@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { LabOrderItem, ImagingOrderItem } from '@/types/healthcare';
+import { PatientContextBar, BELLA_DEMO_PATIENT } from '@/components/hospital/PatientContextBar';
 import {
   getLabOrdersAction,
   verifyLabResultAction,
@@ -20,74 +21,234 @@ import {
   Sun,
   Contrast,
   Undo2,
-  Play,
   Check,
   User,
   FlaskConical,
   FileText,
-  Video,
   Sparkles,
+  Scan,
+  ZoomIn,
+  RotateCw,
+  FlipHorizontal2,
+  Maximize2,
+  Ruler,
+  Layers,
+  ChevronRight,
+  Shield,
+  Brain,
+  PenLine,
+  CheckSquare,
 } from 'lucide-react';
 
 
-const MOCK_LAB_ORDERS: LabOrderItem[] = [
+type LabVerifyStatus = 'pending' | 'verified' | 'panic_notified';
+type ReportStatus = 'draft' | 'preliminary' | 'final' | 'amended';
+
+interface ExtendedLabOrder extends LabOrderItem {
+  ordered_at?: string;
+  ordered_by?: string;
+  verified_at?: string;
+  verified_by?: string;
+  verify_status?: LabVerifyStatus;
+  clinical_interpretation?: string;
+}
+
+interface StudyItem {
+  uid: string;
+  date: string;
+  modality: 'XRAY' | 'CT' | 'MRI' | 'US';
+  description: string;
+  series: { name: string; count: number }[];
+  imageUrl: string;
+  status: 'available' | 'pending';
+}
+
+interface PACSReport {
+  studyUid: string;
+  clinicalIndication: string;
+  technique: string;
+  findings: string;
+  impression: string;
+  status: ReportStatus;
+  signedBy?: string;
+  signedAt?: string;
+}
+
+const MOCK_STUDIES: StudyItem[] = [
   {
-    id: 'lab-001',
-    order_id: 'ord-101',
-    test_code: 'GLU',
-    test_name: 'Glucose (Đường Huyết)',
-    sample_type: 'Máu tĩnh mạch',
-    tube_color: 'Xám',
-    result_value: '',
-    result_unit: 'mmol/L',
-    reference_range: '3.9 - 6.4',
-    is_abnormal: false,
-    is_panic_value: false,
+    uid: 'acc-9872',
+    date: '08/08/2026',
+    modality: 'XRAY',
+    description: 'Chest X-Ray PA',
+    series: [{ name: 'PA View', count: 1 }, { name: 'Lateral', count: 1 }],
+    imageUrl: '/chest_xray.png',
+    status: 'available',
   },
   {
-    id: 'lab-002',
-    order_id: 'ord-101',
-    test_code: 'CREA',
-    test_name: 'Creatinine (Chức Năng Thận)',
-    sample_type: 'Máu tĩnh mạch',
-    tube_color: 'Đỏ',
-    result_value: '',
-    result_unit: 'umol/L',
-    reference_range: '62 - 115',
-    is_abnormal: false,
-    is_panic_value: false,
+    uid: 'acc-9841',
+    date: '07/08/2026',
+    modality: 'CT',
+    description: 'CT Chest with Contrast',
+    series: [{ name: 'Scout', count: 1 }, { name: 'Axial', count: 180 }, { name: 'Coronal', count: 60 }],
+    imageUrl: '/ct_chest.png',
+    status: 'available',
   },
   {
-    id: 'lab-003',
-    order_id: 'ord-101',
-    test_code: 'WBC',
-    test_name: 'Bạch Cầu (White Blood Cells)',
-    sample_type: 'Máu toàn phần',
-    tube_color: 'Tím',
-    result_value: '',
-    result_unit: 'G/L',
-    reference_range: '4.0 - 10.0',
-    is_abnormal: false,
-    is_panic_value: false,
+    uid: 'acc-9801',
+    date: '03/08/2026',
+    modality: 'XRAY',
+    description: 'Chest X-Ray (Baseline)',
+    series: [{ name: 'PA View', count: 1 }],
+    imageUrl: '/chest_xray.png',
+    status: 'available',
+  },
+];
+
+const INITIAL_REPORTS: Record<string, PACSReport> = {
+  'acc-9872': {
+    studyUid: 'acc-9872',
+    clinicalIndication: 'Ho khan, sốt 38.9°C, SpO₂ 91% — bệnh nhân ICU, tiền sử suy hô hấp cấp.',
+    technique: 'Chest X-Ray PA view, portable. Thực hiện tại khoa ICU lúc 20:30.',
+    findings: 'Hình ảnh thâm nhiễm dạng đốm hai bên thùy dưới phổi, rõ bên phải. Góc sườn hoành hai bên có tràn dịch màng phổi lượng nhỏ. Bóng tim không to (CTR 0.45). Trachea thẳng giữa. Xương sườn và cấu trúc xương không có tổn thương.',
+    impression: 'Nghĩ viêm phổi cả hai bên. Tràn dịch màng phổi hai bên lượng nhỏ. Đề nghị theo dõi lâm sàng và điều trị kháng sinh phổ rộng.',
+    status: 'preliminary',
+    signedBy: undefined,
+    signedAt: undefined,
+  },
+  'acc-9841': {
+    studyUid: 'acc-9841',
+    clinicalIndication: 'Đánh giá tiến triển viêm phổi, loại trừ áp xe phổi.',
+    technique: 'CT Ngực có cản quang, 1mm slice. Thực hiện tại phòng CT lúc 08:45.',
+    findings: '',
+    impression: '',
+    status: 'draft',
+  },
+};
+
+
+const now = Date.now();
+
+const MOCK_LAB_ORDERS: ExtendedLabOrder[] = [
+  {
+    id: 'lab-001', order_id: 'ord-101',
+    test_code: 'GLU', test_name: 'Glucose (Đường Huyết)',
+    sample_type: 'Máu tĩnh mạch', tube_color: 'Xám',
+    result_value: '14.2', result_unit: 'mmol/L', reference_range: '3.9 - 6.4',
+    is_abnormal: true, is_panic_value: false,
+    ordered_at: new Date(now - 3 * 60 * 60000).toISOString(),
+    ordered_by: 'BS.CKII Phạm Quốc Việt',
+    verify_status: 'verified', verified_at: new Date(now - 2 * 60 * 60000).toISOString(),
+    verified_by: 'KTV Nguyễn Quốc Bảo',
+    clinical_interpretation: 'CAO — Tăng đường huyết mức độ cao, cần điều chỉnh Insulin.',
+  },
+  {
+    id: 'lab-002', order_id: 'ord-101',
+    test_code: 'CREA', test_name: 'Creatinine (Chức Năng Thận)',
+    sample_type: 'Máu tĩnh mạch', tube_color: 'Đỏ',
+    result_value: '312', result_unit: 'umol/L', reference_range: '62 - 115',
+    is_abnormal: true, is_panic_value: true,
+    ordered_at: new Date(now - 3 * 60 * 60000).toISOString(),
+    ordered_by: 'BS.CKII Phạm Quốc Việt',
+    verify_status: 'panic_notified', verified_at: new Date(now - 2.5 * 60 * 60000).toISOString(),
+    verified_by: 'KTV Nguyễn Quốc Bảo',
+    clinical_interpretation: '🔴 NGUY KỊCH — Suy thận cấp. Đã báo bác sĩ điều trị ngay.',
+  },
+  {
+    id: 'lab-003', order_id: 'ord-101',
+    test_code: 'WBC', test_name: 'Bạch Cầu (WBC)',
+    sample_type: 'Máu toàn phần', tube_color: 'Tím',
+    result_value: '13.8', result_unit: 'G/L', reference_range: '4.0 - 10.0',
+    is_abnormal: true, is_panic_value: false,
+    ordered_at: new Date(now - 3 * 60 * 60000).toISOString(),
+    ordered_by: 'BS.CKII Phạm Quốc Việt',
+    verify_status: 'verified', verified_at: new Date(now - 2 * 60 * 60000).toISOString(),
+    verified_by: 'KTV Nguyễn Quốc Bảo',
+    clinical_interpretation: 'CAO — Tăng bạch cầu, nghĩ nhiễm trùng tiến triển.',
+  },
+  {
+    id: 'lab-004', order_id: 'ord-101',
+    test_code: 'HGB', test_name: 'Hemoglobin (Huyết Sắc Tố)',
+    sample_type: 'Máu toàn phần', tube_color: 'Tím',
+    result_value: '9.2', result_unit: 'g/dL', reference_range: '12.0 - 16.0',
+    is_abnormal: true, is_panic_value: false,
+    ordered_at: new Date(now - 3 * 60 * 60000).toISOString(),
+    ordered_by: 'BS.CKII Phạm Quốc Việt',
+    verify_status: 'verified', verified_at: new Date(now - 2 * 60 * 60000).toISOString(),
+    verified_by: 'KTV Nguyễn Quốc Bảo',
+    clinical_interpretation: 'THẤP — Thiếu máu mức độ trung bình.',
+  },
+  {
+    id: 'lab-005', order_id: 'ord-101',
+    test_code: 'K+', test_name: 'Kali Máu (Potassium)',
+    sample_type: 'Máu tĩnh mạch', tube_color: 'Vàng',
+    result_value: '3.1', result_unit: 'mEq/L', reference_range: '3.5 - 5.0',
+    is_abnormal: true, is_panic_value: false,
+    ordered_at: new Date(now - 3 * 60 * 60000).toISOString(),
+    ordered_by: 'BS.CKII Phạm Quốc Việt',
+    verify_status: 'verified', verified_at: new Date(now - 1.5 * 60 * 60000).toISOString(),
+    verified_by: 'KTV Nguyễn Quốc Bảo',
+    clinical_interpretation: 'THẤP — Hạ kali máu. Đây là lý do Furosemide đang tạm ngưng (MAR).',
+  },
+  {
+    id: 'lab-006', order_id: 'ord-101',
+    test_code: 'Na+', test_name: 'Natri Máu (Sodium)',
+    sample_type: 'Máu tĩnh mạch', tube_color: 'Vàng',
+    result_value: '138', result_unit: 'mEq/L', reference_range: '135 - 145',
+    is_abnormal: false, is_panic_value: false,
+    ordered_at: new Date(now - 3 * 60 * 60000).toISOString(),
+    ordered_by: 'BS.CKII Phạm Quốc Việt',
+    verify_status: 'verified', verified_at: new Date(now - 1.5 * 60 * 60000).toISOString(),
+    verified_by: 'KTV Nguyễn Quốc Bảo',
+    clinical_interpretation: 'BÌNH THƯỜNG.',
+  },
+  {
+    id: 'lab-007', order_id: 'ord-102',
+    test_code: 'CRP', test_name: 'C-Reactive Protein (Viêm)',
+    sample_type: 'Máu tĩnh mạch', tube_color: 'Đỏ',
+    result_value: '', result_unit: 'mg/L', reference_range: '< 5.0',
+    is_abnormal: false, is_panic_value: false,
+    ordered_at: new Date(now - 30 * 60000).toISOString(),
+    ordered_by: 'BS. Nguyễn Thu Hà',
+    verify_status: 'pending',
+    clinical_interpretation: undefined,
+  },
+  {
+    id: 'lab-008', order_id: 'ord-102',
+    test_code: 'PCT', test_name: 'Procalcitonin (Nhiễm Khuẩn)',
+    sample_type: 'Máu tĩnh mạch', tube_color: 'Đỏ',
+    result_value: '', result_unit: 'ng/mL', reference_range: '< 0.5',
+    is_abnormal: false, is_panic_value: false,
+    ordered_at: new Date(now - 30 * 60000).toISOString(),
+    ordered_by: 'BS. Nguyễn Thu Hà',
+    verify_status: 'pending',
+    clinical_interpretation: undefined,
   },
 ];
 
 const MOCK_IMAGING_ORDERS: ImagingOrderItem[] = [
   {
-    id: 'img-001',
-    order_id: 'ord-102',
+    id: 'img-001', order_id: 'ord-103',
     modality: 'XRAY',
-    body_site: 'Lồng Ngực (Chest X-Ray)',
+    body_site: 'Lồng Ngực — Chest X-Ray PA',
     dcm_study_uid: '1.2.840.113619.2.134568',
+    viewer_link: '#',
+    radiologist_report: 'Hình ảnh thâm nhiễm đốm nhỏ lan toả hai phổi, nổi bật thuỳ dưới phổi phải. Rãnh liên thuỳ mờ nhẹ. Tim không to. Góc sườn hoành hai bên bình thường. Kết luận: Nghĩ viêm phổi tiến triển hai bên, cần theo dõi và điều trị kháng sinh phổ rộng.',
+    radiologist_id: 'doc-radiologist-01',
+  },
+  {
+    id: 'img-002', order_id: 'ord-104',
+    modality: 'CT',
+    body_site: 'Bụng — CT Scan Ổ Bụng Có Thuốc Cản Quang',
+    dcm_study_uid: '1.2.840.113619.2.134569',
     viewer_link: '#',
     radiologist_report: '',
     radiologist_id: 'doc-radiologist-01',
   },
 ];
 
-export default function HospitalAncillaryPage() {
+function AncillaryPageInner() {
   const searchParams = useSearchParams();
-  const [labOrders, setLabOrders] = useState<LabOrderItem[]>(MOCK_LAB_ORDERS);
+  const [labOrders, setLabOrders] = useState<ExtendedLabOrder[]>(MOCK_LAB_ORDERS);
   const [imagingOrders, setImagingOrders] = useState<ImagingOrderItem[]>(MOCK_IMAGING_ORDERS);
   // Read initial tab from URL query param (?tab=lis or ?tab=ris)
   const [activeTab, setActiveTab] = useState<'lis' | 'ris'>(() => {
@@ -112,6 +273,15 @@ export default function HospitalAncillaryPage() {
 
   // Diagnosis feedback
   const [aiFeedback, setAiFeedback] = useState<string>('');
+  const [activeStudyUid, setActiveStudyUid] = useState<string>('acc-9872');
+  const [pacsReports, setPacsReports] = useState<Record<string, PACSReport>>(INITIAL_REPORTS);
+  const [showAiOverlay, setShowAiOverlay] = useState<boolean>(false);
+  const [activeTool, setActiveTool] = useState<string>('pan');
+  const [ctSlice, setCtSlice] = useState<number>(42);
+  const [zoom, setZoom] = useState<number>(100);
+
+  // Derived: active study object
+  const activeStudy = MOCK_STUDIES.find((s) => s.uid === activeStudyUid) ?? MOCK_STUDIES[0];
 
   const handleUpdateLabResult = (id: string, value: string) => {
     setLabOrders((prev) =>
@@ -120,16 +290,34 @@ export default function HospitalAncillaryPage() {
           const numValue = parseFloat(value);
           let isAbnormal = false;
           let isPanic = false;
+          let interp = '';
 
           if (item.test_code === 'GLU') {
             isAbnormal = numValue < 3.9 || numValue > 6.4;
             isPanic = numValue < 2.5 || numValue > 25.0;
+            interp = isPanic ? '🔴 NGUY KỊCH — Hạ/tăng đường huyết nghiêm trọng' : isAbnormal ? (numValue > 6.4 ? 'CAO — Tăng đường huyết' : 'THẤP — Hạ đường huyết') : 'BÌNH THƯỜNG';
           } else if (item.test_code === 'CREA') {
             isAbnormal = numValue < 62 || numValue > 115;
             isPanic = numValue > 500;
+            interp = isPanic ? '🔴 NGUY KỊCH — Suy thận cấp, báo bác sĩ ngay' : isAbnormal ? 'CAO — Chức năng thận suy giảm' : 'BÌNH THƯỜNG';
           } else if (item.test_code === 'WBC') {
             isAbnormal = numValue < 4.0 || numValue > 10.0;
             isPanic = numValue < 1.0 || numValue > 30.0;
+            interp = isPanic ? '🔴 NGUY KỊCH — Nhiễm trùng nặng / suy tuỷ' : isAbnormal ? (numValue > 10 ? 'CAO — Nhiễm trùng tiến triển' : 'THẤP — Giảm bạch cầu') : 'BÌNH THƯỜNG';
+          } else if (item.test_code === 'K+') {
+            isAbnormal = numValue < 3.5 || numValue > 5.0;
+            isPanic = numValue < 2.5 || numValue > 6.5;
+            interp = isPanic ? '🔴 NGUY KỊCH — Kali nguy hiểm, nguy cơ rối loạn nhịp tim' : isAbnormal ? (numValue < 3.5 ? 'THẤP — Hạ kali máu' : 'CAO — Tăng kali máu') : 'BÌNH THƯỜNG';
+          } else if (item.test_code === 'CRP') {
+            isAbnormal = numValue >= 5.0;
+            isPanic = numValue > 100;
+            interp = isPanic ? '🔴 NGUY KỊCH — Viêm hệ thống nặng / nhiễm trùng huyết' : isAbnormal ? 'CAO — Phản ứng viêm tiến triển' : 'BÌNH THƯỜNG';
+          } else if (item.test_code === 'PCT') {
+            isAbnormal = numValue >= 0.5;
+            isPanic = numValue > 10;
+            interp = isPanic ? '🔴 NGUY KỊCH — Nhiễm khuẩn huyết nguy hiểm' : isAbnormal ? 'CAO — Nhiễm khuẩn tiến triển, cần kháng sinh mạnh' : 'BÌNH THƯỜNG';
+          } else {
+            interp = isAbnormal ? 'Bất thường' : 'Bình thường';
           }
 
           return {
@@ -137,6 +325,8 @@ export default function HospitalAncillaryPage() {
             result_value: value,
             is_abnormal: isAbnormal,
             is_panic_value: isPanic,
+            verify_status: 'pending' as LabVerifyStatus,
+            clinical_interpretation: interp,
           };
         }
         return item;
@@ -144,7 +334,7 @@ export default function HospitalAncillaryPage() {
     );
   };
 
-  const handleVerifyLab = async (item: LabOrderItem) => {
+  const handleVerifyLab = async (item: ExtendedLabOrder) => {
     if (!item.result_value) {
       alert('Vui lòng nhập giá trị xét nghiệm trước khi duyệt!');
       return;
@@ -160,14 +350,19 @@ export default function HospitalAncillaryPage() {
         isPanicValue: item.is_panic_value,
         verifiedBy: 'usr-tech-01',
       });
-
-      alert(`Đã duyệt thành công kết quả xét nghiệm ${item.test_code}.`);
-
-      if (item.is_panic_value) {
-        speakPanicAlert(item.test_name, item.result_value, item.result_unit || '');
-      }
     } catch {
-      // Swallowed for offline dev mode
+      // Fallback to optimistic
+    }
+
+    // Optimistic UI — mark verified
+    setLabOrders((prev) => prev.map((o) =>
+      o.id === item.id
+        ? { ...o, verify_status: item.is_panic_value ? 'panic_notified' : 'verified', verified_at: new Date().toISOString(), verified_by: 'KTV Nguyễn Quốc Bảo' }
+        : o
+    ));
+
+    if (item.is_panic_value) {
+      speakPanicAlert(item.test_name, item.result_value, item.result_unit || '');
     }
   };
 
@@ -264,6 +459,28 @@ export default function HospitalAncillaryPage() {
         </button>
       </div>
 
+      {/* ── PERSISTENT PATIENT CONTEXT BAR ────────────────────── */}
+      <div className="bg-white border border-slate-200 rounded-xl px-5 py-3 shadow-sm">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-sm shadow">
+              L
+            </div>
+            <div>
+              <div className="font-bold text-slate-900 text-sm">Lê Thị Hương</div>
+              <div className="text-xs text-slate-500">Nữ · 62t · MRN: pat-001</div>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <span className="text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-full">🛏 ICU-BED-01</span>
+            <span className="text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-full">Hồi sức Tích cực (ICU)</span>
+            <span className="text-xs font-semibold text-teal-700 bg-teal-50 border border-teal-200 px-2.5 py-1 rounded-full">📅 Ngày điều trị 5</span>
+            <span className="text-xs font-bold text-rose-700 bg-rose-50 border border-rose-300 px-2.5 py-1 rounded-full">⚠ Dị ứng: Penicillin, Sulfonamides</span>
+          </div>
+          <div className="ml-auto text-[10px] text-slate-400 italic">Persistent Patient Context · All clinical workspaces</div>
+        </div>
+      </div>
+
       {activeTab === 'lis' ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* LIS Order List */}
@@ -277,53 +494,104 @@ export default function HospitalAncillaryPage() {
               </div>
 
               <div className="p-4 divide-y divide-slate-100">
-                {labOrders.map((item) => (
-                  <div key={item.id} className="py-4 first:pt-0 last:pb-0 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="font-bold text-indigo-700">[{item.test_code}]</span>
-                        <span className="font-semibold text-slate-800">{item.test_name}</span>
+                {labOrders.map((item) => {
+                  const ext = item as ExtendedLabOrder;
+                  const isVerified = ext.verify_status === 'verified' || ext.verify_status === 'panic_notified';
+                  const isPending = !ext.verify_status || ext.verify_status === 'pending';
+                  return (
+                  <div key={item.id} className={`py-4 first:pt-0 last:pb-0 space-y-2.5 rounded-lg transition-all ${
+                    item.is_panic_value ? 'bg-rose-50/60 border border-rose-200 px-3 -mx-3' :
+                    item.is_abnormal ? 'bg-amber-50/40' : ''
+                  }`}>
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-indigo-700 text-sm">[{item.test_code}]</span>
+                          <span className="font-semibold text-slate-800 text-sm">{item.test_name}</span>
+                          {item.is_panic_value && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-rose-600 text-white animate-pulse">
+                              🔴 NGUY KỊCH
+                            </span>
+                          )}
+                          {item.is_abnormal && !item.is_panic_value && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                              🟡 BẤT THƯỜNG
+                            </span>
+                          )}
+                          {isVerified && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <CheckCircle2 className="w-2.5 h-2.5" /> Đã duyệt
+                            </span>
+                          )}
+                          {isPending && item.result_value && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                              Chờ duyệt
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          Mẫu: {item.sample_type} · Ống: <strong>{item.tube_color}</strong> · Tham chiếu: <strong>{item.reference_range} {item.result_unit}</strong>
+                          {ext.ordered_by && <span> · BS chỉ định: <strong>{ext.ordered_by}</strong></span>}
+                        </div>
+                        {/* Clinical Interpretation — clearly separated from AI */}
+                        {ext.clinical_interpretation && isVerified && (
+                          <div className={`text-xs font-semibold px-2.5 py-1 rounded border inline-block mt-1 ${
+                            item.is_panic_value ? 'bg-rose-100 text-rose-800 border-rose-300' :
+                            item.is_abnormal ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                            'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          }`}>
+                            🔬 Kết quả lâm sàng: {ext.clinical_interpretation}
+                          </div>
+                        )}
+                        {isVerified && ext.verified_by && (
+                          <div className="text-[10px] text-slate-400">
+                            Duyệt lúc {ext.verified_at ? new Date(ext.verified_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--'} bởi {ext.verified_by}
+                          </div>
+                        )}
                       </div>
-                      <div className="text-xs text-slate-500">
-                        Mẫu: {item.sample_type} • Ống lấy máu: <span className="font-semibold">{item.tube_color}</span> • Chỉ số bình thường: {item.reference_range} {item.result_unit}
+
+                      <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+                        {isVerified ? (
+                          <div className="flex items-center gap-2">
+                            <span className={`text-lg font-black ${
+                              item.is_panic_value ? 'text-rose-700' : item.is_abnormal ? 'text-amber-700' : 'text-emerald-700'
+                            }`}>{item.result_value}</span>
+                            <span className="text-xs text-slate-400">{item.result_unit}</span>
+                          </div>
+                        ) : (
+                          <div className="relative">
+                            <input
+                              type="number"
+                              placeholder="Nhập KQ"
+                              value={item.result_value}
+                              onChange={(e) => handleUpdateLabResult(item.id, e.target.value)}
+                              className={`pl-3 pr-14 py-1.5 w-32 border rounded-lg text-sm focus:outline-none focus:ring-2 font-bold ${
+                                item.is_panic_value ? 'border-rose-400 bg-rose-50 focus:ring-rose-500' :
+                                item.is_abnormal ? 'border-amber-400 bg-amber-50 focus:ring-amber-500' :
+                                'border-slate-300 focus:ring-indigo-500'
+                              }`}
+                            />
+                            <span className="absolute right-3 top-2 text-[10px] font-semibold text-slate-400">{item.result_unit}</span>
+                          </div>
+                        )}
+
+                        {!isVerified && (
+                          <button
+                            onClick={() => handleVerifyLab(item as ExtendedLabOrder)}
+                            disabled={!item.result_value}
+                            className={`p-1.5 rounded-lg transition-colors text-white ${
+                              item.result_value ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-300 cursor-not-allowed'
+                            }`}
+                            title="Duyệt kết quả"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
-                    </div>
-
-                    <div className="flex items-center space-x-3 w-full md:w-auto justify-end">
-                      <div className="relative">
-                        <input
-                          type="number"
-                          placeholder="Kết quả"
-                          value={item.result_value}
-                          onChange={(e) => handleUpdateLabResult(item.id, e.target.value)}
-                          className="pl-3 pr-14 py-1.5 w-32 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold"
-                        />
-                        <span className="absolute right-3 top-2 text-[10px] font-semibold text-slate-400">
-                          {item.result_unit}
-                        </span>
-                      </div>
-
-                      {item.is_panic_value && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 animate-pulse border border-rose-300">
-                          🔴 Nguy kịch
-                        </span>
-                      )}
-                      {item.is_abnormal && !item.is_panic_value && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
-                          🟡 Bất thường
-                        </span>
-                      )}
-
-                      <button
-                        onClick={() => handleVerifyLab(item)}
-                        className="p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors"
-                        title="Duyệt kết quả"
-                      >
-                        <Check className="w-4 h-4" />
-                      </button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -355,136 +623,434 @@ export default function HospitalAncillaryPage() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* DICOM PACS Viewer Simulator */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl flex flex-col justify-between h-[500px]">
-              {/* PACS Top Control Panel */}
-              <div className="p-3 bg-slate-900 border-b border-slate-800 flex items-center justify-between text-xs text-slate-400">
-                <div className="flex items-center space-x-4">
-                  <span className="font-bold text-slate-200">Bella PACS Viewer (DCM Simulator)</span>
-                  <span>Modality: <strong className="text-cyan-400">{activeModality}</strong></span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => {
-                      setBrightness(100);
-                      setContrast(100);
-                      setInvert(false);
-                    }}
-                    className="p-1 hover:bg-slate-800 rounded text-slate-300"
-                    title="Reset hình ảnh"
-                  >
-                    <Undo2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setInvert(!invert)}
-                    className="p-1 hover:bg-slate-800 rounded text-slate-300"
-                    title="Đảo ngược màu sắc"
-                  >
-                    <Sliders className="w-4 h-4" />
-                  </button>
-                </div>
+        // ─────────────────────────────────────────────────────────────────
+        // PACS / RIS — 4-Zone Professional Radiology Workstation
+        // Zone 1 (left): Study/Series List
+        // Zone 2 (center): DICOM Viewer
+        // Zone 3 (right): Radiology Report
+        // Zone 4 (bottom): Toolbar + Controls
+        // ─────────────────────────────────────────────────────────────────
+        <div className="space-y-4">
+
+          {/* ── ZONE: STUDY/SERIES/VIEWER/REPORT ─────────────────────── */}
+          <div className="grid grid-cols-1 xl:grid-cols-[220px_1fr_340px] gap-4 h-[680px]">
+
+            {/* ── ZONE 1: Study List (left) ────────────────────────────── */}
+            <div className="bg-slate-950 rounded-xl border border-slate-800 flex flex-col overflow-hidden">
+              <div className="px-3 py-2.5 bg-slate-900 border-b border-slate-800">
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Studies</div>
+                <div className="text-[9px] text-slate-500 mt-0.5">MRN: pat-001 · 3 studies</div>
               </div>
-
-              {/* PACS Image Area */}
-              <div className="flex-1 flex items-center justify-center relative overflow-hidden bg-black p-4">
-                {/* Simulated DICOM Image Overlay Details */}
-                <div className="absolute top-4 left-4 text-xs font-mono text-emerald-500/80 space-y-1 z-10 pointer-events-none">
-                  <div>PATIENT ID: pat-001</div>
-                  <div>ACCESSION NO: acc-9872</div>
-                  <div>STUDY DATE: 2026-08-07</div>
-                  <div>SERIES: 1</div>
-                </div>
-
-                <div className="absolute bottom-4 right-4 text-xs font-mono text-emerald-500/80 z-10 pointer-events-none text-right">
-                  <div>ZOOM: 100%</div>
-                  <div>W/L: 450 / 80</div>
-                  <div>BRIGHTNESS: {brightness}%</div>
-                  <div>CONTRAST: {contrast}%</div>
-                </div>
-
-                {/* The Medical Scan Image */}
-                <div
-                  className="w-80 h-80 relative rounded border border-slate-800 bg-contain bg-center bg-no-repeat transition-all"
-                  style={{
-                    backgroundImage: `url('https://images.unsplash.com/photo-1576086213369-97a306d36557?auto=format&fit=crop&q=80&w=400')`,
-                    filter: `brightness(${brightness}%) contrast(${contrast}%) ${invert ? 'invert(100%)' : ''}`,
-                  }}
-                />
+              <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
+                {MOCK_STUDIES.map((study) => {
+                  const isActive = study.uid === activeStudyUid;
+                  const modalityColor: Record<string, string> = {
+                    XRAY: 'text-cyan-400',
+                    CT: 'text-amber-400',
+                    MRI: 'text-violet-400',
+                    US: 'text-emerald-400',
+                  };
+                  return (
+                    <button
+                      key={study.uid}
+                      onClick={() => setActiveStudyUid(study.uid)}
+                      className={`w-full text-left rounded-lg p-2.5 transition-all border ${
+                        isActive
+                          ? 'bg-indigo-600/30 border-indigo-500/50'
+                          : 'bg-slate-900/50 border-slate-800 hover:bg-slate-800'
+                      }`}
+                    >
+                      <div className={`text-[10px] font-black uppercase tracking-wider ${
+                        modalityColor[study.modality]
+                      }`}>{study.modality}</div>
+                      <div className="text-xs font-semibold text-slate-200 mt-0.5 leading-tight">{study.description}</div>
+                      <div className="text-[9px] text-slate-500 mt-0.5">{study.date}</div>
+                      {/* Series */}
+                      <div className="mt-1.5 space-y-0.5">
+                        {study.series.map((s) => (
+                          <div key={s.name} className="flex items-center gap-1 text-[9px] text-slate-400">
+                            <ChevronRight className="w-2.5 h-2.5" />
+                            <span>{s.name}</span>
+                            <span className="ml-auto text-slate-600">{s.count}img</span>
+                          </div>
+                        ))}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
-
-              {/* PACS Bottom Adjuster Panel */}
-              <div className="p-3 bg-slate-900 border-t border-slate-800 grid grid-cols-2 gap-4">
-                <div className="flex items-center space-x-2 text-xs text-slate-400">
-                  <Sun className="w-4 h-4 text-amber-500" />
-                  <span>Độ Sáng (Brightness):</span>
-                  <input
-                    type="range"
-                    min="50"
-                    max="200"
-                    value={brightness}
-                    onChange={(e) => setBrightness(parseInt(e.target.value))}
-                    className="w-full accent-cyan-500"
-                  />
-                </div>
-
-                <div className="flex items-center space-x-2 text-xs text-slate-400">
-                  <Contrast className="w-4 h-4 text-blue-500" />
-                  <span>Độ Tương Phản (Contrast):</span>
-                  <input
-                    type="range"
-                    min="50"
-                    max="200"
-                    value={contrast}
-                    onChange={(e) => setContrast(parseInt(e.target.value))}
-                    className="w-full accent-cyan-500"
-                  />
+              {/* Series thumbnails row */}
+              <div className="p-2 bg-slate-900 border-t border-slate-800">
+                <div className="text-[9px] text-slate-500 mb-1.5">Thumbnails</div>
+                <div className="flex gap-1.5">
+                  {[activeStudy].map((study, i) => (
+                    <div key={i} className="w-14 h-14 rounded border border-slate-700 bg-black overflow-hidden flex-shrink-0">
+                      <img src={study.imageUrl} alt="thumb" className="w-full h-full object-cover opacity-70" />
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Radiologist Diagnosis Report Panel */}
-          <div className="space-y-4">
-            {imagingOrders.map((item) => (
-              <div key={item.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3">
-                <div>
-                  <span className="text-xs font-semibold text-indigo-700 uppercase tracking-wider">
-                    Bác Sĩ Chẩn Đoán Hình Ảnh
-                  </span>
-                  <h3 className="text-base font-bold text-slate-800">{item.body_site}</h3>
-                  <p className="text-xs text-slate-500">Mã phim: {item.dcm_study_uid}</p>
+            {/* ── ZONE 2: DICOM Viewer (center) ────────────────────────── */}
+            <div className="bg-slate-950 rounded-xl border border-slate-800 flex flex-col overflow-hidden">
+              {/* Viewer Header */}
+              <div className="px-3 py-2 bg-slate-900 border-b border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                <div className="flex items-center gap-3">
+                  <span className="font-bold text-slate-200">Bella PACS Viewer</span>
+                  <span className="text-[10px] px-1.5 py-0.5 bg-cyan-500/20 text-cyan-400 rounded font-bold">{activeStudy.modality}</span>
+                  <span className="text-[10px] text-slate-500">{activeStudy.description} · {activeStudy.date}</span>
                 </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Kết Luận Chẩn Đoán Lâm Sàng (RIS Report):
-                  </label>
-                  <textarea
-                    rows={6}
-                    value={item.radiologist_report}
-                    onChange={(e) =>
-                      setImagingOrders((prev) =>
-                        prev.map((o) => (o.id === item.id ? { ...o, radiologist_report: e.target.value } : o))
-                      )
-                    }
-                    placeholder="Ghi nhận kết luận chẩn đoán hình ảnh chi tiết (ví dụ: Hình ảnh tổn thương thâm nhiễm thùy dưới phổi phải, nghĩ viêm phổi tiến triển)..."
-                    className="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  />
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setShowAiOverlay(!showAiOverlay)}
+                    className={`text-[10px] px-2 py-0.5 rounded border font-bold transition-all ${
+                      showAiOverlay
+                        ? 'bg-violet-600/40 border-violet-500 text-violet-300'
+                        : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-violet-400'
+                    }`}
+                  >
+                    ✦ AI Overlay {showAiOverlay ? 'ON' : 'OFF'}
+                  </button>
+                  <button onClick={() => { setBrightness(100); setContrast(100); }}
+                    className="p-1 hover:bg-slate-800 rounded text-slate-300" title="Reset">
+                    <Undo2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => setInvert(!invert)}
+                    className="p-1 hover:bg-slate-800 rounded text-slate-300" title="Invert">
+                    <Sliders className="w-3.5 h-3.5" />
+                  </button>
                 </div>
-
-                <button
-                  onClick={() => handleSaveImagingReport(item)}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-xl text-xs transition-all shadow-md"
-                >
-                  Duyệt Báo Cáo Chẩn Đoán Hình Ảnh
-                </button>
               </div>
-            ))}
+
+              {/* DICOM Info overlay — top left */}
+              <div className="flex-1 relative overflow-hidden bg-black">
+                <div className="absolute top-3 left-3 text-[9px] font-mono text-emerald-500/80 space-y-0.5 z-10 pointer-events-none">
+                  <div>PATIENT: {BELLA_DEMO_PATIENT.name.toUpperCase()}</div>
+                  <div>MRN: {BELLA_DEMO_PATIENT.mrn.toUpperCase()}</div>
+                  <div>ACC: {activeStudy.uid.toUpperCase()}</div>
+                  <div>DATE: {activeStudy.date}</div>
+                  <div>SERIES: 1 / {activeStudy.series.length}</div>
+                </div>
+
+                {/* Top right DICOM info */}
+                <div className="absolute top-3 right-3 text-[9px] font-mono text-emerald-500/80 z-10 pointer-events-none text-right">
+                  <div>ZOOM: {zoom}%</div>
+                  <div>W/L: {brightness * 4.5 | 0} / {contrast * 0.8 | 0}</div>
+                  {activeStudy.modality === 'CT' && <div>SLICE: {ctSlice} / 180</div>}
+                </div>
+
+                {/* Main image */}
+                <img
+                  src={activeStudy.imageUrl}
+                  alt={activeStudy.description}
+                  className="w-full h-full object-contain transition-all"
+                  style={{
+                    filter: `brightness(${brightness}%) contrast(${contrast}%) ${invert ? 'invert(100%)' : ''}`,
+                    transform: `scale(${zoom / 100})`,
+                  }}
+                />
+
+                {/* AI Overlay — only when toggled ON */}
+                {showAiOverlay && (
+                  <div className="absolute inset-0 pointer-events-none z-20">
+                    {/* Right lower lobe opacity marker */}
+                    <div className="absolute" style={{ bottom: '28%', right: '32%' }}>
+                      <div className="w-16 h-16 border-2 border-violet-400 rounded-full animate-pulse opacity-70" />
+                      <div className="absolute -bottom-6 left-0 text-[9px] font-bold text-violet-300 whitespace-nowrap bg-black/60 px-1 rounded">
+                        AI: Opacity 91%
+                      </div>
+                    </div>
+                    {/* Small effusion marker */}
+                    <div className="absolute" style={{ bottom: '15%', left: '28%' }}>
+                      <div className="w-10 h-6 border border-dashed border-amber-400 rounded opacity-70" />
+                      <div className="absolute -bottom-5 left-0 text-[9px] font-bold text-amber-300 whitespace-nowrap bg-black/60 px-1 rounded">
+                        Effusion?
+                      </div>
+                    </div>
+                    {/* AI badge */}
+                    <div className="absolute bottom-3 left-3 text-[9px] bg-violet-600/80 text-violet-100 font-bold px-2 py-0.5 rounded flex items-center gap-1">
+                      <Brain className="w-3 h-3" /> AI Radiology Assist — NOT a clinical diagnosis
+                    </div>
+                  </div>
+                )}
+
+                {/* Active tool badge */}
+                <div className="absolute bottom-3 right-3 text-[10px] font-mono text-slate-500 bg-black/50 px-2 py-0.5 rounded">
+                  Tool: {activeTool.toUpperCase()}
+                </div>
+              </div>
+
+              {/* ── ZONE 4: Toolbar (bottom) ────────────────────────────── */}
+              <div className="bg-slate-900 border-t border-slate-800 px-3 py-2 flex items-center gap-1 flex-wrap">
+                {/* Tools */}
+                {([
+                  { id: 'pan', icon: <Scan className="w-3.5 h-3.5" />, label: 'Pan' },
+                  { id: 'zoom', icon: <ZoomIn className="w-3.5 h-3.5" />, label: 'Zoom' },
+                  { id: 'rotate', icon: <RotateCw className="w-3.5 h-3.5" />, label: 'Rotate' },
+                  { id: 'flip', icon: <FlipHorizontal2 className="w-3.5 h-3.5" />, label: 'Flip' },
+                  { id: 'measure', icon: <Ruler className="w-3.5 h-3.5" />, label: 'Measure' },
+                  { id: 'annotate', icon: <PenLine className="w-3.5 h-3.5" />, label: 'Annotate' },
+                  { id: 'fullscreen', icon: <Maximize2 className="w-3.5 h-3.5" />, label: 'Fullscreen' },
+                ] as { id: string; icon: React.ReactNode; label: string }[]).map((tool) => (
+                  <button
+                    key={tool.id}
+                    title={tool.label}
+                    onClick={() => setActiveTool(tool.id)}
+                    className={`p-1.5 rounded text-xs transition-all ${
+                      activeTool === tool.id
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
+                    }`}
+                  >
+                    {tool.icon}
+                  </button>
+                ))}
+
+                <div className="w-px h-4 bg-slate-700 mx-1" />
+
+                {/* Brightness slider */}
+                <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                  <Sun className="w-3 h-3 text-amber-400" />
+                  <input type="range" min={50} max={200} value={brightness}
+                    onChange={(e) => setBrightness(parseInt(e.target.value))}
+                    className="w-16 accent-cyan-500" />
+                  <span className="w-7">{brightness}%</span>
+                </div>
+
+                {/* Contrast slider */}
+                <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                  <Contrast className="w-3 h-3 text-blue-400" />
+                  <input type="range" min={50} max={200} value={contrast}
+                    onChange={(e) => setContrast(parseInt(e.target.value))}
+                    className="w-16 accent-cyan-500" />
+                  <span className="w-7">{contrast}%</span>
+                </div>
+
+                {/* CT slice (only for CT) */}
+                {activeStudy.modality === 'CT' && (
+                  <div className="flex items-center gap-1.5 text-[10px] text-slate-400 ml-auto">
+                    <Layers className="w-3 h-3 text-amber-400" />
+                    <span>Slice</span>
+                    <input type="range" min={1} max={180} value={ctSlice}
+                      onChange={(e) => setCtSlice(parseInt(e.target.value))}
+                      className="w-20 accent-amber-500" />
+                    <span className="w-12">{ctSlice}/180</span>
+                  </div>
+                )}
+                {/* Zoom control */}
+                <div className="flex items-center gap-1.5 text-[10px] text-slate-400 ml-auto">
+                  <ZoomIn className="w-3 h-3 text-cyan-400" />
+                  <input type="range" min={50} max={200} value={zoom}
+                    onChange={(e) => setZoom(parseInt(e.target.value))}
+                    className="w-16 accent-cyan-500" />
+                  <span className="w-10">{zoom}%</span>
+                </div>
+              </div>
+            </div>
+
+            {/* ── ZONE 3: Radiology Report (right) ─────────────────────── */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-md flex flex-col overflow-hidden">
+              <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Radiology Report</div>
+                <div className="text-xs font-semibold text-slate-700 mt-0.5">{activeStudy.description}</div>
+                <div className="flex items-center gap-1.5 mt-1.5">
+                  {/* Report State Machine badge */}
+                  {([
+                    { status: 'draft', label: 'DRAFT', color: 'bg-slate-200 text-slate-600' },
+                    { status: 'preliminary', label: 'PRELIM', color: 'bg-amber-100 text-amber-700 border border-amber-300' },
+                    { status: 'final', label: 'FINAL', color: 'bg-emerald-100 text-emerald-700 border border-emerald-300' },
+                    { status: 'amended', label: 'AMENDED', color: 'bg-rose-100 text-rose-700 border border-rose-300' },
+                  ] as { status: ReportStatus; label: string; color: string }[]).map((s) => {
+                    const currentReport = pacsReports[activeStudyUid];
+                    const isActive = currentReport?.status === s.status;
+                    return (
+                      <span key={s.status} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                        isActive ? s.color : 'bg-slate-100 text-slate-300'
+                      }`}>
+                        {s.label}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Report body */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {pacsReports[activeStudyUid] ? (
+                  <>
+                    {/* Clinical Indication */}
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Clinical Indication</label>
+                      <textarea
+                        rows={2}
+                        value={pacsReports[activeStudyUid]?.clinicalIndication ?? ''}
+                        onChange={(e) => setPacsReports((prev) => ({
+                          ...prev,
+                          [activeStudyUid]: { ...prev[activeStudyUid], clinicalIndication: e.target.value },
+                        }))}
+                        className="w-full border border-slate-200 rounded-lg p-2 text-xs focus:ring-2 focus:ring-indigo-400 focus:outline-none resize-none text-slate-700"
+                        placeholder="Lý do chỉ định chụp..."
+                      />
+                    </div>
+
+                    {/* Technique */}
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Technique</label>
+                      <textarea
+                        rows={2}
+                        value={pacsReports[activeStudyUid]?.technique ?? ''}
+                        onChange={(e) => setPacsReports((prev) => ({
+                          ...prev,
+                          [activeStudyUid]: { ...prev[activeStudyUid], technique: e.target.value },
+                        }))}
+                        className="w-full border border-slate-200 rounded-lg p-2 text-xs focus:ring-2 focus:ring-indigo-400 focus:outline-none resize-none text-slate-700"
+                        placeholder="Kỹ thuật thực hiện..."
+                      />
+                    </div>
+
+                    {/* Findings */}
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Findings</label>
+                      <textarea
+                        rows={4}
+                        value={pacsReports[activeStudyUid]?.findings ?? ''}
+                        onChange={(e) => setPacsReports((prev) => ({
+                          ...prev,
+                          [activeStudyUid]: { ...prev[activeStudyUid], findings: e.target.value },
+                        }))}
+                        className="w-full border border-slate-200 rounded-lg p-2 text-xs focus:ring-2 focus:ring-indigo-400 focus:outline-none resize-none text-slate-700"
+                        placeholder="Mô tả hình ảnh chi tiết..."
+                      />
+                    </div>
+
+                    {/* Impression — most important */}
+                    <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-200">
+                      <label className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider block mb-1">★ Impression</label>
+                      <textarea
+                        rows={3}
+                        value={pacsReports[activeStudyUid]?.impression ?? ''}
+                        onChange={(e) => setPacsReports((prev) => ({
+                          ...prev,
+                          [activeStudyUid]: { ...prev[activeStudyUid], impression: e.target.value },
+                        }))}
+                        className="w-full border border-indigo-200 rounded-lg p-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none text-slate-800 bg-white font-semibold"
+                        placeholder="Kết luận chẩn đoán hình ảnh..."
+                      />
+                    </div>
+
+                    {/* AI Radiology Assist */}
+                    <div className="bg-gradient-to-br from-violet-50 to-indigo-50 rounded-lg p-3 border border-violet-200">
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-violet-700 mb-2">
+                        <Brain className="w-3.5 h-3.5" />
+                        ✦ AI RADIOLOGY ASSIST
+                        <span className="ml-auto font-normal text-violet-400">Not a diagnosis</span>
+                      </div>
+                      <div className="text-[10px] text-violet-700 space-y-1 mb-2">
+                        <div className="font-semibold text-[9px] text-violet-500 uppercase">Findings detected:</div>
+                        <div className="flex items-center gap-1">
+                          <CheckSquare className="w-3 h-3 text-violet-600" />
+                          <span>Right lower lobe opacity</span>
+                          <span className="ml-auto font-bold text-violet-600">91%</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <CheckSquare className="w-3 h-3 text-violet-600" />
+                          <span>Small pleural effusion</span>
+                          <span className="ml-auto font-bold text-violet-600">74%</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-slate-400">
+                          <Eye className="w-3 h-3" />
+                          <span>Cardiomegaly</span>
+                          <span className="ml-auto">Not detected</span>
+                        </div>
+                      </div>
+                      <div className="text-[9px] text-violet-600 italic border-t border-violet-200 pt-1">
+                        AI suggestion: Correlate with clinical findings and lab results. Human review required before reporting.
+                      </div>
+                      <button
+                        onClick={() => setShowAiOverlay(!showAiOverlay)}
+                        className="mt-1.5 w-full text-[10px] bg-violet-600 hover:bg-violet-700 text-white py-1 rounded font-semibold transition-all"
+                      >
+                        {showAiOverlay ? '✓ AI Overlay Active' : '▷ View AI Overlay'}
+                      </button>
+                    </div>
+
+                    {/* Signed-by info (if FINAL) */}
+                    {pacsReports[activeStudyUid]?.status === 'final' && (
+                      <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-[10px] text-emerald-700">
+                        <div className="font-bold flex items-center gap-1">
+                          <Shield className="w-3.5 h-3.5" /> FINAL REPORT — Signed
+                        </div>
+                        <div className="mt-0.5">
+                          By: {pacsReports[activeStudyUid].signedBy} · {pacsReports[activeStudyUid].signedAt}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-xs text-slate-400 text-center py-8">Chưa có report cho study này.</div>
+                )}
+              </div>
+
+              {/* Report action buttons */}
+              <div className="p-3 bg-slate-50 border-t border-slate-200 space-y-1.5">
+                {pacsReports[activeStudyUid]?.status !== 'final' && (
+                  <button
+                    onClick={() => setPacsReports((prev) => ({
+                      ...prev,
+                      [activeStudyUid]: {
+                        ...prev[activeStudyUid],
+                        status: prev[activeStudyUid]?.status === 'draft' ? 'preliminary' : 'draft',
+                      },
+                    }))}
+                    className="w-full text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-1.5 rounded-lg transition-all"
+                  >
+                    {pacsReports[activeStudyUid]?.status === 'draft' ? '▷ Submit Preliminary' : '↩ Revert to Draft'}
+                  </button>
+                )}
+                {pacsReports[activeStudyUid]?.status !== 'final' ? (
+                  <button
+                    onClick={() => setPacsReports((prev) => ({
+                      ...prev,
+                      [activeStudyUid]: {
+                        ...prev[activeStudyUid],
+                        status: 'final',
+                        signedBy: 'BS. Nguyễn Văn A',
+                        signedAt: new Date().toLocaleString('vi-VN'),
+                      },
+                    }))}
+                    className="w-full text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 rounded-lg transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Sign &amp; Finalize Report
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setPacsReports((prev) => ({
+                      ...prev,
+                      [activeStudyUid]: {
+                        ...prev[activeStudyUid],
+                        status: 'amended',
+                      },
+                    }))}
+                    className="w-full text-xs bg-rose-100 hover:bg-rose-200 text-rose-700 font-semibold py-1.5 rounded-lg transition-all"
+                  >
+                    ✎ Amend Report
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
     </div>
   );
 }
+
+// Derive active study from the state (used in JSX above)
+// This is needed because hooks can't be called conditionally
+function AncillaryPageWrapper() {
+  return <AncillaryPageInner />;
+}
+
+export default AncillaryPageWrapper;
+

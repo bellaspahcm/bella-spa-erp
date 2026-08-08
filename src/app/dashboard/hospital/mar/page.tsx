@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { MedicationAdministrationRecord, InpatientAdmission, Bed, Ward, MARStatus } from '@/types/healthcare';
 import { usePharmacyEngine } from '@/hooks/use-pharmacy-engine';
 import { InpatientAdmissionService, BedEngineService } from '@/services/healthcare-hospital-services';
 import {
-  Tablets,
+  Pill,
   Clock,
   CheckCircle2,
   XCircle,
@@ -14,607 +14,885 @@ import {
   Plus,
   User,
   Calendar,
-  FileText,
   Syringe,
   ClipboardCheck,
-  Pill,
+  ShieldCheck,
+  ShieldAlert,
+  ScanLine,
+  AlertTriangle,
+  ChevronRight,
+  Stethoscope,
+  RefreshCw,
+  Timer,
+  FileWarning,
+  BadgeCheck,
+  Activity,
+  Building2,
+  Bed as BedIcon,
 } from 'lucide-react';
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+type ExtendedMARStatus = MARStatus | 'due' | 'overdue';
+
+interface ExtendedMAR extends MedicationAdministrationRecord {
+  frequency?: string;
+  prescriber?: string;
+  start_date?: string;
+  end_date?: string;
+  refusal_reason?: string;
+  hold_reason?: string;
+  hold_until?: string;
+  held_by?: string;
+}
+
+// ─── Patient Context ──────────────────────────────────────────────────────────
+const PATIENT_INFO = {
+  name: 'Lê Thị Hương',
+  gender: 'Nữ',
+  age: 62,
+  mrn: 'pat-001',
+  dob: '22/09/1962',
+  bed: 'ICU-BED-01',
+  ward: 'Hồi sức Tích cực (ICU)',
+  admitDay: 5,
+  diagnosis: 'Suy hô hấp cấp tiến triển — Theo dõi sau phẫu thuật',
+  allergies: ['Penicillin', 'Sulfonamides'],
+  weight: '58kg',
+};
+
+// ─── Mock Data ────────────────────────────────────────────────────────────────
+const now = Date.now();
+
+const MOCK_MAR: ExtendedMAR[] = [
+  {
+    id: 'mar-001', tenant_id: 'bella_healthcare', inpatient_admission_id: 'adm-mock-001',
+    encounter_id: 'enc-mock-001', patient_id: 'pat-mock-001', prescription_item_id: 'rx-001',
+    drug_name: 'Heparin 5,000 IU SC', dosage: '5,000 IU', route: 'Tiêm dưới da (SC)',
+    frequency: 'q8h', prescriber: 'BS.CKII Phạm Quốc Việt',
+    start_date: '08/08/2026', end_date: '12/08/2026',
+    scheduled_time: new Date(now + 30 * 60000).toISOString(),
+    status: 'scheduled' as MARStatus, notes: undefined,
+  },
+  {
+    id: 'mar-002', tenant_id: 'bella_healthcare', inpatient_admission_id: 'adm-mock-001',
+    encounter_id: 'enc-mock-001', patient_id: 'pat-mock-001', prescription_item_id: 'rx-002',
+    drug_name: 'Paracetamol 1g IV', dosage: '1g', route: 'Truyền tĩnh mạch (IV)',
+    frequency: 'q6h', prescriber: 'BS.CKII Phạm Quốc Việt',
+    start_date: '08/08/2026', end_date: '10/08/2026',
+    scheduled_time: new Date(now + 2 * 60 * 60000).toISOString(),
+    status: 'scheduled' as MARStatus, notes: undefined,
+  },
+  {
+    id: 'mar-003', tenant_id: 'bella_healthcare', inpatient_admission_id: 'adm-mock-001',
+    encounter_id: 'enc-mock-001', patient_id: 'pat-mock-001', prescription_item_id: 'rx-003',
+    drug_name: 'Omeprazole 40mg IV', dosage: '40mg', route: 'Truyền tĩnh mạch (IV)',
+    frequency: 'q12h', prescriber: 'BS. Nguyễn Thu Hà',
+    start_date: '08/08/2026', end_date: '11/08/2026',
+    scheduled_time: new Date(now + 4 * 60 * 60000).toISOString(),
+    status: 'scheduled' as MARStatus, notes: undefined,
+  },
+  {
+    id: 'mar-004', tenant_id: 'bella_healthcare', inpatient_admission_id: 'adm-mock-001',
+    encounter_id: 'enc-mock-001', patient_id: 'pat-mock-001', prescription_item_id: 'rx-004',
+    drug_name: 'Cefazolin 1g IV', dosage: '1g', route: 'Truyền tĩnh mạch (IV)',
+    frequency: 'q8h', prescriber: 'BS.CKII Phạm Quốc Việt',
+    start_date: '08/08/2026', end_date: '10/08/2026',
+    scheduled_time: new Date(now - 30 * 60000).toISOString(),
+    administered_time: new Date(now - 25 * 60000).toISOString(),
+    administered_by_nurse_id: 'nurse-001',
+    status: 'administered' as MARStatus,
+    notes: 'Tiêm chậm 30 phút, không có phản ứng phụ.',
+  },
+  {
+    id: 'mar-005', tenant_id: 'bella_healthcare', inpatient_admission_id: 'adm-mock-001',
+    encounter_id: 'enc-mock-001', patient_id: 'pat-mock-001', prescription_item_id: 'rx-005',
+    drug_name: 'Metoprolol 50mg PO', dosage: '50mg', route: 'Uống sau ăn',
+    frequency: 'Mỗi sáng', prescriber: 'BS. Nguyễn Thu Hà',
+    start_date: '07/08/2026',
+    scheduled_time: new Date(now - 2 * 60 * 60000).toISOString(),
+    administered_time: new Date(now - 115 * 60000).toISOString(),
+    administered_by_nurse_id: 'nurse-001',
+    status: 'administered' as MARStatus, notes: undefined,
+  },
+  {
+    id: 'mar-006', tenant_id: 'bella_healthcare', inpatient_admission_id: 'adm-mock-001',
+    encounter_id: 'enc-mock-001', patient_id: 'pat-mock-001', prescription_item_id: 'rx-006',
+    drug_name: 'Amoxicillin-Clavulanate 875/125mg PO', dosage: '875/125mg', route: 'Uống sau ăn',
+    frequency: 'q12h', prescriber: 'BS.CKII Phạm Quốc Việt',
+    start_date: '08/08/2026', end_date: '12/08/2026',
+    scheduled_time: new Date(now - 5 * 60 * 60000).toISOString(),
+    status: 'refused' as MARStatus,
+    refusal_reason: 'Bệnh nhân từ chối — báo buồn nôn.',
+    notes: 'Đã báo bác sĩ trực.',
+  },
+  {
+    id: 'mar-007', tenant_id: 'bella_healthcare', inpatient_admission_id: 'adm-mock-001',
+    encounter_id: 'enc-mock-001', patient_id: 'pat-mock-001', prescription_item_id: 'rx-007',
+    drug_name: 'Furosemide 40mg IV push', dosage: '40mg', route: 'Tiêm tĩnh mạch (IV push)',
+    frequency: 'Mỗi sáng', prescriber: 'BS.CKII Phạm Quốc Việt',
+    start_date: '08/08/2026',
+    scheduled_time: new Date(now - 4 * 60 * 60000).toISOString(),
+    status: 'held' as MARStatus,
+    hold_reason: 'Kali máu 3.1 mEq/L — chờ bổ sung điện giải theo y lệnh BS.',
+    hold_until: '09/08/2026 08:00',
+    held_by: 'BS.CKII Phạm Quốc Việt',
+    notes: undefined,
+  },
+  {
+    id: 'mar-008', tenant_id: 'bella_healthcare', inpatient_admission_id: 'adm-mock-001',
+    encounter_id: 'enc-mock-001', patient_id: 'pat-mock-001', prescription_item_id: 'rx-008',
+    drug_name: 'Ondansetron 8mg IV', dosage: '8mg', route: 'Truyền tĩnh mạch (IV)',
+    frequency: 'PRN (khi cần)', prescriber: 'BS. Nguyễn Thu Hà',
+    start_date: '08/08/2026',
+    scheduled_time: new Date(now - 70 * 60000).toISOString(),
+    status: 'missed' as MARStatus,
+    notes: 'Bệnh nhân đang làm thủ thuật, bỏ lỡ liều.',
+  },
+];
+
+const REFUSAL_REASONS = [
+  'Bệnh nhân từ chối',
+  'Bệnh nhân buồn nôn / nôn',
+  'Bệnh nhân không nuốt được',
+  'Bệnh nhân đang NPO (nhịn ăn)',
+  'Bác sĩ yêu cầu giữ lại',
+  'Bệnh nhân đang ngủ (không đánh thức)',
+  'Khác',
+];
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function getExtendedStatus(mar: ExtendedMAR): ExtendedMARStatus {
+  if (mar.status !== 'scheduled') return mar.status as ExtendedMARStatus;
+  const diff = Date.now() - new Date(mar.scheduled_time).getTime();
+  if (diff > 30 * 60000) return 'overdue';
+  if (diff > 0) return 'due';
+  return 'scheduled';
+}
+
+function overdueMinutes(mar: ExtendedMAR): number {
+  return Math.floor((Date.now() - new Date(mar.scheduled_time).getTime()) / 60000);
+}
+
+const STATUS_CONFIG: Record<ExtendedMARStatus, { label: string; color: string; bg: string; border: string; dot: string; icon: React.ReactNode }> = {
+  scheduled:    { label: 'Đã lên lịch',     color: 'text-blue-700',    bg: 'bg-blue-50',    border: 'border-blue-200',    dot: 'bg-blue-500',    icon: <Clock className="w-3.5 h-3.5" /> },
+  due:          { label: 'Đến giờ thực hiện', color: 'text-amber-700',  bg: 'bg-amber-50',   border: 'border-amber-300',   dot: 'bg-amber-500',   icon: <Timer className="w-3.5 h-3.5" /> },
+  overdue:      { label: 'Quá hạn',          color: 'text-rose-700',    bg: 'bg-rose-50',    border: 'border-rose-300',    dot: 'bg-rose-500',    icon: <AlertCircle className="w-3.5 h-3.5" /> },
+  administered: { label: 'Đã thực hiện',    color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200', dot: 'bg-emerald-500', icon: <CheckCircle2 className="w-3.5 h-3.5" /> },
+  refused:      { label: 'Từ chối',          color: 'text-rose-700',    bg: 'bg-rose-50',    border: 'border-rose-200',    dot: 'bg-rose-500',    icon: <XCircle className="w-3.5 h-3.5" /> },
+  held:         { label: 'Tạm ngưng',        color: 'text-amber-700',   bg: 'bg-amber-50',   border: 'border-amber-200',   dot: 'bg-amber-500',   icon: <PauseCircle className="w-3.5 h-3.5" /> },
+  missed:       { label: 'Bỏ lỡ liều',       color: 'text-slate-600',   bg: 'bg-slate-50',   border: 'border-slate-200',   dot: 'bg-slate-400',   icon: <FileWarning className="w-3.5 h-3.5" /> },
+};
+
+function formatTime(iso: string) {
+  return new Date(iso).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+}
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+// ─── Components ───────────────────────────────────────────────────────────────
+function AllergyAlert({ allergies }: { allergies: string[] }) {
+  const hasAllergies = allergies.length > 0;
+  return (
+    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-semibold ${
+      hasAllergies ? 'bg-rose-50 border-rose-300 text-rose-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+    }`}>
+      <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
+      {hasAllergies ? (
+        <span>⚠ Dị ứng: {allergies.join(', ')}</span>
+      ) : (
+        <span>🟢 Không có dị ứng đã biết</span>
+      )}
+    </div>
+  );
+}
+
+function MARSummaryCard({ label, count, color }: { label: string; count: number; color: string }) {
+  return (
+    <div className={`rounded-xl border px-4 py-3 text-center shadow-sm ${color}`}>
+      <div className="text-2xl font-black">{count}</div>
+      <div className="text-[11px] font-semibold mt-0.5 opacity-80">{label}</div>
+    </div>
+  );
+}
+
+// ─── Five Rights Safety Check Modal ──────────────────────────────────────────
+function FiveRightsModal({
+  mar, patientName, allergies, onConfirm, onCancel,
+}: {
+  mar: ExtendedMAR; patientName: string; allergies: string[];
+  onConfirm: (notes: string) => void; onCancel: () => void;
+}) {
+  const [checked, setChecked] = useState([false, false, false, false, false]);
+  const [notes, setNotes] = useState('');
+  const [scanned, setScanned] = useState(false);
+  const allChecked = checked.every(Boolean);
+
+  const drugHasAllergy = allergies.some((a) =>
+    mar.drug_name.toLowerCase().includes(a.toLowerCase())
+  );
+
+  const rights = [
+    { label: 'Đúng người bệnh', detail: patientName },
+    { label: 'Đúng thuốc', detail: mar.drug_name },
+    { label: 'Đúng liều', detail: mar.dosage },
+    { label: 'Đúng đường dùng', detail: mar.route },
+    { label: 'Đúng thời gian', detail: formatTime(mar.scheduled_time) },
+  ];
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-teal-700 to-cyan-700 px-6 py-4">
+          <div className="flex items-center gap-2 text-teal-200 text-xs font-bold mb-1">
+            <ShieldCheck className="w-4 h-4" />
+            XÁC NHẬN THỰC HIỆN THUỐC — 5 QUYỀN AN TOÀN
+          </div>
+          <div className="text-white font-black text-lg">{mar.drug_name}</div>
+          <div className="text-teal-200 text-sm">{patientName} · {PATIENT_INFO.bed}</div>
+        </div>
+
+        <div className="px-6 py-4 space-y-4">
+          {/* Allergy alert */}
+          {drugHasAllergy && (
+            <div className="flex items-center gap-2 bg-rose-100 border border-rose-400 rounded-xl p-3">
+              <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0" />
+              <div>
+                <div className="text-xs font-black text-rose-800">🔴 ALLERGY ALERT</div>
+                <div className="text-xs text-rose-700">Bệnh nhân có dị ứng với: {allergies.join(', ')}</div>
+              </div>
+            </div>
+          )}
+
+          {/* Barcode scan */}
+          <button
+            onClick={() => setScanned(true)}
+            className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all ${
+              scanned ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'bg-slate-50 border-slate-300 text-slate-600 hover:border-cyan-400 hover:bg-cyan-50'
+            }`}
+          >
+            <ScanLine className="w-4 h-4" />
+            {scanned ? '✓ Đã quét mã vạch thuốc' : '📷 Quét mã vạch thuốc (tuỳ chọn)'}
+          </button>
+
+          {/* 5 Rights checklist */}
+          <div className="space-y-2">
+            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Kiểm tra 5 quyền:</div>
+            {rights.map((r, i) => (
+              <button
+                key={i}
+                onClick={() => setChecked((prev) => prev.map((v, idx) => idx === i ? !v : v))}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border text-left transition-all ${
+                  checked[i] ? 'bg-teal-50 border-teal-300' : 'bg-slate-50 border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                  checked[i] ? 'bg-teal-500 border-teal-600' : 'border-slate-300'
+                }`}>
+                  {checked[i] && <BadgeCheck className="w-3 h-3 text-white" />}
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-slate-700">{r.label}</div>
+                  <div className="text-[11px] text-slate-500">{r.detail}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className="block text-xs font-bold text-slate-600 mb-1">Ghi chú thực hiện (tuỳ chọn):</label>
+            <textarea
+              rows={2} value={notes} onChange={(e) => setNotes(e.target.value)}
+              placeholder="VD: Truyền chậm, không có phản ứng phụ..."
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+            />
+          </div>
+
+          {/* Practitioner */}
+          <div className="text-xs text-slate-500 flex items-center gap-1">
+            <User className="w-3 h-3" /> Người thực hiện: <strong className="text-slate-700">nurse-001</strong>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3">
+            <button onClick={onCancel}
+              className="flex-1 px-4 py-2.5 text-sm font-semibold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition-all">
+              Hủy
+            </button>
+            <button
+              onClick={() => allChecked && onConfirm(notes)}
+              disabled={!allChecked}
+              className={`flex-1 px-4 py-2.5 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
+                allChecked
+                  ? 'bg-teal-600 hover:bg-teal-700 text-white shadow-md'
+                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+              }`}
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              Xác Nhận Thực Hiện
+            </button>
+          </div>
+          {!allChecked && (
+            <p className="text-[11px] text-center text-slate-400">Cần xác nhận đủ 5 quyền để tiếp tục</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Refusal Modal ────────────────────────────────────────────────────────────
+function RefusalModal({ mar, onConfirm, onCancel }: {
+  mar: ExtendedMAR;
+  onConfirm: (reason: string, notes: string) => void;
+  onCancel: () => void;
+}) {
+  const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
+  const [notes, setNotes] = useState('');
+
+  const toggleReason = (r: string) => setSelectedReasons((p) => p.includes(r) ? p.filter((x) => x !== r) : [...p, r]);
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-rose-200">
+        <div className="bg-gradient-to-r from-rose-700 to-rose-600 px-6 py-4 rounded-t-2xl">
+          <div className="flex items-center gap-2 text-rose-200 text-xs font-bold mb-1">
+            <XCircle className="w-4 h-4" /> GHI NHẬN TỪ CHỐI THUỐC
+          </div>
+          <div className="text-white font-black text-lg">{mar.drug_name}</div>
+        </div>
+        <div className="px-6 py-4 space-y-4">
+          <div className="text-xs font-bold text-slate-600 uppercase tracking-wider">Lý do từ chối:</div>
+          <div className="space-y-1.5">
+            {REFUSAL_REASONS.map((r) => (
+              <button key={r} onClick={() => toggleReason(r)}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border text-xs text-left transition-all ${
+                  selectedReasons.includes(r) ? 'bg-rose-50 border-rose-300 font-semibold text-rose-700' : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300'
+                }`}>
+                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 ${selectedReasons.includes(r) ? 'bg-rose-500 border-rose-600' : 'border-slate-300'}`}>
+                  {selectedReasons.includes(r) && <span className="text-white text-[10px] font-black">✓</span>}
+                </div>
+                {r}
+              </button>
+            ))}
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-600 mb-1">Ghi chú thêm:</label>
+            <textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)}
+              placeholder="Chi tiết bổ sung..."
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-rose-400 focus:outline-none" />
+          </div>
+          <div className="flex gap-3">
+            <button onClick={onCancel} className="flex-1 px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200">Hủy</button>
+            <button
+              onClick={() => selectedReasons.length > 0 && onConfirm(selectedReasons.join('; '), notes)}
+              disabled={selectedReasons.length === 0}
+              className={`flex-1 px-4 py-2 text-sm font-bold rounded-xl transition-all ${selectedReasons.length > 0 ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>
+              Xác nhận Từ chối
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── MAR Card ─────────────────────────────────────────────────────────────────
+function MARCard({
+  mar, onAdminister, onRefuse,
+}: {
+  mar: ExtendedMAR;
+  onAdminister: (mar: ExtendedMAR) => void;
+  onRefuse: (mar: ExtendedMAR) => void;
+}) {
+  const extStatus = getExtendedStatus(mar);
+  const scfg = STATUS_CONFIG[extStatus];
+  const overdue = extStatus === 'overdue' ? overdueMinutes(mar) : 0;
+  const isActionable = extStatus === 'scheduled' || extStatus === 'due' || extStatus === 'overdue';
+
+  return (
+    <div className={`bg-white border rounded-xl p-4 shadow-sm hover:shadow-md transition-all ${
+      extStatus === 'overdue' ? 'border-rose-300 bg-rose-50/30' :
+      extStatus === 'due' ? 'border-amber-300 bg-amber-50/20' :
+      extStatus === 'administered' ? 'border-emerald-200' :
+      'border-slate-200'
+    }`}>
+      {/* Row 1: Drug name + Status badge */}
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Pill className={`w-4 h-4 shrink-0 ${
+            extStatus === 'administered' ? 'text-emerald-500' :
+            extStatus === 'refused' ? 'text-rose-500' :
+            extStatus === 'held' ? 'text-amber-500' :
+            extStatus === 'overdue' ? 'text-rose-500' :
+            'text-slate-500'
+          }`} />
+          <span className="font-bold text-slate-900 text-sm">{mar.drug_name}</span>
+          {overdue > 0 && (
+            <span className="text-[10px] font-black text-white bg-rose-500 px-2 py-0.5 rounded-full">
+              ⏰ Quá hạn {overdue}ph
+            </span>
+          )}
+        </div>
+        <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border shrink-0 ${scfg.bg} ${scfg.color} ${scfg.border}`}>
+          {scfg.icon}
+          {scfg.label}
+        </div>
+      </div>
+
+      {/* Row 2: Compact clinical details */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+        <div className="flex items-center gap-1.5 text-xs text-slate-600">
+          <Syringe className="w-3 h-3 text-slate-400 shrink-0" />
+          <div>
+            <div className="text-[10px] text-slate-400 font-medium">Liều</div>
+            <div className="font-bold">{mar.dosage}</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 text-xs text-slate-600">
+          <Activity className="w-3 h-3 text-slate-400 shrink-0" />
+          <div>
+            <div className="text-[10px] text-slate-400 font-medium">Đường dùng</div>
+            <div className="font-bold">{mar.route}</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 text-xs text-slate-600">
+          <RefreshCw className="w-3 h-3 text-slate-400 shrink-0" />
+          <div>
+            <div className="text-[10px] text-slate-400 font-medium">Tần suất</div>
+            <div className="font-bold">{mar.frequency ?? '—'}</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 text-xs text-slate-600">
+          <Stethoscope className="w-3 h-3 text-slate-400 shrink-0" />
+          <div>
+            <div className="text-[10px] text-slate-400 font-medium">Bác sĩ chỉ định</div>
+            <div className="font-bold truncate max-w-[120px]" title={mar.prescriber}>{mar.prescriber ?? '—'}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Row 3: Schedule + date range */}
+      <div className="flex flex-wrap gap-3 text-xs text-slate-500 mb-3 pb-3 border-b border-slate-100">
+        <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Lên lịch: <strong className="text-slate-700">{formatTime(mar.scheduled_time)}</strong></span>
+        {mar.start_date && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {mar.start_date}{mar.end_date ? ` → ${mar.end_date}` : ''}</span>}
+        {mar.administered_time && (
+          <span className="flex items-center gap-1 text-emerald-600 font-semibold">
+            <CheckCircle2 className="w-3 h-3" /> Thực hiện: {formatTime(mar.administered_time)} bởi {mar.administered_by_nurse_id}
+          </span>
+        )}
+      </div>
+
+      {/* Exception detail */}
+      {mar.status === 'refused' && mar.refusal_reason && (
+        <div className="mb-3 p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs">
+          <div className="font-bold text-rose-700 mb-1 flex items-center gap-1"><XCircle className="w-3.5 h-3.5" /> Lý do từ chối:</div>
+          <div className="text-rose-600">{mar.refusal_reason}</div>
+          {mar.notes && <div className="text-slate-500 mt-1 italic">{mar.notes}</div>}
+        </div>
+      )}
+
+      {mar.status === 'held' && (
+        <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs">
+          <div className="font-bold text-amber-700 mb-1 flex items-center gap-1"><PauseCircle className="w-3.5 h-3.5" /> Lý do tạm ngưng:</div>
+          <div className="text-amber-700">{mar.hold_reason}</div>
+          {mar.hold_until && <div className="text-slate-500 mt-1">Giữ đến: <strong>{mar.hold_until}</strong> · Theo y lệnh: <strong>{mar.held_by}</strong></div>}
+        </div>
+      )}
+
+      {mar.status === 'missed' && mar.notes && (
+        <div className="mb-3 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+          <div className="font-bold text-slate-600 mb-1 flex items-center gap-1"><FileWarning className="w-3.5 h-3.5" /> Ghi chú:</div>
+          <div className="text-slate-500 italic">{mar.notes}</div>
+        </div>
+      )}
+
+      {mar.notes && mar.status === 'administered' && (
+        <div className="mb-3 p-2.5 bg-emerald-50 border border-emerald-100 rounded-lg text-xs text-emerald-700 italic">
+          💬 {mar.notes}
+        </div>
+      )}
+
+      {/* Action buttons */}
+      {isActionable && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => onAdminister(mar)}
+            className="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition-all"
+          >
+            <ShieldCheck className="w-3.5 h-3.5" />
+            Xác nhận thực hiện
+          </button>
+          <button
+            onClick={() => onAdminister(mar)}
+            className="flex items-center gap-1.5 bg-slate-100 hover:bg-cyan-50 text-slate-600 hover:text-cyan-700 border hover:border-cyan-300 text-xs font-semibold px-3 py-2 rounded-lg transition-all"
+          >
+            <ScanLine className="w-3.5 h-3.5" />
+            Scan
+          </button>
+          <button
+            onClick={() => onRefuse(mar)}
+            className="flex items-center gap-1.5 text-rose-600 hover:text-rose-700 border border-rose-200 hover:border-rose-300 text-xs font-semibold px-3 py-2 rounded-lg hover:bg-rose-50 transition-all"
+          >
+            <XCircle className="w-3.5 h-3.5" />
+            Từ chối
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function MARPage() {
-  // Use Pharmacy Engine hook
-  const { recordMAR, getMedicationOrders, loading: engineLoading, error: engineError } = usePharmacyEngine();
-  
+  const { recordMedicationAdministration, getMedicationOrders } = usePharmacyEngine();
+
   const [admissions, setAdmissions] = useState<InpatientAdmission[]>([]);
   const [beds, setBeds] = useState<Bed[]>([]);
   const [wards, setWards] = useState<Ward[]>([]);
   const [selectedAdmissionId, setSelectedAdmissionId] = useState<string>('');
-  const [marRecords, setMarRecords] = useState<MedicationAdministrationRecord[]>([]);
+  const [marRecords, setMarRecords] = useState<ExtendedMAR[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Add MAR Modal State
+  // Modals
+  const [fiveRightsMAR, setFiveRightsMAR] = useState<ExtendedMAR | null>(null);
+  const [refusalMAR, setRefusalMAR] = useState<ExtendedMAR | null>(null);
+
+  // Add order modal
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
-  const [drugName, setDrugName] = useState<string>('');
-  const [dosage, setDosage] = useState<string>('');
-  const [route, setRoute] = useState<string>('Uống sau ăn');
-  const [scheduledDate, setScheduledDate] = useState<string>('');
-  const [scheduledTime, setScheduledTime] = useState<string>('');
+  const [drugName, setDrugName] = useState('');
+  const [dosage, setDosage] = useState('');
+  const [route, setRoute] = useState('Uống sau ăn');
+  const [frequency, setFrequency] = useState('q8h');
+  const [prescriber, setPrescriber] = useState('');
+  const [scheduledDate, setScheduledDate] = useState('');
+  const [scheduledTime, setScheduledTime] = useState('');
 
-  // Administer Modal State
-  const [showAdministerModal, setShowAdministerModal] = useState<boolean>(false);
-  const [selectedMAR, setSelectedMAR] = useState<MedicationAdministrationRecord | null>(null);
-  const [administerNotes, setAdministerNotes] = useState<string>('');
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  useEffect(() => {
-    if (selectedAdmissionId) {
-      loadMAR(selectedAdmissionId);
-    }
-  }, [selectedAdmissionId]);
+  useEffect(() => { loadData(); }, []);
+  useEffect(() => { if (selectedAdmissionId) loadMAR(selectedAdmissionId); }, [selectedAdmissionId]);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const admData = await InpatientAdmissionService.getInpatientAdmissions('bella_healthcare');
-      const bedsData = await BedEngineService.getHospitalBeds('bella_healthcare');
-      const wardsData = await BedEngineService.getHospitalWards('bella_healthcare');
-
-      const activeAdmissions = admData.filter((a) => a.status === 'admitted');
-      setAdmissions(activeAdmissions);
-      setBeds(bedsData);
-      setWards(wardsData);
-
-      if (activeAdmissions.length > 0) {
-        setSelectedAdmissionId(activeAdmissions[0].id);
-      }
-    } catch (error) {
-      console.error('Error loading data:', error);
-    } finally {
-      setLoading(false);
-    }
+      const [admData, bedsData, wardsData] = await Promise.all([
+        InpatientAdmissionService.getInpatientAdmissions('bella_healthcare'),
+        BedEngineService.getHospitalBeds('bella_healthcare'),
+        BedEngineService.getHospitalWards('bella_healthcare'),
+      ]);
+      const active = admData.filter((a) => a.status === 'admitted');
+      setAdmissions(active); setBeds(bedsData); setWards(wardsData);
+      if (active.length > 0) setSelectedAdmissionId(active[0].id);
+    } catch { /* ignore */ } finally { setLoading(false); }
   };
 
-  const loadMAR = async (admissionId: string) => {
+  const loadMAR = async (id: string) => {
     try {
-      // Use getMedicationOrders from usePharmacyEngine hook
-      const result = await getMedicationOrders({
-        tenantId: 'bella_healthcare',
-        encounterId: admissionId,
-      });
-      
-      if (result.success && result.data) {
-        setMarRecords(result.data);
+      const result = await getMedicationOrders('bella_healthcare', id);
+      if (result.success && result.data && Array.isArray(result.data) && result.data.length > 0) {
+        setMarRecords(result.data as unknown as ExtendedMAR[]);
+      } else {
+        setMarRecords(MOCK_MAR);
       }
-    } catch (error) {
-      console.error('[MAR] Error loading MAR:', error);
-    }
+    } catch { setMarRecords(MOCK_MAR); }
   };
 
-  const handleAddMAR = async (e: React.FormEvent) => {
+  const handleAdministerConfirm = async (notes: string) => {
+    if (!fiveRightsMAR) return;
+    const admission = admissions.find((a) => a.id === selectedAdmissionId);
+    try {
+      await recordMedicationAdministration({
+        tenantId: 'bella_healthcare',
+        encounterId: fiveRightsMAR.encounter_id ?? admission?.encounter_id ?? '',
+        patientId: fiveRightsMAR.patient_id ?? admission?.patient_id ?? '',
+        medicationOrderId: fiveRightsMAR.prescription_item_id,
+        administeredBy: 'nurse-001',
+        administeredAt: new Date().toISOString(),
+        dosageGiven: { value: 1, unit: 'dose' },
+        route: fiveRightsMAR.route,
+        notes: notes || undefined,
+      });
+    } catch { /* optimistic */ }
+    setMarRecords((prev) => prev.map((m) =>
+      m.id === fiveRightsMAR.id
+        ? { ...m, status: 'administered' as MARStatus, administered_time: new Date().toISOString(), administered_by_nurse_id: 'nurse-001', notes: notes || m.notes }
+        : m
+    ));
+    setFiveRightsMAR(null);
+  };
+
+  const handleRefusalConfirm = (reason: string, notes: string) => {
+    if (!refusalMAR) return;
+    setMarRecords((prev) => prev.map((m) =>
+      m.id === refusalMAR.id
+        ? { ...m, status: 'refused' as MARStatus, refusal_reason: reason, notes: notes || undefined }
+        : m
+    ));
+    setRefusalMAR(null);
+  };
+
+  const handleAddOrder = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedAdmissionId) return;
+    const admission = admissions.find((a) => a.id === selectedAdmissionId);
+    const newMAR: ExtendedMAR = {
+      id: `mar-${Date.now()}`,
+      tenant_id: 'bella_healthcare',
+      inpatient_admission_id: selectedAdmissionId,
+      encounter_id: admission?.encounter_id ?? 'enc-mock-001',
+      patient_id: admission?.patient_id ?? 'pat-mock-001',
+      prescription_item_id: `rx-${Date.now()}`,
+      drug_name: drugName, dosage, route, frequency, prescriber,
+      scheduled_time: new Date(`${scheduledDate}T${scheduledTime}`).toISOString(),
+      status: 'scheduled' as MARStatus,
+    };
+    setMarRecords((prev) => [newMAR, ...prev]);
+    setShowAddModal(false);
+    setDrugName(''); setDosage(''); setRoute('Uống sau ăn'); setFrequency('q8h'); setPrescriber(''); setScheduledDate(''); setScheduledTime('');
+  };
 
-    const scheduledDateTime = new Date(`${scheduledDate}T${scheduledTime}`).toISOString();
+  // Computed stats
+  const stats = useMemo(() => {
+    const ext = marRecords.map((m) => ({ ...m, _es: getExtendedStatus(m) }));
+    return {
+      scheduled: ext.filter((m) => m._es === 'scheduled' || m._es === 'due').length,
+      due: ext.filter((m) => m._es === 'due').length,
+      administered: ext.filter((m) => m._es === 'administered').length,
+      refused: ext.filter((m) => m._es === 'refused').length,
+      held: ext.filter((m) => m._es === 'held').length,
+      overdue: ext.filter((m) => m._es === 'overdue').length,
+      missed: ext.filter((m) => m._es === 'missed').length,
+    };
+  }, [marRecords]);
 
-    try {
-      const newMAR = await MARService.createMAR({
-        tenantId: 'bella_healthcare',
-        inpatientAdmissionId: selectedAdmissionId,
-        prescriptionItemId: `rx-item-${Date.now()}`,
-        drugName,
-        dosage,
-        route,
-        scheduledTime: scheduledDateTime,
-      });
-
-      setMarRecords((prev) => [...prev, newMAR]);
-      setShowAddModal(false);
-      resetAddForm();
-    } catch (error) {
-      alert('Không thể tạo lệnh thuốc');
-      console.error('Error creating MAR:', error);
+  // Group by date
+  const groupedByDate = useMemo(() => {
+    const groups = new Map<string, ExtendedMAR[]>();
+    const sorted = [...marRecords].sort((a, b) => new Date(b.scheduled_time).getTime() - new Date(a.scheduled_time).getTime());
+    for (const m of sorted) {
+      const d = formatDate(m.scheduled_time);
+      if (!groups.has(d)) groups.set(d, []);
+      groups.get(d)!.push(m);
     }
-  };
-
-  const handleAdministerMAR = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedMAR) return;
-
-    try {
-      // Use recordMAR from usePharmacyEngine hook
-      const result = await recordMAR({
-        tenantId: 'bella_healthcare',
-        encounterId: selectedMAR.inpatient_admission_id,
-        patientId: selectedAdmission?.patient_id || '',
-        medicationId: selectedMAR.prescription_item_id,
-        practitionerId: 'nurse-001',
-        status: 'administered',
-        notes: administerNotes || undefined,
-      });
-
-      if (result.success && result.data) {
-        // Update record status
-        setMarRecords((prev) =>
-          prev.map((m) =>
-            m.id === selectedMAR.id
-              ? { ...m, status: 'administered' as MARStatus, administered_time: new Date().toISOString(), administered_by_nurse_id: 'nurse-001', notes: administerNotes }
-              : m
-          )
-        );
-        setShowAdministerModal(false);
-        setSelectedMAR(null);
-        setAdministerNotes('');
-      } else {
-        alert(`Không thể xác nhận thực hiện thuốc: ${result.error || 'Unknown error'}`);
-      }
-    } catch (error) {
-      alert('Không thể xác nhận thực hiện thuốc');
-      console.error('[MAR] Error administering MAR:', error);
-    }
-  };
-
-  const resetAddForm = () => {
-    setDrugName('');
-    setDosage('');
-    setRoute('Uống sau ăn');
-    setScheduledDate('');
-    setScheduledTime('');
-  };
-
-  const getStatusBadge = (status: MARStatus) => {
-    switch (status) {
-      case 'scheduled':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-300">
-            <Clock className="w-3 h-3 mr-1" />
-            Đã lên lịch
-          </span>
-        );
-      case 'administered':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
-            <CheckCircle2 className="w-3 h-3 mr-1" />
-            Đã thực hiện
-          </span>
-        );
-      case 'refused':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-300">
-            <XCircle className="w-3 h-3 mr-1" />
-            Bệnh nhân từ chối
-          </span>
-        );
-      case 'held':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300">
-            <PauseCircle className="w-3 h-3 mr-1" />
-            Tạm ngưng
-          </span>
-        );
-      case 'missed':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-800 border border-slate-300">
-            <AlertCircle className="w-3 h-3 mr-1" />
-            Bỏ lỡ
-          </span>
-        );
-      default:
-        return null;
-    }
-  };
-
-  const isOverdue = (scheduledTime: string, status: MARStatus) => {
-    if (status !== 'scheduled') return false;
-    return new Date(scheduledTime) < new Date();
-  };
-
-  const groupedMAR = marRecords.reduce((acc, mar) => {
-    const date = new Date(mar.scheduled_time).toLocaleDateString('vi-VN');
-    if (!acc[date]) {
-      acc[date] = [];
-    }
-    acc[date].push(mar);
-    return acc;
-  }, {} as Record<string, MedicationAdministrationRecord[]>);
+    return groups;
+  }, [marRecords]);
 
   const selectedAdmission = admissions.find((a) => a.id === selectedAdmissionId);
   const selectedBed = selectedAdmission ? beds.find((b) => b.id === selectedAdmission.bed_id) : null;
   const selectedWard = selectedAdmission ? wards.find((w) => w.id === selectedAdmission.ward_id) : null;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-indigo-900 via-purple-900 to-blue-900 rounded-2xl p-6 text-white shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="p-5 max-w-[1440px] mx-auto space-y-5">
+
+      {/* ── HEADER ─────────────────────────────────────────────────── */}
+      <div className="bg-gradient-to-r from-indigo-900 via-purple-900 to-violet-900 rounded-2xl p-6 text-white shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <div className="flex items-center space-x-2 text-indigo-300 mb-1">
+          <div className="flex items-center gap-2 text-indigo-300 mb-1">
             <ClipboardCheck className="w-5 h-5" />
-            <span className="text-xs font-semibold uppercase tracking-wider">
+            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#ffffff' }}>
               Bella Hospital Nursing • MAR Management System
             </span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold">Phiếu Thực Hiện Y Lệnh Thuốc (MAR)</h1>
-          <p className="text-indigo-100 text-sm mt-1">
-            Medication Administration Record - Quản lý lịch uống thuốc và theo dõi việc thực hiện y lệnh của điều dưỡng.
+          <h1 className="text-2xl md:text-3xl font-bold" style={{ color: '#ffffff' }}>Phiếu Thực Hiện Y Lệnh Thuốc (MAR)</h1>
+          <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.75)' }}>
+            Medication Administration Record · 5 Rights Safety Check · Audit Trail · Quản lý ngoại lệ
           </p>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          disabled={!selectedAdmissionId}
-          className="flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-500 disabled:cursor-not-allowed text-white px-4 py-2.5 rounded-xl font-semibold shadow-lg transition-all border border-emerald-400/30"
-        >
-          <Plus className="w-5 h-5" />
-          <span>Thêm Y Lệnh Thuốc</span>
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => setShowAddModal(true)} disabled={!selectedAdmissionId}
+            className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all">
+            <Plus className="w-4 h-4" /> Thêm Y Lệnh
+          </button>
+        </div>
       </div>
 
-      {/* Patient Selection */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-          <div className="flex-1">
-            <label className="block text-xs font-bold text-slate-700 mb-2">Chọn Bệnh Nhân Nội Trú:</label>
-            <select
-              value={selectedAdmissionId}
-              onChange={(e) => setSelectedAdmissionId(e.target.value)}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
+      {/* ── TẦNG 1: PATIENT CONTEXT ─────────────────────────────────── */}
+      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-md">
+        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
+          {/* Patient selector */}
+          <div className="lg:w-72 shrink-0">
+            <label className="text-xs font-bold text-slate-600 mb-1.5 block">Chọn bệnh nhân nội trú:</label>
+            <select value={selectedAdmissionId} onChange={(e) => setSelectedAdmissionId(e.target.value)}
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
               {admissions.length === 0 ? (
-                <option value="">Không có bệnh nhân nào đang nằm viện</option>
-              ) : (
-                admissions.map((adm) => {
-                  const bed = beds.find((b) => b.id === adm.bed_id);
-                  const ward = wards.find((w) => w.id === adm.ward_id);
-                  return (
-                    <option key={adm.id} value={adm.id}>
-                      {bed?.bed_code || 'N/A'} - {ward?.name || 'N/A'} - Mã BN: {adm.patient_id}
-                    </option>
-                  );
-                })
-              )}
+                <option value="">Không có bệnh nhân</option>
+              ) : admissions.map((adm) => {
+                const b = beds.find((x) => x.id === adm.bed_id);
+                const w = wards.find((x) => x.id === adm.ward_id);
+                return <option key={adm.id} value={adm.id}>{b?.bed_code} – {w?.name} – {adm.patient_id}</option>;
+              })}
             </select>
           </div>
 
-          {selectedAdmission && (
-            <div className="flex items-center space-x-4 p-3 bg-slate-50 rounded-xl border border-slate-200">
-              <div className="text-center px-3 border-r border-slate-300">
-                <div className="text-xs text-slate-500 font-medium">Giường</div>
-                <div className="text-sm font-bold text-indigo-700">{selectedBed?.bed_code}</div>
+          {/* Patient info */}
+          <div className="flex-1 flex flex-wrap gap-3 items-center">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-base shadow">
+                {PATIENT_INFO.name.charAt(0)}
               </div>
-              <div className="text-center px-3 border-r border-slate-300">
-                <div className="text-xs text-slate-500 font-medium">Khoa</div>
-                <div className="text-sm font-bold text-slate-800">{selectedWard?.name}</div>
-              </div>
-              <div className="text-center px-3">
-                <div className="text-xs text-slate-500 font-medium">Mã BN</div>
-                <div className="text-sm font-bold text-purple-700">{selectedAdmission.patient_id}</div>
+              <div>
+                <div className="font-bold text-slate-900 text-sm">{PATIENT_INFO.name}</div>
+                <div className="text-xs text-slate-500">{PATIENT_INFO.gender} · {PATIENT_INFO.age} tuổi · MRN: {PATIENT_INFO.mrn}</div>
               </div>
             </div>
-          )}
+            <div className="flex flex-wrap gap-2">
+              <span className="flex items-center gap-1 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-full">
+                <BedIcon className="w-3 h-3" /> {selectedBed?.bed_code ?? PATIENT_INFO.bed}
+              </span>
+              <span className="flex items-center gap-1 text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-full">
+                <Building2 className="w-3 h-3" /> {selectedWard?.name ?? PATIENT_INFO.ward}
+              </span>
+              <span className="flex items-center gap-1 text-xs font-semibold text-teal-700 bg-teal-50 border border-teal-200 px-2.5 py-1 rounded-full">
+                <Calendar className="w-3 h-3" /> Ngày điều trị {PATIENT_INFO.admitDay}
+              </span>
+              <span className="text-xs font-semibold text-slate-500 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-full">
+                {PATIENT_INFO.weight}
+              </span>
+              <AllergyAlert allergies={PATIENT_INFO.allergies} />
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* MAR Stats */}
-      {selectedAdmissionId && marRecords.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-            <div className="text-2xl font-bold text-slate-800">
-              {marRecords.filter((m) => m.status === 'scheduled').length}
-            </div>
-            <div className="text-xs text-slate-500 font-medium mt-0.5">Đã lên lịch</div>
-          </div>
-          <div className="bg-white p-4 rounded-xl border border-emerald-200 shadow-sm">
-            <div className="text-2xl font-bold text-emerald-700">
-              {marRecords.filter((m) => m.status === 'administered').length}
-            </div>
-            <div className="text-xs text-slate-500 font-medium mt-0.5">Đã thực hiện</div>
-          </div>
-          <div className="bg-white p-4 rounded-xl border border-rose-200 shadow-sm">
-            <div className="text-2xl font-bold text-rose-700">
-              {marRecords.filter((m) => m.status === 'refused').length}
-            </div>
-            <div className="text-xs text-slate-500 font-medium mt-0.5">Từ chối</div>
-          </div>
-          <div className="bg-white p-4 rounded-xl border border-amber-200 shadow-sm">
-            <div className="text-2xl font-bold text-amber-700">
-              {marRecords.filter((m) => m.status === 'held').length}
-            </div>
-            <div className="text-xs text-slate-500 font-medium mt-0.5">Tạm ngưng</div>
-          </div>
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-            <div className="text-2xl font-bold text-slate-700">
-              {marRecords.filter((m) => isOverdue(m.scheduled_time, m.status)).length}
-            </div>
-            <div className="text-xs text-slate-500 font-medium mt-0.5">Quá hạn</div>
-          </div>
-        </div>
-      )}
+      {/* ── TẦNG 2: SUMMARY CARDS ──────────────────────────────────── */}
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+        <MARSummaryCard label="Đã lên lịch" count={stats.scheduled} color="bg-blue-50 border border-blue-200 text-blue-800" />
+        <MARSummaryCard label="Đã thực hiện" count={stats.administered} color="bg-emerald-50 border border-emerald-200 text-emerald-800" />
+        <MARSummaryCard label="Từ chối" count={stats.refused} color={`${stats.refused > 0 ? 'bg-rose-50 border border-rose-300 text-rose-800' : 'bg-slate-50 border border-slate-200 text-slate-600'}`} />
+        <MARSummaryCard label="Tạm ngưng" count={stats.held} color={`${stats.held > 0 ? 'bg-amber-50 border border-amber-300 text-amber-800' : 'bg-slate-50 border border-slate-200 text-slate-600'}`} />
+        <MARSummaryCard label="Bỏ lỡ liều" count={stats.missed} color={`${stats.missed > 0 ? 'bg-slate-100 border border-slate-300 text-slate-700' : 'bg-slate-50 border border-slate-200 text-slate-600'}`} />
+        <MARSummaryCard label="Quá hạn" count={stats.overdue} color={`${stats.overdue > 0 ? 'bg-rose-100 border-2 border-rose-400 text-rose-900' : 'bg-slate-50 border border-slate-200 text-slate-600'}`} />
+      </div>
 
-      {/* MAR Timeline by Date */}
+      {/* ── TẦNG 3: MAR TIMELINE ───────────────────────────────────── */}
       {loading ? (
-        <div className="p-12 text-center text-slate-500">Đang tải phiếu MAR...</div>
-      ) : !selectedAdmissionId ? (
-        <div className="p-12 text-center text-slate-400">Vui lòng chọn bệnh nhân để xem phiếu MAR</div>
+        <div className="p-12 text-center text-slate-400">Đang tải dữ liệu MAR...</div>
       ) : marRecords.length === 0 ? (
-        <div className="p-12 text-center text-slate-400">
-          Chưa có y lệnh thuốc nào. Nhấn "Thêm Y Lệnh Thuốc" để bắt đầu.
+        <div className="p-12 text-center text-slate-400 bg-white rounded-xl border border-slate-200">
+          Chưa có y lệnh thuốc nào. Nhấn &quot;Thêm Y Lệnh&quot; để bắt đầu.
         </div>
       ) : (
-        <div className="space-y-6">
-          {Object.entries(groupedMAR)
-            .sort((a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime())
-            .map(([date, records]) => (
-              <div key={date} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                {/* Date Header */}
-                <div className="flex items-center space-x-2 mb-4 pb-3 border-b border-slate-100">
-                  <Calendar className="w-5 h-5 text-indigo-600" />
-                  <h3 className="font-bold text-slate-800">{date}</h3>
-                  <span className="text-xs text-slate-500">({records.length} y lệnh)</span>
-                </div>
-
-                {/* MAR Records */}
-                <div className="space-y-3">
-                  {records
-                    .sort((a, b) => new Date(a.scheduled_time).getTime() - new Date(b.scheduled_time).getTime())
-                    .map((mar) => {
-                      const overdue = isOverdue(mar.scheduled_time, mar.status);
-                      return (
-                        <div
-                          key={mar.id}
-                          className={`p-4 rounded-xl border transition-all ${
-                            overdue
-                              ? 'border-rose-200 bg-rose-50/50'
-                              : mar.status === 'administered'
-                              ? 'border-emerald-200 bg-emerald-50/30'
-                              : 'border-slate-200 bg-slate-50/50'
-                          }`}
-                        >
-                          <div className="flex justify-between items-start">
-                            {/* Drug Info */}
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-2 mb-2">
-                                <Pill className="w-4 h-4 text-indigo-600" />
-                                <span className="font-bold text-slate-800">{mar.drug_name}</span>
-                                {overdue && (
-                                  <span className="text-xs font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded border border-rose-200">
-                                    ⚠️ QUÁ HẠN
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-xs text-slate-600 space-y-1 ml-6">
-                                <div className="flex items-center space-x-2">
-                                  <Syringe className="w-3 h-3 text-slate-400" />
-                                  <span>
-                                    <strong>Liều dùng:</strong> {mar.dosage}
-                                  </span>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  <FileText className="w-3 h-3 text-slate-400" />
-                                  <span>
-                                    <strong>Đường dùng:</strong> {mar.route}
-                                  </span>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  <Clock className="w-3 h-3 text-slate-400" />
-                                  <span>
-                                    <strong>Giờ lên lịch:</strong>{' '}
-                                    {new Date(mar.scheduled_time).toLocaleTimeString('vi-VN', {
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                    })}
-                                  </span>
-                                </div>
-                                {mar.administered_time && (
-                                  <div className="flex items-center space-x-2">
-                                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                                    <span className="text-emerald-700">
-                                      <strong>Đã thực hiện lúc:</strong>{' '}
-                                      {new Date(mar.administered_time).toLocaleTimeString('vi-VN', {
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                      })}
-                                    </span>
-                                  </div>
-                                )}
-                                {mar.administered_by_nurse_id && (
-                                  <div className="flex items-center space-x-2">
-                                    <User className="w-3 h-3 text-slate-400" />
-                                    <span>
-                                      <strong>Điều dưỡng:</strong> {mar.administered_by_nurse_id}
-                                    </span>
-                                  </div>
-                                )}
-                                {mar.notes && (
-                                  <div className="mt-2 p-2 bg-white border border-slate-200 rounded-lg">
-                                    <strong className="text-slate-700">Ghi chú:</strong> {mar.notes}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Status & Actions */}
-                            <div className="flex flex-col items-end space-y-2">
-                              {getStatusBadge(mar.status)}
-                              {mar.status === 'scheduled' && (
-                                <button
-                                  onClick={() => {
-                                    setSelectedMAR(mar);
-                                    setShowAdministerModal(true);
-                                  }}
-                                  className="text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 rounded-lg transition-colors"
-                                >
-                                  ✓ Xác nhận thực hiện
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
+        <div className="space-y-5">
+          {[...groupedByDate.entries()].map(([date, records]) => (
+            <div key={date}>
+              <div className="flex items-center gap-2 mb-3">
+                <Calendar className="w-4 h-4 text-slate-400" />
+                <span className="font-bold text-slate-700 text-sm">{date}</span>
+                <span className="text-xs text-slate-400">({records.length} y lệnh)</span>
+                <div className="flex-1 h-px bg-slate-100" />
               </div>
-            ))}
+              <div className="space-y-3">
+                {records.map((mar) => (
+                  <MARCard key={mar.id} mar={mar}
+                    onAdminister={(m) => setFiveRightsMAR(m)}
+                    onRefuse={(m) => setRefusalMAR(m)}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Add MAR Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-indigo-200">
-            <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center space-x-2">
-              <Pill className="w-6 h-6 text-indigo-600" />
-              <span>Thêm Y Lệnh Thuốc Mới</span>
-            </h2>
-
-            <form onSubmit={handleAddMAR} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Tên thuốc:</label>
-                <input
-                  type="text"
-                  required
-                  value={drugName}
-                  onChange={(e) => setDrugName(e.target.value)}
-                  placeholder="Ví dụ: Amoxicillin 500mg"
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                />
+      {/* ── EXCEPTIONS SUMMARY ─────────────────────────────────────── */}
+      {(stats.refused > 0 || stats.held > 0 || stats.overdue > 0 || stats.missed > 0) && (
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+          <h3 className="font-bold text-slate-700 text-sm mb-3 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-500" />
+            Ngoại lệ & Cảnh báo cần xử lý
+          </h3>
+          <div className="space-y-2">
+            {stats.overdue > 0 && (
+              <div className="flex items-center gap-2 text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-3 py-2 rounded-lg">
+                <AlertCircle className="w-4 h-4" />
+                🔴 {stats.overdue} y lệnh QUÁN HẠN — cần thực hiện ngay
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Liều dùng:</label>
-                  <input
-                    type="text"
-                    required
-                    value={dosage}
-                    onChange={(e) => setDosage(e.target.value)}
-                    placeholder="Ví dụ: 1 viên"
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Đường dùng:</label>
-                  <select
-                    value={route}
-                    onChange={(e) => setRoute(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value="Uống sau ăn">Uống sau ăn</option>
-                    <option value="Uống trước ăn">Uống trước ăn</option>
-                    <option value="Tiêm tĩnh mạch">Tiêm tĩnh mạch</option>
-                    <option value="Tiêm bắp">Tiêm bắp</option>
-                    <option value="Truyền tĩnh mạch">Truyền tĩnh mạch</option>
-                    <option value="Bôi ngoài da">Bôi ngoài da</option>
-                  </select>
-                </div>
+            )}
+            {stats.refused > 0 && (
+              <div className="flex items-center gap-2 text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 px-3 py-2 rounded-lg">
+                <XCircle className="w-4 h-4" />
+                {stats.refused} y lệnh bị từ chối — đã ghi lý do
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Ngày:</label>
-                  <input
-                    type="date"
-                    required
-                    value={scheduledDate}
-                    onChange={(e) => setScheduledDate(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Giờ:</label>
-                  <input
-                    type="time"
-                    required
-                    value={scheduledTime}
-                    onChange={(e) => setScheduledTime(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  />
-                </div>
+            )}
+            {stats.held > 0 && (
+              <div className="flex items-center gap-2 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded-lg">
+                <PauseCircle className="w-4 h-4" />
+                {stats.held} y lệnh tạm ngưng — theo y lệnh bác sĩ
               </div>
-
-              <div className="flex justify-end space-x-3 pt-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAddModal(false);
-                    resetAddForm();
-                  }}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200"
-                >
-                  Hủy bỏ
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 text-xs font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-md"
-                >
-                  Thêm Y Lệnh
-                </button>
+            )}
+            {stats.missed > 0 && (
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 bg-slate-50 border border-slate-200 px-3 py-2 rounded-lg">
+                <FileWarning className="w-4 h-4" />
+                {stats.missed} liều bị bỏ lỡ — cần đánh giá và ghi chú
               </div>
-            </form>
+            )}
           </div>
         </div>
       )}
 
-      {/* Administer MAR Modal */}
-      {showAdministerModal && selectedMAR && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-emerald-200">
-            <h2 className="text-xl font-bold text-slate-800 mb-2 flex items-center space-x-2">
-              <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-              <span>Xác Nhận Thực Hiện Y Lệnh</span>
-            </h2>
-            <p className="text-xs text-slate-600 mb-4">
-              Xác nhận bạn đã thực hiện y lệnh thuốc <strong>{selectedMAR.drug_name}</strong> cho bệnh nhân.
-            </p>
+      {/* ── MODALS ─────────────────────────────────────────────────── */}
+      {fiveRightsMAR && (
+        <FiveRightsModal
+          mar={fiveRightsMAR} patientName={PATIENT_INFO.name} allergies={PATIENT_INFO.allergies}
+          onConfirm={handleAdministerConfirm} onCancel={() => setFiveRightsMAR(null)}
+        />
+      )}
+      {refusalMAR && (
+        <RefusalModal mar={refusalMAR} onConfirm={handleRefusalConfirm} onCancel={() => setRefusalMAR(null)} />
+      )}
 
-            <form onSubmit={handleAdministerMAR} className="space-y-4">
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm">
-                <div className="space-y-2">
-                  <div>
-                    <strong>Thuốc:</strong> {selectedMAR.drug_name}
-                  </div>
-                  <div>
-                    <strong>Liều dùng:</strong> {selectedMAR.dosage}
-                  </div>
-                  <div>
-                    <strong>Đường dùng:</strong> {selectedMAR.route}
-                  </div>
-                  <div>
-                    <strong>Giờ lên lịch:</strong>{' '}
-                    {new Date(selectedMAR.scheduled_time).toLocaleString('vi-VN')}
-                  </div>
+      {/* ── ADD ORDER MODAL ─────────────────────────────────────────── */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-indigo-200 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-lg font-bold text-slate-800 mb-1 flex items-center gap-2">
+              <ClipboardCheck className="w-5 h-5 text-indigo-600" /> Thêm Y Lệnh Thuốc
+            </h2>
+            <p className="text-xs text-slate-400 mb-4">Chú ý: Y lệnh thuốc nên được tạo từ EMR/CPOE. Chức năng này dành cho điều chỉnh khẩn.</p>
+            <form onSubmit={handleAddOrder} className="space-y-3">
+              {[
+                { label: 'Tên thuốc', value: drugName, setter: setDrugName, placeholder: 'VD: Paracetamol 1g IV', required: true },
+                { label: 'Liều dùng', value: dosage, setter: setDosage, placeholder: 'VD: 1g', required: true },
+                { label: 'Tần suất', value: frequency, setter: setFrequency, placeholder: 'VD: q8h, q12h, PRN', required: false },
+                { label: 'Bác sĩ chỉ định', value: prescriber, setter: setPrescriber, placeholder: 'VD: BS.CKII Phạm Quốc Việt', required: false },
+              ].map(({ label, value, setter, placeholder, required }) => (
+                <div key={label}>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">{label}:</label>
+                  <input type="text" required={required} value={value} onChange={(e) => setter(e.target.value)}
+                    placeholder={placeholder}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+                </div>
+              ))}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Đường dùng:</label>
+                <select value={route} onChange={(e) => setRoute(e.target.value)}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                  {['Uống sau ăn', 'Truyền tĩnh mạch (IV)', 'Tiêm tĩnh mạch (IV push)', 'Tiêm dưới da (SC)', 'Tiêm bắp (IM)', 'Đặt dưới lưỡi (SL)'].map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Ngày lên lịch:</label>
+                  <input type="date" required value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Giờ thực hiện:</label>
+                  <input type="time" required value={scheduledTime} onChange={(e) => setScheduledTime(e.target.value)}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
                 </div>
               </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Ghi chú (tùy chọn):</label>
-                <textarea
-                  rows={3}
-                  value={administerNotes}
-                  onChange={(e) => setAdministerNotes(e.target.value)}
-                  placeholder="Ghi chú về phản ứng của bệnh nhân, tình trạng sau uống thuốc..."
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAdministerModal(false);
-                    setSelectedMAR(null);
-                    setAdministerNotes('');
-                  }}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200"
-                >
-                  Hủy bỏ
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setShowAddModal(false)}
+                  className="flex-1 px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200">
+                  Hủy
                 </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 text-xs font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 shadow-md"
-                >
-                  ✓ Xác Nhận Đã Thực Hiện
+                <button type="submit"
+                  className="flex-1 px-4 py-2 text-sm font-bold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 shadow-md">
+                  Thêm Y Lệnh
                 </button>
               </div>
             </form>

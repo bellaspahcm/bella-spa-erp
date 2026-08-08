@@ -302,6 +302,8 @@ export interface MedicationAdministrationRecord {
   id: string;
   tenant_id: string;
   inpatient_admission_id: string;
+  encounter_id?: string;
+  patient_id?: string;
   prescription_item_id: string;
   drug_name: string;
   dosage: string;
