@@ -5,7 +5,7 @@
 
 import { eventBus } from '../event-bus.service';
 import { BedAllocatedPayload } from '../types';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase-client';
 
 /**
  * When a bed is allocated, create a room charge in billing

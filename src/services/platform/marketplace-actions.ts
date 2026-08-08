@@ -4,21 +4,32 @@
  * Industry Pack Marketplace Governance Actions
  * Phase C.4 – Industry Pack Marketplace
  *
- * Governance: Constitution #1 (Zero Silent DB Failures), #3 (Strict Types), #8 (Immutable Finalized)
+ * Governance: Constitution #1 (Zero Silent DB Failures), #3 (Strict Types),
+ *             #8 (Immutable Finalized), Law 11 (Zero `any`)
+ *
+ * Now fully typed via generated Database schema — rawFrom helper removed.
  */
 
 import { createClient } from '@/lib/supabase-server';
+import { Database } from '@/types/supabase';
 import { revalidatePath } from 'next/cache';
-import { INDUSTRY_PACK_REGISTRY, type IndustryPackManifest } from '@/platform/industry-registry';
 
 // ---------------------------------------------------------------------------
-// Types
+// Generated Types from Supabase Schema
 // ---------------------------------------------------------------------------
+
+type PlatformIndustryPackRow = Database['public']['Tables']['platform_industry_packs']['Row'];
+type PlatformIndustryPackUpdate = Database['public']['Tables']['platform_industry_packs']['Update'];
+
+// ---------------------------------------------------------------------------
+// Public Types
+// ---------------------------------------------------------------------------
+
 export interface PackInstallationState {
   id: string;
   packCode: string;
   version: string;
-  status: 'draft' | 'review' | 'active' | 'deprecated' | 'sunset';
+  status: string;
   isFrozen: boolean;
   frozenReason: string | null;
   enabledCapabilities: string[];
@@ -27,14 +38,31 @@ export interface PackInstallationState {
   maturityLevel: number;
 }
 
+function mapPackRow(p: PlatformIndustryPackRow): PackInstallationState {
+  return {
+    id: p.id,
+    packCode: p.pack_code,
+    version: p.version,
+    status: p.status,
+    isFrozen: p.is_frozen ?? false,
+    frozenReason: p.frozen_reason ?? null,
+    enabledCapabilities: p.enabled_capabilities ?? [],
+    countryPacks: p.country_packs ?? [],
+    complianceStandards: p.compliance_standards ?? [],
+    maturityLevel: p.maturity_level ?? 1,
+  };
+}
+
 // ---------------------------------------------------------------------------
-// Actions
+// Server Actions
 // ---------------------------------------------------------------------------
+
 export async function getMarketplacePacksAction(): Promise<{
   data: PackInstallationState[];
   error: string | null;
 }> {
   const supabase = await createClient();
+
   const { data, error } = await supabase
     .from('platform_industry_packs')
     .select('*')
@@ -44,20 +72,7 @@ export async function getMarketplacePacksAction(): Promise<{
     return { data: [], error: error.message };
   }
 
-  const packs = (data ?? []).map((p) => ({
-    id: p.id,
-    packCode: p.pack_code,
-    version: p.version,
-    status: p.status as PackInstallationState['status'],
-    isFrozen: p.is_frozen ?? false,
-    frozenReason: p.frozen_reason ?? null,
-    enabledCapabilities: p.enabled_capabilities ?? [],
-    countryPacks: p.country_packs ?? [],
-    complianceStandards: p.compliance_standards ?? [],
-    maturityLevel: p.maturity_level ?? 1,
-  }));
-
-  return { data: packs, error: null };
+  return { data: (data ?? []).map(mapPackRow), error: null };
 }
 
 export async function upgradePackVersionAction(
@@ -84,13 +99,14 @@ export async function upgradePackVersionAction(
     };
   }
 
-  // Update pack version
+  const updatePayload: PlatformIndustryPackUpdate = {
+    version: targetVersion,
+    updated_at: new Date().toISOString(),
+  };
+
   const { error: updateError } = await supabase
     .from('platform_industry_packs')
-    .update({
-      version: targetVersion,
-      updated_at: new Date().toISOString(),
-    })
+    .update(updatePayload)
     .eq('id', packId);
 
   if (updateError) {
@@ -103,14 +119,14 @@ export async function upgradePackVersionAction(
 
 export async function updatePackStatusAction(
   packId: string,
-  status: PackInstallationState['status']
+  status: string
 ): Promise<{ success: boolean; error: string | null }> {
   const supabase = await createClient();
 
   // Validate freeze policy
   const { data: pack } = await supabase
     .from('platform_industry_packs')
-    .select('is_frozen, frozen_reason, pack_code')
+    .select('is_frozen, pack_code')
     .eq('id', packId)
     .single();
 
@@ -121,9 +137,14 @@ export async function updatePackStatusAction(
     };
   }
 
+  const updatePayload: PlatformIndustryPackUpdate = {
+    status,
+    updated_at: new Date().toISOString(),
+  };
+
   const { error } = await supabase
     .from('platform_industry_packs')
-    .update({ status, updated_at: new Date().toISOString() })
+    .update(updatePayload)
     .eq('id', packId);
 
   if (error) {

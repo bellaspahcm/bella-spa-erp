@@ -5,7 +5,7 @@
 
 import { eventBus } from '../event-bus.service';
 import { VitalsRecordedPayload } from '../types';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase-client';
 
 // Critical thresholds (TODO: Move to tenant config)
 const CRITICAL_THRESHOLDS = {

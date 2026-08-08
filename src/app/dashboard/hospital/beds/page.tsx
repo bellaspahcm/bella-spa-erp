@@ -77,7 +77,7 @@ export default function HospitalBedsPage() {
     try {
       // For now, update beds directly via Supabase
       // TODO: Add updateBedStatus to useBedEngine hook
-      const { createClient } = await import('@/lib/supabase/client');
+      const { createClient } = await import('@/lib/supabase-client');
       const supabase = createClient();
       
       const { data, error } = await supabase

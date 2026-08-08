@@ -22,7 +22,7 @@
 
 import { useState } from 'react';
 import { BedEngineService } from '@/platform/healthcare/engines/bed-engine';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase-client';
 import type {
   BedAllocationRequest,
   BedReleaseRequest,

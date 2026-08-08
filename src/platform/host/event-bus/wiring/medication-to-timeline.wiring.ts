@@ -5,7 +5,7 @@
 
 import { eventBus } from '../event-bus.service';
 import { MedicationAdministeredPayload } from '../types';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase-client';
 
 /**
  * When medication is administered, record in clinical timeline

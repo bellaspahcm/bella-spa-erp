@@ -21,7 +21,39 @@ export type EventType =
   | 'PaymentReceived'
   // Clinical Engine Events
   | 'TimelineEntryAdded'
-  | 'DiagnosisRecorded';
+  | 'DiagnosisRecorded'
+  // Perioperative events (v1.1 Clinical Safety Profile)
+  | 'hos.or.scheduled.v1'
+  | 'hos.or.rescheduled.v1'
+  | 'hos.or.cancelled.v1'
+  | 'hos.or.ready.v1'
+  | 'hos.surgical.case.created.v1'
+  | 'hos.surgical.team.assigned.v1'
+  | 'hos.surgical.safety.signin.v1'
+  | 'hos.surgical.safety.timeout.v1'
+  | 'hos.surgical.procedure.started.v1'
+  | 'hos.surgical.procedure.completed.v1'
+  | 'hos.anesthesia.preop.completed.v1'
+  | 'hos.anesthesia.observation.recorded.v1'
+  | 'hos.pacu.discharged.v1'
+  | 'hos.cssd.cycle.completed.v1'
+  // Critical Care & Diagnostics events (Phase B2, B3, B4)
+  | 'hos.blood.transfusion.blocked.v1'
+  | 'hos.icu.ventilator.validation_failed.v1'
+  | 'hos.ed.triage.reassessed.v1'
+  | 'hos.blood.crossmatch.completed.v1'
+  | 'hos.blood.unit.reserved.v1'
+  | 'hos.blood.transfusion.started.v1'
+  | 'hos.blood.transfusion.completed.v1'
+  // Clinical Decision Support events (Phase C)
+  | 'hos.cds.drug_interaction.detected.v1'
+  | 'hos.cds.allergy.blocked.v1'
+  | 'hos.cds.protocol.violated.v1'
+  | 'hos.cds.dispense.blocked.v1'
+  | 'hos.order.created.v1'
+  | 'hos.order.approved.v1'
+  | 'hos.order.discontinued.v1';
+
 
 export interface DomainEvent<T = unknown> {
   // Event identification

@@ -32,6 +32,16 @@ export * from './engines/scheduling-engine';
 export * from './engines/queue-engine';
 export * from './engines/laboratory-engine';
 export * from './engines/imaging-engine';
+export * from './engines/or-engine';
+export * from './engines/surgical-engine';
+export * from './engines/anesthesia-engine';
+export * from './engines/cssd-engine';
+export * from './engines/pacu-engine';
+export * from './engines/or-readiness-engine';
+export * from './engines/icu-engine';
+export * from './engines/emergency-engine';
+export * from './engines/blood-bank-engine';
+
 
 // Healthcare Platform Contracts
 export * from './contracts';

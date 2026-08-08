@@ -16,13 +16,18 @@ import type {
 } from '../../contracts/pharmacy-engine.contract';
 import type { EngineResponse, MedicationOrder, EngineHealthStatus } from '../../shared-kernel/types';
 import { eventBus } from '@/platform/host/event-bus';
+import { CdsEngineService } from '../cds-engine/cds-engine.service';
 
 export class PharmacyEngineService implements PharmacyEngineContract {
   readonly engineName = 'pharmacy-engine';
   readonly engineVersion = '1.0.0';
   readonly contractVersion = '1.0.0';
 
-  constructor(private readonly supabase: SupabaseClient) {}
+  private readonly cdsEngine: CdsEngineService;
+
+  constructor(private readonly supabase: SupabaseClient) {
+    this.cdsEngine = new CdsEngineService(supabase);
+  }
 
   async recordMedicationAdministration(request: MARAdministrationRequest): Promise<EngineResponse<{ id: string }>> {
     try {
@@ -151,9 +156,63 @@ export class PharmacyEngineService implements PharmacyEngineContract {
     tenantId: string;
     medicationOrderId: string;
     dispensedBy: string;
+    /** CDS Barrier 2: required for re-check at dispense time */
+    patientId?: string;
+    encounterId?: string;
+    drugCode?: string;
+    currentMedicationCodes?: string[];
   }): Promise<EngineResponse<MedicationOrder>> {
     try {
       const now = new Date().toISOString();
+
+      // ── CDS Barrier 2: Re-check at dispense time ──────────────────────────
+      // Defense-in-depth: catches new allergies or DDIs added AFTER prescribing.
+      if (request.patientId && request.encounterId && request.drugCode) {
+        const cdsResult = await this.cdsEngine.generateCdsSummary({
+          requestId: `dispense-cds-${request.medicationOrderId}`,
+          tenantId: request.tenantId,
+          encounterId: request.encounterId,
+          patientId: request.patientId,
+          proposedDrugCode: request.drugCode,
+          currentMedicationCodes: request.currentMedicationCodes ?? [],
+          causationId: request.medicationOrderId,
+        });
+
+        if (cdsResult.success && cdsResult.data?.hardBlocked) {
+          await eventBus.publish({
+            eventType: 'hos.cds.dispense.blocked.v1',
+            tenantId: request.tenantId,
+            aggregateId: request.medicationOrderId,
+            aggregateType: 'MedicationOrder',
+            payload: {
+              medicationOrderId: request.medicationOrderId,
+              encounterId: request.encounterId,
+              patientId: request.patientId,
+              drugCode: request.drugCode,
+              cdsCheckId: cdsResult.data.calculationId,
+              alertCount: cdsResult.data.alerts.length,
+              barrier: 'PHARMACY_DISPENSE',
+            },
+          });
+
+          return {
+            success: false,
+            error: {
+              code: 'CDS_DISPENSE_BLOCKED',
+              message:
+                'Dispense blocked by CDS Barrier 2: new clinical safety constraint detected since prescribing. See hos.cds.dispense.blocked.v1 event.',
+              details: {
+                cdsCheckId: cdsResult.data.calculationId,
+                alerts: cdsResult.data.alerts
+                  .filter((a) => a.enforcement === 'ABSOLUTE_BLOCK' || a.enforcement === 'BLOCK')
+                  .map((a) => ({ type: a.alertType, severity: a.severity, message: a.message })),
+              },
+              timestamp: now,
+            },
+          };
+        }
+      }
+      // ─────────────────────────────────────────────────────────────────────
 
       const { data, error } = await this.supabase
         .from('hc_medication_orders')

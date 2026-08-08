@@ -20,6 +20,7 @@ class EventBusService {
    */
   async publish<T = unknown>(params: {
     eventType: EventType;
+    eventVersion?: string;
     tenantId: string;
     aggregateId: string;
     aggregateType: string;
@@ -31,10 +32,11 @@ class EventBusService {
     const event: DomainEvent<T> = {
       eventId: crypto.randomUUID(),
       eventType: params.eventType,
-      eventVersion: '1.0',
+      eventVersion: params.eventVersion || (params.eventType.endsWith('.v1') ? 'v1' : '1.0'),
       tenantId: params.tenantId,
       aggregateId: params.aggregateId,
       aggregateType: params.aggregateType,
+
       payload: params.payload,
       occurredAt: new Date().toISOString(),
       userId: params.userId,

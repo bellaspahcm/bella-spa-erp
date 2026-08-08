@@ -1,12 +1,12 @@
 {
   "summary": {
-    "totalFiles": 1641,
-    "filesWithViolations": 187,
-    "totalViolations": 788,
+    "totalFiles": 1691,
+    "filesWithViolations": 188,
+    "totalViolations": 789,
     "byPriority": {
       "high": 0,
       "medium": 0,
-      "low": 788
+      "low": 789
     },
     "estimatedHours": 40
   },
@@ -3753,6 +3753,14 @@
       "column": 40,
       "content": "/** Get all contracts for a party (as any role) */",
       "pattern": "\\bas\\s+any\\b",
+      "priority": "LOW"
+    },
+    {
+      "file": "src\\platform\\healthcare\\engines\\cssd-engine\\cssd-engine.service.ts",
+      "line": 688,
+      "column": 81,
+      "content": "const report: TraceabilityReport[] = (data || []).map((row: Record<string, any>) => {",
+      "pattern": "Record<string,\\s*any>",
       "priority": "LOW"
     },
     {
