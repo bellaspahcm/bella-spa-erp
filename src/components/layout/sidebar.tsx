@@ -527,7 +527,7 @@ const bellaHospitalInpatientMenuItems: SidebarMenuItem[] = [
   { type: 'header', label: 'Trung Tâm Điều Hành' },
   { icon: LayoutDashboard, label: 'Tổng quan bệnh viện',         href: '/dashboard/hospital' },
   { icon: ShieldCheck,     label: 'Giám sát an toàn',            href: '/dashboard/hospital/queue' },
-  { icon: AlertCircle,     label: 'Cảnh báo & Xử lý',            href: '/dashboard/hospital/queue?filter=active' },
+  { icon: AlertCircle,     label: 'Sự cố & Báo cáo',             href: '/dashboard/hospital/incidents' },
 
   { type: 'header', label: 'Chăm Sóc Bệnh Nhân' },
   { icon: Calendar,        label: 'Đặt lịch & Ngoại trú',        href: '/dashboard/healthcare/appointments' },
