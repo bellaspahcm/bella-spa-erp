@@ -534,7 +534,7 @@ const bellaHospitalInpatientMenuItems: SidebarMenuItem[] = [
   { icon: Tv,              label: 'TV Gọi Số Hàng Đợi',          href: '/dashboard/healthcare/queue/tv' },
   { icon: Bed,             label: 'Sơ đồ buồng giường',          href: '/dashboard/hospital/beds' },
   { icon: Hospital,        label: 'Thủ tục xuất viện',           href: '/dashboard/hospital/admissions' },
-  { icon: Activity,        label: 'Hành trình điều trị',         href: '/dashboard/healthcare/journeys' },
+  { icon: Activity,        label: 'Hành trình điều trị',         href: '/dashboard/hospital/care-pathway' },
 
   { type: 'header', label: 'Lâm Sàng & Cận Lâm Sàng' },
   { icon: Users,           label: 'Hồ sơ bệnh nhân (MPI)',       href: '/dashboard/healthcare/patients' },
@@ -545,7 +545,7 @@ const bellaHospitalInpatientMenuItems: SidebarMenuItem[] = [
   { icon: ClipboardList,   label: 'Chẩn đoán hình ảnh (PACS)',   href: '/dashboard/hospital/ancillary?tab=ris' },
 
   { type: 'header', label: 'Hồi Sức & Cấp Cứu' },
-  { icon: Stethoscope,     label: 'Điều phối khoa ICU',          href: '/dashboard/healthcare/schedules' },
+  { icon: Stethoscope,     label: 'Điều phối khoa ICU',          href: '/dashboard/hospital/icu-dispatch' },
   { icon: ShieldAlert,     label: 'Cảnh báo nguy kịch',          href: '/dashboard/hospital/queue?severity=critical' },
 
   { type: 'header', label: 'Vận Hành & Nhân Sự' },
@@ -558,8 +558,8 @@ const bellaHospitalInpatientMenuItems: SidebarMenuItem[] = [
   { icon: FileText,        label: 'Hợp đồng bảo hiểm',           href: '/dashboard/hospital/contracts' },
 
   { type: 'header', label: 'Chất Lượng & An Toàn' },
-  { icon: ShieldCheck,     label: 'Sự cố an toàn bệnh nhân',     href: '/dashboard/healthcare/reports/clinical' },
-  { icon: ShieldCheck,     label: 'Kiểm toán an toàn',           href: '/dashboard/healthcare/reports/treatment' },
+  { icon: ShieldCheck,     label: 'Sự cố an toàn bệnh nhân',     href: '/dashboard/hospital/safety/incidents' },
+  { icon: ShieldCheck,     label: 'Kiểm toán an toàn',           href: '/dashboard/hospital/safety/audit' },
 
   { type: 'header', label: 'Phân Tích & Quản Trị' },
   { icon: BarChart3,       label: 'Báo cáo phân tích BI',        href: '/dashboard/hospital/reports' },
