@@ -59,18 +59,7 @@ export default function HospitalDashboardPage() {
     recentVitals: 0,
     abnormalVitals: 0,
   });
-  const [admissions, setAdmissions] = useState<InpatientAdmission[]>([]);
-  const [beds, setBeds] = useState<Bed[]>([]);
-  const [wards, setWards] = useState<Ward[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
   const [currentTime, setCurrentTime] = useState<string>('');
-
-  useEffect(() => {
-    loadDashboardData();
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   const updateTime = () => {
     const now = new Date();
@@ -87,9 +76,8 @@ export default function HospitalDashboardPage() {
   };
 
   const loadDashboardData = async () => {
-    setLoading(true);
     try {
-      const [admData, bedsData, wardsData] = await Promise.all([
+      const [admData, bedsData, _wardsData] = await Promise.all([
         InpatientAdmissionService.getInpatientAdmissions('bella_healthcare'),
         BedEngineService.getHospitalBeds('bella_healthcare'),
         BedEngineService.getHospitalWards('bella_healthcare'),
@@ -142,16 +130,17 @@ export default function HospitalDashboardPage() {
         recentVitals: totalRecentVitals || 24,
         abnormalVitals: totalAbnormalVitals || 1,
       });
-
-      setAdmissions(admData);
-      setBeds(bedsData);
-      setWards(wardsData);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
-    } finally {
-      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadDashboardData();
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800">
@@ -198,10 +187,13 @@ export default function HospitalDashboardPage() {
             <Hospital className="w-7 h-7 text-indigo-300" />
           </div>
           <div>
-            <div className="text-xs font-bold uppercase tracking-widest text-indigo-400">
+            <div className="text-xs font-bold uppercase tracking-widest text-indigo-200">
               Hệ Điều Hành Bệnh Viện Enterprise • Trung Tâm Điều Hành & Giám Sát
             </div>
-            <h1 className="text-2xl font-black uppercase tracking-tight sm:text-3xl">
+            <h1 
+              className="text-2xl font-black uppercase tracking-tight sm:text-3xl !text-white"
+              style={{ color: '#ffffff' }}
+            >
               Bệnh Viện Đa Khoa Bella
             </h1>
           </div>
