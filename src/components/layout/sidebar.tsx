@@ -538,7 +538,7 @@ const bellaHospitalInpatientMenuItems: SidebarMenuItem[] = [
 
   { type: 'header', label: 'Lâm Sàng & Cận Lâm Sàng' },
   { icon: Users,           label: 'Hồ sơ bệnh nhân (MPI)',       href: '/dashboard/healthcare/patients' },
-  { icon: ClipboardList,   label: 'Y lệnh lâm sàng (EMR)',       href: '/dashboard/healthcare/encounters' },
+  { icon: ClipboardList,   label: 'Bệnh án điện tử (EMR)',       href: '/dashboard/healthcare/encounters' },
   { icon: Activity,        label: 'Sinh hiệu điều dưỡng',        href: '/dashboard/hospital/nursing-vitals' },
   { icon: Tablets,         label: 'Phiếu y lệnh (MAR)',          href: '/dashboard/hospital/mar' },
   { icon: ClipboardList,   label: 'Xét nghiệm (LIS)',            href: '/dashboard/hospital/ancillary?tab=lis' },
