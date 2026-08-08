@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { LabOrderItem, ImagingOrderItem } from '@/types/healthcare';
 import {
   getLabOrdersAction,
@@ -85,9 +86,23 @@ const MOCK_IMAGING_ORDERS: ImagingOrderItem[] = [
 ];
 
 export default function HospitalAncillaryPage() {
+  const searchParams = useSearchParams();
   const [labOrders, setLabOrders] = useState<LabOrderItem[]>(MOCK_LAB_ORDERS);
   const [imagingOrders, setImagingOrders] = useState<ImagingOrderItem[]>(MOCK_IMAGING_ORDERS);
-  const [activeTab, setActiveTab] = useState<'lis' | 'ris'>('lis');
+  // Read initial tab from URL query param (?tab=lis or ?tab=ris)
+  const [activeTab, setActiveTab] = useState<'lis' | 'ris'>(() => {
+    return 'lis'; // SSR-safe default; will be synced in useEffect
+  });
+
+  // Sync tab whenever URL ?tab param changes (sidebar navigation)
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'ris') {
+      setActiveTab('ris');
+    } else {
+      setActiveTab('lis');
+    }
+  }, [searchParams]);
 
   // DICOM Viewer state
   const [brightness, setBrightness] = useState<number>(100);
