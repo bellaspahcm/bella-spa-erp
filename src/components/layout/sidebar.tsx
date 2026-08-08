@@ -52,6 +52,9 @@ import {
   Bed,
   Hospital,
   Tablets,
+  ShieldAlert,
+  AlertCircle,
+  Layers,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -521,45 +524,48 @@ const bellaMedicalClinicMenuItems: SidebarMenuItem[] = [
 
 // ─── Bella General Hospital Module Menu (hospital_inpatient capability) ───
 const bellaHospitalInpatientMenuItems: SidebarMenuItem[] = [
-  { type: 'header', label: 'Tổng quan & AI' },
-  { icon: LayoutDashboard, label: 'Dashboard điều hành',         href: '/dashboard/hospital' },
-  { icon: Sparkles,        label: 'AI Copilot',                  href: '/dashboard/ai-copilot' },
+  { type: 'header', label: 'Trung Tâm Điều Hành' },
+  { icon: LayoutDashboard, label: 'Tổng quan bệnh viện',         href: '/dashboard/hospital' },
+  { icon: ShieldCheck,     label: 'Giám sát an toàn',            href: '/dashboard/hospital/queue' },
+  { icon: AlertCircle,     label: 'Cảnh báo & Xử lý',            href: '/dashboard/hospital/queue?filter=active' },
 
-  { type: 'header', label: 'Tiếp đón & Ngoại trú' },
-  { icon: Calendar,        label: 'Đặt Lịch & QR Check-in',      href: '/dashboard/healthcare/appointments' },
-  { icon: Tv,              label: 'Màn Hình TV Hàng Đợi AI',     href: '/dashboard/healthcare/queue/tv' },
-  { icon: Stethoscope,     label: 'Lịch Trực Bác sĩ',            href: '/dashboard/healthcare/schedules' },
-  { icon: Users,           label: 'Hồ sơ bệnh nhân (MPI)',       href: '/dashboard/healthcare/patients' },
-  { icon: ClipboardList,   label: 'Lượt khám bệnh (EMR)',        href: '/dashboard/healthcare/encounters' },
+  { type: 'header', label: 'Chăm Sóc Bệnh Nhân' },
+  { icon: Calendar,        label: 'Đặt lịch & Ngoại trú',        href: '/dashboard/healthcare/appointments' },
+  { icon: Tv,              label: 'Khoa Cấp Cứu (ER)',           href: '/dashboard/healthcare/queue/tv' },
+  { icon: Bed,             label: 'Sơ đồ buồng giường',          href: '/dashboard/hospital/beds' },
+  { icon: Hospital,        label: 'Thủ tục xuất viện',           href: '/dashboard/hospital/admissions' },
   { icon: Activity,        label: 'Hành trình điều trị',         href: '/dashboard/healthcare/journeys' },
 
-  { type: 'header', label: 'Nội trú & Buồng Giường' },
-  { icon: Bed,             label: 'Sơ đồ Buồng Giường Nội Trú',  href: '/dashboard/hospital/beds' },
-  { icon: Hospital,        label: 'Bệnh Án Nội Trú',             href: '/dashboard/hospital/admissions' },
-  { icon: Activity,        label: 'Sinh Hiệu Điều Dưỡng',        href: '/dashboard/hospital/nursing-vitals' },
-  { icon: Tablets,         label: 'Phiếu Y Lệnh (MAR)',          href: '/dashboard/hospital/mar' },
+  { type: 'header', label: 'Lâm Sàng & Cận Lâm Sàng' },
+  { icon: Users,           label: 'Hồ sơ bệnh nhân (MPI)',       href: '/dashboard/healthcare/patients' },
+  { icon: ClipboardList,   label: 'Y lệnh lâm sàng (EMR)',       href: '/dashboard/healthcare/encounters' },
+  { icon: Activity,        label: 'Sinh hiệu điều dưỡng',        href: '/dashboard/hospital/nursing-vitals' },
+  { icon: Tablets,         label: 'Phiếu y lệnh (MAR)',          href: '/dashboard/hospital/mar' },
+  { icon: ClipboardList,   label: 'Xét nghiệm (LIS)',            href: '/dashboard/hospital/ancillary?tab=lis' },
+  { icon: ClipboardList,   label: 'Chẩn đoán hình ảnh (PACS)',   href: '/dashboard/hospital/ancillary?tab=ris' },
 
-  { type: 'header', label: 'Cận Lâm Sàng' },
-  { icon: ClipboardList,   label: 'Cận Lâm Sàng (LIS/RIS)',      href: '/dashboard/hospital/ancillary' },
-  { icon: Package,         label: 'Dược y tế & Kê đơn',          href: '/dashboard/medical/pharmacy' },
+  { type: 'header', label: 'Hồi Sức & Cấp Cứu' },
+  { icon: Stethoscope,     label: 'Điều phối khoa ICU',          href: '/dashboard/healthcare/schedules' },
+  { icon: ShieldAlert,     label: 'Cảnh báo nguy kịch',          href: '/dashboard/hospital/queue?severity=critical' },
 
-  { type: 'header', label: 'BHYT & Viện Phí' },
-  { icon: CircleDollarSign, label: 'Viện phí & BHYT (80/20)',     href: '/dashboard/medical/billing' },
-  { icon: FileText,        label: 'Cổng Giám Định BHYT XML 130',  href: '/dashboard/hospital/bhyt' },
-  { icon: FileText,        label: 'Hợp đồng BHYT & Bảo hiểm',    href: '/dashboard/medical/contracts' },
+  { type: 'header', label: 'Vận Hành & Nhân Sự' },
+  { icon: Users,           label: 'Quản lý nhân lực',            href: '/dashboard/hr/workforce' },
+  { icon: Package,         label: 'Kho dược & Cấp phát',         href: '/dashboard/medical/pharmacy' },
 
-  { type: 'header', label: 'Báo cáo & Phân tích' },
-  { icon: BarChart3,       label: 'Báo cáo Vận hành & SLA',      href: '/dashboard/medical/reports' },
-  { icon: LineChart,       label: 'Phân tích Doanh thu Y tế',    href: '/dashboard/medical/reports/revenue' },
+  { type: 'header', label: 'Viện Phí & Bảo Hiểm' },
+  { icon: CircleDollarSign, label: 'Viện phí & Thanh toán',       href: '/dashboard/medical/billing' },
+  { icon: FileText,        label: 'Cổng giám định BHYT',         href: '/dashboard/hospital/bhyt' },
+  { icon: FileText,        label: 'Hợp đồng bảo hiểm',           href: '/dashboard/medical/contracts' },
 
-  { type: 'header', label: 'Tài chính & Hệ thống' },
-  { icon: Banknote,        label: 'Lương bác sĩ & Y sĩ',         href: '/dashboard/medical/salary' },
-  { icon: CircleDollarSign, label: 'Báo cáo thu chi',            href: '/dashboard/medical/finance' },
-  { icon: Wallet,          label: 'Nhật ký sổ cái y khoa',        href: '/dashboard/medical/accounting' },
-  { icon: FileSpreadsheet, label: 'Báo cáo tài chính TT133',     href: '/dashboard/accounting/reports' },
-  { icon: HelpCircle,      label: 'Hướng dẫn sử dụng',          href: '/dashboard/guides' },
-  { icon: Sliders,         label: 'Cấu hình Dịch vụ',            href: '/dashboard/services' },
-  { icon: Settings,        label: 'Cài Đặt Hệ Thống',           href: '/dashboard/settings' },
+  { type: 'header', label: 'Chất Lượng & An Toàn' },
+  { icon: ShieldCheck,     label: 'Sự cố an toàn bệnh nhân',     href: '/dashboard/healthcare/reports/clinical' },
+  { icon: ShieldCheck,     label: 'Kiểm toán an toàn',           href: '/dashboard/healthcare/reports/treatment' },
+
+  { type: 'header', label: 'Phân Tích & Quản Trị' },
+  { icon: BarChart3,       label: 'Báo cáo phân tích BI',        href: '/dashboard/medical/reports' },
+  { icon: LineChart,       label: 'Doanh thu & Chi phí P&L',     href: '/dashboard/medical/reports/revenue' },
+  { icon: Layers,          label: 'Quản trị nền tảng',           href: '/dashboard/rules' },
+  { icon: Settings,        label: 'Cài đặt hệ thống',            href: '/dashboard/settings' },
 ];
 
 const customerMenuItems: SidebarMenuItem[] = [
@@ -606,6 +612,9 @@ const LUCIDE_ICONS_MAP: Record<string, LucideIcon> = {
   Bed,
   Hospital,
   Tablets,
+  ShieldAlert,
+  AlertCircle,
+  Layers,
 };
 
 
