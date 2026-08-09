@@ -28,7 +28,7 @@ import {
   AlertCircle,
   FileWarning,
 } from 'lucide-react';
-import PremiumSelect from '@/components/ui/PremiumSelect';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 // Extended type to represent full clinical view
 interface ExtendedInpatientAdmission extends InpatientAdmission {
