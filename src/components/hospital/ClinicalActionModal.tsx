@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, AlertTriangle, CheckCircle, Clock, User } from 'lucide-react';
+import { X, AlertTriangle, CheckCircle, Clock, User, Layers, UserPlus, ArrowUpCircle } from 'lucide-react';
 
 // Types
 export interface ClinicalAlert {
@@ -34,6 +34,8 @@ export default function ClinicalActionModal({
 }: ClinicalActionModalProps) {
   const [notes, setNotes] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [assignTo, setAssignTo] = useState('');
 
   if (!isOpen || !alert) return null;
 
@@ -48,6 +50,50 @@ export default function ClinicalActionModal({
     } catch (error) {
       console.error('Failed to process action:', error);
       alert('Có lỗi xảy ra khi xử lý. Vui lòng thử lại.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleWorkspace = () => {
+    // Navigate to clinical workspace for this patient
+    window.open(`/dashboard/hospital/patients/${alert.patientMPI}`, '_blank');
+  };
+
+  const handleAssign = async () => {
+    if (!assignTo.trim()) {
+      alert('Vui lòng chọn người được gán');
+      return;
+    }
+    
+    setIsProcessing(true);
+    try {
+      await onAction(alert.id, 'assign', `Assigned to: ${assignTo}`);
+      setShowAssignModal(false);
+      setAssignTo('');
+      onClose();
+    } catch (error) {
+      console.error('Failed to assign:', error);
+      alert('Có lỗi xảy ra khi gán. Vui lòng thử lại.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleEscalate = async () => {
+    const confirmEscalate = window.confirm(
+      'Bạn có chắc chắn muốn leo thang cảnh báo này lên cấp cao hơn không?'
+    );
+    
+    if (!confirmEscalate) return;
+
+    setIsProcessing(true);
+    try {
+      await onAction(alert.id, 'escalate', notes || 'Escalated to higher authority');
+      onClose();
+    } catch (error) {
+      console.error('Failed to escalate:', error);
+      alert('Có lỗi xảy ra khi leo thang. Vui lòng thử lại.');
     } finally {
       setIsProcessing(false);
     }
@@ -171,6 +217,50 @@ export default function ClinicalActionModal({
             </div>
           </div>
 
+          {/* Quick Action Buttons */}
+          <div>
+            <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">
+              Hành Động Nhanh
+            </h3>
+            <div className="grid grid-cols-3 gap-3">
+              <button
+                onClick={handleWorkspace}
+                disabled={isProcessing}
+                className="flex flex-col items-center justify-center p-4 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-2xl transition-all disabled:opacity-50 group"
+              >
+                <div className="p-2 bg-blue-100 rounded-xl mb-2 group-hover:bg-blue-200 transition-colors">
+                  <Layers className="w-5 h-5 text-blue-600" />
+                </div>
+                <span className="text-xs font-bold text-blue-900">Workspace</span>
+                <span className="text-[10px] text-blue-600 mt-0.5">Xem chi tiết</span>
+              </button>
+
+              <button
+                onClick={() => setShowAssignModal(true)}
+                disabled={isProcessing}
+                className="flex flex-col items-center justify-center p-4 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-2xl transition-all disabled:opacity-50 group"
+              >
+                <div className="p-2 bg-indigo-100 rounded-xl mb-2 group-hover:bg-indigo-200 transition-colors">
+                  <UserPlus className="w-5 h-5 text-indigo-600" />
+                </div>
+                <span className="text-xs font-bold text-indigo-900">Assign</span>
+                <span className="text-[10px] text-indigo-600 mt-0.5">Gán người xử lý</span>
+              </button>
+
+              <button
+                onClick={handleEscalate}
+                disabled={isProcessing}
+                className="flex flex-col items-center justify-center p-4 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-2xl transition-all disabled:opacity-50 group"
+              >
+                <div className="p-2 bg-rose-100 rounded-xl mb-2 group-hover:bg-rose-200 transition-colors">
+                  <ArrowUpCircle className="w-5 h-5 text-rose-600" />
+                </div>
+                <span className="text-xs font-bold text-rose-900">Escalate</span>
+                <span className="text-[10px] text-rose-600 mt-0.5">Leo thang</span>
+              </button>
+            </div>
+          </div>
+
           {/* Additional Metadata */}
           {alert.metadata && Object.keys(alert.metadata).length > 0 && (
             <div>
@@ -250,6 +340,61 @@ export default function ClinicalActionModal({
           </div>
         </div>
       </div>
+
+      {/* Assign Modal (nested) */}
+      {showAssignModal && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/30">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-slate-900">Gán Người Xử Lý</h3>
+              <button
+                onClick={() => setShowAssignModal(false)}
+                className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
+                disabled={isProcessing}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">
+                  Chọn Người Xử Lý
+                </label>
+                <select
+                  value={assignTo}
+                  onChange={(e) => setAssignTo(e.target.value)}
+                  className="w-full p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  disabled={isProcessing}
+                >
+                  <option value="">-- Chọn người --</option>
+                  <option value="Dr. Nguyen Van A">BS. Nguyễn Văn A (Khoa Nội)</option>
+                  <option value="Dr. Tran Thi B">BS. Trần Thị B (Khoa Ngoại)</option>
+                  <option value="Nurse Le Van C">ĐD. Lê Văn C (Điều Dưỡng Trưởng)</option>
+                  <option value="Pharmacist Pham Thi D">DS. Phạm Thị D (Dược Sĩ)</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowAssignModal(false)}
+                  className="px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                  disabled={isProcessing}
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={handleAssign}
+                  className="px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors disabled:opacity-50"
+                  disabled={isProcessing || !assignTo}
+                >
+                  {isProcessing ? 'Đang Gán...' : 'Xác Nhận Gán'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
