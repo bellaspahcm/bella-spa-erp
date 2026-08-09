@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, AlertTriangle, CheckCircle, Clock, User, Layers, UserPlus, ArrowUpCircle } from 'lucide-react';
-import { toast } from 'sonner';
+import { X, AlertTriangle, CheckCircle, Clock, User, Layers, UserPlus, ArrowUpCircle, Info, AlertCircle } from 'lucide-react';
 
 // Types
 export interface ClinicalAlert {
@@ -27,6 +26,13 @@ interface ClinicalActionModalProps {
   onAction: (alertId: string, action: string, notes?: string) => Promise<void>;
 }
 
+interface NotificationPopup {
+  show: boolean;
+  type: 'success' | 'error' | 'info' | 'warning';
+  title: string;
+  message: string;
+}
+
 export default function ClinicalActionModal({
   alert,
   isOpen,
@@ -37,8 +43,23 @@ export default function ClinicalActionModal({
   const [isProcessing, setIsProcessing] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [assignTo, setAssignTo] = useState('');
+  const [notification, setNotification] = useState<NotificationPopup>({
+    show: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
 
   if (!isOpen || !alert) return null;
+
+  const showNotification = (type: NotificationPopup['type'], title: string, message: string) => {
+    setNotification({ show: true, type, title, message });
+    
+    // Auto hide after 3 seconds
+    setTimeout(() => {
+      setNotification(prev => ({ ...prev, show: false }));
+    }, 3000);
+  };
 
   const handleAction = async (actionType: string) => {
     if (!alert) return;
@@ -48,23 +69,20 @@ export default function ClinicalActionModal({
       await onAction(alert.id, actionType, notes);
       setNotes('');
       
-      // Show success toast
+      // Show success notification
       if (actionType === 'acknowledge') {
-        toast.success('Đã xác nhận cảnh báo', {
-          description: `Cảnh báo "${alert.title}" sẽ được xử lý sau.`
-        });
+        showNotification('success', 'Đã Xác Nhận', `Cảnh báo "${alert.title}" sẽ được xử lý sau.`);
       } else {
-        toast.success('Xử lý thành công', {
-          description: `Cảnh báo "${alert.title}" đã được xử lý.`
-        });
+        showNotification('success', 'Xử Lý Thành Công', `Cảnh báo "${alert.title}" đã được xử lý.`);
       }
       
-      onClose();
+      // Close modal after 1 second
+      setTimeout(() => {
+        onClose();
+      }, 1000);
     } catch (error) {
       console.error('Failed to process action:', error);
-      toast.error('Có lỗi xảy ra khi xử lý', {
-        description: error instanceof Error ? error.message : 'Vui lòng thử lại sau.'
-      });
+      showNotification('error', 'Có Lỗi Xảy Ra', error instanceof Error ? error.message : 'Vui lòng thử lại sau.');
     } finally {
       setIsProcessing(false);
     }
@@ -72,17 +90,13 @@ export default function ClinicalActionModal({
 
   const handleWorkspace = () => {
     // Navigate to clinical workspace for this patient
-    toast.info('Đang mở Workspace...', {
-      description: `Xem hồ sơ bệnh nhân ${alert.patientName}`
-    });
+    showNotification('info', 'Đang Mở Workspace', `Xem hồ sơ bệnh nhân ${alert.patientName}`);
     window.open(`/dashboard/hospital/patients/${alert.patientMPI}`, '_blank');
   };
 
   const handleAssign = async () => {
     if (!assignTo.trim()) {
-      toast.warning('Chưa chọn người xử lý', {
-        description: 'Vui lòng chọn người được gán trước khi xác nhận.'
-      });
+      showNotification('warning', 'Chưa Chọn Người Xử Lý', 'Vui lòng chọn người được gán trước khi xác nhận.');
       return;
     }
     
@@ -90,18 +104,18 @@ export default function ClinicalActionModal({
     try {
       await onAction(alert.id, 'assign', `Assigned to: ${assignTo}`);
       
-      toast.success('Đã gán người xử lý', {
-        description: `Cảnh báo "${alert.title}" đã được gán cho ${assignTo}.`
-      });
+      showNotification('success', 'Đã Gán Người Xử Lý', `Cảnh báo "${alert.title}" đã được gán cho ${assignTo}.`);
       
       setShowAssignModal(false);
       setAssignTo('');
-      onClose();
+      
+      // Close modal after 1 second
+      setTimeout(() => {
+        onClose();
+      }, 1000);
     } catch (error) {
       console.error('Failed to assign:', error);
-      toast.error('Có lỗi xảy ra khi gán', {
-        description: error instanceof Error ? error.message : 'Vui lòng thử lại sau.'
-      });
+      showNotification('error', 'Có Lỗi Xảy Ra', error instanceof Error ? error.message : 'Vui lòng thử lại sau.');
     } finally {
       setIsProcessing(false);
     }
@@ -118,16 +132,15 @@ export default function ClinicalActionModal({
     try {
       await onAction(alert.id, 'escalate', notes || 'Escalated to higher authority');
       
-      toast.success('Đã leo thang cảnh báo', {
-        description: `Cảnh báo "${alert.title}" đã được chuyển lên cấp cao hơn.`
-      });
+      showNotification('success', 'Đã Leo Thang', `Cảnh báo "${alert.title}" đã được chuyển lên cấp cao hơn.`);
       
-      onClose();
+      // Close modal after 1 second
+      setTimeout(() => {
+        onClose();
+      }, 1000);
     } catch (error) {
       console.error('Failed to escalate:', error);
-      toast.error('Có lỗi xảy ra khi leo thang', {
-        description: error instanceof Error ? error.message : 'Vui lòng thử lại sau.'
-      });
+      showNotification('error', 'Có Lỗi Xảy Ra', error instanceof Error ? error.message : 'Vui lòng thử lại sau.');
     } finally {
       setIsProcessing(false);
     }
@@ -425,6 +438,70 @@ export default function ClinicalActionModal({
                   {isProcessing ? 'Đang Gán...' : 'Xác Nhận Gán'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notification Popup */}
+      {notification.show && (
+        <div className="fixed top-4 right-4 z-[70] animate-in slide-in-from-top-2 duration-300">
+          <div 
+            className={`
+              min-w-[320px] max-w-md p-4 rounded-2xl shadow-2xl border-2
+              ${notification.type === 'success' ? 'bg-emerald-50 border-emerald-500' : ''}
+              ${notification.type === 'error' ? 'bg-rose-50 border-rose-500' : ''}
+              ${notification.type === 'warning' ? 'bg-amber-50 border-amber-500' : ''}
+              ${notification.type === 'info' ? 'bg-blue-50 border-blue-500' : ''}
+            `}
+          >
+            <div className="flex items-start space-x-3">
+              <div className={`
+                p-2 rounded-xl flex-shrink-0
+                ${notification.type === 'success' ? 'bg-emerald-100' : ''}
+                ${notification.type === 'error' ? 'bg-rose-100' : ''}
+                ${notification.type === 'warning' ? 'bg-amber-100' : ''}
+                ${notification.type === 'info' ? 'bg-blue-100' : ''}
+              `}>
+                {notification.type === 'success' && <CheckCircle className="w-6 h-6 text-emerald-600" />}
+                {notification.type === 'error' && <AlertCircle className="w-6 h-6 text-rose-600" />}
+                {notification.type === 'warning' && <AlertTriangle className="w-6 h-6 text-amber-600" />}
+                {notification.type === 'info' && <Info className="w-6 h-6 text-blue-600" />}
+              </div>
+              
+              <div className="flex-1 min-w-0">
+                <h4 className={`
+                  text-sm font-black mb-1
+                  ${notification.type === 'success' ? 'text-emerald-900' : ''}
+                  ${notification.type === 'error' ? 'text-rose-900' : ''}
+                  ${notification.type === 'warning' ? 'text-amber-900' : ''}
+                  ${notification.type === 'info' ? 'text-blue-900' : ''}
+                `}>
+                  {notification.title}
+                </h4>
+                <p className={`
+                  text-xs leading-relaxed
+                  ${notification.type === 'success' ? 'text-emerald-700' : ''}
+                  ${notification.type === 'error' ? 'text-rose-700' : ''}
+                  ${notification.type === 'warning' ? 'text-amber-700' : ''}
+                  ${notification.type === 'info' ? 'text-blue-700' : ''}
+                `}>
+                  {notification.message}
+                </p>
+              </div>
+              
+              <button
+                onClick={() => setNotification(prev => ({ ...prev, show: false }))}
+                className={`
+                  p-1.5 rounded-lg transition-colors flex-shrink-0
+                  ${notification.type === 'success' ? 'hover:bg-emerald-100' : ''}
+                  ${notification.type === 'error' ? 'hover:bg-rose-100' : ''}
+                  ${notification.type === 'warning' ? 'hover:bg-amber-100' : ''}
+                  ${notification.type === 'info' ? 'hover:bg-blue-100' : ''}
+                `}
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>
