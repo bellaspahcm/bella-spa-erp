@@ -53,10 +53,12 @@ export default function ClinicalActionModal({
   if (!isOpen || !alert) return null;
 
   const showNotification = (type: NotificationPopup['type'], title: string, message: string) => {
+    console.log('🔔 Showing notification:', { type, title, message }); // DEBUG
     setNotification({ show: true, type, title, message });
     
     // Auto hide after 3 seconds
     setTimeout(() => {
+      console.log('⏰ Auto-hiding notification'); // DEBUG
       setNotification(prev => ({ ...prev, show: false }));
     }, 3000);
   };
@@ -445,7 +447,24 @@ export default function ClinicalActionModal({
 
       {/* Notification Popup */}
       {notification.show && (
-        <div className="fixed top-4 right-4 z-[70] animate-in slide-in-from-top-2 duration-300">
+        <div 
+          className="fixed top-4 right-4 z-[70] transition-all duration-300 ease-out"
+          style={{
+            animation: 'slideInFromTop 0.3s ease-out'
+          }}
+        >
+          <style jsx>{`
+            @keyframes slideInFromTop {
+              from {
+                opacity: 0;
+                transform: translateY(-20px);
+              }
+              to {
+                opacity: 1;
+                transform: translateY(0);
+              }
+            }
+          `}</style>
           <div 
             className={`
               min-w-[320px] max-w-md p-4 rounded-2xl shadow-2xl border-2
