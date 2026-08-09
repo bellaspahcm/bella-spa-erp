@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { InpatientAdmission, Bed, Ward, ICD10Diagnosis } from '@/types/healthcare';
 import { InpatientAdmissionService, BedEngineService } from '@/services/healthcare-hospital-services';
 import {
@@ -23,7 +24,11 @@ import {
   ShieldCheck,
   CheckSquare,
   FileText,
+  Building2,
+  AlertCircle,
+  FileWarning,
 } from 'lucide-react';
+import PremiumSelect from '@/components/ui/PremiumSelect';
 
 // Extended type to represent full clinical view
 interface ExtendedInpatientAdmission extends InpatientAdmission {
@@ -434,7 +439,7 @@ export default function HospitalAdmissionsPage() {
     loadData();
   }, []);
 
-  const loadData = async () => {
+  async function loadData() {
     setLoading(true);
     try {
       const admData = await InpatientAdmissionService.getInpatientAdmissions('bella_healthcare');
@@ -510,7 +515,7 @@ export default function HospitalAdmissionsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const handleCreateAdmission = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -932,44 +937,49 @@ export default function HospitalAdmissionsPage() {
           </div>
 
           <div>
-            <select
+            <PremiumSelect
               value={selectedWard}
-              onChange={(e) => setSelectedWard(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-slate-50 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="all">Tất cả Khoa điều trị</option>
-              {wards.map((w) => (
-                <option key={w.id} value={w.id}>{w.name}</option>
-              ))}
-            </select>
+              onChange={(value) => setSelectedWard(value)}
+              options={[
+                { value: 'all', label: 'Tất cả Khoa điều trị', icon: <Building2 className="w-4 h-4" /> },
+                ...wards.map((w) => ({
+                  value: w.id,
+                  label: w.name,
+                  icon: <Building2 className="w-4 h-4" />
+                }))
+              ]}
+              placeholder="Chọn khoa điều trị"
+            />
           </div>
 
           <div>
-            <select
+            <PremiumSelect
               value={selectedState}
-              onChange={(e) => setSelectedState(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-slate-50 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="all">Tất cả Trạng thái Lâm sàng</option>
-              <option value="treating">🟢 Đang điều trị</option>
-              <option value="waiting_cls">🟡 Chờ cận lâm sàng</option>
-              <option value="has_alert">🔴 Có cảnh báo nguy hiểm</option>
-              <option value="waiting_doctor">🟣 Chờ bác sĩ ký duyệt</option>
-              <option value="preparing_discharge">🔵 Chuẩn bị ra viện</option>
-            </select>
+              onChange={(value) => setSelectedState(value)}
+              options={[
+                { value: 'all', label: 'Tất cả Trạng thái Lâm sàng', icon: <Activity className="w-4 h-4" /> },
+                { value: 'treating', label: '🟢 Đang điều trị', icon: <Activity className="w-4 h-4" /> },
+                { value: 'waiting_cls', label: '🟡 Chờ cận lâm sàng', icon: <Clock className="w-4 h-4" /> },
+                { value: 'has_alert', label: '🔴 Có cảnh báo nguy hiểm', icon: <AlertTriangle className="w-4 h-4" /> },
+                { value: 'waiting_doctor', label: '🟣 Chờ bác sĩ ký duyệt', icon: <User className="w-4 h-4" /> },
+                { value: 'preparing_discharge', label: '🔵 Chuẩn bị ra viện', icon: <FileCheck className="w-4 h-4" /> }
+              ]}
+              placeholder="Chọn trạng thái"
+            />
           </div>
 
           <div>
-            <select
+            <PremiumSelect
               value={selectedAlertFilter}
-              onChange={(e) => setSelectedAlertFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-slate-50 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="all">Mức độ ưu tiên / Cảnh báo</option>
-              <option value="high_alert">Độ ưu tiên cao (🔴 Alert)</option>
-              <option value="missed_mar">MAR trễ liều (Missed dose)</option>
-              <option value="allergy">Có tiền sử dị ứng thuốc</option>
-            </select>
+              onChange={(value) => setSelectedAlertFilter(value)}
+              options={[
+                { value: 'all', label: 'Mức độ ưu tiên / Cảnh báo', icon: <Filter className="w-4 h-4" /> },
+                { value: 'high_alert', label: 'Độ ưu tiên cao (🔴 Alert)', icon: <AlertCircle className="w-4 h-4" /> },
+                { value: 'missed_mar', label: 'MAR trễ liều (Missed dose)', icon: <Clock className="w-4 h-4" /> },
+                { value: 'allergy', label: 'Có tiền sử dị ứng thuốc', icon: <FileWarning className="w-4 h-4" /> }
+              ]}
+              placeholder="Chọn cảnh báo"
+            />
           </div>
 
         </div>
