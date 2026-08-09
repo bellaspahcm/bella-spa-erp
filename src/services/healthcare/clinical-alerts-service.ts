@@ -171,21 +171,48 @@ export class ClinicalAlertsService {
   }
 
   /**
-   * Process alert (acknowledge, resolve, dismiss)
+   * Process alert (acknowledge, resolve, dismiss, assign, escalate)
    */
   static async processAlert(input: ProcessAlertInput): Promise<ClinicalAlertRecord> {
     const now = new Date().toISOString();
     
+    // Determine status based on action
+    let newStatus: 'active' | 'acknowledged' | 'resolved' | 'dismissed' = 'resolved';
+    let updateData: Partial<ClinicalAlertRecord> = {
+      processed_at: now,
+      processed_by: input.processedBy,
+      resolution_notes: input.notes,
+      updated_at: now,
+    };
+
+    switch (input.action) {
+      case 'acknowledge':
+        newStatus = 'acknowledged';
+        break;
+      case 'assign':
+        // Extract assigned person from notes (format: "Assigned to: NAME")
+        newStatus = 'active'; // Keep active but assigned
+        const assignMatch = input.notes?.match(/Assigned to: (.+)/);
+        if (assignMatch) {
+          updateData.assigned_to = assignMatch[1];
+        }
+        break;
+      case 'escalate':
+        // Escalate increases priority and keeps active
+        newStatus = 'active';
+        updateData.priority = 'urgent'; // Always escalate to urgent
+        updateData.resolution_notes = input.notes || 'Escalated to higher authority';
+        break;
+      default:
+        newStatus = 'resolved';
+    }
+
+    updateData.status = newStatus;
+    
     try {
       const { data, error } = await supabase
         .from('hc_clinical_alerts')
-        .update({
-          status: input.action === 'acknowledge' ? 'acknowledged' : 'resolved',
-          processed_at: now,
-          processed_by: input.processedBy,
-          resolution_notes: input.notes,
-          updated_at: now,
-        })
+        .update(updateData)
         .eq('id', input.alertId)
         .select()
         .single();
@@ -196,12 +223,8 @@ export class ClinicalAlertsService {
         if (alertIndex !== -1) {
           MOCK_ALERTS[alertIndex] = {
             ...MOCK_ALERTS[alertIndex],
-            status: input.action === 'acknowledge' ? 'acknowledged' : 'resolved',
-            processed_at: now,
-            processed_by: input.processedBy,
-            resolution_notes: input.notes,
-            updated_at: now,
-          };
+            ...updateData,
+          } as ClinicalAlertRecord;
           return MOCK_ALERTS[alertIndex];
         }
         throw new Error('Alert not found');
@@ -214,12 +237,8 @@ export class ClinicalAlertsService {
       if (alertIndex !== -1) {
         MOCK_ALERTS[alertIndex] = {
           ...MOCK_ALERTS[alertIndex],
-          status: input.action === 'acknowledge' ? 'acknowledged' : 'resolved',
-          processed_at: now,
-          processed_by: input.processedBy,
-          resolution_notes: input.notes,
-          updated_at: now,
-        };
+          ...updateData,
+        } as ClinicalAlertRecord;
         return MOCK_ALERTS[alertIndex];
       }
       throw new Error('Failed to process alert');
