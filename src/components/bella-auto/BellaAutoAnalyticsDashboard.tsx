@@ -16,7 +16,8 @@ import {
   Tooltip,
 } from 'recharts';
 import { SafeResponsiveContainer as ResponsiveContainer } from '@/components/ui/SafeResponsiveContainer';
-import { TrendingUp, TrendingDown, DollarSign, Clock, Package, Activity } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Clock, Package, Activity, Calendar } from 'lucide-react';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 interface AnalyticsData {
   monthlyTrend: Array<{ month: string; nhap: number; xuat: number; ton: number }>;
@@ -37,13 +38,24 @@ interface BellaAutoAnalyticsDashboardProps {
 
 // Interactive Header Actions for Premium look
 const CardHeaderActions = () => {
+  const [timeRange, setTimeRange] = useState('6_months');
+  
+  const timeRangeOptions = [
+    { value: '6_months', label: '6 tháng qua', icon: <Calendar className="w-4 h-4" /> },
+    { value: '30_days', label: '30 ngày qua', icon: <Calendar className="w-4 h-4" /> },
+    { value: 'this_year', label: 'Năm nay', icon: <Calendar className="w-4 h-4" /> },
+  ];
+
   return (
     <div className="flex items-center gap-1.5 animate-fade-in">
-      <select className="text-[11px] font-semibold bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-lg px-2.5 py-1 text-slate-600 dark:text-slate-300 focus:outline-none cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 shadow-sm">
-        <option>6 tháng qua</option>
-        <option>30 ngày qua</option>
-        <option>Năm nay</option>
-      </select>
+      <div className="w-40">
+        <PremiumSelect
+          value={timeRange}
+          onChange={setTimeRange}
+          options={timeRangeOptions}
+          placeholder="Chọn khoảng thời gian"
+        />
+      </div>
       <button 
         title="Tải báo cáo"
         className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm"

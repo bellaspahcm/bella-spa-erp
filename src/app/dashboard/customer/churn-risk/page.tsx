@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase-client';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import type { IntelligenceResponse } from '@/services/intelligence/shared/types';
 import type { ChurnRiskAnalysis } from '@/services/intelligence/customer/queries-simple';
 import {
@@ -318,17 +318,19 @@ function ChurnRiskDashboard() {
           <h2 className="text-lg font-black text-slate-900 uppercase tracking-wider">Khách Hàng Có Rủi Ro</h2>
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-slate-400" />
-            <Select value={riskFilter} onValueChange={(value) => value && setRiskFilter(value as RiskFilter)}>
-              <SelectTrigger className="px-4 py-2 border border-slate-200/80 rounded-xl text-xs font-bold bg-white/80 backdrop-blur-sm shadow-sm focus:outline-none focus:border-primary/50 text-slate-700 h-9">
-                <SelectValue placeholder="Chọn mức rủi ro" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả</SelectItem>
-                <SelectItem value="High">Rủi ro cao</SelectItem>
-                <SelectItem value="Medium">Rủi ro trung bình</SelectItem>
-                <SelectItem value="Low">Rủi ro thấp</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="w-48">
+              <PremiumSelect
+                value={riskFilter}
+                onChange={(value) => setRiskFilter(value as RiskFilter)}
+                options={[
+                  { value: 'all', label: 'Tất cả', icon: <Filter className="w-4 h-4" /> },
+                  { value: 'High', label: 'Rủi ro cao', icon: <AlertTriangle className="w-4 h-4" /> },
+                  { value: 'Medium', label: 'Rủi ro trung bình', icon: <TrendingDown className="w-4 h-4" /> },
+                  { value: 'Low', label: 'Rủi ro thấp', icon: <Users className="w-4 h-4" /> },
+                ]}
+                placeholder="Chọn mức rủi ro"
+              />
+            </div>
           </div>
         </div>
         <div className="overflow-x-auto">

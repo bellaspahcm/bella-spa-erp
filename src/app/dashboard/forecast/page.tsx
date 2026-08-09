@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { 
   useRevenueForecast, 
@@ -315,32 +315,29 @@ function ForecastDashboard() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1">
                   <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Mô Hình</label>
-                  <Select value={revenueModel} onValueChange={(value) => value && setRevenueModel(value)}>
-                    <SelectTrigger className="w-full bg-white/80 border border-slate-200/80 rounded-2xl px-4 py-2 text-sm font-bold shadow-sm h-11 focus:outline-none">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="simple_moving_average">Trung Bình Động Đơn Giản</SelectItem>
-                      <SelectItem value="exponential_smoothing">Làm Mượt Hàm Mũ</SelectItem>
-                      <SelectItem value="linear_regression">Hồi Quy Tuyến Tính</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <PremiumSelect
+                    value={revenueModel}
+                    onChange={(value) => setRevenueModel(value)}
+                    options={[
+                      { value: 'simple_moving_average', label: 'Trung Bình Động Đơn Giản', icon: <TrendingUp className="w-4 h-4" /> },
+                      { value: 'exponential_smoothing', label: 'Làm Mượt Hàm Mũ', icon: <TrendingUp className="w-4 h-4" /> },
+                      { value: 'linear_regression', label: 'Hồi Quy Tuyến Tính', icon: <TrendingUp className="w-4 h-4" /> },
+                    ]}
+                    placeholder="Chọn mô hình"
+                  />
                 </div>
                 <div className="flex-1">
                   <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Thời Gian Dự Báo</label>
-                  <Select 
-                    value={revenueHorizon.toString()} 
-                    onValueChange={(v) => v && setRevenueHorizon(parseInt(v))}
-                  >
-                    <SelectTrigger className="w-full bg-white/80 border border-slate-200/80 rounded-2xl px-4 py-2 text-sm font-bold shadow-sm h-11 focus:outline-none">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="3">3 tháng</SelectItem>
-                      <SelectItem value="6">6 tháng</SelectItem>
-                      <SelectItem value="12">12 tháng</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <PremiumSelect
+                    value={revenueHorizon.toString()}
+                    onChange={(v) => setRevenueHorizon(parseInt(v))}
+                    options={[
+                      { value: '3', label: '3 tháng', icon: <Calendar className="w-4 h-4" /> },
+                      { value: '6', label: '6 tháng', icon: <Calendar className="w-4 h-4" /> },
+                      { value: '12', label: '12 tháng', icon: <Calendar className="w-4 h-4" /> },
+                    ]}
+                    placeholder="Chọn thời gian"
+                  />
                 </div>
               </div>
             </div>
@@ -567,19 +564,16 @@ function ForecastDashboard() {
               <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">Cấu Hình Dự Báo</h2>
               <div className="flex-1 max-w-xs">
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Thời Gian Dự Báo</label>
-                <Select 
-                  value={churnHorizon.toString()} 
-                  onValueChange={(v) => v && setChurnHorizon(parseInt(v))}
-                >
-                  <SelectTrigger className="w-full bg-white/80 border border-slate-200/80 rounded-2xl px-4 py-2 text-sm font-bold shadow-sm h-11 focus:outline-none">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="30">30 ngày</SelectItem>
-                    <SelectItem value="60">60 ngày</SelectItem>
-                    <SelectItem value="90">90 ngày</SelectItem>
-                  </SelectContent>
-                </Select>
+                <PremiumSelect
+                  value={churnHorizon.toString()}
+                  onChange={(v) => setChurnHorizon(parseInt(v))}
+                  options={[
+                    { value: '30', label: '30 ngày', icon: <Calendar className="w-4 h-4" /> },
+                    { value: '60', label: '60 ngày', icon: <Calendar className="w-4 h-4" /> },
+                    { value: '90', label: '90 ngày', icon: <Calendar className="w-4 h-4" /> },
+                  ]}
+                  placeholder="Chọn thời gian"
+                />
               </div>
             </div>
 

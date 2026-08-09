@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase-client';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import type { IntelligenceResponse } from '@/services/intelligence/shared/types';
 import type { CustomerSegment, SegmentDistribution } from '@/services/intelligence/customer/queries';
 import {
@@ -428,17 +428,19 @@ function CustomerSegmentationDashboard() {
           <h2 className="text-lg font-black text-slate-900 uppercase tracking-wider">Khách Hàng Theo Phân Đoạn</h2>
           <div className="flex items-center gap-3">
             <Filter className="w-4 h-4 text-slate-400" />
-            <Select value={filter} onValueChange={(value) => value && setFilter(value as SegmentFilter)}>
-              <SelectTrigger className="px-4 py-2 border border-slate-200 bg-white/80 rounded-2xl text-xs font-bold shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 h-9">
-                <SelectValue placeholder="Chọn phân đoạn" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả</SelectItem>
-                <SelectItem value="champions">Champions</SelectItem>
-                <SelectItem value="at-risk">Rủi ro trung bình</SelectItem>
-                <SelectItem value="high-risk">Rủi ro cao</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="w-52">
+              <PremiumSelect
+                value={filter}
+                onChange={(value) => setFilter(value as SegmentFilter)}
+                options={[
+                  { value: 'all', label: 'Tất cả', icon: <Filter className="w-4 h-4" /> },
+                  { value: 'champions', label: 'Champions', icon: <Award className="w-4 h-4" /> },
+                  { value: 'at-risk', label: 'Rủi ro trung bình', icon: <AlertTriangle className="w-4 h-4" /> },
+                  { value: 'high-risk', label: 'Rủi ro cao', icon: <AlertTriangle className="w-4 h-4" /> },
+                ]}
+                placeholder="Chọn phân đoạn"
+              />
+            </div>
           </div>
         </div>
         <div className="overflow-x-auto">
