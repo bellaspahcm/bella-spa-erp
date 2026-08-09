@@ -106,7 +106,7 @@ export class CheckoutTransactionCoordinator {
       if (!step4.success) throw new Error(step4.error || 'Failed to deduct inventory');
 
       return { success: true };
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Atomically rollback all previous operations in reverse order
       for (let i = rollbackStack.length - 1; i >= 0; i--) {
         await rollbackStack[i]();

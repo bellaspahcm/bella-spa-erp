@@ -507,7 +507,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                 return; // Dừng ở đây để hiển thị modal QR, không đóng BookingModal hay gọi onSuccess ngay lập tức
               }
             }
-          } catch (err) {
+          } catch (err: unknown) {
             console.error("Error loading deposit QR:", err);
           }
         }

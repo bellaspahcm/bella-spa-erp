@@ -127,7 +127,7 @@ export default function AccountingReadinessPage() {
       setSummary(summaryData);
       setReviewItems(queueData);
       setTemplates(templateData);
-    } catch (err) {
+    } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Không thể tải mức sẵn sàng kế toán.';
       toast.error(message);
     } finally {
@@ -157,7 +157,7 @@ export default function AccountingReadinessPage() {
           : 'Đã từ chối dòng review kế toán.'
       );
       await loadData();
-    } catch (err) {
+    } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Không thể xử lý review item.';
       toast.error(message);
     } finally {
@@ -178,7 +178,7 @@ export default function AccountingReadinessPage() {
       const review = result.data.reduce((sum, row) => sum + row.review_created, 0);
       toast.success(`Đã quét ${scanned} dòng dữ liệu cũ. ${review} dòng cần kế toán review.`);
       await loadData();
-    } catch (err) {
+    } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Không thể chạy backfill metadata kế toán.';
       toast.error(message);
     } finally {

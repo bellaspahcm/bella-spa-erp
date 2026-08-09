@@ -7,7 +7,15 @@ interface QueryMetrics {
   error?: Error;
 }
 
+interface SentryWindow extends Window {
+  Sentry?: {
+    captureException: (error: unknown, options?: Record<string, unknown>) => void;
+    addBreadcrumb: (breadcrumb: Record<string, unknown>) => void;
+  };
+}
+
 const SLOW_QUERY_THRESHOLD = 1000; // 1 second
+
 
 /**
  * Log database query execution with performance metrics
@@ -28,8 +36,8 @@ export function logQuery(metrics: QueryMetrics) {
     );
     
     // Report to Sentry
-    if (typeof window !== 'undefined' && (window as any).Sentry) {
-      (window as any).Sentry.captureException(error, {
+    if (typeof window !== 'undefined' && (window as unknown as SentryWindow).Sentry) {
+      (window as unknown as SentryWindow).Sentry?.captureException(error, {
         tags: {
           type: 'database_query',
         },
@@ -54,8 +62,8 @@ export function logQuery(metrics: QueryMetrics) {
     );
     
     // Report to Sentry as breadcrumb
-    if (typeof window !== 'undefined' && (window as any).Sentry) {
-      (window as any).Sentry.addBreadcrumb({
+    if (typeof window !== 'undefined' && (window as unknown as SentryWindow).Sentry) {
+      (window as unknown as SentryWindow).Sentry?.addBreadcrumb({
         category: 'database',
         message: 'Slow query',
         level: 'warning',
@@ -105,7 +113,7 @@ export async function monitoredQuery<T>(
     // Extract row count if result has data array
     let rowCount: number | undefined;
     if (result && typeof result === 'object') {
-      const data = (result as any).data;
+      const data = (result as { data?: unknown }).data;
       if (Array.isArray(data)) {
         rowCount = data.length;
       }
@@ -157,21 +165,21 @@ export async function monitoredRPC<T>(
  *     .from('real_estate_products')
  *     .select('*');
  */
-export function withQueryMonitoring<T extends Record<string, any>>(client: T): T {
+export function withQueryMonitoring<T extends Record<string, unknown>>(client: T): T {
   // This is a simplified version
   // Full implementation would wrap all Supabase query methods
   return new Proxy(client, {
     get(target, prop) {
-      const value = (target as any)[prop];
+      const value = target[prop as string];
       
       if (typeof value === 'function' && prop === 'from') {
-        return (...args: any[]) => {
-          const tableName = args[0];
-          const query = value.apply(target, args);
+        return (...args: unknown[]) => {
+          const tableName = args[0] as string;
+          const query = (value as (...args: unknown[]) => { then: (...thenArgs: unknown[]) => Promise<unknown> }).apply(target, args);
           
           // Wrap the query execution
           const originalThen = query.then;
-          query.then = function(...thenArgs: any[]) {
+          query.then = function(...thenArgs: unknown[]) {
             return monitoredQuery(
               () => originalThen.apply(query, thenArgs),
               `SELECT from ${tableName}`

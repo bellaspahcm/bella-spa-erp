@@ -18,6 +18,7 @@ import { Database } from '@/types/database.types';
 
 type ChurnPrediction = Database['public']['Tables']['auto_churn_predictions']['Row'];
 type ChurnPredictionInsert = Database['public']['Tables']['auto_churn_predictions']['Insert'];
+type ChurnPredictionUpdate = Database['public']['Tables']['auto_churn_predictions']['Update'];
 
 type ChurnRiskLevel = 'low' | 'medium' | 'high' | 'critical';
 type ActionResult = 'retained' | 'churned' | 'pending';
@@ -30,7 +31,7 @@ interface CreatePredictionParams {
   churnProbability: number;
   churnRiskLevel: ChurnRiskLevel;
   estimatedDaysToChurn?: number;
-  factors: any[];
+  factors: unknown[];
   primaryReason?: string;
   daysSinceLastService?: number;
   totalServiceVisits?: number;
@@ -39,7 +40,7 @@ interface CreatePredictionParams {
   averageRepairCost?: number;
   npsScore?: number;
   csiScore?: number;
-  recommendedActions?: any[];
+  recommendedActions?: unknown[];
   retentionStrategy?: string;
   estimatedRetentionCost?: number;
   modelName?: string;
@@ -61,7 +62,7 @@ export class ChurnPredictionService {
       churn_probability: params.churnProbability,
       churn_risk_level: params.churnRiskLevel,
       estimated_days_to_churn: params.estimatedDaysToChurn,
-      factors: params.factors as any,
+      factors: params.factors as unknown,
       primary_reason: params.primaryReason,
       days_since_last_service: params.daysSinceLastService,
       total_service_visits: params.totalServiceVisits,
@@ -70,7 +71,7 @@ export class ChurnPredictionService {
       average_repair_cost: params.averageRepairCost,
       nps_score: params.npsScore,
       csi_score: params.csiScore,
-      recommended_actions: params.recommendedActions as any,
+      recommended_actions: params.recommendedActions as unknown,
       retention_strategy: params.retentionStrategy,
       estimated_retention_cost: params.estimatedRetentionCost,
       model_name: params.modelName || 'churn-prediction-v1',
@@ -195,7 +196,7 @@ export class ChurnPredictionService {
   ): Promise<ChurnPrediction> {
     const supabase = getPrimaryClient();
     
-    const updates: any = {
+    const updates: ChurnPredictionUpdate = {
       action_taken: true,
       action_date: new Date().toISOString().split('T')[0],
       action_type: actionType,

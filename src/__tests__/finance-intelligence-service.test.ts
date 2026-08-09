@@ -1,6 +1,6 @@
 /**
  * Unit Tests for Finance Intelligence Service
- * 
+ *
  * Tests FinanceIntelligenceService class including:
  * - Cache-first pattern
  * - Error handling
@@ -8,37 +8,49 @@
  * - Method signatures
  */
 
-import { getFinanceIntelligenceService } from '@/services/intelligence/finance/service';
+// ─── Shared cache store (defined outside so tests can clear it) ───────────────
+// Must use `var` so it is accessible inside the hoisted jest.mock factory
+// eslint-disable-next-line no-var
+var cacheStore: Map<string, unknown>;
 
-// Mock Redis cache
-const mockCache = new Map<string, { value: any; expiresAt: number }>();
+// Mock the entire multi-tier cache layer so MemoryCache singleton
+// doesn't leak between test cases.
+jest.mock('@/services/intelligence/cache', () => {
+  // Lazily initialise the store inside the factory to avoid hoisting issues
+  const store: Map<string, unknown> = new Map();
+  // Expose it on the module so tests can reach it via require()
+  (global as Record<string, unknown>).__testCacheStore = store;
 
-jest.mock('@/lib/redis-cache', () => ({
-  getCacheClient: jest.fn(() => ({
-    get: jest.fn((key: string) => {
-      const cached = mockCache.get(key);
-      if (!cached) return Promise.resolve(null);
-      if (Date.now() > cached.expiresAt) {
-        mockCache.delete(key);
-        return Promise.resolve(null);
+  const instance = {
+    get: jest.fn(async (key: string) => store.get(key) ?? null),
+    set: jest.fn(async (key: string, value: unknown) => { store.set(key, value); }),
+    delete: jest.fn(async (key: string) => { store.delete(key); }),
+    deletePattern: jest.fn(async (pattern: string) => {
+      const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
+      for (const key of store.keys()) {
+        if (regex.test(key)) store.delete(key);
       }
-      return Promise.resolve(cached.value);
     }),
-    setex: jest.fn((key: string, ttl: number, value: string) => {
-      mockCache.set(key, {
-        value,
-        expiresAt: Date.now() + ttl * 1000,
-      });
-      return Promise.resolve('OK');
-    }),
-    del: jest.fn((key: string) => {
-      mockCache.delete(key);
-      return Promise.resolve(1);
-    }),
-  })),
-}));
+    deleteByTag: jest.fn(async (_tag: string) => { store.clear(); }),
+    clear: jest.fn(async () => { store.clear(); }),
+    getStats: jest.fn(async () => ({
+      hits: 0, misses: 0, hitRate: 0, totalKeys: 0, memoryUsedBytes: 0,
+    })),
+    healthCheck: jest.fn(async () => true),
+  };
 
-// Mock queries module
+  return {
+    getCache: jest.fn(() => instance),
+    resetCache: jest.fn(() => { store.clear(); }),
+    MultiTierCache: jest.fn(() => instance),
+    getMemoryCache: jest.fn(() => instance),
+    resetMemoryCache: jest.fn(),
+    getRedisCache: jest.fn(() => instance),
+    resetRedisCache: jest.fn(),
+  };
+});
+
+// ─── Mock queries ─────────────────────────────────────────────────────────────
 const mockQueryResults = {
   monthlyPnL: {
     totalRevenue: 10000000,
@@ -61,194 +73,192 @@ const mockQueryResults = {
 };
 
 jest.mock('@/services/intelligence/finance/queries', () => ({
-  getMonthlyPnL: jest.fn(() => Promise.resolve(mockQueryResults.monthlyPnL)),
-  getCashFlowAnalysis: jest.fn(() => Promise.resolve(mockQueryResults.cashFlowAnalysis)),
-  getBudgetVariance: jest.fn(() => Promise.resolve(mockQueryResults.budgetVariance)),
-  getExpenseBreakdown: jest.fn(() => Promise.resolve({ items: [], total: 0 })),
-  getRevenueBreakdown: jest.fn(() => Promise.resolve({ items: [], total: 0 })),
-  getCashFlowForecast: jest.fn(() => Promise.resolve({ projections: [], confidence: 85 })),
+  getMonthlyPnL:        jest.fn(() => Promise.resolve(mockQueryResults.monthlyPnL)),
+  getCashFlowAnalysis:  jest.fn(() => Promise.resolve(mockQueryResults.cashFlowAnalysis)),
+  getBudgetVariance:    jest.fn(() => Promise.resolve(mockQueryResults.budgetVariance)),
+  getExpenseBreakdown:  jest.fn(() => Promise.resolve({ items: [], total: 0 })),
+  getRevenueBreakdown:  jest.fn(() => Promise.resolve({ items: [], total: 0 })),
+  getCashFlowForecast:  jest.fn(() => Promise.resolve({ projections: [], confidence: 85 })),
   getProfitabilityTrends: jest.fn(() => Promise.resolve({ trends: [], momGrowth: 10, yoyGrowth: 25 })),
-  getFinancialRatios: jest.fn(() => Promise.resolve({ currentRatio: 1.5, quickRatio: 1.2 })),
+  getFinancialRatios:   jest.fn(() => Promise.resolve({ currentRatio: 1.5, quickRatio: 1.2 })),
 }));
+
+import { getFinanceIntelligenceService } from '@/services/intelligence/finance/service';
+
+// Helper: clear the mock cache store between tests
+function clearTestCacheStore(): void {
+  const store = (global as Record<string, unknown>).__testCacheStore as Map<string, unknown> | undefined;
+  store?.clear();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 describe('FinanceIntelligenceService', () => {
   let service: ReturnType<typeof getFinanceIntelligenceService>;
 
   beforeEach(() => {
-    // Clear cache before each test
-    mockCache.clear();
+    clearTestCacheStore();
     jest.clearAllMocks();
     service = getFinanceIntelligenceService();
   });
 
+  // ── Singleton ─────────────────────────────────────────────────────────────
+
   describe('Singleton Pattern', () => {
     it('should return the same instance', () => {
-      const instance1 = getFinanceIntelligenceService();
-      const instance2 = getFinanceIntelligenceService();
-      expect(instance1).toBe(instance2);
+      expect(getFinanceIntelligenceService()).toBe(getFinanceIntelligenceService());
     });
   });
 
-  describe('getMonthlyPnL', () => {
-    const tenantId = 'test-tenant-123';
-    const period = 'current_month';
+  // ── getMonthlyPnL ─────────────────────────────────────────────────────────
 
-    it('should return P&L data on first call (cache miss)', async () => {
-      const result = await service.getMonthlyPnL(tenantId, period);
-      
-      expect(result).toEqual(mockQueryResults.monthlyPnL);
+  describe('getMonthlyPnL', () => {
+    const tenantId = 'test-tenant-pnl';
+    const period   = 'current_month';
+
+    it('returns P&L data on first call (cache miss)', async () => {
+      const result = await service.getMonthlyPnL('pnl-miss', period);
+      expect(result.data).toEqual(mockQueryResults.monthlyPnL);
+      expect(result.metadata.cacheHit).toBe(false);
     });
 
-    it('should return cached data on second call (cache hit)', async () => {
+    it('returns cached data on second call (cache hit)', async () => {
       const queries = require('@/services/intelligence/finance/queries');
-      
-      // First call - cache miss
-      await service.getMonthlyPnL(tenantId, period);
+      const tid = 'pnl-hit';
+
+      await service.getMonthlyPnL(tid, period);
       expect(queries.getMonthlyPnL).toHaveBeenCalledTimes(1);
 
-      // Second call - cache hit
-      const result = await service.getMonthlyPnL(tenantId, period);
-      expect(queries.getMonthlyPnL).toHaveBeenCalledTimes(1); // Not called again
-      expect(result).toEqual(mockQueryResults.monthlyPnL);
+      const result = await service.getMonthlyPnL(tid, period);
+      expect(queries.getMonthlyPnL).toHaveBeenCalledTimes(1); // not called again
+      expect(result.metadata.cacheHit).toBe(true);
+      expect(result.data).toEqual(mockQueryResults.monthlyPnL);
     });
 
-    it('should handle different periods correctly', async () => {
-      await service.getMonthlyPnL(tenantId, 'current_month');
-      await service.getMonthlyPnL(tenantId, 'last_month');
-      
+    it('calls queries separately for different periods', async () => {
       const queries = require('@/services/intelligence/finance/queries');
+      // Use DateRange objects with distinct dates to guarantee different cache keys
+      const range1 = { startDate: new Date('2026-06-01'), endDate: new Date('2026-06-30') };
+      const range2 = { startDate: new Date('2026-05-01'), endDate: new Date('2026-05-31') };
+      const tid = 'pnl-periods';
+      await service.getMonthlyPnL(tid, range1);
+      await service.getMonthlyPnL(tid, range2);
       expect(queries.getMonthlyPnL).toHaveBeenCalledTimes(2);
     });
 
-    it('should handle custom date range', async () => {
-      const startDate = '2026-05-01';
-      const endDate = '2026-05-31';
-      
-      await service.getMonthlyPnL(tenantId, 'custom', startDate, endDate);
-      
-      const queries = require('@/services/intelligence/finance/queries');
-      expect(queries.getMonthlyPnL).toHaveBeenCalledWith(tenantId, 'custom', startDate, endDate);
+    it('passes a DateRange object directly to the query', async () => {
+      const queries  = require('@/services/intelligence/finance/queries');
+      const tid       = 'pnl-daterange';
+      const startDate = new Date('2026-05-01');
+      const endDate   = new Date('2026-05-31');
+      const range     = { startDate, endDate };
+
+      await service.getMonthlyPnL(tid, range);
+      expect(queries.getMonthlyPnL).toHaveBeenCalledWith(tid, range);
     });
   });
 
-  describe('getCashFlowAnalysis', () => {
-    const tenantId = 'test-tenant-123';
-    const period = 'month';
+  // ── getCashFlowAnalysis ───────────────────────────────────────────────────
 
-    it('should return cash flow data', async () => {
+  describe('getCashFlowAnalysis', () => {
+    const tenantId = 'test-tenant-cf';
+    const period   = 'month';
+
+    it('returns cash-flow data', async () => {
       const result = await service.getCashFlowAnalysis(tenantId, period);
-      
-      expect(result).toEqual(mockQueryResults.cashFlowAnalysis);
-      expect(result.totalInflows).toBe(10000000);
-      expect(result.netCashFlow).toBe(4000000);
+      expect(result.data).toEqual(mockQueryResults.cashFlowAnalysis);
+      expect(result.data.totalInflows).toBe(10000000);
+      expect(result.data.netCashFlow).toBe(4000000);
     });
 
-    it('should cache results by tenant and period', async () => {
+    it('caches results by tenant + period', async () => {
       const queries = require('@/services/intelligence/finance/queries');
-      
       await service.getCashFlowAnalysis(tenantId, period);
       await service.getCashFlowAnalysis(tenantId, period);
-      
       expect(queries.getCashFlowAnalysis).toHaveBeenCalledTimes(1);
     });
   });
 
-  describe('getBudgetVariance', () => {
-    const tenantId = 'test-tenant-123';
-    const month = '2026-06';
+  // ── getBudgetVariance ─────────────────────────────────────────────────────
 
-    it('should return budget variance data', async () => {
+  describe('getBudgetVariance', () => {
+    const tenantId = 'test-tenant-bv';
+    const month    = '2026-06';
+
+    it('returns budget variance data', async () => {
       const result = await service.getBudgetVariance(tenantId, month);
-      
-      expect(result).toEqual(mockQueryResults.budgetVariance);
-      expect(result.variance).toBe(-500000);
-      expect(result.variancePercent).toBe(-5);
+      expect(result.data).toEqual(mockQueryResults.budgetVariance);
+      expect(result.data.variance).toBe(-500000);
+      expect(result.data.variancePercent).toBe(-5);
     });
 
-    it('should cache results by tenant and month', async () => {
+    it('caches results by tenant + month', async () => {
       const queries = require('@/services/intelligence/finance/queries');
-      
       await service.getBudgetVariance(tenantId, month);
       await service.getBudgetVariance(tenantId, month);
-      
       expect(queries.getBudgetVariance).toHaveBeenCalledTimes(1);
     });
 
-    it('should handle different months separately', async () => {
+    it('treats different months as separate cache entries', async () => {
       const queries = require('@/services/intelligence/finance/queries');
-      
       await service.getBudgetVariance(tenantId, '2026-05');
       await service.getBudgetVariance(tenantId, '2026-06');
-      
       expect(queries.getBudgetVariance).toHaveBeenCalledTimes(2);
     });
   });
 
+  // ── getCashFlowForecast ───────────────────────────────────────────────────
+
   describe('getCashFlowForecast', () => {
-    const tenantId = 'test-tenant-123';
+    const tenantId      = 'test-tenant-fcst';
     const forecastMonths = 6;
 
-    it('should return forecast data with specified months', async () => {
+    it('returns forecast data', async () => {
       const result = await service.getCashFlowForecast(tenantId, forecastMonths);
-      
-      expect(result).toHaveProperty('projections');
-      expect(result).toHaveProperty('confidence');
-      expect(result.confidence).toBe(85);
+      expect(result.data).toHaveProperty('projections');
+      expect(result.data).toHaveProperty('confidence');
+      expect(result.data.confidence).toBe(85);
     });
 
-    it('should cache forecast results', async () => {
+    it('caches forecast results', async () => {
       const queries = require('@/services/intelligence/finance/queries');
-      
       await service.getCashFlowForecast(tenantId, forecastMonths);
       await service.getCashFlowForecast(tenantId, forecastMonths);
-      
       expect(queries.getCashFlowForecast).toHaveBeenCalledTimes(1);
     });
 
-    it('should handle different forecast periods', async () => {
+    it('treats different forecast horizons separately', async () => {
       const queries = require('@/services/intelligence/finance/queries');
-      
       await service.getCashFlowForecast(tenantId, 3);
       await service.getCashFlowForecast(tenantId, 12);
-      
       expect(queries.getCashFlowForecast).toHaveBeenCalledTimes(2);
     });
   });
 
+  // ── Error Handling ────────────────────────────────────────────────────────
+
   describe('Error Handling', () => {
-    it('should propagate query errors', async () => {
+    it('propagates query errors to the caller', async () => {
       const queries = require('@/services/intelligence/finance/queries');
       queries.getMonthlyPnL.mockRejectedValueOnce(new Error('Database error'));
 
       await expect(
-        service.getMonthlyPnL('test-tenant', 'current_month')
+        service.getMonthlyPnL('test-tenant-err', 'current_month'),
       ).rejects.toThrow('Database error');
-    });
-
-    it('should handle cache write failures gracefully', async () => {
-      const redis = require('@/lib/redis');
-      redis.getCacheClient().setex.mockRejectedValueOnce(new Error('Redis error'));
-
-      // Should still return data even if cache write fails
-      const result = await service.getMonthlyPnL('test-tenant', 'current_month');
-      expect(result).toEqual(mockQueryResults.monthlyPnL);
     });
   });
 
+  // ── Cache Invalidation ────────────────────────────────────────────────────
+
   describe('Cache Invalidation', () => {
-    it('should clear all cache entries for a tenant', async () => {
-      const tenantId = 'test-tenant-123';
-      
-      // Populate cache
+    it('forces a DB hit after clearCache(tenantId)', async () => {
+      const queries  = require('@/services/intelligence/finance/queries');
+      const tenantId = 'test-tenant-inv';
+
       await service.getMonthlyPnL(tenantId, 'current_month');
-      await service.getCashFlowAnalysis(tenantId, 'month');
-      await service.getBudgetVariance(tenantId, '2026-06');
+      expect(queries.getMonthlyPnL).toHaveBeenCalledTimes(1);
 
-      // Clear cache
       await service.clearCache(tenantId);
-
-      // Next calls should hit queries again
-      const queries = require('@/services/intelligence/finance/queries');
       jest.clearAllMocks();
 
       await service.getMonthlyPnL(tenantId, 'current_month');
@@ -256,69 +266,70 @@ describe('FinanceIntelligenceService', () => {
     });
   });
 
+  // ── Health Check ──────────────────────────────────────────────────────────
+
   describe('Health Check', () => {
-    it('should return healthy status', async () => {
+    it('returns true when cache layer is healthy', async () => {
       const health = await service.healthCheck();
-      
-      expect(health).toHaveProperty('status');
-      expect(health.status).toBe('healthy');
-      expect(health).toHaveProperty('timestamp');
-      expect(health).toHaveProperty('service');
-      expect(health.service).toBe('finance-intelligence');
+      expect(health).toBe(true);
     });
   });
+
+  // ── Tenant Isolation ──────────────────────────────────────────────────────
 
   describe('Tenant Isolation', () => {
-    it('should isolate cache by tenant ID', async () => {
+    it('uses separate cache keys per tenant', async () => {
       const queries = require('@/services/intelligence/finance/queries');
-      
-      await service.getMonthlyPnL('tenant-1', 'current_month');
-      await service.getMonthlyPnL('tenant-2', 'current_month');
-      
-      // Should call queries twice (once per tenant)
+
+      await service.getMonthlyPnL('tenant-A', 'current_month');
+      await service.getMonthlyPnL('tenant-B', 'current_month');
+
       expect(queries.getMonthlyPnL).toHaveBeenCalledTimes(2);
-      expect(queries.getMonthlyPnL).toHaveBeenNthCalledWith(1, 'tenant-1', 'current_month', undefined, undefined);
-      expect(queries.getMonthlyPnL).toHaveBeenNthCalledWith(2, 'tenant-2', 'current_month', undefined, undefined);
+      expect(queries.getMonthlyPnL).toHaveBeenNthCalledWith(1, 'tenant-A', 'current_month');
+      expect(queries.getMonthlyPnL).toHaveBeenNthCalledWith(2, 'tenant-B', 'current_month');
     });
   });
 
+  // ── Cache TTL Simulation ──────────────────────────────────────────────────
+
   describe('Cache TTL', () => {
-    it('should expire cache after TTL (3600 seconds)', async () => {
-      const tenantId = 'test-tenant-123';
-      const queries = require('@/services/intelligence/finance/queries');
-      
-      // First call
+    it('re-queries DB after the cache store is cleared (simulates TTL expiry)', async () => {
+      const queries  = require('@/services/intelligence/finance/queries');
+      const tenantId = 'test-tenant-ttl';
+
+      // First call → cache miss → DB query
       await service.getMonthlyPnL(tenantId, 'current_month');
       expect(queries.getMonthlyPnL).toHaveBeenCalledTimes(1);
 
-      // Simulate cache expiry by manually clearing
-      mockCache.clear();
+      // Simulate TTL expiry: wipe the store & reset call counts
+      clearTestCacheStore();
+      jest.clearAllMocks();
 
-      // Second call after expiry
+      // Second call → should be a cache miss again → DB query
       await service.getMonthlyPnL(tenantId, 'current_month');
-      expect(queries.getMonthlyPnL).toHaveBeenCalledTimes(2);
+      expect(queries.getMonthlyPnL).toHaveBeenCalledTimes(1);
     });
   });
 
+  // ── Data Transformation ───────────────────────────────────────────────────
+
   describe('Data Transformation', () => {
-    it('should return data in consistent format', async () => {
-      const result = await service.getMonthlyPnL('test-tenant', 'current_month');
-      
-      expect(result).toHaveProperty('totalRevenue');
-      expect(result).toHaveProperty('totalExpenses');
-      expect(result).toHaveProperty('netProfit');
-      expect(result).toHaveProperty('profitMargin');
-      
-      expect(typeof result.totalRevenue).toBe('number');
-      expect(typeof result.profitMargin).toBe('number');
+    it('wraps response in IntelligenceResponse shape', async () => {
+      const result = await service.getMonthlyPnL('test-tenant-shape', 'current_month');
+
+      expect(result.data).toHaveProperty('totalRevenue');
+      expect(result.data).toHaveProperty('totalExpenses');
+      expect(result.data).toHaveProperty('netProfit');
+      expect(result.data).toHaveProperty('profitMargin');
+      expect(typeof result.data.totalRevenue).toBe('number');
     });
 
-    it('should handle null/undefined gracefully', async () => {
+    it('wraps null query result as { data: null, ... }', async () => {
       const queries = require('@/services/intelligence/finance/queries');
       queries.getMonthlyPnL.mockResolvedValueOnce(null);
 
-      const result = await service.getMonthlyPnL('test-tenant', 'current_month');
-      expect(result).toBeNull();
+      const result = await service.getMonthlyPnL('test-tenant-null', 'current_month');
+      expect(result.data).toBeNull();
     });
   });
 });

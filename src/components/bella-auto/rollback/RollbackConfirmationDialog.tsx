@@ -30,8 +30,8 @@ interface TransactionStep {
   compensatingAction: string;
   entityType: string;
   entityId: string;
-  snapshotBefore?: Record<string, any>;
-  snapshotAfter?: Record<string, any>;
+  snapshotBefore?: Record<string, unknown>;
+  snapshotAfter?: Record<string, unknown>;
 }
 
 interface RollbackConfirmationDialogProps {

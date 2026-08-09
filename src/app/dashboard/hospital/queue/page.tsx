@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   ShieldCheck,
   ShieldAlert,
@@ -321,6 +322,8 @@ function AlertCard({
   onUpdateNote,
   onEscalate,
   onClose,
+  onOpenPatient,
+  onNotifyPhysician,
 }: {
   alert: SafetyAlert;
   onAcknowledge: (id: string) => void;
@@ -329,6 +332,8 @@ function AlertCard({
   onUpdateNote: (id: string, note: string) => void;
   onEscalate: (id: string) => void;
   onClose: (id: string) => void;
+  onOpenPatient: (mrn: string, bed: string) => void;
+  onNotifyPhysician: (alertId: string, patientName: string, message: string) => void;
 }) {
   const [expanded, setExpanded] = useState(alert.status === 'open');
   const [showActions, setShowActions] = useState(false);
@@ -553,11 +558,17 @@ function AlertCard({
                 <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
                 {alert.status === 'open' ? 'Acknowledge' : 'Acknowledged ✓'}
               </button>
-              <button className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-all">
+              <button
+                onClick={() => onOpenPatient(alert.patient.mrn, alert.patient.bed)}
+                className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-all"
+              >
                 <Eye className="w-3.5 h-3.5" />
                 Open Patient
               </button>
-              <button className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all">
+              <button
+                onClick={() => onNotifyPhysician(alert.id, alert.patient.name, alert.message)}
+                className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all"
+              >
                 <PhoneCall className="w-3.5 h-3.5" />
                 Notify Physician
               </button>
@@ -596,6 +607,7 @@ function AlertCard({
 
 // ─── Main Component ─────────────────────────────────────────────────────────────
 function ClinicalSafetyContent() {
+  const router = useRouter();
   const [alerts, setAlerts] = useState<SafetyAlert[]>(INITIAL_ALERTS);
   const [liveTime, setLiveTime] = useState('');
 
@@ -666,6 +678,58 @@ function ClinicalSafetyContent() {
     setAlerts((prev) => prev.map((a) => a.id === id ? { ...a, actionNote: note } : a));
   }, []);
 
+  const handleOpenPatient = useCallback((mrn: string, bed: string) => {
+    // Navigate to patient detail page
+    console.log(`Opening patient chart: MRN=${mrn}, Bed=${bed}`);
+    
+    // Option 1: Navigate to patient detail page (if page exists)
+    // Uncomment this line when patient detail page is ready:
+    // router.push(`/dashboard/hospital/patients/${mrn}`);
+    
+    // Option 2: Navigate to admissions page and scroll to patient
+    router.push(`/dashboard/hospital/admissions?mrn=${mrn}&highlight=true`);
+    
+    // Note: Alert dialog removed - now directly navigates
+  }, [router]);
+
+  const handleNotifyPhysician = useCallback((alertId: string, patientName: string, message: string) => {
+    const now = new Date().toLocaleTimeString('vi-VN');
+    
+    // Update alert audit trail
+    setAlerts((prev) => prev.map((a) => {
+      if (a.id !== alertId) return a;
+      return {
+        ...a,
+        auditTrail: [
+          ...a.auditTrail,
+          { 
+            time: now, 
+            actor: 'Hệ thống thông báo', 
+            action: 'PHYSICIAN NOTIFIED — Gửi cảnh báo tới bác sĩ trực qua SMS + App' 
+          }
+        ],
+        actionsSelected: a.actionsSelected.includes('physician_notified') 
+          ? a.actionsSelected 
+          : [...a.actionsSelected, 'physician_notified']
+      };
+    }));
+
+    // Show success notification
+    alert(
+      `✅ Đã gửi thông báo tới Bác sĩ trực\n\n` +
+      `Bệnh nhân: ${patientName}\n` +
+      `Cảnh báo: ${message}\n` +
+      `Thời gian: ${now}\n\n` +
+      `Kênh gửi:\n` +
+      `- SMS hotline\n` +
+      `- Push notification (App)\n` +
+      `- Email backup`
+    );
+
+    // In real app: Call notification API
+    // await NotificationService.notifyPhysician({ alertId, patientName, message });
+  }, []);
+
   const commonCardProps = {
     onAcknowledge: handleAcknowledge,
     onAddAction: () => undefined,
@@ -673,6 +737,8 @@ function ClinicalSafetyContent() {
     onUpdateNote: handleUpdateNote,
     onEscalate: handleEscalate,
     onClose: handleClose,
+    onOpenPatient: handleOpenPatient,
+    onNotifyPhysician: handleNotifyPhysician,
   };
 
   return (

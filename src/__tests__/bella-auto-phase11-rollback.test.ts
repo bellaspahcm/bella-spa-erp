@@ -10,10 +10,96 @@
  * 6. Audit trail
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
-import { createMockSupabaseClient } from '@/lib/testing/mock-supabase';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { BusinessRollbackEngine } from '@/modules/bella-auto/services/rollback/BusinessRollbackEngine';
 import { VehicleDeliveryRollback } from '@/modules/bella-auto/services/rollback/VehicleDeliveryRollback';
+
+function createChainableMock(defaultResolveValue: any = { data: null, error: null }) {
+  const mockPromise = (val: any) => {
+    const promise = Promise.resolve(val);
+    const chain: any = {
+      then: (onfulfilled: any, onrejected: any) => promise.then(onfulfilled, onrejected),
+      catch: (onrejected: any) => promise.catch(onrejected),
+      finally: (onfinally: any) => promise.finally(onfinally),
+      select: jest.fn(() => chain),
+      insert: jest.fn(() => chain),
+      update: jest.fn(() => chain),
+      delete: jest.fn(() => chain),
+      eq: jest.fn(() => chain),
+      neq: jest.fn(() => chain),
+      in: jest.fn(() => chain),
+      order: jest.fn(() => chain),
+      limit: jest.fn(() => chain),
+      single: jest.fn(() => chain),
+      maybeSingle: jest.fn(() => chain),
+    };
+    return chain;
+  };
+
+  const fn: any = jest.fn(() => fn._chain);
+
+  fn._chain = mockPromise(defaultResolveValue);
+
+  fn.mockResolvedValueOnce = (val: any) => {
+    fn.mockImplementationOnce(() => {
+      return mockPromise(val);
+    });
+    return fn;
+  };
+
+  fn.mockResolvedValue = (val: any) => {
+    fn.mockImplementation(() => {
+      return mockPromise(val);
+    });
+    return fn;
+  };
+
+  fn.mockRejectedValueOnce = (val: any) => {
+    fn.mockImplementationOnce(() => {
+      const promise = Promise.reject(val);
+      const chain: any = {
+        then: (onfulfilled: any, onrejected: any) => promise.then(onfulfilled, onrejected),
+        catch: (onrejected: any) => promise.catch(onrejected),
+        finally: (onfinally: any) => promise.finally(onfinally),
+        select: jest.fn(() => chain),
+        eq: jest.fn(() => chain),
+      };
+      return chain;
+    });
+    return fn;
+  };
+
+  return fn;
+}
+
+function createMockSupabaseClient() {
+  const tables: Record<string, any> = {};
+
+  const from = jest.fn((table: string) => {
+    if (!tables[table]) {
+      const tableMock = {
+        select: createChainableMock({ data: [], error: null }),
+        insert: createChainableMock({ data: null, error: null }),
+        update: createChainableMock({ data: null, error: null }),
+        delete: createChainableMock({ data: null, error: null }),
+        eq: createChainableMock({ data: [], error: null }),
+        neq: createChainableMock({ data: [], error: null }),
+        in: createChainableMock({ data: [], error: null }),
+        order: createChainableMock({ data: [], error: null }),
+        limit: createChainableMock({ data: [], error: null }),
+        single: createChainableMock({ data: null, error: null }),
+        maybeSingle: createChainableMock({ data: null, error: null }),
+      };
+      tables[table] = tableMock;
+    }
+    return tables[table];
+  });
+
+  return {
+    from,
+    rpc: jest.fn().mockImplementation(() => Promise.resolve({ data: null, error: null })),
+  };
+}
 
 describe('Phase 11: Business Rollback Engine', () => {
   let mockSupabase: ReturnType<typeof createMockSupabaseClient>;
@@ -215,10 +301,10 @@ describe('Phase 11: Business Rollback Engine', () => {
         error: null,
       });
 
-      // Should complete rollback despite errors
+      // Should complete rollback despite errors (expecting the collected errors to be thrown at the end)
       await expect(
         engine.rollbackTransaction('tx-1', 'Test rollback', USER_ID)
-      ).resolves.not.toThrow();
+      ).rejects.toThrow('Rollback completed with 2 error(s)');
     });
   });
 
@@ -464,7 +550,9 @@ describe('Phase 11: Business Rollback Engine', () => {
         return Promise.resolve({ data: null, error: null });
       });
 
-      await engine.rollbackTransaction('tx-1', 'Test reason', USER_ID);
+      await expect(
+        engine.rollbackTransaction('tx-1', 'Test reason', USER_ID)
+      ).rejects.toThrow('Rollback completed with 1 error(s)');
 
       expect(auditLogData).toMatchObject({
         tenant_id: TENANT_ID,

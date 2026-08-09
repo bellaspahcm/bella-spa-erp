@@ -140,7 +140,7 @@ class InAppAdapter implements INotificationAdapter {
       const list = this.store.get(key)!;
       if (list.length > 200) list.splice(200);
       return { success: true };
-    } catch (err) {
+    } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       return { success: false, error: msg };
     }
@@ -221,7 +221,7 @@ class NotificationHubClass {
         const result = await adapter.send(request);
         channelStatuses[channel] = result.success ? 'sent' : 'failed';
         if (!result.success && result.error) channelErrors[channel] = result.error;
-      } catch (err) {
+      } catch (err: unknown) {
         channelStatuses[channel] = 'failed';
         channelErrors[channel] = err instanceof Error ? err.message : String(err);
       }

@@ -14,10 +14,12 @@ import {
 } from '../queries';
 import type { DateRange } from '../../shared/types';
 import { QueryError } from '../../shared/types';
-import { createClient } from '@/lib/supabase-client';
+import { createClient } from '@supabase/supabase-js';
 
 // Mock Supabase client
-jest.mock('@/lib/supabase-client');
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn(),
+}));
 
 // Helper to create chainable Supabase mock
 function createSupabaseMock(mockData: any[]) {

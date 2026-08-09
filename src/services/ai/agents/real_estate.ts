@@ -3,6 +3,21 @@ import type { Database } from '@/types/database.types';
 import type { SubAgentResponse } from '../types';
 import { RealEstateExecutiveSkill } from '@/modules/real_estate/contexts/shared/ai-skills';
 
+interface RealEstateAnomaly {
+  type: string;
+  project_name: string;
+  available_count: number;
+  ratio: number;
+  message: string;
+}
+
+interface RealEstateDraftProposal {
+  type: string;
+  recipient: string;
+  reason: string;
+  draftMessage: string;
+}
+
 export async function runRealEstateAgent(
   supabase: SupabaseClient<Database>,
   tenantId: string,
@@ -49,8 +64,8 @@ export async function runRealEstateAgent(
     .reduce((sum, item) => sum + Number(item.unit_price || 0), 0);
 
   // Identify anomalies
-  const anomalies: any[] = [];
-  const draftProposals: any[] = [];
+  const anomalies: RealEstateAnomaly[] = [];
+  const draftProposals: RealEstateDraftProposal[] = [];
 
   // Check if any block is almost sold out
   projList.forEach(proj => {

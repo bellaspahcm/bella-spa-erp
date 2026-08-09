@@ -138,7 +138,7 @@ export function createInventoryReorderWorkflow(
       new ConditionStep(
         'reorder-branch',
         (ctx) => {
-          const decision = ctx.data.reorderDecision as any;
+          const decision = ctx.data.reorderDecision as unknown;
           return decision?.outcome === 'APPROVE' || decision?.reorder === true;
         },
         'create-purchase-order', // If reorder needed
@@ -150,7 +150,7 @@ export function createInventoryReorderWorkflow(
       new ActionStep(
         'create-purchase-order',
         async (ctx) => {
-          const decision = ctx.data.reorderDecision as any;
+          const decision = ctx.data.reorderDecision as unknown;
           
           const po = await services.purchaseOrder.create({
             productId: ctx.data.productId as string,
@@ -220,7 +220,7 @@ export function createInventoryReorderWorkflow(
       new ActionStep(
         'audit-reorder',
         async (ctx) => {
-          const decision = ctx.data.reorderDecision as any;
+          const decision = ctx.data.reorderDecision as unknown;
           
           await services.audit.log({
             action: 'inventory-reorder',
@@ -238,7 +238,7 @@ export function createInventoryReorderWorkflow(
       new ActionStep(
         'skip-reorder',
         async (ctx) => {
-          const decision = ctx.data.reorderDecision as any;
+          const decision = ctx.data.reorderDecision as unknown;
           
           await services.audit.log({
             action: 'inventory-reorder-skipped',

@@ -89,7 +89,7 @@ export default function VehicleInventoryDashboard({ tenantId }: { tenantId: stri
       console.log('[VehicleInventory] Loaded vehicles:', data?.length);
 
       // Map to interface format
-      const mappedVehicles = (data || []).map((row: any) => ({
+      const mappedVehicles = (data || []).map((row: Record<string, unknown>) => ({
         id: row.id,
         vin: row.vin,
         variant_id: row.variant_id,

@@ -197,7 +197,7 @@ export interface ResourceProviderManifest {
   };
   getEligibleAssignees?: (resource: ResourceRef) => AssigneeUser[];
   getNextRotationAssignee?: (resource: ResourceRef, currentAssigneeId?: string, strategy?: string) => AssigneeUser;
-  formatNotification?: (event: any) => { title: string; body: string };
+  formatNotification?: (event: Record<string, unknown>) => { title: string; body: string };
 }
 
 export interface ResourceEvent {
@@ -207,7 +207,7 @@ export interface ResourceEvent {
   eventType: string;
   actorId: string;
   actorName: string;
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
   timestamp: string;
 }
 

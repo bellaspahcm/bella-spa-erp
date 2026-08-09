@@ -35,7 +35,7 @@ function StatusContent() {
       } else {
         setError(result.error || 'Không thể tải thông tin đơn đăng ký');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[loadApplication] Error:', err);
       setError('Có lỗi xảy ra. Vui lòng thử lại sau.');
     } finally {

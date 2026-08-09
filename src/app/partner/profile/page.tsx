@@ -47,7 +47,7 @@ export default function PartnerProfilePage() {
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const loadProfile = async (userId: string) => {
+  async function loadProfile(userId: string) {
     try {
       setLoading(true);
       const data = await fetchPartnerProfile(userId);
@@ -57,7 +57,7 @@ export default function PartnerProfilePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   useEffect(() => {
     const loadUser = async () => {

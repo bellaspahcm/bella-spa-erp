@@ -71,7 +71,7 @@ export interface RealEstateProjectRow {
   location: string | null;
   developer: string | null;
   total_units: number;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -91,7 +91,7 @@ export interface RealEstateProductRow {
   status: ReProductStatus;
   owner_name: string | null;
   owner_contact: string | null;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -106,7 +106,7 @@ export interface ReReservationRow {
   customer_id: string | null;
   status: ReReservationStatus;
   expires_at: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -128,7 +128,7 @@ export interface ReCommissionLedgerRow {
   approved_date: string | null;
   paid_date: string | null;
   notes: string | null;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -147,7 +147,7 @@ export interface ReDocumentRow {
   file_size_bytes: number | null;
   version: string;
   is_latest: boolean;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -165,7 +165,7 @@ export interface RePartnerLeadRow {
   status: string;
   protected_until: string;
   notes: string | null;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
   created_by: string | null;

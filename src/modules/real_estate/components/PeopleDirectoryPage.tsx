@@ -430,7 +430,7 @@ export function PeopleDirectoryPage() {
         const augmented = result.candidates.map((ref, idx) => augmentPerson(ref, idx));
         setAllPeople(augmented);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[PeopleDirectoryPage] load error: %s', err instanceof Error ? err.message : String(err));
     } finally {
       setIsLoading(false);

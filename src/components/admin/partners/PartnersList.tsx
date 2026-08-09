@@ -127,7 +127,7 @@ export function PartnersList() {
       document.body.removeChild(a);
 
       toast.success('Partners list exported to CSV');
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to export partners:', err);
       toast.error('Failed to export partners list');
     }

@@ -81,6 +81,9 @@ describe('E2E Refund with Commission Clawback (Edge Case Test)', () => {
     }).select('id').single();
     if (customerError) throw new Error(`Failed to create test customer: ${customerError.message}`);
     testCustomerId = customer!.id;
+
+    // Clean up any leaked salary records from previous runs
+    await supabase.from('salary_records').delete().eq('tenant_id', testTenantId).eq('ktv_id', testKtvId);
   });
 
   afterAll(async () => {
@@ -90,6 +93,9 @@ describe('E2E Refund with Commission Clawback (Edge Case Test)', () => {
       await supabase.from('bookings').delete().eq('id', testBookingId);
     }
     if (testCustomerId) await supabase.from('customers').delete().eq('id', testCustomerId);
+    if (testKtvId) {
+      await supabase.from('salary_records').delete().eq('tenant_id', testTenantId).eq('ktv_id', testKtvId);
+    }
   });
 
   it('should NOT claw back commission for completed sessions when refund issued', async () => {
@@ -130,10 +136,13 @@ describe('E2E Refund with Commission Clawback (Edge Case Test)', () => {
     await supabase.from('bookings').update({ completed_sessions: 3, status: 'in_progress' }).eq('id', testBookingId);
 
     const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
-    await supabase.from('salary_records').insert({
+    const { error: insertError } = await supabase.from('salary_records').insert({
       tenant_id: testTenantId, ktv_id: testKtvId, month_year: currentMonth, base_salary: 6000000,
       session_bonus: 450000, total_sessions: 3, total_salary: 6450000, status: 'draft',
     });
+    if (insertError) {
+      throw new Error(`Failed to insert salary record: ${insertError.message}`);
+    }
 
     console.log('✅ Step 2: 3 sessions completed', { commissionEarned: 450000 });
 

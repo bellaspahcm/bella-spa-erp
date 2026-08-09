@@ -71,7 +71,7 @@ export default function LoginPage() {
       const requiresMfa = await needsMfaChallenge();
       if (requiresMfa) { setStage('mfa'); setLoading(false); return; }
       window.location.href = '/dashboard';
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[Login Error]', err);
       setError(err instanceof Error ? err.message : 'Đăng nhập thất bại. Vui lòng thử lại.');
       setLoading(false);
@@ -88,7 +88,7 @@ export default function LoginPage() {
       const result = await challengeAndVerify(mfaCode);
       if (!result.ok) { setError(result.error || 'Mã không đúng hoặc đã hết hạn.'); setLoading(false); return; }
       window.location.href = '/dashboard';
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[MFA Error]', err);
       setError(err instanceof Error ? err.message : 'Xác minh thất bại. Vui lòng thử lại.');
       setLoading(false);
@@ -99,7 +99,7 @@ export default function LoginPage() {
     try {
       const { getSupabase } = await import('@/lib/supabase-client');
       await getSupabase().auth.signOut();
-    } catch (err) { console.error('[SignOut Error]', err); }
+    } catch (err: unknown) { console.error('[SignOut Error]', err); }
     setStage('credentials');
     setPassword('');
     setMfaCode('');

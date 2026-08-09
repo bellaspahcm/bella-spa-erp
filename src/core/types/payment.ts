@@ -100,7 +100,7 @@ export interface PaymentIntent {
    * - `authorizationCode: string` - Payment gateway auth code
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 /**
@@ -147,7 +147,7 @@ export interface InvoiceLineItem {
    * - `discountApplied: number` - Discount amount (if applicable)
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**

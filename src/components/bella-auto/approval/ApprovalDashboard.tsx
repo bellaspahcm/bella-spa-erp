@@ -16,7 +16,7 @@ export interface ApprovalInstance {
   currentLevel: number;
   requestedAt: string;
   ageHours: number;
-  entityData?: any;
+  entityData?: unknown;
 }
 
 export interface ApprovalDashboardProps {
@@ -37,13 +37,7 @@ export function ApprovalDashboard({
   const [selectedInstance, setSelectedInstance] = useState<string | null>(null);
   const [actionInProgress, setActionInProgress] = useState(false);
 
-  useEffect(() => {
-    fetchPendingApprovals();
-    const interval = setInterval(fetchPendingApprovals, 30000);
-    return () => clearInterval(interval);
-  }, [userId, userRole]);
-
-  const fetchPendingApprovals = async () => {
+  async function fetchPendingApprovals() {
     setIsLoading(true);
     try {
       // TODO: Replace with actual RPC call
@@ -91,7 +85,13 @@ export function ApprovalDashboard({
     } finally {
       setIsLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    fetchPendingApprovals();
+    const interval = setInterval(fetchPendingApprovals, 30000);
+    return () => clearInterval(interval);
+  }, [userId, userRole]);
 
   const handleApprove = async (instanceId: string) => {
     if (!onApprove) return;

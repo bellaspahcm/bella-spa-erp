@@ -41,7 +41,7 @@ export default function TemporalQueryBuilder({ tenantId }: { tenantId: string })
       if (rpcError) throw rpcError;
       
       setResults(data || []);
-    } catch (err) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Unknown error');
       setResults([]);
     } finally {

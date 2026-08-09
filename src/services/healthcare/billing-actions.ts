@@ -34,7 +34,7 @@ export async function calculateMedicalBillingAction(input: {
   items: Array<{ itemCode: string; itemName: string; unitPrice: number; quantity: number }>;
 }): Promise<{ success: boolean; calculation?: MedicalBillingCalculation; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     // Fetch Patient BHYT Info
@@ -82,8 +82,8 @@ export async function calculateMedicalBillingAction(input: {
         items: itemsCalculated
       }
     };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi tính toán chi phí viện phí' };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : 'Lỗi tính toán chi phí viện phí' };
   }
 }
 
@@ -97,7 +97,7 @@ export async function processMedicalPaymentAction(input: {
   billingCalculation: MedicalBillingCalculation;
 }): Promise<{ success: boolean; invoiceId?: string; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     // 1. Update Encounter status to billing_pending -> pharmacy_pending/completed
@@ -142,12 +142,12 @@ export async function processMedicalPaymentAction(input: {
           credit: '5113' // Doanh thu dịch vụ y tế
         },
         payload: domainEvent
-      } as any
+      } as unknown as Record<string, unknown>
     });
 
     return { success: true, invoiceId };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi thanh toán viện phí' };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : 'Lỗi thanh toán viện phí' };
   }
 }
 
@@ -161,7 +161,7 @@ export async function reconcileMedicalInvoiceToLedgerAction(input: {
   billingCalculation: MedicalBillingCalculation;
 }): Promise<{ success: boolean; journalEntryId?: string; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     // 1. Check if journal entry already exists for this invoice (Idempotency)
@@ -273,7 +273,7 @@ export async function reconcileMedicalInvoiceToLedgerAction(input: {
     }
 
     return { success: true, journalEntryId: journalEntry.id };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi hạch toán hóa đơn viện phí' };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : 'Lỗi hạch toán hóa đơn viện phí' };
   }
 }

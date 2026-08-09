@@ -43,7 +43,7 @@ const formatVNDFull = (v: number) =>
 
 // ─── Custom Active Dot for Line/Area Charts ────────────────────────────────────
 
-const PremiumActiveDot = (props: any) => {
+const PremiumActiveDot = (props: Record<string, unknown>) => {
   const { cx, cy, stroke } = props;
   return (
     <g>

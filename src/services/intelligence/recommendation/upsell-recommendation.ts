@@ -449,11 +449,21 @@ async function fetchCustomerContext(
   customerId: string
 ): Promise<RecommendationContext> {
   // Note: View not in generated types yet, cast query builder to any
-  const { data: segment } = await (supabase.from as (table: string) => any)('mv_customer_segments')
+  interface CustomerSegmentRow {
+    segment?: string | null;
+    recency_score?: number | null;
+    frequency_score?: number | null;
+    monetary_score?: number | null;
+    total_orders?: number | null;
+    avg_order_value?: number | string | null;
+    last_purchase_date?: string | null;
+  }
+
+  const { data: segment } = await supabase.from('mv_customer_segments' as never)
     .select('*')
     .eq('tenant_id', tenantId)
     .eq('customer_id', customerId)
-    .single();
+    .single() as unknown as { data: CustomerSegmentRow | null };
   
   if (!segment) {
     return {};
@@ -507,12 +517,12 @@ async function fetchSingleItemDetails(
   
   if (itemType === 'service') {
     // Note: 'services' table exists but not in generated types yet, cast query builder
-    const { data: service } = await (supabase.from as (table: string) => any)('services')
+    const { data: service } = await supabase.from('services' as never)
       .select('name, price')
       .eq('tenant_id', tenantId)
       .eq('id', itemId)
       .eq('is_active', true)
-      .single();
+      .single() as unknown as { data: { name: string; price: number } | null };
     
     if (!service) return null;
     
@@ -556,7 +566,7 @@ async function fetchSingleItemDetails(
     let totalRatings = 0;
     
     if (ratings) {
-      for (const booking of ratings as any[]) {
+      for (const booking of ratings as unknown[]) {
         if (booking.sessions && booking.sessions.reviews) {
           for (const review of booking.sessions.reviews) {
             avgRating += review.overall_rating;

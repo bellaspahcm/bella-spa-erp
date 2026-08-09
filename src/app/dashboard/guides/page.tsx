@@ -34,7 +34,7 @@ export default function UserManualsHub() {
         const role = user?.role ?? null;
         const moduleGuides = getModuleGuides(tenantModuleKey);
         setGuides(moduleGuides.filter((g) => isManualPermitted(role, g.slug)));
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Failed to load guides:', err);
       } finally {
         setIsLoading(false);

@@ -185,7 +185,7 @@ export class PolicyAuditService {
   static async logCreated(
     policyId: string,
     version: string,
-    policyData: any,
+    policyData: Record<string, unknown>,
     userId: string,
     reason?: string
   ): Promise<void> {
@@ -230,8 +230,8 @@ export class PolicyAuditService {
     policyId: string,
     version: string,
     field: string,
-    oldValue: any,
-    newValue: any,
+    oldValue: Record<string, unknown>,
+    newValue: Record<string, unknown>,
     userId: string,
     reason?: string
   ): Promise<void> {
@@ -252,7 +252,7 @@ export class PolicyAuditService {
 // HELPER FUNCTIONS
 // ============================================================================
 
-function mapDbToHistoryEntry(dbRow: any): PolicyHistoryEntry {
+function mapDbToHistoryEntry(dbRow: Record<string, unknown>): PolicyHistoryEntry {
   return {
     id: dbRow.id,
     policyId: dbRow.policy_id,

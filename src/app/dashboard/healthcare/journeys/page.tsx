@@ -298,7 +298,7 @@ export default function JourneysPage() {
               const anyActive = updatedMs.some((m) => m.status === 'in_progress' || m.status === 'completed');
               const sjStatus = allDone ? 'completed' : anyActive ? 'active' : 'pending';
 
-              return { ...sj, status: sjStatus as any, milestones: updatedMs };
+              return { ...sj, status: sjStatus as unknown, milestones: updatedMs };
             }
             return sj;
           });

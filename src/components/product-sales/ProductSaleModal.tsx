@@ -239,7 +239,7 @@ export function ProductSaleModal({
       } else {
         setError(result.error || `Không thể ${isEditMode ? 'cập nhật' : 'lưu'} bán hàng`);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error creating product sale:', err);
       setError('Lỗi hệ thống');
     } finally {

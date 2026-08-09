@@ -253,7 +253,7 @@ export async function updateServiceItem(
       try {
         const { recalculateAndSaveSalaryRecord } = await import('@/modules/hr-salary/actions/admin-salary-actions');
         await recalculateAndSaveSalaryRecord(supabase, existing.ktv_id, oldMonth, tenantId);
-      } catch (err) {
+      } catch (err: unknown) {
         oldRecalcFailed = true;
         oldRecalcErrorMsg = err instanceof Error ? err.message : 'Lỗi tính toán lương cũ';
       }
@@ -266,7 +266,7 @@ export async function updateServiceItem(
       try {
         const { recalculateAndSaveSalaryRecord } = await import('@/modules/hr-salary/actions/admin-salary-actions');
         await recalculateAndSaveSalaryRecord(supabase, newKtvId, newMonth, tenantId);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Error recalculating new KTV salary:', err);
         // Rollback update
         await updateBookingServiceItem(supabase, id, tenantId, {
@@ -367,7 +367,7 @@ export async function deleteServiceItem(id: string, tenantId: string): Promise<S
       try {
         const { recalculateAndSaveSalaryRecord } = await import('@/modules/hr-salary/actions/admin-salary-actions');
         await recalculateAndSaveSalaryRecord(supabase, existing.ktv_id, monthYear, tenantId);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Error recalculating salary after deleting service item:', err);
         // Rollback status to completed
         await updateBookingServiceItem(supabase, id, tenantId, {

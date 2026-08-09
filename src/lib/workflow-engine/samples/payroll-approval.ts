@@ -146,9 +146,9 @@ export function createPayrollApprovalWorkflow(
       new ActionStep(
         'aggregate-salary',
         async (ctx) => {
-          const kpiResult = ctx.data.kpiResult as any;
-          const deductionResult = ctx.data.deductionResult as any;
-          const commissionResult = ctx.data.commissionResult as any;
+          const kpiResult = ctx.data.kpiResult as unknown;
+          const deductionResult = ctx.data.deductionResult as unknown;
+          const commissionResult = ctx.data.commissionResult as unknown;
           const baseSalary = ctx.data.baseSalary as number;
           
           const totalSalary =

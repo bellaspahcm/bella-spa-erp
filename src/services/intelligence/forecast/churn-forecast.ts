@@ -137,7 +137,7 @@ async function fetchCustomerData(
 ): Promise<CustomerData[]> {
   // Fetch customer data from mv_customer_segments (has RFM scores)
   // Note: View not in generated types yet, using type cast
-  type SupabaseDynamic = { from: (table: string) => any };
+  type SupabaseDynamic = { from: (table: string) => { select: (cols: string) => { eq: (...args: unknown[]) => Promise<{ data: Record<string, unknown>[] | null; error: { message: string } | null }> } } };
   try {
     const { data, error } = await (supabase as unknown as SupabaseDynamic)
       .from('mv_customer_segments')
@@ -240,7 +240,7 @@ async function getChurnAccuracy(
 ): Promise<{ avgAccuracyPct: number; precision: number; recall: number; f1Score: number } | null> {
   // Query mv_forecast_accuracy for churn model metrics
   // Note: View not in generated types yet, using type cast
-  type SupabaseDynamic = { from: (table: string) => any };
+  type SupabaseDynamic = { from: (table: string) => { select: (cols: string) => { eq: (...args: unknown[]) => { eq: (...args: unknown[]) => { eq: (...args: unknown[]) => { single: () => Promise<{ data: Record<string, unknown> | null; error: { message: string } | null }> } } } } } };
   const { data, error } = await (supabase as unknown as SupabaseDynamic)
     .from('mv_forecast_accuracy')
     .select('avg_accuracy_pct, avg_mape')
@@ -481,7 +481,7 @@ async function saveChurnPredictions(
   }
   
   // Note: Table not in generated types yet, using type cast
-  type SupabaseDynamic = { from: (table: string) => any };
+  type SupabaseDynamic = { from: (table: string) => { upsert: (data: unknown[], opts: unknown) => Promise<{ error: { message: string } | null }> } };
   const { error } = await (supabase as unknown as SupabaseDynamic)
     .from('forecast_results')
     .upsert(forecastRecords, {

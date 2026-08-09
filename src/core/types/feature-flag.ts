@@ -59,7 +59,7 @@ export interface FeatureFlag {
    * - `allowedUserIds: string[]` - Specific users with access
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  metadata?: Readonly<Record<string, any>>;
+  metadata?: Readonly<Record<string, unknown>>;
 }
 
 /**

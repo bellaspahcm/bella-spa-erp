@@ -83,7 +83,7 @@ export default function DocumentList({
       } else {
         setError(data.error || 'Lỗi tải documents');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to fetch documents:', err);
       setError('Lỗi kết nối');
     } finally {
@@ -114,7 +114,7 @@ export default function DocumentList({
       } else {
         alert(data.error || 'Lỗi xóa document');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       alert('Lỗi kết nối');
     } finally {
       setDeletingPath(null);

@@ -15,7 +15,7 @@ export interface RecommendationItem {
   relevance_score: number;
   rank_position: number;
   algorithm_used: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface RecommendationResponse {

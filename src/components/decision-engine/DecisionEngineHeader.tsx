@@ -24,6 +24,14 @@ const getThemeColors = (moduleKey: string | null) => {
       inactiveTab: 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-200',
       badgeBg: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300',
     };
+  } else if (normKey === 'bella_healthcare') {
+    return {
+      primary: 'indigo',
+      gradient: 'from-blue-600 to-indigo-650',
+      activeTab: 'border-primary text-primary dark:text-primary font-bold',
+      inactiveTab: 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-200',
+      badgeBg: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300',
+    };
   } else {
     return {
       primary: 'rose',

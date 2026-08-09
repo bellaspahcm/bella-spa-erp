@@ -85,7 +85,7 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
   }
   
   // Check file type
-  if (!ALLOWED_FILE_TYPES.includes(file.type as any)) {
+  if (!ALLOWED_FILE_TYPES.includes(file.type as unknown)) {
     return {
       valid: false,
       error: `Loại file không hợp lệ. Chỉ chấp nhận: ${ALLOWED_EXTENSIONS.join(', ')}`,
@@ -94,7 +94,7 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
   
   // Check file name extension
   const ext = file.name.toLowerCase().match(/\.\w+$/)?.[0];
-  if (!ext || !ALLOWED_EXTENSIONS.includes(ext as any)) {
+  if (!ext || !ALLOWED_EXTENSIONS.includes(ext as unknown)) {
     return {
       valid: false,
       error: `Phần mở rộng file không hợp lệ`,
@@ -178,7 +178,7 @@ export async function uploadDocument(
       .getPublicUrl(filePath);
     
     // Update application with document reference
-    const { error: dbError } = await (supabase.rpc as any)('add_partner_document', {
+    const { error: dbError } = await (supabase.rpc as unknown)('add_partner_document', {
       p_application_id: applicationId,
       p_file_path: filePath,
       p_file_url: urlData.publicUrl,
@@ -238,7 +238,7 @@ export async function deleteDocument(
     }
     
     // Remove from application documents array
-    const { error: dbError } = await (supabase.rpc as any)('remove_partner_document', {
+    const { error: dbError } = await (supabase.rpc as unknown)('remove_partner_document', {
       p_application_id: applicationId,
       p_file_path: filePath,
     });
@@ -313,7 +313,7 @@ export async function listDocuments(
     
     const documents = application?.documents || [];
     
-    return { documents: documents as any };
+    return { documents: documents as unknown };
     
   } catch (error) {
     console.error('[listDocuments] Exception:', error);

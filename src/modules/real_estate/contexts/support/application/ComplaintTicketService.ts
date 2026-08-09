@@ -6,7 +6,7 @@ import {
   TicketState,
   TicketEvent,
 } from '../domain/ComplaintTicketAggregate';
-import { activityStream } from '@/platform/activity-stream/index';
+import { activityStream, ActivityEntry } from '@/platform/activity-stream/index';
 import { TransitionContext } from '@/platform/state-machine/state-machine';
 
 // In-memory data store for demonstration
@@ -267,7 +267,7 @@ export class ComplaintTicketService {
    * - Property booking, deposit, contracts
    * - Support tickets creations and transitions
    */
-  public static getCustomerTimeline(tenantId: string, customerId: string): any[] {
+  public static getCustomerTimeline(tenantId: string, customerId: string): ActivityEntry[] {
     // 1. Log some mock pre-existing interactions if timeline is empty to make it look great!
     const timelineEvents = activityStream.getStream({
       tenantId,

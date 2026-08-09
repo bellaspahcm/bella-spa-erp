@@ -685,7 +685,7 @@ export class CssdEngineService implements CssdEngineContract {
         };
       }
 
-      const report: TraceabilityReport[] = (data || []).map((row: Record<string, any>) => {
+      const report: TraceabilityReport[] = (data || []).map((row: Record<string, unknown>) => {
         const eq = row.hc_equipment;
         const cyc = row.hc_cssd_cycles;
         return {

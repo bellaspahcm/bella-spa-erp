@@ -8,6 +8,7 @@ import { getLocalDateString } from '@bella/shared';
 import { getMonthStart } from '@/lib/utils';;
 import { createAccountingDataClient } from '@/core/services/accounting/client';
 import type { Database } from '@/types/database.types';
+import type { CurrentUser } from '@/types/domain';
 import { Client } from 'pg';
 
 type SalaryRecordRow = Database['public']['Tables']['salary_records']['Row'];
@@ -436,7 +437,7 @@ export async function ktvDisputeSalary(salaryRecordId: string, reason: string) {
  * @see {@link ktvConfirmSalary} to confirm salary after review
  * @see {@link ktvDisputeSalary} to dispute salary if incorrect
  */
-export async function getKtvSalaryForConfirmation(month?: string, currentUser?: any): Promise<KtvSalaryConfirmation | null> {
+export async function getKtvSalaryForConfirmation(month?: string, currentUser?: CurrentUser | null): Promise<KtvSalaryConfirmation | null> {
   const supabase = await createClient();
   const user = currentUser || await getCurrentUser();
   if (!user) return null;

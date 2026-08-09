@@ -10,6 +10,7 @@ import { Database } from '@/types/database.types';
 
 type MarketValuation = Database['public']['Tables']['auto_market_valuations']['Row'];
 type MarketValuationInsert = Database['public']['Tables']['auto_market_valuations']['Insert'];
+type MarketValuationUpdate = Database['public']['Tables']['auto_market_valuations']['Update'];
 
 export interface CreateMarketValuationData {
   tenantId: string;
@@ -159,7 +160,7 @@ export class MarketValuationService {
   ): Promise<MarketValuation> {
     const supabase = getPrimaryClient();
 
-    const updateData: any = {};
+    const updateData: MarketValuationUpdate = {};
 
     if (updates.priceExcellent !== undefined) updateData.price_excellent = updates.priceExcellent;
     if (updates.priceGood !== undefined) updateData.price_good = updates.priceGood;

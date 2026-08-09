@@ -129,7 +129,7 @@ export default function PartnerRegistrationPage() {
       
       setApplicationId(response.application.id);
       nextStep();
-    } catch (err) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setIsSubmitting(false);
@@ -167,7 +167,7 @@ export default function PartnerRegistrationPage() {
       }
       
       nextStep();
-    } catch (err) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setIsSubmitting(false);
@@ -202,7 +202,7 @@ export default function PartnerRegistrationPage() {
       
       updateFormData({ documents: uploadedDocs });
       nextStep();
-    } catch (err) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setIsSubmitting(false);
@@ -231,7 +231,7 @@ export default function PartnerRegistrationPage() {
       
       // Redirect to verification page
       router.push(`/partner/verify?application_id=${applicationId}`);
-    } catch (err) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setIsSubmitting(false);

@@ -964,7 +964,7 @@ export async function getKTVDashboardData(monthStr: string) {
     try {
       const { checkAndGenerateKtvAlertNotifications } = await import('./notification-helpers');
       await checkAndGenerateKtvAlertNotifications(user.id, user.tenant_id);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error running checkAndGenerateKtvAlertNotifications:', err);
     }
   }

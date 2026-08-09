@@ -65,7 +65,7 @@ export function WaitlistTableRow({ entry, onRefresh }: WaitlistTableRowProps) {
 
       toast.success('Đã gửi thông báo đến khách hàng');
       await onRefresh();
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Lỗi khi gửi thông báo');
     } finally {
       setIsProcessing(false);
@@ -86,7 +86,7 @@ export function WaitlistTableRow({ entry, onRefresh }: WaitlistTableRowProps) {
 
       toast.success(`Đã chuyển đổi sang ${vocab.booking.singular.toLowerCase()} thành công`);
       await onRefresh();
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Lỗi khi chuyển đổi');
     } finally {
       setIsProcessing(false);
@@ -108,7 +108,7 @@ export function WaitlistTableRow({ entry, onRefresh }: WaitlistTableRowProps) {
 
       toast.success('Đã xóa khỏi danh sách chờ');
       await onRefresh();
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Lỗi khi hủy');
     } finally {
       setIsProcessing(false);

@@ -208,7 +208,7 @@ export default function BookingEngineDashboardPage() {
       const data: MetricsResponse = await response.json();
       setMetrics(data);
       setLastRefreshAt(new Date());
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[BookingEngineDashboard] Error fetching metrics:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {

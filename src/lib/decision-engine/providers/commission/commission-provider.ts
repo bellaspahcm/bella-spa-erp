@@ -41,6 +41,12 @@ interface CommissionProviderOptions {
   debug?: boolean;
 }
 
+interface CommissionRuleContext {
+  input: CommissionDecisionInput;
+  timestamp: string;
+  provider: string;
+}
+
 /**
  * CommissionProvider
  * 
@@ -311,7 +317,7 @@ export class CommissionProvider {
   /**
    * Creates rule context from input
    */
-  private createRuleContext(input: CommissionDecisionInput): any {
+  private createRuleContext(input: CommissionDecisionInput): CommissionRuleContext {
     return {
       input,
       timestamp: new Date().toISOString(),
@@ -326,7 +332,7 @@ export class CommissionProvider {
    */
   private async checkGates(
     input: CommissionDecisionInput,
-    _context: any
+    _context: CommissionRuleContext
   ): Promise<{ rejected: boolean; reason?: string; gateType?: string }> {
     const config = input.config;
 
@@ -407,7 +413,7 @@ export class CommissionProvider {
    */
   private async evaluateBaseCommission(
     input: CommissionDecisionInput,
-    _context: any
+    _context: CommissionRuleContext
   ): Promise<{ service: number; product: number; total: number }> {
     const config = input.config;
 
@@ -541,7 +547,7 @@ export class CommissionProvider {
    */
   private async evaluateVolumeTier(
     input: CommissionDecisionInput,
-    _context: any
+    _context: CommissionRuleContext
   ): Promise<{ tier: VolumeTier; multiplier: number }> {
     const totalSessions = input.totalSessions ?? 0;
     const config = input.config;
@@ -584,7 +590,7 @@ export class CommissionProvider {
    */
   private async evaluatePerformanceTier(
     input: CommissionDecisionInput,
-    _context: any
+    _context: CommissionRuleContext
   ): Promise<{ tier: PerformanceTier; multiplier: number }> {
     const avgRating = input.avgRating ?? 0;
     const config = input.config;

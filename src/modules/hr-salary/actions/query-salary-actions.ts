@@ -231,7 +231,7 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
 
     let rawKtvs: KtvUserData[] = [];
     if (moduleKey === 'real_estate') {
-      const { data: hrSummary, error: hrError } = await (supabase as any).rpc(
+      const { data: hrSummary, error: hrError } = await (supabase as unknown).rpc(
         'get_hr_employee_summary',
         { p_tenant_id: tenantId, p_status: 'active' }
       );
@@ -239,7 +239,7 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
         throw new Error(`[getSalaryData] get_hr_employee_summary failed: ${hrError.message}`);
       }
       
-      const hrSummaryMapped: KtvUserData[] = (hrSummary || []).map((row: any) => ({
+      const hrSummaryMapped: KtvUserData[] = (hrSummary || []).map((row: Record<string, unknown>) => ({
         id: row.person_id,
         full_name: row.display_name,
         role: 'ktv',
@@ -646,7 +646,7 @@ export async function getKtvSessionMatrix(): Promise<KtvSessionMatrix> {
 
     let rawKtvs: MatrixKtvUser[] = [];
     if (moduleKey === 'real_estate') {
-      const { data: hrSummary, error: hrError } = await (supabase as any).rpc(
+      const { data: hrSummary, error: hrError } = await (supabase as unknown).rpc(
         'get_hr_employee_summary',
         { p_tenant_id: tenantId, p_status: 'active' }
       );
@@ -654,14 +654,14 @@ export async function getKtvSessionMatrix(): Promise<KtvSessionMatrix> {
         throw new Error(`getKtvSessionMatrix get_hr_employee_summary failed: ${hrError.message}`);
       }
       
-      const hrSummaryMapped = (hrSummary || []).map((row: any) => ({
+      const hrSummaryMapped = (hrSummary || []).map((row: Record<string, unknown>) => ({
         id: row.person_id,
         full_name: row.display_name,
         resignation_date: null
       }));
 
       if (currentUser?.role?.toLowerCase() === 'ktv') {
-        rawKtvs = hrSummaryMapped.filter((ktv: any) => ktv.id === currentUser.id);
+        rawKtvs = hrSummaryMapped.filter((ktv: Record<string, unknown>) => ktv.id === currentUser.id);
       } else {
         rawKtvs = hrSummaryMapped;
       }

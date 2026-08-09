@@ -17,7 +17,7 @@ export default function DetailError({
     <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 p-8">
       <h2 className="text-xl font-bold text-red-600">Lỗi tải trang chi tiết</h2>
       <p className="text-gray-600 text-sm font-mono bg-gray-100 p-4 rounded-lg max-w-lg text-wrap break-all">
-        {error.message || 'Unknown error'}
+        {error instanceof Error ? error.message : 'Unknown error'}
         {error.digest && <span className="block mt-2 text-xs text-gray-400">Digest: {error.digest}</span>}
       </p>
       <button

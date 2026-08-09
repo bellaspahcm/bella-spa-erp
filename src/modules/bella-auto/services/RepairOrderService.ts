@@ -10,6 +10,7 @@ import { Database } from '@/types/database.types';
 
 type RepairOrder = Database['public']['Tables']['auto_repair_orders']['Row'];
 type RepairOrderInsert = Database['public']['Tables']['auto_repair_orders']['Insert'];
+type RepairOrderUpdate = Database['public']['Tables']['auto_repair_orders']['Update'];
 type RepairOrderItem = Database['public']['Tables']['auto_repair_order_items']['Row'];
 type RepairOrderItemInsert = Database['public']['Tables']['auto_repair_order_items']['Insert'];
 
@@ -67,7 +68,7 @@ export class RepairOrderService {
       appointment_id: data.appointmentId,
       order_type: data.orderType,
       work_description: data.workDescription,
-      customer_complaints: data.customerComplaints as any,
+      customer_complaints: data.customerComplaints as RepairOrderInsert['customer_complaints'],
       mileage_in: data.mileageIn,
       fuel_level: data.fuelLevel,
       vehicle_condition_notes: data.vehicleConditionNotes,
@@ -147,7 +148,7 @@ export class RepairOrderService {
   ): Promise<RepairOrder> {
     const supabase = getPrimaryClient();
 
-    const updateData: any = {
+    const updateData: RepairOrderUpdate = {
       diagnosis_notes: data.diagnosisNotes,
       diagnosed_at: new Date().toISOString(),
       status: 'diagnosed',
@@ -231,7 +232,7 @@ export class RepairOrderService {
   ): Promise<RepairOrder> {
     const supabase = getPrimaryClient();
 
-    const updateData: any = {};
+    const updateData: RepairOrderUpdate = {};
 
     if (isPrimary) {
       updateData.primary_technician_id = technicianId;
@@ -243,7 +244,7 @@ export class RepairOrderService {
         .eq('id', repairOrderId)
         .single();
 
-      const additionalTechs = (currentOrder?.additional_technicians as any) || [];
+      const additionalTechs = (currentOrder?.additional_technicians as string[]) || [];
       if (!additionalTechs.includes(technicianId)) {
         additionalTechs.push(technicianId);
         updateData.additional_technicians = additionalTechs;
@@ -354,7 +355,7 @@ export class RepairOrderService {
   ): Promise<RepairOrder> {
     const supabase = getPrimaryClient();
 
-    const updateData: any = {
+    const updateData: RepairOrderUpdate = {
       quality_check_passed: data.passed,
       quality_checked_at: new Date().toISOString(),
       quality_checked_by: data.checkedBy,
@@ -533,7 +534,7 @@ export class RepairOrderService {
 
     const total = laborCost + partsCost;
 
-    const updateData: any = {};
+    const updateData: RepairOrderUpdate = {};
     if (isActual) {
       updateData.actual_labor_cost = laborCost;
       updateData.actual_parts_cost = partsCost;

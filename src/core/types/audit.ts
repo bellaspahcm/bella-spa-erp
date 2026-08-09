@@ -47,11 +47,11 @@ export type ActorType = 'user' | 'system' | 'api';
 export interface FieldChange {
   /** Value before the change. Can be any type (string, number, boolean, object, array, null, undefined) */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  before: any;
+  before: unknown;
   
   /** Value after the change. Can be any type (string, number, boolean, object, array, null, undefined) */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  after: any;
+  after: unknown;
 }
 
 /**
@@ -150,7 +150,7 @@ export interface AuditEvent {
    * ```
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 /**
@@ -201,7 +201,7 @@ export function createAuditEvent(params: {
    * See {@link AuditEvent.metadata} for details.
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }): AuditEvent {
   return {
     id: crypto.randomUUID(),

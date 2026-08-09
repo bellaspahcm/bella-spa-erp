@@ -21,7 +21,7 @@ export default function ApprovalPanel() {
     try {
       const data = await getPendingApprovals();
       setRequests(data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[ApprovalPanel] Fetch failed:', err);
       toast.error('Lỗi khi tải danh sách phê duyệt');
     } finally {
@@ -43,7 +43,7 @@ export default function ApprovalPanel() {
       } else {
         toast.error(res.error || 'Duyệt yêu cầu thất bại');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi kết nối khi phê duyệt');
     } finally {
       setIsSubmitting(false);
@@ -70,7 +70,7 @@ export default function ApprovalPanel() {
       } else {
         toast.error(res.error || 'Từ chối yêu cầu thất bại');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi kết nối khi từ chối');
     } finally {
       setIsSubmitting(false);

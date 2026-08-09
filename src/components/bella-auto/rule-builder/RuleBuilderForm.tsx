@@ -60,7 +60,14 @@ export function RuleBuilderForm({
 
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
-  const [testResult, setTestResult] = useState<any>(null);
+interface TestResult {
+  matched: boolean;
+  conditions: { field: string; operator: string; value: unknown; result: boolean }[];
+  actions: RuleAction[];
+  sampleData: Record<string, unknown>;
+}
+
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const updateRule = (updates: Partial<BusinessRule>) => {
@@ -172,7 +179,7 @@ export function RuleBuilderForm({
   };
 
   const getSampleDataForEntity = (entityType: string) => {
-    const samples: Record<string, any> = {
+    const samples: Record<string, unknown> = {
       quotation: {
         total_price: 2500000000,
         discount: 50000000,
@@ -312,7 +319,7 @@ export function RuleBuilderForm({
             </label>
             <select
               value={rule.entityType}
-              onChange={(e) => updateRule({ entityType: e.target.value as any })}
+              onChange={(e) => updateRule({ entityType: e.target.value as unknown })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white"
               disabled={readonly}
             >
@@ -430,7 +437,7 @@ export function RuleBuilderForm({
                 <div>
                   <span className="font-medium">Hành động sẽ thực hiện:</span>
                   <ul className="list-disc list-inside mt-1">
-                    {testResult.actions.map((action: any, index: number) => (
+                    {testResult.actions.map((action: RuleAction, index: number) => (
                       <li key={index}>{action.type}</li>
                     ))}
                   </ul>

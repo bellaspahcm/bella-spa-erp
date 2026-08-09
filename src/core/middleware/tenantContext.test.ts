@@ -18,7 +18,7 @@ jest.mock('@/lib/supabase-server', () => ({
 import { createClient } from '@/lib/supabase-server';
 
 describe('extractTenantContext', () => {
-  let mockSupabase: any;
+  let mockSupabase: unknown;
   let mockRequest: NextRequest;
 
   beforeEach(() => {
@@ -304,7 +304,7 @@ describe('extractTenantContext', () => {
 });
 
 describe('withTenantContext middleware', () => {
-  let mockSupabase: any;
+  let mockSupabase: unknown;
 
   beforeEach(() => {
     jest.clearAllMocks();

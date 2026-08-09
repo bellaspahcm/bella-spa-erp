@@ -165,11 +165,11 @@ export const RATE_LIMITS = {
 /**
  * Rate limit middleware helper for API routes
  */
-export function withRateLimit(
-  handler: Function,
+export function withRateLimit<TArgs extends unknown[]>(
+  handler: (request: Request, ...args: TArgs) => Promise<Response>,
   config: RateLimitConfig
 ) {
-  return async (request: Request, ...args: any[]) => {
+  return async (request: Request, ...args: TArgs): Promise<Response> => {
     const ip = getClientIp(request);
     const result = checkRateLimit(ip, config);
     

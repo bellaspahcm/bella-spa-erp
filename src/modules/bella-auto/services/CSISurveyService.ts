@@ -472,7 +472,7 @@ export class CSISurveyService {
         consultantMap.set(score.sales_consultant_id, {
           sum: score.overall_csi || 0,
           count: 1,
-          name: (score.employees as any)?.name || 'Unknown',
+          name: (score.employees as unknown)?.name || 'Unknown',
         });
       }
     }

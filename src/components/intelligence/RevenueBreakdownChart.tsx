@@ -42,6 +42,15 @@ const COLORS = [
   '#6366f1', // indigo
 ];
 
+interface CustomLabelProps {
+  cx: number;
+  cy: number;
+  midAngle: number;
+  innerRadius: number;
+  outerRadius: number;
+  percent: number;
+}
+
 export function RevenueBreakdownChart({ data, height = 300 }: RevenueBreakdownChartProps) {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -59,7 +68,7 @@ export function RevenueBreakdownChart({ data, height = 300 }: RevenueBreakdownCh
     innerRadius,
     outerRadius,
     percent,
-  }: any) => {
+  }: CustomLabelProps) => {
     const RADIAN = Math.PI / 180;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -116,7 +125,7 @@ export function RevenueBreakdownChart({ data, height = 300 }: RevenueBreakdownCh
           verticalAlign="bottom"
           height={36}
           iconType="circle"
-          formatter={(value, entry: any) => {
+          formatter={(value, entry: Record<string, unknown>) => {
             const item = data.find((d) => d.source === value);
             return `${value} (${item?.percentage || 0}%)`;
           }}

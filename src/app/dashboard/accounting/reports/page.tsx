@@ -116,7 +116,7 @@ export default function AccountingReportsPage() {
         if (data && data.length > 0) {
           setSelectedAccountId(data[0].id);
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Error fetching accounts for report selector:', err);
         toast.error(getErrorMessage(err, 'Không thể tải danh sách tài khoản cho báo cáo sổ chi tiết.'));
       }
@@ -163,7 +163,7 @@ export default function AccountingReportsPage() {
             { account_id: '4', account_code: '1521', account_name: 'Kho Dược phẩm & Hóa chất LIS', opening_debit: 35000000, opening_credit: 0, period_debit: 28000000, period_credit: 18000000, closing_debit: 45000000, closing_credit: 0 },
             { account_id: '5', account_code: '5113', account_name: 'Doanh thu Dịch vụ Khám Y Tế & Chẩn đoán', opening_debit: 0, opening_credit: 0, period_debit: 0, period_credit: 477500000, closing_debit: 0, closing_credit: 477500000 },
             { account_id: '6', account_code: '6421', account_name: 'Chi phí Lương & Thù lao Y Bác sĩ', opening_debit: 0, opening_credit: 0, period_debit: 176500000, period_credit: 0, closing_debit: 176500000, closing_credit: 0 },
-          ] as any;
+          ] as unknown;
         }
         reportCacheRef.current.set(cacheKey, { kind: 'trial_balance', data: data || [] });
         setTrialBalance(data || []);
@@ -185,7 +185,7 @@ export default function AccountingReportsPage() {
             profit_before_tax: 220200000,
             tax_expense: 44040000,
             net_profit: 176160000,
-          } as any;
+          } as unknown;
         }
         reportCacheRef.current.set(cacheKey, { kind: 'income_statement', data });
         setIncomeStatement(data);
@@ -210,7 +210,7 @@ export default function AccountingReportsPage() {
             owners_capital: 250000000,
             retained_earnings: 177500000,
             total_equity_and_liabilities: 445500000,
-          } as any;
+          } as unknown;
         }
         reportCacheRef.current.set(cacheKey, { kind: 'balance_sheet', data });
         setBalanceSheet(data);
@@ -236,7 +236,7 @@ export default function AccountingReportsPage() {
             owner_contributions: 0,
             loans_received: 0,
             loans_repaid: 0,
-          } as any;
+          } as unknown;
         }
         reportCacheRef.current.set(cacheKey, { kind: 'cash_flow', data });
         setCashFlow(data);

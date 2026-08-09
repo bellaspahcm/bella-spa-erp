@@ -58,7 +58,7 @@ export default function PartnerCommissionPage() {
   });
   const [selectedFilter, setSelectedFilter] = useState<CommissionStatus | 'all'>('all');
 
-  const loadCommissions = async (userId: string) => {
+  async function loadCommissions(userId: string) {
     try {
       setLoading(true);
       const data = await fetchPartnerCommissions(userId);
@@ -89,7 +89,7 @@ export default function PartnerCommissionPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   useEffect(() => {
     const loadUser = async () => {

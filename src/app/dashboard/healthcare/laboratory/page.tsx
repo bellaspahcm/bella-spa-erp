@@ -119,7 +119,7 @@ export default function LaboratoryPage() {
           tubeColor: defaultOpts[0].color,
         }));
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Lỗi tải danh sách xét nghiệm LIS:', err);
     }
   };
@@ -146,7 +146,7 @@ export default function LaboratoryPage() {
       } else {
         toast.error('Lỗi tải phiếu xét nghiệm: ' + res.error);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi kết nối máy chủ');
     } finally {
       setIsLoading(false);

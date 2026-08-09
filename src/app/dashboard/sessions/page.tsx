@@ -136,7 +136,7 @@ function SessionsContent() {
     try {
       const leaves = await getPendingLeaveRequests() as LeaveRequest[];
       setPendingLeaves(leaves);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to load pending leaves:", err);
     }
   }, []);

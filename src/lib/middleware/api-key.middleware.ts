@@ -259,7 +259,7 @@ export async function logAPIRequest(logData: CreateAPIRequestLogInput): Promise<
   const supabase = getAdminSupabaseClient();
 
   // Primary: Use SECURITY DEFINER RPC log_api_request for safe INET handling and RLS bypass
-  const { error: rpcError } = await (supabase.rpc as any)('log_api_request', {
+  const { error: rpcError } = await (supabase.rpc as unknown)('log_api_request', {
     p_partner_id: logData.partner_id,
     p_tenant_id: logData.tenant_id,
     p_method: logData.method,

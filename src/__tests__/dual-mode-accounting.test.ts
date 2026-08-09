@@ -433,7 +433,10 @@ describe('Application Layer protection', () => {
     expect(mockInsert).not.toHaveBeenCalled();
   });
 
-  it('blocks reconciliation debt collection if mode is PROFESSIONAL', async () => {
+  it('allows debt collection in PROFESSIONAL mode (produces classified revenue)', async () => {
+    // collectDebtPayment is intentionally NOT blocked in PROFESSIONAL mode.
+    // It creates revenue with full business_event_type + accounting_metadata
+    // compatible with Professional Core — blocking it would break debt recovery.
     mockGetCurrentUser.mockResolvedValue(ADMIN_USER);
     mockSingle.mockResolvedValueOnce({ data: { accounting_mode: 'PROFESSIONAL' }, error: null });
 
@@ -445,9 +448,8 @@ describe('Application Layer protection', () => {
       packageName: 'Goi cham soc',
     });
 
-    expect(res.success).toBe(false);
-    expect(res.error).toMatch(/Professional Core/);
-    expect(mockInsert).not.toHaveBeenCalled();
+    // Must NOT be blocked with a Professional Core mode error
+    expect(res.error).not.toMatch(/Professional Core/);
   });
 
   it('blocks orphan revenue allocation if mode is PROFESSIONAL', async () => {

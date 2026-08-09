@@ -87,6 +87,8 @@ const mockReferralCampaign = {
 describe('calculateTierDiscount', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockSupabase.rpc = jest.fn();
+    mockSupabase.from = jest.fn();
   });
 
   test('should calculate VIP discount (15% off)', async () => {
@@ -244,6 +246,8 @@ describe('calculateTierDiscount', () => {
 describe('applyCampaignPromotion', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockSupabase.rpc = jest.fn();
+    mockSupabase.from = jest.fn();
   });
 
   test('should apply seasonal campaign (Summer Sale 20%)', async () => {
@@ -345,7 +349,7 @@ describe('applyCampaignPromotion', () => {
   test('should reject campaign when customer exceeded usage limit', async () => {
     mockSupabase.rpc
       .mockResolvedValueOnce({
-        data: [mockReferralCampaign],
+        data: [{ ...mockReferralCampaign, max_uses_per_customer: 5 }],
         error: null,
       })
       .mockResolvedValueOnce({
@@ -419,6 +423,8 @@ describe('applyCampaignPromotion', () => {
 describe('checkDiscountEligibility', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockSupabase.rpc = jest.fn();
+    mockSupabase.from = jest.fn();
   });
 
   test('should return eligible when campaigns available', async () => {
@@ -511,6 +517,8 @@ describe('checkDiscountEligibility', () => {
 describe('trackDiscountUsage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockSupabase.rpc = jest.fn();
+    mockSupabase.from = jest.fn();
   });
 
   const mockInsert = jest.fn();

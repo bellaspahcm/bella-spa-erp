@@ -84,7 +84,7 @@ async function fetchCustomerDetails(customerId: string): Promise<{
       .eq('customer_id', customerId)
       .single();
 
-    const metadataObj = customer.metadata as Record<string, any> | null;
+    const metadataObj = customer.metadata as Record<string, unknown> | null;
     const email = metadataObj?.email || null;
 
     return {

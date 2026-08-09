@@ -47,11 +47,7 @@ export function CapabilityMarketplace({
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'popular' | 'newest' | 'rating'>('popular');
 
-  useEffect(() => {
-    fetchCapabilities();
-  }, []);
-
-  const fetchCapabilities = async () => {
+  async function fetchCapabilities() {
     setIsLoading(true);
     try {
       // TODO: Replace with actual API call
@@ -170,7 +166,11 @@ export function CapabilityMarketplace({
     } finally {
       setIsLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    fetchCapabilities();
+  }, []);
 
   const filteredCapabilities = capabilities
     .filter((cap) => {
@@ -248,7 +248,7 @@ export function CapabilityMarketplace({
         {/* Sort */}
         <select
           value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as any)}
+          onChange={(e) => setSortBy(e.target.value as unknown)}
           className="px-3 py-2 border border-gray-300 rounded-md bg-white"
         >
           <option value="popular">Phổ biến nhất</option>

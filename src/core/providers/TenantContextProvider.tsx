@@ -136,7 +136,7 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
         }
 
         setContext(data as TenantContext);
-      } catch (err) {
+      } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : String(err);
         
         if (process.env.NODE_ENV === 'development') {
@@ -169,7 +169,7 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
       if (hasNumericKeys) {
         modulesArray = Object.values(enabledModules).filter((v): v is string => typeof v === 'string');
       } else {
-        const modules = enabledModules as any;
+        const modules = enabledModules as unknown;
         
         if (modules.real_estate === true) {
           moduleKey = 'real_estate';

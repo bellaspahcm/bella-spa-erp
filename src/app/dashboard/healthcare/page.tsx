@@ -165,7 +165,7 @@ export default function HealthcareDashboardPage() {
 
       if (finalPatients.length > 0) setSelectedPatientId(finalPatients[0].id);
       if (finalEncounters.length > 0) setSelectedEncounterId(finalEncounters[0].id);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[loadInitialData] ❌ Error loading data:', err);
       setError('Lỗi tải dữ liệu phòng khám');
     } finally {
@@ -467,7 +467,7 @@ export default function HealthcareDashboardPage() {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveViewTab(tab.id as any)}
+                onClick={() => setActiveViewTab(tab.id as unknown)}
                 className={`px-4 py-2 rounded-xl text-left transition-all duration-200 cursor-pointer flex flex-col justify-center whitespace-nowrap ${
                   isActive
                     ? 'bg-white dark:bg-slate-800 text-teal-950 dark:text-teal-300 font-extrabold shadow-sm border border-slate-200/90 dark:border-slate-700'

@@ -23,7 +23,7 @@ export default function PartnerInventory() {
       const data = await getPartnerInventory();
       setItems(data);
       setFilteredItems(data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[PartnerInventory] Fetch failed:', err);
       toast.error('Lỗi khi tải bảng hàng');
     } finally {

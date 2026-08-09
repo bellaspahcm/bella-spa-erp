@@ -141,7 +141,7 @@ export function AdjustmentsListPage() {
         if (!error && data) {
           setUserList(data as Array<{ id: string; full_name: string }>);
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('[AdjustmentsListPage] Error fetching users:', err);
       }
     }
@@ -160,7 +160,7 @@ export function AdjustmentsListPage() {
       const supabase = createClient();
       
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let query = (supabase as any)
+      let query = (supabase as unknown)
         .from('salary_adjustments')
         .select(`
           *,
@@ -218,7 +218,7 @@ export function AdjustmentsListPage() {
 
       // Transform data
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const adjustmentsData: SalaryAdjustment[] = (data || []).map((adj: any) => ({
+      const adjustmentsData: SalaryAdjustment[] = (data || []).map((adj: Record<string, unknown>) => ({
         id: adj.id,
         ktv_id: adj.ktv_id,
         month_year: adj.month_year,
@@ -251,7 +251,7 @@ export function AdjustmentsListPage() {
         totalDeductions: deductions.reduce((sum, a) => sum + a.amount, 0),
         pendingCount: pending.length,
       });
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[AdjustmentsListPage] Unexpected error:', err);
       setError('Lỗi hệ thống khi tải dữ liệu');
     } finally {

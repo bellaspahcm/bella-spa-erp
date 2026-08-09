@@ -244,7 +244,7 @@ export async function resolveAccountingReviewItem(params: {
     await safeRevalidatePath('/dashboard/accounting/reconciliation');
 
     return { success: true, data: data?.[0] ?? null };
-  } catch (err) {
+  } catch (err: unknown) {
     console.error('[resolveAccountingReviewItem] Failed:', err);
     return {
       success: false,
@@ -298,7 +298,7 @@ export async function runAccountingMetadataBackfill(params?: {
     }));
 
     return { success: true, data: mappedData };
-  } catch (err) {
+  } catch (err: unknown) {
     console.error('[runAccountingMetadataBackfill] Failed:', err);
     return {
       success: false,

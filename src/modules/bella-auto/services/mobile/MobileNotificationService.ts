@@ -32,7 +32,7 @@ interface CreateNotificationParams {
   title: string;
   message: string;
   actionType?: string;
-  actionData?: any;
+  actionData?: unknown;
   priority?: Priority;
   expiresAt?: string;
 }
@@ -48,7 +48,7 @@ export class MobileNotificationService {
       title: params.title,
       message: params.message,
       action_type: params.actionType,
-      action_data: params.actionData as any,
+      action_data: params.actionData as unknown,
       priority: params.priority || 'normal',
       expires_at: params.expiresAt,
       status: 'pending',

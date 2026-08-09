@@ -118,17 +118,27 @@ export async function getMyCommissionLedger(): Promise<CommissionLedgerEntry[]> 
     throw new Error(`Failed to fetch commission ledger: ${error.message}`);
   }
 
-  return (data || []).map(record => ({
-    id: record.id,
-    deal_id: record.transaction_id || 'N/A',
-    deal_name: (record.metadata as any)?.deal_name || 'N/A',
-    customer_name: (record.metadata as any)?.customer_name || 'N/A',
-    amount: record.commission_amount,
-    status: record.status as 'pending' | 'approved' | 'paid',
-    earned_date: record.earned_date,
-    paid_date: record.paid_at,
-    commission_type: record.transaction_type as 'booking' | 'contract' | 'milestone',
-  }));
+  interface CommissionLedgerMetadata {
+    deal_name?: string;
+    customer_name?: string;
+  }
+
+  const ledgerMetadata = (record.metadata as unknown as CommissionLedgerMetadata) || {};
+
+  return (data || []).map(record => {
+    const meta = (record.metadata as unknown as CommissionLedgerMetadata) || {};
+    return {
+      id: record.id,
+      deal_id: record.transaction_id || 'N/A',
+      deal_name: meta.deal_name || 'N/A',
+      customer_name: meta.customer_name || 'N/A',
+      amount: record.commission_amount,
+      status: record.status as 'pending' | 'approved' | 'paid',
+      earned_date: record.earned_date,
+      paid_date: record.paid_at,
+      commission_type: record.transaction_type as 'booking' | 'contract' | 'milestone',
+    };
+  });
 }
 
 export interface WorkforceLeadFilter {
@@ -233,7 +243,7 @@ export async function projectSiteCheckIn(payload: ProjectCheckInPayload): Promis
     }
 
     return { success: true };
-  } catch (err) {
+  } catch (err: unknown) {
     console.error('[projectSiteCheckIn] Exception:', err);
     return { success: false, error: 'Unexpected error during check-in' };
   }
@@ -377,11 +387,11 @@ export async function getMyTasks(): Promise<WorkforceTask[]> {
     id: t.id,
     title: t.title,
     description: t.description,
-    task_type: t.task_type as any,
-    priority: t.priority as any,
+    task_type: t.task_type as 'lead_followup' | 'site_visit' | 'deposit_reminder' | 'contract_preparation' | 'manual' | 'system_generated',
+    priority: t.priority as 'low' | 'medium' | 'high' | 'urgent',
     due_date: t.due_date,
     due_time: t.due_time,
-    status: t.status as any,
+    status: t.status as 'pending' | 'in_progress' | 'completed' | 'cancelled',
     completed_at: t.completed_at,
     related_lead_id: t.related_lead_id,
     related_customer_id: t.related_customer_id,
@@ -461,11 +471,11 @@ export async function createTask(payload: {
       id: data.id,
       title: data.title,
       description: data.description,
-      task_type: data.task_type as any,
-      priority: data.priority as any,
+      task_type: data.task_type as 'lead_followup' | 'site_visit' | 'deposit_reminder' | 'contract_preparation' | 'manual' | 'system_generated',
+      priority: data.priority as 'low' | 'medium' | 'high' | 'urgent',
       due_date: data.due_date,
       due_time: data.due_time,
-      status: data.status as any,
+      status: data.status as 'pending' | 'in_progress' | 'completed' | 'cancelled',
       completed_at: data.completed_at,
       related_lead_id: data.related_lead_id,
       related_customer_id: data.related_customer_id,
@@ -546,15 +556,22 @@ export async function getMyCheckIns(): Promise<ProjectCheckInRecord[]> {
     throw new Error(`Failed to fetch check-ins: ${error.message}`);
   }
 
-  return (data || []).map(c => ({
-    id: c.id,
-    project_name: (c.real_estate_projects as any)?.name || 'Dự án khác',
-    checkin_time: c.checkin_time,
-    checkout_time: c.checkout_time,
-    visit_purpose: c.visit_purpose || 'site_duty',
-    verification_method: c.verification_method || 'gps',
-    notes: c.notes,
-  }));
+  interface RealEstateProjectJoin {
+    name: string;
+  }
+
+  return (data || []).map(c => {
+    const proj = c.real_estate_projects as unknown as RealEstateProjectJoin;
+    return {
+      id: c.id,
+      project_name: proj?.name || 'Dự án khác',
+      checkin_time: c.checkin_time,
+      checkout_time: c.checkout_time,
+      visit_purpose: c.visit_purpose || 'site_duty',
+      verification_method: c.verification_method || 'gps',
+      notes: c.notes,
+    };
+  });
 }
 
 export interface LeaderboardEntry {
@@ -597,14 +614,22 @@ export async function getWorkforceLeaderboard(month: string): Promise<Leaderboar
     throw new Error(`Failed to fetch leaderboard: ${error.message}`);
   }
 
-  return (data || []).map((row, idx) => ({
-    user_id: row.user_id,
-    name: (row.users as any)?.full_name || 'Nhân viên kinh doanh',
-    avatar_url: (row.users as any)?.avatar_url || null,
-    actual_revenue: Number(row.actual_revenue) || 0,
-    achievement_rate: Number(row.achievement_rate) || 0,
-    rank: idx + 1,
-  }));
+  interface UserJoin {
+    full_name: string | null;
+    avatar_url: string | null;
+  }
+
+  return (data || []).map((row, idx) => {
+    const userRow = row.users as unknown as UserJoin;
+    return {
+      user_id: row.user_id,
+      name: userRow?.full_name || 'Nhân viên kinh doanh',
+      avatar_url: userRow?.avatar_url || null,
+      actual_revenue: Number(row.actual_revenue) || 0,
+      achievement_rate: Number(row.achievement_rate) || 0,
+      rank: idx + 1,
+    };
+  });
 }
 
 export interface WorkforceDocument {
@@ -645,7 +670,7 @@ export async function getMyDocuments(): Promise<WorkforceDocument[]> {
     id: d.id,
     title: d.title,
     description: d.description,
-    document_type: d.document_type as any,
+    document_type: d.document_type as 'brochure' | 'price_list' | 'legal_docs' | 'bank_policy' | 'faq' | 'training' | 'contract_template' | 'other',
     file_url: d.file_url,
     file_name: d.file_name,
     file_size_bytes: Number(d.file_size_bytes) || null,
@@ -697,14 +722,22 @@ export async function getPendingApprovals(): Promise<ApprovalRequest[]> {
   }
 
   // Map leaves
-  const leavesMapped: ApprovalRequest[] = (leavesData || []).map(l => ({
-    id: l.id,
-    type: 'leave',
-    requester_name: (l.users as any)?.full_name || 'Nhân sự',
-    details: `Nghỉ ${l.leave_type === 'full_day' ? 'cả ngày' : 'nửa ngày'} - Ngày: ${l.leave_date} - Lý do: ${l.reason || 'Không có'}`,
-    status: l.status as any,
-    created_at: (l.created_at || new Date().toISOString()) as string,
-  }));
+  interface CustomersJoin {
+    name_mother: string | null;
+    address: string | null;
+  }
+
+  const leavesMapped: ApprovalRequest[] = (leavesData || []).map(l => {
+    const usr = l.users as unknown as UserJoin;
+    return {
+      id: l.id,
+      type: 'leave',
+      requester_name: usr?.full_name || 'Nhân sự',
+      details: `Nghỉ ${l.leave_type === 'full_day' ? 'cả ngày' : 'nửa ngày'} - Ngày: ${l.leave_date} - Lý do: ${l.reason || 'Không có'}`,
+      status: l.status as 'pending' | 'approved' | 'rejected',
+      created_at: (l.created_at || new Date().toISOString()) as string,
+    };
+  });
 
   // Fetch pending commission ledger payouts or pending bookings
   // Since bookings table holds booking details, we can return some mocked bookings that are pending approval
@@ -729,14 +762,17 @@ export async function getPendingApprovals(): Promise<ApprovalRequest[]> {
     console.error('[getPendingApprovals] Bookings fetch failed:', bookingsError);
   }
 
-  const bookingsMapped: ApprovalRequest[] = (bookingsData || []).map(b => ({
-    id: b.id,
-    type: 'booking',
-    requester_name: (b.customers as any)?.name_mother || 'Khách hàng',
-    details: `Đặt giữ chỗ Booking #${b.booking_number} - Gói: ${b.package_name || 'Căn hộ'}`,
-    status: b.status as any,
-    created_at: (b.created_at || new Date().toISOString()) as string,
-  }));
+  const bookingsMapped: ApprovalRequest[] = (bookingsData || []).map(b => {
+    const cust = b.customers as unknown as CustomersJoin;
+    return {
+      id: b.id,
+      type: 'booking',
+      requester_name: cust?.name_mother || 'Khách hàng',
+      details: `Đặt giữ chỗ Booking #${b.booking_number} - Gói: ${b.package_name || 'Căn hộ'}`,
+      status: b.status as 'pending' | 'approved' | 'rejected',
+      created_at: (b.created_at || new Date().toISOString()) as string,
+    };
+  });
 
   return [...leavesMapped, ...bookingsMapped].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }
@@ -898,14 +934,14 @@ export async function getCalendarEvents(dateStr: string): Promise<CalendarEvent[
 
     return (data || []).map(s => {
       const booking = Array.isArray(s.bookings) ? s.bookings[0] : s.bookings;
-      const customer = booking?.customers;
+      const customer = booking?.customers as unknown as CustomersJoin;
       return {
         id: s.id,
         title: `Buổi #${s.session_number} - Khách hàng: ${customer?.name_mother || 'Khách hàng'}`,
         subtitle: `Gói: ${booking?.package_name || 'Liệu trình'}`,
         time_start: s.assigned_time?.split(' - ')[0] || '09:00',
         time_end: s.assigned_time?.split(' - ')[1] || '11:00',
-        status: s.status as any,
+        status: s.status as 'scheduled' | 'in_progress' | 'completed',
         type: 'session',
         location: customer?.address || 'Tại nhà khách hàng',
       };
@@ -983,11 +1019,11 @@ export async function getWorkforceTransactions(): Promise<WorkforceTransaction[]
 
   return (data || []).map(t => ({
     id: t.id,
-    transaction_type: t.transaction_type as any,
+    transaction_type: t.transaction_type as 'booking' | 'deposit' | 'contract' | 'payment_milestone' | 'adjustment',
     base_amount: Number(t.base_amount) || 0,
     commission_rate: t.commission_rate ? Number(t.commission_rate) : null,
     commission_amount: Number(t.commission_amount) || 0,
-    status: t.status as any,
+    status: t.status as 'pending' | 'approved' | 'paid' | 'cancelled',
     earned_date: t.earned_date,
     notes: t.notes,
   }));

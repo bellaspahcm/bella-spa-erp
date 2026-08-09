@@ -40,7 +40,7 @@ export default function GuideReader({ params }: PageProps) {
           return;
         }
         setGuideTitle(found.title);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Error verifying guide access:', err);
         router.push('/dashboard/guides');
       } finally {

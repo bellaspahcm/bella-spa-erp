@@ -122,7 +122,7 @@ export function AddAdjustmentModal({
       } else {
         setError(result.error || 'Không thể tạo điều chỉnh');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[AddAdjustmentModal] Error creating adjustment:', err);
       setError('Lỗi hệ thống');
     } finally {

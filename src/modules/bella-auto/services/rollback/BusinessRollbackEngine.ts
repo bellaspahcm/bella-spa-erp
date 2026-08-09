@@ -45,24 +45,25 @@ import { Database } from '@/types/database.types';
 type BusinessTransactionType = Database['public']['Enums']['auto_business_transaction_type'];
 type BusinessTransactionStatus = Database['public']['Enums']['auto_business_transaction_status'];
 type TransactionStepStatus = Database['public']['Enums']['auto_transaction_step_status'];
+type StepRow = Database['public']['Tables']['auto_transaction_steps']['Row'];
 
 interface StartTransactionParams {
   type: BusinessTransactionType;
   entityType: string;
   entityId: string;
   createdBy?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 interface ExecuteStepParams {
   action: string;
   entityType: string;
   entityId: string;
-  snapshotBefore?: Record<string, any>;
-  snapshotAfter?: Record<string, any>;
+  snapshotBefore?: Record<string, unknown>;
+  snapshotAfter?: Record<string, unknown>;
   compensatingAction: string;
-  compensatingParams: Record<string, any>;
-  metadata?: Record<string, any>;
+  compensatingParams: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
 }
 
 interface BusinessTransaction {
@@ -84,10 +85,10 @@ interface TransactionStep {
   status: TransactionStepStatus;
   entityType: string;
   entityId: string;
-  snapshotBefore?: Record<string, any>;
-  snapshotAfter?: Record<string, any>;
+  snapshotBefore?: Record<string, unknown>;
+  snapshotAfter?: Record<string, unknown>;
   compensatingAction: string;
-  compensatingParams: Record<string, any>;
+  compensatingParams: Record<string, unknown>;
   executedAt?: string;
   rolledBackAt?: string;
   errorMessage?: string;
@@ -306,37 +307,37 @@ export class BusinessRollbackEngine {
    * Execute compensating action for a step
    * This is where actual business logic rollback happens
    */
-  private async executeCompensatingAction(step: any): Promise<void> {
-    const { compensating_action, compensating_params, entity_type, entity_id } = step;
+  private async executeCompensatingAction(step: StepRow): Promise<void> {
+    const { compensating_action, compensating_params, entity_id } = step;
 
     // Route to appropriate handler based on compensating action
     switch (compensating_action) {
       case 'revert_vehicle_status':
-        await this.revertVehicleStatus(entity_id, compensating_params);
+        await this.revertVehicleStatus(entity_id || '', compensating_params as { status: string });
         break;
       
       case 'reverse_accounting_entry':
-        await this.reverseAccountingEntry(entity_id, compensating_params);
+        await this.reverseAccountingEntry(entity_id || '', compensating_params as { reversal_reason: string });
         break;
       
       case 'revert_journey_stage':
-        await this.revertJourneyStage(entity_id, compensating_params);
+        await this.revertJourneyStage(entity_id || '', compensating_params as { previous_stage: string });
         break;
       
       case 'cancel_notification':
-        await this.cancelNotification(entity_id, compensating_params);
+        await this.cancelNotification(entity_id || '', compensating_params as Record<string, unknown>);
         break;
       
       case 'remove_ai_event':
-        await this.removeAIEvent(entity_id, compensating_params);
+        await this.removeAIEvent(entity_id || '', compensating_params as Record<string, unknown>);
         break;
       
       case 'revert_commission':
-        await this.revertCommission(entity_id, compensating_params);
+        await this.revertCommission(entity_id || '', compensating_params as Record<string, unknown>);
         break;
       
       case 'restore_inventory':
-        await this.restoreInventory(entity_id, compensating_params);
+        await this.restoreInventory(entity_id || '', compensating_params as { quantity: number });
         break;
       
       default:
@@ -385,7 +386,7 @@ export class BusinessRollbackEngine {
 
   private async cancelNotification(
     notificationId: string,
-    params: Record<string, any>
+    params: Record<string, unknown>
   ): Promise<void> {
     // Mark notification as cancelled
     console.log('TODO: Implement notification cancellation', { notificationId, params });
@@ -393,7 +394,7 @@ export class BusinessRollbackEngine {
 
   private async removeAIEvent(
     eventId: string,
-    params: Record<string, any>
+    params: Record<string, unknown>
   ): Promise<void> {
     // Remove AI event from insights
     console.log('TODO: Implement AI event removal', { eventId, params });
@@ -401,7 +402,7 @@ export class BusinessRollbackEngine {
 
   private async revertCommission(
     commissionId: string,
-    params: Record<string, any>
+    params: Record<string, unknown>
   ): Promise<void> {
     // Reverse commission calculation
     console.log('TODO: Implement commission reversal', { commissionId, params });

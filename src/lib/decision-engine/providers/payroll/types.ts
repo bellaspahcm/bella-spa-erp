@@ -59,22 +59,22 @@ export interface PayrollDecisionInput {
     kpi?: {
       enabled: boolean;
       strategy: 'threshold' | 'linear' | 'tier';
-      params: Record<string, any>;
+      params: Record<string, unknown>;
     };
     attendance?: {
       enabled: boolean;
       strategy: 'late_deduction' | 'absent_deduction' | 'combined';
-      params: Record<string, any>;
+      params: Record<string, unknown>;
     };
     rating?: {
       enabled: boolean;
       strategy: 'threshold' | 'linear' | 'tier';
-      params: Record<string, any>;
+      params: Record<string, unknown>;
     };
     commission?: {
       enabled: boolean;
       strategy: 'fixed' | 'tier' | 'percentage' | 'service';
-      params: Record<string, any>;
+      params: Record<string, unknown>;
     };
   };
 
@@ -144,7 +144,7 @@ export interface SalaryComponent {
   strategy?: string;
 
   /** Detailed metadata */
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -249,5 +249,5 @@ export interface GateEvaluationResult {
   reason?: string;
 
   /** Gate metadata */
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }

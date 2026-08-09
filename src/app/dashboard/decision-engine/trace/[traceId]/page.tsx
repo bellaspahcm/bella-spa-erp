@@ -87,7 +87,7 @@ export default function TraceViewerPage() {
         }
 
         setTraceData(result);
-      } catch (err) {
+      } catch (err: unknown) {
         setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
         setLoading(false);

@@ -29,7 +29,7 @@ export default function KpiCenter() {
       ]);
       setKpiData(kpi);
       setLeaderboard(lead);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[KpiCenter] Fetch failed:', err);
       toast.error('Lỗi khi tải dữ liệu hiệu suất');
     } finally {

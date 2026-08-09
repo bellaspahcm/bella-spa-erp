@@ -184,7 +184,12 @@ class MockQueryBuilder {
           name_baby: 'Bé Cherry',
           phone: '0901234567',
         },
-        packages: { name: item.package_name || 'Gói Bầu VIP' },
+        packages: (() => {
+          const pkg = mockStore.packages.find((p) => p.id === item.package_id);
+          return pkg
+            ? { name: pkg.name, price: pkg.price, total_sessions: pkg.total_sessions }
+            : { name: item.package_name || 'Gói Bầu VIP', price: item.full_price || 0, total_sessions: item.total_sessions || 15 };
+        })(),
       }));
     }
 

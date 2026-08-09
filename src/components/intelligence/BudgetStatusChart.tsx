@@ -42,6 +42,15 @@ const STATUS_LABELS: Record<string, string> = {
   over: 'Vượt ngân sách',
 };
 
+interface CustomLabelProps {
+  cx: number;
+  cy: number;
+  midAngle: number;
+  innerRadius: number;
+  outerRadius: number;
+  percent: number;
+}
+
 export function BudgetStatusChart({ data, height = 250 }: BudgetStatusChartProps) {
   const renderCustomLabel = ({
     cx,
@@ -50,7 +59,7 @@ export function BudgetStatusChart({ data, height = 250 }: BudgetStatusChartProps
     innerRadius,
     outerRadius,
     percent,
-  }: any) => {
+  }: CustomLabelProps) => {
     const RADIAN = Math.PI / 180;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -92,7 +101,7 @@ export function BudgetStatusChart({ data, height = 250 }: BudgetStatusChartProps
           ))}
         </Pie>
         <Tooltip
-          formatter={(value, name, props: any) => {
+          formatter={(value, name, props: Record<string, unknown>) => {
             const item = data.find((d) => d.status === props.payload.status);
             const numValue = typeof value === 'number' ? value : 0;
             return [

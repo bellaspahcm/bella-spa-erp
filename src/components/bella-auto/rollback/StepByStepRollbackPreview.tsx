@@ -18,8 +18,8 @@ interface TransactionStep {
   compensatingAction: string;
   entityType: string;
   entityId: string;
-  snapshotBefore?: Record<string, any>;
-  snapshotAfter?: Record<string, any>;
+  snapshotBefore?: Record<string, unknown>;
+  snapshotAfter?: Record<string, unknown>;
 }
 
 interface StepByStepRollbackPreviewProps {
@@ -30,7 +30,7 @@ export function StepByStepRollbackPreview({ steps }: StepByStepRollbackPreviewPr
   // Reverse order for rollback visualization
   const reversedSteps = [...steps].reverse();
 
-  const formatValue = (value: any): string => {
+  const formatValue = (value: unknown): string => {
     if (value === null || value === undefined) return 'null';
     if (typeof value === 'object') return JSON.stringify(value, null, 2);
     return String(value);

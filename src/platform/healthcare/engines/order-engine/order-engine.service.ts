@@ -304,7 +304,7 @@ export class OrderEngineService implements OrderEngineContract {
       await this.storeIdempotency(request.requestId, result);
 
       return { success: true, data: result };
-    } catch (err) {
+    } catch (err: unknown) {
       return {
         success: false,
         error: {
@@ -349,7 +349,7 @@ export class OrderEngineService implements OrderEngineContract {
         success: true,
         data: { order, cdsAlerts: [], cdsCheckStatus: order.cdsCheckStatus ?? 'PASSED' },
       };
-    } catch (err) {
+    } catch (err: unknown) {
       return {
         success: false,
         error: {
@@ -446,7 +446,7 @@ export class OrderEngineService implements OrderEngineContract {
 
       await this.storeIdempotency(request.requestId, order);
       return { success: true, data: order };
-    } catch (err) {
+    } catch (err: unknown) {
       return {
         success: false,
         error: {
@@ -544,7 +544,7 @@ export class OrderEngineService implements OrderEngineContract {
 
       await this.storeIdempotency(request.requestId, order);
       return { success: true, data: order };
-    } catch (err) {
+    } catch (err: unknown) {
       return {
         success: false,
         error: {
@@ -590,7 +590,7 @@ export class OrderEngineService implements OrderEngineContract {
       }
 
       return { success: true, data: (data ?? []).map(this.mapOrderRow) };
-    } catch (err) {
+    } catch (err: unknown) {
       return {
         success: false,
         error: {
@@ -661,7 +661,7 @@ export class OrderEngineService implements OrderEngineContract {
       const overrideRecord = this.mapOverrideRow(data);
       await this.storeIdempotency(request.requestId, overrideRecord);
       return { success: true, data: overrideRecord };
-    } catch (err) {
+    } catch (err: unknown) {
       return {
         success: false,
         error: {
@@ -690,7 +690,7 @@ export class OrderEngineService implements OrderEngineContract {
         checks: { database: error ? 'error' : 'ok' },
         message: error ? 'Database connection issue' : undefined,
       };
-    } catch (err) {
+    } catch (err: unknown) {
       return {
         status: 'unhealthy',
         timestamp: new Date().toISOString(),

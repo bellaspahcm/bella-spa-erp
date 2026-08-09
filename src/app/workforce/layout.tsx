@@ -7,7 +7,9 @@ import { resolveTenantBrandIdentity } from '@/lib/business-rules/tenant-modules'
 import { WorkforceBottomNav } from './components/WorkforceBottomNav';
 import { toast } from 'sonner';
 
-async function applyWorkforceBrandRuntime(tenantSettings?: any) {
+type TenantSettingsResult = Awaited<ReturnType<typeof getCachedTenantSettings>>;
+
+async function applyWorkforceBrandRuntime(tenantSettings?: TenantSettingsResult) {
   const tenant = tenantSettings ?? await getCachedTenantSettings();
   if (!tenant || typeof document === 'undefined') return;
 
@@ -87,7 +89,7 @@ export default function WorkforceLayout({
         const tenant = await tenantWarmupPromise;
         await applyWorkforceBrandRuntime(tenant ?? undefined);
         setIsAuthorized(true);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('[WorkforceLayout] Auth check failed:', err);
         router.replace('/login');
       }

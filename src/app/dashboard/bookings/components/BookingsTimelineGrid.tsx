@@ -108,7 +108,7 @@ function checkIfSessionIsLate(session: TimelineSession) {
     const scheduledDateTime = new Date(year, month - 1, day, hour, minute, 0, 0);
     const diffMinutes = (nowVN.getTime() - scheduledDateTime.getTime()) / (1000 * 60);
     return diffMinutes > 15;
-  } catch (err) {
+  } catch (err: unknown) {
     return false;
   }
 }

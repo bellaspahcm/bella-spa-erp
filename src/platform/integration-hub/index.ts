@@ -201,7 +201,7 @@ class IntegrationHubClass {
             result.failed++;
           }
         }
-      } catch (err) {
+      } catch (err: unknown) {
         const errMsg = err instanceof Error ? err.message : String(err);
         this.scheduleRetry(job, errMsg);
         result.failed++;
@@ -237,7 +237,7 @@ class IntegrationHubClass {
         this.scheduleRetry(job, result.error ?? 'Unknown error');
       }
       return result;
-    } catch (err) {
+    } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
       this.scheduleRetry(job, errMsg);
       return { success: false, error: errMsg };

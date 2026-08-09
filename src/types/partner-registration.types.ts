@@ -131,7 +131,7 @@ export interface PartnerApplication {
   ai_recommendation: string | null;
   
   // Extensibility
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   
   // Audit
   created_at: string;
@@ -160,10 +160,10 @@ export interface PartnerApplicationLog {
   // Details
   old_status: PartnerApplicationStatus | null;
   new_status: PartnerApplicationStatus | null;
-  changes: Record<string, { old: any; new: any }> | null;
+  changes: Record<string, { old: unknown; new: unknown }> | null;
   
   // Metadata
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   ip_address: string | null;
   user_agent: string | null;
   
@@ -197,8 +197,8 @@ export interface PartnerApplicationInsert {
   // Optional - System fields
   registration_type?: string;
   status?: PartnerApplicationStatus;
-  documents?: any; // JSONB
-  metadata?: any; // JSONB
+  documents?: unknown; // JSONB
+  metadata?: unknown; // JSONB
   ip_address?: string;
   user_agent?: string;
 }
@@ -223,7 +223,7 @@ export interface PartnerApplicationUpdate {
   ward?: string;
   
   // Documents
-  documents?: any; // JSONB
+  documents?: unknown; // JSONB
   
   // Email verification
   email_verified_at?: string;
@@ -242,10 +242,10 @@ export interface PartnerApplicationUpdate {
   rejection_reason?: string;
   rejection_category?: string;
   info_request_message?: string;
-  info_request_fields?: any; // JSONB
+  info_request_fields?: unknown; // JSONB
   
   // Metadata
-  metadata?: any; // JSONB
+  metadata?: unknown; // JSONB
   updated_by?: string;
 }
 

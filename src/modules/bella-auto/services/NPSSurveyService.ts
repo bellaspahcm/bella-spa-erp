@@ -107,7 +107,7 @@ export class NPSSurveyService {
     // Get customer details
     const { data: customer } = await supabase
       .from('customers')
-      .select('name, email, phone')
+      .select('*')
       .eq('id', survey.customer_id)
       .single();
 
@@ -115,9 +115,13 @@ export class NPSSurveyService {
       throw new Error('Customer not found');
     }
 
+    const customerObj = customer as unknown as Record<string, unknown>;
+    const customerName = (customerObj.name || customerObj.name_mother || 'Customer') as string;
+    const customerEmail = (customerObj.email || 'customer@example.com') as string;
+
     // TODO: Integrate with notification service (email/SMS)
     // For now, just log and update status
-    console.log(`[NPS Survey] Sending to ${customer.name} (${customer.email})`);
+    console.log(`[NPS Survey] Sending to ${customerName} (${customerEmail})`);
 
     // Update survey status to 'sent'
     await supabase

@@ -15,13 +15,14 @@ import { SupabaseClient } from '@supabase/supabase-js';
 export interface RuleCondition {
   field: string;
   operator: 'equals' | 'not_equals' | 'greater_than' | 'less_than' | 'greater_or_equal' | 'less_or_equal' | 'contains' | 'not_contains' | 'in' | 'not_in' | 'between';
-  value: any;
+  value: unknown;
 }
 
 export interface RuleAction {
   type: 'require_approval' | 'auto_approve' | 'auto_reject' | 'set_discount_limit' | 'allocate_vehicle' | 'assign_sales_person' | 'trigger_notification' | 'create_task';
-  [key: string]: any;
+  [key: string]: unknown;
 }
+
 
 export interface BusinessRule {
   id: string;
@@ -86,7 +87,7 @@ export class BusinessRuleEngine {
     tenantId: string,
     entityType: string,
     entityId: string,
-    entityData: Record<string, any>,
+    entityData: Record<string, unknown>,
     userId: string
   ): Promise<RuleEvaluationResult[]> {
     try {
@@ -104,7 +105,7 @@ export class BusinessRuleEngine {
         return [];
       }
 
-      return (data || []).map((row: any) => ({
+      return (data || []).map((row: Record<string, unknown>) => ({
         ruleId: row.rule_id,
         ruleCode: row.rule_code,
         matched: row.matched,
@@ -126,7 +127,7 @@ export class BusinessRuleEngine {
     entityId: string,
     actions: RuleAction[],
     userId: string
-  ): Promise<{ success: boolean; results: any[] }> {
+  ): Promise<{ success: boolean; results: unknown[] }> {
     const results = [];
 
     for (const action of actions) {
@@ -255,9 +256,9 @@ export class BusinessRuleEngine {
       }
 
       // Validate approver role matches current level
-      const workflow = instance.workflow as any;
+      const workflow = instance.workflow as unknown as ApprovalWorkflow;
       const currentLevelConfig = workflow.levels.find(
-        (l: any) => l.level === instance.current_level
+        (l: Record<string, unknown>) => l.level === instance.current_level
       );
 
       if (!currentLevelConfig || currentLevelConfig.role !== approverRole) {
@@ -301,13 +302,13 @@ export class BusinessRuleEngine {
 
       // Check if current level is complete
       const currentLevelApprovals = newApprovals.filter(
-        (a: any) => a.level === instance.current_level && a.approved
+        (a: Record<string, unknown>) => a.level === instance.current_level && a.approved
       );
 
       if (currentLevelApprovals.length >= currentLevelConfig.requiredCount) {
         // Move to next level or complete
         const nextLevel = instance.current_level + 1;
-        const hasNextLevel = workflow.levels.some((l: any) => l.level === nextLevel);
+        const hasNextLevel = workflow.levels.some((l: Record<string, unknown>) => l.level === nextLevel);
 
         const { error: updateError } = await this.supabase
           .from('auto_approval_instances')
@@ -349,7 +350,7 @@ export class BusinessRuleEngine {
     tenantId: string,
     userId: string,
     userRole: string
-  ): Promise<any[]> {
+  ): Promise<unknown[]> {
     try {
       const { data, error } = await this.supabase.rpc('get_pending_approvals', {
         p_tenant_id: tenantId,

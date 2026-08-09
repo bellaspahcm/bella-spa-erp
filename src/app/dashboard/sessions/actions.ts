@@ -31,7 +31,7 @@ export async function getLeaveDecisionRecommendation(leaveId: string) {
       console.error('[getLeaveDecisionRecommendation] Supabase error:', error);
       return {
         error: true,
-        message: `Database error: ${error.message || 'Unknown'}`
+        message: `Database error: ${error instanceof Error ? error.message : 'Unknown'}`
       };
     }
     

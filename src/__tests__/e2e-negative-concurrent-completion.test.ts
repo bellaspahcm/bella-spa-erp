@@ -13,9 +13,14 @@ import type { Database } from '@/types/database.types';
 
 jest.setTimeout(60_000);
 
+import crypto from 'crypto';
+
 describe('E2E Concurrent Session Completion (Race Condition Test)', () => {
   let supabase: ReturnType<typeof createSupabaseClient<Database>>;
   let testTenantId: string;
+  let testCustomerId: string;
+  let testPackageId: string;
+  let testBookingId: string;
   let sessionId: string;
   let ktvAId: string;
   let ktvBId: string;
@@ -29,24 +34,74 @@ describe('E2E Concurrent Session Completion (Race Condition Test)', () => {
 
     const { data: ktvA } = await supabase.from('users').insert({
       tenant_id: testTenantId, email: `ktv-a-concurrent-${Date.now()}@test.com`,
-      full_name: 'KTV A', role: 'ktv', phone: '0900000040', base_salary: 6000000,
+      full_name: 'KTV A', role: 'ktv', phone: `095${Date.now().toString().slice(-7)}`, base_salary: 6000000,
     }).select('id').single();
     ktvAId = ktvA!.id;
 
     const { data: ktvB } = await supabase.from('users').insert({
       tenant_id: testTenantId, email: `ktv-b-concurrent-${Date.now()}@test.com`,
-      full_name: 'KTV B', role: 'ktv', phone: '0900000041', base_salary: 6000000,
+      full_name: 'KTV B', role: 'ktv', phone: `095${(Date.now() + 1).toString().slice(-7)}`, base_salary: 6000000,
     }).select('id').single();
     ktvBId = ktvB!.id;
 
+    // Create test customer
+    testCustomerId = crypto.randomUUID();
+    await supabase.from('customers').insert({
+      id: testCustomerId,
+      tenant_id: testTenantId,
+      name_mother: 'Customer Concurrent Test',
+      phone: `095${(Date.now() + 2).toString().slice(-7)}`,
+      status: 'active',
+    });
+
+    // Create test package
+    testPackageId = crypto.randomUUID();
+    await supabase.from('packages').insert({
+      id: testPackageId,
+      tenant_id: testTenantId,
+      name: 'Concurrent Test Package',
+      full_price: 3000000,
+      total_sessions: 10,
+      status: 'active',
+      module_key: 'baby_care',
+      service_kind: 'treatment_package',
+      default_duration_minutes: 90,
+      requires_resource: false,
+      before_after_required: false,
+    });
+
+    // Create test booking
+    testBookingId = crypto.randomUUID();
+    await supabase.from('bookings').insert({
+      id: testBookingId,
+      tenant_id: testTenantId,
+      customer_id: testCustomerId,
+      package_id: testPackageId,
+      booking_number: `B-CONC-${Date.now()}`,
+      status: 'booked',
+      total_sessions: 10,
+      completed_sessions: 0,
+    });
+
     const { data: session } = await supabase.from('session_logs').insert({
-      booking_id: 'test-booking-concurrent',
+      booking_id: testBookingId,
       session_number: 1,
       assigned_date: new Date().toISOString().split('T')[0],
       status: 'scheduled',
       tenant_id: testTenantId,
     }).select('id').single();
     sessionId = session!.id;
+  });
+
+  afterAll(async () => {
+    if (testTenantId) {
+      await supabase.from('session_logs').delete().eq('tenant_id', testTenantId);
+      await supabase.from('bookings').delete().eq('tenant_id', testTenantId);
+      await supabase.from('packages').delete().eq('tenant_id', testTenantId);
+      await supabase.from('customers').delete().eq('tenant_id', testTenantId);
+      await supabase.from('users').delete().eq('tenant_id', testTenantId);
+      await supabase.from('tenants').delete().eq('id', testTenantId);
+    }
   });
 
   it('should prevent double completion via optimistic locking', async () => {
@@ -56,19 +111,19 @@ describe('E2E Concurrent Session Completion (Race Condition Test)', () => {
         status: 'completed',
         completed_by_ktv_id: ktvAId,
         completed_date: new Date().toISOString().split('T')[0],
-      }).eq('id', sessionId).eq('status', 'scheduled'), // Optimistic lock: only update if still scheduled
+      }).eq('id', sessionId).eq('status', 'scheduled').select(), // Optimistic lock: only update if still scheduled
 
       supabase.from('session_logs').update({
         status: 'completed',
         completed_by_ktv_id: ktvBId,
         completed_date: new Date().toISOString().split('T')[0],
-      }).eq('id', sessionId).eq('status', 'scheduled'), // Same condition
+      }).eq('id', sessionId).eq('status', 'scheduled').select(), // Same condition
     ];
 
     const results = await Promise.all(completionPromises);
 
     // Only ONE update should succeed (the first one)
-    const successCount = results.filter(r => !r.error && r.count === 1).length;
+    const successCount = results.filter(r => !r.error && r.data && r.data.length === 1).length;
     
     expect(successCount).toBe(1); // Only 1 KTV completes successfully
 

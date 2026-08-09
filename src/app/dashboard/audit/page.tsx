@@ -625,7 +625,7 @@ export default function AuditPage() {
       const user = await getCurrentUser();
       if (!user || !user.tenant_id) return { status: 'missing' };
       return { status: 'ready', userId: user.id, tenantId: user.tenant_id };
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error resolving audit session:', err);
       return { status: 'missing' };
     }

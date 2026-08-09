@@ -130,7 +130,7 @@ export default function EIPOrganizationDashboardPage() {
       try {
         const children = await engine.getChildNodes(nodeId);
         setLoadedChildren(prev => ({ ...prev, [nodeId]: children }));
-      } catch (err) {
+      } catch (err: unknown) {
         console.error(`[OrganizationCenter] Failed to load children for ${nodeId}:`, err);
       }
     }

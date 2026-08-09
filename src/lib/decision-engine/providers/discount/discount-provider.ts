@@ -22,7 +22,8 @@
  */
 
 import { RuleReasoner } from '../../RuleReasoner';
-import type { Policy, Knowledge } from '../../types';
+import type { Policy, Knowledge, Condition } from '../../types';
+import type { RuleCondition } from '../../types/rule';
 import { discountRules } from './rules';
 import type {
   CustomerTier,
@@ -269,7 +270,11 @@ export class DiscountProvider {
    * 
    * Maps Decision Engine Rule format to Sprint 2 RuleReasoner format.
    */
-  private convertConditionToReasoner(condition: any): any {
+  private convertConditionToReasoner(condition: RuleCondition): Condition {
+    if (typeof condition === 'function') {
+      throw new Error('Function-based conditions are not supported by convertConditionToReasoner');
+    }
+
     if (condition.type === 'simple') {
       return {
         type: 'comparison',
@@ -283,7 +288,7 @@ export class DiscountProvider {
       return {
         type: 'operator',
         operator: 'and',
-        conditions: condition.conditions.map((c: any) => this.convertConditionToReasoner(c)),
+        conditions: condition.conditions.map((c) => this.convertConditionToReasoner(c)),
       };
     }
 
@@ -291,24 +296,26 @@ export class DiscountProvider {
       return {
         type: 'operator',
         operator: 'or',
-        conditions: condition.conditions.map((c: any) => this.convertConditionToReasoner(c)),
+        conditions: condition.conditions.map((c) => this.convertConditionToReasoner(c)),
       };
     }
 
-    throw new Error(`Unsupported condition type: ${condition.type}`);
+    throw new Error(`Unsupported condition type: ${(condition as { type: string }).type}`);
   }
 
   /**
    * Map Platform operator to RuleReasoner operator
    */
-  private mapOperator(operator: string): string {
-    const operatorMap: Record<string, string> = {
-      equals: '===',
-      not_equals: '!==',
-      greater_than: '>',
-      greater_than_or_equal: '>=',
-      less_than: '<',
-      less_than_or_equal: '<=',
+  private mapOperator(operator: string): '===' | '!==' | '>' | '>=' | '<' | '<=' {
+    const operatorMap: Record<string, '===' | '!==' | '>' | '>=' | '<' | '<='> = {
+      equals: '===' as const,
+      not_equals: '!==' as const,
+      greater_than: '>' as const,
+      greater_than_or_equal: '>=' as const,
+      greaterThanOrEqual: '>=' as const,
+      less_than: '<' as const,
+      less_than_or_equal: '<=' as const,
+      lessThanOrEqual: '<=' as const,
     };
 
     return operatorMap[operator] || '===';

@@ -54,7 +54,7 @@ interface Variant {
   name: string;
   description: string | null;
   base_price: number;
-  features: any;
+  features: unknown;
 }
 
 interface Vehicle {
@@ -73,7 +73,7 @@ const POPULAR_COLORS = [
   { name: 'Xanh Dương', value: 'Xanh Dương', hex: '#2563EB' },
 ];
 
-const STEPS: { key: Step; label: string; icon: any }[] = [
+const STEPS: { key: Step; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { key: 'customer', label: 'Khách Hàng', icon: User },
   { key: 'vehicle', label: 'Xe', icon: Car },
   { key: 'pricing', label: 'Giá & Cọc', icon: DollarSign },
@@ -262,19 +262,19 @@ export function CreateBookingModal({ isOpen, onClose, onSuccess }: CreateBooking
     updateFormData('totalPrice', variant.base_price);
   };
 
-  const handleSelectVehicle = (vehicle: Vehicle | null) => {
+  function handleSelectVehicle(vehicle: Vehicle | null) {
     setSelectedVehicle(vehicle);
     updateFormData('vehicleId', vehicle?.id);
-  };
+  }
 
-  const updateFormData = (field: keyof BookingFormData, value: any) => {
+  function updateFormData(field: keyof BookingFormData, value: BookingFormData[keyof BookingFormData]) {
     setFormData(prev => ({ ...prev, [field]: value }));
     
     // Check duplicate when phone changes in new customer form
     if (field === 'customerPhone' && showNewCustomerForm) {
       checkDuplicatePhone(value);
     }
-  };
+  }
 
   const currentStepIndex = STEPS.findIndex(s => s.key === currentStep);
   const isFirstStep = currentStepIndex === 0;

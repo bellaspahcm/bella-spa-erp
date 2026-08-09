@@ -47,7 +47,7 @@ export default function LoginPageSimple() {
 
       // Success - redirect
       window.location.href = '/dashboard';
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[Login Error]', err);
       setError(
         err instanceof Error 

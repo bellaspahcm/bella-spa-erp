@@ -86,7 +86,7 @@ export function useLandingPackages() {
 
         setDataStatus('fallback');
         setDataError('No active packages returned from database.');
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Fetch active packages error:', err);
         setDataStatus('fallback');
         setDataError(err instanceof Error ? err.message : 'Unknown package fetch error.');
@@ -131,7 +131,7 @@ export function useLandingPromotions() {
         setPromotions(data ? filterActivePromotions(data as Promotion[], todayStr) : []);
         setDataStatus('loaded');
         setDataError(null);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Fetch promotions error:', err);
         setDataStatus('fallback');
         setDataError(err instanceof Error ? err.message : 'Unknown promotions fetch error.');

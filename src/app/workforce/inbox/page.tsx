@@ -17,7 +17,7 @@ export default function InboxCenter() {
     try {
       const data = await getWorkforceNotifications();
       setNotifications(data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[InboxCenter] Fetch failed:', err);
       toast.error('Lỗi khi tải thông báo');
     } finally {
@@ -41,7 +41,7 @@ export default function InboxCenter() {
         toast.error(res.error || 'Lỗi khi cập nhật trạng thái thông báo');
         fetchNotifs(); // rollback
       }
-    } catch (err) {
+    } catch (err: unknown) {
       fetchNotifs(); // rollback
     }
   };

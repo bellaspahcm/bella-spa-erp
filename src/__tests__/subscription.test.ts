@@ -6,6 +6,7 @@ const createChainableMock = (resolvedValue: any, singleValueFn?: () => any) => {
     eq: jest.fn(() => chain),
     or: jest.fn(() => chain),
     neq: jest.fn(() => chain),
+    in: jest.fn(() => chain),
     single: jest.fn(() => {
       if (singleValueFn) return singleValueFn();
       return Promise.resolve(resolvedValue);
@@ -662,10 +663,8 @@ describe('Subscription Constraints & Webhook Suite', () => {
       const response = await POST(req);
       const resData = await response.json();
 
-      // Current implementation: Returns 200 with mocked Supabase client
-      // TODO: Consider adding explicit env validation if strict failure mode is required
-      expect(response.status).toBe(200);
-      // Response structure may vary - just verify it's successful
+      // Config validation throws, returning 500
+      expect(response.status).toBe(500);
       expect(resData).toBeDefined();
       
       // Restore env after test

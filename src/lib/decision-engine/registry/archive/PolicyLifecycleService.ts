@@ -65,7 +65,7 @@ export class PolicyLifecycleService {
     }
 
     // Update status to active and set as active version
-    const updates: any = {
+    const updates: { status: string; publishedAt: string; publishedBy: string } = {
       status: 'active',
       publishedAt: new Date().toISOString(),
       publishedBy: userId,
@@ -128,7 +128,7 @@ export class PolicyLifecycleService {
     }
 
     // Update status
-    const updates: any = {
+    const updates: { status: string; deprecatedAt: string } = {
       status: 'deprecated',
       deprecatedAt: new Date().toISOString(),
     };
@@ -194,7 +194,7 @@ export class PolicyLifecycleService {
     }
 
     // Update status
-    const updates: any = {
+    const updates: { status: string; archivedAt: string } = {
       status: 'archived',
       archivedAt: new Date().toISOString(),
     };
@@ -284,7 +284,7 @@ export class PolicyLifecycleService {
     }
 
     // Update status to active
-    const updates: any = {
+    const updates: { status: string; publishedAt: string; publishedBy: string } = {
       status: 'active',
       publishedAt: policy.publishedAt || new Date().toISOString(),
       publishedBy: policy.publishedBy || userId,
@@ -373,7 +373,7 @@ export class PolicyLifecycleService {
     canArchive: boolean;
     canActivate: boolean;
     canDelete: boolean;
-    governanceCheck: any;
+    governanceCheck: unknown;
   }> {
     const policy = await PolicyRepository.findByIdAndVersion(policyId, version);
     const governanceCheck = await PolicyGovernanceService.checkGovernance(policyId, version);

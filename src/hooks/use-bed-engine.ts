@@ -46,7 +46,7 @@ export function useBedEngine() {
     try {
       const result = await bedEngine.allocateBed(request);
       return result;
-    } catch (err) {
+    } catch (err: unknown) {
       const errorObj = err instanceof Error ? err : new Error('Unknown error');
       setError(errorObj);
       return { success: false, error: { code: 'ENGINE_ERROR', message: errorObj.message, timestamp: new Date().toISOString() } };
@@ -62,7 +62,7 @@ export function useBedEngine() {
     try {
       const result = await bedEngine.releaseBed(request);
       return result;
-    } catch (err) {
+    } catch (err: unknown) {
       const errorObj = err instanceof Error ? err : new Error('Unknown error');
       setError(errorObj);
       return { success: false, error: { code: 'ENGINE_ERROR', message: errorObj.message, timestamp: new Date().toISOString() } };
@@ -78,7 +78,7 @@ export function useBedEngine() {
     try {
       const result = await bedEngine.transferBed(request);
       return result;
-    } catch (err) {
+    } catch (err: unknown) {
       const errorObj = err instanceof Error ? err : new Error('Unknown error');
       setError(errorObj);
       return { success: false, error: { code: 'ENGINE_ERROR', message: errorObj.message, timestamp: new Date().toISOString() } };
@@ -94,7 +94,7 @@ export function useBedEngine() {
     try {
       const result = await bedEngine.queryBeds(request);
       return result;
-    } catch (err) {
+    } catch (err: unknown) {
       const errorObj = err instanceof Error ? err : new Error('Unknown error');
       setError(errorObj);
       return { success: false, error: { code: 'ENGINE_ERROR', message: errorObj.message, timestamp: new Date().toISOString() } };

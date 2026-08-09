@@ -222,7 +222,7 @@ export class PolicyGovernanceService {
     }
 
     // Track which fields changed for audit
-    const changedFields: Array<{ field: string; oldValue: any; newValue: any }> = [];
+    const changedFields: Array<{ field: string; oldValue: unknown; newValue: unknown }> = [];
 
     if (updates.businessOwner && updates.businessOwner !== policy.businessOwner) {
       changedFields.push({

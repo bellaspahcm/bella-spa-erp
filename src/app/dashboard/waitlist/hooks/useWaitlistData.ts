@@ -64,7 +64,7 @@ export function useWaitlistData(params: UseWaitlistDataParams): UseWaitlistDataR
       setEntries(data.entries || []);
       setTotal(data.total || 0);
       setError(null);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error fetching waitlist:', err);
       setError(err instanceof Error ? err.message : 'Lỗi không xác định');
       setEntries([]);

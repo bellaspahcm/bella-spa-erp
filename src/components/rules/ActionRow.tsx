@@ -11,7 +11,7 @@ import { getActionSchema } from '@/lib/decision-engine/action-schema-registry';
 
 export interface ActionExpression {
   type?: string;
-  params?: Record<string, any>;
+  params?: Record<string, unknown>;
 }
 
 interface ActionRowProps {
@@ -33,7 +33,7 @@ export function ActionRow({ provider, action, actionNumber, onChange, onDelete, 
   // Initialize params with default values when action type changes
   useEffect(() => {
     if (actionSchema && !action.params) {
-      const defaultParams: Record<string, any> = {};
+      const defaultParams: Record<string, unknown> = {};
       actionSchema.params.forEach(param => {
         if (param.defaultValue !== undefined) {
           defaultParams[param.key] = param.defaultValue;
@@ -55,7 +55,7 @@ export function ActionRow({ provider, action, actionNumber, onChange, onDelete, 
     });
   };
 
-  const handleParamsChange = (params: Record<string, any>) => {
+  const handleParamsChange = (params: Record<string, unknown>) => {
     onChange({
       ...action,
       params,

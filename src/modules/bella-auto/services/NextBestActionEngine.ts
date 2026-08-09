@@ -11,6 +11,7 @@ import { Database } from '@/types/database.types';
 
 type NextBestAction = Database['public']['Tables']['auto_next_best_actions']['Row'];
 type NextBestActionInsert = Database['public']['Tables']['auto_next_best_actions']['Insert'];
+type NextBestActionUpdate = Database['public']['Tables']['auto_next_best_actions']['Update'];
 type CustomerJourney = Database['public']['Tables']['auto_customer_journeys']['Row'];
 
 export interface ActionRecommendation {
@@ -20,7 +21,7 @@ export interface ActionRecommendation {
   description: string;
   reason: string;
   confidenceScore: number;
-  dataPoints: Record<string, any>;
+  dataPoints: Record<string, unknown>;
   validUntil: Date;
 }
 
@@ -497,7 +498,7 @@ export class NextBestActionEngine {
       action_description: recommendation.description,
       reason: recommendation.reason,
       confidence_score: recommendation.confidenceScore,
-      data_points: recommendation.dataPoints as any,
+      data_points: recommendation.dataPoints as unknown,
       assigned_to: assignedTo,
       status: 'pending',
       valid_until: recommendation.validUntil.toISOString(),
@@ -561,7 +562,7 @@ export class NextBestActionEngine {
   ): Promise<void> {
     const supabase = getPrimaryClient();
 
-    const updateData: any = {
+    const updateData: NextBestActionUpdate = {
       status,
       updated_at: new Date().toISOString(),
     };

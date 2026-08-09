@@ -296,7 +296,7 @@ export default function PatientsPage() {
   }, []);
 
   const [newPatient, setNewPatient] = useState({
-    recordNumber: `BN${Math.floor(100000 + Math.random() * 900000)}`,
+    recordNumber: '',
     name: '',
     gender: 'Nam',
     age: 30,
@@ -306,6 +306,15 @@ export default function PatientsPage() {
     bhytBenefitRate: 80,
     allergiesInput: '',
   });
+
+  useEffect(() => {
+    if (isCreateModalOpen && !newPatient.recordNumber) {
+      setNewPatient(prev => ({
+        ...prev,
+        recordNumber: `BN${Math.floor(100000 + Math.random() * 900000)}`
+      }));
+    }
+  }, [isCreateModalOpen, newPatient.recordNumber]);
 
   const handleCreatePatient = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -335,7 +344,7 @@ export default function PatientsPage() {
         toast.success(`🎉 Khởi tạo hồ sơ MPI cho bệnh nhân ${newPatient.name} thành công!`);
         setIsCreateModalOpen(false);
         setNewPatient({
-          recordNumber: `BN${Math.floor(100000 + Math.random() * 900000)}`,
+          recordNumber: '',
           name: '',
           gender: 'Nam',
           age: 30,
@@ -349,7 +358,7 @@ export default function PatientsPage() {
       } else {
         toast.error('Không thể tạo bệnh nhân: ' + res.error);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error('Lỗi khởi tạo hồ sơ bệnh nhân');
     }
   };

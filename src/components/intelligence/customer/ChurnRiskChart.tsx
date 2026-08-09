@@ -52,7 +52,7 @@ export function ChurnRiskChart({ data, height = 350 }: ChurnRiskChartProps) {
     return null;
   };
 
-  const renderLegend = (props: any) => {
+  const renderLegend = (props: Record<string, unknown>) => {
     const { payload } = props;
     return (
       <ul className="flex justify-center gap-6 mt-4 flex-wrap">

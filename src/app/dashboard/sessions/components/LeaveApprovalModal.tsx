@@ -77,7 +77,7 @@ export function LeaveApprovalModal({ isOpen, onClose, onSuccess, userRole }: Lea
     try {
       const leaves = (await getPendingLeaveRequests()) as LeaveRequest[];
       setPendingLeaves(leaves);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to load pending leaves:", err);
       toast.error("Không thể tải danh sách đơn nghỉ phép");
     }
@@ -88,7 +88,7 @@ export function LeaveApprovalModal({ isOpen, onClose, onSuccess, userRole }: Lea
     try {
       const leaves = (await getProcessedLeaveRequests(month)) as ProcessedLeaveRequest[];
       setProcessedLeaves(leaves);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to load leave history:", err);
       toast.error("Không thể tải lịch sử đơn nghỉ phép");
     } finally {
@@ -101,7 +101,7 @@ export function LeaveApprovalModal({ isOpen, onClose, onSuccess, userRole }: Lea
       const users = (await getUsers()) as KtvUser[];
       const activeKTVs = users.filter((u) => u.role === 'ktv' && u.status === 'active');
       setAllKTVs(activeKTVs);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to load KTVs:", err);
     }
   };
@@ -177,7 +177,7 @@ export function LeaveApprovalModal({ isOpen, onClose, onSuccess, userRole }: Lea
           message: decisionErr instanceof Error ? decisionErr.message : 'Unknown error' 
         });
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to load conflict sessions:", err);
       toast.error("Không thể tải đầy đủ thông tin đơn nghỉ phép");
     } finally {

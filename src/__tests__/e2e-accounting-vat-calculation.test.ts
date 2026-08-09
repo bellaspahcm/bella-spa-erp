@@ -45,19 +45,23 @@ describe('E2E VAT Calculation (Tax Accounting Test)', () => {
     // - VAT Payable: 500k → Account 3331
 
     // STEP 1: Record revenue with VAT split
-    const { data: revenue } = await supabase.from('revenue').insert({
+    const { data: revenue, error: revenueError } = await supabase.from('revenue').insert({
       tenant_id: testTenantId,
-      booking_id: 'test-booking-vat',
+      booking_id: null, // Avoid foreign key constraint on bookings
       amount: packagePrice, // Total including VAT
       payment_method: 'cash',
       status: 'confirmed',
       received_date: new Date().toISOString().split('T')[0],
       revenue_type: 'deposit',
-      vat_amount: vatAmount, // Store VAT amount separately
+      accounting_metadata: { vat_amount: vatAmount }, // Store VAT amount inside accounting_metadata instead of non-existent column
     }).select('*').single();
 
+    if (revenueError) {
+      console.error("DB REVENUE INSERT ERROR:", revenueError);
+    }
+
     expect(revenue!.amount).toBe(packagePrice);
-    expect(revenue!.vat_amount).toBe(vatAmount);
+    expect((revenue!.accounting_metadata as any)?.vat_amount).toBe(vatAmount);
 
     console.log('✅ Step 1: Revenue recorded with VAT', {
       totalAmount: packagePrice,

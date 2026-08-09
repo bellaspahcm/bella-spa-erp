@@ -257,7 +257,7 @@ export class CdsEngineService implements CdsEngineContract {
           evaluatedAt: now,
         },
       };
-    } catch (err) {
+    } catch (err: unknown) {
       return {
         success: false,
         error: {
@@ -379,7 +379,7 @@ export class CdsEngineService implements CdsEngineContract {
           evaluatedAt: now,
         },
       };
-    } catch (err) {
+    } catch (err: unknown) {
       return {
         success: false,
         error: {
@@ -591,7 +591,7 @@ export class CdsEngineService implements CdsEngineContract {
           evaluatedAt: new Date().toISOString(),
         },
       };
-    } catch (err) {
+    } catch (err: unknown) {
       return {
         success: false,
         error: {
@@ -712,7 +712,7 @@ export class CdsEngineService implements CdsEngineContract {
           evaluatedAt: now,
         },
       };
-    } catch (err) {
+    } catch (err: unknown) {
       return {
         success: false,
         error: {
@@ -768,7 +768,7 @@ export class CdsEngineService implements CdsEngineContract {
         success: true,
         data: this.mapAllergyRow(data),
       };
-    } catch (err) {
+    } catch (err: unknown) {
       return {
         success: false,
         error: {
@@ -809,7 +809,7 @@ export class CdsEngineService implements CdsEngineContract {
         success: true,
         data: (data ?? []).map(this.mapAllergyRow),
       };
-    } catch (err) {
+    } catch (err: unknown) {
       return {
         success: false,
         error: {
@@ -838,7 +838,7 @@ export class CdsEngineService implements CdsEngineContract {
         checks: { database: error ? 'error' : 'ok' },
         message: error ? 'Global KB unreachable' : undefined,
       };
-    } catch (err) {
+    } catch (err: unknown) {
       return {
         status: 'unhealthy',
         timestamp: new Date().toISOString(),

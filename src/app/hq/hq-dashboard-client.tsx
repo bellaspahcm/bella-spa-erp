@@ -206,7 +206,7 @@ export default function HqDashboardClient({
     try {
       const data = await getFranchiseRoyaltyInvoices();
       setInvoices(data);
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Không thể tải hóa đơn nhượng quyền: ' + getErrorMessage(err));
     } finally {
       setLoadingRoyalty(false);
@@ -218,7 +218,7 @@ export default function HqDashboardClient({
     try {
       const data = await getInterBranchClearingRecords();
       setClearingRecords(data);
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Không thể tải đối soát liên chi nhánh: ' + getErrorMessage(err));
     } finally {
       setLoadingClearing(false);
@@ -235,7 +235,7 @@ export default function HqDashboardClient({
         return;
       }
       setTransferOrders(result.data);
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Không thể tải danh sách chuyển kho: ' + getErrorMessage(err));
     } finally {
       setLoadingTransfers(false);
@@ -266,7 +266,7 @@ export default function HqDashboardClient({
         const users = await getAuditUsers();
         setAuditUsers(users);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Không thể tải nhật ký kiểm toán: ' + getErrorMessage(err));
     } finally {
       setLoadingAudit(false);
@@ -306,7 +306,7 @@ export default function HqDashboardClient({
       // }
       
       toast.success('Đồng bộ dữ liệu Bella HQ thành công!');
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi khi tải lại dữ liệu: ' + getErrorMessage(err));
     } finally {
       setLoading(false);
@@ -348,7 +348,7 @@ export default function HqDashboardClient({
       } else {
         toast.error(res.error || 'Duyệt giao hàng thất bại');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi: ' + getErrorMessage(err));
     } finally {
       setSubmittingTransferAction(false);
@@ -371,7 +371,7 @@ export default function HqDashboardClient({
       } else {
         toast.error(res.error || 'Từ chối cấp hàng thất bại');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi: ' + getErrorMessage(err));
     } finally {
       setSubmittingTransferAction(false);
@@ -389,7 +389,7 @@ export default function HqDashboardClient({
       } else {
         toast.error(res.error || 'Thao tác gạch nợ thất bại');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi: ' + getErrorMessage(err));
     }
   };
@@ -416,7 +416,7 @@ export default function HqDashboardClient({
       } else {
         toast.error(res.error || 'Cập nhật thất bại.');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi: ' + getErrorMessage(err));
     } finally {
       setSubmittingClearingRate(false);
@@ -435,7 +435,7 @@ export default function HqDashboardClient({
       // Exclude HQ branch itself when listing target branches to distribute
       const filteredTenantsForMatrix = matrix.tenants.filter((t: { id: string; name: string }) => t.name !== 'Bella Spa Headquarter');
       setMatrixTenants(filteredTenantsForMatrix);
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Không thể tải danh sách liệu trình và ma trận phân phối: ' + getErrorMessage(err));
     } finally {
       setLoadingServices(false);
@@ -520,7 +520,7 @@ export default function HqDashboardClient({
           toast.error(res.error || 'Thêm mới thất bại');
         }
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi lưu liệu trình: ' + getErrorMessage(err));
     } finally {
       setSubmittingTemplate(false);
@@ -538,7 +538,7 @@ export default function HqDashboardClient({
       } else {
         toast.error(res.error || 'Xóa thất bại');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi khi xóa: ' + getErrorMessage(err));
     }
   };
@@ -568,7 +568,7 @@ export default function HqDashboardClient({
       } else {
         toast.error(res.error || 'Phân phối thất bại');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi phân phối: ' + getErrorMessage(err));
     } finally {
       setSubmittingDistribution(false);
@@ -659,7 +659,7 @@ export default function HqDashboardClient({
       } else {
         toast.error(res.error || 'Thao tác thất bại');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Có lỗi xảy ra: ' + getErrorMessage(err));
     } finally {
       setUpdatingId(null);
@@ -699,7 +699,7 @@ export default function HqDashboardClient({
       } else {
         toast.error(res.error || 'Cập nhật chính sách thất bại.');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi lưu cấu hình: ' + getErrorMessage(err));
     } finally {
       setSubmittingConfig(false);
@@ -718,7 +718,7 @@ export default function HqDashboardClient({
       } else {
         toast.error(res.error || 'Gạch nợ thất bại');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi khi đối soát: ' + getErrorMessage(err));
     } finally {
       setLoadingRoyalty(false);

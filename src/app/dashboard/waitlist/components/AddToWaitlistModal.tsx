@@ -83,7 +83,7 @@ export function AddToWaitlistModal({
         const data = await response.json();
         setCustomers(data.customers || []);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error fetching customers:', err);
     } finally {
       setIsLoadingCustomers(false);
@@ -98,7 +98,7 @@ export function AddToWaitlistModal({
         const data = await response.json();
         setPackages(data.packages || []);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error fetching packages:', err);
     } finally {
       setIsLoadingPackages(false);
@@ -113,7 +113,7 @@ export function AddToWaitlistModal({
         const data = await response.json();
         setKtvs(data.users || []);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error fetching KTVs:', err);
     } finally {
       setIsLoadingKtvs(false);
@@ -221,7 +221,7 @@ export function AddToWaitlistModal({
       
       toast.success(`Đã thêm vào vị trí #${data.position || '?'} trong hàng chờ`);
       onSuccess();
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Lỗi không xác định');
     } finally {
       setIsSubmitting(false);

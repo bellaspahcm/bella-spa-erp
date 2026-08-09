@@ -19,6 +19,9 @@ import { RulesFilters } from '@/components/rules/RulesFilters';
 import { RulesTableSkeleton } from '@/components/rules/RulesTableSkeleton';
 import DecisionEngineHeader from '@/components/decision-engine/DecisionEngineHeader';
 
+import { getTenantSettings } from '@/services/tenant-actions';
+import { getDefaultTenantModuleKey } from '@/lib/business-rules/tenant-modules';
+
 export const metadata = {
   title: 'Quy tắc nghiệp vụ | Bella ERP',
   description: 'Quản lý các quy tắc tự động phân ca, tính lương, hoa hồng và các nghiệp vụ khác',
@@ -40,6 +43,15 @@ export default async function RulesPage({ searchParams }: RulesPageProps) {
   const search = resolvedParams.search || undefined;
   const page = Number(resolvedParams.page) || 1;
 
+  // Resolve tenant module on the server side
+  const tenant = await getTenantSettings();
+  const moduleKey = getDefaultTenantModuleKey(tenant?.enabled_modules);
+  const isHealthcare = moduleKey === 'bella_healthcare';
+
+  const subtitle = isHealthcare
+    ? 'Cấu hình các luật giám định bảo hiểm (BHYT), chỉ định lâm sàng, phân bổ giường bệnh và ca trực y tế'
+    : 'Cấu hình các luật tự động phân ca, hoa hồng, tính lương và chiết khấu';
+
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#11100F] transition-colors duration-300">
       {/* Shared Tabs Header */}
@@ -53,7 +65,7 @@ export default async function RulesPage({ searchParams }: RulesPageProps) {
               Quy tắc & Luật nghiệp vụ
             </h2>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Cấu hình các luật tự động phân ca, hoa hồng, tính lương và chiết khấu
+              {subtitle}
             </p>
           </div>
           <Link href="/dashboard/rules/new">

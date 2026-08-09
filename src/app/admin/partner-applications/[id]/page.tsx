@@ -53,7 +53,7 @@ export default function PartnerApplicationDetailPage() {
       
       // For now, show error
       setError('Database not yet deployed. Application data will appear here after migration.');
-    } catch (err) {
+    } catch (err: unknown) {
       setError('Failed to load application');
       console.error('[loadApplication] Error:', err);
     } finally {
@@ -101,7 +101,7 @@ export default function PartnerApplicationDetailPage() {
       } else {
         throw new Error(data.error || 'Approval failed');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[handleApprove] Error:', err);
       alert(err instanceof Error ? err.message : 'Failed to approve application');
     } finally {
@@ -143,7 +143,7 @@ export default function PartnerApplicationDetailPage() {
       } else {
         throw new Error(data.error || 'Rejection failed');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[handleReject] Error:', err);
       alert(err instanceof Error ? err.message : 'Failed to reject application');
     } finally {
@@ -184,7 +184,7 @@ export default function PartnerApplicationDetailPage() {
       } else {
         throw new Error(data.error || 'Info request failed');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[handleRequestInfo] Error:', err);
       alert(err instanceof Error ? err.message : 'Failed to request info');
     } finally {

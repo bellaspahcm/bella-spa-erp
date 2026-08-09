@@ -8,14 +8,14 @@ import { createClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY!;
 
 describe('Bella Auto Phase 7 - Trade-In Center', () => {
   let supabase: ReturnType<typeof createClient<Database>>;
-  const testTenantId = 'bella_auto_demo';
+  const testTenantId = 'da9e610b-88c5-4901-8ab9-5439f4931467'; // Valid UUID for test tenant
 
   beforeAll(() => {
-    supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+    supabase = createClient<Database>(supabaseUrl, supabaseKey);
   });
 
   describe('Schema Validation', () => {

@@ -27,7 +27,7 @@ export class RealEstateInboxReceiver implements IInboxReceiver {
 
       console.log(`[RealEstateInboxReceiver] Successfully processed lead for client ${item.senderName}`);
       return { success: true };
-    } catch (err) {
+    } catch (err: unknown) {
       return {
         success: false,
         error: err instanceof Error ? err.message : 'Failed to receive inbox item',

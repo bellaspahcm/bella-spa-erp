@@ -23,7 +23,8 @@
  */
 
 import { RuleReasoner } from '../../RuleReasoner';
-import type { Policy } from '../../types';
+import type { Policy, Condition } from '../../types';
+import type { RuleCondition } from '../../types/rule';
 import { assignmentRules } from './rules/assignment-rules';
 import type {
   AutoAssignmentInput,
@@ -581,7 +582,11 @@ export class AutoAssignmentProvider {
    * Convert Platform Rule condition to RuleReasoner condition
    * @private
    */
-  private convertConditionToReasoner(condition: any): any {
+  private convertConditionToReasoner(condition: RuleCondition): Condition {
+    if (typeof condition === 'function') {
+      throw new Error('Function-based conditions are not supported by convertConditionToReasoner');
+    }
+
     if (condition.type === 'simple') {
       // Handle 'exists' operator
       if (condition.operator === 'exists') {
@@ -605,7 +610,7 @@ export class AutoAssignmentProvider {
       return {
         type: 'operator',
         operator: 'and',
-        conditions: (condition.conditions || []).map((c: any) =>
+        conditions: (condition.conditions || []).map((c) =>
           this.convertConditionToReasoner(c)
         ),
       };
@@ -615,29 +620,32 @@ export class AutoAssignmentProvider {
       return {
         type: 'operator',
         operator: 'or',
-        conditions: (condition.conditions || []).map((c: any) =>
+        conditions: (condition.conditions || []).map((c) =>
           this.convertConditionToReasoner(c)
         ),
       };
     }
 
-    throw new Error(`Unsupported condition type: ${condition.type}`);
+    throw new Error(`Unsupported condition type: ${(condition as { type: string }).type}`);
   }
 
   /**
    * Map Platform operator to RuleReasoner operator
    * @private
    */
-  private mapOperator(operator: string): string {
-    const operatorMap: Record<string, string> = {
-      equals: '===',
-      notEquals: '!==',
-      greaterThan: '>',
-      greaterThanOrEqual: '>=',
-      lessThan: '<',
-      lessThanOrEqual: '<=',
+  private mapOperator(operator: string): '>=' | '>' | '<=' | '<' | '==' | '===' | '!=' | '!==' {
+    const operatorMap: Record<string, '>= ' | '>' | '<=' | '<' | '==' | '===' | '!=' | '!=='> = {
+      equals: '===' as const,
+      notEquals: '!==' as const,
+      greaterThan: '>' as const,
+      greaterThanOrEqual: '>=' as const,
+      lessThan: '<' as const,
+      lessThanOrEqual: '<=' as const,
     };
 
-    return operatorMap[operator] || '===';
+    const mapped = operatorMap[operator];
+    // Strip trailing space in '>= ' typo if any, ensuring type correctness
+    return (mapped ? mapped.trim() : '===') as '>=' | '>' | '<=' | '<' | '==' | '===' | '!=' | '!==';
   }
 }
+

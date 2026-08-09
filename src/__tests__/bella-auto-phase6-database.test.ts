@@ -3,20 +3,54 @@
  * Tests service appointments, repair orders, service history, warranty claims
  */
 
-import { describe, it, expect, beforeAll } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY!;
 
 describe('Bella Auto Phase 6 - Service Center & Workshop', () => {
   let supabase: ReturnType<typeof createClient<Database>>;
-  const testTenantId = 'bella_auto_demo';
+  const testTenantId = 'da9e610b-88c5-4901-8ab9-5439f4931467'; // Valid UUID for test tenant
+  let testCustomerId: string;
+  let testVehicleId: string;
 
-  beforeAll(() => {
-    supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+  beforeAll(async () => {
+    jest.setTimeout(60000);
+    supabase = createClient<Database>(supabaseUrl, supabaseKey);
+
+    // Create test customer
+    const { data: customer } = await supabase
+      .from('customers')
+      .insert({
+        tenant_id: testTenantId,
+        name_mother: 'Test Customer Phase 6 DB',
+        phone: '09' + Math.floor(10000000 + Math.random() * 90000000).toString(),
+      })
+      .select()
+      .single();
+    testCustomerId = customer!.id;
+
+    // Query an existing vehicle to bypass complex variant foreign keys
+    const { data: vehicle } = await supabase
+      .from('auto_vehicles')
+      .select('id')
+      .limit(1)
+      .single();
+    testVehicleId = vehicle!.id;
   });
+
+  afterAll(async () => {
+    // Cleanup test data
+    await supabase.from('auto_technician_time_logs').delete().eq('tenant_id', testTenantId);
+    await supabase.from('auto_warranty_claims').delete().eq('tenant_id', testTenantId);
+    await supabase.from('auto_service_history').delete().eq('tenant_id', testTenantId);
+    await supabase.from('auto_repair_order_items').delete().eq('tenant_id', testTenantId);
+    await supabase.from('auto_repair_orders').delete().eq('tenant_id', testTenantId);
+    await supabase.from('auto_service_appointments').delete().eq('tenant_id', testTenantId);
+    await supabase.from('customers').delete().eq('id', testCustomerId);
+  }, 30000); // Increase timeout to 30s for cleanup
 
   describe('Schema Validation', () => {
     it('should have auto_service_packages table', async () => {
@@ -121,17 +155,21 @@ describe('Bella Auto Phase 6 - Service Center & Workshop', () => {
 
   describe('Service Appointment Lifecycle', () => {
     it('should create service appointment with unique number', async () => {
+      const todayDateStr = new Date().toISOString().split('T')[0];
       const { data: aptNumber } = await supabase
         .rpc('generate_appointment_number', { p_tenant_id: testTenantId });
 
       const appointment = {
         tenant_id: testTenantId,
         appointment_number: aptNumber,
-        customer_id: '00000000-0000-0000-0000-000000000001',
-        vehicle_id: '00000000-0000-0000-0000-000000000002',
-        scheduled_date: '2026-08-10',
-        scheduled_time: '09:00:00',
+        customer_id: testCustomerId,
+        vehicle_id: testVehicleId,
+        appointment_date: todayDateStr,
+        appointment_time: '09:00:00',
+        scheduled_date: `${todayDateStr}T09:00:00Z`,
         service_type: 'Bảo dưỡng định kỳ',
+        requested_services: 'Bảo dưỡng định kỳ',
+        vehicle_info: 'Toyota Fortuner 2024',
         status: 'pending',
       };
 
@@ -148,23 +186,31 @@ describe('Bella Auto Phase 6 - Service Center & Workshop', () => {
     });
 
     it('should transition appointment status: pending -> confirmed -> checked_in', async () => {
+      const todayDateStr = new Date().toISOString().split('T')[0];
       const { data: aptNumber } = await supabase
         .rpc('generate_appointment_number', { p_tenant_id: testTenantId });
 
-      const { data: apt } = await supabase
+      const { data: apt, error: aptErr } = await supabase
         .from('auto_service_appointments')
         .insert({
           tenant_id: testTenantId,
           appointment_number: aptNumber,
-          customer_id: '00000000-0000-0000-0000-000000000001',
-          vehicle_id: '00000000-0000-0000-0000-000000000002',
-          scheduled_date: '2026-08-10',
-          scheduled_time: '10:00:00',
+          customer_id: testCustomerId,
+          vehicle_id: testVehicleId,
+          appointment_date: todayDateStr,
+          appointment_time: '10:00:00',
+          scheduled_date: `${todayDateStr}T10:00:00Z`,
           service_type: 'Test',
+          requested_services: 'Test',
+          vehicle_info: 'Toyota Fortuner 2024',
           status: 'pending',
         })
         .select()
         .single();
+
+      if (aptErr) {
+        console.error('Apt Insert Error:', aptErr);
+      }
 
       // Confirm
       const { data: confirmed } = await supabase
@@ -177,15 +223,19 @@ describe('Bella Auto Phase 6 - Service Center & Workshop', () => {
       expect(confirmed?.status).toBe('confirmed');
 
       // Check-in
-      const { data: checkedIn } = await supabase
+      const { data: checkedIn, error: checkinErr } = await supabase
         .from('auto_service_appointments')
         .update({
           status: 'checked_in',
-          actual_arrival_time: new Date().toISOString(),
+          checked_in_at: new Date().toISOString(),
         })
         .eq('id', apt!.id)
         .select()
         .single();
+
+      if (checkinErr) {
+        console.error('Check-in Error:', checkinErr);
+      }
 
       expect(checkedIn?.status).toBe('checked_in');
     });
@@ -201,11 +251,14 @@ describe('Bella Auto Phase 6 - Service Center & Workshop', () => {
         .insert({
           tenant_id: testTenantId,
           order_number: roNumber,
-          customer_id: '00000000-0000-0000-0000-000000000001',
-          vehicle_id: '00000000-0000-0000-0000-000000000002',
+          customer_id: testCustomerId,
+          vehicle_id: testVehicleId,
+          order_date: '2026-08-09',
           order_type: 'Sửa chữa',
           work_description: 'Thay dầu động cơ',
           mileage_in: 50000,
+          customer_name: 'Test Customer',
+          vehicle_info: 'Toyota Fortuner 2024',
           status: 'open',
         })
         .select()
@@ -253,11 +306,14 @@ describe('Bella Auto Phase 6 - Service Center & Workshop', () => {
         .insert({
           tenant_id: testTenantId,
           order_number: roNumber,
-          customer_id: '00000000-0000-0000-0000-000000000001',
-          vehicle_id: '00000000-0000-0000-0000-000000000002',
+          customer_id: testCustomerId,
+          vehicle_id: testVehicleId,
+          order_date: '2026-08-09',
           order_type: 'Test',
           work_description: 'Test',
           mileage_in: 50000,
+          customer_name: 'Test Customer',
+          vehicle_info: 'Toyota Fortuner 2024',
           status: 'open',
         })
         .select()
@@ -279,7 +335,7 @@ describe('Bella Auto Phase 6 - Service Center & Workshop', () => {
         .single();
 
       // total_amount should be auto-calculated: (3 * 100000) * (1 - 0.1) = 270000
-      expect(lineItem?.total_amount).toBe('270000');
+      expect(Number(lineItem?.total_amount)).toBe(270000);
     });
   });
 
@@ -293,38 +349,41 @@ describe('Bella Auto Phase 6 - Service Center & Workshop', () => {
         .insert({
           tenant_id: testTenantId,
           order_number: roNumber,
-          customer_id: '00000000-0000-0000-0000-000000000001',
-          vehicle_id: '00000000-0000-0000-0000-000000000002',
+          customer_id: testCustomerId,
+          vehicle_id: testVehicleId,
+          order_date: '2026-08-09',
           order_type: 'Bảo dưỡng',
           work_description: 'Test maintenance',
           mileage_in: 60000,
+          customer_name: 'Test Customer',
+          vehicle_info: 'Toyota Fortuner 2024',
           status: 'completed',
         })
         .select()
         .single();
 
-      const { data: history } = await supabase
+      const { data: history, error: historyErr } = await supabase
         .from('auto_service_history')
         .insert({
           tenant_id: testTenantId,
           vin: 'TEST-VIN-123456',
           vehicle_id: repairOrder!.vehicle_id,
-          license_plate: '30A-12345',
-          vehicle_make: 'Toyota',
-          vehicle_model: 'Camry',
-          vehicle_year: 2023,
-          customer_id: repairOrder!.customer_id,
-          customer_name: 'Test Customer',
           repair_order_id: repairOrder!.id,
-          repair_order_number: repairOrder!.order_number,
           service_date: repairOrder!.order_date,
           service_type: repairOrder!.order_type,
-          mileage: repairOrder!.mileage_in,
-          work_description: repairOrder!.work_description,
+          mileage: repairOrder!.mileage_in || 60000,
+          service_description: repairOrder!.work_description || 'Test maintenance',
+          services_performed: ['Bảo dưỡng định kỳ'],
+          recorded_at: new Date().toISOString(),
+          recorded_by: testCustomerId,
           is_locked: true,
         })
         .select()
         .single();
+
+      if (historyErr) {
+        console.error('History Insert Error:', historyErr);
+      }
 
       expect(history).toBeDefined();
       expect(history?.is_locked).toBe(true);
@@ -362,12 +421,13 @@ describe('Bella Auto Phase 6 - Service Center & Workshop', () => {
         .insert({
           tenant_id: testTenantId,
           claim_number: claimNumber,
-          customer_id: '00000000-0000-0000-0000-000000000001',
-          vehicle_id: '00000000-0000-0000-0000-000000000002',
+          customer_id: testCustomerId,
+          vehicle_id: testVehicleId,
+          claim_date: '2026-08-09',
           claim_type: 'Engine',
-          failure_description: 'Test warranty claim',
+          issue_description: 'Test warranty claim',
           failure_date: '2026-08-01',
-          mileage_at_failure: 40000,
+          failure_mileage: 40000,
           status: 'submitted',
         })
         .select()
@@ -387,12 +447,13 @@ describe('Bella Auto Phase 6 - Service Center & Workshop', () => {
         .insert({
           tenant_id: testTenantId,
           claim_number: claimNumber,
-          customer_id: '00000000-0000-0000-0000-000000000001',
-          vehicle_id: '00000000-0000-0000-0000-000000000002',
+          customer_id: testCustomerId,
+          vehicle_id: testVehicleId,
+          claim_date: '2026-08-09',
           claim_type: 'Test',
-          failure_description: 'Test',
+          issue_description: 'Test',
           failure_date: '2026-08-01',
-          mileage_at_failure: 40000,
+          failure_mileage: 40000,
           status: 'submitted',
         })
         .select()
@@ -412,19 +473,23 @@ describe('Bella Auto Phase 6 - Service Center & Workshop', () => {
       expect(approved?.status).toBe('approved');
 
       // Complete
-      const { data: completed } = await supabase
+      const { data: completed, error: completeErr } = await supabase
         .from('auto_warranty_claims')
         .update({
           status: 'completed',
-          completed_at: new Date().toISOString(),
-          actual_repair_cost: 5000000,
+          closed_at: new Date().toISOString(),
+          total_approved: 5000000,
         })
         .eq('id', claim!.id)
         .select()
         .single();
 
+      if (completeErr) {
+        console.error('Complete Claim Error:', completeErr);
+      }
+
       expect(completed?.status).toBe('completed');
-      expect(Number(completed?.actual_repair_cost)).toBe(5000000);
+      expect(Number(completed?.total_approved)).toBe(5000000);
     });
   });
 
@@ -438,11 +503,14 @@ describe('Bella Auto Phase 6 - Service Center & Workshop', () => {
         .insert({
           tenant_id: testTenantId,
           order_number: roNumber,
-          customer_id: '00000000-0000-0000-0000-000000000001',
-          vehicle_id: '00000000-0000-0000-0000-000000000002',
+          customer_id: testCustomerId,
+          vehicle_id: testVehicleId,
+          order_date: '2026-08-09',
           order_type: 'Test',
           work_description: 'Test',
           mileage_in: 50000,
+          customer_name: 'Test Customer',
+          vehicle_info: 'Toyota Fortuner 2024',
           status: 'in_progress',
         })
         .select()

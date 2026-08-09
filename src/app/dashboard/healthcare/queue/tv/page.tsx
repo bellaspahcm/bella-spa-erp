@@ -118,14 +118,14 @@ export default function QueueTVScreenPage() {
             fallbackToWebSpeech(textToSpeak);
           });
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.warn('Google TTS initialization failed, falling back to WebSpeech:', err);
       fallbackToWebSpeech(textToSpeak);
     }
   };
 
   // SoundOfText CORS-friendly API fallback to play Google Vietnamese TTS voice without referrer limits
-  const playSoundOfText = (textToSpeak: string, onSuccess: () => void, onError: (err: any) => void) => {
+  const playSoundOfText = (textToSpeak: string, onSuccess: () => void, onError: (err: Record<string, unknown>) => void) => {
     fetch('https://api.soundoftext.com/sounds', {
       method: 'POST',
       headers: {
@@ -168,7 +168,7 @@ export default function QueueTVScreenPage() {
   };
 
   // Primary High-Reliability Google TTS Proxy fetching raw MP3 via open CORS Proxy (AllOrigins)
-  const playViaCorsProxy = (textToSpeak: string, onSuccess: () => void, onError: (err: any) => void) => {
+  const playViaCorsProxy = (textToSpeak: string, onSuccess: () => void, onError: (err: Record<string, unknown>) => void) => {
     try {
       const googleTtsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=vi&q=${encodeURIComponent(textToSpeak)}`;
       const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(googleTtsUrl)}`;
@@ -202,7 +202,7 @@ export default function QueueTVScreenPage() {
   };
 
   // 100% Reliable Local Next.js Server-Side TTS Proxy (immune to client-side CORS/referrer blocks)
-  const playViaLocalProxy = (textToSpeak: string, onSuccess: () => void, onError: (err: any) => void) => {
+  const playViaLocalProxy = (textToSpeak: string, onSuccess: () => void, onError: (err: Record<string, unknown>) => void) => {
     try {
       const localUrl = `/api/tts?text=${encodeURIComponent(textToSpeak)}`;
       const audio = document.getElementById('tts-audio') as HTMLAudioElement;
@@ -266,16 +266,16 @@ export default function QueueTVScreenPage() {
 
             // 3. Try ResponsiveVoice (CDN Cloud TTS with natural native Vietnamese voice)
             setDebugStatus('Đang kết nối...');
-            if (typeof window !== 'undefined' && (window as any).responsiveVoice) {
+            if (typeof window !== 'undefined' && (window as unknown).responsiveVoice) {
               try {
-                (window as any).responsiveVoice.speak(textToSpeak, "Vietnamese Female", {
+                (window as unknown).responsiveVoice.speak(textToSpeak, "Vietnamese Female", {
                   rate: 0.9,
                   pitch: 1.0,
                   onstart: () => {
                     setDebugStatus('Giọng Việt (Cloud 2)');
                     toast.success(`🔊 [ResponsiveVoice] AI Voice đang phát thông báo: "${textToSpeak}"`);
                   },
-                  onerror: (rvErr: any) => {
+                  onerror: (rvErr: Record<string, unknown>) => {
                     console.warn('ResponsiveVoice playback failed, trying SoundOfText:', rvErr);
 
                     // 4. Try SoundOfText API
@@ -294,7 +294,7 @@ export default function QueueTVScreenPage() {
                   }
                 });
                 return;
-              } catch (err) {
+              } catch (err: unknown) {
                 console.warn('ResponsiveVoice execution failed, trying SoundOfText:', err);
               }
             }
@@ -323,7 +323,7 @@ export default function QueueTVScreenPage() {
       window.speechSynthesis.cancel();
     }
     try {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const AudioContextClass = window.AudioContext || (window as unknown).webkitAudioContext;
       if (AudioContextClass) {
         const context = new AudioContextClass();
         if (context.state === 'suspended') {

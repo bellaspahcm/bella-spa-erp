@@ -470,7 +470,7 @@ export async function publishSalaryRecord(ktvId: string) {
   } catch (e: unknown) {
     const err = e as Error;
     console.error('Error in publishSalaryRecord:', err);
-    return { success: false, error: err.message || 'Lỗi không xác định' };
+    return { success: false, error: err instanceof Error ? err.message : 'Lỗi không xác định' };
   }
 }
 
@@ -550,7 +550,7 @@ export async function publishAllSalaryRecords() {
 
   let targets: Array<{ id: string }> = [];
   if (moduleKey === 'real_estate') {
-    const { data: hrSummary, error: hrError } = await (supabase as any).rpc(
+    const { data: hrSummary, error: hrError } = await (supabase as unknown).rpc(
       'get_hr_employee_summary',
       { p_tenant_id: tenantId, p_status: 'active' }
     );
@@ -560,7 +560,7 @@ export async function publishAllSalaryRecords() {
         error: `Không thể tải danh sách nhân viên: ${hrError.message}`,
       }]);
     }
-    targets = (hrSummary || []).map((row: any) => ({ id: row.person_id }));
+    targets = (hrSummary || []).map((row: Record<string, unknown>) => ({ id: row.person_id }));
   } else {
     const { data: ktvs, error: ktvError } = await supabase
       .from('users')
@@ -1279,7 +1279,7 @@ export async function approveSalary(ktvId: string) {
   } catch (error: unknown) {
     const err = error as Error;
     console.error('Error in approveSalary:', err);
-    return { success: false, error: err.message || 'Lỗi không xác định' };
+    return { success: false, error: err instanceof Error ? err.message : 'Lỗi không xác định' };
   }
 }
 
@@ -1533,8 +1533,7 @@ export async function confirmKtvSessions(ktvId: string, totalSessions: number) {
     revalidateSalaryPage();
     return { success: true };
   } catch (error: unknown) {
-    const err = error as Error;
-    console.error('Failed to confirm sessions (exception):', err);
-    return { success: false, error: err.message || 'Lỗi không xác định' };
+    console.error('Failed to confirm sessions (exception):', error);
+    return { success: false, error: getErrorMessage(error, 'Lỗi không xác định') };
   }
 }

@@ -41,7 +41,7 @@ export function usePharmacyEngine() {
     try {
       const result = await pharmacyEngine.getMedicationOrders(tenantId, encounterId);
       return result;
-    } catch (err) {
+    } catch (err: unknown) {
       const errorObj = err instanceof Error ? err : new Error('Unknown error');
       setError(errorObj);
       return {
@@ -62,7 +62,7 @@ export function usePharmacyEngine() {
     try {
       const result = await pharmacyEngine.recordMedicationAdministration(request);
       return result;
-    } catch (err) {
+    } catch (err: unknown) {
       const errorObj = err instanceof Error ? err : new Error('Unknown error');
       setError(errorObj);
       return {

@@ -67,7 +67,7 @@ export function useRollbackAudit(filters?: AuditFilters) {
       const data = await response.json();
       setStats(data.stats);
       setLogs(data.logs);
-    } catch (err) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Unknown error');
       setStats(null);
       setLogs([]);

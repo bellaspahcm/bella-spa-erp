@@ -63,7 +63,7 @@ export function WaitlistDetailContent({ entryId }: WaitlistDetailContentProps) {
         // Non-critical, keep notifications empty
         setNotifications([]);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error fetching waitlist entry:', err);
       setError(err instanceof Error ? err.message : 'Lỗi không xác định');
     } finally {
@@ -95,7 +95,7 @@ export function WaitlistDetailContent({ entryId }: WaitlistDetailContentProps) {
 
       toast.success('Đã gửi thông báo đến khách hàng');
       await fetchEntry();
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Lỗi khi gửi thông báo');
     } finally {
       setIsProcessing(false);
@@ -118,7 +118,7 @@ export function WaitlistDetailContent({ entryId }: WaitlistDetailContentProps) {
 
       toast.success('Đã đánh dấu giữ chỗ cho khách hàng');
       await fetchEntry();
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Lỗi khi đánh dấu');
     } finally {
       setIsProcessing(false);
@@ -140,7 +140,7 @@ export function WaitlistDetailContent({ entryId }: WaitlistDetailContentProps) {
 
       toast.success('Đã chuyển đổi sang lịch hẹn thành công');
       await fetchEntry();
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Lỗi khi chuyển đổi');
     } finally {
       setIsProcessing(false);
@@ -163,7 +163,7 @@ export function WaitlistDetailContent({ entryId }: WaitlistDetailContentProps) {
 
       toast.success('Đã xóa khỏi danh sách chờ');
       router.push('/dashboard/waitlist');
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Lỗi khi hủy');
     } finally {
       setIsProcessing(false);

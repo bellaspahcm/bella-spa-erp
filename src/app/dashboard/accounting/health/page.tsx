@@ -146,7 +146,7 @@ export default function AccountingHealthPage() {
       ]);
       setSummary(accountingData);
       setBusinessSummary(businessData);
-    } catch (err) {
+    } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Không thể tải sức khỏe sổ kế toán.';
       toast.error(message);
     } finally {
@@ -172,7 +172,7 @@ export default function AccountingHealthPage() {
       });
       toast.success(result.message);
       await loadData(month);
-    } catch (err) {
+    } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Không thể xử lý nhanh cảnh báo dữ liệu.';
       toast.error(message);
     } finally {
@@ -196,7 +196,7 @@ export default function AccountingHealthPage() {
       const result = await publishAccountingHealthAlertNotification(`${month}-01`);
       toast.success(result.message);
       await loadData(month);
-    } catch (err) {
+    } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Không thể tạo thông báo nội bộ cho cảnh báo worker.';
       toast.error(message);
     } finally {

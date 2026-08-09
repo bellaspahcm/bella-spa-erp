@@ -1,7 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 // Inline debounce implementation to avoid lodash dependency issues
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function debounce<T extends (...args: any[]) => void>(fn: T, delay: number) {
+function debounce<T extends (...args: unknown[]) => void>(fn: T, delay: number) {
   let timer: ReturnType<typeof setTimeout> | null = null;
   const debounced = (...args: Parameters<T>) => {
     if (timer) clearTimeout(timer);
@@ -83,7 +82,7 @@ export function useKtvAvailability() {
 
         const data: KTVAvailabilityResult = await response.json();
         setAvailability(data);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('[useKtvAvailability] Error:', err);
         setError(err instanceof Error ? err.message : 'Failed to check availability');
         setAvailability(null);

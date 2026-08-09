@@ -44,7 +44,7 @@ export default function PatientQueuePage() {
       const res = await getPatientQueueAction();
       if (res.success && res.data) {
         // Map database queue model to frontend QueueItem model
-        const mapped: QueueItem[] = res.data.map((q: any) => ({
+        const mapped: QueueItem[] = res.data.map((q: Record<string, unknown>) => ({
           id: q.id,
           ticketNumber: q.ticket_number,
           patientName: q.patient_name,
@@ -65,7 +65,7 @@ export default function PatientQueuePage() {
       } else {
         toast.error('Lỗi tải danh sách hàng đợi: ' + res.error);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi kết nối máy chủ');
     } finally {
       setIsLoading(false);
@@ -271,7 +271,7 @@ export default function PatientQueuePage() {
                 <PremiumSelect
                   options={QUEUE_TYPE_OPTIONS}
                   value={newTicket.queueType}
-                  onChange={(val) => setNewTicket({ ...newTicket, queueType: val as any })}
+                  onChange={(val) => setNewTicket({ ...newTicket, queueType: val as unknown })}
                   buttonClassName="px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 font-bold text-slate-900 dark:text-white text-xs h-10"
                 />
               </div>
@@ -281,7 +281,7 @@ export default function PatientQueuePage() {
                 <PremiumSelect
                   options={STATION_OPTIONS}
                   value={newTicket.station}
-                  onChange={(val) => setNewTicket({ ...newTicket, station: val as any })}
+                  onChange={(val) => setNewTicket({ ...newTicket, station: val as unknown })}
                   buttonClassName="px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 font-bold text-slate-900 dark:text-white text-xs h-10"
                 />
               </div>

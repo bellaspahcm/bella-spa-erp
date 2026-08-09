@@ -111,7 +111,7 @@ const DEMO_CONTRACTS: ContractRecord[] = [
 export async function fetchContractsAction(): Promise<{ success: boolean; data?: ContractRecord[]; error?: string }> {
   try {
     return { success: true, data: DEMO_CONTRACTS };
-  } catch (err) {
+  } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Unknown error';
     return { success: false, error: msg };
   }
@@ -127,7 +127,7 @@ export async function signContractAction(contractId: string): Promise<{ success:
     // Mark first milestone as paid
     if (contract.milestones[0]) contract.milestones[0].status = 'paid';
     return { success: true };
-  } catch (err) {
+  } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Unknown error';
     return { success: false, error: msg };
   }
@@ -149,7 +149,7 @@ export async function recordMilestonePaymentAction(
     const allPaid = contract.milestones.every(m => m.status === 'paid');
     if (allPaid) contract.status = 'completed';
     return { success: true };
-  } catch (err) {
+  } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Unknown error';
     return { success: false, error: msg };
   }
@@ -184,7 +184,7 @@ export async function createContractAction(
 
     DEMO_CONTRACTS.push(newContract);
     return { success: true, data: newContract };
-  } catch (err) {
+  } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Unknown error';
     return { success: false, error: msg };
   }

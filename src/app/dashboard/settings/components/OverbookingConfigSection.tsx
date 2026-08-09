@@ -120,7 +120,7 @@ export default function OverbookingConfigSection({
           </h3>
           <p className="text-sm text-muted-foreground font-semibold">
             {isHealthcare
-              ? "Bật / tắt kiểm tra từng loại tài nguyên theo quy mô phòng khám"
+              ? "Bật / tắt kiểm tra từng loại tài nguyên theo quy mô bệnh viện"
               : "Bật / tắt kiểm tra từng loại tài nguyên theo quy mô cơ sở"}
           </p>
         </div>
@@ -130,8 +130,8 @@ export default function OverbookingConfigSection({
       <div className="flex items-start gap-3 p-4 bg-blue-50/80 border border-blue-100 rounded-2xl mb-5 text-sm">
         <Info className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
         <p className="text-blue-700 font-medium leading-relaxed">
-          Doanh nghiệp có thể tắt bớt kiểm tra phòng hoặc thiết bị cố định nếu không sử dụng để tránh cảnh báo không cần thiết.
-          Kiểm tra trùng lịch làm việc nhân sự luôn được bật mặc định.
+          Bệnh viện có thể tắt bớt kiểm tra buồng bệnh, giường hoặc thiết bị cố định nếu không sử dụng để tránh cảnh báo không cần thiết.
+          Kiểm tra trùng lịch trực bác sĩ & nhân sự y tế luôn được bật mặc định.
         </p>
       </div>
 
@@ -140,8 +140,8 @@ export default function OverbookingConfigSection({
         <ToggleRow
           id="conflict-toggle-worker"
           icon={<Users className="w-5 h-5" />}
-          label={isHealthcare ? "Trùng lịch bác sĩ / y sĩ" : "Trùng lịch nhân sự"}
-          description={isHealthcare ? "Ngăn xếp 2 bệnh nhân cho cùng 1 bác sĩ trong cùng khung giờ. Tính năng cốt lõi, không thể tắt." : "Ngăn xếp lịch 2 khách cho cùng 1 nhân sự trong cùng khung giờ. Tính năng cốt lõi, không thể tắt."}
+          label={isHealthcare ? "Trùng lịch bác sĩ / nhân sự y tế" : "Trùng lịch nhân sự"}
+          description={isHealthcare ? "Ngăn xếp lịch điều trị cho cùng 1 bác sĩ/nhân sự y tế trong cùng khung giờ. Tính năng cốt lõi, không thể tắt." : "Ngăn xếp lịch 2 khách cho cùng 1 nhân sự trong cùng khung giờ. Tính năng cốt lõi, không thể tắt."}
           checked={true}
           disabled={true}
           disabledReason="Bắt buộc"
@@ -152,8 +152,8 @@ export default function OverbookingConfigSection({
         <ToggleRow
           id="conflict-toggle-room"
           icon={<BedDouble className="w-5 h-5" />}
-          label={isHealthcare ? "Trùng phòng khám / ghế nha" : "Trùng phòng / giường"}
-          description={isHealthcare ? "Cảnh báo khi 2 bệnh nhân được đặt cùng phòng khám hoặc ghế nha trong cùng khung giờ." : "Cảnh báo khi 2 khách được đặt cùng phòng hoặc giường trong cùng khung giờ."}
+          label={isHealthcare ? "Trùng phòng bệnh / giường bệnh / phòng mổ" : "Trùng phòng / giường"}
+          description={isHealthcare ? "Cảnh báo khi 2 bệnh nhân được xếp cùng một giường bệnh hoặc phòng mổ trong cùng khung giờ." : "Cảnh báo khi 2 khách được đặt cùng phòng hoặc giường trong cùng khung giờ."}
           checked={config.detectRoomConflicts}
           onChange={(val) => update("detectRoomConflicts", val)}
         />
@@ -162,8 +162,8 @@ export default function OverbookingConfigSection({
         <ToggleRow
           id="conflict-toggle-equipment"
           icon={<Wrench className="w-5 h-5" />}
-          label={isHealthcare ? "Trùng máy X-Quang / thiết bị 3D" : "Trùng thiết bị"}
-          description={isHealthcare ? "Cảnh báo khi 2 lượt khám dùng cùng máy X-Quang 3D / thiết bị chuyên khoa trong cùng khung giờ." : "Cảnh báo khi 2 khách dùng cùng thiết bị trong cùng khung giờ."}
+          label={isHealthcare ? "Trùng máy quét chuyên sâu / thiết bị y tế" : "Trùng thiết bị"}
+          description={isHealthcare ? "Cảnh báo khi 2 lượt điều trị cùng sử dụng một thiết bị chuyên khoa hoặc máy quét y tế trong cùng khung giờ." : "Cảnh báo khi 2 khách dùng cùng thiết bị trong cùng khung giờ."}
           checked={config.detectEquipmentConflicts}
           onChange={(val) => update("detectEquipmentConflicts", val)}
         />

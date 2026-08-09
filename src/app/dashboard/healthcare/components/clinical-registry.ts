@@ -42,8 +42,8 @@ export const HealthcareComponentRegistry = new HealthcareComponentRegistryClass(
 export interface DashboardWidget {
   readonly id: string;
   readonly capability: string;
-  visible(user: any): boolean;
-  render(context?: any): React.ReactNode;
+  visible(user: unknown): boolean;
+  render(context?: unknown): React.ReactNode;
 }
 
 class WidgetRegistryClass {

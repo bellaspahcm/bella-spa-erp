@@ -38,16 +38,19 @@ export class ValidationPolicy implements ProcurementPolicy<ValidationResult> {
     const matchedRules: string[] = [];
     const validationErrors: string[] = [];
 
+    const budgetRaw = context.budget as unknown as Record<string, unknown> | undefined;
+    const budgetAvailable = context.budget?.available ?? (typeof budgetRaw?.remaining === 'number' ? budgetRaw.remaining : 0);
+
     // Rule 1: Budget availability check
     const budgetCheck = {
-      passed: budget.available >= requisition.totalAmount,
-      available: budget.available,
+      passed: budgetAvailable >= requisition.totalAmount,
+      available: budgetAvailable,
       required: requisition.totalAmount,
     };
 
     if (!budgetCheck.passed) {
       validationErrors.push(
-        `Insufficient budget: ${budget.available.toLocaleString()}đ available, ${requisition.totalAmount.toLocaleString()}đ required`
+        `Insufficient budget: ${budgetAvailable.toLocaleString()}đ available, ${requisition.totalAmount.toLocaleString()}đ required`
       );
       matchedRules.push('budget-insufficient');
     } else {

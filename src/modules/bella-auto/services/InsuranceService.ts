@@ -90,7 +90,7 @@ export class InsuranceService {
       policy_type: params.policyType,
       coverage_amount: params.coverageAmount,
       deductible_amount: params.deductibleAmount,
-      coverage_items: params.coverageItems as any,
+      coverage_items: params.coverageItems as unknown,
       premium_amount: params.premiumAmount,
       premium_payment_frequency: params.premiumPaymentFrequency,
       effective_date: params.effectiveDate,
@@ -321,7 +321,7 @@ export class InsuranceService {
       policy_type: oldPolicy.policy_type,
       coverage_amount: oldPolicy.coverage_amount,
       deductible_amount: oldPolicy.deductible_amount,
-      coverage_items: oldPolicy.coverage_items as any,
+      coverage_items: oldPolicy.coverage_items as unknown,
       premium_amount: renewalParams.premiumAmount ?? oldPolicy.premium_amount,
       premium_payment_frequency: oldPolicy.premium_payment_frequency,
       effective_date: renewalParams.effectiveDate,
@@ -528,7 +528,7 @@ export class InsuranceService {
     const { data, error } = await supabase
       .from('auto_insurance_policies')
       .update({
-        coverage_items: updatedCoverage as any,
+        coverage_items: updatedCoverage as unknown,
         updated_by: updatedBy,
       })
       .eq('id', policyId)

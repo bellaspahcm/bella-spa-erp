@@ -92,7 +92,7 @@ export const UnitDetailModal: React.FC<UnitDetailModalProps> = ({
       setErrorMsg(null);
       await onUpdateStatus(product.id, targetStatus, ownerInput || product.owner_name);
       onClose();
-    } catch (err) {
+    } catch (err: unknown) {
       setErrorMsg(err instanceof Error ? err.message : 'Cập nhật thất bại');
     } finally {
       setIsSubmitting(false);
@@ -126,7 +126,7 @@ export const UnitDetailModal: React.FC<UnitDetailModalProps> = ({
         });
       }
       setIsEditing(false);
-    } catch (err) {
+    } catch (err: unknown) {
       setErrorMsg(err instanceof Error ? err.message : 'Cập nhật thất bại');
     } finally {
       setIsSubmitting(false);

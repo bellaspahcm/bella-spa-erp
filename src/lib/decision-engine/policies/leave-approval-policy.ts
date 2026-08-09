@@ -16,7 +16,7 @@
 
 // import type { Policy } from '../types'; // TODO: Define Policy type or remove this file
 
-export const leaveApprovalPolicy: any = {
+export const leaveApprovalPolicy: Record<string, unknown> = {
   name: 'Leave Approval Policy',
   version: '1.0.0',
   description: 'Business rules for employee leave request approval',

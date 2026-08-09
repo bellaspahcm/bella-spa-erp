@@ -63,7 +63,7 @@ export interface ZaloOAInsight {
   clickThroughRate: number; // (clicks / delivered) * 100
   conversionRate: number; // (conversions / visits) * 100
   
-  rawData?: Record<string, any>; // Full API response for debugging
+  rawData?: Record<string, unknown>; // Full API response for debugging
 }
 
 /**

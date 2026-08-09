@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileCheck, ShieldCheck, CheckCircle2, Building2, Plus, Download } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -38,10 +38,19 @@ export default function ContractsPage() {
 
   const [newContract, setNewContract] = useState({
     name: '',
-    code: `INS-PARTNER-${Math.floor(10 + Math.random() * 90)}`,
+    code: '',
     type: 'Bảo Hiểm Tư Nhân / Bảo Lãnh Trực Tiếp',
     coverageRate: '100% Quyền lợi Thẻ',
   });
+
+  useEffect(() => {
+    if (isAddModalOpen && !newContract.code) {
+      setNewContract(prev => ({
+        ...prev,
+        code: `INS-PARTNER-${Math.floor(10 + Math.random() * 90)}`
+      }));
+    }
+  }, [isAddModalOpen, newContract.code]);
 
   const handleCreateContractSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,7 +72,7 @@ export default function ContractsPage() {
     setContracts([created, ...contracts]);
     setIsAddModalOpen(false);
     toast.success(`🎉 Đã thêm hợp đồng bảo hiểm bảo lãnh ${created.name} (${created.code})!`);
-    setNewContract({ name: '', code: `INS-PARTNER-${Math.floor(10 + Math.random() * 90)}`, type: 'Bảo Hiểm Tư Nhân / Bảo Lãnh Trực Tiếp', coverageRate: '100% Quyền lợi Thẻ' });
+    setNewContract({ name: '', code: '', type: 'Bảo Hiểm Tư Nhân / Bảo Lãnh Trực Tiếp', coverageRate: '100% Quyền lợi Thẻ' });
   };
 
   return (

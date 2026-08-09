@@ -11,8 +11,9 @@
  * 4. Tenant isolation (RLS)
  */
 
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from '@jest/globals';
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 import {
   createServiceItem,
   updateServiceItem,
@@ -24,23 +25,99 @@ import type { ServiceItemInput } from '../service-items-actions';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'mock-key';
 
+jest.setTimeout(60000);
+
 describe('Service Items Actions', () => {
   let testBookingId: string;
   let testTenantId: string;
   let testKtvId: string;
+  let testCustomerId: string;
+  let testPackageId: string;
   let createdServiceItemIds: string[] = [];
 
+  beforeAll(async () => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+    const supabase = createClient(url, serviceKey);
+
+    // Create test tenant
+    testTenantId = crypto.randomUUID();
+    await supabase.from('tenants').insert({
+      id: testTenantId,
+      name: 'Service Item Test Tenant',
+      status: 'active',
+    });
+
+    // Create test KTV user
+    testKtvId = crypto.randomUUID();
+    await supabase.from('users').insert({
+      id: testKtvId,
+      tenant_id: testTenantId,
+      email: `ktv-service-item-${Date.now()}@test.com`,
+      full_name: 'KTV Service Item Test',
+      role: 'ktv',
+      phone: `095${Date.now().toString().slice(-7)}`,
+      status: 'active',
+    });
+
+    // Create test customer
+    testCustomerId = crypto.randomUUID();
+    await supabase.from('customers').insert({
+      id: testCustomerId,
+      tenant_id: testTenantId,
+      name_mother: 'Customer Service Item Test',
+      phone: `095${(Date.now() + 1).toString().slice(-7)}`,
+      status: 'active',
+    });
+
+    // Create test package
+    testPackageId = crypto.randomUUID();
+    await supabase.from('packages').insert({
+      id: testPackageId,
+      tenant_id: testTenantId,
+      name: 'Service Item Test Package',
+      full_price: 3000000,
+      total_sessions: 10,
+      status: 'active',
+      module_key: 'baby_care',
+      service_kind: 'treatment_package',
+      default_duration_minutes: 90,
+      requires_resource: false,
+      before_after_required: false,
+    });
+
+    // Create test booking
+    testBookingId = crypto.randomUUID();
+    await supabase.from('bookings').insert({
+      id: testBookingId,
+      tenant_id: testTenantId,
+      customer_id: testCustomerId,
+      package_id: testPackageId,
+      booking_number: `B-${Date.now()}`,
+      status: 'booked',
+      total_sessions: 10,
+      completed_sessions: 0,
+    });
+  });
+
+  afterAll(async () => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+    const supabase = createClient(url, serviceKey);
+
+    await supabase.from('booking_service_items').delete().eq('tenant_id', testTenantId);
+    await supabase.from('bookings').delete().eq('tenant_id', testTenantId);
+    await supabase.from('packages').delete().eq('tenant_id', testTenantId);
+    await supabase.from('customers').delete().eq('tenant_id', testTenantId);
+    await supabase.from('users').delete().eq('tenant_id', testTenantId);
+    await supabase.from('tenants').delete().eq('id', testTenantId);
+  });
+
   beforeEach(() => {
-    // Generate test UUIDs
-    testTenantId = 'test-tenant-' + Date.now();
-    testBookingId = 'test-booking-' + Date.now();
-    testKtvId = 'test-ktv-' + Date.now();
     createdServiceItemIds = [];
   });
 
   afterEach(async () => {
-    // Cleanup: Delete all created service items
-    // Note: In real test, this would use Supabase client to cleanup
     createdServiceItemIds = [];
   });
 

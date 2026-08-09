@@ -106,7 +106,7 @@ export interface CoreBookingOrder {
    * - `completion_photos: string[]` - URLs to completion photos
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 /**

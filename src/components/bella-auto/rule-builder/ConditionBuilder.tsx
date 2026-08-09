@@ -5,14 +5,14 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Trash2, Plus } from 'lucide-react';
 
 export interface RuleCondition {
   id: string;
   field: string;
   operator: 'equals' | 'not_equals' | 'greater_than' | 'less_than' | 'greater_or_equal' | 'less_or_equal' | 'contains' | 'not_contains' | 'in' | 'not_in' | 'between';
-  value: any;
+  value: unknown;
   logicOperator?: 'AND' | 'OR';
 }
 
@@ -98,7 +98,7 @@ export function ConditionBuilder({
 }: ConditionBuilderProps) {
   const fields = ENTITY_FIELDS[entityType] || [];
 
-  const addCondition = () => {
+  const addCondition = useCallback(() => {
     const newCondition: RuleCondition = {
       id: `cond-${Date.now()}`,
       field: fields[0]?.key || '',
@@ -107,17 +107,17 @@ export function ConditionBuilder({
       logicOperator: conditions.length > 0 ? 'AND' : undefined,
     };
     onChange([...conditions, newCondition]);
-  };
+  }, [conditions, fields, onChange]);
 
-  const removeCondition = (id: string) => {
+  const removeCondition = useCallback((id: string) => {
     onChange(conditions.filter((c) => c.id !== id));
-  };
+  }, [conditions, onChange]);
 
-  const updateCondition = (id: string, updates: Partial<RuleCondition>) => {
+  const updateCondition = useCallback((id: string, updates: Partial<RuleCondition>) => {
     onChange(
       conditions.map((c) => (c.id === id ? { ...c, ...updates } : c))
     );
-  };
+  }, [conditions, onChange]);
 
   const getFieldType = (fieldKey: string): string => {
     return fields.find((f) => f.key === fieldKey)?.type || 'text';
@@ -254,7 +254,7 @@ export function ConditionBuilder({
             {/* Operator Selector */}
             <select
               value={condition.operator}
-              onChange={(e) => updateCondition(condition.id, { operator: e.target.value as any })}
+              onChange={(e) => updateCondition(condition.id, { operator: e.target.value as unknown })}
               className="px-3 py-2 border border-gray-300 rounded-md bg-white min-w-[150px]"
               disabled={readonly}
             >

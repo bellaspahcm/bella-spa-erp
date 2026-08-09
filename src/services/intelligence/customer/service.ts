@@ -40,7 +40,7 @@ import {
   ChurnRiskAnalysis,
   CohortAnalysis,
   SegmentDistribution,
-} from './queries-simple';
+} from '@/services/intelligence/customer/queries-simple';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Customer Intelligence Service

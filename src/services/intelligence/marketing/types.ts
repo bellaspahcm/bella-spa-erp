@@ -305,7 +305,7 @@ export interface ExternalAdsDataRow {
   cpa: number | null;
   roas: number | null;
   roi: number | null;
-  raw_data: Record<string, any>;
+  raw_data: Record<string, unknown>;
   sync_status: 'pending' | 'success' | 'failed';
   synced_at: string | null;
   created_at: string;
@@ -321,7 +321,7 @@ export interface MarketingCampaignRow {
   start_date: string | null;
   end_date: string | null;
   external_mappings: Record<Platform, string>;
-  goals: Record<string, any>;
+  goals: Record<string, unknown>;
   notes: string | null;
   created_at: string;
   updated_at: string;

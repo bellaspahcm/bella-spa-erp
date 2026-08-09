@@ -40,7 +40,7 @@ interface QueueActionParams {
   sessionId?: string;
   actionType: ActionType;
   entityType: string;
-  actionData: any;
+  actionData: unknown;
   priority?: number;
 }
 
@@ -65,7 +65,7 @@ export class OfflineSyncService {
       session_id: params.sessionId,
       action_type: params.actionType,
       entity_type: params.entityType,
-      action_data: params.actionData as any,
+      action_data: params.actionData as unknown,
       priority: params.priority || 5,
       status: 'pending',
       sync_attempts: 0,
@@ -91,7 +91,7 @@ export class OfflineSyncService {
     tenantId: string,
     userId: string,
     limit: number = 50
-  ): Promise<any[]> {
+  ): Promise<OfflineAction[]> {
     const supabase = getPrimaryClient();
     
     const { data, error } = await supabase
@@ -119,7 +119,7 @@ export class OfflineSyncService {
       .update({
         status: 'syncing',
         last_sync_attempt_at: new Date().toISOString(),
-        sync_attempts: supabase.rpc('increment', { column_name: 'sync_attempts' }) as any,
+        sync_attempts: supabase.rpc('increment', { column_name: 'sync_attempts' }) as unknown,
       })
       .eq('id', actionId)
       .eq('tenant_id', tenantId)

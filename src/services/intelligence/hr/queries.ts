@@ -300,7 +300,7 @@ export async function getWorkforceAnalytics(
   const supabase = await createServiceRoleClient();
   
   let query = supabase
-    .from('mv_workforce_analytics' as any) // Materialized view not in generated types yet
+    .from('mv_workforce_analytics' as never) // Materialized view not in generated types yet
     .select('*')
     .eq('tenant_id', tenantId);
   
@@ -444,7 +444,7 @@ export async function getEmployeePerformance(
   const supabase = await createServiceRoleClient();
   
   let query = supabase
-    .from('mv_employee_performance' as any) // Materialized view not in generated types yet
+    .from('mv_employee_performance' as never) // Materialized view not in generated types yet
     .select('*')
     .eq('tenant_id', tenantId);
   
@@ -499,7 +499,7 @@ export async function getRetentionAnalysis(
   
   // Query workforce analytics for retention calculations
   let query = supabase
-    .from('mv_workforce_analytics' as any) // Materialized view not in generated types yet
+    .from('mv_workforce_analytics' as never) // Materialized view not in generated types yet
     .select('*')
     .eq('tenant_id', tenantId);
   
@@ -527,7 +527,7 @@ export async function getRetentionAnalysis(
   }
   
   // Cast data to proper type after error check and null check
-  const rows = data as unknown as Record<string, any>[];
+  const rows = data as unknown as Record<string, unknown>[];
   
   // Aggregate retention metrics
   const totalHeadcount = rows.reduce((sum, row) => sum + (row.current_headcount || 0), 0);
@@ -577,7 +577,7 @@ export async function getRetentionAnalysis(
 
   // Fetch employee performance metrics to compute risk categories
   const { data: perfData } = await supabase
-    .from('mv_employee_performance' as any)
+    .from('mv_employee_performance' as never)
     .select('ktv_id, avg_star_rating, working_days, absent_days')
     .eq('tenant_id', tenantId);
 
@@ -585,8 +585,15 @@ export async function getRetentionAnalysis(
   let mediumRiskEmployees = 0;
   let lowRiskEmployees = 0;
 
+  interface PerfRow {
+    ktv_id: string;
+    avg_star_rating: number | null;
+    working_days: number | null;
+    absent_days: number | null;
+  }
+
   if (perfData && perfData.length > 0) {
-    (perfData as any[]).forEach((p) => {
+    (perfData as unknown as PerfRow[]).forEach((p) => {
       const rating = p.avg_star_rating || 5.0;
       const working = p.working_days || 26;
       const absent = p.absent_days || 0;
@@ -636,7 +643,7 @@ export async function getProductivityTrends(
   
   // Query employee performance for productivity aggregations
   let query = supabase
-    .from('mv_employee_performance' as any) // Materialized view not in generated types yet
+    .from('mv_employee_performance' as never) // Materialized view not in generated types yet
     .select('*')
     .eq('tenant_id', tenantId);
   
@@ -664,7 +671,7 @@ export async function getProductivityTrends(
   }
   
   // Cast data to proper type after error check and null check
-  const rows = data as unknown as Record<string, any>[];
+  const rows = data as unknown as Record<string, unknown>[];
   
   // Group by month and aggregate
   const monthlyData = rows.reduce((acc, row) => {

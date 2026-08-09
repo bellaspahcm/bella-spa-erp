@@ -38,7 +38,7 @@ export class EventBus {
       for (const handler of handlers) {
         try {
           await handler(event);
-        } catch (err) {
+        } catch (err: unknown) {
           console.error(`[EventBus Error] Failed handler for event ${event.eventType}:`, err);
         }
       }

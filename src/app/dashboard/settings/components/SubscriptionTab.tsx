@@ -147,7 +147,7 @@ export default function SubscriptionTab() {
       ]);
       setStatus(statusRes);
       setInvoices(invoicesRes);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error loading subscription data:', err);
       toast.error('Không thể tải thông tin gói cước');
     } finally {
@@ -168,7 +168,7 @@ export default function SubscriptionTab() {
           setStatus(statusRes);
           setInvoices(invoicesRes);
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Error loading subscription data:', err);
         if (!cancelled) toast.error('Không thể tải thông tin gói cước');
       } finally {
@@ -212,7 +212,7 @@ export default function SubscriptionTab() {
           toast.success('Đã tạo hóa đơn gia hạn thành công!');
           loadData();
         }
-      } catch (err) {
+      } catch (err: unknown) {
         toast.error('Đã xảy ra lỗi khi tạo hóa đơn');
         console.error(err);
       }
@@ -288,7 +288,7 @@ export default function SubscriptionTab() {
           }, 500);
         }
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi khi giả lập thanh toán');
       console.error(err);
     } finally {
@@ -318,7 +318,7 @@ export default function SubscriptionTab() {
       setTimeout(() => {
         window.location.reload();
       }, 1000);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Convert to franchise error:', err);
       toast.error('Lỗi khi chuyển đổi chế độ franchise');
     } finally {

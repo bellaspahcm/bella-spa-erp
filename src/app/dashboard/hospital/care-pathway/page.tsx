@@ -264,52 +264,52 @@ const MS_STATUS_ICON: Record<MilestoneStatus, React.ReactNode> = {
 };
 
 const EX_SEVERITY_CONFIG: Record<ExceptionSeverity, { bg: string; border: string; text: string; badge: string; dot: string }> = {
-  critical: { bg: 'bg-rose-50',   border: 'border-rose-200',   text: 'text-rose-800',   badge: 'bg-rose-100 text-rose-800 border-rose-300',   dot: 'bg-rose-500' },
-  high:     { bg: 'bg-amber-50',  border: 'border-amber-200',  text: 'text-amber-800',  badge: 'bg-amber-100 text-amber-800 border-amber-300',  dot: 'bg-amber-500' },
-  medium:   { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-800', badge: 'bg-yellow-100 text-yellow-800 border-yellow-300', dot: 'bg-yellow-400' },
+  critical: { bg: 'bg-rose-50/70',  border: 'border-rose-300',   text: 'text-rose-900',   badge: 'bg-rose-100 text-rose-900 border-rose-300 font-extrabold',   dot: 'bg-rose-600' },
+  high:     { bg: 'bg-amber-50/70', border: 'border-amber-300',  text: 'text-amber-900',  badge: 'bg-amber-100 text-amber-900 border-amber-300 font-extrabold',  dot: 'bg-amber-600' },
+  medium:   { bg: 'bg-yellow-50/70 text-slate-900', border: 'border-yellow-350', text: 'text-yellow-950', badge: 'bg-yellow-100 text-yellow-950 border-yellow-300 font-extrabold', dot: 'bg-yellow-500' },
 };
 
 const PHASE_COLORS: Record<string, string> = {
-  'Nhập viện':         'bg-blue-100 text-blue-800',
-  'Phẫu thuật':        'bg-purple-100 text-purple-800',
-  'Hậu phẫu':          'bg-orange-100 text-orange-800',
-  'Điều trị tích cực': 'bg-rose-100 text-rose-800',
-  'Theo dõi':          'bg-amber-100 text-amber-800',
-  'Phục hồi':          'bg-teal-100 text-teal-800',
-  'Xuất viện':         'bg-emerald-100 text-emerald-800',
+  'Nhập viện':         'bg-blue-100 text-blue-900 border border-blue-200',
+  'Phẫu thuật':        'bg-purple-100 text-purple-900 border border-purple-200',
+  'Hậu phẫu':          'bg-orange-100 text-orange-900 border border-orange-200',
+  'Điều trị tích cực': 'bg-rose-100 text-rose-900 border border-rose-200',
+  'Theo dõi':          'bg-amber-100 text-amber-900 border border-amber-200',
+  'Phục hồi':          'bg-teal-100 text-teal-900 border border-teal-200',
+  'Xuất viện':         'bg-emerald-100 text-emerald-900 border border-emerald-200',
 };
 
 const HEALTH_STATUS_CONFIG = {
-  ok:       { dot: 'bg-emerald-500', text: 'text-emerald-700', badge: 'text-emerald-700', icon: '🟢' },
-  warning:  { dot: 'bg-amber-400',   text: 'text-amber-700',   badge: 'text-amber-700',   icon: '🟡' },
-  critical: { dot: 'bg-rose-500',    text: 'text-rose-700',    badge: 'text-rose-700',    icon: '🔴' },
+  ok:       { dot: 'bg-emerald-600', text: 'text-emerald-800 bg-emerald-50 border border-emerald-250 px-2 py-0.5 rounded font-extrabold text-xs', badge: 'text-emerald-850', icon: '🟢' },
+  warning:  { dot: 'bg-amber-500',   text: 'text-amber-900 bg-amber-50 border border-amber-250 px-2 py-0.5 rounded font-extrabold text-xs',   badge: 'text-amber-900',   icon: '🟡' },
+  critical: { dot: 'bg-rose-600',    text: 'text-rose-900 bg-rose-50 border border-rose-250 px-2 py-0.5 rounded font-extrabold text-xs',    badge: 'text-rose-900',    icon: '🔴' },
 };
 
 const PRIORITY_CONFIG: Record<string, { ring: string; badge: string }> = {
-  urgent: { ring: 'ring-1 ring-rose-200',   badge: 'bg-rose-100 text-rose-700' },
-  high:   { ring: 'ring-1 ring-amber-200',  badge: 'bg-amber-100 text-amber-700' },
-  normal: { ring: 'ring-1 ring-slate-200',  badge: 'bg-slate-100 text-slate-600' },
+  urgent: { ring: 'ring-1 ring-rose-300 bg-rose-50/30',   badge: 'bg-rose-100 text-rose-900 border border-rose-200' },
+  high:   { ring: 'ring-1 ring-amber-300 bg-amber-50/30',  badge: 'bg-amber-100 text-amber-900 border border-amber-200' },
+  normal: { ring: 'ring-1 ring-slate-300 bg-slate-50/30',  badge: 'bg-slate-100 text-slate-800 border border-slate-200' },
 };
 
 // ─── Sub-Components ───────────────────────────────────────────────────────────
 function ActionIcon({ type }: { type: string }) {
   switch (type) {
-    case 'heart': return <HeartPulse className="w-4 h-4 text-rose-500" />;
-    case 'lab':   return <FlaskConical className="w-4 h-4 text-purple-500" />;
-    case 'pill':  return <Pill className="w-4 h-4 text-blue-500" />;
-    case 'doctor': return <Stethoscope className="w-4 h-4 text-teal-600" />;
-    case 'discharge': return <LogOut className="w-4 h-4 text-emerald-600" />;
-    default: return <Zap className="w-4 h-4 text-slate-500" />;
+    case 'heart': return <HeartPulse className="w-4.5 h-4.5 text-rose-600" />;
+    case 'lab':   return <FlaskConical className="w-4.5 h-4.5 text-purple-600" />;
+    case 'pill':  return <Pill className="w-4.5 h-4.5 text-blue-600" />;
+    case 'doctor': return <Stethoscope className="w-4.5 h-4.5 text-teal-700" />;
+    case 'discharge': return <LogOut className="w-4.5 h-4.5 text-emerald-700" />;
+    default: return <Zap className="w-4.5 h-4.5 text-slate-700" />;
   }
 }
 
 function CareTeamIcon({ type }: { type: string }) {
   switch (type) {
-    case 'doctor': return <Stethoscope className="w-4 h-4 text-teal-600" />;
-    case 'nurse':  return <HeartPulse className="w-4 h-4 text-rose-500" />;
-    case 'lab':    return <FlaskConical className="w-4 h-4 text-purple-500" />;
-    case 'ward':   return <Activity className="w-4 h-4 text-blue-500" />;
-    default: return <User className="w-4 h-4 text-slate-500" />;
+    case 'doctor': return <Stethoscope className="w-4.5 h-4.5 text-teal-700" />;
+    case 'nurse':  return <HeartPulse className="w-4.5 h-4.5 text-rose-600" />;
+    case 'lab':    return <FlaskConical className="w-4.5 h-4.5 text-purple-600" />;
+    case 'ward':   return <Activity className="w-4.5 h-4.5 text-blue-600" />;
+    default: return <User className="w-4.5 h-4.5 text-slate-700" />;
   }
 }
 
@@ -326,36 +326,50 @@ export default function HospitalCarePathwayPage() {
   const openVariances  = pathway.varianceItems.filter((v) => v.status === 'open').length;
 
   return (
-    <div className="p-5 max-w-[1440px] mx-auto space-y-5">
+    <div className="p-5 max-w-[1440px] mx-auto space-y-6">
 
       {/* ── HEADER ─────────────────────────────────────────────────────── */}
-      <div className="bg-gradient-to-r from-teal-900 via-emerald-900 to-green-900 rounded-2xl p-6 text-white shadow-xl">
-        <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="relative overflow-hidden bg-gradient-to-br from-teal-950 via-emerald-900 to-emerald-950 rounded-2xl p-6 md:p-8 text-white shadow-xl border border-teal-500/20">
+        {/* Decorative background blur objects */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="relative z-10 flex items-center justify-between flex-wrap gap-6">
           <div>
-            <div className="flex items-center space-x-2 text-teal-300 mb-1">
-              <GitBranch className="w-5 h-5" />
-              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#ffffff' }}>
+            <div className="flex items-center space-x-2 text-emerald-300 mb-2">
+              <GitBranch className="w-5 h-5 animate-pulse text-emerald-400" />
+              <span className="text-xs font-bold uppercase tracking-widest text-emerald-200">
                 Bella Hospital • Clinical Care Pathway Management
               </span>
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold" style={{ color: '#ffffff' }}>Hành Trình Điều Trị Nội Trú</h1>
-            <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.8)' }}>
+            <h1 className="text-3xl md:text-4xl font-extrabold font-serif tracking-tight drop-shadow-sm" style={{ color: '#ffffff' }}>
+              Hành Trình Điều Trị Nội Trú
+            </h1>
+            <p className="text-sm mt-2 font-medium max-w-3xl text-emerald-100/90 leading-relaxed">
               Theo dõi tuân thủ phác đồ điều trị (Clinical Pathway) theo DRG · Phát hiện sai lệch (Variance) · Kiểm soát LOS & Discharge Readiness
             </p>
           </div>
-          {/* KPI pills */}
-          <div className="flex flex-wrap gap-2">
-            <div className="bg-white/10 backdrop-blur border border-white/20 rounded-xl px-4 py-2 text-center">
-              <div className="text-2xl font-black text-white">{MOCK_PATHWAYS.length}</div>
-              <div className="text-[10px] text-teal-200 font-medium">Bệnh nhân</div>
+          {/* KPI pills with glassmorphism */}
+          <div className="flex flex-wrap gap-3">
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl px-5 py-3 text-center shadow-lg hover:bg-white/15 transition-all duration-300">
+              <div className="text-3xl font-black text-white tracking-tight">{MOCK_PATHWAYS.length}</div>
+              <div className="text-xs text-emerald-200 font-bold uppercase tracking-wider mt-0.5">Bệnh nhân</div>
             </div>
-            <div className={`backdrop-blur border rounded-xl px-4 py-2 text-center ${openExceptions > 0 ? 'bg-rose-500/20 border-rose-400/40' : 'bg-white/10 border-white/20'}`}>
-              <div className="text-2xl font-black text-white">{openExceptions}</div>
-              <div className="text-[10px] text-teal-200 font-medium">Exceptions</div>
+            <div className={`backdrop-blur-md border rounded-xl px-5 py-3 text-center shadow-lg transition-all duration-300 ${
+              openExceptions > 0 
+                ? 'bg-rose-500/20 border-rose-500/40 hover:bg-rose-500/25' 
+                : 'bg-white/10 border-white/20 hover:bg-white/15'
+            }`}>
+              <div className="text-3xl font-black text-white tracking-tight">{openExceptions}</div>
+              <div className="text-xs text-rose-200 font-bold uppercase tracking-wider mt-0.5">Exceptions</div>
             </div>
-            <div className={`backdrop-blur border rounded-xl px-4 py-2 text-center ${openVariances > 0 ? 'bg-amber-500/20 border-amber-400/40' : 'bg-white/10 border-white/20'}`}>
-              <div className="text-2xl font-black text-white">{openVariances}</div>
-              <div className="text-[10px] text-teal-200 font-medium">Variances</div>
+            <div className={`backdrop-blur-md border rounded-xl px-5 py-3 text-center shadow-lg transition-all duration-300 ${
+              openVariances > 0 
+                ? 'bg-amber-500/20 border-amber-500/40 hover:bg-amber-500/25' 
+                : 'bg-white/10 border-white/20 hover:bg-white/15'
+            }`}>
+              <div className="text-3xl font-black text-white tracking-tight">{openVariances}</div>
+              <div className="text-xs text-amber-200 font-bold uppercase tracking-wider mt-0.5">Variances</div>
             </div>
           </div>
         </div>
@@ -365,115 +379,153 @@ export default function HospitalCarePathwayPage() {
       <PatientContextBar patient={BELLA_DEMO_PATIENT} workspace="Care Pathway · Hành trình Điều trị" />
 
       {/* ── MAIN LAYOUT ──────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
 
         {/* ─ LEFT: Patient List ─ */}
-        <div className="lg:col-span-1 space-y-3">
-          <h3 className="font-bold text-slate-700 text-sm px-1 flex items-center gap-1.5">
+        <div className="lg:col-span-1 space-y-4">
+          <h2 className="font-bold text-slate-800 text-sm px-1 flex items-center gap-2 tracking-wide uppercase">
             <Users className="w-4 h-4 text-teal-600" /> Bệnh nhân đang theo phác đồ
-          </h3>
-          {MOCK_PATHWAYS.map((p) => {
-            const done = p.milestones.filter((m) => m.status === 'completed').length;
-            const pct  = Math.round((done / p.milestones.length) * 100);
-            const over = p.currentDay > p.targetLOS;
-            const hasException = p.exceptions.length > 0;
-            return (
-              <button
-                key={p.caseId}
-                onClick={() => setSelectedCase(p.caseId)}
-                className={`w-full text-left bg-white border rounded-xl p-4 shadow-sm hover:shadow-md transition-all ${
-                  selectedCase === p.caseId
-                    ? 'border-teal-500 ring-2 ring-teal-200'
-                    : over ? 'border-rose-300' : 'border-slate-200'
-                }`}
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="font-bold text-slate-800 text-sm">{p.patientName}</div>
-                    <div className="text-[10px] text-slate-500 mt-0.5">{p.wardBed}</div>
+          </h2>
+          <div className="space-y-3">
+            {MOCK_PATHWAYS.map((p) => {
+              const done = p.milestones.filter((m) => m.status === 'completed').length;
+              const pct  = Math.round((done / p.milestones.length) * 100);
+              const over = p.currentDay > p.targetLOS;
+              const hasException = p.exceptions.length > 0;
+              const isActive = selectedCase === p.caseId;
+              
+              return (
+                <button
+                  key={p.caseId}
+                  onClick={() => setSelectedCase(p.caseId)}
+                  className={`w-full text-left bg-white border rounded-xl p-4 shadow-sm hover:shadow-md hover:border-slate-350 transition-all duration-250 ${
+                    isActive
+                      ? 'border-teal-600 ring-2 ring-teal-100 bg-teal-50/20 shadow-md'
+                      : over 
+                        ? 'border-rose-250 hover:border-rose-350' 
+                        : 'border-slate-200'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="font-extrabold text-slate-900 text-sm leading-snug">{p.patientName}</div>
+                      <div className="text-xs font-semibold text-slate-700 mt-1 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-400" /> {p.wardBed}
+                      </div>
+                    </div>
+                    {hasException && (
+                      <span className="text-xs font-extrabold text-rose-800 bg-rose-100 border border-rose-200 px-2 py-0.5 rounded-full">
+                        {p.exceptions.length}
+                      </span>
+                    )}
                   </div>
-                  {hasException && (
-                    <span className="text-[9px] font-bold text-white bg-rose-500 px-1.5 py-0.5 rounded-full">{p.exceptions.length}</span>
-                  )}
-                </div>
-                {/* LOS badge */}
-                <div className={`mt-2 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                  over ? 'bg-rose-100 text-rose-700' : 'bg-emerald-50 text-emerald-700'
-                }`}>
-                  {over ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                  LOS {p.currentDay}d / Target {p.targetLOS}d {over && `(+${p.currentDay - p.targetLOS}d)`}
-                </div>
-                {/* Progress */}
-                <div className="mt-2">
-                  <div className="w-full bg-slate-100 rounded-full h-1.5">
-                    <div className="h-1.5 rounded-full bg-teal-500 transition-all" style={{ width: `${pct}%` }} />
+                  
+                  {/* LOS badge */}
+                  <div className="mt-3">
+                    <div className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border ${
+                      over 
+                        ? 'bg-rose-50 text-rose-800 border-rose-200' 
+                        : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    }`}>
+                      {over ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                      LOS {p.currentDay}d / Target {p.targetLOS}d {over && `(+${p.currentDay - p.targetLOS}d)`}
+                    </div>
                   </div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">{pct}% · {done}/{p.milestones.length} milestones</div>
-                </div>
-              </button>
-            );
-          })}
+                  
+                  {/* Progress */}
+                  <div className="mt-3 pt-3 border-t border-slate-100">
+                    <div className="flex justify-between text-xs text-slate-700 mb-1 font-semibold">
+                      <span>Tiến độ</span>
+                      <span>{pct}%</span>
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-2">
+                      <div className="h-2 rounded-full bg-teal-600 transition-all duration-300" style={{ width: `${pct}%` }} />
+                    </div>
+                    <div className="text-xs text-slate-750 mt-1.5 font-bold">
+                      {done}/{p.milestones.length} milestones
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* ─ RIGHT: Pathway Detail ─ */}
-        <div className="lg:col-span-3 space-y-4">
+        <div className="lg:col-span-3 space-y-5">
 
           {/* ── PATHWAY OVERVIEW CARD ─────────────────────────────────── */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-md">
-            <div className="flex justify-between items-start flex-wrap gap-3">
-              <div>
-                <div className="text-xs font-bold text-slate-400 tracking-wider">{pathway.drgCode}</div>
-                <h2 className="font-bold text-slate-900 text-lg leading-tight">{pathway.pathwayName}</h2>
-                <div className="text-sm text-slate-500 mt-1">
-                  {pathway.patientName} · {pathway.wardBed} · {pathway.attendingPhysician}
+          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-md relative overflow-hidden">
+            {/* Top accent line */}
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-500 to-emerald-500" />
+            
+            <div className="flex justify-between items-start flex-wrap gap-4">
+              <div className="space-y-1">
+                <span className="inline-flex items-center text-xs font-extrabold text-teal-800 bg-teal-50 border border-teal-200 px-2.5 py-0.5 rounded-md">
+                  {pathway.drgCode}
+                </span>
+                <h2 className="font-bold text-slate-900 text-xl md:text-2xl font-serif tracking-tight leading-tight mt-1.5">
+                  {pathway.pathwayName}
+                </h2>
+                <div className="text-sm font-semibold text-slate-700 mt-2 flex flex-wrap gap-x-4 gap-y-1.5 items-center">
+                  <span>Bệnh nhân: <strong className="text-slate-900">{pathway.patientName}</strong></span>
+                  <span className="text-slate-300 hidden sm:inline">•</span>
+                  <span>Giường: <strong className="text-slate-900">{pathway.wardBed}</strong></span>
+                  <span className="text-slate-300 hidden sm:inline">•</span>
+                  <span>Bác sĩ phụ trách: <strong className="text-slate-900">{pathway.attendingPhysician}</strong></span>
                 </div>
               </div>
-              {/* LOS Display — cải thiện theo yêu cầu */}
-              <div className={`rounded-xl px-4 py-3 text-right border ${isOverLOS ? 'bg-rose-50 border-rose-200' : 'bg-emerald-50 border-emerald-200'}`}>
-                <div className="text-xs text-slate-500 font-medium mb-0.5">Ngày nằm viện</div>
-                <div className={`text-2xl font-black ${isOverLOS ? 'text-rose-700' : 'text-teal-700'}`}>
+              
+              {/* LOS Display */}
+              <div className={`rounded-xl px-5 py-4 text-right border shadow-sm shrink-0 ${
+                isOverLOS ? 'bg-rose-50/80 border-rose-300' : 'bg-emerald-50/80 border-emerald-300'
+              }`}>
+                <div className="text-xs text-slate-700 font-extrabold uppercase tracking-wider mb-1">Ngày nằm viện</div>
+                <div className={`text-3xl font-black ${isOverLOS ? 'text-rose-900' : 'text-emerald-900'} leading-none`}>
                   LOS {pathway.currentDay}d
-                  <span className="text-sm font-bold text-slate-400 ml-1">/ Target {pathway.targetLOS}d</span>
+                </div>
+                <div className="text-xs text-slate-750 font-extrabold mt-1.5">
+                  Mục tiêu: {pathway.targetLOS}d
                 </div>
                 {isOverLOS && (
-                  <div className="text-[11px] font-bold text-rose-600 flex items-center justify-end gap-1 mt-0.5">
-                    <AlertTriangle className="w-3 h-3" /> +{losVariance}d Variance
+                  <div className="text-xs font-extrabold text-rose-800 flex items-center justify-end gap-1 mt-2">
+                    <AlertTriangle className="w-3.5 h-3.5 text-rose-600" /> +{losVariance}d Variance
                   </div>
                 )}
               </div>
             </div>
 
             {/* Progress bar */}
-            <div className="mt-4">
-              <div className="flex justify-between text-xs text-slate-500 mb-1.5">
-                <span className="font-medium">Tiến độ phác đồ</span>
-                <span className="font-bold text-teal-700">{progress}% ({completed}/{pathway.milestones.length} milestones)</span>
+            <div className="mt-6 pt-5 border-t border-slate-100">
+              <div className="flex justify-between items-center text-xs text-slate-800 mb-2 font-bold uppercase tracking-wider">
+                <span>Tiến độ phác đồ</span>
+                <span className="text-teal-800 font-black">{progress}% ({completed}/{pathway.milestones.length} milestones)</span>
               </div>
-              <div className="w-full bg-slate-100 rounded-full h-2.5">
-                <div className="h-2.5 rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all" style={{ width: `${progress}%` }} />
+              <div className="w-full bg-slate-100 rounded-full h-3">
+                <div className="h-3 rounded-full bg-gradient-to-r from-teal-600 to-emerald-500 shadow-sm transition-all duration-500" style={{ width: `${progress}%` }} />
               </div>
             </div>
           </div>
 
           {/* ── PATHWAY HEALTH + CARE TEAM ────────────────────────────── */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-5">
 
             {/* Pathway Health */}
-            <div className="md:col-span-3 bg-white border border-slate-200 rounded-xl p-5 shadow-md">
-              <h3 className="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2">
+            <div className="md:col-span-3 bg-white border border-slate-200 rounded-xl p-6 shadow-md">
+              <h3 className="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2 tracking-wide uppercase">
                 <Activity className="w-4 h-4 text-teal-600" />
-                Pathway Health
+                Pathway Health (Sức khỏe phác đồ)
               </h3>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {pathway.pathwayHealth.map((h) => {
                   const cfg = HEALTH_STATUS_CONFIG[h.status];
                   return (
-                    <div key={h.label} className="flex items-center justify-between py-1 border-b border-slate-50 last:border-0">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full shrink-0 ${cfg.dot}`} />
-                        <span className="text-xs text-slate-700 font-medium">{h.label}</span>
+                    <div key={h.label} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${cfg.dot}`} />
+                        <span className="text-xs text-slate-850 font-bold">{h.label}</span>
                       </div>
-                      <span className={`text-xs font-semibold ${cfg.text}`}>{h.detail}</span>
+                      <span className={cfg.text}>{h.detail}</span>
                     </div>
                   );
                 })}
@@ -481,20 +533,20 @@ export default function HospitalCarePathwayPage() {
             </div>
 
             {/* Care Team */}
-            <div className="md:col-span-2 bg-white border border-slate-200 rounded-xl p-5 shadow-md">
-              <h3 className="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2">
+            <div className="md:col-span-2 bg-white border border-slate-200 rounded-xl p-6 shadow-md">
+              <h3 className="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2 tracking-wide uppercase">
                 <Users className="w-4 h-4 text-teal-600" />
                 Care Team
               </h3>
-              <div className="space-y-2.5">
+              <div className="space-y-3">
                 {pathway.careTeam.map((m) => (
-                  <div key={m.role} className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-full bg-teal-50 border border-teal-100 flex items-center justify-center shrink-0">
+                  <div key={m.role} className="flex items-center gap-3 p-1.5 rounded-lg hover:bg-slate-50/80 transition-all duration-150">
+                    <div className="w-8 h-8 rounded-full bg-teal-50 border border-teal-200 flex items-center justify-center shrink-0 shadow-sm">
                       <CareTeamIcon type={m.icon} />
                     </div>
                     <div>
-                      <div className="text-[10px] text-slate-400 font-medium">{m.role}</div>
-                      <div className="text-xs text-slate-800 font-semibold leading-tight">{m.name}</div>
+                      <div className="text-xs text-slate-700 font-bold">{m.role}</div>
+                      <div className="text-sm text-slate-900 font-extrabold leading-tight">{m.name}</div>
                     </div>
                   </div>
                 ))}
@@ -504,35 +556,36 @@ export default function HospitalCarePathwayPage() {
 
           {/* ── CLINICAL EXCEPTIONS (nếu có) ──────────────────────────── */}
           {pathway.exceptions.length > 0 && (
-            <div className="bg-white border border-rose-200 rounded-xl p-5 shadow-md">
-              <h3 className="font-bold text-rose-800 text-sm mb-3 flex items-center gap-2">
-                <ShieldAlert className="w-4 h-4" />
+            <div className="bg-white border border-rose-300 rounded-xl p-6 shadow-md relative overflow-hidden">
+              <div className="absolute top-0 left-0 bottom-0 w-1 bg-rose-500" />
+              <h3 className="font-bold text-rose-900 text-sm mb-4 flex items-center gap-2 tracking-wide uppercase">
+                <ShieldAlert className="w-4 h-4 text-rose-600" />
                 Clinical Exceptions — {pathway.exceptions.length} cần xử lý
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {pathway.exceptions.map((ex) => {
                   const cfg = EX_SEVERITY_CONFIG[ex.severity];
                   return (
-                    <div key={ex.id} className={`rounded-xl p-4 border ${cfg.bg} ${cfg.border}`}>
+                    <div key={ex.id} className={`rounded-xl p-4 border shadow-sm ${cfg.bg} ${cfg.border}`}>
                       <div className="flex items-start gap-3">
-                        <div className={`w-2.5 h-2.5 rounded-full mt-1 shrink-0 ${cfg.dot}`} />
+                        <div className={`w-2.5 h-2.5 rounded-full mt-1 shrink-0 ${cfg.dot} animate-pulse`} />
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 flex-wrap mb-1">
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${cfg.badge}`}>
+                          <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                            <span className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full border ${cfg.badge}`}>
                               {ex.severity === 'critical' ? '🔴 CRITICAL' : ex.severity === 'high' ? '🟠 HIGH' : '🟡 MEDIUM'}
                             </span>
-                            <span className={`font-bold text-sm ${cfg.text}`}>{ex.title}</span>
+                            <span className={`font-extrabold text-sm ${cfg.text}`}>{ex.title}</span>
                           </div>
-                          <p className="text-xs text-slate-600">{ex.detail}</p>
-                          <div className="mt-2 flex flex-wrap gap-3 text-[11px]">
-                            <span className="flex items-center gap-1 text-slate-500">
-                              <User className="w-3 h-3" /> <strong>Owner:</strong> {ex.owner}
+                          <p className="text-xs text-slate-850 font-semibold leading-relaxed">{ex.detail}</p>
+                          <div className="mt-3 pt-2 border-t border-slate-200/50 flex flex-wrap gap-x-4 gap-y-2 text-xs">
+                            <span className="flex items-center gap-1.5 text-slate-700 font-bold">
+                              <User className="w-3.5 h-3.5 text-slate-500" /> <strong>Owner:</strong> <span className="text-slate-900">{ex.owner}</span>
                             </span>
-                            <span className="flex items-center gap-1 text-slate-500">
-                              <Timer className="w-3 h-3" /> <strong>Due:</strong> {ex.dueTime}
+                            <span className="flex items-center gap-1.5 text-slate-700 font-bold">
+                              <Timer className="w-3.5 h-3.5 text-slate-500" /> <strong>Due:</strong> <span className="text-slate-900">{ex.dueTime}</span>
                             </span>
-                            <span className="flex items-center gap-1 text-rose-600 font-semibold">
-                              <ArrowRight className="w-3 h-3" /> {ex.action}
+                            <span className="flex items-center gap-1.5 text-rose-800 font-bold bg-rose-100/80 border border-rose-200 px-2 py-0.5 rounded-full">
+                              <ArrowRight className="w-3.5 h-3.5 text-rose-600" /> {ex.action}
                             </span>
                           </div>
                         </div>
@@ -546,26 +599,32 @@ export default function HospitalCarePathwayPage() {
 
           {/* ── CLINICAL VARIANCE ─────────────────────────────────────── */}
           {pathway.varianceItems.length > 0 && (
-            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-md">
-              <h3 className="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-amber-500" />
-                Clinical Variance
+            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-md">
+              <h3 className="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2 tracking-wide uppercase">
+                <AlertTriangle className="w-4 h-4 text-amber-600" />
+                Clinical Variance (Biến động lâm sàng)
               </h3>
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {pathway.varianceItems.map((v) => {
                   const cfg = EX_SEVERITY_CONFIG[v.severity];
                   const isResolved = v.status === 'resolved';
                   return (
                     <div
                       key={v.id}
-                      className={`flex items-center gap-3 p-3 rounded-xl border text-xs ${
-                        isResolved ? 'bg-slate-50 border-slate-100 opacity-60' : `${cfg.bg} ${cfg.border}`
+                      className={`flex items-center gap-3 p-3.5 rounded-xl border text-xs transition-all ${
+                        isResolved 
+                          ? 'bg-slate-50/50 border-slate-200 text-slate-705 font-semibold opacity-85' 
+                          : `${cfg.bg} ${cfg.border} font-bold`
                       }`}
                     >
-                      <div className={`w-2 h-2 rounded-full shrink-0 ${isResolved ? 'bg-emerald-400' : cfg.dot}`} />
-                      <span className="text-slate-500 font-semibold w-20 shrink-0">{v.category}</span>
-                      <span className="flex-1 text-slate-700">{v.description}</span>
-                      <span className={`font-bold shrink-0 ${isResolved ? 'text-emerald-600' : cfg.text}`}>
+                      <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${isResolved ? 'bg-emerald-500' : cfg.dot}`} />
+                      <span className="text-slate-700 font-extrabold w-24 shrink-0 uppercase tracking-wider">{v.category}</span>
+                      <span className="flex-1 text-slate-900 leading-snug">{v.description}</span>
+                      <span className={`font-extrabold shrink-0 px-2.5 py-0.5 rounded-full ${
+                        isResolved 
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-250' 
+                          : `${cfg.badge} border`
+                      }`}>
                         {isResolved ? '✓ Đã xử lý' : v.delta}
                       </span>
                     </div>
@@ -576,54 +635,62 @@ export default function HospitalCarePathwayPage() {
           )}
 
           {/* ── MILESTONES TIMELINE ───────────────────────────────────── */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-md">
-            <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-md">
+            <h3 className="font-bold text-slate-800 mb-6 flex items-center gap-2 tracking-wide uppercase">
               <ClipboardCheck className="w-4 h-4 text-teal-600" />
-              Milestones Phác Đồ Điều Trị
-              <span className="text-xs text-slate-400 font-normal ml-1">— 5 trạng thái: Hoàn thành · Đang thực hiện · Có nguy cơ · Sai lệch · Chưa đến</span>
+              Mốc Tiến Trình Phác Đồ Điều Trị
             </h3>
             <div className="relative">
-              <div className="absolute left-[18px] top-4 bottom-4 w-0.5 bg-slate-200" />
-              <div className="space-y-3">
+              <div className="absolute left-[20px] top-6 bottom-6 w-0.5 bg-slate-200" />
+              <div className="space-y-4">
                 {pathway.milestones.map((ms) => {
                   const sc      = MS_STATUS_CONFIG[ms.status];
                   const scIcon  = MS_STATUS_ICON[ms.status];
-                  const phaseColor = PHASE_COLORS[ms.phase] ?? 'bg-slate-100 text-slate-700';
+                  const phaseColor = PHASE_COLORS[ms.phase] ?? 'bg-slate-100 text-slate-750';
                   const isLate  = ms.actualDay !== null && ms.actualDay > ms.targetDay;
+                  
                   return (
-                    <div key={ms.id} className="flex items-start gap-3 pl-1">
+                    <div key={ms.id} className="flex items-start gap-4 pl-1 group">
                       {/* Status dot */}
-                      <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${sc.dotColor} text-white border-2 ${sc.dotBorder} z-10 shadow-sm`}>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${sc.dotColor} text-white border-2 ${sc.dotBorder} z-10 shadow-sm transition-transform duration-300 group-hover:scale-110`}>
                         {scIcon}
                       </div>
-                      {/* Content */}
-                      <div className={`flex-1 rounded-xl p-3.5 border ${sc.bgColor} border-opacity-60`} style={{ borderColor: sc.dotColor.replace('bg-','').includes('slate') ? '#e2e8f0' : undefined }}>
-                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${phaseColor}`}>{ms.phase}</span>
-                          <span className="font-semibold text-slate-800 text-sm">{ms.name}</span>
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                            ms.status === 'completed'   ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                            ms.status === 'in_progress' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                            ms.status === 'variance'    ? 'bg-rose-50 text-rose-700 border-rose-200' :
-                            ms.status === 'at_risk'     ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                            'bg-slate-50 text-slate-500 border-slate-200'
+                      
+                      {/* Content Card */}
+                      <div 
+                        className={`flex-1 rounded-xl p-4 border transition-all duration-200 ${sc.bgColor} border-opacity-70 hover:shadow-sm`}
+                        style={{ borderColor: sc.dotColor.replace('bg-','').includes('slate') ? '#cbd5e1' : undefined }}
+                      >
+                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                          <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider ${phaseColor}`}>
+                            {ms.phase}
+                          </span>
+                          <span className="font-extrabold text-slate-900 text-sm tracking-tight">{ms.name}</span>
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
+                            ms.status === 'completed'   ? 'bg-emerald-100 text-emerald-800 border-emerald-250' :
+                            ms.status === 'in_progress' ? 'bg-blue-100 text-blue-800 border-blue-250' :
+                            ms.status === 'variance'    ? 'bg-rose-100 text-rose-800 border-rose-250' :
+                            ms.status === 'at_risk'     ? 'bg-amber-100 text-amber-800 border-amber-250' :
+                            'bg-slate-100 text-slate-700 border-slate-250'
                           }`}>
                             {sc.label}
                           </span>
                           {isLate && (
-                            <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                            <span className="text-xs font-extrabold text-amber-900 bg-amber-100 border border-amber-250 px-2 py-0.5 rounded-full">
                               Trễ +{ms.actualDay! - ms.targetDay} ngày
                             </span>
                           )}
                         </div>
-                        <div className="text-xs text-slate-500">{ms.description}</div>
-                        <div className="mt-2 flex justify-between text-[11px] text-slate-400 flex-wrap gap-1">
-                          <span>Phụ trách: <strong className="text-slate-600">{ms.responsible}</strong></span>
-                          <span className="font-medium">
+                        
+                        <p className="text-xs text-slate-850 font-semibold leading-relaxed">{ms.description}</p>
+                        
+                        <div className="mt-3 pt-2 border-t border-slate-200/40 flex justify-between text-xs text-slate-700 flex-wrap gap-2">
+                          <span>Phụ trách: <strong className="text-slate-900">{ms.responsible}</strong></span>
+                          <span className="font-bold">
                             Mục tiêu: Ngày {ms.targetDay}
                             {ms.actualDay !== null && (
-                              <> · Thực hiện: Ngày {ms.actualDay}
-                                {isLate && <span className="text-amber-600 font-bold"> (+{ms.actualDay - ms.targetDay}d)</span>}
+                              <> · Thực hiện: <span className={isLate ? 'text-amber-800 font-black' : 'text-emerald-850 font-black'}>Ngày {ms.actualDay}</span>
+                                {isLate && <span className="text-amber-900 font-black"> (+{ms.actualDay - ms.targetDay}d)</span>}
                               </>
                             )}
                             {ms.status === 'pending' && ' · Chưa đến thời điểm'}
@@ -638,35 +705,38 @@ export default function HospitalCarePathwayPage() {
           </div>
 
           {/* ── NEXT CLINICAL ACTIONS + DISCHARGE READINESS ───────────── */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
             {/* Next Actions */}
-            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-md">
-              <h3 className="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2">
-                <Zap className="w-4 h-4 text-amber-500" />
-                Next Clinical Actions
+            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-md">
+              <h3 className="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2 tracking-wide uppercase">
+                <Zap className="w-4 h-4 text-amber-500 animate-bounce" />
+                Hành Động Lâm Sàng Tiếp Theo
               </h3>
               {pathway.nextActions.length === 0 ? (
-                <div className="text-xs text-slate-400 text-center py-4">Không có hành động ưu tiên</div>
+                <div className="text-xs text-slate-550 text-center py-6 font-semibold">Không có hành động ưu tiên</div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {pathway.nextActions.map((a) => {
                     const pcfg = PRIORITY_CONFIG[a.priority];
                     return (
-                      <div key={a.id} className={`flex items-start gap-3 p-3 rounded-xl bg-slate-50 ${pcfg.ring}`}>
-                        <div className="w-7 h-7 bg-white rounded-full flex items-center justify-center shrink-0 shadow-sm border border-slate-100">
+                      <div key={a.id} className={`flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-50 hover:bg-slate-100/50 transition-all border border-slate-200`}>
+                        <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shrink-0 shadow-sm border border-slate-200">
                           <ActionIcon type={a.icon} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-xs font-semibold text-slate-800 leading-tight">{a.label}</div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">{a.assignee}</div>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <div className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${pcfg.badge}`}>
-                            {a.priority === 'urgent' ? '🔴' : a.priority === 'high' ? '🟠' : '🟢'}
+                          <div className="text-xs md:text-sm font-extrabold text-slate-900 leading-snug">{a.label}</div>
+                          <div className="text-xs text-slate-700 font-bold mt-1 flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-teal-500" />
+                            {a.assignee}
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-1 flex items-center gap-0.5">
-                            <Clock className="w-2.5 h-2.5" /> {a.dueIn}
+                        </div>
+                        <div className="text-right shrink-0 flex flex-col items-end">
+                          <div className={`text-xs font-extrabold px-2 py-0.5 rounded-full border shadow-sm ${pcfg.badge}`}>
+                            {a.priority === 'urgent' ? '🔴 URGENT' : a.priority === 'high' ? '🟠 HIGH' : '🟢 NORMAL'}
+                          </div>
+                          <div className="text-xs text-slate-750 font-bold mt-2 flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5 text-slate-500" /> {a.dueIn}
                           </div>
                         </div>
                       </div>
@@ -677,35 +747,45 @@ export default function HospitalCarePathwayPage() {
             </div>
 
             {/* Discharge Readiness */}
-            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-md">
-              <h3 className="font-bold text-slate-800 text-sm mb-1 flex items-center gap-2">
+            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-md">
+              <h3 className="font-bold text-slate-800 text-sm mb-2 flex items-center gap-2 tracking-wide uppercase">
                 <LogOut className="w-4 h-4 text-emerald-600" />
-                Discharge Readiness
+                Discharge Readiness (Đủ điều kiện xuất viện)
               </h3>
-              <div className="flex items-center gap-3 mb-3">
-                <div className={`text-2xl font-black ${pathway.dischargeReadiness.pct >= 80 ? 'text-emerald-600' : pathway.dischargeReadiness.pct >= 50 ? 'text-amber-600' : 'text-rose-600'}`}>
+              
+              <div className="flex items-center gap-4 mb-4 bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm">
+                <div className={`text-3xl font-black shrink-0 ${
+                  pathway.dischargeReadiness.pct >= 80 ? 'text-emerald-700' : pathway.dischargeReadiness.pct >= 50 ? 'text-amber-700' : 'text-rose-700'
+                }`}>
                   {pathway.dischargeReadiness.pct}%
                 </div>
                 <div className="flex-1">
-                  <div className="w-full bg-slate-100 rounded-full h-2">
+                  <div className="w-full bg-slate-200 rounded-full h-2.5">
                     <div
-                      className={`h-2 rounded-full transition-all ${pathway.dischargeReadiness.pct >= 80 ? 'bg-emerald-500' : pathway.dischargeReadiness.pct >= 50 ? 'bg-amber-400' : 'bg-rose-500'}`}
+                      className={`h-2.5 rounded-full transition-all duration-500 ${
+                        pathway.dischargeReadiness.pct >= 80 ? 'bg-emerald-600' : pathway.dischargeReadiness.pct >= 50 ? 'bg-amber-500' : 'bg-rose-500'
+                      }`}
                       style={{ width: `${pathway.dischargeReadiness.pct}%` }}
                     />
                   </div>
-                  <div className={`text-[10px] font-semibold mt-0.5 ${pathway.dischargeReadiness.pct >= 80 ? 'text-emerald-600' : 'text-amber-600'}`}>
-                    {pathway.dischargeReadiness.pct >= 80 ? '✓ Sẵn sàng xuất viện' : '⏳ Chưa đủ tiêu chí'}
+                  <div className={`text-xs font-bold mt-1.5 ${
+                    pathway.dischargeReadiness.pct >= 80 ? 'text-emerald-800' : 'text-amber-850'
+                  }`}>
+                    {pathway.dischargeReadiness.pct >= 80 ? '✓ Sẵn sàng xuất viện' : '⏳ Chưa đủ tiêu chí xuất viện'}
                   </div>
                 </div>
               </div>
-              <div className="space-y-1.5">
+              
+              <div className="space-y-2">
                 {pathway.dischargeReadiness.items.map((item, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs">
+                  <div key={i} className="flex items-center gap-2.5 text-xs p-1 rounded hover:bg-slate-50">
                     {item.done
-                      ? <CheckSquare className="w-4 h-4 text-emerald-500 shrink-0" />
-                      : <Square className="w-4 h-4 text-slate-300 shrink-0" />
+                      ? <CheckSquare className="w-4.5 h-4.5 text-emerald-600 shrink-0" />
+                      : <Square className="w-4.5 h-4.5 text-slate-400 shrink-0" />
                     }
-                    <span className={item.done ? 'text-slate-600' : 'text-slate-400'}>{item.label}</span>
+                    <span className={item.done ? 'text-slate-900 font-extrabold' : 'text-slate-750 font-bold'}>
+                      {item.label}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -714,33 +794,38 @@ export default function HospitalCarePathwayPage() {
 
           {/* ── CLINICAL INTELLIGENCE (AI) ───────────────────────────── */}
           {pathway.aiRecommendation && (
-            <div className="bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-200 rounded-xl p-5 shadow-md">
-              <h3 className="font-bold text-indigo-900 text-sm mb-3 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-indigo-600" />
+            <div className="relative overflow-hidden bg-gradient-to-br from-indigo-50 via-purple-50 to-violet-50 border border-indigo-200 rounded-xl p-6 shadow-md">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none" />
+              
+              <h3 className="font-bold text-indigo-900 text-sm mb-4 flex items-center gap-2 tracking-wide uppercase">
+                <Sparkles className="w-4 h-4 text-indigo-600 animate-pulse" />
                 Bella Clinical Intelligence
-                <span className="text-[10px] font-normal text-indigo-400 ml-1">— AI hỗ trợ, không tự quyết định lâm sàng</span>
+                <span className="text-xs font-bold text-indigo-800/80 ml-1 font-sans">— AI hỗ trợ quyết định</span>
               </h3>
-              <div className="space-y-3">
-                <div className="p-3 bg-white/70 rounded-xl border border-indigo-100">
-                  <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-1">Phát hiện</div>
-                  <p className="text-sm text-slate-800">{pathway.aiRecommendation.finding}</p>
+              
+              <div className="space-y-4">
+                <div className="p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-indigo-200 shadow-sm">
+                  <div className="text-xs font-extrabold text-indigo-900 uppercase tracking-widest mb-1.5">Phát hiện</div>
+                  <p className="text-sm text-slate-900 font-extrabold leading-relaxed">{pathway.aiRecommendation.finding}</p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="p-3 bg-white/70 rounded-xl border border-indigo-100">
-                    <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-1">Nguyên nhân có thể</div>
-                    <p className="text-xs text-slate-700">{pathway.aiRecommendation.cause}</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-indigo-200 shadow-sm">
+                    <div className="text-xs font-extrabold text-indigo-900 uppercase tracking-widest mb-1.5">Nguyên nhân dự đoán</div>
+                    <p className="text-xs text-slate-800 font-extrabold leading-relaxed">{pathway.aiRecommendation.cause}</p>
                   </div>
-                  <div className="p-3 bg-white/70 rounded-xl border border-emerald-100">
-                    <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-1">Đề xuất hành động</div>
-                    <p className="text-xs text-slate-700">{pathway.aiRecommendation.suggestion}</p>
+                  <div className="p-4 bg-emerald-50/80 backdrop-blur-sm rounded-xl border border-emerald-200 shadow-sm">
+                    <div className="text-xs font-extrabold text-emerald-900 uppercase tracking-widest mb-1.5">Đề xuất xử lý</div>
+                    <p className="text-xs text-slate-850 font-black leading-relaxed">{pathway.aiRecommendation.suggestion}</p>
                   </div>
                 </div>
-                <div className="flex items-center justify-between flex-wrap gap-2 text-xs">
-                  <span className="flex items-center gap-1 text-amber-700 font-semibold bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-full">
-                    <Brain className="w-3 h-3" /> Mức ảnh hưởng: {pathway.aiRecommendation.impact}
+                
+                <div className="flex items-center justify-between flex-wrap gap-2 text-xs pt-2">
+                  <span className="flex items-center gap-1.5 text-amber-900 font-extrabold bg-amber-50 border border-amber-250 px-3.5 py-2 rounded-full shadow-sm">
+                    <Brain className="w-3.5 h-3.5 text-amber-600" /> Mức ảnh hưởng: {pathway.aiRecommendation.impact}
                   </span>
-                  <span className="flex items-center gap-1 text-indigo-700 font-semibold bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-full">
-                    <User className="w-3 h-3" /> Quyền quyết định: {pathway.aiRecommendation.decisionOwner}
+                  <span className="flex items-center gap-1.5 text-indigo-900 font-extrabold bg-indigo-50 border border-indigo-250 px-3.5 py-2 rounded-full shadow-sm">
+                    <User className="w-3.5 h-3.5 text-indigo-600" /> Quyền quyết định: {pathway.aiRecommendation.decisionOwner}
                   </span>
                 </div>
               </div>
@@ -749,16 +834,16 @@ export default function HospitalCarePathwayPage() {
 
           {/* ── VARIANCE LOG ─────────────────────────────────────────── */}
           {pathway.varianceNotes.length > 0 && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm">
-              <h3 className="font-bold text-amber-800 text-sm mb-3 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4" />
-                Variance Log — Nhật ký sai lệch so với phác đồ
+            <div className="bg-amber-50/70 border border-amber-300 rounded-xl p-5 shadow-sm">
+              <h3 className="font-bold text-amber-900 text-sm mb-3 flex items-center gap-2 tracking-wide uppercase">
+                <AlertCircle className="w-4 h-4 text-amber-600" />
+                Variance Log (Nhật ký sai lệch phác đồ)
               </h3>
-              <ul className="space-y-1.5">
+              <ul className="space-y-2">
                 {pathway.varianceNotes.map((note, i) => (
-                  <li key={i} className="text-xs text-amber-700 flex items-start gap-2">
-                    <ChevronRight className="w-3 h-3 mt-0.5 shrink-0" />
-                    <span>{note}</span>
+                  <li key={i} className="text-xs text-amber-950 font-bold flex items-start gap-2">
+                    <ChevronRight className="w-4 h-4 mt-0.5 shrink-0 text-amber-600" />
+                    <span className="leading-normal">{note}</span>
                   </li>
                 ))}
               </ul>

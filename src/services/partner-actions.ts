@@ -25,6 +25,37 @@ export interface PartnerDashboardData {
   }[];
 }
 
+interface LedgerRow {
+  base_amount: number | null;
+  commission_amount: number | null;
+  status: string | null;
+}
+
+interface ReservationRow {
+  status: string | null;
+}
+
+interface ReservationMetadata {
+  customerName?: string;
+  customerPhone?: string;
+  depositAmount?: number;
+  depositProofUrl?: string | null;
+  documents?: { name: string; type: string; url: string }[];
+}
+
+interface UserMetadata {
+  full_name?: string;
+  phone?: string;
+  partner_code?: string;
+  partner_type?: 'F1' | 'F2' | 'CTV';
+  company_name?: string;
+  tax_code?: string;
+  address?: string;
+  bank_account?: { bank_name: string; account_number: string; account_holder: string; branch?: string };
+  created_at?: string;
+}
+
+
 /**
  * Fetch dashboard stats for current logged-in partner/broker
  */
@@ -54,7 +85,7 @@ export async function getPartnerDashboardData(): Promise<PartnerDashboardData> {
   let latestPaid = 0;
 
   if (ledgerData && Array.isArray(ledgerData)) {
-    (ledgerData as any[]).forEach(item => {
+    (ledgerData as unknown as LedgerRow[]).forEach(item => {
       const base = Number(item.base_amount) || 0;
       const comm = Number(item.commission_amount) || 0;
       totalComm += comm;
@@ -86,7 +117,7 @@ export async function getPartnerDashboardData(): Promise<PartnerDashboardData> {
   let approvedBookingsCount = 0;
 
   if (resData && Array.isArray(resData)) {
-    (resData as any[]).forEach(r => {
+    (resData as unknown as ReservationRow[]).forEach(r => {
       if (r.status === 'active') {
         pendingBookingsCount++;
       } else if (r.status === 'converted') {
@@ -185,7 +216,7 @@ export async function getPartnerInventory(): Promise<PartnerInventoryItem[]> {
     throw new Error(`Failed to fetch inventory: ${error.message}`);
   }
 
-  return (data || []).map((p: any) => ({
+  return (data || []).map((p: Record<string, unknown>) => ({
     id: p.id,
     project_id: p.project_id,
     project_name: p.real_estate_projects?.name || 'Dự án BĐS',
@@ -246,7 +277,7 @@ export async function getPartnerCommissions(): Promise<PartnerCommissionItem[]> 
     throw new Error(`Failed to fetch commissions: ${error.message}`);
   }
 
-  return (data || []).map((c: any) => ({
+  return (data || []).map((c: Record<string, unknown>) => ({
     id: c.id,
     transaction_type: c.transaction_type,
     base_amount: Number(c.base_amount) || 0,
@@ -292,7 +323,7 @@ export async function getPartnerDocuments(): Promise<PartnerDocumentItem[]> {
     throw new Error(`Failed to fetch documents: ${error.message}`);
   }
 
-  return (data || []).map((d: any) => ({
+  return (data || []).map((d: Record<string, unknown>) => ({
     id: d.id,
     title: d.title,
     description: d.description,
@@ -352,7 +383,7 @@ export async function getPartnerBookings(): Promise<PartnerBookingItem[]> {
     throw new Error(`Failed to fetch bookings: ${error.message}`);
   }
 
-  return (data || []).map((r: any) => ({
+  return (data || []).map((r: Record<string, unknown>) => ({
     id: r.id,
     product_code: r.real_estate_products?.product_code || 'N/A',
     project_name: r.real_estate_products?.real_estate_projects?.name || 'Dự án',
@@ -381,7 +412,7 @@ export async function createPartnerBooking(params: {
   const supabase = await createClient();
 
   // Call the core RPC reserve_product (defined in reservation_engine migration)
-  const { data, error } = await supabase.rpc('reserve_product' as any, { // TODO: Regenerate types after migration
+  const { data, error } = await supabase.rpc('reserve_product' as never, { // TODO: Regenerate types after migration
     p_tenant_id: user.tenant_id,
     p_product_id: params.productId,
     p_user_id: user.id,
@@ -394,7 +425,7 @@ export async function createPartnerBooking(params: {
     return { success: false, error: error.message };
   }
 
-  const res = data as any;
+  const res = data as unknown as { success: boolean; error?: string; reservation_id?: string };
   if (!res.success) {
     return { success: false, error: res.error };
   }
@@ -445,7 +476,7 @@ export async function fetchPartnerBookings(userId: string) {
 
   if (error) throw error;
 
-  return (data || []).map((r: any) => ({
+  return (data || []).map((r: Record<string, unknown>) => ({
     id: r.id,
     project_name: r.real_estate_products?.real_estate_projects?.name || 'Dự án',
     unit_code: r.real_estate_products?.product_code || 'N/A',
@@ -515,7 +546,7 @@ export async function uploadBookingDocument(
 
   if (!reservation) throw new Error('Booking not found');
 
-  const metadata = (reservation).metadata as any || {};
+  const metadata = (reservation).metadata as unknown as ReservationMetadata || {};
   const documents = metadata.documents || [];
   
   documents.push({
@@ -563,7 +594,7 @@ export async function fetchPartnerCommissions(userId: string) {
 
   if (error) throw error;
 
-  return (data || []).map((c: any) => ({
+  return (data || []).map((c: Record<string, unknown>) => ({
     id: c.id,
     booking_id: c.id,
     project_name: c.real_estate_products?.real_estate_projects?.name || 'Dự án',
@@ -611,7 +642,7 @@ export async function fetchPartnerDocuments() {
 
   if (error) throw error;
 
-  const categoryMap: Record<string, any> = {
+  const categoryMap: Record<string, unknown> = {
     brochure: 'brochure',
     price_list: 'price_list',
     legal_docs: 'legal',
@@ -622,7 +653,7 @@ export async function fetchPartnerDocuments() {
     other: 'media',
   };
 
-  return (data || []).map((d: any) => ({
+  return (data || []).map((d: Record<string, unknown>) => ({
     id: d.id,
     title: d.title,
     category: categoryMap[d.document_type] || 'media',
@@ -738,7 +769,7 @@ export async function updatePartnerProfile(
     .eq('id', userId)
     .single();
 
-  const metadata = { ...(current?.metadata as any || {}), ...updates };
+  const metadata = { ...(current?.metadata as unknown as UserMetadata || {}), ...updates };
 
   const { error } = await supabase
     .from('users')
@@ -766,7 +797,7 @@ export async function updateBankAccount(
     .single();
 
   const metadata = { 
-    ...(current?.metadata as any || {}), 
+    ...(current?.metadata as unknown as UserMetadata || {}), 
     bank_account: bankInfo 
   };
 

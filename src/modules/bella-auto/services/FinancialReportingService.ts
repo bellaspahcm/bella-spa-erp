@@ -21,6 +21,51 @@ interface DateRange {
   end: string;
 }
 
+interface SaleRow {
+  id: string;
+  vehicle_id: string;
+  sale_price: number | null;
+  sale_date: string;
+  salesperson_id: string | null;
+  salesperson_commission?: number | null;
+  auto_vehicles: {
+    id: string;
+    make: string;
+    model: string;
+    purchase_price: number | null;
+  };
+}
+
+interface RepairOrderRow {
+  id: string;
+  total_labor_cost: number | null;
+  total_parts_cost: number | null;
+  total_amount: number | null;
+  service_type: string | null;
+}
+
+interface LoanRow {
+  referral_commission_amount: number | null;
+  commission_paid: boolean | null;
+}
+
+interface InsurancePolicyRow {
+  referral_commission_amount: number | null;
+  commission_paid: boolean | null;
+}
+
+interface TradeInRow {
+  final_trade_in_value: number | null;
+}
+
+interface ExpenseRow {
+  amount: number | null;
+}
+
+interface SalePriceRow {
+  sale_price: number | null;
+}
+
 interface VehicleProfitMargin {
   saleId: string;
   vehicleId: string;
@@ -121,7 +166,7 @@ export class FinancialReportingService {
       throw new Error(`Failed to fetch vehicle profit margins: ${error.message}`);
     }
     
-    const margins: VehicleProfitMargin[] = (data || []).map((sale: any) => {
+    const margins: VehicleProfitMargin[] = (data || []).map((sale: SaleRow) => {
       const vehicle = sale.auto_vehicles;
       const salePrice = Number(sale.sale_price) || 0;
       const costPrice = Number(vehicle.purchase_price) || 0;
@@ -191,7 +236,7 @@ export class FinancialReportingService {
       laborRevenue: 0,
     };
     
-    (data || []).forEach((order: any) => {
+    (data || []).forEach((order: RepairOrderRow) => {
       const totalAmount = Number(order.total_amount) || 0;
       const laborCost = Number(order.total_labor_cost) || 0;
       const partsCost = Number(order.total_parts_cost) || 0;
@@ -250,7 +295,7 @@ export class FinancialReportingService {
     
     const { data: salesData } = await salesQuery;
     
-    (salesData || []).forEach((sale: any) => {
+    (salesData || []).forEach((sale: SalePriceRow) => {
       const commission = Number(sale.salesperson_commission) || 0;
       breakdown.vehicleSalesCommission += commission;
     });
@@ -270,7 +315,7 @@ export class FinancialReportingService {
     
     const { data: loanData } = await loanQuery;
     
-    (loanData || []).forEach((loan: any) => {
+    (loanData || []).forEach((loan: LoanRow) => {
       const commission = Number(loan.referral_commission_amount) || 0;
       breakdown.loanReferralCommission += commission;
       
@@ -296,7 +341,7 @@ export class FinancialReportingService {
     
     const { data: insuranceData } = await insuranceQuery;
     
-    (insuranceData || []).forEach((policy: any) => {
+    (insuranceData || []).forEach((policy: InsurancePolicyRow) => {
       const commission = Number(policy.referral_commission_amount) || 0;
       breakdown.insuranceReferralCommission += commission;
       
@@ -350,7 +395,7 @@ export class FinancialReportingService {
     
     const { data: salesData } = await salesQuery;
     
-    (salesData || []).forEach((sale: any) => {
+    (salesData || []).forEach((sale: SalePriceRow) => {
       breakdown.vehicleSales += Number(sale.sale_price) || 0;
     });
     
@@ -378,7 +423,7 @@ export class FinancialReportingService {
     
     const { data: tradeInData } = await tradeInQuery;
     
-    (tradeInData || []).forEach((appraisal: any) => {
+    (tradeInData || []).forEach((appraisal: TradeInRow) => {
       breakdown.tradeIn += Number(appraisal.final_trade_in_value) || 0;
     });
     
@@ -430,7 +475,7 @@ export class FinancialReportingService {
     const { data: expensesData } = await expensesQuery;
     
     let operatingExpenses = 0;
-    (expensesData || []).forEach((expense: any) => {
+    (expensesData || []).forEach((expense: ExpenseRow) => {
       operatingExpenses += Number(expense.amount) || 0;
     });
     

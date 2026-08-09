@@ -42,7 +42,7 @@ export class DomainEventBus {
       for (const handler of handlers) {
         try {
           await handler(event);
-        } catch (err) {
+        } catch (err: unknown) {
           console.error(
             `[DomainEventBus Error] Failed handler for event %s:`,
             event.eventType,

@@ -313,7 +313,7 @@ export function withSandbox(
         await logAPIRequest({
           partner_id: partner.partner_id,
           tenant_id: partner.tenant_id,
-          method: req.method as any,
+          method: req.method as unknown,
           endpoint: req.nextUrl.pathname,
           status_code: response.status,
           response_time_ms: Date.now() - startTime,

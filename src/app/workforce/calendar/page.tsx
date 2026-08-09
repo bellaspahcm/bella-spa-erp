@@ -46,7 +46,7 @@ export default function WorkCalendar() {
     try {
       const data = await getCalendarEvents(selectedDate);
       setEvents(data);
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi khi tải lịch làm việc');
     } finally {
       setIsLoading(false);

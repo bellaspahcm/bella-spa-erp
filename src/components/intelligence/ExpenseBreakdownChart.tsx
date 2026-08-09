@@ -41,6 +41,15 @@ const COLORS = [
   '#06b6d4', // cyan
 ];
 
+interface CustomLabelProps {
+  cx: number;
+  cy: number;
+  midAngle: number;
+  innerRadius: number;
+  outerRadius: number;
+  percent: number;
+}
+
 export function ExpenseBreakdownChart({ data, height = 300 }: ExpenseBreakdownChartProps) {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -58,7 +67,7 @@ export function ExpenseBreakdownChart({ data, height = 300 }: ExpenseBreakdownCh
     innerRadius,
     outerRadius,
     percent,
-  }: any) => {
+  }: CustomLabelProps) => {
     const RADIAN = Math.PI / 180;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -115,7 +124,7 @@ export function ExpenseBreakdownChart({ data, height = 300 }: ExpenseBreakdownCh
           verticalAlign="bottom"
           height={36}
           iconType="circle"
-          formatter={(value, entry: any) => {
+          formatter={(value, entry: Record<string, unknown>) => {
             const item = data.find((d) => d.category === value);
             return `${value} (${item?.percentage || 0}%)`;
           }}

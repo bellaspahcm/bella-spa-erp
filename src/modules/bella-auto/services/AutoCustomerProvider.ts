@@ -16,7 +16,7 @@ export interface AutoCustomerProfile {
   purchasingPurpose: string | null;
   totalVehiclesOwned: number;
   totalValueSpent: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface OwnedVehicle {
@@ -91,7 +91,7 @@ export const AutoCustomerProvider = {
       metadata:           profileData.metadata,
     } : null;
 
-    const ownedVehicles: OwnedVehicle[] = (ownersData ?? []).map((row: any) => ({
+    const ownedVehicles: OwnedVehicle[] = (ownersData ?? []).map((row: Record<string, unknown>) => ({
       ownerRecordId:    row.id,
       vehicleId:        row.auto_vehicles.id,
       vin:              row.auto_vehicles.vin,
@@ -246,7 +246,7 @@ export const AutoCustomerProvider = {
 
     if (priceErr) return;
 
-    const totalValueSpent = (priceData ?? []).reduce((acc: number, row: any) => {
+    const totalValueSpent = (priceData ?? []).reduce((acc: number, row: Record<string, unknown>) => {
       return acc + (Number(row.auto_vehicles?.list_price) || 0);
     }, 0);
 

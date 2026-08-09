@@ -309,7 +309,7 @@ export class ConflictDetectionProvider {
   /**
    * Find customer conflicting booking
    */
-  private findCustomerConflictingBooking(input: ConflictDetectionInput): any {
+  private findCustomerConflictingBooking(input: ConflictDetectionInput): { id: string; date: string; startTime: string; endTime: string; status: string } | undefined {
     const { requestedStartTime, requestedEndTime } = input.booking;
     return input.existingBookings.customerBookings?.find((b) =>
       this.hasTimeOverlap(requestedStartTime, requestedEndTime, b.startTime, b.endTime)
@@ -319,30 +319,54 @@ export class ConflictDetectionProvider {
   /**
    * Find room conflicting booking
    */
-  private findRoomConflictingBooking(input: ConflictDetectionInput): any {
+  private findRoomConflictingBooking(input: ConflictDetectionInput): { id: string; date: string; startTime: string; endTime: string; status: string } | undefined {
     const { roomId, requestedStartTime, requestedEndTime } = input.booking;
-    return input.existingBookings.roomBookings?.find((b) =>
+    const found = input.existingBookings.roomBookings?.find((b) =>
       b.roomId === roomId &&
       this.hasTimeOverlap(requestedStartTime, requestedEndTime, b.startTime, b.endTime)
     );
+    if (!found) return undefined;
+    return {
+      id: found.id,
+      date: found.date,
+      startTime: found.startTime,
+      endTime: found.endTime,
+      status: found.status,
+    };
   }
 
   /**
    * Find equipment conflicting booking
    */
-  private findEquipmentConflictingBooking(input: ConflictDetectionInput): any {
+  private findEquipmentConflictingBooking(input: ConflictDetectionInput): { id: string; date: string; startTime: string; endTime: string; status: string } | undefined {
     const { equipmentIds, requestedStartTime, requestedEndTime } = input.booking;
-    return input.existingBookings.equipmentBookings?.find((b) =>
+    const found = input.existingBookings.equipmentBookings?.find((b) =>
       equipmentIds?.includes(b.equipmentId) &&
       this.hasTimeOverlap(requestedStartTime, requestedEndTime, b.startTime, b.endTime)
     );
+    if (!found) return undefined;
+    return {
+      id: found.id,
+      date: found.date,
+      startTime: found.startTime,
+      endTime: found.endTime,
+      status: found.status,
+    };
   }
 
   /**
    * Find package conflicting session
    */
-  private findPackageConflictingSession(input: ConflictDetectionInput): any {
-    return input.existingBookings.packageSessions?.[0];
+  private findPackageConflictingSession(input: ConflictDetectionInput): { id: string; date: string; startTime: string; endTime: string; status: string } | undefined {
+    const session = input.existingBookings.packageSessions?.[0];
+    if (!session) return undefined;
+    return {
+      id: session.id,
+      date: session.date,
+      startTime: '00:00',
+      endTime: '23:59',
+      status: session.status,
+    };
   }
 
   /**

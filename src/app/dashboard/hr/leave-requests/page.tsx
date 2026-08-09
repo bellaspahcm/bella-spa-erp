@@ -89,7 +89,7 @@ function LeaveRequestsDashboard() {
     try {
       const leaves = (await getPendingLeaveRequests()) as LeaveRequest[];
       setPendingLeaves(leaves);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to load pending leaves:", err);
       toast.error("Không thể tải danh sách đơn nghỉ phép");
     } finally {
@@ -102,7 +102,7 @@ function LeaveRequestsDashboard() {
     try {
       const leaves = (await getProcessedLeaveRequests(month)) as ProcessedLeaveRequest[];
       setProcessedLeaves(leaves);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to load leave history:", err);
       toast.error("Không thể tải lịch sử đơn nghỉ phép");
     } finally {
@@ -115,7 +115,7 @@ function LeaveRequestsDashboard() {
       const users = (await getUsers()) as KtvUser[];
       const activeKTVs = users.filter((u) => u.role === 'ktv' && u.status === 'active');
       setAllKTVs(activeKTVs);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to load KTVs:", err);
     }
   }, []);
@@ -210,7 +210,7 @@ function LeaveRequestsDashboard() {
           message: decisionErr instanceof Error ? decisionErr.message : 'Unknown error' 
         });
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to load conflict sessions:", err);
       toast.error("Không thể tải đầy đủ thông tin đơn nghỉ phép");
     } finally {

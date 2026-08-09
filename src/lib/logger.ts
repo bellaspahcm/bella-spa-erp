@@ -18,14 +18,14 @@ class ConsoleLogger {
     this.module = module;
   }
 
-  private formatMessage(level: string, obj: any, msg?: string) {
+  private formatMessage(level: string, obj: unknown, msg?: string) {
     const timestamp = new Date().toISOString();
     const moduleStr = this.module ? ` [${this.module}]` : '';
     const objStr = obj && typeof obj === 'object' ? ` ${JSON.stringify(obj)}` : '';
     return `${timestamp} ${level.toUpperCase()}${moduleStr}: ${msg || ''}${objStr}`;
   }
 
-  info(obj: any, msg?: string) {
+  info(obj: unknown, msg?: string) {
     if (typeof obj === 'string') {
       console.log(this.formatMessage('info', null, obj));
     } else {
@@ -33,7 +33,7 @@ class ConsoleLogger {
     }
   }
 
-  error(obj: any, msg?: string) {
+  error(obj: unknown, msg?: string) {
     if (typeof obj === 'string') {
       console.error(this.formatMessage('error', null, obj));
     } else {
@@ -41,7 +41,7 @@ class ConsoleLogger {
     }
   }
 
-  warn(obj: any, msg?: string) {
+  warn(obj: unknown, msg?: string) {
     if (typeof obj === 'string') {
       console.warn(this.formatMessage('warn', null, obj));
     } else {
@@ -49,7 +49,7 @@ class ConsoleLogger {
     }
   }
 
-  debug(obj: any, msg?: string) {
+  debug(obj: unknown, msg?: string) {
     if (process.env.NODE_ENV === 'development') {
       if (typeof obj === 'string') {
         console.debug(this.formatMessage('debug', null, obj));

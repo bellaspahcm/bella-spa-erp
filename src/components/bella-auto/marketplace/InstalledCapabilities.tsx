@@ -35,11 +35,7 @@ export function InstalledCapabilities({
   const [installations, setInstallations] = useState<InstalledCapability[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchInstallations();
-  }, [tenantId]);
-
-  const fetchInstallations = async () => {
+  async function fetchInstallations() {
     setIsLoading(true);
     try {
       // TODO: Replace with actual API
@@ -78,7 +74,11 @@ export function InstalledCapabilities({
     } finally {
       setIsLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    fetchInstallations();
+  }, [tenantId]);
 
   const getStatusBadge = (status: string) => {
     const badges = {

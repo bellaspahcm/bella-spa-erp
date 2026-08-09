@@ -51,7 +51,7 @@ interface UseProgressiveLoadOptions {
    * re-triggered, identical to the second argument of `useEffect`.
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  deps?: any[];
+  deps?: unknown[];
 }
 
 interface UseProgressiveLoadResult {
@@ -96,7 +96,7 @@ export function useProgressiveLoad({
     // ── Phase 1: Critical ────────────────────────────────────────────────────
     try {
       await criticalRef.current();
-    } catch (err) {
+    } catch (err: unknown) {
       setCriticalError(err instanceof Error ? err : new Error(String(err)));
     } finally {
       setCriticalReady(true);
@@ -108,7 +108,7 @@ export function useProgressiveLoad({
     secondaryTimerRef.current = setTimeout(async () => {
       try {
         await secondaryRef.current!();
-      } catch (err) {
+      } catch (err: unknown) {
         setSecondaryError(err instanceof Error ? err : new Error(String(err)));
       } finally {
         setSecondaryReady(true);

@@ -2,6 +2,8 @@ import { describe, it, expect, jest } from '@jest/globals';
 import { LeadRotationService } from '@/modules/bella-auto/services/LeadRotationService';
 import { AutoSalesProvider } from '@/modules/bella-auto/services/AutoSalesProvider';
 
+jest.setTimeout(60000);
+
 // Mock VehicleStatusMachineService để tránh DB call thực khi transition
 jest.mock('@/modules/bella-auto/services/VehicleStatusMachineService', () => ({
   VehicleStatusMachineService: {

@@ -23,10 +23,10 @@ describe('Bella Auto Module Isolation & Registry Tests', () => {
       // Check for bella_auto theme scoped selectors
       expect(css).toContain('[data-auto-layout]');
       
-      // Check for premium automotive theme color tokens
-      expect(css).toContain('#0A1628'); // Deep Navy
-      expect(css).toContain('#C0A060'); // Accent Gold
-      expect(css).toContain('#8B9AAB'); // Racing Silver
+      // Check for premium automotive theme color tokens (Ocean Clean theme)
+      expect(css).toContain('#0891b2'); // Deep Ocean Primary
+      expect(css).toContain('#14b8a6'); // Teal Accent
+      expect(css).toContain('#0f172a'); // Navy Text
     });
   });
 

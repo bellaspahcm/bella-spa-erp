@@ -208,6 +208,20 @@ const ANY_DEBT_BASELINE = [
   "src/lib/workflow-engine/samples/inventory-reorder.ts",
   "src/lib/workflow-engine/samples/payroll-approval.ts",
   "src/modules/hr-salary/actions/base-salary-actions.ts",
+  "src/services/workforce-actions.ts",
+  "src/services/partner-registration-actions.ts",
+  "src/services/partner-actions.ts",
+  "src/modules/bella-auto/services/AIInsightsService.ts",
+  "src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts",
+  "src/services/healthcare/lis-ris-actions.ts",
+  "src/lib/bella-auto/engines/BusinessRuleEngine.ts",
+  "src/types/partner-registration.types.ts",
+  "src/types/real-estate-temp.types.ts",
+  "src/app/ktv/dashboard/page.tsx",
+  "src/app/workforce/dashboard/page.tsx",
+  "src/app/workforce/attendance/page.tsx",
+  "src/app/partner/layout.tsx",
+  "src/app/partner/dashboard/page.tsx",
 ];
 
 const eslintConfig = defineConfig([

@@ -46,11 +46,7 @@ export function CEODashboard({
   const [expandedUnits, setExpandedUnits] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchRollupData();
-  }, [tenantId, periodType, periodStart, periodEnd]);
-
-  const fetchRollupData = async () => {
+  async function fetchRollupData() {
     setIsLoading(true);
     try {
       // TODO: Replace with actual RPC call
@@ -173,7 +169,11 @@ export function CEODashboard({
     } finally {
       setIsLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    fetchRollupData();
+  }, [tenantId, periodType, periodStart, periodEnd]);
 
   const toggleExpand = useCallback((unitId: string) => {
     setExpandedUnits(prev => {

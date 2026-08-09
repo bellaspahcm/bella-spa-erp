@@ -258,7 +258,7 @@ export interface IIntegrationAdapter {
    *       headers: req.headers
    *     });
    *     res.status(200).send('OK');
-   *   } catch (err) {
+   *   } catch (err: unknown) {
    *     res.status(400).send('Invalid webhook');
    *   }
    * });
@@ -573,7 +573,7 @@ export class IntegrationAdapterRegistry {
       Array.from(this.adapters.entries()).map(async ([provider, adapter]) => {
         try {
           results[provider] = await adapter.healthCheck();
-        } catch (err) {
+        } catch (err: unknown) {
           results[provider] = {
             healthy: false,
             error: err instanceof Error ? err.message : 'Unknown error',

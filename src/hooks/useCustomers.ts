@@ -44,7 +44,7 @@ export function useCustomers(tenantId?: string) {
       }
 
       setCustomers(data || []);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[useCustomers] Unexpected error:', err);
       setError('Không thể tải danh sách khách hàng');
       setCustomers([]);

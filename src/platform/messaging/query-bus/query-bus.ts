@@ -9,7 +9,7 @@ export type QueryHandler<TQuery extends Query = Query, TResult = unknown> = (
 
 export class QueryBus {
   private static instance: QueryBus;
-  private handlers: Map<string, QueryHandler<any, any>> = new Map();
+  private handlers: Map<string, QueryHandler<Query, unknown>> = new Map();
 
   private constructor() {}
 
@@ -44,7 +44,7 @@ export class QueryBus {
 
     try {
       return await handler(query);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(`[QueryBus Error] Failed executing query %s:`, query.name, err);
       throw err;
     }

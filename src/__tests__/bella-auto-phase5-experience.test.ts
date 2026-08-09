@@ -3,7 +3,7 @@
  * Tests NPS, CSI, Health Scores, Next Best Actions, and Lost Analysis
  */
 
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterAll, jest } from '@jest/globals';
 import { createClient } from '@supabase/supabase-js';
 import { NPSSurveyService } from '@/modules/bella-auto/services/NPSSurveyService';
 import { CSISurveyService } from '@/modules/bella-auto/services/CSISurveyService';
@@ -15,10 +15,14 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const TEST_TENANT_ID = 'bella_auto_demo';
+jest.setTimeout(30000);
+
+const TEST_TENANT_ID = 'da9e610b-88c5-4901-8ab9-5439f4931467';
 let testCustomerId: string;
 let testJourneyId: string;
 let testVehicleId: string;
+let testNpsTemplateId: string;
+let testCsiTemplateId: string;
 
 describe('Bella Auto Phase 5 - Experience Center', () => {
   beforeAll(async () => {
@@ -30,43 +34,86 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
       .from('customers')
       .insert({
         tenant_id: TEST_TENANT_ID,
-        name: 'Test Customer Phase 5',
-        email: 'phase5test@example.com',
-        phone: '0900000005',
+        name_mother: 'Test Customer Phase 5',
+        phone: '09' + Math.floor(10000000 + Math.random() * 90000000).toString(),
       })
       .select()
       .single();
 
     testCustomerId = customer!.id;
 
-    // Create test vehicle
+    // Query an existing vehicle to bypass complex variant foreign keys
     const { data: vehicle } = await supabase
       .from('auto_vehicles')
-      .insert({
-        tenant_id: TEST_TENANT_ID,
-        vin: 'TEST5VIN123456789',
-        brand: 'Toyota',
-        model: 'Camry',
-        year: 2024,
-        status: 'delivered',
-      })
-      .select()
+      .select('id')
+      .limit(1)
       .single();
 
     testVehicleId = vehicle!.id;
 
+    // Create test NPS template
+    const { data: npsTemplate } = await supabase
+      .from('auto_survey_templates')
+      .insert({
+        tenant_id: TEST_TENANT_ID,
+        name: 'Test NPS Template',
+        survey_type: 'nps',
+        trigger_event: 'vehicle_delivered',
+        questions: [
+          {
+            id: 'nps_score',
+            text: 'How likely are you to recommend us to a friend or colleague?',
+            type: 'nps_score',
+          }
+        ],
+        is_active: true,
+        auto_send: true,
+        send_delay_hours: 0,
+      })
+      .select()
+      .single();
+    testNpsTemplateId = npsTemplate!.id;
+
+    // Create test CSI template
+    const { data: csiTemplate } = await supabase
+      .from('auto_survey_templates')
+      .insert({
+        tenant_id: TEST_TENANT_ID,
+        name: 'Test CSI Template',
+        survey_type: 'csi',
+        trigger_event: 'vehicle_delivered',
+        questions: [
+          { id: 'sales_consultant', text: 'Chất lượng phục vụ của tư vấn bán hàng', type: 'rating' },
+          { id: 'facility', text: 'Cơ sở vật chất showroom', type: 'rating' },
+          { id: 'delivery_timing', text: 'Thời gian giao xe', type: 'rating' },
+          { id: 'vehicle_quality', text: 'Chất lượng xe khi nhận', type: 'rating' },
+          { id: 'after_sales', text: 'Dịch vụ hậu mãi', type: 'rating' },
+        ],
+        is_active: true,
+        auto_send: true,
+        send_delay_hours: 0,
+      })
+      .select()
+      .single();
+    testCsiTemplateId = csiTemplate!.id;
+
     // Create test journey
-    const { data: journey } = await supabase
+    const { data: journey, error: journeyErr } = await supabase
       .from('auto_customer_journeys')
       .insert({
         tenant_id: TEST_TENANT_ID,
         customer_id: testCustomerId,
-        vehicle_id: testVehicleId,
-        current_stage: 'delivered',
-        status: 'completed',
+        current_stage_id: '5af246ac-cb07-4d31-b13f-3631237891f1', // Stage: 'delivered'
+        entered_stage_at: new Date().toISOString(),
+        sla_status: 'normal',
+        metadata: {},
       })
       .select()
       .single();
+
+    if (journeyErr) {
+      console.error('Journey Insert Error:', journeyErr);
+    }
 
     testJourneyId = journey!.id;
   });
@@ -80,7 +127,7 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
     await supabase.from('auto_next_best_actions').delete().eq('customer_id', testCustomerId);
     await supabase.from('auto_lost_analysis').delete().eq('customer_id', testCustomerId);
     await supabase.from('auto_customer_journeys').delete().eq('id', testJourneyId);
-    await supabase.from('auto_vehicles').delete().eq('id', testVehicleId);
+    await supabase.from('auto_survey_templates').delete().in('id', [testNpsTemplateId, testCsiTemplateId]);
     await supabase.from('customers').delete().eq('id', testCustomerId);
   });
 
@@ -91,7 +138,7 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
         customerId: testCustomerId,
         journeyId: testJourneyId,
         vehicleId: testVehicleId,
-        deliveryId: 'test-delivery-1',
+        deliveryId: '00000000-0000-0000-0000-000000000001',
         triggerEvent: 'vehicle_delivered',
       });
 
@@ -176,7 +223,7 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
         customerId: testCustomerId,
         journeyId: testJourneyId,
         vehicleId: testVehicleId,
-        deliveryId: 'test-delivery-2',
+        deliveryId: '00000000-0000-0000-0000-000000000002',
       });
 
       expect(survey).toBeDefined();
@@ -376,8 +423,8 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
         }
       );
 
-      // Wait for async analysis
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Run analysis synchronously for test stability
+      await LostAnalysisAIService.performAIAnalysis(TEST_TENANT_ID, lostAnalysis.id);
 
       const { data: analyzed } = await supabase
         .from('auto_lost_analysis')

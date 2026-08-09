@@ -18,7 +18,7 @@ export default function CommissionWallet() {
     try {
       const data = await getMyCommissionLedger();
       setLedger(data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[CommissionWallet] Fetch failed:', err);
       toast.error('Lỗi khi tải ví hoa hồng');
     } finally {

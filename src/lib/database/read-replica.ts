@@ -16,7 +16,9 @@ import type { Database } from '@/types/database.types';
 
 // Connection strings từ environment
 const PRIMARY_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const PRIMARY_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const PRIMARY_KEY = (process.env.NODE_ENV === 'test' && (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY))
+  ? (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY!)
+  : (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '');
 const REPLICA_URL = process.env.SUPABASE_READ_REPLICA_URL;
 const REPLICA_KEY = process.env.SUPABASE_READ_REPLICA_KEY;
 

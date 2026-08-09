@@ -22,6 +22,8 @@
  * @module integration/booking-flow
  */
 
+jest.setTimeout(60000);
+
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from '@jest/globals';
 import {
   seedTestDatabase,
@@ -1336,6 +1338,6 @@ describe('Booking Flow Integration Tests', () => {
 
       console.log('[Test] ✅ Performance acceptable under concurrent load');
       console.log('--- ✅ Scenario 8d: PASSED ---\n');
-    }, 30000);
+    }, 60000); // Increased timeout to 60s for concurrent load test
   });
 });

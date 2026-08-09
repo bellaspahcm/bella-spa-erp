@@ -39,7 +39,7 @@ export function useOrderEngine() {
     setError(null);
     try {
       return await orderEngine.createOrder(request);
-    } catch (err) {
+    } catch (err: unknown) {
       const e = err instanceof Error ? err : new Error('Unknown error in createOrder');
       setError(e);
       return {
@@ -58,7 +58,7 @@ export function useOrderEngine() {
     setError(null);
     try {
       return await orderEngine.approveOrder(request);
-    } catch (err) {
+    } catch (err: unknown) {
       const e = err instanceof Error ? err : new Error('Unknown error in approveOrder');
       setError(e);
       return {
@@ -77,7 +77,7 @@ export function useOrderEngine() {
     setError(null);
     try {
       return await orderEngine.discontinueOrder(request);
-    } catch (err) {
+    } catch (err: unknown) {
       const e = err instanceof Error ? err : new Error('Unknown error in discontinueOrder');
       setError(e);
       return {
@@ -96,7 +96,7 @@ export function useOrderEngine() {
     setError(null);
     try {
       return await orderEngine.getActiveOrders(request);
-    } catch (err) {
+    } catch (err: unknown) {
       const e = err instanceof Error ? err : new Error('Unknown error in getActiveOrders');
       setError(e);
       return {
@@ -115,7 +115,7 @@ export function useOrderEngine() {
     setError(null);
     try {
       return await orderEngine.overrideCdsWarning(request);
-    } catch (err) {
+    } catch (err: unknown) {
       const e = err instanceof Error ? err : new Error('Unknown error in overrideCdsWarning');
       setError(e);
       return {

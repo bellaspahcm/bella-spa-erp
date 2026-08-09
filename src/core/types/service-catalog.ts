@@ -92,7 +92,7 @@ export interface CoreServiceCatalogItem {
    * - `warranty_months: number` - Service warranty period
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 /**

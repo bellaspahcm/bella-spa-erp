@@ -18,7 +18,7 @@ interface SuspiciousActivity {
   email?: string;
   activityType: string;
   timestamp: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // In-memory store (use Redis/DB in production)

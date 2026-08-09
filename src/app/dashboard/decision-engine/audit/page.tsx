@@ -159,7 +159,7 @@ export default function DecisionAuditTrailPage() {
           setError('Không thể xác định thông tin Tenant của bạn. Vui lòng liên hệ hỗ trợ.');
           setLoading(false);
         }
-      } catch (err) {
+      } catch (err: unknown) {
         setError('Lỗi khi tải ngữ cảnh người dùng: ' + (err instanceof Error ? err.message : 'Lỗi không xác định'));
         setLoading(false);
       }
@@ -193,7 +193,7 @@ export default function DecisionAuditTrailPage() {
 
       setData(result.data);
       setPagination(result.pagination);
-    } catch (err) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);

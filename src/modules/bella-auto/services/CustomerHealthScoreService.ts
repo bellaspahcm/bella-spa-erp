@@ -73,7 +73,7 @@ export class CustomerHealthScoreService {
       loyalty_score: loyaltyScore,
       overall_health_score: overallScore,
       health_status: this.determineHealthStatus(overallScore),
-      risk_factors: riskFactors as any,
+      risk_factors: riskFactors as unknown,
       last_purchase_date: interactionData.lastPurchaseDate,
       last_service_date: interactionData.lastServiceDate,
       last_interaction_date: interactionData.lastInteractionDate,
@@ -634,7 +634,7 @@ export class CustomerHealthScoreService {
       try {
         await this.calculateHealthScore(tenantId, customer.id);
         processed++;
-      } catch (err) {
+      } catch (err: unknown) {
         console.error(`Failed to calculate health score for ${customer.id}:`, err);
         errors++;
       }

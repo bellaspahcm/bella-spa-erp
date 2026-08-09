@@ -9,7 +9,7 @@ import { useQuery, useMutation, useQueryClient, UseQueryOptions } from '@tanstac
 // TYPES
 // ============================================================================
 
-export interface FinanceIntelligenceResponse<T = any> {
+export interface FinanceIntelligenceResponse<T = unknown> {
   success: boolean;
   data: T;
   metadata: {
@@ -434,7 +434,7 @@ export function useRefreshFinanceData() {
       // Clear server-side cache and refresh database views
       try {
         await fetch('/api/intelligence/admin/clear-cache', { method: 'DELETE' });
-      } catch (err) {
+      } catch (err: unknown) {
         console.warn('Failed to clear server-side cache:', err);
       }
 

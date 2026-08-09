@@ -246,7 +246,7 @@ export async function getDashboardStats(
     // Run alongside other queries so we don't add round-trip latency.
     const getLeaderboardCached = async (month: string) => {
       const cacheKey = `leaderboard:${tenantId}:${month}`;
-      const cached = await getCache<any>(cacheKey);
+      const cached = await getCache<KtvLeaderboardRow[]>(cacheKey);
       if (cached) return { data: cached };
       
       const res = await supabase.rpc('get_ktv_leaderboard', { p_tenant_id: tenantId, p_month: month });
@@ -530,7 +530,7 @@ export async function getTopTechnicians(): Promise<KtvPerformanceViewModel[]> {
     const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
 
     const cacheKey = `leaderboard:${tenantId}:${month}`;
-    let data = await getCache<any>(cacheKey);
+    let data = await getCache<KtvLeaderboardRow[]>(cacheKey);
     let error = null;
 
     if (!data) {
@@ -615,7 +615,7 @@ export async function getMonthlyPerformance(): Promise<PerformanceDataPointViewM
     
     const monthlyRpcCalls = months.map(async (mo) => {
       const cacheKey = `leaderboard:${tenantId}:${mo.start}`;
-      const cached = await getCache<any>(cacheKey);
+      const cached = await getCache<KtvLeaderboardRow[]>(cacheKey);
       if (cached) {
         return { data: cached };
       }
@@ -898,7 +898,7 @@ export async function getImportantAlerts(): Promise<DashboardAlert[]> {
           });
         }
       }
-    } catch (err) {
+    } catch (err: unknown) {
       throw err instanceof Error ? err : new Error('Failed to fetch pending leave alerts');
     }
 
@@ -948,7 +948,7 @@ export async function getImportantAlerts(): Promise<DashboardAlert[]> {
           });
         }
       }
-    } catch (err) {
+    } catch (err: unknown) {
       throw err instanceof Error ? err : new Error('Failed to fetch app notification alerts');
     }
 

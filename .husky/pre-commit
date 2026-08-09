@@ -1,0 +1,44 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Checking for 'any' type violations in staged files..."
+
+# Get staged TypeScript files
+STAGED_TS_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$' || true)
+
+if [ -z "$STAGED_TS_FILES" ]; then
+  echo "✅ No TypeScript files staged"
+  exit 0
+fi
+
+# Check for 'any' type violations
+VIOLATIONS=""
+while IFS= read -r file; do
+  if [ -f "$file" ]; then
+    # Check for various 'any' patterns
+    if grep -nE ': any\b|: any\[|: any\{|as any|\bany\[\]|<any>|Promise<any>|Record<.*,\s*any>' "$file" > /dev/null 2>&1; then
+      VIOLATIONS="$VIOLATIONS\n  - $file"
+    fi
+  fi
+done <<< "$STAGED_TS_FILES"
+
+if [ -n "$VIOLATIONS" ]; then
+  echo ""
+  echo "❌ ERROR: 'any' type violations detected in staged files:"
+  echo "$VIOLATIONS"
+  echo ""
+  echo "Law 11: Strictly No 'any' Types Allowed"
+  echo ""
+  echo "Please fix the violations before committing:"
+  echo "  1. Use explicit types from database schemas"
+  echo "  2. Use 'unknown' for truly dynamic data, then narrow"
+  echo "  3. Use generic constraints: T extends Record<string, unknown>"
+  echo "  4. See ANY_TYPE_VIOLATIONS_REPORT.md for patterns"
+  echo ""
+  echo "To bypass this check (NOT RECOMMENDED):"
+  echo "  git commit --no-verify"
+  echo ""
+  exit 1
+fi
+
+echo "✅ No 'any' type violations found in staged files"

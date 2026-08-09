@@ -39,6 +39,10 @@ class MockQueryBuilder {
     if (column) queryFilters.push({ column, value });
     return this;
   }
+  neq(column?: string, value?: unknown) {
+    if (column) queryFilters.push({ column, value, operator: 'neq' });
+    return this;
+  }
   gte(column?: string, value?: unknown) {
     if (column) queryFilters.push({ column, value, operator: 'gte' });
     return this;

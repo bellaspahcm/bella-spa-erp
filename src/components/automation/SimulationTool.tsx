@@ -116,7 +116,7 @@ export function SimulationTool({ template, onComplete }: SimulationToolProps) {
         );
 
         setCustomers(processed);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Error fetching customers for simulation:', err);
       } finally {
         setLoading(false);

@@ -32,7 +32,7 @@ export default function SOAPEditor({ context }: { context: ClinicalContextType }
       } else {
         toast.error('Lỗi lưu EMR SOAP: ' + res.error);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi kết nối máy chủ');
     } finally {
       setIsSaving(false);

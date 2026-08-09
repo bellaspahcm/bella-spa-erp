@@ -50,7 +50,7 @@ interface CreateForecastParams {
   modelName?: string;
   modelVersion?: string;
   modelAccuracy?: number;
-  featuresUsed?: any;
+  featuresUsed?: unknown;
   createdBy?: string;
 }
 
@@ -91,7 +91,7 @@ export class DemandForecastingService {
       model_name: params.modelName || 'demand-forecast-v1',
       model_version: params.modelVersion,
       model_accuracy: params.modelAccuracy,
-      features_used: params.featuresUsed as any,
+      features_used: params.featuresUsed as unknown,
       status: 'active',
       created_by: params.createdBy,
     };

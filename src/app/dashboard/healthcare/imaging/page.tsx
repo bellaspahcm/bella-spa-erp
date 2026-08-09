@@ -148,7 +148,7 @@ export default function ImagingPage() {
           bodySite: defaultOpts[0].bodySite,
         }));
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Lỗi tải danh mục chỉ định RIS:', err);
     }
   };
@@ -162,7 +162,7 @@ export default function ImagingPage() {
       } else {
         toast.error('Lỗi tải phiếu CĐHA: ' + res.error);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi kết nối máy chủ');
     } finally {
       setIsLoading(false);

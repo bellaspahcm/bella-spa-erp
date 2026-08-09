@@ -1,7 +1,7 @@
 "use client";
 // Version: 1.3.0 - Refactored Component & Strict Types
 
-import { Suspense, useCallback, useState, useEffect } from "react";
+import { Suspense, useCallback, useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -30,6 +30,7 @@ import { resolveTenantBrandIdentity } from "@/lib/business-rules/tenant-modules"
 import { usePageRefresh } from "@/hooks/usePageRefresh";
 import { cn } from "@/lib/utils";
 import { TenantGeneralSettings } from "@/types/domain";
+import { useTenantModuleKey } from "@/hooks/useTenantModuleKey";
 import {
   clearDashboardClientContextCache,
   getCachedTenantSettings,
@@ -96,6 +97,37 @@ function SettingsContent() {
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
   const [settingsBrandName, setSettingsBrandName] = useState("Spa ERP");
 
+  const { tenantModuleKey } = useTenantModuleKey();
+  const isHealthcare = tenantModuleKey === "bella_healthcare";
+
+  const visibleTabs = useMemo(() => {
+    return TABS.map((tab) => {
+      if ("type" in tab && tab.type === "header") {
+        return tab;
+      }
+      const normalTab = tab as Extract<TabItem, { id: string }>;
+      if (isHealthcare) {
+        if (
+          normalTab.id === "hq-billing" ||
+          normalTab.id === "promotions" ||
+          normalTab.id === "meta-ads"
+        ) {
+          return null;
+        }
+        if (normalTab.id === "general") {
+          return { ...normalTab, label: "Thông tin bệnh viện" };
+        }
+        if (normalTab.id === "salary") {
+          return { ...normalTab, label: "Thù lao trực & Lương" };
+        }
+        if (normalTab.id === "commission") {
+          return { ...normalTab, label: "Định mức kỹ thuật lâm sàng" };
+        }
+      }
+      return normalTab;
+    }).filter(Boolean) as TabItem[];
+  }, [isHealthcare]);
+
   const [generalSettings, setGeneralSettings] = useState<TenantGeneralSettings>({
     name: "",
     phone: "",
@@ -156,7 +188,7 @@ function SettingsContent() {
           }
         });
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Error loading settings:", err);
       toast.error("Không thể tải thông tin cấu hình");
     } finally {
@@ -223,7 +255,7 @@ function SettingsContent() {
       } else {
         toast.error("Lỗi khi lưu: " + res.error);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error("Đã xảy ra lỗi khi lưu cấu hình!");
       console.error(err);
     } finally {
@@ -263,7 +295,7 @@ function SettingsContent() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Navigation Sidebar */}
         <div className="lg:col-span-1 space-y-1.5 bg-white/40 dark:bg-[#1C1B19]/40 p-4 rounded-[2.5rem] border border-slate-200/40 dark:border-[#3E3A35]/40 h-fit">
-          {TABS.map((tab, idx) => {
+          {visibleTabs.map((tab, idx) => {
             if ("type" in tab && tab.type === "header") {
               return (
                 <div

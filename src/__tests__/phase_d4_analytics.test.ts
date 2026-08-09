@@ -8,6 +8,8 @@ import { createClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
 import { AnalyticsEngineService } from '@/platform/host/analytics-engine';
 
+jest.setTimeout(60000);
+
 const SUPABASE_URL = process.env['NEXT_PUBLIC_SUPABASE_URL'] ?? '';
 const SUPABASE_KEY = process.env['SUPABASE_SERVICE_ROLE_KEY'] ?? '';
 const TENANT_A = '88888888-8888-8888-8888-888888888888';

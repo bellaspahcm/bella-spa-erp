@@ -51,7 +51,7 @@ interface CacheStats {
  * cache.invalidatePattern('customer:*'); // Clear by pattern
  * ```
  */
-export class InMemoryCache<T = any> {
+export class InMemoryCache<T = unknown> {
   private cache = new Map<string, CacheEntry<T>>();
   private stats: CacheStats = {
     hits: 0,

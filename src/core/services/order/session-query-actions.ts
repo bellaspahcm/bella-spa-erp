@@ -124,7 +124,7 @@ export async function getSessionsWithDetails(options: GetSessionsWithDetailsOpti
     try {
       const { checkAndGenerateAdminAlertNotifications } = await import('@/services/notification-helpers');
       void checkAndGenerateAdminAlertNotifications(tenantId);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to run checkAndGenerateAdminAlertNotifications:', err);
     }
   }

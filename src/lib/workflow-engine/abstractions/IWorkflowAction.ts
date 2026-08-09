@@ -203,7 +203,7 @@ export interface IWorkflowAction {
    * try {
    *   await action.rollback(context);
    *   console.log('Action rolled back successfully');
-   * } catch (err) {
+   * } catch (err: unknown) {
    *   console.error('Rollback failed:', err);
    * }
    * ```

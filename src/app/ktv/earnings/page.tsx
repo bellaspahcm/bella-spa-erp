@@ -108,7 +108,7 @@ export default function KTVEarningsPage() {
         setSalaryData(data.salaryData);
         setTenantModuleKey(data.tenantModuleKey);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[KTVEarnings] Error loading data:', err);
       console.error('[KTVEarnings] Error stack:', err instanceof Error ? err.stack : 'No stack');
       console.error('[KTVEarnings] Error details:', {

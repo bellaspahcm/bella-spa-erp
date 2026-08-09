@@ -55,7 +55,7 @@ export default function PartnerDocumentsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [downloading, setDownloading] = useState<string | null>(null);
 
-  const loadDocuments = async () => {
+  async function loadDocuments() {
     try {
       setLoading(true);
       const data = await fetchPartnerDocuments();
@@ -65,7 +65,7 @@ export default function PartnerDocumentsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   useEffect(() => {
     const loadUser = async () => {

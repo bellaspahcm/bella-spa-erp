@@ -100,7 +100,7 @@ export async function getLeadCandidatesAction(
       bridgedAgents: pool.bridgedAgents,
       topCandidate: pool.topCandidate,
     };
-  } catch (err) {
+  } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[getLeadCandidatesAction] error: %s', msg);
     return { success: false, error: msg };
@@ -122,7 +122,7 @@ export async function validateLeadCandidateAction(
 
     const result = await assignmentSvc.validateCandidate(assignableId, tenantId);
     return { success: true, ...result };
-  } catch (err) {
+  } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[validateLeadCandidateAction] error: %s', msg);
     return { success: false, error: msg };
@@ -144,7 +144,7 @@ export async function resolveLeadAssigneeAction(
 
     const assignee = await assignmentSvc.resolveAssignee(assignableId, tenantId);
     return { success: true, assignee };
-  } catch (err) {
+  } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[resolveLeadAssigneeAction] error: %s', msg);
     return { success: false, error: msg };
@@ -168,7 +168,7 @@ export async function getAllInScopeAction(input: {
 
     const result = await assignmentSvc.getAllInScope(input);
     return { success: true, ...result };
-  } catch (err) {
+  } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[getAllInScopeAction] error: %s', msg);
     return { success: false, error: msg };

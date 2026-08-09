@@ -21,7 +21,7 @@ export async function getOrCreatePatientProfile(input: {
   medicalHistory?: string[];
 }): Promise<{ success: boolean; data?: PatientProfile; error?: string }> {
   try {
-    const supabase = (await createClient()) as any;
+    const supabase = await createClient();
 
     // 1. Check existing
     const { data: existing, error: selectErr } = await supabase
@@ -62,8 +62,9 @@ export async function getOrCreatePatientProfile(input: {
     }
 
     return { success: true, data: inserted as PatientProfile };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Failed to get/create patient profile' };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to get/create patient profile';
+    return { success: false, error: message };
   }
 }
 
@@ -80,7 +81,7 @@ export async function startEncounter(input: {
   priority?: Encounter['priority'];
 }): Promise<{ success: boolean; data?: Encounter; error?: string }> {
   try {
-    const supabase = (await createClient()) as any;
+    const supabase = await createClient();
 
     const encounterPayload = {
       tenant_id: input.tenantId,
@@ -124,8 +125,9 @@ export async function startEncounter(input: {
     console.info('Healthcare Domain Event Emitted: %s', domainEvent.eventName);
 
     return { success: true, data: inserted as unknown as Encounter };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Failed to start encounter' };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to start encounter';
+    return { success: false, error: message };
   }
 }
 
@@ -142,14 +144,14 @@ export async function issuePrescription(input: {
   notes?: string;
 }): Promise<{ success: boolean; data?: Prescription; error?: string }> {
   try {
-    const supabase = (await createClient()) as any;
+    const supabase = await createClient();
 
     const prescriptionPayload = {
       tenant_id: input.tenantId,
       encounter_id: input.encounterId,
       patient_party_id: input.patientId,
       doctor_party_id: input.doctorId,
-      drugs: input.drugs as any,
+      drugs: input.drugs as Prescription['items'],
       diagnosis: input.diagnosis || null,
       notes: input.notes || null,
     };
@@ -184,8 +186,9 @@ export async function issuePrescription(input: {
     console.info('Healthcare Domain Event Emitted: %s', domainEvent.eventName);
 
     return { success: true, data: inserted as unknown as Prescription };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Failed to issue prescription' };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to issue prescription';
+    return { success: false, error: message };
   }
 }
 
@@ -196,7 +199,7 @@ export async function getPatientJourneyQueue(
   tenantId: string
 ): Promise<{ success: boolean; data?: PatientJourneyQueueItem[]; error?: string }> {
   try {
-    const supabase = (await createClient()) as any;
+    const supabase = await createClient();
 
     const { data, error } = await supabase
       .from('hc_patient_queues')
@@ -210,7 +213,8 @@ export async function getPatientJourneyQueue(
     }
 
     return { success: true, data: (data || []) as PatientJourneyQueueItem[] };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Failed to fetch patient queues' };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to fetch patient queues';
+    return { success: false, error: message };
   }
 }

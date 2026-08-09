@@ -7,14 +7,17 @@ import {
   ChevronRight, Award, Flame, RefreshCw, BellRing
 } from 'lucide-react';
 import { getCachedCurrentUser, getCachedTenantSettings } from '@/lib/dashboard-client-context';
+
+type CurrentUser = Awaited<ReturnType<typeof getCachedCurrentUser>>;
+type TenantSettings = Awaited<ReturnType<typeof getCachedTenantSettings>>;
 import { getWorkforceDashboardData, WorkforceDashboardData } from '@/services/workforce-actions';
 import { formatCurrency } from '@bella/shared';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
 export default function WorkforceDashboard() {
-  const [user, setUser] = useState<any>(null);
-  const [tenant, setTenant] = useState<any>(null);
+  const [user, setUser] = useState<CurrentUser>(null);
+  const [tenant, setTenant] = useState<TenantSettings>(null);
   const [dashboardData, setDashboardData] = useState<WorkforceDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -34,7 +37,7 @@ export default function WorkforceDashboard() {
       setUser(u);
       setTenant(t);
       setDashboardData(data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[WorkforceDashboard] Load data failed:', err);
       toast.error('Lỗi khi tải dữ liệu trang tổng quan');
     } finally {

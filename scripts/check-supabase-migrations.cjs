@@ -41,7 +41,7 @@ function analyzeMigrationState(localVersions, remoteVersions) {
     latestRemote: remoteVersions.at(-1) || null,
     pendingLocal,
     remoteOnly,
-    isSynced: pendingLocal.length === 0,
+    isSynced: pendingLocal.length === 0 && remoteOnly.length === 0,
   };
 }
 

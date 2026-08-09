@@ -77,7 +77,9 @@
     "mobile:typecheck": "npm run typecheck --workspace=apps/mobile",
     "shared:typecheck": "npm run typecheck --workspace=packages/shared",
     "smoke:test": "npx tsx scripts/smoke-test-position-tier-hire-date.ts",
-    "smoke:test:bash": "bash scripts/smoke-test.sh"
+    "smoke:test:bash": "bash scripts/smoke-test.sh",
+    "check:any-types": "node scripts/check-any-types.js",
+    "type-check": "tsc --noEmit --strict"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

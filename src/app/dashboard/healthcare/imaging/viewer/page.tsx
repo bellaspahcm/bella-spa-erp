@@ -126,7 +126,7 @@ function DICOMViewerContent() {
 
   // Cine Playback Loop
   useEffect(() => {
-    let interval: any;
+    let interval: unknown;
     if (isPlayingCine) {
       interval = setInterval(() => {
         setCurrentSlice((prev) => {
@@ -352,7 +352,7 @@ function DICOMViewerContent() {
               ].map((preset) => (
                 <button
                   key={preset.key}
-                  onClick={() => setWindowPreset(preset.key as any)}
+                  onClick={() => setWindowPreset(preset.key as unknown)}
                   className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
                     windowPreset === preset.key
                       ? 'bg-indigo-600 text-white shadow-xs'
@@ -522,7 +522,7 @@ function DICOMViewerContent() {
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTabSidebar(tab.id as any)}
+                onClick={() => setActiveTabSidebar(tab.id as unknown)}
                 className={`flex-1 py-3 text-center transition-all cursor-pointer border-b-2 ${
                   activeTabSidebar === tab.id
                     ? 'border-indigo-600 text-indigo-700 bg-white font-black shadow-xs'

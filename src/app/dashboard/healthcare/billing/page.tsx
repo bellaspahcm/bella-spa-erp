@@ -44,7 +44,7 @@ export default function BillingPage() {
       } else {
         toast.error('Lỗi tải hóa đơn viện phí: ' + res.error);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi kết nối máy chủ');
     } finally {
       setIsLoading(false);

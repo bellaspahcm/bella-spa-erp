@@ -106,7 +106,7 @@ export default function RuleTestSimulator({ rule, testHistory }: RuleTestSimulat
         executedActions: data.data.executedActions || [],
       });
 
-    } catch (err) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setIsExecuting(false);

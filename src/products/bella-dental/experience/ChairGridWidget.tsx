@@ -16,7 +16,7 @@ export const ChairGridWidget: React.FC = () => {
         const queryCap = capabilityRegistry.get<ResourceQueryCapability>('dental_resource_query');
         const data = await queryCap.getResources('default_tenant');
         setChairs(data);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('[ChairGridWidget] Failed to fetch chairs:', err);
       } finally {
         setLoading(false);

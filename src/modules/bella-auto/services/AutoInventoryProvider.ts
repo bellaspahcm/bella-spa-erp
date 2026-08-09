@@ -156,7 +156,7 @@ export const AutoInventoryProvider = {
     const { data, error } = await query;
     if (error) throw new Error(`AutoInventoryProvider.listVehicles: ${error.message}`);
 
-    return (data ?? []).map((row: any) => ({
+    return (data ?? []).map((row: Record<string, unknown>) => ({
       id:                  row.id,
       vin:                 row.vin,
       chassisNumber:       row.chassis_number,

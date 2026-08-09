@@ -103,7 +103,7 @@ export default function DocumentUploader({
       xhr.open('POST', '/api/partner/documents/upload');
       xhr.send(formData);
       
-    } catch (err) {
+    } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : 'Upload thất bại';
       setError(errorMsg);
       onUploadError?.(errorMsg);

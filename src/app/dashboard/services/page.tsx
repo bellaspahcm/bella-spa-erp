@@ -850,7 +850,7 @@ export default function ServicesPage() {
                           <label className="text-xs font-black text-slate-600 dark:text-slate-300 ml-1">Phương Pháp (Modality) *</label>
                           <PremiumSelect
                             value={risModality}
-                            onChange={(val) => setRisModality(val as any)}
+                            onChange={(val) => setRisModality(val as unknown)}
                             options={[
                               { value: 'XRAY', label: 'XRAY — X-Quang Kỹ Thuật Số' },
                               { value: 'CT', label: 'CT — CT-Scanner Cắt Lớp' },

@@ -3,8 +3,7 @@
  * Verifies all 4 use case implementations
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
-import { createClient } from '@supabase/supabase-js';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import {
   ServiceCompletionRollback,
   TradeInApprovalRollback,
@@ -17,6 +16,85 @@ const mockSupabase = {
   from: jest.fn(),
 } as any;
 
+function setupMockSupabase(config: {
+  transactionId?: string;
+  inventory?: { id: string; quantity: number };
+  contract?: { id: string; total_price: number };
+  quotation?: { id: string; status: string };
+  vehicles?: Array<{ id: string; status: string }>;
+  journeyStage?: { id: string; sla_hours: number };
+  journey?: { id: string };
+  steps?: Array<any>;
+}) {
+  let currentTxId = config.transactionId || 'tx-001';
+
+  mockSupabase.from.mockImplementation((table: string) => {
+    const builder: any = {};
+    const chainFn = () => builder;
+    
+    builder.select = chainFn;
+    builder.insert = jest.fn().mockImplementation((payload: any) => {
+      if (table === 'auto_business_transactions') {
+        const txObj = Array.isArray(payload) ? payload[0] : payload;
+        if (txObj.entity_id === 'service-999') currentTxId = 'tx-999';
+        else if (txObj.entity_id === 'trade-001') currentTxId = 'tx-002';
+        else if (txObj.entity_id === 'loan-001') currentTxId = 'tx-003';
+        else if (txObj.entity_id === 'quote-001') currentTxId = 'tx-004';
+      }
+      return builder;
+    });
+    builder.update = chainFn;
+    builder.delete = chainFn;
+    builder.eq = chainFn;
+    builder.limit = chainFn;
+    builder.order = chainFn;
+    
+    builder.single = jest.fn().mockImplementation(async () => {
+      if (table === 'auto_business_transactions') {
+        return { data: { id: currentTxId }, error: null };
+      }
+      if (table === 'auto_inventory') {
+        return { data: config.inventory || { id: 'inv-001', quantity: 100 }, error: null };
+      }
+      if (table === 'auto_bookings') {
+        return { data: config.contract || { id: 'contract-001', total_price: 800000000 }, error: null };
+      }
+      if (table === 'auto_quotations') {
+        return { data: config.quotation || { id: 'quote-001', status: 'draft' }, error: null };
+      }
+      if (table === 'auto_journey_stages') {
+        return { data: config.journeyStage || { id: 'stage-001', sla_hours: 24 }, error: null };
+      }
+      if (table === 'auto_customer_journeys') {
+        return { data: config.journey || { id: 'journey-001' }, error: null };
+      }
+      return { data: null, error: null };
+    });
+
+    builder.then = (onfulfilled: any) => {
+      let resData: any = null;
+      if (table === 'auto_vehicles') {
+        resData = config.vehicles || [{ id: 'vehicle-001', status: 'showroom' }];
+      } else if (table === 'auto_transaction_steps') {
+        resData = config.steps || [
+          {
+            id: 'step-001',
+            action_type: 'INSERT',
+            target_table: 'auto_services',
+            target_record_id: 'service-001',
+            before_snapshot: null,
+            after_snapshot: {},
+            status: 'executed',
+          }
+        ];
+      }
+      return Promise.resolve({ data: resData, error: null }).then(onfulfilled);
+    };
+
+    return builder;
+  });
+}
+
 describe('Rollback Use Cases', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -25,6 +103,7 @@ describe('Rollback Use Cases', () => {
   describe('ServiceCompletionRollback', () => {
     it('should register service completion with all impacts', async () => {
       const rollback = new ServiceCompletionRollback(mockSupabase);
+      setupMockSupabase({ transactionId: 'tx-001' });
 
       const serviceData = {
         serviceId: 'service-001',
@@ -41,29 +120,6 @@ describe('Rollback Use Cases', () => {
         completedBy: 'user-001',
       };
 
-      // Mock successful transaction creation
-      mockSupabase.from.mockReturnValue({
-        insert: jest.fn().mockReturnValue({
-          select: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: { id: 'tx-001' },
-              error: null,
-            }),
-          }),
-        }),
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: { id: 'inv-001', quantity: 100 },
-              error: null,
-            }),
-          }),
-        }),
-        update: jest.fn().mockReturnValue({
-          eq: jest.fn().mockResolvedValue({ error: null }),
-        }),
-      });
-
       const result = await rollback.registerServiceCompletion(
         'tenant-001',
         serviceData,
@@ -76,8 +132,21 @@ describe('Rollback Use Cases', () => {
 
     it('should rollback service completion', async () => {
       const rollback = new ServiceCompletionRollback(mockSupabase);
+      setupMockSupabase({
+        transactionId: 'tx-001',
+        steps: [
+          {
+            id: 'step-001',
+            action_type: 'INSERT',
+            target_table: 'auto_services',
+            target_record_id: 'service-001',
+            before_snapshot: null,
+            after_snapshot: {},
+            status: 'executed',
+          }
+        ]
+      });
 
-      // Test rollback execution
       const result = await rollback.rollbackServiceCompletion(
         'tx-001',
         'Service recorded incorrectly - wrong parts used',
@@ -85,14 +154,15 @@ describe('Rollback Use Cases', () => {
         'admin@test.com'
       );
 
-      // In real test, verify BusinessRollbackEngine is called
-      expect(result).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.stepsRolledBack).toBe(1);
     });
   });
 
   describe('TradeInApprovalRollback', () => {
     it('should register trade-in with inventory and accounting impacts', async () => {
       const rollback = new TradeInApprovalRollback(mockSupabase);
+      setupMockSupabase({ transactionId: 'tx-002' });
 
       const tradeInData = {
         tradeInId: 'trade-001',
@@ -109,28 +179,6 @@ describe('Rollback Use Cases', () => {
         approvedBy: 'user-001',
       };
 
-      mockSupabase.from.mockReturnValue({
-        insert: jest.fn().mockReturnValue({
-          select: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: { id: 'tx-002' },
-              error: null,
-            }),
-          }),
-        }),
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: { id: 'contract-001', total_price: 800000000 },
-              error: null,
-            }),
-          }),
-        }),
-        update: jest.fn().mockReturnValue({
-          eq: jest.fn().mockResolvedValue({ error: null }),
-        }),
-      });
-
       const result = await rollback.registerTradeInApproval(
         'tenant-001',
         tradeInData,
@@ -145,6 +193,7 @@ describe('Rollback Use Cases', () => {
   describe('LoanDisbursementRollback', () => {
     it('should register loan disbursement with revenue and commission', async () => {
       const rollback = new LoanDisbursementRollback(mockSupabase);
+      setupMockSupabase({ transactionId: 'tx-003' });
 
       const loanData = {
         loanId: 'loan-001',
@@ -162,28 +211,6 @@ describe('Rollback Use Cases', () => {
         salesCommission: 5600000, // 1% of loan
       };
 
-      mockSupabase.from.mockReturnValue({
-        insert: jest.fn().mockReturnValue({
-          select: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: { id: 'tx-003' },
-              error: null,
-            }),
-          }),
-        }),
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: { id: 'contract-001', total_price: 800000000 },
-              error: null,
-            }),
-          }),
-        }),
-        update: jest.fn().mockReturnValue({
-          eq: jest.fn().mockResolvedValue({ error: null }),
-        }),
-      });
-
       const result = await rollback.registerLoanDisbursement(
         'tenant-001',
         loanData,
@@ -198,6 +225,7 @@ describe('Rollback Use Cases', () => {
   describe('QuotationApprovalRollback', () => {
     it('should register quotation approval with journey and AI event', async () => {
       const rollback = new QuotationApprovalRollback(mockSupabase);
+      setupMockSupabase({ transactionId: 'tx-004' });
 
       const quotationData = {
         quotationId: 'quote-001',
@@ -216,34 +244,6 @@ describe('Rollback Use Cases', () => {
         salesPersonId: 'sales-001',
       };
 
-      mockSupabase.from.mockReturnValue({
-        insert: jest.fn().mockReturnValue({
-          select: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: { id: 'tx-004' },
-              error: null,
-            }),
-          }),
-        }),
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: { id: 'quote-001', status: 'draft' },
-              error: null,
-            }),
-          }),
-          limit: jest.fn().mockReturnValue({
-            mockResolvedValue: {
-              data: [{ id: 'vehicle-001', status: 'showroom' }],
-              error: null,
-            },
-          }),
-        }),
-        update: jest.fn().mockReturnValue({
-          eq: jest.fn().mockResolvedValue({ error: null }),
-        }),
-      });
-
       const result = await rollback.registerQuotationApproval(
         'tenant-001',
         quotationData,
@@ -258,6 +258,20 @@ describe('Rollback Use Cases', () => {
   describe('Integration: Complete Rollback Flow', () => {
     it('should execute full rollback with audit trail', async () => {
       const rollback = new ServiceCompletionRollback(mockSupabase);
+      setupMockSupabase({
+        transactionId: 'tx-999',
+        steps: [
+          {
+            id: 'step-999',
+            action_type: 'INSERT',
+            target_table: 'auto_services',
+            target_record_id: 'service-999',
+            before_snapshot: null,
+            after_snapshot: {},
+            status: 'executed',
+          }
+        ]
+      });
 
       // 1. Register transaction
       const serviceData = {
@@ -271,28 +285,6 @@ describe('Rollback Use Cases', () => {
         completedAt: new Date().toISOString(),
         completedBy: 'user-999',
       };
-
-      mockSupabase.from.mockReturnValue({
-        insert: jest.fn().mockReturnValue({
-          select: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: { id: 'tx-999' },
-              error: null,
-            }),
-          }),
-        }),
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: { id: 'inv-999', quantity: 100 },
-              error: null,
-            }),
-          }),
-        }),
-        update: jest.fn().mockReturnValue({
-          eq: jest.fn().mockResolvedValue({ error: null }),
-        }),
-      });
 
       const registerResult = await rollback.registerServiceCompletion(
         'tenant-001',
@@ -310,8 +302,8 @@ describe('Rollback Use Cases', () => {
         'admin@test.com'
       );
 
-      // Verify rollback executed
-      expect(rollbackResult).toBeDefined();
+      expect(rollbackResult.success).toBe(true);
+      expect(rollbackResult.stepsRolledBack).toBe(1);
     });
   });
 });

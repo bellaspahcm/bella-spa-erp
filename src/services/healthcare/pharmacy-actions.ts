@@ -18,7 +18,7 @@ export async function checkPrescriptionAllergiesAction(input: {
   drugItems: Array<{ drugCode: string; drugName: string; activeIngredient: string }>;
 }): Promise<{ safe: boolean; warnings: string[] }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     // Fetch patient profile to get known allergies
@@ -50,7 +50,7 @@ export async function checkPrescriptionAllergiesAction(input: {
       safe: warnings.length === 0,
       warnings
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
     return { safe: false, warnings: ['Lỗi kiểm tra CDSS dị ứng thuốc'] };
   }
 }
@@ -73,7 +73,7 @@ export async function issuePrescriptionAction(input: {
   }>;
 }): Promise<{ success: boolean; prescriptionId?: string; warnings?: string[]; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     // 1. CDSS Invariant Check: Run Allergy Check
@@ -134,12 +134,12 @@ export async function issuePrescriptionAction(input: {
     await supabase.from('audit_logs').insert({
       tenant_id: tenantId,
       action: 'HEALTHCARE_EVENT_EMITTED',
-      details: domainEvent as any
+      details: domainEvent as unknown as Record<string, unknown>
     });
 
     return { success: true, prescriptionId: clinicalOrder.id };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi hệ thống khi kê đơn thuốc' };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : 'Lỗi hệ thống khi kê đơn thuốc' };
   }
 }
 
@@ -151,7 +151,7 @@ export async function dispensePrescriptionAction(input: {
   dispensedBy: string;
 }): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     // Mark Clinical Order completed
@@ -169,7 +169,7 @@ export async function dispensePrescriptionAction(input: {
     }
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi hệ thống khi cấp phát thuốc' };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : 'Lỗi hệ thống khi cấp phát thuốc' };
   }
 }

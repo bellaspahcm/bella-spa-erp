@@ -1,5 +1,5 @@
 import { supabase as typedSupabase } from '@/lib/supabase';
-const supabase = typedSupabase as any;
+const supabase = typedSupabase as unknown;
 
 export interface MetadataConfig {
   readonly id?: string;

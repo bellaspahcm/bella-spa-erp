@@ -370,7 +370,7 @@ export class PartsInventoryIntegration {
     }>();
 
     for (const trans of transactions) {
-      const inv = trans.inventory as any;
+      const inv = trans.inventory as unknown;
       const partNumber = inv.item_code || '';
       const partName = inv.item_name || '';
 

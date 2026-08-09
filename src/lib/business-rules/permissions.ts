@@ -30,13 +30,48 @@ export function isManualPermittedByRole(role: string | null | undefined, slug: s
   const normalizedRole = normalizeRole(role);
   const normalizedSlug = slug.trim().toLowerCase();
 
-  if (!normalizedRole) return true; // Default allow for viewing manuals in hub
-  if (normalizedSlug.startsWith('sop') || normalizedSlug === 'index') return true;
-  if (['admin', 'super_admin', 'owner', 'manager'].includes(normalizedRole)) return true;
-  if (normalizedSlug.includes('doctor') || normalizedSlug.includes('therapist') || normalizedSlug.includes('ktv') || normalizedSlug.includes('worker') || normalizedSlug.includes('sale') || normalizedSlug.includes('reception')) {
+  // 1. Must be authenticated
+  if (!normalizedRole) return false;
+
+  // 2. Admin roles have absolute access to all slugs
+  if (['admin', 'owner', 'manager', 're-admin', 'admin-healthcare'].includes(normalizedRole)) {
     return true;
   }
-  if (normalizedSlug.includes('hr')) return ['hr', 'admin', 'manager'].includes(normalizedRole) || true;
-  if (normalizedSlug.includes('accountant') || normalizedSlug.includes('finance')) return ['accountant', 'admin', 'manager'].includes(normalizedRole) || true;
-  return true;
+
+  // 3. Slug must be valid
+  const VALID_SLUGS = new Set([
+    'sop', 'ktv', 'hr', 'accountant', 'admin', 'index',
+    'sop-beauty', 'therapist', 'hr-beauty', 'accountant-beauty',
+    'sop-cleaning', 'worker', 'supervisor', 'hr-cleaning', 'accountant-cleaning',
+    're-sop', 're-sale', 're-broker', 're-contracts', 're-hr', 're-finance', 're-admin',
+    'sop-healthcare', 'doctor-nurse', 'reception-healthcare', 'hr-healthcare', 'accountant-healthcare', 'admin-healthcare'
+  ]);
+
+  if (!VALID_SLUGS.has(normalizedSlug) && !normalizedSlug.startsWith('sop') && normalizedSlug !== 'index') {
+    return false;
+  }
+
+  // 4. Public manuals (SOP & Index) are allowed for any authenticated user
+  if (normalizedSlug.startsWith('sop') || normalizedSlug === 'index') {
+    return true;
+  }
+
+  // 5. Check role-specific permissions
+  if (normalizedRole === 'ktv' || normalizedRole === 'ktv_lead' || normalizedRole === 'therapist') {
+    return ['ktv', 'therapist', 'worker'].includes(normalizedSlug);
+  }
+
+  if (normalizedRole === 'hr') {
+    return ['hr', 're-hr', 'hr-beauty', 'hr-cleaning', 'hr-healthcare', 'ktv', 'therapist', 'worker'].includes(normalizedSlug);
+  }
+
+  if (normalizedRole === 'accountant') {
+    return ['accountant', 'accountant-beauty', 'accountant-cleaning', 'accountant-healthcare', 're-finance'].includes(normalizedSlug);
+  }
+
+  if (normalizedRole === 'admin_staff') {
+    return false;
+  }
+
+  return false;
 }

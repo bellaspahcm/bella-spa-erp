@@ -109,7 +109,7 @@ export function useSpaSession(
       
       console.log('[useSpaSession] Session completion not yet implemented');
       return true;
-    } catch (err) {
+    } catch (err: unknown) {
       setError(err as Error);
       console.error('[useSpaSession] Failed to complete session:', err);
       return false;

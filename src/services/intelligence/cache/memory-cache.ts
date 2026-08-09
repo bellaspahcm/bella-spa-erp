@@ -65,7 +65,7 @@ interface MemoryCacheConfig {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export class MemoryCache implements CacheService {
-  private cache = new Map<string, CacheEntry<any>>();
+  private cache = new Map<string, CacheEntry<unknown>>();
   private tagIndex = new Map<string, Set<string>>(); // tag → Set of keys
   private stats = {
     hits: 0,

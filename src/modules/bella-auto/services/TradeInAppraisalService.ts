@@ -10,7 +10,10 @@ import { Database } from '@/types/database.types';
 
 type TradeInAppraisal = Database['public']['Tables']['auto_trade_in_appraisals']['Row'];
 type TradeInAppraisalInsert = Database['public']['Tables']['auto_trade_in_appraisals']['Insert'];
+type TradeInAppraisalUpdate = Database['public']['Tables']['auto_trade_in_appraisals']['Update'];
 type MarketValuation = Database['public']['Tables']['auto_market_valuations']['Row'];
+
+type ConditionRating = 'excellent' | 'good' | 'fair' | 'poor' | 'very_poor';
 
 export interface CreateTradeInAppraisalData {
   tenantId: string;
@@ -41,12 +44,12 @@ export interface CreateTradeInAppraisalData {
 }
 
 export interface TechnicalChecklistUpdate {
-  engineCondition?: any;
-  transmissionCondition?: any;
-  exteriorCondition?: any;
-  interiorCondition?: any;
-  tiresBrakesCondition?: any;
-  documentsCondition?: any;
+  engineCondition?: ConditionRating;
+  transmissionCondition?: ConditionRating;
+  exteriorCondition?: ConditionRating;
+  interiorCondition?: ConditionRating;
+  tiresBrakesCondition?: ConditionRating;
+  documentsCondition?: ConditionRating;
   overallCondition?: 'excellent' | 'good' | 'fair' | 'poor' | 'very_poor';
   overallNotes?: string;
 }
@@ -127,7 +130,7 @@ export class TradeInAppraisalService {
   ): Promise<TradeInAppraisal> {
     const supabase = getPrimaryClient();
 
-    const updateData: any = {};
+    const updateData: TradeInAppraisalUpdate = {};
 
     if (checklist.engineCondition !== undefined) {
       updateData.engine_condition = checklist.engineCondition;
@@ -391,7 +394,7 @@ export class TradeInAppraisalService {
   ): Promise<TradeInAppraisal> {
     const supabase = getPrimaryClient();
 
-    const updateData: any = {
+    const updateData: TradeInAppraisalUpdate = {
       status: 'approved',
       approved_at: new Date().toISOString(),
       approved_by: approvedBy,

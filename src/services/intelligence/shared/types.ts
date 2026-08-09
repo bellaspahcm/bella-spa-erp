@@ -222,7 +222,7 @@ export interface BusinessEvent {
   entityId: string; // ID of the entity that triggered the event (booking_id, session_id, etc.)
   entityType: string; // 'booking', 'session', 'revenue', etc.
   timestamp: Date;
-  payload: Record<string, any>; // Event-specific data
+  payload: Record<string, unknown>; // Event-specific data
 }
 
 /**

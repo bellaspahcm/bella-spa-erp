@@ -61,7 +61,7 @@ export class ExecutiveIntelligenceService implements IntelligenceService {
     dateRange: DateRange | string
   ): Promise<IntelligenceResponse<MonthlyRevenueSummary>> {
     const startTime = Date.now();
-    const parsedRange = parseDateRange(dateRange as any);
+    const parsedRange = parseDateRange(dateRange as unknown);
 
     try {
       // Build cache key
@@ -128,7 +128,7 @@ export class ExecutiveIntelligenceService implements IntelligenceService {
     dateRange: DateRange | string
   ): Promise<IntelligenceResponse<OperationalEfficiency>> {
     const startTime = Date.now();
-    const parsedRange = parseDateRange(dateRange as any);
+    const parsedRange = parseDateRange(dateRange as unknown);
 
     try {
       const cacheKey = buildCacheKey(
@@ -191,7 +191,7 @@ export class ExecutiveIntelligenceService implements IntelligenceService {
     dateRange: DateRange | string
   ): Promise<IntelligenceResponse<CustomerMetrics>> {
     const startTime = Date.now();
-    const parsedRange = parseDateRange(dateRange as any);
+    const parsedRange = parseDateRange(dateRange as unknown);
 
     try {
       const cacheKey = buildCacheKey(
@@ -254,7 +254,7 @@ export class ExecutiveIntelligenceService implements IntelligenceService {
     dateRange: DateRange | string
   ): Promise<IntelligenceResponse<FinancialHealth>> {
     const startTime = Date.now();
-    const parsedRange = parseDateRange(dateRange as any);
+    const parsedRange = parseDateRange(dateRange as unknown);
 
     try {
       const cacheKey = buildCacheKey(
@@ -317,7 +317,7 @@ export class ExecutiveIntelligenceService implements IntelligenceService {
     dateRange: DateRange | string
   ): Promise<IntelligenceResponse<GrowthIndicators>> {
     const startTime = Date.now();
-    const parsedRange = parseDateRange(dateRange as any);
+    const parsedRange = parseDateRange(dateRange as unknown);
 
     try {
       const cacheKey = buildCacheKey(

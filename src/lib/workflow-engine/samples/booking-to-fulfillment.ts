@@ -120,7 +120,7 @@ export function createBookingToFulfillmentWorkflow(
       new ConditionStep(
         'approval-branch',
         (ctx) => {
-          const result = ctx.data.approvalResult as any;
+          const result = ctx.data.approvalResult as unknown;
           return result?.outcome === 'APPROVE' || result?.approved === true;
         },
         'reserve-inventory',      // If approved
@@ -132,7 +132,7 @@ export function createBookingToFulfillmentWorkflow(
       new ActionStep(
         'reserve-inventory',
         async (ctx) => {
-          const booking = ctx.data.booking as any;
+          const booking = ctx.data.booking as unknown;
           
           const reservation = await services.inventory.reserve({
             productIds: booking.productIds,
@@ -160,7 +160,7 @@ export function createBookingToFulfillmentWorkflow(
       new ActionStep(
         'assign-ktv',
         async (ctx) => {
-          const booking = ctx.data.booking as any;
+          const booking = ctx.data.booking as unknown;
           
           const assignment = await services.ktv.autoAssign({
             sessionDate: booking.sessionDate,
@@ -185,7 +185,7 @@ export function createBookingToFulfillmentWorkflow(
           new ActionStep(
             'notify-customer',
             async (ctx) => {
-              const booking = ctx.data.booking as any;
+              const booking = ctx.data.booking as unknown;
               
               await services.notification.sendEmail({
                 to: booking.customerEmail,
@@ -207,7 +207,7 @@ export function createBookingToFulfillmentWorkflow(
             async (ctx) => {
               await services.notification.sendSMS({
                 to: ctx.data.assignedKtvId as string,
-                message: `New booking assigned: ${(ctx.data.booking as any).id}`
+                message: `New booking assigned: ${(ctx.data.booking as unknown).id}`
               });
               
               return { ktvNotified: true };
@@ -223,7 +223,7 @@ export function createBookingToFulfillmentWorkflow(
       new ActionStep(
         'finalize-booking',
         async (ctx) => {
-          const booking = ctx.data.booking as any;
+          const booking = ctx.data.booking as unknown;
           
           await services.booking.finalize({
             bookingId: booking.id,
@@ -241,14 +241,14 @@ export function createBookingToFulfillmentWorkflow(
       new ActionStep(
         'notify-pending-approval',
         async (ctx) => {
-          const booking = ctx.data.booking as any;
+          const booking = ctx.data.booking as unknown;
           
           await services.notification.sendEmail({
             to: booking.customerEmail,
             template: 'booking-pending-approval',
             data: {
               bookingId: booking.id,
-              reason: (ctx.data.approvalResult as any)?.explanation ?? 'Requires manager approval'
+              reason: (ctx.data.approvalResult as unknown)?.explanation ?? 'Requires manager approval'
             }
           });
           

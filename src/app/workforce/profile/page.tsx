@@ -6,6 +6,9 @@ import {
   ChevronLeft, Loader2, CheckCircle2, ChevronRight, Lock
 } from 'lucide-react';
 import { getCachedCurrentUser, getCachedTenantSettings } from '@/lib/dashboard-client-context';
+
+type CurrentUser = Awaited<ReturnType<typeof getCachedCurrentUser>>;
+type TenantSettings = Awaited<ReturnType<typeof getCachedTenantSettings>>;
 import { createClient } from '@/lib/supabase-client';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -13,8 +16,8 @@ import Link from 'next/link';
 
 export default function ProfileAndSecurity() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
-  const [tenant, setTenant] = useState<any>(null);
+  const [user, setUser] = useState<CurrentUser>(null);
+  const [tenant, setTenant] = useState<TenantSettings>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Password state
@@ -33,7 +36,7 @@ export default function ProfileAndSecurity() {
         ]);
         setUser(u);
         setTenant(t);
-      } catch (err) {
+      } catch (err: unknown) {
         toast.error('Lỗi khi tải thông tin cá nhân');
       } finally {
         setIsLoading(false);
@@ -83,7 +86,7 @@ export default function ProfileAndSecurity() {
       setPwdCurrent('');
       setPwdNew('');
       setPwdConfirm('');
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Có lỗi xảy ra trong quá trình đổi mật khẩu');
     } finally {
       setIsChangingPwd(false);
@@ -102,7 +105,7 @@ export default function ProfileAndSecurity() {
       await supabase.auth.signOut();
       toast.success('Đăng xuất thành công');
       router.push('/login');
-    } catch (err) {
+    } catch (err: unknown) {
       router.push('/login');
     }
   };

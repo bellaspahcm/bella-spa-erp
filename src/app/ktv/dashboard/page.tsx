@@ -241,7 +241,7 @@ export default function KTVDashboard() {
       setPwdNew('');
       setPwdConfirm('');
       setIsPasswordOpen(false);
-    } catch (err) {
+    } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'lỗi không xác định';
       toast.error('Đã xảy ra lỗi: ' + msg);
     } finally {
@@ -401,7 +401,7 @@ export default function KTVDashboard() {
         setNotifications(cachedNotifs as KtvDashboardNotification[]);
       }
 
-      let dashboardPromise: Promise<any>;
+      let dashboardPromise: Promise<unknown>;
       
       if (cachedSessions) {
         console.log(`[KTV Dashboard] 💾 Cache HIT - loaded sessions in ${perfMarks['cache_check'].toFixed(0)}ms`);

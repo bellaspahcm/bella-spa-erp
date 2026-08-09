@@ -10,7 +10,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const TEST_TENANT_ID = 'bella_auto_demo';
+const TEST_TENANT_ID = 'da9e610b-88c5-4901-8ab9-5439f4931467';
 
 describe('Bella Auto Phase 5 - Database Schema', () => {
   beforeAll(async () => {
@@ -101,9 +101,8 @@ describe('Bella Auto Phase 5 - Database Schema', () => {
         .from('customers')
         .insert({
           tenant_id: TEST_TENANT_ID,
-          name: 'NPS Test Customer',
-          email: 'npstest@example.com',
-          phone: '0900000005',
+          name_mother: 'NPS Test Customer',
+          phone: '09' + Math.floor(10000000 + Math.random() * 90000000).toString(),
         })
         .select()
         .single();
@@ -192,9 +191,8 @@ describe('Bella Auto Phase 5 - Database Schema', () => {
         .from('customers')
         .insert({
           tenant_id: TEST_TENANT_ID,
-          name: 'CSI Test Customer',
-          email: 'csitest@example.com',
-          phone: '0900000006',
+          name_mother: 'CSI Test Customer',
+          phone: '09' + Math.floor(10000000 + Math.random() * 90000000).toString(),
         })
         .select()
         .single();
@@ -260,9 +258,8 @@ describe('Bella Auto Phase 5 - Database Schema', () => {
         .from('customers')
         .insert({
           tenant_id: TEST_TENANT_ID,
-          name: 'Health Test Customer',
-          email: 'healthtest@example.com',
-          phone: '0900000007',
+          name_mother: 'Health Test Customer',
+          phone: '09' + Math.floor(10000000 + Math.random() * 90000000).toString(),
         })
         .select()
         .single();
@@ -301,8 +298,14 @@ describe('Bella Auto Phase 5 - Database Schema', () => {
     });
 
     it('should auto-determine health status from score', async () => {
+      // Clear previous health score first to prevent UNIQUE constraint violation
+      await supabase
+        .from('auto_customer_health_scores')
+        .delete()
+        .eq('customer_id', testCustomerId);
+
       // Test excellent (≥80)
-      const { data: excellent } = await supabase
+      const { data: excellent, error } = await supabase
         .from('auto_customer_health_scores')
         .insert({
           tenant_id: TEST_TENANT_ID,
@@ -318,6 +321,10 @@ describe('Bella Auto Phase 5 - Database Schema', () => {
         .select()
         .single();
 
+      if (error) {
+        console.error('Insert Health Score Error:', error);
+      }
+
       expect(excellent!.health_status).toBe('excellent');
     });
   });
@@ -330,9 +337,8 @@ describe('Bella Auto Phase 5 - Database Schema', () => {
         .from('customers')
         .insert({
           tenant_id: TEST_TENANT_ID,
-          name: 'Action Test Customer',
-          email: 'actiontest@example.com',
-          phone: '0900000008',
+          name_mother: 'Action Test Customer',
+          phone: '09' + Math.floor(10000000 + Math.random() * 90000000).toString(),
         })
         .select()
         .single();
@@ -382,9 +388,8 @@ describe('Bella Auto Phase 5 - Database Schema', () => {
         .from('customers')
         .insert({
           tenant_id: TEST_TENANT_ID,
-          name: 'Lost Test Customer',
-          email: 'losttest@example.com',
-          phone: '0900000009',
+          name_mother: 'Lost Test Customer',
+          phone: '09' + Math.floor(10000000 + Math.random() * 90000000).toString(),
         })
         .select()
         .single();
@@ -397,8 +402,10 @@ describe('Bella Auto Phase 5 - Database Schema', () => {
         .insert({
           tenant_id: TEST_TENANT_ID,
           customer_id: testCustomerId,
-          current_stage: 'quotation',
-          status: 'active',
+          current_stage_id: 'bf9c20b9-93f7-4270-b458-eee18079cde5', // Stage: 'quotation'
+          entered_stage_at: new Date().toISOString(),
+          sla_status: 'normal',
+          metadata: {},
         })
         .select()
         .single();
@@ -449,7 +456,7 @@ describe('Bella Auto Phase 5 - Database Schema', () => {
       const { data, error } = await supabase
         .from('auto_surveys')
         .select('*')
-        .eq('tenant_id', 'wrong_tenant');
+        .eq('tenant_id', '00000000-0000-0000-0000-000000000003');
 
       // Should return empty or error depending on RLS config
       expect(data).toEqual([]);

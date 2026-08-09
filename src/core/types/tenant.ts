@@ -84,7 +84,7 @@ export interface TenantContext {
    * - `defaultTaxRate: number` - Default tax rate for invoices
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  readonly settings: Readonly<Record<string, any>>;
+  readonly settings: Readonly<Record<string, unknown>>;
 }
 
 /**

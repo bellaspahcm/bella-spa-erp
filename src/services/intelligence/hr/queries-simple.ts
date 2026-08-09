@@ -144,7 +144,7 @@ export async function getAttendanceReport(tenantId: string, month?: string) {
       .gte('date', startDate)
       .lt('date', endDate) as {
         data: Array<{ ktv_id: string; date: string; status: string; checkin_time: string | null }> | null;
-        error: any;
+        error: unknown;
       };
 
     if (error) {
@@ -318,7 +318,7 @@ export async function getEmployeePerformance(tenantId: string, month?: string) {
       .eq('tenant_id', tenantId)
       .eq('month_year', formattedMonth) as {
         data: Array<{ ktv_id: string; customer_satisfaction: number | null; bonus_amount: number | null }> | null;
-        error: any;
+        error: unknown;
       };
 
     if (kpiError) {

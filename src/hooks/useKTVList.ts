@@ -52,7 +52,7 @@ export function useKTVList(tenantId?: string) {
       );
 
       setKtvList(validKtvs);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[useKTVList] Unexpected error:', err);
       setError('Không thể tải danh sách KTV');
       setKtvList([]);

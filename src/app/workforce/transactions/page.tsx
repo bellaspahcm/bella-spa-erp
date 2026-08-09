@@ -19,7 +19,7 @@ export default function MyTransactions() {
     try {
       const data = await getWorkforceTransactions();
       setTransactions(data);
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi khi tải lịch sử giao dịch');
     } finally {
       setIsLoading(false);

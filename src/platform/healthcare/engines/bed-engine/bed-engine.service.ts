@@ -56,12 +56,50 @@ export class BedEngineService implements BedEngineContract {
 
       const { data: beds, error: queryError } = await query.limit(1);
 
+      // 🔍 DEBUG LOGGING
+      console.log('[BedEngine] allocateBed debug:', {
+        request,
+        queryError: queryError?.message,
+        foundBeds: beds?.length || 0,
+        timestamp: new Date().toISOString(),
+      });
+
       if (queryError || !beds || beds.length === 0) {
+        // Additional debug query to understand why no beds found
+        const { data: allWardBeds } = await this.supabase
+          .from('hc_beds')
+          .select('id, bed_code, ward_id, status, bed_type')
+          .eq('tenant_id', request.tenantId)
+          .eq('ward_id', request.wardId);
+
+        console.error('[BedEngine] No beds available. Debug info:', {
+          requestedWardId: request.wardId,
+          requestedBedType: request.bedType,
+          requestedPreferredBedId: request.preferredBedId,
+          allBedsInWard: allWardBeds,
+          totalBedsInWard: allWardBeds?.length || 0,
+          bedsStatusBreakdown: allWardBeds?.reduce((acc: Record<string, number>, bed: any) => {
+            acc[bed.status] = (acc[bed.status] || 0) + 1;
+            return acc;
+          }, {}) || {},
+          queryError: queryError?.message,
+        });
+
         return {
           success: false,
           error: {
             code: 'NO_BEDS_AVAILABLE',
             message: 'No available beds matching criteria',
+            details: {
+              requestedWardId: request.wardId,
+              requestedBedType: request.bedType,
+              requestedPreferredBedId: request.preferredBedId,
+              totalBedsInWard: allWardBeds?.length || 0,
+              bedsStatusBreakdown: allWardBeds?.reduce((acc: Record<string, number>, bed: any) => {
+                acc[bed.status] = (acc[bed.status] || 0) + 1;
+                return acc;
+              }, {}) || {},
+            },
             timestamp: new Date().toISOString(),
           },
         };
@@ -74,9 +112,8 @@ export class BedEngineService implements BedEngineContract {
         .from('hc_beds')
         .update({
           status: 'occupied',
-          assigned_patient_id: request.patientId,
-          assigned_admission_id: request.admissionId,
-          assigned_at: new Date().toISOString(),
+          current_patient_id: request.patientId, // ✅ Fixed: current_patient_id
+          current_admission_id: request.admissionId, // ✅ Fixed: current_admission_id
           updated_at: new Date().toISOString(),
         })
         .eq('id', bed.id)
@@ -347,10 +384,10 @@ export class BedEngineService implements BedEngineContract {
       }
 
       if (request.assignedPatientId) {
-        query = query.eq('assigned_patient_id', request.assignedPatientId);
+        query = query.eq('current_patient_id', request.assignedPatientId); // ✅ Fixed: current_patient_id not assigned_patient_id
       }
 
-      const { data, error } = await query.order('bed_number', { ascending: true });
+      const { data, error } = await query.order('bed_code', { ascending: true }); // ✅ Fixed: bed_code not bed_number
 
       if (error) {
         return {

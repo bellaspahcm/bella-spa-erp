@@ -73,7 +73,7 @@ export function WaitlistFilters({
           const data = await response.json();
           setPackages(data.packages || []);
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Error fetching packages:', err);
       } finally {
         setIsLoadingPackages(false);

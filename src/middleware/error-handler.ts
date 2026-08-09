@@ -44,8 +44,8 @@ export function handleAPIError(error: unknown, context?: string): NextResponse {
   );
   
   // Report to Sentry (only 500 errors)
-  if (statusCode >= 500 && typeof window !== 'undefined' && (window as any).Sentry) {
-    (window as any).Sentry.captureException(error, {
+  if (statusCode >= 500 && typeof window !== 'undefined' && (window as unknown).Sentry) {
+    (window as unknown).Sentry.captureException(error, {
       tags: {
         context: context || 'api',
         statusCode,

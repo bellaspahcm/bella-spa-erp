@@ -68,7 +68,7 @@ export class ProjectionEngine {
     for (const projector of list) {
       try {
         await projector.project(event);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error(
           `[ProjectionEngine Error] Projector "%s" failed to process event "%s":`,
           projector.name,

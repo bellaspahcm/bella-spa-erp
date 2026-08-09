@@ -7,7 +7,9 @@ import { resolveTenantBrandIdentity } from '@/lib/business-rules/tenant-modules'
 import { PartnerBottomNav } from './components/PartnerBottomNav';
 import { toast } from 'sonner';
 
-async function applyPartnerBrandRuntime(tenantSettings?: any) {
+type TenantSettingsResult = Awaited<ReturnType<typeof getCachedTenantSettings>>;
+
+async function applyPartnerBrandRuntime(tenantSettings?: TenantSettingsResult) {
   const tenant = tenantSettings ?? await getCachedTenantSettings();
   if (!tenant || typeof document === 'undefined') return;
 
@@ -87,7 +89,7 @@ export default function PartnerLayout({
         const tenant = await tenantWarmupPromise;
         await applyPartnerBrandRuntime(tenant ?? undefined);
         setIsAuthorized(true);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('[PartnerLayout] Auth check failed:', err);
         router.replace('/login');
       }

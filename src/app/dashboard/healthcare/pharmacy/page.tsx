@@ -169,7 +169,7 @@ export default function PharmacyPage() {
       const res = await getPrescriptionsAction();
       if (res.success && res.data) {
         if (res.data.length > 0) {
-          const mapped: PrescriptionReview[] = res.data.map((rx: any) => {
+          const mapped: PrescriptionReview[] = res.data.map((rx: Record<string, unknown>) => {
             const drugs = Array.isArray(rx.drugs) ? rx.drugs : [];
             const primaryDrug = drugs[0] || {};
             let alerts: string[] = [];
@@ -209,7 +209,7 @@ export default function PharmacyPage() {
               qty: primaryDrug.qty || 1,
               unit: rx.patient?.display_name?.includes('Hoàng') ? 'Ống' : 'Viên',
               dosageInstruction: primaryDrug.dosageInstruction || 'Uống theo đơn',
-              status: rx.status as any,
+              status: rx.status as unknown,
               createdAt: new Date(rx.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
               cdssAlerts: alerts,
             };
@@ -219,7 +219,7 @@ export default function PharmacyPage() {
           void seedDefaultPrescriptions();
         }
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Lỗi tải đơn thuốc:', err);
     }
   };
@@ -388,7 +388,7 @@ export default function PharmacyPage() {
       ]);
 
       void loadPrescriptions();
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Lỗi seed đơn thuốc mẫu:', err);
     }
   };
@@ -405,7 +405,7 @@ export default function PharmacyPage() {
       } else {
         toast.error('Lỗi tải danh mục thuốc: ' + res.error);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi kết nối máy chủ');
     } finally {
       setIsLoading(false);
@@ -526,7 +526,7 @@ export default function PharmacyPage() {
       } else {
         toast.error('Lỗi duyệt đơn thuốc: ' + res.error);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi kết nối máy chủ');
     }
   };

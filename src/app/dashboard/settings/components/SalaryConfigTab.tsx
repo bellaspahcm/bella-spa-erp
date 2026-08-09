@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Coins, Award, Calendar, Star, Save, Loader2, Target, TrendingUp, BarChart3 } from 'lucide-react';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import { parseIntegerInput, parseDecimalInput } from '@/lib/utils';
 import {
   loadKPIConfig,
   saveKPIConfig,
@@ -193,23 +194,23 @@ export default function SalaryConfigTab({
           const config = commissionResult.data.config as Record<string, unknown>;
           
           if (commissionResult.data.strategy === 'fixed') {
-            setCommissionRate(Number(config.rate) || 120000);
-            setCommissionMinSessions(Number(config.minSessions) || 0);
+            setCommissionRate(parseIntegerInput(config.rate, { fallback: 120000 }));
+            setCommissionMinSessions(parseIntegerInput(config.minSessions));
           } else if (commissionResult.data.strategy === 'tier') {
             setCommissionTiers((config.tiers as Array<{ min: number; max: number; rate: number }>) || commissionTiers);
           } else if (commissionResult.data.strategy === 'percentage') {
-            setCommissionPercentage(Number(config.percentage) || 15);
-            setCommissionMinRevenue(Number(config.minRevenue) || 0);
+            setCommissionPercentage(parseIntegerInput(config.percentage, { fallback: 15 }));
+            setCommissionMinRevenue(parseIntegerInput(config.minRevenue));
           } else if (commissionResult.data.strategy === 'service') {
             setCommissionServiceRates((config.rates as Record<string, number>) || commissionServiceRates);
           } else if (commissionResult.data.strategy === 'product_sales') {
-            setProductSalesPercentage(Number(config.percentage) || 15);
-            setProductSalesMinSales(Number(config.minSales) || 0);
+            setProductSalesPercentage(parseIntegerInput(config.percentage, { fallback: 15 }));
+            setProductSalesMinSales(parseIntegerInput(config.minSales));
           } else if (commissionResult.data.strategy === 'total_revenue') {
-            setTotalRevenuePercentage(Number(config.percentage) || 10);
-            setTotalRevenueMinRevenue(Number(config.minRevenue) || 0);
-            setServiceWeight(Number(config.serviceWeight) || 1.0);
-            setProductWeight(Number(config.productWeight) || 1.0);
+            setTotalRevenuePercentage(parseIntegerInput(config.percentage, { fallback: 10 }));
+            setTotalRevenueMinRevenue(parseIntegerInput(config.minRevenue));
+            setServiceWeight(parseDecimalInput(config.serviceWeight, { fallback: 1.0 }));
+            setProductWeight(parseDecimalInput(config.productWeight, { fallback: 1.0 }));
           }
         } else {
           // Default to fixed strategy if no config
@@ -348,11 +349,6 @@ export default function SalaryConfigTab({
   };
 
   // Input helpers
-  const parseIntegerInput = (value: string, { min = 0, max = 1000000000 } = {}) => {
-    const num = parseInt(value.replace(/\D/g, ''), 10);
-    if (isNaN(num)) return min;
-    return Math.min(Math.max(num, min), max);
-  };
 
   const parseFloatInput = (value: string, { min = 0, max = 5, decimals = 1 } = {}) => {
     const num = parseFloat(value);

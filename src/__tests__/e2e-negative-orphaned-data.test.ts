@@ -10,12 +10,15 @@ process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ||
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { requireSupabaseAdminEnv } from '@/lib/supabase-admin-env';
 import type { Database } from '@/types/database.types';
+import crypto from 'crypto';
 
 jest.setTimeout(60_000);
 
 describe('E2E Orphaned Data (Referential Integrity Test)', () => {
   let supabase: ReturnType<typeof createSupabaseClient<Database>>;
   let testTenantId: string;
+  let testCustomerId: string;
+  let testPackageId: string;
   let bookingId: string;
 
   beforeAll(async () => {
@@ -24,13 +27,18 @@ describe('E2E Orphaned Data (Referential Integrity Test)', () => {
     
     const { data: tenant } = await supabase.from('tenants').select('id').eq('name', 'Test Orphan Tenant').single();
     testTenantId = tenant?.id || (await supabase.from('tenants').insert({ name: 'Test Orphan Tenant', status: 'active' }).select('id').single()).data!.id;
+
+    testCustomerId = crypto.randomUUID();
+    await supabase.from('customers').insert({ id: testCustomerId, tenant_id: testTenantId, name_mother: 'Customer Orphan', phone: `095${Date.now().toString().slice(-7)}`, status: 'active' });
+    testPackageId = crypto.randomUUID();
+    await supabase.from('packages').insert({ id: testPackageId, tenant_id: testTenantId, name: 'Package Orphan', full_price: 5000000, total_sessions: 5, status: 'active', module_key: 'baby_care', service_kind: 'treatment_package', default_duration_minutes: 60, requires_resource: false, before_after_required: false });
   });
 
   it('should cascade delete session logs when booking is deleted', async () => {
     // Create booking with sessions
     const { data: booking } = await supabase.from('bookings').insert({
       tenant_id: testTenantId, booking_number: `ORPHAN-${Date.now()}`,
-      customer_id: 'cust-orphan', package_id: 'pkg-orphan',
+      customer_id: testCustomerId, package_id: testPackageId,
       start_date: '2026-06-20', full_price: 5000000, status: 'booked',
     }).select('id').single();
     bookingId = booking!.id;

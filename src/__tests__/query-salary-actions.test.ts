@@ -327,6 +327,7 @@ describe('getKtvSessionMatrix query errors', () => {
 
   it('returns package columns and KTV rows when all matrix queries succeed', async () => {
     const calls = setupDb([
+      { table: 'tenants', op: 'select', data: { enabled_modules: ['beauty_spa'] } },
       { table: 'users', op: 'select', data: [{ id: 'ktv-1', full_name: 'KTV One' }] },
       { table: 'salary_records', op: 'select', data: [{ ktv_id: 'ktv-1', total_sessions: 1.5, status: 'pending_approval' }] },
       {
@@ -359,28 +360,30 @@ describe('getKtvSessionMatrix query errors', () => {
       'Dịch vụ lẻ': 0,
     }]);
     expect(mockNoStore).toHaveBeenCalled();
-    expect(calls[2].filters).toEqual([
+    expect(calls[3].filters).toEqual([
       { field: 'status', value: 'completed' },
       { field: 'completed_date', value: '2026-06-01' },
       { field: 'completed_date', value: '2026-07-01' },
       { field: 'tenant_id', value: 'tenant-1' },
     ]);
-    expect(calls[3].filters).toContainEqual({ field: 'tenant_id', value: 'tenant-1' });
+    expect(calls[4].filters).toContainEqual({ field: 'tenant_id', value: 'tenant-1' });
   });
 
   it('throws instead of returning an empty matrix when the session query fails', async () => {
     const calls = setupDb([
+      { table: 'tenants', op: 'select', data: { enabled_modules: ['beauty_spa'] } },
       { table: 'users', op: 'select', data: [{ id: 'ktv-1', full_name: 'KTV One' }] },
       { table: 'salary_records', op: 'select', data: [] },
       { table: 'session_logs', op: 'select', error: { message: 'session query failed' } },
     ]);
 
     await expect(getKtvSessionMatrix()).rejects.toThrow('getKtvSessionMatrix session_logs query failed: session query failed');
-    expect(calls).toHaveLength(3);
+    expect(calls).toHaveLength(4);
   });
 
   it('throws instead of returning partial data when the packages query fails', async () => {
     setupDb([
+      { table: 'tenants', op: 'select', data: { enabled_modules: ['beauty_spa'] } },
       { table: 'users', op: 'select', data: [{ id: 'ktv-1', full_name: 'KTV One' }] },
       { table: 'salary_records', op: 'select', data: [] },
       { table: 'session_logs', op: 'select', data: [] },

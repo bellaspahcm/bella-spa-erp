@@ -571,10 +571,7 @@ export default function MARPage() {
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
 
-  useEffect(() => { loadData(); }, []);
-  useEffect(() => { if (selectedAdmissionId) loadMAR(selectedAdmissionId); }, [selectedAdmissionId]);
-
-  const loadData = async () => {
+  async function loadData() {
     setLoading(true);
     try {
       const [admData, bedsData, wardsData] = await Promise.all([
@@ -586,9 +583,12 @@ export default function MARPage() {
       setAdmissions(active); setBeds(bedsData); setWards(wardsData);
       if (active.length > 0) setSelectedAdmissionId(active[0].id);
     } catch { /* ignore */ } finally { setLoading(false); }
-  };
+  }
 
-  const loadMAR = async (id: string) => {
+  useEffect(() => { loadData(); }, []);
+  useEffect(() => { if (selectedAdmissionId) loadMAR(selectedAdmissionId); }, [selectedAdmissionId]);
+
+  async function loadMAR(id: string) {
     try {
       const result = await getMedicationOrders('bella_healthcare', id);
       if (result.success && result.data && Array.isArray(result.data) && result.data.length > 0) {
@@ -597,7 +597,7 @@ export default function MARPage() {
         setMarRecords(MOCK_MAR);
       }
     } catch { setMarRecords(MOCK_MAR); }
-  };
+  }
 
   const handleAdministerConfirm = async (notes: string) => {
     if (!fiveRightsMAR) return;

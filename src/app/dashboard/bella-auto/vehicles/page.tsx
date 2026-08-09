@@ -293,7 +293,7 @@ export default function VehicleInventoryPage() {
         setVehicles([]);
       } else {
         // Map to VehicleInventoryItem interface
-        const mappedVehicles = (data || []).map((row: any) => ({
+        const mappedVehicles = (data || []).map((row: Record<string, unknown>) => ({
           id: row.id,
           vin: row.vin,
           chassisNumber: row.chassis_number,

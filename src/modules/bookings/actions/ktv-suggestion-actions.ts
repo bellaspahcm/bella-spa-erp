@@ -114,7 +114,7 @@ export async function getKtvSuggestions(
       .single();
 
     const loyaltyPoints = customer?.loyalty_points || 0;
-    const metadata = (customer?.metadata as Record<string, any>) || {};
+    const metadata = (customer?.metadata as Record<string, unknown>) || {};
     const status = String(metadata.status || '').toLowerCase().trim();
 
     const customerTier: 'vip' | 'loyal' | 'new' =
@@ -196,7 +196,7 @@ export async function getKtvSuggestions(
         executionTimeMs: engineResult.executionTime,
       },
     };
-  } catch (err) {
+  } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Lỗi hệ thống';
     return { success: false, suggestions: [], error: message };
   }
@@ -249,7 +249,7 @@ export async function applyKtvSuggestion(
     }
 
     return { success: true };
-  } catch (err) {
+  } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Lỗi hệ thống';
     return { success: false, error: message };
   }
@@ -317,7 +317,7 @@ async function filterAvailableKtvs(
       .eq('id', tenantId)
       .single();
 
-    const capacityConfig = ((tenant?.metadata as any)?.capacity_config as { break_buffer_minutes?: number; max_sessions_per_day?: number } | null) || {};
+    const capacityConfig = ((tenant?.metadata as unknown)?.capacity_config as { break_buffer_minutes?: number; max_sessions_per_day?: number } | null) || {};
     const breakBufferMinutes = capacityConfig.break_buffer_minutes || 15;
     const maxSessionsPerDay = capacityConfig.max_sessions_per_day || 8;
 
@@ -382,7 +382,7 @@ async function filterAvailableKtvs(
     });
 
     return availableKtvs;
-  } catch (err) {
+  } catch (err: unknown) {
     console.error('[filterAvailableKtvs] Error:', err);
     // On error, return all candidates (don't block UI)
     return candidates;

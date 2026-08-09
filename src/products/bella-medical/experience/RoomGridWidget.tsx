@@ -16,7 +16,7 @@ export const RoomGridWidget: React.FC = () => {
         const queryCap = capabilityRegistry.get<ResourceQueryCapability>('medical_resource_query');
         const data = await queryCap.getResources('default_tenant');
         setRooms(data);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('[RoomGridWidget] Failed to fetch rooms:', err);
       } finally {
         setLoading(false);

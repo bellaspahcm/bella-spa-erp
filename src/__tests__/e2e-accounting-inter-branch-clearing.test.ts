@@ -11,12 +11,12 @@ process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ||
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { requireSupabaseAdminEnv } from '@/lib/supabase-admin-env';
 import type { Database } from '@/types/database.types';
+import crypto from 'crypto';
 
 jest.setTimeout(60_000);
 
 describe('E2E Inter-Branch Clearing (Accounting Test)', () => {
   let supabase: ReturnType<typeof createSupabaseClient<Database>>;
-  let testTenantId: string;
   let branchAId: string;
   let branchBId: string;
 
@@ -24,19 +24,28 @@ describe('E2E Inter-Branch Clearing (Accounting Test)', () => {
     const { url, adminKey } = requireSupabaseAdminEnv();
     supabase = createSupabaseClient<Database>(url, adminKey);
     
-    const { data: tenant } = await supabase.from('tenants').select('id').eq('name', 'Test Tenant Inter Branch').single();
-    testTenantId = tenant?.id || (await supabase.from('tenants').insert({ name: 'Test Tenant Inter Branch', status: 'active' }).select('id').single()).data!.id;
-
-    // Create 2 branches
-    const { data: branchA } = await supabase.from('branches').insert({
-      tenant_id: testTenantId, name: 'Branch A', code: 'BRA', status: 'active',
+    // Create Tenant A (representing Branch A)
+    const { data: tenantA, error: errA } = await supabase.from('tenants').insert({
+      name: 'Test Tenant Inter Branch A',
+      status: 'active',
     }).select('id').single();
-    branchAId = branchA!.id;
+    if (errA) throw errA;
+    branchAId = tenantA!.id;
 
-    const { data: branchB } = await supabase.from('branches').insert({
-      tenant_id: testTenantId, name: 'Branch B', code: 'BRB', status: 'active',
+    // Create Tenant B (representing Branch B)
+    const { data: tenantB, error: errB } = await supabase.from('tenants').insert({
+      name: 'Test Tenant Inter Branch B',
+      status: 'active',
     }).select('id').single();
-    branchBId = branchB!.id;
+    if (errB) throw errB;
+    branchBId = tenantB!.id;
+  });
+
+  afterAll(async () => {
+    if (branchAId && branchBId) {
+      await supabase.from('inter_branch_clearing_records').delete().eq('debtor_tenant_id', branchAId);
+      await supabase.from('tenants').delete().in('id', [branchAId, branchBId]);
+    }
   });
 
   it('should create reciprocal clearing entries for inter-branch service', async () => {
@@ -46,15 +55,22 @@ describe('E2E Inter-Branch Clearing (Accounting Test)', () => {
     const clearingAmount = 150000; // Commission cost
 
     // STEP 1: Create inter-branch clearing record
-    const { data: clearing } = await supabase.from('inter_branch_clearing_records').insert({
-      tenant_id: testTenantId,
-      from_branch_id: branchAId, // Branch A owes
-      to_branch_id: branchBId,   // Branch B is owed
-      amount: clearingAmount,
-      clearing_date: new Date().toISOString().split('T')[0],
+    const { data: clearing, error: clearingError } = await supabase.from('inter_branch_clearing_records').insert({
+      clearing_number: `CLR-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      month_year: '2026-06-01',
+      debtor_tenant_id: branchAId, // Branch A owes
+      creditor_tenant_id: branchBId,   // Branch B is owed
+      session_count: 1,
+      clearing_rate: clearingAmount,
+      calculated_amount: clearingAmount,
       status: 'pending',
       notes: 'Branch A booking completed by Branch B KTV',
     }).select('*').single();
+
+    if (clearingError) {
+      console.error('Error inserting clearing record:', clearingError);
+      throw clearingError;
+    }
 
     console.log('✅ Step 1: Clearing record created', { fromBranch: branchAId, toBranch: branchBId, amount: 150000 });
 
@@ -80,7 +96,7 @@ describe('E2E Inter-Branch Clearing (Accounting Test)', () => {
 
     // STEP 3: Verify clearing record status
     expect(clearing!.status).toBe('pending');
-    expect(clearing!.amount).toBe(clearingAmount);
+    expect(Number(clearing!.calculated_amount)).toBe(clearingAmount);
 
     console.log('\n🎉 E2E INTER-BRANCH CLEARING TEST: PASSED');
   }, 60000);

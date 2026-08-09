@@ -19,7 +19,7 @@ export default function DocumentsHub() {
     try {
       const data = await getMyDocuments();
       setDocuments(data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[DocumentsHub] Fetch failed:', err);
       toast.error('Lỗi khi tải kho tài liệu');
     } finally {

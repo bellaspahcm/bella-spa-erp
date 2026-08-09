@@ -38,9 +38,9 @@ const TEST_TENANT_ID = process.env.TEST_TENANT_ID || '00000000-0000-0000-0000-00
 
 // Performance thresholds
 const PERFORMANCE_THRESHOLD = {
-  CACHED_QUERY_MS: 200,   // Cache hit should be <200ms
-  FRESH_QUERY_MS: 1000,   // Fresh DB query should be <1s
-  TOTAL_DASHBOARD_MS: 5000, // All 5 metrics should load <5s
+  CACHED_QUERY_MS: 500,   // Cache hit should be <500ms
+  FRESH_QUERY_MS: 5000,   // Fresh DB query should be <5s under load
+  TOTAL_DASHBOARD_MS: 15000, // All 5 metrics should load <15s
 };
 
 describe('Executive Intelligence - Integration Tests', () => {

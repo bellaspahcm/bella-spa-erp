@@ -23,6 +23,52 @@ import { createClient } from '@/lib/supabase-client';
 import { HealthcareFinanceAdapter, type HealthcareFinanceVM, type HealthcareTransactionVM } from '@/modules/bella-healthcare/adapters/healthcare-adapter';
 import { HealthcareAnalytics, type DoctorRevenueShare, type TreatmentCategoryShare } from '@/modules/bella-healthcare/metrics/healthcare-analytics';
 
+interface JournalLine {
+  credit_amount: number | string | null;
+  debit_amount: number | string | null;
+  [key: string]: unknown;
+}
+
+interface JournalEntryRow {
+  id: string;
+  entry_date: string;
+  description: string | null;
+  journal_lines?: JournalLine[];
+  [key: string]: unknown;
+}
+
+interface RevenueRow {
+  id: string;
+  amount: number | string | null;
+  payment_method?: string | null;
+  received_date: string;
+  notes?: string | null;
+  status: string;
+  accounting_metadata?: {
+    patientName?: string;
+    bhytCode?: string;
+    [key: string]: unknown;
+  } | null;
+  [key: string]: unknown;
+}
+
+interface ExpenseRow {
+  id: string;
+  amount: number;
+  payment_method?: string | null;
+  expense_date: string;
+  description: string | null;
+  status: string;
+  [key: string]: unknown;
+}
+
+interface SalaryRecordRow {
+  id: string;
+  total_salary: number | null;
+  month_year: string;
+  [key: string]: unknown;
+}
+
 export default function HealthcareFinancePage() {
   const [activeTab, setActiveTab] = useState<'pnl' | 'transactions' | 'analytics'>('pnl');
   const [filterType, setFilterType] = useState<'month' | 'day'>('month');
@@ -39,10 +85,10 @@ export default function HealthcareFinancePage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Raw data from DB
-  const [dbJournalEntries, setDbJournalEntries] = useState<any[]>([]);
-  const [dbRevenues, setDbRevenues] = useState<any[]>([]);
-  const [dbExpenses, setDbExpenses] = useState<any[]>([]);
-  const [dbSalaryRecords, setDbSalaryRecords] = useState<any[]>([]);
+  const [dbJournalEntries, setDbJournalEntries] = useState<JournalEntryRow[]>([]);
+  const [dbRevenues, setDbRevenues] = useState<RevenueRow[]>([]);
+  const [dbExpenses, setDbExpenses] = useState<ExpenseRow[]>([]);
+  const [dbSalaryRecords, setDbSalaryRecords] = useState<SalaryRecordRow[]>([]);
 
   // ViewModels after Adapter mapping
   const [financeSummary, setFinanceSummary] = useState<HealthcareFinanceVM>({
@@ -143,7 +189,7 @@ export default function HealthcareFinancePage() {
       if (salErr) throw salErr;
       setDbSalaryRecords(salaryRecs || []);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching healthcare finance data:', err);
       toast.error('Lỗi tải dữ liệu tài chính: ' + err.message);
     } finally {
@@ -180,7 +226,7 @@ export default function HealthcareFinancePage() {
     let totalRevenue = 0;
     dbJournalEntries.forEach(entry => {
       const lines = entry.journal_lines || [];
-      lines.forEach((l: any) => {
+      lines.forEach((l) => {
         totalRevenue += Number(l.credit_amount || 0);
       });
     });
@@ -230,7 +276,7 @@ export default function HealthcareFinancePage() {
       ...dbJournalEntries.map(j => ({
         id: j.id,
         type: 'revenue',
-        amount: (j.journal_lines || []).reduce((sum: number, l: any) => sum + Number(l.credit_amount || 0), 0),
+        amount: (j.journal_lines || []).reduce((sum: number, l) => sum + Number(l.credit_amount || 0), 0),
         paymentMethod: 'bank_transfer',
         timestamp: j.entry_date,
         description: j.description,
@@ -350,7 +396,7 @@ export default function HealthcareFinancePage() {
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => setActiveTab(tab.id as unknown)}
                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
                   activeTab === tab.id
                     ? 'bg-white dark:bg-slate-950 text-teal-600 dark:text-teal-400 shadow-sm font-black'

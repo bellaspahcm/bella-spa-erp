@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+// Automotive vertical terms: Xe, VIN, Hành trình, Báo giá, Showroom, Dịch vụ
 import { createClient } from '@/lib/supabase-server';
 import { redirect } from 'next/navigation';
 import VehicleInventoryDashboard from '@/components/bella-auto/VehicleInventoryDashboard';
@@ -9,6 +10,18 @@ import BellaAutoAnalyticsDashboard from '@/components/bella-auto/BellaAutoAnalyt
 export const dynamic = 'force-dynamic';
 
 export default async function BellaAutoPage() {
+  let profile = null;
+  let tenant = null;
+  let vehicleStats = {
+    total: 0,
+    showroom: 0,
+    warehouse: 0,
+    allocated: 0,
+    delivered: 0,
+  };
+  let monogram = 'BA';
+  let errorMsg = null;
+
   try {
     console.log('[BellaAutoPage] Starting render...');
     const supabase = await createClient();
@@ -25,39 +38,70 @@ export default async function BellaAutoPage() {
 
     console.log('[BellaAutoPage] User authenticated:', user.id);
 
-  // Get tenant and user profile
-  const { data: profile } = await supabase
-    .from('users')
-    .select('tenant_id, full_name')
-    .eq('id', user.id)
-    .single();
+    // Get tenant and user profile
+    const { data: profileData } = await supabase
+      .from('users')
+      .select('tenant_id, full_name')
+      .eq('id', user.id)
+      .single();
 
-  if (!profile?.tenant_id) {
-    return <div>Không tìm thấy tenant</div>;
+    profile = profileData;
+
+    if (!profile?.tenant_id) {
+      errorMsg = 'Không tìm thấy tenant';
+    } else {
+      // Get tenant name
+      const { data: tenantData } = await supabase
+        .from('tenants')
+        .select('name')
+        .eq('id', profile.tenant_id)
+        .single();
+      tenant = tenantData;
+
+      // Fetch vehicle stats for analytics
+      const { data: vehicles } = await supabase
+        .from('auto_vehicles')
+        .select('status')
+        .eq('tenant_id', profile.tenant_id);
+
+      vehicleStats = {
+        total: vehicles?.length || 0,
+        showroom: vehicles?.filter(v => v.status === 'showroom').length || 0,
+        warehouse: vehicles?.filter(v => v.status === 'warehouse').length || 0,
+        allocated: vehicles?.filter(v => v.status === 'allocated').length || 0,
+        delivered: vehicles?.filter(v => v.status === 'delivered').length || 0,
+      };
+
+      monogram = profile?.full_name ? profile.full_name.substring(0, 2).toUpperCase() : 'BA';
+    }
+  } catch (error) {
+    console.error('[BellaAutoPage] Fatal error:', error);
+    errorMsg = error instanceof Error ? error.message : 'Unknown error occurred';
   }
 
-  // Get tenant name
-  const { data: tenant } = await supabase
-    .from('tenants')
-    .select('name')
-    .eq('id', profile.tenant_id)
-    .single();
+  if (errorMsg) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="text-center space-y-4 max-w-md">
+          <div className="text-6xl">⚠️</div>
+          <h2 className="text-2xl font-bold text-red-600">Lỗi tải Dashboard</h2>
+          <p className="text-slate-600">{errorMsg}</p>
+        </div>
+      </div>
+    );
+  }
 
-  // Fetch vehicle stats for analytics
-  const { data: vehicles } = await supabase
-    .from('auto_vehicles')
-    .select('status')
-    .eq('tenant_id', profile.tenant_id);
-
-  const vehicleStats = {
-    total: vehicles?.length || 0,
-    showroom: vehicles?.filter(v => v.status === 'showroom').length || 0,
-    warehouse: vehicles?.filter(v => v.status === 'warehouse').length || 0,
-    allocated: vehicles?.filter(v => v.status === 'allocated').length || 0,
-    delivered: vehicles?.filter(v => v.status === 'delivered').length || 0,
-  };
-
-  const monogram = profile?.full_name ? profile.full_name.substring(0, 2).toUpperCase() : 'BA';
+  if (!profile?.tenant_id) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="text-center space-y-4 max-w-md">
+          <div className="text-6xl">⚠️</div>
+          <h2 className="text-2xl font-bold text-red-600">Không tìm thấy Tenant</h2>
+          <p className="text-slate-600">Hồ sơ người dùng không liên kết với Tenant nào.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 overflow-auto bg-slate-50/50 dark:bg-slate-950 p-6 md:p-10 space-y-8">
@@ -119,24 +163,4 @@ export default async function BellaAutoPage() {
       </Suspense>
     </div>
   );
-  } catch (error) {
-    console.error('[BellaAutoPage] Fatal error:', error);
-    return (
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="text-center space-y-4 max-w-md">
-          <div className="text-6xl">⚠️</div>
-          <h2 className="text-2xl font-bold text-red-600">Lỗi tải Dashboard</h2>
-          <p className="text-slate-600">
-            {error instanceof Error ? error.message : 'Unknown error occurred'}
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors"
-          >
-            Tải lại trang
-          </button>
-        </div>
-      </div>
-    );
-  }
 }

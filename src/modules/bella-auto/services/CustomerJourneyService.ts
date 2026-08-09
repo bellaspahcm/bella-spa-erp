@@ -13,7 +13,7 @@ export interface TransitionJourneyInput {
   toStageCode: string;
   changedByUserId?: string;
   reason?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export const CustomerJourneyService = {
@@ -103,7 +103,7 @@ export const CustomerJourneyService = {
       throw new Error(`CustomerJourneyService.transitionStage: Khách hàng chưa được khởi tạo hành trình.`);
     }
 
-    const currentStage = (journey.auto_journey_stages as any);
+    const currentStage = (journey.auto_journey_stages as unknown);
     const fromStageCode = currentStage?.code;
     const fromStageId = journey.current_stage_id;
 

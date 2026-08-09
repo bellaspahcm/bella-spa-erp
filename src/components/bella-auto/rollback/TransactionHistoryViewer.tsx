@@ -103,7 +103,7 @@ export function TransactionHistoryViewer({
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, any> = {
+    const variants: Record<string, unknown> = {
       committed: 'default',
       rolled_back: 'destructive',
       failed: 'destructive',

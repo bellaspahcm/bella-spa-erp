@@ -250,12 +250,8 @@ export class CapacityManagementProvider {
   private detectConflicts(
     input: CapacityCheckInput,
     capacityState: { currentBookings: number; maxBookings: number }
-  ): Array<{
-    type: 'time_overlap' | 'concurrent_limit' | 'break_time_violation' | 'daily_limit' | 'outside_working_hours';
-    reason: string;
-    conflictingBooking?: { id: string; startTime: string; endTime: string };
-  }> {
-    const conflicts: Array<any> = [];
+  ): CapacityConflict[] {
+    const conflicts: CapacityConflict[] = [];
 
     // Check 1: Daily limit
     if (capacityState.currentBookings >= capacityState.maxBookings) {
@@ -342,8 +338,8 @@ export class CapacityManagementProvider {
   private findTimeOverlaps(
     requestedStart: string,
     requestedEnd: string,
-    existingBookings: Array<any>
-  ): Array<any> {
+    existingBookings: CapacityCheckInput['existingBookings']
+  ): CapacityCheckInput['existingBookings'] {
     return existingBookings.filter(booking => {
       // Skip cancelled bookings
       if (booking.status === 'cancelled') return false;
@@ -365,7 +361,7 @@ export class CapacityManagementProvider {
   private countConcurrentSessions(
     requestedStart: string,
     requestedEnd: string,
-    existingBookings: Array<any>
+    existingBookings: CapacityCheckInput['existingBookings']
   ): number {
     return existingBookings.filter(booking => {
       if (booking.status === 'cancelled') return false;
@@ -385,10 +381,10 @@ export class CapacityManagementProvider {
   private findBreakTimeViolations(
     requestedStart: string,
     requestedEnd: string,
-    existingBookings: Array<any>,
+    existingBookings: CapacityCheckInput['existingBookings'],
     minBreakMinutes: number
-  ): Array<any> {
-    const violations: Array<any> = [];
+  ): CapacityCheckInput['existingBookings'] {
+    const violations: CapacityCheckInput['existingBookings'] = [];
 
     existingBookings.forEach(booking => {
       if (booking.status === 'cancelled') return;
@@ -494,14 +490,10 @@ export class CapacityManagementProvider {
    */
   private generateAlternatives(
     input: CapacityCheckInput,
-    capacityState: any,
-    conflicts: Array<any>
-  ): Array<{
-    timeSlot: string;
-    ktvId?: string;
-    reason: string;
-  }> {
-    const alternatives: Array<any> = [];
+    capacityState: { utilizationPercentage: number },
+    conflicts: CapacityConflict[]
+  ): CapacityCheckOutput['alternatives'] {
+    const alternatives: Array<{ timeSlot: string; ktvId?: string; reason: string }> = [];
 
     // If daily limit exceeded, suggest next day
     if (conflicts.some(c => c.type === 'daily_limit')) {
@@ -546,8 +538,8 @@ export class CapacityManagementProvider {
   private findNextAvailableSlot(
     preferredStart: string,
     durationMinutes: number,
-    existingBookings: Array<any>,
-    ktvCapacity: any
+    existingBookings: CapacityCheckInput['existingBookings'],
+    ktvCapacity: CapacityCheckInput['ktvCapacity']
   ): string | null {
     // Simple implementation: try slots every 30 minutes
     let currentTime = this.timeToMinutes(preferredStart);
@@ -606,7 +598,7 @@ export class CapacityManagementProvider {
    * Build matched rules from conflicts
    * @private
    */
-  private buildMatchedRules(conflicts: Array<any>): string[] {
+  private buildMatchedRules(conflicts: CapacityConflict[]): string[] {
     const ruleMap: Record<string, string> = {
       daily_limit: 'booking-capacity-daily-limit',
       time_overlap: 'booking-capacity-time-overlap',
@@ -622,9 +614,9 @@ export class CapacityManagementProvider {
    * Build rejection reason
    * @private
    */
-  private buildRejectionReason(conflicts: Array<any>, ruleResult: any): string {
+  private buildRejectionReason(conflicts: CapacityConflict[], ruleResult: Record<string, unknown> | null | unknown): string {
     if (conflicts.length === 0) {
-      return ruleResult.explanation || 'Capacity not available';
+      return (ruleResult as Record<string, unknown>)?.explanation as string || 'Capacity not available';
     }
 
     const reasons = conflicts.map(c => c.reason);
@@ -637,8 +629,8 @@ export class CapacityManagementProvider {
    */
   private enrichKnowledge(
     input: CapacityCheckInput,
-    capacityState: any,
-    conflicts: Array<any>
+    capacityState: { currentBookings: number; utilizationPercentage: number; isPeakHour: boolean },
+    conflicts: CapacityConflict[]
   ): CapacityKnowledge {
     return {
       tenantId: input.tenantId,
@@ -668,31 +660,32 @@ export class CapacityManagementProvider {
    * Convert Platform Rule condition to RuleReasoner condition
    * @private
    */
-  private convertConditionToReasoner(condition: any): any {
-    if (condition.type === 'simple') {
+  private convertConditionToReasoner(condition: Record<string, unknown> | null | unknown): Record<string, unknown> | null | unknown {
+    const cond = condition as Record<string, unknown>;
+    if (cond.type === 'simple') {
       return {
         type: 'comparison',
-        field: condition.field,
-        operator: this.mapOperator(condition.operator),
-        value: condition.value,
+        field: cond.field,
+        operator: this.mapOperator(cond.operator as string),
+        value: cond.value,
       };
     }
 
-    if (condition.type === 'all') {
+    if (cond.type === 'all') {
       return {
         type: 'operator',
         operator: 'and',
-        conditions: condition.conditions.map((c: any) =>
+        conditions: (cond.conditions as Array<Record<string, unknown>>).map((c: Record<string, unknown>) =>
           this.convertConditionToReasoner(c)
         ),
       };
     }
 
-    if (condition.type === 'any') {
+    if (cond.type === 'any') {
       return {
         type: 'operator',
         operator: 'or',
-        conditions: condition.conditions.map((c: any) =>
+        conditions: (cond.conditions as Array<Record<string, unknown>>).map((c: Record<string, unknown>) =>
           this.convertConditionToReasoner(c)
         ),
       };

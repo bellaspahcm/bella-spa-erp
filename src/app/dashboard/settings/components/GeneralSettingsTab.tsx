@@ -54,7 +54,7 @@ export default function GeneralSettingsTab({
     : isIndustrialCleaning 
     ? "Thông tin Công ty" 
     : isBellaHealthcare
-    ? "Thông tin Phòng khám & Y tế"
+    ? "Thông tin Bệnh viện"
     : "Thông tin Spa";
 
   const subtitleText = isRealEstate

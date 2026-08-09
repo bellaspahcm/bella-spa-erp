@@ -34,10 +34,10 @@ export interface DecisionContext {
   sessionId?: string;
 
   /** Optional metadata for extensibility */
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 
   /** Manual overrides for A/B testing or admin adjustments */
-  overrides?: Record<string, any>;
+  overrides?: Record<string, unknown>;
 }
 
 /**
@@ -317,8 +317,8 @@ export function createDecisionContext(
   options?: {
     timestamp?: string;
     sessionId?: string;
-    metadata?: Record<string, any>;
-    overrides?: Record<string, any>;
+    metadata?: Record<string, unknown>;
+    overrides?: Record<string, unknown>;
   }
 ): DecisionContext {
   return {
@@ -345,8 +345,8 @@ export function createPayrollContext(
     kpi?: KpiData;
     manualAdjustments?: ManualAdjustment[];
     tenantConfig?: PayrollDecisionContext['tenantConfig'];
-    metadata?: Record<string, any>;
-    overrides?: Record<string, any>;
+    metadata?: Record<string, unknown>;
+    overrides?: Record<string, unknown>;
   }
 ): PayrollDecisionContext {
   return {

@@ -43,7 +43,7 @@ export async function getAppointmentsAction(dateFilter?: string): Promise<{ succ
     const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
-    let query = (supabase as any)
+    let query = supabase
       .from('hc_appointments')
       .select('*')
       .eq('tenant_id', tenantId);

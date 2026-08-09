@@ -45,7 +45,7 @@ export default function ClinicalWorkspaceEnginePage() {
   const [isLoading, setIsLoading] = useState(true);
 
   // Initialize and run the 11-step Platform Runtime Lifecycle (Purity Rule compliant)
-  const runRuntimeLifecycle = async (encData: any, patData: any, isDental: boolean) => {
+  const runRuntimeLifecycle = async (encData: EncounterContext, patData: PatientContext, isDental: boolean) => {
     const logs: string[] = [];
     const addLog = (msg: string) => logs.push(`[Runtime] ${msg}`);
 
@@ -134,7 +134,7 @@ export default function ClinicalWorkspaceEnginePage() {
         };
 
         if (patRes.success && patRes.data) {
-          const matched = patRes.data.find((p: any) => p.name === encData.patient_name);
+          const matched = patRes.data.find((p: Record<string, unknown>) => p.name === encData.patient_name);
           if (matched) {
             matchedPatient = {
               id: matched.id,
@@ -188,7 +188,7 @@ export default function ClinicalWorkspaceEnginePage() {
 
         await runRuntimeLifecycle(mockEncounter, mockPatient, isDental);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi kết nối dữ liệu y khoa');
     } finally {
       setIsLoading(false);
@@ -220,14 +220,14 @@ export default function ClinicalWorkspaceEnginePage() {
   const handleUpdateStatus = async (newStatus: EncounterContext['status']) => {
     if (!encounter) return;
     try {
-      const res = await updateEncounterStatusAction(encounter.id, newStatus as any);
+      const res = await updateEncounterStatusAction(encounter.id, newStatus as unknown);
       if (res.success) {
         toast.success(`Di chuyển trạng thái lượt khám sang: ${newStatus}`);
         loadData();
       } else {
         toast.error('Lỗi chuyển trạng thái: ' + res.error);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi kết nối máy chủ');
     }
   };

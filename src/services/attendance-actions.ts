@@ -670,8 +670,8 @@ export async function approveLeaveRequest(
       // Send real-time notification to the substitute KTV
       try {
         const booking = Array.isArray(sessionLog.bookings) ? sessionLog.bookings[0] : sessionLog.bookings;
-        const customerName = (booking as any)?.customers?.name_mother || 'Khách hàng';
-        const packageName = (booking as any)?.package_name || 'Dịch vụ';
+        const customerName = (booking as unknown)?.customers?.name_mother || 'Khách hàng';
+        const packageName = (booking as unknown)?.package_name || 'Dịch vụ';
         const dateStr = sessionLog.assigned_date ? sessionLog.assigned_date.split('-').reverse().join('/') : '';
         
         const { createSystemNotification } = await import('./notification-helpers');

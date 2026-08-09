@@ -226,7 +226,7 @@ class SchedulerRegistryClass {
       this.lastRun.set(key, runRecord.finishedAt);
       const intervalMs = getIntervalMs(def.schedule);
       this.nextRun.set(key, new Date(Date.now() + intervalMs).toISOString());
-    } catch (err) {
+    } catch (err: unknown) {
       runRecord.status = 'failed';
       runRecord.finishedAt = new Date().toISOString();
       runRecord.durationMs = Date.now() - startMs;

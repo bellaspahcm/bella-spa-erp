@@ -87,6 +87,20 @@ export async function seedTestDatabase(): Promise<void> {
   console.log('[Seed] Starting test database seeding...');
 
   try {
+    // Clean up any conflicting emails/phones across the entire database to prevent unique constraint failures
+    const ktvPhones = ['0955234567', '0955234568', '0955234569', '0955234570', '0955234571'];
+    const ktvEmails = ['alice-booking@test.com', 'bob-booking@test.com', 'carol-booking@test.com', 'david-booking@test.com', 'emma-booking@test.com'];
+    const customerPhones = ['0955654321', '0955654322', '0955654323', '0955654329', '0955654325'];
+
+    await testSupabase.from('session_logs').delete().eq('tenant_id', TEST_IDS.tenant);
+    await testSupabase.from('bookings').delete().eq('tenant_id', TEST_IDS.tenant);
+    await testSupabase.from('packages').delete().eq('tenant_id', TEST_IDS.tenant);
+    await testSupabase.from('customers').delete().eq('tenant_id', TEST_IDS.tenant);
+    await testSupabase.from('users').delete().eq('tenant_id', TEST_IDS.tenant);
+    await testSupabase.from('users').delete().in('email', ktvEmails);
+    await testSupabase.from('users').delete().in('phone', ktvPhones);
+    await testSupabase.from('customers').delete().in('phone', customerPhones);
+
     // 1. Create test tenant
     const { error: tenantError } = await testSupabase.from('tenants').upsert({
       id: TEST_IDS.tenant,
@@ -194,9 +208,9 @@ export async function seedTestDatabase(): Promise<void> {
     const ktvs = [
       {
         id: TEST_IDS.ktvs.alice,
-        email: 'alice@test.com',
+        email: 'alice-booking@test.com',
         full_name: 'Alice Nguyen',
-        phone: '0901234567',
+        phone: '0955234567',
         role: 'ktv',
         position_tier: 'senior',
         tenant_id: TEST_IDS.tenant,
@@ -211,9 +225,9 @@ export async function seedTestDatabase(): Promise<void> {
       },
       {
         id: TEST_IDS.ktvs.bob,
-        email: 'bob@test.com',
+        email: 'bob-booking@test.com',
         full_name: 'Bob Tran',
-        phone: '0901234568',
+        phone: '0955234568',
         role: 'ktv',
         position_tier: 'junior',
         tenant_id: TEST_IDS.tenant,
@@ -228,9 +242,9 @@ export async function seedTestDatabase(): Promise<void> {
       },
       {
         id: TEST_IDS.ktvs.carol,
-        email: 'carol@test.com',
+        email: 'carol-booking@test.com',
         full_name: 'Carol Le',
-        phone: '0901234569',
+        phone: '0955234569',
         role: 'ktv',
         position_tier: 'junior',
         tenant_id: TEST_IDS.tenant,
@@ -245,9 +259,9 @@ export async function seedTestDatabase(): Promise<void> {
       },
       {
         id: TEST_IDS.ktvs.david,
-        email: 'david@test.com',
+        email: 'david-booking@test.com',
         full_name: 'David Pham',
-        phone: '0901234570',
+        phone: '0955234570',
         role: 'ktv',
         position_tier: 'senior',
         tenant_id: TEST_IDS.tenant,
@@ -262,9 +276,9 @@ export async function seedTestDatabase(): Promise<void> {
       },
       {
         id: TEST_IDS.ktvs.emma,
-        email: 'emma@test.com',
+        email: 'emma-booking@test.com',
         full_name: 'Emma Vo',
-        phone: '0901234571',
+        phone: '0955234571',
         role: 'ktv',
         position_tier: 'junior',
         tenant_id: TEST_IDS.tenant,
@@ -287,7 +301,7 @@ export async function seedTestDatabase(): Promise<void> {
     const customers = [
       {
         id: TEST_IDS.customers.vip,
-        phone: '0987654321',
+        phone: '0955654321',
         name_mother: 'VIP Customer Nguyen',
         name_baby: 'Baby VIP',
         dob_baby: '2025-06-15',
@@ -300,7 +314,7 @@ export async function seedTestDatabase(): Promise<void> {
       },
       {
         id: TEST_IDS.customers.loyal,
-        phone: '0987654322',
+        phone: '0955654322',
         name_mother: 'Loyal Customer Tran',
         name_baby: 'Baby Loyal',
         dob_baby: '2025-08-20',
@@ -313,7 +327,7 @@ export async function seedTestDatabase(): Promise<void> {
       },
       {
         id: TEST_IDS.customers.new,
-        phone: '0987654323',
+        phone: '0955654323',
         name_mother: 'New Customer Le',
         name_baby: 'Baby New',
         dob_expected: '2026-09-01',
@@ -326,7 +340,7 @@ export async function seedTestDatabase(): Promise<void> {
       },
       {
         id: TEST_IDS.customers.emma_customer,
-        phone: '0987654329',
+        phone: '0955654329',
         name_mother: 'Emma Customer Vo',
         name_baby: 'Baby Emma',
         dob_baby: '2025-06-15',
@@ -339,7 +353,7 @@ export async function seedTestDatabase(): Promise<void> {
       },
       {
         id: TEST_IDS.customers.concurrency_customer,
-        phone: '0987654325',
+        phone: '0955654325',
         name_mother: 'Concurrency Customer',
         name_baby: 'Baby Concurrency',
         dob_baby: '2025-06-15',
@@ -458,14 +472,6 @@ export async function cleanupTestDatabase(): Promise<void> {
       .eq('tenant_id', TEST_IDS.tenant);
     if (usersError) throw usersError;
     console.log('[Cleanup] ✅ Users deleted');
-
-    // 5. Delete tenant
-    const { error: tenantError } = await testSupabase
-      .from('tenants')
-      .delete()
-      .eq('id', TEST_IDS.tenant);
-    if (tenantError) throw tenantError;
-    console.log('[Cleanup] ✅ Tenant deleted');
 
     console.log('[Cleanup] ✅ Test database cleanup completed successfully!');
   } catch (error) {

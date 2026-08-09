@@ -255,7 +255,7 @@ export async function GET(request: Request): Promise<Response> {
       forecastPeriodDays: forecastDays,
     });
 
-  } catch (err) {
+  } catch (err: unknown) {
     console.error('[Forecast] Unexpected error:', err);
     return NextResponse.json<ForecastResponse>(
       { success: false, forecast: [], totalBookings: 0, forecastPeriodDays: 0, error: err instanceof Error ? err.message : 'Unknown error' },

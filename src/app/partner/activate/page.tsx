@@ -25,7 +25,7 @@ export default function PartnerActivatePage() {
         setStep('error');
         setError(data.error || 'Token không hợp lệ hoặc đã hết hạn');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[validateToken] Error:', err);
       setStep('error');
       setError('Có lỗi xảy ra. Vui lòng thử lại sau.');
@@ -70,7 +70,7 @@ export default function PartnerActivatePage() {
       } else {
         alert(data.error || 'Kích hoạt thất bại');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[handleActivate] Error:', err);
       alert('Có lỗi xảy ra. Vui lòng thử lại.');
     } finally {

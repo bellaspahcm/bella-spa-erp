@@ -34,7 +34,7 @@ export function WaitlistStatsPanel({ tenantId }: WaitlistStatsPanelProps) {
           const data = await response.json();
           setStats(data);
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Error fetching waitlist stats:', err);
       } finally {
         setIsLoading(false);

@@ -488,12 +488,12 @@ export function useServicesPageState() {
       ) ? service.default_resource_type : 'bed',
       beforeAfterRequired: service.before_after_required === true,
       careNoteTemplate: service.care_note_template || '',
-      lisCode: (service.metadata as any)?.lisCode || '',
-      lisSampleType: (service.metadata as any)?.lisSampleType || '',
-      lisTubeColor: (service.metadata as any)?.lisTubeColor || '',
-      risCode: (service.metadata as any)?.risCode || '',
-      risModality: (service.metadata as any)?.risModality || 'XRAY',
-      risBodySite: (service.metadata as any)?.risBodySite || '',
+      lisCode: (service.metadata as unknown)?.lisCode || '',
+      lisSampleType: (service.metadata as unknown)?.lisSampleType || '',
+      lisTubeColor: (service.metadata as unknown)?.lisTubeColor || '',
+      risCode: (service.metadata as unknown)?.risCode || '',
+      risModality: (service.metadata as unknown)?.risModality || 'XRAY',
+      risBodySite: (service.metadata as unknown)?.risBodySite || '',
     });
     setMaterialRows([]);
     setIsModalOpen(true);
@@ -675,7 +675,7 @@ export function useServicesPageState() {
         ? form.moduleKey
         : getDefaultTenantModuleKey(enabledModules);
 
-      const metadata: Record<string, any> = {};
+      const metadata: Record<string, unknown> = {};
       if (form.serviceKind === 'lis_test') {
         metadata.lisCode = form.lisCode || undefined;
         metadata.lisSampleType = form.lisSampleType || undefined;

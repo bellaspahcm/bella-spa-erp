@@ -105,7 +105,7 @@ export default function SystemMonitorPage() {
     try {
       const data = await getSystemMonitorSummary(`${monthValue}-01`);
       setSummary(data);
-    } catch (err) {
+    } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Không thể tải trung tâm giám sát hệ thống.';
       toast.error(message);
     } finally {

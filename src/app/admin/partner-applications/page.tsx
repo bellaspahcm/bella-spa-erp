@@ -64,7 +64,7 @@ export default function PartnerApplicationsPage() {
       } else {
         throw new Error(data.error || 'Failed to load applications');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       setError('Failed to load applications');
       console.error('[loadApplications] Error:', err);
       setApplications([]);

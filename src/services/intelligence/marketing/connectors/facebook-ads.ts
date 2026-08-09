@@ -36,7 +36,7 @@ export interface FacebookAdInsight {
   cpc: number; // cost per click
   cpa: number; // cost per acquisition
   roas: number; // return on ad spend
-  rawData?: Record<string, any>; // Full API response for debugging
+  rawData?: Record<string, unknown>; // Full API response for debugging
 }
 
 /**

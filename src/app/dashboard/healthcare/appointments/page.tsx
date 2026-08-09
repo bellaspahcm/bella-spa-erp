@@ -738,7 +738,7 @@ function AppointmentCenterContent() {
                 ].map((mode) => (
                   <button
                     key={mode.value}
-                    onClick={() => setScheduleView(mode.value as any)}
+                    onClick={() => setScheduleView(mode.value as unknown)}
                     className={`px-2 py-1 rounded-lg uppercase tracking-wider transition-all cursor-pointer ${
                       scheduleView === mode.value 
                         ? 'bg-white text-cyan-600 shadow-3xs font-black' 

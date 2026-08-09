@@ -29,7 +29,7 @@ interface TimelineEntry {
   summary: string;
   outcomeType: 'approved' | 'rejected' | 'modified' | 'info';
   timestamp: string;
-  output: Record<string, any>;
+  output: Record<string, unknown>;
   confidenceScore?: number;
 }
 
@@ -67,7 +67,7 @@ export default function DecisionHistoryTimeline({
         }
 
         setTimeline(result.timeline || []);
-      } catch (err) {
+      } catch (err: unknown) {
         setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
         setLoading(false);
@@ -240,7 +240,7 @@ export function CompactDecisionTimeline({
           // Take only recent items
           setTimeline((result.timeline || []).slice(0, maxItems));
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Failed to fetch timeline:', err);
       } finally {
         setLoading(false);

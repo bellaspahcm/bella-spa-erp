@@ -52,7 +52,7 @@ export async function createDraftApplication(
         registration_type: 'partner',
         documents: '[]',
         metadata: '{}',
-      } as any)
+      } as Database['public']['Tables']['partner_applications']['Insert'])
       .select()
       .single();
     
@@ -66,7 +66,7 @@ export async function createDraftApplication(
     
     return {
       success: true,
-      application: application as any, // Types mismatch: Json vs PartnerApplicationDocument[]
+      application: application as unknown as PartnerApplication, // Types mismatch: Json vs PartnerApplicationDocument[]
     };
   } catch (error) {
     console.error('[createDraftApplication] Exception:', error);
@@ -91,7 +91,7 @@ export async function updateDraftApplication(
     // Update application
     const { data: application, error } = await supabase
       .from('partner_applications')
-      .update(data as any)
+      .update(data as Database['public']['Tables']['partner_applications']['Update'])
       .eq('id', applicationId)
       .eq('status', 'draft') // Only allow updating drafts
       .select()
@@ -114,7 +114,7 @@ export async function updateDraftApplication(
     
     return {
       success: true,
-      application: application as any, // Types mismatch: Json vs PartnerApplicationDocument[]
+      application: application as unknown as PartnerApplication, // Types mismatch: Json vs PartnerApplicationDocument[]
     };
   } catch (error) {
     console.error('[updateDraftApplication] Exception:', error);
@@ -148,7 +148,7 @@ export async function submitApplication(
         submitted_at: new Date().toISOString(),
         verification_token: verificationToken,
         verification_token_expires_at: tokenExpiresAt.toISOString(),
-      } as any)
+      } as Database['public']['Tables']['partner_applications']['Update'])
       .eq('id', applicationId)
       .eq('status', 'draft')
       .select()
@@ -184,7 +184,7 @@ export async function submitApplication(
     
     return {
       success: true,
-      application: application as any, // Types mismatch: Json vs PartnerApplicationDocument[]
+      application: application as unknown as PartnerApplication, // Types mismatch: Json vs PartnerApplicationDocument[]
     };
   } catch (error) {
     console.error('[submitApplication] Exception:', error);
@@ -250,7 +250,7 @@ export async function verifyEmail(token: string): Promise<EmailVerificationRespo
         email_verified_at: new Date().toISOString(),
         status: 'pending_review',
         updated_at: new Date().toISOString(),
-      } as any)
+      } as Database['public']['Tables']['partner_applications']['Update'])
       .eq('id', application.id);
     
     if (updateError) {
@@ -269,12 +269,12 @@ export async function verifyEmail(token: string): Promise<EmailVerificationRespo
         action: 'email_verified',
         action_description: 'Email verified successfully',
         performed_by_role: 'system',
-      } as any);
+      } as Database['public']['Tables']['partner_application_logs']['Insert']);
     
     return {
       success: true,
       application_id: application.id,
-      status: 'pending_review' as any,
+      status: 'pending_review' as PartnerApplicationStatus,
     };
   } catch (error) {
     console.error('[verifyEmail] Exception:', error);
@@ -321,7 +321,7 @@ export async function resendVerificationEmail(
       .update({
         verification_token: verificationToken,
         verification_token_expires_at: tokenExpiresAt.toISOString(),
-      } as any)
+      } as Database['public']['Tables']['partner_applications']['Update'])
       .eq('id', applicationId)
       .select()
       .single();
@@ -339,7 +339,7 @@ export async function resendVerificationEmail(
     
     return {
       success: true,
-      application: application as any, // Types mismatch: Json vs PartnerApplicationDocument[]
+      application: application as unknown as PartnerApplication, // Types mismatch: Json vs PartnerApplicationDocument[]
     };
   } catch (error) {
     console.error('[resendVerificationEmail] Exception:', error);
@@ -388,7 +388,7 @@ export async function uploadDocument(
       .getPublicUrl(fileName);
     
     const document: PartnerApplicationDocument = {
-      type: documentType as any,
+      type: documentType as PartnerApplicationDocument['type'],
       url: urlData.publicUrl,
       uploaded_at: new Date().toISOString(),
       file_name: file.name,
@@ -409,12 +409,12 @@ export async function uploadDocument(
       };
     }
     
-    const existingDocs = (existingApp.documents as any[]) || [];
+    const existingDocs = (existingApp.documents as unknown as PartnerApplicationDocument[]) || [];
     const updatedDocuments = [...existingDocs, document];
     
     const { error: updateError } = await supabase
       .from('partner_applications')
-      .update({ documents: updatedDocuments } as any)
+      .update({ documents: updatedDocuments as unknown as Database['public']['Tables']['partner_applications']['Update']['documents'] })
       .eq('id', applicationId);
     
     if (updateError) {
@@ -432,7 +432,7 @@ export async function uploadDocument(
       action_description: `Document uploaded: ${documentType}`,
       performed_by_role: 'system',
       metadata: { document_type: documentType, file_name: file.name },
-    } as any);
+    } as Database['public']['Tables']['partner_application_logs']['Insert']);
     
     return {
       success: true,
@@ -480,7 +480,7 @@ export async function getApplicationById(
     
     return {
       success: true,
-      application: application as any, // Types mismatch: Json vs PartnerApplicationDocument[]
+      application: application as unknown as PartnerApplication, // Types mismatch: Json vs PartnerApplicationDocument[]
     };
   } catch (error) {
     console.error('[getApplicationById] Exception:', error);
@@ -525,7 +525,7 @@ export async function getApplicationByEmail(
     
     return {
       success: true,
-      application: applications[0] as any,
+      application: applications[0] as unknown as PartnerApplication,
     };
   } catch (error) {
     console.error('[getApplicationByEmail] Exception:', error);

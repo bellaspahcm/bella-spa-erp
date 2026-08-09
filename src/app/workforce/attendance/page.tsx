@@ -14,7 +14,8 @@ export default function AttendanceAndCheckIn() {
   const [activeTab, setActiveTab] = useState<'shift' | 'project'>('shift');
   const [projects, setProjects] = useState<RealEstateProjectSummary[]>([]);
   const [checkIns, setCheckIns] = useState<ProjectCheckInRecord[]>([]);
-  const [todayAttendance, setTodayAttendance] = useState<any>(null);
+  type KTVAttendance = Awaited<ReturnType<typeof getKTVTodayAttendance>>;
+  const [todayAttendance, setTodayAttendance] = useState<KTVAttendance>(null);
   
   const [isLoading, setIsLoading] = useState(true);
   const [isActionLoading, setIsActionLoading] = useState(false);
@@ -39,7 +40,7 @@ export default function AttendanceAndCheckIn() {
       if (projs.length > 0) {
         setSelectedProjectId(projs[0].id);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[Attendance] Fetch failed:', err);
       toast.error('Lỗi khi tải dữ liệu chấm công');
     } finally {
@@ -72,7 +73,7 @@ export default function AttendanceAndCheckIn() {
         accuracy: position.coords.accuracy
       });
       toast.success('Đã lấy tọa độ định vị thành công!');
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('GPS permission failed:', err);
       toast.error('Không thể truy cập GPS. Vui lòng cho phép định vị trong cài đặt.');
     } finally {
@@ -90,7 +91,7 @@ export default function AttendanceAndCheckIn() {
       } else {
         toast.error(res.error || 'Check-in thất bại');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi kết nối khi check-in');
     } finally {
       setIsActionLoading(false);
@@ -107,7 +108,7 @@ export default function AttendanceAndCheckIn() {
       } else {
         toast.error(res.error || 'Check-out thất bại');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi kết nối khi check-out');
     } finally {
       setIsActionLoading(false);
@@ -141,7 +142,7 @@ export default function AttendanceAndCheckIn() {
       } else {
         toast.error(res.error || 'Check-in dự án thất bại');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi kết nối khi check-in dự án');
     } finally {
       setIsActionLoading(false);
@@ -270,7 +271,7 @@ export default function AttendanceAndCheckIn() {
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Mục đích check-in</label>
                 <select
                   value={visitPurpose}
-                  onChange={(e: any) => setVisitPurpose(e.target.value)}
+                  onChange={(e: Record<string, unknown>) => setVisitPurpose(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-750 rounded-2xl px-4 py-3.5 text-xs outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
                 >
                   <option value="customer_tour">Dẫn khách xem nhà mẫu</option>

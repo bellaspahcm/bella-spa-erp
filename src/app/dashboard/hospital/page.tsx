@@ -3,6 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { InpatientAdmission, Bed, Ward } from '@/types/healthcare';
 import { InpatientAdmissionService, BedEngineService, NursingVitalsService, MARService } from '@/services/healthcare-hospital-services';
+import { ClinicalAlertsService } from '@/services/healthcare/clinical-alerts-service';
+import { EmergencyService, type EmergencyStats } from '@/services/healthcare/emergency-service';
+import { ICUService, type ICUStats } from '@/services/healthcare/icu-service';
+import { OperatingRoomService, type OperatingRoomStats } from '@/services/healthcare/operating-room-service';
+import { PatientFlowService, type PatientFlowStats } from '@/services/healthcare/patient-flow-service';
+import { LaboratoryService, type LaboratoryStats, type ImagingStats } from '@/services/healthcare/laboratory-service';
+import ClinicalActionModal, { ClinicalAlert } from '@/components/hospital/ClinicalActionModal';
 import {
   Hospital,
   Bed as BedIcon,
@@ -60,6 +67,17 @@ export default function HospitalDashboardPage() {
     abnormalVitals: 0,
   });
   const [currentTime, setCurrentTime] = useState<string>('');
+  const [clinicalAlerts, setClinicalAlerts] = useState<ClinicalAlert[]>([]);
+  const [selectedAlert, setSelectedAlert] = useState<ClinicalAlert | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // New state for additional modules
+  const [emergencyStats, setEmergencyStats] = useState<EmergencyStats | null>(null);
+  const [icuStats, setICUStats] = useState<ICUStats | null>(null);
+  const [orStats, setORStats] = useState<OperatingRoomStats | null>(null);
+  const [flowStats, setFlowStats] = useState<PatientFlowStats | null>(null);
+  const [labStats, setLabStats] = useState<LaboratoryStats | null>(null);
+  const [imagingStats, setImagingStats] = useState<ImagingStats | null>(null);
 
   const updateTime = () => {
     const now = new Date();
@@ -77,15 +95,44 @@ export default function HospitalDashboardPage() {
 
   const loadDashboardData = async () => {
     try {
-      const [admData, bedsData, _wardsData] = await Promise.all([
-        InpatientAdmissionService.getInpatientAdmissions('bella_healthcare'),
-        BedEngineService.getHospitalBeds('bella_healthcare'),
-        BedEngineService.getHospitalWards('bella_healthcare'),
+      const tenantId = 'bella_healthcare';
+
+      // Load all data in parallel
+      const [
+        admData,
+        bedsData,
+        _wardsData,
+        alerts,
+        erStats,
+        icuData,
+        orData,
+        flowData,
+        lisData,
+        risData
+      ] = await Promise.all([
+        InpatientAdmissionService.getInpatientAdmissions(tenantId),
+        BedEngineService.getHospitalBeds(tenantId),
+        BedEngineService.getHospitalWards(tenantId),
+        ClinicalAlertsService.getActiveAlerts(tenantId),
+        EmergencyService.getERStats(tenantId),
+        ICUService.getICUStats(tenantId),
+        OperatingRoomService.getORStats(tenantId),
+        PatientFlowService.getFlowStats(tenantId),
+        LaboratoryService.getLabStats(tenantId),
+        LaboratoryService.getImagingStats(tenantId)
       ]);
 
-      const activeAdm = admData.filter((a) => a.status === 'admitted');
-      const occupiedBedsCount = bedsData.filter((b) => b.status === 'occupied').length;
-      const availableBedsCount = bedsData.filter((b) => b.status === 'available').length;
+      setClinicalAlerts(alerts);
+      setEmergencyStats(erStats);
+      setICUStats(icuData);
+      setORStats(orData);
+      setFlowStats(flowData);
+      setLabStats(lisData);
+      setImagingStats(risData);
+
+      const activeAdm = admData.filter((a: InpatientAdmission) => a.status === 'admitted');
+      const occupiedBedsCount = bedsData.filter((b: Bed) => b.status === 'occupied').length;
+      const availableBedsCount = bedsData.filter((b: Bed) => b.status === 'available').length;
       const occupancyRate = bedsData.length > 0 ? (occupiedBedsCount / bedsData.length) * 100 : 0;
 
       // Load MAR data for active admissions
@@ -93,9 +140,9 @@ export default function HospitalDashboardPage() {
       let totalOverdueMAR = 0;
       for (const adm of activeAdm) {
         const marRecords = await MARService.getMARByAdmission(adm.id);
-        totalPendingMAR += marRecords.filter((m) => m.status === 'scheduled').length;
+        totalPendingMAR += marRecords.filter((m: { status: string }) => m.status === 'scheduled').length;
         totalOverdueMAR += marRecords.filter(
-          (m) => m.status === 'scheduled' && new Date(m.scheduled_time) < new Date()
+          (m: { status: string; scheduled_time: string }) => m.status === 'scheduled' && new Date(m.scheduled_time) < new Date()
         ).length;
       }
 
@@ -105,7 +152,7 @@ export default function HospitalDashboardPage() {
       for (const adm of activeAdm.slice(0, 5)) {
         const vitals = await NursingVitalsService.getVitalSignsByAdmission(adm.id);
         totalRecentVitals += vitals.length;
-        totalAbnormalVitals += vitals.filter((v) => {
+        totalAbnormalVitals += vitals.filter((v: { temperature: number; heart_rate: number; systolic_bp: number; spo2: number }) => {
           return (
             v.temperature < 36.0 ||
             v.temperature > 37.5 ||
@@ -142,8 +189,44 @@ export default function HospitalDashboardPage() {
     return () => clearInterval(interval);
   }, []);
 
+  const handleAlertClick = (alert: ClinicalAlert) => {
+    setSelectedAlert(alert);
+    setIsModalOpen(true);
+  };
+
+  const handleAlertAction = async (alertId: string, action: string, notes?: string) => {
+    try {
+      await ClinicalAlertsService.processAlert({
+        alertId,
+        action,
+        processedBy: 'current-user-id', // TODO: Get from auth context
+        notes,
+      });
+
+      // Reload alerts after processing
+      const updatedAlerts = await ClinicalAlertsService.getActiveAlerts('bella_healthcare');
+      setClinicalAlerts(updatedAlerts);
+
+      // Show success notification (you can integrate with toast library)
+      console.log('Alert processed successfully');
+    } catch (error) {
+      console.error('Failed to process alert:', error);
+      throw error;
+    }
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800">
+      {/* Clinical Action Modal */}
+      <ClinicalActionModal
+        alert={selectedAlert}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedAlert(null);
+        }}
+        onAction={handleAlertAction}
+      />
       {/* 4. HOSPITAL STATUS BAR */}
       <div className="bg-slate-900 text-slate-200 px-6 py-2 rounded-2xl flex items-center justify-between shadow-md border border-slate-800 text-[10px] md:text-[11px] font-bold tracking-wide">
         <div className="flex items-center space-x-4 flex-wrap">
@@ -258,13 +341,13 @@ export default function HospitalDashboardPage() {
             </div>
           </div>
           <div className="my-3">
-            <div className="text-3xl font-black text-rose-600">24</div>
+            <div className="text-3xl font-black text-rose-600">{emergencyStats?.totalPatients || 24}</div>
             <div className="text-xs text-slate-500 font-semibold mt-1.5">
-              Chờ khám: <span className="text-rose-600 font-bold">8</span> • Nguy kịch: <span className="text-rose-700 font-bold">2</span> • Phân loại: <span className="text-amber-600 font-bold">3</span>
+              Chờ khám: <span className="text-rose-600 font-bold">{emergencyStats?.waitingTriage || 8}</span> • Nguy kịch: <span className="text-rose-700 font-bold">{emergencyStats?.critical || 2}</span> • Phân loại: <span className="text-amber-600 font-bold">{emergencyStats?.triaging || 3}</span>
             </div>
           </div>
           <div className="text-xs font-bold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-md self-start">
-            1 Bệnh nhân đang chờ giường ICU
+            {emergencyStats?.waitingBed || 1} Bệnh nhân đang chờ giường ICU
           </div>
         </div>
 
@@ -277,14 +360,14 @@ export default function HospitalDashboardPage() {
             </div>
           </div>
           <div className="my-3">
-            <div className="text-3xl font-black text-slate-900">12/14</div>
+            <div className="text-3xl font-black text-slate-900">{icuStats?.occupiedBeds || 12}/{icuStats?.totalBeds || 14}</div>
             <div className="text-xs text-slate-500 font-semibold mt-1.5">
-              Thở máy: <span className="text-purple-600 font-bold">4</span> • Cảnh báo cao: <span className="text-indigo-600 font-bold">2</span>
+              Thở máy: <span className="text-purple-600 font-bold">{icuStats?.ventilatedPatients || 4}</span> • Cảnh báo cao: <span className="text-indigo-600 font-bold">{icuStats?.criticalAlerts || 2}</span>
             </div>
           </div>
           <div className="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md self-start flex items-center space-x-1">
             <AlertCircle className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
-            <span>01 Cảnh báo chưa xác nhận</span>
+            <span>{icuStats?.highAlerts || 1} Cảnh báo chưa xác nhận</span>
           </div>
         </div>
 
@@ -297,13 +380,13 @@ export default function HospitalDashboardPage() {
             </div>
           </div>
           <div className="my-3">
-            <div className="text-3xl font-black text-slate-900">18 <span className="text-xs text-slate-400 font-medium">Ca mổ</span></div>
+            <div className="text-3xl font-black text-slate-900">{orStats?.totalSurgeriesToday || 18} <span className="text-xs text-slate-400 font-medium">Ca mổ</span></div>
             <div className="text-xs text-slate-500 font-semibold mt-1.5">
-              Đang mổ: <span className="text-emerald-600 font-bold">3</span> • Xong: <span className="text-slate-500 font-bold">11</span> • Trễ lịch: <span className="text-amber-600 font-bold">2</span>
+              Đang mổ: <span className="text-emerald-600 font-bold">{orStats?.inProgress || 3}</span> • Xong: <span className="text-slate-500 font-bold">{orStats?.completed || 11}</span> • Trễ lịch: <span className="text-amber-600 font-bold">{orStats?.delayed || 2}</span>
             </div>
           </div>
           <div className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md self-start">
-            P.Mổ 01, P.Mổ 03: Đang thực hiện
+            {orStats?.roomsInUse || 3}/{orStats?.totalRooms || 6} Phòng mổ đang hoạt động
           </div>
         </div>
       </div>
@@ -321,91 +404,88 @@ export default function HospitalDashboardPage() {
                 </h2>
               </div>
               <span className="text-xs font-bold bg-rose-50 text-rose-700 px-3 py-1 rounded-full">
-                07 Nhiệm Vụ Cần Xử Lý
+                {clinicalAlerts.length > 0 ? `${clinicalAlerts.length.toString().padStart(2, '0')} Nhiệm Vụ Cần Xử Lý` : 'Không Có Cảnh Báo'}
               </span>
             </div>
 
             <div className="space-y-3">
-              {/* Critical Alert */}
-              <div className="flex items-start justify-between p-3.5 bg-rose-50 rounded-2xl border border-rose-100 group hover:bg-rose-100/50 transition-colors">
-                <div className="flex items-start space-x-3">
-                  <div className="p-2 bg-rose-500 text-white rounded-xl mt-0.5">
-                    <ShieldAlert className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-rose-950 flex items-center space-x-2">
-                      <span>Cảnh Báo Tương Tác Thuốc Nguy Cấp (CDS)</span>
-                      <span className="text-[9px] uppercase tracking-wider font-extrabold bg-rose-200 text-rose-900 px-1.5 py-0.5 rounded">NGUY CẤP</span>
-                    </div>
-                    <p className="text-xs text-rose-900/80 mt-1 leading-relaxed">
-                      Phát hiện tương tác thuốc nghiêm trọng giữa Warfarin + Aspirin trên Bệnh nhân <span className="font-bold">Trần Thị B (MPI-8923)</span> tại Khoa Cấp Cứu.
-                    </p>
-                    <div className="text-[10px] text-rose-800 font-semibold mt-2">
-                      Kích hoạt 12 phút trước • BS phụ trách: Nguyễn Văn A
-                    </div>
-                  </div>
-                </div>
-                <button className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-sm shadow-rose-900/10 self-center">
-                  Xem xét
-                </button>
-              </div>
+              {/* Render dynamic alerts */}
+              {clinicalAlerts.slice(0, 3).map((alert) => {
+                const isUrgent = alert.priority === 'urgent';
+                const bgColor = isUrgent ? 'bg-rose-50' : 'bg-amber-50';
+                const borderColor = isUrgent ? 'border-rose-100' : 'border-amber-100';
+                const textColor = isUrgent ? 'text-rose-950' : 'text-amber-950';
+                const badgeColor = isUrgent ? 'bg-rose-200 text-rose-900' : 'bg-amber-200 text-amber-900';
+                const buttonColor = isUrgent ? 'bg-rose-600 hover:bg-rose-700' : 'bg-amber-600 hover:bg-amber-700';
+                
+                let IconComponent = ShieldAlert;
+                if (alert.type === 'vital_abnormal') {
+                  IconComponent = Heart;
+                } else if (alert.type === 'medication_verification') {
+                  IconComponent = Pill;
+                }
 
-              {/* Vital Abnormal Alert */}
-              <div className="flex items-start justify-between p-3.5 bg-rose-50 rounded-2xl border border-rose-100 group hover:bg-rose-100/50 transition-colors">
-                <div className="flex items-start space-x-3">
-                  <div className="p-2 bg-rose-500 text-white rounded-xl mt-0.5">
-                    <Heart className="w-4 h-4 animate-pulse" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-rose-950 flex items-center space-x-2">
-                      <span>Ghi Nhận Sinh Hiệu Bất Thường</span>
-                      <span className="text-[9px] uppercase tracking-wider font-extrabold bg-rose-200 text-rose-900 px-1.5 py-0.5 rounded">NGUY CẤP</span>
+                return (
+                  <div
+                    key={alert.id}
+                    className={`flex items-start justify-between p-3.5 ${bgColor} rounded-2xl border ${borderColor} group hover:bg-opacity-75 transition-colors cursor-pointer`}
+                    onClick={() => handleAlertClick(alert)}
+                  >
+                    <div className="flex items-start space-x-3 flex-1">
+                      <div className={`p-2 ${isUrgent ? 'bg-rose-500' : 'bg-amber-500'} text-white rounded-xl mt-0.5`}>
+                        <IconComponent className={`w-4 h-4 ${alert.type === 'vital_abnormal' ? 'animate-pulse' : ''}`} />
+                      </div>
+                      <div className="flex-1">
+                        <div className={`text-sm font-bold ${textColor} flex items-center space-x-2 flex-wrap`}>
+                          <span>{alert.title}</span>
+                          <span className={`text-[9px] uppercase tracking-wider font-extrabold ${badgeColor} px-1.5 py-0.5 rounded`}>
+                            {isUrgent ? 'NGUY CẤP' : 'ƯU TIÊN CAO'}
+                          </span>
+                        </div>
+                        <p className={`text-xs ${isUrgent ? 'text-rose-900/80' : 'text-amber-900/80'} mt-1 leading-relaxed`}>
+                          {alert.description}
+                        </p>
+                        <div className={`text-[10px] ${isUrgent ? 'text-rose-800' : 'text-amber-800'} font-semibold mt-2`}>
+                          Kích hoạt {alert.triggeredAt}
+                          {alert.assignedTo && ` • Phụ trách: ${alert.assignedTo}`}
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-xs text-rose-900/80 mt-1 leading-relaxed">
-                      Chỉ số SpO2 giảm xuống <span className="font-bold text-rose-700">92%</span> (Ngưỡng an toàn: 95%) ở Bệnh nhân <span className="font-bold">Lê Hoàng M (MPI-1234)</span>, Buồng Ward-304.
-                    </p>
-                    <div className="text-[10px] text-rose-800 font-semibold mt-2">
-                      Kích hoạt 5 phút trước • ĐD phụ trách: Lê Thị D
-                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAlertClick(alert);
+                      }}
+                      className={`${buttonColor} text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-sm self-center ml-3`}
+                    >
+                      {alert.actionRequired === 'review' ? 'Xem xét' : 
+                       alert.actionRequired === 'confirm' ? 'Xác nhận' : 
+                       alert.actionRequired === 'verify' ? 'Xác minh' : 'Xử lý'}
+                    </button>
                   </div>
-                </div>
-                <button className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-sm shadow-rose-900/10 self-center">
-                  Xác nhận
-                </button>
-              </div>
+                );
+              })}
 
-              {/* High-priority task */}
-              <div className="flex items-start justify-between p-3.5 bg-amber-50 rounded-2xl border border-amber-100 group hover:bg-amber-100/50 transition-colors">
-                <div className="flex items-start space-x-3">
-                  <div className="p-2 bg-amber-500 text-white rounded-xl mt-0.5">
-                    <Pill className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-amber-950 flex items-center space-x-2">
-                      <span>Đang Chờ Xác Minh Kép Thuốc Nguy Cơ Cao</span>
-                      <span className="text-[9px] uppercase tracking-wider font-extrabold bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded">ƯU TIÊN CAO</span>
-                    </div>
-                    <p className="text-xs text-amber-900/80 mt-1 leading-relaxed">
-                      Yêu cầu xác minh kép liều Insulin trước khi thực hiện tiêm cho Bệnh nhân <span className="font-bold">Phan Huy L (Buồng Ward-202)</span>.
-                    </p>
-                    <div className="text-[10px] text-amber-800 font-semibold mt-2">
-                      Kích hoạt 15 phút trước • Phụ trách: Điều dưỡng trưởng ca
-                    </div>
-                  </div>
+              {clinicalAlerts.length === 0 && (
+                <div className="text-center py-8 text-slate-500">
+                  <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-emerald-500" />
+                  <p className="text-sm font-semibold">Không có cảnh báo nào cần xử lý</p>
                 </div>
-                <button className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-sm shadow-amber-900/10 self-center">
-                  Xác minh
-                </button>
-              </div>
-            </div>
+              )}
+
           </div>
 
           <div className="mt-4 border-t border-slate-100 pt-4 flex justify-between items-center text-xs font-bold text-slate-500">
-            <span>Cảnh báo vận hành: 4 nhiệm vụ chưa hoàn thành</span>
+            <span>
+              {clinicalAlerts.length > 0 
+                ? `Cảnh báo vận hành: ${clinicalAlerts.length} nhiệm vụ chưa hoàn thành` 
+                : 'Hệ thống hoạt động bình thường'}
+            </span>
             <Link href="/dashboard/hospital/queue" className="text-rose-600 hover:text-rose-700 flex items-center space-x-1 group">
               <span>Xem Trung Tâm Cảnh Báo</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
             </Link>
+          </div>
           </div>
         </div>
 
@@ -426,11 +506,11 @@ export default function HospitalDashboardPage() {
                 <div>
                   <div className="text-sm font-bold text-slate-800">Khoa Hồi Sức Tích Cực (ICU)</div>
                   <div className="text-[10px] text-slate-500 font-semibold mt-1">
-                    Đã chiếm: <span className="text-slate-800 font-bold">12</span> • Tổng số: <span className="text-slate-800">14</span>
+                    Đã chiếm: <span className="text-slate-800 font-bold">{icuStats?.occupiedBeds || 12}</span> • Tổng số: <span className="text-slate-800">{icuStats?.totalBeds || 14}</span>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs font-extrabold text-rose-600 bg-rose-50 px-2 py-1 rounded-lg">85% công suất</div>
+                  <div className="text-xs font-extrabold text-rose-600 bg-rose-50 px-2 py-1 rounded-lg">{icuStats?.occupancyRate.toFixed(0) || 85}% công suất</div>
                 </div>
               </div>
 
@@ -439,11 +519,13 @@ export default function HospitalDashboardPage() {
                 <div>
                   <div className="text-sm font-bold text-slate-800">Khoa Nội Trú & Lâm Sàng Chung</div>
                   <div className="text-[10px] text-slate-500 font-semibold mt-1">
-                    Đã chiếm: <span className="text-slate-800 font-bold">44</span> • Tổng số: <span className="text-slate-800">66</span>
+                    Đã chiếm: <span className="text-slate-800 font-bold">{stats.occupiedBeds - (icuStats?.occupiedBeds || 12)}</span> • Tổng số: <span className="text-slate-800">{stats.totalBeds - (icuStats?.totalBeds || 14)}</span>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs font-extrabold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">66% công suất</div>
+                  <div className="text-xs font-extrabold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">
+                    {(((stats.occupiedBeds - (icuStats?.occupiedBeds || 12)) / (stats.totalBeds - (icuStats?.totalBeds || 14))) * 100).toFixed(0)}% công suất
+                  </div>
                 </div>
               </div>
 
@@ -485,7 +567,16 @@ export default function HospitalDashboardPage() {
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-8 gap-3 relative">
           {/* Flow Nodes */}
-          {[
+          {flowStats ? [
+            { step: 'Cấp Cứu (ED)', ...flowStats.emergency },
+            { step: 'Phân Loại (Triage)', ...flowStats.triage },
+            { step: 'Phòng Khám (OPD)', ...flowStats.outpatient },
+            { step: 'Cận Lâm Sàng', ...flowStats.diagnostics },
+            { step: 'Thủ Tục Nhập Viện', ...flowStats.admissionProcess },
+            { step: 'Nội Trú / ICU', ...flowStats.inpatient },
+            { step: 'Phẫu Thuật (OR)', ...flowStats.surgery },
+            { step: 'Lên Lịch Xuất Viện', ...flowStats.discharge },
+          ] : [
             { step: 'Cấp Cứu (ED)', count: 24, badge: '2 Nguy Kịch', badgeColor: 'bg-rose-100 text-rose-800 border-rose-200' },
             { step: 'Phân Loại (Triage)', count: 18, badge: '3 Đang Chờ', badgeColor: 'bg-amber-100 text-amber-800 border-amber-200' },
             { step: 'Phòng Khám (OPD)', count: 42, badge: 'Đang Khám', badgeColor: 'bg-blue-100 text-blue-800 border-blue-200' },
@@ -533,19 +624,19 @@ export default function HospitalDashboardPage() {
               <div className="p-3 bg-slate-50 border border-slate-100 rounded-2xl">
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-extrabold uppercase text-slate-500 tracking-wider">Xét Nghiệm (LIS)</span>
-                  <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded">2 Kết Quả Khẩn</span>
+                  <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded">{labStats?.urgent || 2} Kết Quả Khẩn</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2 mt-2 text-center text-xs font-bold">
                   <div className="bg-white p-2 rounded-xl border border-slate-100">
-                    <div className="text-slate-900 font-extrabold">34</div>
+                    <div className="text-slate-900 font-extrabold">{labStats?.totalOrders || 34}</div>
                     <div className="text-[9px] text-slate-400">Chỉ định</div>
                   </div>
                   <div className="bg-white p-2 rounded-xl border border-slate-100">
-                    <div className="text-indigo-600 font-extrabold">28</div>
+                    <div className="text-indigo-600 font-extrabold">{labStats?.sampleReceived || 28}</div>
                     <div className="text-[9px] text-slate-400">Đã nhận mẫu</div>
                   </div>
                   <div className="bg-white p-2 rounded-xl border border-slate-100">
-                    <div className="text-amber-600 font-extrabold">4</div>
+                    <div className="text-amber-600 font-extrabold">{labStats?.inProgress || 4}</div>
                     <div className="text-[9px] text-slate-400">Đang chạy KQ</div>
                   </div>
                 </div>
@@ -555,19 +646,19 @@ export default function HospitalDashboardPage() {
               <div className="p-3 bg-slate-50 border border-slate-100 rounded-2xl">
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-extrabold uppercase text-slate-500 tracking-wider">Chẩn Đoán Hình Ảnh & PACS (RIS)</span>
-                  <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">1 Cảnh Báo PACS</span>
+                  <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">{imagingStats?.pacsAlerts || 1} Cảnh Báo PACS</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2 mt-2 text-center text-xs font-bold">
                   <div className="bg-white p-2 rounded-xl border border-slate-100">
-                    <div className="text-slate-900 font-extrabold">18</div>
+                    <div className="text-slate-900 font-extrabold">{imagingStats?.totalOrders || 18}</div>
                     <div className="text-[9px] text-slate-400">Chỉ định</div>
                   </div>
                   <div className="bg-white p-2 rounded-xl border border-slate-100">
-                    <div className="text-indigo-600 font-extrabold">10</div>
+                    <div className="text-indigo-600 font-extrabold">{imagingStats?.scheduled || 10}</div>
                     <div className="text-[9px] text-slate-400">Đã lên lịch</div>
                   </div>
                   <div className="bg-white p-2 rounded-xl border border-slate-100">
-                    <div className="text-emerald-600 font-extrabold">4</div>
+                    <div className="text-emerald-600 font-extrabold">{imagingStats?.completed || 4}</div>
                     <div className="text-[9px] text-slate-400">Đã trả KQ PACS</div>
                   </div>
                 </div>

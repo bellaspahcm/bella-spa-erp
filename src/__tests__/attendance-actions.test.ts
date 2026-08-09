@@ -30,6 +30,10 @@ jest.mock('../lib/supabase-server', () => ({
   createClient: jest.fn(() => Promise.resolve({ from: mockFrom })),
 }));
 
+jest.mock('../services/notification-helpers', () => ({
+  createSystemNotification: jest.fn().mockResolvedValue(undefined),
+}));
+
 class MockQueryBuilder {
   constructor(private data: any = null, private error: any = null) {}
 

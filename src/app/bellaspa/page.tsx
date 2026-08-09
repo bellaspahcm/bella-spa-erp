@@ -137,7 +137,7 @@ export default function LandingPage() {
         setBookingDate('');
         setBookingNotes('');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Có lỗi xảy ra, vui lòng thử lại sau.');
       console.error(err);
     } finally {

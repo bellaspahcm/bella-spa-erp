@@ -216,7 +216,7 @@ export default function GlobalSearchPage() {
             });
           });
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error("Error searching leads: ", err);
       }
 

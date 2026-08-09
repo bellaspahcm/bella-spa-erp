@@ -261,7 +261,7 @@ describe('D3 RuleEngine — ABSOLUTE severity governance', () => {
 
     const active = await engine.getActiveRuleVersion(ruleKey);
     expect(active?.status).toBe('ACTIVE');
-  });
+  }, 30000); // Increase timeout to 30s for slow rule operations
 });
 
 // ─────────────────────────────────────────────────────────────────

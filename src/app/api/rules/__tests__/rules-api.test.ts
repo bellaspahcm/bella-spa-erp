@@ -51,7 +51,7 @@ describe('Rule Management API', () => {
       .from('users')
       .insert({
         tenant_id: testTenantId,
-        email: 'test-rules@example.com',
+        email: `test-rules-${Date.now()}@example.com`,
         full_name: 'Test User - Rules',
         role: 'admin'
       })

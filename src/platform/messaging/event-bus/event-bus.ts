@@ -34,7 +34,7 @@ class EventBus {
     for (const handler of list) {
       try {
         await handler(event as SystemEvent<unknown>);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('[EventBus] Error handling event %s:', event.name, err);
       }
     }

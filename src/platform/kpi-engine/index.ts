@@ -179,7 +179,7 @@ class KpiEngineClass {
           deltaPercent = (delta / Math.abs(prevValue)) * 100;
         }
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[KpiEngine] Compute failed for key %s:', key, err);
       value = null;
     }

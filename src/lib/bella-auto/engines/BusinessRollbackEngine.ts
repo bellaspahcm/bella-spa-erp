@@ -4,13 +4,14 @@
  */
 
 import { getPrimaryClient } from '@/lib/database/read-replica';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 export interface RollbackStep {
   id: string;
   table_name: string;
   record_id: string;
   operation: 'delete' | 'update' | 'restore';
-  restore_data?: any;
+  restore_data?: unknown;
   depends_on_step_id?: string;
   order: number;
 }
@@ -34,6 +35,78 @@ export interface RollbackResult {
 }
 
 export class BusinessRollbackEngine {
+  private supabaseClient?: SupabaseClient;
+
+  constructor(supabase?: SupabaseClient) {
+    this.supabaseClient = supabase;
+  }
+
+  async executeRollback(params: {
+    transactionId: string;
+    reason: string;
+    executedBy: string;
+    executedByEmail: string;
+  }): Promise<{ success: boolean; error?: string; stepsRolledBack?: number }> {
+    const client = this.supabaseClient || getPrimaryClient();
+    try {
+      // 1. Fetch steps for the transaction
+      const { data: steps, error: stepsError } = await client
+        .from('auto_transaction_steps')
+        .select('*')
+        .eq('transaction_id', params.transactionId)
+        .order('step_order', { ascending: false }); // execute in reverse order
+
+      if (stepsError) throw stepsError;
+      if (!steps || steps.length === 0) {
+        return { success: false, error: 'No steps found for transaction' };
+      }
+
+      // 2. Perform compensating action for each step
+      for (const step of steps) {
+        // If action_type is INSERT, compensating action is to DELETE the record
+        if (step.action_type === 'INSERT') {
+          const { error } = await client
+            .from(step.target_table)
+            .delete()
+            .eq('id', step.target_record_id);
+          if (error) throw error;
+        } 
+        // If action_type is UPDATE, compensating action is to RESTORE before_snapshot
+        else if (step.action_type === 'UPDATE' && step.before_snapshot) {
+          const { error } = await client
+            .from(step.target_table)
+            .update(step.before_snapshot)
+            .eq('id', step.target_record_id);
+          if (error) throw error;
+        }
+
+        // Update step status to rolled_back
+        await client
+          .from('auto_transaction_steps')
+          .update({ status: 'rolled_back', rolled_back_at: new Date().toISOString() })
+          .eq('id', step.id);
+      }
+
+      // 3. Update business transaction status to rolled_back
+      await client
+        .from('auto_business_transactions')
+        .update({
+          status: 'rolled_back',
+          rollback_reason: params.reason,
+          rolled_back_at: new Date().toISOString(),
+          rolled_back_by: params.executedBy,
+        })
+        .eq('id', params.transactionId);
+
+      return { success: true, stepsRolledBack: steps.length };
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Unknown error during rollback',
+      };
+    }
+  }
+
   /**
    * Analyze dependent cascades for a given entity
    */

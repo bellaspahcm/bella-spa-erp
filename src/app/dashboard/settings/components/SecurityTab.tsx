@@ -95,7 +95,7 @@ export default function SecurityTab() {
         setNewPassword("");
         setConfirmPassword("");
       }
-    } catch (err) {
+    } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "unknown";
       toast.error("Đã xảy ra lỗi: " + msg);
     } finally {

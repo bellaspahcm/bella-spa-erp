@@ -21,6 +21,23 @@ import type {
   RecommendationCache,
 } from './types';
 
+interface RecommendationResultBase {
+  algorithmName?: string;
+  algorithmVersion?: string;
+  relevanceScore?: number;
+  confidenceScore?: number;
+  diversityScore?: number;
+  context?: unknown;
+}
+
+interface CacheRecordRow {
+  relevance_score?: number | null;
+  confidence_score?: number | null;
+  hit_count?: number | null;
+  recommendation_type?: string | null;
+}
+
+
 // ============================================================================
 // TYPE EXTENSIONS
 // ============================================================================
@@ -207,7 +224,7 @@ export class RecommendationService {
           computationTime,
         },
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         data: {} as UpsellRecommendationResult,
@@ -220,7 +237,7 @@ export class RecommendationService {
         },
         error: {
           code: 'RECOMMENDATION_ERROR',
-          message: error.message || 'Failed to generate upsell recommendations',
+          message: error instanceof Error ? error.message : 'Failed to generate upsell recommendations',
           details: error,
         },
       };
@@ -289,7 +306,7 @@ export class RecommendationService {
           computationTime,
         },
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         data: {} as PackageRecommendationResult,
@@ -302,7 +319,7 @@ export class RecommendationService {
         },
         error: {
           code: 'RECOMMENDATION_ERROR',
-          message: error.message || 'Failed to generate package recommendations',
+          message: error instanceof Error ? error.message : 'Failed to generate package recommendations',
           details: error,
         },
       };
@@ -343,24 +360,25 @@ export class RecommendationService {
     const supabase = await createClient();
     
     const expiresAt = new Date(Date.now() + CACHE_TTL).toISOString();
+    const resultBase = result as unknown as RecommendationResultBase;
     
     const cacheRecord = {
       tenant_id: tenantId,
       recommendation_type: recommendationType,
       customer_id: customerId,
-      algorithm_name: (result as any).algorithmName,
-      algorithm_version: (result as any).algorithmVersion,
+      algorithm_name: resultBase.algorithmName,
+      algorithm_version: resultBase.algorithmVersion,
       recommendations: result,
-      relevance_score: (result as any).relevanceScore,
-      confidence_score: (result as any).confidenceScore,
-      diversity_score: (result as any).diversityScore,
-      context: (result as any).context,
+      relevance_score: resultBase.relevanceScore,
+      confidence_score: resultBase.confidenceScore,
+      diversity_score: resultBase.diversityScore,
+      context: resultBase.context,
       cache_key: cacheKey,
       expires_at: expiresAt,
     };
     
-    const { error } = await (supabase.from as (table: string) => any)('recommendation_cache')
-      .upsert(cacheRecord, {
+    const { error } = await supabase.from('recommendation_cache' as never)
+      .upsert(cacheRecord as never, {
         onConflict: 'tenant_id,cache_key',
       });
     
@@ -377,16 +395,16 @@ export class RecommendationService {
   ): Promise<void> {
     const supabase = await createClient();
     
-    let query = (supabase.from as (table: string) => any)('recommendation_cache')
+    let query = supabase.from('recommendation_cache' as never)
       .delete()
       .eq('tenant_id', tenantId);
     
     if (customerId) {
-      query = query.eq('customer_id', customerId);
+      query = query.eq('customer_id', customerId) as never;
     }
     
     if (recommendationType) {
-      query = query.eq('recommendation_type', recommendationType);
+      query = query.eq('recommendation_type', recommendationType) as never;
     }
     
     const { error } = await query;
@@ -404,11 +422,11 @@ export class RecommendationService {
     tenantId: string,
     startDate: string,
     endDate: string
-  ): Promise<any> {
+  ): Promise<unknown> {
     const supabase = await createClient();
     
     // Query recommendation cache for analytics
-    const { data, error } = await (supabase.from as (table: string) => any)('recommendation_cache')
+    const { data, error } = await supabase.from('recommendation_cache' as never)
       .select('*')
       .eq('tenant_id', tenantId)
       .gte('created_at', startDate)
@@ -419,15 +437,16 @@ export class RecommendationService {
     }
     
     // Calculate metrics
-    const totalRecommendations = data.length;
-    const avgRelevance = data.reduce((sum: number, r: any) => sum + (r.relevance_score || 0), 0) / totalRecommendations;
-    const avgConfidence = data.reduce((sum: number, r: any) => sum + (r.confidence_score || 0), 0) / totalRecommendations;
-    const cacheHitRate = data.reduce((sum: number, r: any) => sum + (r.hit_count > 0 ? 1 : 0), 0) / totalRecommendations;
+    const totalRecommendations = (data as unknown[]).length;
+    const typedData = data as unknown as CacheRecordRow[];
+    const avgRelevance = typedData.reduce((sum: number, r: CacheRecordRow) => sum + (r.relevance_score || 0), 0) / totalRecommendations;
+    const avgConfidence = typedData.reduce((sum: number, r: CacheRecordRow) => sum + (r.confidence_score || 0), 0) / totalRecommendations;
+    const cacheHitRate = typedData.reduce((sum: number, r: CacheRecordRow) => sum + ((r.hit_count ?? 0) > 0 ? 1 : 0), 0) / totalRecommendations;
     
     const byType = {
-      service: data.filter((r: any) => r.recommendation_type === 'service').length,
-      upsell: data.filter((r: any) => r.recommendation_type === 'upsell').length,
-      package: data.filter((r: any) => r.recommendation_type === 'package').length,
+      service: typedData.filter((r) => r.recommendation_type === 'service').length,
+      upsell: typedData.filter((r) => r.recommendation_type === 'upsell').length,
+      package: typedData.filter((r) => r.recommendation_type === 'package').length,
     };
     
     return {

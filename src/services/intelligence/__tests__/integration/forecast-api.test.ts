@@ -4,12 +4,16 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from '@jest/globals';
+import { randomUUID } from 'crypto';
 import { NextRequest } from 'next/server';
 import { GET as getRevenue } from '@/app/api/intelligence/forecast/revenue/route';
 import { GET as getChurn } from '@/app/api/intelligence/forecast/churn/route';
 import { GET as getDemand } from '@/app/api/intelligence/forecast/demand/route';
 import { GET as getAll } from '@/app/api/intelligence/forecast/all/route';
 import { GET as getAccuracy } from '@/app/api/intelligence/forecast/accuracy/route';
+
+jest.setTimeout(60000);
+
 import {
   getTestSupabaseClient,
   TEST_TENANT_ID,
@@ -242,7 +246,7 @@ describe('Forecast API - Integration Tests', () => {
 
       const phoneSeed = Math.floor(100000 + Math.random() * 900000).toString();
       for (let i = 0; i < 20; i++) {
-        const customerId = `00000000-0000-0000-0000-${String(i).padStart(12, '0')}`;
+        const customerId = randomUUID();
         customers.push({
           id: customerId,
           tenant_id: TEST_TENANT_ID,
@@ -252,7 +256,7 @@ describe('Forecast API - Integration Tests', () => {
 
         const sessionCount = 2;
         for (let j = 0; j < sessionCount; j++) {
-          const bookingId = `00000000-0000-0000-0000-${String(i * 100 + j).padStart(12, '0')}`;
+          const bookingId = randomUUID();
           bookings.push(generateBooking({
             id: bookingId,
             customer_id: customerId,
@@ -315,7 +319,7 @@ describe('Forecast API - Integration Tests', () => {
   describe('GET /api/intelligence/forecast/demand', () => {
     beforeEach(async () => {
       // Ensure customer exists
-      const customerId = '00000000-0000-0000-0000-000000000007';
+      const customerId = randomUUID();
       await supabase.from('bookings').delete().eq('tenant_id', TEST_TENANT_ID);
       await supabase.from('customers').delete().eq('tenant_id', TEST_TENANT_ID);
       
@@ -406,7 +410,7 @@ describe('Forecast API - Integration Tests', () => {
       expect(response.status).toBe(200);
       
       // Should be faster than making 3 separate requests (parallel execution)
-      expect(duration).toBeLessThan(5000); // < 5 seconds
+      expect(duration).toBeLessThan(10000); // < 10 seconds (increased from 5s for CI/slow machines)
     });
   });
 

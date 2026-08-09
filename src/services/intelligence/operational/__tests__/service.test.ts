@@ -16,30 +16,33 @@
  */
 
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
-import type { KtvPerformance, KtvLeaderboardEntry } from '../queries';
 import type { CacheService } from '../../shared/types';
 
 // ─── Mock Dependencies ──────────────────────────────────────────────────────
 
-// Mock query functions (MUST be before service import)
-jest.mock('../queries', () => ({
-  getKtvPerformance: jest.fn(),
-  getKtvLeaderboard: jest.fn(),
+// Mock queries-simple module using alias path to ensure Jest resolver matches correctly
+jest.mock('@/services/intelligence/operational/queries-simple', () => ({
+  __esModule: true,
+  getKTVPerformance: jest.fn(),
+  getKTVLeaderboard: jest.fn(),
   getInventoryStatus: jest.fn(),
   getInventoryForecast: jest.fn(),
   getSessionAnalytics: jest.fn(),
   getCapacityUtilization: jest.fn(),
 }));
 
-// Import service AFTER mocking queries
-import { OperationalIntelligenceService } from '../service';
+// Load service dynamically after registering mock
+const { OperationalIntelligenceService } = require('../service');
+
+// Import mocked functions via requireMock
+const queriesSimple = jest.requireMock('@/services/intelligence/operational/queries-simple') as any;
 
 // Create mock cache instance (will be passed to service constructor)
 const createMockCache = (): jest.Mocked<CacheService> => ({
   get: jest.fn(),
   set: jest.fn(),
   delete: jest.fn(),
-  deletePattern: jest.fn(), // ← Correct method name from CacheService interface
+  deletePattern: jest.fn(),
   deleteByTag: jest.fn(),
   healthCheck: jest.fn().mockResolvedValue(true),
   clear: jest.fn(),
@@ -51,13 +54,15 @@ const createMockCache = (): jest.Mocked<CacheService> => ({
   }),
 });
 
-
 // ─── Mock Data ──────────────────────────────────────────────────────────────
 
-const mockKtvPerformanceData: KtvPerformance[] = [
+const TEST_TENANT_ID = '6ba7b810-9dad-41d1-80b4-00c04fd430c8';
+const TEST_KTV_ID = '550e8400-e29b-41d4-a716-446655440000';
+
+const mockKtvPerformanceData = [
   {
-    ktvId: '550e8400-e29b-41d4-a716-446655440000',
-    tenantId: '6ba7b810-9dad-41d1-80b4-00c04fd430c8',
+    ktvId: TEST_KTV_ID,
+    tenantId: TEST_TENANT_ID,
     ktvName: 'Nguyễn Thị Hoa',
     ktvEmail: 'hoa.nguyen@example.com',
     ktvPhone: '0901234567',
@@ -86,7 +91,7 @@ const mockKtvPerformanceData: KtvPerformance[] = [
   },
 ];
 
-const mockLeaderboardData: KtvLeaderboardEntry[] = [
+const mockLeaderboardData = [
   {
     rank: 1,
     ktvId: 'ktv-1',
@@ -109,13 +114,11 @@ const mockLeaderboardData: KtvLeaderboardEntry[] = [
   },
 ];
 
-
 // ─── Test Suite ─────────────────────────────────────────────────────────────
 
 describe('OperationalIntelligenceService', () => {
-  let service: OperationalIntelligenceService;
+  let service: any;
   let mockCache: jest.Mocked<CacheService>;
-  let queryMocks: any;
 
   beforeEach(() => {
     // Clear all mocks
@@ -128,18 +131,15 @@ describe('OperationalIntelligenceService', () => {
     mockCache.get.mockResolvedValue(null);
     mockCache.set.mockResolvedValue(undefined);
     mockCache.delete.mockResolvedValue(undefined);
-    mockCache.deletePattern.mockResolvedValue(undefined); // ← Correct method name
+    mockCache.deletePattern.mockResolvedValue(undefined);
     mockCache.deleteByTag.mockResolvedValue(undefined);
     mockCache.getStats.mockResolvedValue({
       hits: 0,
       misses: 0,
       hitRate: 0,
       totalKeys: 0,
-    });
+    } as any);
 
-    // Get query mocks (for checking calls, not actual execution)
-    queryMocks = require('../queries');
-    
     // Create service instance with mock cache
     service = new OperationalIntelligenceService(mockCache);
   });
@@ -149,23 +149,23 @@ describe('OperationalIntelligenceService', () => {
   });
 
   // ───────────────────────────────────────────────────────────────────────────
-  // Test 1: Cache Hit Scenario (Only test cache, not database queries)
+  // Test 1: Cache Hit Scenario
   // ───────────────────────────────────────────────────────────────────────────
 
   describe('Cache Hit Scenarios', () => {
     it('should return cached data on cache hit for getKtvPerformance', async () => {
-      // Simulate cache hit with pre-populated data
       mockCache.get.mockResolvedValue(mockKtvPerformanceData);
 
       const result = await service.getKtvPerformance(
-        '550e8400-e29b-41d4-a716-446655440000',
+        TEST_TENANT_ID,
+        TEST_KTV_ID,
         'month'
       );
 
       // Verify cache was checked
       expect(mockCache.get).toHaveBeenCalledTimes(1);
       expect(mockCache.get).toHaveBeenCalledWith(
-        expect.stringContaining('operational::550e8400-e29b-41d4-a716-446655440000:ktvPerformance')
+        expect.stringContaining(`operational::${TEST_KTV_ID}:ktvPerformance`)
       );
 
       // Verify cache was NOT written (already exists)
@@ -175,8 +175,6 @@ describe('OperationalIntelligenceService', () => {
       expect(result.metadata.cacheHit).toBe(true);
       expect(result.metadata.dataSourcesUsed).toEqual(['cache']);
       expect(result.data).toEqual(mockKtvPerformanceData);
-
-      // Verify query time is fast (< 50ms for cache hit)
       expect(result.metadata.queryTimeMs).toBeLessThan(50);
     });
 
@@ -184,7 +182,7 @@ describe('OperationalIntelligenceService', () => {
       mockCache.get.mockResolvedValue(mockLeaderboardData);
 
       const result = await service.getKtvLeaderboard(
-        '6ba7b810-9dad-41d1-80b4-00c04fd430c8',
+        TEST_TENANT_ID,
         'month'
       );
 
@@ -203,7 +201,7 @@ describe('OperationalIntelligenceService', () => {
     it('should build correct cache key for KTV performance queries', async () => {
       mockCache.get.mockResolvedValue(mockKtvPerformanceData);
 
-      await service.getKtvPerformance('test-ktv-id', 'month');
+      await service.getKtvPerformance(TEST_TENANT_ID, 'test-ktv-id', 'month');
 
       expect(mockCache.get).toHaveBeenCalledWith(
         expect.stringMatching(/operational::test-ktv-id:ktvPerformance:.*/)
@@ -213,14 +211,13 @@ describe('OperationalIntelligenceService', () => {
     it('should build correct cache key for leaderboard queries', async () => {
       mockCache.get.mockResolvedValue(mockLeaderboardData);
 
-      await service.getKtvLeaderboard('test-tenant-id', 'week', 'revenue', 5);
+      await service.getKtvLeaderboard(TEST_TENANT_ID, 'week', 'revenue', 5);
 
       expect(mockCache.get).toHaveBeenCalledWith(
-        expect.stringMatching(/operational::test-tenant-id:ktvLeaderboard:.*/)
+        expect.stringMatching(/operational::6ba7b810-9dad-41d1-80b4-00c04fd430c8:ktvLeaderboard:.*/)
       );
     });
   });
-
 
   // ───────────────────────────────────────────────────────────────────────────
   // Test 3: healthCheck Method
@@ -228,9 +225,8 @@ describe('OperationalIntelligenceService', () => {
 
   describe('healthCheck', () => {
     it('should return true when cache is healthy', async () => {
-      // Mock cache methods for health check flow
       mockCache.set.mockResolvedValue(undefined);
-      mockCache.get.mockResolvedValue({ test: true }); // ← Must return test data
+      mockCache.get.mockResolvedValue({ test: true });
       mockCache.delete.mockResolvedValue(undefined);
 
       const isHealthy = await service.healthCheck();
@@ -247,8 +243,7 @@ describe('OperationalIntelligenceService', () => {
 
     it('should return false when cache is unhealthy', async () => {
       mockCache.set.mockResolvedValue(undefined);
-      mockCache.get.mockResolvedValue(null); // ← Cache get failed/returned null
-      mockCache.delete.mockResolvedValue(undefined);
+      mockCache.get.mockResolvedValue(null);
 
       const isHealthy = await service.healthCheck();
 
@@ -270,18 +265,16 @@ describe('OperationalIntelligenceService', () => {
 
   describe('clearCache', () => {
     it('should clear all operational cache entries', async () => {
-      mockCache.deletePattern.mockResolvedValue(undefined); // ← Correct method name
+      mockCache.deletePattern.mockResolvedValue(undefined);
 
       await service.clearCache();
 
-      // Verify deletePattern was called with operational prefix
       expect(mockCache.deletePattern).toHaveBeenCalledWith('operational::*');
     });
 
     it('should propagate cache clearing errors', async () => {
       mockCache.deletePattern.mockRejectedValue(new Error('Cache clear failed'));
 
-      // Should throw IntelligenceError (not swallow error)
       await expect(service.clearCache()).rejects.toThrow('Failed to clear operational intelligence cache');
     });
   });
@@ -292,20 +285,15 @@ describe('OperationalIntelligenceService', () => {
 
   describe('Cache Error Resilience', () => {
     it('should handle cache read errors gracefully (log warning, continue)', async () => {
-      // Cache read fails
       mockCache.get.mockRejectedValue(new Error('Cache read failed'));
+      queriesSimple.getKTVPerformance.mockRejectedValue(new Error('Database error'));
 
-      // Service should log warning but not throw - will attempt database query
-      // (In this unit test, we can't execute real query, so we expect it to fail at query stage)
-      // This test verifies cache error is caught and logged, not propagated immediately
-      
       await expect(
-        service.getKtvPerformance('test-ktv-id', 'month')
-      ).rejects.toThrow(); // Will fail at query stage (no mock), but cache error was handled
+        service.getKtvPerformance(TEST_TENANT_ID, 'test-ktv-id', 'month')
+      ).rejects.toThrow('Database error');
 
-      // Verify cache was attempted
       expect(mockCache.get).toHaveBeenCalled();
+      expect(queriesSimple.getKTVPerformance).toHaveBeenCalledWith(TEST_TENANT_ID, 'test-ktv-id');
     });
   });
 });
-

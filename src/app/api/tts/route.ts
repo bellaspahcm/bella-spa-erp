@@ -29,8 +29,8 @@ export async function GET(request: Request) {
         'Cache-Control': 'public, max-age=31536000'
       }
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[TTS API Route Error]:', error);
-    return new NextResponse(error.message || 'Internal Server Error', { status: 500 });
+    return new NextResponse(error instanceof Error ? error.message : 'Internal Server Error', { status: 500 });
   }
 }

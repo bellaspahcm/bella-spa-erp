@@ -130,7 +130,7 @@ export class DecisionEngineContext {
       }
 
       return result;
-    } catch (err) {
+    } catch (err: unknown) {
       // Provider execution failed
       success = false;
       error = err instanceof Error ? err : new Error(String(err));
@@ -198,7 +198,7 @@ export class DecisionEngineContext {
       }
 
       return result;
-    } catch (err) {
+    } catch (err: unknown) {
       // Provider execution failed
       success = false;
       error = err instanceof Error ? err : new Error(String(err));

@@ -61,7 +61,7 @@ export function useInventoryForecast(days: number = 30) {
       } else {
         throw new Error(data.error || 'Unknown error');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[useInventoryForecast] Error:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch forecast');
       setForecast([]);

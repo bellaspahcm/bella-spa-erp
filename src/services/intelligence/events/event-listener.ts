@@ -272,7 +272,7 @@ export class BusinessEventListener implements EventListener {
           entityId: row.reference_id,
           entityType: row.reference_type,
           timestamp: new Date(row.created_at),
-          payload: (row.payload as Record<string, any>) || {},
+          payload: (row.payload as Record<string, unknown>) || {},
         };
 
         await this.emit(businessEvent);

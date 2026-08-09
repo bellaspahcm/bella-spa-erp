@@ -34,6 +34,7 @@ import type {
   ProviderCategory,
   GateEvaluationResult,
 } from './types';
+import type { Rule, Condition } from '../../types';
 
 /**
  * Payroll Provider
@@ -430,7 +431,7 @@ export class PayrollProvider {
   private calculateKPIBonus(
     sessions: number,
     strategy: string,
-    params: Record<string, any>
+    params: Record<string, unknown>
   ): number {
     switch (strategy) {
       case 'threshold': {
@@ -461,7 +462,7 @@ export class PayrollProvider {
         ];
         
         const matchedTier = tiers.find(
-          (t: any) => sessions >= t.min && sessions <= t.max
+          (t: Record<string, unknown>) => sessions >= t.min && sessions <= t.max
         );
         
         return matchedTier ? matchedTier.bonus : 0;
@@ -480,7 +481,7 @@ export class PayrollProvider {
     lateDays: number,
     absentDays: number,
     strategy: string,
-    params: Record<string, any>
+    params: Record<string, unknown>
   ): number {
     const latePenalty = params.latePenalty || 50000;
     const absentPenalty = params.absentPenalty || 200000;
@@ -507,7 +508,7 @@ export class PayrollProvider {
   private calculateRatingBonus(
     avgRating: number,
     strategy: string,
-    params: Record<string, any>
+    params: Record<string, unknown>
   ): number {
     switch (strategy) {
       case 'threshold': {
@@ -538,7 +539,7 @@ export class PayrollProvider {
         ];
         
         const matchedTier = tiers.find(
-          (t: any) => avgRating >= t.min && avgRating <= t.max
+          (t: Record<string, unknown>) => avgRating >= t.min && avgRating <= t.max
         );
         
         return matchedTier ? matchedTier.bonus : 0;
@@ -558,7 +559,7 @@ export class PayrollProvider {
     revenue: number,
     serviceTypes: Record<string, number>,
     strategy: string,
-    params: Record<string, any>
+    params: Record<string, unknown>
   ): number {
     switch (strategy) {
       case 'fixed': {
@@ -574,7 +575,7 @@ export class PayrollProvider {
         ];
         
         const matchedTier = tiers.find(
-          (t: any) => sessions >= t.min && sessions <= t.max
+          (t: Record<string, unknown>) => sessions >= t.min && sessions <= t.max
         );
         
         return matchedTier ? sessions * matchedTier.rate : 0;
@@ -734,7 +735,7 @@ export class PayrollProvider {
    * Create policy from rules
    * @private
    */
-  private createPolicy(id: string, name: string, rules: any[]): Policy {
+  private createPolicy(id: string, name: string, rules: Rule[]): Policy {
     // RuleReasoner evaluates rules in ASCENDING priority order
     // Payroll rules already have correct priority order (200-350)
     // No need to invert like DiscountProvider
@@ -759,7 +760,7 @@ export class PayrollProvider {
    * Convert Platform Rule condition to RuleReasoner condition
    * @private
    */
-  private convertConditionToReasoner(condition: any): any {
+  private convertConditionToReasoner(condition: Condition): Condition {
     if (condition.type === 'simple') {
       return {
         type: 'comparison',
@@ -773,7 +774,7 @@ export class PayrollProvider {
       return {
         type: 'operator',
         operator: 'and',
-        conditions: condition.conditions.map((c: any) =>
+        conditions: condition.conditions.map((c: Record<string, unknown>) =>
           this.convertConditionToReasoner(c)
         ),
       };
@@ -783,7 +784,7 @@ export class PayrollProvider {
       return {
         type: 'operator',
         operator: 'or',
-        conditions: condition.conditions.map((c: any) =>
+        conditions: condition.conditions.map((c: Record<string, unknown>) =>
           this.convertConditionToReasoner(c)
         ),
       };

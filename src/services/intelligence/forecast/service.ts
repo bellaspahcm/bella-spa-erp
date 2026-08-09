@@ -119,7 +119,7 @@ export class ForecastService {
         },
         error: {
           code: 'FORECAST_ERROR',
-          message: err.message || 'Failed to generate revenue forecast',
+          message: err instanceof Error ? err.message : 'Failed to generate revenue forecast',
           details: error,
         },
       };
@@ -198,7 +198,7 @@ export class ForecastService {
         },
         error: {
           code: 'FORECAST_ERROR',
-          message: err.message || 'Failed to generate churn forecast',
+          message: err instanceof Error ? err.message : 'Failed to generate churn forecast',
           details: error,
         },
       };
@@ -278,7 +278,7 @@ export class ForecastService {
         },
         error: {
           code: 'FORECAST_ERROR',
-          message: err.message || 'Failed to generate demand forecast',
+          message: err instanceof Error ? err.message : 'Failed to generate demand forecast',
           details: error,
         },
       };
@@ -346,7 +346,7 @@ export class ForecastService {
     const supabase = await createClient();
     
     try {
-      type SupabaseFrom = { from: (t: string) => any };
+      type SupabaseFrom = { from: (t: string) => { select: (cols: string) => { eq: (...args: unknown[]) => { eq: (...args: unknown[]) => { order: (col: string) => Promise<{ data: Record<string, unknown>[] | null; error: { message: string } | null }> } } } } };
       const { data, error } = await (supabase as unknown as SupabaseFrom)
         .from('mv_forecast_accuracy')
         .select('*')
@@ -373,7 +373,7 @@ export class ForecastService {
   ): Promise<ModelComparisonResult[]> {
     const supabase = await createClient();
     
-    type SupabaseRpc = { rpc: (fn: string, params: Record<string, unknown>) => any };
+    type SupabaseRpc = { rpc: (fn: string, params: Record<string, unknown>) => Promise<{ data: Record<string, unknown>[] | null; error: { message: string } | null }> };
     const { data, error } = await (supabase as unknown as SupabaseRpc).rpc('compare_forecast_models', {
       p_tenant_id: tenantId,
       p_forecast_type: forecastType,

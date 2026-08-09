@@ -269,7 +269,7 @@ export async function getKtvPerformance(
     
     // Query materialized view (use rpc or type-safe approach)
     const { data, error } = await supabase
-      .from('mv_ktv_performance_summary' as any)
+      .from('mv_ktv_performance_summary' as unknown)
       .select('*')
       .eq('ktv_id', ktvId)
       .gte('month', formatDate(range.startDate))
@@ -354,7 +354,7 @@ export async function getKtvLeaderboard(
     
     // Query materialized view (type-cast needed for MV support)
     const { data, error } = await supabase
-      .from('mv_ktv_performance_summary' as any)
+      .from('mv_ktv_performance_summary' as unknown)
       .select('*')
       .eq('tenant_id', tenantId)
       .gte('month', formatDate(range.startDate))
@@ -446,7 +446,7 @@ export async function getInventoryStatus(
     
     // Build query (type-cast needed for MV support)
     let query = supabase
-      .from('mv_inventory_status' as any)
+      .from('mv_inventory_status' as unknown)
       .select('*')
       .eq('tenant_id', tenantId);
     
@@ -525,7 +525,7 @@ export async function getInventoryForecast(
     
     // Query materialized view for product (type-cast needed for MV support)
     const { data, error } = await supabase
-      .from('mv_inventory_status' as any)
+      .from('mv_inventory_status' as unknown)
       .select('*')
       .eq('product_id', productId)
       .single();
@@ -607,7 +607,7 @@ export async function getSessionAnalytics(
     
     // Query materialized view (type-cast needed for MV support)
     const { data, error } = await supabase
-      .from('mv_session_analytics' as any)
+      .from('mv_session_analytics' as unknown)
       .select('*')
       .eq('tenant_id', tenantId)
       .gte('date', formatDate(range.startDate))
@@ -687,7 +687,7 @@ export async function getCapacityUtilization(
     
     // Query session analytics for capacity metrics (type-cast needed for MV support)
     const { data: sessionData, error: sessionError } = await supabase
-      .from('mv_session_analytics' as any)
+      .from('mv_session_analytics' as unknown)
       .select('*')
       .eq('tenant_id', tenantId)
       .gte('date', formatDate(range.startDate))

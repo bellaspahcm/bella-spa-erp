@@ -57,7 +57,7 @@ export function KtvSuggestionPanel({
         setError(result.error || 'Không tìm thấy đề xuất KTV.');
         setSuggestions([]);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
       setError('Lỗi khi kết nối với Decision Engine.');
     } finally {
@@ -80,7 +80,7 @@ export function KtvSuggestionPanel({
         } else {
           toast.error(res.error || 'Có lỗi xảy ra khi lưu chỉ định.');
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error(err);
         toast.error('Lỗi kết nối máy chủ.');
       } finally {

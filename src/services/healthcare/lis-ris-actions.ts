@@ -21,7 +21,7 @@ export async function createLabOrdersAction(input: {
   testItems: Array<{ testCode: string; testName: string; sampleType?: string; tubeColor?: string }>;
 }): Promise<{ success: boolean; data?: LabOrderItem[]; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     // 1. Insert parent Clinical Order
@@ -89,19 +89,19 @@ export async function createLabOrdersAction(input: {
     await supabase.from('audit_logs').insert({
       tenant_id: tenantId,
       action: 'HEALTHCARE_EVENT_EMITTED',
-      details: domainEvent as any
+      details: domainEvent as unknown as Record<string, unknown>
     });
 
     return { success: true, data: (insertedItems || []) as LabOrderItem[] };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi hệ thống khi tạo chỉ định xét nghiệm' };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : 'Lỗi hệ thống khi tạo chỉ định xét nghiệm' };
   }
 }
 
 // Lấy danh sách Y lệnh Xét nghiệm theo Encounter
 export async function getLabOrdersAction(encounterId: string): Promise<{ success: boolean; data?: LabOrderItem[]; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     const { data, error } = await supabase
@@ -116,8 +116,8 @@ export async function getLabOrdersAction(encounterId: string): Promise<{ success
     }
 
     return { success: true, data: (data || []) as LabOrderItem[] };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi lấy thông tin xét nghiệm' };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : 'Lỗi lấy thông tin xét nghiệm' };
   }
 }
 
@@ -132,7 +132,7 @@ export async function verifyLabResultAction(input: {
   verifiedBy: string;
 }): Promise<{ success: boolean; isPanicValue?: boolean; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     const { data: labOrder, error: updateError } = await supabase
@@ -180,12 +180,12 @@ export async function verifyLabResultAction(input: {
     await supabase.from('audit_logs').insert({
       tenant_id: tenantId,
       action: 'HEALTHCARE_EVENT_EMITTED',
-      details: domainEvent as any
+      details: domainEvent as unknown as Record<string, unknown>
     });
 
     return { success: true, isPanicValue: labOrder.is_panic_value };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi hệ thống khi duyệt kết quả xét nghiệm' };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : 'Lỗi hệ thống khi duyệt kết quả xét nghiệm' };
   }
 }
 
@@ -201,7 +201,7 @@ export async function createImagingOrderAction(input: {
   bodySite: string;
 }): Promise<{ success: boolean; data?: ImagingOrderItem; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     // Insert parent Clinical Order
@@ -242,8 +242,8 @@ export async function createImagingOrderAction(input: {
     }
 
     return { success: true, data: imagingOrder as ImagingOrderItem };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi tạo Y lệnh CĐHA' };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : 'Lỗi tạo Y lệnh CĐHA' };
   }
 }
 
@@ -254,7 +254,7 @@ export async function updateImagingReportAction(input: {
   radiologistId: string;
 }): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     const { error } = await supabase
@@ -272,7 +272,7 @@ export async function updateImagingReportAction(input: {
     }
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi cập nhật báo cáo CĐHA' };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : 'Lỗi cập nhật báo cáo CĐHA' };
   }
 }

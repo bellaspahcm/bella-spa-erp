@@ -48,7 +48,7 @@ interface MockQueryBuilder {
  * Each method returns a NEW instance to avoid conflicts
  */
 function createMockQueryBuilder(): MockQueryBuilder {
-  const mockBuilder: any = {
+  const mockBuilder: MockQueryBuilder = {
     select: jest.fn().mockImplementation(() => createMockQueryBuilder()),
     insert: jest.fn().mockImplementation(() => createMockQueryBuilder()),
     update: jest.fn().mockImplementation(() => createMockQueryBuilder()),

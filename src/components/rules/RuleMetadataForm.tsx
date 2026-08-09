@@ -31,46 +31,90 @@ export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormPro
   const vocab = useModuleVocabulary();
   const isRealEstate = vocab.booking.singular.includes('giữ chỗ') || vocab.worker.short === 'CVTV';
   const isCleaning = vocab.worker.short === 'NVS';
+  const isHealthcare = vocab.worker.short === 'Bác sĩ';
 
   const providers = [
     {
       value: 'booking',
-      label: isRealEstate ? 'Đơn giữ chỗ & Hợp đồng' : isCleaning ? 'Phiếu công việc & Ca làm' : 'Đặt lịch & Hẹn dịch vụ',
+      label: isRealEstate
+        ? 'Đơn giữ chỗ & Hợp đồng'
+        : isCleaning
+        ? 'Phiếu công việc & Ca làm'
+        : isHealthcare
+        ? 'Tiếp nhận & Buồng giường'
+        : 'Đặt lịch & Hẹn dịch vụ',
     },
-    { value: 'discount', label: 'Chiết khấu & Ưu đãi' },
-    { value: 'payroll', label: 'Tính lương & Thưởng' },
-    { value: 'commission', label: 'Hoa hồng & Doanh số' },
+    {
+      value: 'discount',
+      label: isHealthcare ? 'Khấu trừ & Giám định BHYT' : 'Chiết khấu & Ưu đãi',
+    },
+    {
+      value: 'payroll',
+      label: isHealthcare ? 'Lương & Trực y tế' : 'Tính lương & Thưởng',
+    },
+    {
+      value: 'commission',
+      label: isHealthcare ? 'Thù lao dịch vụ lâm sàng' : 'Hoa hồng & Doanh số',
+    },
     {
       value: 'inventory',
-      label: isRealEstate ? 'Giỏ hàng & Căn hộ' : isCleaning ? 'Vật tư & Trang thiết bị' : 'Kho hàng & Sản phẩm',
+      label: isRealEstate
+        ? 'Giỏ hàng & Căn hộ'
+        : isCleaning
+        ? 'Vật tư & Trang thiết bị'
+        : isHealthcare
+        ? 'Kho dược & Vật tư y tế'
+        : 'Kho hàng & Sản phẩm',
     },
   ];
 
   const categoryLabels: Record<string, string> = {
     // booking
-    assignment: isRealEstate ? 'Phân bổ tư vấn viên' : isCleaning ? 'Phân bổ nhân viên vệ sinh' : 'Phân bổ ca làm',
-    capacity: isRealEstate ? 'Hạn mức giữ chỗ' : 'Công suất phục vụ',
-    conflict: 'Xung đột lịch',
-    waitlist: isRealEstate ? 'Danh sách giữ chỗ hàng chờ' : 'Danh sách chờ',
-    priority: 'Độ ưu tiên xử lý',
+    assignment: isRealEstate
+      ? 'Phân bổ tư vấn viên'
+      : isCleaning
+      ? 'Phân bổ nhân viên vệ sinh'
+      : isHealthcare
+      ? 'Phân công kíp trực / Bác sĩ'
+      : 'Phân bổ ca làm',
+    capacity: isRealEstate
+      ? 'Hạn mức giữ chỗ'
+      : isHealthcare
+      ? 'Công suất buồng giường & Điều chuyển'
+      : 'Công suất phục vụ',
+    conflict: isHealthcare ? 'Xung đột kíp trực / Phòng mổ' : 'Xung đột lịch',
+    waitlist: isRealEstate
+      ? 'Danh sách giữ chỗ hàng chờ'
+      : isHealthcare
+      ? 'Hàng chờ tiếp nhận'
+      : 'Danh sách chờ',
+    priority: isHealthcare ? 'Mức độ ưu tiên phân cấp người bệnh (Triage)' : 'Độ ưu tiên xử lý',
     // discount
-    membership: 'Hạng thành viên / VIP',
-    campaign: 'Chiến dịch ưu đãi',
-    bundle: 'Gói sản phẩm / Combo',
-    referral: 'Giới thiệu khách hàng',
+    membership: isHealthcare ? 'Đối tượng bệnh nhân (BHYT / Tự nguyện)' : 'Hạng thành viên / VIP',
+    campaign: isHealthcare ? 'Chương trình miễn giảm / Hỗ trợ y tế' : 'Chiến dịch ưu đãi',
+    bundle: isHealthcare ? 'Gói chăm sóc / Phác đồ trọn gói' : 'Gói sản phẩm / Combo',
+    referral: isHealthcare ? 'Bệnh nhân chuyển tuyến' : 'Giới thiệu khách hàng',
     // payroll
-    kpi_bonus: 'Thưởng KPI',
-    attendance_deduction: 'Khấu trừ chuyên cần',
-    session_bonus: isRealEstate ? 'Thưởng giao dịch' : 'Hoa hồng ca làm',
-    rating_bonus: 'Thưởng đánh giá',
+    kpi_bonus: isHealthcare ? 'Phụ cấp kíp trực / Cấp cứu' : 'Thưởng KPI',
+    attendance_deduction: 'Khấu trừ vắng mặt',
+    session_bonus: isRealEstate ? 'Thưởng giao dịch' : isHealthcare ? 'Thù lao dịch vụ kỹ thuật lâm sàng' : 'Hoa hồng ca làm',
+    rating_bonus: isHealthcare ? 'Phụ cấp chuyên môn / Trực ca' : 'Thưởng đánh giá',
     // commission
-    service_commission: isRealEstate ? 'Hoa hồng tư vấn' : 'Hoa hồng dịch vụ',
-    product_commission: isRealEstate ? 'Hoa hồng bán căn hộ' : 'Hoa hồng bán sản phẩm',
-    performance_bonus: 'Thưởng hiệu suất',
+    service_commission: isRealEstate
+      ? 'Hoa hồng tư vấn'
+      : isHealthcare
+      ? 'Thù lao thủ thuật / Phẫu thuật'
+      : 'Hoa hồng dịch vụ',
+    product_commission: isRealEstate
+      ? 'Hoa hồng bán căn hộ'
+      : isHealthcare
+      ? 'Định mức kê đơn thuốc'
+      : 'Hoa hồng bán sản phẩm',
+    performance_bonus: isHealthcare ? 'Thưởng chất lượng điều trị (Clinical quality)' : 'Thưởng hiệu suất',
     // inventory
-    reorder: isRealEstate ? 'Cập nhật bảng hàng' : 'Đặt hàng lại',
-    allocation: isRealEstate ? 'Phân bổ giỏ hàng' : 'Phân bổ kho',
-    expiry: isRealEstate ? 'Hạn giữ chỗ căn' : 'Hạn sử dụng',
+    reorder: isRealEstate ? 'Cập nhật bảng hàng' : isHealthcare ? 'Hạn mức tồn kho an toàn thuốc' : 'Đặt hàng lại',
+    allocation: isRealEstate ? 'Phân bổ giỏ hàng' : isHealthcare ? 'Cấp phát thuốc nội trú' : 'Phân bổ kho',
+    expiry: isRealEstate ? 'Hạn giữ chỗ căn' : isHealthcare ? 'Cảnh báo hạn dùng thuốc / Vật tư' : 'Hạn sử dụng',
   };
 
   const handleChange = (field: string, value: unknown) => {

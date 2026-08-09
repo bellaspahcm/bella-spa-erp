@@ -77,7 +77,7 @@ export function AdjustmentsBreakdown({
         }));
 
         setAdjustments(adjustmentsData);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('[AdjustmentsBreakdown] Unexpected error:', err);
         setError('Lỗi hệ thống');
       } finally {

@@ -15,10 +15,10 @@ export interface RuleTemplate {
   description: string;
   category: 'pricing' | 'approval' | 'allocation' | 'notification';
   entityType: string;
-  conditionsTemplate: any[];
-  actionsTemplate: any[];
+  conditionsTemplate: unknown[];
+  actionsTemplate: unknown[];
   requiredParams: string[];
-  exampleConfig: any;
+  exampleConfig: unknown;
   isSystem: boolean;
 }
 
@@ -59,11 +59,7 @@ export function TemplateGallery({
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    fetchTemplates();
-  }, []);
-
-  const fetchTemplates = async () => {
+  async function fetchTemplates() {
     setIsLoading(true);
     try {
       // TODO: Replace with actual API call
@@ -182,7 +178,11 @@ export function TemplateGallery({
     } finally {
       setIsLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    fetchTemplates();
+  }, []);
 
   const filteredTemplates = templates.filter((template) => {
     // Category filter

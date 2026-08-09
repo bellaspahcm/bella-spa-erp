@@ -29,7 +29,7 @@ export default function KtvGuidesPage() {
         const permitted = ALL_GUIDES.filter((g) => isManualPermitted(role, g.slug));
         // For KTV, we only show 'ktv' and 'sop' (or whatever they are permitted)
         setGuides(permitted.filter(g => ['ktv', 'sop'].includes(g.slug)));
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Failed to load guides for KTV:', err);
       } finally {
         setIsLoading(false);

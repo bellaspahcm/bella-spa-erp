@@ -11,7 +11,7 @@ import { Trash2, Plus, Settings } from 'lucide-react';
 export interface RuleAction {
   id: string;
   type: 'require_approval' | 'auto_approve' | 'auto_reject' | 'set_discount_limit' | 'allocate_vehicle' | 'assign_sales_person' | 'trigger_notification' | 'create_task';
-  [key: string]: any;
+  [key: string]: string | number | boolean | undefined;
 }
 
 export interface ActionConfiguratorProps {
@@ -247,7 +247,7 @@ export function ActionConfigurator({
                   <div className="flex-1">
                     <select
                       value={action.type}
-                      onChange={(e) => updateAction(action.id, { type: e.target.value as any })}
+                      onChange={(e) => updateAction(action.id, { type: e.target.value as unknown })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white font-medium"
                       disabled={readonly}
                     >

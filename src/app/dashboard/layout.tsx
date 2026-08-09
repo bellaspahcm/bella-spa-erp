@@ -148,7 +148,7 @@ export default function DashboardLayout({
           console.error('[DashboardLayout] Brand runtime apply failed:', brandError);
         }
         setIsAuthorized(true);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('[DashboardLayout] Auth check failed:', err);
         router.replace('/login');
       }

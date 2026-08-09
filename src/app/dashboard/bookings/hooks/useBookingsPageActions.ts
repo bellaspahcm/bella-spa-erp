@@ -100,7 +100,7 @@ export function useBookingsPageActions({
       }
 
       setInvoicePrintLogs(result.data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error fetching invoice print logs:', err);
       setInvoicePrintLogs([]);
       toast.error('Không thể tải lịch sử in bill.');
@@ -125,7 +125,7 @@ export function useBookingsPageActions({
         tenantInfo: booking.tenants || null,
       });
       setShowQrModal(true);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error opening QR Modal:', err);
       toast.error('Có lỗi xảy ra khi tải dữ liệu thanh toán');
     }
@@ -221,7 +221,7 @@ export function useBookingsPageActions({
 
       await fetchInvoicePrintLogs(targetModalData.bookingId);
       toast.success('Đã chuẩn bị hóa đơn K80. Hộp thoại in sẽ mở ngay.');
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error preparing thermal invoice:', err);
       toast.error('Không thể chuẩn bị hóa đơn in.');
     } finally {
@@ -270,7 +270,7 @@ export function useBookingsPageActions({
 
       await fetchInvoicePrintLogs(modalData.bookingId);
       toast.success('Đã hủy bill đã in. Bạn có thể sửa thông tin rồi in bill mới.');
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error voiding invoice print log:', err);
       toast.error('Không thể hủy bill đã in.');
     }
@@ -443,7 +443,7 @@ export function useBookingsPageActions({
         await fetchSessions();
         closeCreateModal();
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error creating schedule:', err);
       toast.error('Có lỗi xảy ra khi tạo lịch hẹn');
     } finally {

@@ -36,13 +36,13 @@ interface PolicyVersion {
 
 interface ReplayResult {
   originalResult: {
-    output: Record<string, any>;
+    output: Record<string, unknown>;
     matchedRules: Array<{ ruleId: string; ruleName: string; priority: number }>;
     confidenceScore?: number;
     executionTimeMs: number;
   };
   replayedResult: {
-    output: Record<string, any>;
+    output: Record<string, unknown>;
     matchedRules: Array<{ ruleId: string; ruleName: string; priority: number }>;
     confidenceScore?: number;
     executionTimeMs: number;
@@ -108,7 +108,7 @@ export default function DecisionTimeMachine({
             author: 'Manager',
           },
         ]);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Failed to fetch versions:', err);
       }
     };
@@ -138,7 +138,7 @@ export default function DecisionTimeMachine({
       }
 
       setReplayResult(result);
-    } catch (err) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
@@ -564,6 +564,11 @@ function ResultPanel({
 /**
  * Helper: Get nested value from object by dot-notation path
  */
-function getNestedValue(obj: any, path: string): any {
-  return path.split('.').reduce((curr, key) => curr?.[key], obj);
+function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+  return path.split('.').reduce<unknown>((curr, key) => {
+    if (curr !== null && typeof curr === 'object') {
+      return (curr as Record<string, unknown>)[key];
+    }
+    return undefined;
+  }, obj);
 }

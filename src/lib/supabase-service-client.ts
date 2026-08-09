@@ -12,7 +12,7 @@ import { Database } from '@/types/database.types';
 
 export function createServiceClient() {
   if (typeof window !== 'undefined') {
-    return null as any;
+    return null as unknown;
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

@@ -435,10 +435,18 @@ export async function checkDiscountEligibility(
       fn: string,
       args: Record<string, unknown>
     ) => Promise<{ data: unknown; error: { message: string } | null }>;
-    const { data: campaignsRaw } = await rpcFn('get_active_campaigns', {
+    const { data: campaignsRaw, error: campaignsError } = await rpcFn('get_active_campaigns', {
       p_tenant_id: request.tenantId,
       p_check_date: request.orderDate,
     });
+
+    if (campaignsError) {
+      violations.push({
+        rule: 'system_error',
+        message: campaignsError.message,
+        severity: 'blocking',
+      });
+    }
     const campaigns = campaignsRaw as unknown as Array<{
       campaign_id: string;
       campaign_name: string;

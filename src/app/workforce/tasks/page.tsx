@@ -26,7 +26,7 @@ export default function TaskCenter() {
     try {
       const data = await getMyTasks();
       setTasks(data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[TaskCenter] Fetch failed:', err);
       toast.error('Lỗi khi tải danh sách nhiệm vụ');
     } finally {
@@ -51,7 +51,7 @@ export default function TaskCenter() {
         toast.error(res.error || 'Lỗi khi cập nhật nhiệm vụ');
         fetchTasks(); // rollback
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi kết nối khi cập nhật nhiệm vụ');
       fetchTasks(); // rollback
     }
@@ -86,7 +86,7 @@ export default function TaskCenter() {
       } else {
         toast.error(res.error || 'Không thể tạo nhiệm vụ');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Lỗi kết nối khi tạo nhiệm vụ');
     } finally {
       setIsSubmitting(false);
@@ -252,7 +252,7 @@ export default function TaskCenter() {
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loại nhiệm vụ</label>
                   <select
                     value={newType}
-                    onChange={(e: any) => setNewType(e.target.value)}
+                    onChange={(e: Record<string, unknown>) => setNewType(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-750 rounded-2xl px-4 py-3 text-xs outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
                   >
                     <option value="manual">Tự tạo</option>
@@ -267,7 +267,7 @@ export default function TaskCenter() {
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Mức độ ưu tiên</label>
                   <select
                     value={newPriority}
-                    onChange={(e: any) => setNewPriority(e.target.value)}
+                    onChange={(e: Record<string, unknown>) => setNewPriority(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-750 rounded-2xl px-4 py-3 text-xs outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
                   >
                     <option value="low">Thấp</option>

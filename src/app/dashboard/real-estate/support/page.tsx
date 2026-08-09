@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { PremiumSelect } from "@/components/ui/PremiumSelect";
+import { ActivityEntry } from "@/platform/activity-stream/index";
 
 import {
   colors,
@@ -43,7 +44,7 @@ export default function SupportPage() {
   const [tickets, setTickets] = useState<ComplaintTicketProps[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("inv-1");
   const [selectedCustomerName, setSelectedCustomerName] = useState<string>("Lê Văn C");
-  const [timeline, setTimeline] = useState<any[]>([]);
+  const [timeline, setTimeline] = useState<ActivityEntry[]>([]);
   const [search, setSearch] = useState("");
   
   // Create Modal State
@@ -84,7 +85,7 @@ export default function SupportPage() {
       );
       toast.success("Đã phân công phiếu cho kĩ thuật viên hỗ trợ");
       refreshData();
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(e.message || "Lỗi phân công");
     }
   }
@@ -97,7 +98,7 @@ export default function SupportPage() {
       );
       toast.success("Bắt đầu quy trình xác minh và kiểm tra khiếu nại");
       refreshData();
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(e.message || "Lỗi cập nhật trạng thái");
     }
   }
@@ -111,7 +112,7 @@ export default function SupportPage() {
       );
       toast.success("Xác nhận giải quyết khiếu nại thành công");
       refreshData();
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(e.message || "Lỗi cập nhật trạng thái");
     }
   }
@@ -124,7 +125,7 @@ export default function SupportPage() {
       );
       toast.success("Đã hoàn tất đóng phiếu khiếu nại");
       refreshData();
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(e.message || "Lỗi đóng phiếu");
     }
   }
@@ -137,7 +138,7 @@ export default function SupportPage() {
       );
       toast.success("Mở lại phiếu khiếu nại để xác minh bổ sung");
       refreshData();
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(e.message || "Lỗi mở lại phiếu");
     }
   }
@@ -150,7 +151,7 @@ export default function SupportPage() {
       );
       toast.success("Đã hủy phiếu khiếu nại");
       refreshData();
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(e.message || "Lỗi hủy phiếu");
     }
   }

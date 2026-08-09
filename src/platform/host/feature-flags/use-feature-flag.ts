@@ -55,7 +55,7 @@ export function useFeatureFlag(
           setResult(evaluation);
           setEnabled(evaluation.enabled);
         }
-      } catch (err) {
+      } catch (err: unknown) {
         if (mounted) {
           setError(err instanceof Error ? err : new Error('Failed to evaluate feature flag'));
           setEnabled(false);
@@ -125,7 +125,7 @@ export function useFeatureFlags(
         if (mounted) {
           setFlags(evaluations);
         }
-      } catch (err) {
+      } catch (err: unknown) {
         if (mounted) {
           setError(err instanceof Error ? err : new Error('Failed to evaluate feature flags'));
           setFlags(new Map());

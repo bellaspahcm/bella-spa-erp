@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
             error = `Unknown rule type: ${rule.rule_type}`;
             result = null;
         }
-      } catch (err) {
+      } catch (err: unknown) {
         error = err instanceof Error ? err.message : 'Unknown error';
         result = null;
       }
@@ -288,7 +288,7 @@ function evaluateDecision(config: Record<string, unknown>, data: Record<string, 
             result: evaluateCondition(rule, data),
             matched: true
           };
-        } catch (err) {
+        } catch (err: unknown) {
           return {
             rule,
             result: null,

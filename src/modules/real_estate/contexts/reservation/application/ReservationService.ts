@@ -1,5 +1,5 @@
 import { supabase as typedSupabase } from '@/lib/supabase';
-const supabase = typedSupabase as any;
+const supabase = typedSupabase as unknown;
 
 export interface ReservationResult {
   readonly success: boolean;
@@ -43,7 +43,7 @@ export class ReservationService {
       throw error; // Rule #1: Zero Silent Database Failures
     }
 
-    const res = data as Record<string, any>;
+    const res = data as Record<string, unknown>;
     if (!res.success) {
       return {
         success: false,

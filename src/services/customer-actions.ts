@@ -587,7 +587,7 @@ export async function updateCustomer(id: string, customerData: CustomerUpdate) {
       return { data: null, error: existingError.message, warning: null };
     }
     oldCustomer = existing;
-  } catch (err) {
+  } catch (err: unknown) {
     return {
       data: null,
       error: err instanceof Error ? err.message : 'Failed to fetch old customer for audit trail',
@@ -673,7 +673,7 @@ export async function deleteCustomer(id: string) {
       return { success: false, error: existingError.message };
     }
     oldCustomer = existing;
-  } catch (err) {
+  } catch (err: unknown) {
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Failed to fetch old customer for delete audit trail'

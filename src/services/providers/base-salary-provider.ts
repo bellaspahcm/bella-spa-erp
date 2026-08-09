@@ -64,7 +64,7 @@ import type { PayrollDecisionContext, EmployeeData, AttendanceData } from '@/lib
  */
 export class BaseSalaryProvider implements PayrollProvider<SalaryComponent> {
   readonly name = 'BaseSalaryProvider';
-  readonly decisionType = 'base-salary';
+  readonly decisionType = 'base-salary-eligibility';
 
   /**
    * Evaluate base salary for the given context

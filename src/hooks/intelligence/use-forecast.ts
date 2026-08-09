@@ -19,7 +19,7 @@ export interface ForecastResult {
   confidence_lower: number;
   confidence_upper: number;
   accuracy_pct: number | null;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface ForecastResponse {

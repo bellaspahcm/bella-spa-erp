@@ -82,7 +82,7 @@ function isMissingAuthSessionError(error: unknown) {
 
 function assertNonMissingQueryError(error: SupabaseQueryError, context: string) {
   if (!error || isMissingSingleRowError(error)) return;
-  throw new Error(`${context}: ${error.message || 'Unknown database error'}`);
+  throw new Error(`${context}: ${error instanceof Error ? error.message : 'Unknown database error'}`);
 }
 
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
@@ -166,7 +166,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
             role: 'admin',
             status: 'active',
             tenant_id: '77777777-7777-7777-7777-777777777777',
-          } as any;
+          } as unknown as CurrentUser;
         }
       }
     }

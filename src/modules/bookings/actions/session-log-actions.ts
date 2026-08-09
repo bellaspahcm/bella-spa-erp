@@ -735,7 +735,7 @@ export async function updateSessionLog(
       try {
         const { recalculateAndSaveSalaryRecord } = await import('@/modules/hr-salary/actions/admin-salary-actions');
         await recalculateAndSaveSalaryRecord(supabase, existingLog.completed_by_ktv_id, monthYear, tenantId);
-      } catch (err) {
+      } catch (err: unknown) {
         oldRecalcFailed = true;
         oldRecalcErrorMsg = err instanceof Error ? err.message : 'Lỗi tính toán lương cũ';
       }
@@ -753,7 +753,7 @@ export async function updateSessionLog(
       try {
         const { recalculateAndSaveSalaryRecord } = await import('@/modules/hr-salary/actions/admin-salary-actions');
         await recalculateAndSaveSalaryRecord(supabase, currentKtvId, monthYear, tenantId);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('[UpdateSessionLog] New recalculation failed, rolling back...', err);
         // Rollback update in database
         await supabase
@@ -871,7 +871,7 @@ export async function deleteSessionLog(
       try {
         const { recalculateAndSaveSalaryRecord } = await import('@/modules/hr-salary/actions/admin-salary-actions');
         await recalculateAndSaveSalaryRecord(supabase, existingLog.completed_by_ktv_id, monthYear, tenantId);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('[DeleteSessionLog] Recalculation failed, rolling back delete...', err);
         // Insert back to database
         await supabase.from('session_logs').insert(existingLog);

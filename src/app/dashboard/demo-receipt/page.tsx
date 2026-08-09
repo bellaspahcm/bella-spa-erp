@@ -53,7 +53,7 @@ export default function DemoReceiptPage() {
       link.href = dataUrl;
       link.click();
       
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to export image", err);
       alert("Có lỗi xảy ra khi xuất ảnh. Vui lòng thử lại!");
     } finally {

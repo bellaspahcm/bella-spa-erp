@@ -90,7 +90,7 @@ export default function DecisionDetailDrawer({
         }
 
         setData(result.data);
-      } catch (err) {
+      } catch (err: unknown) {
         setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
         setLoading(false);

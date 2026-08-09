@@ -42,10 +42,22 @@ interface JobResult {
 
 // ─── Helper Functions ───────────────────────────────────────────────────────
 
+interface AdsCredentials {
+  facebook_access_token?: string;
+  google_access_token?: string;
+  tiktok_access_token?: string;
+  zalo_access_token?: string;
+}
+
+interface TenantMetadata {
+  ads_credentials?: AdsCredentials;
+  [key: string]: unknown;
+}
+
 /**
  * Get all active tenants with ad credentials
  */
-async function getTenantsWithAdsCredentials(): Promise<Array<{ id: string; name: string; metadata: any }>> {
+async function getTenantsWithAdsCredentials(): Promise<Array<{ id: string; name: string; metadata: unknown }>> {
   const supabase = await createClient();
 
   const { data: tenants, error } = await supabase
@@ -63,7 +75,7 @@ async function getTenantsWithAdsCredentials(): Promise<Array<{ id: string; name:
 
   // Filter tenants that have at least one ad platform credential
   const tenantsWithAds = tenants.filter(tenant => {
-    const metadata = tenant.metadata as any;
+    const metadata = tenant.metadata as TenantMetadata | null;
     if (!metadata || !metadata.ads_credentials) {
       return false;
     }
@@ -91,7 +103,7 @@ async function logJobResult(result: JobResult): Promise<void> {
 
     // Check if cron_job_logs table exists
     const { error } = await supabase
-      .from('cron_job_logs' as any)
+      .from('cron_job_logs' as unknown)
       .insert({
         job_name: 'sync-external-ads',
         status: result.success ? 'success' : 'failed',

@@ -483,7 +483,7 @@ export default function DoctorSchedulePage() {
                   <PremiumSelect
                     options={days.map((d) => ({ value: d, label: d }))}
                     value={newShift.dayOfWeek}
-                    onChange={(val) => setNewShift({ ...newShift, dayOfWeek: val as any })}
+                    onChange={(val) => setNewShift({ ...newShift, dayOfWeek: val as unknown })}
                     placeholder="Chọn ngày..."
                     buttonClassName="!py-0 h-10 px-3.5 text-xs bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 !rounded-xl font-bold shadow-xs flex items-center w-full"
                   />
@@ -498,7 +498,7 @@ export default function DoctorSchedulePage() {
                       { value: 'night_call', label: 'Ca Trực Đêm Khẩn' },
                     ]}
                     value={newShift.shiftType}
-                    onChange={(val) => setNewShift({ ...newShift, shiftType: val as any })}
+                    onChange={(val) => setNewShift({ ...newShift, shiftType: val as unknown })}
                     placeholder="Chọn ca..."
                     buttonClassName="!py-0 h-10 px-3.5 text-xs bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 !rounded-xl font-bold shadow-xs flex items-center w-full"
                   />

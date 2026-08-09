@@ -15,7 +15,7 @@ export interface TouchpointInput {
   title: string;
   content?: string;
   staffId?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export const JourneySLAMonitorService = {

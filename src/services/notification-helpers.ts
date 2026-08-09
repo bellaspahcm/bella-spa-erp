@@ -29,7 +29,7 @@ export async function createSystemNotification(params: {
     if (error) {
       console.error('[createSystemNotification] Error inserting notification:', error);
     }
-  } catch (err) {
+  } catch (err: unknown) {
     console.error('[createSystemNotification] Exception:', err);
   }
 }
@@ -147,7 +147,7 @@ export async function checkAndGenerateKtvAlertNotifications(userId: string, tena
         }
       }
     }
-  } catch (err) {
+  } catch (err: unknown) {
     console.error('[checkAndGenerateKtvAlertNotifications] Exception:', err);
   }
 }
@@ -250,7 +250,7 @@ export async function checkAndGenerateAdminAlertNotifications(tenantId: string) 
         }
       }
     }
-  } catch (err) {
+  } catch (err: unknown) {
     console.error('[checkAndGenerateAdminAlertNotifications] Exception:', err);
   }
 }

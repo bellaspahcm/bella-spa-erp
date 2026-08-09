@@ -47,7 +47,7 @@ interface ManagedLead {
   acceptedAt?: string;
   noAnswerCount: number;
   rotationCount: number;
-  rotationHistory: any[];
+  rotationHistory: unknown[];
   auditTimeline: AuditLog[];
   activeSLATimer?: SLATimer;
   notes?: string;
@@ -318,7 +318,7 @@ export default function LeadsPipeline() {
           ].map(t => (
             <button
               key={t.value}
-              onClick={() => setSelectedTab(t.value as any)}
+              onClick={() => setSelectedTab(t.value as unknown)}
               className={`flex-shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold transition-all border ${selectedTab === t.value ? 'bg-primary border-primary text-white shadow-sm' : 'bg-slate-50 dark:bg-slate-850 text-slate-500 dark:text-slate-400 border-slate-100 dark:border-slate-850 hover:border-slate-200'}`}
             >
               {t.label}

@@ -129,7 +129,7 @@ export interface NotificationEvent {
    * - `affectedUsers: number` - Count of affected users
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   
   /** When notification was created (ISO 8601 timestamp) */
   createdAt: string;

@@ -250,52 +250,81 @@ const MOCK_STAFF: ICUShiftStaff[] = [
 const SEV_CFG: Record<Severity, { label: string; headerBg: string; ring: string; dot: string; badge: string }> = {
   very_critical: {
     label: 'CRITICAL',
-    headerBg: 'bg-rose-700',
-    ring: 'ring-2 ring-rose-500',
-    dot: 'bg-rose-500 animate-ping',
-    badge: 'bg-rose-100 text-rose-800 border-rose-300',
+    headerBg: 'bg-gradient-to-r from-rose-700 to-rose-900 border-b border-rose-800',
+    ring: 'ring-4 ring-rose-500/80 shadow-rose-950/40 shadow-lg scale-[1.01]',
+    dot: 'bg-rose-500 animate-pulse',
+    badge: 'bg-rose-50 text-rose-950 border-rose-300 font-black',
   },
   critical: {
     label: 'SEVERE',
-    headerBg: 'bg-orange-600',
-    ring: 'ring-2 ring-orange-400',
+    headerBg: 'bg-gradient-to-r from-orange-600 to-orange-800 border-b border-orange-700',
+    ring: 'ring-4 ring-orange-400/80 shadow-orange-950/40 shadow-lg scale-[1.01]',
     dot: 'bg-orange-500',
-    badge: 'bg-orange-100 text-orange-800 border-orange-300',
+    badge: 'bg-orange-50 text-orange-900 border-orange-300 font-extrabold',
   },
   monitoring: {
     label: 'MONITORING',
-    headerBg: 'bg-amber-500',
-    ring: 'ring-2 ring-amber-400',
+    headerBg: 'bg-gradient-to-r from-amber-500 to-amber-600 border-b border-amber-500',
+    ring: 'ring-2 ring-amber-400 shadow-md',
     dot: 'bg-amber-400',
-    badge: 'bg-amber-100 text-amber-800 border-amber-300',
+    badge: 'bg-amber-50 text-amber-950 border-amber-300 font-bold',
   },
   stable: {
     label: 'STABLE',
-    headerBg: 'bg-emerald-600',
-    ring: 'ring-1 ring-emerald-400',
+    headerBg: 'bg-gradient-to-r from-emerald-600 to-emerald-700 border-b border-emerald-500',
+    ring: 'ring-1 ring-emerald-400 shadow-sm',
     dot: 'bg-emerald-400',
-    badge: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+    badge: 'bg-emerald-50 text-emerald-950 border-emerald-200 font-semibold',
   },
 };
 
 // ─── Mini Sparkline Component ──────────────────────────────────────────────────
 function MiniSparkline({ values, trend, color }: { values: number[]; trend: 'up' | 'down' | 'stable'; color: string }) {
-  if (values.length < 2) return null;
+  if (!values || values.length < 2) return null;
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = max - min || 1;
-  const w = 48;
-  const h = 16;
-  const pts = values.map((v, i) => {
+  const w = 60;
+  const h = 20;
+  
+  const points = values.map((v, i) => {
     const x = (i / (values.length - 1)) * w;
-    const y = h - ((v - min) / range) * h;
-    return `${x},${y}`;
-  }).join(' ');
+    const y = h - 2 - ((v - min) / range) * (h - 4);
+    return { x, y };
+  });
 
-  const strokeColor = trend === 'up' ? '#ef4444' : trend === 'down' ? '#f97316' : '#64748b';
+  const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+  const strokeColor = trend === 'up' ? '#ef4444' : trend === 'down' ? '#f97316' : '#10b981';
+  const lastPt = points[points.length - 1];
+
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="overflow-visible">
-      <polyline points={pts} fill="none" stroke={strokeColor} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+      {/* Translucent glow shadow line */}
+      <path
+        d={pathD}
+        fill="none"
+        stroke={strokeColor}
+        strokeWidth="3.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="opacity-25 blur-[1px]"
+      />
+      {/* Crisp primary line */}
+      <path
+        d={pathD}
+        fill="none"
+        stroke={strokeColor}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Pulse circle at current coordinate */}
+      {lastPt && (
+        <>
+          <circle cx={lastPt.x} cy={lastPt.y} r="2" fill={strokeColor} />
+          <circle cx={lastPt.x} cy={lastPt.y} r="4.5" fill={strokeColor} className="animate-ping opacity-75" />
+        </>
+      )}
     </svg>
   );
 }
@@ -515,34 +544,35 @@ export default function ICUCommandCenter() {
     <div className="p-4 md:p-6 max-w-[1440px] mx-auto space-y-4">
 
       {/* ══════════════════════════════════════════════════════════
-          TẦNG 1 — COMMAND SUMMARY
-          Header: navy dark, red critical accents, Live indicator
+          TẦNG 1 — COMMAND SUMMARY (Bright design)
           ══════════════════════════════════════════════════════════ */}
-      <div className="bg-slate-950 rounded-2xl p-5 text-white shadow-2xl border border-slate-800 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-rose-950/30 via-transparent to-transparent pointer-events-none" />
+      <div className="bg-gradient-to-br from-slate-50 via-white to-indigo-50/50 rounded-2xl p-6 text-slate-800 shadow-md border border-slate-200/80 relative overflow-hidden">
+        {/* Glowing backdrop elements */}
+        <div className="absolute top-0 right-0 w-72 h-72 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/4 w-80 h-80 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           {/* Title block */}
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <div className="flex items-center gap-2">
-              <Activity className="w-4 h-4 text-rose-400" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+              <Activity className="w-4.5 h-4.5 text-rose-600 animate-pulse" />
+              <span className="text-xs font-extrabold uppercase tracking-widest text-slate-400">
                 Bella Hospital · ICU Command Center
               </span>
               {/* Live indicator */}
-              <div className={`flex items-center gap-1.5 ml-3 px-2 py-0.5 rounded-full border text-[9px] font-bold ${
-                isLive ? 'border-emerald-700 text-emerald-400 bg-emerald-950/50' : 'border-amber-700 text-amber-400 bg-amber-950/50'
+              <div className={`flex items-center gap-1.5 ml-3 px-2.5 py-0.5 rounded-full border text-[9px] font-bold ${
+                isLive ? 'border-emerald-200 text-emerald-700 bg-emerald-50' : 'border-amber-200 text-amber-700 bg-amber-50'
               }`}>
                 {isLive
-                  ? <><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />LIVE · {liveTime}</>
+                  ? <><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />LIVE · {liveTime}</>
                   : <><WifiOff className="w-3 h-3" />DEGRADED</>
                 }
               </div>
             </div>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight">
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight font-serif text-slate-900" style={{ color: '#0f172a' }}>
               ICU Real-Time Dispatch
             </h1>
-            <p className="text-slate-400 text-xs">
+            <p className="text-slate-500 text-xs font-semibold">
               Điều phối khoa Hồi sức tích cực · Giám sát bệnh nhân · Cảnh báo lâm sàng · Quản lý chuyển khoa
             </p>
           </div>
@@ -550,16 +580,16 @@ export default function ICUCommandCenter() {
           {/* KPI Chips — Command Summary */}
           <div className="grid grid-cols-3 lg:grid-cols-6 gap-2 shrink-0">
             {[
-              { value: MOCK_ICU_BEDS.length, label: 'ICU Beds', color: 'text-slate-200', sub: '' },
-              { value: occupiedBeds,          label: 'Occupied',  color: 'text-amber-300', sub: '' },
-              { value: criticalCount,         label: 'Critical',  color: 'text-rose-400 animate-pulse', sub: '⬤' },
-              { value: onVentilator,          label: 'Ventilated',color: 'text-blue-400',  sub: '' },
-              { value: isolationCount,        label: 'Isolation', color: 'text-violet-400',sub: '' },
-              { value: availableCount,        label: 'Available', color: 'text-emerald-400',sub: '' },
-            ].map(({ value, label, color, sub }) => (
-              <div key={label} className="text-center bg-white/5 border border-white/10 rounded-xl px-3 py-2.5">
+              { value: MOCK_ICU_BEDS.length, label: 'ICU Beds', color: 'text-slate-800', bg: 'bg-slate-50 border-slate-200' },
+              { value: occupiedBeds,          label: 'Occupied',  color: 'text-amber-600', bg: 'bg-amber-50 border-amber-200' },
+              { value: criticalCount,         label: 'Critical',  color: 'text-rose-600 animate-pulse', sub: '⬤', bg: 'bg-rose-50 border-rose-200' },
+              { value: onVentilator,          label: 'Ventilated',color: 'text-blue-600', bg: 'bg-blue-50 border-blue-200' },
+              { value: isolationCount,        label: 'Isolation', color: 'text-violet-600', bg: 'bg-violet-50 border-violet-200' },
+              { value: availableCount,        label: 'Available', color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-200' },
+            ].map(({ value, label, color, sub, bg }) => (
+              <div key={label} className={`text-center ${bg} border rounded-xl px-4 py-3 shadow-sm hover:scale-[1.02] hover:shadow-md transition-all duration-150`}>
                 <div className={`text-2xl font-black ${color}`}>{sub && <span className="text-[10px] mr-0.5">{sub}</span>}{value}</div>
-                <div className="text-[9px] text-slate-500 font-semibold uppercase mt-0.5">{label}</div>
+                <div className="text-[9px] text-slate-500 font-bold uppercase mt-1 tracking-wider">{label}</div>
               </div>
             ))}
           </div>
@@ -572,32 +602,43 @@ export default function ICUCommandCenter() {
           ══════════════════════════════════════════════════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-        {/* ── Alert Rail ─────────────────────────────────────────── */}
-        <div className="bg-slate-950 rounded-xl border border-slate-800 overflow-hidden">
-          <div className="px-4 py-3 bg-rose-950/60 border-b border-rose-900/50 flex items-center justify-between">
+        {/* ── Alert Rail (Bright Theme) ──────────────────────────── */}
+        <div className="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden transition-all duration-200">
+          <div className="px-4 py-3.5 bg-gradient-to-r from-rose-50/50 to-slate-50 border-b border-rose-100 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Siren className="w-4 h-4 text-rose-400" />
-              <span className="text-xs font-black text-rose-300 uppercase tracking-wide">Active Alerts</span>
+              <Siren className="w-4 h-4 text-rose-600 animate-pulse" />
+              <span className="text-xs font-bold text-rose-700 uppercase tracking-wider">Active Alerts</span>
             </div>
-            <span className={`text-xs font-black px-2 py-0.5 rounded-full ${
-              unacknowledgedAlerts > 0 ? 'bg-rose-600 text-white animate-pulse' : 'bg-slate-800 text-slate-400'
+            <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${
+              unacknowledgedAlerts > 0 ? 'bg-rose-600 border-rose-500 text-white animate-pulse' : 'bg-slate-100 border-slate-200 text-slate-500'
             }`}>
-              {unacknowledgedAlerts}
+              {unacknowledgedAlerts} NEW
             </span>
           </div>
-          <div className="divide-y divide-slate-900 max-h-48 overflow-y-auto">
+          <div className="divide-y divide-slate-100 max-h-48 overflow-y-auto">
             {alerts.map((al) => (
-              <div key={al.id} className={`px-4 py-2.5 flex items-start gap-2 transition-all ${al.acknowledged ? 'opacity-40' : ''}`}>
-                <div className={`w-2 h-2 rounded-full mt-1 shrink-0 ${al.level === 'critical' ? 'bg-rose-500 animate-ping' : 'bg-amber-400'}`} />
+              <div key={al.id} className={`px-4 py-3 flex items-start gap-3 transition-all hover:bg-slate-50/50 ${al.acknowledged ? 'opacity-40' : ''}`}>
+                <div className="relative mt-1 shrink-0">
+                  <div className={`w-2.5 h-2.5 rounded-full ${al.level === 'critical' ? 'bg-rose-500' : 'bg-amber-500 bg-amber-500'}`} />
+                  {al.level === 'critical' && !al.acknowledged && (
+                    <div className="absolute inset-0 w-2.5 h-2.5 rounded-full bg-rose-400 bg-rose-400 animate-ping" />
+                  )}
+                </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[10px] font-black text-slate-300">{al.bedCode} · {al.patientName}</div>
-                  <div className="text-[10px] text-slate-400 leading-relaxed">{al.message}</div>
-                  <div className="text-[9px] text-slate-600 mt-0.5">{al.triggeredAt}</div>
+                  <div className="text-[11px] font-bold text-slate-800 tracking-wide flex items-center gap-1.5">
+                    <span className="bg-slate-100 border border-slate-200 px-1 py-0.5 rounded text-[9px] font-mono text-slate-700 font-extrabold">{al.bedCode}</span>
+                    <span className="truncate font-black text-slate-900">{al.patientName}</span>
+                  </div>
+                  <div className="text-[10px] text-slate-600 text-slate-600 font-semibold leading-relaxed mt-1">{al.message}</div>
+                  <div className="text-[9px] text-slate-400 mt-1.5 font-bold flex items-center gap-1 font-mono">
+                    <Clock className="w-3 h-3 text-slate-400" />
+                    {al.triggeredAt}
+                  </div>
                 </div>
                 {!al.acknowledged && (
                   <button
                     onClick={() => acknowledgeAlert(al.id)}
-                    className="shrink-0 p-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-all"
+                    className="shrink-0 p-1.5 rounded-lg bg-slate-50 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-500 hover:text-rose-600 active:scale-95 transition-all"
                     title="Acknowledge"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
@@ -606,72 +647,72 @@ export default function ICUCommandCenter() {
               </div>
             ))}
           </div>
-          <div className="px-4 py-2 border-t border-slate-800">
-            <button className="text-[10px] text-rose-400 hover:text-rose-300 font-semibold flex items-center gap-1">
-              <Bell className="w-3 h-3" /> View all alerts
+          <div className="px-4 py-2.5 border-t border-slate-100 bg-slate-50/50">
+            <button className="text-[10px] text-rose-600 hover:text-rose-700 font-bold flex items-center gap-1 transition-colors">
+              <Bell className="w-3 h-3" /> View all active alerts
             </button>
           </div>
         </div>
 
         {/* ── Transfer Dispatch ──────────────────────────────────── */}
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-          <div className="px-4 py-3 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between">
+        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200">
+          <div className="px-4 py-3.5 bg-gradient-to-r from-indigo-50/50 via-slate-50/30 to-white border-b border-slate-100 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ArrowRight className="w-4 h-4 text-indigo-600" />
-              <span className="text-xs font-black text-indigo-700 uppercase tracking-wide">Transfer Requests</span>
+              <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">Transfer Requests</span>
             </div>
-            <span className={`text-xs font-black px-2 py-0.5 rounded-full ${
-              pendingTransfers > 0 ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-500'
+            <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+              pendingTransfers > 0 ? 'bg-amber-50 border-amber-200 border-amber-200 text-amber-700 font-extrabold animate-pulse' : 'bg-slate-50 border-slate-200 text-slate-500'
             }`}>
               {pendingTransfers} Pending
             </span>
           </div>
           <div className="divide-y divide-slate-100 max-h-48 overflow-y-auto">
             {transfers.map((t) => {
-              const prioColor = t.priority === 'emergency' ? 'text-rose-600 bg-rose-50 border-rose-200' :
-                t.priority === 'priority' ? 'text-amber-700 bg-amber-50 border-amber-200' :
-                'text-slate-600 bg-slate-50 border-slate-200';
+              const prioStyles = t.priority === 'emergency' ? 'text-rose-700 bg-rose-50 border border-rose-200' :
+                t.priority === 'priority' ? 'text-amber-800 bg-amber-50 border border-amber-200' :
+                'text-slate-700 bg-slate-50 border border-slate-200';
               return (
-                <div key={t.id} className="px-4 py-3 space-y-1.5">
+                <div key={t.id} className="px-4 py-3 space-y-2 hover:bg-slate-50/30 transition-colors">
                   <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="text-xs font-bold text-slate-800">{t.patientName}</div>
-                      <div className="flex items-center gap-1 text-[10px] text-slate-500 mt-0.5">
-                        <span className="font-semibold">{t.fromBed}</span>
-                        <ArrowRight className="w-2.5 h-2.5" />
-                        <span className="font-semibold">{t.toWard}</span>
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-slate-800 truncate">{t.patientName}</div>
+                      <div className="flex items-center gap-1 text-[10px] text-slate-500 mt-1">
+                        <span className="font-bold bg-slate-100 px-1 py-0.2 rounded text-[9px] text-slate-700">{t.fromBed}</span>
+                        <ArrowRight className="w-3 h-3 text-slate-400" />
+                        <span className="font-bold bg-indigo-50 text-indigo-700 px-1 py-0.2 border border-indigo-100 rounded text-[9px]">{t.toWard}</span>
                       </div>
-                      <div className="text-[9px] text-slate-400">{t.reason}</div>
+                      <div className="text-[9px] text-slate-500 mt-1 leading-normal italic font-medium">{t.reason}</div>
                     </div>
-                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border shrink-0 uppercase ${prioColor}`}>
+                    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded border shrink-0 uppercase tracking-wider ${prioStyles}`}>
                       {t.priority}
                     </span>
                   </div>
                   {t.status === 'pending' && (
-                    <>
+                    <div className="space-y-2 pt-1">
                       <SLATimer requestedAt={t.requestedAt} slaMinutes={t.slaMinutes} />
                       <div className="flex gap-1.5">
                         <button onClick={() => approveTransfer(t.id)}
-                          className="flex-1 py-1 text-[10px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all">
+                          className="flex-1 py-1.5 text-[10px] font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm hover:shadow active:scale-95 transition-all">
                           ✓ Accept
                         </button>
-                        <button className="px-2 py-1 text-[10px] font-bold bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg transition-all">
+                        <button className="px-3 py-1.5 text-[10px] font-extrabold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg active:scale-95 transition-all">
                           Assign Bed
                         </button>
                         <button onClick={() => rejectTransfer(t.id)}
-                          className="px-2 py-1 text-[10px] font-bold bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg transition-all">
+                          className="px-2 py-1.5 text-[10px] font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg active:scale-95 transition-all">
                           ✗
                         </button>
                       </div>
-                    </>
+                    </div>
                   )}
                   {t.status === 'approved' && (
-                    <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                    <span className="inline-block text-[9px] font-extrabold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
                       ✓ Approved
                     </span>
                   )}
                   {t.status === 'rejected' && (
-                    <span className="text-[9px] font-bold text-slate-500 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-full">
+                    <span className="inline-block text-[9px] font-extrabold text-slate-500 bg-slate-50 border border-slate-200 px-2.5 py-0.5 rounded-full">
                       ✗ Rejected
                     </span>
                   )}
@@ -682,56 +723,59 @@ export default function ICUCommandCenter() {
         </div>
 
         {/* ── Staffing Intelligence ─────────────────────────────── */}
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-          <div className="px-4 py-3 bg-teal-50 border-b border-teal-100 flex items-center justify-between">
+        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200">
+          <div className="px-4 py-3.5 bg-gradient-to-r from-teal-50/50 via-slate-50/30 to-white border-b border-slate-100 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-teal-600" />
-              <span className="text-xs font-black text-teal-700 uppercase tracking-wide">Staffing · Ca Sáng</span>
+              <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">Staffing · Ca Sáng</span>
             </div>
-            <span className="text-[10px] font-bold text-teal-600 bg-teal-100 border border-teal-200 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-bold text-teal-700 bg-teal-50 border border-teal-200 px-2.5 py-0.5 rounded-full">
               Active
             </span>
           </div>
           {/* Ratio summary */}
-          <div className="grid grid-cols-2 divide-x divide-slate-100 border-b border-slate-100">
+          <div className="grid grid-cols-2 divide-x divide-slate-100 border-b border-slate-100 bg-slate-50/30">
             <div className="px-4 py-3 text-center">
-              <div className="text-[9px] font-bold text-slate-400 uppercase">Bác sĩ</div>
-              <div className="text-xl font-black text-slate-800 mt-0.5">{onDutyPhysicians} <span className="text-sm font-normal text-slate-400">/ {physicians.length}</span></div>
-              <div className="text-[9px] text-slate-500">đang trực</div>
+              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Bác sĩ</div>
+              <div className="text-xl font-black text-slate-800 mt-0.5">{onDutyPhysicians} <span className="text-xs font-bold text-slate-400">/ {physicians.length}</span></div>
+              <div className="text-[9px] text-slate-500 font-semibold font-medium">đang trực</div>
             </div>
             <div className="px-4 py-3 text-center">
-              <div className="text-[9px] font-bold text-slate-400 uppercase">Điều dưỡng</div>
-              <div className="text-xl font-black text-slate-800 mt-0.5">{onDutyNurses} <span className="text-sm font-normal text-slate-400">/ {nurses.length}</span></div>
-              <div className="text-[9px] text-slate-500">đang trực</div>
+              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Điều dưỡng</div>
+              <div className="text-xl font-black text-slate-800 mt-0.5">{onDutyNurses} <span className="text-xs font-bold text-slate-400">/ {nurses.length}</span></div>
+              <div className="text-[9px] text-slate-500 font-semibold font-medium">đang trực</div>
             </div>
           </div>
-          {/* Nurse ratio */}
-          <div className="px-4 py-2 bg-amber-50 border-b border-amber-100">
-            <div className="text-[9px] font-bold text-amber-700 flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3" />
-              Tỷ lệ: 1 ĐD : {Math.round(occupiedBeds / (onDutyNurses || 1))} BN · Khuyến nghị 1:2 hoặc tốt hơn
+          {/* Nurse ratio alert */}
+          <div className="px-4 py-2.5 bg-amber-50/70 border-b border-amber-100">
+            <div className="text-[10px] font-bold text-amber-800 flex items-center gap-1.5 leading-normal">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+              <span>Tỷ lệ: 1 ĐD : {Math.round(occupiedBeds / (onDutyNurses || 1))} BN <span className="font-semibold text-amber-600/90">(Khuyến nghị 1:2 hoặc tốt hơn)</span></span>
             </div>
           </div>
           {/* Staff list compact */}
           <div className="divide-y divide-slate-100 max-h-36 overflow-y-auto">
             {MOCK_STAFF.filter((s) => s.status !== 'off_duty' || s.onCall).map((s) => (
-              <div key={s.id} className="px-4 py-2 flex items-center gap-2">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center font-black text-[9px] text-white shrink-0 ${
-                  s.role === 'physician' ? 'bg-blue-600' : s.role === 'resident' ? 'bg-purple-600' : 'bg-teal-600'
-                }`}>
-                  {s.role === 'physician' ? 'BS' : s.role === 'resident' ? 'NT' : 'ĐD'}
+              <div key={s.id} className="px-4 py-2.5 flex items-center justify-between gap-3 hover:bg-slate-50/40 transition-colors">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-[9px] text-white shrink-0 ${
+                    s.role === 'physician' ? 'bg-blue-600' : s.role === 'resident' ? 'bg-purple-600' : 'bg-teal-600'
+                  }`}>
+                    {s.role === 'physician' ? 'BS' : s.role === 'resident' ? 'NT' : 'ĐD'}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-bold text-slate-800 truncate">{s.name}</div>
+                    {s.assignedBeds.length > 0 ? (
+                      <div className="text-[9px] text-slate-400 font-semibold truncate mt-0.5">Giường: {s.assignedBeds.join(', ')}</div>
+                    ) : (
+                      s.onCall && <div className="text-[9px] text-indigo-600 font-bold mt-0.5">On-call</div>
+                    )}
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[10px] font-semibold text-slate-800 truncate">{s.name}</div>
-                  {s.assignedBeds.length > 0 && (
-                    <div className="text-[9px] text-slate-400">{s.assignedBeds.join(', ')}</div>
-                  )}
-                  {s.onCall && <div className="text-[9px] text-indigo-600 font-bold">On-call</div>}
-                </div>
-                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
-                  s.status === 'on_duty' ? 'bg-emerald-100 text-emerald-700' :
-                  s.status === 'break' ? 'bg-amber-100 text-amber-700' :
-                  'bg-slate-100 text-slate-500'
+                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                  s.status === 'on_duty' ? 'bg-emerald-50 text-emerald-800 border border-emerald-100' :
+                  s.status === 'break' ? 'bg-amber-50 bg-amber-50 text-amber-800 border border-amber-100' :
+                  'bg-slate-50 bg-slate-50 text-slate-500 border border-slate-100'
                 }`}>
                   {s.status === 'on_duty' ? 'Trực' : s.status === 'break' ? 'Nghỉ' : 'On-call'}
                 </span>
@@ -741,12 +785,9 @@ export default function ICUCommandCenter() {
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════════════════════
-          TẦNG 3 — PATIENT GRID + TABS
-          ══════════════════════════════════════════════════════════ */}
       <div>
         {/* Tab bar */}
-        <div className="flex border-b border-slate-200 gap-1 mb-4">
+        <div className="flex border-b border-slate-200 gap-1.5 mb-5 bg-slate-50/50 p-1 rounded-xl">
           {[
             { key: 'beds'     as const, label: 'Sơ Đồ Giường ICU',    icon: BedDouble },
             { key: 'staff'    as const, label: 'Nhân Sự Ca Trực',     icon: Users },
@@ -755,18 +796,20 @@ export default function ICUCommandCenter() {
             <button
               key={key}
               onClick={() => setActiveTab(key)}
-              className={`py-2.5 px-5 text-sm font-semibold flex items-center gap-2 border-b-2 transition-all ${
-                activeTab === key ? 'border-rose-600 text-rose-700' : 'border-transparent text-slate-500 hover:text-slate-700'
+              className={`py-2 px-4.5 text-xs font-bold flex items-center gap-2 rounded-lg transition-all active:scale-95 ${
+                activeTab === key
+                  ? 'bg-white text-rose-700 shadow-sm border border-slate-200'
+                  : 'text-slate-500 hover:text-slate-800 hover:bg-white/50 border border-transparent'
               }`}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className={`w-3.5 h-3.5 ${activeTab === key ? 'text-rose-600' : 'text-slate-400'}`} />
               {label}
             </button>
           ))}
           {/* Refresh */}
-          <div className="ml-auto flex items-center">
-            <button className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all">
-              <RefreshCw className="w-4 h-4" />
+          <div className="ml-auto flex items-center pr-1">
+            <button className="p-2 text-slate-400 hover:text-slate-700 hover:bg-white rounded-lg border border-transparent hover:border-slate-200 hover:shadow-sm transition-all active:scale-95">
+              <RefreshCw className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
@@ -778,28 +821,30 @@ export default function ICUCommandCenter() {
               // Empty / Cleaning bed
               if (bed.status === 'empty' || bed.status === 'cleaning' || bed.status === 'maintenance') {
                 const emptyColors = {
-                  empty: 'border-emerald-200 bg-emerald-50/40',
-                  cleaning: 'border-amber-200 bg-amber-50/40',
-                  maintenance: 'border-slate-200 bg-slate-50',
+                  empty: 'border-emerald-200 bg-emerald-50/30 hover:bg-emerald-50/50 shadow-inner shadow-emerald-100/10',
+                  cleaning: 'border-amber-200 bg-amber-50/20 hover:bg-amber-50/40 shadow-inner shadow-amber-100/10',
+                  maintenance: 'border-slate-200 bg-slate-50 hover:bg-slate-100/50',
                 };
                 const iconColors = {
-                  empty: 'text-emerald-400',
-                  cleaning: 'text-amber-400',
-                  maintenance: 'text-slate-300',
+                  empty: 'text-emerald-500',
+                  cleaning: 'text-amber-500',
+                  maintenance: 'text-slate-400',
                 };
                 return (
-                  <div key={bed.bedId} className={`border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center min-h-[180px] ${emptyColors[bed.status]}`}>
-                    <BedDouble className={`w-10 h-10 mb-2 ${iconColors[bed.status]}`} />
-                    <div className="font-black text-slate-600 text-lg">{bed.bedCode}</div>
-                    <div className={`text-xs font-semibold mt-1 ${
-                      bed.status === 'empty' ? 'text-emerald-600' :
-                      bed.status === 'cleaning' ? 'text-amber-600' : 'text-slate-500'
+                  <div key={bed.bedId} className={`border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center min-h-[190px] transition-all duration-200 ${emptyColors[bed.status]}`}>
+                    <div className="p-3 bg-white rounded-full shadow-sm border border-slate-100 mb-2">
+                      <BedDouble className={`w-6 h-6 ${iconColors[bed.status]}`} />
+                    </div>
+                    <div className="font-extrabold text-slate-800 text-lg tracking-wide">{bed.bedCode}</div>
+                    <div className={`text-xs font-bold mt-1.5 ${
+                      bed.status === 'empty' ? 'text-emerald-700' :
+                      bed.status === 'cleaning' ? 'text-amber-700' : 'text-slate-500'
                     }`}>
                       {bed.status === 'empty' ? '✓ Sẵn sàng tiếp nhận' :
-                       bed.status === 'cleaning' ? '↻ Đang vệ sinh khử khuẩn' : '⚙ Bảo trì'}
+                       bed.status === 'cleaning' ? '↻ Đang vệ sinh khử khuẩn' : '⚙ Bảo trì thiết bị'}
                     </div>
                     {bed.status === 'empty' && (
-                      <button className="mt-3 text-[10px] font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 border border-emerald-200 px-3 py-1 rounded-full transition-all">
+                      <button className="mt-3.5 text-[10px] font-extrabold text-emerald-800 bg-white hover:bg-emerald-600 hover:text-white border border-emerald-300 hover:border-emerald-600 px-4 py-1.5 rounded-xl shadow-sm hover:shadow active:scale-95 transition-all">
                         + Tiếp nhận BN
                       </button>
                     )}
@@ -812,84 +857,84 @@ export default function ICUCommandCenter() {
               return (
                 <div
                   key={bed.bedId}
-                  className={`bg-white border rounded-2xl shadow-md overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-200 ${sev.ring}`}
+                  className={`bg-white border rounded-2xl shadow-sm overflow-hidden cursor-pointer hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 ${sev.ring}`}
                   onClick={() => setSelectedBed(bed)}
                 >
                   {/* Card header */}
-                  <div className={`${sev.headerBg} px-4 py-2.5 flex items-center justify-between`}>
+                  <div className={`${sev.headerBg} px-4 py-3 flex items-center justify-between text-white`}>
                     <div className="flex items-center gap-2">
                       <div className="relative">
                         <div className={`w-2.5 h-2.5 rounded-full ${sev.dot}`} />
                         {bed.severity === 'very_critical' && (
-                          <div className="absolute inset-0 w-2.5 h-2.5 rounded-full bg-rose-400 animate-ping" />
+                          <div className="absolute inset-0 w-2.5 h-2.5 rounded-full bg-rose-400 bg-rose-400 animate-ping" />
                         )}
                       </div>
-                      <span className="font-black text-white text-sm">{bed.bedCode}</span>
+                      <span className="font-black text-white text-sm tracking-wide">{bed.bedCode}</span>
                       {bed.isolation && (
-                        <span className="text-[9px] font-bold bg-white/20 text-white px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                        <span className="text-[8px] font-black bg-white/20 text-white px-2 py-0.5 rounded-full flex items-center gap-0.5 tracking-wider">
                           <ShieldAlert className="w-2.5 h-2.5" /> ISOLATION
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       {bed.activeAlerts > 0 && (
-                        <span className="text-[9px] font-black bg-white/20 text-white px-1.5 py-0.5 rounded-full flex items-center gap-1">
-                          <Bell className="w-2.5 h-2.5" /> {bed.activeAlerts}
+                        <span className="text-[8px] font-black bg-rose-600/90 text-white border border-rose-500 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                          <Bell className="w-2.5 h-2.5 animate-bounce" /> {bed.activeAlerts}
                         </span>
                       )}
-                      <span className="text-[10px] font-black text-white/90 uppercase tracking-wide">{sev.label}</span>
+                      <span className="text-[8px] font-black bg-white/25 text-white px-2 py-0.5 rounded-full tracking-wider uppercase">{sev.label}</span>
                     </div>
                   </div>
 
-                  <div className="p-4 space-y-3">
+                  <div className="p-4 space-y-3.5">
                     {/* Patient */}
                     <div>
-                      <div className="font-bold text-slate-900 text-sm">{bed.patientName}</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">{bed.age}t · {bed.gender} · MRN: {bed.mrn}</div>
-                      <div className="text-xs text-slate-600 mt-0.5 line-clamp-1">{bed.diagnosis}</div>
+                      <div className="font-extrabold text-slate-900 text-base tracking-tight">{bed.patientName}</div>
+                      <div className="text-[10px] text-slate-500 font-semibold mt-1">{bed.age} tuổi · {bed.gender} · MRN: <span className="font-mono text-slate-700 font-bold">{bed.mrn}</span></div>
+                      <div className="text-xs font-semibold text-slate-600 mt-1 line-clamp-1">{bed.diagnosis}</div>
                     </div>
 
                     {/* Vitals with sparklines */}
-                    <div className="grid grid-cols-3 gap-1.5 bg-slate-50 rounded-xl p-2.5">
+                    <div className="grid grid-cols-3 gap-2 bg-slate-50/70 border border-slate-100 rounded-2xl p-3">
                       {/* HR */}
-                      <div className="text-center">
-                        <div className="flex items-center justify-center gap-0.5 text-rose-500 mb-0.5">
-                          <Heart className="w-3 h-3" />
+                      <div className="text-center space-y-0.5">
+                        <div className="flex items-center justify-center gap-0.5 text-rose-600">
+                          <Heart className="w-3.5 h-3.5 fill-rose-50/10" />
                           <TrendIcon trend={bed.hrTrend.trend} />
                         </div>
-                        <div className={`text-sm font-black ${(bed.latestHR ?? 0) > 100 || (bed.latestHR ?? 0) < 50 ? 'text-rose-700' : 'text-slate-800'}`}>
+                        <div className={`text-base font-black tracking-tight ${(bed.latestHR ?? 0) > 100 || (bed.latestHR ?? 0) < 50 ? 'text-rose-700' : 'text-slate-800'}`}>
                           {bed.latestHR}
                         </div>
-                        <div className="text-[9px] text-slate-400">HR/ph</div>
-                        <div className="mt-1 flex justify-center">
+                        <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wide">HR/ph</div>
+                        <div className="pt-1 flex justify-center">
                           <MiniSparkline values={bed.hrTrend.values} trend={bed.hrTrend.trend} color="rose" />
                         </div>
                       </div>
                       {/* SpO₂ */}
-                      <div className="text-center">
-                        <div className="flex items-center justify-center gap-0.5 text-blue-500 mb-0.5">
-                          <Wind className="w-3 h-3" />
+                      <div className="text-center space-y-0.5">
+                        <div className="flex items-center justify-center gap-0.5 text-blue-600">
+                          <Wind className="w-3.5 h-3.5" />
                           <TrendIcon trend={bed.spo2Trend.trend} />
                         </div>
-                        <div className={`text-sm font-black ${(bed.latestSpO2 ?? 100) < 94 ? 'text-rose-700' : 'text-slate-800'}`}>
+                        <div className={`text-base font-black tracking-tight ${(bed.latestSpO2 ?? 100) < 94 ? 'text-rose-700' : 'text-slate-800'}`}>
                           {bed.latestSpO2}%
                         </div>
-                        <div className="text-[9px] text-slate-400">SpO₂</div>
-                        <div className="mt-1 flex justify-center">
+                        <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wide">SpO₂</div>
+                        <div className="pt-1 flex justify-center">
                           <MiniSparkline values={bed.spo2Trend.values} trend={bed.spo2Trend.trend} color="blue" />
                         </div>
                       </div>
                       {/* MAP */}
-                      <div className="text-center">
-                        <div className="flex items-center justify-center gap-0.5 text-violet-500 mb-0.5">
-                          <Gauge className="w-3 h-3" />
+                      <div className="text-center space-y-0.5">
+                        <div className="flex items-center justify-center gap-0.5 text-violet-600">
+                          <Gauge className="w-3.5 h-3.5" />
                           <TrendIcon trend={bed.mapTrend.trend} />
                         </div>
-                        <div className={`text-sm font-black ${(bed.mapTrend?.values?.at(-1) ?? 70) < 65 ? 'text-rose-700' : 'text-slate-800'}`}>
+                        <div className={`text-base font-black tracking-tight ${(bed.mapTrend?.values?.at(-1) ?? 70) < 65 ? 'text-rose-700' : 'text-slate-800'}`}>
                           {bed.latestMap}
                         </div>
-                        <div className="text-[9px] text-slate-400">MAP</div>
-                        <div className="mt-1 flex justify-center">
+                        <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wide">MAP</div>
+                        <div className="pt-1 flex justify-center">
                           <MiniSparkline values={bed.mapTrend.values} trend={bed.mapTrend.trend} color="violet" />
                         </div>
                       </div>
@@ -898,46 +943,46 @@ export default function ICUCommandCenter() {
                     {/* Acuity + Equipment tags */}
                     <div className="flex flex-wrap gap-1">
                       {bed.ventilator && (
-                        <span className="text-[9px] font-bold bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                          <Wind className="w-2.5 h-2.5" /> Ventilator
+                        <span className="text-[9px] font-extrabold bg-blue-50 text-blue-700 border border-blue-200/65 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                          <Wind className="w-3 h-3" /> Ventilator
                         </span>
                       )}
                       {bed.apacheScore !== null && (
-                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 ${
-                          bed.apacheScore >= 25 ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-50 text-slate-600 border-slate-200'
+                        <span className={`text-[9px] font-bold px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${
+                          bed.apacheScore >= 25 ? 'bg-rose-50 border-rose-200 text-rose-700 font-extrabold' : 'bg-slate-50 border-slate-200 text-slate-600'
                         }`}>
                           APACHE II {bed.apacheScore}
                           <TrendIcon trend={bed.apacheTrend} />
                         </span>
                       )}
                       {bed.sofaScore !== null && (
-                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
-                          bed.sofaScore >= 10 ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-50 text-slate-600 border-slate-200'
+                        <span className={`text-[9px] font-bold px-2.5 py-0.5 rounded-full border ${
+                          bed.sofaScore >= 10 ? 'bg-rose-50 border-rose-200 text-rose-700 font-extrabold' : 'bg-slate-50 border-slate-200 text-slate-600'
                         }`}>
                           SOFA {bed.sofaScore}
                         </span>
                       )}
                       {bed.pendingLabs > 0 && (
-                        <span className="text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                          <FlaskConical className="w-2.5 h-2.5" /> {bed.pendingLabs} Lab
+                        <span className="text-[9px] font-extrabold bg-amber-50 text-amber-800 border border-amber-200/80 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                          <FlaskConical className="w-3 h-3 text-amber-600" /> {bed.pendingLabs} Lab
                         </span>
                       )}
                     </div>
 
                     {/* Staff row — Lucide, no emoji */}
-                    <div className="flex justify-between text-[10px] text-slate-500 border-t border-slate-100 pt-2 gap-2">
-                      <div className="flex items-center gap-1 truncate">
-                        <Stethoscope className="w-3 h-3 shrink-0 text-blue-400" />
-                        <span className="truncate">{bed.assignedPhysician}</span>
+                    <div className="flex justify-between text-[10px] text-slate-500 border-t border-slate-100 pt-2.5 gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <Stethoscope className="w-3.5 h-3.5 shrink-0 text-blue-500" />
+                        <span className="truncate font-semibold text-slate-700">{bed.assignedPhysician}</span>
                       </div>
-                      <div className="flex items-center gap-1 truncate">
-                        <PersonStanding className="w-3 h-3 shrink-0 text-teal-400" />
-                        <span className="truncate">{bed.assignedNurse}</span>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <PersonStanding className="w-3.5 h-3.5 shrink-0 text-teal-600" />
+                        <span className="truncate font-semibold text-slate-700">{bed.assignedNurse}</span>
                       </div>
                     </div>
 
                     {/* Click hint */}
-                    <div className="flex items-center justify-end text-[9px] text-slate-300 gap-0.5">
+                    <div className="flex items-center justify-end text-[9px] text-slate-300 font-bold hover:text-slate-400 transition-colors gap-0.5">
                       <ChevronRight className="w-3 h-3" /> Open workspace
                     </div>
                   </div>
@@ -949,47 +994,51 @@ export default function ICUCommandCenter() {
 
         {/* ── STAFF TAB ─────────────────────────────────────────── */}
         {activeTab === 'staff' && (
-          <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-            <div className="px-5 py-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+            <div className="px-5 py-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+              <h3 className="font-extrabold text-slate-800 text-sm flex items-center gap-2">
                 <Users className="w-4 h-4 text-teal-600" />
-                Ca Trực — {new Date().toLocaleDateString('vi-VN')}
+                Ca Trực Hiện Tại — {new Date().toLocaleDateString('vi-VN')}
               </h3>
-              <div className="flex gap-3 text-xs text-slate-500 font-semibold">
-                <span>BS: {onDutyPhysicians}/{physicians.length}</span>
-                <span>ĐD: {onDutyNurses}/{nurses.length}</span>
-                <span className={`font-bold ${onDutyNurses / occupiedBeds < 0.6 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                  Ratio: 1:{Math.round(occupiedBeds / (onDutyNurses || 1))}
+              <div className="flex flex-wrap gap-2 text-xs font-semibold">
+                <span className="bg-slate-200 text-slate-700 px-2.5 py-0.5 rounded-full">Bác sĩ: {onDutyPhysicians}/{physicians.length}</span>
+                <span className="bg-slate-200 text-slate-700 px-2.5 py-0.5 rounded-full">Điều dưỡng: {onDutyNurses}/{nurses.length}</span>
+                <span className={`px-2.5 py-0.5 rounded-full border ${onDutyNurses / occupiedBeds < 0.6 ? 'bg-amber-50 border-amber-200 text-amber-700 font-extrabold animate-pulse' : 'bg-emerald-50 border-emerald-200 text-emerald-700 font-extrabold'}`}>
+                  Tỷ lệ ĐD/BN: 1:{Math.round(occupiedBeds / (onDutyNurses || 1))}
                 </span>
               </div>
             </div>
             <div className="divide-y divide-slate-100">
               {MOCK_STAFF.map((s) => (
-                <div key={s.id} className="px-5 py-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-full flex items-center justify-center font-black text-xs text-white ${
-                      s.role === 'physician' ? 'bg-blue-600' : s.role === 'resident' ? 'bg-purple-600' : 'bg-teal-600'
+                <div key={s.id} className="px-5 py-4 flex items-center justify-between hover:bg-slate-50/30 transition-colors">
+                  <div className="flex items-center gap-3.5">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-xs text-white shadow-sm shrink-0 \s.role === 'physician' ? 'bg-blue-600' : s.role === 'resident' ? 'bg-purple-600' : 'bg-teal-600'
                     }`}>
                       {s.role === 'physician' ? 'BS' : s.role === 'resident' ? 'NT' : 'ĐD'}
                     </div>
                     <div>
-                      <div className="font-semibold text-slate-800 text-sm">{s.name}</div>
-                      <div className="text-xs text-slate-500">
-                        {s.assignedBeds.length > 0 ? `Giường: ${s.assignedBeds.join(', ')}` : s.onCall ? '— On-call' : 'Ca Chiều/Đêm'}
+                      <div className="font-extrabold text-slate-800 text-sm">{s.name}</div>
+                      <div className="text-xs text-slate-500 font-semibold mt-0.5">
+                        {s.assignedBeds.length > 0 ? (
+                          <span className="text-slate-600">Giường phụ trách: <span className="font-bold text-slate-800">{s.assignedBeds.join(', ')}</span></span>
+                        ) : s.onCall ? (
+                          <span className="text-indigo-600 font-bold">On-call trực dự phòng</span>
+                        ) : 'Ca Chiều/Đêm (Ngoại ca)'}
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2.5">
                     {s.onCall && (
-                      <span className="text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full">
-                        On-call
+                      <span className="text-[9px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full">
+                        ON CALL
                       </span>
                     )}
-                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                      s.status === 'on_duty' ? 'bg-emerald-100 text-emerald-700' :
-                      s.status === 'break' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'
+                    <span className={`text-xs font-bold px-3 py-1 rounded-full border ${
+                      s.status === 'on_duty' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' :
+                      s.status === 'break' ? 'bg-amber-50 border-amber-200 text-amber-800' :
+                      'bg-slate-50 bg-slate-50 text-slate-500 text-slate-500'
                     }`}>
-                      {s.status === 'on_duty' ? 'Đang trực' : s.status === 'break' ? 'Nghỉ giải lao' : 'Hết ca'}
+                      {s.status === 'on_duty' ? 'Đang trực' : s.status === 'break' ? 'Nghỉ ca' : 'Hết ca'}
                     </span>
                   </div>
                 </div>
@@ -1000,64 +1049,66 @@ export default function ICUCommandCenter() {
 
         {/* ── TRANSFER TAB ──────────────────────────────────────── */}
         {activeTab === 'transfer' && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {transfers.map((t) => {
-              const prioStyles: Record<TransferPriority, string> = {
-                emergency: 'border-rose-300 bg-rose-50/60',
-                priority: 'border-amber-300 bg-amber-50/40',
-                routine: 'border-slate-200 bg-white',
+              const prioStyles = {
+                emergency: 'border-rose-300 bg-rose-50/30 hover:bg-rose-50/50',
+                priority: 'border-amber-300 bg-amber-50/20 hover:bg-amber-50/40',
+                routine: 'border-slate-200 bg-white hover:bg-slate-50/30',
               };
-              const prioBadge: Record<TransferPriority, string> = {
-                emergency: 'bg-rose-600 text-white',
-                priority: 'bg-amber-500 text-white',
-                routine: 'bg-slate-200 text-slate-600',
+              const prioBadge = {
+                emergency: 'bg-rose-600 text-white border-rose-500',
+                priority: 'bg-amber-500 bg-amber-500 text-white border-amber-400',
+                routine: 'bg-slate-100 text-slate-700 border-slate-200',
               };
               return (
-                <div key={t.id} className={`border-2 rounded-xl p-5 shadow-sm ${prioStyles[t.priority]}`}>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase ${prioBadge[t.priority]}`}>
+                <div key={t.id} className={`border border-l-4 rounded-xl p-5 shadow-sm transition-all duration-200 ${prioStyles[t.priority]} ${
+                  t.priority === 'emergency' ? 'border-l-rose-600' : t.priority === 'priority' ? 'border-l-amber-500' : 'border-l-slate-400'
+                }`}>
+                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`text-[9px] font-black px-2.5 py-0.5 rounded-full border uppercase tracking-wider ${prioBadge[t.priority]}`}>
                           {t.priority === 'emergency' ? '🔴 Emergency' : t.priority === 'priority' ? '🟠 Priority' : '🔵 Routine'}
                         </span>
                         {t.status === 'approved' && (
-                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-full">
+                          <span className="text-[9px] font-extrabold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
                             ✓ Approved
                           </span>
                         )}
                         {t.status === 'rejected' && (
-                          <span className="text-[10px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
+                          <span className="text-[9px] font-extrabold text-slate-500 bg-slate-50 border border-slate-200 px-2.5 py-0.5 rounded-full">
                             ✗ Rejected
                           </span>
                         )}
                       </div>
-                      <div className="font-bold text-slate-900">{t.patientName} <span className="text-xs font-normal text-slate-500">· MRN: {t.mrn}</span></div>
-                      <div className="flex items-center gap-2 text-xs text-slate-700">
-                        <span className="font-semibold">{t.fromBed}</span>
-                        <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
-                        <span className="font-semibold">{t.toWard}</span>
+                      <div className="font-extrabold text-slate-900 text-base">{t.patientName} <span className="text-xs font-semibold text-slate-500">· MRN: <span className="font-mono">{t.mrn}</span></span></div>
+                      <div className="flex items-center gap-1.5 text-xs text-slate-700 font-semibold">
+                        <span className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px] text-slate-800">{t.fromBed}</span>
+                        <ArrowRight className="w-3.5 h-3.5 text-slate-400 text-slate-400" />
+                        <span className="bg-indigo-50 text-indigo-700 border border-indigo-100 px-1.5 py-0.5 rounded text-[10px]">{t.toWard}</span>
                       </div>
-                      <div className="text-xs text-slate-500">Lý do: {t.reason}</div>
-                      <div className="text-[10px] text-slate-400">Yêu cầu bởi: {t.requestedBy} · {new Date(t.requestedAt).toLocaleString('vi-VN')}</div>
+                      <div className="text-xs text-slate-600 font-semibold leading-relaxed">{t.reason}</div>
+                      <div className="text-[10px] text-slate-400 font-bold">Yêu cầu bởi: {t.requestedBy} · {new Date(t.requestedAt).toLocaleString('vi-VN')}</div>
                     </div>
                     {t.status === 'pending' && (
-                      <div className="flex flex-col gap-2 shrink-0">
+                      <div className="flex flex-row md:flex-col gap-2 shrink-0">
                         <button onClick={() => approveTransfer(t.id)}
-                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow transition-all flex items-center gap-1.5">
+                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-extrabold shadow hover:shadow-md active:scale-95 transition-all flex items-center gap-1.5">
                           <CheckCircle2 className="w-3.5 h-3.5" /> Accept
                         </button>
-                        <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5">
+                        <button className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-extrabold active:scale-95 transition-all flex items-center gap-1.5">
                           <BedDouble className="w-3.5 h-3.5" /> Assign Bed
                         </button>
                         <button onClick={() => rejectTransfer(t.id)}
-                          className="px-4 py-2 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg text-xs font-bold transition-all">
-                          ✗ Từ chối
+                          className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold active:scale-95 transition-all">
+                          Từ chối
                         </button>
                       </div>
                     )}
                   </div>
                   {t.status === 'pending' && (
-                    <div className="mt-3 pt-3 border-t border-current/10">
+                    <div className="mt-3.5 pt-3.5 border-t border-slate-100">
                       <SLATimer requestedAt={t.requestedAt} slaMinutes={t.slaMinutes} />
                     </div>
                   )}
@@ -1067,11 +1118,6 @@ export default function ICUCommandCenter() {
           </div>
         )}
       </div>
-
-      {/* ── Patient Clinical Workspace Modal ───────────────────── */}
-      {selectedBed && (
-        <PatientWorkspaceModal bed={selectedBed} onClose={() => setSelectedBed(null)} />
-      )}
     </div>
   );
 }

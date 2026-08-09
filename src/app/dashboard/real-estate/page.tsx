@@ -56,7 +56,7 @@ export default function RealEstateDashboardPage() {
         setNotifications(data as AppNotification[]);
         setUnreadCount(data.filter((n) => !n.is_read).length);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error fetching notifications:', err);
     }
   }, []);
@@ -72,7 +72,7 @@ export default function RealEstateDashboardPage() {
           .update({ is_read: true })
           .eq('is_read', false);
         setUnreadCount(0);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Error marking notifications as read:', err);
       }
     }
@@ -102,7 +102,7 @@ export default function RealEstateDashboardPage() {
           setProducts(Array.isArray(resProducts.data) ? resProducts.data : [resProducts.data]);
         }
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[RealEstateDashboardPage] Error:', err);
       setError(err instanceof Error ? err.message : 'System error loading Real Estate module');
     } finally {
@@ -136,7 +136,7 @@ export default function RealEstateDashboardPage() {
           setProducts(Array.isArray(resProducts.data) ? resProducts.data : [resProducts.data]);
         }
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[RealEstateDashboardPage] Refresh Error:', err);
       setError(err instanceof Error ? err.message : 'System error refreshing Real Estate module');
     } finally {

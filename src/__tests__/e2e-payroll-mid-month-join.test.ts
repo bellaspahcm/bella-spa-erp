@@ -48,11 +48,12 @@ describe('E2E Mid-Month Join (Pro-Rata Salary Test)', () => {
       testTenantId = newTenant!.id;
     }
 
-    // Create KTV with join_date = May 15
-    const { data: newKtv } = await supabase.from('users').insert({
+    // Create KTV with hire_date = May 15 (join_date is stored as hire_date in users table)
+    const { data: newKtv, error: ktvError } = await supabase.from('users').insert({
       tenant_id: testTenantId, email: `ktv-midjoin-${Date.now()}@test.com`, full_name: 'KTV Mid Join',
-      role: 'ktv', phone: '0900000021', base_salary: 6000000, join_date: joinDate,
+      role: 'ktv', phone: `095${Date.now().toString().slice(-7)}`, base_salary: 6000000, hire_date: joinDate,
     }).select('id').single();
+    if (ktvError) throw new Error(`Failed to create KTV: ${ktvError.message}`);
     testKtvId = newKtv!.id;
   });
 

@@ -25,7 +25,7 @@ export default function LoginPage() {
   useEffect(() => {
     try {
       getSupabase(); // Try to initialize
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to initialize Supabase client:', err);
       setInitError(
         err instanceof Error 
@@ -122,7 +122,7 @@ export default function LoginPage() {
     }
 
     finalizeLogin();
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Login error:', err);
       setError(
         err instanceof Error 

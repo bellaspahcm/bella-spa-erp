@@ -70,7 +70,7 @@ export async function provisionPartnerAccount(
           source: 'partner_registration',
           application_id: input.application_id,
         },
-      } as any)
+      } as unknown)
       .select()
       .single();
 
@@ -119,7 +119,7 @@ export async function provisionPartnerAccount(
         user_id: authUser.user.id,
         role_name: 'partner',
         tenant_id: tenant.id,
-      } as any);
+      } as unknown);
     
     if (roleError) {
       console.error('[provisionPartnerAccount] Role assignment failed:', roleError);
@@ -141,7 +141,7 @@ export async function provisionPartnerAccount(
         activation_token: activationToken,
         activation_token_expires_at: tokenExpiresAt.toISOString(),
         updated_at: new Date().toISOString(),
-      } as any)
+      } as unknown)
       .eq('id', input.application_id);
 
     if (updateError) {
@@ -161,7 +161,7 @@ export async function provisionPartnerAccount(
           tenant_id: tenant.id,
           user_id: authUser.user.id,
         },
-      } as any);
+      } as unknown);
 
     // Step 8: Send activation email (async, don't block)
     sendActivationEmail(input.email, input.full_name, activationToken).catch((err) => {

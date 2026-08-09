@@ -76,7 +76,7 @@ export async function deleteAuthUser(userId: string): Promise<string> {
     
     console.log('[deleteAuthUser] Successfully deleted user from auth.users:', userId);
     return '';
-  } catch (err) {
+  } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     console.error('[deleteAuthUser] Exception:', message);
     return message;

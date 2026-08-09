@@ -134,7 +134,7 @@ describe('Sandbox Middleware', () => {
       try {
         validateEnvironmentAccess(partner, 'sandbox'); // Requires sandbox
         fail('Should have thrown error');
-      } catch (error: any) {
+      } catch (error: unknown) {
         expect(error.message).toContain('requires sandbox API key');
         expect(error.message).toContain('using production key');
         expect(error.details.current_environment).toBe('production');

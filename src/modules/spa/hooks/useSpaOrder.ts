@@ -93,7 +93,7 @@ export function useSpaOrder(initialOrder?: CoreBookingOrder | null) {
       // updateOrder(updatedOrder);
       
       console.log('[useSpaOrder] Session completion not yet implemented');
-    } catch (err) {
+    } catch (err: unknown) {
       setError(err as Error);
       console.error('[useSpaOrder] Failed to complete session:', err);
     } finally {

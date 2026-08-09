@@ -3,8 +3,11 @@ import { TextEncoder, TextDecoder } from 'util'
 import dotenv from 'dotenv'
 import path from 'path'
 
-// Load .env.local explicitly for tests
-dotenv.config({ path: path.resolve(process.cwd(), '.env.local') })
+import fs from 'fs'
+
+// Load .env.test or .env.local explicitly for tests
+const envFile = fs.existsSync(path.resolve(process.cwd(), '.env.test')) ? '.env.test' : '.env.local'
+dotenv.config({ path: path.resolve(process.cwd(), envFile) })
 
 // Debug: Check if env vars are loaded
 console.log('[Jest Setup] SUPABASE_SERVICE_ROLE_KEY loaded:', 

@@ -36,7 +36,7 @@ export interface AppliedPolicies {
   constraintPolicies: string[];
 }
 
-const COMPENSATION_DECISION_TYPE = 'session-commission';
+const COMPENSATION_DECISION_TYPE = 'compensation-eligibility';
 
 /**
  * Compensation Provider

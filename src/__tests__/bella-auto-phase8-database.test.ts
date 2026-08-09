@@ -8,14 +8,15 @@ import { createClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY!;
+const randSuffix = Math.floor(100000 + Math.random() * 900000);
 
 describe('Bella Auto Phase 8 - Finance Center', () => {
   let supabase: ReturnType<typeof createClient<Database>>;
-  const testTenantId = 'bella_auto_demo';
+  const testTenantId = 'da9e610b-88c5-4901-8ab9-5439f4931467'; // Valid UUID for test tenant
 
   beforeAll(() => {
-    supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+    supabase = createClient<Database>(supabaseUrl, supabaseKey);
   });
 
   describe('Schema Validation', () => {
@@ -111,6 +112,7 @@ describe('Bella Auto Phase 8 - Finance Center', () => {
         .from('auto_loan_applications')
         .insert({
           tenant_id: testTenantId,
+          customer_id: '00000000-0000-0000-0000-000000000001',
           application_number: applicationNumber,
           loan_amount: 400000000,
           down_payment: 100000000,
@@ -137,6 +139,7 @@ describe('Bella Auto Phase 8 - Finance Center', () => {
         .from('auto_loan_applications')
         .insert({
           tenant_id: testTenantId,
+          customer_id: '00000000-0000-0000-0000-000000000001',
           application_number: applicationNumber,
           loan_amount: 600000000,
           down_payment: 200000000,
@@ -189,6 +192,7 @@ describe('Bella Auto Phase 8 - Finance Center', () => {
         .from('auto_loan_applications')
         .insert({
           tenant_id: testTenantId,
+          customer_id: '00000000-0000-0000-0000-000000000001',
           application_number: applicationNumber,
           loan_amount: 500000000,
           down_payment: 150000000,
@@ -212,7 +216,7 @@ describe('Bella Auto Phase 8 - Finance Center', () => {
     it('should create insurance policy', async () => {
       const policyData = {
         tenant_id: testTenantId,
-        policy_number: 'INS20260803001',
+        policy_number: 'INS' + randSuffix + '001',
         customer_id: '00000000-0000-0000-0000-000000000001',
         vehicle_id: '00000000-0000-0000-0000-000000000002',
         insurance_company: 'Bảo Việt',
@@ -235,7 +239,7 @@ describe('Bella Auto Phase 8 - Finance Center', () => {
 
       expect(error).toBeNull();
       expect(data).toBeDefined();
-      expect(data?.policy_number).toBe('INS20260803001');
+      expect(data?.policy_number).toBe('INS' + randSuffix + '001');
       expect(data?.policy_type).toBe('comprehensive');
     });
 
@@ -254,7 +258,7 @@ describe('Bella Auto Phase 8 - Finance Center', () => {
         .from('auto_insurance_policies')
         .insert({
           tenant_id: testTenantId,
-          policy_number: 'INS20260803002',
+          policy_number: 'INS' + randSuffix + '002',
           customer_id: '00000000-0000-0000-0000-000000000001',
           vehicle_id: '00000000-0000-0000-0000-000000000003',
           insurance_company: 'PVI',
@@ -282,7 +286,7 @@ describe('Bella Auto Phase 8 - Finance Center', () => {
           .from('auto_insurance_policies')
           .insert({
             tenant_id: testTenantId,
-            policy_number: `INS2026080300${policyTypes.indexOf(policyType) + 3}`,
+            policy_number: `INS${randSuffix}00${policyTypes.indexOf(policyType) + 3}`,
             customer_id: '00000000-0000-0000-0000-000000000001',
             vehicle_id: '00000000-0000-0000-0000-000000000004',
             insurance_company: 'MIC',
@@ -305,7 +309,7 @@ describe('Bella Auto Phase 8 - Finance Center', () => {
         .from('auto_insurance_policies')
         .insert({
           tenant_id: testTenantId,
-          policy_number: 'INS20260803007',
+          policy_number: 'INS' + randSuffix + '007',
           customer_id: '00000000-0000-0000-0000-000000000001',
           vehicle_id: '00000000-0000-0000-0000-000000000005',
           insurance_company: 'Liberty',
@@ -331,7 +335,7 @@ describe('Bella Auto Phase 8 - Finance Center', () => {
         .from('auto_insurance_policies')
         .insert({
           tenant_id: testTenantId,
-          policy_number: 'INS20260803008',
+          policy_number: 'INS' + randSuffix + '008',
           customer_id: '00000000-0000-0000-0000-000000000001',
           vehicle_id: '00000000-0000-0000-0000-000000000006',
           insurance_company: 'AAA',
@@ -362,7 +366,7 @@ describe('Bella Auto Phase 8 - Finance Center', () => {
         .from('auto_insurance_policies')
         .insert({
           tenant_id: testTenantId,
-          policy_number: 'INS20260803009',
+          policy_number: 'INS' + randSuffix + '009',
           customer_id: '00000000-0000-0000-0000-000000000001',
           vehicle_id: '00000000-0000-0000-0000-000000000007',
           insurance_company: 'Test Insurance',

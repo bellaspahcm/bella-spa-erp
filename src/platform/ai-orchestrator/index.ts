@@ -285,7 +285,7 @@ class AiOrchestratorClass {
         task.durationMs = Date.now() - startMs;
         break;
 
-      } catch (err) {
+      } catch (err: unknown) {
         const errMsg = err instanceof Error ? err.message : String(err);
         task.error = errMsg;
         console.error('[AiOrchestrator] Task %s attempt %d failed: %s', task.id, task.attempt, errMsg);

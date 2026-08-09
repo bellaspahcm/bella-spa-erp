@@ -46,7 +46,7 @@ export function ServiceItemRowExample() {
     },
   ]);
 
-  const handleChange = (id: string, field: string, value: any) => {
+  const handleChange = (id: string, field: string, value: ServiceItemData[keyof ServiceItemData]) => {
     setItems((prev) =>
       prev.map((item) =>
         item.id === id ? { ...item, [field]: value } : item

@@ -37,10 +37,10 @@ interface CreateInsightParams {
   insightType: InsightType;
   title: string;
   summary: string;
-  details?: any;
+  details?: Record<string, unknown>;
   queryText?: string;
   queryIntent?: string;
-  queryParameters?: any;
+  queryParameters?: Record<string, unknown>;
   modelName?: string;
   modelVersion?: string;
   confidenceScore?: number;
@@ -48,7 +48,7 @@ interface CreateInsightParams {
   journeyId?: string;
   saleId?: string;
   leadId?: string;
-  suggestedActions?: any[];
+  suggestedActions?: Record<string, unknown>[];
   priority?: Priority;
   expiresAt?: string;
   createdBy?: string;
@@ -73,10 +73,10 @@ export class AIInsightsService {
       insight_type: params.insightType,
       insight_title: params.title,
       insight_summary: params.summary,
-      insight_details: params.details as any,
+      insight_details: params.details as AIInsightInsert['insight_details'],
       query_text: params.queryText,
       query_intent: params.queryIntent,
-      query_parameters: params.queryParameters as any,
+      query_parameters: params.queryParameters as AIInsightInsert['query_parameters'],
       model_name: params.modelName,
       model_version: params.modelVersion,
       confidence_score: params.confidenceScore,
@@ -84,7 +84,7 @@ export class AIInsightsService {
       journey_id: params.journeyId,
       sale_id: params.saleId,
       lead_id: params.leadId,
-      suggested_actions: params.suggestedActions as any,
+      suggested_actions: params.suggestedActions as AIInsightInsert['suggested_actions'],
       priority: params.priority || 'medium',
       expires_at: params.expiresAt,
       status: 'new',
@@ -276,11 +276,11 @@ export class AIInsightsService {
     tenantId: string;
     queryText: string;
     queryIntent?: string;
-    queryParameters?: any;
+    queryParameters?: Record<string, unknown>;
     result: {
       title: string;
       summary: string;
-      details: any;
+      details: Record<string, unknown>;
     };
     modelName?: string;
     confidenceScore?: number;
@@ -312,7 +312,7 @@ export class AIInsightsService {
     journeyId?: string;
     title: string;
     summary: string;
-    suggestedActions: any[];
+    suggestedActions: Record<string, unknown>[];
     priority?: Priority;
     confidenceScore?: number;
     createdBy?: string;
@@ -346,9 +346,9 @@ export class AIInsightsService {
     analysis: {
       title: string;
       summary: string;
-      details: any;
+      details: Record<string, unknown>;
     };
-    preventionActions: any[];
+    preventionActions: Record<string, unknown>[];
     confidenceScore?: number;
     createdBy?: string;
   }): Promise<AIInsight> {
@@ -379,9 +379,9 @@ export class AIInsightsService {
     tenantId: string;
     title: string;
     summary: string;
-    details: any;
+    details: Record<string, unknown>;
     priority: Priority;
-    suggestedActions?: any[];
+    suggestedActions?: Record<string, unknown>[];
     createdBy?: string;
   }): Promise<AIInsight> {
     return this.create({

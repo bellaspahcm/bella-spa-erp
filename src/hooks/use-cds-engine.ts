@@ -38,7 +38,7 @@ export function useCdsEngine() {
     setError(null);
     try {
       return await cdsEngine.checkDrugInteractions(request);
-    } catch (err) {
+    } catch (err: unknown) {
       const e = err instanceof Error ? err : new Error('Unknown error in checkDrugInteractions');
       setError(e);
       return {
@@ -57,7 +57,7 @@ export function useCdsEngine() {
     setError(null);
     try {
       return await cdsEngine.checkAllergyContraindications(request);
-    } catch (err) {
+    } catch (err: unknown) {
       const e = err instanceof Error ? err : new Error('Unknown error in checkAllergyContraindications');
       setError(e);
       return {
@@ -76,7 +76,7 @@ export function useCdsEngine() {
     setError(null);
     try {
       return await cdsEngine.checkProtocolAdherence(request);
-    } catch (err) {
+    } catch (err: unknown) {
       const e = err instanceof Error ? err : new Error('Unknown error in checkProtocolAdherence');
       setError(e);
       return {
@@ -95,7 +95,7 @@ export function useCdsEngine() {
     setError(null);
     try {
       return await cdsEngine.generateCdsSummary(request);
-    } catch (err) {
+    } catch (err: unknown) {
       const e = err instanceof Error ? err : new Error('Unknown error in generateCdsSummary');
       setError(e);
       return {
@@ -114,7 +114,7 @@ export function useCdsEngine() {
     setError(null);
     try {
       return await cdsEngine.recordAllergy(request);
-    } catch (err) {
+    } catch (err: unknown) {
       const e = err instanceof Error ? err : new Error('Unknown error in recordAllergy');
       setError(e);
       return {
@@ -134,7 +134,7 @@ export function useCdsEngine() {
     setError(null);
     try {
       return await cdsEngine.getPatientAllergies(tenantId, patientId);
-    } catch (err) {
+    } catch (err: unknown) {
       const e = err instanceof Error ? err : new Error('Unknown error in getPatientAllergies');
       setError(e);
       return {

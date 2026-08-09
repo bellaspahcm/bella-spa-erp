@@ -205,7 +205,7 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
         
         const result = await response.json();
         setData(result);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Error fetching employee detail:', err);
         setError(err instanceof Error ? err.message : 'Unknown error occurred');
       } finally {

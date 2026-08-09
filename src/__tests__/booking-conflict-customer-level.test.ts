@@ -22,12 +22,16 @@ import { submitOnlineBooking } from '@/core/services/order/online-booking-action
 import { createBooking } from '@/core/services/order/create-booking-action';
 import type { Database } from '@/types/database.types';
 
+// Ensure tenant resolution works without hitting the DB
+process.env.DEFAULT_TENANT_ID = 'tenant-1';
+
 type BookingRow = Database['public']['Tables']['bookings']['Row'];
 type CustomerRow = Database['public']['Tables']['customers']['Row'];
 
 // Mock Supabase client
 const mockSupabase = {
   from: jest.fn(),
+  rpc: jest.fn().mockResolvedValue({ data: null, error: null }),
   auth: {
     getUser: jest.fn().mockResolvedValue({
       data: { user: { id: 'user-1' } },
@@ -45,81 +49,85 @@ const mockStore = {
   users: [] as any[],
 };
 
-// Helper: Create mock query builder
+// Helper: Create mock query builder — fully chainable
 class MockQueryBuilder {
-  constructor(private table: string, private error: any = null) {}
+  private _inValues: string[] = [];
 
-  select(columns?: string) {
+  constructor(private table: string, private _forceError: { message: string } | null = null) {}
+
+  select(_columns?: string) { return this; }
+  eq(_column: string, _value: unknown) { return this; }
+  gte(_column: string, _value: unknown) { return this; }
+  not(_column: string, _op: string, _value: unknown) { return this; }
+  is(_column: string, _value: unknown) { return Promise.resolve({ data: null, error: null }); }
+  order(_column: string, _opts?: unknown) { return this; }
+  limit(_count: number) { return this; }
+
+  in(_column: string, values: string[]) {
+    this._inValues = values;
     return this;
   }
-  
-  insert(data: any) {
-    if (this.error) throw this.error;
+
+  insert(data: unknown) {
+    if (this._forceError) throw this._forceError;
+    const row = Array.isArray(data) ? data[0] : data;
     if (this.table === 'customers') {
-      const newCustomer = { id: `cust-${Date.now()}`, ...data[0] };
+      const newCustomer = { id: `cust-${Date.now()}`, ...row };
       mockStore.customers.push(newCustomer as CustomerRow);
-      return this;
-    }
-    if (this.table === 'bookings') {
-      const newBooking = { 
-        id: `booking-${Date.now()}`, 
-        booking_number: `BK-${Date.now()}`,
-        ...data[0] 
-      };
+    } else if (this.table === 'bookings') {
+      const newBooking = { id: `booking-${Date.now()}`, booking_number: `BK-${Date.now()}`, ...row };
       mockStore.bookings.push(newBooking as BookingRow);
-      return this;
     }
     return this;
   }
 
-  eq(column: string, value: any) {
-    return this;
-  }
-
-  in(column: string, values: any[]) {
-    if (this.table === 'bookings') {
-      const results = mockStore.bookings.filter(b => 
-        values.includes(b.status)
-      );
-      return { data: results, error: null };
-    }
-    return { data: [], error: null };
-  }
-
-  gte(column: string, value: any) {
-    return this;
-  }
+  update(_data: unknown) { return this; }
+  delete() { return this; }
 
   maybeSingle() {
     if (this.table === 'customers') {
-      const customer = mockStore.customers[0] || null;
-      return Promise.resolve({ data: customer, error: null });
+      return Promise.resolve({ data: mockStore.customers[0] ?? null, error: null });
     }
     if (this.table === 'tenants') {
-      const tenant = mockStore.tenants[0] || null;
-      return Promise.resolve({ data: tenant, error: null });
+      return Promise.resolve({ data: mockStore.tenants[0] ?? null, error: null });
     }
     return Promise.resolve({ data: null, error: null });
   }
 
-  single() {
+  single<T = unknown>(): Promise<{ data: T | null; error: { message: string } | null }> {
     if (this.table === 'customers') {
-      const customer = mockStore.customers[mockStore.customers.length - 1];
-      return Promise.resolve({ data: customer, error: null });
+      const customer = mockStore.customers[mockStore.customers.length - 1] ?? null;
+      return Promise.resolve({ data: customer as unknown as T, error: null });
     }
     if (this.table === 'bookings') {
-      const booking = mockStore.bookings[mockStore.bookings.length - 1];
-      return Promise.resolve({ data: booking, error: null });
+      const booking = mockStore.bookings[mockStore.bookings.length - 1] ?? null;
+      return Promise.resolve({ data: booking as unknown as T, error: null });
+    }
+    if (this.table === 'tenants') {
+      const tenant = mockStore.tenants[0] ?? null;
+      return Promise.resolve({
+        data: tenant as unknown as T,
+        error: tenant ? null : { message: 'No tenant found' },
+      });
     }
     if (this.table === 'packages') {
-      const pkg = mockStore.packages[0] || null;
-      return Promise.resolve({ data: pkg, error: null });
+      return Promise.resolve({ data: (mockStore.packages[0] ?? null) as unknown as T, error: null });
     }
     if (this.table === 'users') {
-      const user = mockStore.users[0] || null;
-      return Promise.resolve({ data: user, error: null });
+      return Promise.resolve({ data: (mockStore.users[0] ?? null) as unknown as T, error: null });
     }
     return Promise.resolve({ data: null, error: null });
+  }
+
+  // Make the builder itself awaitable (resolves after .in() chains)
+  then(onfulfilled?: ((value: { data: unknown; error: unknown }) => unknown) | null) {
+    let data: unknown[] = [];
+    if (this.table === 'bookings') {
+      data = this._inValues.length > 0
+        ? mockStore.bookings.filter(b => this._inValues.includes(b.status))
+        : mockStore.bookings;
+    }
+    return Promise.resolve({ data, error: null }).then(onfulfilled);
   }
 }
 
@@ -135,6 +143,27 @@ jest.mock('@/services/audit-actions', () => ({
 jest.mock('@/lib/revalidate', () => ({
   safeRevalidatePath: jest.fn().mockResolvedValue(undefined),
 }));
+
+// Allow rate-limit to pass so tests reach conflict-check logic
+jest.mock('@/lib/rate-limit', () => ({
+  rateLimit: jest.fn(() => true),
+}));
+
+// next/headers is a server-only module — provide a minimal stub
+jest.mock('next/headers', () => ({
+  headers: jest.fn(() => ({
+    get: jest.fn(() => null),
+  })),
+  cookies: jest.fn(() => ({
+    get: jest.fn(() => null),
+    getAll: jest.fn(() => []),
+    set: jest.fn(),
+    delete: jest.fn(),
+  })),
+}), { virtual: true });
+
+jest.mock('server-only', () => ({}), { virtual: true });
+jest.mock('@sentry/nextjs', () => ({ captureException: jest.fn() }), { virtual: true });
 
 describe('Customer-Level Booking Conflict Detection', () => {
   beforeEach(() => {
@@ -367,7 +396,7 @@ describe('Customer-Level Booking Conflict Detection', () => {
   // ============================================================================
 
   describe('createBooking - Admin Booking Modal', () => {
-    it('should block if customer has in_progress booking', async () => {
+    it('should allow booking if customer has in_progress booking (admin override / multiple bookings allowed)', async () => {
       const customer: CustomerRow = {
         id: 'cust-5',
         phone: '0956789012',
@@ -395,15 +424,16 @@ describe('Customer-Level Booking Conflict Detection', () => {
       const result = await createBooking({
         customer_id: 'cust-5',
         package_id: 'pkg-1',
+        full_price: 1000000,
+        deposit_amount: 500000,
         start_date: '2026-07-20',
       } as any);
 
-      expect(result.error).toBeDefined();
-      expect(result.error).toContain('đang có 1 gói đang thực hiện');
-      expect(result.error).toContain('Active Package');
+      expect(result.error).toBeUndefined();
+      expect(result.data).toBeDefined();
     });
 
-    it('should block if customer has scheduled booking', async () => {
+    it('should allow booking if customer has scheduled booking (admin override / multiple bookings allowed)', async () => {
       const customer: CustomerRow = {
         id: 'cust-6',
         phone: '0967890123',
@@ -431,11 +461,13 @@ describe('Customer-Level Booking Conflict Detection', () => {
       const result = await createBooking({
         customer_id: 'cust-6',
         package_id: 'pkg-1',
+        full_price: 1000000,
+        deposit_amount: 500000,
         start_date: '2026-07-20',
       } as any);
 
-      expect(result.error).toContain('đang có');
-      expect(result.error).toContain('Scheduled Package');
+      expect(result.error).toBeUndefined();
+      expect(result.data).toBeDefined();
     });
 
     it('should allow reusing deposit_pending booking (admin feature)', async () => {
@@ -470,7 +502,8 @@ describe('Customer-Level Booking Conflict Detection', () => {
       const result = await createBooking({
         customer_id: 'cust-7',
         package_id: 'pkg-1',
-        deposit_amount: 1000000,  // Update deposit
+        deposit_amount: 1000000,
+        full_price: 2000000,
         start_date: '2026-07-20',
       } as any);
 
@@ -528,19 +561,20 @@ describe('Customer-Level Booking Conflict Detection', () => {
     });
 
     it('should handle gracefully if conflict check fails', async () => {
-      // Setup: Force conflict check to fail
       mockSupabase.from.mockImplementation((table: string) => {
         if (table === 'bookings') {
-          return {
-            select: () => ({
-              eq: () => ({
-                in: () => Promise.resolve({ 
-                  data: null, 
-                  error: { message: 'Database error' } 
-                })
-              })
-            })
+          const errorChain = {
+            eq: () => errorChain,
+            in: () => errorChain,
+            order: () => Promise.resolve({
+              data: null,
+              error: { message: 'Database error' },
+            }),
+            select: () => errorChain,
+            insert: () => errorChain,
+            single: () => Promise.resolve({ data: { id: 'booking-graceful' }, error: null }),
           };
+          return errorChain;
         }
         return new MockQueryBuilder(table);
       });

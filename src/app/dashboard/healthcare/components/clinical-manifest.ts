@@ -20,7 +20,7 @@ export interface WorkspaceManifest extends BaseManifest {
 
 export interface DashboardManifest extends BaseManifest {
   readonly widgets: string[];
-  readonly layouts: Record<string, any>;
+  readonly layouts: Record<string, unknown>;
 }
 
 export interface ProductManifest {

@@ -92,7 +92,7 @@ export function AddServiceItemForm({
       } else {
         setError(result.error || 'Không thể thêm dịch vụ');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error creating service item:', err);
       setError('Lỗi hệ thống');
     } finally {

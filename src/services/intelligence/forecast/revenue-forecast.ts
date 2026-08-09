@@ -158,7 +158,7 @@ async function selectBestModel(
   tenantId: string,
   forecastType: string
 ): Promise<ModelName> {
-  type SupabaseFrom = { from: (t: string) => any };
+  type SupabaseFrom = { from: (t: string) => { select: (cols: string) => { eq: (...args: unknown[]) => { eq: (...args: unknown[]) => { eq: (...args: unknown[]) => { single: () => Promise<{ data: { model_name: string } | null; error: { message: string } | null }> } } } } } };
   const { data, error} = await (supabase as unknown as SupabaseFrom)
     .from('mv_forecast_accuracy')
     .select('model_name')
@@ -183,7 +183,7 @@ async function enrichWithActualValues(
   // Fetch actual revenue for dates that have passed
   const dates = forecasts.map((f) => f.date);
   
-  type SupabaseFrom = { from: (t: string) => any };
+  type SupabaseFrom = { from: (t: string) => { select: (cols: string) => { eq: (...args: unknown[]) => { in: (col: string, vals: unknown[]) => Promise<{ data: Record<string, unknown>[] | null; error: { message: string } | null }> } } } };
   const { data, error } = await (supabase as unknown as SupabaseFrom)
     .from('mv_monthly_pnl')
     .select('period_month, total_revenue')
@@ -466,7 +466,7 @@ async function saveForecastResults(
     accuracy_pct: forecast.accuracyPct || null,
   }));
   
-  type SupabaseFrom = { from: (t: string) => any };
+  type SupabaseFrom = { from: (t: string) => { upsert: (data: unknown[], opts: unknown) => Promise<{ error: { message: string } | null }> } };
   const { error } = await (supabase as unknown as SupabaseFrom)
     .from('forecast_results')
     .upsert(forecastRecords, {

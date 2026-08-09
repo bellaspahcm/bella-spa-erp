@@ -19,7 +19,7 @@ export interface Transaction {
 }
 
 export interface TransactionDetail extends Transaction {
-  metadata: any;
+  metadata: unknown;
   steps: TransactionStep[];
 }
 
@@ -29,8 +29,8 @@ export interface TransactionStep {
   actionType: string;
   targetTable: string;
   targetRecordId: string;
-  beforeSnapshot: any;
-  afterSnapshot: any;
+  beforeSnapshot: unknown;
+  afterSnapshot: unknown;
   status: string;
   executedAt: string;
   errorMessage?: string;
@@ -69,7 +69,7 @@ export function useTransactions(filters?: TransactionFilters) {
 
       const data = await response.json();
       setTransactions(data.transactions);
-    } catch (err) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Unknown error');
       setTransactions([]);
     } finally {
@@ -107,7 +107,7 @@ export function useTransactionDetail(transactionId: string | null) {
 
       const data = await response.json();
       setTransaction(data.transaction);
-    } catch (err) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Unknown error');
       setTransaction(null);
     } finally {
@@ -152,7 +152,7 @@ export function useRollbackTransaction() {
 
       const result = await response.json();
       return { success: true, data: result };
-    } catch (err) {
+    } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMessage);
       return { success: false, error: errorMessage };

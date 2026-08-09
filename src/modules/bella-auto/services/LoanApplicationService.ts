@@ -243,7 +243,7 @@ export class LoanApplicationService {
     const { data, error } = await supabase
       .from('auto_loan_applications')
       .update({
-        documents_checklist: updatedChecklist as any,
+        documents_checklist: updatedChecklist as LoanApplicationUpdate['documents_checklist'],
         updated_by: updatedBy,
       })
       .eq('id', loanId)
@@ -261,7 +261,7 @@ export class LoanApplicationService {
   /**
    * Check if all required documents are complete
    */
-  static isDocumentChecklistComplete(checklist: any): boolean {
+  static isDocumentChecklistComplete(checklist: Partial<DocumentChecklistItem> | null | undefined): boolean {
     if (!checklist) return false;
     
     const required = [

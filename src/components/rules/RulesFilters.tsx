@@ -86,6 +86,7 @@ export function RulesFilters({
   const { tenantModuleKey } = useTenantModuleKey();
   const isBeautySpa = tenantModuleKey === 'beauty_spa';
   const isIndustrialCleaning = tenantModuleKey === 'industrial_cleaning';
+  const isHealthcare = tenantModuleKey === 'bella_healthcare';
 
   const vocab = useModuleVocabulary();
   const isRealEstate = vocab.booking.singular.includes('giữ chỗ') || vocab.worker.short === 'CVTV';
@@ -93,11 +94,38 @@ export function RulesFilters({
 
   const providers = [
     { value: 'all', label: 'Tất cả nghiệp vụ' },
-    { value: 'booking', label: isRealEstate ? 'Đơn giữ chỗ & Hợp đồng' : isCleaning ? 'Phiếu công việc' : 'Đặt lịch & Hẹn dịch vụ' },
-    { value: 'discount', label: 'Chiết khấu & Ưu đãi' },
-    { value: 'payroll', label: 'Tính lương & Thưởng' },
-    { value: 'commission', label: 'Hoa hồng & Doanh số' },
-    { value: 'inventory', label: isRealEstate ? 'Giỏ hàng & Căn hộ' : isCleaning ? 'Vật tư & Trang thiết bị' : 'Kho hàng & Sản phẩm' },
+    {
+      value: 'booking',
+      label: isRealEstate
+        ? 'Đơn giữ chỗ & Hợp đồng'
+        : isCleaning
+        ? 'Phiếu công việc'
+        : isHealthcare
+        ? 'Tiếp nhận & Phòng giường'
+        : 'Đặt lịch & Hẹn dịch vụ',
+    },
+    {
+      value: 'discount',
+      label: isHealthcare ? 'Khấu trừ & Giám định BHYT' : 'Chiết khấu & Ưu đãi',
+    },
+    {
+      value: 'payroll',
+      label: isHealthcare ? 'Lương & Trực y tế' : 'Tính lương & Thưởng',
+    },
+    {
+      value: 'commission',
+      label: isHealthcare ? 'Thù lao dịch vụ lâm sàng' : 'Hoa hồng & Doanh số',
+    },
+    {
+      value: 'inventory',
+      label: isRealEstate
+        ? 'Giỏ hàng & Căn hộ'
+        : isCleaning
+        ? 'Vật tư & Trang thiết bị'
+        : isHealthcare
+        ? 'Kho dược & Vật tư y tế'
+        : 'Kho hàng & Sản phẩm',
+    },
   ];
 
   const buttonActive = isBeautySpa

@@ -60,7 +60,7 @@ export function SalaryDetailModal({
         if (!error && data) {
           setServiceItems(data);
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('[SalaryDetailModal] Error fetching service items:', err);
       } finally {
         setIsLoadingServices(false);
@@ -90,7 +90,7 @@ export function SalaryDetailModal({
         if (!error && data) {
           setProductSales(data);
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('[SalaryDetailModal] Error fetching product sales:', err);
       } finally {
         setIsLoadingProducts(false);

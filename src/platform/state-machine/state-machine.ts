@@ -125,7 +125,7 @@ export class StateMachine<TState extends string, TEvent extends string> {
     if (transition.guard) {
       try {
         return await transition.guard(context);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error(
           '[StateMachine Guard Error] Guard failed for event %s from state %s:',
           event,

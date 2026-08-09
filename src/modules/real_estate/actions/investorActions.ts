@@ -109,7 +109,7 @@ const DEMO_INVESTORS: InvestorRecord[] = [
 export async function fetchInvestorsAction(): Promise<{ success: boolean; data?: InvestorRecord[]; error?: string }> {
   try {
     return { success: true, data: DEMO_INVESTORS };
-  } catch (err) {
+  } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Unknown error';
     return { success: false, error: msg };
   }
@@ -130,7 +130,7 @@ export async function addInvestorInteractionAction(
     investor.lastContactedAt = new Date().toISOString().split('T')[0];
     if (investor.status === 'lead') investor.status = 'contacted';
     return { success: true };
-  } catch (err) {
+  } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Unknown error';
     return { success: false, error: msg };
   }
@@ -145,7 +145,7 @@ export async function updateInvestorStatusAction(
     if (!investor) throw new Error(`Investor ${investorId} not found`);
     investor.status = status;
     return { success: true };
-  } catch (err) {
+  } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Unknown error';
     return { success: false, error: msg };
   }
@@ -165,7 +165,7 @@ export async function createInvestorAction(
     };
     DEMO_INVESTORS.push(newInvestor);
     return { success: true, data: newInvestor };
-  } catch (err) {
+  } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Unknown error';
     return { success: false, error: msg };
   }

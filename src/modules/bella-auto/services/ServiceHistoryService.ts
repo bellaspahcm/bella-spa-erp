@@ -12,6 +12,32 @@ import { Database } from '@/types/database.types';
 type ServiceHistory = Database['public']['Tables']['auto_service_history']['Row'];
 type ServiceHistoryInsert = Database['public']['Tables']['auto_service_history']['Insert'];
 
+interface VehicleJoinRow {
+  id: string;
+  vin: string | null;
+  license_plate: string | null;
+  make: string;
+  model: string;
+  year: number;
+}
+
+interface CustomerJoinRow {
+  id: string;
+  name: string;
+}
+
+interface PartItem {
+  partNumber: string | null;
+  partName: string;
+  quantity: number;
+  isWarrantyCovered: boolean | null;
+}
+
+interface ExportResult {
+  headers: string[];
+  rows: (string | number | boolean | null)[][];
+}
+
 export interface ServiceHistoryQuery {
   vin?: string;
   vehicleId?: string;
@@ -66,8 +92,8 @@ export class ServiceHistoryService {
       .eq('tenant_id', tenantId);
 
     // Prepare service history data
-    const vehicle = repairOrder.auto_vehicles as any;
-    const customer = repairOrder.customers as any;
+    const vehicle = repairOrder.auto_vehicles as unknown as VehicleJoinRow;
+    const customer = repairOrder.customers as unknown as CustomerJoinRow;
 
     const historyData: ServiceHistoryInsert = {
       tenant_id: tenantId,
@@ -98,7 +124,7 @@ export class ServiceHistoryService {
         laborHours: item.labor_hours,
         partNumber: item.part_number,
         isWarrantyCovered: item.is_warranty_covered,
-      })) as any,
+      })) as ServiceHistoryInsert['service_items'],
       parts_replaced: items
         ?.filter(item => item.item_type === 'part')
         ?.map(item => ({
@@ -106,7 +132,7 @@ export class ServiceHistoryService {
           partName: item.item_name,
           quantity: item.quantity,
           isWarrantyCovered: item.is_warranty_covered,
-        })) as any,
+        })) as ServiceHistoryInsert['parts_replaced'],
       labor_hours: repairOrder.actual_hours,
       labor_cost: Number(repairOrder.actual_labor_cost || 0),
       parts_cost: Number(repairOrder.actual_parts_cost || 0),
@@ -116,7 +142,7 @@ export class ServiceHistoryService {
       quality_check_passed: repairOrder.quality_check_passed,
       quality_checked_by: repairOrder.quality_checked_by,
       quality_check_notes: repairOrder.quality_check_notes,
-      customer_complaints: repairOrder.customer_complaints as any,
+      customer_complaints: repairOrder.customer_complaints as ServiceHistoryInsert['customer_complaints'],
       is_locked: true, // IMMUTABLE by default
     };
 
@@ -257,8 +283,8 @@ export class ServiceHistoryService {
     // Count common parts
     const partsCount: Record<string, number> = {};
     history.forEach(h => {
-      const parts = (h.parts_replaced as any) || [];
-      parts.forEach((part: any) => {
+      const parts = (h.parts_replaced as PartItem[]) || [];
+      parts.forEach((part: PartItem) => {
         const partName = part.partName || 'Unknown';
         partsCount[partName] = (partsCount[partName] || 0) + 1;
       });
@@ -367,7 +393,7 @@ export class ServiceHistoryService {
     tenantId: string,
     vin: string,
     format: 'json' | 'csv' = 'json'
-  ): Promise<any> {
+  ): Promise<ServiceHistory[] | ExportResult> {
     const history = await this.getServiceHistoryByVIN(tenantId, vin);
 
     if (format === 'csv') {

@@ -42,7 +42,7 @@ interface SupabaseClientWithRPCs {
     }
   ): Promise<{
     data: SimilarCustomer[] | null;
-    error: any | null;
+    error: unknown | null;
   }>;
   rpc(
     fn: 'get_service_ratings',
@@ -52,7 +52,7 @@ interface SupabaseClientWithRPCs {
     }
   ): Promise<{
     data: ServiceRating[] | null;
-    error: any | null;
+    error: unknown | null;
   }>;
   rpc(
     fn: 'get_popular_services_by_segment',
@@ -63,7 +63,7 @@ interface SupabaseClientWithRPCs {
     }
   ): Promise<{
     data: PopularServiceBySegment[] | null;
-    error: any | null;
+    error: unknown | null;
   }>;
   rpc(
     fn: 'get_popular_services',
@@ -73,7 +73,7 @@ interface SupabaseClientWithRPCs {
     }
   ): Promise<{
     data: PopularService[] | null;
-    error: any | null;
+    error: unknown | null;
   }>;
 }
 
@@ -270,7 +270,7 @@ async function collaborativeFilteringRecommendations(
   );
   
   const candidateServices = new Map<string, {
-    service: any;
+    service: unknown;
     weightedScore: number;
     similaritySum: number;
     purchaseCount: number;
@@ -279,12 +279,14 @@ async function collaborativeFilteringRecommendations(
   for (const similarCustomer of typedSimilarCustomers) {
     // Get services purchased by this similar customer
     // Note: View not in generated types yet, cast query builder to any but type-assert result
-    const { data: interactions } = await (supabase.from as (table: string) => any)('mv_customer_item_interactions')
+    const { data: rawInteractions } = await supabase.from('mv_customer_item_interactions' as never)
       .select('*')
       .eq('tenant_id', input.tenantId)
       .eq('customer_id', similarCustomer.similarCustomerId)
       .eq('item_type', 'service')
       .gte('interaction_score', 0.5); // Only strong preferences
+    
+    const interactions = rawInteractions as unknown as CustomerItemInteraction[] | null;
     
     if (!interactions) continue;
     
@@ -311,7 +313,7 @@ async function collaborativeFilteringRecommendations(
   // Fetch full service details
   // Note: 'services' table exists but not in generated types yet, cast query builder
   const serviceIds = Array.from(candidateServices.keys());
-  const { data: services } = await (supabase.from as (table: string) => any)('services')
+  const { data: services } = await supabase.from('services' as never)
     .select('id, name, price, duration, category, is_active')
     .eq('tenant_id', input.tenantId)
     .in('id', serviceIds)
@@ -404,7 +406,7 @@ async function contentBasedRecommendations(
   const priceRange = context.preferences?.priceRange || { min: 0, max: 10000000 };
   
   // Note: 'services' table exists but not in generated types yet, cast query builder
-  let query = (supabase.from as (table: string) => any)('services')
+  let query = supabase.from('services' as never)
     .select('id, name, price, duration, category, is_active')
     .eq('tenant_id', input.tenantId)
     .eq('is_active', true)
@@ -664,11 +666,21 @@ async function fetchCustomerContext(
 ): Promise<RecommendationContext> {
   // Fetch from mv_customer_segments
   // Note: View not in generated types yet, cast query builder to any but type-assert result
-  const { data: segment } = await (supabase.from as (table: string) => any)('mv_customer_segments')
+  interface CustomerSegmentRow {
+    segment?: string | null;
+    recency_score?: number | null;
+    frequency_score?: number | null;
+    monetary_score?: number | null;
+    total_orders?: number | null;
+    avg_order_value?: number | string | null;
+    last_purchase_date?: string | null;
+  }
+
+  const { data: segment } = await supabase.from('mv_customer_segments' as never)
     .select('*')
     .eq('tenant_id', tenantId)
     .eq('customer_id', customerId)
-    .single();
+    .single() as unknown as { data: CustomerSegmentRow | null };
   
   if (!segment) {
     return {};
@@ -697,7 +709,7 @@ async function fetchCustomerInteractions(
   customerId: string
 ): Promise<CustomerItemInteraction[]> {
   // Note: View not in generated types yet, cast query builder to any but type-assert result
-  const { data } = await (supabase.from as (table: string) => any)('mv_customer_item_interactions')
+  const { data } = await supabase.from('mv_customer_item_interactions' as never)
     .select('*')
     .eq('tenant_id', tenantId)
     .eq('customer_id', customerId);

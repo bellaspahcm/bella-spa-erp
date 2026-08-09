@@ -20,6 +20,26 @@ import { createClient } from '@/lib/supabase-client';
 import { HealthcareAccountingAdapter, type HealthcareAccountingVM } from '@/modules/bella-healthcare/adapters/healthcare-adapter';
 import { getHealthcareAccountingJournalAction, syncHealthcareAccountingOutboxAction } from '@/services/healthcare/healthcare-actions';
 
+interface AccountingAccount {
+  account_code?: string | null;
+  account_name?: string | null;
+}
+
+interface JournalLine {
+  id: string;
+  accounting_accounts?: AccountingAccount | null;
+  debit_amount?: number | null;
+  credit_amount?: number | null;
+}
+
+interface JournalEntry {
+  id: string;
+  reference_type?: string | null;
+  description?: string | null;
+  entry_date?: string | null;
+  journal_lines?: JournalLine[] | null;
+}
+
 export default function HealthcareAccountingPage() {
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
     const now = new Date();
@@ -32,7 +52,7 @@ export default function HealthcareAccountingPage() {
   const [isSyncing, setIsSyncing] = useState(false);
 
   // Database states
-  const [dbJournalEntries, setDbJournalEntries] = useState<any[]>([]);
+  const [dbJournalEntries, setDbJournalEntries] = useState<JournalEntry[]>([]);
 
   // ViewModels after Adapter mapping
   const [mappedEvents, setMappedEvents] = useState<HealthcareAccountingVM[]>([]);
@@ -49,7 +69,7 @@ export default function HealthcareAccountingPage() {
       setDbJournalEntries(res.journals || []);
 
       const accountingAdapter = new HealthcareAccountingAdapter();
-      const mapped = (res.outboxEvents || []).map((evt: any) =>
+      const mapped = (res.outboxEvents || []).map((evt: Record<string, unknown>) =>
         accountingAdapter.map({
           id: evt.id,
           event_type: evt.event_type || 'Encounter.Completed.v1',
@@ -61,9 +81,9 @@ export default function HealthcareAccountingPage() {
       );
 
       setMappedEvents(mapped);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      toast.error('Lỗi tải sổ nhật ký: ' + (err.message || 'Lỗi hệ thống'));
+      toast.error('Lỗi tải sổ nhật ký: ' + (err instanceof Error ? err.message : 'Lỗi hệ thống'));
     } finally {
       setIsLoading(false);
     }
@@ -86,7 +106,7 @@ export default function HealthcareAccountingPage() {
       await syncHealthcareAccountingOutboxAction();
       await fetchData();
       toast.success('Đồng bộ hóa Outbox Event thành công! Các bút toán đã được đưa vào Sổ cái.');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
       toast.error('Lỗi khi đồng bộ: ' + err.message);
     } finally {
@@ -111,7 +131,7 @@ export default function HealthcareAccountingPage() {
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => setActiveTab(tab.id as unknown)}
                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
                   activeTab === tab.id
                     ? 'bg-white dark:bg-slate-950 text-teal-600 dark:text-teal-400 shadow-sm font-black'
@@ -209,7 +229,7 @@ export default function HealthcareAccountingPage() {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-bold text-slate-600 dark:text-slate-400">
-                            {(entry.journal_lines || []).map((line: any) => (
+                            {(entry.journal_lines || []).map((line: Record<string, unknown>) => (
                               <tr key={line.id}>
                                 <td className="px-5 py-3 text-slate-900 dark:text-white font-black">{line.accounting_accounts?.account_code}</td>
                                 <td className="px-5 py-3 text-slate-500">{line.accounting_accounts?.account_name}</td>

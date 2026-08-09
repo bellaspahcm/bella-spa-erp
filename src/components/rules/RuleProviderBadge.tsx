@@ -57,18 +57,19 @@ export function RuleProviderBadge({ provider, className }: RuleProviderBadgeProp
   const vocab = useModuleVocabulary();
   const isRealEstate = vocab.booking.singular.includes('giữ chỗ') || vocab.worker.short === 'CVTV';
   const isCleaning = vocab.worker.short === 'NVS';
+  const isHealthcare = vocab.worker.short === 'Bác sĩ';
 
   let dynamicLabel: string = provider;
   if (provider === 'booking') {
-    dynamicLabel = isRealEstate ? 'Giữ chỗ' : isCleaning ? 'Phiếu công việc' : 'Đặt lịch';
+    dynamicLabel = isRealEstate ? 'Giữ chỗ' : isCleaning ? 'Phiếu công việc' : isHealthcare ? 'Hẹn khám & Giường' : 'Đặt lịch';
   } else if (provider === 'discount') {
-    dynamicLabel = 'Chiết khấu';
+    dynamicLabel = isHealthcare ? 'Khấu trừ / BHYT' : 'Chiết khấu';
   } else if (provider === 'payroll') {
-    dynamicLabel = 'Tính lương';
+    dynamicLabel = isHealthcare ? 'Lương & Trực' : 'Tính lương';
   } else if (provider === 'commission') {
-    dynamicLabel = 'Hoa hồng';
+    dynamicLabel = isHealthcare ? 'Thù lao lâm sàng' : 'Hoa hồng';
   } else if (provider === 'inventory') {
-    dynamicLabel = isRealEstate ? 'Giỏ hàng' : 'Kho hàng';
+    dynamicLabel = isRealEstate ? 'Giỏ hàng' : isHealthcare ? 'Kho dược & Vật tư' : 'Kho hàng';
   }
 
   const config = PROVIDER_CONFIG[provider as keyof typeof PROVIDER_CONFIG] || {

@@ -9,7 +9,7 @@ export type CommandHandler<TCommand extends Command = Command, TResult = unknown
 
 export class CommandBus {
   private static instance: CommandBus;
-  private handlers: Map<string, CommandHandler<any, any>> = new Map();
+  private handlers: Map<string, CommandHandler<Command, unknown>> = new Map();
 
   private constructor() {}
 
@@ -44,7 +44,7 @@ export class CommandBus {
 
     try {
       return await handler(command);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(`[CommandBus Error] Failed executing command %s:`, command.name, err);
       throw err;
     }

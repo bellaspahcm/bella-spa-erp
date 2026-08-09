@@ -1,5 +1,5 @@
 import { supabase as typedSupabase } from '@/lib/supabase';
-const supabase = typedSupabase as any;
+const supabase = typedSupabase as unknown;
 
 export interface OutboxClaimedEvent {
   id: string;
@@ -53,8 +53,8 @@ export class AccountingOutboxListener {
 
       if (accError) throw accError;
 
-      const debitAccount = accounts?.find((a: any) => a.account_code === debitCode);
-      const creditAccount = accounts?.find((a: any) => a.account_code === creditCode);
+      const debitAccount = accounts?.find((a: Record<string, unknown>) => a.account_code === debitCode);
+      const creditAccount = accounts?.find((a: Record<string, unknown>) => a.account_code === creditCode);
 
       if (!debitAccount || !creditAccount) {
         throw new Error(`Accounting accounts not configured for codes: ${debitCode}, ${creditCode}`);
@@ -114,7 +114,7 @@ export class AccountingOutboxListener {
       if (outboxError) throw outboxError;
 
       return entryId;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(`[AccountingOutboxListener Error] Processing failed for outbox ${outboxId}:`, err.message);
       // Mark outbox entry failed for retry
       await supabase.rpc('mark_outbox_failed', {

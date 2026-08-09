@@ -84,7 +84,7 @@ async function rateLimitSupabase(
     const allowed = data === true;
     l1Cache.set(identifier, { allowed, expiresAt: now + L1_TTL_MS });
     return allowed;
-  } catch (err) {
+  } catch (err: unknown) {
     console.warn('[rate-limit] Unexpected error, falling back to memory:', err);
     return rateLimitMemory(identifier, capacity, refillRatePerSecond);
   }

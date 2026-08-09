@@ -47,7 +47,7 @@ function ensureSupabaseClient(): SupabaseClient {
 // Test data constants
 // Use fixed UUIDs for deterministic testing (not random, for reproducibility)
 const TEST_PREFIX = 'e2e-salary-test';
-const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000001'; // Fixed UUID for test tenant
+const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000009'; // Fixed UUID for test tenant
 
 // ============================================================================
 // TYPES

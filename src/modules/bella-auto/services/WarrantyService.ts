@@ -10,6 +10,14 @@ import { Database } from '@/types/database.types';
 
 type WarrantyClaim = Database['public']['Tables']['auto_warranty_claims']['Row'];
 type WarrantyClaimInsert = Database['public']['Tables']['auto_warranty_claims']['Insert'];
+type WarrantyClaimUpdate = Database['public']['Tables']['auto_warranty_claims']['Update'];
+
+interface AutoSaleWarrantyInfo {
+  warranty_start_date?: string | null;
+  warranty_end_date?: string | null;
+  warranty_mileage_limit?: number | null;
+  sale_date?: string | null;
+}
 
 export interface CreateWarrantyClaimData {
   tenantId: string;
@@ -75,7 +83,7 @@ export class WarrantyService {
       failure_description: data.failureDescription,
       failure_date: data.failureDate.toISOString().split('T')[0],
       mileage_at_failure: data.mileageAtFailure,
-      affected_parts: data.affectedParts as any,
+      affected_parts: data.affectedParts as WarrantyClaimInsert['affected_parts'],
       customer_complaints: data.customerComplaints,
       submitted_by: data.submittedBy,
       submitted_at: new Date().toISOString(),
@@ -121,7 +129,7 @@ export class WarrantyService {
       };
     }
 
-    const sale = vehicle.auto_sales as any;
+    const sale = vehicle.auto_sales as AutoSaleWarrantyInfo;
 
     // Check if warranty exists
     if (!sale?.warranty_start_date || !sale?.warranty_end_date) {
@@ -185,7 +193,7 @@ export class WarrantyService {
   ): Promise<WarrantyClaim> {
     const supabase = getPrimaryClient();
 
-    const updateData: any = {
+    const updateData: WarrantyClaimUpdate = {
       reviewed_by: data.reviewedBy,
       reviewed_at: new Date().toISOString(),
       review_notes: data.reviewNotes,
@@ -270,7 +278,7 @@ export class WarrantyService {
   ): Promise<WarrantyClaim> {
     const supabase = getPrimaryClient();
 
-    const updateData: any = {
+    const updateData: WarrantyClaimUpdate = {
       inspection_completed_date: new Date().toISOString().split('T')[0],
       inspection_findings: data.findings,
       inspection_photos: data.photos,

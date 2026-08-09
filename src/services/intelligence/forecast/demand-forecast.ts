@@ -164,7 +164,7 @@ async function fetchHistoricalDemand(
     .split('T')[0];
   
   try {
-    type SupabaseRpc = { rpc: (fn: string, params: Record<string, unknown>) => any };
+    type SupabaseRpc = { rpc: (fn: string, params: Record<string, unknown>) => Promise<{ data: Record<string, unknown>[] | null; error: { message: string } | null }> };
     if (itemType === 'service') {
       // Get service demand from sessions
       // Note: RPC not in generated types yet, using type cast
@@ -310,7 +310,7 @@ async function getDemandAccuracy(
   tenantId: string
 ): Promise<{ avgAccuracyPct: number; avgMape: number } | null> {
   // Note: View not in generated types yet, using type cast
-  type SupabaseFrom = { from: (t: string) => any };
+  type SupabaseFrom = { from: (t: string) => { select: (cols: string) => { eq: (...args: unknown[]) => { eq: (...args: unknown[]) => { eq: (...args: unknown[]) => { single: () => Promise<{ data: Record<string, unknown> | null; error: { message: string } | null }> } } } } } };
   const { data, error } = await (supabase as unknown as SupabaseFrom)
     .from('mv_forecast_accuracy')
     .select('avg_accuracy_pct, avg_mape')
@@ -562,7 +562,7 @@ async function saveDemandForecasts(
     },
   }));
   
-  type SupabaseFrom = { from: (t: string) => any };
+  type SupabaseFrom = { from: (t: string) => { upsert: (data: unknown[], opts: unknown) => Promise<{ error: { message: string } | null }> } };
   const { error } = await (supabase as unknown as SupabaseFrom)
     .from('forecast_results')
     .upsert(forecastRecords, {

@@ -11,6 +11,16 @@ import { Database } from '@/types/database.types';
 
 type LostAnalysis = Database['public']['Tables']['auto_lost_analysis']['Row'];
 type LostAnalysisInsert = Database['public']['Tables']['auto_lost_analysis']['Insert'];
+type LostAnalysisUpdate = Database['public']['Tables']['auto_lost_analysis']['Update'];
+
+interface AIAnalysisRecord {
+  recoverabilityScore: number;
+  rootCauses: string[];
+  contributingFactors: string[];
+  preventionSuggestions: string[];
+  recommendedActions: string[];
+  similarCases: number;
+}
 
 export interface LostReason {
   primary: string;
@@ -65,7 +75,7 @@ export class LostAnalysisAIService {
       lost_at_stage: data.lostAtStage,
       lost_date: data.lostDate.toISOString().split('T')[0],
       primary_reason: data.reason.primary,
-      secondary_reasons: data.reason.secondary as any,
+      secondary_reasons: data.reason.secondary as LostAnalysisInsert['secondary_reasons'],
       competitor_brand: data.competitorInfo?.brand,
       competitor_model: data.competitorInfo?.model,
       competitor_price: data.competitorInfo?.price,
@@ -136,8 +146,8 @@ export class LostAnalysisAIService {
       .from('auto_lost_analysis')
       .update({
         ai_analyzed: true,
-        ai_analysis_result: analysis as any,
-        ai_prevention_suggestions: analysis.preventionSuggestions as any,
+        ai_analysis_result: analysis as LostAnalysisUpdate['ai_analysis_result'],
+        ai_prevention_suggestions: analysis.preventionSuggestions as LostAnalysisUpdate['ai_prevention_suggestions'],
         updated_at: new Date().toISOString(),
       })
       .eq('id', lostAnalysisId)
@@ -156,7 +166,7 @@ export class LostAnalysisAIService {
    */
   private static async analyzeRootCauses(
     tenantId: string,
-    lostAnalysis: any
+    lostAnalysis: LostAnalysis
   ): Promise<AIAnalysisResult> {
     const supabase = getPrimaryClient();
 
@@ -344,7 +354,7 @@ export class LostAnalysisAIService {
    */
   private static async createRecoveryAction(
     tenantId: string,
-    lostAnalysis: any,
+    lostAnalysis: LostAnalysis,
     analysis: AIAnalysisResult
   ): Promise<void> {
     const supabase = getPrimaryClient();
@@ -450,7 +460,7 @@ export class LostAnalysisAIService {
     // Average recoverability
     const analyzedRecords = lostRecords.filter((r) => r.ai_analyzed && r.ai_analysis_result);
     const totalRecoverability = analyzedRecords.reduce(
-      (sum, r) => sum + ((r.ai_analysis_result as any)?.recoverabilityScore || 0),
+      (sum, r) => sum + ((r.ai_analysis_result as AIAnalysisRecord | null)?.recoverabilityScore ?? 0),
       0
     );
     const averageRecoverabilityScore = analyzedRecords.length > 0

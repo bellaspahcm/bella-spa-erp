@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { getRealEstateProjects, RealEstateProjectSummary } from '@/services/workforce-actions';
 import { fetchProductsAction } from '@/modules/real_estate/actions/productActions';
+import { Database } from '@/types/database.types';
 import { formatCurrency } from '@bella/shared';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -14,7 +15,8 @@ import Link from 'next/link';
 export default function Inventory() {
   const [projects, setProjects] = useState<RealEstateProjectSummary[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState('');
-  const [products, setProducts] = useState<any[]>([]);
+  type ProductRow = Database['public']['Tables']['real_estate_products']['Row'];
+  const [products, setProducts] = useState<ProductRow[]>([]);
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -29,7 +31,7 @@ export default function Inventory() {
         if (data.length > 0) {
           setSelectedProjectId(data[0].id);
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('[Inventory] Load projects failed:', err);
         toast.error('Lỗi khi tải danh sách dự án');
       } finally {
@@ -50,7 +52,7 @@ export default function Inventory() {
       } else {
         toast.error(res.error || 'Lỗi khi tải bảng hàng');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[Inventory] Fetch products failed:', err);
       toast.error('Lỗi kết nối khi tải bảng hàng');
     } finally {

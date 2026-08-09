@@ -486,7 +486,7 @@ export default function InpatientBedCommandCenter() {
   const loadHospitalBeds = async () => {
     setRefreshing(true);
     try {
-      const result = await queryBeds({ tenantId: 'bella_healthcare' });
+      const result = await queryBeds({ tenantId: 'c1e19d70-36ab-4a5f-a36c-92f7e7f6e05d' });
       if (result.success && result.data && result.data.length > 0) {
         // Map database records into extended UI model
         const mappedData: BedCardData[] = result.data.map((dbBed) => {
@@ -594,11 +594,13 @@ export default function InpatientBedCommandCenter() {
     setLoading(true);
     try {
       const result = await allocateBed({
-        tenantId: 'bella_healthcare',
+        tenantId: 'c1e19d70-36ab-4a5f-a36c-92f7e7f6e05d', // Bella General Hospital UUID
         encounterId: '00000000-0000-0000-0000-000000000000',
+        admissionId: `ADM-${Date.now()}`, // Generate temporary admission ID
         patientId,
         wardId: allocationTarget.wardId,
         bedType: allocationTarget.bedType,
+        userId: 'system', // Add current user ID if available
       });
 
       if (result.success) {

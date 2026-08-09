@@ -7,7 +7,7 @@
  * @status 🧪 Testing
  */
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach } from '@jest/globals';
 
 // Mock modules BEFORE importing the function under test
 jest.mock('@/lib/supabase-server', () => ({
@@ -233,7 +233,7 @@ describe('checkBookingConflicts', () => {
 
     expect(result.decision).toBe('APPROVE');
     expect(result.message).toContain('no KTV');
-    expect(mockPolicy.evaluate).not.toHaveBeenCalled(); // Skip policy check
+    expect(mockEvaluate).not.toHaveBeenCalled(); // Skip policy check
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -252,7 +252,7 @@ describe('checkBookingConflicts', () => {
 
     expect(result.decision).toBe('APPROVE');
     expect(result.message).toContain('no KTV or date');
-    expect(mockPolicy.evaluate).not.toHaveBeenCalled();
+    expect(mockEvaluate).not.toHaveBeenCalled();
   });
 
   // ─────────────────────────────────────────────────────────────────────────

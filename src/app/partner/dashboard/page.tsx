@@ -7,13 +7,15 @@ import {
 } from 'lucide-react';
 import { getPartnerDashboardData, PartnerDashboardData, fetchLeadAnalytics, LeadAnalytics } from '@/services/partner-actions';
 import { getCachedCurrentUser } from '@/lib/dashboard-client-context';
+
+type CurrentUser = Awaited<ReturnType<typeof getCachedCurrentUser>>;
 import { toast } from 'sonner';
 import Link from 'next/link';
 
 export default function PartnerDashboard() {
   const [data, setData] = useState<PartnerDashboardData | null>(null);
   const [leadStats, setLeadStats] = useState<LeadAnalytics | null>(null);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<CurrentUser>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadData = useCallback(async () => {
@@ -63,7 +65,7 @@ export default function PartnerDashboard() {
       setData(dbData);
       setLeadStats(analytics);
       setUser(currentUser);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[PartnerDashboard] Load failed:', err);
       // toast.error('Lỗi khi tải dữ liệu trang chủ');
       // Set empty data instead of showing error

@@ -118,7 +118,7 @@ export class PolicyStatisticsService {
         lastDecisionAt: null,
         createdAt: null,
         updatedAt: null,
-      } as any
+      } as unknown
     );
 
     // Calculate derived fields
@@ -215,32 +215,32 @@ export class PolicyStatisticsService {
 // HELPER FUNCTIONS
 // ============================================================================
 
-function mapDbToStatistics(dbRow: any): PolicyStatistics {
+function mapDbToStatistics(dbRow: Record<string, unknown>): PolicyStatistics {
   return {
-    policyId: dbRow.policy_id,
-    version: dbRow.version,
-    totalDecisions: dbRow.total_decisions || 0,
-    totalApprovals: dbRow.total_approvals || 0,
-    totalRejections: dbRow.total_rejections || 0,
-    approvalRate: dbRow.approval_rate,
-    rejectionRate: dbRow.rejection_rate,
-    avgConfidence: dbRow.avg_confidence,
-    lastDecisionAt: dbRow.last_decision_at,
-    createdAt: dbRow.created_at,
-    updatedAt: dbRow.updated_at,
+    policyId: (dbRow.policy_id as string) || '',
+    version: (dbRow.version as string) || '',
+    totalDecisions: (dbRow.total_decisions as number) || 0,
+    totalApprovals: (dbRow.total_approvals as number) || 0,
+    totalRejections: (dbRow.total_rejections as number) || 0,
+    approvalRate: dbRow.approval_rate as number | undefined,
+    rejectionRate: dbRow.rejection_rate as number | undefined,
+    avgConfidence: dbRow.avg_confidence as number | undefined,
+    lastDecisionAt: dbRow.last_decision_at as string | null,
+    createdAt: dbRow.created_at as string | null,
+    updatedAt: dbRow.updated_at as string | null,
   };
 }
 
-function mapDbToStatisticsRaw(dbRow: any): PolicyStatistics {
-  const totalDecisions = dbRow.total_decisions || 0;
-  const totalApprovals = dbRow.total_approvals || 0;
-  const totalRejections = dbRow.total_rejections || 0;
-  const confidenceSum = dbRow.confidence_sum || 0;
-  const confidenceCount = dbRow.confidence_count || 0;
+function mapDbToStatisticsRaw(dbRow: Record<string, unknown>): PolicyStatistics {
+  const totalDecisions = (dbRow.total_decisions as number) || 0;
+  const totalApprovals = (dbRow.total_approvals as number) || 0;
+  const totalRejections = (dbRow.total_rejections as number) || 0;
+  const confidenceSum = (dbRow.confidence_sum as number) || 0;
+  const confidenceCount = (dbRow.confidence_count as number) || 0;
 
   return {
-    policyId: dbRow.policy_id,
-    version: dbRow.version,
+    policyId: (dbRow.policy_id as string) || '',
+    version: (dbRow.version as string) || '',
     totalDecisions,
     totalApprovals,
     totalRejections,
@@ -256,8 +256,8 @@ function mapDbToStatisticsRaw(dbRow: any): PolicyStatistics {
       confidenceCount > 0
         ? Math.round((confidenceSum / confidenceCount) * 100) / 100
         : undefined,
-    lastDecisionAt: dbRow.last_decision_at,
-    createdAt: dbRow.created_at,
-    updatedAt: dbRow.updated_at,
+    lastDecisionAt: dbRow.last_decision_at as string | null,
+    createdAt: dbRow.created_at as string | null,
+    updatedAt: dbRow.updated_at as string | null,
   };
 }

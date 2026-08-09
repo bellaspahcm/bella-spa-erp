@@ -110,7 +110,7 @@ export function ProductSalesListPage() {
         console.log('[ProductSalesListPage] Raw data from API:', result.data);
         
         // Transform data to match ProductSale interface with safety checks
-        const salesData = (result.data.sales as any[]).map((sale, index) => {
+        const salesData = (result.data.sales as unknown[]).map((sale, index) => {
           try {
             // Safely extract KTV name
             const ktvName = sale.users?.full_name || 'Unknown KTV';
@@ -175,7 +175,7 @@ export function ProductSalesListPage() {
         console.error('[ProductSalesListPage] API returned error:', result.error);
         setError(result.error || 'Không thể tải danh sách bán hàng');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error fetching product sales:', err);
       setError('Lỗi hệ thống khi tải dữ liệu');
     } finally {
@@ -216,7 +216,7 @@ export function ProductSalesListPage() {
         } else {
           setCommissionDefaults(data);
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('[ProductSalesListPage] Unexpected error fetching config:', err);
         // Use fallback defaults
         setCommissionDefaults({

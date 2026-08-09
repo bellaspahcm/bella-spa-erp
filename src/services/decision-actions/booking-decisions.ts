@@ -119,7 +119,7 @@ export async function checkBookingConflicts(input: {
           duration = packageData.default_duration_minutes;
         }
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.warn('[checkBookingConflicts] Failed to fetch package duration, falling back to input:', err);
     }
 

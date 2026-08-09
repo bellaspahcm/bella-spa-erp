@@ -372,7 +372,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     try {
       await navigator.clipboard.writeText(text);
       return true;
-    } catch (err) {
+    } catch (err: unknown) {
       console.warn('navigator.clipboard.writeText failed, trying fallback:', err);
     }
   }
@@ -407,7 +407,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     if (successful) {
       return true;
     }
-  } catch (err) {
+  } catch (err: unknown) {
     console.error('Fallback copy method failed:', err);
   }
   

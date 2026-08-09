@@ -18,7 +18,7 @@ import type { PayrollProvider, SalaryComponent } from '@/lib/decision-engine/typ
  * 
  * Wraps the result of a single policy evaluation with metadata.
  */
-export interface PolicyExecutionResult<T = any> {
+export interface PolicyExecutionResult<T = unknown> {
   /** Policy that generated this result */
   policyName: string;
   
@@ -38,7 +38,7 @@ export interface PolicyExecutionResult<T = any> {
   executionTime: number;
   
   /** Metadata from policy evaluation */
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -46,7 +46,7 @@ export interface PolicyExecutionResult<T = any> {
  * 
  * Aggregated result from all policy executions in a process.
  */
-export interface ProcessResult<T = any> {
+export interface ProcessResult<T = unknown> {
   /** Process name */
   processName: string;
   
@@ -137,7 +137,7 @@ export interface BusinessProcess<TContext, TResult> {
   config: ProcessConfig;
   
   /** Policy providers in this process */
-  policies: PayrollProvider<any>[];
+  policies: PayrollProvider<unknown>[];
   
   /**
    * Execute the business process

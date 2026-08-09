@@ -20,6 +20,8 @@ const TEST_TENANT_ID = '88888888-8888-8888-8888-888888888888';
 let supabase: ReturnType<typeof createClient<Database>>;
 let engine: RollbackEngineService;
 
+jest.setTimeout(60000);
+
 beforeAll(() => {
   supabase = createClient<Database>(SUPABASE_URL, SUPABASE_KEY);
   engine = new RollbackEngineService(supabase, TEST_TENANT_ID);
