@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { X, AlertTriangle, CheckCircle, Clock, User, Layers, UserPlus, ArrowUpCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 // Types
 export interface ClinicalAlert {
@@ -46,10 +47,24 @@ export default function ClinicalActionModal({
     try {
       await onAction(alert.id, actionType, notes);
       setNotes('');
+      
+      // Show success toast
+      if (actionType === 'acknowledge') {
+        toast.success('Đã xác nhận cảnh báo', {
+          description: `Cảnh báo "${alert.title}" sẽ được xử lý sau.`
+        });
+      } else {
+        toast.success('Xử lý thành công', {
+          description: `Cảnh báo "${alert.title}" đã được xử lý.`
+        });
+      }
+      
       onClose();
     } catch (error) {
       console.error('Failed to process action:', error);
-      alert('Có lỗi xảy ra khi xử lý. Vui lòng thử lại.');
+      toast.error('Có lỗi xảy ra khi xử lý', {
+        description: error instanceof Error ? error.message : 'Vui lòng thử lại sau.'
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -57,24 +72,36 @@ export default function ClinicalActionModal({
 
   const handleWorkspace = () => {
     // Navigate to clinical workspace for this patient
+    toast.info('Đang mở Workspace...', {
+      description: `Xem hồ sơ bệnh nhân ${alert.patientName}`
+    });
     window.open(`/dashboard/hospital/patients/${alert.patientMPI}`, '_blank');
   };
 
   const handleAssign = async () => {
     if (!assignTo.trim()) {
-      alert('Vui lòng chọn người được gán');
+      toast.warning('Chưa chọn người xử lý', {
+        description: 'Vui lòng chọn người được gán trước khi xác nhận.'
+      });
       return;
     }
     
     setIsProcessing(true);
     try {
       await onAction(alert.id, 'assign', `Assigned to: ${assignTo}`);
+      
+      toast.success('Đã gán người xử lý', {
+        description: `Cảnh báo "${alert.title}" đã được gán cho ${assignTo}.`
+      });
+      
       setShowAssignModal(false);
       setAssignTo('');
       onClose();
     } catch (error) {
       console.error('Failed to assign:', error);
-      alert('Có lỗi xảy ra khi gán. Vui lòng thử lại.');
+      toast.error('Có lỗi xảy ra khi gán', {
+        description: error instanceof Error ? error.message : 'Vui lòng thử lại sau.'
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -90,10 +117,17 @@ export default function ClinicalActionModal({
     setIsProcessing(true);
     try {
       await onAction(alert.id, 'escalate', notes || 'Escalated to higher authority');
+      
+      toast.success('Đã leo thang cảnh báo', {
+        description: `Cảnh báo "${alert.title}" đã được chuyển lên cấp cao hơn.`
+      });
+      
       onClose();
     } catch (error) {
       console.error('Failed to escalate:', error);
-      alert('Có lỗi xảy ra khi leo thang. Vui lòng thử lại.');
+      toast.error('Có lỗi xảy ra khi leo thang', {
+        description: error instanceof Error ? error.message : 'Vui lòng thử lại sau.'
+      });
     } finally {
       setIsProcessing(false);
     }
