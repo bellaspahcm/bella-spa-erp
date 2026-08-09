@@ -1,4 +1,9 @@
-import { supabase } from '@/lib/supabase';
+import { createBrowserClient } from '@/lib/supabase-browser-client';
+
+// Get browser client for client-side calls
+const getBrowserSupabase = () => {
+  return createBrowserClient();
+};
 
 export interface ICUStats {
   totalBeds: number;
@@ -96,6 +101,7 @@ export class ICUService {
    */
   static async getICUStats(tenantId: string): Promise<ICUStats> {
     try {
+      const supabase = getBrowserSupabase();
       // Query ICU ward beds
       const { data: icuWard, error: wardError } = await supabase
         .from('wards')
@@ -162,6 +168,7 @@ export class ICUService {
    */
   static async getICUPatients(tenantId: string): Promise<ICUPatient[]> {
     try {
+      const supabase = getBrowserSupabase();
       const { data, error } = await supabase
         .from('inpatient_admissions')
         .select('*, patients(*), beds(*)')

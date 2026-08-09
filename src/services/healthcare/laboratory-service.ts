@@ -1,4 +1,9 @@
-import { supabase } from '@/lib/supabase';
+import { createBrowserClient } from '@/lib/supabase-browser-client';
+
+// Get browser client for client-side calls
+const getBrowserSupabase = () => {
+  return createBrowserClient();
+};
 
 export interface LaboratoryStats {
   totalOrders: number;
@@ -24,6 +29,7 @@ export class LaboratoryService {
    */
   static async getLabStats(tenantId: string): Promise<LaboratoryStats> {
     try {
+      const supabase = getBrowserSupabase();
       const { data: orders, error } = await supabase
         .from('clinical_orders')
         .select('*')
@@ -65,6 +71,7 @@ export class LaboratoryService {
    */
   static async getImagingStats(tenantId: string): Promise<ImagingStats> {
     try {
+      const supabase = getBrowserSupabase();
       const { data: orders, error } = await supabase
         .from('clinical_orders')
         .select('*')

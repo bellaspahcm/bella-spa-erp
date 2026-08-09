@@ -1,4 +1,9 @@
-import { supabase } from '@/lib/supabase';
+import { createBrowserClient } from '@/lib/supabase-browser-client';
+
+// Get browser client for client-side calls
+const getBrowserSupabase = () => {
+  return createBrowserClient();
+};
 
 export interface EmergencyStats {
   totalPatients: number;
@@ -77,6 +82,7 @@ export class EmergencyService {
    */
   static async getERStats(tenantId: string): Promise<EmergencyStats> {
     try {
+      const supabase = getBrowserSupabase();
       const { data: patients, error } = await supabase
         .from('emergency_patients')
         .select('*')
@@ -119,6 +125,7 @@ export class EmergencyService {
    */
   static async getEmergencyPatients(tenantId: string): Promise<EmergencyPatient[]> {
     try {
+      const supabase = getBrowserSupabase();
       const { data, error } = await supabase
         .from('emergency_patients')
         .select('*')

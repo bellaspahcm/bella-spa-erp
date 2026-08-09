@@ -1,4 +1,9 @@
-import { supabase } from '@/lib/supabase';
+import { createBrowserClient } from '@/lib/supabase-browser-client';
+
+// Get browser client for client-side calls
+const getBrowserSupabase = () => {
+  return createBrowserClient();
+};
 
 export interface OperatingRoomStats {
   totalSurgeriesToday: number;
@@ -100,6 +105,7 @@ export class OperatingRoomService {
    */
   static async getORStats(tenantId: string): Promise<OperatingRoomStats> {
     try {
+      const supabase = getBrowserSupabase();
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const tomorrow = new Date(today);
@@ -150,6 +156,7 @@ export class OperatingRoomService {
    */
   static async getTodaySurgeries(tenantId: string): Promise<Surgery[]> {
     try {
+      const supabase = getBrowserSupabase();
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const tomorrow = new Date(today);

@@ -1,4 +1,9 @@
-import { supabase } from '@/lib/supabase';
+import { createBrowserClient } from '@/lib/supabase-browser-client';
+
+// Get browser client for client-side calls
+const getBrowserSupabase = () => {
+  return createBrowserClient();
+};
 
 export interface PatientFlowStats {
   emergency: { count: number; badge: string; badgeColor: string };
@@ -17,6 +22,7 @@ export class PatientFlowService {
    */
   static async getFlowStats(tenantId: string): Promise<PatientFlowStats> {
     try {
+      const supabase = getBrowserSupabase();
       // Query multiple departments in parallel
       const [
         emergencyResult,
