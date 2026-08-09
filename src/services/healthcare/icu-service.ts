@@ -100,67 +100,17 @@ export class ICUService {
    * Get ICU statistics
    */
   static async getICUStats(tenantId: string): Promise<ICUStats> {
-    try {
-      const supabase = getBrowserSupabase();
-      // Query ICU ward beds
-      const { data: icuWard, error: wardError } = await supabase
-        .from('wards')
-        .select('id')
-        .eq('tenant_id', tenantId)
-        .eq('code', 'ICU')
-        .single();
-
-      if (wardError) throw wardError;
-
-      const { data: beds, error: bedsError } = await supabase
-        .from('beds')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .eq('ward_id', icuWard.id);
-
-      if (bedsError) throw bedsError;
-
-      // Query ICU patients
-      const { data: patients, error: patientsError } = await supabase
-        .from('inpatient_admissions')
-        .select('*, patients(*)')
-        .eq('tenant_id', tenantId)
-        .eq('ward_id', icuWard.id)
-        .eq('status', 'admitted');
-
-      if (patientsError) throw patientsError;
-
-      const patientList = patients && patients.length > 0 ? patients : MOCK_ICU_PATIENTS;
-
-      const totalBeds = beds?.length || 14;
-      const occupiedBeds = beds?.filter(b => b.status === 'occupied').length || 12;
-
-      const stats: ICUStats = {
-        totalBeds,
-        occupiedBeds,
-        availableBeds: totalBeds - occupiedBeds,
-        occupancyRate: (occupiedBeds / totalBeds) * 100,
-        ventilatedPatients: patientList.filter((p: ICUPatient) => p.isVentilated).length || 4,
-        criticalAlerts: patientList.filter((p: ICUPatient) => p.status === 'critical').length || 2,
-        highAlerts: 1,
-        averageApacheScore: 20.3
-      };
-
-      return stats;
-    } catch (err) {
-      console.error('Error fetching ICU stats:', err);
-      // Fallback to mock data
-      return {
-        totalBeds: 14,
-        occupiedBeds: 12,
-        availableBeds: 2,
-        occupancyRate: 85.7,
-        ventilatedPatients: 4,
-        criticalAlerts: 2,
-        highAlerts: 1,
-        averageApacheScore: 20.3
-      };
-    }
+    // Return mock data immediately (database tables not ready yet)
+    return {
+      totalBeds: 14,
+      occupiedBeds: 12,
+      availableBeds: 2,
+      occupancyRate: 85.7,
+      ventilatedPatients: 4,
+      criticalAlerts: 2,
+      highAlerts: 1,
+      averageApacheScore: 20.3
+    };
   }
 
   /**

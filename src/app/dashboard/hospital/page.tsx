@@ -567,15 +567,15 @@ export default function HospitalDashboardPage() {
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-8 gap-3 relative">
           {/* Flow Nodes */}
-          {flowStats ? [
-            { step: 'Cấp Cứu (ED)', ...flowStats.emergency },
-            { step: 'Phân Loại (Triage)', ...flowStats.triage },
-            { step: 'Phòng Khám (OPD)', ...flowStats.outpatient },
-            { step: 'Cận Lâm Sàng', ...flowStats.diagnostics },
-            { step: 'Thủ Tục Nhập Viện', ...flowStats.admissionProcess },
-            { step: 'Nội Trú / ICU', ...flowStats.inpatient },
-            { step: 'Phẫu Thuật (OR)', ...flowStats.surgery },
-            { step: 'Lên Lịch Xuất Viện', ...flowStats.discharge },
+          {(flowStats ? [
+            { step: 'Cấp Cứu (ED)', count: flowStats.emergency.count, badge: flowStats.emergency.badge, badgeColor: flowStats.emergency.badgeColor },
+            { step: 'Phân Loại (Triage)', count: flowStats.triage.count, badge: flowStats.triage.badge, badgeColor: flowStats.triage.badgeColor },
+            { step: 'Phòng Khám (OPD)', count: flowStats.outpatient.count, badge: flowStats.outpatient.badge, badgeColor: flowStats.outpatient.badgeColor },
+            { step: 'Cận Lâm Sàng', count: flowStats.diagnostics.count, badge: flowStats.diagnostics.badge, badgeColor: flowStats.diagnostics.badgeColor },
+            { step: 'Thủ Tục Nhập Viện', count: flowStats.admissionProcess.count, badge: flowStats.admissionProcess.badge, badgeColor: flowStats.admissionProcess.badgeColor },
+            { step: 'Nội Trú / ICU', count: flowStats.inpatient.count, badge: flowStats.inpatient.badge, badgeColor: flowStats.inpatient.badgeColor },
+            { step: 'Phẫu Thuật (OR)', count: flowStats.surgery.count, badge: flowStats.surgery.badge, badgeColor: flowStats.surgery.badgeColor },
+            { step: 'Lên Lịch Xuất Viện', count: flowStats.discharge.count, badge: flowStats.discharge.badge, badgeColor: flowStats.discharge.badgeColor },
           ] : [
             { step: 'Cấp Cứu (ED)', count: 24, badge: '2 Nguy Kịch', badgeColor: 'bg-rose-100 text-rose-800 border-rose-200' },
             { step: 'Phân Loại (Triage)', count: 18, badge: '3 Đang Chờ', badgeColor: 'bg-amber-100 text-amber-800 border-amber-200' },
@@ -585,7 +585,7 @@ export default function HospitalDashboardPage() {
             { step: 'Nội Trú / ICU', count: 86, badge: '12 Giường ICU', badgeColor: 'bg-purple-100 text-purple-800 border-purple-200' },
             { step: 'Phẫu Thuật (OR)', count: 3, badge: '1 Trễ Ca', badgeColor: 'bg-amber-100 text-amber-800 border-amber-200' },
             { step: 'Lên Lịch Xuất Viện', count: 9, badge: '2 Chờ Thanh Toán', badgeColor: 'bg-slate-100 text-slate-700 border-slate-200' },
-          ].map((item, idx) => (
+          ]).map((item, idx) => (
             <div key={idx} className="bg-slate-50 border border-slate-100 p-3.5 rounded-2xl relative flex flex-col justify-between hover:border-indigo-300 transition-colors group">
               <div>
                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">

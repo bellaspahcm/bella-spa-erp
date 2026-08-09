@@ -104,51 +104,17 @@ export class OperatingRoomService {
    * Get Operating Room statistics for today
    */
   static async getORStats(tenantId: string): Promise<OperatingRoomStats> {
-    try {
-      const supabase = getBrowserSupabase();
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      const { data: surgeries, error } = await supabase
-        .from('surgeries')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .gte('scheduled_start', today.toISOString())
-        .lt('scheduled_start', tomorrow.toISOString())
-        .neq('status', 'cancelled');
-
-      if (error) throw error;
-
-      const surgeryList = surgeries && surgeries.length > 0 ? surgeries : MOCK_SURGERIES;
-
-      const stats: OperatingRoomStats = {
-        totalSurgeriesToday: surgeryList.length,
-        inProgress: surgeryList.filter((s: Surgery) => s.status === 'in_progress').length,
-        completed: surgeryList.filter((s: Surgery) => s.status === 'completed').length,
-        scheduled: surgeryList.filter((s: Surgery) => s.status === 'scheduled').length,
-        delayed: surgeryList.filter((s: Surgery) => s.status === 'delayed').length,
-        avgDuration: 135, // Mock average
-        roomsInUse: surgeryList.filter((s: Surgery) => s.status === 'in_progress').length,
-        totalRooms: 6
-      };
-
-      return stats;
-    } catch (err) {
-      console.error('Error fetching OR stats:', err);
-      // Fallback to mock data
-      return {
-        totalSurgeriesToday: 18,
-        inProgress: 3,
-        completed: 11,
-        scheduled: 2,
-        delayed: 2,
-        avgDuration: 135,
-        roomsInUse: 3,
-        totalRooms: 6
-      };
-    }
+    // Return mock data immediately (database tables not ready yet)
+    return {
+      totalSurgeriesToday: 18,
+      inProgress: 3,
+      completed: 11,
+      scheduled: 2,
+      delayed: 2,
+      avgDuration: 135,
+      roomsInUse: 3,
+      totalRooms: 6
+    };
   }
 
   /**

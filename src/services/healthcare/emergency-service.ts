@@ -81,6 +81,18 @@ export class EmergencyService {
    * Get Emergency Room statistics
    */
   static async getERStats(tenantId: string): Promise<EmergencyStats> {
+    // Return mock data immediately (database tables not ready yet)
+    return {
+      totalPatients: 24,
+      waitingTriage: 8,
+      critical: 2,
+      triaging: 3,
+      treating: 9,
+      waitingBed: 2,
+      avgWaitTime: 28
+    };
+
+    /* TODO: Enable database queries when tables are ready
     try {
       const supabase = getBrowserSupabase();
       const { data: patients, error } = await supabase
@@ -91,7 +103,6 @@ export class EmergencyService {
 
       if (error) throw error;
 
-      // Use real data if available, otherwise use mock
       const patientList = patients && patients.length > 0 ? patients : MOCK_ER_PATIENTS;
 
       const stats: EmergencyStats = {
@@ -101,13 +112,12 @@ export class EmergencyService {
         triaging: patientList.filter((p: EmergencyPatient) => p.status === 'triaging').length,
         treating: patientList.filter((p: EmergencyPatient) => p.status === 'in_treatment').length,
         waitingBed: patientList.filter((p: EmergencyPatient) => p.status === 'waiting_bed').length,
-        avgWaitTime: 28 // Mock average wait time in minutes
+        avgWaitTime: 28
       };
 
       return stats;
     } catch (err) {
       console.error('Error fetching ER stats:', err);
-      // Fallback to mock data
       return {
         totalPatients: 24,
         waitingTriage: 8,
@@ -118,6 +128,7 @@ export class EmergencyService {
         avgWaitTime: 28
       };
     }
+    */
   }
 
   /**
