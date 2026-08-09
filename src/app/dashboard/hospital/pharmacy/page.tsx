@@ -25,6 +25,7 @@ import {
   Trash2,
   AlertCircle
 } from 'lucide-react';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 // ─── TYPES ──────────────────────────────────────────────────────────────────
 type MedicationState =
@@ -811,33 +812,37 @@ export default function HospitalPharmacyPage() {
 
         {activeTab === 'dispense' && (
           <div className="flex gap-2 w-full md:w-auto">
-            <select
+            <PremiumSelect
+              options={[
+                { value: 'ALL', label: 'Tất cả ưu tiên' },
+                { value: 'STAT', label: 'STAT (Khẩn)' },
+                { value: 'NOW', label: 'NOW (Ngay)' },
+                { value: 'URGENT', label: 'URGENT (Gấp)' },
+                { value: 'ROUTINE', label: 'ROUTINE (Thường)' },
+              ]}
               value={priorityFilter}
-              onChange={(e) => setPriorityFilter(e.target.value)}
-              className="text-xs font-bold border border-slate-300 rounded-lg px-2.5 py-2 bg-slate-50 text-slate-700"
-            >
-              <option value="ALL">Tất cả ưu tiên</option>
-              <option value="STAT">STAT (Khẩn)</option>
-              <option value="NOW">NOW (Ngay)</option>
-              <option value="URGENT">URGENT (Gấp)</option>
-              <option value="ROUTINE">ROUTINE (Thường)</option>
-            </select>
+              onChange={setPriorityFilter}
+              placeholder="Chọn ưu tiên"
+              buttonClassName="text-xs"
+            />
 
-            <select
+            <PremiumSelect
+              options={[
+                { value: 'ALL', label: 'Tất cả trạng thái' },
+                { value: 'ORDERED', label: 'Chờ duyệt lâm sàng' },
+                { value: 'PHARMACY_VERIFIED', label: 'Đã duyệt lâm sàng' },
+                { value: 'RESERVED', label: 'Đã giữ tồn kho' },
+                { value: 'DISPENSING', label: 'Đang chuẩn bị' },
+                { value: 'DISPENSED', label: 'Đã cấp phát' },
+                { value: 'DELIVERED', label: 'Đang giao' },
+                { value: 'RECEIVED_BY_WARD', label: 'Khoa đã nhận' },
+                { value: 'ADMINISTERED', label: 'Đã dùng cho BN' },
+              ]}
               value={stateFilter}
-              onChange={(e) => setStateFilter(e.target.value)}
-              className="text-xs font-bold border border-slate-300 rounded-lg px-2.5 py-2 bg-slate-50 text-slate-700"
-            >
-              <option value="ALL">Tất cả trạng thái</option>
-              <option value="ORDERED">Chờ duyệt lâm sàng</option>
-              <option value="PHARMACY_VERIFIED">Đã duyệt lâm sàng</option>
-              <option value="RESERVED">Đã giữ tồn kho</option>
-              <option value="DISPENSING">Đang chuẩn bị</option>
-              <option value="DISPENSED">Đã cấp phát</option>
-              <option value="DELIVERED">Đang giao</option>
-              <option value="RECEIVED_BY_WARD">Khoa đã nhận</option>
-              <option value="ADMINISTERED">Đã dùng cho BN</option>
-            </select>
+              onChange={setStateFilter}
+              placeholder="Chọn trạng thái"
+              buttonClassName="text-xs"
+            />
           </div>
         )}
       </div>
@@ -1304,26 +1309,30 @@ export default function HospitalPharmacyPage() {
 
               <form onSubmit={handleDisposalSubmit} className="space-y-3.5">
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1">Tên thuốc độc hại:</label>
-                  <select
+                  <PremiumSelect
+                    label="Tên thuốc độc hại:"
+                    options={[
+                      { value: 'Morphine 10mg/ml', label: 'Morphine 10mg/ml' },
+                    ]}
                     value={disposalDrug}
-                    onChange={(e) => setDisposalDrug(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-rose-500 bg-slate-50 font-bold"
-                  >
-                    <option value="Morphine 10mg/ml">Morphine 10mg/ml</option>
-                  </select>
+                    onChange={setDisposalDrug}
+                    placeholder="Chọn thuốc"
+                    buttonClassName="text-xs"
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1">Mã Lô thuốc:</label>
-                  <select
+                  <PremiumSelect
+                    label="Mã Lô thuốc:"
+                    options={[
+                      { value: 'MOR-260201', label: 'MOR-260201 (Hạn: 02/2027)' },
+                      { value: 'MOR-260904', label: 'MOR-260904 (Hạn: 09/2027)' },
+                    ]}
                     value={disposalBatch}
-                    onChange={(e) => setDisposalBatch(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-rose-500 bg-slate-50"
-                  >
-                    <option value="MOR-260201">MOR-260201 (Hạn: 02/2027)</option>
-                    <option value="MOR-260904">MOR-260904 (Hạn: 09/2027)</option>
-                  </select>
+                    onChange={setDisposalBatch}
+                    placeholder="Chọn lô"
+                    buttonClassName="text-xs"
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">

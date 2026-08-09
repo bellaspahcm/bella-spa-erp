@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { X, AlertTriangle, CheckCircle, Clock, User, Layers, UserPlus, ArrowUpCircle, Info, AlertCircle } from 'lucide-react';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 // Types
 export interface ClinicalAlert {
@@ -407,21 +408,20 @@ export default function ClinicalActionModal({
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">
-                  Chọn Người Xử Lý
-                </label>
-                <select
+                <PremiumSelect
+                  label="Chọn Người Xử Lý"
+                  options={[
+                    { value: '', label: '-- Chọn người --' },
+                    { value: 'Dr. Nguyen Van A', label: 'BS. Nguyễn Văn A (Khoa Nội)' },
+                    { value: 'Dr. Tran Thi B', label: 'BS. Trần Thị B (Khoa Ngoại)' },
+                    { value: 'Nurse Le Van C', label: 'ĐD. Lê Văn C (Điều Dưỡng Trưởng)' },
+                    { value: 'Pharmacist Pham Thi D', label: 'DS. Phạm Thị D (Dược Sĩ)' },
+                  ]}
                   value={assignTo}
-                  onChange={(e) => setAssignTo(e.target.value)}
-                  className="w-full p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  onChange={setAssignTo}
+                  placeholder="-- Chọn người --"
                   disabled={isProcessing}
-                >
-                  <option value="">-- Chọn người --</option>
-                  <option value="Dr. Nguyen Van A">BS. Nguyễn Văn A (Khoa Nội)</option>
-                  <option value="Dr. Tran Thi B">BS. Trần Thị B (Khoa Ngoại)</option>
-                  <option value="Nurse Le Van C">ĐD. Lê Văn C (Điều Dưỡng Trưởng)</option>
-                  <option value="Pharmacist Pham Thi D">DS. Phạm Thị D (Dược Sĩ)</option>
-                </select>
+                />
               </div>
 
               <div className="flex justify-end space-x-3">
