@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { NursingVitalSigns, InpatientAdmission, Bed, Ward } from '@/types/healthcare';
-import { useNursingEngine } from '@/hooks/use-nursing-engine';
+import { useNursingEngine } from '@/products/bella-hospital/hooks/use-nursing-engine';
 import { InpatientAdmissionService, BedEngineService } from '@/services/healthcare-hospital-services';
 import {
   Activity,

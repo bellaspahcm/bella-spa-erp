@@ -22,7 +22,7 @@ import {
   ShieldCheck,
   UserPlus
 } from 'lucide-react';
-import { useBedEngine } from '@/hooks/use-bed-engine';
+import { useBedEngine } from '@/products/bella-hospital/hooks/use-bed-engine';
 import { BreakGlassSecurityService } from '@/services/healthcare-hospital-services';
 import { createClient } from '@/lib/supabase-client';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';

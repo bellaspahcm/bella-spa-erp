@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { MedicationAdministrationRecord, InpatientAdmission, Bed, Ward, MARStatus } from '@/types/healthcare';
-import { usePharmacyEngine } from '@/hooks/use-pharmacy-engine';
+import { usePharmacyEngine } from '@/products/bella-hospital/hooks/use-pharmacy-engine';
 import { InpatientAdmissionService, BedEngineService } from '@/services/healthcare-hospital-services';
 import { PatientContextBar, BELLA_DEMO_PATIENT } from '@/components/hospital/PatientContextBar';
 import {
