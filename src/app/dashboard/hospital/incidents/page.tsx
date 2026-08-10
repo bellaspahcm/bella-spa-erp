@@ -30,6 +30,7 @@ import {
   GitBranch, Layers, Brain, Shield, X, Plus, AlertOctagon,
   HeartPulse, FlaskConical, Scan, Zap,
 } from 'lucide-react';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -875,19 +876,28 @@ export default function IncidentManagementPage() {
                     className="pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-xl w-full focus:outline-none focus:ring-1 focus:ring-blue-400"
                   />
                 </div>
-                {[
-                  { val: filterSeverity, set: setFilterSeverity, opts: Object.entries(SEVERITY_CFG).map(([v,c]) => ({ v, l: c.label })), placeholder: 'Severity' },
-                  { val: filterStatus,   set: setFilterStatus,   opts: Object.entries(STATUS_CFG).map(([v,c]) => ({ v, l: c.label })),   placeholder: 'Status' },
-                ].map((f, idx) => (
-                  <div key={idx} className="relative">
-                    <select value={f.val} onChange={e => (f.set as (v: string) => void)(e.target.value)}
-                      className="pl-3 pr-6 py-1.5 text-xs border border-slate-200 rounded-xl appearance-none bg-white focus:outline-none focus:ring-1 focus:ring-blue-400">
-                      <option value="all">{f.placeholder}</option>
-                      {f.opts.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
-                    </select>
-                    <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
-                  </div>
-                ))}
+                <PremiumSelect
+                  options={[
+                    { value: 'all', label: 'Severity' },
+                    ...Object.entries(SEVERITY_CFG).map(([v, c]) => ({ value: v, label: c.label }))
+                  ]}
+                  value={filterSeverity}
+                  onChange={setFilterSeverity}
+                  placeholder="Severity"
+                  buttonClassName="text-xs py-1.5"
+                  className="w-auto min-w-[140px]"
+                />
+                <PremiumSelect
+                  options={[
+                    { value: 'all', label: 'Status' },
+                    ...Object.entries(STATUS_CFG).map(([v, c]) => ({ value: v, label: c.label }))
+                  ]}
+                  value={filterStatus}
+                  onChange={setFilterStatus}
+                  placeholder="Status"
+                  buttonClassName="text-xs py-1.5"
+                  className="w-auto min-w-[140px]"
+                />
                 <span className="text-[10px] text-slate-400 ml-auto">{filtered.length} sự cố</span>
               </div>
 
