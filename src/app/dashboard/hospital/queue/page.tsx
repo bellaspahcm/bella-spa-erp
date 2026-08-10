@@ -679,13 +679,9 @@ function ClinicalSafetyContent() {
   }, []);
 
   const handleOpenPatient = useCallback((mrn: string, bed: string) => {
-    // Navigate to patient detail page
-    console.log(`Opening patient chart: MRN=${mrn}, Bed=${bed}`);
-    
-    // Option 1: Navigate to patient detail page (if page exists)
-    // Uncomment this line when patient detail page is ready:
-    // router.push(`/dashboard/hospital/patients/${mrn}`);
-    
+    // Navigate to admissions page with patient filter
+    router.push(`/dashboard/hospital/admissions?search=${mrn}`);
+  }, [router]);
     // Option 2: Navigate to admissions page and scroll to patient
     router.push(`/dashboard/hospital/admissions?mrn=${mrn}&highlight=true`);
     
