@@ -682,11 +682,6 @@ function ClinicalSafetyContent() {
     // Navigate to admissions page with patient filter
     router.push(`/dashboard/hospital/admissions?search=${mrn}`);
   }, [router]);
-    // Option 2: Navigate to admissions page and scroll to patient
-    router.push(`/dashboard/hospital/admissions?mrn=${mrn}&highlight=true`);
-    
-    // Note: Alert dialog removed - now directly navigates
-  }, [router]);
 
   const handleNotifyPhysician = useCallback((alertId: string, patientName: string, message: string) => {
     const now = new Date().toLocaleTimeString('vi-VN');
