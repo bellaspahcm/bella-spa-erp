@@ -9517,13 +9517,22 @@ export type Database = {
           created_at: string
           created_by: string | null
           deleted_at: string | null
+          department_id: string | null
+          diagnosis: Json | null
           doctor_party_id: string | null
           encounter_class: string
+          encounter_type: string
           finished_at: string | null
           id: string
+          location_id: string | null
+          metadata: Json | null
           notes: string | null
+          parent_encounter_id: string | null
           patient_party_id: string
+          period_end: string | null
+          period_start: string
           queue_number: number | null
+          reason_code: Json | null
           scheduled_at: string | null
           started_at: string | null
           status: string
@@ -9540,13 +9549,22 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
+          department_id?: string | null
+          diagnosis?: Json | null
           doctor_party_id?: string | null
           encounter_class: string
+          encounter_type: string
           finished_at?: string | null
           id?: string
+          location_id?: string | null
+          metadata?: Json | null
           notes?: string | null
+          parent_encounter_id?: string | null
           patient_party_id: string
+          period_end?: string | null
+          period_start: string
           queue_number?: number | null
+          reason_code?: Json | null
           scheduled_at?: string | null
           started_at?: string | null
           status?: string
@@ -9563,13 +9581,22 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
+          department_id?: string | null
+          diagnosis?: Json | null
           doctor_party_id?: string | null
           encounter_class?: string
+          encounter_type?: string
           finished_at?: string | null
           id?: string
+          location_id?: string | null
+          metadata?: Json | null
           notes?: string | null
+          parent_encounter_id?: string | null
           patient_party_id?: string
+          period_end?: string | null
+          period_start?: string
           queue_number?: number | null
+          reason_code?: Json | null
           scheduled_at?: string | null
           started_at?: string | null
           status?: string
@@ -9591,6 +9618,13 @@ export type Database = {
             columns: ["doctor_party_id"]
             isOneToOne: false
             referencedRelation: "party_parties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hc_encounters_parent_encounter_id_fkey"
+            columns: ["parent_encounter_id"]
+            isOneToOne: false
+            referencedRelation: "hc_encounters"
             referencedColumns: ["id"]
           },
           {

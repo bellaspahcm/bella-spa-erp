@@ -30,7 +30,7 @@ import type {
   PayrollDecisionInput,
   PayrollDecisionOutput,
 } from '@/lib/decision-engine/providers/payroll';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database.types';
 
 // Flexible types that accept either full table rows or minimal shapes
 type SessionLike = {

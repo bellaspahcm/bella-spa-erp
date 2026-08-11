@@ -4,7 +4,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database.types';
 import { AssessmentRepository } from './assessment.repository';
 import { AssessmentAggregate, AssessmentResultAggregate } from './assessment.aggregate';
 import type {

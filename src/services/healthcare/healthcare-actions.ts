@@ -1,6 +1,6 @@
 'use server';
 
-import { Database, Json } from '@/types/supabase';
+import { Database, Json } from '@/types/database.types';
 
 interface SoapNotesType {
   subjective?: string;

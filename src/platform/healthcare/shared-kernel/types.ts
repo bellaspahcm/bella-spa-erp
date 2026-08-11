@@ -93,6 +93,7 @@ export type EncounterStatus =
 
 export interface Diagnosis {
   code: string; // ICD-10 code
+  system: string; // 'ICD-10', 'ICD-11', 'SNOMED-CT'
   display: string;
   type: 'primary' | 'secondary' | 'differential';
   onsetDateTime?: string;

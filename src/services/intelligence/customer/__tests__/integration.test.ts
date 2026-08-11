@@ -22,7 +22,7 @@ import { describe, it, expect, beforeAll } from '@jest/globals';
 import { createServerClient } from '@/lib/supabase-server';
 import { CustomerIntelligenceService } from '../service';
 import { MemoryCacheService } from '../../cache/memory-cache';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database.types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Test Configuration

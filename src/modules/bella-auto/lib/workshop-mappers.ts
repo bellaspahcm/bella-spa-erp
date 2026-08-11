@@ -4,7 +4,7 @@
  * Handles new denormalized columns (scheduled_date, customer_name, vehicle_info)
  */
 
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database.types';
 
 type DbAppointment = Database['public']['Tables']['auto_service_appointments']['Row'];
 type DbRepairOrder = Database['public']['Tables']['auto_repair_orders']['Row'];

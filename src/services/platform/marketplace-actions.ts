@@ -11,7 +11,7 @@
  */
 
 import { createClient } from '@/lib/supabase-server';
-import { Database } from '@/types/supabase';
+import { Database } from '@/types/database.types';
 import { revalidatePath } from 'next/cache';
 
 // ---------------------------------------------------------------------------

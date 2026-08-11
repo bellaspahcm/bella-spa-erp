@@ -1,0 +1,150 @@
+-- ============================================================================
+-- Healthcare Platform — Encounter Engine (Aggregate Root)
+-- Migration: 20260811000000_create_encounters_table.sql
+-- Constitution Compliance: Law 1 (Encounter is Aggregate Root), Law 4 (Additive Only)
+-- ============================================================================
+
+-- Phase 2: Persistence Layer for Encounter Domain Entity
+-- Source: src/platform/healthcare/engines/encounter-engine/domain/encounter.entity.ts
+
+-- ============================================================================
+-- 1. ENCOUNTERS TABLE (Aggregate Root)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS public.hc_encounters (
+    -- Primary Identity
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+    
+    -- Person Reference (FK to Person Center, NOT separate patient table)
+    -- Aligns with Bella Platform Blueprint: party_parties is universal identity
+    patient_id UUID NOT NULL REFERENCES public.party_parties(id) ON DELETE RESTRICT,
+    
+    -- Encounter Classification
+    encounter_type TEXT NOT NULL CHECK (encounter_type IN ('outpatient', 'inpatient', 'emergency', 'home-health', 'virtual')),
+    encounter_class TEXT NOT NULL CHECK (encounter_class IN ('AMB', 'EMER', 'IMP', 'HH', 'VR')),
+    
+    -- Lifecycle State Machine (7 states)
+    status TEXT NOT NULL DEFAULT 'planned' CHECK (status IN ('planned', 'arrived', 'triaged', 'in-progress', 'on-hold', 'finished', 'cancelled')),
+    
+    -- Temporal Boundaries
+    period_start TIMESTAMPTZ NOT NULL,
+    period_end TIMESTAMPTZ,
+    
+    -- Clinical Context
+    service_provider_id UUID REFERENCES public.party_parties(id), -- Doctor/Practitioner
+    department_id UUID, -- References organization structure (future)
+    location_id UUID, -- References facility location (future)
+    
+    -- Clinical Data
+    reason_code TEXT[] DEFAULT '{}', -- ICD-10 reason codes
+    diagnosis JSONB DEFAULT '[]', -- Array of Diagnosis objects (ICD-10)
+    
+    -- Hierarchy (for transfers/continuations)
+    parent_encounter_id UUID REFERENCES public.hc_encounters(id),
+    
+    -- Extensibility
+    metadata JSONB DEFAULT '{}',
+    
+    -- Provenance & Audit (Constitution Law compliance)
+    created_by UUID NOT NULL,
+    updated_by UUID NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+    
+    -- Soft Delete
+    deleted_at TIMESTAMPTZ,
+    
+    -- Optimistic Locking (future)
+    version INTEGER NOT NULL DEFAULT 1,
+    
+    -- Constraints
+    CONSTRAINT period_valid CHECK (period_end IS NULL OR period_end >= period_start),
+    CONSTRAINT finished_has_end CHECK (status NOT IN ('finished', 'cancelled') OR period_end IS NOT NULL)
+);
+
+-- ============================================================================
+-- 2. INDEXES (Performance Optimization)
+-- ============================================================================
+
+-- Tenant Isolation (Most Common Query Path)
+CREATE INDEX idx_hc_encounters_tenant ON public.hc_encounters(tenant_id) WHERE deleted_at IS NULL;
+
+-- Patient Lookup (Encounter History by Patient)
+CREATE INDEX idx_hc_encounters_patient ON public.hc_encounters(patient_id) WHERE deleted_at IS NULL;
+
+-- Status Filtering (Active Encounters Dashboard)
+CREATE INDEX idx_hc_encounters_status ON public.hc_encounters(tenant_id, status) WHERE deleted_at IS NULL;
+
+-- Temporal Queries (Today's Encounters, Date Range)
+CREATE INDEX idx_hc_encounters_period_start ON public.hc_encounters(tenant_id, period_start) WHERE deleted_at IS NULL;
+CREATE INDEX idx_hc_encounters_period_end ON public.hc_encounters(tenant_id, period_end) WHERE deleted_at IS NULL AND period_end IS NOT NULL;
+
+-- Service Provider Lookup (Doctor's Patient List)
+CREATE INDEX idx_hc_encounters_provider ON public.hc_encounters(service_provider_id) WHERE deleted_at IS NULL;
+
+-- Department/Location Queries
+CREATE INDEX idx_hc_encounters_department ON public.hc_encounters(department_id) WHERE deleted_at IS NULL;
+CREATE INDEX idx_hc_encounters_location ON public.hc_encounters(location_id) WHERE deleted_at IS NULL;
+
+-- Parent-Child Hierarchy (Transfer Chain)
+CREATE INDEX idx_hc_encounters_parent ON public.hc_encounters(parent_encounter_id) WHERE deleted_at IS NULL;
+
+-- Composite Index (Tenant + Patient + Active Status)
+CREATE INDEX idx_hc_encounters_tenant_patient_active ON public.hc_encounters(tenant_id, patient_id, status) 
+    WHERE deleted_at IS NULL AND status IN ('arrived', 'triaged', 'in-progress', 'on-hold');
+
+-- ============================================================================
+-- 3. ROW LEVEL SECURITY (RLS) — Tenant Isolation
+-- ============================================================================
+
+-- Enable RLS
+ALTER TABLE public.hc_encounters ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Users can only access encounters in their tenant
+CREATE POLICY tenant_isolation_policy ON public.hc_encounters
+    FOR ALL
+    USING (tenant_id = (auth.jwt() ->> 'tenant_id')::UUID);
+
+-- Policy: Service role bypass (for system operations)
+CREATE POLICY service_role_bypass ON public.hc_encounters
+    FOR ALL
+    TO service_role
+    USING (true);
+
+-- ============================================================================
+-- 4. AUDIT TRIGGER (Auto-update updated_at)
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION update_hc_encounters_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_hc_encounters_updated_at
+    BEFORE UPDATE ON public.hc_encounters
+    FOR EACH ROW
+    EXECUTE FUNCTION update_hc_encounters_updated_at();
+
+-- ============================================================================
+-- 5. COMMENTS (Schema Documentation)
+-- ============================================================================
+
+COMMENT ON TABLE public.hc_encounters IS 'Encounter Aggregate Root (Constitution Law 1). All clinical activities reference an encounter.';
+COMMENT ON COLUMN public.hc_encounters.patient_id IS 'FK to party_parties (Person Center). NOT separate patient table.';
+COMMENT ON COLUMN public.hc_encounters.status IS 'State machine: planned → arrived → triaged → in-progress → on-hold → finished/cancelled';
+COMMENT ON COLUMN public.hc_encounters.diagnosis IS 'JSONB array of {code: ICD-10, display: string, type: primary|secondary, recordedDate: ISO}';
+COMMENT ON COLUMN public.hc_encounters.period_start IS 'Encounter start datetime (planned or actual arrival)';
+COMMENT ON COLUMN public.hc_encounters.period_end IS 'Encounter end datetime (finish or cancel). NULL if ongoing.';
+COMMENT ON COLUMN public.hc_encounters.parent_encounter_id IS 'For transfer chains or continued care episodes';
+
+-- ============================================================================
+-- MIGRATION COMPLETE
+-- ============================================================================
+
+-- Verification Query (Run after migration):
+-- SELECT COUNT(*) FROM public.hc_encounters; -- Should return 0 (empty table)
+-- SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name = 'hc_encounters' ORDER BY ordinal_position;

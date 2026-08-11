@@ -7,7 +7,7 @@
 import { EventBusAdapter, DomainEvent, EventHandler, EventType } from './types';
 import { MemoryEventBusAdapter } from './memory-adapter';
 
-class EventBusService {
+export class EventBusService {
   private adapter: EventBusAdapter;
 
   constructor(adapter?: EventBusAdapter) {

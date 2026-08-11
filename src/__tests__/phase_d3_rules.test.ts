@@ -5,7 +5,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import { Database } from '@/types/supabase';
+import { Database } from '@/types/database.types';
 import { RuleEngineService, RuleConditions } from '@/platform/host/rule-engine';
 import crypto from 'crypto';
 

@@ -5,7 +5,7 @@
  */
 
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database.types';
 
 /**
  * Create a Supabase client for testing (bypasses Next.js cookie requirement)

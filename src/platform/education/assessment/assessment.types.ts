@@ -3,7 +3,7 @@
  * Education Platform - Assessment Capability
  */
 
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database.types';
 
 // ============================================================================
 // Database Types (from Supabase schema)

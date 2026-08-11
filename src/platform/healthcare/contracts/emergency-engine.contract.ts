@@ -3,7 +3,7 @@
  * Healthcare Platform - Platform-of-Platforms
  */
 
-import { Database } from '@/types/supabase';
+import { Database } from '@/types/database.types';
 import { EngineResponse } from '../shared-kernel/types';
 
 export type EmergencyVisitRow = Database['public']['Tables']['hc_emergency_visits']['Row'];

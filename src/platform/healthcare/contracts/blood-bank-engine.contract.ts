@@ -3,7 +3,7 @@
  * Healthcare Platform - Platform-of-Platforms
  */
 
-import { Database } from '@/types/supabase';
+import { Database } from '@/types/database.types';
 import { EngineResponse } from '../shared-kernel/types';
 
 export type BloodUnitRow = Database['public']['Tables']['hc_blood_units']['Row'];

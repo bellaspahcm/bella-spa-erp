@@ -5,7 +5,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import { Database } from '@/types/supabase';
+import { Database } from '@/types/database.types';
 import { AnalyticsEngineService } from '@/platform/host/analytics-engine';
 
 jest.setTimeout(60000);

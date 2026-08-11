@@ -14,7 +14,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { Database } from '@/types/supabase';
+import { Database } from '@/types/database.types';
 import { eventBus } from '@/platform/host/event-bus';
 import type { DomainEvent } from '@/platform/host/event-bus/types';
 import crypto from 'crypto';

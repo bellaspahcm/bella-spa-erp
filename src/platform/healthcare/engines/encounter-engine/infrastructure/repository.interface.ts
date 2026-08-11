@@ -25,9 +25,13 @@ export interface EncounterSearchQuery {
   patientId?: string;
   status?: EncounterStatus | EncounterStatus[];
   encounterType?: EncounterType;
+  encounterClass?: string; // 'AMB', 'EMER', 'IMP', 'HH', 'VR'
   serviceProviderId?: string;
   departmentId?: string;
   locationId?: string;
+  providerId?: string; // Alias for serviceProviderId
+  fromDate?: string; // ISO date string
+  toDate?: string; // ISO date string
   startDateFrom?: Date;
   startDateTo?: Date;
   limit?: number;
@@ -50,8 +54,9 @@ export interface IEncounterRepository {
   /**
    * Save encounter (insert or update)
    * Repository determines if INSERT or UPDATE based on existence
+   * Returns the saved encounter
    */
-  save(encounter: Encounter): Promise<void>;
+  save(encounter: Encounter): Promise<Encounter>;
 
   /**
    * Find encounter by ID

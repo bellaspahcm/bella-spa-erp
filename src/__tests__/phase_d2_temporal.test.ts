@@ -11,7 +11,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import { Database } from '@/types/supabase';
+import { Database } from '@/types/database.types';
 import { TemporalEngineService } from '@/platform/host/temporal-engine';
 import crypto from 'crypto';
 

@@ -7,7 +7,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import { Database } from '@/types/supabase';
+import { Database } from '@/types/database.types';
 import { RollbackEngineService, TransactionStatus } from '@/platform/host/rollback-engine';
 
 // ─────────────────────────────────────────────────────────────────

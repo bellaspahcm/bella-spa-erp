@@ -40,7 +40,7 @@ import type {
   ProductSale,
   ManualAdjustment,
 } from '@/lib/decision-engine/providers/commission';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database.types';
 
 /**
  * Commission-specific configuration from tenant settings

@@ -5,6 +5,18 @@
  */
 
 export type EventType =
+  // Encounter Engine Events (Phase 3)
+  | 'EncounterCreated'
+  | 'EncounterArrived'
+  | 'EncounterTriaged'
+  | 'EncounterStarted'
+  | 'EncounterHeld'
+  | 'EncounterResumed'
+  | 'EncounterFinished'
+  | 'EncounterCancelled'
+  | 'DiagnosisAdded'
+  | 'ProviderAssigned'
+  | 'EncounterTransferred'
   // Bed Engine Events
   | 'BedAllocated'
   | 'BedReleased'

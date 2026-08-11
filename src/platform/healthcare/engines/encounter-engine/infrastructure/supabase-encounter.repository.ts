@@ -14,7 +14,7 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database.types';
 import { Encounter, EncounterProps, EncounterStatus, EncounterType } from '../domain/encounter.entity';
 import type { Diagnosis } from '@/platform/healthcare/shared-kernel/types';
 import type {
@@ -46,24 +46,15 @@ type EncounterUpdate = Database['public']['Tables']['hc_encounters']['Update'];
 export class SupabaseEncounterRepository implements IEncounterRepository {
   private supabase: SupabaseClient<Database>;
 
-  constructor(supabaseUrl?: string, supabaseKey?: string) {
-    const url = supabaseUrl || process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = supabaseKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (!url || !key) {
-      throw new DatabaseConnectionError(
-        new Error('Supabase URL or Key not configured')
-      );
-    }
-
-    this.supabase = createClient<Database>(url, key);
+  constructor(supabase: SupabaseClient<Database>) {
+    this.supabase = supabase;
   }
 
   // ==========================================================================
   // Public Methods
   // ==========================================================================
 
-  async save(encounter: Encounter): Promise<void> {
+  async save(encounter: Encounter): Promise<Encounter> {
     try {
       const exists = await this.exists(encounter.id, encounter.tenantId);
 
@@ -72,6 +63,9 @@ export class SupabaseEncounterRepository implements IEncounterRepository {
       } else {
         await this.insert(encounter);
       }
+
+      // Return the saved encounter
+      return encounter;
     } catch (error) {
       if (error instanceof RepositoryError) {
         throw error;
@@ -526,9 +520,9 @@ export class SupabaseEncounterRepository implements IEncounterRepository {
       parentEncounterId: row.parent_encounter_id || undefined,
       metadata: (row.metadata as unknown as Record<string, unknown>) || {},
       provenance: {
-        createdBy: row.created_by,
+        createdBy: row.created_by || 'system',
         createdAt: new Date(row.created_at),
-        updatedBy: row.updated_by,
+        updatedBy: row.updated_by || 'system',
         updatedAt: new Date(row.updated_at),
       },
     };
@@ -549,6 +543,7 @@ export class SupabaseEncounterRepository implements IEncounterRepository {
       id: props.id,
       tenant_id: props.tenantId,
       patient_party_id: props.patientId,  // ← Write to legacy column (DEPRECATED but active)
+      care_journey_id: props.id, // Same as encounter ID for now
       encounter_type: props.encounterType,
       encounter_class: props.encounterClass,
       status: props.status,
