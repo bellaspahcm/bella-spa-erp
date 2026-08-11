@@ -159,7 +159,7 @@ export class EncounterEngineService implements IEncounterEngine {
       const saved = await this.repository.save(encounter);
 
       // 4. Publish events
-      await this.publishStatusChanged(saved, request.status as EncounterStatus, request.userId);
+      await this.publishStatusChanged(saved, request.status as EncounterStatus, request.userId, request.reason);
 
       return {
         success: true,
@@ -210,7 +210,7 @@ export class EncounterEngineService implements IEncounterEngine {
       const saved = await this.repository.save(encounter);
 
       // 4. Publish events
-      await this.publishDiagnosisAdded(saved, request.code, request.userId);
+      await this.publishDiagnosisAdded(saved, request.code, request.system, request.userId);
 
       return {
         success: true,
@@ -295,6 +295,9 @@ export class EncounterEngineService implements IEncounterEngine {
         };
       }
 
+      // Capture original department before transfer
+      const fromDepartmentId = encounter.departmentId;
+
       encounter.transfer(
         request.toDepartmentId,
         request.toLocationId,
@@ -305,7 +308,13 @@ export class EncounterEngineService implements IEncounterEngine {
       const saved = await this.repository.save(encounter);
 
       // 4. Publish events
-      await this.publishEncounterTransferred(saved, request.toDepartmentId, request.toLocationId, request.userId);
+      await this.publishEncounterTransferred(
+        saved,
+        fromDepartmentId,
+        request.toDepartmentId,
+        request.toLocationId,
+        request.userId
+      );
 
       return {
         success: true,
@@ -415,7 +424,12 @@ export class EncounterEngineService implements IEncounterEngine {
   /**
    * ✅ Phase 3 - Publish Event: Status Changed
    */
-  private async publishStatusChanged(encounter: Encounter, newStatus: EncounterStatus, userId: string): Promise<void> {
+  private async publishStatusChanged(
+    encounter: Encounter,
+    newStatus: EncounterStatus,
+    userId: string,
+    reason?: string
+  ): Promise<void> {
     try {
       const eventTypeMap: Record<EncounterStatus, string> = {
         'planned': 'EncounterPlanned',
@@ -427,16 +441,23 @@ export class EncounterEngineService implements IEncounterEngine {
         'cancelled': 'EncounterCancelled',
       };
 
+      const payload: Record<string, unknown> = {
+        encounterId: encounter.id,
+        patientId: encounter.patientId,
+        status: newStatus,
+      };
+
+      // Add cancellation reason if status is cancelled
+      if (newStatus === 'cancelled' && reason) {
+        payload.cancellationReason = reason;
+      }
+
       await this.eventBus.publish({
         eventType: (eventTypeMap[newStatus] || 'EncounterStatusChanged') as EventType,
         aggregateId: encounter.id,
         aggregateType: 'Encounter',
         tenantId: encounter.tenantId,
-        payload: {
-          encounterId: encounter.id,
-          patientId: encounter.patientId,
-          status: newStatus,
-        },
+        payload,
         userId,
       });
     } catch (error) {
@@ -447,7 +468,12 @@ export class EncounterEngineService implements IEncounterEngine {
   /**
    * ✅ Phase 3 - Publish Event: Diagnosis Added
    */
-  private async publishDiagnosisAdded(encounter: Encounter, diagnosisCode: string, userId: string): Promise<void> {
+  private async publishDiagnosisAdded(
+    encounter: Encounter,
+    diagnosisCode: string,
+    diagnosisSystem: string,
+    userId: string
+  ): Promise<void> {
     try {
       await this.eventBus.publish({
         eventType: 'DiagnosisAdded',
@@ -458,6 +484,7 @@ export class EncounterEngineService implements IEncounterEngine {
           encounterId: encounter.id,
           patientId: encounter.patientId,
           diagnosisCode,
+          diagnosisSystem,
         },
         userId,
       });
@@ -494,6 +521,7 @@ export class EncounterEngineService implements IEncounterEngine {
    */
   private async publishEncounterTransferred(
     encounter: Encounter,
+    fromDepartmentId: string | undefined,
     toDepartmentId: string,
     toLocationId: string,
     userId: string
@@ -507,6 +535,7 @@ export class EncounterEngineService implements IEncounterEngine {
         payload: {
           encounterId: encounter.id,
           patientId: encounter.patientId,
+          fromDepartmentId,
           toDepartmentId,
           toLocationId,
         },
