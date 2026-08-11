@@ -178,6 +178,8 @@ export interface PartnerInventoryItem {
   unit_price: number;
   status: 'available' | 'booked' | 'deposited' | 'contracted' | 'paid' | 'handed_over' | 'cancelled';
   owner_name: string | null;
+  customer_id: string | null;
+  customer_display_name: string | null;
 }
 
 /**
@@ -204,6 +206,11 @@ export async function getPartnerInventory(): Promise<PartnerInventoryItem[]> {
       unit_price,
       status,
       owner_name,
+      customer_id,
+      party_parties:customer_id (
+        id,
+        display_name
+      ),
       real_estate_projects (
         name
       )
@@ -228,6 +235,8 @@ export async function getPartnerInventory(): Promise<PartnerInventoryItem[]> {
     unit_price: Number(p.unit_price) || 0,
     status: p.status,
     owner_name: p.owner_name,
+    customer_id: p.customer_id,
+    customer_display_name: p.party_parties?.display_name || null,
   }));
 }
 

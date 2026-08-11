@@ -82,11 +82,23 @@ ALTER TABLE public.hc_prescriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.den_odontograms ENABLE ROW LEVEL SECURITY;
 
 -- 5. CREATE RLS TENANT ISOLATION POLICIES
-CREATE POLICY tenant_isolation_hc_encounters ON public.hc_encounters
-    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'hc_encounters' AND policyname = 'tenant_isolation_hc_encounters') THEN
+    CREATE POLICY tenant_isolation_hc_encounters ON public.hc_encounters FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+  END IF;
+END $$;
 
-CREATE POLICY tenant_isolation_hc_prescriptions ON public.hc_prescriptions
-    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'hc_prescriptions' AND policyname = 'tenant_isolation_hc_prescriptions') THEN
+    CREATE POLICY tenant_isolation_hc_prescriptions ON public.hc_prescriptions FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+  END IF;
+END $$;
 
-CREATE POLICY tenant_isolation_den_odontograms ON public.den_odontograms
-    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'den_odontograms' AND policyname = 'tenant_isolation_den_odontograms') THEN
+    CREATE POLICY tenant_isolation_den_odontograms ON public.den_odontograms FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+  END IF;
+END $$;

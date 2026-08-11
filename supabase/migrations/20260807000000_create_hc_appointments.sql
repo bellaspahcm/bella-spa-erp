@@ -31,8 +31,13 @@ CREATE INDEX IF NOT EXISTS idx_hc_appointments_status ON public.hc_appointments(
 ALTER TABLE public.hc_appointments ENABLE ROW LEVEL SECURITY;
 
 -- Tenant Isolation Policy
-CREATE POLICY tenant_isolation_hc_appointments ON public.hc_appointments
-    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'hc_appointments' AND policyname = 'tenant_isolation_hc_appointments') THEN
+    CREATE POLICY tenant_isolation_hc_appointments ON public.hc_appointments
+        FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+  END IF;
+END $$;
 
 -- Seed default appointments for all tenants
 CREATE OR REPLACE FUNCTION public.seed_hc_appointments_for_all_tenants()

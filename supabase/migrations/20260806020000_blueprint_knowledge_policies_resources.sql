@@ -114,20 +114,44 @@ ALTER TABLE public.workflow_instances ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.resource_skills ENABLE ROW LEVEL SECURITY;
 
 -- 7. CREATE RLS TENANT ISOLATION POLICIES
-CREATE POLICY tenant_isolation_knowledge ON public.knowledge_entries
-    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'knowledge_entries' AND policyname = 'tenant_isolation_knowledge') THEN
+    CREATE POLICY tenant_isolation_knowledge ON public.knowledge_entries FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+  END IF;
+END $$;
 
-CREATE POLICY tenant_isolation_graph ON public.knowledge_graph_edges
-    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'knowledge_graph_edges' AND policyname = 'tenant_isolation_graph') THEN
+    CREATE POLICY tenant_isolation_graph ON public.knowledge_graph_edges FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+  END IF;
+END $$;
 
-CREATE POLICY tenant_isolation_inference ON public.knowledge_inference_rules
-    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'knowledge_inference_rules' AND policyname = 'tenant_isolation_inference') THEN
+    CREATE POLICY tenant_isolation_inference ON public.knowledge_inference_rules FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+  END IF;
+END $$;
 
-CREATE POLICY tenant_isolation_wf_defs ON public.workflow_definitions
-    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'workflow_definitions' AND policyname = 'tenant_isolation_wf_defs') THEN
+    CREATE POLICY tenant_isolation_wf_defs ON public.workflow_definitions FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+  END IF;
+END $$;
 
-CREATE POLICY tenant_isolation_wf_insts ON public.workflow_instances
-    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'workflow_instances' AND policyname = 'tenant_isolation_wf_insts') THEN
+    CREATE POLICY tenant_isolation_wf_insts ON public.workflow_instances FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+  END IF;
+END $$;
 
-CREATE POLICY tenant_isolation_skills ON public.resource_skills
-    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'resource_skills' AND policyname = 'tenant_isolation_skills') THEN
+    CREATE POLICY tenant_isolation_skills ON public.resource_skills FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+  END IF;
+END $$;

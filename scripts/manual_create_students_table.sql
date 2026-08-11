@@ -14,13 +14,10 @@
 -- Person (firstName, lastName, DOB) → Student (studentCode, academicStatus)
 -- ============================================================================
 
--- Fix: Drop existing table with wrong schema
-DROP TABLE IF EXISTS public.students CASCADE;
-
 -- Create students table
 CREATE TABLE IF NOT EXISTS public.students (
   -- Primary key
-  student_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   
   -- Tenant isolation
   tenant_id UUID NOT NULL,
@@ -171,7 +168,7 @@ CREATE TRIGGER trigger_students_updated_at
 -- ============================================================================
 
 COMMENT ON TABLE public.students IS 'Students - academic role referencing Person for identity';
-COMMENT ON COLUMN public.students.student_id IS 'Unique student identifier (UUID)';
+COMMENT ON COLUMN public.students.id IS 'Unique student identifier (UUID)';
 COMMENT ON COLUMN public.students.tenant_id IS 'Tenant this student belongs to';
 COMMENT ON COLUMN public.students.person_id IS 'Reference to Person identity aggregate (foreign key)';
 COMMENT ON COLUMN public.students.student_code IS 'Unique student identifier (e.g., EDU-2024-001)';

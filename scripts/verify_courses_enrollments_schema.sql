@@ -1,0 +1,48 @@
+-- Verify courses and enrollments tables exist in database
+-- Run in Supabase SQL Editor
+
+-- Check if tables exist
+SELECT 
+  table_name,
+  COUNT(*) as column_count
+FROM information_schema.columns
+WHERE table_schema = 'public'
+  AND table_name IN ('courses', 'enrollments')
+GROUP BY table_name
+ORDER BY table_name;
+
+-- Check courses columns
+SELECT 
+  column_name,
+  data_type,
+  is_nullable
+FROM information_schema.columns
+WHERE table_schema = 'public'
+  AND table_name = 'courses'
+ORDER BY ordinal_position;
+
+-- Check enrollments columns
+SELECT 
+  column_name,
+  data_type,
+  is_nullable
+FROM information_schema.columns
+WHERE table_schema = 'public'
+  AND table_name = 'enrollments'
+ORDER BY ordinal_position;
+
+-- Check foreign keys
+SELECT
+  tc.constraint_name,
+  tc.table_name,
+  kcu.column_name,
+  ccu.table_name AS foreign_table_name,
+  ccu.column_name AS foreign_column_name
+FROM information_schema.table_constraints AS tc
+JOIN information_schema.key_column_usage AS kcu
+  ON tc.constraint_name = kcu.constraint_name
+JOIN information_schema.constraint_column_usage AS ccu
+  ON ccu.constraint_name = tc.constraint_name
+WHERE tc.constraint_type = 'FOREIGN KEY'
+  AND tc.table_name IN ('courses', 'enrollments')
+ORDER BY tc.table_name, tc.constraint_name;

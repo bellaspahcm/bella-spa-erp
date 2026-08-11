@@ -68,8 +68,28 @@ ALTER TABLE public.asset_assets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.contract_contracts ENABLE ROW LEVEL SECURITY;
 
 -- 4. CREATE RLS TENANT ISOLATION POLICIES
-CREATE POLICY tenant_isolation_assets ON public.asset_assets
-    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'asset_assets' 
+    AND policyname = 'tenant_isolation_assets'
+  ) THEN
+    CREATE POLICY tenant_isolation_assets ON public.asset_assets
+      FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+  END IF;
+END $$;
 
-CREATE POLICY tenant_isolation_contracts ON public.contract_contracts
-    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'contract_contracts' 
+    AND policyname = 'tenant_isolation_contracts'
+  ) THEN
+    CREATE POLICY tenant_isolation_contracts ON public.contract_contracts
+      FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+  END IF;
+END $$;

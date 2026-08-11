@@ -119,9 +119,9 @@ function UnitCell({
               {((product.unit_price * (product.area ?? 0)) / 1e9).toFixed(2)} tỷ
             </p>
           )}
-          {product.owner_name && (
+          {(product.customer_display_name || product.owner_name) && (
             <p className="text-[10px] text-blue-400 flex items-center gap-1 mb-2">
-              <UserCheck className="w-3 h-3" />{product.owner_name}
+              <UserCheck className="w-3 h-3" />{product.customer_display_name || product.owner_name}
             </p>
           )}
           <div className="space-y-1">
@@ -507,7 +507,7 @@ export default function RealEstateApartmentsPage() {
                       </span>
                     </td>
                     <td className="px-5 py-3 text-slate-600 dark:text-slate-400 text-sm">
-                      {p.owner_name ?? <span className="text-slate-300 dark:text-slate-600">—</span>}
+                      {p.customer_display_name || p.owner_name || <span className="text-slate-300 dark:text-slate-600">—</span>}
                     </td>
                     <td className="px-5 py-3" onClick={e => e.stopPropagation()}>
                       <div className="flex gap-1.5">

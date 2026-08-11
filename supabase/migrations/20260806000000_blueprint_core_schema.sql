@@ -176,26 +176,106 @@ ALTER TABLE public.journey_milestones ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.timeline_events ENABLE ROW LEVEL SECURITY;
 
 -- 10. CREATE STANDARD TENANT ISOLATION RLS POLICIES
-CREATE POLICY tenant_isolation_parties ON public.party_parties
-    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'party_parties' 
+    AND policyname = 'tenant_isolation_parties'
+  ) THEN
+    CREATE POLICY tenant_isolation_parties ON public.party_parties
+      FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+  END IF;
+END $$;
 
-CREATE POLICY tenant_isolation_party_identifiers ON public.party_identifiers
-    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'party_identifiers' 
+    AND policyname = 'tenant_isolation_party_identifiers'
+  ) THEN
+    CREATE POLICY tenant_isolation_party_identifiers ON public.party_identifiers
+      FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+  END IF;
+END $$;
 
-CREATE POLICY tenant_isolation_party_relationships ON public.party_relationships
-    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'party_relationships' 
+    AND policyname = 'tenant_isolation_party_relationships'
+  ) THEN
+    CREATE POLICY tenant_isolation_party_relationships ON public.party_relationships
+      FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+  END IF;
+END $$;
 
-CREATE POLICY tenant_isolation_party_roles ON public.party_roles
-    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'party_roles' 
+    AND policyname = 'tenant_isolation_party_roles'
+  ) THEN
+    CREATE POLICY tenant_isolation_party_roles ON public.party_roles
+      FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+  END IF;
+END $$;
 
-CREATE POLICY tenant_isolation_journeys ON public.journey_journeys
-    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'journey_journeys' 
+    AND policyname = 'tenant_isolation_journeys'
+  ) THEN
+    CREATE POLICY tenant_isolation_journeys ON public.journey_journeys
+      FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+  END IF;
+END $$;
 
-CREATE POLICY tenant_isolation_sub_journeys ON public.journey_sub_journeys
-    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'journey_sub_journeys' 
+    AND policyname = 'tenant_isolation_sub_journeys'
+  ) THEN
+    CREATE POLICY tenant_isolation_sub_journeys ON public.journey_sub_journeys
+      FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+  END IF;
+END $$;
 
-CREATE POLICY tenant_isolation_milestones ON public.journey_milestones
-    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'journey_milestones' 
+    AND policyname = 'tenant_isolation_milestones'
+  ) THEN
+    CREATE POLICY tenant_isolation_milestones ON public.journey_milestones
+      FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+  END IF;
+END $$;
 
-CREATE POLICY tenant_isolation_timeline ON public.timeline_events
-    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'timeline_events' 
+    AND policyname = 'tenant_isolation_timeline'
+  ) THEN
+    CREATE POLICY tenant_isolation_timeline ON public.timeline_events
+      FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+  END IF;
+END $$;

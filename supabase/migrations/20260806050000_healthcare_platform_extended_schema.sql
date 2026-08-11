@@ -138,20 +138,50 @@ ALTER TABLE public.hc_drug_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.hc_patient_queues ENABLE ROW LEVEL SECURITY;
 
 -- 8. CREATE RLS POLICIES (Tenant Isolation)
-CREATE POLICY tenant_isolation_patient_profiles ON public.patient_profiles
-    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'patient_profiles' AND policyname = 'tenant_isolation_patient_profiles') THEN
+    CREATE POLICY tenant_isolation_patient_profiles ON public.patient_profiles
+        FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+  END IF;
+END $$;
 
-CREATE POLICY tenant_isolation_hc_clinical_orders ON public.hc_clinical_orders
-    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'hc_clinical_orders' AND policyname = 'tenant_isolation_hc_clinical_orders') THEN
+    CREATE POLICY tenant_isolation_hc_clinical_orders ON public.hc_clinical_orders
+        FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+  END IF;
+END $$;
 
-CREATE POLICY tenant_isolation_hc_lab_orders ON public.hc_lab_orders
-    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'hc_lab_orders' AND policyname = 'tenant_isolation_hc_lab_orders') THEN
+    CREATE POLICY tenant_isolation_hc_lab_orders ON public.hc_lab_orders
+        FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+  END IF;
+END $$;
 
-CREATE POLICY tenant_isolation_hc_imaging_orders ON public.hc_imaging_orders
-    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'hc_imaging_orders' AND policyname = 'tenant_isolation_hc_imaging_orders') THEN
+    CREATE POLICY tenant_isolation_hc_imaging_orders ON public.hc_imaging_orders
+        FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+  END IF;
+END $$;
 
-CREATE POLICY tenant_isolation_hc_drug_profiles ON public.hc_drug_profiles
-    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'hc_drug_profiles' AND policyname = 'tenant_isolation_hc_drug_profiles') THEN
+    CREATE POLICY tenant_isolation_hc_drug_profiles ON public.hc_drug_profiles
+        FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+  END IF;
+END $$;
 
-CREATE POLICY tenant_isolation_hc_patient_queues ON public.hc_patient_queues
-    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'hc_patient_queues' AND policyname = 'tenant_isolation_hc_patient_queues') THEN
+    CREATE POLICY tenant_isolation_hc_patient_queues ON public.hc_patient_queues
+        FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+  END IF;
+END $$;
