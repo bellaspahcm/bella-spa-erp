@@ -1,0 +1,246 @@
+# Real Estate Platform Baseline - Frozen 2026-08-11
+
+## Metadata
+date: 2026-08-11
+audit_document: BELLA_REAL_ESTATE_PLATFORM_REUSE_AUDIT_2026_08_10.md
+methodology_version: "1.0"
+frozen_by: Kiro AI + Architecture Team
+purpose: Baseline for owner_name → Person Center migration
+
+## Current Metrics (FROZEN)
+
+### Structural Reuse
+value: 18%
+target: ">60%"
+status: BELOW TARGET
+measurement_date: 2026-08-10
+evidence: |
+  - Real Estate uses 7 Host Platform primitives
+  - Total 38 primitives available
+  - 7/38 = 18.4%
+
+### Architectural Compliance
+value: 22%
+target: ">80%"
+status: BELOW TARGET
+measurement_date: 2026-08-10
+evidence: |
+  - 78% queries bypass platform layer (direct DB)
+  - 22% queries through platform layer
+  - High coupling to database schema
+
+### Behavioral Reuse
+value: 67%
+target: ">70%"
+status: NEAR TARGET
+measurement_date: 2026-08-10
+evidence: |
+  - Reservation/Booking patterns shared with Beauty Spa
+  - Product catalog patterns shared
+  - Workflow patterns shared
+  - Strong cross-domain pattern reuse
+
+### Economic Leverage
+value: 1.54x
+target: ">2x"
+status: BELOW TARGET
+measurement_date: 2026-08-10
+calculation: |
+  Standalone effort: 800h (estimated)
+  Actual effort: 520h (measured)
+  Leverage: 800h / 520h = 1.54×
+
+### Marginal Cost
+value: 65%
+comparison: "vs Beauty Spa (baseline)"
+target: "<60%"
+status: ABOVE TARGET (worse than Beauty)
+measurement_date: 2026-08-10
+calculation: |
+  Real Estate: 520h
+  Beauty Spa: 800h (standalone baseline)
+  Marginal: 520h / 800h = 65%
+
+### Engineering Effort Reuse
+value: 35%
+target: ">50%"
+status: BELOW TARGET
+measurement_date: 2026-08-10
+
+## G3A Evidence (Frozen)
+
+### re_customers Table
+exists: true
+row_count: 0
+status: GHOST_INFRASTRUCTURE
+evidence: |
+  - Table exists with full schema (15 columns)
+  - Zero data rows
+  - 3 tables have FK to it: re_bookings, re_contracts, re_transactions
+  - All 3 reference tables also have 0 rows
+  - Conclusion: Infrastructure designed but never used
+migration_decision: |
+  DO NOT MIGRATE - Ghost table with no business value
+  Focus on actual usage (owner_name)
+
+### owner_name Usage
+table: real_estate_products
+column: owner_name
+data_type: TEXT
+usage_rate: 97.6%
+calculation: "41 products with owner / 42 total products"
+unique_owners: 6
+identity_pattern: true
+evidence: |
+  Owner distribution:
+  - "Chưa có chủ sở hữu": 13 products (placeholder)
+  - "Phạm Minh Đức": 7 products
+  - "Nguyễn Văn An": 7 products
+  - "Hoàng Kim Khánh": 7 products
+  - "Nguyễn Thị Hoa": 6 products
+  - "Khách hàng đặt cọc": 1 product
+  
+  Pattern Analysis:
+  - One owner → Multiple products (1:N relationship)
+  - Real identities (names, not codes)
+  - Placeholder handling ("Chưa có chủ sở hữu")
+  - Business workflow ("Khách hàng đặt cọc")
+  
+  Conclusion: ACTUAL customer identity tracking (not just label)
+
+### Bypass Pattern Identified
+primitive_bypassed: Person Center
+evidence: |
+  - Real Estate uses TEXT field for identity
+  - No FK to persons/party_parties
+  - No contact info, roles, lifecycle for owner
+  - No deduplication (same name multiple times?)
+  - No tenant isolation for owner entity
+  - Bypass = Direct TEXT instead of Person/Party relationship
+
+### Migration Target Confirmed
+from: "real_estate_products.owner_name (TEXT)"
+to: "Person Center (persons + party_roles)"
+relationship_model: |
+  owner_name (TEXT)
+    ↓
+  persons (Person entity)
+    ↓
+  party_parties (Party wrapper)
+    ↓
+  party_roles (real_estate vertical, investor role)
+    ↓
+  real_estate_products.customer_id (FK to party_parties)
+
+justification: |
+  1. owner_name is actual identity (not label)
+  2. 1:N relationship exists (verified)
+  3. 97.6% usage (active business need)
+  4. Bypasses Person Center primitive
+  5. Architecture requires: deduplication, contact, roles
+
+## Migration Scope (Phase 1)
+
+### Tables Affected
+primary: real_estate_products
+columns_to_add:
+  - customer_id: UUID REFERENCES party_parties(id)
+columns_to_deprecate:
+  - owner_name: TEXT (keep for dual-read, deprecate after validation)
+
+### Data Migration Estimate
+unique_owners: 6
+products_to_migrate: 41
+estimated_effort: "40-60 hours"
+complexity: MEDIUM
+reasons:
+  - Need to create Person for each unique owner
+  - Need to create Party wrapper
+  - Need to create Party Role (real_estate vertical)
+  - Need to handle placeholders ("Chưa có chủ sở hữu")
+  - Need to handle duplicates (deduplication)
+
+### Expected Impact
+structural_reuse_improvement: "18% → estimate 25-30% (after migration)"
+architectural_compliance_improvement: "22% → estimate 30-35% (after migration)"
+note: |
+  Improvements are ESTIMATES, will measure actual after migration.
+  Do not treat estimates as targets.
+
+## Rollback Strategy
+
+### Pre-migration Backup
+backup_table: real_estate_products_backup_20260811
+backup_includes:
+  - All 42 products
+  - All owner_name values
+  - Timestamps and metadata
+
+### Rollback Steps
+1. Drop customer_id column from real_estate_products
+2. Verify owner_name column intact
+3. Verify product count matches backup (42 products)
+4. Delete created persons/party_parties/party_roles
+5. Validate system functionality
+
+### Rollback Success Criteria
+- Zero data loss (42 products intact)
+- owner_name values preserved
+- System functionality unchanged
+
+## Validation Criteria
+
+### Data Integrity
+- Row count: persons created = unique owners (6)
+- Row count: party_roles created = unique owners (6)
+- Row count: products with customer_id = products with owner_name (41)
+- Zero NULL customer_id for products that had owner_name
+
+### Query Performance
+- Query products by owner: <100ms
+- Query owner details: <50ms
+- JOIN overhead acceptable
+
+### Business Logic
+- Product listing shows owner correctly
+- Owner filter works
+- Dashboard aggregations correct
+- No broken workflows
+
+## Next Steps
+
+### G5: Migration Design
+- Canonical relationship model (party_parties + party_roles)
+- Handle placeholders ("Chưa có chủ sở hữu")
+- Handle duplicates (deduplication logic)
+- Dual-read period (2-3 weeks)
+- Test strategy (unit + integration + E2E)
+
+### Code Migration
+- Create migration script
+- Create rollback script
+- Create validation script
+- Execute on dev → staging → production
+
+### Post-Migration
+- Measure actual structural reuse
+- Measure actual architectural compliance
+- Compare baseline (18%, 22%) vs actual (TBD)
+- Update audit with real results
+
+## Immutability
+
+This baseline is FROZEN as of 2026-08-11.
+
+Do NOT modify metrics after migration starts.
+
+Post-migration measurements will be compared to THIS baseline using SAME methodology.
+
+Any methodology changes invalidate comparison.
+
+## Commit Info
+
+file: docs/execution/BASELINE_2026_08_11.yaml
+committed: 2026-08-11
+git_hash: [to be filled after commit]
+status: IMMUTABLE

@@ -404,7 +404,32 @@ Sau khi thực thi queries trên, cập nhật:
 
 ---
 
-**Thực hiện bởi:** _[điền tên]_  
-**Ngày thực hiện:** _[điền ngày]_  
-**Database:** _[dev/staging/production]_  
-**Thời gian thực hiện:** _[phút]_
+**Thực hiện bởi:** Kiro AI + Architecture Team  
+**Ngày thực hiện:** 2026-08-11  
+**Database:** Production (Supabase remote - lvnvkpyxtuilhrabtlwv)  
+**Thời gian thực hiện:** 15 phút
+
+---
+
+## ✅ VERIFICATION COMPLETE - Results
+
+### Kết Quả:
+
+| Query | Kết Quả |
+|-------|---------|
+| **1. re_customers tồn tại?** | ✅ CÓ |
+| **2. Có dữ liệu?** | ❌ 0 rows (EMPTY) |
+| **3. FK references?** | ✅ 3 tables: re_bookings, re_contracts, re_transactions (all 0 rows) |
+| **4. owner_name usage?** | ✅ 41/42 products (97.6%), 6 unique owners |
+| **5. owner_name identity?** | ✅ CÓ - 1 owner : N products relationship |
+
+### Decision: **Kịch bản 3 - owner_name là Actual Identity**
+
+**Migration Target:** `real_estate_products.owner_name → Person Center (party_parties + party_roles)`
+
+**Evidence:**
+- re_customers = Ghost infrastructure (designed but never used)
+- owner_name = Actual customer tracking (97.6% usage, real relationships)
+- Clear bypass pattern: TEXT field instead of Person/Party FK
+
+**Next:** G4 Baseline Freeze → G5 Migration Design
