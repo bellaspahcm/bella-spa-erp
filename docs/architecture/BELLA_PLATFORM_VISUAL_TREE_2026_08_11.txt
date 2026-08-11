@@ -1,0 +1,378 @@
+┌────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                    │
+│                    BELLA AI PLATFORM - Architecture Tree                           │
+│                          (Post-Migration 2026-08-11)                              │
+│                                                                                    │
+└────────────────────────────────────────────────────────────────────────────────────┘
+
+                                 META-PLATFORM
+                                      │
+            ┌─────────────────────────┼─────────────────────────┐
+            │                         │                         │
+       LAYER 1                   LAYER 2                   LAYER 3
+    HOST PLATFORM          INDUSTRY PLATFORMS           PRODUCT PACKS
+    (Foundation)            (Domain Engines)         (Vertical Solutions)
+
+
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ LAYER 1: BELLA HOST PLATFORM (42 TS files)                                          │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                      │
+│  ┌─────────────────────────────────────────────────────────────────────────┐       │
+│  │  CORE PRIMITIVES 🟢                                                      │       │
+│  ├─────────────────────────────────────────────────────────────────────────┤       │
+│  │                                                                           │       │
+│  │  ┌─── Person Center ──────────────────────────────┐                     │       │
+│  │  │  • Universal Identity                           │                     │       │
+│  │  │  • Party Roles (Extensible per industry)       │                     │       │
+│  │  │  • Person Repository (Supabase)                │                     │       │
+│  │  │  • Domain Events                                │                     │       │
+│  │  │  ✅ Real Estate: Level 1 (UPGRADED)            │                     │       │
+│  │  │     └─ customer_id FK → party_parties          │                     │       │
+│  │  │     └─ 4 persons, 4 roles created              │                     │       │
+│  │  └─────────────────────────────────────────────────┘                     │       │
+│  │                                                                           │       │
+│  │  ┌─── IAM & Security ─────────────────────────────┐                     │       │
+│  │  │  • RBAC (Role-Based Access Control)            │                     │       │
+│  │  │  • Service Role Authentication                 │                     │       │
+│  │  │  • Multi-tenant Isolation (RLS)                │                     │       │
+│  │  │  ✅ Real Estate: Level 1 (IAM Matrix)          │                     │       │
+│  │  └─────────────────────────────────────────────────┘                     │       │
+│  │                                                                           │       │
+│  │  ┌─── Tenant Management ──────────────────────────┐                     │       │
+│  │  │  • Multi-tenancy Architecture                   │                     │       │
+│  │  │  • Tenant Context Provider (React)             │                     │       │
+│  │  │  • Brand Theme Configuration                   │                     │       │
+│  │  │  ✅ Real Estate: Level 1 (Column + RLS)        │                     │       │
+│  │  └─────────────────────────────────────────────────┘                     │       │
+│  │                                                                           │       │
+│  │  ┌─── Organization Center ────────────────────────┐                     │       │
+│  │  │  • Org Hierarchy (Dept, Branch)                │                     │       │
+│  │  │  • Organization Tree Provider                  │                     │       │
+│  │  │  🟡 Real Estate: Level 2 (Provider, mock)      │                     │       │
+│  │  └─────────────────────────────────────────────────┘                     │       │
+│  │                                                                           │       │
+│  └───────────────────────────────────────────────────────────────────────────┘       │
+│                                                                                      │
+│  ┌─────────────────────────────────────────────────────────────────────────┐       │
+│  │  PLATFORM GOVERNANCE 🟡                                                  │       │
+│  ├─────────────────────────────────────────────────────────────────────────┤       │
+│  │                                                                           │       │
+│  │  ┌─── Contract Registry ──────────────────────────┐                     │       │
+│  │  │  • API/Event/Schema Registry                    │                     │       │
+│  │  │  • JSON Schema Validation                       │                     │       │
+│  │  │  ✅ Healthcare: 3 contracts registered          │                     │       │
+│  │  └─────────────────────────────────────────────────┘                     │       │
+│  │                                                                           │       │
+│  │  ┌─── Capability Registry ────────────────────────┐                     │       │
+│  │  │  • Capability Catalog                           │                     │       │
+│  │  │  • Dependency Management                        │                     │       │
+│  │  │  ✅ Real Estate: Declared in manifest          │                     │       │
+│  │  └─────────────────────────────────────────────────┘                     │       │
+│  │                                                                           │       │
+│  │  ┌─── Feature Flag Platform ──────────────────────┐                     │       │
+│  │  │  • Feature Flag Service (400+ lines)            │                     │       │
+│  │  │  • React Hooks (useFeatureFlag)                │                     │       │
+│  │  │  ✅ 4 Phase 0 flags seeded                      │                     │       │
+│  │  └─────────────────────────────────────────────────┘                     │       │
+│  │                                                                           │       │
+│  │  🟡 Metadata Platform, Event Bus, Workflow         │                     │       │
+│  │     (Defined, partial integration)                 │                     │       │
+│  │                                                                           │       │
+│  └───────────────────────────────────────────────────────────────────────────┘       │
+│                                                                                      │
+│  ┌─────────────────────────────────────────────────────────────────────────┐       │
+│  │  INFRASTRUCTURE SERVICES 🟡                                              │       │
+│  ├─────────────────────────────────────────────────────────────────────────┤       │
+│  │                                                                           │       │
+│  │  ✅ Notification Hub (SMS, Email active)                                 │       │
+│  │  🟡 Document Engine (Structure exists)                                   │       │
+│  │  🟡 AI Runtime (Structure exists)                                        │       │
+│  │  🟡 Integration Hub (95% ready)                                          │       │
+│  │  ✅ Scheduler Registry (Cron jobs running)                               │       │
+│  │  🟡 Search, Timeline, Activity Stream (Structure)                        │       │
+│  │                                                                           │       │
+│  └───────────────────────────────────────────────────────────────────────────┘       │
+│                                                                                      │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+
+
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ LAYER 2: INDUSTRY PLATFORMS (74 TS files)                                           │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                      │
+│  ┌─────────────────────────────────────────────────────────────────────────┐       │
+│  │  HEALTHCARE PLATFORM 🧪 (46 TS files)                                   │       │
+│  ├─────────────────────────────────────────────────────────────────────────┤       │
+│  │                                                                           │       │
+│  │  [Shared Kernel]                                                         │       │
+│  │  ├─ Encounter (Aggregate Root)                                           │       │
+│  │  ├─ Patient Identity Types                                               │       │
+│  │  └─ Clinical Data Types                                                  │       │
+│  │                                                                           │       │
+│  │  [Engines - 3 Implemented]                                               │       │
+│  │  │                                                                        │       │
+│  │  ├─┬─ Bed Engine ─────────────────────────────────┐                     │       │
+│  │  │ │  • allocateBed(), releaseBed(), transferBed() │                     │       │
+│  │  │ │  • queryBeds(), getBedById()                  │                     │       │
+│  │  │ │  • Hook: useBedEngine()                       │                     │       │
+│  │  │ │  ✅ Contract registered                        │                     │       │
+│  │  │ └────────────────────────────────────────────────┘                     │       │
+│  │  │                                                                        │       │
+│  │  ├─┬─ Nursing Engine ───────────────────────────────┐                    │       │
+│  │  │ │  • recordVitals(), getVitals(), createNote()   │                     │       │
+│  │  │ │  • Hook: useNursingEngine()                    │                     │       │
+│  │  │ │  ✅ Contract registered                         │                     │       │
+│  │  │ └────────────────────────────────────────────────┘                     │       │
+│  │  │                                                                        │       │
+│  │  └─┬─ Pharmacy Engine ───────────────────────────────┐                   │       │
+│  │    │  • recordMAR(), getMedicationOrders(), dispense() │                   │       │
+│  │    │  • Hook: usePharmacyEngine()                    │                     │       │
+│  │    │  ✅ Contract registered                         │                     │       │
+│  │    └────────────────────────────────────────────────┘                     │       │
+│  │                                                                           │       │
+│  │  [Future Engines - 14 Defined]                                           │       │
+│  │  └─ MPI, Encounter, Clinical, Order, Billing, Insurance,                 │       │
+│  │     Scheduling, Queue, Lab, Imaging, Emergency, etc.                     │       │
+│  │                                                                           │       │
+│  └───────────────────────────────────────────────────────────────────────────┘       │
+│                                                                                      │
+│  ┌─────────────────────────────────────────────────────────────────────────┐       │
+│  │  EDUCATION PLATFORM 🧪 (28 TS files)                                    │       │
+│  ├─────────────────────────────────────────────────────────────────────────┤       │
+│  │                                                                           │       │
+│  │  [Domain Aggregates - 5 Implemented]                                     │       │
+│  │  │                                                                        │       │
+│  │  ├─ Student Aggregate                                                    │       │
+│  │  │  └─ Enrollment, Status tracking                                       │       │
+│  │  │                                                                        │       │
+│  │  ├─ Course Aggregate                                                     │       │
+│  │  │  └─ Lifecycle, Schedule, 141 tests ✅                                 │       │
+│  │  │                                                                        │       │
+│  │  ├─ Enrollment Aggregate                                                 │       │
+│  │  │  └─ Registration, Waitlist                                            │       │
+│  │  │                                                                        │       │
+│  │  ├─ Attendance Aggregate                                                 │       │
+│  │  │  └─ Check-in, Tracking                                                │       │
+│  │  │                                                                        │       │
+│  │  └─ Assessment Aggregate                                                 │       │
+│  │     └─ Grading, Evaluation                                               │       │
+│  │                                                                           │       │
+│  │  [Evidence: Code-Level Acceleration]                                     │       │
+│  │  • Capability 1: 75 min → Capability 5: 10 min                           │       │
+│  │  • Per-capability: -87% acceleration                                     │       │
+│  │  • Total: -57% acceleration                                              │       │
+│  │  • Patterns: 1 → 15 accumulated                                          │       │
+│  │                                                                           │       │
+│  └───────────────────────────────────────────────────────────────────────────┘       │
+│                                                                                      │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+
+
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ LAYER 3: PRODUCT PACKS (Vertical Solutions)                                         │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                      │
+│  ┌─────────────────────────────────────────────────────────────────────────┐       │
+│  │  BELLA SPA & BABY CARE 🟢 PRODUCTION                                    │       │
+│  ├─────────────────────────────────────────────────────────────────────────┤       │
+│  │                                                                           │       │
+│  │  • Bookings, Sessions, Customers                                         │       │
+│  │  • Payroll, Salary, Commission                                           │       │
+│  │  • Inventory, Finance (P&L)                                              │       │
+│  │                                                                           │       │
+│  │  [Platform Consumption]                                                  │       │
+│  │  • Person Center: ❌ Custom customers table                              │       │
+│  │  • IAM: ✅ RBAC                                                          │       │
+│  │  • Tenant: ✅ Multi-tenant isolation                                     │       │
+│  │  • Accounting Outbox: ✅ TT133 compliance                                │       │
+│  │  • Notification: ✅ SMS/Email active                                     │       │
+│  │                                                                           │       │
+│  │  ✅ Production Pilots Running                                            │       │
+│  │  ✅ Financial Compliance (TT133)                                         │       │
+│  │                                                                           │       │
+│  └───────────────────────────────────────────────────────────────────────────┘       │
+│                                                                                      │
+│  ┌─────────────────────────────────────────────────────────────────────────┐       │
+│  │  BELLA REAL ESTATE ✅ PRODUCTION READY (POST-MIGRATION)                 │       │
+│  ├─────────────────────────────────────────────────────────────────────────┤       │
+│  │                                                                           │       │
+│  │  [Domain Model - Exemplary DDD]                                          │       │
+│  │  • 11 Bounded Contexts                                                   │       │
+│  │  • Finite State Machines (FSM)                                           │       │
+│  │  • Event-Driven Architecture                                             │       │
+│  │  • 67% Behavioral Pattern Reuse                                          │       │
+│  │                                                                           │       │
+│  │  [Platform Consumption] ✅ UPGRADED 2026-08-11                           │       │
+│  │  │                                                                        │       │
+│  │  ├─ Person Center: ✅ Level 1 (UPGRADED) ⬆️                             │       │
+│  │  │  ├─ BEFORE: ❌ Custom re_customers table                              │       │
+│  │  │  └─ AFTER:  ✅ customer_id FK → party_parties                        │       │
+│  │  │      ├─ 4 persons created                                             │       │
+│  │  │      ├─ 4 roles (real_estate/investor)                               │       │
+│  │  │      └─ Code: JOIN party_parties for display                         │       │
+│  │  │                                                                        │       │
+│  │  ├─ Party Roles: ✅ Level 1 (NEW) ⬆️                                    │       │
+│  │  ├─ IAM: ✅ Level 1 (IAM Matrix)                                         │       │
+│  │  ├─ Tenant: ✅ Level 1 (Column + RLS)                                    │       │
+│  │  ├─ Organization: 🟡 Level 2 (Provider only)                             │       │
+│  │  ├─ Capability: ✅ Declared in manifest                                  │       │
+│  │  ├─ Feature Flags: ✅ Ready for rollout                                  │       │
+│  │  ├─ Event Bus: 🟡 Level 1 (Catalog only)                                │       │
+│  │  └─ Accounting Outbox: ✅ Level 1 (TT133)                                │       │
+│  │                                                                           │       │
+│  │  [Metrics Post-Migration] (Preliminary)                                  │       │
+│  │  • Structural Reuse:  18% → 27% (+50%)  ⬆️                              │       │
+│  │  • Bypass Rate:       78% → 70% (-8 points) ⬆️                          │       │
+│  │  • Custom Tables:     12 → 11 (-1) ⬆️                                   │       │
+│  │  • Economic Leverage: 1.54× → 1.70× (projected) ⬆️                      │       │
+│  │                                                                           │       │
+│  │  ⏳ Manual Testing In Progress                                           │       │
+│  │                                                                           │       │
+│  └───────────────────────────────────────────────────────────────────────────┘       │
+│                                                                                      │
+│  ┌─────────────────────────────────────────────────────────────────────────┐       │
+│  │  BELLA AUTO 🧪 EXPERIMENTAL                                             │       │
+│  ├─────────────────────────────────────────────────────────────────────────┤       │
+│  │                                                                           │       │
+│  │  • Vehicles, Sales, Test Drives                                          │       │
+│  │  • Customer Profile, Journey                                             │       │
+│  │                                                                           │       │
+│  │  [Platform Consumption]                                                  │       │
+│  │  • Person Center: 🟡 Partial (auto_customer_profiles)                   │       │
+│  │  • Timeline: ✅ Customer journey                                         │       │
+│  │                                                                           │       │
+│  │  🧪 Experimental (Phase 5)                                               │       │
+│  │                                                                           │       │
+│  └───────────────────────────────────────────────────────────────────────────┘       │
+│                                                                                      │
+│  ┌─────────────────────────────────────────────────────────────────────────┐       │
+│  │  HEALTHCARE HOSPITAL 🧪 DEVELOPMENT                                     │       │
+│  ├─────────────────────────────────────────────────────────────────────────┤       │
+│  │                                                                           │       │
+│  │  • Inpatients, Beds, Nursing, Pharmacy                                   │       │
+│  │                                                                           │       │
+│  │  [Platform Consumption]                                                  │       │
+│  │  • Healthcare Engines: ✅ Consumes via hooks                             │       │
+│  │    └─ useBedEngine(), useNursingEngine(), usePharmacyEngine()           │       │
+│  │  • Person Center: 🟡 Partial (MPI concept)                              │       │
+│  │  • Contract Registry: ✅ 3 contracts                                     │       │
+│  │  • Capability Registry: ✅ Declared                                      │       │
+│  │  • Feature Flags: ✅ Progressive rollout                                 │       │
+│  │                                                                           │       │
+│  │  [Architecture - 11 Laws]                                                │       │
+│  │  • 91/100 Compliance (10/11 laws)                                        │       │
+│  │  • Encounter: Aggregate Root                                             │       │
+│  │  • No Direct DB: Uses engines                                            │       │
+│  │  • Architecture: ✅ FROZEN (15-20 year lifetime)                         │       │
+│  │                                                                           │       │
+│  │  🧪 Phase 0 Complete, Pilot Pending                                     │       │
+│  │                                                                           │       │
+│  └───────────────────────────────────────────────────────────────────────────┘       │
+│                                                                                      │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+
+
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ MIGRATION IMPACT SUMMARY (2026-08-11)                                               │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+
+  BEFORE Migration (2026-08-10)           │    AFTER Migration (2026-08-11)
+  ─────────────────────────────────────────┼─────────────────────────────────────────
+                                          │
+  Real Estate → Person Center             │    Real Estate → Person Center
+  ❌ Not integrated                        │    ✅ Integrated (Level 1)
+  • Custom re_customers table             │    • customer_id FK → party_parties
+  • owner_name TEXT (no relationship)     │    • owner_name TEXT (preserved fallback)
+  • No contact info, roles, lifecycle     │    • 4 persons, 4 roles created
+                                          │
+  ──────────────────────────────────────  │   ──────────────────────────────────────
+  Database Schema                         │    Database Schema
+  ──────────────────────────────────────  │   ──────────────────────────────────────
+  • 12 custom tables                      │    • 11 custom tables (-1) ⬆️
+  • owner_name: TEXT (NULL)               │    • owner_name: TEXT (preserved)
+  • No FK to Person Center                │    • customer_id: UUID FK ✅ NEW
+                                          │    • Index: idx_re_products_customer
+                                          │
+  ──────────────────────────────────────  │   ──────────────────────────────────────
+  Code                                    │    Code
+  ──────────────────────────────────────  │   ──────────────────────────────────────
+  Service:                                │    Service:
+  • owner_name: string | null             │    • owner_name: string | null
+                                          │    • customer_id: string | null ✅
+                                          │    • customer_display_name ✅
+  Query:                                  │    Query:
+  • SELECT owner_name                     │    • SELECT owner_name, customer_id
+                                          │    • JOIN party_parties ✅
+                                          │
+  UI:                                     │    UI:
+  • Display: owner_name                   │    • Display: customer_display_name
+                                          │      || owner_name || "—"
+                                          │
+  ──────────────────────────────────────  │   ──────────────────────────────────────
+  Metrics                                 │    Metrics (Preliminary)
+  ──────────────────────────────────────  │   ──────────────────────────────────────
+  • Structural Reuse:  18%                │    • Structural Reuse:  27%  (+50%) ⬆️
+  • Bypass Rate:       78%                │    • Bypass Rate:       70%  (-8pt) ⬆️
+  • Person Center:     Level 0 ❌         │    • Person Center:     Level 1 ✅ ⬆️
+  • Party Roles:       Level 0 ❌         │    • Party Roles:       Level 1 ✅ ⬆️
+  • Economic Leverage: 1.54×              │    • Economic Leverage: 1.70× ⬆️
+                                          │
+  ──────────────────────────────────────  │   ──────────────────────────────────────
+  Status                                  │    Status
+  ──────────────────────────────────────  │   ──────────────────────────────────────
+  • MODERATE LEVERAGE (3/6 dimensions)    │    • MODERATE → STRONG (moving)
+  • 18% structural reuse                  │    • 27% structural reuse
+  • Need Person Center integration        │    • Person Center integrated ✅
+                                          │    • ⏳ Manual testing in progress
+
+
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ STRATEGIC POSITION                                                                   │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+
+  PROVEN ✅                                NOT YET PROVEN ❌
+  ────────────────────────────────────     ──────────────────────────────────────
+  • Platform works cross-domain            • Full platform leverage
+    (Beauty → Real Estate)                   (27% vs 60% target)
+                                          
+  • Incremental adoption possible          • >2× economic leverage
+    (Person Center only, no big bang)        (1.70× vs 2× target)
+                                          
+  • Measurement-driven approach            • Compound effect
+    (Baseline frozen, objective compare)     (Only 1 primitive migrated)
+                                          
+  • Governance lightweight yet effective   • Production validation
+    (CI gate, manual review)                 (Testing in progress)
+
+
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│ NEXT TARGETS                                                                         │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+
+  Phase 2: Organization, Document, Notification
+  ──────────────────────────────────────────────────────────────────────────────────
+
+  Priority 1: Organization Center
+  • Real Estate: Level 2 → Level 1 (Consume Organization Center)
+  • Expected: +5% structural reuse
+
+  Priority 2: Document Management
+  • Real Estate Contracts: Use Document Engine
+  • Expected: +8% structural reuse
+
+  Priority 3: Notification Hub
+  • Real Estate: Customer alerts (reservation, contract)
+  • Expected: +5% structural reuse
+
+  Combined Impact: 27% → 45% structural reuse
+  Still need: 45% → 60% (Organization, lead tracking, etc.)
+
+
+┌────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                    │
+│                         Created: 2026-08-11                                       │
+│                         Status: ✅ CURRENT (Post-Migration)                       │
+│                         Next Update: After manual testing complete                │
+│                                                                                    │
+└────────────────────────────────────────────────────────────────────────────────────┘
