@@ -5,10 +5,16 @@
  * the courses and enrollments tables.
  */
 
-const SUPABASE_URL = 'https://lvnvkpyxtuilhrabtlwv.supabase.co';
-const SUPABASE_SERVICE_KEY = 'sb_secret_Dmz5w0qvg_xw5lZ1jONptQ_dPLJbdYx';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://lvnvkpyxtuilhrabtlwv.supabase.co';
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 async function testPostgRESTSchema() {
+  if (!SUPABASE_SERVICE_KEY) {
+    console.error('❌ SUPABASE_SERVICE_ROLE_KEY environment variable not set');
+    console.error('   Run: export SUPABASE_SERVICE_ROLE_KEY=your_key');
+    process.exit(1);
+  }
+  
   console.log('🔍 Testing PostgREST Schema Cache...\n');
   
   // Test 1: Query courses table (should fail if schema cache not refreshed)
