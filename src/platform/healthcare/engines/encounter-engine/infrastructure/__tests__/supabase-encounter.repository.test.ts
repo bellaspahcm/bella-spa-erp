@@ -21,9 +21,12 @@ import { SupabaseEncounterRepository } from '../supabase-encounter.repository';
 import { Encounter, CreateEncounterData } from '../../domain/encounter.entity';
 import type { EncounterSearchQuery } from '../repository.interface';
 import { RepositoryError } from '../repository.interface';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
 
 describe('SupabaseEncounterRepository - Integration Tests', () => {
   let repository: SupabaseEncounterRepository;
+  let supabase: SupabaseClient<Database>;
 
   const TENANT_A = 'tenant-integration-test-a';
   const TENANT_B = 'tenant-integration-test-b';
@@ -32,7 +35,16 @@ describe('SupabaseEncounterRepository - Integration Tests', () => {
   const USER_ID = 'user-test-001';
 
   beforeAll(() => {
-    repository = new SupabaseEncounterRepository();
+    // ✅ FIX: Create Supabase client from environment variables
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Missing Supabase environment variables for integration tests');
+    }
+
+    supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
+    repository = new SupabaseEncounterRepository(supabase);
   });
 
   // ==========================================================================

@@ -9,12 +9,8 @@ import fs from 'fs'
 const envFile = fs.existsSync(path.resolve(process.cwd(), '.env.test')) ? '.env.test' : '.env.local'
 dotenv.config({ path: path.resolve(process.cwd(), envFile) })
 
-// Debug: Check if env vars are loaded
-console.log('[Jest Setup] SUPABASE_SERVICE_ROLE_KEY loaded:', 
-  process.env.SUPABASE_SERVICE_ROLE_KEY ? 
-  `${process.env.SUPABASE_SERVICE_ROLE_KEY.substring(0, 12)}... (${process.env.SUPABASE_SERVICE_ROLE_KEY.length} chars)` : 
-  'NOT LOADED'
-)
+// Debug: Check if env vars are loaded (DO NOT LOG SECRET VALUES)
+console.log('[Jest Setup] SUPABASE_SERVICE_ROLE_KEY loaded:', Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY));
 
 global.TextEncoder = TextEncoder
 global.TextDecoder = TextDecoder as any

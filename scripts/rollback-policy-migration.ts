@@ -14,7 +14,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from '../src/types/supabase';
+import type { Database } from '../src/types/database.types';
 
 // Policies to rollback (must match migration script)
 const POLICIES_TO_ROLLBACK = [

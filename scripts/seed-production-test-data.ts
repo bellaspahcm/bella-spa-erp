@@ -15,7 +15,7 @@
 import { config } from 'dotenv';
 import { resolve } from 'path';
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from '../src/types/supabase';
+import type { Database } from '../src/types/database.types';
 
 // Load environment variables from .env.local
 config({ path: resolve(__dirname, '../.env.local') });
