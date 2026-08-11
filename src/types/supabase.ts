@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       _prisma_migrations: {
@@ -1146,6 +1171,120 @@ export type Database = {
           },
           {
             foreignKeyName: "attendance_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendances: {
+        Row: {
+          attendance_id: string
+          check_in_time: string | null
+          check_out_time: string | null
+          course_id: string
+          created_at: string
+          created_by: string
+          enrollment_id: string | null
+          excuse_document_url: string | null
+          excuse_reason: string | null
+          metadata: Json | null
+          minutes_late: number | null
+          notes: string | null
+          session_date: string
+          session_duration: number | null
+          session_number: number | null
+          session_type: string | null
+          status: string
+          student_id: string
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          attendance_id?: string
+          check_in_time?: string | null
+          check_out_time?: string | null
+          course_id: string
+          created_at?: string
+          created_by: string
+          enrollment_id?: string | null
+          excuse_document_url?: string | null
+          excuse_reason?: string | null
+          metadata?: Json | null
+          minutes_late?: number | null
+          notes?: string | null
+          session_date: string
+          session_duration?: number | null
+          session_number?: number | null
+          session_type?: string | null
+          status?: string
+          student_id: string
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          attendance_id?: string
+          check_in_time?: string | null
+          check_out_time?: string | null
+          course_id?: string
+          created_at?: string
+          created_by?: string
+          enrollment_id?: string | null
+          excuse_document_url?: string | null
+          excuse_reason?: string | null
+          metadata?: Json | null
+          minutes_late?: number | null
+          notes?: string | null
+          session_date?: string
+          session_duration?: number | null
+          session_number?: number | null
+          session_type?: string | null
+          status?: string
+          student_id?: string
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_attendances_course"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["course_id"]
+          },
+          {
+            foreignKeyName: "fk_attendances_enrollment"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
+            referencedColumns: ["enrollment_id"]
+          },
+          {
+            foreignKeyName: "fk_attendances_student"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "fk_attendances_tenant"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "fk_attendances_tenant"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -7308,83 +7447,64 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "course_modules_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       courses: {
         Row: {
+          course_code: string
+          course_id: string
+          course_name: string
           created_at: string
           created_by: string | null
+          credits: number
           description: string | null
-          id: string
-          module_key: string
-          specialty: string | null
+          duration_weeks: number | null
+          metadata: Json | null
           status: string
           tenant_id: string
-          theory_duration_minutes: number
-          title: string
-          tuition_amount: number
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
+          course_code: string
+          course_id?: string
+          course_name: string
           created_at?: string
           created_by?: string | null
+          credits: number
           description?: string | null
-          id?: string
-          module_key?: string
-          specialty?: string | null
+          duration_weeks?: number | null
+          metadata?: Json | null
           status?: string
           tenant_id: string
-          theory_duration_minutes?: number
-          title: string
-          tuition_amount?: number
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
+          course_code?: string
+          course_id?: string
+          course_name?: string
           created_at?: string
           created_by?: string | null
+          credits?: number
           description?: string | null
-          id?: string
-          module_key?: string
-          specialty?: string | null
+          duration_weeks?: number | null
+          metadata?: Json | null
           status?: string
           tenant_id?: string
-          theory_duration_minutes?: number
-          title?: string
-          tuition_amount?: number
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "courses_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
-          },
-          {
-            foreignKeyName: "courses_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "courses_tenant_id_fkey"
+            foreignKeyName: "courses_tenant_fk"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "reconciliation_health_today"
             referencedColumns: ["tenant_id"]
           },
           {
-            foreignKeyName: "courses_tenant_id_fkey"
+            foreignKeyName: "courses_tenant_fk"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -7642,6 +7762,95 @@ export type Database = {
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "party_parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      enrollments: {
+        Row: {
+          attendance_percentage: number | null
+          completion_date: string | null
+          course_id: string
+          created_at: string
+          created_by: string | null
+          credits_earned: number | null
+          enrollment_date: string
+          enrollment_id: string
+          grade: string | null
+          grade_points: number | null
+          grade_status: string
+          metadata: Json | null
+          status: string
+          student_id: string
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          attendance_percentage?: number | null
+          completion_date?: string | null
+          course_id: string
+          created_at?: string
+          created_by?: string | null
+          credits_earned?: number | null
+          enrollment_date: string
+          enrollment_id?: string
+          grade?: string | null
+          grade_points?: number | null
+          grade_status?: string
+          metadata?: Json | null
+          status?: string
+          student_id: string
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          attendance_percentage?: number | null
+          completion_date?: string | null
+          course_id?: string
+          created_at?: string
+          created_by?: string | null
+          credits_earned?: number | null
+          enrollment_date?: string
+          enrollment_id?: string
+          grade?: string | null
+          grade_points?: number | null
+          grade_status?: string
+          metadata?: Json | null
+          status?: string
+          student_id?: string
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollments_course_fk"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["course_id"]
+          },
+          {
+            foreignKeyName: "enrollments_student_fk"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "enrollments_tenant_fk"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "enrollments_tenant_fk"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -9308,13 +9517,22 @@ export type Database = {
           created_at: string
           created_by: string | null
           deleted_at: string | null
+          department_id: string | null
+          diagnosis: Json | null
           doctor_party_id: string | null
           encounter_class: string
+          encounter_type: string
           finished_at: string | null
           id: string
+          location_id: string | null
+          metadata: Json | null
           notes: string | null
+          parent_encounter_id: string | null
           patient_party_id: string
+          period_end: string | null
+          period_start: string
           queue_number: number | null
+          reason_code: Json | null
           scheduled_at: string | null
           started_at: string | null
           status: string
@@ -9331,13 +9549,22 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
+          department_id?: string | null
+          diagnosis?: Json | null
           doctor_party_id?: string | null
           encounter_class: string
+          encounter_type: string
           finished_at?: string | null
           id?: string
+          location_id?: string | null
+          metadata?: Json | null
           notes?: string | null
+          parent_encounter_id?: string | null
           patient_party_id: string
+          period_end?: string | null
+          period_start: string
           queue_number?: number | null
+          reason_code?: Json | null
           scheduled_at?: string | null
           started_at?: string | null
           status?: string
@@ -9354,13 +9581,22 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
+          department_id?: string | null
+          diagnosis?: Json | null
           doctor_party_id?: string | null
           encounter_class?: string
+          encounter_type?: string
           finished_at?: string | null
           id?: string
+          location_id?: string | null
+          metadata?: Json | null
           notes?: string | null
+          parent_encounter_id?: string | null
           patient_party_id?: string
+          period_end?: string | null
+          period_start?: string
           queue_number?: number | null
+          reason_code?: Json | null
           scheduled_at?: string | null
           started_at?: string | null
           status?: string
@@ -9382,6 +9618,13 @@ export type Database = {
             columns: ["doctor_party_id"]
             isOneToOne: false
             referencedRelation: "party_parties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hc_encounters_parent_encounter_id_fkey"
+            columns: ["parent_encounter_id"]
+            isOneToOne: false
+            referencedRelation: "hc_encounters"
             referencedColumns: ["id"]
           },
           {
@@ -14477,6 +14720,87 @@ export type Database = {
           },
         ]
       }
+      persons: {
+        Row: {
+          addresses: Json | null
+          contacts: Json | null
+          created_at: string
+          created_by: string | null
+          date_of_birth: string
+          first_name: string
+          gender: string
+          id: string
+          identifiers: Json | null
+          last_name: string
+          metadata: Json | null
+          middle_name: string | null
+          nationality: string | null
+          photo_url: string | null
+          preferred_language: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          addresses?: Json | null
+          contacts?: Json | null
+          created_at?: string
+          created_by?: string | null
+          date_of_birth: string
+          first_name: string
+          gender: string
+          id?: string
+          identifiers?: Json | null
+          last_name: string
+          metadata?: Json | null
+          middle_name?: string | null
+          nationality?: string | null
+          photo_url?: string | null
+          preferred_language?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          addresses?: Json | null
+          contacts?: Json | null
+          created_at?: string
+          created_by?: string | null
+          date_of_birth?: string
+          first_name?: string
+          gender?: string
+          id?: string
+          identifiers?: Json | null
+          last_name?: string
+          metadata?: Json | null
+          middle_name?: string | null
+          nationality?: string | null
+          photo_url?: string | null
+          preferred_language?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "persons_tenant_fk"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "persons_tenant_fk"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_ai_agents: {
         Row: {
           agent_code: string
@@ -17174,6 +17498,7 @@ export type Database = {
           block: string | null
           created_at: string
           created_by: string | null
+          customer_id: string | null
           deleted_at: string | null
           direction: string | null
           floor: string | null
@@ -17196,6 +17521,7 @@ export type Database = {
           block?: string | null
           created_at?: string
           created_by?: string | null
+          customer_id?: string | null
           deleted_at?: string | null
           direction?: string | null
           floor?: string | null
@@ -17218,6 +17544,7 @@ export type Database = {
           block?: string | null
           created_at?: string
           created_by?: string | null
+          customer_id?: string | null
           deleted_at?: string | null
           direction?: string | null
           floor?: string | null
@@ -17247,6 +17574,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "real_estate_products_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "party_parties"
             referencedColumns: ["id"]
           },
           {
@@ -19454,13 +19788,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "student_class_attendance_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "students"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "student_class_attendance_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
@@ -19522,13 +19849,6 @@ export type Database = {
             columns: ["lesson_id"]
             isOneToOne: false
             referencedRelation: "lessons"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "student_lesson_progress_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "students"
             referencedColumns: ["id"]
           },
           {
@@ -19603,13 +19923,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "student_tuition_payments_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "students"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "student_tuition_payments_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
@@ -19627,90 +19940,94 @@ export type Database = {
       }
       students: {
         Row: {
-          course_id: string
+          academic_status: string
+          actual_graduation_date: string | null
           created_at: string
-          email: string | null
-          enrolled_at: string
-          enrollment_status: string
-          full_name: string
-          graduated_at: string | null
-          id: string
-          notes: string | null
-          phone: string | null
+          created_by: string | null
+          current_level: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          emergency_contact_relationship: string | null
+          enrollment_date: string
+          enrollment_type: string
+          expected_graduation_date: string | null
+          gpa: number | null
+          metadata: Json | null
+          person_id: string
+          program_id: string
+          student_code: string
+          student_id: string
           tenant_id: string
-          tuition_paid: number
-          tuition_total: number
+          total_credits: number | null
           updated_at: string
-          user_id: string
+          updated_by: string | null
         }
         Insert: {
-          course_id: string
+          academic_status: string
+          actual_graduation_date?: string | null
           created_at?: string
-          email?: string | null
-          enrolled_at?: string
-          enrollment_status?: string
-          full_name: string
-          graduated_at?: string | null
-          id?: string
-          notes?: string | null
-          phone?: string | null
+          created_by?: string | null
+          current_level?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
+          enrollment_date: string
+          enrollment_type: string
+          expected_graduation_date?: string | null
+          gpa?: number | null
+          metadata?: Json | null
+          person_id: string
+          program_id: string
+          student_code: string
+          student_id?: string
           tenant_id: string
-          tuition_paid?: number
-          tuition_total?: number
+          total_credits?: number | null
           updated_at?: string
-          user_id: string
+          updated_by?: string | null
         }
         Update: {
-          course_id?: string
+          academic_status?: string
+          actual_graduation_date?: string | null
           created_at?: string
-          email?: string | null
-          enrolled_at?: string
-          enrollment_status?: string
-          full_name?: string
-          graduated_at?: string | null
-          id?: string
-          notes?: string | null
-          phone?: string | null
+          created_by?: string | null
+          current_level?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
+          enrollment_date?: string
+          enrollment_type?: string
+          expected_graduation_date?: string | null
+          gpa?: number | null
+          metadata?: Json | null
+          person_id?: string
+          program_id?: string
+          student_code?: string
+          student_id?: string
           tenant_id?: string
-          tuition_paid?: number
-          tuition_total?: number
+          total_credits?: number | null
           updated_at?: string
-          user_id?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "students_course_id_fkey"
-            columns: ["course_id"]
+            foreignKeyName: "students_person_fk"
+            columns: ["person_id"]
             isOneToOne: false
-            referencedRelation: "courses"
+            referencedRelation: "persons"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "students_tenant_id_fkey"
+            foreignKeyName: "students_tenant_fk"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "reconciliation_health_today"
             referencedColumns: ["tenant_id"]
           },
           {
-            foreignKeyName: "students_tenant_id_fkey"
+            foreignKeyName: "students_tenant_fk"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "students_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
-          },
-          {
-            foreignKeyName: "students_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -20403,13 +20720,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "training_classes_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "training_classes_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -23322,6 +23632,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       AttendanceStatus: ["present", "late", "absent", "half_day"],
