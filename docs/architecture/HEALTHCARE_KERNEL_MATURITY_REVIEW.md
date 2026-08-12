@@ -23,7 +23,7 @@ This document conducts a rigorous structural audit after the completion of three
     1. Inpatient Bed (`Bed` in `bed-engine`)
     2. Emergency Bay (`EmergencyBay` in `emergency-engine`)
     3. ICU Bay (`IcuBay` in `icu-engine`)
-  - **Action**: Design a generic `PlatformResourceAllocationPrimitive` in the Common Core or Healthcare Shared Kernel. This primitive will standardise atomic conditional locks (`status = AVAILABLE`) and optimistic concurrency updates.
+  - **Action (Gatekeeping Nuance)**: Do NOT immediately abstract or implement `PlatformResourceAllocationPrimitive`. We must first conduct a thorough **Architecture Evidence Review** to verify if Bed, Emergency Bay, and ICU Bay share the same business semantics, lifecycles, and invariants (beyond just technical conditional lock queries). If they differ in lifecycle or ownership, domain isolation must be preserved to prevent premature abstraction.
 
 ### 4. Implicit Coupling & Event Contracts
 - **Are domain models implicitly coupled via events?**
@@ -63,9 +63,9 @@ Every new clinical vertical (e.g., **H4 Surgery/Perioperative**, **H5 Laboratory
 
 ---
 
-## Part 3: Architecture Baseline v3 Ratification
+## Part 3: Architecture Baseline v3 Status
 
-We hereby ratify **Baseline v3**:
+- **Status**: 🟡 Candidate for Ratification (Pending Architecture Evidence Review).
 - **Total Executable Tests:** **`428`** across **`41`** Jest test suites.
 - **Enforced CI Gate:** `node scripts/ci-healthcare-architecture-gate.js` with exit code 0.
 - **Rule of Internal Entities:** Ventilator sessions and other device states must remain internal entities of `IcuStay` to prevent domain model inflation.
