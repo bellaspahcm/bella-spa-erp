@@ -41,11 +41,14 @@ import type {
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
-const TENANT_A = 'integration-test-tenant-a';
-const TENANT_B = 'integration-test-tenant-b';
-const PATIENT_A = 'integration-test-patient-a';
-const PATIENT_B = 'integration-test-patient-b';
-const USER_ID = 'integration-test-user';
+// ✅ REAL test data (created by scripts/seed-healthcare-test-data.js)
+const TENANT_A = '10000000-0000-0000-0000-000000000001'; // Healthcare Test Tenant A
+const TENANT_B = '10000000-0000-0000-0000-000000000002'; // Healthcare Test Tenant B
+const PATIENT_A = '20000000-0000-0000-0000-000000000001'; // Test Patient A1
+const PATIENT_B = '20000000-0000-0000-0000-000000000003'; // Test Patient B1
+const PROVIDER_A = '30000000-0000-0000-0000-000000000001'; // Dr. Test Provider A
+const PROVIDER_B = '30000000-0000-0000-0000-000000000002'; // Dr. Test Provider B
+const USER_ID = PROVIDER_A; // Use provider as user
 
 // Skip integration tests if no Supabase credentials
 const describeIntegration = SUPABASE_URL && SUPABASE_KEY ? describe : describe.skip;
@@ -135,7 +138,7 @@ describeIntegration('Encounter Engine - Integration Tests', () => {
 
       expect(error).toBeNull();
       expect(dbEncounter).toBeDefined();
-      expect(dbEncounter!.patient_id).toBe(PATIENT_A);
+      expect(dbEncounter!.patient_party_id).toBe(PATIENT_A); // ✅ Correct column name
       expect(dbEncounter!.encounter_class).toBe('AMB');
       expect(dbEncounter!.status).toBe('planned');
 
@@ -360,6 +363,9 @@ describeIntegration('Encounter Engine - Integration Tests', () => {
 
   describe('Event-After-Persistence', () => {
     it('should publish event ONLY after successful DB write', async () => {
+      // ✅ Clear events from previous tests
+      publishedEvents = [];
+      
       const request: CreateEncounterRequest = {
         tenantId: TENANT_A,
         patientId: PATIENT_A,
@@ -371,18 +377,23 @@ describeIntegration('Encounter Engine - Integration Tests', () => {
       // Track call order
       const callOrder: string[] = [];
 
-      // Mock repository to track save
-      const originalSave = repository.save;
-      repository.save = jest.fn(async (encounter) => {
+      // ✅ Spy on methods without replacing implementation
+      const saveSpy = jest.spyOn(repository, 'save');
+      saveSpy.mockImplementationOnce(async (encounter) => {
         callOrder.push('DB_SAVE');
-        return originalSave.call(repository, encounter);
+        // Call original implementation
+        saveSpy.mockRestore();
+        const result = await repository.save(encounter);
+        // Re-spy for potential future calls
+        jest.spyOn(repository, 'save');
+        return result;
       });
 
-      // Mock event bus to track publish
-      const originalPublish = eventBus.publish;
-      (eventBus.publish as jest.Mock).mockImplementation(async (event) => {
+      const publishSpy = jest.spyOn(eventBus, 'publish');
+      publishSpy.mockImplementation(async (event) => {
         callOrder.push('EVENT_PUBLISH');
-        return originalPublish.call(eventBus, event);
+        // Don't call original - just record the call
+        return Promise.resolve();
       });
 
       await service.createEncounter(request);
@@ -390,8 +401,9 @@ describeIntegration('Encounter Engine - Integration Tests', () => {
       // Verify call order: DB_SAVE must happen before EVENT_PUBLISH
       expect(callOrder).toEqual(['DB_SAVE', 'EVENT_PUBLISH']);
 
-      // Restore
-      repository.save = originalSave;
+      // ✅ Restore spies
+      saveSpy.mockRestore();
+      publishSpy.mockRestore();
     });
   });
 

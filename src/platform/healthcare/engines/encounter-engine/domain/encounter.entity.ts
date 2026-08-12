@@ -187,7 +187,8 @@ export class Encounter {
     const initialStatus: EncounterStatus = data.isEmergency ? 'arrived' : 'planned';
 
     const props: EncounterProps = {
-      id: `enc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      // ✅ Generate UUID for database compatibility
+      id: crypto.randomUUID(),
       tenantId: data.tenantId,
       patientId: data.patientId,
       encounterType: data.encounterType,

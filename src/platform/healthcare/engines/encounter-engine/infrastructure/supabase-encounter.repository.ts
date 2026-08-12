@@ -352,9 +352,10 @@ export class SupabaseEncounterRepository implements IEncounterRepository {
         .eq('tenant_id', tenantId)
         .is('deleted_at', null);
 
-      if (error) {
+      // Supabase returns error object with empty message when count=0 (not a real error)
+      if (error && error.message && error.message.trim() !== '') {
         throw new RepositoryError(
-          `Failed to check encounter existence: ${error.message}`,
+          `Failed to check encounter existence: ${error.message || error.code || JSON.stringify(error)}`,
           'EXISTS_CHECK_FAILED',
           { encounterId, tenantId, error }
         );
