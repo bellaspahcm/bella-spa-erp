@@ -1,67 +1,90 @@
-# Implementation Plan: Gate 4B — Pharmacy Engine Integration
+# Implementation Plan: Gate 4B — Pharmacy Engine Integration (Updated)
 
-## 🎯 Goal Description
-The goal of Gate 4B is to implement the core of the **Pharmacy Engine** and prove that a medication clinical workflow can traverse cross-engine boundaries from **Encounter -> Clinical Order -> Prescription -> MAR (Medication Administration Record)**.
-
-Rather than building Pharmacy as a standalone, disconnected engine, we will build it as a contract-aligned component that consumes events/contracts from the Clinical Order Engine and Encounter Engine.
-
----
-
-## 🛠️ Proposed Schema Changes
-
-To support linking prescriptions to clinical orders, and to allow medication administration (MAR) to support both inpatients and outpatients (rather than being strictly locked to inpatient admissions), we will execute an additive migration:
-
-### 1. [NEW] Database Migration
-`20260812050000_extend_pharmacy_schema.sql`
-- Add `clinical_order_id UUID REFERENCES public.hc_clinical_orders(id) ON DELETE SET NULL` to the `hc_prescriptions` table.
-- Make `inpatient_admission_id` in `hc_medication_administration_records` **nullable** (allowing outpatient MAR tracking).
-- Add `encounter_id UUID REFERENCES public.hc_encounters(id) ON DELETE CASCADE` to `hc_medication_administration_records`.
-- Add performance indexes on `clinical_order_id` and `encounter_id`.
+**Status:** 🟡 PLANNED  
+**Owner:** Healthcare Platform Team  
+**Goal:** Establish and verify the Pharmacy Engine as an event-driven aggregate coordinating with Encounter and Clinical Order Engines.
 
 ---
 
-## 📂 Proposed Code Changes
+## 📋 Gate 4B Step-by-Step Roadmap
 
-### 1. Domain Layer
-- **Prescription Aggregate Root (`Prescription`):**
-  - Managed states: `PENDING_REVIEW` (when prescription is created from approved order), `DISPENSED` (medication given to patient), `ON_HOLD`, `CANCELLED`.
-  - Invariants: Cannot transition to `DISPENSED` unless the clinical order status is active.
-- **Medication Administration Entity (`MAREntry`):**
-  - Tracks dose, route, site, scheduled time, actual administration time, nurse practitioner ID, and status (`scheduled`, `administered`, `refused`, `held`, `missed`).
+### 4B.1 — Pharmacy Schema & Domain
+Before writing service logic, we must inventory the database schema and execute a secure, additive migration.
 
-### 2. Infrastructure & Repository Layer
-- **[NEW] `SupabasePharmacyRepository`:**
-  - Saves and loads `Prescription` and `MAREntry` aggregates to/from `hc_prescriptions` and `hc_medication_administration_records` tables.
-- **[NEW] `ClinicalOrderReader` & `SupabaseClinicalOrderReader`:**
-  - Provides a contract-based reader for the Pharmacy Engine to fetch the parent Clinical Order status (`PENDING`, `VALIDATED`, `APPROVED`, etc.) without direct compilation coupling to the `OrderEngineService` implementation.
+#### Database Migration: `20260812050000_extend_pharmacy_schema.sql`
+- **Prescription Table (`hc_prescriptions`):**
+  - Add `clinical_order_id UUID NOT NULL UNIQUE REFERENCES public.hc_clinical_orders(id) ON DELETE RESTRICT`.
+  - Ensures clinical order linkages cannot be orphan-deleted.
+- **MAR Table (`hc_medication_administration_records`):**
+  - Make `inpatient_admission_id` nullable to support outpatient MAR.
+  - Add `encounter_id UUID REFERENCES public.hc_encounters(id) ON DELETE RESTRICT`.
+  - Enforce check constraint: `CHECK (inpatient_admission_id IS NOT NULL OR encounter_id IS NOT NULL)`.
+  - Blocks deletions of encounters that have active MAR logs to preserve historical audit records.
 
-### 3. Service Layer
-- **`PharmacyEngineService`:**
-  - Implement full service logic according to the `PharmacyEngineContract` interface.
-  - Implement drug interaction check integration via `CdsEngineService` at dispense time (CDS Barrier 2).
-  - Implement event handlers for `hos.order.approved.v1` to automatically create a `Prescription` record in status `PENDING_REVIEW` in the database.
-
-### 4. Integration Tests
-- **[NEW] `pharmacy-engine.integration.test.ts`:**
-  - Verify that approving a Clinical Order of type `MEDICATION` successfully publishes `hos.order.approved.v1`.
-  - Verify that the Pharmacy Engine consumes the event and creates a `Prescription` record.
-  - Verify that dispensing a prescription performs CDS checks (allergies & DDIs) and transitions to `DISPENSED`.
-  - Verify that administering a dose records the MAR entry in the database and publishes `MedicationAdministered` event.
+#### Prescription Domain Model (`Prescription`)
+Implement the domain aggregate root and value objects enforcing the following clinical state machine:
+```
+PENDING_REVIEW ──→ APPROVED ──→ READY_FOR_DISPENSE ──→ PARTIALLY_DISPENSED ──→ DISPENSED
+      │              │                  │
+      └──→ REJECTED  └──→ ON_HOLD       └──→ ON_HOLD
+                            │
+                            └──→ APPROVED / CANCELLED
+```
 
 ---
 
-## 📋 Verification Plan
+### 4B.2 — Pharmacy Repository
+Implement `SupabasePharmacyRepository` to load, save, and manage `Prescription` and `MAREntry` records.
+Verify proper database mapping and RLS policy compatibility (enforcing tenant isolation at the repository level).
 
-### Automated Tests
-- Implement unit tests for `Prescription` aggregate root state machine.
-- Implement integration tests running on the real database to check end-to-end flow:
-  ```powershell
-  npm test -- src/platform/healthcare/engines/pharmacy-engine/
-  ```
-- Run full platform regression to verify 0 regressions:
-  ```powershell
-  npm test -- src/platform/healthcare/
-  ```
+---
 
-### Manual Verification
-- Verify database state transitions using SQL queries.
+### 4B.3 — Event-Driven Integration (OrderApproved -> Prescription)
+Rather than calling the Pharmacy Engine from the Order Service, we will prove **event-driven decoupling** (ADR-011).
+
+```
+Order Engine (ClinicalOrderService)
+      ↓
+[Event: hos.order.approved.v1]
+      ↓
+Platform Event Bus (HostEventBus)
+      ↓
+Pharmacy Subscriber (OrderApprovedSubscriber)
+      ↓
+Prescription (PENDING_REVIEW)
+```
+
+#### Subscriber Requirements & Invariant Checks:
+- **Tenant Match:** Reject event if metadata tenant ID mismatches database target.
+- **Idempotency:** Prevent duplicate event execution (no duplicate prescriptions created).
+- **Metadata Safety:** Reject event if correlation/causation metadata is missing.
+- **Transactional Consistency:** Database insertion errors must abort gracefully without emitting downstream events.
+
+---
+
+### 4B.4 — 3-Engine Medication Workflow
+After the subscriber is verified, implement end-to-end integration tests linking all 3 engines:
+```
+Encounter Engine (arrived/in-progress)
+      ↓
+Clinical Order Engine (order created & approved)
+      ↓
+Event Bus (hos.order.approved.v1)
+      ↓
+Pharmacy Engine (prescription created & dispensed)
+      ↓
+MAR Record (administration recorded & MedicationAdministered emitted)
+```
+
+---
+
+## 🎯 Gate 4B Acceptance Checklist
+
+- [ ] **Contract Tests:** Ensure `PharmacyEngineContract` is registered and discoverable.
+- [ ] **Domain Tests:** Unit tests for Prescription state machine transitions and invariants.
+- [ ] **MAR Domain Tests:** Unit tests for medication administration invariants.
+- [ ] **Repository Integration Tests:** Verify real database persistence with RLS.
+- [ ] **Event Subscriber Integration Tests:** Verify `OrderApprovedSubscriber` is decoupled and handles idempotency correctly.
+- [ ] **3-Engine Workflow Tests:** Verify end-to-end flow from encounter up to medication administration.
+- [ ] **Audit Preservation:** Verify database constraints block deletes of encounters and orders that have MAR logs.
+- [ ] **No Circular Dependency:** Static analysis verifies no imports from `order-engine` in the `pharmacy-engine` codebase.
