@@ -12,6 +12,7 @@ import {
   getEncounterEngine,
   EncounterEngineContract,
 } from '../engines/encounter-engine';
+import { PHARMACY_ENGINE_CONTRACT } from '../contracts/pharmacy-engine.contract';
 
 describe('Healthcare Platform Bootstrap & Wiring (STEP 8)', () => {
   let supabase: Awaited<ReturnType<typeof createClient>>;
@@ -28,7 +29,7 @@ describe('Healthcare Platform Bootstrap & Wiring (STEP 8)', () => {
     await expect(bootstrapHealthcarePlatform(contractRegistry)).resolves.not.toThrow();
   });
 
-  it('should register both Encounter and Order engine contracts in Contract Registry', async () => {
+  it('should register Encounter, Order, and Pharmacy engine contracts in Contract Registry', async () => {
     await bootstrapHealthcarePlatform(contractRegistry);
 
     // Verify Order Engine Contract
@@ -48,6 +49,15 @@ describe('Healthcare Platform Bootstrap & Wiring (STEP 8)', () => {
     expect(encounterContract).toBeDefined();
     expect(encounterContract?.name).toBe('encounter-engine');
     expect(encounterContract?.version).toBe('1.0.0');
+
+    // Verify Pharmacy Engine Contract
+    const pharmacyContract = contractRegistry.getContract(
+      PHARMACY_ENGINE_CONTRACT.name,
+      PHARMACY_ENGINE_CONTRACT.version
+    );
+    expect(pharmacyContract).toBeDefined();
+    expect(pharmacyContract?.name).toBe('pharmacy-engine');
+    expect(pharmacyContract?.version).toBe('1.0.0');
   });
 
   it('should create ClinicalOrderService with correct dependencies via factory', () => {

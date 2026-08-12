@@ -50,7 +50,7 @@ describe('Encounter Entity - Domain Layer', () => {
     it('should create a valid planned encounter', () => {
       const encounter = Encounter.create(validCreateData);
 
-      expect(encounter.id).toMatch(/^enc-\d+-[a-z0-9]+$/);
+      expect(encounter.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
       expect(encounter.tenantId).toBe('tenant-001');
       expect(encounter.patientId).toBe('patient-001');
       expect(encounter.encounterType).toBe('outpatient');

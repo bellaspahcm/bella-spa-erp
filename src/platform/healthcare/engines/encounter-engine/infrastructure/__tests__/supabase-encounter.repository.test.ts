@@ -23,18 +23,25 @@ import type { EncounterSearchQuery } from '../repository.interface';
 import { RepositoryError } from '../repository.interface';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
+import { randomUUID } from 'crypto';
 
 describe('SupabaseEncounterRepository - Integration Tests', () => {
   let repository: SupabaseEncounterRepository;
   let supabase: SupabaseClient<Database>;
 
-  const TENANT_A = 'tenant-integration-test-a';
-  const TENANT_B = 'tenant-integration-test-b';
-  const PATIENT_A = 'patient-test-a';
-  const PATIENT_B = 'patient-test-b';
-  const USER_ID = 'user-test-001';
+  const TENANT_A = '11111111-1111-1111-1111-11111111111a';
+  const TENANT_B = '22222222-2222-2222-2222-22222222222b';
+  const PATIENT_A = '33333333-3333-3333-3333-333333333333';
+  const PATIENT_B = '44444444-4444-4444-4444-444444444444';
+  const SHARED_PATIENT_ID = '99999999-9999-9999-9999-999999999999';
+  const DOCTOR_A = '66666666-6666-6666-6666-666666666666';
+  const DOCTOR_B = '77777777-7777-7777-7777-777777777777';
+  const DEPT_A = '88888888-8888-8888-8888-888888888881';
+  const DEPT_B = '88888888-8888-8888-8888-888888888882';
+  const LOC_B = '88888888-8888-8888-8888-888888888883';
+  const USER_ID = '55555555-5555-5555-5555-555555555555';
 
-  beforeAll(() => {
+  beforeAll(async () => {
     // ✅ FIX: Create Supabase client from environment variables
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -45,6 +52,41 @@ describe('SupabaseEncounterRepository - Integration Tests', () => {
 
     supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
     repository = new SupabaseEncounterRepository(supabase);
+
+    // Clean up any stale test records first
+    await supabase.from('hc_encounters').delete().in('tenant_id', [TENANT_A, TENANT_B]);
+    await supabase.from('party_parties').delete().in('tenant_id', [TENANT_A, TENANT_B]);
+
+    // Insert or update required tenant records (using upsert to bypass delete constraints rule bug)
+    const testTenants = [
+      { id: TENANT_A, name: 'Integration Test Tenant A', status: 'active' },
+      { id: TENANT_B, name: 'Integration Test Tenant B', status: 'active' },
+    ];
+    const { error: tenantError } = await supabase.from('tenants').upsert(testTenants, { onConflict: 'id' });
+    if (tenantError) {
+      throw new Error(`Failed to seed tenants: ${tenantError.message}`);
+    }
+
+    // Insert required party records to satisfy FK constraints
+    const parties = [
+      { id: PATIENT_A, tenant_id: TENANT_A, party_type: 'person', display_name: 'Patient A' },
+      { id: PATIENT_B, tenant_id: TENANT_B, party_type: 'person', display_name: 'Patient B' },
+      { id: SHARED_PATIENT_ID, tenant_id: TENANT_A, party_type: 'person', display_name: 'Shared Patient' },
+      { id: USER_ID, tenant_id: TENANT_A, party_type: 'person', display_name: 'User A' },
+      { id: DOCTOR_A, tenant_id: TENANT_A, party_type: 'person', display_name: 'Doctor A' },
+      { id: DOCTOR_B, tenant_id: TENANT_A, party_type: 'person', display_name: 'Doctor B' },
+    ];
+
+    const { error: partyError } = await supabase.from('party_parties').upsert(parties, { onConflict: 'id' });
+    if (partyError) {
+      throw new Error(`Failed to seed party_parties: ${partyError.message}`);
+    }
+  });
+
+  afterAll(async () => {
+    // Cleanup everything created for test tenants in reverse dependency order
+    await supabase.from('hc_encounters').delete().in('tenant_id', [TENANT_A, TENANT_B]);
+    await supabase.from('party_parties').delete().in('tenant_id', [TENANT_A, TENANT_B]);
   });
 
   // ==========================================================================
@@ -59,8 +101,8 @@ describe('SupabaseEncounterRepository - Integration Tests', () => {
         encounterType: 'outpatient',
         encounterClass: 'AMB',
         startDateTime: new Date('2026-08-11T09:00:00Z'),
-        serviceProviderId: 'doctor-001',
-        departmentId: 'dept-001',
+        serviceProviderId: DOCTOR_A,
+        departmentId: DEPT_A,
         reasonCode: ['R50.9'],
         createdBy: USER_ID,
       };
@@ -82,9 +124,9 @@ describe('SupabaseEncounterRepository - Integration Tests', () => {
         encounterType: 'inpatient',
         encounterClass: 'IMP',
         startDateTime: new Date('2026-08-11T10:00:00Z'),
-        serviceProviderId: 'doctor-002',
-        departmentId: 'dept-002',
-        locationId: 'loc-002',
+        serviceProviderId: DOCTOR_B,
+        departmentId: DEPT_B,
+        locationId: LOC_B,
         reasonCode: ['J18.9', 'I10'],
         createdBy: USER_ID,
       });
@@ -154,7 +196,7 @@ describe('SupabaseEncounterRepository - Integration Tests', () => {
 
   describe('findById()', () => {
     it('should return null if encounter not found', async () => {
-      const found = await repository.findById('non-existent-id', TENANT_A);
+      const found = await repository.findById(randomUUID(), TENANT_A);
       expect(found).toBeNull();
     });
 
@@ -194,7 +236,7 @@ describe('SupabaseEncounterRepository - Integration Tests', () => {
     });
 
     it('should return false if encounter does not exist', async () => {
-      const exists = await repository.exists('non-existent-id', TENANT_A);
+      const exists = await repository.exists(randomUUID(), TENANT_A);
       expect(exists).toBe(false);
     });
 
@@ -274,7 +316,7 @@ describe('SupabaseEncounterRepository - Integration Tests', () => {
 
     it('should isolate patient encounters by tenant', async () => {
       // Same patient ID in both tenants (different people)
-      const sharedPatientId = 'patient-shared-id';
+      const sharedPatientId = SHARED_PATIENT_ID;
 
       const encounterA = Encounter.create({
         tenantId: TENANT_A,

@@ -37,6 +37,11 @@ export interface EventBus {
    * Best-effort: If one fails, continue with others
    */
   publishBatch(events: OrderEvent[]): Promise<EventPublishResult[]>;
+
+  /**
+   * Subscribe to a specific domain event type
+   */
+  subscribe(eventType: string, handler: (event: OrderEvent) => Promise<void>): void;
 }
 
 /**
@@ -46,6 +51,7 @@ export interface EventBus {
 export class InMemoryEventBus implements EventBus {
   private events: OrderEvent[] = [];
   private shouldFail = false;
+  private subscribers: Map<string, ((event: OrderEvent) => Promise<void>)[]> = new Map();
   
   async publish(event: OrderEvent): Promise<EventPublishResult> {
     if (this.shouldFail) {
@@ -56,6 +62,15 @@ export class InMemoryEventBus implements EventBus {
     }
     
     this.events.push(event);
+
+    // Call registered subscribers asynchronously
+    const handlers = this.subscribers.get(event.eventType) || [];
+    for (const handler of handlers) {
+      handler(event).catch((err: Error) => {
+        console.error(`Error in event subscriber for ${event.eventType}:`, err.message);
+      });
+    }
+
     return {
       success: true,
       eventId: event.eventId,
@@ -64,6 +79,13 @@ export class InMemoryEventBus implements EventBus {
   
   async publishBatch(events: OrderEvent[]): Promise<EventPublishResult[]> {
     return Promise.all(events.map(event => this.publish(event)));
+  }
+
+  subscribe(eventType: string, handler: (event: OrderEvent) => Promise<void>): void {
+    if (!this.subscribers.has(eventType)) {
+      this.subscribers.set(eventType, []);
+    }
+    this.subscribers.get(eventType)!.push(handler);
   }
   
   // Test helpers
