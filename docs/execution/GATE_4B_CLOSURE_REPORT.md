@@ -13,7 +13,7 @@ Gate 4B
 ├── Repository               ✅ (Supabase pharmacy repository mapping DB exceptions)
 ├── Event Subscriber         ✅ (Decoupled, event-level idempotency & type filtering)
 ├── Bootstrap                ✅ (Platform contract registration & DI initialization)
-├── 3-Engine Workflow        ✅ (Encounter -> Clinical Order -> Pharmacy E2E path)
+├── 3-Engine Workflow        ✅ (Person -> Encounter -> Clinical Order -> Approval -> Pharmacy -> Dispensing -> MAR)
 ├── Audit Preservation       ✅ (ON DELETE RESTRICT preserving clinical records)
 ├── Idempotency              ✅ (Application and DB level replay protection)
 ├── Tenant Isolation         ✅ (RLS isolation validated across multiple tenants)
@@ -59,12 +59,33 @@ Time:        18.677 s
 
 ---
 
+### 5. Healthcare Reference Kernel Workflow
+In the Bella Healthcare Operating Kernel, `Person` is the root entity, whereas `Patient` represents a contextual role attached to an encounter or clinical order:
+```text
+Person (Root Entity)
+  ↓
+Encounter (Active Care Period)
+  ↓
+Clinical Order (Medication Order)
+  ↓
+Approval (Validated & Approved)
+  ↓
+Pharmacy (Prescription Review)
+  ↓
+Dispensing (CDS Barrier 2 Passed)
+  ↓
+Medication Administration (MAR Record & Event Emitted)
+```
+
+---
+
 ## 📈 Strategic Path Forward
 
 With Gate 4B completed:
 1. **Operating Kernel Proven:** Rather than implementing 5–10 more engines, Bella has successfully proven the orchestration of three core, independent engines (`Encounter`, `Clinical Order`, `Pharmacy`) coordinating in real-time under multi-tenant isolation constraints.
-2. **Transition to Platform Reusability:** The proven design patterns (event-driven subscribers, decoupled database readers, repository-level exception mapping, and transaction validation) are now ready to be refactored into a reusable `Common Core` framework.
-3. **Multi-Domain Demonstration:** This Common Core will power both the `Healthcare OS` (deep domain validation) and a lightweight `Education OS` (reusability proof), creating a highly compelling investment narrative.
+2. **Transition to Platform Reusability (Common Core Extraction):** The proven design patterns will be systematically refactored using the strict pipeline:
+   `Healthcare implementation → Identify reusable invariant → Define platform-level abstraction → Extract to Common Core → Healthcare consumes Common Core → Run regression`
+3. **Multi-Domain Demonstration (Healthcare OS + Education OS):** Common Core primitives (Event Bus, Contract Registry, Tenant Context, RLS, Repositories, Idempotency, Optimistic Locking, Audit) will power both `Healthcare OS` and a lightweight `Education OS` capability (Student / Course / Enrollment) to prove Meta-Platform reusability to investors.
 
 ---
 **Gate 4B — CLOSED**
