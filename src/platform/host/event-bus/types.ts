@@ -1,8 +1,4 @@
-/**
- * Event Bus Types
- * Platform-of-Platforms: Host Platform
- * Constitution: Law 5 (Event-Driven Communication)
- */
+import { DomainEventEnvelope, EventBusPort, EventHandler as CoreEventHandler } from '../../core/events';
 
 export type EventType =
   // Encounter Engine Events (Phase 3)
@@ -86,8 +82,8 @@ export type EventType =
   | 'platform.metric.recorded.v1'
   | 'platform.metric.daily_rollup.completed.v1'
   | 'platform.metric.monthly_rollup.completed.v1'
-  | 'platform.metric.enterprise_rollup.completed.v1';
-
+  | 'platform.metric.enterprise_rollup.completed.v1'
+  | (string & {});
 
 export interface DomainEvent<T = unknown> {
   // Event identification
@@ -110,16 +106,14 @@ export interface DomainEvent<T = unknown> {
   causationId?: string; // Event that caused this event
 }
 
-export interface EventHandler<T = unknown> {
-  (event: DomainEvent<T>): Promise<void> | void;
-}
+export type EventHandler<T = unknown> = (event: DomainEvent<T>) => Promise<void> | void;
 
-export interface EventBusAdapter {
+export interface EventBusAdapter extends EventBusPort {
   publish(event: DomainEvent): Promise<void>;
   subscribe<T = unknown>(
     eventType: EventType,
     handler: EventHandler<T>
-  ): () => void; // Returns unsubscribe function
+  ): () => void;
 }
 
 // Event payloads
