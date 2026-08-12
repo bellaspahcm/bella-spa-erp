@@ -63,9 +63,12 @@ Every new clinical vertical (e.g., **H4 Surgery/Perioperative**, **H5 Laboratory
 
 ---
 
-## Part 3: Architecture Baseline v3 Status
+## Part 3: Architecture Baseline v3 Status & Ratification
 
-- **Status**: 🟡 Candidate for Ratification (Pending Architecture Evidence Review).
+- **Status**: ✅ APPROVED & RATIFIED (Architecture Constitution)
+- **Architecture Evidence Review**: Completed on 2026-08-12.
+  - *Resource Allocation*: Denied generic abstraction. Kept domain isolation per [Architecture Evidence Review](file:///C:/Users/DELL/.gemini/antigravity-ide/brain/27dfb19f-ce08-4eb0-b0c9-d3676dcb31ca/architecture_evidence_review.md) (technically locked but semantically isolated).
+  - *Encounter Contract*: Strict scope boundaries locked to prevent God Object bloating.
 - **Total Executable Tests:** **`428`** across **`41`** Jest test suites.
 - **Enforced CI Gate:** `node scripts/ci-healthcare-architecture-gate.js` with exit code 0.
 - **Rule of Internal Entities:** Ventilator sessions and other device states must remain internal entities of `IcuStay` to prevent domain model inflation.

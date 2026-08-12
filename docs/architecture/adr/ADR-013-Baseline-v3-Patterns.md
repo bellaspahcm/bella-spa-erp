@@ -1,17 +1,17 @@
 # ADR-013: Healthcare OS Architecture Baseline v3 & Critical Care Pattern Ratification
 
-**Status:** 🟡 CANDIDATE FOR RATIFICATION (Pending Architecture Evidence Review)  
+**Status:** ✅ APPROVED & RATIFIED (Architecture Constitution)  
 **Effective Date:** 2026-08-12  
 **Deciders:** ARB (Architecture Review Board), Core Platform Team  
 **Scope:** Healthcare OS Kernel & All Bounded Contexts (Inpatient, Emergency, ICU/CCU, Surgery/OR)  
 
 ---
 
-## 0. Gate Gatekeeping: Pending Architecture Evidence Review
+## 0. Gate Gatekeeping: Architecture Evidence Review Completed
 
-Before officially freezing **Baseline v3**, the architecture review board mandates a dedicated **Architecture Evidence Review** on two critical areas:
-1. **Resource Allocation Primitive**: We have 3 implementations (Bed, Emergency Bay, ICU Bay). We must prove they share the same business semantics, lifecycles, and invariants before implementing `PlatformResourceAllocationPrimitive`. If their lifecycles or ownership rules differ, we must retain domain isolation.
-2. **Encounter Contract**: We must audit the `Encounter` interface size to prevent Shared Kernel bloating before H4 Surgery adds more complexity.
+The architecture review board completed the **Architecture Evidence Review** on two critical areas on 2026-08-12:
+1. **Resource Allocation Primitive**: Denied shared abstraction. We proved Bed, Emergency Bay, and ICU Bed differ in business semantics, lifecycles, and domain ownership. We retain strict domain isolation per [Architecture Evidence Review](file:///C:/Users/DELL/.gemini/antigravity-ide/brain/27dfb19f-ce08-4eb0-b0c9-d3676dcb31ca/architecture_evidence_review.md).
+2. **Encounter Contract**: Locked strict boundary limits to keep the shared `Encounter` model focused strictly on clinical session lifecycle metadata, preventing it from becoming a God Object before H4 Surgery.
 
 ---
 
