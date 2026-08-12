@@ -65,6 +65,8 @@ class IntegrationEncounterReader {
   }
 }
 
+jest.setTimeout(30000);
+
 describe('3-Engine Clinical Workflow Integration Tests (4B.4 & 4B.5)', () => {
   let supabase: Awaited<ReturnType<typeof createClient>>;
   let fixtures: HealthcareTestFixture;
@@ -202,15 +204,29 @@ describe('3-Engine Clinical Workflow Integration Tests (4B.4 & 4B.5)', () => {
     // The subscriber automatically hears the event, queries DB reader, and inserts prescription.
     const prescription = await pollForPrescription(fixtures.tenantId, orderId);
     expect(prescription).not.toBeNull();
-    expect(prescription.status).toBe('PENDING_REVIEW');
+    expect(prescription.status).toBe('PENDING_VERIFICATION');
     expect(prescription.clinicalOrderId).toBe(orderId);
     expect(prescription.drugs).toHaveLength(1);
     expect(prescription.drugs[0].code).toBe('A02B');
 
     // =========================================================================
+    // STEP C2: Verify the Prescription (Pharmacy Engine)
+    // =========================================================================
+    // Verify prescription before dispensing
+    const verifyResult = await pharmacyService.verifyPrescription({
+      tenantId: fixtures.tenantId,
+      medicationOrderId: orderId,
+      pharmacistId: fixtures.providerPartyId,
+    });
+    expect(verifyResult.success).toBe(true);
+
+    // Set stock for A02B
+    await pharmacyRepository.setStock(fixtures.tenantId, 'A02B', 10);
+
+    // =========================================================================
     // STEP D: Dispense the Prescription (Pharmacy Engine)
     // =========================================================================
-    // Dispensing will transition PENDING_REVIEW -> APPROVED -> READY_FOR_DISPENSE -> DISPENSED
+    // Dispensing will transition VERIFIED -> DISPENSED
     const dispenseResult = await pharmacyService.dispenseMedication({
       tenantId: fixtures.tenantId,
       medicationOrderId: orderId,

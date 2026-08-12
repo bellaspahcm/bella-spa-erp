@@ -1,0 +1,173 @@
+
+> bella-spa-erp@0.1.0 test
+> jest clinical-order.service.integration.test.ts
+
+  console.log
+    Γùç injected env (0) from .env.test // tip: Γîÿ override existing { override: true }
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+  console.log
+    [Jest Setup] SUPABASE_SERVICE_ROLE_KEY loaded: true
+
+      at Object.log (jest.setup.ts:13:9)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+FAIL src/platform/healthcare/engines/order-engine/services/__tests__/clinical-order.service.integration.test.ts (9.093 s)
+  ClinicalOrderService Integration Tests
+    createOrder - End-to-End
+      ├ù should create order with real encounter + persist to DB + publish event (1229 ms)
+      ├ù should enforce idempotency via requestId (690 ms)
+      ΓêÜ should reject order if encounter not found (621 ms)
+      ΓêÜ should reject order if patient does not match encounter (590 ms)
+      ΓêÜ should reject order if encounter is discharged (FINISHED) (1211 ms)
+      ΓêÜ should reject order if encounter is cancelled (1217 ms)
+    approveOrder - End-to-End
+      ├ù should approve order + update DB + publish event (868 ms)
+      ├ù should enforce optimistic locking (stale version) (836 ms)
+    discontinueOrder - End-to-End
+      ├ù should discontinue order + update DB + publish event (799 ms)
+    Tenant Isolation
+      ΓêÜ should not allow creating order for different tenant encounter (575 ms)
+
+  ΓùÅ ClinicalOrderService Integration Tests ΓÇ║ createOrder - End-to-End ΓÇ║ should create order with real encounter + persist to DB + publish event
+
+    TypeError: eventBus.getEvents is not a function
+
+      176 |         
+      177 |         // Verify event published
+    > 178 |         const events = eventBus.getEvents();
+          |                                 ^
+      179 |         expect(events).toHaveLength(1);
+      180 |         expect(events[0].type).toBe('OrderCreated');
+      181 |       }
+
+      at Object.getEvents (src/platform/healthcare/engines/order-engine/services/__tests__/clinical-order.service.integration.test.ts:178:33)
+
+  ΓùÅ ClinicalOrderService Integration Tests ΓÇ║ createOrder - End-to-End ΓÇ║ should enforce idempotency via requestId
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      198 |       // First request
+      199 |       const result1 = await service.createOrder(request);
+    > 200 |       expect(result1.success).toBe(true);
+          |                               ^
+      201 |       
+      202 |       if (result1.data) {
+      203 |         createdOrderIds.push(result1.data.id);
+
+      at Object.toBe (src/platform/healthcare/engines/order-engine/services/__tests__/clinical-order.service.integration.test.ts:200:31)
+
+  ΓùÅ ClinicalOrderService Integration Tests ΓÇ║ approveOrder - End-to-End ΓÇ║ should approve order + update DB + publish event
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      329 |       const result = await service.approveOrder(approveRequest);
+      330 |       
+    > 331 |       expect(result.success).toBe(true);
+          |                              ^
+      332 |       expect(result.data?.orderStatus).toBe('APPROVED');
+      333 |       expect(result.data?.version).toBe(2);
+      334 |       expect(result.eventPublished).toBe(true);
+
+      at Object.toBe (src/platform/healthcare/engines/order-engine/services/__tests__/clinical-order.service.integration.test.ts:331:30)
+
+  ΓùÅ ClinicalOrderService Integration Tests ΓÇ║ approveOrder - End-to-End ΓÇ║ should enforce optimistic locking (stale version)
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected substring: "version mismatch"
+    Received string:    "Order 052841b4-4a42-4437-94fb-9cdff4b4601f cannot be approved in status: PENDING"
+
+      377 |       
+      378 |       expect(result.success).toBe(false);
+    > 379 |       expect(result.error).toContain('version mismatch');
+          |                            ^
+      380 |     });
+      381 |   });
+      382 |   
+
+      at Object.toContain (src/platform/healthcare/engines/order-engine/services/__tests__/clinical-order.service.integration.test.ts:379:28)
+
+  ΓùÅ ClinicalOrderService Integration Tests ΓÇ║ discontinueOrder - End-to-End ΓÇ║ should discontinue order + update DB + publish event
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      411 |       const result = await service.discontinueOrder(discontinueRequest);
+      412 |       
+    > 413 |       expect(result.success).toBe(true);
+          |                              ^
+      414 |       expect(result.data?.orderStatus).toBe('DISCONTINUED');
+      415 |       expect(result.data?.discontinueReason).toBe('Patient allergic to medication');
+      416 |       expect(result.eventPublished).toBe(true);
+
+      at Object.toBe (src/platform/healthcare/engines/order-engine/services/__tests__/clinical-order.service.integration.test.ts:413:30)
+
+Test Suites: 1 failed, 1 total
+Tests:       5 failed, 5 passed, 10 total
+Snapshots:   0 total
+Time:        9.282 s
+Ran all test suites matching clinical-order.service.integration.test.ts.

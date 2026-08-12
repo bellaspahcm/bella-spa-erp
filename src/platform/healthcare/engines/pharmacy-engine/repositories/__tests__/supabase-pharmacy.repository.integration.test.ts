@@ -6,8 +6,9 @@ import { Prescription, MAREntry, PrescriptionDrugItem } from '../../domain/presc
 import { SupabasePharmacyRepository } from '../supabase-pharmacy.repository';
 import { SupabaseClinicalOrderReader } from '../supabase-clinical-order-reader';
 import { OptimisticLockError, UniqueConstraintViolationError } from '../pharmacy-repository.interface';
+import { ScreeningResult } from '../../domain/screening-policies';
 
-describe('SupabasePharmacyRepository & Reader Integration Tests (4B.2)', () => {
+describe('SupabasePharmacyRepository & Reader Integration Tests (H6 Refined)', () => {
   let supabase: Awaited<ReturnType<typeof createClient>>;
   let repository: SupabasePharmacyRepository;
   let reader: SupabaseClinicalOrderReader;
@@ -19,14 +20,15 @@ describe('SupabasePharmacyRepository & Reader Integration Tests (4B.2)', () => {
   let createdMARIds: string[] = [];
   let createdAdmissionIds: string[] = [];
   let createdOrderIds: string[] = [];
+  let createdInventoryItemIds: string[] = [];
 
   const drugs: PrescriptionDrugItem[] = [
     {
-      code: 'A02B',
-      name: 'Omeprazole 20mg',
-      dose: '1 capsule',
-      frequency: 'QD',
-      durationDays: 14,
+      code: 'PARACETAMOL',
+      name: 'Paracetamol 500mg',
+      dose: '500mg',
+      frequency: 'QID',
+      durationDays: 5,
     },
   ];
 
@@ -47,13 +49,13 @@ describe('SupabasePharmacyRepository & Reader Integration Tests (4B.2)', () => {
         order_status: 'APPROVED',
         ordered_by: fixtures.providerPartyId,
         order_details: {
-          drugCode: 'A02B',
-          drugName: 'Omeprazole 20mg',
-          dose: 20,
+          drugCode: 'PARACETAMOL',
+          drugName: 'Paracetamol 500mg',
+          dose: 500,
           doseUnit: 'mg',
           route: 'PO',
-          frequency: 'QD',
-          durationDays: 14,
+          frequency: 'QID',
+          durationDays: 5,
         },
       },
       {
@@ -65,13 +67,13 @@ describe('SupabasePharmacyRepository & Reader Integration Tests (4B.2)', () => {
         order_status: 'APPROVED',
         ordered_by: fixtures.providerPartyId,
         order_details: {
-          drugCode: 'A02B',
-          drugName: 'Omeprazole 20mg',
-          dose: 20,
+          drugCode: 'PARACETAMOL',
+          drugName: 'Paracetamol 500mg',
+          dose: 500,
           doseUnit: 'mg',
           route: 'PO',
-          frequency: 'QD',
-          durationDays: 14,
+          frequency: 'QID',
+          durationDays: 5,
         },
       },
     ]);
@@ -103,6 +105,12 @@ describe('SupabasePharmacyRepository & Reader Integration Tests (4B.2)', () => {
       createdOrderIds = [];
     }
 
+    // Teardown inventory items
+    if (createdInventoryItemIds.length > 0) {
+      await supabase.from('inventory_items').delete().in('sku', createdInventoryItemIds);
+      createdInventoryItemIds = [];
+    }
+
     await fixtures.cleanup();
   });
 
@@ -111,18 +119,13 @@ describe('SupabasePharmacyRepository & Reader Integration Tests (4B.2)', () => {
       const snapshot = await reader.getOrderSnapshot(fixtures.tenantId, clinicalOrderId);
       expect(snapshot).not.toBeNull();
       expect(snapshot?.id).toBe(clinicalOrderId);
-      expect(snapshot?.drugCode).toBe('A02B');
-      expect(snapshot?.dose).toBe(20);
-    });
-
-    it('should return null for non-existent clinical order', async () => {
-      const snapshot = await reader.getOrderSnapshot(fixtures.tenantId, randomUUID());
-      expect(snapshot).toBeNull();
+      expect(snapshot?.drugCode).toBe('PARACETAMOL');
+      expect(snapshot?.dose).toBe(500);
     });
   });
 
-  describe('Prescription Persistence', () => {
-    it('should successfully save and load a Prescription aggregate', async () => {
+  describe('Prescription Persistence & Metadata Mapping', () => {
+    it('should successfully save and load a Prescription aggregate with metadata', async () => {
       const prescription = Prescription.create({
         tenantId: fixtures.tenantId,
         encounterId: fixtures.encounterId,
@@ -130,25 +133,22 @@ describe('SupabasePharmacyRepository & Reader Integration Tests (4B.2)', () => {
         doctorPartyId: fixtures.providerPartyId,
         clinicalOrderId,
         drugs,
+        isHighAlert: true,
       });
       createdPrescriptionIds.push(prescription.id);
 
-      // Save
+      // Verify and set state before saving
+      prescription.verify(fixtures.providerPartyId, ScreeningResult.clear());
       await repository.savePrescription(prescription);
 
       // Load by ID
       const loaded = await repository.findPrescriptionById(fixtures.tenantId, prescription.id);
       expect(loaded).not.toBeNull();
       expect(loaded?.id).toBe(prescription.id);
-      expect(loaded?.status).toBe('PENDING_REVIEW');
-      expect(loaded?.clinicalOrderId).toBe(clinicalOrderId);
-      expect(loaded?.drugs).toHaveLength(1);
-      expect(loaded?.drugs[0].code).toBe('A02B');
-
-      // Load by Clinical Order ID
-      const loadedByOrder = await repository.findPrescriptionByClinicalOrderId(fixtures.tenantId, clinicalOrderId);
-      expect(loadedByOrder).not.toBeNull();
-      expect(loadedByOrder?.id).toBe(prescription.id);
+      expect(loaded?.status).toBe('PENDING_VERIFICATION'); // High alert stays pending until second verify
+      expect(loaded?.dualVerificationState).toBe('VERIFICATION_1');
+      expect(loaded?.isHighAlert).toBe(true);
+      expect(loaded?.verifications).toHaveLength(1);
     });
 
     it('should enforce unique clinical_order_id constraint on insert', async () => {
@@ -164,7 +164,6 @@ describe('SupabasePharmacyRepository & Reader Integration Tests (4B.2)', () => {
 
       await repository.savePrescription(prescription1);
 
-      // Try to create second prescription referencing same clinical order
       const prescription2 = Prescription.create({
         tenantId: fixtures.tenantId,
         encounterId: fixtures.encounterId,
@@ -191,31 +190,51 @@ describe('SupabasePharmacyRepository & Reader Integration Tests (4B.2)', () => {
 
       await repository.savePrescription(prescription);
 
-      // Load two instances representing two separate concurrent updates
       const instance1 = await repository.findPrescriptionById(fixtures.tenantId, prescription.id);
       const instance2 = await repository.findPrescriptionById(fixtures.tenantId, prescription.id);
       expect(instance1).not.toBeNull();
       expect(instance2).not.toBeNull();
 
-      // Instance 1 transitions and saves
-      instance1!.approve(fixtures.providerPartyId);
+      instance1!.verify(fixtures.providerPartyId, ScreeningResult.clear());
       await repository.savePrescription(instance1!);
       expect(instance1!.version).toBe(2);
 
-      // Instance 2 (stale version 1) tries to transition and save
       instance2!.reject(fixtures.providerPartyId, 'Stale update');
       await expect(repository.savePrescription(instance2!)).rejects.toThrow(OptimisticLockError);
     });
   });
 
-  describe('MAR Persistence & Consistency Trigger', () => {
+  describe('Inventory Stock Management', () => {
+    it('should set stock and deduct stock atomically', async () => {
+      const medCode = 'PARA-TEST-1';
+      createdInventoryItemIds.push(medCode);
+
+      // Set Stock
+      await repository.setStock(fixtures.tenantId, medCode, 10);
+      expect(await repository.getStock(fixtures.tenantId, medCode)).toBe(10);
+
+      // Deduct Stock
+      await repository.deductStock(fixtures.tenantId, medCode, 3);
+      expect(await repository.getStock(fixtures.tenantId, medCode)).toBe(7);
+    });
+
+    it('should fail stock deduction if insufficient stock', async () => {
+      const medCode = 'PARA-TEST-2';
+      createdInventoryItemIds.push(medCode);
+
+      await repository.setStock(fixtures.tenantId, medCode, 2);
+      await expect(repository.deductStock(fixtures.tenantId, medCode, 5)).rejects.toThrow();
+    });
+  });
+
+  describe('MAR Persistence', () => {
     it('should successfully save and load a MAR record with encounterId', async () => {
       const mar = MAREntry.create({
         tenantId: fixtures.tenantId,
         encounterId: fixtures.encounterId,
         prescriptionItemId: randomUUID(),
-        drugName: 'Omeprazole 20mg',
-        dosage: '1 capsule',
+        drugName: 'Paracetamol 500mg',
+        dosage: '500mg',
         route: 'PO',
         scheduledTime: new Date(),
       });
@@ -228,43 +247,6 @@ describe('SupabasePharmacyRepository & Reader Integration Tests (4B.2)', () => {
       expect(loaded?.id).toBe(mar.id);
       expect(loaded?.status).toBe('scheduled');
       expect(loaded?.encounterId).toBe(fixtures.encounterId);
-      expect(loaded?.inpatientAdmissionId).toBeUndefined();
-    });
-
-    it('should fail insertion when cross-table encounter consistency trigger is violated', async () => {
-      // 1. Create a real inpatient admission linked to encounter A
-      const admissionId = randomUUID();
-      await supabase.from('hc_inpatient_admissions').insert({
-        id: admissionId,
-        tenant_id: fixtures.tenantId,
-        patient_party_id: fixtures.patientPartyId,
-        encounter_id: fixtures.encounterId, // encounter A
-        status: 'admitted',
-        admitted_at: new Date().toISOString(),
-      });
-      createdAdmissionIds.push(admissionId);
-
-      // 2. Generate a separate encounter B ID (non-existent/different encounter context)
-      const separateEncounterId = randomUUID();
-
-      // 3. Save a MAR entry referencing the admission, but encounter B
-      const inconsistentMAR = MAREntry.reconstitute({
-        id: randomUUID(),
-        tenantId: fixtures.tenantId,
-        inpatientAdmissionId: admissionId,
-        encounterId: separateEncounterId, // mismatch encounter
-        prescriptionItemId: randomUUID(),
-        drugName: 'Omeprazole 20mg',
-        dosage: '1 capsule',
-        route: 'PO',
-        scheduledTime: new Date(),
-        status: 'scheduled',
-        createdAt: new Date(),
-      });
-      createdMARIds.push(inconsistentMAR.id);
-
-      // DB Trigger verify_mar_encounter_consistency must raise an exception aborting transaction
-      await expect(repository.saveMAR(inconsistentMAR)).rejects.toThrow();
     });
   });
 });

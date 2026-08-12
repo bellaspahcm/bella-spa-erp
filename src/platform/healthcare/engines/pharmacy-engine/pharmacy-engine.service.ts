@@ -1,11 +1,11 @@
 /**
- * Pharmacy Engine Service (MAR)
+ * Pharmacy Engine Service
  * 
- * Healthcare Platform engine for pharmacy and medication administration.
+ * Healthcare Platform engine for pharmacy, prescription validation, and MAR operations.
  * 
  * Constitution Compliance:
  * - Law 1: All records reference Encounter
- * - Law 5: MedicationAdministered events published downstream
+ * - Law 5: Domain events published downstream after DB persistence
  * - Law 11: Strictly typed, zero `any` types allowed
  * 
  * @module platform/healthcare/engines/pharmacy-engine
@@ -17,28 +17,201 @@ import type {
   MARAdministrationRequest,
 } from '../../contracts/pharmacy-engine.contract';
 import type { EngineResponse, MedicationOrder, EngineHealthStatus } from '../../shared-kernel/types';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database.types';
 import { eventBus } from '@/platform/host/event-bus';
-import { CdsEngineService } from '../cds-engine/cds-engine.service';
 import { SupabasePharmacyRepository } from './repositories/supabase-pharmacy.repository';
-import { MAREntry } from './domain/prescription.entity';
+import { Prescription, MAREntry, type PrescriptionStatus } from './domain/prescription.entity';
+import {
+  AllergyPolicy,
+  InteractionPolicy,
+  DosePolicy,
+  DuplicateTherapyPolicy,
+  ScreeningResult,
+  type ScreeningFinding,
+  type MedicationSafetyDefinition,
+} from './domain/screening-policies';
 
-type PrescriptionRow = Database['public']['Tables']['hc_prescriptions']['Row'];
+export const SAFETY_DEFINITIONS: Record<string, MedicationSafetyDefinition> = {
+  'PARACETAMOL': {
+    medicationCode: 'PARACETAMOL',
+    doseLimit: 4000,
+    doseUnit: 'mg',
+    interactionRules: [
+      { conflictDrugCode: 'WARFARIN', severity: 'WARNING', message: 'Paracetamol may increase anticoagulation effect of Warfarin.' },
+    ],
+    allergyRules: [
+      { allergyCode: 'ALLERGEN-PARA', severity: 'BLOCKED', message: 'Patient has life-threatening allergy to Paracetamol.' },
+    ],
+  },
+  'WARFARIN': {
+    medicationCode: 'WARFARIN',
+    doseLimit: 10,
+    doseUnit: 'mg',
+    interactionRules: [
+      { conflictDrugCode: 'NSAID-IBU', severity: 'BLOCKED', message: 'Absolute contraindication: Warfarin combined with Ibuprofen increases severe bleeding risk.' },
+    ],
+  },
+  'NSAID-IBU': {
+    medicationCode: 'NSAID-IBU',
+    doseLimit: 2400,
+    doseUnit: 'mg',
+  },
+};
 
 export class PharmacyEngineService implements PharmacyEngineContract {
   readonly engineName = 'pharmacy-engine';
-  readonly engineVersion = '1.0.0';
+  readonly engineVersion = '1.1.0';
   readonly contractVersion = '1.0.0';
 
-  private readonly cdsEngine: CdsEngineService;
   private readonly pharmacyRepository: SupabasePharmacyRepository;
+  private readonly allergyPolicy = new AllergyPolicy();
+  private readonly interactionPolicy = new InteractionPolicy();
+  private readonly dosePolicy = new DosePolicy();
+  private readonly duplicateTherapyPolicy = new DuplicateTherapyPolicy();
 
   constructor(private readonly supabase: SupabaseClient<Database>) {
-    this.cdsEngine = new CdsEngineService(supabase);
     this.pharmacyRepository = new SupabasePharmacyRepository(supabase);
   }
 
-  async recordMedicationAdministration(request: MARAdministrationRequest): Promise<EngineResponse<{ id: string }>> {
+  /**
+   * Verify Prescription Command (Gate 1, 2, 3, 5)
+   */
+  async verifyPrescription(request: {
+    tenantId: string;
+    medicationOrderId: string; // parent clinical order id
+    pharmacistId: string;
+    overrides?: { warningCode: string; rationale: string; policyVersion?: string }[];
+  }): Promise<EngineResponse<{ id: string; status: string; safetyState: string }>> {
+    const now = new Date().toISOString();
+    try {
+      const prescription = await this.pharmacyRepository.findPrescriptionByClinicalOrderId(
+        request.tenantId,
+        request.medicationOrderId
+      );
+
+      if (!prescription) {
+        return {
+          success: false,
+          error: {
+            code: 'PRESCRIPTION_NOT_FOUND',
+            message: `Prescription not found for order ${request.medicationOrderId}`,
+            timestamp: now,
+          },
+        };
+      }
+
+      const firstDrug = prescription.drugs[0];
+      if (!firstDrug) {
+        return {
+          success: false,
+          error: {
+            code: 'PRESCRIPTION_EMPTY',
+            message: 'Prescription contains no drug items.',
+            timestamp: now,
+          },
+        };
+      }
+
+      // 1. Query safety inputs from DB (Allergies & Active Meds)
+      const { data: allergies } = await this.supabase
+        .from('hc_patient_allergies')
+        .select('allergen_code')
+        .eq('tenant_id', request.tenantId)
+        .eq('patient_id', prescription.patientPartyId)
+        .eq('is_active', true);
+      const patientAllergies = (allergies || []).map((a) => a.allergen_code);
+
+      const { data: activeRxs } = await this.supabase
+        .from('hc_prescriptions')
+        .select('drugs')
+        .eq('tenant_id', request.tenantId)
+        .eq('patient_party_id', prescription.patientPartyId)
+        .in('status', ['verified', 'dispensed', 'mar_ready']);
+      const activeMedicationCodes: string[] = [];
+      if (activeRxs) {
+        for (const rx of activeRxs) {
+          const drugsRaw = rx.drugs as unknown as { code: string }[];
+          for (const d of drugsRaw) {
+            if (d.code) activeMedicationCodes.push(d.code);
+          }
+        }
+      }
+
+      // Parse dosage value & unit
+      const dosageValue = parseFloat(firstDrug.dose) || 0;
+      const dosageUnit = firstDrug.dose.replace(/[0-9. ]/g, '') || 'mg';
+
+      // 2. Execute clinical screening policies (Rule 3)
+      const findings: ScreeningFinding[] = [];
+      const context = {
+        medicationCode: firstDrug.code,
+        dosageValue,
+        dosageUnit,
+        patientAllergies,
+        activeMedicationCodes,
+        safetyDefinitions: SAFETY_DEFINITIONS,
+      };
+
+      findings.push(...this.allergyPolicy.screen(context));
+      findings.push(...this.interactionPolicy.screen(context));
+      findings.push(...this.dosePolicy.screen(context));
+      findings.push(...this.duplicateTherapyPolicy.screen(context));
+
+      const screeningResult = ScreeningResult.create(findings);
+
+      // 3. Transition aggregate state
+      const originalVersion = prescription.version;
+      prescription.verify(request.pharmacistId, screeningResult, request.overrides);
+
+      // 4. Save aggregate (Gate 4 Event-after-persistence rule)
+      await this.pharmacyRepository.savePrescription(prescription, originalVersion);
+
+      // 5. Emit domain event on success
+      await eventBus.publish({
+        eventType: 'PrescriptionVerified',
+        tenantId: request.tenantId,
+        aggregateId: prescription.id,
+        aggregateType: 'Prescription',
+        payload: {
+          prescriptionId: prescription.id,
+          clinicalOrderId: prescription.clinicalOrderId,
+          status: prescription.status,
+          safetyState: prescription.safetyState,
+          dualVerificationState: prescription.dualVerificationState,
+          verifications: prescription.verifications,
+        },
+        userId: request.pharmacistId,
+      });
+
+      return {
+        success: true,
+        data: {
+          id: prescription.id,
+          status: prescription.status,
+          safetyState: prescription.safetyState,
+        },
+      };
+    } catch (error) {
+      console.error('[PharmacyEngine] Verification failed:', error);
+      return {
+        success: false,
+        error: {
+          code: 'VERIFICATION_ERROR',
+          message: error instanceof Error ? error.message : 'Unknown error',
+          timestamp: now,
+        },
+      };
+    }
+  }
+
+  /**
+   * Dispense Medication Command (Gate 6)
+   */
+  async dispenseMedication(request: {
+    tenantId: string;
+    medicationOrderId: string;
+    dispensedBy: string;
+  }): Promise<EngineResponse<MedicationOrder>> {
     const now = new Date().toISOString();
     try {
       // 1. Fetch referenced Prescription aggregate
@@ -52,13 +225,119 @@ export class PharmacyEngineService implements PharmacyEngineContract {
           success: false,
           error: {
             code: 'PRESCRIPTION_NOT_FOUND',
-            message: `Prescription not found for clinical order ${request.medicationOrderId}`,
+            message: `Prescription not found for order ${request.medicationOrderId}`,
             timestamp: now,
           },
         };
       }
 
-      // 2. Construct and transition MAREntry aggregate
+      const firstDrug = prescription.drugs[0];
+      if (!firstDrug) {
+        return {
+          success: false,
+          error: {
+            code: 'PRESCRIPTION_EMPTY',
+            message: 'Prescription drug list is empty.',
+            timestamp: now,
+          },
+        };
+      }
+
+      // 2. Perform Stock Deduction under concurrency check (Rule 1 & Rule 7 / Gate 6)
+      await this.pharmacyRepository.deductStock(request.tenantId, firstDrug.code, 1);
+
+      // 3. Transition status to DISPENSED
+      const originalVersion = prescription.version;
+      prescription.dispense(request.dispensedBy);
+
+      // 4. Save updated aggregate to DB (Event-after-persistence)
+      await this.pharmacyRepository.savePrescription(prescription, originalVersion);
+
+      // 5. Publish MedicationDispensed event
+      await eventBus.publish({
+        eventType: 'MedicationDispensed',
+        tenantId: request.tenantId,
+        aggregateId: prescription.id,
+        aggregateType: 'Prescription',
+        payload: {
+          prescriptionId: prescription.id,
+          medicationCode: firstDrug.code,
+          quantity: 1,
+        },
+        userId: request.dispensedBy,
+      });
+
+      // Map DTO
+      const parsedDose = parseFloat(firstDrug.dose) || 0;
+      const parsedUnit = firstDrug.dose.replace(/[0-9. ]/g, '') || 'mg';
+
+      const medicationOrder: MedicationOrder = {
+        id: prescription.clinicalOrderId,
+        tenantId: prescription.tenantId,
+        encounterId: prescription.encounterId,
+        patientId: prescription.patientPartyId,
+        medicationId: firstDrug.code,
+        status: 'active',
+        dosage: { value: parsedDose, unit: parsedUnit },
+        frequency: firstDrug.frequency,
+        route: 'oral',
+        startDate: prescription.provenance.createdAt.toISOString(),
+        duration: firstDrug.durationDays,
+        durationUnit: 'days',
+        prescribedBy: prescription.doctorPartyId,
+        prescribedDate: prescription.provenance.createdAt.toISOString(),
+        dispensedBy: request.dispensedBy,
+        dispensedDate: prescription.provenance.updatedAt.toISOString(),
+        createdAt: prescription.provenance.createdAt.toISOString(),
+        updatedAt: prescription.provenance.updatedAt.toISOString(),
+      };
+
+      return {
+        success: true,
+        data: medicationOrder,
+      };
+    } catch (error) {
+      console.error('[PharmacyEngine] Dispensing medication failed:', error);
+      return {
+        success: false,
+        error: {
+          code: 'DISPENSE_ERROR',
+          message: error instanceof Error ? error.message : 'Unknown error',
+          timestamp: now,
+        },
+      };
+    }
+  }
+
+  /**
+   * Record Medication Administration (Gate 7 Clinical Continuity Outcome)
+   */
+  async recordMedicationAdministration(request: MARAdministrationRequest): Promise<EngineResponse<{ id: string }>> {
+    const now = new Date().toISOString();
+    try {
+      const prescription = await this.pharmacyRepository.findPrescriptionByClinicalOrderId(
+        request.tenantId,
+        request.medicationOrderId
+      );
+
+      if (!prescription) {
+        return {
+          success: false,
+          error: {
+            code: 'PRESCRIPTION_NOT_FOUND',
+            message: `Prescription not found for order ${request.medicationOrderId}`,
+            timestamp: now,
+          },
+        };
+      }
+
+      // Update prescription state to MAR_READY when first dose is recorded
+      if (prescription.status === 'DISPENSED') {
+        const originalVersion = prescription.version;
+        prescription.markMarReady(request.administeredBy);
+        await this.pharmacyRepository.savePrescription(prescription, originalVersion);
+      }
+
       const mar = MAREntry.create({
         tenantId: request.tenantId,
         encounterId: request.encounterId,
@@ -70,13 +349,10 @@ export class PharmacyEngineService implements PharmacyEngineContract {
         notes: request.notes,
       });
 
-      // Execute administration transition
       mar.administer(request.administeredBy, new Date(request.administeredAt), request.notes);
 
-      // 3. Save to database (trigger handles cross-table validation, foreign keys block orphan deletes)
       await this.pharmacyRepository.saveMAR(mar);
 
-      // 4. Publish MedicationAdministered event downstream (Event-After-Persistence)
       await eventBus.publish({
         eventType: 'MedicationAdministered',
         tenantId: request.tenantId,
@@ -97,8 +373,6 @@ export class PharmacyEngineService implements PharmacyEngineContract {
         },
         userId: request.administeredBy,
       });
-
-      console.info(`[PharmacyEngine] Recorded medication administration for patient ${request.patientId}, MAR ID: ${mar.id}`);
 
       return {
         success: true,
@@ -139,6 +413,14 @@ export class PharmacyEngineService implements PharmacyEngineContract {
 
       const rows = (data || []) as PrescriptionRow[];
       const medicationOrders: MedicationOrder[] = rows.map((row) => {
+        let actualNotes = row.notes || '';
+        if (row.notes && row.notes.startsWith('METADATA:')) {
+          try {
+            const metadata = JSON.parse(row.notes.substring(9));
+            actualNotes = metadata.userNotes || '';
+          } catch (e) {}
+        }
+
         const drugsRaw = row.drugs as unknown as {
           code: string;
           name: string;
@@ -156,7 +438,7 @@ export class PharmacyEngineService implements PharmacyEngineContract {
           encounterId: row.encounter_id,
           patientId: row.patient_party_id,
           medicationId: firstDrug.code,
-          status: row.status === 'dispensed' ? 'active' : 'on-hold',
+          status: row.status === 'dispensed' || row.status === 'mar_ready' ? 'active' : 'on-hold',
           dosage: { value: parsedDose, unit: parsedUnit },
           frequency: firstDrug.frequency,
           route: 'oral',
@@ -166,7 +448,7 @@ export class PharmacyEngineService implements PharmacyEngineContract {
           prescribedBy: row.doctor_party_id,
           prescribedDate: row.created_at,
           dispensedBy: row.updated_by ?? undefined,
-          dispensedDate: row.status === 'dispensed' ? row.updated_at : undefined,
+          dispensedDate: row.status === 'dispensed' || row.status === 'mar_ready' ? row.updated_at : undefined,
           createdAt: row.created_at,
           updatedAt: row.updated_at,
         };
@@ -181,162 +463,6 @@ export class PharmacyEngineService implements PharmacyEngineContract {
         success: false,
         error: {
           code: 'GET_ERROR',
-          message: error instanceof Error ? error.message : 'Unknown error',
-          timestamp: now,
-        },
-      };
-    }
-  }
-
-  async dispenseMedication(request: {
-    tenantId: string;
-    medicationOrderId: string;
-    dispensedBy: string;
-  }): Promise<EngineResponse<MedicationOrder>> {
-    const now = new Date().toISOString();
-    try {
-      // 1. Fetch referenced Prescription aggregate
-      const prescription = await this.pharmacyRepository.findPrescriptionByClinicalOrderId(
-        request.tenantId,
-        request.medicationOrderId
-      );
-
-      if (!prescription) {
-        return {
-          success: false,
-          error: {
-            code: 'PRESCRIPTION_NOT_FOUND',
-            message: `Prescription not found for clinical order ${request.medicationOrderId}`,
-            timestamp: now,
-          },
-        };
-      }
-
-      const firstDrug = prescription.drugs[0];
-      if (!firstDrug) {
-        return {
-          success: false,
-          error: {
-            code: 'PRESCRIPTION_EMPTY',
-            message: `Prescription drug list is empty for order ${request.medicationOrderId}`,
-            timestamp: now,
-          },
-        };
-      }
-
-      // 2. CDS Barrier 2: Defense-in-depth re-check at dispense time
-      // Query active/dispensed prescriptions of the patient for DDI checks
-      const { data: patientRxs } = await this.supabase
-        .from('hc_prescriptions')
-        .select('drugs')
-        .eq('tenant_id', request.tenantId)
-        .eq('patient_party_id', prescription.patientPartyId)
-        .eq('status', 'dispensed');
-
-      const currentMedicationCodes: string[] = [];
-      if (patientRxs) {
-        for (const row of patientRxs) {
-          const drugsRaw = row.drugs as unknown as { code: string }[];
-          for (const d of drugsRaw) {
-            if (d.code) currentMedicationCodes.push(d.code);
-          }
-        }
-      }
-
-      const cdsResult = await this.cdsEngine.generateCdsSummary({
-        requestId: `dispense-cds-${request.medicationOrderId}`,
-        tenantId: request.tenantId,
-        encounterId: prescription.encounterId,
-        patientId: prescription.patientPartyId,
-        proposedDrugCode: firstDrug.code,
-        currentMedicationCodes,
-        causationId: request.medicationOrderId,
-      });
-
-      if (cdsResult.success && cdsResult.data?.hardBlocked) {
-        await eventBus.publish({
-          eventType: 'hos.cds.dispense.blocked.v1',
-          tenantId: request.tenantId,
-          aggregateId: request.medicationOrderId,
-          aggregateType: 'MedicationOrder',
-          payload: {
-            medicationOrderId: request.medicationOrderId,
-            encounterId: prescription.encounterId,
-            patientId: prescription.patientPartyId,
-            drugCode: firstDrug.code,
-            cdsCheckId: cdsResult.data.calculationId,
-            alertCount: cdsResult.data.alerts.length,
-            barrier: 'PHARMACY_DISPENSE',
-          },
-          userId: request.dispensedBy,
-        });
-
-        return {
-          success: false,
-          error: {
-            code: 'CDS_DISPENSE_BLOCKED',
-            message: 'Dispense blocked by CDS Barrier 2: new clinical safety constraint detected since prescribing.',
-            details: {
-              cdsCheckId: cdsResult.data.calculationId,
-              alerts: cdsResult.data.alerts
-                .filter((a) => a.enforcement === 'ABSOLUTE_BLOCK' || a.enforcement === 'BLOCK')
-                .map((a) => ({ type: a.alertType, severity: a.severity, message: a.message })),
-            },
-            timestamp: now,
-          },
-        };
-      }
-
-      // 3. State transition progression to DISPENSED
-      const originalVersion = prescription.version;
-      if (prescription.status === 'PENDING_REVIEW') {
-        prescription.approve(request.dispensedBy);
-      }
-      if (prescription.status === 'APPROVED') {
-        prescription.markReady(request.dispensedBy);
-      }
-      prescription.dispense(request.dispensedBy, false);
-
-      // 4. Save updated aggregate to DB
-      await this.pharmacyRepository.savePrescription(prescription, originalVersion);
-
-      // 5. Construct mapped MedicationOrder payload
-      const parsedDose = parseFloat(firstDrug.dose) || 0;
-      const parsedUnit = firstDrug.dose.replace(/[0-9. ]/g, '') || 'mg';
-
-      const medicationOrder: MedicationOrder = {
-        id: prescription.clinicalOrderId,
-        tenantId: prescription.tenantId,
-        encounterId: prescription.encounterId,
-        patientId: prescription.patientPartyId,
-        medicationId: firstDrug.code,
-        status: 'active',
-        dosage: { value: parsedDose, unit: parsedUnit },
-        frequency: firstDrug.frequency,
-        route: 'oral',
-        startDate: prescription.provenance.createdAt.toISOString(),
-        duration: firstDrug.durationDays,
-        durationUnit: 'days',
-        prescribedBy: prescription.doctorPartyId,
-        prescribedDate: prescription.provenance.createdAt.toISOString(),
-        dispensedBy: request.dispensedBy,
-        dispensedDate: prescription.provenance.updatedAt.toISOString(),
-        createdAt: prescription.provenance.createdAt.toISOString(),
-        updatedAt: prescription.provenance.updatedAt.toISOString(),
-      };
-
-      console.info(`[PharmacyEngine] Dispensed medication order ${request.medicationOrderId}`);
-
-      return {
-        success: true,
-        data: medicationOrder,
-      };
-    } catch (error) {
-      console.error('[PharmacyEngine] Dispensing medication failed:', error);
-      return {
-        success: false,
-        error: {
-          code: 'DISPENSE_ERROR',
           message: error instanceof Error ? error.message : 'Unknown error',
           timestamp: now,
         },

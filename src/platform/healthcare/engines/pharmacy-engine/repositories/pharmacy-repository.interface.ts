@@ -50,4 +50,19 @@ export interface IPharmacyRepository {
    * Retrieve all MAR entries associated with a specific prescription item.
    */
   findMARByPrescriptionId(tenantId: string, prescriptionId: string): Promise<MAREntry[]>;
+
+  /**
+   * Deduct stock for a medication item using optimistic/conditional locks.
+   */
+  deductStock(tenantId: string, medicationCode: string, quantity: number): Promise<void>;
+
+  /**
+   * Set stock level for a medication item.
+   */
+  setStock(tenantId: string, medicationCode: string, quantity: number): Promise<void>;
+
+  /**
+   * Get stock level.
+   */
+  getStock(tenantId: string, medicationCode: string): Promise<number>;
 }

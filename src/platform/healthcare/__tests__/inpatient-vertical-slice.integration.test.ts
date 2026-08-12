@@ -110,6 +110,7 @@ class MockOrderRepo {
 
 class MockPharmacyRepo {
   private store = new Map<string, Prescription>();
+  private stock = new Map<string, number>();
 
   async savePrescription(rx: Prescription): Promise<Prescription> {
     const copy = Prescription.reconstitute(rx.toProps());
@@ -133,6 +134,22 @@ class MockPharmacyRepo {
   }
 
   async saveMAR(): Promise<void> {}
+  async findMARById(): Promise<any> { return null; }
+  async findMARByPrescriptionId(): Promise<any[]> { return []; }
+
+  async setStock(tenantId: string, medCode: string, qty: number): Promise<void> {
+    this.stock.set(medCode, qty);
+  }
+
+  async getStock(tenantId: string, medCode: string): Promise<number> {
+    return this.stock.get(medCode) ?? 0;
+  }
+
+  async deductStock(tenantId: string, medCode: string, qty: number): Promise<void> {
+    const current = await this.getStock(tenantId, medCode);
+    if (current < qty) throw new Error(`Insufficient stock: ${medCode}`);
+    this.stock.set(medCode, current - qty);
+  }
 }
 
 describe('Inpatient Vertical Slice Integration Test (H1 Acceptance)', () => {
@@ -197,17 +214,20 @@ describe('Inpatient Vertical Slice Integration Test (H1 Acceptance)', () => {
       },
     };
 
-    pharmacyService = new PharmacyEngineService({
-      from: () => ({
-        select: () => ({
-          eq: () => ({
-            eq: () => ({
-              eq: () => Promise.resolve({ data: [] }),
-            }),
-          }),
-        }),
-      }),
-    } as any);
+    const mockSupabase = {
+      from: () => {
+        const builder: any = {
+          select: () => builder,
+          eq: () => builder,
+          in: () => builder,
+          limit: () => builder,
+          then: (resolve: any) => resolve({ data: [], error: null }),
+        };
+        return builder;
+      },
+    };
+
+    pharmacyService = new PharmacyEngineService(mockSupabase as any);
 
     // Override repository in pharmacyService
     (pharmacyService as any).pharmacyRepository = pharmacyRepo;
@@ -288,7 +308,18 @@ describe('Inpatient Vertical Slice Integration Test (H1 Acceptance)', () => {
     // 5. Verify Pharmacy Engine automatically generated Prescription via Subscriber
     const rx = await pharmacyRepo.findPrescriptionByClinicalOrderId(tenantId, orderId);
     expect(rx).not.toBeNull();
-    expect(rx?.status).toBe('PENDING_REVIEW');
+    expect(rx?.status).toBe('PENDING_VERIFICATION');
+
+    // 5b. Pharmacist Verifies Prescription
+    const verifyRes = await pharmacyService.verifyPrescription({
+      tenantId,
+      medicationOrderId: orderId,
+      pharmacistId: 'pharm-001',
+    });
+    expect(verifyRes.success).toBe(true);
+
+    // Set stock for MED-AMOX-500
+    await pharmacyRepo.setStock(tenantId, 'MED-AMOX-500', 10);
 
     // 6. Pharmacist Dispenses Medication (Passes CDS Barrier 2 Check)
     const dispenseRes = await pharmacyService.dispenseMedication({

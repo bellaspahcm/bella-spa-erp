@@ -41,6 +41,11 @@ export interface ApproveCrossmatchRequest {
   tenantId: string;
   crossmatchId: string;
   approvedBy: string;
+  emergencyOverride?: {
+    authorizedBy: string;
+    practitionerRole: string;
+    reason: string;
+  };
 }
 
 export interface ReserveBloodUnitRequest {

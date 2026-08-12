@@ -186,6 +186,21 @@ export class AnesthesiaEngineService implements AnesthesiaEngineContract {
         }
       }
 
+      if (
+        request.asaClassification === undefined ||
+        request.asaClassification < 1 ||
+        request.asaClassification > 5
+      ) {
+        return {
+          success: false,
+          error: {
+            code: 'INVALID_ASA_CLASSIFICATION',
+            message: 'ASA classification must be between 1 and 5',
+            timestamp: new Date().toISOString(),
+          },
+        };
+      }
+
       const { data: record, error: fetchError } = await this.supabase
         .from('hc_anesthesia_records')
         .select('*')

@@ -1,6 +1,6 @@
 # HEALTHCARE OS EXECUTABLE ARCHITECTURE REFERENCE & GOLDEN PATH BLUEPRINT
 
-**Document Version:** 1.0.0  
+**Document Version:** 1.1.0  
 **Effective Date:** 2026-08-12  
 **Status:** ✅ RATIFIED & ENFORCED (Architecture Constitution)  
 **Governance Scope:** Healthcare OS Engines & Vertical Modules (ICU, Emergency, Surgery, Laboratory, Pharmacy, Blood Bank, Home Care, Dental, Specialist Clinic, etc.)
@@ -123,30 +123,48 @@ Một Pull Request chứa Engine hoặc Vertical Slice mới **CHỈ ĐƯỢC PH
 
 ---
 
-## 5. 6 Patterns Đã Được Khóa Tại Baseline v3 (Ratified Architectural Patterns — ADR-013)
+## 5. Các Patterns Đã Được Khóa Tại Baseline v3, v4 & v5 (Ratified Architectural Patterns)
 
-**Công Thức Baseline v3**:  
-$$\text{Architecture Baseline v3} = \text{H1 Baseline (383 Tests)} + \text{H2 Tests (27 Tests)} + \text{H3 Tests (18 Tests)} = \mathbf{428\text{ Executable Tests PASS}}$$
+### Baseline v3 (Ratified Architectural Patterns — ADR-013)
+- **Công Thức Baseline v3**:  
+  $$\text{Architecture Baseline v3} = \text{H1 Baseline (383 Tests)} + \text{H2 Tests (27 Tests)} + \text{H3 Tests (18 Tests)} = \mathbf{428\text{ Executable Tests PASS}}$$
 
-Sau khi hoàn thành và vượt qua 100% kiểm thử **H3 ICU/CCU Vertical Slice** (428 Executable Tests PASS across 41 Test Suites, Exit 0), Healthcare OS chính thức Ratify 6 Pattern Kiến Trúc mới (ADR-013):
+1. **Continuous Monitoring & Telemetry Ingestion Pattern**: Tách biệt ingestion sinh hiệu tần suất cao bằng contract. Chỉ lưu trữ summary.
+2. **Safety Barrier & Hard Block Pattern**: Aggregate chặn cứng giao dịch khi thông số vượt ngưỡng lâm sàng an toàn.
+3. **Clinical Critical Care Scoring Strategy Pattern**: Tách biệt thuật toán chấm điểm (SOFA) qua `IScoringStrategy`.
+4. **Decoupled Observation Consumption Pattern**: Đọc chéo dữ liệu qua read-only contracts.
+5. **Critical Resource Concurrency & Conditional Allocation Pattern**: Khóa tài nguyên bay/giường chống race condition ở database level.
+6. **Multi-Domain Clinical Continuity Workflow Pattern**: Quyền quyết định điểm đến lâm sàng (Decision Ownership) $\neq$ Quyền điều phối vòng đời điểm đến đó (Lifecycle Ownership).
 
-### 1. Continuous Monitoring & Telemetry Ingestion Pattern
-- **Nguyên tắc**: Tách biệt ingestion luồng sinh hiệu/telemetry tần suất cao khỏi domain aggregates bằng interface contract (`ICriticalObservationContract`). Chỉ lưu trữ summaries/thresholds đã validate thay vì toàn bộ raw stream.
+### Baseline v4 (Ratified Architectural Patterns — ADR-014)
+- **Công Thức Baseline v4**:  
+  $$\text{Architecture Baseline v4} = \text{Baseline v3 (428 Tests)} + \text{H4 Tests (7 Tests)} = \mathbf{435\text{ Executable Tests PASS}}$$
 
-### 2. Safety Barrier & Hard Block Pattern
-- **Nguyên tắc**: Tự động chặn (HARD BLOCK) tại tầng aggregate & database khi các thông số vượt ngưỡng giới hạn lâm sàng an toàn, đồng thời phát hành sự kiện cảnh báo (`hos.icu.ventilator_safety_blocked.v1`).
+1. **WHO Checklist Gates as Aggregated Invariants**: Chặn cứng quy trình phẫu thuật dựa trên WHO checklist (Sign-In, Time-Out, Sign-Out) tại aggregate root.
+2. **Multi-Engine Safety Gate Checking via Decoupled Contracts**: Kiểm tra điều kiện bên ngoài (CSSD Sterilization) thông qua contract, đảm bảo không chiếm dụng lifecycle của phân hệ khác.
+3. **Anesthesia Safety Gate and External Record Alignment**: Điều phối qua service layer để kiểm tra pre-op assessment và ASA classification (1-5) từ Anesthesia record trước khi gây mê.
+4. **Database-level Exclusion Constraints for Concurrent Resource Scheduling**: Sử dụng PostgreSQL exclusion constraints để chống race condition đồng thời khi xếp lịch phòng mổ/bác sĩ ngoại khoa.
 
-### 3. Clinical Critical Care Scoring Strategy Pattern
-- **Nguyên tắc**: Aggregate (`IcuStay`) giao tiếp với các thuật toán chấm điểm lâm sàng (SOFA, APACHE II) thông qua `IScoringStrategy` abstract interfaces. Cho phép mở rộng thuật toán mà không cần biến đổi Aggregate root.
+### Baseline v5 (Ratified Architectural Patterns — ADR-015)
+- **Công Thức Baseline v5**:  
+  $$\text{Architecture Baseline v5} = \text{Baseline v4 (435 Tests)} + \text{H5 Tests (16 Tests)} = \mathbf{451\text{ Executable Tests PASS}}$$
 
-### 4. Decoupled Observation Consumption Pattern
-- **Nguyên tắc**: Đọc dữ liệu chéo giữa các phân hệ thông qua read-only contracts (`IMARReader`, v.v.) thay vì direct import domain.
+1. **Domain State Machine Sequence Pattern**: Enforce tuần tự các trạng thái kết quả lâm sàng (`ORDERED -> COLLECTED -> RECEIVED -> PROCESSING -> RESULTED -> VERIFIED`), chặn mọi hành vi đi tắt hay quay ngược.
+2. **Diagnostic Interpretation and Range Assessment Pattern**: Sử dụng cấu hình TestDefinition tách biệt để tự động đánh giá phân loại giá trị xét nghiệm (`NORMAL | ABNORMAL | CRITICAL`).
+3. **Clinical Safety Acknowledgment Pattern**: Giữ cảnh báo nguy kịch (`CRITICAL` -> `ESCALATION_REQUIRED`) như một nghĩa vụ an toàn chưa được giải quyết cho đến khi bác sĩ chủ động thực hiện ký xác nhận (`ACKNOWLEDGED`), lưu lại vết người thực hiện và mốc thời gian.
+4. **Decoupled Subscriber and Anti-Corruption Layer (ACL) Integration Pattern**: Đồng bộ danh sách xét nghiệm từ clinical order thông qua contract reader cô lập, che giấu cấu trúc bảng database legacy bằng repository mapper.
+5. **Optimistic Concurrency Control (OCC) for State Transitions**: Ngăn chặn race condition khi nhập/duyệt song song thông qua ràng buộc kiểm tra giá trị null ở tầng repository khi lưu trữ.
 
-### 5. Critical Resource Concurrency & Conditional Allocation Pattern
-- **Nguyên tắc**: Allocation tài nguyên giường bệnh, buồng bệnh đặc thù (Emergency Bay, ICU Bay, OR Room) sử dụng optimistic concurrency hoặc database level uniqueness để bảo vệ chống race condition dưới tải cao.
+### Baseline v6 (Ratified Architectural Patterns — ADR-016)
+- **Công Thức Baseline v6**:  
+  $$\text{Architecture Baseline v6} = \text{Baseline v5 (451 Tests)} + \text{H6 Tests (9 Tests)} = \mathbf{460\text{ Executable Tests PASS}}$$
 
-### 6. Multi-Domain Clinical Continuity Workflow Pattern
-- **Nguyên tắc**: Quyền quyết định điểm đến lâm sàng (Decision Ownership) $\neq$ Quyền điều phối vòng đời của điểm đến đó (Lifecycle Ownership). Xâu chuỗi liên tục: `Emergency ADMIT -> Admission -> Bed Allocation -> ICU Critical Care -> Stabilization -> Step-down`.
+1. **Clinical Safety Screening Engine (CDS Policy Integration)**: Tách biệt các bộ lọc an toàn thuốc (dị ứng, tương tác, liều, trùng trị liệu) thành các lớp policy độc lập bên ngoài aggregate root.
+2. **Human Override & Audit Provenance Pattern**: Cho phép ghi đè cảnh báo lâm sàng nhưng bắt buộc lưu lại vết chứng minh đầy đủ (Who, Why, When, Policy Version) dưới dạng lịch sử append-only không thể chỉnh sửa.
+3. **High-Alert Dual Verification Safety Gate**: Chặn quy trình cấp phát thuốc nguy cơ cao cho đến khi có sự ký duyệt của hai dược sĩ độc lập khác nhau.
+4. **Decoupled Inventory Allocation & Deductions Pattern**: Quản lý kho dược tách biệt với Aggregate Root đơn thuốc, thực hiện kiểm tra và trừ kho thông qua giao dịch repository.
+
+*Lưu ý cốt lõi*: **Pattern được chứng minh $\neq$ Abstraction được tạo ra**. Không được kéo các patterns thành Shared Abstractions (như `PlatformResourceAllocationPrimitive` hay `UniversalVerificationEngine`) khi chưa đủ 3 verticals có cùng lifecycle và business semantics thực sự.
 
 ---
 
@@ -156,14 +174,14 @@ Sau khi hoàn thành và vượt qua 100% kiểm thử **H3 ICU/CCU Vertical Sli
 - ✅ **H1.1 — Self-Defending Architecture & CI Gate** — **RATIFIED**
 - ✅ **H2 — Emergency Vertical Slice** — **Baseline v2 (410 Tests PASS)**
 - ✅ **H3 — ICU / CCU Vertical Slice** — **Baseline v3 (428 Tests PASS)**
-- 🔜 **H4 — Surgery / Perioperative Suite** (OR Scheduling, Surgical Case, Anesthesia, Equipment, CSSD, PACU)
-- 🔜 **H5 — Laboratory Engine** (Diagnostic Workflow)
-- 🔜 **H6 — Pharmacy Engine** (Clinical Pharmacy Verification)
+- ✅ **H4 — Surgery / Perioperative Suite** — **Baseline v4 (435 Tests PASS)**
+- ✅ **H5 — Laboratory Engine** — **Baseline v5 (451 Tests PASS)**
+- ✅ **H6 — Pharmacy Engine** (Clinical Pharmacy Verification) — **Baseline v6 (460 Tests PASS)**
 - 🔜 **H7 — Blood Bank Engine**
 - 🔜 **H8 — Home Care OS**
 
 ---
 
 **Phê duyệt bởi Architecture Review Board (ARB)**  
-*Healthcare OS — Executable Architecture Reference Edition (Baseline v3: 428 Tests PASS, Exit 0)*
+*Healthcare OS — Executable Architecture Reference Edition (Baseline v6: 460 Tests PASS, Exit 0)*
 

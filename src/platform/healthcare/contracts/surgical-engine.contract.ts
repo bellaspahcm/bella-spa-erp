@@ -15,6 +15,11 @@ export interface CreateSurgicalCaseRequest {
   caseNumber: string;
   requestId?: string; // Idempotency
   userId?: string;
+  patientId?: string;
+  orId?: string;
+  surgeonId?: string;
+  scheduledStart?: string;
+  scheduledEnd?: string;
 }
 
 export interface AssignTeamMemberRequest {
@@ -59,7 +64,7 @@ export interface SurgicalCase {
   tenantId: string;
   encounterId: string;
   caseNumber: string;
-  status: 'planned' | 'scheduled' | 'ready' | 'in_progress' | 'completed' | 'cancelled' | 'aborted';
+  status: 'planned' | 'scheduled' | 'ready' | 'in_progress' | 'completed' | 'cancelled' | 'aborted' | 'SCHEDULED' | 'PREOP_READY' | 'ANESTHETIZED' | 'PROCEDURE_IN_PROGRESS' | 'RECOVERY_PACU' | 'POSTOP_COMPLETED';
   createdAt: string;
   updatedAt: string;
 }
@@ -95,6 +100,7 @@ export interface SurgicalEngineContract extends EngineContract {
   completeSignIn(request: CompleteChecklistPhaseRequest): Promise<EngineResponse<SurgicalSafetyChecklist>>;
   completeTimeOut(request: CompleteChecklistPhaseRequest): Promise<EngineResponse<SurgicalSafetyChecklist>>;
   completeSignOut(request: CompleteChecklistPhaseRequest): Promise<EngineResponse<SurgicalSafetyChecklist>>;
+  administerAnesthesia(request: { tenantId: string; surgicalCaseId: string }): Promise<EngineResponse<SurgicalCase>>;
   startProcedure(request: StartProcedureRequest): Promise<EngineResponse<SurgicalCase>>;
   completeProcedure(request: CompleteProcedureRequest): Promise<EngineResponse<SurgicalCase>>;
   cancelCase(request: CancelCaseRequest): Promise<EngineResponse<SurgicalCase>>;

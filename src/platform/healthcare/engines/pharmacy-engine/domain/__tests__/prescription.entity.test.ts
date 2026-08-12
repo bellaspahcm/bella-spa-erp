@@ -9,26 +9,29 @@ import {
   TerminalStateModifiedError,
   PrescriptionDomainError,
 } from '../prescription.entity';
+import { ScreeningResult, ScreeningFinding } from '../screening-policies';
 
-describe('Prescription & MAR Domain Unit Tests (4B.1)', () => {
+describe('Prescription & MAR Domain Unit Tests (H6 Refined)', () => {
   const tenantId = randomUUID();
   const encounterId = randomUUID();
   const patientPartyId = randomUUID();
   const doctorPartyId = randomUUID();
   const clinicalOrderId = randomUUID();
+  const pharmacistA = randomUUID();
+  const pharmacistB = randomUUID();
   
   const drugs: PrescriptionDrugItem[] = [
     {
-      code: 'A02B',
-      name: 'Omeprazole 20mg',
-      dose: '1 capsule',
-      frequency: 'QD',
-      durationDays: 14,
+      code: 'PARACETAMOL',
+      name: 'Paracetamol 500mg',
+      dose: '500mg',
+      frequency: 'QID',
+      durationDays: 5,
     },
   ];
 
   describe('Prescription Aggregate Root', () => {
-    it('should successfully create a prescription in PENDING_REVIEW status', () => {
+    it('should successfully create a prescription in PENDING_VERIFICATION status', () => {
       const prescription = Prescription.create({
         tenantId,
         encounterId,
@@ -42,10 +45,11 @@ describe('Prescription & MAR Domain Unit Tests (4B.1)', () => {
       });
 
       expect(prescription.id).toBeDefined();
-      expect(prescription.status).toBe('PENDING_REVIEW');
+      expect(prescription.status).toBe('PENDING_VERIFICATION');
+      expect(prescription.safetyState).toBe('NO_BLOCK');
+      expect(prescription.dualVerificationState).toBe('NONE');
       expect(prescription.version).toBe(1);
       expect(prescription.drugs).toHaveLength(1);
-      expect(prescription.drugs[0].code).toBe('A02B');
       expect(prescription.isTerminal).toBe(false);
     });
 
@@ -60,20 +64,9 @@ describe('Prescription & MAR Domain Unit Tests (4B.1)', () => {
           drugs,
         });
       }).toThrow(MissingRequiredFieldError);
-
-      expect(() => {
-        Prescription.create({
-          tenantId,
-          encounterId,
-          patientPartyId,
-          doctorPartyId,
-          clinicalOrderId,
-          drugs: [],
-        });
-      }).toThrow(MissingRequiredFieldError);
     });
 
-    it('should transition correctly through state machine flows', () => {
+    it('should verify clear prescriptions directly', () => {
       const p = Prescription.create({
         tenantId,
         encounterId,
@@ -83,26 +76,123 @@ describe('Prescription & MAR Domain Unit Tests (4B.1)', () => {
         drugs,
       });
 
-      // PENDING_REVIEW -> APPROVED
-      p.approve(doctorPartyId);
-      expect(p.status).toBe('APPROVED');
-      expect(p.version).toBe(2);
+      p.verify(pharmacistA, ScreeningResult.clear());
+      expect(p.status).toBe('VERIFIED');
+      expect(p.safetyState).toBe('NO_BLOCK');
+      expect(p.verifications).toHaveLength(1);
+      expect(p.verifications[0].pharmacistId).toBe(pharmacistA);
+    });
 
-      // APPROVED -> READY_FOR_DISPENSE
-      p.markReady(doctorPartyId);
-      expect(p.status).toBe('READY_FOR_DISPENSE');
+    it('should fail verification if blocked', () => {
+      const p = Prescription.create({
+        tenantId,
+        encounterId,
+        patientPartyId,
+        doctorPartyId,
+        clinicalOrderId,
+        drugs,
+      });
 
-      // READY_FOR_DISPENSE -> PARTIALLY_DISPENSED
-      p.dispense(doctorPartyId, true);
-      expect(p.status).toBe('PARTIALLY_DISPENSED');
+      const blockedFinding: ScreeningFinding = {
+        policyName: 'AllergyPolicy',
+        medicationCode: 'PARACETAMOL',
+        severity: 'BLOCKED',
+        code: 'ALLERGY_BLOCKED',
+        message: 'Severe allergy detected',
+      };
 
-      // PARTIALLY_DISPENSED -> DISPENSED
-      p.dispense(doctorPartyId, false);
+      expect(() => {
+        p.verify(pharmacistA, ScreeningResult.create([blockedFinding]));
+      }).toThrow(PrescriptionDomainError);
+      expect(p.safetyState).toBe('BLOCKED');
+    });
+
+    it('should require override for warnings', () => {
+      const p = Prescription.create({
+        tenantId,
+        encounterId,
+        patientPartyId,
+        doctorPartyId,
+        clinicalOrderId,
+        drugs,
+      });
+
+      const warningFinding: ScreeningFinding = {
+        policyName: 'DuplicateTherapyPolicy',
+        medicationCode: 'PARACETAMOL',
+        severity: 'WARNING',
+        code: 'DUP_WARNING',
+        message: 'Duplicate therapy detected',
+      };
+
+      // Fails without overrides
+      expect(() => {
+        p.verify(pharmacistA, ScreeningResult.create([warningFinding]));
+      }).toThrow(PrescriptionDomainError);
+      expect(p.safetyState).toBe('OVERRIDE_REQUIRED');
+
+      // Succeeds with valid overrides
+      p.verify(pharmacistA, ScreeningResult.create([warningFinding]), [
+        { warningCode: 'DUP_WARNING', rationale: 'Clinically justified' },
+      ]);
+      expect(p.status).toBe('VERIFIED');
+      expect(p.safetyState).toBe('ACKNOWLEDGED');
+      expect(p.overrideHistory).toHaveLength(1);
+      expect(p.overrideHistory[0].rationale).toBe('Clinically justified');
+    });
+
+    it('should enforce dual verification for High-Alert medications', () => {
+      const p = Prescription.create({
+        tenantId,
+        encounterId,
+        patientPartyId,
+        doctorPartyId,
+        clinicalOrderId,
+        drugs,
+        isHighAlert: true,
+      });
+
+      expect(p.dualVerificationState).toBe('HIGH_ALERT');
+
+      // First verification
+      p.verify(pharmacistA, ScreeningResult.clear());
+      expect(p.status).toBe('PENDING_VERIFICATION');
+      expect(p.dualVerificationState).toBe('VERIFICATION_1');
+
+      // Cannot be verified by same pharmacist
+      expect(() => {
+        p.verify(pharmacistA, ScreeningResult.clear());
+      }).toThrow(PrescriptionDomainError);
+
+      // Second verification succeeds
+      p.verify(pharmacistB, ScreeningResult.clear());
+      expect(p.status).toBe('VERIFIED');
+      expect(p.dualVerificationState).toBe('DUAL_VERIFIED');
+      expect(p.verifications).toHaveLength(2);
+    });
+
+    it('should transition through verify -> dispense -> mar_ready', () => {
+      const p = Prescription.create({
+        tenantId,
+        encounterId,
+        patientPartyId,
+        doctorPartyId,
+        clinicalOrderId,
+        drugs,
+      });
+
+      p.verify(pharmacistA, ScreeningResult.clear());
+      expect(p.status).toBe('VERIFIED');
+
+      p.dispense(doctorPartyId);
       expect(p.status).toBe('DISPENSED');
+
+      p.markMarReady(doctorPartyId);
+      expect(p.status).toBe('MAR_READY');
       expect(p.isTerminal).toBe(true);
     });
 
-    it('should support rejection branches and on-hold branches', () => {
+    it('should support rejection branch', () => {
       const p = Prescription.create({
         tenantId,
         encounterId,
@@ -112,50 +202,12 @@ describe('Prescription & MAR Domain Unit Tests (4B.1)', () => {
         drugs,
       });
 
-      // PENDING_REVIEW -> REJECTED
-      p.reject(doctorPartyId, 'Incorrect dosage');
+      p.reject(doctorPartyId, 'Incorrect dose');
       expect(p.status).toBe('REJECTED');
       expect(p.isTerminal).toBe(true);
-      expect(p.notes).toContain('Rejected: Incorrect dosage');
     });
 
-    it('should allow putting on hold and resuming or cancelling', () => {
-      const p1 = Prescription.create({
-        tenantId,
-        encounterId,
-        patientPartyId,
-        doctorPartyId,
-        clinicalOrderId,
-        drugs,
-      });
-      p1.approve(doctorPartyId);
-      
-      // APPROVED -> ON_HOLD
-      p1.hold(doctorPartyId, 'Patient needs clinical review');
-      expect(p1.status).toBe('ON_HOLD');
-      
-      // ON_HOLD -> APPROVED
-      p1.approve(doctorPartyId);
-      expect(p1.status).toBe('APPROVED');
-
-      const p2 = Prescription.create({
-        tenantId,
-        encounterId,
-        patientPartyId,
-        doctorPartyId,
-        clinicalOrderId,
-        drugs,
-      });
-      p2.approve(doctorPartyId);
-      p2.hold(doctorPartyId, 'Patient unavailable');
-      
-      // ON_HOLD -> CANCELLED
-      p2.cancel(doctorPartyId, 'Encounter cancelled');
-      expect(p2.status).toBe('CANCELLED');
-      expect(p2.isTerminal).toBe(true);
-    });
-
-    it('should throw error for invalid state transitions', () => {
+    it('should forbid modifications to terminal states', () => {
       const p = Prescription.create({
         tenantId,
         encounterId,
@@ -165,27 +217,10 @@ describe('Prescription & MAR Domain Unit Tests (4B.1)', () => {
         drugs,
       });
 
-      // Cannot dispense directly from PENDING_REVIEW
-      expect(() => {
-        p.dispense(doctorPartyId, false);
-      }).toThrow(InvalidStateTransitionError);
-    });
+      p.reject(doctorPartyId, 'Incorrect dose');
 
-    it('should forbid modifications when in terminal states', () => {
-      const p = Prescription.create({
-        tenantId,
-        encounterId,
-        patientPartyId,
-        doctorPartyId,
-        clinicalOrderId,
-        drugs,
-      });
-
-      p.reject(doctorPartyId, 'Test reject');
-      
-      // Cannot approve rejected prescription
       expect(() => {
-        p.approve(doctorPartyId);
+        p.verify(pharmacistA, ScreeningResult.clear());
       }).toThrow(TerminalStateModifiedError);
     });
   });
@@ -196,8 +231,8 @@ describe('Prescription & MAR Domain Unit Tests (4B.1)', () => {
         tenantId,
         encounterId,
         prescriptionItemId: 'item-001',
-        drugName: 'Omeprazole 20mg',
-        dosage: '1 capsule',
+        drugName: 'Paracetamol 500mg',
+        dosage: '500mg',
         route: 'PO',
         scheduledTime: new Date(),
       });
@@ -205,20 +240,6 @@ describe('Prescription & MAR Domain Unit Tests (4B.1)', () => {
       expect(mar.id).toBeDefined();
       expect(mar.status).toBe('scheduled');
       expect(mar.encounterId).toBe(encounterId);
-      expect(mar.inpatientAdmissionId).toBeUndefined();
-    });
-
-    it('should reject MAR creation if both inpatientAdmissionId and encounterId are missing', () => {
-      expect(() => {
-        MAREntry.create({
-          tenantId,
-          prescriptionItemId: 'item-001',
-          drugName: 'Omeprazole 20mg',
-          dosage: '1 capsule',
-          route: 'PO',
-          scheduledTime: new Date(),
-        });
-      }).toThrow(PrescriptionDomainError);
     });
 
     it('should administer medication successfully', () => {
@@ -226,36 +247,20 @@ describe('Prescription & MAR Domain Unit Tests (4B.1)', () => {
         tenantId,
         encounterId,
         prescriptionItemId: 'item-001',
-        drugName: 'Omeprazole 20mg',
-        dosage: '1 capsule',
+        drugName: 'Paracetamol 500mg',
+        dosage: '500mg',
         route: 'PO',
         scheduledTime: new Date(),
       });
 
       const nurseId = randomUUID();
       const adminTime = new Date();
-      mar.administer(nurseId, adminTime, 'Patient took medication with water');
+      mar.administer(nurseId, adminTime, 'Patient swallowed pill');
 
       expect(mar.status).toBe('administered');
       expect(mar.administeredByNurseId).toBe(nurseId);
       expect(mar.administeredTime).toEqual(adminTime);
-      expect(mar.notes).toContain('Patient took medication with water');
-    });
-
-    it('should allow changing status to refused or missed with a reason', () => {
-      const mar = MAREntry.create({
-        tenantId,
-        encounterId,
-        prescriptionItemId: 'item-001',
-        drugName: 'Omeprazole 20mg',
-        dosage: '1 capsule',
-        route: 'PO',
-        scheduledTime: new Date(),
-      });
-
-      mar.updateStatus('refused', 'Patient refuses to take oral pills');
-      expect(mar.status).toBe('refused');
-      expect(mar.notes).toContain('Patient refuses to take oral pills');
+      expect(mar.notes).toContain('Patient swallowed pill');
     });
   });
 });

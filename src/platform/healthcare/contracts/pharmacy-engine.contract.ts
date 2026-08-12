@@ -27,6 +27,12 @@ export interface PharmacyEngineContract extends EngineContract {
   recordMedicationAdministration(request: MARAdministrationRequest): Promise<EngineResponse<{ id: string }>>;
   getMedicationOrders(tenantId: string, encounterId: string): Promise<EngineResponse<MedicationOrder[]>>;
   dispenseMedication(request: { tenantId: string; medicationOrderId: string; dispensedBy: string }): Promise<EngineResponse<MedicationOrder>>;
+  verifyPrescription(request: {
+    tenantId: string;
+    medicationOrderId: string;
+    pharmacistId: string;
+    overrides?: { warningCode: string; rationale: string; policyVersion?: string }[];
+  }): Promise<EngineResponse<{ id: string; status: string; safetyState: string }>>;
 }
 
 export const PHARMACY_ENGINE_CONTRACT: ContractMetadata = {

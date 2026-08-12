@@ -6,7 +6,7 @@
  * - Layer 1: Static Architecture Gate (Law 1 Boundary Isolation & Law 11 Zero `any` Types)
  * - Layer 2: Structural Compliance Gate (11-Step Pattern with Exemption Declarations)
  * - Layer 3: Behavioral Invariants Gate (Concurrency & Event-After-Persistence execution)
- * - Layer 4: 384 H1 Guardian Regression Test Suite
+ * - Layer 4: 435 Baseline Regression Test Suite
  *
  * Usage:
  *   node scripts/ci-healthcare-architecture-gate.js
@@ -67,16 +67,16 @@ function runGatePipeline() {
   // Layer 3: Behavioral Invariants Execution
   logStep('3', 'Behavioral Invariants Execution (Concurrency & Event-After-Persistence)');
   const behaviorPass = runCommand(
-    'npx jest src/platform/healthcare/engines/bed-engine/__tests__/bed-concurrency.integration.test.ts src/platform/healthcare/engines/pharmacy-engine/events/__tests__/order-approved-subscriber.integration.test.ts --silent',
+    'npx jest src/platform/healthcare/engines/bed-engine/__tests__/bed-concurrency.integration.test.ts src/platform/healthcare/engines/pharmacy-engine/events/__tests__/order-approved-subscriber.integration.test.ts src/__tests__/SurgicalConcurrencyAndSafety.test.ts --silent',
     'Behavioral Invariants Execution Gate'
   );
   if (!behaviorPass) return false;
 
-  // Layer 4: 384 H1 Guardian Regression Test Suite
-  logStep('4', '384 H1 Guardian Full Platform Regression Test Suite');
+  // Layer 4: 435 Baseline Regression Test Suite
+  logStep('4', '435 Baseline Regression Test Suite');
   const guardianPass = runCommand(
     'npx jest src/platform/healthcare/ src/platform/education/domain/__tests__/ src/platform/education/__tests__/ --runInBand --silent',
-    '384 H1 Guardian Regression Gate'
+    '435 Baseline Regression Gate'
   );
   if (!guardianPass) return false;
 

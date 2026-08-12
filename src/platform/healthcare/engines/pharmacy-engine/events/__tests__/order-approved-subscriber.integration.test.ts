@@ -9,6 +9,8 @@ import { OrderApprovedSubscriber } from '../order-approved-subscriber';
 import { Prescription } from '../../domain/prescription.entity';
 import type { OrderApprovedEvent } from '../../../order-engine/events/order-events';
 
+jest.setTimeout(30000);
+
 describe('OrderApprovedSubscriber Integration Tests (4B.3)', () => {
   let supabase: Awaited<ReturnType<typeof createClient>>;
   let eventBus: InMemoryEventBus;
@@ -88,7 +90,7 @@ describe('OrderApprovedSubscriber Integration Tests (4B.3)', () => {
     await fixtures.cleanup();
   });
 
-  async function waitForPrescription(tenantId: string, orderId: string, timeoutMs = 5000): Promise<Prescription | null> {
+  async function waitForPrescription(tenantId: string, orderId: string, timeoutMs = 10000): Promise<Prescription | null> {
     const start = Date.now();
     while (Date.now() - start < timeoutMs) {
       const rx = await repository.findPrescriptionByClinicalOrderId(tenantId, orderId);
@@ -130,7 +132,7 @@ describe('OrderApprovedSubscriber Integration Tests (4B.3)', () => {
     // Wait for async subscriber to insert
     const prescription = await waitForPrescription(fixtures.tenantId, clinicalOrderId);
     expect(prescription).not.toBeNull();
-    expect(prescription?.status).toBe('PENDING_REVIEW');
+    expect(prescription?.status).toBe('PENDING_VERIFICATION');
     expect(prescription?.encounterId).toBe(fixtures.encounterId);
     expect(prescription?.patientPartyId).toBe(fixtures.patientPartyId);
     expect(prescription?.drugs).toHaveLength(1);

@@ -8,31 +8,31 @@
  * 
  * State Machine Flow:
  * ```
- * PENDING_REVIEW ──→ APPROVED ──→ READY_FOR_DISPENSE ──→ PARTIALLY_DISPENSED ──→ DISPENSED (terminal)
- *       │              │                  │
- *       └──→ REJECTED  └──→ ON_HOLD       └──→ ON_HOLD
- *            (terminal)       │
- *                             └──→ APPROVED / CANCELLED (terminal)
+ * PENDING_VERIFICATION ──→ VERIFIED ──→ DISPENSED ──→ MAR_READY (terminal)
+ *            │                             │
+ *            └──→ REJECTED (terminal)      └──→ CANCELLED (terminal)
  * ```
- * 
- * @module platform/healthcare/engines/pharmacy-engine/domain
  */
 
 import crypto from 'crypto';
+import { ScreeningResult } from './screening-policies';
 
 // ============================================================================
 // Types & Enums
 // ============================================================================
 
 export type PrescriptionStatus =
-  | 'PENDING_REVIEW'
-  | 'APPROVED'
-  | 'READY_FOR_DISPENSE'
-  | 'PARTIALLY_DISPENSED'
+  | 'PENDING_VERIFICATION'
+  | 'VERIFIED'
   | 'DISPENSED'
+  | 'MAR_READY'
   | 'REJECTED'
   | 'ON_HOLD'
   | 'CANCELLED';
+
+export type SafetyState = 'NO_BLOCK' | 'OVERRIDE_REQUIRED' | 'ACKNOWLEDGED' | 'BLOCKED';
+
+export type DualVerificationState = 'NONE' | 'HIGH_ALERT' | 'VERIFICATION_1' | 'DUAL_VERIFIED';
 
 export interface PrescriptionDrugItem {
   code: string;
@@ -47,6 +47,21 @@ export interface PrescriptionProvenance {
   createdAt: Date;
   updatedBy?: string;
   updatedAt: Date;
+}
+
+export interface OverrideAuditEntry {
+  warningCode: string;
+  decision: string;
+  rationale: string;
+  practitionerId: string;
+  practitionerRole: string;
+  timestamp: Date;
+  policyVersion: string;
+}
+
+export interface VerificationSignature {
+  pharmacistId: string;
+  verifiedAt: Date;
 }
 
 // ============================================================================
@@ -72,7 +87,7 @@ export class MissingRequiredFieldError extends PrescriptionDomainError {
 }
 
 export class InvalidStateTransitionError extends PrescriptionDomainError {
-  constructor(from: PrescriptionStatus, to: PrescriptionStatus) {
+  constructor(from: string, to: string) {
     super(
       `Invalid state transition from ${from} to ${to}`,
       'INVALID_STATE_TRANSITION',
@@ -93,6 +108,13 @@ export class TerminalStateModifiedError extends PrescriptionDomainError {
   }
 }
 
+export class SafetyBlockError extends PrescriptionDomainError {
+  constructor(message: string, code: string, details?: Record<string, unknown>) {
+    super(message, code, details);
+    this.name = 'SafetyBlockError';
+  }
+}
+
 // ============================================================================
 // Prescription Aggregate Root Props
 // ============================================================================
@@ -108,6 +130,11 @@ export interface PrescriptionProps {
   diagnosis?: string;
   notes?: string;
   status: PrescriptionStatus;
+  safetyState: SafetyState;
+  dualVerificationState: DualVerificationState;
+  overrideHistory: OverrideAuditEntry[];
+  verifications: VerificationSignature[];
+  isHighAlert: boolean;
   version: number;
   provenance: PrescriptionProvenance;
 }
@@ -127,9 +154,6 @@ export class Prescription {
   // Factory Methods
   // ==========================================================================
 
-  /**
-   * Create a new Prescription (PENDING_REVIEW status)
-   */
   static create(data: {
     tenantId: string;
     encounterId: string;
@@ -139,6 +163,7 @@ export class Prescription {
     drugs: PrescriptionDrugItem[];
     diagnosis?: string;
     notes?: string;
+    isHighAlert?: boolean;
     createdBy?: string;
   }): Prescription {
     if (!data.tenantId) throw new MissingRequiredFieldError('tenantId');
@@ -149,6 +174,7 @@ export class Prescription {
     if (!data.drugs || data.drugs.length === 0) throw new MissingRequiredFieldError('drugs');
 
     const now = new Date();
+    const isHighAlert = data.isHighAlert ?? false;
 
     return new Prescription({
       id: crypto.randomUUID(),
@@ -160,7 +186,12 @@ export class Prescription {
       drugs: [...data.drugs],
       diagnosis: data.diagnosis,
       notes: data.notes,
-      status: 'PENDING_REVIEW',
+      status: 'PENDING_VERIFICATION',
+      safetyState: 'NO_BLOCK',
+      dualVerificationState: isHighAlert ? 'HIGH_ALERT' : 'NONE',
+      overrideHistory: [],
+      verifications: [],
+      isHighAlert,
       version: 1,
       provenance: {
         createdBy: data.createdBy,
@@ -171,11 +202,13 @@ export class Prescription {
     });
   }
 
-  /**
-   * Reconstitute Prescription from database state
-   */
   static reconstitute(props: PrescriptionProps): Prescription {
-    return new Prescription(props);
+    return new Prescription({
+      ...props,
+      drugs: [...props.drugs],
+      overrideHistory: [...props.overrideHistory],
+      verifications: [...props.verifications],
+    });
   }
 
   // ==========================================================================
@@ -192,12 +225,17 @@ export class Prescription {
   get diagnosis(): string | undefined { return this.props.diagnosis; }
   get notes(): string | undefined { return this.props.notes; }
   get status(): PrescriptionStatus { return this.props.status; }
+  get safetyState(): SafetyState { return this.props.safetyState; }
+  get dualVerificationState(): DualVerificationState { return this.props.dualVerificationState; }
+  get overrideHistory(): OverrideAuditEntry[] { return [...this.props.overrideHistory]; }
+  get verifications(): VerificationSignature[] { return [...this.props.verifications]; }
+  get isHighAlert(): boolean { return this.props.isHighAlert; }
   get version(): number { return this.props.version; }
   get provenance(): PrescriptionProvenance { return { ...this.props.provenance }; }
 
   get isTerminal(): boolean {
     return (
-      this.props.status === 'DISPENSED' ||
+      this.props.status === 'MAR_READY' ||
       this.props.status === 'REJECTED' ||
       this.props.status === 'CANCELLED'
     );
@@ -208,89 +246,145 @@ export class Prescription {
   // ==========================================================================
 
   /**
-   * Approve the prescription
-   * Valid transitions: PENDING_REVIEW -> APPROVED, ON_HOLD -> APPROVED
+   * Verify Prescription (Gate 1 & 5)
    */
-  approve(userId: string): void {
+  verify(
+    pharmacistId: string,
+    screeningResult: ScreeningResult,
+    overrides?: { warningCode: string; rationale: string; policyVersion?: string }[]
+  ): void {
     this.assertNotTerminal();
-    this.assertCanTransition('APPROVED');
+    if (this.props.status !== 'PENDING_VERIFICATION') {
+      throw new InvalidStateTransitionError(this.props.status, 'VERIFIED');
+    }
 
-    this.props.status = 'APPROVED';
-    this.updateProvenance(userId);
+    // 1. Process screening results (Gate 2 & 3)
+    if (screeningResult.status === 'BLOCKED') {
+      this.props.safetyState = 'BLOCKED';
+      throw new SafetyBlockError(
+        'Prescription is blocked due to critical screening findings.',
+        'SAFETY_BLOCK_ACTIVE',
+        { findings: screeningResult.findings }
+      );
+    }
+
+    if (screeningResult.status === 'WARNING') {
+      this.props.safetyState = 'OVERRIDE_REQUIRED';
+
+      // Check if warnings were acknowledged via override rationale
+      const activeWarnings = screeningResult.findings.filter((f) => f.severity === 'WARNING');
+      for (const warning of activeWarnings) {
+        const matchingOverride = overrides?.find((o) => o.warningCode === warning.code);
+        if (!matchingOverride || !matchingOverride.rationale.trim()) {
+          throw new SafetyBlockError(
+            `Pharmacist override rationale required for warning: ${warning.message}`,
+            'OVERRIDE_RATIONALE_REQUIRED',
+            { warningCode: warning.code }
+          );
+        }
+
+        // Record override with immutable provenance (Gate 3)
+        const auditEntry: OverrideAuditEntry = {
+          warningCode: warning.code,
+          decision: 'OVERRIDE',
+          rationale: matchingOverride.rationale,
+          practitionerId: pharmacistId,
+          practitionerRole: 'pharmacist',
+          timestamp: new Date(),
+          policyVersion: matchingOverride.policyVersion || '1.0.0',
+        };
+        // Append-only invariant check
+        this.props.overrideHistory.push(auditEntry);
+      }
+      this.props.safetyState = 'ACKNOWLEDGED';
+    }
+
+    // 2. High-Alert Dual Verification (Gate 5)
+    if (this.props.isHighAlert) {
+      if (this.props.dualVerificationState === 'NONE' || this.props.dualVerificationState === 'HIGH_ALERT') {
+        this.props.dualVerificationState = 'VERIFICATION_1';
+        this.props.verifications.push({ pharmacistId, verifiedAt: new Date() });
+        this.updateProvenance(pharmacistId);
+        return; // Stays PENDING_VERIFICATION until verification 2
+      }
+
+      if (this.props.dualVerificationState === 'VERIFICATION_1') {
+        // Enforce distinct practitioners rule
+        const firstVerifier = this.props.verifications[0]?.pharmacistId;
+        if (firstVerifier === pharmacistId) {
+          throw new PrescriptionDomainError(
+            'Dual verification requires two distinct pharmacists.',
+            'DUAL_VERIFICATION_SAME_USER'
+          );
+        }
+
+        this.props.dualVerificationState = 'DUAL_VERIFIED';
+        this.props.verifications.push({ pharmacistId, verifiedAt: new Date() });
+        this.props.status = 'VERIFIED';
+        this.updateProvenance(pharmacistId);
+        return;
+      }
+
+      // If already verified, do nothing or throw
+      return;
+    }
+
+    // Standard verification
+    this.props.verifications.push({ pharmacistId, verifiedAt: new Date() });
+    this.props.status = 'VERIFIED';
+    this.updateProvenance(pharmacistId);
   }
 
   /**
-   * Reject the prescription
-   * Valid transitions: PENDING_REVIEW -> REJECTED (terminal)
+   * Reject Prescription
    */
   reject(userId: string, reason?: string): void {
     this.assertNotTerminal();
-    this.assertCanTransition('REJECTED');
+    if (this.props.status !== 'PENDING_VERIFICATION') {
+      throw new InvalidStateTransitionError(this.props.status, 'REJECTED');
+    }
 
     this.props.status = 'REJECTED';
     if (reason) {
-      this.props.notes = this.props.notes 
-        ? `${this.props.notes}\nRejected: ${reason}` 
-        : `Rejected: ${reason}`;
+      this.props.notes = this.props.notes ? `${this.props.notes}\nRejected: ${reason}` : `Rejected: ${reason}`;
     }
     this.updateProvenance(userId);
   }
 
   /**
-   * Mark prescription as ready for dispense
-   * Valid transitions: APPROVED -> READY_FOR_DISPENSE
+   * Dispense Medication (Command separates clinical verification from physical deduction)
    */
-  markReady(userId: string): void {
+  dispense(userId: string): void {
     this.assertNotTerminal();
-    this.assertCanTransition('READY_FOR_DISPENSE');
+    if (this.props.status !== 'VERIFIED') {
+      throw new InvalidStateTransitionError(this.props.status, 'DISPENSED');
+    }
 
-    this.props.status = 'READY_FOR_DISPENSE';
+    this.props.status = 'DISPENSED';
     this.updateProvenance(userId);
   }
 
   /**
-   * Hold the prescription
-   * Valid transitions: APPROVED -> ON_HOLD, READY_FOR_DISPENSE -> ON_HOLD, PARTIALLY_DISPENSED -> ON_HOLD
+   * Mark ready for nurse administration (Gate 7 Clinical Continuity Transition)
    */
-  hold(userId: string, reason: string): void {
-    if (!reason) throw new MissingRequiredFieldError('hold reason');
+  markMarReady(userId: string): void {
     this.assertNotTerminal();
-    this.assertCanTransition('ON_HOLD');
+    if (this.props.status !== 'DISPENSED') {
+      throw new InvalidStateTransitionError(this.props.status, 'MAR_READY');
+    }
 
-    this.props.status = 'ON_HOLD';
-    this.props.notes = this.props.notes 
-      ? `${this.props.notes}\nHeld: ${reason}` 
-      : `Held: ${reason}`;
+    this.props.status = 'MAR_READY';
     this.updateProvenance(userId);
   }
 
   /**
-   * Cancel the prescription
-   * Valid transitions: APPROVED -> CANCELLED, READY_FOR_DISPENSE -> CANCELLED, PARTIALLY_DISPENSED -> CANCELLED, ON_HOLD -> CANCELLED (terminal)
+   * Cancel Prescription
    */
   cancel(userId: string, reason: string): void {
     if (!reason) throw new MissingRequiredFieldError('cancel reason');
     this.assertNotTerminal();
-    this.assertCanTransition('CANCELLED');
-
     this.props.status = 'CANCELLED';
-    this.props.notes = this.props.notes 
-      ? `${this.props.notes}\nCancelled: ${reason}` 
-      : `Cancelled: ${reason}`;
-    this.updateProvenance(userId);
-  }
-
-  /**
-   * Dispense medication
-   * Valid transitions: READY_FOR_DISPENSE -> PARTIALLY_DISPENSED, READY_FOR_DISPENSE -> DISPENSED, PARTIALLY_DISPENSED -> DISPENSED
-   */
-  dispense(userId: string, isPartial: boolean): void {
-    this.assertNotTerminal();
-    
-    const targetStatus: PrescriptionStatus = isPartial ? 'PARTIALLY_DISPENSED' : 'DISPENSED';
-    this.assertCanTransition(targetStatus);
-
-    this.props.status = targetStatus;
+    this.props.notes = this.props.notes ? `${this.props.notes}\nCancelled: ${reason}` : `Cancelled: ${reason}`;
     this.updateProvenance(userId);
   }
 
@@ -304,44 +398,25 @@ export class Prescription {
     }
   }
 
-  private assertCanTransition(to: PrescriptionStatus): void {
-    const validTransitions: Record<PrescriptionStatus, PrescriptionStatus[]> = {
-      'PENDING_REVIEW': ['APPROVED', 'REJECTED'],
-      'APPROVED': ['READY_FOR_DISPENSE', 'ON_HOLD', 'CANCELLED'],
-      'READY_FOR_DISPENSE': ['PARTIALLY_DISPENSED', 'DISPENSED', 'ON_HOLD', 'CANCELLED'],
-      'PARTIALLY_DISPENSED': ['DISPENSED', 'ON_HOLD', 'CANCELLED'],
-      'ON_HOLD': ['APPROVED', 'CANCELLED'],
-      'DISPENSED': [],
-      'REJECTED': [],
-      'CANCELLED': [],
-    };
-
-    const allowed = validTransitions[this.props.status] || [];
-    if (!allowed.includes(to)) {
-      throw new InvalidStateTransitionError(this.props.status, to);
-    }
-  }
-
   private updateProvenance(userId: string): void {
     this.props.provenance.updatedBy = userId;
     this.props.provenance.updatedAt = new Date();
     this.props.version += 1;
   }
 
-  /**
-   * Convert entity props for persistence
-   */
   toProps(): PrescriptionProps {
     return {
       ...this.props,
       drugs: [...this.props.drugs],
+      overrideHistory: [...this.props.overrideHistory],
+      verifications: [...this.props.verifications],
       provenance: { ...this.props.provenance },
     };
   }
 }
 
 // ============================================================================
-// MAR Entry Entity
+// MAR Entry Entity (Belongs to MAR Context, read/modified via events)
 // ============================================================================
 
 export type MARStatus = 'scheduled' | 'administered' | 'refused' | 'held' | 'missed';
@@ -399,10 +474,6 @@ export class MAREntry {
     return new MAREntry(props);
   }
 
-  // ==========================================================================
-  // Getters
-  // ==========================================================================
-
   get id(): string { return this.props.id; }
   get tenantId(): string { return this.props.tenantId; }
   get inpatientAdmissionId(): string | undefined { return this.props.inpatientAdmissionId; }
@@ -418,13 +489,6 @@ export class MAREntry {
   get notes(): string | undefined { return this.props.notes; }
   get createdAt(): Date { return this.props.createdAt; }
 
-  // ==========================================================================
-  // Transitions
-  // ==========================================================================
-
-  /**
-   * Administer the dose
-   */
   administer(nurseId: string, time: Date = new Date(), notes?: string): void {
     if (!nurseId) throw new MissingRequiredFieldError('administeredByNurseId');
     if (this.props.status !== 'scheduled') {
@@ -442,9 +506,6 @@ export class MAREntry {
     }
   }
 
-  /**
-   * Refuse/hold/miss the dose
-   */
   updateStatus(status: Exclude<MARStatus, 'scheduled' | 'administered'>, reason: string): void {
     if (!reason) throw new MissingRequiredFieldError('status change reason');
     if (this.props.status !== 'scheduled') {
@@ -458,10 +519,6 @@ export class MAREntry {
     this.props.notes = this.props.notes ? `${this.props.notes}\nStatus changed to ${status}: ${reason}` : reason;
   }
 
-  // ==========================================================================
-  // Private Helpers
-  // ==========================================================================
-
   private validate(): void {
     if (!this.props.id) throw new MissingRequiredFieldError('id');
     if (!this.props.tenantId) throw new MissingRequiredFieldError('tenantId');
@@ -471,7 +528,6 @@ export class MAREntry {
     if (!this.props.route) throw new MissingRequiredFieldError('route');
     if (!this.props.scheduledTime) throw new MissingRequiredFieldError('scheduledTime');
 
-    // Invariant: At least one treatment context must exist
     if (!this.props.inpatientAdmissionId && !this.props.encounterId) {
       throw new PrescriptionDomainError(
         'MAR entry must have either inpatientAdmissionId or encounterId treatment context',
