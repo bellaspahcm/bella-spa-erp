@@ -10,6 +10,7 @@
 
 import { ContractRegistryService } from '@/platform/host/contract-registry/contract-registry.service';
 import { registerEncounterEngine } from './engines/encounter-engine/encounter-engine.registration';
+import { registerOrderEngine } from './engines/order-engine/order-engine.registration';
 
 /**
  * ✅ Phase 3 - Bootstrap Healthcare Platform
@@ -28,14 +29,9 @@ export async function bootstrapHealthcarePlatform(
     await registerEncounterEngine(contractRegistry);
 
     // ===========================
-    // TODO: Register other engines (Phase 4+)
+    // Register Order Engine
     // ===========================
-    // await registerMPIEngine(contractRegistry);
-    // await registerBedEngine(contractRegistry);
-    // await registerNursingEngine(contractRegistry);
-    // await registerPharmacyEngine(contractRegistry);
-    // await registerBillingEngine(contractRegistry);
-    // await registerOrderEngine(contractRegistry);
+    await registerOrderEngine(contractRegistry);
 
     console.log('[HealthcarePlatform] Bootstrap complete ✅');
   } catch (error) {

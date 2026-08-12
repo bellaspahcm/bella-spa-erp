@@ -53,6 +53,14 @@ export class ContractRegistryService {
     return ContractRegistryService.instance;
   }
 
+  /**
+   * Clear all registered contracts and schemas (mainly for testing)
+   */
+  public clear(): void {
+    this.contracts.clear();
+    this.schemas.clear();
+  }
+
   // ==========================================================================
   // Contract Registration
   // ==========================================================================
