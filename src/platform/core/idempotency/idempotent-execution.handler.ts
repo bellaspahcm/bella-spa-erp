@@ -10,7 +10,7 @@
 import { IdempotencyKey, IdempotencyStore, IdempotentResult } from './types';
 
 export class MemoryIdempotencyStore implements IdempotencyStore {
-  private cache = new Map<string, IdempotentResult<any>>();
+  private cache = new Map<string, IdempotentResult<unknown>>();
 
   private formatKey(key: IdempotencyKey): string {
     return `${key.tenantId}:${key.operation}:${key.businessKey}`;

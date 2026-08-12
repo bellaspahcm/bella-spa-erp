@@ -14,7 +14,7 @@ import { Enrollment } from '../domain/enrollment.entity';
 import { IEducationRepository } from './education-repository.interface';
 
 export class SupabaseEducationRepository extends BaseSupabaseRepositoryPrimitive implements IEducationRepository {
-  constructor(private readonly supabase: SupabaseClient<any>) {
+  constructor(private readonly supabase: SupabaseClient<Record<string, unknown>>) {
     super();
   }
 

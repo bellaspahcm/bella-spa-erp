@@ -10,10 +10,11 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { CoreContractRegistry, MemoryEventBusAdapter, PlatformContractRegistry } from './core';
 import { EducationEngineService, registerEducationEngine, SupabaseEducationRepository } from './education';
+import { ContractRegistryService } from './host/contract-registry/contract-registry.service';
 import { bootstrapHealthcarePlatform } from './healthcare/healthcare-platform.bootstrap';
 
 export interface PlatformBootstrapOptions {
-  supabaseClient: SupabaseClient<any>;
+  supabaseClient: SupabaseClient<Record<string, unknown>>;
   contractRegistry?: PlatformContractRegistry;
   eventBus?: MemoryEventBusAdapter;
 }
@@ -32,7 +33,7 @@ export async function bootstrapUnifiedPlatform(options: PlatformBootstrapOptions
   const eventBus = options.eventBus || new MemoryEventBusAdapter();
 
   // 2. Healthcare OS Registration
-  await bootstrapHealthcarePlatform(contractRegistry as any);
+  await bootstrapHealthcarePlatform(contractRegistry as unknown as ContractRegistryService);
   console.log('[MetaPlatform] Healthcare OS registered successfully.');
 
   // 3. Education OS Registration

@@ -21,7 +21,7 @@ export abstract class BaseSupabaseRepositoryPrimitive {
   /**
    * Helper to normalize database exceptions using ExceptionMapper
    */
-  protected mapDatabaseError(error: any, contextMessage?: string): PlatformError {
+  protected mapDatabaseError(error: unknown, contextMessage?: string): PlatformError {
     return ExceptionMapper.mapDatabaseError(error, contextMessage);
   }
 }

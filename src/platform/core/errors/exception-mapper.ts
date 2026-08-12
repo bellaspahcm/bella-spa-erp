@@ -14,13 +14,14 @@ import {
 } from './types';
 
 export class ExceptionMapper {
-  public static mapDatabaseError(error: any, contextMessage?: string): PlatformError {
+  public static mapDatabaseError(error: unknown, contextMessage?: string): PlatformError {
     if (!error) {
       return new PlatformError(contextMessage || 'Unknown database error', 'UNKNOWN_DB_ERROR');
     }
 
-    const code = error.code || error.statusCode;
-    const message = error.message || String(error);
+    const err = error as Record<string, unknown>;
+    const code = String(err.code || err.statusCode || '');
+    const message = String(err.message || error);
     const prefix = contextMessage ? `${contextMessage}: ` : '';
 
     // Postgres 23505: Unique constraint violation

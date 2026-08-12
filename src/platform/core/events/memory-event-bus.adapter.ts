@@ -10,7 +10,7 @@
 import { DomainEventEnvelope, EventBusPort, EventHandler } from './types';
 
 export class MemoryEventBusAdapter implements EventBusPort {
-  private handlers = new Map<string, Set<EventHandler<any>>>();
+  private handlers = new Map<string, Set<EventHandler<unknown>>>();
 
   public async publish<T = unknown>(event: DomainEventEnvelope<T>): Promise<void> {
     const topicHandlers = this.handlers.get(event.eventType);
@@ -24,7 +24,7 @@ export class MemoryEventBusAdapter implements EventBusPort {
     const errors: Error[] = [];
     for (const handler of Array.from(topicHandlers)) {
       try {
-        await handler(event);
+        await handler(event as unknown as DomainEventEnvelope<unknown>);
       } catch (err) {
         const error = err instanceof Error ? err : new Error(String(err));
         console.error(`[EventBus] Handler error for ${event.eventType}:`, error.message);
@@ -43,11 +43,12 @@ export class MemoryEventBusAdapter implements EventBusPort {
     }
 
     const topicHandlers = this.handlers.get(eventType)!;
-    topicHandlers.add(handler);
+    const erasedHandler = handler as unknown as EventHandler<unknown>;
+    topicHandlers.add(erasedHandler);
     console.log(`[EventBus] Subscribed to ${eventType} (${topicHandlers.size} handlers)`);
 
     return () => {
-      topicHandlers.delete(handler);
+      topicHandlers.delete(erasedHandler);
       console.log(`[EventBus] Unsubscribed from ${eventType}`);
     };
   }

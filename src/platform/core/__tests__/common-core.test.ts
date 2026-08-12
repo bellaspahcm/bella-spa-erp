@@ -13,6 +13,7 @@ import {
   OptimisticLockError,
   IdempotentExecutionHandler,
   AuditTrailPrimitive,
+  DomainEventEnvelope,
 } from '../index';
 
 describe('Common Core Primitives - Isolation Unit Tests', () => {
@@ -20,9 +21,9 @@ describe('Common Core Primitives - Isolation Unit Tests', () => {
   describe('EventBusPort & MemoryEventBusAdapter', () => {
     it('should publish and receive domain events cleanly', async () => {
       const bus = new MemoryEventBusAdapter();
-      const received: any[] = [];
+      const received: Array<DomainEventEnvelope<{ message: string }>> = [];
 
-      bus.subscribe('test.event.v1', async (evt) => {
+      bus.subscribe<{ message: string }>('test.event.v1', async (evt) => {
         received.push(evt);
       });
 

@@ -5,13 +5,13 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { MemoryEventBusAdapter } from '../../core/events';
+import { MemoryEventBusAdapter, DomainEventEnvelope } from '../../core/events';
 import { Course } from '../domain/course.entity';
 import { EducationEngineService } from '../education-engine.service';
 import { SupabaseEducationRepository } from '../repositories/supabase-education.repository';
 
 describe('Education OS — Integration Tests (Common Core Reuse Proof)', () => {
-  let supabase: SupabaseClient<any>;
+  let supabase: SupabaseClient<Record<string, unknown>>;
   let eventBus: MemoryEventBusAdapter;
   let repository: SupabaseEducationRepository;
   let service: EducationEngineService;
@@ -116,7 +116,7 @@ describe('Education OS — Integration Tests (Common Core Reuse Proof)', () => {
       const course = Course.create({ tenantId: TENANT_EDU_A, courseCode: 'ENG-101', title: 'Academic Writing' });
       await repository.saveCourse(course);
 
-      const eventsReceived: any[] = [];
+      const eventsReceived: Array<DomainEventEnvelope<unknown>> = [];
       eventBus.subscribe('edu.enrollment.created.v1', async (evt) => {
         eventsReceived.push(evt);
       });
@@ -142,14 +142,14 @@ describe('Education OS — Integration Tests (Common Core Reuse Proof)', () => {
       // Verify Event Published AFTER DB Success
       expect(eventsReceived).toHaveLength(1);
       expect(eventsReceived[0].eventType).toBe('edu.enrollment.created.v1');
-      expect(eventsReceived[0].payload.studentPartyId).toBe(STUDENT_PERSON_A);
+      expect((eventsReceived[0].payload as Record<string, unknown>).studentPartyId).toBe(STUDENT_PERSON_A);
     });
 
     it('should enforce idempotency on duplicate requests without creating second record or emitting second event', async () => {
       const course = Course.create({ tenantId: TENANT_EDU_A, courseCode: 'PHY-101', title: 'Physics I' });
       await repository.saveCourse(course);
 
-      const eventsReceived: any[] = [];
+      const eventsReceived: Array<DomainEventEnvelope<unknown>> = [];
       eventBus.subscribe('edu.enrollment.created.v1', async (evt) => {
         eventsReceived.push(evt);
       });
