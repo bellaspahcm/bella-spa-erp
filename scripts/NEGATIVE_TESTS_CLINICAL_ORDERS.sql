@@ -45,13 +45,14 @@ BEGIN
   
   -- This should FAIL
   INSERT INTO hc_clinical_orders (
-    id, tenant_id, encounter_id, patient_party_id,
+    id, tenant_id, encounter_id, patient_party_id, customer_id,
     order_type, status, version
   ) VALUES (
     gen_random_uuid(),
     test_tenant_id,
     test_encounter_id,
     wrong_patient_id,  -- ❌ WRONG patient
+    wrong_patient_id,  -- customer_id (required field)
     'medication',
     'draft',
     1
@@ -76,9 +77,10 @@ DO $$
 DECLARE
   test_encounter_id UUID;
   test_tenant_id UUID;
+  test_patient_id UUID;
 BEGIN
-  SELECT id, tenant_id 
-  INTO test_encounter_id, test_tenant_id
+  SELECT id, tenant_id, patient_party_id
+  INTO test_encounter_id, test_tenant_id, test_patient_id
   FROM hc_encounters LIMIT 1;
   
   RAISE NOTICE '';
@@ -89,13 +91,14 @@ BEGIN
   
   -- This should FAIL
   INSERT INTO hc_clinical_orders (
-    id, tenant_id, encounter_id, patient_party_id,
+    id, tenant_id, encounter_id, patient_party_id, customer_id,
     order_type, status, version
   ) VALUES (
     gen_random_uuid(),
     test_tenant_id,
     test_encounter_id,
     NULL,  -- ❌ NULL patient
+    test_patient_id,  -- customer_id (required field)
     'medication',
     'draft',
     1
@@ -138,13 +141,14 @@ BEGIN
   -- First insert (should succeed)
   RAISE NOTICE 'Inserting first order...';
   INSERT INTO hc_clinical_orders (
-    id, tenant_id, encounter_id, patient_party_id,
+    id, tenant_id, encounter_id, patient_party_id, customer_id,
     order_type, status, version, request_id
   ) VALUES (
     gen_random_uuid(),
     test_tenant_id,
     test_encounter_id,
     test_patient_id,
+    test_patient_id,  -- customer_id (required field)
     'medication',
     'draft',
     1,
@@ -156,13 +160,14 @@ BEGIN
   
   -- Second insert with same request_id (should FAIL)
   INSERT INTO hc_clinical_orders (
-    id, tenant_id, encounter_id, patient_party_id,
+    id, tenant_id, encounter_id, patient_party_id, customer_id,
     order_type, status, version, request_id
   ) VALUES (
     gen_random_uuid(),
     test_tenant_id,  -- ❌ Same tenant
     test_encounter_id,
     test_patient_id,
+    test_patient_id,  -- customer_id (required field)
     'medication',
     'draft',
     1,
@@ -216,13 +221,14 @@ BEGIN
   -- Insert in tenant 1
   RAISE NOTICE 'Inserting order in tenant 1...';
   INSERT INTO hc_clinical_orders (
-    id, tenant_id, encounter_id, patient_party_id,
+    id, tenant_id, encounter_id, patient_party_id, customer_id,
     order_type, status, version, request_id
   ) VALUES (
     gen_random_uuid(),
     tenant_1,
     test_encounter_id,
     test_patient_id,
+    test_patient_id,  -- customer_id (required field)
     'medication',
     'draft',
     1,
@@ -234,13 +240,14 @@ BEGIN
   -- Insert in tenant 2 with SAME request_id (should SUCCEED)
   RAISE NOTICE 'Inserting order in tenant 2 with same request_id...';
   INSERT INTO hc_clinical_orders (
-    id, tenant_id, encounter_id, patient_party_id,
+    id, tenant_id, encounter_id, patient_party_id, customer_id,
     order_type, status, version, request_id
   ) VALUES (
     gen_random_uuid(),
     tenant_2,  -- ✅ Different tenant
     test_encounter_id,
     test_patient_id,
+    test_patient_id,  -- customer_id (required field)
     'medication',
     'draft',
     1,
