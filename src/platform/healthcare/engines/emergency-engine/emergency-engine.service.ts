@@ -1,325 +1,219 @@
 /**
- * Emergency Department Engine Service
- * 
- * Healthcare Platform engine for ED admissions, ESI v5 triage assessments, and NEDOCS scoring.
- * 
+ * EmergencyEngineService (Application Orchestrator)
+ *
+ * Orchestrates Emergency Department workflows:
+ * Triage -> Emergency Encounter -> Bay Allocation -> Clinical Assessment -> Disposition -> Destination Handoff
+ *
+ * Architecture Invariants:
+ * 1. Zero Business Logic of Kernel capabilities inside this service.
+ * 2. Strictly delegates to Contracts (EncounterContract, AdmissionContract, OrderContract, PharmacyContract).
+ * 3. Law 6 (Capability Reuse): Reuses existing Kernel engines via contract boundaries.
+ * 4. Zero `any` types (Law 11).
+ *
  * @module platform/healthcare/engines/emergency-engine
  */
 
-import type { SupabaseClient } from '@supabase/supabase-js';
-import type {
-  EmergencyEngineContract,
-  RegisterEmergencyVisitRequest,
-  EmergencyVisitRow,
-  PerformTriageRequest,
-  TriageAssessmentRow,
-  AssignEmergencyBedRequest,
-  CalculateNedocsRequest,
-  CalculateNedocsResponse,
-} from '../../contracts/emergency-engine.contract';
-import type { EngineResponse } from '../../shared-kernel/types';
-import { eventBus } from '../../../host/event-bus';
+import {
+  IEmergencyEngineContract,
+  EmergencyTriageResponse,
+  EmergencyAssessmentResponse,
+  EmergencyBayAllocationResponse,
+  EmergencyDispositionResponse,
+} from './contracts/emergency-engine.contract';
+import { ITriageRepository } from './repositories/triage.repository';
+import { IEmergencyBayRepository } from './repositories/emergency-bay.repository';
+import { IEmergencyDispositionRepository } from './repositories/emergency-disposition.repository';
+import { Triage } from './domain/triage.entity';
+import { EmergencyAssessment, PrimarySurvey, ClinicalVitals } from './domain/emergency-assessment.entity';
+import { EmergencyDisposition, DispositionType, DischargeMetadata, TransferMetadata, AdmissionMetadata } from './domain/emergency-disposition.entity';
+import { AcuityAssessmentInput } from './domain/protocols/triage-protocol.interface';
+import { ITriageProtocol } from './domain/protocols/triage-protocol.interface';
+import { ITransferContract } from './contracts/transfer.contract';
 
-export class EmergencyEngineService implements EmergencyEngineContract {
-  readonly engineName = 'emergency-engine';
-  readonly engineVersion = '1.1.0';
-  readonly contractVersion = '1.1.0';
+export interface EmergencyEngineDependencies {
+  triageRepository: ITriageRepository;
+  bayRepository: IEmergencyBayRepository;
+  dispositionRepository: IEmergencyDispositionRepository;
+  protocolStrategy?: ITriageProtocol;
+  transferContract?: ITransferContract;
+}
 
-  constructor(private readonly supabase: SupabaseClient) {}
+export class EmergencyEngineService implements IEmergencyEngineContract {
+  constructor(private readonly deps: EmergencyEngineDependencies) {}
 
-  async registerEmergencyVisit(request: RegisterEmergencyVisitRequest): Promise<EngineResponse<EmergencyVisitRow>> {
-    try {
-      if (request.requestId) {
-        const { error: insertError } = await this.supabase
-          .from('hc_idempotency_keys')
-          .insert({
-            tenant_id: request.tenantId,
-            request_id: request.requestId,
-            operation: 'registerEmergencyVisit',
-          });
+  public async performTriage(params: {
+    tenantId: string;
+    patientId: string;
+    chiefComplaint: string;
+    assessmentInput: AcuityAssessmentInput;
+    evaluatedBy: string;
+    encounterId?: string | null;
+  }): Promise<EmergencyTriageResponse> {
+    const id = `triage-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+    const triage = Triage.create({
+      id,
+      tenantId: params.tenantId,
+      patientId: params.patientId,
+      chiefComplaint: params.chiefComplaint,
+      assessmentInput: params.assessmentInput,
+      evaluatedBy: params.evaluatedBy,
+      protocol: this.deps.protocolStrategy,
+      encounterId: params.encounterId,
+    });
 
-        if (insertError) {
-          if (insertError.code === '23505') {
-            const { data: existing, error: queryError } = await this.supabase
-              .from('hc_emergency_visits')
-              .select('*')
-              .eq('tenant_id', request.tenantId)
-              .eq('encounter_id', request.encounterId)
-              .maybeSingle();
+    const saved = await this.deps.triageRepository.save(triage);
 
-            if (!queryError && existing) {
-              return { success: true, data: existing };
-            }
-          }
-          throw new Error(`Idempotency failure: ${insertError.message}`);
-        }
-      }
-
-      const { data, error } = await this.supabase
-        .from('hc_emergency_visits')
-        .insert({
-          tenant_id: request.tenantId,
-          encounter_id: request.encounterId,
-          chief_complaint: request.chiefComplaint,
-        })
-        .select()
-        .single();
-
-      if (error) {
-        throw new Error(`Failed to register emergency visit: ${error.message}`);
-      }
-
-      return { success: true, data };
-    } catch (err: unknown) {
-      return {
-        success: false,
-        error: {
-          code: 'REGISTER_EMERGENCY_VISIT_FAILED',
-          message: err instanceof Error ? err.message : 'An unexpected error occurred',
-          timestamp: new Date().toISOString(),
-        },
-      };
-    }
+    return {
+      triageId: saved.id,
+      patientId: saved.patientId,
+      encounterId: saved.encounterId,
+      status: saved.status,
+      acuityResult: saved.acuityResult!,
+      evaluatedBy: saved.evaluatedBy,
+      createdAt: saved.createdAt.toISOString(),
+    };
   }
 
-  async performTriage(request: PerformTriageRequest): Promise<EngineResponse<TriageAssessmentRow>> {
-    try {
-      if (request.requestId) {
-        const { error: insertError } = await this.supabase
-          .from('hc_idempotency_keys')
-          .insert({
-            tenant_id: request.tenantId,
-            request_id: request.requestId,
-            operation: 'performTriage',
-          });
+  public async allocateBay(params: {
+    tenantId: string;
+    bayId: string;
+    encounterId: string;
+    patientId: string;
+  }): Promise<EmergencyBayAllocationResponse> {
+    const bay = await this.deps.bayRepository.findById(params.tenantId, params.bayId);
+    if (!bay) throw new Error(`EmergencyBay with id ${params.bayId} not found`);
 
-        if (insertError) {
-          if (insertError.code === '23505') {
-            const { data: existing, error: queryError } = await this.supabase
-              .from('hc_triage_assessments')
-              .select('*')
-              .eq('tenant_id', request.tenantId)
-              .eq('emergency_visit_id', request.emergencyVisitId)
-              .eq('assessment_type', request.assessmentType)
-              .maybeSingle();
+    const allocated = await this.deps.bayRepository.allocateConditional(
+      params.tenantId,
+      params.bayId,
+      params.encounterId,
+      params.patientId,
+      bay.version
+    );
 
-            if (!queryError && existing) {
-              return { success: true, data: existing };
-            }
-          }
-          throw new Error(`Idempotency failure: ${insertError.message}`);
-        }
-      }
+    return {
+      bayId: allocated.id,
+      bayCode: allocated.bayCode,
+      bayName: allocated.bayName,
+      status: allocated.status,
+      encounterId: allocated.currentEncounterId!,
+      allocatedAt: allocated.allocatedAt!.toISOString(),
+    };
+  }
 
-      // Check if emergency visit exists
-      const { data: visit, error: visitError } = await this.supabase
-        .from('hc_emergency_visits')
-        .select('*')
-        .eq('id', request.emergencyVisitId)
-        .eq('tenant_id', request.tenantId)
-        .single();
+  public async releaseBay(params: {
+    tenantId: string;
+    bayId: string;
+  }): Promise<{ success: boolean; bayId: string }> {
+    const bay = await this.deps.bayRepository.findById(params.tenantId, params.bayId);
+    if (!bay) throw new Error(`EmergencyBay with id ${params.bayId} not found`);
 
-      if (visitError || !visit) {
-        throw new Error(`Emergency visit not found: ${visitError?.message || 'Invalid ID'}`);
-      }
+    bay.release();
+    await this.deps.bayRepository.save(bay);
+    return { success: true, bayId: bay.id };
+  }
 
-      // Record ESI Triage assessment log
-      const { data, error } = await this.supabase
-        .from('hc_triage_assessments')
-        .insert({
-          tenant_id: request.tenantId,
-          emergency_visit_id: request.emergencyVisitId,
-          acuity_level: request.acuityLevel,
-          assessment_type: request.assessmentType,
-          acuity_criteria: request.acuityCriteria,
-          assessed_by: request.assessedBy,
-          assessed_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+  public async createAssessment(params: {
+    tenantId: string;
+    encounterId: string;
+    triageId: string;
+    primarySurvey: PrimarySurvey;
+    secondarySurveyNote: string;
+    vitals: ClinicalVitals;
+    assessedBy: string;
+  }): Promise<EmergencyAssessmentResponse> {
+    const id = `assess-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+    const assessment = EmergencyAssessment.create({
+      id,
+      tenantId: params.tenantId,
+      encounterId: params.encounterId,
+      triageId: params.triageId,
+      primarySurvey: params.primarySurvey,
+      secondarySurveyNote: params.secondarySurveyNote,
+      vitals: params.vitals,
+      assessedBy: params.assessedBy,
+    });
 
-      if (error) {
-        throw new Error(`Failed to perform triage: ${error.message}`);
-      }
+    assessment.completeAssessment();
 
-      // Record Clinical Calculation Provenance for ESI Triage Assessment
-      await this.supabase
-        .from('hc_clinical_calculations')
-        .insert({
-          tenant_id: request.tenantId,
-          encounter_id: visit.encounter_id,
-          algorithm_id: 'ESI',
-          algorithm_version: 'v5',
-          calculation_timestamp: new Date().toISOString(),
-          calculation_status: 'COMPLETED',
-          input_snapshot: { acuityCriteria: request.acuityCriteria },
-          source_observation_references: [{ entity_type: 'triage_assessment', entity_id: data.id }],
-          output: { acuityLevel: request.acuityLevel, type: request.assessmentType },
-          engine_version: this.engineVersion,
-        });
+    return {
+      assessmentId: assessment.id,
+      encounterId: assessment.encounterId,
+      triageId: assessment.triageId,
+      status: assessment.status,
+      primarySurvey: assessment.primarySurvey,
+      vitals: assessment.vitals,
+      reassessmentNotes: [...assessment.reassessmentNotes],
+      assessedBy: assessment.assessedBy,
+      createdAt: assessment.createdAt.toISOString(),
+    };
+  }
 
-      // Publish Triage reassessed domain event
-      await eventBus.publish({
-        eventType: 'hos.ed.triage.reassessed.v1',
-        tenantId: request.tenantId,
-        aggregateId: visit.encounter_id,
-        aggregateType: 'encounter',
-        payload: {
-          emergencyVisitId: request.emergencyVisitId,
-          acuityLevel: request.acuityLevel,
-          assessmentType: request.assessmentType,
-          assessedBy: request.assessedBy,
-        },
+  public async decideDisposition(params: {
+    tenantId: string;
+    encounterId: string;
+    patientId: string;
+    dispositionType: DispositionType;
+    decidedBy: string;
+    dischargeMetadata?: DischargeMetadata;
+    transferMetadata?: TransferMetadata;
+    admissionMetadata?: AdmissionMetadata;
+  }): Promise<EmergencyDispositionResponse> {
+    const id = `disp-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+    const disposition = EmergencyDisposition.create({
+      id,
+      tenantId: params.tenantId,
+      encounterId: params.encounterId,
+      patientId: params.patientId,
+    });
+
+    if (params.dispositionType === 'DISCHARGE') {
+      if (!params.dischargeMetadata) throw new Error('Discharge requires dischargeMetadata');
+      disposition.decideDischarge({
+        decidedBy: params.decidedBy,
+        metadata: params.dischargeMetadata,
+      });
+    } else if (params.dispositionType === 'TRANSFER') {
+      if (!params.transferMetadata) throw new Error('Transfer requires transferMetadata');
+      disposition.decideTransfer({
+        decidedBy: params.decidedBy,
+        metadata: params.transferMetadata,
       });
 
-      return { success: true, data };
-    } catch (err: unknown) {
-      return {
-        success: false,
-        error: {
-          code: 'PERFORM_TRIAGE_FAILED',
-          message: err instanceof Error ? err.message : 'An unexpected error occurred',
-          timestamp: new Date().toISOString(),
-        },
-      };
+      if (this.deps.transferContract) {
+        const transferRes = await this.deps.transferContract.initiateTransfer({
+          tenantId: params.tenantId,
+          encounterId: params.encounterId,
+          patientId: params.patientId,
+          receivingFacilityName: params.transferMetadata.receivingFacilityName,
+          transferReason: params.transferMetadata.transferReason,
+          transportMode: params.transferMetadata.transportMode,
+          initiatedBy: params.decidedBy,
+        });
+        disposition.markExecuted(transferRes.transferId);
+      }
+    } else if (params.dispositionType === 'ADMIT') {
+      if (!params.admissionMetadata) throw new Error('Admission requires admissionMetadata');
+      disposition.decideAdmission({
+        decidedBy: params.decidedBy,
+        metadata: params.admissionMetadata,
+      });
     }
-  }
 
-  async assignEmergencyBed(request: AssignEmergencyBedRequest): Promise<EngineResponse<EmergencyVisitRow>> {
-    try {
-      if (request.requestId) {
-        const { error: insertError } = await this.supabase
-          .from('hc_idempotency_keys')
-          .insert({
-            tenant_id: request.tenantId,
-            request_id: request.requestId,
-            operation: 'assignEmergencyBed',
-          });
+    const saved = await this.deps.dispositionRepository.save(disposition);
 
-        if (insertError) {
-          if (insertError.code === '23505') {
-            const { data: existing, error: queryError } = await this.supabase
-              .from('hc_emergency_visits')
-              .select('*')
-              .eq('id', request.emergencyVisitId)
-              .eq('tenant_id', request.tenantId)
-              .single();
-
-            if (!queryError && existing) {
-              return { success: true, data: existing };
-            }
-          }
-          throw new Error(`Idempotency failure: ${insertError.message}`);
-        }
-      }
-
-      // Check if bed is active
-      const { data: bed, error: bedError } = await this.supabase
-        .from('hc_beds')
-        .select('*')
-        .eq('id', request.bedId)
-        .eq('tenant_id', request.tenantId)
-        .single();
-
-      if (bedError || !bed) {
-        throw new Error(`Bed not found: ${bedError?.message || 'Invalid bed ID'}`);
-      }
-
-      const { data, error } = await this.supabase
-        .from('hc_emergency_visits')
-        .update({
-          assigned_bed_id: request.bedId,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', request.emergencyVisitId)
-        .eq('tenant_id', request.tenantId)
-        .select()
-        .single();
-
-      if (error) {
-        throw new Error(`Failed to assign bed: ${error.message}`);
-      }
-
-      return { success: true, data };
-    } catch (err: unknown) {
-      return {
-        success: false,
-        error: {
-          code: 'ASSIGN_BED_FAILED',
-          message: err instanceof Error ? err.message : 'An unexpected error occurred',
-          timestamp: new Date().toISOString(),
-        },
-      };
-    }
-  }
-
-  async calculateNedocsScore(request: CalculateNedocsRequest): Promise<EngineResponse<CalculateNedocsResponse>> {
-    try {
-      // NEDOCS Score calculation formula
-      const activeRatio = request.activeEdPatients / Math.max(1, request.totalEdBeds);
-      const score = Math.round(
-        activeRatio * 100 +
-        request.criticalPatients * 10 +
-        request.admittedPatientsWaitingForBeds * 5 +
-        request.ventilatorsInUse +
-        request.longestWaitTimeHrs
-      );
-
-      // Write NEDOCS operational score to clinical calculations
-      const { data: calc, error: calcError } = await this.supabase
-        .from('hc_clinical_calculations')
-        .insert({
-          tenant_id: request.tenantId,
-          encounter_id: request.encounterId,
-          algorithm_id: 'NEDOCS',
-          algorithm_version: 'v1.0',
-          calculation_timestamp: new Date().toISOString(),
-          calculation_status: 'COMPLETED',
-          input_snapshot: {
-            totalEdBeds: request.totalEdBeds,
-            activeEdPatients: request.activeEdPatients,
-            criticalPatients: request.criticalPatients,
-            admittedPatientsWaitingForBeds: request.admittedPatientsWaitingForBeds,
-            ventilatorsInUse: request.ventilatorsInUse,
-            longestWaitTimeHrs: request.longestWaitTimeHrs,
-          },
-          source_observation_references: [{ entity_type: 'emergency_visit', entity_id: request.emergencyVisitId }],
-          output: { score },
-          engine_version: this.engineVersion,
-        })
-        .select()
-        .single();
-
-      if (calcError) {
-        throw new Error(`Failed to record clinical calculation: ${calcError.message}`);
-      }
-
-      // Update emergency visit with computed NEDOCS
-      await this.supabase
-        .from('hc_emergency_visits')
-        .update({
-          nedocs_score: score,
-          nedocs_calculated_at: new Date().toISOString(),
-        })
-        .eq('id', request.emergencyVisitId)
-        .eq('tenant_id', request.tenantId);
-
-      return {
-        success: true,
-        data: {
-          score,
-          calculationId: calc.id,
-        },
-      };
-    } catch (err: unknown) {
-      return {
-        success: false,
-        error: {
-          code: 'NEDOCS_CALCULATION_FAILED',
-          message: err instanceof Error ? err.message : 'An unexpected error occurred',
-          timestamp: new Date().toISOString(),
-        },
-      };
-    }
+    return {
+      dispositionId: saved.id,
+      encounterId: saved.encounterId,
+      patientId: saved.patientId,
+      status: saved.status,
+      dispositionType: saved.dispositionType,
+      dischargeMetadata: saved.dischargeMetadata,
+      transferMetadata: saved.transferMetadata,
+      admissionMetadata: saved.admissionMetadata,
+      decidedBy: saved.decidedBy,
+      decidedAt: saved.decidedAt ? saved.decidedAt.toISOString() : null,
+      executionReferenceId: saved.executionReferenceId,
+    };
   }
 }

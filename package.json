@@ -71,6 +71,8 @@
     "load:medical:200": "k6 run -e PROFILE=200 load-tests/scripts/13-medical-load.js",
     "load:medical:500": "k6 run -e PROFILE=500 load-tests/scripts/13-medical-load.js",
     "ci:env:check": "node scripts/check-ci-quality-env.mjs",
+    "ci:healthcare-gate": "node scripts/ci-healthcare-architecture-gate.js",
+    "ci:healthcare-gate:test": "node scripts/ci-healthcare-architecture-gate.js --test-self-defending",
     "mobile:dev": "npm run start --workspace=apps/mobile",
     "mobile:ios": "npm run ios --workspace=apps/mobile",
     "mobile:android": "npm run android --workspace=apps/mobile",

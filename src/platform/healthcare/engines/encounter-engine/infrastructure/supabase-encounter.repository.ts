@@ -553,10 +553,10 @@ export class SupabaseEncounterRepository implements IEncounterRepository {
       doctor_party_id: props.serviceProviderId || null,  // ← Write to legacy column (DEPRECATED but active)
       department_id: props.departmentId || null,
       location_id: props.locationId || null,
-      reason_code: props.reasonCode as unknown as any, // JSONB serialization
-      diagnosis: props.diagnosis as unknown as any, // JSONB serialization: Supabase expects unknown
+      reason_code: props.reasonCode as unknown as Database['public']['Tables']['hc_encounters']['Insert']['reason_code'],
+      diagnosis: props.diagnosis as unknown as Database['public']['Tables']['hc_encounters']['Insert']['diagnosis'],
       parent_encounter_id: props.parentEncounterId || null,
-      metadata: props.metadata as unknown as any, // JSONB serialization: Supabase expects unknown
+      metadata: props.metadata as unknown as Database['public']['Tables']['hc_encounters']['Insert']['metadata'],
       created_by: props.provenance.createdBy,
       updated_by: props.provenance.updatedBy,
       created_at: props.provenance.createdAt.toISOString(),
