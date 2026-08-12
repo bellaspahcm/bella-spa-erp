@@ -166,11 +166,24 @@ BEGIN
   RAISE NOTICE '[Phase 4] Adding constraints...';
 END $$;
 
--- 4.1 Ensure hc_encounters has composite index (required for FK)
-CREATE INDEX IF NOT EXISTS idx_hc_encounters_id_patient 
-  ON public.hc_encounters(id, patient_party_id);
-
-RAISE NOTICE '[Phase 4] Composite index on hc_encounters: READY';
+-- 4.1 Ensure hc_encounters has UNIQUE constraint (required for composite FK)
+--     Note: (id, patient_party_id) is naturally unique since id is already PK
+--     This just makes it explicit for the FK constraint
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint 
+    WHERE conname = 'uq_hc_encounters_id_patient'
+  ) THEN
+    ALTER TABLE public.hc_encounters
+      ADD CONSTRAINT uq_hc_encounters_id_patient 
+      UNIQUE (id, patient_party_id);
+    
+    RAISE NOTICE '[Phase 4] UNIQUE constraint on hc_encounters(id, patient_party_id): ADDED';
+  ELSE
+    RAISE NOTICE '[Phase 4] UNIQUE constraint on hc_encounters(id, patient_party_id): EXISTS';
+  END IF;
+END $$;
 
 -- 4.2 FK: patient_party_id references party_parties
 ALTER TABLE public.hc_clinical_orders
@@ -179,7 +192,10 @@ ALTER TABLE public.hc_clinical_orders
   REFERENCES public.party_parties(id)
   ON DELETE CASCADE;
 
-RAISE NOTICE '[Phase 4] FK to party_parties: ADDED';
+DO $$ 
+BEGIN
+  RAISE NOTICE '[Phase 4] FK to party_parties: ADDED';
+END $$;
 
 -- 4.3 Composite FK: (encounter_id, patient_party_id) matches hc_encounters
 --     This enforces: orders.patient_party_id == encounters.patient_party_id
@@ -189,7 +205,10 @@ ALTER TABLE public.hc_clinical_orders
   REFERENCES public.hc_encounters(id, patient_party_id)
   ON DELETE CASCADE;
 
-RAISE NOTICE '[Phase 4] Composite FK (encounter, patient): ADDED - ADR-011 enforced';
+DO $$ 
+BEGIN
+  RAISE NOTICE '[Phase 4] Composite FK (encounter, patient): ADDED - ADR-011 enforced';
+END $$;
 
 -- 4.4 UNIQUE constraint: (tenant_id, request_id) for idempotency
 --     Partial index: only when request_id IS NOT NULL
@@ -197,7 +216,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_hc_clinical_orders_request_id
   ON public.hc_clinical_orders(tenant_id, request_id)
   WHERE request_id IS NOT NULL;
 
-RAISE NOTICE '[Phase 4] Tenant-scoped idempotency index: ADDED';
+DO $$ 
+BEGIN
+  RAISE NOTICE '[Phase 4] Tenant-scoped idempotency index: ADDED';
+END $$;
 
 DO $$ 
 BEGIN
@@ -217,7 +239,10 @@ END $$;
 ALTER TABLE public.hc_clinical_orders
   ALTER COLUMN patient_party_id SET NOT NULL;
 
-RAISE NOTICE '[Phase 5] patient_party_id: SET NOT NULL';
+DO $$ 
+BEGIN
+  RAISE NOTICE '[Phase 5] patient_party_id: SET NOT NULL';
+END $$;
 
 -- 5.2 version already has DEFAULT 1 NOT NULL (set in Phase 1)
 -- 5.3 request_id remains NULLABLE (not all orders have request_id)
@@ -238,13 +263,14 @@ END $$;
 
 -- 6.1 Index for patient-based queries (e.g., patient medication history)
 CREATE INDEX IF NOT EXISTS idx_hc_clinical_orders_patient 
-  ON public.hc_clinical_orders(tenant_id, patient_party_id, order_status);
+  ON public.hc_clinical_orders(tenant_id, patient_party_id, status);
 
 -- 6.2 Index for version-based optimistic locking queries
 CREATE INDEX IF NOT EXISTS idx_hc_clinical_orders_version 
   ON public.hc_clinical_orders(id, version);
 
 -- Note: idx_hc_clinical_orders_encounter already exists from 20260808000006
+-- Note: UNIQUE constraint uq_hc_encounters_id_patient serves as index for FK
 
 DO $$ 
 BEGIN
@@ -301,7 +327,7 @@ BEGIN
   RAISE NOTICE '  - UNIQUE INDEX: (tenant_id, request_id) WHERE request_id IS NOT NULL';
   RAISE NOTICE '';
   RAISE NOTICE 'Indexes added:';
-  RAISE NOTICE '  - idx_hc_encounters_id_patient (composite for FK)';
+  RAISE NOTICE '  - uq_hc_encounters_id_patient (UNIQUE constraint for composite FK)';
   RAISE NOTICE '  - idx_hc_clinical_orders_request_id (tenant-scoped idempotency)';
   RAISE NOTICE '  - idx_hc_clinical_orders_patient (patient-based queries)';
   RAISE NOTICE '  - idx_hc_clinical_orders_version (optimistic locking)';
@@ -326,11 +352,14 @@ ALTER TABLE public.hc_clinical_orders
 ALTER TABLE public.hc_clinical_orders
   DROP CONSTRAINT IF EXISTS fk_clinical_orders_patient;
 
+-- Drop UNIQUE constraint on hc_encounters
+ALTER TABLE public.hc_encounters
+  DROP CONSTRAINT IF EXISTS uq_hc_encounters_id_patient;
+
 -- Drop indexes
 DROP INDEX IF EXISTS public.idx_hc_clinical_orders_request_id;
 DROP INDEX IF EXISTS public.idx_hc_clinical_orders_patient;
 DROP INDEX IF EXISTS public.idx_hc_clinical_orders_version;
-DROP INDEX IF EXISTS public.idx_hc_encounters_id_patient;
 
 -- Drop columns
 ALTER TABLE public.hc_clinical_orders
