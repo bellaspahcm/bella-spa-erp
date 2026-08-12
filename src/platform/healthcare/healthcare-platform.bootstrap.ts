@@ -19,20 +19,21 @@ import { registerPharmacyEngine } from './engines/pharmacy-engine/pharmacy-engin
  * Gọi hàm này khi app khởi động (trong app/layout.tsx hoặc middleware)
  */
 export async function bootstrapHealthcarePlatform(
-  contractRegistry: ContractRegistryService
+  contractRegistry?: ContractRegistryService
 ): Promise<void> {
+  const registry = contractRegistry || ContractRegistryService.getInstance();
   console.log('[HealthcarePlatform] Bootstrapping...');
 
   try {
     // ===========================
     // Register Encounter Engine
     // ===========================
-    await registerEncounterEngine(contractRegistry);
+    await registerEncounterEngine(registry);
 
     // ===========================
     // Register Order Engine
     // ===========================
-    await registerOrderEngine(contractRegistry);
+    await registerOrderEngine(registry);
 
     // ===========================
     // Register Pharmacy Engine

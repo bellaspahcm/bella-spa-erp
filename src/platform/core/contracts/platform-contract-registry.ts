@@ -12,24 +12,42 @@ export class CoreContractRegistry implements PlatformContractRegistry {
   private contracts = new Map<string, unknown>();
   private metadataMap = new Map<string, ContractMetadata>();
 
-  public registerContract<T = unknown>(name: string, implementation: T, metadata?: Partial<ContractMetadata>): void {
-    if (!name || !implementation) {
+  public registerContract<T = unknown>(
+    nameOrMeta: string | (Partial<ContractMetadata> & { name: string; implementation?: unknown }),
+    implementation?: T,
+    metadata?: Partial<ContractMetadata>
+  ): void {
+    let name: string;
+    let impl: unknown;
+    let metaPartial: Partial<ContractMetadata> | undefined;
+
+    if (typeof nameOrMeta === 'object' && nameOrMeta !== null) {
+      name = nameOrMeta.name;
+      impl = nameOrMeta.implementation || nameOrMeta;
+      metaPartial = nameOrMeta;
+    } else {
+      name = nameOrMeta;
+      impl = implementation;
+      metaPartial = metadata;
+    }
+
+    if (!name || !impl) {
       throw new Error('Contract name and implementation must be provided');
     }
 
-    this.contracts.set(name, implementation);
+    this.contracts.set(name, impl);
 
     const now = new Date().toISOString();
     const meta: ContractMetadata = {
       name,
-      version: metadata?.version || '1.0.0',
-      type: metadata?.type || 'engine',
-      description: metadata?.description || `Contract implementation for ${name}`,
-      owner: metadata?.owner || 'platform',
-      status: metadata?.status || 'active',
-      registeredAt: metadata?.registeredAt || now,
+      version: metaPartial?.version || '1.0.0',
+      type: metaPartial?.type || 'engine',
+      description: metaPartial?.description || `Contract implementation for ${name}`,
+      owner: metaPartial?.owner || 'platform',
+      status: metaPartial?.status || 'active',
+      registeredAt: metaPartial?.registeredAt || now,
       updatedAt: now,
-      metadata: metadata?.metadata,
+      metadata: metaPartial?.metadata,
     };
 
     this.metadataMap.set(name, meta);
