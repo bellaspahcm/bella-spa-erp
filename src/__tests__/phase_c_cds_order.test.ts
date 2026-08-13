@@ -286,6 +286,63 @@ class MockQueryBuilder {
         return eqMatch && orMatch;
       });
       data = matches;
+    } else if (this.table === 'hc_prescriptions') {
+      if (this.isInsert || this.isUpdate) {
+        data = this.insertPayload || this.updatePayload;
+      } else {
+        const matches = dbMedicationOrders.filter((m) =>
+          Object.entries(this.filters).every(([k, v]) => {
+            if (k === 'id') return `rx-${m.id}` === v;
+            if (k === 'clinical_order_id') return m.id === v;
+            if (k === 'tenant_id') return m.tenant_id === v;
+            return true;
+          })
+        );
+        const rows = matches.map((m) => ({
+          id: `rx-${m.id}`,
+          tenant_id: m.tenant_id,
+          encounter_id: m.encounter_id,
+          patient_party_id: m.patient_id,
+          doctor_party_id: 'doc-123',
+          clinical_order_id: m.id,
+          drugs: [
+            {
+              code: m.drug_code,
+              name: `Drug ${m.drug_code}`,
+              dose: '500mg',
+              frequency: 'QID',
+              durationDays: 5,
+            },
+          ],
+          diagnosis: null,
+          notes: null,
+          status: m.status.toLowerCase(),
+          version: 1,
+          created_by: 'doc-123',
+          updated_by: 'doc-123',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }));
+        data = mode === 'single' || mode === 'maybeSingle' ? (rows[0] || null) : rows;
+      }
+    } else if (this.table === 'inventory_items') {
+      if (this.isUpdate) {
+        data = [this.updatePayload];
+      } else {
+        const sku = this.filters['sku'] || 'PENICILLIN-500';
+        const row = {
+          id: `inv-${sku}`,
+          tenant_id: this.filters['tenant_id'] || 'tenant-hospital-a',
+          sku,
+          name: `Inventory ${sku}`,
+          stock_level: 10,
+          unit: 'vial',
+          min_stock_level: 0,
+          price_per_unit: 100,
+          updated_at: new Date().toISOString(),
+        };
+        data = mode === 'single' || mode === 'maybeSingle' ? row : [row];
+      }
     } else if (this.table === 'hc_patient_allergies') {
       if (this.isInsert) {
         const row = this.insertPayload as Omit<MockPatientAllergy, 'id'>;

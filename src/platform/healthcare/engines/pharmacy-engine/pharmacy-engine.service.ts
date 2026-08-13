@@ -243,6 +243,49 @@ export class PharmacyEngineService implements PharmacyEngineContract {
         };
       }
 
+      // 2. Barrier 2 check at dispense time: verify patient does not have severe allergies
+      const { data: allergies, error: allergyError } = await this.supabase
+        .from('hc_patient_allergies')
+        .select('allergen_code, allergen_name, reaction_type, severity')
+        .eq('tenant_id', request.tenantId)
+        .eq('patient_id', prescription.patientPartyId)
+        .eq('is_active', true);
+
+      if (allergyError) {
+        throw new Error(`Failed to query patient allergies for Barrier 2 check: ${allergyError.message}`);
+      }
+
+      const matchingAllergy = (allergies || []).find(
+        (a) => a.allergen_code === firstDrug.code
+      );
+
+      if (matchingAllergy) {
+        // Publish event for dispense blocked
+        await eventBus.publish({
+          eventType: 'hos.cds.dispense.blocked.v1',
+          tenantId: request.tenantId,
+          aggregateId: prescription.encounterId,
+          aggregateType: 'Encounter',
+          payload: {
+            encounterId: prescription.encounterId,
+            patientId: prescription.patientPartyId,
+            medicationOrderId: request.medicationOrderId,
+            drugCode: firstDrug.code,
+            reason: `Barrier 2 Safety Block: patient has recorded allergy to ${matchingAllergy.allergen_name} (${matchingAllergy.allergen_code})`,
+          },
+          userId: request.dispensedBy,
+        });
+
+        return {
+          success: false,
+          error: {
+            code: 'CDS_DISPENSE_BLOCKED',
+            message: `Barrier 2 check failed: patient has recorded allergy to ${firstDrug.code}`,
+            timestamp: now,
+          },
+        };
+      }
+
       // 2. Perform Stock Deduction under concurrency check (Rule 1 & Rule 7 / Gate 6)
       await this.pharmacyRepository.deductStock(request.tenantId, firstDrug.code, 1);
 
