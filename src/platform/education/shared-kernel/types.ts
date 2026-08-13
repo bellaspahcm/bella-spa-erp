@@ -136,7 +136,7 @@ export interface StudentWithPerson extends Student {
 // ============================================================================
 
 export interface StudentsTableRow {
-  id: string;
+  student_id: string;
   tenant_id: string;
   person_id: string;
   student_code: string;
@@ -160,7 +160,7 @@ export interface StudentsTableRow {
 }
 
 export interface StudentsTableInsert {
-  id?: string;
+  student_id?: string;
   tenant_id: string;
   person_id: string;
   student_code: string;

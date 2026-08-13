@@ -24,7 +24,7 @@ export class StudentRepository {
 
     // Map domain model to database row
     const row: StudentsTableInsert = {
-      id: student.studentId,
+      student_id: student.studentId,
       tenant_id: student.tenantId,
       person_id: student.personId,
       student_code: student.studentCode,
@@ -77,7 +77,7 @@ export class StudentRepository {
     const { data, error } = await supabase
       .from('students')
       .select('*')
-      .eq('id', studentId)
+      .eq('student_id', studentId)
       .eq('tenant_id', tenantId)
       .single();
 
@@ -201,7 +201,7 @@ export class StudentRepository {
     const { data, error } = await supabase
       .from('students')
       .update(updateData)
-      .eq('id', student.studentId)
+      .eq('student_id', student.studentId)
       .eq('tenant_id', student.tenantId)
       .select()
       .single();
@@ -226,7 +226,7 @@ export class StudentRepository {
     const { error } = await supabase
       .from('students')
       .delete()
-      .eq('id', studentId)
+      .eq('student_id', studentId)
       .eq('tenant_id', tenantId);
 
     if (error) {
@@ -266,7 +266,7 @@ export class StudentRepository {
 
     const { data, error } = await supabase
       .from('students')
-      .select('id')
+      .select('student_id')
       .eq('student_code', studentCode)
       .eq('tenant_id', tenantId)
       .single();
@@ -287,7 +287,7 @@ export class StudentRepository {
    */
   private static mapRowToDomain(row: StudentsTableRow): Student {
     return {
-      studentId: row.id,
+      studentId: row.student_id,
       tenantId: row.tenant_id,
       personId: row.person_id,
       studentCode: row.student_code,

@@ -6,6 +6,8 @@
  * @module platform/education/domain/enrollment.entity
  */
 
+import crypto from 'crypto';
+
 export type EnrollmentStatus = 'pending' | 'active' | 'completed' | 'cancelled';
 
 export interface CreateEnrollmentProps {
@@ -15,6 +17,7 @@ export interface CreateEnrollmentProps {
   courseId: string;
   status?: EnrollmentStatus;
   enrolledAt?: Date;
+  requestId?: string;
 }
 
 export class Enrollment {
@@ -24,6 +27,7 @@ export class Enrollment {
   private readonly _courseId: string;
   private _status: EnrollmentStatus;
   private readonly _enrolledAt: Date;
+  private readonly _requestId: string;
   private readonly _createdAt: Date;
   private _updatedAt: Date;
 
@@ -38,6 +42,7 @@ export class Enrollment {
     this._courseId = props.courseId;
     this._status = props.status || 'pending';
     this._enrolledAt = props.enrolledAt || new Date();
+    this._requestId = props.requestId || crypto.randomUUID();
     this._createdAt = props.createdAt || new Date();
     this._updatedAt = props.updatedAt || new Date();
   }
@@ -81,6 +86,7 @@ export class Enrollment {
   public get courseId(): string { return this._courseId; }
   public get status(): EnrollmentStatus { return this._status; }
   public get enrolledAt(): Date { return this._enrolledAt; }
+  public get requestId(): string { return this._requestId; }
   public get createdAt(): Date { return this._createdAt; }
   public get updatedAt(): Date { return this._updatedAt; }
 }

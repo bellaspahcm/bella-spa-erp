@@ -41,6 +41,7 @@ export type RuleDomain =
   | 'crm.sla'
   | 'bella_auto.sales'
   | 'babycare.booking'
+  | 'education.enrollment'
   | 'platform.system';
 
 export type RuleEvalOutcome =

@@ -70,7 +70,7 @@ describe('Enrollment Integration Tests', () => {
       .single();
 
     if (courseError) throw new Error(`Course creation failed: ${courseError.message}`);
-    courseId = courseData.id;
+    courseId = courseData.course_id;
   });
 
   afterAll(async () => {
@@ -140,8 +140,20 @@ describe('Enrollment Integration Tests', () => {
 
   describe('Business Rules', () => {
     it('should reject enrollment of graduated student', async () => {
-      // Graduate student
-      await StudentService.graduateStudent(studentId, tenantId, '2024-06-30', TEST_USER_UUID);
+      // Create a second student specifically for this test
+      const tempStudent = await StudentService.createStudent({
+        tenantId,
+        personId,
+        studentCode: 'EDU-2024-101',
+        academicStatus: 'enrolled',
+        enrollmentType: 'full_time',
+        programId: 'program-cs',
+        enrollmentDate: '2024-09-01',
+        createdBy: TEST_USER_UUID,
+      });
+
+      // Graduate this temporary student (enrollment date is 2024-09-01, graduate on 2024-09-30)
+      await StudentService.graduateStudent(tempStudent.studentId, tenantId, '2024-09-30', TEST_USER_UUID);
 
       const supabase = await createClient();
       const { data: course2 } = await supabase
@@ -159,23 +171,23 @@ describe('Enrollment Integration Tests', () => {
 
       const request: CreateEnrollmentRequest = {
         tenantId,
-        studentId,
-        courseId: course2!.id,
+        studentId: tempStudent.studentId,
+        courseId: course2!.course_id,
         enrollmentDate: '2024-09-01',
         createdBy: TEST_USER_UUID,
       };
 
       await expect(EnrollmentService.createEnrollment(request)).rejects.toThrow('Cannot enroll graduated student');
 
-      // Cleanup: Reinstate student for other tests
-      await StudentService.reinstateStudent(studentId, tenantId, TEST_USER_UUID);
-      await supabase.from('courses').delete().eq('id', course2!.id);
+      // Cleanup: Delete course2 and temp student
+      await supabase.from('courses').delete().eq('course_id', course2!.course_id);
+      await supabase.from('students').delete().eq('student_id', tempStudent.studentId);
     });
   });
 
   describe('Tenant Isolation', () => {
     it('should not find enrollment from different tenant', async () => {
-      const enrollment = await EnrollmentService.getEnrollmentById(enrollmentId, 'different-tenant');
+      const enrollment = await EnrollmentService.getEnrollmentById(enrollmentId, NON_EXISTENT_UUID);
       expect(enrollment).toBeNull();
     });
 
@@ -239,7 +251,7 @@ describe('Enrollment Integration Tests', () => {
       expect(graded.grade).toBe('A');
       expect(graded.gradePoints).toBe(90);
       expect(graded.creditsEarned).toBe(3);
-      expect(graded.getGrade().status).toBe('pass');
+      expect(graded.gradeStatus).toBe('pass');
     });
   });
 });

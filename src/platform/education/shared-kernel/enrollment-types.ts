@@ -101,7 +101,7 @@ export interface UpdateEnrollmentRequest {
 // ============================================================================
 
 export interface EnrollmentsTableRow {
-  id: string;
+  enrollment_id: string;
   tenant_id: string;
   student_id: string;
   course_id: string;
@@ -121,7 +121,7 @@ export interface EnrollmentsTableRow {
 }
 
 export interface EnrollmentsTableInsert {
-  id?: string;
+  enrollment_id?: string;
   tenant_id: string;
   student_id: string;
   course_id: string;

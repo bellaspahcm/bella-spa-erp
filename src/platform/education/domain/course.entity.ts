@@ -14,6 +14,9 @@ export interface CreateCourseProps {
   courseCode: string;
   title: string;
   status?: CourseStatus;
+  maxStudents?: number | null;
+  currentEnrollment?: number;
+  prerequisiteCourseCodes?: string[];
 }
 
 export class Course {
@@ -22,6 +25,9 @@ export class Course {
   private readonly _courseCode: string;
   private _title: string;
   private _status: CourseStatus;
+  private _maxStudents: number | null;
+  private _currentEnrollment: number;
+  private _prerequisiteCourseCodes: string[];
   private readonly _createdAt: Date;
   private _updatedAt: Date;
 
@@ -35,6 +41,9 @@ export class Course {
     this._courseCode = props.courseCode.trim().toUpperCase();
     this._title = props.title.trim();
     this._status = props.status || 'active';
+    this._maxStudents = props.maxStudents !== undefined ? props.maxStudents : null;
+    this._currentEnrollment = props.currentEnrollment || 0;
+    this._prerequisiteCourseCodes = props.prerequisiteCourseCodes || [];
     this._createdAt = props.createdAt || new Date();
     this._updatedAt = props.updatedAt || new Date();
   }
@@ -61,6 +70,9 @@ export class Course {
   public get courseCode(): string { return this._courseCode; }
   public get title(): string { return this._title; }
   public get status(): CourseStatus { return this._status; }
+  public get maxStudents(): number | null { return this._maxStudents; }
+  public get currentEnrollment(): number { return this._currentEnrollment; }
+  public get prerequisiteCourseCodes(): string[] { return this._prerequisiteCourseCodes; }
   public get createdAt(): Date { return this._createdAt; }
   public get updatedAt(): Date { return this._updatedAt; }
 }

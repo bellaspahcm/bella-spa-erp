@@ -25,6 +25,9 @@ export class SupabaseEducationRepository extends BaseSupabaseRepositoryPrimitive
       course_code: course.courseCode,
       title: course.title,
       status: course.status,
+      max_students: course.maxStudents,
+      current_enrollment: course.currentEnrollment,
+      prerequisite_course_codes: course.prerequisiteCourseCodes,
       created_at: course.createdAt.toISOString(),
       updated_at: course.updatedAt.toISOString(),
     };
@@ -58,6 +61,9 @@ export class SupabaseEducationRepository extends BaseSupabaseRepositoryPrimitive
       courseCode: data.course_code,
       title: data.title,
       status: data.status,
+      maxStudents: data.max_students,
+      currentEnrollment: data.current_enrollment,
+      prerequisiteCourseCodes: data.prerequisite_course_codes,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at),
     });
@@ -70,6 +76,7 @@ export class SupabaseEducationRepository extends BaseSupabaseRepositoryPrimitive
       student_party_id: enrollment.studentPartyId,
       course_id: enrollment.courseId,
       status: enrollment.status,
+      request_id: enrollment.requestId,
       enrolled_at: enrollment.enrolledAt.toISOString(),
       created_at: enrollment.createdAt.toISOString(),
       updated_at: enrollment.updatedAt.toISOString(),
@@ -104,6 +111,7 @@ export class SupabaseEducationRepository extends BaseSupabaseRepositoryPrimitive
       studentPartyId: data.student_party_id,
       courseId: data.course_id,
       status: data.status,
+      requestId: data.request_id,
       enrolledAt: new Date(data.enrolled_at),
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at),
@@ -135,6 +143,7 @@ export class SupabaseEducationRepository extends BaseSupabaseRepositoryPrimitive
       studentPartyId: data.student_party_id,
       courseId: data.course_id,
       status: data.status,
+      requestId: data.request_id,
       enrolledAt: new Date(data.enrolled_at),
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at),
@@ -168,5 +177,90 @@ export class SupabaseEducationRepository extends BaseSupabaseRepositoryPrimitive
     }
 
     return { isValid: true };
+  }
+
+  public async findCourseByCode(courseCode: string, tenantId: string): Promise<Course | null> {
+    const { data, error } = await this.supabase
+      .from('edu_courses')
+      .select('*')
+      .eq('course_code', courseCode.trim().toUpperCase())
+      .eq('tenant_id', tenantId)
+      .maybeSingle();
+
+    if (error) {
+      throw this.mapDatabaseError(error, `Failed to find course by code ${courseCode}`);
+    }
+
+    if (!data) return null;
+
+    return Course.reconstitute({
+      id: data.id,
+      tenantId: data.tenant_id,
+      courseCode: data.course_code,
+      title: data.title,
+      status: data.status,
+      maxStudents: data.max_students,
+      currentEnrollment: data.current_enrollment,
+      prerequisiteCourseCodes: data.prerequisite_course_codes,
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at),
+    });
+  }
+
+  public async getStudentScores(studentPartyId: string, tenantId: string): Promise<Array<{ courseId: string; score: number }>> {
+    const { data: student, error: studentError } = await this.supabase
+      .from('students')
+      .select('student_id')
+      .eq('person_id', studentPartyId)
+      .eq('tenant_id', tenantId)
+      .maybeSingle();
+
+    if (studentError || !student) {
+      return [];
+    }
+
+    const { data, error } = await this.supabase
+      .from('assessment_results')
+      .select('score, status, assessments!inner(course_id)')
+      .eq('student_id', student.student_id)
+      .eq('tenant_id', tenantId);
+
+    if (error || !data) {
+      return [];
+    }
+
+    // Keep only graded assessments with non-null scores
+    return data
+      .filter((r: any) => r.status === 'graded' && r.score !== null)
+      .map((r: any) => ({
+        courseId: r.assessments.course_id,
+        score: Number(r.score),
+      }));
+  }
+
+  public async executeEnrollStudentTransaction(params: {
+    tenantId: string;
+    studentPartyId: string;
+    courseId: string;
+    enrollmentId: string;
+    requestId: string;
+  }): Promise<{ isDuplicate: boolean; enrollmentId: string }> {
+    const { data, error } = await this.supabase.rpc('edu_enroll_student_v3', {
+      p_tenant_id: params.tenantId,
+      p_student_party_id: params.studentPartyId,
+      p_course_id: params.courseId,
+      p_enrollment_id: params.enrollmentId,
+      p_enrolled_at: new Date().toISOString(),
+      p_request_id: params.requestId,
+    });
+
+    if (error) {
+      throw this.mapDatabaseError(error, `RPC edu_enroll_student_v3 failed: ${error.message}`);
+    }
+
+    return {
+      isDuplicate: data.is_duplicate,
+      enrollmentId: data.enrollment_id,
+    };
   }
 }

@@ -8,9 +8,21 @@
  */
 
 import { EventBusPort } from '../core/events';
-import { IdempotentExecutionHandler } from '../core/idempotency';
 import { Enrollment } from './domain/enrollment.entity';
 import { IEducationRepository } from './repositories/education-repository.interface';
+import { IEducationRuleGovernancePort } from './ports/rule-governance.port';
+import crypto from 'crypto';
+
+export interface OverrideRequest {
+  readonly actorId: string;
+  readonly reason: string;
+  readonly ruleVersion: string;
+  readonly timestamp: string;
+  readonly targetStudent: string;
+  readonly targetCourse: string;
+  readonly authorization: string;
+  readonly auditEvidence: string;
+}
 
 export interface EnrollStudentInput {
   tenantId: string;
@@ -18,6 +30,7 @@ export interface EnrollStudentInput {
   courseId: string;
   requestId: string;
   userId?: string;
+  overrideRequest?: OverrideRequest;
 }
 
 export interface EnrollStudentResult {
@@ -36,11 +49,10 @@ export interface EnrollStudentResult {
 }
 
 export class EducationEngineService {
-  private readonly idempotencyHandler = new IdempotentExecutionHandler();
-
   constructor(
     private readonly repository: IEducationRepository,
-    private readonly eventBus: EventBusPort
+    private readonly eventBus: EventBusPort,
+    private readonly ruleGovernancePort?: IEducationRuleGovernancePort
   ) {}
 
   public async enrollStudent(input: EnrollStudentInput): Promise<EnrollStudentResult> {
@@ -64,57 +76,103 @@ export class EducationEngineService {
       throw new Error(`Course ${input.courseId} is in status ${course.status}, expected active`);
     }
 
-    // 3. Generalized Idempotency Key Execution
-    const idempotencyKey = {
-      tenantId: input.tenantId,
-      operation: 'ENROLL_STUDENT',
-      businessKey: input.requestId,
-    };
+    // 2.5 Prerequisite Eligibility & Governed Override (Decoupled Port)
+    if (course.prerequisiteCourseCodes && course.prerequisiteCourseCodes.length > 0) {
+      let port = this.ruleGovernancePort;
+      if (!port) {
+        // Dynamic import to avoid compile-time dependency from Kernel -> Host
+        const { EducationRuleGovernanceAdapter } = await import('../host/rule-governance/education-rule-governance.adapter');
+        port = new EducationRuleGovernanceAdapter();
+      }
 
-    const { data: enrollment, isDuplicate } = await this.idempotencyHandler.execute(
-      idempotencyKey,
-      async () => {
-        // Check if student is already enrolled in course
-        const existing = await this.repository.findEnrollmentByStudentAndCourse(
-          input.studentPartyId,
-          input.courseId,
-          input.tenantId
-        );
-        if (existing) {
-          return existing;
+      const activeRule = await port.getActiveGradingRule(input.tenantId);
+      const studentScores = await this.repository.getStudentScores(input.studentPartyId, input.tenantId);
+
+      const missingPrerequisites: string[] = [];
+      for (const reqCode of course.prerequisiteCourseCodes) {
+        const prereqCourse = await this.repository.findCourseByCode(reqCode, input.tenantId);
+        if (!prereqCourse) {
+          missingPrerequisites.push(reqCode);
+          continue;
         }
 
-        const newEnrollment = Enrollment.create({
-          tenantId: input.tenantId,
-          studentPartyId: input.studentPartyId,
-          courseId: input.courseId,
-          status: 'pending',
-        });
-
-        // Persist to Database FIRST (Event-After-Persistence rule)
-        await this.repository.saveEnrollment(newEnrollment);
-
-        // Publish event AFTER database persistence success
-        await this.eventBus.publish({
-          eventId: crypto.randomUUID(),
-          eventType: 'edu.enrollment.created.v1',
-          eventVersion: 'v1',
-          tenantId: newEnrollment.tenantId,
-          aggregateId: newEnrollment.id,
-          aggregateType: 'enrollment',
-          occurredAt: newEnrollment.createdAt.toISOString(),
-          payload: {
-            enrollmentId: newEnrollment.id,
-            studentPartyId: newEnrollment.studentPartyId,
-            courseId: newEnrollment.courseId,
-            status: newEnrollment.status,
-          },
-          userId: input.userId,
-        });
-
-        return newEnrollment;
+        const studentScore = studentScores.find(s => s.courseId === prereqCourse.id);
+        const hasPassed = studentScore !== undefined && studentScore.score >= activeRule.passingThreshold;
+        if (!hasPassed) {
+          missingPrerequisites.push(reqCode);
+        }
       }
-    );
+
+      if (missingPrerequisites.length > 0) {
+        if (!input.overrideRequest) {
+          throw new Error(`Prerequisite check failed. Missing prerequisite courses: ${missingPrerequisites.join(', ')}`);
+        }
+
+        // Validate OverrideRequest Schema
+        const ov = input.overrideRequest;
+        if (
+          !ov.actorId ||
+          !ov.reason ||
+          !ov.ruleVersion ||
+          !ov.timestamp ||
+          !ov.targetStudent ||
+          !ov.targetCourse ||
+          !ov.authorization ||
+          !ov.auditEvidence
+        ) {
+          throw new Error('OverrideRequest validation failed: Missing required fields');
+        }
+
+        // Validate OverrideRequest payload targets
+        if (ov.targetStudent !== input.studentPartyId) {
+          throw new Error('OverrideRequest validation failed: targetStudent mismatch');
+        }
+        if (ov.targetCourse !== input.courseId) {
+          throw new Error('OverrideRequest validation failed: targetCourse mismatch');
+        }
+        if (ov.ruleVersion !== activeRule.ruleVersion) {
+          throw new Error('OverrideRequest validation failed: ruleVersion mismatch');
+        }
+      }
+    }
+
+    // 3. Stored Procedure Transaction (Row lock + Idempotency checks)
+    const enrollmentId = crypto.randomUUID();
+    const txResult = await this.repository.executeEnrollStudentTransaction({
+      tenantId: input.tenantId,
+      studentPartyId: input.studentPartyId,
+      courseId: input.courseId,
+      enrollmentId,
+      requestId: input.requestId,
+    });
+
+    const isDuplicate = txResult.isDuplicate;
+    const finalEnrollmentId = txResult.enrollmentId;
+
+    const enrollment = await this.repository.findEnrollmentById(finalEnrollmentId, input.tenantId);
+    if (!enrollment) {
+      throw new Error(`Failed to load enrollment ${finalEnrollmentId}`);
+    }
+
+    // 4. Event-After-Persistence event publication
+    if (!isDuplicate) {
+      await this.eventBus.publish({
+        eventId: crypto.randomUUID(),
+        eventType: 'edu.enrollment.created.v1',
+        eventVersion: 'v1',
+        tenantId: enrollment.tenantId,
+        aggregateId: enrollment.id,
+        aggregateType: 'enrollment',
+        occurredAt: enrollment.createdAt.toISOString(),
+        payload: {
+          enrollmentId: enrollment.id,
+          studentPartyId: enrollment.studentPartyId,
+          courseId: enrollment.courseId,
+          status: enrollment.status,
+        },
+        userId: input.userId,
+      });
+    }
 
     return {
       success: true,

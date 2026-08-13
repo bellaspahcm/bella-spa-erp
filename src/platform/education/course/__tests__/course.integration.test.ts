@@ -146,8 +146,8 @@ describe('Course Integration Tests', () => {
       const supabase = await createClient();
       await supabase
         .from('courses')
-        .update({ current_enrollment: 10 })
-        .eq('id', courseId);
+        .update({ metadata: { current_enrollment: 10 } })
+        .eq('course_id', courseId);
 
       const result = await CourseService.startCourse(courseId, tenantId, TEST_USER_UUID);
 
@@ -219,8 +219,8 @@ describe('Course Integration Tests', () => {
       const supabase = await createClient();
       await supabase
         .from('courses')
-        .update({ current_enrollment: 10 })
-        .eq('id', newCourseId);
+        .update({ metadata: { current_enrollment: 10 } })
+        .eq('course_id', newCourseId);
 
       await CourseService.startCourse(newCourseId, tenantId, TEST_USER_UUID);
       await CourseService.completeCourse(newCourseId, tenantId, TEST_USER_UUID);

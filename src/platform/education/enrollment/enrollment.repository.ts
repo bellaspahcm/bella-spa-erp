@@ -15,7 +15,7 @@ export class EnrollmentRepository {
     const supabase = await createClient();
 
     const row: EnrollmentsTableInsert = {
-      id: enrollment.enrollmentId,
+      enrollment_id: enrollment.enrollmentId,
       tenant_id: enrollment.tenantId,
       student_id: enrollment.studentId,
       course_id: enrollment.courseId,
@@ -38,10 +38,10 @@ export class EnrollmentRepository {
 
     if (error) {
       if (error.code === '23503') {
-        if (error.message.includes('student_id')) {
+        if (error.message.includes('student_id') || error.message.includes('student_fk')) {
           throw new Error(`Student with ID ${enrollment.studentId} does not exist`);
         }
-        if (error.message.includes('course_id')) {
+        if (error.message.includes('course_id') || error.message.includes('course_fk')) {
           throw new Error(`Course with ID ${enrollment.courseId} does not exist`);
         }
       }
@@ -60,7 +60,7 @@ export class EnrollmentRepository {
     const { data, error } = await supabase
       .from('enrollments')
       .select('*')
-      .eq('id', enrollmentId)
+      .eq('enrollment_id', enrollmentId)
       .eq('tenant_id', tenantId)
       .single();
 
@@ -125,7 +125,7 @@ export class EnrollmentRepository {
     const { data, error } = await supabase
       .from('enrollments')
       .update(updateData)
-      .eq('id', enrollment.enrollmentId)
+      .eq('enrollment_id', enrollment.enrollmentId)
       .eq('tenant_id', enrollment.tenantId)
       .select()
       .single();
@@ -147,7 +147,7 @@ export class EnrollmentRepository {
     const { error } = await supabase
       .from('enrollments')
       .delete()
-      .eq('id', enrollmentId)
+      .eq('enrollment_id', enrollmentId)
       .eq('tenant_id', tenantId);
 
     if (error) {
@@ -157,7 +157,7 @@ export class EnrollmentRepository {
 
   private static mapRowToDomain(row: EnrollmentsTableRow): Enrollment {
     return {
-      enrollmentId: row.id,
+      enrollmentId: row.enrollment_id,
       tenantId: row.tenant_id,
       studentId: row.student_id,
       courseId: row.course_id,
