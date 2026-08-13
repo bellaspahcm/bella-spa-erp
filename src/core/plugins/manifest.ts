@@ -31,4 +31,8 @@ export interface ProductManifest {
   readonly dependencies: readonly string[]; // Required capabilities e.g. ["billing_query", "inventory_command"]
   readonly permissions: readonly string[];
   readonly featureFlags?: Readonly<Record<string, boolean>>;
+  readonly capabilities?: readonly string[];
+  readonly workflows?: readonly string[];
+  readonly clinicalPolicies?: readonly string[];
+  readonly integrations?: readonly string[];
 }

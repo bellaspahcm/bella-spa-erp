@@ -499,3 +499,14 @@ export const ENCOUNTER_ENGINE_CONTRACT: ContractMetadata = {
   registeredAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };
+
+export type {
+  IEncounterEngine,
+  CreateEncounterRequest,
+  CreateEncounterResponse,
+  UpdateEncounterStatusRequest,
+  UpdateEncounterStatusResponse,
+  AddDiagnosisRequest,
+  AddDiagnosisResponse,
+  EncounterDTO,
+} from '../engines/encounter-engine/encounter-engine.interface';

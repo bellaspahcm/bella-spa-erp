@@ -15,4 +15,8 @@ export const medicalProductManifest: ProductManifest = {
     enable_icd10_search: true,
     enable_telemedicine: false,
   },
+  capabilities: ['medical_resource_query', 'medical_resource_command'],
+  workflows: ['outpatient_consultation_flow', 'prescription_safety_check_flow'],
+  clinicalPolicies: ['mandatory_cds_ddi_allergy_check'],
+  integrations: ['bhyt_insurance_sync', 'lris_diagnostic_sync'],
 };

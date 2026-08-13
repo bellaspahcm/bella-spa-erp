@@ -6,6 +6,7 @@
  * @module platform/healthcare/contracts
  */
 
+export * from './encounter-engine.contract';
 export * from './bed-engine.contract';
 export * from './nursing-engine.contract';
 export * from './pharmacy-engine.contract';
