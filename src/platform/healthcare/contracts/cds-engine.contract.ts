@@ -281,3 +281,23 @@ export interface CdsEngineContract {
 
   healthCheck(): Promise<EngineHealthStatus>;
 }
+
+/**
+ * Decision Contract (IDecisionContract)
+ * 
+ * Defines the contract interface for evaluating clinical context before actions.
+ * Dependency inversion model (H8-10): Caller engines implement checks via this contract
+ * without importing the CDS engine directly.
+ */
+export interface IDecisionContract {
+  evaluate(request: {
+    tenantId: string;
+    encounterId: string;
+    patientId: string;
+    actionContext: {
+      proposedDrugCode: string;
+      proposedDrugClass?: string;
+      proposedDoseMg?: number;
+    } & Record<string, unknown>;
+  }): Promise<EngineResponse<CdsCheckResult>>;
+}

@@ -27,8 +27,7 @@ import type {
   OrderStatus,
 } from '../../contracts/order-engine.contract';
 import type { EngineResponse, EngineHealthStatus } from '../../shared-kernel/types';
-import type { CdsAlert } from '../../contracts/cds-engine.contract';
-import { CdsEngineService } from '../cds-engine/cds-engine.service';
+import type { CdsAlert, IDecisionContract } from '../../contracts/cds-engine.contract';
 import { eventBus } from '@/platform/host/event-bus';
 
 // ============================================================================
@@ -89,10 +88,13 @@ export class OrderEngineService implements OrderEngineContract {
   readonly engineName = 'order-engine' as const;
   readonly engineVersion = ENGINE_VERSION;
 
-  private readonly cdsEngine: CdsEngineService;
+  private readonly decisionContract?: IDecisionContract;
 
-  constructor(private readonly supabase: SupabaseClient) {
-    this.cdsEngine = new CdsEngineService(supabase);
+  constructor(
+    private readonly supabase: SupabaseClient,
+    decisionContract?: IDecisionContract
+  ) {
+    this.decisionContract = decisionContract;
   }
 
   // --------------------------------------------------------------------------
@@ -125,21 +127,29 @@ export class OrderEngineService implements OrderEngineContract {
         }
 
         const medDetails = request.orderDetails as MedicationOrderDetails;
-        const cdsResult = await this.cdsEngine.generateCdsSummary({
-          requestId: `${request.requestId}-cds`,
+        
+        if (!this.decisionContract) {
+          return {
+            success: false,
+            error: {
+              code: 'CDS_CONTRACT_MISSING',
+              message: 'Decision Contract is required for MEDICATION orders',
+              timestamp: now,
+            },
+          };
+        }
+
+        const cdsResult = await this.decisionContract.evaluate({
           tenantId: request.tenantId,
           encounterId: request.encounterId,
           patientId: request.patientId,
-          proposedDrugCode: medDetails.drugCode,
-          proposedDrugClass: undefined,
-          currentMedicationCodes: medDetails.currentMedicationCodes,
-          proposedDoseMg: medDetails.totalDailyDoseMg,
-          patientAgeYears: medDetails.patientAgeYears,
-          patientWeightKg: medDetails.patientWeightKg,
-          patientEgfr: medDetails.patientEgfr,
-          patientHepaticClass: medDetails.patientHepaticClass,
-          patientPregnant: medDetails.patientPregnant,
-          correlationId: request.requestId,
+          actionContext: {
+            proposedDrugCode: medDetails.drugCode,
+            proposedDrugClass: undefined,
+            proposedDoseMg: medDetails.totalDailyDoseMg,
+            actionType: 'PRESCRIBE',
+            currentMedicationCodes: medDetails.currentMedicationCodes,
+          },
         });
 
         if (!cdsResult.success || !cdsResult.data) {

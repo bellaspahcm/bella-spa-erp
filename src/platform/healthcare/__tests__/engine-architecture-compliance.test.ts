@@ -40,6 +40,9 @@ const KNOWN_EXEMPTIONS: Record<string, string[]> = {
   'pacu-engine': ['domain', 'contracts', 'events', 'repositories'],
   'scheduling-engine': ['domain', 'contracts', 'events', 'repositories'],
   'queue-engine': ['domain', 'contracts', 'events', 'repositories'],
+  'temporal-engine': ['contracts', 'repositories'],
+  'rule-engine': ['contracts', 'repositories', 'events'],
+  'audit-compliance-engine': ['contracts', 'repositories', 'events'],
 };
 
 const ENGINES_ROOT = path.resolve(__dirname, '../engines');

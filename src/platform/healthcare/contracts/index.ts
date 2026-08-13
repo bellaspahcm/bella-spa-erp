@@ -21,6 +21,9 @@ export * from './blood-bank-engine.contract';
 export * from './cds-engine.contract';
 export * from './order-engine.contract';
 export * from './sterilization.contract';
+export * from './temporal-engine.contract';
+export * from './rule-governance.contract';
+export * from './clinical-audit.contract';
 
 // Import contract metadata for registration
 import { BED_ENGINE_CONTRACT } from './bed-engine.contract';

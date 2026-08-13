@@ -538,8 +538,8 @@ describe('Phase C: Clinical Decision Support & CPOE Order Engine', () => {
     seedGlobalKnowledgeBase();
 
     cdsEngine = new CdsEngineService(mockSupabase);
-    orderEngine = new OrderEngineService(mockSupabase);
-    pharmacyEngine = new PharmacyEngineService(mockSupabase);
+    orderEngine = new OrderEngineService(mockSupabase, cdsEngine);
+    pharmacyEngine = new PharmacyEngineService(mockSupabase, cdsEngine);
   });
 
   // ────────────────────────────────────────────────────────────────────────────

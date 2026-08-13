@@ -4,6 +4,8 @@ import type { EventBus } from '../order-engine/contracts/event-bus.interface';
 import { LabOrder } from './domain/lab-order.entity';
 import { TEST_DEFINITIONS, type TestDefinition } from './domain/test-definition';
 
+import { ConcurrencyViolationError } from './repositories/laboratory-repository.interface';
+
 export class LaboratoryEngineService implements ILaboratoryEngine {
   constructor(
     private readonly repository: ILaboratoryRepository,
@@ -90,6 +92,12 @@ export class LaboratoryEngineService implements ILaboratoryEngine {
     verifiedBy: string
   ): Promise<LabOrder> {
     const labOrder = await this.getLabOrderOrThrow(tenantId, labOrderId);
+
+    if (labOrder.status === 'VERIFIED') {
+      throw new ConcurrencyViolationError(
+        `Optimistic concurrency violation: LabOrder ${labOrderId} has already been verified.`
+      );
+    }
 
     // Perform verification transition in domain aggregate
     labOrder.verify(verifiedBy);

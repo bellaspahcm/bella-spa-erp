@@ -19,6 +19,7 @@ import type {
 import type { EngineResponse, MedicationOrder, EngineHealthStatus } from '../../shared-kernel/types';
 import type { Database } from '@/types/database.types';
 import { eventBus } from '@/platform/host/event-bus';
+import type { IDecisionContract } from '../../contracts/cds-engine.contract';
 import { SupabasePharmacyRepository } from './repositories/supabase-pharmacy.repository';
 import { Prescription, MAREntry, type PrescriptionStatus } from './domain/prescription.entity';
 import {
@@ -68,9 +69,14 @@ export class PharmacyEngineService implements PharmacyEngineContract {
   private readonly interactionPolicy = new InteractionPolicy();
   private readonly dosePolicy = new DosePolicy();
   private readonly duplicateTherapyPolicy = new DuplicateTherapyPolicy();
+  private readonly decisionContract?: IDecisionContract;
 
-  constructor(private readonly supabase: SupabaseClient<Database>) {
+  constructor(
+    private readonly supabase: SupabaseClient<Database>,
+    decisionContract?: IDecisionContract
+  ) {
     this.pharmacyRepository = new SupabasePharmacyRepository(supabase);
+    this.decisionContract = decisionContract;
   }
 
   /**
@@ -244,22 +250,51 @@ export class PharmacyEngineService implements PharmacyEngineContract {
       }
 
       // 2. Barrier 2 check at dispense time: verify patient does not have severe allergies
-      const { data: allergies, error: allergyError } = await this.supabase
-        .from('hc_patient_allergies')
-        .select('allergen_code, allergen_name, reaction_type, severity')
-        .eq('tenant_id', request.tenantId)
-        .eq('patient_id', prescription.patientPartyId)
-        .eq('is_active', true);
+      let hasAllergyBlock = false;
+      let allergyReason = '';
 
-      if (allergyError) {
-        throw new Error(`Failed to query patient allergies for Barrier 2 check: ${allergyError.message}`);
+      if (this.decisionContract) {
+        const cdsRes = await this.decisionContract.evaluate({
+          tenantId: request.tenantId,
+          encounterId: prescription.encounterId,
+          patientId: prescription.patientPartyId,
+          actionContext: {
+            proposedDrugCode: firstDrug.code,
+            actionType: 'DISPENSE',
+          },
+        });
+        if (cdsRes.success && cdsRes.data && !cdsRes.data.passed) {
+          const blockingAlert = cdsRes.data.alerts.find(
+            (a) => a.enforcement === 'ABSOLUTE_BLOCK' || a.enforcement === 'BLOCK'
+          );
+          if (blockingAlert) {
+            hasAllergyBlock = true;
+            allergyReason = `Barrier 2 Safety Block: ${blockingAlert.message}`;
+          }
+        }
+      } else {
+        const { data: allergies, error: allergyError } = await this.supabase
+          .from('hc_patient_allergies')
+          .select('allergen_code, allergen_name, reaction_type, severity')
+          .eq('tenant_id', request.tenantId)
+          .eq('patient_id', prescription.patientPartyId)
+          .eq('is_active', true);
+
+        if (allergyError) {
+          throw new Error(`Failed to query patient allergies for Barrier 2 check: ${allergyError.message}`);
+        }
+
+        const matchingAllergy = (allergies || []).find(
+          (a) => a.allergen_code === firstDrug.code
+        );
+
+        if (matchingAllergy) {
+          hasAllergyBlock = true;
+          allergyReason = `Barrier 2 Safety Block: patient has recorded allergy to ${matchingAllergy.allergen_name} (${matchingAllergy.allergen_code})`;
+        }
       }
 
-      const matchingAllergy = (allergies || []).find(
-        (a) => a.allergen_code === firstDrug.code
-      );
-
-      if (matchingAllergy) {
+      if (hasAllergyBlock) {
         // Publish event for dispense blocked
         await eventBus.publish({
           eventType: 'hos.cds.dispense.blocked.v1',
@@ -271,7 +306,7 @@ export class PharmacyEngineService implements PharmacyEngineContract {
             patientId: prescription.patientPartyId,
             medicationOrderId: request.medicationOrderId,
             drugCode: firstDrug.code,
-            reason: `Barrier 2 Safety Block: patient has recorded allergy to ${matchingAllergy.allergen_name} (${matchingAllergy.allergen_code})`,
+            reason: allergyReason,
           },
           userId: request.dispensedBy,
         });
