@@ -18,6 +18,7 @@ export interface IEducationRepository {
   findEnrollmentByStudentAndCourse(studentPartyId: string, courseId: string, tenantId: string): Promise<Enrollment | null>;
   verifyStudentRole(studentPartyId: string, tenantId: string): Promise<{ isValid: boolean; reason?: string }>;
   getStudentScores(studentPartyId: string, tenantId: string): Promise<Array<{ courseId: string; score: number }>>;
+  getActiveEnrollmentsCount(studentPartyId: string, tenantId: string): Promise<number>;
   executeEnrollStudentTransaction(params: {
     tenantId: string;
     studentPartyId: string;

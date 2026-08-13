@@ -238,6 +238,21 @@ export class SupabaseEducationRepository extends BaseSupabaseRepositoryPrimitive
       }));
   }
 
+  public async getActiveEnrollmentsCount(studentPartyId: string, tenantId: string): Promise<number> {
+    const { count, error } = await this.supabase
+      .from('edu_enrollments')
+      .select('*', { count: 'exact', head: true })
+      .eq('student_party_id', studentPartyId)
+      .eq('tenant_id', tenantId)
+      .in('status', ['active', 'pending']);
+
+    if (error) {
+      throw this.mapDatabaseError(error, `Failed to count active enrollments for student ${studentPartyId}`);
+    }
+
+    return count || 0;
+  }
+
   public async executeEnrollStudentTransaction(params: {
     tenantId: string;
     studentPartyId: string;
