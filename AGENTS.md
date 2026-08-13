@@ -1,8 +1,9 @@
 # BELLA AI CODING — MANDATORY ARCHITECTURAL CONTROL
 
-Before modifying any Healthcare OS code or implementing any Product Vertical, you MUST read and strictly comply with:
+Before modifying any Healthcare or Education code or implementing any Product Vertical, you MUST read and strictly comply with:
 
-👉 `docs/architecture/HEALTHCARE_VERTICAL_CODING_CONSTITUTION.md`
+👉 **Healthcare OS Constitution:** `docs/architecture/HEALTHCARE_VERTICAL_CODING_CONSTITUTION.md`
+👉 **Education OS Constitution:** `docs/architecture/EDUCATION_VERTICAL_CODING_CONSTITUTION.md`
 
 ---
 
