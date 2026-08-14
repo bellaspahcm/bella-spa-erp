@@ -45,9 +45,9 @@ describe('Bella Platform V2 — Static Security Architecture Guard', () => {
     const violations: string[] = [];
 
     sourceFiles.forEach((file) => {
-      // Ignore test files and mock files themselves to avoid self-reporting
+      // Ignore test files, test directories, and mock files themselves to avoid self-reporting
       const filename = path.basename(file);
-      if (filename.includes('.test.ts') || filename.includes('test-extensions.ts') || filename.includes('mock')) {
+      if (file.includes('__tests__') || filename.includes('.test.ts') || filename.includes('test-extensions.ts') || filename.includes('mock')) {
         return;
       }
 

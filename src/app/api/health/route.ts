@@ -3,67 +3,104 @@ import { getPrimaryClient } from '@/lib/database/read-replica';
 
 /**
  * Application Health Check
- * 
+ *
  * Used by:
- * - Load balancers
- * - Monitoring systems (UptimeRobot, Pingdom)
- * - Internal dashboards
- * 
+ * - Load balancers / Monitoring systems / Internal dashboards
+ *
  * GET /api/health
- * 
+ *
  * Returns:
  * - 200 OK if healthy
  * - 503 Service Unavailable if unhealthy
+ *
+ * Server-Timing instrumentation (Bước 2.5 — K6-2 → K6-3 transition):
+ * Breaks down TTFB into segments so we can see inside the 129ms black-box:
+ *   next_handler    → time from function entry to first await
+ *   db_client_init  → time to obtain Supabase client singleton
+ *   db_query        → time for Supabase JS → PostgREST → PostgreSQL → RLS → response
+ *   serialization   → time to build and serialize the JSON response
+ *
+ * Visible in:
+ *   - Browser DevTools → Network → Timing
+ *   - k6: response.headers["Server-Timing"]
+ *   - curl -I https://.../api/health | grep Server-Timing
  */
 export async function GET() {
+  // ── Segment: next_handler ─────────────────────────────────────────────────
+  const t_handler_start = performance.now();
+
   try {
-    const checks = await Promise.all([
-      checkDatabase(),
-      checkSupabase(),
-    ]);
+    // ── Segment: db_client_init ───────────────────────────────────────────
+    const t_client_start = performance.now();
+    const db = getPrimaryClient();
+    const t_client_ms = performance.now() - t_client_start;
 
-    const [database, supabase] = checks;
+    // ── Segment: db_query ─────────────────────────────────────────────────
+    const t_query_start = performance.now();
+    const { error } = await db.from('tenants').select('id').limit(1);
+    const t_query_ms = performance.now() - t_query_start;
 
-    if (!database.healthy || !supabase.healthy) {
+    const t_handler_ms = performance.now() - t_handler_start;
+
+    if (error) {
+      const serverTiming = [
+        `next_handler;dur=${t_handler_ms.toFixed(1)}`,
+        `db_client_init;dur=${t_client_ms.toFixed(1)}`,
+        `db_query;dur=${t_query_ms.toFixed(1)}`,
+      ].join(', ');
+
       return NextResponse.json(
         {
           status: 'unhealthy',
           timestamp: new Date().toISOString(),
-          checks: {
-            database: database.healthy ? 'ok' : 'failed',
-            supabase: supabase.healthy ? 'ok' : 'failed',
+          checks: { database: 'failed' },
+          errors: [`Database: ${error.message}`],
+          _timing: {
+            next_handler_ms: parseFloat(t_handler_ms.toFixed(1)),
+            db_client_init_ms: parseFloat(t_client_ms.toFixed(1)),
+            db_query_ms: parseFloat(t_query_ms.toFixed(1)),
           },
-          errors: [
-            ...(database.error ? [`Database: ${database.error}`] : []),
-            ...(supabase.error ? [`Supabase: ${supabase.error}`] : []),
-          ],
         },
-        { 
+        {
           status: 503,
           headers: {
             'Cache-Control': 'no-store, must-revalidate',
+            'Server-Timing': serverTiming,
           },
         }
       );
     }
 
-    return NextResponse.json(
-      {
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        environment: process.env.DEPLOYMENT_ENV || 'development',
-        checks: {
-          database: 'ok',
-          supabase: 'ok',
-        },
+    // ── Segment: serialization ────────────────────────────────────────────
+    const t_serial_start = performance.now();
+    const body = {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.DEPLOYMENT_ENV || 'development',
+      checks: { database: 'ok' },
+      // Timing breakdown exposed in response body for K6 / curl inspection
+      _timing: {
+        next_handler_ms: parseFloat(t_handler_ms.toFixed(1)),
+        db_client_init_ms: parseFloat(t_client_ms.toFixed(1)),
+        db_query_ms: parseFloat(t_query_ms.toFixed(1)),
       },
-      {
-        headers: {
-          'Cache-Control': 'no-store, must-revalidate',
-        },
-      }
-    );
+    };
+    const t_serial_ms = performance.now() - t_serial_start;
+
+    const serverTiming = [
+      `next_handler;dur=${t_handler_ms.toFixed(1)}`,
+      `db_client_init;dur=${t_client_ms.toFixed(1)}`,
+      `db_query;dur=${t_query_ms.toFixed(1)}`,
+      `serialization;dur=${t_serial_ms.toFixed(1)}`,
+    ].join(', ');
+
+    return NextResponse.json(body, {
+      headers: {
+        'Cache-Control': 'no-store, must-revalidate',
+        'Server-Timing': serverTiming,
+      },
+    });
   } catch (error) {
     return NextResponse.json(
       {
@@ -73,46 +110,5 @@ export async function GET() {
       },
       { status: 500 }
     );
-  }
-}
-
-async function checkDatabase(): Promise<{ healthy: boolean; error?: string }> {
-  try {
-    const db = getPrimaryClient();
-    const { error } = await db.from('tenants').select('id').limit(1);
-
-    if (error) throw error;
-
-    return { healthy: true };
-  } catch (error) {
-    return {
-      healthy: false,
-      error: error instanceof Error ? error.message : 'Database connection failed',
-    };
-  }
-}
-
-async function checkSupabase(): Promise<{ healthy: boolean; error?: string }> {
-  try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/tenants?select=id&limit=1`,
-      {
-        method: 'HEAD',
-        headers: {
-          apikey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-        },
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Supabase returned ${response.status}`);
-    }
-
-    return { healthy: true };
-  } catch (error) {
-    return {
-      healthy: false,
-      error: error instanceof Error ? error.message : 'Supabase connection failed',
-    };
   }
 }

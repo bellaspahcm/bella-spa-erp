@@ -46,17 +46,17 @@ export class KmsSecretManager implements IKmsSecretManagerContract {
     if (!tenantId) throw new Error('TENANT_ISOLATION_VIOLATION: tenantId required.');
     if (!ciphertext) throw new Error('Invalid ciphertext.');
 
-    const parts = ciphertext.split(':');
-    if (parts.length !== 2) {
-      throw new Error('CORRUPTED_SECRET: Ciphertext payload format is invalid.');
-    }
-
-    const iv = Buffer.from(parts[0], 'hex');
-    const encryptedText = parts[1];
-
-    const tenantKey = this.deriveTenantKey(tenantId, keyName);
-
     try {
+      const parts = ciphertext.split(':');
+      if (parts.length !== 2) {
+        throw new Error('CORRUPTED_SECRET: Ciphertext payload format is invalid.');
+      }
+
+      const iv = Buffer.from(parts[0], 'hex');
+      const encryptedText = parts[1];
+
+      const tenantKey = this.deriveTenantKey(tenantId, keyName);
+
       const decipher = crypto.createDecipheriv('aes-256-cbc', tenantKey, iv);
       let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
       decrypted += decipher.final('utf8');

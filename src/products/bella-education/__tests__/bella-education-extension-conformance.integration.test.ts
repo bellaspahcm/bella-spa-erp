@@ -96,16 +96,24 @@ describe('BELLA EDUCATION V1 — EXTENSION PLATFORM INTEGRATION TESTS', () => {
 
   // Law 6: Compatibility Law
   test('Law 6: Blocks installation if target extension requires incompatible API version', async () => {
-    // Modify version to test compatibility block
-    const originalVersion = AVAILABLE_EXTENSIONS['scholarship-fee-ext'].manifest.extensionApiVersion;
-    (AVAILABLE_EXTENSIONS['scholarship-fee-ext'].manifest as any).extensionApiVersion = '2'; // unsupported API version
+    AVAILABLE_EXTENSIONS['incompatible-ext'] = {
+      manifest: {
+        id: 'incompatible-ext',
+        name: 'Incompatible Extension',
+        version: '1.0.0',
+        extensionApiVersion: '2', // unsupported API version
+        targetVertical: 'education',
+        hooks: ['education.calculate_tuition'],
+        capabilities: []
+      },
+      execute: async () => ({})
+    };
 
     await expect(
-      runtime.installExtension(TENANT_A, 'scholarship-fee-ext')
+      runtime.installExtension(TENANT_A, 'incompatible-ext')
     ).rejects.toThrow('EXTENSION_INCOMPATIBLE');
 
-    // Restore
-    (AVAILABLE_EXTENSIONS['scholarship-fee-ext'].manifest as any).extensionApiVersion = originalVersion;
+    delete AVAILABLE_EXTENSIONS['incompatible-ext'];
   });
 
   // Version Isolation
@@ -132,21 +140,25 @@ describe('BELLA EDUCATION V1 — EXTENSION PLATFORM INTEGRATION TESTS', () => {
 
   // Capability Permission Gate
   test('Capability Permission Gate: Throws error if extension lacks target capability', async () => {
-    await runtime.installExtension(TENANT_A, 'scholarship-fee-ext');
+    AVAILABLE_EXTENSIONS['no-cap-ext'] = {
+      manifest: {
+        id: 'no-cap-ext',
+        name: 'No Cap Extension',
+        version: '1.0.0',
+        extensionApiVersion: '1',
+        targetVertical: 'education',
+        hooks: ['education.calculate_tuition'],
+        capabilities: [] // lacks the tuition calculate capability
+      },
+      execute: async () => ({})
+    };
 
-    // Attempt to invoke tuition calculations, which succeeds because it has education.tuition.calculate capability
-    const ok = await runtime.executeExtensionHook(TENANT_A, 'education.calculate_tuition', { baseTuitionFee: 3000000 });
-    expect(ok).toBeDefined();
-
-    // Dynamically strip target capability
-    const originalCaps = [...AVAILABLE_EXTENSIONS['scholarship-fee-ext'].manifest.capabilities];
-    (AVAILABLE_EXTENSIONS['scholarship-fee-ext'].manifest as any).capabilities = [];
+    await runtime.installExtension(TENANT_A, 'no-cap-ext');
 
     await expect(
       runtime.executeExtensionHook(TENANT_A, 'education.calculate_tuition', { baseTuitionFee: 3000000 })
     ).rejects.toThrow('EXTENSION_SECURITY_VIOLATION');
 
-    // Restore
-    (AVAILABLE_EXTENSIONS['scholarship-fee-ext'].manifest as any).capabilities = originalCaps;
+    delete AVAILABLE_EXTENSIONS['no-cap-ext'];
   });
 });

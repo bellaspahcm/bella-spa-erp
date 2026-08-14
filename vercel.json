@@ -1,6 +1,7 @@
 {
   "buildCommand": "npm run build",
   "installCommand": "npm install --legacy-peer-deps --ignore-scripts",
+  "regions": ["sin1"],
   "crons": [
     {
       "path": "/api/cron/sync-external-ads",
