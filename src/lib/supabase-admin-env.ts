@@ -13,7 +13,15 @@ export function getSupabaseAdminUrl(): string {
 }
 
 export function getSupabaseAdminKey(): string {
-  return process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
+  const secretKey = process.env.SUPABASE_SECRET_KEY;
+  // Ignore the local mock/test key if it was accidentally copied to production/staging env
+  const isWrongTestKey = secretKey === 'sb_secret_Dmz5w0qvg_xw5lZ1jONptQ_dPLJbdYx';
+  
+  if (isWrongTestKey && process.env.NODE_ENV === 'production') {
+    return process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
+  }
+  
+  return secretKey ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
 }
 
 export function hasSupabaseAdminEnv(): boolean {
