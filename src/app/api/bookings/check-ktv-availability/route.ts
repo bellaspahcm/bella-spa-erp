@@ -64,7 +64,7 @@ function buildAvailabilityCacheKey(params: {
  * Trade-off: shorter TTL = fresher data, more DB hits.
  *            longer TTL = better DB pressure reduction, higher stale risk.
  */
-const AVAILABILITY_CACHE_TTL_SECONDS = 15;
+const AVAILABILITY_CACHE_TTL_SECONDS = 120;
 
 // ─── Cache Invalidation (called after booking commit) ─────────────────────────
 
@@ -85,14 +85,21 @@ export async function invalidateAvailabilityCache(params: {
   time: string;
   duration: number;
 }): Promise<void> {
-  // Invalidate both with and without excludeBookingId variants
-  // (both are commonly cached from UI polling)
-  const keyWithoutExclude = buildAvailabilityCacheKey({ ...params, excludeBookingId: null });
-  await deleteCache(keyWithoutExclude);
+  const durations = [60, 90, 120];
+  if (!durations.includes(params.duration)) {
+    durations.push(params.duration);
+  }
 
-  // Note: keys with specific excludeBookingId will expire via TTL naturally.
-  // If stronger consistency is required, store and invalidate those keys too.
-  console.info('[KTV Availability Cache] Invalidated:', keyWithoutExclude);
+  const promises: Promise<any>[] = [];
+  for (const dur of durations) {
+    const keyWithoutExclude = buildAvailabilityCacheKey({ ...params, duration: dur, excludeBookingId: null });
+    promises.push(deleteCache(keyWithoutExclude));
+  }
+  
+  await Promise.all(promises).catch(err => 
+    console.error('[KTV Availability Cache] Invalidation failed:', err)
+  );
+  console.info('[KTV Availability Cache] Invalidated all durations:', params.date, params.time);
 }
 
 // ─── Route Handler ─────────────────────────────────────────────────────────────
@@ -136,17 +143,26 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: currentUser } = await supabase
-      .from('users')
-      .select('tenant_id')
-      .eq('id', user.id)
-      .single();
+    // Try to get tenantId from cache first to avoid a DB query
+    const userCacheKey = `user:tenant:${user.id}`;
+    let tenantId = await getCache<string>(userCacheKey);
 
-    if (!currentUser?.tenant_id) {
-      return NextResponse.json({ error: 'Tenant not found' }, { status: 403 });
+    if (!tenantId) {
+      const { data: currentUser } = await supabase
+        .from('users')
+        .select('tenant_id')
+        .eq('id', user.id)
+        .single();
+
+      if (!currentUser?.tenant_id) {
+        return NextResponse.json({ error: 'Tenant not found' }, { status: 403 });
+      }
+      tenantId = currentUser.tenant_id;
+      // Cache tenantId for 1 hour
+      await setCache(userCacheKey, tenantId, 3600).catch(err =>
+        console.error('[KTV Availability Cache] Failed to cache user tenant:', err)
+      );
     }
-
-    const tenantId = currentUser.tenant_id;
 
     // ── Input Parsing & Validation ────────────────────────────────────────────
     const searchParams = request.nextUrl.searchParams;
@@ -190,15 +206,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // ── DB: Tenant Capacity Config ────────────────────────────────────────────
-    const tDbStart = Date.now();
-
-    const { data: tenantData } = await supabase
-      .from('tenants')
-      .select('metadata')
-      .eq('id', tenantId)
-      .single();
-
+    // ── DB & Redis: Tenant Capacity Config ────────────────────────────────────
+    const tenantCacheKey = `tenant:capacity:${tenantId}`;
     type TenantMetadata = {
       capacity_config?: {
         minBreakMinutes?: number;
@@ -207,24 +216,71 @@ export async function GET(request: NextRequest) {
         enablePeakHourManagement?: boolean;
       };
     };
+    let capacityConfig = await getCache<TenantMetadata['capacity_config']>(tenantCacheKey);
+    let hasCachedCapacity = capacityConfig !== null;
 
-    const capacityConfig = (tenantData?.metadata as TenantMetadata)?.capacity_config;
+    if (!hasCachedCapacity) {
+      const { data: tenantData } = await supabase
+        .from('tenants')
+        .select('metadata')
+        .eq('id', tenantId)
+        .single();
+      
+      capacityConfig = (tenantData?.metadata as TenantMetadata)?.capacity_config || {};
+      // Cache capacityConfig for 1 hour
+      await setCache(tenantCacheKey, capacityConfig, 3600).catch(err =>
+        console.error('[KTV Availability Cache] Failed to cache tenant capacity:', err)
+      );
+    }
+
     const minBreakMinutes = capacityConfig?.minBreakMinutes ?? 15;
     const enforceBreakTimes = capacityConfig?.enforceBreakTimes !== false;
 
-    // ── DB: Fetch All Active KTVs ─────────────────────────────────────────────
-    const { data: allKtvs, error: ktvsError } = await supabase
-      .from('users')
-      .select('id, full_name')
-      .eq('tenant_id', tenantId)
-      .eq('role', 'ktv')
-      .eq('status', 'active')
-      .order('full_name');
+    // ── DB: Parallel Fetch (KTVs + Session Logs) ──────────────────────────────
+    const tDbStart = Date.now();
 
-    if (ktvsError) {
-      console.error('[CheckAvailability] Failed to fetch KTVs:', ktvsError);
+    const [ktvsResult, sessionsResult] = await Promise.all([
+      supabase
+        .from('users')
+        .select('id, full_name')
+        .eq('tenant_id', tenantId)
+        .eq('role', 'ktv')
+        .eq('status', 'active')
+        .order('full_name'),
+      supabase
+        .from('session_logs')
+        .select(`
+          id,
+          status,
+          assigned_time,
+          completed_by_ktv_id,
+          bookings!inner (
+            id,
+            assigned_ktv_id,
+            status,
+            packages (
+              duration_minutes:default_duration_minutes
+            )
+          )
+        `)
+        .eq('assigned_date', date)
+        .eq('tenant_id', tenantId)
+        .in('status', ['scheduled', 'in_progress', 'completed'])
+    ]);
+
+    serverTimingParts.push(`db;dur=${Date.now() - tDbStart}`);
+
+    if (ktvsResult.error) {
+      console.error('[CheckAvailability] Failed to fetch KTVs:', ktvsResult.error);
       return NextResponse.json({ error: 'Failed to fetch KTVs' }, { status: 500 });
     }
+    if (sessionsResult.error) {
+      console.error('[CheckAvailability] Failed to fetch session logs:', sessionsResult.error);
+      return NextResponse.json({ error: 'Failed to fetch sessions' }, { status: 500 });
+    }
+
+    const allKtvs = ktvsResult.data;
+    const allSessionsForDate = sessionsResult.data;
 
     if (!allKtvs || allKtvs.length === 0) {
       const responseBody: CheckAvailabilityResponse = { available: [], unavailable: [] };
@@ -245,39 +301,6 @@ export async function GET(request: NextRequest) {
           },
         }
       );
-    }
-
-    // ── DB: Batch Session Query (N+1 Fix) ─────────────────────────────────────
-    //
-    // BEFORE (N+1 pattern): one DB query per KTV → e.g. 20 KTVs = 20 queries
-    // AFTER  (batch):       one DB query for ALL session_logs on this date,
-    //                       then filter per-KTV in memory (zero extra round-trips)
-    //
-    const { data: allSessionsForDate, error: sessionError } = await supabase
-      .from('session_logs')
-      .select(`
-        id,
-        status,
-        assigned_time,
-        completed_by_ktv_id,
-        bookings!inner (
-          id,
-          assigned_ktv_id,
-          status,
-          packages (
-            duration_minutes:default_duration_minutes
-          )
-        )
-      `)
-      .eq('assigned_date', date)
-      .eq('tenant_id', tenantId)
-      .in('status', ['scheduled', 'in_progress', 'completed']);
-
-    serverTimingParts.push(`db;dur=${Date.now() - tDbStart}`);
-
-    if (sessionError) {
-      console.error('[CheckAvailability] Failed to fetch session logs:', sessionError);
-      return NextResponse.json({ error: 'Failed to fetch sessions' }, { status: 500 });
     }
 
     // ── Compute: Filter + Capacity Check per KTV (in memory) ─────────────────
