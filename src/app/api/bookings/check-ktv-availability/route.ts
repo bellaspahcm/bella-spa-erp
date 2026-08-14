@@ -1,5 +1,3 @@
-'use server';
-
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { CapacityManagementProvider } from '@/lib/decision-engine/providers/booking/capacity-management-provider';
