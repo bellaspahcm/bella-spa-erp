@@ -86,6 +86,10 @@ class MockQueryBuilder {
 }
 
 // Mock imports
+jest.mock('@/app/api/bookings/check-ktv-availability/route', () => ({
+  invalidateAvailabilityCache: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock('@/lib/supabase-server', () => ({
   createClient: jest.fn().mockResolvedValue(mockSupabase),
 }));

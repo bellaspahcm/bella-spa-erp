@@ -5,6 +5,7 @@ import { safeRevalidatePath } from '@/lib/revalidate';
 import { bookingSchema } from '@/lib/validations';
 import type { Database } from '@/types/database.types';
 import type { z } from 'zod';
+import { invalidateAvailabilityCache } from '@/app/api/bookings/check-ktv-availability/route';
 import {
   buildBookingPayload,
   createCustomerForBookingIfNeeded,
@@ -306,6 +307,21 @@ export async function createBooking(formData: CreateBookingInput): Promise<Creat
     } else {
       console.log(`[createBooking] Created ${serviceItemsResult.count} service items with total commission: ${serviceItemsResult.totalCommission} VND`);
     }
+  }
+
+  // ── Availability Cache Invalidation ──────────────────────────────────────
+  // After booking and initial session logs are committed to the DB,
+  // invalidate the Redis availability cache for the booking slot.
+  // Fire-and-forget: failure does not block booking creation.
+  if (booking.start_date && booking.preferred_time) {
+    invalidateAvailabilityCache({
+      tenantId,
+      date: booking.start_date,
+      time: booking.preferred_time,
+      duration: 60, // Default duration — keys without duration variant expire via TTL
+    }).catch(err =>
+      console.error('[createBooking] Availability cache invalidation failed (non-blocking):', err)
+    );
   }
 
   const revalPaths = [

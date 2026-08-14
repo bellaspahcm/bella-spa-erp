@@ -5,6 +5,7 @@ import { safeRevalidatePath } from '@/lib/revalidate';
 import { validateBookingPackageScope } from './create-booking-helpers';
 import { BookingError } from '@/core/lib/errors';
 import type { Database } from '@/types/database.types';
+import { invalidateAvailabilityCache } from '@/app/api/bookings/check-ktv-availability/route';
 
 type BookingRow = Database['public']['Tables']['bookings']['Row'];
 type BookingUpdate = Database['public']['Tables']['bookings']['Update'];
@@ -215,6 +216,35 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
   }
 
   if (finalData?.[0]) {
+    // ── Availability Cache Invalidation ──────────────────────────────────────
+    // After booking is confirmed in DB, invalidate the Redis availability cache
+    // for any date/time slot that was affected by this update.
+    // Fire-and-forget: cache invalidation failure must NOT block booking update.
+    // The cache TTL (15s) acts as a safety net if invalidation fails.
+    const invalidateDates = new Set<string>();
+    if (finalPayload.start_date) invalidateDates.add(finalPayload.start_date);
+    if (oldBooking?.start_date && oldBooking.start_date !== finalPayload.start_date) {
+      invalidateDates.add(oldBooking.start_date);
+    }
+    if (invalidateDates.size > 0) {
+      const tenantIdForCache = finalData?.[0]?.tenant_id || oldBooking?.tenant_id || tenantId;
+      const timeForCache = finalPayload.preferred_time || oldBooking?.preferred_time;
+      if (tenantIdForCache && timeForCache) {
+        Promise.all(
+          [...invalidateDates].map(date =>
+            invalidateAvailabilityCache({
+              tenantId: tenantIdForCache,
+              date,
+              time: timeForCache,
+              duration: 60, // Default duration — keys without duration variant expire via TTL
+            })
+          )
+        ).catch(err =>
+          console.error('[updateBooking] Availability cache invalidation failed (non-blocking):', err)
+        );
+      }
+    }
+
     try {
       const { recordAuditLog } = await import('@/services/audit-actions');
       await recordAuditLog({

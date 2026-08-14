@@ -3,7 +3,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { CapacityManagementProvider } from '@/lib/decision-engine/providers/booking/capacity-management-provider';
+import { getCache, setCache, deleteCache } from '@/lib/redis-cache';
 
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface KTVAvailability {
   id: string;
@@ -22,28 +24,115 @@ interface KTVAvailability {
 interface CheckAvailabilityResponse {
   available: KTVAvailability[];
   unavailable: KTVAvailability[];
+  _cache?: 'HIT' | 'MISS';
+}
+
+// ─── Cache Key & TTL ──────────────────────────────────────────────────────────
+
+/**
+ * Build a deterministic cache key from all inputs that affect availability.
+ *
+ * IMPORTANT: Every query parameter that influences the availability result
+ * MUST be included here. If the route gains new discriminating params
+ * (e.g. branchId, serviceId), add them to this function AND bump CACHE_VERSION.
+ */
+function buildAvailabilityCacheKey(params: {
+  tenantId: string;
+  date: string;
+  time: string;
+  duration: number;
+  excludeBookingId: string | null;
+}): string {
+  const CACHE_VERSION = 'v1';
+  const parts = [
+    'ktv:availability',
+    CACHE_VERSION,
+    params.tenantId,
+    params.date,
+    params.time,
+    String(params.duration),
+    params.excludeBookingId ?? 'none',
+  ];
+  return parts.join(':');
 }
 
 /**
+ * Starting TTL for availability cache.
+ *
+ * NOTE: This is a starting point — not a fixed value.
+ * After K6-3v4 results, benchmark TTL at 5s / 10s / 15s / 30s
+ * and choose the longest TTL that still preserves business correctness.
+ *
+ * Trade-off: shorter TTL = fresher data, more DB hits.
+ *            longer TTL = better DB pressure reduction, higher stale risk.
+ */
+const AVAILABILITY_CACHE_TTL_SECONDS = 15;
+
+// ─── Cache Invalidation (called after booking commit) ─────────────────────────
+
+/**
+ * Invalidate availability cache entries that may be affected by a new booking.
+ *
+ * Call this AFTER a booking has been successfully committed to the database,
+ * NOT before. The database transaction is the source of truth for booking validity.
+ *
+ * @param tenantId - Tenant whose availability data changed
+ * @param date     - Date of the new/modified booking
+ * @param time     - Start time slot to invalidate
+ * @param duration - Duration to invalidate
+ */
+export async function invalidateAvailabilityCache(params: {
+  tenantId: string;
+  date: string;
+  time: string;
+  duration: number;
+}): Promise<void> {
+  // Invalidate both with and without excludeBookingId variants
+  // (both are commonly cached from UI polling)
+  const keyWithoutExclude = buildAvailabilityCacheKey({ ...params, excludeBookingId: null });
+  await deleteCache(keyWithoutExclude);
+
+  // Note: keys with specific excludeBookingId will expire via TTL naturally.
+  // If stronger consistency is required, store and invalidate those keys too.
+  console.info('[KTV Availability Cache] Invalidated:', keyWithoutExclude);
+}
+
+// ─── Route Handler ─────────────────────────────────────────────────────────────
+
+/**
  * API Route: Check KTV Availability for Booking Time
- * 
+ *
  * Purpose: Real-time availability check when editing booking time.
  * Returns which KTVs are available/unavailable with detailed reasons.
- * 
+ *
+ * Performance Strategy:
+ *   1. Redis read cache (L1 in-memory → L2 Upstash) with 15s TTL
+ *   2. N+1 fix: one batch query for ALL session_logs on the requested date,
+ *      then per-KTV filtering happens in memory (zero extra DB round-trips)
+ *   3. Server-Timing headers for sub-step measurement in K6-3v4
+ *
+ * Cache Architecture:
+ *   Redis = Acceleration layer only.
+ *   Redis HIT answers "KTV appeared available when cache was created."
+ *   Database transaction = authority for whether booking can actually be committed.
+ *   → Always call invalidateAvailabilityCache() after booking COMMIT.
+ *
  * Query Parameters:
  * - date: YYYY-MM-DD (required)
  * - time: HH:mm (required)
  * - duration: number in minutes (optional, default: 60)
  * - excludeBookingId: UUID (optional) - exclude this booking from conflict check
- * 
+ *
  * @example
  * GET /api/bookings/check-ktv-availability?date=2026-07-15&time=14:32&duration=60&excludeBookingId=abc-123
  */
 export async function GET(request: NextRequest) {
+  const serverTimingParts: string[] = [];
+  const t0 = Date.now();
+
   try {
+    // ── Auth ──────────────────────────────────────────────────────────────────
     const supabase = await createClient();
-    
-    // Get current user and tenant
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -61,7 +150,7 @@ export async function GET(request: NextRequest) {
 
     const tenantId = currentUser.tenant_id;
 
-    // Parse query parameters
+    // ── Input Parsing & Validation ────────────────────────────────────────────
     const searchParams = request.nextUrl.searchParams;
     const date = searchParams.get('date');
     const time = searchParams.get('time');
@@ -74,18 +163,38 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    // Validate date format (YYYY-MM-DD)
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return NextResponse.json({ error: 'Invalid date format. Expected: YYYY-MM-DD' }, { status: 400 });
     }
-
-    // Validate time format (HH:mm)
     if (!/^\d{2}:\d{2}$/.test(time)) {
       return NextResponse.json({ error: 'Invalid time format. Expected: HH:mm' }, { status: 400 });
     }
 
-    // Fetch tenant capacity config
+    // ── Redis Cache Lookup ────────────────────────────────────────────────────
+    const cacheKey = buildAvailabilityCacheKey({ tenantId, date, time, duration, excludeBookingId });
+    const tCacheStart = Date.now();
+
+    const cached = await getCache<CheckAvailabilityResponse>(cacheKey);
+    serverTimingParts.push(`redis;dur=${Date.now() - tCacheStart}`);
+
+    if (cached) {
+      const totalDur = Date.now() - t0;
+      serverTimingParts.push(`total;dur=${totalDur}`);
+      return NextResponse.json(
+        { ...cached, _cache: 'HIT' },
+        {
+          headers: {
+            'X-Cache': 'HIT',
+            'X-Cache-Key': cacheKey,
+            'Server-Timing': serverTimingParts.join(', '),
+          },
+        }
+      );
+    }
+
+    // ── DB: Tenant Capacity Config ────────────────────────────────────────────
+    const tDbStart = Date.now();
+
     const { data: tenantData } = await supabase
       .from('tenants')
       .select('metadata')
@@ -96,14 +205,16 @@ export async function GET(request: NextRequest) {
       capacity_config?: {
         minBreakMinutes?: number;
         enforceBreakTimes?: boolean;
+        bufferPercentage?: number;
+        enablePeakHourManagement?: boolean;
       };
     };
 
     const capacityConfig = (tenantData?.metadata as TenantMetadata)?.capacity_config;
     const minBreakMinutes = capacityConfig?.minBreakMinutes ?? 15;
-    const enforceBreakTimes = capacityConfig?.enforceBreakTimes !== false; // Default true
+    const enforceBreakTimes = capacityConfig?.enforceBreakTimes !== false;
 
-    // Fetch all active KTVs
+    // ── DB: Fetch All Active KTVs ─────────────────────────────────────────────
     const { data: allKtvs, error: ktvsError } = await supabase
       .from('users')
       .select('id, full_name')
@@ -118,58 +229,63 @@ export async function GET(request: NextRequest) {
     }
 
     if (!allKtvs || allKtvs.length === 0) {
-      return NextResponse.json({
-        available: [],
-        unavailable: [],
-      });
+      return NextResponse.json({ available: [], unavailable: [] });
     }
 
-    // Initialize capacity provider
-    const capacityProvider = new CapacityManagementProvider({ debug: false });
+    // ── DB: Batch Session Query (N+1 Fix) ─────────────────────────────────────
+    //
+    // BEFORE (N+1 pattern): one DB query per KTV → e.g. 20 KTVs = 20 queries
+    // AFTER  (batch):       one DB query for ALL session_logs on this date,
+    //                       then filter per-KTV in memory (zero extra round-trips)
+    //
+    const { data: allSessionsForDate, error: sessionError } = await supabase
+      .from('session_logs')
+      .select(`
+        id,
+        status,
+        assigned_time,
+        completed_by_ktv_id,
+        bookings!inner (
+          id,
+          assigned_ktv_id,
+          status,
+          packages (
+            duration_minutes:default_duration_minutes
+          )
+        )
+      `)
+      .eq('assigned_date', date)
+      .eq('tenant_id', tenantId)
+      .in('status', ['scheduled', 'in_progress', 'completed']);
 
-    // Calculate end time
+    serverTimingParts.push(`db;dur=${Date.now() - tDbStart}`);
+
+    if (sessionError) {
+      console.error('[CheckAvailability] Failed to fetch session logs:', sessionError);
+      return NextResponse.json({ error: 'Failed to fetch sessions' }, { status: 500 });
+    }
+
+    // ── Compute: Filter + Capacity Check per KTV (in memory) ─────────────────
+    const tComputeStart = Date.now();
+
+    const allSessions = allSessionsForDate ?? [];
+
     const [hours, minutes] = time.split(':').map(Number);
     const totalMinutes = hours * 60 + minutes + duration;
     const endHours = Math.floor(totalMinutes / 60) % 24;
     const endMinutes = totalMinutes % 60;
     const endTime = `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
 
-    // Check availability for each KTV
+    const capacityProvider = new CapacityManagementProvider({ debug: false });
+
     const availabilityChecks = await Promise.all(
       allKtvs.map(async (ktv) => {
         try {
-          // Fetch existing session logs for this date
-          const { data: existingSessions, error: sessionFetchError } = await supabase
-            .from('session_logs')
-            .select(`
-              id,
-              status,
-              assigned_time,
-              completed_by_ktv_id,
-              bookings!inner (
-                id,
-                assigned_ktv_id,
-                status,
-                packages (
-                  duration_minutes:default_duration_minutes
-                )
-              )
-            `)
-            .eq('assigned_date', date)
-            .eq('tenant_id', tenantId)
-            .in('status', ['scheduled', 'in_progress', 'completed']);
-
-          if (sessionFetchError) {
-            console.error('[CheckAvailability] Failed to fetch session logs:', sessionFetchError);
-            throw new Error(sessionFetchError.message);
-          }
-
-          const filteredSessions = (existingSessions || []).filter(session => {
+          // Filter the batch result for this KTV — in-memory, no DB call
+          const filteredSessions = allSessions.filter(session => {
             const booking = Array.isArray(session.bookings) ? session.bookings[0] : session.bookings;
             if (!booking) return false;
             if (booking.status === 'cancelled') return false;
-
-            // Exclude current booking if editing
             if (excludeBookingId && booking.id === excludeBookingId) return false;
 
             const activeKtvId = session.completed_by_ktv_id || booking.assigned_ktv_id;
@@ -178,7 +294,8 @@ export async function GET(request: NextRequest) {
 
           const existingBookingsFormatted = filteredSessions.map(session => {
             const booking = Array.isArray(session.bookings) ? session.bookings[0] : session.bookings;
-            const durationMinutes = (booking?.packages as unknown as Record<string, unknown>)?.duration_minutes as number || 60;
+            const durationMinutes =
+              (booking?.packages as unknown as Record<string, unknown>)?.duration_minutes as number || 60;
             const statusMap: Record<string, 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled'> = {
               scheduled: 'confirmed',
               in_progress: 'in_progress',
@@ -188,19 +305,15 @@ export async function GET(request: NextRequest) {
             return {
               id: booking?.id || session.id,
               startTime: session.assigned_time || '08:00',
-              endTime: calculateEndTime(
-                session.assigned_time || '08:00',
-                durationMinutes
-              ),
+              endTime: calculateEndTime(session.assigned_time || '08:00', durationMinutes),
               durationMinutes,
               status,
             };
           });
 
-          // Check capacity
           const capacityResult = await capacityProvider.checkCapacity({
             ktvId: ktv.id,
-            tenantId: tenantId,
+            tenantId,
             booking: {
               requestedStartTime: time,
               requestedEndTime: endTime,
@@ -210,93 +323,96 @@ export async function GET(request: NextRequest) {
               customerTier: 'new',
             },
             existingBookings: existingBookingsFormatted,
-            tenantCapacity: capacityConfig ? {
-              bufferPercentage: (capacityConfig.bufferPercentage as number) || 0,
-              enablePeakHourManagement: (capacityConfig.enablePeakHourManagement as boolean) || false,
-              enforceBreakTimes: enforceBreakTimes,
-            } : undefined,
+            tenantCapacity: capacityConfig
+              ? {
+                  bufferPercentage: (capacityConfig.bufferPercentage as number) || 0,
+                  enablePeakHourManagement: (capacityConfig.enablePeakHourManagement as boolean) || false,
+                  enforceBreakTimes,
+                }
+              : undefined,
             ktvCapacity: {
               maxDailyBookings: 10,
               maxConcurrentSessions: 5,
-              minBreakMinutes: minBreakMinutes,
+              minBreakMinutes,
               workingHours: { start: '08:00', end: '22:00' },
             },
           });
 
           if (capacityResult.available) {
-            return {
-              id: ktv.id,
-              name: ktv.full_name,
-              available: true,
-            };
-          } else {
-            // Parse conflict details
-            const conflict = capacityResult.conflicts?.[0];
-            let reason = 'Không khả dụng';
-            let conflictType: 'overlap' | 'break_time_violation' | 'daily_limit' = 'overlap';
-            let conflictDetails: KTVAvailability['conflictDetails'] = {};
-
-            if (conflict) {
-              if (conflict.type === 'break_time_violation') {
-                conflictType = 'break_time_violation';
-                const existingTime = formatTime(conflict.conflictingBooking?.startTime || '');
-                const existingEnd = formatTime(conflict.conflictingBooking?.endTime || calculateEndTime(existingTime, duration));
-                reason = `Ca kết thúc lúc ${existingEnd}, cần thêm ${minBreakMinutes} phút nghỉ`;
-                const nextAvail = formatTime(calculateNextAvailable(existingEnd, 0, minBreakMinutes));
-                conflictDetails = {
-                  existingBookingTime: existingTime,
-                  existingBookingEndTime: existingEnd,
-                  requiredBreakMinutes: minBreakMinutes,
-                  nextAvailableTime: nextAvail,
-                };
-              } else if (conflict.type === 'time_overlap') {
-                conflictType = 'overlap';
-                const existingTime = formatTime(conflict.conflictingBooking?.startTime || '');
-                const existingEnd = formatTime(conflict.conflictingBooking?.endTime || calculateEndTime(existingTime, duration));
-                const nextAvail = formatTime(calculateNextAvailable(existingEnd, 0, minBreakMinutes));
-                reason = `Trùng ca đang có lúc ${existingTime}–${existingEnd}`;
-                conflictDetails = {
-                  existingBookingTime: existingTime,
-                  existingBookingEndTime: existingEnd,
-                  requiredBreakMinutes: minBreakMinutes,
-                  nextAvailableTime: nextAvail,
-                };
-              } else if (conflict.type === 'daily_limit' || conflict.type === 'outside_working_hours') {
-                conflictType = 'daily_limit';
-                reason = 'Đã đạt giới hạn ca trong ngày';
-              }
-            }
-
-            return {
-              id: ktv.id,
-              name: ktv.full_name,
-              available: false,
-              reason,
-              conflictType,
-              conflictDetails,
-            };
+            return { id: ktv.id, name: ktv.full_name, available: true } as KTVAvailability;
           }
+
+          const conflict = capacityResult.conflicts?.[0];
+          let reason = 'Không khả dụng';
+          let conflictType: 'overlap' | 'break_time_violation' | 'daily_limit' = 'overlap';
+          let conflictDetails: KTVAvailability['conflictDetails'] = {};
+
+          if (conflict) {
+            if (conflict.type === 'break_time_violation') {
+              conflictType = 'break_time_violation';
+              const existingTime = formatTime(conflict.conflictingBooking?.startTime || '');
+              const existingEnd = formatTime(
+                conflict.conflictingBooking?.endTime || calculateEndTime(existingTime, duration)
+              );
+              reason = `Ca kết thúc lúc ${existingEnd}, cần thêm ${minBreakMinutes} phút nghỉ`;
+              conflictDetails = {
+                existingBookingTime: existingTime,
+                existingBookingEndTime: existingEnd,
+                requiredBreakMinutes: minBreakMinutes,
+                nextAvailableTime: formatTime(calculateNextAvailable(existingEnd, 0, minBreakMinutes)),
+              };
+            } else if (conflict.type === 'time_overlap') {
+              conflictType = 'overlap';
+              const existingTime = formatTime(conflict.conflictingBooking?.startTime || '');
+              const existingEnd = formatTime(
+                conflict.conflictingBooking?.endTime || calculateEndTime(existingTime, duration)
+              );
+              reason = `Trùng ca đang có lúc ${existingTime}–${existingEnd}`;
+              conflictDetails = {
+                existingBookingTime: existingTime,
+                existingBookingEndTime: existingEnd,
+                requiredBreakMinutes: minBreakMinutes,
+                nextAvailableTime: formatTime(calculateNextAvailable(existingEnd, 0, minBreakMinutes)),
+              };
+            } else if (conflict.type === 'daily_limit' || conflict.type === 'outside_working_hours') {
+              conflictType = 'daily_limit';
+              reason = 'Đã đạt giới hạn ca trong ngày';
+            }
+          }
+
+          return { id: ktv.id, name: ktv.full_name, available: false, reason, conflictType, conflictDetails };
         } catch (error) {
           console.error(`[CheckAvailability] Error checking KTV ${ktv.id}:`, error);
-          // If error, mark as unavailable to be safe
-          return {
-            id: ktv.id,
-            name: ktv.full_name,
-            available: false,
-            reason: 'Không thể kiểm tra lịch',
-          };
+          return { id: ktv.id, name: ktv.full_name, available: false, reason: 'Không thể kiểm tra lịch' };
         }
       })
     );
 
-    // Split into available and unavailable
+    serverTimingParts.push(`compute;dur=${Date.now() - tComputeStart}`);
+
+    // ── Build Response & Cache ────────────────────────────────────────────────
     const available = availabilityChecks.filter(k => k.available);
     const unavailable = availabilityChecks.filter(k => !k.available);
+    const responseBody: CheckAvailabilityResponse = { available, unavailable };
 
-    return NextResponse.json({
-      available,
-      unavailable,
-    } as CheckAvailabilityResponse);
+    // Write to cache (fire-and-forget, do not await to avoid adding latency)
+    setCache(cacheKey, responseBody, AVAILABILITY_CACHE_TTL_SECONDS).catch(err =>
+      console.error('[KTV Availability Cache] Failed to write cache:', err)
+    );
+
+    const totalDur = Date.now() - t0;
+    serverTimingParts.push(`total;dur=${totalDur}`);
+
+    return NextResponse.json(
+      { ...responseBody, _cache: 'MISS' },
+      {
+        headers: {
+          'X-Cache': 'MISS',
+          'X-Cache-Key': cacheKey,
+          'Server-Timing': serverTimingParts.join(', '),
+        },
+      }
+    );
 
   } catch (error) {
     console.error('[CheckAvailability] Unhandled error:', error);
@@ -307,9 +423,8 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/**
- * Calculate end time given start time and duration
- */
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function calculateEndTime(startTime: string, durationMinutes: number): string {
   const [hours, minutes] = startTime.split(':').map(Number);
   const totalMinutes = hours * 60 + minutes + durationMinutes;
@@ -318,10 +433,6 @@ function calculateEndTime(startTime: string, durationMinutes: number): string {
   return `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
 }
 
-/**
- * Calculate next available time considering break time buffer
- * Pass existingDurationMinutes = 0 when existingEnd is already calculated
- */
 function calculateNextAvailable(
   existingEndOrStart: string,
   existingDurationOrZero: number,
@@ -334,9 +445,6 @@ function calculateNextAvailable(
   return calculateEndTime(existingEnd, minBreakMinutes);
 }
 
-/**
- * Format time to HH:mm, stripping seconds if present
- */
 function formatTime(t: string): string {
   if (!t) return '';
   return t.split(':').slice(0, 2).join(':');

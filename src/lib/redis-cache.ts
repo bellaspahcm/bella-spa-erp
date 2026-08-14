@@ -188,6 +188,22 @@ export const CacheKeys = {
   tenant: (tenantId: string) => `tenant:${tenantId}`,
   ktvSessions: (userId: string, date: string) => `ktv:sessions:${userId}:${date}`,
   ktvEarnings: (userId: string, month: string) => `ktv:earnings:${userId}:${month}`,
+  /** Availability read cache — key must include ALL inputs affecting the result */
+  ktvAvailability: (params: {
+    tenantId: string;
+    date: string;
+    time: string;
+    duration: number;
+    excludeBookingId?: string | null;
+  }) =>
+    [
+      'ktv:availability:v1',
+      params.tenantId,
+      params.date,
+      params.time,
+      String(params.duration),
+      params.excludeBookingId ?? 'none',
+    ].join(':'),
 } as const;
 
 /**
