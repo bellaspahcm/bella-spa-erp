@@ -227,7 +227,24 @@ export async function GET(request: NextRequest) {
     }
 
     if (!allKtvs || allKtvs.length === 0) {
-      return NextResponse.json({ available: [], unavailable: [] });
+      const responseBody: CheckAvailabilityResponse = { available: [], unavailable: [] };
+      setCache(cacheKey, responseBody, AVAILABILITY_CACHE_TTL_SECONDS).catch(err =>
+        console.error('[KTV Availability Cache] Failed to write cache:', err)
+      );
+
+      const totalDur = Date.now() - t0;
+      serverTimingParts.push(`total;dur=${totalDur}`);
+
+      return NextResponse.json(
+        { ...responseBody, _cache: 'MISS' },
+        {
+          headers: {
+            'X-Cache': 'MISS',
+            'X-Cache-Key': cacheKey,
+            'Server-Timing': serverTimingParts.join(', '),
+          },
+        }
+      );
     }
 
     // ── DB: Batch Session Query (N+1 Fix) ─────────────────────────────────────
