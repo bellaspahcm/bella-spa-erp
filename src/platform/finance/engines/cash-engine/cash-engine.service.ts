@@ -19,6 +19,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
 import type {
   ICashReportingEngine,
+  ICashReconstructionEngine,
   BankAccount,
   CashPosition,
   CashMovement,
@@ -29,7 +30,7 @@ import type {
 import type { FinanceEngineResponse, Money } from '../../shared-kernel/types';
 import { TelemetryTracer } from '@/platform/security/telemetry-tracer';
 
-export class CashEngineService implements ICashReportingEngine {
+export class CashEngineService implements ICashReportingEngine, ICashReconstructionEngine {
   public readonly engineName = 'CashReportingEngine';
   public readonly engineVersion = '1.0.0';
 
@@ -502,6 +503,54 @@ export class CashEngineService implements ICashReportingEngine {
         });
 
         return { success: true, data: events };
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const code = msg.startsWith('UNAUTHORIZED') ? 'FORBIDDEN' : 'DATABASE_ERROR';
+      return this.createErrorResponse(code, msg);
+    }
+  }
+
+  // ==========================================================================
+  // position reconstruction query (restricted)
+  // ==========================================================================
+
+  public async reconstructCashPositions(
+    tenantId: string,
+    bankAccountId?: string
+  ): Promise<FinanceEngineResponse<{ reconstructed_accounts_count: number }>> {
+    try {
+      // 1. Enforce fail-closed permission context check (finance.cash.reconstruct)
+      if (!this.permissions || !this.permissions.includes('finance.cash.reconstruct')) {
+        throw new Error('UNAUTHORIZED_ACCESS: Missing required permission finance.cash.reconstruct');
+      }
+
+      // 2. Enforce tenant isolation context check
+      if (this.contextTenantId && this.contextTenantId !== tenantId) {
+        throw new Error(`UNAUTHORIZED_TENANT_ACCESS: Context tenant '${this.contextTenantId}' is not authorized to access tenant '${tenantId}'`);
+      }
+
+      return await this.traceOperation(tenantId, 'finance.cash.reconstruct_positions', async () => {
+        const { data, error } = await this.client.rpc('finance_reconstruct_cash_positions', {
+          p_tenant_id: tenantId,
+          p_bank_account_id: bankAccountId || null
+        });
+
+        if (error) {
+          // Detect the specific custom database error ERRCODE F2012
+          const isMismatch = error.message && error.message.includes('BANK_ACCOUNT_TENANT_MISMATCH');
+          const errCode = isMismatch ? 'BANK_ACCOUNT_TENANT_MISMATCH' : 'RECONSTRUCTION_FAILED';
+          return this.createErrorResponse(errCode, error.message);
+        }
+
+        const count = data && typeof data === 'object' && 'reconstructed_count' in data
+          ? (data as { reconstructed_count: number }).reconstructed_count
+          : 0;
+
+        return {
+          success: true,
+          data: { reconstructed_accounts_count: count }
+        };
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
