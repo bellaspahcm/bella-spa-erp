@@ -67,6 +67,16 @@ async function applyMigrations() {
         version: '20260815040000',
         name: 'finance_trigger_reversal_fix',
         file: 'supabase/migrations/20260815040000_finance_trigger_reversal_fix.sql'
+      },
+      {
+        version: '20260816050000',
+        name: 'finance_f3_proof_setup',
+        file: 'supabase/migrations/20260816050000_finance_f3_proof_setup.sql'
+      },
+      {
+        version: '20260817000000',
+        name: 'finance_ar_engine_v1',
+        file: 'supabase/migrations/20260817000000_finance_ar_engine_v1.sql'
       }
     ];
 
