@@ -23,11 +23,26 @@ END $$;
 -- =========================================================================
 -- 2. F1 ADDITIVE COMPATIBILITY MIGRATION (ADR-021 Exception)
 -- =========================================================================
-ALTER TABLE public.finance_transactions 
-    ADD CONSTRAINT finance_tx_tenant_id_unique UNIQUE (tenant_id, id);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'finance_tx_tenant_id_unique' 
+          AND conrelid = 'public.finance_transactions'::regclass
+    ) THEN
+        ALTER TABLE public.finance_transactions 
+            ADD CONSTRAINT finance_tx_tenant_id_unique UNIQUE (tenant_id, id);
+    END IF;
 
-ALTER TABLE public.finance_accounts 
-    ADD CONSTRAINT finance_accounts_tenant_id_unique UNIQUE (tenant_id, id);
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'finance_accounts_tenant_id_unique' 
+          AND conrelid = 'public.finance_accounts'::regclass
+    ) THEN
+        ALTER TABLE public.finance_accounts 
+            ADD CONSTRAINT finance_accounts_tenant_id_unique UNIQUE (tenant_id, id);
+    END IF;
+END $$;
 
 -- =========================================================================
 -- 3. F2.1 TABLES CREATION
