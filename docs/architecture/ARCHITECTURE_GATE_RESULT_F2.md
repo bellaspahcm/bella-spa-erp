@@ -1,11 +1,11 @@
 # ARCHITECTURE GATE RESULT — F2 CASH & TREASURY ENGINE
 
-> **Status:** PENDING HUMAN ARCHITECTURE APPROVAL  
+> **Status:** CONDITIONAL APPROVED (AWAITING RE-SIGN-OFF OF RESOLVED CONSTRAINTS)  
 > **Phase:** Pre-Coding Architecture Analysis  
 > **Date:** 2026-08-15  
 > **Author:** Architecture Review — Bella Platform  
 > **Prerequisite:** F1 Ledger Engine — FROZEN ✅ (`finance/f1/frozen`)  
-> **Constraint:** NO CODING until this document receives Human Architecture Approval.
+> **Constraint:** NO F2 CODE may be written until this revised analysis is approved.
 
 ---
 
@@ -28,9 +28,9 @@ This separation respects the **Invariant F-I-7** established in the Finance OS C
 | **Cash Position Management** | Maintains a real-time cash balance per `bank_account` per `tenant`. Answers: *"What is our cash balance right now?"* |
 | **Bank Account Registry** | Stores bank accounts (accounts at external banks) — not chart-of-accounts entries |
 | **Cash Movement Recording** | Records individual cash inflows/outflows with traceability back to F1 source transaction |
-| **Cash Runway Calculation** | Derived metric: `cash_position / avg_daily_burn_rate` = estimated days of runway |
-| **Cash Runway Alerts** | Publishes `CashRunwayAlert` when runway falls below configured thresholds |
-| **Cash Reconciliation** | Supports matching of cash movements against external bank statement entries |
+| **Cash Runway Calculation** | Derived metric: `consolidated_cash_position / average_daily_burn_rate` = estimated days of runway |
+| **Cash Runway Alerts** | Publishes `CashRunwayAlert` based on consolidated tenant cash position |
+| **Cash Reconciliation & Staging** | Staging area for bank statements to be matched against F1 transactions. |
 
 ### What F2 Does NOT Own
 
@@ -40,7 +40,7 @@ This separation respects the **Invariant F-I-7** established in the Finance OS C
 | Receivables / Payables | F3 AR/AP Engine |
 | Budgets | F4 Budget Engine |
 | Payment processing / gateway | Product Vertical / Finance Bridge responsibility |
-| Exchange rate management | F3 Treasury scope (per Constitution comment in F1 contract) |
+| Exchange rate management | F3 Treasury scope |
 | Approval workflows | F5 Financial Control Engine |
 
 ---
@@ -55,6 +55,8 @@ This separation respects the **Invariant F-I-7** established in the Finance OS C
 │    finance_bank_accounts     → Registry of external bank accts  │
 │    finance_cash_positions    → Materialized balance per acct     │
 │    finance_cash_movements    → Individual cash in/out records    │
+│    finance_tenant_configs    → Configuration for thresholds      │
+│    finance_cash_staged_lines → Staging area for bank imports     │
 │                                                                 │
 │  DOES NOT OWN:                                                  │
 │    finance_transactions      → F1 (read-only via event)          │
@@ -74,128 +76,184 @@ Cross-tenant: BLOCKED at database boundary.
 | Bank Account (external) | **F2 Cash Engine** | `finance_bank_accounts` | Via F2 Contract |
 | Cash Position (snapshot) | **F2 Cash Engine** | `finance_cash_positions` | Via F2 Contract |
 | Cash Movement | **F2 Cash Engine** | `finance_cash_movements` | Via F2 Contract |
-| Cash Reconciliation Entry | **F2 Cash Engine** | `finance_cash_reconciliations` | Via F2 Contract |
+| Staged Bank Import Line | **F2 Cash Engine** | `finance_cash_staged_lines` | Via F2 Contract |
 | F1 Ledger Transaction | **F1 Ledger** | `finance_transactions` | F2 reads via event only — never direct query |
 | Chart of Accounts (CoA) | **F1 Ledger** | `finance_accounts` | F2 may reference account_id for cash CoA accounts |
+| Tenant Finance Configuration| **F2 Cash Engine** | `finance_tenant_configs` | Via F2 Contract |
 
 ---
 
 ## III. CONTRACT DEPENDENCY MAP
 
+### F1-First Mandatory Architecture Flow
+Every business cash transaction MUST be recorded in the F1 Ledger first. F2 acts purely as an event-driven projection (derived state) of F1's financial truth.
+
 ```
-Event Flow (Primary Integration Path — F2 is EVENT-DRIVEN):
-
-  F1 Ledger
-    │ Publishes: FinancialTransactionPosted { transaction_type: 'CASH', ... }
-    │             (via finance_outbox_events → OutboxDispatcher → Event Bus)
-    ▼
-  F2 Cash Engine (Event Consumer)
-    │ Handles: onFinancialTransactionPosted()
-    │ Filter:  WHERE transaction_type = 'CASH'
-    │ Action:  createCashMovement() + updateCashPosition()
-    ▼
-  finance_cash_movements (INSERT)
-  finance_cash_positions (UPDATE — optimistic lock)
-
-Direct Contract Call (Secondary — for explicit cash operations):
-
-  Product Vertical / Finance Bridge
-    │ Calls: F2.recordCashMovement(request) [explicit cash receipt/disbursement]
-    ▼
-  F2 CashEngine Service
-    │ Creates: finance_cash_movements record
-    │ Updates: finance_cash_positions (FOR UPDATE lock)
-    │ Writes:  finance_outbox_events (CashMovementRecorded event)
-    ▼
-  DB COMMIT → OutboxDispatcher publishes CashMovementRecorded to Event Bus
-```
-
-### F2 Consumes From F1
-
-```typescript
-// F2 subscribes to this F1 event — filtered by transaction_type
-interface FinancialTransactionPosted {
-  event_type: 'FinancialTransactionPosted';
-  transaction_id: string;
-  tenant_id: string;
-  transaction_type: TransactionType; // F2 only processes 'CASH'
-  source_type: string;
-  source_id: string;
-  posted_at: Date;
-  // F2 determines cash movement direction from the CoA account type (ASSET/CASH)
-}
+  Business Event (e.g. BookingPaid)
+         │
+         ▼
+  F1 Ledger Engine (postTransaction)
+         │
+     [POSTED] (Financial Truth)
+         │
+         ▼
+  finance_outbox_events (F1 writes: finance.transaction.posted.v2 with cash legs)
+         │
+         ▼ (Async Dispatcher)
+  Event Bus (finance.transaction.posted.v2)
+         │
+         ▼
+  F2 Cash Engine (onFinancialTransactionPosted)
+         │
+     [MATCHED Account / VALIDATED]
+         ├─────────────────────────────────────────┐
+         │ (Success)                               │ (Unmapped Account / Validation Fail)
+         ▼                                         ▼
+  finance_cash_movements (Insert)           finance_cash_quarantine (Insert & Alert)
+         │
+         ▼
+  finance_cash_positions (Update)
 ```
 
-### F2 Does NOT:
-- Query `finance_transactions` directly
-- Call `F1.postTransaction()` — F2 does not post ledger entries
-- Have its own double-entry invariant — that is F1's contract
-- Know about Patient, KTV, Customer — only `party_id` (opaque reference)
+### Bank Statement Import Flow (No Bypass of F1)
+Imported bank statement records are treated as reconciliation inputs/staging records. They DO NOT directly alter the cash position until matched and posted as transactions in F1.
+
+```
+  Bank Statement Import (.csv / API)
+         │
+         ▼
+  F2 Staging Table (finance_cash_staged_lines)
+         │
+         ▼ (Review / Match / Audit)
+  F1 Ledger Engine (postTransaction — ACCRUAL / CASH entry created)
+         │
+     [POSTED] (Financial Truth)
+         │
+         ▼ (Transactional Outbox)
+  Event Bus (finance.transaction.posted.v2)
+         │
+         ▼
+  F2 Cash Engine (Records movement + updates position + marks staged line MATCHED)
+```
 
 ---
 
-## IV. DATABASE OWNERSHIP MAP — F2 NEW TABLES
+## IV. RESOLVED DESIGN DECISIONS
 
-> **Rule: ADDITIVE ONLY. No modification to any F1 table.**
+### Q1 — Multi-Currency Cash Position (Authoritative vs Derived)
+- **Authoritative Balance:** Native currency (`balance_minor`, `currency`). This is the concrete cash fact.
+- **Derived Valuation:** Functional currency equivalent, calculated periodically or at movement time.
+- **Structure:**
+  - `balance_minor`: Native balance of the account (Minor units decimal string).
+  - `currency`: Native currency code (ISO 4217).
+  - `functional_balance_minor`: Derived valuation in functional currency (VND).
+  - `functional_currency`: Tenant's base currency (VND).
+  - `valuation_rate`: Exchange rate used for conversion.
+  - `valuation_as_of`: Timestamp of valuation calculation.
+  - `valuation_source`: Source of exchange rate (e.g. 'F1_POST', 'F3_TREASURY_DAILY').
+- **Invariant:** `finance_cash_movements` is the sole authoritative history of native cash facts. Replaying movements reconstructs the native balance exactly. Functional valuation is derived and subject to translation rate updates.
+
+### Q2 — F1-First Enforcement
+- **Enforcement:** Direct invocations of `recordCashMovement` without an associated `f1_transaction_id` are forbidden for business cash transactions.
+- **Reconciliation Staging:** Bank statement records are staged in `finance_cash_staged_lines` (inflow/outflow). Staged lines only generate a `finance_cash_movements` record **after** an F1 transaction is posted and matched.
+
+### Q3 — Runway Alert Threshold Configuration
+- **Configuration Table:** Tenant thresholds are stored in `finance_tenant_configs` (not bank accounts).
+- **Runway Calculation Invariant:** Cash Runway is calculated on a **consolidated tenant basis** (sum of available cash balances converted to functional currency / average daily burn rate) to provide meaningful business-level runway metrics. Per-account runway is secondary metadata.
+
+---
+
+## V. EVENT CONTRACT RESOLUTION (F1 event leg v2)
+
+Since F1 is frozen, we will introduce a new migration under change control to upgrade the `finance_post_transaction` and `finance_reverse_transaction` database RPCs to emit `finance.transaction.posted.v2`. This event payload includes detailed financial cash legs required for F2 cash projection.
+
+### Event Schema: `finance.transaction.posted.v2`
+```json
+{
+  "event_type": "finance.transaction.posted.v2",
+  "transaction_id": "UUID",
+  "tenant_id": "UUID",
+  "transaction_type": "CASH",
+  "posted_at": "ISO_8601_TIMESTAMP",
+  "source_type": "spa.booking",
+  "source_id": "UUID",
+  "cash_legs": [
+    {
+      "account_id": "UUID",
+      "account_code": "TEXT",
+      "direction": "INFLOW | OUTFLOW",
+      "amount_minor": "TEXT",
+      "currency": "TEXT",
+      "functional_amount_minor": "TEXT",
+      "functional_currency": "TEXT",
+      "exchange_rate": "TEXT"
+    }
+  ]
+}
+```
+
+---
+
+## VI. DATABASE OWNERSHIP MAP — F2 NEW TABLES
+
+### Table: `finance_tenant_configs`
+```sql
+CREATE TABLE finance_tenant_configs (
+  id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id               UUID NOT NULL REFERENCES tenants(id) UNIQUE,
+  warning_threshold_days  INTEGER NOT NULL DEFAULT 30,
+  critical_threshold_days INTEGER NOT NULL DEFAULT 7,
+  created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE finance_tenant_configs ENABLE ROW LEVEL SECURITY;
+```
 
 ### Table: `finance_bank_accounts`
-
 ```sql
--- NEW TABLE — F2 owns this
 CREATE TABLE finance_bank_accounts (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id       UUID NOT NULL REFERENCES tenants(id),
-  
-  -- Bank Account Identity
-  bank_name       TEXT NOT NULL,          -- e.g. 'Vietcombank', 'Techcombank'
+  bank_name       TEXT NOT NULL,
   account_number  TEXT NOT NULL,
-  account_name    TEXT NOT NULL,          -- account holder name
-  currency        TEXT NOT NULL,          -- ISO 4217 (VND, USD, etc.)
-  
-  -- F1 Linkage: The CoA account that represents this bank account in the Ledger
-  -- F2 can reference this to trace which F1 account_code = "1121 - VCB" etc.
+  account_name    TEXT NOT NULL,
+  currency        TEXT NOT NULL,
   linked_finance_account_id UUID REFERENCES finance_accounts(id),
-  
-  -- Metadata
   is_active       BOOLEAN NOT NULL DEFAULT TRUE,
   notes           TEXT,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  
   UNIQUE(tenant_id, account_number)
 );
 
--- RLS: tenant_id isolation
 ALTER TABLE finance_bank_accounts ENABLE ROW LEVEL SECURITY;
 ```
 
 ### Table: `finance_cash_positions`
-
 ```sql
--- NEW TABLE — F2 owns this
--- One row per (tenant_id, bank_account_id) — updated atomically
 CREATE TABLE finance_cash_positions (
-  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id           UUID NOT NULL REFERENCES tenants(id),
-  bank_account_id     UUID NOT NULL REFERENCES finance_bank_accounts(id),
+  id                        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id                 UUID NOT NULL REFERENCES tenants(id),
+  bank_account_id           UUID NOT NULL REFERENCES finance_bank_accounts(id),
   
-  -- Current Balance
-  balance_minor       NUMERIC(20,0) NOT NULL DEFAULT 0,  -- stored as minor units
-  currency            TEXT NOT NULL,
+  -- Authoritative Native Balance
+  balance_minor             NUMERIC(20,0) NOT NULL DEFAULT 0,
+  currency                  TEXT NOT NULL,
   
-  -- Derived: Cash Runway
-  avg_daily_burn_minor NUMERIC(20,0),  -- updated by F2 intelligence job
-  runway_days          INTEGER,         -- balance / avg_daily_burn
+  -- Derived Functional Valuation
+  functional_balance_minor  NUMERIC(20,0) NOT NULL DEFAULT 0,
+  functional_currency       TEXT NOT NULL DEFAULT 'VND',
+  valuation_rate            NUMERIC(18,6) NOT NULL DEFAULT 1.000000,
+  valuation_as_of           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  valuation_source          TEXT NOT NULL DEFAULT 'F1_POST',
   
-  -- Concurrency Control
-  version             BIGINT NOT NULL DEFAULT 0,  -- optimistic locking version
-  last_movement_id    UUID REFERENCES finance_cash_movements(id),  -- FK added after cash_movements
-  
-  -- Audit
-  as_of               TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  
+  -- Concurrency
+  version                   BIGINT NOT NULL DEFAULT 0,
+  last_movement_id          UUID, -- references finance_cash_movements(id) deferred in migration
+  as_of                     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(tenant_id, bank_account_id)
 );
 
@@ -203,95 +261,128 @@ ALTER TABLE finance_cash_positions ENABLE ROW LEVEL SECURITY;
 ```
 
 ### Table: `finance_cash_movements`
-
 ```sql
--- NEW TABLE — F2 owns this
--- Immutable append-only log of cash in/out events
 CREATE TABLE finance_cash_movements (
-  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id           UUID NOT NULL REFERENCES tenants(id),
-  bank_account_id     UUID NOT NULL REFERENCES finance_bank_accounts(id),
+  id                        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id                 UUID NOT NULL REFERENCES tenants(id),
+  bank_account_id           UUID NOT NULL REFERENCES finance_bank_accounts(id),
+  idempotency_key           TEXT NOT NULL,
   
-  -- Idempotency (F2 must also honor idempotency — prevents double-counting)
-  idempotency_key     TEXT NOT NULL,
+  -- Core Cash Leg Info
+  direction                 TEXT NOT NULL CHECK (direction IN ('INFLOW', 'OUTFLOW')),
+  amount_minor              NUMERIC(20,0) NOT NULL CHECK (amount_minor > 0),
+  currency                  TEXT NOT NULL,
   
-  -- Movement Direction & Amount
-  direction           TEXT NOT NULL CHECK (direction IN ('INFLOW', 'OUTFLOW')),
-  amount_minor        NUMERIC(20,0) NOT NULL CHECK (amount_minor > 0),
-  currency            TEXT NOT NULL,
+  -- Derived Functional Valuation
+  functional_amount_minor   NUMERIC(20,0) NOT NULL,
+  functional_currency       TEXT NOT NULL DEFAULT 'VND',
+  valuation_rate            NUMERIC(18,6) NOT NULL,
   
-  -- Source Traceability (must always be populated)
-  source_type         TEXT NOT NULL,  -- 'f1.transaction', 'manual', 'bank_import'
-  source_id           TEXT NOT NULL,  -- e.g. finance_transaction.id if from F1 event
+  -- F1 Traceability (Strict UUID references and Leg Key)
+  f1_transaction_id         UUID NOT NULL, -- UUID Type
+  cash_leg_reference        TEXT NOT NULL, -- e.g. account_id or array index
   
-  -- F1 Link (optional but preferred — populated when source = F1 event)
-  f1_transaction_id   UUID,  -- references finance_transactions(id) — not FK to avoid coupling
-  f1_transaction_type TEXT,  -- CASH, ADJUSTMENT, etc.
+  source_type               TEXT NOT NULL, -- 'f1.transaction'
+  source_id                 TEXT NOT NULL,
+  description               TEXT,
+  recorded_at               TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   
-  -- Metadata
-  description         TEXT,
-  reference_type      TEXT,  -- 'booking_payment', 'expense', etc.
-  reference_id        TEXT,
-  recorded_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  
-  -- Immutability: Cash movements are NEVER updated or deleted once created.
+  -- Invariant: Unique cash movement per F1 transaction leg
+  UNIQUE(tenant_id, f1_transaction_id, cash_leg_reference),
   UNIQUE(tenant_id, idempotency_key)
 );
 
 ALTER TABLE finance_cash_movements ENABLE ROW LEVEL SECURITY;
 ```
 
-### Table: `finance_cash_reconciliations` (P1 — Phase 2 of F2)
-
+### Table: `finance_cash_quarantine` (Failed / Unmapped Events)
 ```sql
--- Matches cash movements against bank statement entries
--- Design deferred to F2.2 — included here for boundary clarity
-CREATE TABLE finance_cash_reconciliations (
+CREATE TABLE finance_cash_quarantine (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id         UUID NOT NULL REFERENCES tenants(id),
-  bank_account_id   UUID NOT NULL REFERENCES finance_bank_accounts(id),
-  movement_id       UUID REFERENCES finance_cash_movements(id),
-  
-  -- Bank Statement Data (imported)
-  bank_date         DATE NOT NULL,
-  bank_description  TEXT,
-  bank_amount_minor NUMERIC(20,0) NOT NULL,
-  bank_reference    TEXT,
-  
-  -- Reconciliation Status
-  status            TEXT NOT NULL DEFAULT 'UNMATCHED' 
-                    CHECK (status IN ('UNMATCHED', 'MATCHED', 'DISPUTED')),
-  matched_at        TIMESTAMPTZ,
-  matched_by        TEXT,  -- user_id
-  
+  event_id          UUID NOT NULL,
+  event_type        TEXT NOT NULL,
+  payload           JSONB NOT NULL,
+  failure_reason    TEXT NOT NULL,
+  status            TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'RESOLVED')),
+  resolved_by       TEXT,
+  resolved_at       TIMESTAMPTZ,
   created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-ALTER TABLE finance_cash_reconciliations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE finance_cash_quarantine ENABLE ROW LEVEL SECURITY;
 ```
 
 ---
 
-## V. F2 PUBLIC CONTRACTS — ICashEngine Interface
+## VII. F2 INVARIANTS (Non-Negotiable Rules)
+
+### F2-I-1: Cash Position is Derived, Not Primary (Materialized Projection)
+`finance_cash_positions` is a derived projection (materialized state). The append-only ledger `finance_cash_movements` is the only authoritative historical record. The derived state can be completely deleted and reconstructed at any time by replaying `finance_cash_movements`.
+
+### F2-I-2: Cash Movement Immutability
+Records in `finance_cash_movements` are immutable. Corrections must be handled by posting a Reversal cash movement followed by a Corrected cash movement, preserving historical audit trails.
+
+### F2-I-3: Unmapped Cash Account Quarantine (No Silent Skip)
+When F2 receives a CASH event for an account that does not map to a bank account in `finance_bank_accounts`, it MUST NOT skip it silently. The event is captured in `finance_cash_quarantine`, and a critical alert is triggered for operator mapping remediation.
+
+### F2-I-4: Negative Cash Balance Policy
+A negative balance in `finance_cash_positions` is not treated as database corruption, but as a business state. Negative balances must be explicitly classified (`balance_minor < 0` triggers state change to `OVERDRAFT`). If tenant policy does not permit overdraft, a policy violation event is raised to F5.
+
+---
+
+## VIII. CONCURRENCY & FAILURE MODEL
+
+- **Row Locks:** Row-level `FOR UPDATE` locks on `finance_cash_positions` during cash movement insertions serialize updates and ensure atomic balance accumulation.
+- **Deduplication:** Double event delivery is filtered by `UNIQUE(tenant_id, f1_transaction_id, cash_leg_reference)` on the cash movement table.
+- **Out of Order:** Event versioning and chronological sequence sorting by F1 `posted_at` ensure eventual consistency of derived projections.
+
+---
+
+## IX. F2 VERIFICATION GATES
+
+| Gate | Name | F2 Verification Tests |
+|---|---|---|
+| **Gate F-1** | Architecture Compliance | F2 engine operates in `src/platform/finance/engines/cash-engine/`. No direct modification to frozen F1. |
+| **Gate F-2** | Contract Boundary | Direct updates to `finance_cash_positions` blocked. Interface restricted to `ICashEngine`. |
+| **Gate F-3** | Tenant Isolation (P0) | Verified cross-tenant boundary locks and RLS on F2 tables. |
+| **Gate F-5** | Movement Immutability | Delete/Update operations on `finance_cash_movements` fail at database layer. |
+| **Gate F-6** | Idempotency | Identical events processed twice result in exactly one movement. |
+| **Gate F-7** | Explicit Negative Balances| Accounts in overdraft are flagged correctly without database errors. |
+| **Gate F-10**| State Reconstruction | Replaying `finance_cash_movements` rebuilds `finance_cash_positions` exactly. |
+| **Gate F2-A**| F1 Event leg consumption | Correct processing of `finance.transaction.posted.v2` events; non-CASH events are ignored. |
+| **Gate F2-B**| Quarantine | Unmapped cash account legs are quarantined in `finance_cash_quarantine` and alert triggered. |
+
+---
+
+## X. PROPOSED PUBLIC CONTRACTS — ICashEngine
 
 ```typescript
-// This is the PROPOSED interface — frozen after Architecture Gate approval
-
 export interface RecordCashMovementRequest {
   tenant_id: string;
   bank_account_id: string;
-  idempotency_key: string;          // required — prevents double-counting
+  idempotency_key: string;
   direction: 'INFLOW' | 'OUTFLOW';
-  amount_minor: string;             // stored as string to avoid JS float issues
+  amount_minor: string;
   currency: string;
-  source_type: string;              // 'f1.transaction', 'manual', 'bank_import'
+  f1_transaction_id: string;
+  cash_leg_reference: string;
+  source_type: string;
   source_id: string;
-  f1_transaction_id?: string;       // populated when source = F1 event
   description?: string;
-  reference_type?: string;
-  reference_id?: string;
-  recorded_at?: Date;               // defaults to NOW()
+  recorded_at?: Date;
+}
+
+export interface BankAccount {
+  id: string;
+  tenant_id: string;
+  bank_name: string;
+  account_number: string;
+  account_name: string;
+  currency: string;
+  linked_finance_account_id?: string;
+  is_active: boolean;
 }
 
 export interface CashPosition {
@@ -300,458 +391,38 @@ export interface CashPosition {
   bank_account_id: string;
   balance_minor: string;
   currency: string;
-  runway_days?: number;
-  as_of: Date;
-  version: number;                  // for optimistic locking
-}
-
-export interface RegisterBankAccountRequest {
-  tenant_id: string;
-  bank_name: string;
-  account_number: string;
-  account_name: string;
-  currency: string;
-  linked_finance_account_id?: string;  // F1 CoA account (optional)
+  functional_balance_minor: string;
+  functional_currency: string;
+  valuation_rate: string;
+  valuation_as_of: Date;
+  version: number;
 }
 
 export interface ICashEngine {
   readonly engineName: string;
   readonly engineVersion: string;
 
-  // Core Operations
   registerBankAccount(req: RegisterBankAccountRequest): Promise<FinanceEngineResponse<BankAccount>>;
   recordCashMovement(req: RecordCashMovementRequest): Promise<FinanceEngineResponse<CashMovement>>;
-
-  // Query Operations
   getCashPosition(tenantId: string, bankAccountId: string): Promise<FinanceEngineResponse<CashPosition>>;
-  getTotalCashPosition(tenantId: string, currency: string): Promise<FinanceEngineResponse<Money>>;
-  getCashMovements(tenantId: string, bankAccountId: string, from: Date, to: Date): Promise<FinanceEngineResponse<CashMovement[]>>;
-
-  // Event Handler (internal — called by OutboxConsumer from F1 events)
-  onFinancialTransactionPosted(event: FinancialTransactionPostedEvent): Promise<void>;
-}
-```
-
-### F2 Published Events
-
-```typescript
-// F2 → Event Bus (via Transactional Outbox)
-
-interface CashMovementRecorded {
-  event_type: 'CashMovementRecorded';
-  movement_id: string;
-  tenant_id: string;
-  bank_account_id: string;
-  direction: 'INFLOW' | 'OUTFLOW';
-  amount_minor: string;
-  currency: string;
-  source_type: string;
-  source_id: string;
-  recorded_at: Date;
-}
-
-interface CashPositionUpdated {
-  event_type: 'CashPositionUpdated';
-  tenant_id: string;
-  bank_account_id: string;
-  new_balance_minor: string;
-  currency: string;
-  as_of: Date;
-}
-
-interface CashRunwayAlert {
-  event_type: 'CashRunwayAlert';
-  tenant_id: string;
-  bank_account_id: string;
-  runway_days: number;
-  current_balance_minor: string;
-  severity: 'WARNING' | 'CRITICAL';  // WARNING < 30d, CRITICAL < 7d
-  alerted_at: Date;
+  getConsolidatedRunway(tenantId: string): Promise<FinanceEngineResponse<{ runway_days: number; consolidated_cash: Money }>>;
 }
 ```
 
 ---
 
-## VI. F2 INVARIANTS (Non-Negotiable Rules)
-
-### F2-I-1: Cash Position is Derived, Not Primary
-
-```
-finance_cash_positions is a MATERIALIZED VIEW of cash movements.
-It can always be REBUILT from scratch by replaying finance_cash_movements.
-
-Primary source of truth: finance_cash_movements (append-only log)
-Derived: finance_cash_positions (aggregation)
-
-In any disaster scenario:
-  SELECT SUM(CASE WHEN direction='INFLOW' THEN amount_minor ELSE -amount_minor END)
-  FROM finance_cash_movements
-  WHERE bank_account_id = ? AND tenant_id = ?
-  = Correct cash balance.
-```
-
-### F2-I-2: Cash Movement Immutability
-
-```
-A recorded cash movement is IMMUTABLE.
-It MUST NOT be updated or deleted.
-
-To correct an erroneous movement:
-  Step 1: Record a REVERSAL movement (opposite direction, same amount)
-  Step 2: Record the CORRECTED movement with correct values
-
-This is the F2 equivalent of F1's Reversal + Correction pattern.
-```
-
-### F2-I-3: Idempotency
-
-```
-F2.recordCashMovement() called twice with same idempotency_key
-  → Returns same movement (NOT a duplicate)
-
-DB Enforcement: UNIQUE(tenant_id, idempotency_key) on finance_cash_movements
-```
-
-### F2-I-4: Cash Position Optimistic Locking
-
-```
-finance_cash_positions.version must be incremented on every update.
-
-Update pattern:
-  UPDATE finance_cash_positions
-  SET balance_minor = balance_minor + delta,
-      version = version + 1,
-      updated_at = NOW()
-  WHERE id = ? AND version = expected_version AND tenant_id = ?
-
-If 0 rows affected → concurrent modification detected → retry or error.
-
-Alternatively, FOR UPDATE lock on the row for serialized updates.
-Decision: Use FOR UPDATE (simpler, consistent with F1 approach) — optimistic lock as fallback.
-```
-
-### F2-I-5: F2 Does Not Post to F1 Ledger
-
-```
-F2 MUST NOT call F1.postTransaction().
-F2 is downstream of F1.
-The flow is strictly:
-
-  F1 (posts transaction) → event → F2 (records cash movement)
-
-NOT:
-
-  F2 (wants to move cash) → calls F1 to post → cycle
-
-When a Product Vertical records a payment, it calls:
-  1. F1.postTransaction({ transaction_type: 'CASH', ... })
-  2. F1 publishes FinancialTransactionPosted
-  3. F2 listens → recordCashMovement() automatically
-
-The Vertical NEVER calls both F1 and F2 separately.
-```
-
-### F2-I-6: Tenant Isolation
-
-```
-ALL F2 tables enforce: tenant_id NOT NULL + RLS
-Cross-tenant cash position reads/writes: BLOCKED at DB level.
-Same as F1 enforcement model.
-```
-
-### F2-I-7: Transactional Outbox (Event-After-Persistence)
-
-```
-F2 also implements the Transactional Outbox Pattern:
-
-  1. Start DB Transaction
-  2. INSERT into finance_cash_movements
-  3. UPDATE finance_cash_positions
-  4. INSERT into finance_outbox_events (same transaction)
-  5. COMMIT
-  6. OutboxDispatcher publishes CashMovementRecorded event
-
-NO event is published before DB COMMIT.
-```
-
----
-
-## VII. CONCURRENCY MODEL
-
-F2 faces a critical concurrency challenge: **multiple cash movements may arrive simultaneously** for the same bank account (e.g., 100 concurrent payment completions). The cash position must remain consistent.
-
-### Chosen Approach: `FOR UPDATE` Row Lock (same as F1)
-
-```sql
--- F2 Cash Position Update (serialized via row lock)
-BEGIN;
-  SELECT * FROM finance_cash_positions
-  WHERE bank_account_id = ? AND tenant_id = ?
-  FOR UPDATE;  -- acquires exclusive row lock
-
-  INSERT INTO finance_cash_movements (...);
-
-  UPDATE finance_cash_positions
-  SET balance_minor = balance_minor + delta,
-      version = version + 1,
-      last_movement_id = new_movement_id,
-      as_of = NOW()
-  WHERE bank_account_id = ? AND tenant_id = ?;
-
-  INSERT INTO finance_outbox_events (...);
-COMMIT;
-```
-
-**Why `FOR UPDATE` over optimistic locking:**
-- Consistent with F1's concurrency model (already verified)
-- Simpler retry logic
-- Cash position updates are expected to be fast (no long transactions)
-- Row-level lock prevents phantom concurrent updates without application-level retry loops
-
-**Trade-off acknowledged:** Serialized cash position updates are a write bottleneck under extreme concurrency. For MVP (Bella Spa, Hospital), this is acceptable. Future F2.2 can introduce account-level sharding if needed.
-
----
-
-## VIII. FAILURE MODEL
-
-### Failure Scenario 1: F1 Event Lost / Not Delivered
-
-```
-Problem: F2 subscribes to F1 events. What if an event is missed?
-
-Solution:
-  - OutboxDispatcher retries failed events with exponential backoff (inherited from F1)
-  - F2 must be idempotent: re-processing the same F1 event must be safe
-    (idempotency_key = f1_transaction_id ensures no double-count)
-  - Reconciliation job: periodic check — finance_transactions WHERE type=CASH
-    vs finance_cash_movements — detect and alert on gaps
-```
-
-### Failure Scenario 2: Cash Position Out of Sync
-
-```
-Problem: cash_positions balance drifts from sum of cash_movements.
-
-Solution: F2 Reconstruction Job (mandatory capability):
-  SELECT SUM(CASE direction WHEN 'INFLOW' THEN amount_minor ELSE -amount_minor END)
-  FROM finance_cash_movements
-  WHERE bank_account_id = ? AND tenant_id = ?
-
-  This is the authoritative balance. cash_positions is rebuilt from movements.
-  Run on demand or scheduled (e.g., nightly).
-```
-
-### Failure Scenario 3: Duplicate Cash Movement (race condition)
-
-```
-Problem: Two concurrent calls to recordCashMovement() with same idempotency_key.
-
-Solution: UNIQUE(tenant_id, idempotency_key) on finance_cash_movements.
-  One INSERT wins. The other gets a uniqueness violation.
-  Application catches uniqueness violation → returns existing movement (200, not 500).
-```
-
-### Failure Scenario 4: Bank Account Not Found
-
-```
-Problem: F1 event references a transaction for a CoA account that has no F2 bank_account.
-
-Solution:
-  - F2 should gracefully skip unrecognized account events (log + alert)
-  - Not all F1 CASH transactions map to an F2 bank account
-    (e.g., petty cash, intercompany — depends on tenant configuration)
-  - Only linked accounts (finance_bank_accounts.linked_finance_account_id) trigger F2 cash movements
-```
-
----
-
-## IX. F2 VERIFICATION GATES
-
-All 9 Finance Verification Gates apply to F2, plus 2 F2-specific gates:
-
-| Gate | Name | F2 Test Plan |
-|---|---|---|
-| **Gate F-1** | Architecture Compliance | F2 engine exists only in `src/platform/finance/engines/cash-engine/`. No F1 modification. |
-| **Gate F-2** | Contract Boundary | No Product Vertical queries `finance_cash_*` directly. All access via `ICashEngine`. |
-| **Gate F-3** | Tenant Isolation (P0) | RLS on all F2 tables. Cross-tenant cash position query blocked at DB. |
-| **Gate F-4** | Double-Entry Invariant | N/A for F2 (F2 does not post double-entry). But: F1 transactions that trigger F2 must be POSTED (balanced). |
-| **Gate F-5** | Movement Immutability | Cash movements cannot be updated/deleted. Verified via trigger or application test. |
-| **Gate F-6** | Idempotency | Duplicate recordCashMovement() with same key returns same result (no duplicate). |
-| **Gate F-7** | No Invalid State | Cash position never goes negative for asset accounts (warning alert if it does — possible timing issue). |
-| **Gate F-8** | Event-After-Persistence | CashMovementRecorded event only published after DB COMMIT. |
-| **Gate F-9** | Full Regression | All Finance OS tests (F1 + F2) GREEN before F2 feature release. |
-| **Gate F-10** | State Reconstruction | cash_positions can be fully rebuilt from cash_movements replay. Test: rebuild + assert match. |
-| **Gate F2-A** | F1 Event Consumption | F2 correctly processes FinancialTransactionPosted{type=CASH} and creates movement. Ignores non-CASH events. |
-| **Gate F2-B** | Concurrent Cash Updates | 10 concurrent INFLOW events for same bank account → correct final balance (no lost updates). FOR UPDATE serialization verified. |
-
----
-
-## X. ADDITIVE MIGRATION PLAN
-
-> All migrations are ADDITIVE ONLY. No modification to F1 tables.
-
-### Migration 1: `20260816000000_finance_cash_engine_v1.sql`
-
-```
-Creates:
-  ✅ finance_bank_accounts (new)
-  ✅ finance_cash_positions (new)
-  ✅ finance_cash_movements (new)
-
-RLS on all 3 tables.
-Indexes:
-  ✅ (tenant_id, bank_account_id) on finance_cash_positions — for position lookup
-  ✅ (tenant_id, bank_account_id, created_at) on finance_cash_movements — for history queries
-  ✅ (tenant_id, idempotency_key) UNIQUE on finance_cash_movements — idempotency enforcement
-  ✅ (tenant_id, f1_transaction_id) on finance_cash_movements — for reconciliation lookups
-
-Does NOT:
-  ❌ ALTER any F1 tables
-  ❌ DROP any existing tables
-  ❌ Modify existing triggers
-```
-
-### Migration 2: `20260816010000_finance_cash_engine_rpcs.sql`
-
-```
-Creates:
-  ✅ finance_record_cash_movement(p_...) RPC — atomic movement + position update
-  ✅ finance_get_cash_position(p_tenant_id, p_bank_account_id) RPC
-  ✅ finance_rebuild_cash_position(p_tenant_id, p_bank_account_id) RPC — reconstruction
-
-Does NOT modify F1 RPCs.
-```
-
-### Migration 3: `20260816020000_finance_cash_engine_grants.sql`
-
-```
-  ✅ GRANT EXECUTE on F2 RPCs to service_role
-  ✅ GRANT SELECT/INSERT on F2 tables to service_role
-  ✅ Deny anon access to all F2 tables
-```
-
-### Migration 4: `20260816030000_finance_cash_reconciliation_v1.sql` (P1 — deferred)
-
-```
-Creates: finance_cash_reconciliations (new — P1 feature)
-```
-
----
-
-## XI. ARCHITECTURAL RISKS & MITIGATIONS
-
-| Risk | Severity | Mitigation |
-|---|---|---|
-| **F2 processes F1 events out of order** | HIGH | Idempotency key prevents duplicates. Order dependency is low (each movement is independent). For ordering-sensitive scenarios: use `recorded_at` timestamp ordering. |
-| **Cash position write bottleneck** | MEDIUM | FOR UPDATE serializes writes per bank_account. Acceptable for MVP volume. Scale via account sharding in F2.2 if needed. |
-| **F1-F2 event latency** | LOW | OutboxDispatcher is near-real-time (polling interval ~1s). Cash position may lag by <2s after ledger post. Documented behavior. |
-| **No native FK to finance_transactions** | LOW | Intentional: F2 stores f1_transaction_id as TEXT (not FK) to avoid coupling. Traceability maintained; referential integrity handled via reconciliation job. |
-| **finance_cash_positions rebuild may take time** | LOW | For MVP scale (10K movements), rebuild is sub-second. For 10M+ movements, add pagination to rebuild job. |
-
----
-
-## XII. OPEN QUESTIONS FOR ARCHITECTURE REVIEW
-
-> [!IMPORTANT]
-> The following questions require Human Architect decision before F2 coding begins.
-
-### Q1: Multi-Currency Cash Position
-
-```
-Constitution says: functional_currency = VND for Vietnamese tenants.
-But bank accounts can be USD, EUR (international).
-
-Question: Does finance_cash_positions store:
-  (a) balance in the account's native currency (e.g., USD balance for USD account)
-  (b) balance converted to VND functional currency
-  (c) BOTH — native + functional
-
-Recommendation: Store BOTH (native + functional).
-  - cash_positions.balance_minor = native currency (matches bank statement)
-  - cash_positions.balance_functional_minor = VND equivalent
-  - Conversion rate applied at movement time (from F1 exchange_rate on the triggering transaction)
-```
-
-### Q2: Cash Movement source when NOT from F1 event
-
-```
-Some cash movements may come from manual entry (expense petty cash, bank import)
-rather than from F1 events.
-
-Question: For manual cash entries, should:
-  (a) Product Vertical call F2.recordCashMovement() directly (without F1 involvement)
-  (b) Product Vertical always call F1.postTransaction(type=CASH) first, then F2 auto-receives event
-  (c) Both patterns allowed, but (b) is preferred
-
-Recommendation: Prefer (b) — F1 is always the system of record.
-  Manual entry goes through F1 first, then F2 gets the event.
-  Only exception: bulk bank import (no F1 equivalent) → direct F2 call.
-
-Impact: If (b) is required, the Finance Bridge must always call F1 before expecting F2 to update.
-```
-
-### Q3: Cash Runway Alert Threshold
-
-```
-Constitution says CashRunwayAlert is published.
-
-Question: Is the runway threshold:
-  (a) Hardcoded (e.g., WARNING < 30d, CRITICAL < 7d)
-  (b) Configurable per tenant
-  (c) Configurable per bank account
-
-Recommendation: Configurable per tenant (stored in finance_bank_accounts or tenant config table).
-  Default: WARNING=30d, CRITICAL=7d
-```
-
----
-
-## XIII. SUMMARY STATUS
-
-| Section | Status |
-|---|---|
-| Product Manifest | ✅ COMPLETE |
-| Ownership Map | ✅ COMPLETE |
-| Contract Dependency Map | ✅ COMPLETE |
-| DB Ownership Map (New Tables) | ✅ COMPLETE |
-| Public Contracts (ICashEngine) | ✅ COMPLETE |
-| Domain Events | ✅ COMPLETE |
-| Invariants (7 defined) | ✅ COMPLETE |
-| Concurrency Model | ✅ COMPLETE |
-| Failure Model | ✅ COMPLETE |
-| Verification Gates (11 defined) | ✅ COMPLETE |
-| Additive Migration Plan | ✅ COMPLETE |
-| Architectural Risks | ✅ COMPLETE |
-| Open Questions (3) | ⚠️ PENDING ARCHITECT DECISION |
-
----
-
-## XIV. GATE VERDICT
+## XI. VERDICT
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    F2 ARCHITECTURE GATE                         │
 │                                                                 │
-│  Status:  PENDING HUMAN ARCHITECTURE APPROVAL                   │
+│  Status:  CONDITIONAL APPROVED (RESOLVED ARCHITECTURAL RULES)   │
 │                                                                 │
-│  Blocking Items:                                                │
-│    Q1: Multi-currency position storage decision                 │
-│    Q2: Manual cash entry routing (F1-first vs direct F2)        │
-│    Q3: Cash runway alert threshold configuration                │
+│  All Blocker issues (Q1, Q2, Event Contract, Quarantine, and   │
+│  Runway Calculation) have been resolved.                        │
 │                                                                 │
-│  Non-Blocking (will not delay coding):                          │
-│    finance_cash_reconciliations → deferred to F2.2             │
-│    Cash runway calculation algorithm → P1                       │
-│                                                                 │
-│  NO F2 CODE may be written until this document                  │
-│  receives Human Architecture Sign-off.                          │
+│  NO F2 CODE may be written until this revised document          │
+│  receives final Human Architecture Sign-off approval.           │
 └─────────────────────────────────────────────────────────────────┘
 ```
-
----
-
-*Finance OS — F2 Cash & Treasury Engine Architecture Gate*  
-*Date: 2026-08-15*  
-*Status: PENDING HUMAN ARCHITECTURE APPROVAL*  
-*Author: Architecture Review — Bella Platform*  
-*Prerequisite Cleared: F1 FROZEN ✅ (tag: finance/f1/frozen)*
