@@ -19,7 +19,14 @@ This separation respects the **Invariant F-I-7** established in the Finance OS C
 
 ---
 
-## I. PRODUCT MANIFEST — F2 Capabilities & Scope
+## I. SUPREME ARCHITECTURAL PRINCIPLE
+
+> [!IMPORTANT]
+> **F1 remains immutable/frozen. F2 is additive-only and downstream of F1. No F2 operation may create an independent financial truth.**
+
+---
+
+## II. PRODUCT MANIFEST — F2 Capabilities & Scope
 
 ### What F2 OWNS (capabilities)
 
@@ -46,7 +53,7 @@ This separation respects the **Invariant F-I-7** established in the Finance OS C
 
 ---
 
-## II. OWNERSHIP MAP — WHO OWNS THIS DATA?
+## III. OWNERSHIP MAP — WHO OWNS THIS DATA?
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -84,7 +91,7 @@ Cross-tenant: BLOCKED at database boundary.
 
 ---
 
-## III. CONTRACT DEPENDENCY MAP
+## IV. CONTRACT DEPENDENCY MAP
 
 ### F1-First Mandatory Architecture Flow
 Every business cash transaction MUST be recorded in the F1 Ledger first. F2 acts purely as an event-driven projection (derived state) of F1's financial truth.
@@ -139,33 +146,33 @@ Imported bank statement records are treated as reconciliation inputs/staging rec
 
 ---
 
-## IV. FOUR ARCHITECTURE LOCKS
+## V. FOUR ARCHITECTURE LOCKS
 
 > [!IMPORTANT]
 > To preserve the absolute immutability of the F1 core ledger and prevent the creation of a "shadow ledger", the following architectural locks are enforced:
 
-### Lock A — No Direct Cash Mutation outside F1
-- Product Verticals and external modules **MUST NOT** call `ICashEngine.recordCashMovement()` directly.
-- The `ICashEngine.recordCashMovement()` method is strictly an **internal projection primitive** used only by the internal `onFinancialTransactionPosted` handler when consuming F1 events.
-- Product Verticals only invoke `ILedgerEngine.postTransaction()` to post ledger entries. Cash position updates flow strictly from F1 events to F2.
+### Lock 1 — F1 Event Compatibility
+- F1 remains **FROZEN**. F2 consumes strictly versioned/additive events.
+- F2 **must not** require any changes to F1 core ledger invariants, database tables, or accounting logic.
+- If it is necessary to update the F1 DB helper RPC functions (`finance_post_transaction` and `finance_reverse_transaction`) to populate the additional `cash_legs` property in `finance_outbox_events` for v2 events, it must be performed under strict ADR/change-control review and regression verification. The v1 contract remains completely backwards compatible.
 
-### Lock B — Exchange Rate & Valuation Ownership
-- F2 **does not own or govern exchange rates**. The exchange rate governance and configuration tables are owned by F3 (Treasury Engine).
-- F2 merely consumes the rate input provided by F1 events (which captures the transaction-time rate or F3 rate override) and writes it into `finance_cash_movements` as metadata.
-- Functional valuation is derived state: `functional_balance_minor = balance_minor * valuation_rate`. F2 never performs independent currency conversions or rate sourcing.
+### Lock 2 — recordCashMovement() is NOT a Public Financial-Entry API
+- Product Verticals and external modules **MUST NOT** call `ICashEngine.recordCashMovement()` directly for business transactions.
+- The flow is strictly: `Product Vertical → F1 POSTED → F1 Event → F2 Projection`.
+- `recordCashMovement()` is strictly an **internal projection primitive** used only by the internal projection event consumer. It is not exposed to external callers, preventing verticals from creating independent cash facts.
 
-### Lock C — Reconciliation & Adjustment Boundaries
-- Bank statements staged in `finance_cash_staged_lines` **must not mutate** `finance_cash_positions` directly.
-- If a discrepancy (e.g. bank fee, interest, or write-off) is discovered during reconciliation, F2 **must not** make local adjustments to the cash balance.
-- Instead, the discrepancy must trigger a command to F1 Ledger Engine to post a transaction (e.g. Dr Bank Fees Expense, Cr Bank Account). Once F1 commits and publishes the event, F2 updates its cash position projection.
+### Lock 3 — Valuation Ownership
+- F2 **does not own or govern exchange rates**. The exchange rate engine is owned by F3 (Treasury Engine).
+- F2 only **receives valuation inputs** (exchange rates provided in F1 cash transaction events) and **computes derived functional valuations** (`functional_balance_minor`). F2 does not create a second source of truth for exchange rates.
 
-### Lock D — Versioned Additive Event Contract (F1 Freeze Compatibility)
-- The transition from `finance.transaction.posted.v1` to `finance.transaction.posted.v2` (containing `cash_legs`) is defined as an **additive versioned event contract** in a dedicated migration.
-- It is strictly documented that no F1 core database invariants, existing tables, or ledger behavior are altered. The change is strictly to update the RPC functions (`finance_post_transaction` and `finance_reverse_transaction`) to populate the additional `cash_legs` property in `finance_outbox_events` for v2 events. Existing v1 consumer integrations remain compatible.
+### Lock 4 — Reconciliation Cannot Adjust Ledger Directly
+- Local cash balance discrepancies during bank statement reconciliation cannot modify F2 cash positions directly.
+- The flow is strictly: `Bank Statement → Staging → Matching → Discrepancy → Review → F1 POSTED → F2 Projection`.
+- F2 adjustments without an F1 transaction are prohibited. F2 does not act as a shadow ledger.
 
 ---
 
-## V. RESOLVED DESIGN DECISIONS
+## VI. RESOLVED DESIGN DECISIONS
 
 ### Q1 — Multi-Currency Cash Position (Authoritative vs Derived)
 - **Authoritative Balance:** Native currency (`balance_minor`, `currency`). This is the concrete cash fact.
@@ -190,7 +197,7 @@ Imported bank statement records are treated as reconciliation inputs/staging rec
 
 ---
 
-## VI. EVENT CONTRACT RESOLUTION (F1 event leg v2)
+## VII. EVENT CONTRACT RESOLUTION (F1 event leg v2)
 
 Since F1 is frozen, we will introduce a new migration under change control to upgrade the `finance_post_transaction` and `finance_reverse_transaction` database RPCs to emit `finance.transaction.posted.v2`. This event payload includes detailed financial cash legs required for F2 cash projection.
 
@@ -221,7 +228,7 @@ Since F1 is frozen, we will introduce a new migration under change control to up
 
 ---
 
-## VII. DATABASE OWNERSHIP MAP — F2 NEW TABLES
+## VIII. DATABASE OWNERSHIP MAP — F2 NEW TABLES
 
 ### Table: `finance_tenant_configs`
 ```sql
@@ -343,7 +350,7 @@ ALTER TABLE finance_cash_quarantine ENABLE ROW LEVEL SECURITY;
 
 ---
 
-## VIII. F2 INVARIANTS (Non-Negotiable Rules)
+## IX. F2 INVARIANTS (Non-Negotiable Rules)
 
 ### F2-I-1: Cash Position is Derived, Not Primary (Materialized Projection)
 `finance_cash_positions` is a derived projection (materialized state). The append-only ledger `finance_cash_movements` is the only authoritative historical record. The derived state can be completely deleted and reconstructed at any time by replaying `finance_cash_movements`.
@@ -362,7 +369,7 @@ No F2 cash position mutation may occur without a corresponding F1 POSTED transac
 
 ---
 
-## IX. CONCURRENCY & FAILURE MODEL
+## X. CONCURRENCY & FAILURE MODEL
 
 - **Row Locks:** Row-level `FOR UPDATE` locks on `finance_cash_positions` during cash movement insertions serialize updates and ensure atomic balance accumulation.
 - **Deduplication:** Double event delivery is filtered by `UNIQUE(tenant_id, f1_transaction_id, cash_leg_reference)` on the cash movement table.
@@ -370,7 +377,7 @@ No F2 cash position mutation may occur without a corresponding F1 POSTED transac
 
 ---
 
-## X. F2 VERIFICATION GATES
+## XI. F2 VERIFICATION GATES
 
 | Gate | Name | F2 Verification Tests |
 |---|---|---|
@@ -386,7 +393,7 @@ No F2 cash position mutation may occur without a corresponding F1 POSTED transac
 
 ---
 
-## XI. PROPOSED PUBLIC CONTRACTS — ICashEngine
+## XII. PROPOSED PUBLIC CONTRACTS — ICashEngine
 
 ```typescript
 // RecordCashMovementRequest is strictly internal to the projection engine.
@@ -445,7 +452,24 @@ export interface ICashEngine {
 
 ---
 
-## XII. VERDICT
+## XIII. CODING ROADMAP (PHASE ORDER)
+
+> [!IMPORTANT]
+> The F2 implementation phase must strictly follow this order. UI, dashboard, and runway calculation changes are blocked until the core transactional bounds are completed and verified:
+
+1. **F2.0 Architecture Freeze** (Complete current analysis, obtain Human Sign-off, freeze document)
+2. **F2.1 Database + RLS** (Additive schema migrations for new tables, triggers, indexes, and RLS policies)
+3. **F2.2 Cash Projection / Movement Engine** (Core domain services and database RPC procedures for cash movements)
+4. **F2.3 F1 Event Consumer** (Outbox consumer integration supporting `finance.transaction.posted.v2` events)
+5. **F2.4 Reconstruction** (RPC job and tests verifying complete reconstruction of positions from cash movements)
+6. **F2.5 Concurrency Hardening** (Optimistic locking and `FOR UPDATE` row serialization tests)
+7. **F2.6 Verification Gates** (Executing and verifying the 11 F2 verification gates)
+8. **F2.7 Human Sign-off** (Presentation of F2 report and approval)
+9. **F2 FREEZE** (Freezing the cash projection engine)
+
+---
+
+## XIV. VERDICT
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -453,8 +477,8 @@ export interface ICashEngine {
 │                                                                 │
 │  Status:  APPROVED FOR CODING                                   │
 │                                                                 │
-│  All 4 architectural locks (Public-API boundary, FX Valuation  │
-│  governance, Discrepancy routing, and Event compatibility)    │
+│  All 4 architectural locks (F1 event compatibility, projection  │
+│  API boundary, FX Valuation governance, and Adjustment boundary)│
 │  are fully locked and documented.                               │
 │                                                                 │
 │  F1 remains immutable/frozen. F2 is additive-only and           │
