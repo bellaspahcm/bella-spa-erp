@@ -218,19 +218,20 @@ FX Gain/Loss on alloc  →   ILedgerEngine.postTransaction()   →  DR/CR 4130/8
 ### F3 → F2 (Read Path: Allocation Input)
 
 ```
-F3 Action                F2 Contract Call                        Purpose
+F3 Action                Contract / Database API                 Purpose
 ────────────────────────────────────────────────────────────────────────────────
-Payment Allocation    →  ICashReportingEngine.getCashMovements() → Verify movement exists,
-                                                                    get direction (must be INFLOW),
-                                                                    get amount for over-allocation check
-
-Reconciliation        →  ICashReportingEngine.getCashPosition()  → Informational (not authoritative
-                                                                    for allocation math)
+Payment Allocation    →  ICashReportingEngine.getCashMovements() → TS layer: Query bank inflows.
+                         public.finance_get_cash_movement()      → DB layer: Read-only F2 contract RPC
+                                                                   to verify inflows and amounts.
 ```
 
 > [!CAUTION]
-> F3 must NOT call any `finance_internal_*` F2 RPC. Only `CashEngineService` (read API) is in-contract.
-> The `cash_movement_id` reference in `finance_receivable_allocations` is a logical FK — F3 references the ID but does not acquire a real FK constraint across domain boundaries (to avoid cross-schema FK coupling). The existence check is done at allocation time via the F2 read contract.
+> **F2 read boundary:** F3 has ZERO direct SELECT/INSERT/UPDATE/DELETE grants on F2 cash tables (`finance_cash_movements` and `finance_cash_positions`). At the database layer, RLS boundary is strictly decoupled: F3 RPCs are prohibited from directly querying F2 tables. Instead, F3 calls the read-only F2 SQL contract `public.finance_get_cash_movement(p_tenant_id, p_cash_movement_id)` which returns a JSONB fact payload containing cash currency, amount, and direction.
+> The `cash_movement_id` reference in `finance_receivable_allocations` is a logical FK — F3 references the ID but does not acquire a real FK constraint across domain boundaries to avoid cross-schema FK coupling.
+
+**FX Rate & Currency Semantics:**
+- Exchange rate direction is strictly defined as **CASH_TO_INVOICE** (`Invoice Amount = Cash Amount * Exchange Rate`).
+- Valuation chênh lệch tỷ giá (FX Gain/Loss) is posted to F1 Ledger (DR/CR 515/635) atomically inside `finance_allocate_payment`.
 
 ### F3 → F1 (Read Path: Reconciliation)
 
