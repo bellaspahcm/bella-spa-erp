@@ -77,6 +77,11 @@ async function applyMigrations() {
         version: '20260817000000',
         name: 'finance_ar_engine_v1',
         file: 'supabase/migrations/20260817000000_finance_ar_engine_v1.sql'
+      },
+      {
+        version: '20260817010000',
+        name: 'finance_invoice_lifecycle_rpcs',
+        file: 'supabase/migrations/20260817010000_finance_invoice_lifecycle_rpcs.sql'
       }
     ];
 
