@@ -65,12 +65,12 @@ The AI / Engineer MUST NOT:
 7. Mutate a POSTED transaction directly — use Reversal + Correction pattern.
 8. Create imbalanced journal entries (Σ debit ≠ Σ credit).
 9. Bypass idempotency key check.
-10. Publish domain events before DB COMMIT.
+10. Publish domain events directly before database commit (use transactional outbox).
 
 The AI / Engineer MUST:
 1. Build product-level finance logic in Finance Bridge (Product Vertical layer).
 2. Consume F1–F5 capabilities through public Finance Contracts only.
-3. Pass all 9 Finance Verification Gates before any Finance Kernel feature is "complete".
+3. Pass all 10 Finance Verification Gates before any Finance Kernel feature is "complete".
 4. Preserve multi-tenant isolation (tenant_id on every finance table, RLS enabled).
 ```
 
@@ -127,14 +127,14 @@ These types are **frozen**. They may not be changed without Architecture Review.
 type CurrencyCode = 'VND' | 'USD' | 'EUR' | 'SGD' | string; // ISO 4217
 
 interface Money {
-  amount: number;        // Stored as integer cents/đồng (no floating point)
+  amount_minor: string;  // Stored as decimal string to represent minor unit (cents/đồng) without JS floating point limitations
   currency: CurrencyCode;
 }
 
-// CORRECT: Money { amount: 1000000, currency: 'VND' } = 1,000,000 VND
-// CORRECT: Money { amount: 100,     currency: 'USD' } = $1.00
+// CORRECT: Money { amount_minor: "1000000", currency: 'VND' } = 1,000,000 VND
+// CORRECT: Money { amount_minor: "100",     currency: 'USD' } = $1.00
 // WRONG:   amount: 1000000  (no currency — forbidden)
-// WRONG:   amount: 10.5     (floating point — forbidden, use integer units)
+// WRONG:   amount_minor: 100.5 (floating point / number type — forbidden, use string of minor units)
 ```
 
 ### 4.2 FinancialAccount
@@ -176,7 +176,7 @@ interface FinancialTransaction {
   // Currency
   transaction_currency: CurrencyCode;  // currency of the originating event
   functional_currency: CurrencyCode;   // tenant's base currency (usually VND)
-  exchange_rate: number;               // = 1.0 if same currency
+  exchange_rate: ExchangeRate;         // decoupled decimal rate representation
   
   description: string;
   reference_type: string;
@@ -185,18 +185,36 @@ interface FinancialTransaction {
   lines: FinancialTransactionLine[];
 }
 
+interface ExchangeRate {
+  rate: string;            // Decimal string representing conversion multiplier (e.g. "24500.000000")
+  source_currency: CurrencyCode;
+  target_currency: CurrencyCode;
+  effective_at: Date;
+}
+
+interface FinancialDimensions {
+  cost_center_id?: string;
+  business_unit_id?: string;
+  location_id?: string;     // e.g. branch ID
+  project_id?: string;
+  department_id?: string;
+  custom_dimension_type?: string;
+  custom_dimension_id?: string;
+}
+
 interface FinancialTransactionLine {
   id: string;
   tenant_id: string;
   transaction_id: string;
   account_id: string;
   
-  debit: Money;    // amount in transaction_currency
-  credit: Money;   // amount in transaction_currency
+  debit: Money;              // amount in transaction_currency
+  credit: Money;             // amount in transaction_currency
   
-  debit_functional: Money;   // amount in functional_currency (after exchange)
-  credit_functional: Money;
+  debit_functional: Money;   // amount in functional_currency
+  credit_functional: Money;  // amount in functional_currency
   
+  dimensions?: FinancialDimensions; // P1: Abstraction for cost center, BU, location dimensions
   memo: string;
 }
 ```
@@ -295,16 +313,16 @@ F1.postTransaction() MUST:
 Every financial transaction MUST carry:
   - transaction_currency (currency of originating event)
   - functional_currency  (tenant base currency, default VND)
-  - exchange_rate        (= 1.0 if same currency)
+  - exchange_rate        (decimal string wrapper ExchangeRate object)
 
 Amount storage:
-  - All amounts stored as INTEGER (no floating point)
-  - VND: stored in đồng   (1,000,000 = 1,000,000 VND)
-  - USD: stored in cents   (100 = $1.00)
+  - All amounts stored as decimal strings representing the minor unit (cents/đồng)
+  - VND: stored in minor unit (đồng) as string, e.g. "1000000"
+  - USD: stored in cents as string, e.g. "100" ($1.00)
   
 MVP constraint: 
   - functional_currency = VND for all Vietnamese tenants
-  - exchange_rate support required from day 1 (even if = 1.0 initially)
+  - ExchangeRate support is a first-class primitive required from day 1.
 ```
 
 ### Invariant F-I-6: Line-Level Constraints
@@ -338,35 +356,62 @@ Design requirement:
     ACCRUAL | CASH | ADJUSTMENT | REVERSAL | OPENING_BALANCE
 ```
 
-### Invariant F-I-8: Approval-Before-Post (F5 + F1 Integration)
+### Invariant F-I-8: Approval-Before-Post (Decoupled Orchestration)
 
 ```
-For transactions requiring approval (per F5 FinancialControl rules):
+To prevent circular dependency between F1 (Ledger) and F5 (Control), they are decoupled.
+Orchestration is managed by a Finance Application Service or Command Handler.
 
-  F1.postTransaction() MUST:
-    1. Call F5.checkControl(transaction) BEFORE posting
-    2. If F5 returns REQUIRES_APPROVAL:
-       - Create ApprovalRequest
-       - Return PENDING_APPROVAL status
-       - DO NOT post to Ledger
-    3. F1 posts only when F5.approveRequest() resolves
+Orchestration sequence:
+  1. Financial Command (e.g. PostTransactionCommand) received
+  2. Call F5.checkControl() to evaluate limit policies
+  3. If control check returns REQUIRES_APPROVAL:
+     - Request approval through F5 (which consumes Core Platform State Machine)
+     - Return status PENDING_APPROVAL
+     - Terminate flow (Ledger Posting is NOT executed yet)
+  4. Once F5 approval resolves to APPROVED:
+     - Resume orchestration flow
+     - Call F1.postTransaction() to record the transaction to Ledger
 
-F5 uses Core Platform State Machine for approval lifecycle:
-  REQUESTED → PENDING_APPROVAL → APPROVED | REJECTED
-  (NOT a custom state machine inside Finance OS)
+F1 remains the authoritative source of Ledger entries. F5 manages governance limits and approvals.
+F5 consumes the generic Core State Machine for approval state transitions (REQUESTED → PENDING_APPROVAL → APPROVED | REJECTED).
 ```
 
-### Invariant F-I-9: Event-After-Persistence
+### Invariant F-I-9: Event-After-Persistence via Transactional Outbox
 
 ```
-Finance OS MUST follow the same rule as Healthcare Kernel:
+To guarantee that event publication matches database state, Finance OS implements the Transactional Outbox Pattern:
 
-  DB COMMIT → DOMAIN EVENT → CONSUMER
+  1. Start DB Transaction
+  2. Perform financial operations (write to F1 Ledger, F2 Cash, F3 AR/AP, etc.)
+  3. Update materialized view (finance_financial_state)
+  4. Write the domain event details to the `finance_outbox_events` table within the same DB Transaction
+  5. Commit DB Transaction
+  
+After DB COMMIT is successful:
+  6. An asynchronous Event Dispatcher picks up records from `finance_outbox_events`
+  7. Publishes them to the Core Event Bus
+  8. Marks outbox records as dispatched
 
-Finance domain events (FinancialTransactionPosted, CashPositionUpdated, etc.)
-MUST only be published AFTER successful DB commit.
+This eliminates the risk of DB committing while Event Bus publication fails.
+NO domain event is sent to the bus before DB commit. NO DB transaction is rolled back after outbox dispatch.
+```
 
-NO domain event before DB persist. NO rollback after event published.
+### Invariant F-I-10: Financial State Reconstruction
+
+```
+finance_financial_state is a derived, materialized state (projection).
+It is NOT the primary financial source of truth.
+
+The primary, authoritative sources of truth are:
+  - F1 Ledger records (finance_transactions, finance_transaction_lines)
+  - F2 Cash records (finance_cash_movements)
+  - F3 AR/AP records (finance_receivables, finance_payables, finance_commitments)
+  - F4 Budget/Forecast records (finance_budgets, finance_forecast_lines)
+
+In the event of database corruption, data loss, or schema migration:
+  - Finance OS MUST be capable of reconstructing the entire historical timeline of `finance_financial_state`
+  - Rebuilding is done by replaying F1 Ledger, F2 Cash, F3 AR/AP, and F4 Budget/Forecast entries.
 ```
 
 ---
@@ -377,9 +422,9 @@ NO domain event before DB persist. NO rollback after event published.
 |--------|----|----|------|----|
 | **Ledger Engine** | F1 | `finance_accounts`, `finance_transactions`, `finance_transaction_lines`, `finance_accounting_periods`, `finance_audit_trail` | `FinancialTransactionPosted`, `FinancialTransactionVoided`, `FinancialTransactionReversed`, `AccountBalanceUpdated` | (source of truth) |
 | **Cash & Treasury Engine** | F2 | `finance_cash_positions`, `finance_bank_accounts`, `finance_cash_movements` | `CashPositionUpdated`, `CashMovementRecorded`, `CashRunwayAlert` | `FinancialTransactionPosted{type=CASH}` |
-| **AR/AP & Commitments Engine** | F3 | `finance_receivables`, `finance_payables`, `finance_commitments` | `ReceivableCreated`, `ReceivableSettled`, `PayableCreated`, `PayableSettled`, `CommitmentCreated`, `PayableOverdue` | Business events from Verticals |
+| **AR/AP & Commitments Engine** | F3 | `finance_receivables`, `finance_payables`, `finance_commitments` | `ReceivableCreated`, `ReceivableSettled`, `PayableCreated`, `PayableSettled`, `CommitmentCreated`, `PayableOverdue` | Calls to F3 public contracts via Finance Bridge |
 | **Budget & Forecast Engine** | F4 | `finance_budgets`, `finance_forecast_models`, `finance_forecast_lines` | `BudgetSet`, `BudgetThresholdBreached`, `ForecastUpdated` | `FinancialTransactionPosted` (for Actual) |
-| **Financial Control Engine** | F5 | `finance_controls`, `finance_approvals` | `ControlViolationDetected`, `ApprovalRequested`, `ApprovalGranted`, `ApprovalRejected` | Pre-post hook from F1 |
+| **Financial Control Engine** | F5 | `finance_controls`, `finance_approvals` | `ControlViolationDetected`, `ApprovalRequested`, `ApprovalGranted`, `ApprovalRejected` | Invoked during control orchestration check |
 
 ### F4: Budget / Forecast / Actual — Clear Separation
 
@@ -466,6 +511,14 @@ Finance OS API:
   - F5: checkControl(transaction)
 ```
 
+### The Finance Bridge (Anti-Corruption Layer)
+
+Mỗi Product Vertical bắt buộc phải triển khai một `Finance Bridge` làm Anti-Corruption Layer (ACL).
+- Vertical **không bao giờ** gọi trực tiếp các engine của Finance OS từ core business services.
+- Khi một Business Event xảy ra (ví dụ: `ServiceRendered` ở Hospital OS), vertical đẩy event đó sang `Finance Bridge`.
+- `Finance Bridge` phân tích event, chuyển đổi domain entities (Patient, Encounter, Doctor) thành các primitives tài chính (Money, PartyId, SourceType, SourceId, Dimensions) và gọi Public Contracts của Finance OS (ví dụ: `F3.createReceivable()`, `F1.postTransaction()`).
+- Tách biệt hoàn toàn: Finance OS hoàn toàn không biết semantic của các ngành dọc; và các ngành dọc không biết chi tiết cấu trúc hạch toán ghi sổ của Ledger.
+
 ### Forbidden Patterns
 
 ```
@@ -533,6 +586,9 @@ CHECK (NOT (debit_amount > 0 AND credit_amount > 0)),
 -- finance_transactions  
 UNIQUE (tenant_id, idempotency_key),  -- prevents duplicate posts
 
+-- Outbox Events
+-- finance_outbox_events table stores events transactionally before async dispatch
+
 -- finance_accounting_periods
 -- Period status transitions enforced at application layer (F5 State Machine)
 ```
@@ -558,7 +614,7 @@ NEVER: rewrite then switch all-at-once.
 Every Finance OS feature must pass all 9 gates:
 
 | Gate | Name | Verifies |
-|------|------|---------|
+|---|---|---|
 | **Gate F-1** | Architecture Compliance | No F6+ created in F1–F5 boundary; no vertical logic in kernel |
 | **Gate F-2** | Contract Boundary | Products only call via Finance contracts; no direct finance_* queries |
 | **Gate F-3** | Tenant Isolation (P0) | All finance_* tables enforce tenant_id; cross-tenant query blocked |
@@ -566,8 +622,9 @@ Every Finance OS feature must pass all 9 gates:
 | **Gate F-5** | Transaction Immutability | POSTED transactions not updated; reversal pattern tested |
 | **Gate F-6** | Idempotency | Duplicate postTransaction() with same key returns same result |
 | **Gate F-7** | Period Control | Transactions rejected for CLOSED/LOCKED periods |
-| **Gate F-8** | Event-After-Persistence | Domain events only published after DB COMMIT |
+| **Gate F-8** | Event-After-Persistence | Domain events only published after DB COMMIT via outbox table |
 | **Gate F-9** | Full Finance Kernel Regression | All Finance OS tests GREEN before feature release |
+| **Gate F-10** | Financial State Reconstruction | Rebuilds the `finance_financial_state` table from ledger/cash/arap/budget/forecast database records and asserts that it matches the pre-rebuild state. |
 
 ---
 
