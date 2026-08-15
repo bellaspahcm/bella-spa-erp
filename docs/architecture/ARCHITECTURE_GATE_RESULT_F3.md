@@ -1,8 +1,8 @@
 # ARCHITECTURE GATE RESULT — F3 ACCOUNTS RECEIVABLE & INVOICING
 
-> **Status:** PRE-CODING ARCHITECTURE ANALYSIS — AWAITING HUMAN ARCHITECT APPROVAL
+> **Status:** 🟡 CONDITIONAL — AWAITING ARCHITECT APPROVAL ON G1/G2 PROOF
 > **Phase:** F3 Pre-Coding Gate
-> **Date:** 2026-08-15T22:32:38+07:00
+> **Date:** 2026-08-16T04:46:54+07:00
 > **Author:** Architecture Review — Bella Finance OS
 > **Prerequisite F0:** Finance OS Inheritance Constitution — FROZEN ✅
 > **Prerequisite F1:** F1 Ledger Engine — FROZEN ✅ (commit `7d0b2b3...`)
@@ -37,7 +37,7 @@ F3 Payment Allocation
         ↓
 ICashReportingEngine.getCashMovements()   ← F2 Public Read Contract
         ↓
-SELECT FOR UPDATE (cash_movement row)     ← F3-I-15 concurrency lock
+Advisory Transaction Lock (tenant-scoped)  ← F3-I-15 concurrency lock
         ↓
 finance_receivable_allocations INSERT     ← F3 owns this table
 ```
@@ -63,11 +63,11 @@ finance_receivable_allocations INSERT     ← F3 owns this table
 |---|---|
 | **Invoice Lifecycle** | DRAFT → FINALIZED → ADJUSTED / VOIDED. State machine with F1 integration at each transition. |
 | **Invoice Lines** | Individual billable items. Revenue account mapping to F1 chart of accounts. |
-| **Receivable Subledger Log** | Immutable fact log (`finance_receivable_ledger`) of all AR movements: accruals, allocations, adjustments. |
-| **Receivable Derived Positions** | Materialised outstanding balance per invoice (`finance_receivable_positions`). Reconstructible from subledger. |
+| **Receivable Subledger Log** | Immutable historical fact log (`finance_receivable_ledger`) of all AR movements. UPDATE and DELETE are blocked. |
+| **Receivable Derived Positions**| Materialised projection cache (`finance_receivable_positions`). Fully reconstructible from subledger facts. |
 | **Allocation Ledger** | Many-to-many mapping of F2 cash movements to F3 invoices (`finance_receivable_allocations`). |
-| **Adjustment Memos** | Credit/Debit Memos correcting finalized invoices without mutation. |
-| **AR Aging** | Derived from positions + due_date. Query-only. |
+| **Adjustment Memos** | Credit/Debit Memos correcting finalized invoices without direct mutation. |
+| **AR Aging** | Derived query-only metrics based on positions + due_date. |
 | **Reconciliation Delta Check** | Compares Σ(outstanding positions) vs F1 AR control account balance. Alert on mismatch. No auto-balancing. |
 
 ### What F3 Does NOT Own
@@ -94,7 +94,7 @@ finance_receivable_allocations INSERT     ← F3 owns this table
 │    finance_invoice_lines         → Billable line items             │
 │    finance_receivable_adjustments→ Credit/Debit memos              │
 │    finance_receivable_ledger     → Immutable AR subledger facts    │
-│    finance_receivable_positions  → Derived outstanding balances    │
+│    finance_receivable_positions  → Reconstructible derived cache   │
 │    finance_receivable_allocations→ Payment-to-invoice allocations  │
 │                                                                    │
 │  READS (via frozen public contracts):                              │
@@ -138,7 +138,8 @@ Aggregate 1: Invoice
 Aggregate 2: Receivable Position
   Root:   finance_receivable_positions (1:1 with invoice)
   Source: finance_receivable_ledger (immutable facts)
-  Rule:   Derived. Never written directly. Reconstructed from ledger.
+  Rule:   Materialised projection cache. Reconstructible from facts.
+          Updates allowed only via trusted RPC mutation paths.
 
 Aggregate 3: Allocation
   Root:   finance_receivable_allocations
@@ -160,7 +161,7 @@ Aggregate 5: AR Subledger Log
 
 | Concept | What it is | What it is NOT |
 |---|---|---|
-| `Invoice.status` | Operational lifecycle (DRAFT/FINALIZED/VOIDED/ADJUSTED) | Payment state — PAID/PARTIALLY_PAID are computed, never stored |
+| `Invoice.status` | Operational lifecycle (DRAFT/FINALIZED/VOIDED/ADJUSTED) | Payment state — PAID/PARTIALLY_PAID are computed dynamically, never stored |
 | `finance_receivable_positions.outstanding_amount_minor` | Derived cache of remaining balance | Source of truth — `finance_receivable_ledger` is the source |
 | `finance_receivable_allocations` | Record of cash-to-invoice matching decision | Cash position change — F2 owns cash positions |
 | `finance_receivable_ledger` entry | F3 subledger AR movement fact | F1 journal entry — F1 owns `finance_journal_entries` |
@@ -174,13 +175,13 @@ Aggregate 5: AR Subledger Log
 ```
 F3 Action                  F1 Contract Call                     F1 Journal Lines
 ──────────────────────────────────────────────────────────────────────────────────
-Invoice Finalization   →   ILedgerEngine.postTransaction()   →  DR 1311 (AR Control)
+Invoice Finalization   →   ILedgerEngine.postTransaction()   →  DR 131 (AR Control)
                                                                  CR 5111 (Revenue)
                                                                  CR 3331 (Tax Payable)
 
 Adjustment Memo        →   ILedgerEngine.postTransaction()   →  DR/CR depending on memo type
 (Credit Memo)                                                    DR 5111 (Revenue reversal)
-                                                                 CR 1311 (AR reduction)
+                                                                 CR 131 (AR reduction)
 
 Invoice Void           →   ILedgerEngine.reverseTransaction()→  Full reversal of accrual entry
 
@@ -196,7 +197,7 @@ FX Gain/Loss on alloc  →   ILedgerEngine.postTransaction()   →  DR/CR 4130/8
   source_type:          'F3_AR_INVOICE',
   source_id:            string,   // = invoice.id
   transaction_type:     'ACCRUAL',
-  posted_at:            Date,     // = invoice.issue_date (or finalization timestamp)
+  posted_at:            Date,     // = invoice.issue_date
   transaction_currency: string,   // = invoice.currency
   functional_currency:  string,   // tenant functional currency
   exchange_rate_override?: { rate, effective_at },  // required if invoice_currency ≠ functional
@@ -204,7 +205,7 @@ FX Gain/Loss on alloc  →   ILedgerEngine.postTransaction()   →  DR/CR 4130/8
   reference_type:       'INVOICE',
   reference_id:         string,   // = invoice.id
   lines: [
-    { account_code: '1311', debit_amount_minor: total_invoice_amount_minor, credit_amount_minor: '0', memo: '...' },
+    { account_code: '131',  debit_amount_minor: total_invoice_amount_minor, credit_amount_minor: '0', memo: '...' },
     { account_code: '5111', debit_amount_minor: '0', credit_amount_minor: total_pretax_amount_minor, memo: '...' },
     { account_code: '3331', debit_amount_minor: '0', credit_amount_minor: tax_amount_minor, memo: '...' }
   ]
@@ -237,7 +238,7 @@ Reconciliation        →  ICashReportingEngine.getCashPosition()  → Informati
 F3 Action              F1 Contract Call                    Purpose
 ────────────────────────────────────────────────────────────────────────────────
 Reconciliation     →   ILedgerEngine.getBalance()      →  Read AR control account balance
-                       (account_code='1311', asOf)         Compare vs Σ(outstanding positions)
+                       (account_code='131', asOf)         Compare vs Σ(outstanding positions)
                                                            Delta → alert (never auto-correct)
 ```
 
@@ -250,28 +251,28 @@ Mapping all 17 F3 Constitution invariants to their implementation mechanism and 
 | Invariant | Title | Implementation Mechanism | Gate |
 |---|---|---|---|
 | F3-I-1 | Invoice Immutability | Trigger on `finance_invoices` blocks UPDATE on financial columns after `status = 'FINALIZED'`. Only `updated_at`, `posting_status`, metadata columns are mutable post-finalization. | G5 |
-| F3-I-2 | F1 Double-Entry Parity | `Σ(finance_receivable_positions.outstanding_amount_minor)` compared against `ILedgerEngine.getBalance('1311')` by background reconciliation service. Alert only. | G1 |
+| F3-I-2 | F1 Double-Entry Parity | `Σ(finance_receivable_positions.outstanding_amount_minor)` compared against `ILedgerEngine.getBalance('131')` by background reconciliation service. Alert only. | G1 |
 | F3-I-3 | Adjustment-Only Correction | Invoice immutability trigger + Adjustment Memo workflow in `finance_receivable_adjustments`. No direct invoice line update post-finalization. | G5 |
 | F3-I-4 | F1 Posting Boundary | F3 has ZERO direct grants on `finance_journal_entries` or `finance_accounts`. All F1 writes go through `ILedgerEngine.postTransaction()`. | G1 |
 | F3-I-5 | F2 Cash Boundary | F3 has ZERO grants on `finance_cash_movements` or `finance_cash_positions`. All F2 reads go through `ICashReportingEngine`. | G2 |
-| F3-I-6 | Payment Allocation Integrity | Allocation checks: (1) `direction = 'INFLOW'`, (2) `Σ(active allocations) + new_alloc ≤ movement.amount_minor`. Both enforced in the allocation RPC. | G2 |
+| F3-I-6 | Payment Allocation Integrity | Allocation checks: (1) `direction = 'INFLOW'`, (2) `Σ(active allocations) + new_alloc ≤ movement.amount_minor`. Enforced in the allocation RPC. | G2 |
 | F3-I-7 | Tenant & Customer Isolation | RLS on all 6 F3 tables using `get_auth_tenant_id()`. `customer_id` FK scoped to tenant. | DB layer |
 | F3-I-8 | No Self-Balancing | Reconciliation service raises `AR_RECONCILIATION_MISMATCH_ALERT`. No `UPDATE` path exists for auto-correction. | G1 |
 | F3-I-9 | Timing of Recognition | Invoice status trigger: DRAFT state has no ledger impact. `finance_receivable_ledger` INSERT only triggered on FINALIZED transition. | G5 |
 | F3-I-10 | Allocation Immutability | Trigger on `finance_receivable_allocations` blocks UPDATE/DELETE. Reversal creates new row with `allocation_type = 'REVERSAL'`. | G3 |
-| F3-I-11 | Allocations ≤ Cash Received | `SELECT FOR UPDATE` on movement row, then `Σ(active allocations) + new ≤ movement.amount_minor` inside same TX. | G2 |
+| F3-I-11 | Allocations ≤ Cash Received | `pg_advisory_xact_lock` on tenant + cash_movement_id, then `Σ(active allocations) + new ≤ movement.amount_minor` inside same TX. | G2 |
 | F3-I-12 | Bidirectional Traceability | `finance_receivable_allocations(invoice_id, cash_movement_id)` indexed both ways. | DB layer |
 | F3-I-13 | Reconstructible AR | Positions rebuilt from `finance_receivable_ledger` + `finance_receivable_allocations`. Reconstruction RPC mirrors F2 pattern (SET LOCAL privilege). | G5 |
-| F3-I-14 | Accrual Atomicity | Single database transaction containing: invoice status transition + `ILedgerEngine.postTransaction()` + subledger INSERT. If F1 posting fails → full rollback. PostgreSQL transaction boundary. | G1 |
-| F3-I-15 | Allocation Concurrency Safety | `SELECT FOR UPDATE` on `finance_cash_movements` (via F2 logical lock) + `SELECT FOR UPDATE` on `finance_receivable_positions`. Lock order: cash first, position second. | G2 |
-| F3-I-16 | Posting Boundary Atomicity | Invoice FINALIZED status written only after `postTransaction()` returns success. Status update and subledger INSERT in same TX as F1 call result application. | G1 |
+| F3-I-14 | Accrual Atomicity | Same-transaction nested execution inside DB. Invoice transition + F1 post + subledger insert in same transaction. | G1 |
+| F3-I-15 | Allocation Lock Ordering | Strict lock hierarchy: (1) Advisory lock on (tenant_id, cash_movement_id), (2) `SELECT FOR UPDATE` on `finance_receivable_positions`. | G2 |
+| F3-I-16 | Posting Boundary Atomicity | Invoice FINALIZED status written only after `postTransaction()` returns success. Status update and subledger INSERT in same TX as F1 call result. | G1 |
 | F3-I-17 | Accrual Idempotency | `posting_attempt_id UUID UNIQUE` stored persistently in `finance_invoices`. `PostTransactionRequest.idempotency_key = posting_attempt_id`. F1 idempotency handles duplicate calls transparently. | G1 |
 
 ---
 
 ## VII. ADDITIVE MIGRATION PLAN
 
-F3 introduces 6 new tables and 4+ RPCs. Zero modifications to F1 or F2 schema.
+F3 introduces 6 new tables and 5 RPCs. Zero modifications to F1 or F2 schema.
 
 ### New Tables (CREATE only — no ALTER on existing tables)
 
@@ -336,7 +337,7 @@ CREATE TABLE public.finance_receivable_ledger (
     -- NO updated_at — this table is append-only
 );
 
--- Table 4: Derived Receivable Positions (Reconstructible)
+-- Table 4: Derived Receivable Positions (Reconstructible Projection Cache)
 CREATE TABLE public.finance_receivable_positions (
     id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id               UUID NOT NULL,
@@ -372,8 +373,8 @@ CREATE TABLE public.finance_receivable_allocations (
     cash_amount             BIGINT NOT NULL,
     functional_amount       BIGINT NOT NULL,
     valuation_rate          NUMERIC(20, 8) NOT NULL DEFAULT 1,
-    rate_source             VARCHAR(50),
-    rate_timestamp          TIMESTAMPTZ,
+    rate_source             VARCHAR(50) NOT NULL,    -- Provenance tracking (e.g. 'CENTRAL_BANK', 'TREASURY')
+    rate_timestamp          TIMESTAMPTZ NOT NULL,
     allocation_date         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_by              UUID,
     created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -401,181 +402,104 @@ CREATE TABLE public.finance_receivable_adjustments (
 ### Key Constraints (P0)
 
 ```sql
--- Prevent reversal of already-reversed allocation (F3-I-10)
+-- Prevent multiple reversals of the same allocation (F3-I-10)
 CREATE UNIQUE INDEX uq_reversal_once_per_allocation
   ON public.finance_receivable_allocations(reversal_ref_id)
   WHERE reversal_ref_id IS NOT NULL;
 
+-- Unique identity index for ledger facts to prevent duplicate syncs
+CREATE UNIQUE INDEX uq_receivable_ledger_fact
+  ON public.finance_receivable_ledger (tenant_id, source_type, source_id, entry_type);
+
 -- Bidirectional traceability indexes (F3-I-12)
 CREATE INDEX idx_allocations_by_invoice ON public.finance_receivable_allocations(tenant_id, invoice_id);
 CREATE INDEX idx_allocations_by_movement ON public.finance_receivable_allocations(tenant_id, cash_movement_id);
-
--- Invoice number unique per tenant already in UNIQUE constraint above
--- Invoice status transition guard: trigger (see RPCs section)
 ```
-
-### RLS (all tables)
-
-```sql
-ALTER TABLE public.finance_invoices ENABLE ROW LEVEL SECURITY;
--- repeat for all 6 F3 tables
--- Policy: tenant_id = get_auth_tenant_id()
--- REVOKE ALL from public, anon, authenticated on write RPCs
--- GRANT SELECT to authenticated (read-only via reporting)
--- GRANT EXECUTE on write RPCs to service_role only
-```
-
-### New RPCs (CREATE only — no ALTER on F1/F2 RPCs)
-
-Migration target: `20260817010000_finance_ar_invoice_rpc.sql`
-
-| RPC | Purpose | Notes |
-|---|---|---|
-| `finance_finalize_invoice` | Atomic: status transition + F1 post + subledger insert | SECURITY DEFINER, service_role only |
-| `finance_allocate_payment` | Atomic: F2 movement lookup + dual lock + allocation insert + position update | SECURITY DEFINER, service_role only |
-| `finance_reverse_allocation` | Atomic: reversal allocation insert + subledger debit + position update | SECURITY DEFINER, service_role only |
-| `finance_void_invoice` | Atomic: F1 reversal + receivable reversal subledger + status VOIDED | SECURITY DEFINER, service_role only |
-| `finance_reconstruct_receivable_positions` | Rebuild positions from ledger. SET LOCAL privilege. service_role only. | Mirrors F2 reconstruction pattern |
-
-### Triggers
-
-| Trigger | Table | Effect |
-|---|---|---|
-| `trg_finance_invoice_immutability` | `finance_invoices` | Blocks UPDATE on financial columns after status = 'FINALIZED' |
-| `trg_finance_receivable_ledger_immutability` | `finance_receivable_ledger` | Blocks UPDATE and DELETE unconditionally |
-| `trg_finance_allocation_immutability` | `finance_receivable_allocations` | Blocks UPDATE and DELETE unconditionally |
-| `trg_finance_invoice_status_transition` | `finance_invoices` | Validates state machine transitions (see Section V state table) |
 
 ---
 
-## VIII. FIVE PRE-CODING GATES (from F3 Constitution §7)
+## VIII. FIVE PRE-CODING GATES
 
-### G1 — Atomic Posting Protocol ⚠️ REQUIRES VERIFICATION
+### G1 — Atomic Posting Protocol
 
-**Requirement (F3-I-14, F3-I-16, F3-I-17):**
+**Decision:** Option A — Same-Database PostgreSQL Atomic Transaction.
 
-Invoice finalization must be atomic: `invoice status → FINALIZED` + `ILedgerEngine.postTransaction()` + `finance_receivable_ledger INSERT` must either all commit or all rollback. No partial state.
+**The Accrual Workflow:**
+1. The application calculates the double-entry lines and the sha256 request hash of the payload.
+2. The application invokes the F3 RPC `finance_finalize_invoice` passing the `p_request_hash` alongside the invoice details.
+3. Within `finance_finalize_invoice` (SECURITY DEFINER):
+   - A lock is acquired on the invoice row (`SELECT FOR UPDATE`).
+   - Validate status is `DRAFT`.
+   - Invoke `public.finance_post_transaction(...)` directly inside SQL (F1 primitive contract).
+   - Write `DEBIT_ACCRUAL` entry to `finance_receivable_ledger`.
+   - Initialize `finance_receivable_positions` record.
+   - Update `finance_invoices` status to `FINALIZED`.
+4. Any exception from `finance_post_transaction` or subledger inserts rolls back the entire transaction. The invoice remains `DRAFT`.
 
-**Current F1 contract capability:**
-
-`ILedgerEngine.postTransaction()` is a TypeScript service method that calls a Supabase RPC (`finance_post_transaction`) over HTTP. This means:
-
-```
-F3 Application Code
-        ↓
-ILedgerEngine.postTransaction()   ← HTTP round-trip to Supabase
-        ↓
-finance_post_transaction (PG)     ← Commits its own transaction
-        ↓
-[success / error returned]
-        ↓
-F3 Application Code continues...
-```
-
-**Critical issue:** Because the F1 RPC executes in its own database transaction and the F3 application code runs outside of it, there is **no distributed transaction** between the F1 commit and the subsequent F3 subledger insert. This is the same atomicity challenge that F2 solved via the event-sourcing pattern.
-
-**F3 Resolution Plan (required before coding):**
-
-F3 must adopt one of two integration protocols — this is Gate G1 and is the most important architectural decision for F3.1:
-
-**Option A — F3 Database RPC with F1 call inside a single PG function:**
-Move the entire finalization flow into a Postgres `SECURITY DEFINER` function that:
-1. Updates invoice status within the same PG transaction
-2. Calls `finance_post_transaction` (a PG RPC in F1 schema) directly via PG function call
-3. Inserts subledger row
-This requires that `finance_post_transaction` be callable from within a PG function in the same DB. **This is the recommended path** — it mirrors how F2's `finance_internal_record_cash_movement` calls F1 tables directly within a trusted SECURITY DEFINER boundary.
-
-**Option B — Outbox + Saga pattern:**
-F3 writes to an F3 outbox table (within the same PG transaction as invoice status transition), and an outbox dispatcher calls `ILedgerEngine.postTransaction()` asynchronously. On success, F3 subledger insert happens. On failure after retries → FAILED posting_status → alert.
-This is **more complex** but resilient to RPC timeouts.
-
-> [!IMPORTANT]
-> **G1 decision must be made by Human Architect before F3.1 coding begins.** The wrong choice here is the architectural blocker most likely to violate F3-I-14 (Accrual Atomicity) and F3-I-16 (Posting Boundary Atomicity).
-
-**Recommended decision:** Option A (PG function) for atomicity simplicity, with Option B considered for fault-tolerance if RPC timeout risk is high. The F2 precedent (SECURITY DEFINER PG functions calling other PG RPCs within the same transaction) strongly favors Option A.
+**Verifying G1 compatibility before coding:**
+Before writing F3 database migrations, we must run a minimal test to confirm that:
+- `finance_post_transaction` can be called from inside a nested PL/pgSQL function.
+- It correctly rolls back on errors.
+- Its idempotency check remains functional when called nested.
+- It emits the `posted.v2` outbox event atomically.
 
 ---
 
-### G2 — Dual-Side Allocation Lock ✅ DESIGN CLEAR
+### G2 — Concurrency & Allocation Lock Ordering (F3-I-15)
 
-**Requirement (F3-I-15, F3-I-11):**
+F3 must lock the allocation paths atomically to prevent double-allocating a cash receipt.
+To avoid cross-schema FK locks, F3 uses a transaction-scoped advisory lock.
 
-Both the F2 cash movement row and the F3 receivable position row must be locked before any allocation is written. Lock order must be deterministic to prevent deadlocks.
-
-**Design:**
-
-```sql
--- Inside finance_allocate_payment RPC (SECURITY DEFINER):
--- Step 1: Lock F2 cash movement first (lower domain in the hierarchy)
---         Note: F3 cannot acquire a true PG lock on F2's finance_cash_movements
---         because cross-domain locks add coupling. Instead:
---         (a) Read movement via F2 contract (application layer)
---         (b) Use the movement_id as an advisory lock target, or
---         (c) Include a logical_lock row in a F3-owned table
---         See NOTE below.
-
--- Step 2: Lock F3 receivable position second
-SELECT * FROM public.finance_receivable_positions
-WHERE tenant_id = p_tenant_id AND invoice_id = p_invoice_id
-FOR UPDATE;
-
--- Step 3: Validate Σ(active allocations) + new ≤ movement.amount_minor
--- Step 4: Insert allocation row
--- Step 5: Update position
-```
-
-> [!IMPORTANT]
-> **Cross-domain locking constraint:** F3 cannot use `SELECT ... FOR UPDATE` on `finance_cash_movements` because F3 has no write grants on F2 tables, and `FOR UPDATE` requires UPDATE permission. This is a deliberate boundary.
->
-> **Resolution:** The over-allocation constraint is enforced by:
-> 1. Reading `movement.amount_minor` from F2 at allocation time (via `ICashReportingEngine`)
-> 2. Using an F3-owned `Σ(active allocations per cash_movement_id)` aggregate check inside the allocation RPC (within a serializable transaction or advisory lock on `cash_movement_id`)
-> 3. The unique reversal constraint (`uq_reversal_once_per_allocation`) prevents double-reversal
->
-> This is sufficient because F3 is the only writer to `finance_receivable_allocations`. The cross-domain risk (another system also allocating the same cash movement) is managed at the application layer.
+**The Strict Lock Hierarchy:**
+1. **Advisory Lock:** Lock key `(tenant_id, cash_movement_id)` namespace:
+   ```sql
+   SELECT pg_advisory_xact_lock(
+       hashtextextended(
+           p_tenant_id::text || ':' || p_cash_movement_id::text,
+           0
+       )
+   );
+   ```
+2. **Retrieve F2 facts:** Call F2 reporting engine to query `cash_movement` details (confirm direction = `INFLOW`).
+3. **Lock F3 target position:** Lock invoice position row:
+   ```sql
+   SELECT * FROM public.finance_receivable_positions
+   WHERE tenant_id = p_tenant_id AND invoice_id = p_invoice_id
+   FOR UPDATE;
+   ```
+4. **Validation:** Sum active standard allocations (excluding reversals) and verify `allocated_amount_minor + new_amount <= movement_amount`.
+5. **Execution:** Insert allocation record, write `CREDIT_ALLOCATION` to subledger, update derived position.
+6. **COMMIT** (automatically releases the transaction advisory lock).
 
 ---
 
-### G3 — Reversal Constraint ✅ DESIGN CLEAR
+### G3 — Reversal Constraint
 
-**Requirement (F3-I-10):**
-
-A confirmed allocation cannot be updated or deleted. Reversal creates a new `REVERSAL` row. Each allocation can only be reversed once.
-
-**Enforcement:**
-- `trg_finance_allocation_immutability`: blocks UPDATE/DELETE unconditionally
-- `uq_reversal_once_per_allocation`: unique partial index on `reversal_ref_id` where NOT NULL
-- Reversal allocation `allocated_amount_minor` must equal the original (positive value, same semantics as F2 reversal)
+**Rules:**
+- All allocation reversals must carry positive amounts.
+- Type markers must be `REVERSAL`.
+- `reversal_ref_id` must point to the original standard allocation ID.
+- `uq_reversal_once_per_allocation` uniqueness constraints enforce that an allocation can be reversed at most once.
 
 ---
 
-### G4 — Currency/FX Contract ✅ DESIGN CLEAR
+### G4 — Currency/FX and Rate Provenance
 
-**Requirement:** Multi-currency allocation support. FX gain/loss posting to F1.
-
-**Design:**
-- `finance_receivable_allocations` stores `invoice_currency`, `cash_currency`, `allocation_currency`, `valuation_rate`
-- FX gain/loss calculated: `functional_amount - original_functional_invoice_amount`
-- If gain/loss ≠ 0 → `ILedgerEngine.postTransaction()` with FX P&L lines (accounts: `4130` FX Gain / `8130` FX Loss)
-- F3 does **not** own an exchange rate table. `valuation_rate` comes from the caller (UI or treasury service).
+All foreign currency settlement gains/losses must be recognized during payment allocation.
+- `finance_receivable_allocations` captures the fx details and converts them to functional currency.
+- If an exchange difference exists, F3 posts a currency gain/loss transaction directly to F1 (using control accounts `4130` / `8130`).
+- **Provenance enforcement:** The `rate_source` field must NOT accept arbitrary UI values. It must be checked against a strict list of validated sources (`'CENTRAL_BANK'`, `'TREASURY'`, `'MANUAL_AUTHORIZED'`). Arbitrary UI inputs are rejected.
 
 ---
 
-### G5 — Derived State & Void Semantics ✅ DESIGN CLEAR
+### G5 — Derived State & Void Semantics
 
-**Requirement:** PAID/PARTIALLY_PAID must never be stored. Invoice void = reversal, not deletion.
-
-**Design:**
-- `finance_invoices.status` column: CHECK constraint allows only `('DRAFT', 'FINALIZED', 'ADJUSTED', 'VOIDED')`
-- Payment states derived dynamically: `outstanding_amount_minor = 0 → PAID`, `0 < outstanding < original → PARTIALLY_PAID`
-- Void: `ILedgerEngine.reverseTransaction(original_f1_transaction_id)` + reversal subledger row + status → VOIDED
-- `trg_finance_invoice_immutability` prevents write of PAID/PARTIALLY_PAID to the status column
+- Payment statuses (`PAID`, `PARTIALLY_PAID`) must never be written to the `status` column of `finance_invoices`. They are calculated dynamically by checking the outstanding balance.
+- Voiding a finalized invoice requires calling `ILedgerEngine.reverseTransaction` on F1, inserting a debit reversal line in the F3 subledger, and transitioning the invoice status to `VOIDED`. The original invoice history remains intact.
 
 ---
 
 ## IX. F3 BOUNDARY VIOLATIONS — PROHIBITED LIST
-
-The following are explicitly prohibited in F3 implementation. Any pull request containing these patterns must be rejected:
 
 ```
 ❌ Direct INSERT/UPDATE/DELETE on finance_journal_entries
@@ -598,85 +522,48 @@ The following are explicitly prohibited in F3 implementation. Any pull request c
 
 ## X. PROPOSED TEST GATE — F3 VERIFICATION PLAN
 
-### Target: ≥ 95 integration tests across 5 suites
+Targeting **95+ integration tests** across 5 suites:
 
-| Suite | File | Target |
-|---|---|---|
-| F3.1 Database & RLS | `finance-f3-db-rls.test.ts` | ~25 tests |
-| F3.2 Invoice Lifecycle | `finance-f3-invoice-lifecycle.test.ts` | ~20 tests |
-| F3.3 Allocation Engine | `finance-f3-allocation.test.ts` | ~20 tests |
-| F3.4 Reconstruction & Reconciliation | `finance-f3-reconstruction.test.ts` | ~20 tests |
-| F3.5 Concurrency & Boundary | `finance-f3-concurrency.test.ts` | ~10 tests |
+### Suite 1: Database & RLS (25 tests)
+- Table structures for all 6 F3 tables.
+- Immutability guards for invoices, subledgers, and allocations.
+- Tenant isolation (RLS checks on all 6 tables).
+- Unique constraints: `uq_reversal_once_per_allocation`, `uq_receivable_ledger_fact`.
 
-### Mandatory Test Coverage
+### Suite 2: Invoice Lifecycle & G1 Atomicity (20 tests)
+- Accrual postings on FINALIZED transition.
+- **T_G1_01: Deliberate F1 Posting Failure Injection.** Inject invalid account code or imbalance. Assert that invoice remains `DRAFT`, subledger is empty, and position is uninitialized (Proves `F3-I-14`).
+- **T_G1_02: Deliberate F3 Ledger Failure Injection.** Post transaction succeeds, but F3 subledger insert throws. Assert that F1 transaction rolls back completely (no orphan posted transactions).
+- **T_G1_03: Idempotent finalization.** Repeat finalization calls with same `posting_attempt_id`. Assert only 1 F1 transaction and 1 subledger entry are created.
+- **T_G1_04: Reversal & Void.** Finalized invoice voiding. Assert F1 reversal posted and invoice marked `VOIDED`.
 
-**F3.1 Database & RLS:**
-- Schema integrity for all 6 tables
-- Invoice immutability trigger (cannot UPDATE financial columns post-FINALIZED)
-- Receivable ledger immutability trigger (UPDATE/DELETE blocked)
-- Allocation immutability trigger (UPDATE/DELETE blocked)
-- Unique reversal constraint (each allocation reversed at most once)
-- RLS tenant isolation (6 tables)
+### Suite 3: Payment Allocation & Concurrency (20 tests)
+- Standard allocation: Subledger credit written and derived position updated.
+- **T_G2_01: Concurrent Allocation Race.** Two connections concurrently attempt to allocate `700` and `500` against a cash receipt of `1000`. Assert one succeeds, one fails/aborts, and the sum allocated never exceeds `1000` (Proves advisory lock safety).
+- **T_G2_02: Allocation Lock Ordering.** Assert that allocation locks are acquired in order: (1) advisory lock, (2) position lock. Lock ordering tests to guarantee deadlock immunity.
+- Reversal of standard allocations and enforcement of one-time reversal rules.
+- Multi-currency allocation and correct FX P&L postings to F1.
 
-**F3.2 Invoice Lifecycle:**
-- DRAFT → FINALIZED: F1 posting called, subledger debit created, position initialized
-- DRAFT → FINALIZED: idempotent (same `posting_attempt_id` → same canonical F1 tx)
-- FINALIZED → ADJUSTED: credit memo workflow, F1 adjustment posted
-- FINALIZED → VOIDED: F1 reversal posted, subledger reversal entry created
-- Invalid transitions blocked (VOIDED → FINALIZED, FINALIZED → DRAFT)
-- PAID/PARTIALLY_PAID blocked from being written to status column
-
-**F3.3 Allocation Engine:**
-- Standard allocation: correct subledger credit + position update
-- Over-allocation rejected (Σ allocations > movement.amount_minor)
-- Allocation reversal: new REVERSAL row, position restored
-- Double-reversal of same allocation blocked
-- Multi-currency allocation: FX gain/loss posted to F1
-
-**F3.4 Reconstruction & Reconciliation:**
-- Mirrors F2 reconstruction: R01–R15 from F3 Constitution §6.2
-- Positions reconstructed from ledger exactly
-- Reconstruction privilege isolation (SET LOCAL, role check)
-- Reconciliation delta detection (F3 vs F1 control account)
-- No auto-balancing on mismatch
-
-**F3.5 Concurrency & Boundary:**
-- Concurrent allocations to same cash movement → over-allocation blocked
-- Concurrent finalization with same `posting_attempt_id` → idempotent
-- Direct write to F2 tables from F3 code → blocked (PERMISSION DENIED)
-- Direct write to F1 tables from F3 code → blocked (PERMISSION DENIED)
+### Suite 4: Reconstruction & Reconciliation (20 tests)
+- Derived positions rebuilt from subledger facts.
+- Reconstruction RPC transaction-local privilege isolation (SET LOCAL verification).
+- Reconciliation delta check between F3 position sum and F1 Account `131` (AR control account). Verify that delta raises alerts and does not trigger auto-balancing.
 
 ---
 
-## XI. OPEN QUESTIONS FOR HUMAN ARCHITECT
+## XI. OPEN DESIGN QUESTIONS & SOLUTIONS
 
-> [!IMPORTANT]
-> **Q1 — G1 Atomicity Protocol Selection (BLOCKER)**
-> The most critical decision before F3.1 coding: **Option A** (PG function embedding F1 call in same TX) or **Option B** (outbox saga pattern)?
->
-> Recommendation: **Option A** — same-DB PG function calling `finance_post_transaction` within a single transaction. This is the pattern already established by F2's trusted SECURITY DEFINER RPCs. But this requires verifying that `finance_post_transaction` PG function can be called from within another PG function in F3.
->
-> Verification needed: `SELECT finance_post_transaction(...)` called from inside `finance_finalize_invoice` SQL function — confirm no recursive lock or privilege issue.
+### Q3 — Account Mapping
+The Chart of Accounts seeded by F1 (`seed_default_coa`) seeds account code `131` ("Phải thu của khách hàng") as the default AR Control Account under Circular 131/2016/TT-BTC.
+- **Solution:** F3 will map to F1's Account `131` directly.
+- F3 lines support custom `revenue_account_code` mapping per invoice line (e.g. `5111` for packages, `5112` for retail). F1 remains the single authority validating these account codes at posting time.
 
-> [!IMPORTANT]
-> **Q2 — Cross-Domain Allocation Lock (IMPORTANT)**
-> Since F3 cannot `SELECT FOR UPDATE` on F2's `finance_cash_movements` (no UPDATE grant), the over-allocation protection relies on:
-> (a) Reading movement amount from F2 at allocation time, and
-> (b) Checking `Σ(active allocations) + new_amount ≤ movement_amount` within a serializable isolation TX.
->
-> Is this acceptable, or does the architecture require a different cross-domain lock mechanism (e.g., advisory lock on `cash_movement_id`)?
+### Q4 — Customer Entity Ownership
+F3 will not create a `finance_customers` table.
+- **Solution:** F3 will reference the `customer_id` which acts as a stable tenant-scoped customer reference owned by the product vertical (e.g., patient, guest, client). The lookup/existence check is done at the application boundary.
 
-> [!NOTE]
-> **Q3 — AR Control Account Code**
-> The F3 Constitution mentions account code `1311` for AR control. Is this confirmed in the Chart of Accounts seeded by F1 (`20260525110000_seed_default_coa.sql`)? If multiple revenue accounts exist (`5111`, `5113`), does F3 need a configurable revenue account mapping per invoice line?
-
-> [!NOTE]
-> **Q4 — Customer Entity**
-> The F3 Constitution references `customer_id` but F3 doesn't define the customer table. Does `customer_id` reference an existing table in the product vertical (e.g., `customers` in spa/healthcare vertical)? Or does F3 need a platform-level customer entity?
-
-> [!NOTE]
-> **Q5 — v1 Event Contract Deprecation**
-> The event contract registry states `finance.transaction.posted.v1` has 0 production consumers and will be deprecated in Phase F3. Should F3.0 migration include formally dropping v1 emission, or maintain it for backward compatibility during F3 development?
+### Q5 — Legacy Event Contract Deprecation
+- **Solution:** F3 does not drop or deprecate F1's `v1` event contract. Event versioning and emission deprecation is owned exclusively by F1's contract registry. F3 only consumes the versioned contract events.
 
 ---
 
@@ -685,8 +572,6 @@ The following are explicitly prohibited in F3 implementation. Any pull request c
 ```
 ═══════════════════════════════════════════════════════════════════════
   F3 ACCOUNTS RECEIVABLE & INVOICING — PRE-CODING GATE
-  Date: 2026-08-15T22:32:38+07:00
-  Based on: F3 Constitution (F3-I-1 to F3-I-17) + F1/F2 Frozen Contracts
 ═══════════════════════════════════════════════════════════════════════
 
 PREREQUISITES
@@ -711,30 +596,32 @@ ADDITIVE MIGRATION PLAN               ✅ COMPLETE
   No ALTER on existing F1/F2 tables
 
 FIVE PRE-CODING GATES
-  G1 Atomic Posting Protocol          ⚠️ OPTION A/B DECISION REQUIRED
-  G2 Dual-Side Allocation Lock        ✅ Design approved (advisory lock analysis done)
-  G3 Reversal Constraint              ✅ Design clear
-  G4 Currency/FX Contract             ✅ Design clear
-  G5 Derived State & Void Semantics   ✅ Design clear
+  G1 Atomic Posting Protocol          🟡 CONDITIONAL (Option A selected, verification required)
+  G2 Concurrency & Lock Ordering      🟡 CONDITIONAL (tenant advisory lock required)
+  G3 Reversal Constraint              ✅ Enforced via uniqueness index
+  G4 Currency/FX and Rate Provenance  ✅ Source whitelist constraint added
+  G5 Derived State & Void Semantics   ✅ Position defined as derived cache
 
-PROHIBITED BOUNDARY VIOLATIONS        ✅ 12 patterns listed and enforced
-VERIFICATION PLAN                     ✅ 95+ tests across 5 suites planned
-OPEN QUESTIONS                        ⚠️ 5 questions (Q1 is BLOCKER)
+VERIFICATION PLAN                     ✅ Hardened (Atomic failure & lock race tests added)
 
-STATUS: 🟡 CONDITIONAL — AWAITING HUMAN ARCHITECT APPROVAL ON Q1/Q2
-        Once Q1 atomicity protocol is selected: APPROVED FOR CODING
+STATUS:
+  🟡 CONDITIONAL — APPROVED FOR ARCHITECTURE PROOF
+  No F3 production coding may begin until G1/G2 Proof is completed.
 ═══════════════════════════════════════════════════════════════════════
 ```
 
 ---
 
-## XIII. NEXT STEPS (After Architect Approval)
+## XIII. ARCHITECTURE PROOF WORKFLOW (F3 PRE-CODING PROOF)
 
-1. **Architect answers Q1** → atomicity protocol locked
-2. **Architect answers Q2** → cross-domain lock approach locked
-3. Create `task.md` for F3.1 implementation
-4. Begin `20260817000000_finance_ar_engine_v1.sql` (tables + triggers)
-5. Begin `20260817010000_finance_ar_invoice_rpc.sql` (RPCs)
-6. Begin TypeScript contracts: `src/platform/finance/contracts/ar-engine.contract.ts`
-7. Begin test files: `finance-f3-db-rls.test.ts`
-8. No coding begins until Q1 is resolved.
+To verify the feasibility and safety of G1 nested transactions and G2 advisory lock ordering, the implementation agent must run a specialized test runner verifying **7 proof targets**:
+
+1. **Verify Nested Call Compatibility:** Confirm that a PL/pgSQL function can call `public.finance_post_transaction` directly without throwing compilation or runtime transaction-control errors.
+2. **Verify Same-Transaction Rollback:** Verify that raising a PL/pgSQL exception inside the F3 wrapper function rolls back the F1 ledger entries posted by the nested `finance_post_transaction` call.
+3. **Verify Nested Idempotency:** Confirm that duplicate calls to the wrapper function with the same idempotency key trigger the F1 idempotency check, returning `is_duplicate: true` and the existing transaction UUID.
+4. **Verify Event Emission:** Confirm that the nested F1 transaction successfully inserts the `posted.v2` outbox event into the `finance_outbox_events` table.
+5. **Verify Advisory Lock Concurrency:** Prove that the advisory transaction lock `pg_advisory_xact_lock` prevents concurrent transactions from executing the allocation check simultaneously.
+6. **Verify Lock Ordering Safety:** Verify that the advisory lock + position update sequence does not trigger deadlocks when executed by concurrent connections.
+7. **Verify Boundary Rights:** Verify that the F3 wrapper functions execute successfully using `service_role` privileges without granting write access on F1/F2 tables to application roles.
+
+Once the proof runner reports **7/7 PASS**, Phase F3.1 implementation will be fully approved.
