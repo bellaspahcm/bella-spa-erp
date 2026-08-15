@@ -104,6 +104,7 @@ export interface FinancialTransaction {
 export interface OutboxEvent {
   id: string;
   tenant_id: string;
+  event_id: string;
   event_type: string;
   payload: string; // JSON string
   status: 'PENDING' | 'DISPATCHED' | 'FAILED';
@@ -111,3 +112,28 @@ export interface OutboxEvent {
   error?: string;
   created_at: Date;
 }
+
+// ============================================================================
+// Finance Core Response Types (decoulped but structured like platform standard)
+// ============================================================================
+
+export interface FinanceEngineError {
+  code: string;
+  message: string;
+  details?: Record<string, unknown>;
+  timestamp: string;
+}
+
+export interface FinanceEngineResponseMetadata {
+  requestId?: string;
+  engineVersion?: string;
+  executionTimeMs?: number;
+}
+
+export interface FinanceEngineResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: FinanceEngineError;
+  metadata?: FinanceEngineResponseMetadata;
+}
+

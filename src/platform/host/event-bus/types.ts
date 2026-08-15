@@ -83,6 +83,13 @@ export type EventType =
   | 'platform.metric.daily_rollup.completed.v1'
   | 'platform.metric.monthly_rollup.completed.v1'
   | 'platform.metric.enterprise_rollup.completed.v1'
+  // Finance OS Kernel events (F1 Ledger)
+  | 'finance.transaction.posted.v1'
+  | 'finance.transaction.reversed.v1'
+  | 'finance.transaction.voided.v1'
+  | 'finance.period.opened.v1'
+  | 'finance.period.closed.v1'
+  | 'finance.period.locked.v1'
   | (string & {});
 
 export interface DomainEvent<T = unknown> {
