@@ -94,7 +94,11 @@ export async function getCache<T>(key: string): Promise<T | null> {
   const cachedL1 = localCache.get(key);
   if (cachedL1) {
     if (Date.now() <= cachedL1.expiresAt) {
-      return JSON.parse(cachedL1.value) as T;
+      try {
+        return JSON.parse(cachedL1.value) as T;
+      } catch (e) {
+        localCache.delete(key);
+      }
     } else {
       localCache.delete(key);
     }
@@ -107,16 +111,27 @@ export async function getCache<T>(key: string): Promise<T | null> {
 
   // 2. L1 Miss -> Kiểm tra L2 Cache (Upstash Redis)
   try {
-    const cachedL2 = await client.get<string>(key);
+    const cachedL2 = await client.get<any>(key);
     if (!cachedL2) return null;
+
+    let parsed: T;
+    let stringValue: string;
+
+    if (typeof cachedL2 === 'string') {
+      stringValue = cachedL2;
+      parsed = JSON.parse(cachedL2) as T;
+    } else {
+      stringValue = JSON.stringify(cachedL2);
+      parsed = cachedL2 as T;
+    }
 
     // Lưu ngược lại vào L1 cache tạm 15 giây để tránh spam request mạng liên tục
     localCache.set(key, {
-      value: cachedL2,
+      value: stringValue,
       expiresAt: Date.now() + 15 * 1000,
     });
 
-    return JSON.parse(cachedL2) as T;
+    return parsed;
   } catch (error) {
     console.error('[Redis Cache] Get failed:', error);
     return null;
