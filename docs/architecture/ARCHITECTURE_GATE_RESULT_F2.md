@@ -1,11 +1,11 @@
 # ARCHITECTURE GATE RESULT — F2 CASH & TREASURY ENGINE
 
-> **Status:** CONDITIONAL APPROVED (AWAITING RE-SIGN-OFF OF RESOLVED CONSTRAINTS)  
+> **Status:** APPROVED FOR CODING  
 > **Phase:** Pre-Coding Architecture Analysis  
 > **Date:** 2026-08-15  
 > **Author:** Architecture Review — Bella Platform  
 > **Prerequisite:** F1 Ledger Engine — FROZEN ✅ (`finance/f1/frozen`)  
-> **Constraint:** NO F2 CODE may be written until this revised analysis is approved.
+> **Constraint:** Downstream only. No independent financial truth. Additive database modifications only.
 
 ---
 
@@ -13,7 +13,7 @@
 
 F2 Cash & Treasury Engine is the **second kernel** of Finance OS. Its purpose is to maintain an accurate, real-time **Cash Position** for every tenant — answering: *"How much liquid cash does this business have, right now, across all bank accounts and cash vaults?"*
 
-F2 is **NOT a second ledger**. It does not perform double-entry accounting. It consumes **selective events from F1** (specifically: posted transactions with `transaction_type = 'CASH'`) and derives a materialized cash position from them.
+F2 is a **Materialized Projection / Derived State** of F1's financial truth. It does not perform double-entry accounting and does not make independent cash adjustments. It consumes selective versioned events from F1 (specifically: posted transactions with `transaction_type = 'CASH'`) and updates its projection.
 
 This separation respects the **Invariant F-I-7** established in the Finance OS Constitution: accrual-basis Ledger (F1) ≠ cash-basis Treasury (F2).
 
@@ -25,23 +25,24 @@ This separation respects the **Invariant F-I-7** established in the Finance OS C
 
 | Capability | Description |
 |---|---|
-| **Cash Position Management** | Maintains a real-time cash balance per `bank_account` per `tenant`. Answers: *"What is our cash balance right now?"* |
-| **Bank Account Registry** | Stores bank accounts (accounts at external banks) — not chart-of-accounts entries |
-| **Cash Movement Recording** | Records individual cash inflows/outflows with traceability back to F1 source transaction |
-| **Cash Runway Calculation** | Derived metric: `consolidated_cash_position / average_daily_burn_rate` = estimated days of runway |
-| **Cash Runway Alerts** | Publishes `CashRunwayAlert` based on consolidated tenant cash position |
+| **Cash Position Management** | Maintains a real-time cash balance projection per `bank_account` per `tenant`. |
+| **Bank Account Registry** | Stores bank accounts (accounts at external banks) — not chart-of-accounts entries. |
+| **Cash Movement Recording** | Records individual cash inflows/outflows with traceability back to F1 source transaction. |
+| **Cash Runway Calculation** | Derived metric: `consolidated_cash_position / average_daily_burn_rate` = estimated days of runway. |
+| **Cash Runway Alerts** | Publishes `CashRunwayAlert` based on consolidated tenant cash position. |
 | **Cash Reconciliation & Staging** | Staging area for bank statements to be matched against F1 transactions. |
 
 ### What F2 Does NOT Own
 
-| Out of Scope | Reason |
+| Out of Scope | Owner |
 |---|---|
-| Double-entry Journal Entries | F1 Ledger owns this exclusively |
+| Double-entry Journal Entries | F1 Ledger Engine |
 | Receivables / Payables | F3 AR/AP Engine |
-| Budgets | F4 Budget Engine |
-| Payment processing / gateway | Product Vertical / Finance Bridge responsibility |
-| Exchange rate management | F3 Treasury scope |
+| Budgets & Forecasts | F4 Budget Engine |
+| Payment processing / gateway | Product Vertical / Finance Bridge |
+| Exchange rate management (governance/rates) | F3 Treasury Engine |
 | Approval workflows | F5 Financial Control Engine |
+| Accounting adjustments for bank discrepancies| F1 Ledger Engine (F2 triggers, F1 posts) |
 
 ---
 
@@ -138,7 +139,33 @@ Imported bank statement records are treated as reconciliation inputs/staging rec
 
 ---
 
-## IV. RESOLVED DESIGN DECISIONS
+## IV. FOUR ARCHITECTURE LOCKS
+
+> [!IMPORTANT]
+> To preserve the absolute immutability of the F1 core ledger and prevent the creation of a "shadow ledger", the following architectural locks are enforced:
+
+### Lock A — No Direct Cash Mutation outside F1
+- Product Verticals and external modules **MUST NOT** call `ICashEngine.recordCashMovement()` directly.
+- The `ICashEngine.recordCashMovement()` method is strictly an **internal projection primitive** used only by the internal `onFinancialTransactionPosted` handler when consuming F1 events.
+- Product Verticals only invoke `ILedgerEngine.postTransaction()` to post ledger entries. Cash position updates flow strictly from F1 events to F2.
+
+### Lock B — Exchange Rate & Valuation Ownership
+- F2 **does not own or govern exchange rates**. The exchange rate governance and configuration tables are owned by F3 (Treasury Engine).
+- F2 merely consumes the rate input provided by F1 events (which captures the transaction-time rate or F3 rate override) and writes it into `finance_cash_movements` as metadata.
+- Functional valuation is derived state: `functional_balance_minor = balance_minor * valuation_rate`. F2 never performs independent currency conversions or rate sourcing.
+
+### Lock C — Reconciliation & Adjustment Boundaries
+- Bank statements staged in `finance_cash_staged_lines` **must not mutate** `finance_cash_positions` directly.
+- If a discrepancy (e.g. bank fee, interest, or write-off) is discovered during reconciliation, F2 **must not** make local adjustments to the cash balance.
+- Instead, the discrepancy must trigger a command to F1 Ledger Engine to post a transaction (e.g. Dr Bank Fees Expense, Cr Bank Account). Once F1 commits and publishes the event, F2 updates its cash position projection.
+
+### Lock D — Versioned Additive Event Contract (F1 Freeze Compatibility)
+- The transition from `finance.transaction.posted.v1` to `finance.transaction.posted.v2` (containing `cash_legs`) is defined as an **additive versioned event contract** in a dedicated migration.
+- It is strictly documented that no F1 core database invariants, existing tables, or ledger behavior are altered. The change is strictly to update the RPC functions (`finance_post_transaction` and `finance_reverse_transaction`) to populate the additional `cash_legs` property in `finance_outbox_events` for v2 events. Existing v1 consumer integrations remain compatible.
+
+---
+
+## V. RESOLVED DESIGN DECISIONS
 
 ### Q1 — Multi-Currency Cash Position (Authoritative vs Derived)
 - **Authoritative Balance:** Native currency (`balance_minor`, `currency`). This is the concrete cash fact.
@@ -163,7 +190,7 @@ Imported bank statement records are treated as reconciliation inputs/staging rec
 
 ---
 
-## V. EVENT CONTRACT RESOLUTION (F1 event leg v2)
+## VI. EVENT CONTRACT RESOLUTION (F1 event leg v2)
 
 Since F1 is frozen, we will introduce a new migration under change control to upgrade the `finance_post_transaction` and `finance_reverse_transaction` database RPCs to emit `finance.transaction.posted.v2`. This event payload includes detailed financial cash legs required for F2 cash projection.
 
@@ -194,7 +221,7 @@ Since F1 is frozen, we will introduce a new migration under change control to up
 
 ---
 
-## VI. DATABASE OWNERSHIP MAP — F2 NEW TABLES
+## VII. DATABASE OWNERSHIP MAP — F2 NEW TABLES
 
 ### Table: `finance_tenant_configs`
 ```sql
@@ -316,7 +343,7 @@ ALTER TABLE finance_cash_quarantine ENABLE ROW LEVEL SECURITY;
 
 ---
 
-## VII. F2 INVARIANTS (Non-Negotiable Rules)
+## VIII. F2 INVARIANTS (Non-Negotiable Rules)
 
 ### F2-I-1: Cash Position is Derived, Not Primary (Materialized Projection)
 `finance_cash_positions` is a derived projection (materialized state). The append-only ledger `finance_cash_movements` is the only authoritative historical record. The derived state can be completely deleted and reconstructed at any time by replaying `finance_cash_movements`.
@@ -325,14 +352,17 @@ ALTER TABLE finance_cash_quarantine ENABLE ROW LEVEL SECURITY;
 Records in `finance_cash_movements` are immutable. Corrections must be handled by posting a Reversal cash movement followed by a Corrected cash movement, preserving historical audit trails.
 
 ### F2-I-3: Unmapped Cash Account Quarantine (No Silent Skip)
-When F2 receives a CASH event for an account that does not map to a bank account in `finance_bank_accounts`, it MUST NOT skip it silently. The event is captured in `finance_cash_quarantine`, and a critical alert is triggered for operator mapping remediation.
+When F2 receives a CASH event for an account that does not map to a bank account in `finance_bank_accounts`, it MUST NOT skip it silently. The event is captured in `finance_cash_quarantine`, and a critical alert is triggered for operator mapping remediation. **Invariant: No cash leg may be silently discarded.**
 
 ### F2-I-4: Negative Cash Balance Policy
 A negative balance in `finance_cash_positions` is not treated as database corruption, but as a business state. Negative balances must be explicitly classified (`balance_minor < 0` triggers state change to `OVERDRAFT`). If tenant policy does not permit overdraft, a policy violation event is raised to F5.
 
+### F2-I-5: Cash Mutation Boundary Lock
+No F2 cash position mutation may occur without a corresponding F1 POSTED transaction. Inflow/outflow figures cannot be adjusted directly at the F2 database level without F1 event propagation.
+
 ---
 
-## VIII. CONCURRENCY & FAILURE MODEL
+## IX. CONCURRENCY & FAILURE MODEL
 
 - **Row Locks:** Row-level `FOR UPDATE` locks on `finance_cash_positions` during cash movement insertions serialize updates and ensure atomic balance accumulation.
 - **Deduplication:** Double event delivery is filtered by `UNIQUE(tenant_id, f1_transaction_id, cash_leg_reference)` on the cash movement table.
@@ -340,7 +370,7 @@ A negative balance in `finance_cash_positions` is not treated as database corrup
 
 ---
 
-## IX. F2 VERIFICATION GATES
+## X. F2 VERIFICATION GATES
 
 | Gate | Name | F2 Verification Tests |
 |---|---|---|
@@ -356,9 +386,10 @@ A negative balance in `finance_cash_positions` is not treated as database corrup
 
 ---
 
-## X. PROPOSED PUBLIC CONTRACTS — ICashEngine
+## XI. PROPOSED PUBLIC CONTRACTS — ICashEngine
 
 ```typescript
+// RecordCashMovementRequest is strictly internal to the projection engine.
 export interface RecordCashMovementRequest {
   tenant_id: string;
   bank_account_id: string;
@@ -402,27 +433,32 @@ export interface ICashEngine {
   readonly engineName: string;
   readonly engineVersion: string;
 
+  // External APIs
   registerBankAccount(req: RegisterBankAccountRequest): Promise<FinanceEngineResponse<BankAccount>>;
-  recordCashMovement(req: RecordCashMovementRequest): Promise<FinanceEngineResponse<CashMovement>>;
   getCashPosition(tenantId: string, bankAccountId: string): Promise<FinanceEngineResponse<CashPosition>>;
   getConsolidatedRunway(tenantId: string): Promise<FinanceEngineResponse<{ runway_days: number; consolidated_cash: Money }>>;
+
+  // Internal projection API only (blocked for direct external calls)
+  recordCashMovement(req: RecordCashMovementRequest): Promise<FinanceEngineResponse<CashMovement>>;
 }
 ```
 
 ---
 
-## XI. VERDICT
+## XII. VERDICT
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    F2 ARCHITECTURE GATE                         │
 │                                                                 │
-│  Status:  CONDITIONAL APPROVED (RESOLVED ARCHITECTURAL RULES)   │
+│  Status:  APPROVED FOR CODING                                   │
 │                                                                 │
-│  All Blocker issues (Q1, Q2, Event Contract, Quarantine, and   │
-│  Runway Calculation) have been resolved.                        │
+│  All 4 architectural locks (Public-API boundary, FX Valuation  │
+│  governance, Discrepancy routing, and Event compatibility)    │
+│  are fully locked and documented.                               │
 │                                                                 │
-│  NO F2 CODE may be written until this revised document          │
-│  receives final Human Architecture Sign-off approval.           │
+│  F1 remains immutable/frozen. F2 is additive-only and           │
+│  downstream of F1. No F2 operation may create an independent     │
+│  financial truth.                                               │
 └─────────────────────────────────────────────────────────────────┘
 ```
