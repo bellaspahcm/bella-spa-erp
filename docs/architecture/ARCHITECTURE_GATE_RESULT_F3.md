@@ -226,12 +226,30 @@ Payment Allocation    →  ICashReportingEngine.getCashMovements() → TS layer:
 ```
 
 > [!CAUTION]
-> **F2 read boundary:** F3 has ZERO direct SELECT/INSERT/UPDATE/DELETE grants on F2 cash tables (`finance_cash_movements` and `finance_cash_positions`). At the database layer, RLS boundary is strictly decoupled: F3 RPCs are prohibited from directly querying F2 tables. Instead, F3 calls the read-only F2 SQL contract `public.finance_get_cash_movement(p_tenant_id, p_cash_movement_id)` which returns a JSONB fact payload containing cash currency, amount, and direction.
+> **F2 read boundary:** F3 has ZERO direct SELECT/INSERT/UPDATE/DELETE grants on F2 cash tables (`finance_cash_movements` and `finance_cash_positions`). At the database layer, RLS boundary is strictly decoupled: F3 RPCs are prohibited from directly querying F2 tables. Instead, F3 calls the read-only F2 SQL contract `public.finance_get_cash_movement(p_tenant_id, p_cash_movement_id)` which returns a JSONB fact payload strictly structured as:
+> ```json
+> {
+>   "movement_id": "UUID",
+>   "tenant_id": "UUID",
+>   "direction": "INFLOW | OUTFLOW",
+>   "amount_minor": 12345,
+>   "currency": "VARCHAR",
+>   "status": "POSTED",
+>   "recognition_rate": 1.0,
+>   "recognition_timestamp": "TIMESTAMPTZ"
+> }
+> ```
+> F3 will not query F2 database tables directly or infer any business meaning from fields outside this contract.
 > The `cash_movement_id` reference in `finance_receivable_allocations` is a logical FK — F3 references the ID but does not acquire a real FK constraint across domain boundaries to avoid cross-schema FK coupling.
+
+**Advisory Lock Key Helper:**
+- Lock key derivation is standardized using a canonical shared SQL function:
+  `public.finance_cash_allocation_lock_key(p_tenant_id UUID, p_cash_movement_id UUID) RETURNS TABLE(tenant_key INT, movement_key INT)`.
+  Any 32-bit int collision risk is negligible, only causing temporary false contention without violating correctness since serialization is maintained.
 
 **FX Rate & Currency Semantics:**
 - Exchange rate direction is strictly defined as **CASH_TO_INVOICE** (`Invoice Amount = Cash Amount * Exchange Rate`).
-- Valuation chênh lệch tỷ giá (FX Gain/Loss) is posted to F1 Ledger (DR/CR 515/635) atomically inside `finance_allocate_payment`.
+- To prevent F3 from prematurely defining accounting rules for exchange rate adjustments before a Finance OS-wide FX framework is established, F1 journal postings for FX Gain/Loss differences are postponed and will be addressed in a future dedicated contract. Allocation rates are captured only in F3 subledgers.
 
 ### F3 → F1 (Read Path: Reconciliation)
 
