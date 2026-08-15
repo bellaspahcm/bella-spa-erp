@@ -467,7 +467,7 @@ export default function HealthcareDashboardPage() {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveViewTab(tab.id as unknown)}
+                onClick={() => setActiveViewTab(tab.id as 'overview' | 'operations' | 'event_stream' | 'all')}
                 className={`px-4 py-2 rounded-xl text-left transition-all duration-200 cursor-pointer flex flex-col justify-center whitespace-nowrap ${
                   isActive
                     ? 'bg-white dark:bg-slate-800 text-teal-950 dark:text-teal-300 font-extrabold shadow-sm border border-slate-200/90 dark:border-slate-700'

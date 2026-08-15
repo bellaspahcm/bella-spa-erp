@@ -1,5 +1,7 @@
 import { supabase as typedSupabase } from '@/lib/supabase';
-const supabase = typedSupabase as unknown;
+import type { SupabaseClient } from '@supabase/supabase-js';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const supabase = typedSupabase as unknown as SupabaseClient<any>;
 
 export interface OutboxClaimedEvent {
   id: string;
@@ -115,11 +117,12 @@ export class AccountingOutboxListener {
 
       return entryId;
     } catch (err: unknown) {
-      console.error(`[AccountingOutboxListener Error] Processing failed for outbox ${outboxId}:`, err.message);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.error(`[AccountingOutboxListener Error] Processing failed for outbox ${outboxId}:`, errMsg);
       // Mark outbox entry failed for retry
       await supabase.rpc('mark_outbox_failed', {
         p_outbox_id: outboxId,
-        p_error: err.message,
+        p_error: errMsg,
       });
       throw err; // Propagate error up
     }

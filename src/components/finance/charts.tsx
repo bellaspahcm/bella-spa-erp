@@ -43,7 +43,7 @@ const formatVNDFull = (v: number) =>
 
 // ─── Custom Active Dot for Line/Area Charts ────────────────────────────────────
 
-const PremiumActiveDot = (props: Record<string, unknown>) => {
+const PremiumActiveDot = (props: { cx?: number; cy?: number; stroke?: string; [key: string]: unknown }) => {
   const { cx, cy, stroke } = props;
   return (
     <g>
@@ -620,7 +620,8 @@ export function PnLStatementChart({
             width={70}
           />
           <Tooltip
-            formatter={(value: number) => [formatVNDFull(value), 'Số tiền']}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            formatter={(value: any) => [formatVNDFull(Number(value)), 'Số tiền'] as any}
             contentStyle={{
               backgroundColor: 'rgba(255, 255, 255, 0.95)',
               borderRadius: '16px',

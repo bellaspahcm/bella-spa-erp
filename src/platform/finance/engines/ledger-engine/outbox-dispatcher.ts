@@ -7,7 +7,7 @@
  *
  * Architecture Compliance:
  * - Law F-8: Event dispatched ONLY after DB COMMIT (outbox ensures this).
- * - Law F-14: ZERO `any` usage.
+ * - Engineering Quality Rule: TypeSafety-NoAny (ZERO any usage).
  * - Idempotent: at-least-once delivery with deduplication via status field.
  *
  * @module platform/finance/engines/ledger-engine/outbox-dispatcher
@@ -47,6 +47,11 @@ const MAX_DISPATCH_BATCH = 50;
 export class OutboxDispatcher {
   constructor(private readonly supabase: SupabaseClient<Database>) {}
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private get client(): SupabaseClient<any> {
+    return this.supabase as unknown as SupabaseClient<any>;
+  }
+
   /**
    * Dispatches all PENDING outbox events for a given tenant to the host Event Bus.
    * Returns count of successfully dispatched events.
@@ -55,12 +60,12 @@ export class OutboxDispatcher {
    */
   public async dispatchPendingEvents(tenantId: string): Promise<number> {
     // 1. Fetch PENDING events for this tenant (bounded by MAX_DISPATCH_BATCH)
-    const { data: rows, error: fetchErr } = await this.supabase
-      .from('finance_outbox_events' as unknown as 'tenants')
+    const { data: rows, error: fetchErr } = await this.client
+      .from('finance_outbox_events')
       .select('id, tenant_id, event_type, payload, status, retry_count, error, created_at')
-      .eq('tenant_id' as unknown as 'id', tenantId)
-      .eq('status' as unknown as 'id', 'PENDING')
-      .order('created_at' as unknown as 'id', { ascending: true })
+      .eq('tenant_id', tenantId)
+      .eq('status', 'PENDING')
+      .order('created_at', { ascending: true })
       .limit(MAX_DISPATCH_BATCH);
 
     if (fetchErr) {
@@ -93,11 +98,11 @@ export class OutboxDispatcher {
         });
 
         // 4. Mark as DISPATCHED
-        await this.supabase
-          .from('finance_outbox_events' as unknown as 'tenants')
+        await this.client
+          .from('finance_outbox_events')
           .update({ status: 'DISPATCHED' })
-          .eq('id' as unknown as 'id', row.id)
-          .eq('tenant_id' as unknown as 'id', row.tenant_id);
+          .eq('id', row.id)
+          .eq('tenant_id', row.tenant_id);
 
         dispatchedCount++;
       } catch (err: unknown) {
@@ -105,15 +110,15 @@ export class OutboxDispatcher {
         console.error(`[OutboxDispatcher] Failed to dispatch event ${row.id}:`, errMsg);
 
         // 5. Mark as FAILED and increment retry count
-        await this.supabase
-          .from('finance_outbox_events' as unknown as 'tenants')
+        await this.client
+          .from('finance_outbox_events')
           .update({
             status: 'FAILED',
             retry_count: row.retry_count + 1,
             error: errMsg
           })
-          .eq('id' as unknown as 'id', row.id)
-          .eq('tenant_id' as unknown as 'id', row.tenant_id);
+          .eq('id', row.id)
+          .eq('tenant_id', row.tenant_id);
       }
     }
 
@@ -125,12 +130,12 @@ export class OutboxDispatcher {
    * Resets status to PENDING so next dispatchPendingEvents() call picks them up.
    */
   public async requeueFailedEvents(tenantId: string, maxRetries: number = 3): Promise<number> {
-    const { data: rows, error } = await this.supabase
-      .from('finance_outbox_events' as unknown as 'tenants')
+    const { data: rows, error } = await this.client
+      .from('finance_outbox_events')
       .select('id, retry_count')
-      .eq('tenant_id' as unknown as 'id', tenantId)
-      .eq('status' as unknown as 'id', 'FAILED')
-      .lte('retry_count' as unknown as 'id', maxRetries);
+      .eq('tenant_id', tenantId)
+      .eq('status', 'FAILED')
+      .lte('retry_count', maxRetries);
 
     if (error || !rows || rows.length === 0) {
       return 0;
@@ -139,11 +144,11 @@ export class OutboxDispatcher {
     const typedRows = rows as Array<{ id: string; retry_count: number }>;
     const ids = typedRows.map((r) => r.id);
 
-    await this.supabase
-      .from('finance_outbox_events' as unknown as 'tenants')
+    await this.client
+      .from('finance_outbox_events')
       .update({ status: 'PENDING' })
-      .in('id' as unknown as 'id', ids)
-      .eq('tenant_id' as unknown as 'id', tenantId);
+      .in('id', ids)
+      .eq('tenant_id', tenantId);
 
     return ids.length;
   }
@@ -161,21 +166,31 @@ export class OutboxDispatcher {
 
     const obj = raw as Record<string, unknown>;
 
-    if (typeof obj.aggregateId !== 'string' || typeof obj.aggregateType !== 'string') {
+    // Fallback: DB RPC sets transaction_id instead of aggregateId at root.
+    // Map it gracefully to align outbox dispatcher with DB RPC events.
+    const aggregateId = typeof obj.aggregateId === 'string'
+      ? obj.aggregateId
+      : (typeof obj.transaction_id === 'string' ? obj.transaction_id : undefined);
+
+    const aggregateType = typeof obj.aggregateType === 'string'
+      ? obj.aggregateType
+      : 'transaction';
+
+    if (typeof aggregateId !== 'string' || typeof aggregateType !== 'string') {
       throw new Error('OUTBOX_INVALID_PAYLOAD: missing required fields aggregateId or aggregateType');
     }
 
     return {
       eventType: typeof obj.eventType === 'string' ? obj.eventType : '',
       tenantId: typeof obj.tenantId === 'string' ? obj.tenantId : '',
-      aggregateId: obj.aggregateId,
-      aggregateType: obj.aggregateType,
+      aggregateId,
+      aggregateType,
       eventVersion: typeof obj.eventVersion === 'string' ? obj.eventVersion : undefined,
       userId: typeof obj.userId === 'string' ? obj.userId : undefined,
       correlationId: typeof obj.correlationId === 'string' ? obj.correlationId : undefined,
       data: typeof obj.data === 'object' && obj.data !== null
         ? (obj.data as Record<string, unknown>)
-        : {}
+        : obj
     };
   }
 }

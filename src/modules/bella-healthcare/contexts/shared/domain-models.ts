@@ -113,7 +113,7 @@ export interface BillingSummary {
 export interface AiCooAction {
   readonly id: string;
   readonly priority: 'high' | 'medium' | 'info';
-  readonly category: 'chair' | 'room' | 'patient_wait' | 'pharmacy' | 'capacity';
+  readonly category: 'chair' | 'room' | 'patient_wait' | 'pharmacy' | 'capacity' | 'finance' | 'staff';
   readonly title: string;
   readonly description: string;
   readonly actionLabel: string;

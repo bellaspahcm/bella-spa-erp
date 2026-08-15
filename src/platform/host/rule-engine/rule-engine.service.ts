@@ -184,18 +184,18 @@ export class RuleEngineService {
         tenant_id: this.tenantId,
         rule_key: params.ruleKey,
         version: params.version,
-        domain: params.domain,
+        domain: params.domain as any,
         name: params.name,
         description: params.description ?? null,
         status: 'DRAFT',
         severity: params.severity ?? 'LOW',
         conditions: params.conditions as unknown as Database['public']['Tables']['platform_business_rules']['Insert']['conditions'],
         action_type: params.actionType ?? 'NOTIFY',
-        action_params: params.actionParams ?? {},
+        action_params: (params.actionParams ?? {}) as any,
         effective_from: params.effectiveFrom ?? null,
         effective_to: params.effectiveTo ?? null,
         created_by: params.createdBy ?? null,
-        metadata: params.metadata ?? {},
+        metadata: (params.metadata ?? {}) as any,
       })
       .select()
       .single();
@@ -284,9 +284,7 @@ export class RuleEngineService {
       .from('platform_business_rules')
       .update({
         status: 'SUSPENDED',
-        metadata: this.supabase.from('platform_business_rules')
-          ? ({ suspendReason: reason, suspendedAt: new Date().toISOString() } as unknown as Database['public']['Tables']['platform_business_rules']['Update']['metadata'])
-          : undefined,
+        metadata: { suspendReason: reason, suspendedAt: new Date().toISOString() } as any,
       })
       .eq('id', ruleId)
       .eq('tenant_id', this.tenantId);
@@ -375,7 +373,7 @@ export class RuleEngineService {
       .from('platform_business_rules')
       .select('id')
       .eq('tenant_id', this.tenantId)
-      .eq('domain', domain)
+      .eq('domain', domain as any)
       .eq('status', 'ACTIVE');
 
     if (error) throw new Error(`evaluateAllActiveRules failed: ${error.message}`);
@@ -449,11 +447,11 @@ export class RuleEngineService {
         rule_version: rule.version,
         context_type: params.contextType,
         context_id: params.contextId ?? null,
-        input_data: params.inputData,
+        input_data: params.inputData as any,
         outcome,
         conditions_met: conditionsMet,
         action_taken: actionTaken ?? null,
-        action_result: actionResult ?? null,
+        action_result: actionResult as any,
         evaluated_by: params.evaluatedBy ?? null,
         correlation_id: params.correlationId ?? null,
       });

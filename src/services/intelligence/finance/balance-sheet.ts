@@ -83,9 +83,11 @@ async function getAccountBalances(
 ): Promise<AccountBalance[]> {
   const supabase = await createClient();
 
+  const client = supabase as any;
+
   // Query all journal entry lines up to the specified date
-  const { data: lines, error } = await supabase
-    .from('journal_entry_lines' as unknown)
+  const { data: lines, error } = await client
+    .from('journal_entry_lines')
     .select(`
       account_id,
       debit_amount,
@@ -114,7 +116,7 @@ async function getAccountBalances(
   // Aggregate balances by account
   const balanceMap = new Map<string, AccountBalance>();
 
-  for (const line of (lines as unknown[]) || []) {
+  for (const line of (lines as any[]) || []) {
     const accountId = line.account_id;
     const account = line.accounting_accounts;
     
@@ -123,7 +125,7 @@ async function getAccountBalances(
         accountId,
         accountCode: account.account_code,
         accountName: account.account_name,
-        accountType: account.account_type.toLowerCase() as unknown,
+        accountType: account.account_type.toLowerCase() as any,
         debitTotal: 0,
         creditTotal: 0,
         balance: 0,
@@ -163,9 +165,11 @@ async function getCurrentPeriodPnL(
 ): Promise<number> {
   const supabase = await createClient();
 
+  const client = supabase as any;
+
   // Query revenue and expense accounts for the period
-  const { data: lines, error } = await supabase
-    .from('journal_entry_lines' as unknown)
+  const { data: lines, error } = await client
+    .from('journal_entry_lines')
     .select(`
       debit_amount,
       credit_amount,
@@ -193,7 +197,7 @@ async function getCurrentPeriodPnL(
   let revenue = 0;
   let expenses = 0;
 
-  for (const line of (lines as unknown[]) || []) {
+  for (const line of (lines as any[]) || []) {
     const accountType = line.accounting_accounts.account_type.toLowerCase();
     const debit = Number(line.debit_amount) || 0;
     const credit = Number(line.credit_amount) || 0;

@@ -4,8 +4,8 @@
  * Verifies all Ledger Engine invariants, transaction posting, idempotency,
  * period-closing race conditions, reversal logic, and transactional outbox.
  *
- * Constitution:
- * - Law F-14: Zero `any` types allowed.
+ * Constitution Compliance:
+ * - Engineering Quality Rule: TypeSafety-NoAny (Zero any types allowed).
  *
  * @module platform/finance/__tests__/ledger-engine.integration.test
  */

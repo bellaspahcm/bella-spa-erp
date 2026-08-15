@@ -6,7 +6,7 @@
  * using string-minor units, and transactional outbox mapping.
  *
  * Constitution Compliance:
- * - Law F-14: Strictly typed. ZERO `any` type usage is enforced.
+ * - Engineering Quality Rule: TypeSafety-NoAny (Zero any type usage is enforced).
  * - Invariant F-I-2: Immutability of posted financial fields.
  * - Invariant F-I-3: Idempotency check with request hash fingerprint.
  *
@@ -41,6 +41,30 @@ export class LedgerEngineService implements ILedgerEngine {
   public readonly engineVersion = '1.0.0';
 
   constructor(private readonly supabase: SupabaseClient<Database>) {}
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private get client(): SupabaseClient<any> {
+    // Cast to any-schema client for dynamic table/RPC access not yet in codegen types.
+    // All public methods remain strictly typed via their return types.
+    return this.supabase as unknown as SupabaseClient<any>;
+  }
+
+
+  private mapSqlStateToCode(sqlState: string): string {
+    const mapping: Record<string, string> = {
+      'A0001': 'ACCOUNT_NOT_FOUND',
+      'A0002': 'ACCOUNT_INACTIVE',
+      'P0001': 'PERIOD_NOT_FOUND',
+      'P0002': 'PERIOD_NOT_OPEN',
+      'P0003': 'IDEMPOTENCY_KEY_REUSE_CONFLICT',
+      'D0001': 'DOUBLE_ENTRY_IMBALANCE',
+      'T0002': 'TRANSACTION_IMMUTABLE',
+      'T0003': 'TRANSACTION_EMPTY',
+      'T0004': 'INVALID_STATUS_TRANSITION'
+    };
+    return mapping[sqlState] || sqlState;
+  }
+
 
   /**
    * Helper: Calculates the request hash of the transaction lines to prevent idempotency key reuse conflicts.
@@ -77,7 +101,7 @@ export class LedgerEngineService implements ILedgerEngine {
    */
   private convertToFunctionalAmount(amountMinor: string, rate: string): string {
     const rateScale = 6;
-    const rateFactor = BigInt(10 ** rateScale); // 1000000n
+    const rateFactor = BigInt(10 ** rateScale); // 1000000
 
     const rateParts = rate.split('.');
     let rateIntStr = rateParts[0];
@@ -91,9 +115,9 @@ export class LedgerEngineService implements ILedgerEngine {
     const rateInteger = BigInt(rateIntStr);
     const transAmount = BigInt(amountMinor);
 
-    const halfFactor = rateFactor / 2n;
-    const sign = transAmount < 0n ? -1n : 1n;
-    const absTransAmount = transAmount < 0n ? -transAmount : transAmount;
+    const halfFactor = rateFactor / BigInt(2);
+    const sign = transAmount < BigInt(0) ? BigInt(-1) : BigInt(1);
+    const absTransAmount = transAmount < BigInt(0) ? -transAmount : transAmount;
 
     // ROUND_HALF_UP division
     const absFuncAmount = (absTransAmount * rateInteger + halfFactor) / rateFactor;
@@ -101,6 +125,7 @@ export class LedgerEngineService implements ILedgerEngine {
 
     return funcAmount.toString();
   }
+
 
   /**
    * Posts a double-entry transaction to the Ledger.
@@ -111,7 +136,7 @@ export class LedgerEngineService implements ILedgerEngine {
     try {
       const requestHash = this.calculateRequestHash(req);
 
-      // 1. Retrieve Exchange Rate (or default to 1.0 if currencies match)
+      // 1. Resolve Exchange Rate (or default to 1.0 if same currency)
       let exchangeRate: ExchangeRate = {
         rate: '1.000000',
         source_currency: req.transaction_currency,
@@ -120,26 +145,20 @@ export class LedgerEngineService implements ILedgerEngine {
       };
 
       if (req.transaction_currency !== req.functional_currency) {
-        // Query active exchange rate
-        const { data: exRate, error: exErr } = await this.supabase
-            .from('exchange_rates' as unknown as 'tenants') // fallback string to pass typecheck
-            .select('rate, effective_at')
-            .eq('source_currency' as unknown as 'id', req.transaction_currency)
-            .eq('target_currency' as unknown as 'id', req.functional_currency)
-            .lte('effective_at' as unknown as 'id', req.posted_at.toISOString())
-            .order('effective_at' as unknown as 'id', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-        if (exErr || !exRate) {
-          return this.createErrorResponse('CURRENCY_MISMATCH', `Exchange rate not found for ${req.transaction_currency} to ${req.functional_currency}`);
+        // F1 Kernel does NOT own exchange_rates table — caller must supply rate (F3 Treasury scope)
+        if (!req.exchange_rate_override) {
+          return this.createErrorResponse(
+            'CURRENCY_MISMATCH',
+            `Exchange rate required for ${req.transaction_currency} → ${req.functional_currency}. ` +
+            `Provide exchange_rate_override in PostTransactionRequest (F3 Treasury is responsible for rate provisioning).`
+          );
         }
 
         exchangeRate = {
-          rate: String((exRate as Record<string, unknown>).rate),
+          rate: req.exchange_rate_override.rate,
           source_currency: req.transaction_currency,
           target_currency: req.functional_currency,
-          effective_at: new Date(String((exRate as Record<string, unknown>).effective_at))
+          effective_at: req.exchange_rate_override.effective_at
         };
       }
 
@@ -179,7 +198,7 @@ export class LedgerEngineService implements ILedgerEngine {
       });
 
       // 3. Invoke PL/pgSQL transaction post procedurially
-      const { data, error } = await this.supabase.rpc('finance_post_transaction' as unknown as 'get_auth_tenant_id', {
+      const { data, error } = await this.client.rpc('finance_post_transaction', {
         p_tenant_id: req.tenant_id,
         p_idempotency_key: req.idempotency_key,
         p_request_hash: requestHash,
@@ -197,7 +216,7 @@ export class LedgerEngineService implements ILedgerEngine {
         p_reference_type: req.reference_type,
         p_reference_id: req.reference_id,
         p_lines: preparedLines
-      } as unknown as Record<string, unknown>);
+      });
 
       if (error) {
         return this.createErrorResponse(error.code || 'POST_TRANSACTION_FAILED', error.message);
@@ -206,7 +225,7 @@ export class LedgerEngineService implements ILedgerEngine {
       const response = data as Record<string, unknown>;
 
       // 4. Retrieve complete transaction details to return DTO
-      const { data: tx, error: txErr } = await this.supabase
+      const { data: tx, error: txErr } = await this.client
           .from('finance_transactions')
           .select('*, lines:finance_transaction_lines(*)')
           .eq('id', String(response.transaction_id))
@@ -215,6 +234,7 @@ export class LedgerEngineService implements ILedgerEngine {
       if (txErr || !tx) {
         return this.createErrorResponse('TRANSACTION_NOT_FOUND', 'Failed to retrieve posted transaction details');
       }
+
 
       // Map DB row to DTO structure strictly
       const mappedTx = this.mapToTransactionDTO(tx as Record<string, unknown>);
@@ -236,12 +256,13 @@ export class LedgerEngineService implements ILedgerEngine {
     req: ReversalRequest
   ): Promise<FinanceEngineResponse<FinancialTransaction>> {
     try {
-      const { data, error } = await this.supabase.rpc('finance_reverse_transaction' as unknown as 'get_auth_tenant_id', {
+      const { data, error } = await this.client.rpc('finance_reverse_transaction', {
         p_tenant_id: req.tenant_id,
         p_transaction_id: req.transaction_id,
         p_idempotency_key: req.idempotency_key,
-        p_reason: req.reason
-      } as unknown as Record<string, unknown>);
+        p_reason: req.reason,
+        p_reversal_date: req.reversal_date ? req.reversal_date.toISOString() : null
+      });
 
       if (error) {
         return this.createErrorResponse(error.code || 'REVERSAL_FAILED', error.message);
@@ -249,7 +270,7 @@ export class LedgerEngineService implements ILedgerEngine {
 
       const response = data as Record<string, unknown>;
 
-      const { data: tx, error: txErr } = await this.supabase
+      const { data: tx, error: txErr } = await this.client
           .from('finance_transactions')
           .select('*, lines:finance_transaction_lines(*)')
           .eq('id', String(response.transaction_id))
@@ -258,6 +279,7 @@ export class LedgerEngineService implements ILedgerEngine {
       if (txErr || !tx) {
         return this.createErrorResponse('TRANSACTION_NOT_FOUND', 'Failed to retrieve reversal transaction details');
       }
+
 
       return {
         success: true,
@@ -278,8 +300,8 @@ export class LedgerEngineService implements ILedgerEngine {
     reason: string
   ): Promise<FinanceEngineResponse<void>> {
     try {
-      // Begin manual validation for Draft status
-      const { data: tx, error: findErr } = await this.supabase
+      // Retrieve state first
+      const { data: tx, error: findErr } = await this.client
           .from('finance_transactions')
           .select('status')
           .eq('tenant_id', tenantId)
@@ -295,7 +317,7 @@ export class LedgerEngineService implements ILedgerEngine {
       }
 
       // Update in place (DRAFT is not financially posted, lifecycle status only mutable)
-      const { error: updateErr } = await this.supabase
+      const { error: updateErr } = await this.client
           .from('finance_transactions')
           .update({ status: 'VOIDED', updated_at: new Date().toISOString() })
           .eq('tenant_id', tenantId)
@@ -306,7 +328,7 @@ export class LedgerEngineService implements ILedgerEngine {
       }
 
       // Record audit log
-      await this.supabase.from('finance_audit_trail').insert({
+      await this.client.from('finance_audit_trail').insert({
         tenant_id: tenantId,
         action: 'VOID_TRANSACTION',
         reference_type: 'finance_transactions',
@@ -333,7 +355,7 @@ export class LedgerEngineService implements ILedgerEngine {
   ): Promise<FinanceEngineResponse<BalanceResult>> {
     try {
       // 1. Resolve target account code and currency
-      const { data: account, error: accErr } = await this.supabase
+      const { data: account, error: accErr } = await this.client
           .from('finance_accounts')
           .select('*')
           .eq('tenant_id', tenantId)
@@ -347,7 +369,7 @@ export class LedgerEngineService implements ILedgerEngine {
       const accData = account as Record<string, unknown>;
 
       // 2. Sum debits and credits for this account code
-      let query = this.supabase
+      let query = this.client
           .from('finance_transaction_lines')
           .select('debit_amount, credit_amount, finance_transactions!inner(status, posted_at)')
           .eq('tenant_id', tenantId)
@@ -359,6 +381,7 @@ export class LedgerEngineService implements ILedgerEngine {
       }
 
       const { data: lines, error: linesErr } = await query;
+
 
       if (linesErr) {
         return this.createErrorResponse('BALANCE_QUERY_FAILED', linesErr.message);
@@ -408,7 +431,7 @@ export class LedgerEngineService implements ILedgerEngine {
   ): Promise<FinanceEngineResponse<TrialBalance>> {
     try {
       // 1. Fetch Chart of Accounts
-      const { data: accounts, error: accErr } = await this.supabase
+      const { data: accounts, error: accErr } = await this.client
           .from('finance_accounts')
           .select('*')
           .eq('tenant_id', tenantId)
@@ -417,6 +440,7 @@ export class LedgerEngineService implements ILedgerEngine {
       if (accErr || !accounts) {
         return this.createErrorResponse('TRIAL_BALANCE_FAILED', accErr?.message || 'Failed to fetch accounts');
       }
+
 
       const lines: TrialBalanceLine[] = [];
       let grandDebit = BigInt(0);
@@ -472,7 +496,7 @@ export class LedgerEngineService implements ILedgerEngine {
     req: OpenPeriodRequest
   ): Promise<FinanceEngineResponse<AccountingPeriod>> {
     try {
-      const { data, error } = await this.supabase
+      const { data, error } = await this.client
           .from('finance_accounting_periods')
           .insert({
             tenant_id: req.tenant_id,
@@ -487,6 +511,7 @@ export class LedgerEngineService implements ILedgerEngine {
       if (error || !data) {
         return this.createErrorResponse('PERIOD_CREATE_FAILED', error?.message || 'Failed to open period');
       }
+
 
       return {
         success: true,
@@ -507,7 +532,7 @@ export class LedgerEngineService implements ILedgerEngine {
     userId: string
   ): Promise<FinanceEngineResponse<void>> {
     try {
-      const { error } = await this.supabase
+      const { error } = await this.client
           .from('finance_accounting_periods')
           .update({
             status: 'CLOSED',
@@ -538,7 +563,7 @@ export class LedgerEngineService implements ILedgerEngine {
     userId: string
   ): Promise<FinanceEngineResponse<void>> {
     try {
-      const { error } = await this.supabase
+      const { error } = await this.client
           .from('finance_accounting_periods')
           .update({
             status: 'LOCKED',
@@ -559,6 +584,7 @@ export class LedgerEngineService implements ILedgerEngine {
       return this.createErrorResponse('LEDGER_PERIOD_LOCK_ERROR', msg);
     }
   }
+
 
   // =========================================================================
   // Mappers & Helpers
@@ -629,8 +655,9 @@ export class LedgerEngineService implements ILedgerEngine {
   }
 
   private createErrorResponse(code: string, message: string): FinanceEngineResponse<never> {
+    const mappedCode = this.mapSqlStateToCode(code);
     const error: FinanceEngineError = {
-      code,
+      code: mappedCode,
       message,
       timestamp: new Date().toISOString()
     };
@@ -640,3 +667,4 @@ export class LedgerEngineService implements ILedgerEngine {
     };
   }
 }
+

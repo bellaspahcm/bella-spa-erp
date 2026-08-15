@@ -3007,7 +3007,7 @@ export async function syncHealthcareAccountingOutboxAction(): Promise<{ success:
   try {
     const supabase = await createDevelopmentBypassClient();
     try {
-      await supabase.rpc('process_accounting_outbox');
+      await (supabase as any).rpc('process_accounting_outbox');
     } catch (_e) {
       // Continue if RPC not defined
     }
@@ -3205,7 +3205,7 @@ export async function createDrugAction(input: {
         stock_qty: input.stockQty,
         unit: input.unit,
         status: 'active',
-      })
+      } as any)
       .select()
       .single();
 

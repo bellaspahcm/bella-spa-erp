@@ -26,6 +26,17 @@ export interface PostTransactionRequest {
   posted_at: Date;
   transaction_currency: CurrencyCode;
   functional_currency: CurrencyCode;
+  /**
+   * Optional exchange rate override.
+   * Required when transaction_currency !== functional_currency.
+   * Finance Kernel (F1) does not own an exchange_rates table — that is F3 Treasury scope.
+   * Callers (F3 or Product Verticals) must supply the rate.
+   * If omitted when currencies differ, posting will fail with CURRENCY_MISMATCH.
+   */
+  exchange_rate_override?: {
+    rate: string; // e.g. '24500.500000'
+    effective_at: Date;
+  };
   description: string;
   reference_type: string;
   reference_id: string;
@@ -43,6 +54,7 @@ export interface ReversalRequest {
   transaction_id: string;
   reason: string;
   idempotency_key: string; // mandated for safe retries
+  reversal_date?: Date; // optional date of reversal
 }
 
 export interface OpenPeriodRequest {

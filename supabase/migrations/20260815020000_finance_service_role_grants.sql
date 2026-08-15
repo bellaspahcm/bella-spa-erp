@@ -36,13 +36,13 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.finance_audit_trail TO service_ro
 
 -- Allow service_role to call the Finance Ledger RPCs
 GRANT EXECUTE ON FUNCTION public.finance_post_transaction(
-  UUID, TEXT, TEXT, TEXT, TEXT, TEXT, TIMESTAMPTZ,
-  TEXT, TEXT, NUMERIC, TEXT, TEXT, TIMESTAMPTZ,
-  TEXT, TEXT, TEXT, JSONB
+  UUID, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, TIMESTAMPTZ,
+  VARCHAR, VARCHAR, NUMERIC, VARCHAR, VARCHAR, TIMESTAMPTZ,
+  TEXT, VARCHAR, VARCHAR, JSONB
 ) TO service_role;
 
 GRANT EXECUTE ON FUNCTION public.finance_reverse_transaction(
-  UUID, UUID, TEXT, TEXT
+  UUID, UUID, VARCHAR, TEXT, TIMESTAMPTZ
 ) TO service_role;
 
 -- =========================================================================

@@ -165,7 +165,7 @@ export default function HealthcareFinancePage() {
         .lte('received_date', endDate);
 
       if (revErr) throw revErr;
-      setDbRevenues(revenues || []);
+      setDbRevenues((revenues || []) as unknown as RevenueRow[]);
 
       // 2. Fetch Operating Expenses
       const { data: expenses, error: exErr } = await supabase
@@ -176,7 +176,7 @@ export default function HealthcareFinancePage() {
         .lte('expense_date', endDate);
 
       if (exErr) throw exErr;
-      setDbExpenses(expenses || []);
+      setDbExpenses((expenses || []) as unknown as ExpenseRow[]);
 
       // 3. Fetch Salary Records (for calculating doctor salaries)
       const salaryMonthStr = type === 'month' ? startDate : `${dateVal.substring(0, 7)}-01`;
@@ -190,8 +190,9 @@ export default function HealthcareFinancePage() {
       setDbSalaryRecords(salaryRecs || []);
 
     } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
       console.error('Error fetching healthcare finance data:', err);
-      toast.error('Lỗi tải dữ liệu tài chính: ' + err.message);
+      toast.error('Lỗi tải dữ liệu tài chính: ' + errMsg);
     } finally {
       setIsLoading(false);
     }
@@ -330,7 +331,7 @@ export default function HealthcareFinancePage() {
         description: r.notes === 'healthcare_invoice' ? `Thu viện phí BN ${r.accounting_metadata?.patientName || ''} - BS. Lê Minh` : (r.notes || ''),
         journal_lines: [{ credit_amount: r.amount }]
       }))
-    ];
+    ] as unknown as Array<{ description?: string; journal_lines?: Array<{ credit_amount?: number | string }> }>;
     return HealthcareAnalytics.calculateDoctorRevenueShare(combined);
   }, [dbJournalEntries, dbRevenues]);
 
@@ -343,7 +344,7 @@ export default function HealthcareFinancePage() {
           : (r.notes || ''),
         journal_lines: [{ credit_amount: r.amount }]
       }))
-    ];
+    ] as unknown as Array<{ description?: string; journal_lines?: Array<{ credit_amount?: number | string }> }>;
     return HealthcareAnalytics.calculateTreatmentCategoryRevenue(combined);
   }, [dbJournalEntries, dbRevenues]);
 
@@ -353,7 +354,7 @@ export default function HealthcareFinancePage() {
       ...dbRevenues.map(r => ({
         journal_lines: [{ credit_amount: r.amount }]
       }))
-    ];
+    ] as unknown as Array<{ journal_lines?: Array<{ credit_amount?: number | string }> }>;
     return HealthcareAnalytics.calculateMaterialCostRatio(dbExpenses, combinedJournalEntries);
   }, [dbExpenses, dbJournalEntries, dbRevenues]);
 
@@ -396,7 +397,7 @@ export default function HealthcareFinancePage() {
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as unknown)}
+                onClick={() => setActiveTab(tab.id as 'pnl' | 'transactions' | 'analytics')}
                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
                   activeTab === tab.id
                     ? 'bg-white dark:bg-slate-950 text-teal-600 dark:text-teal-400 shadow-sm font-black'
