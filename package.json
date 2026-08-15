@@ -104,6 +104,8 @@
     "load:8c:k6-3v3:local": "node scripts/run-k6-local.js load-tests/scripts/23-k6-3v3-100-200vus.js",
     "load:8c:k6-3v4": "node scripts/run-k6-cloud.js load-tests/scripts/24-k6-3v4-post-optimization.js",
     "load:8c:k6-3v4:local": "node scripts/run-k6-local.js load-tests/scripts/24-k6-3v4-post-optimization.js",
+    "load:8c:k6-3v5": "node scripts/run-k6-cloud.js load-tests/scripts/25-k6-3v5-pro-tier.js",
+    "load:8c:k6-3v5:local": "node scripts/run-k6-local.js load-tests/scripts/25-k6-3v5-pro-tier.js",
     "load:8c:k6-capacity": "node scripts/run-k6-local.js load-tests/scripts/22-capacity-progression.js",
     "load:8c:contention": "k6 run load-tests/scripts/14-tenant-contention.js",
     "load:8c:soak:short": "k6 run -e SOAK_DURATION=30m load-tests/scripts/16-soak-runner.js",
