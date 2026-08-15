@@ -4,8 +4,10 @@
 > **Phase:** Pre-Coding Architecture Analysis  
 > **Date:** 2026-08-15  
 > **Author:** Architecture Review — Bella Platform  
-> **Prerequisite:** F1 Ledger Engine — FROZEN ✅ (`finance/f1/frozen`)  
-> **Constraint:** Downstream only. No independent financial truth. Additive database modifications only.
+> **Prerequisite F0:** Finance OS Inheritance Constitution — FROZEN ✅ (`FINANCE_OS_INHERITANCE_CONSTITUTION.md`)  
+> **Prerequisite F1:** F1 Ledger Engine — FROZEN ✅ (`finance/f1/frozen`)  
+> **Constraint:** Downstream only. No independent financial truth. Additive database modifications only.  
+> **OS Law:** All F2 operations must comply with BELLA OS INHERITANCE LAW (Laws 1–10).
 
 ---
 
@@ -472,17 +474,123 @@ export interface ICashEngine {
 ## XIV. VERDICT
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    F2 ARCHITECTURE GATE                         │
-│                                                                 │
-│  Status:  APPROVED FOR CODING                                   │
-│                                                                 │
-│  All 4 architectural locks (F1 event compatibility, projection  │
-│  API boundary, FX Valuation governance, and Adjustment boundary)│
-│  are fully locked and documented.                               │
-│                                                                 │
-│  F1 remains immutable/frozen. F2 is additive-only and           │
-│  downstream of F1. No F2 operation may create an independent     │
-│  financial truth.                                               │
-└─────────────────────────────────────────────────────────────────┘
+F2 ARCHITECTURE GATE
+
+Status:  APPROVED FOR CODING
+
+All 4 architectural locks (F1 event compatibility, projection
+API boundary, FX Valuation governance, and Adjustment boundary)
+are fully locked and documented.
+
+F1 remains immutable/frozen. F2 is additive-only and
+downstream of F1. No F2 operation may create an independent
+financial truth.
+```
+
+---
+
+## XV. F2 PHASE IMPLEMENTATION STATUS — 2026-08-15
+
+### Phase Completion Matrix
+
+| Phase | Description | Status | Test Evidence |
+|---|---|---|---|
+| F2.0 | Architecture Freeze | FROZEN | Gate document approved |
+| F2.1 | Database + RLS Migrations | VERIFIED | 22/22 PASS (finance-f2-db-rls) |
+| F2.2 | Cash Projection Worker | VERIFIED | 17/17 PASS (finance-f2-projection-worker) |
+| F2.3 | Reporting API (Read Layer) | VERIFIED | 12/12 PASS (finance-f2-reporting-api) |
+| F2.4 | Reconstruction RPC | PLANNED | — |
+| F2.5 | Concurrency Hardening | PLANNED | — |
+| F2.6 | Verification Gates | PLANNED | — |
+| F2.7 | Human Sign-off | PLANNED | — |
+
+---
+
+## XVI. F2.3 REPORTING API — VERIFICATION EVIDENCE
+
+### Architecture Gate: VERIFIED
+
+F2.3 is a strictly read-only layer. It implements `ICashReportingEngine` with zero write capabilities. No financial truth is created, modified, or bypassed.
+
+### Files Delivered
+
+| File | Role |
+|---|---|
+| `src/platform/finance/engines/cash-engine/cash-engine.service.ts` | CashEngineService — F2.3 implementation |
+| `src/platform/finance/contracts/cash-engine.contract.ts` | ICashReportingEngine contract + typed schemas |
+| `src/platform/finance/__tests__/finance-f2-reporting-api.test.ts` | 12-case integration test suite |
+
+### F2.3 Test Results — 2026-08-15
+
+```
+Test Suite: finance-f2-reporting-api.test.ts
+Duration:   ~8s
+Result:     12/12 PASS (0 failures)
+
+T01  Get Bank Account — retrieves bank account details              PASS
+T02  List Bank Accounts — lists all tenant accounts                 PASS
+T03  Get Cash Position — correct balance/currency/functional        PASS
+T04  List Cash Positions — all positions for tenant                 PASS
+T05  Get Cash Movements — default pagination                        PASS
+T06  Query Movements (Filters) — direction + bank account filter    PASS
+T07  Consolidated Runway — days calculated correctly                PASS
+T08  Quarantine Diagnostics — typed schema with code extraction     PASS
+T09  Authorization — UNAUTHORIZED_TENANT_ACCESS enforced            PASS
+T10  Invalid Pagination rejection — <1, >200, offset<0 rejected     PASS
+T11  Runway Currency/Valuation Integrity — sums functional_balance  PASS
+T12  Telemetry Failure Isolation — API succeeds if telemetry fails  PASS
+```
+
+### Full F2 Regression — 2026-08-15
+
+```
+Command: jest --testPathPatterns="finance-f2" --runInBand
+
+finance-f2-db-rls.test.ts            22/22  PASS  (F2.1 — Database + RLS)
+finance-f2-projection-worker.test.ts  17/17  PASS  (F2.2 — Cash Projection)
+finance-f2-reporting-api.test.ts      12/12  PASS  (F2.3 — Reporting API)
+
+TOTAL: 51/51  ALL PASS
+Failures: 0
+F1 Regression Impact: None
+```
+
+### 4-Hardening Gate Compliance
+
+| Gate | Requirement | Status |
+|---|---|---|
+| Pagination | limit defaults 50; 1-200 valid; invalid INVALID_PAGINATION | Implemented + T10 verified |
+| Runway | Read mv_cash_flow.burn_rate only; no F2.3 burn rate inference | Enforced in service |
+| Consolidated Cash | SUM(finance_cash_positions.functional_balance_minor) direct | T11 verified |
+| TypeSafety-NoAny | Zero any usage; all types explicit | Enforced |
+
+### Architectural Invariants Verified
+
+| Invariant | Description | Evidence |
+|---|---|---|
+| F2.3.1 | Read-only query scope — no write methods exposed | Contract + T09 |
+| F2.3.2 | Multi-layer tenant isolation (checkAccess + RLS) | T09 AUTH test |
+| F2.3.4 | Telemetry failure containment (never crashes query) | T12 |
+| F2.3.5 | Hard pagination ceiling (reject >200) | T10 |
+
+---
+
+## XVII. UPDATED VERDICT
+
+```
+F2 ARCHITECTURE GATE — UPDATED 2026-08-15
+
+F0 Core Inheritance       FROZEN
+F1 Ledger Engine          FROZEN
+F2.0 Architecture         APPROVED + FROZEN
+F2.1 Database/RLS         VERIFIED  22/22
+F2.2 Projection Worker    VERIFIED  17/17
+F2.3 Reporting API        VERIFIED  12/12
+
+TOTAL F2 TESTS: 51/51  ALL PASS
+
+Downstream Constraint: F2 is additive-only. No F2 operation
+creates an independent financial truth. F1 remains immutable.
+
+Next: F2.4 Reconstruction RPC (awaiting Human Architect Sign-off)
 ```

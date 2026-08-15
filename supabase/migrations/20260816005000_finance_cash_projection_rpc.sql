@@ -100,10 +100,8 @@ BEGIN
         NOW()
     )
     ON CONFLICT (tenant_id, bank_account_id) DO UPDATE
-    SET balance_minor = finance_cash_positions.balance_minor + 
-                       CASE WHEN p_direction = 'INFLOW' THEN EXCLUDED.balance_minor ELSE -EXCLUDED.balance_minor END,
-        functional_balance_minor = finance_cash_positions.functional_balance_minor + 
-                                  CASE WHEN p_direction = 'INFLOW' THEN EXCLUDED.functional_balance_minor ELSE -EXCLUDED.functional_balance_minor END,
+    SET balance_minor = finance_cash_positions.balance_minor + EXCLUDED.balance_minor,
+        functional_balance_minor = finance_cash_positions.functional_balance_minor + EXCLUDED.functional_balance_minor,
         valuation_rate = EXCLUDED.valuation_rate,
         valuation_as_of = NOW(),
         last_movement_id = v_movement_id,

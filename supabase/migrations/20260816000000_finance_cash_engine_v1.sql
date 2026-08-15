@@ -145,6 +145,8 @@ CREATE TABLE public.finance_cash_movements (
     -- Invariants and constraints
     CONSTRAINT uq_finance_cash_movements_key UNIQUE (tenant_id, idempotency_key),
     CONSTRAINT uq_finance_cash_movements_leg UNIQUE (tenant_id, f1_transaction_id, cash_leg_reference),
+    -- REQUIRED: composite uniqueness allows finance_cash_positions.fk_last_movement circular FK
+    CONSTRAINT uq_finance_cash_movements_composite UNIQUE (tenant_id, id),
     
     -- Tenant Consistency Composite Foreign Keys
     CONSTRAINT fk_finance_cash_movements_bank FOREIGN KEY (tenant_id, bank_account_id) 
@@ -199,12 +201,18 @@ CREATE INDEX idx_finance_cash_quarantine_pending ON public.finance_cash_quaranti
 -- =========================================================================
 
 -- 5.1 Mutation Guard trigger (Revokes raw mutations on cash engine positions/movements)
+-- Constitution: Finance inherits Core security model. This trigger is the DB-level enforcement
+-- of the F2 contract boundary: only finance_internal_record_cash_movement() may mutate cash tables.
 CREATE OR REPLACE FUNCTION public.finance_cash_mutation_guard()
 RETURNS TRIGGER AS $$
 BEGIN
     IF current_setting('finance.allow_cash_mutation', true) IS DISTINCT FROM 'true' THEN
         RAISE EXCEPTION 'DIRECT_CASH_MUTATION_PROHIBITED: Cash projection tables can only be mutated through the official projection RPC.'
         USING ERRCODE = 'F2001';
+    END IF;
+    -- Fix: DELETE triggers have no NEW row — must return OLD to proceed, not NEW (which is NULL on DELETE)
+    IF TG_OP = 'DELETE' THEN
+        RETURN OLD;
     END IF;
     RETURN NEW;
 END;

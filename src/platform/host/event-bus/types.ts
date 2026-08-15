@@ -90,6 +90,10 @@ export type EventType =
   | 'finance.period.opened.v1'
   | 'finance.period.closed.v1'
   | 'finance.period.locked.v1'
+  // Finance OS F2.2 — Cash Projection Contract (v2)
+  // Worker MUST subscribe to v2 only. v1 is a backward-compatibility event.
+  | 'finance.transaction.posted.v2'
+  | 'finance.transaction.reversed.v2'
   | (string & {});
 
 export interface DomainEvent<T = unknown> {
@@ -164,4 +168,71 @@ export interface MedicationAdministeredPayload {
   practitionerId: string;
   scheduledTime: string;
   notes?: string;
+}
+
+// ============================================================
+// Finance OS v2 Event Payload Types (F2.2 Cash Projection Contract)
+// ============================================================
+
+/**
+ * A candidate cash leg: an ASSET-type account line from an F1 transaction
+ * that MAY represent a real cash flow. F2 CashProjectionWorker determines
+ * whether to project or ignore each leg based on liquidity account mapping.
+ *
+ * F2.2 Invariant: F2 NEVER reconstructs accounting truth from these legs.
+ * These are candidates only. F1 remains the sole source of financial truth.
+ */
+export interface CandidateCashLeg {
+  /** F1 account UUID */
+  account_id: string;
+  /** Account code (e.g. '1111') */
+  account_code: string;
+  /** INFLOW = debit on asset; OUTFLOW = credit on asset */
+  direction: 'INFLOW' | 'OUTFLOW';
+  /** Amount in transaction currency (minor units) */
+  amount_minor: number;
+  currency: string;
+  /** Amount in functional currency (minor units) */
+  functional_amount_minor: number;
+  functional_currency: string;
+  /** Exchange rate applied by F1 */
+  exchange_rate: number;
+}
+
+/**
+ * Payload for finance.transaction.posted.v2
+ * Emitted atomically alongside v1 after a successful F1 ledger post.
+ * CashProjectionWorker subscribes to THIS event, NOT v1.
+ */
+export interface FinanceTransactionPostedV2Payload {
+  event_id: string;
+  event_type: 'finance.transaction.posted.v2';
+  event_version: '2.0';
+  tenant_id: string;
+  transaction_id: string;
+  transaction_type: string;
+  posted_at: string;
+  source_type: string;
+  source_id: string;
+  /** ASSET-type account legs. May be empty for non-cash transactions. */
+  candidate_cash_legs: CandidateCashLeg[];
+}
+
+/**
+ * Payload for finance.transaction.reversed.v2
+ * Emitted atomically alongside v1 after a successful F1 reversal.
+ */
+export interface FinanceTransactionReversedV2Payload {
+  event_id: string;
+  event_type: 'finance.transaction.reversed.v2';
+  event_version: '2.0';
+  tenant_id: string;
+  /** UUID of the new reversal transaction (the credit-side transaction) */
+  transaction_id: string;
+  transaction_type: 'REVERSAL';
+  posted_at: string;
+  /** UUID of the original transaction being reversed */
+  reversal_of_transaction_id: string;
+  /** Candidate cash legs from the reversal transaction lines */
+  candidate_cash_legs: CandidateCashLeg[];
 }

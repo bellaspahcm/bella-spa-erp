@@ -1,6 +1,20 @@
 -- Migration: finance_cash_engine_grants
 -- Description: Enforces least-privilege boundary access controls on F2 Cash Engine tables and RPCs.
--- Rules: Revoke all direct mutations on cash tables from authenticated clients; restrict projection RPC to service_role.
+--
+-- Constitution Reference: FINANCE-CONSTITUTION-001 §6 (Authorization), §3.1 (Core owns Authorization)
+-- 
+-- Authorization model:
+--   - `authenticated` = Bella Core's authenticated user identity (read access to Finance data)
+--   - `service_role`  = Bella Core's trusted infrastructure execution identity
+--                       Used here as the execution identity for the F2 Projection Worker.
+--                       This is NOT a Finance authorization framework — it is Core's execution boundary.
+--                       Finance permission semantics (finance.cash.project) belong to Core Authorization.
+--
+-- Finance permissions defined in Constitution §6:
+--   finance.cash.read      → authenticated SELECT on cash tables
+--   finance.cash.project   → service_role EXECUTE on finance_internal_record_cash_movement
+--   finance.bank.manage    → authenticated INSERT/UPDATE on finance_bank_accounts
+
 
 -- =========================================================================
 -- 1. REVOKE DEFAULT PUBLIC & AUTHENTICATED MUTATION PRIVILEGES

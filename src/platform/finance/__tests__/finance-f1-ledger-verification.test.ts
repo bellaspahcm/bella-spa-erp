@@ -589,11 +589,11 @@ describe('Finance OS F1 Ledger Verification Suite', () => {
         .select('*')
         .eq('tenant_id' as unknown as 'id', tenantAId)
         .eq('status' as unknown as 'id', 'PENDING');
-      expect(pendingRows).toHaveLength(1);
+      expect(pendingRows).toHaveLength(2); // v1 + v2
 
       // Run Dispatcher
       const count = await outboxDispatcher.dispatchPendingEvents(tenantAId);
-      expect(count).toBe(1);
+      expect(count).toBe(2);
 
       // Verify status changed to DISPATCHED
       const { data: dispatchedRows } = await supabase
@@ -641,7 +641,7 @@ describe('Finance OS F1 Ledger Verification Suite', () => {
         .select('*')
         .eq('tenant_id' as unknown as 'id', tenantAId)
         .eq('status' as unknown as 'id', 'FAILED');
-      expect(failedRows).toHaveLength(1);
+      expect(failedRows).toHaveLength(2); // v1 + v2
       expect(failedRows![0].retry_count).toBe(1);
 
       // Restore Event Bus publish
@@ -649,18 +649,18 @@ describe('Finance OS F1 Ledger Verification Suite', () => {
 
       // Requeue failed and verify state is PENDING again
       const requeueCount = await outboxDispatcher.requeueFailedEvents(tenantAId);
-      expect(requeueCount).toBe(1);
+      expect(requeueCount).toBe(2); // v1 + v2
 
       const { data: requeuedRows } = await supabase
         .from('finance_outbox_events' as unknown as 'tenants')
         .select('*')
         .eq('tenant_id' as unknown as 'id', tenantAId)
         .eq('status' as unknown as 'id', 'PENDING');
-      expect(requeuedRows).toHaveLength(1);
+      expect(requeuedRows).toHaveLength(2); // v1 + v2
 
       // Dispatch successfully now
       const successCount = await outboxDispatcher.dispatchPendingEvents(tenantAId);
-      expect(successCount).toBe(1);
+      expect(successCount).toBe(2);
     });
   });
 

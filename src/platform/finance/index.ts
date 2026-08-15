@@ -12,3 +12,4 @@ export * from './shared-kernel/constants';
 export * from './shared-kernel/validators';
 export * from './contracts';
 export * from './engines/ledger-engine';
+export * from './engines/cash-engine';
