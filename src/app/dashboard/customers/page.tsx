@@ -558,7 +558,7 @@ export default function CustomersPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.05 }}
-            className="group luxury-card-white relative flex flex-col gap-4 rounded-3xl p-4 transition-all sm:p-6 lg:flex-row lg:items-center lg:gap-6"
+            className="group luxury-card-white customer-card relative flex flex-col gap-4 rounded-3xl p-4 transition-all sm:p-6 lg:flex-row lg:items-center lg:gap-6"
           >
             <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform sm:h-14 sm:w-14">
               <UserPlus className="text-rose-500 w-7 h-7" />

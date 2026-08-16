@@ -104,7 +104,7 @@ export function SessionCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: idx * 0.05 }}
       onClick={onSelect}
-      className="group luxury-card-white relative flex cursor-pointer flex-col gap-5 rounded-[2rem] border border-slate-100 p-4 transition-all hover:shadow-lg sm:p-6 lg:flex-row lg:items-center lg:gap-8 lg:rounded-[2.5rem]"
+      className="group luxury-card-white customer-card relative flex cursor-pointer flex-col gap-5 rounded-[2rem] border border-slate-100 p-4 transition-all hover:shadow-lg sm:p-6 lg:flex-row lg:items-center lg:gap-8 lg:rounded-[2.5rem]"
     >
       {/* Background blur container with overflow-hidden */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[2rem] lg:rounded-[2.5rem]">

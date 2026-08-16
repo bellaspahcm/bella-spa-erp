@@ -49,10 +49,10 @@ export function WaitlistStatsPanel({ tenantId }: WaitlistStatsPanelProps) {
     switch (moduleKey) {
       case 'beauty_spa':
         return {
-          cardBg: 'bg-emerald-50/10 dark:bg-[#074e44]/10',
-          borderColor: 'border-emerald-100/50 dark:border-emerald-800/30',
-          hoverBorder: 'hover:border-emerald-300/80 dark:hover:border-emerald-700/80',
-          hoverGlow: 'hover:shadow-[0_0_20px_rgba(16,185,129,0.15)]',
+          cardBg: 'bg-white dark:bg-[#1c1b19] shadow-[0_10px_25px_-5px_rgba(16,185,129,0.06)]',
+          borderColor: 'border-emerald-500/22 dark:border-emerald-800/50 border-[1.5px]',
+          hoverBorder: 'hover:border-emerald-500/60 dark:hover:border-emerald-400/60',
+          hoverGlow: 'hover:shadow-[0_20px_40px_-10px_rgba(16,185,129,0.18)]',
           iconBg: 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400',
           accentText: 'text-emerald-700 dark:text-emerald-300',
         };
@@ -68,10 +68,10 @@ export function WaitlistStatsPanel({ tenantId }: WaitlistStatsPanelProps) {
       case 'babycare':
       default:
         return {
-          cardBg: 'bg-rose-50/10 dark:bg-[#5D1C34]/10',
-          borderColor: 'border-rose-100/50 dark:border-rose-800/30',
-          hoverBorder: 'hover:border-rose-300/80 dark:hover:border-rose-700/80',
-          hoverGlow: 'hover:shadow-[0_0_20px_rgba(244,63,94,0.15)]',
+          cardBg: 'bg-white dark:bg-[#1c1b19] shadow-[0_10px_25px_-5px_rgba(244,63,94,0.06)]',
+          borderColor: 'border-rose-500/22 dark:border-rose-800/50 border-[1.5px]',
+          hoverBorder: 'hover:border-rose-500/60 dark:hover:border-rose-400/60',
+          hoverGlow: 'hover:shadow-[0_20px_40px_-10px_rgba(244,63,94,0.18)]',
           iconBg: 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400',
           accentText: 'text-rose-700 dark:text-rose-300',
         };
@@ -146,7 +146,7 @@ export function WaitlistStatsPanel({ tenantId }: WaitlistStatsPanelProps) {
             variants={cardVariants}
             whileHover={{ scale: 1.02 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className={`group rounded-2xl border ${theme.borderColor} ${theme.cardBg} ${theme.hoverBorder} ${theme.hoverGlow} bg-white/40 dark:bg-[#1c1b19]/40 backdrop-blur-md p-4 shadow-sm transition-all duration-300 flex items-center justify-between cursor-pointer`}
+            className={`group rounded-2xl border ${theme.borderColor} ${theme.cardBg} ${theme.hoverBorder} ${theme.hoverGlow} p-4 transition-all duration-300 flex items-center justify-between cursor-pointer`}
           >
             <div className="text-left min-w-0 flex-1 pr-2">
               <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">

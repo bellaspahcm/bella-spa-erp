@@ -30,7 +30,7 @@ export function InventoryReconciliationPanel({
   handleSaveReconciliation,
 }: InventoryReconciliationPanelProps) {
   return (
-    <div className="bg-white rounded-[3rem] shadow-xl border border-slate-100 overflow-hidden">
+    <div className="bg-white customer-detail-card rounded-[3rem] shadow-xl border border-slate-100 overflow-hidden">
       <div className="bella-toolbar flex flex-col justify-between gap-4 border-b border-slate-50 p-6 sm:p-8 md:flex-row md:items-center">
         <div>
           <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">

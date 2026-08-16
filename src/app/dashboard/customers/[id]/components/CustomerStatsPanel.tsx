@@ -90,7 +90,7 @@ export function CustomerStatsPanel({
       {stats.map((stat, index) => (
         <div
           key={`${stat.label}-${index}`}
-          className="bg-white p-3.5 sm:p-5 md:p-6 rounded-[2.5rem] shadow-lg shadow-slate-200/50 border border-slate-100 flex items-center gap-3 sm:gap-4 md:gap-5 min-w-0"
+          className="bg-white customer-detail-card p-3.5 sm:p-5 md:p-6 rounded-[2.5rem] shadow-lg shadow-slate-200/50 border border-slate-100 flex items-center gap-3 sm:gap-4 md:gap-5 min-w-0"
         >
           <div className={cn('w-10 h-10 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0', stat.bg)}>
             <stat.icon className={cn('w-5 h-5 sm:w-7 sm:h-7', stat.color)} />

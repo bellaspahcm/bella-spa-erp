@@ -32,7 +32,7 @@ export function InventoryLogsPanel({
 }: InventoryLogsPanelProps) {
   return (
     <div className="xl:col-span-1">
-      <div className="flex h-full flex-col rounded-[2rem] border border-slate-100 bg-white p-5 shadow-xl sm:rounded-[3rem] sm:p-8">
+      <div className="flex h-full flex-col customer-detail-card rounded-[2rem] border border-slate-100 bg-white p-5 shadow-xl sm:rounded-[3rem] sm:p-8">
         <div className="mb-5 flex items-center justify-between sm:mb-6">
           <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
             <History className="text-primary w-5 h-5" /> Lịch sử Kho

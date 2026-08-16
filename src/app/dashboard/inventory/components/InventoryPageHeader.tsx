@@ -26,7 +26,7 @@ export function InventoryPageHeader({
         </p>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-        <div className="flex min-w-0 items-center gap-3 rounded-[1.5rem] border border-slate-100 bg-white p-4 shadow-lg sm:min-w-[160px] sm:rounded-[2rem]">
+        <div className="flex min-w-0 items-center gap-3 customer-detail-card rounded-[1.5rem] border border-slate-100 bg-white p-4 shadow-lg sm:min-w-[160px] sm:rounded-[2rem]">
           <div className="w-10 h-10 bg-rose-50 rounded-2xl flex items-center justify-center text-primary">
             <Package className="w-5 h-5" />
           </div>
@@ -35,7 +35,7 @@ export function InventoryPageHeader({
             <p className="text-xl font-black text-slate-900">{totalItems}</p>
           </div>
         </div>
-        <div className="flex min-w-0 items-center gap-3 rounded-[1.5rem] border border-slate-100 bg-white p-4 shadow-lg sm:min-w-[160px] sm:rounded-[2rem]">
+        <div className="flex min-w-0 items-center gap-3 customer-detail-card rounded-[1.5rem] border border-slate-100 bg-white p-4 shadow-lg sm:min-w-[160px] sm:rounded-[2rem]">
           <div
             className={cn(
               'w-10 h-10 rounded-2xl flex items-center justify-center',
@@ -51,7 +51,7 @@ export function InventoryPageHeader({
         </div>
         
         {/* NEW: Forecast badge */}
-        <div className="flex min-w-0 items-center gap-3 rounded-[1.5rem] border border-slate-100 bg-white p-4 shadow-lg sm:min-w-[180px] sm:rounded-[2rem]">
+        <div className="flex min-w-0 items-center gap-3 customer-detail-card rounded-[1.5rem] border border-slate-100 bg-white p-4 shadow-lg sm:min-w-[180px] sm:rounded-[2rem]">
           <div
             className={cn(
               'w-10 h-10 rounded-2xl flex items-center justify-center',

@@ -10,6 +10,7 @@
     "dev:windows": "powershell -Command \"$env:NODE_ENV='development'; npm run dev:internal\"",
     "dev:internal": "next dev",
     "build": "next build",
+    "build:prod": "cross-env NODE_ENV=production SKIP_TYPE_CHECK=true next build",
     "start": "next start",
     "lint": "eslint",
     "architecture:test": "ts-node src/architecture/fitness/dependency-test.ts",

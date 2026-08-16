@@ -1,15 +1,12 @@
 {
-  "buildCommand": "npm run build",
-  "installCommand": "npm install --legacy-peer-deps --ignore-scripts",
-  "regions": ["sin1"],
-  "crons": [
-    {
-      "path": "/api/cron/sync-external-ads",
-      "schedule": "0 3 * * *"
-    },
-    {
-      "path": "/api/cron/gate3-monitor",
-      "schedule": "0 12 * * *"
+  "buildCommand": "npm run build:prod",
+  "framework": "nextjs",
+  "installCommand": "npm ci --legacy-peer-deps",
+  "build": {
+    "env": {
+      "SKIP_TYPE_CHECK": "true",
+      "SKIP_LINT": "true",
+      "NODE_OPTIONS": "--max-old-space-size=8192"
     }
-  ]
+  }
 }

@@ -15,7 +15,7 @@ export function InventoryTabs({ activeTab, onChange }: InventoryTabsProps) {
       <button
         onClick={() => onChange('stock')}
         className={cn(
-          'flex shrink-0 items-center gap-2 border-b-2 pb-4 text-xs font-black uppercase tracking-widest transition-all',
+          'flex shrink-0 items-center gap-2 border-b-2 pb-4 text-xs font-black uppercase tracking-widest transition-all no-pill',
           activeTab === 'stock' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600',
         )}
       >
@@ -24,7 +24,7 @@ export function InventoryTabs({ activeTab, onChange }: InventoryTabsProps) {
       <button
         onClick={() => onChange('requests')}
         className={cn(
-          'flex shrink-0 items-center gap-2 border-b-2 pb-4 text-xs font-black uppercase tracking-widest transition-all',
+          'flex shrink-0 items-center gap-2 border-b-2 pb-4 text-xs font-black uppercase tracking-widest transition-all no-pill',
           activeTab === 'requests' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600',
         )}
       >
@@ -33,7 +33,7 @@ export function InventoryTabs({ activeTab, onChange }: InventoryTabsProps) {
       <button
         onClick={() => onChange('reconciliation')}
         className={cn(
-          'flex shrink-0 items-center gap-2 border-b-2 pb-4 text-xs font-black uppercase tracking-widest transition-all',
+          'flex shrink-0 items-center gap-2 border-b-2 pb-4 text-xs font-black uppercase tracking-widest transition-all no-pill',
           activeTab === 'reconciliation' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600',
         )}
       >
@@ -42,7 +42,7 @@ export function InventoryTabs({ activeTab, onChange }: InventoryTabsProps) {
       <button
         onClick={() => onChange('sales')}
         className={cn(
-          'flex shrink-0 items-center gap-2 border-b-2 pb-4 text-xs font-black uppercase tracking-widest transition-all',
+          'flex shrink-0 items-center gap-2 border-b-2 pb-4 text-xs font-black uppercase tracking-widest transition-all no-pill',
           activeTab === 'sales' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600',
         )}
       >

@@ -920,7 +920,7 @@ export function Sidebar() {
         - Mobile: Slide-out fixed drawer based on `isOpen` state
       */}
       <aside className={cn(
-        "w-80 bg-[#FAFAFA] border-r border-slate-200/50 dark:bg-[#1C1B19] dark:border-[#3E3A35] flex flex-col h-screen fixed inset-y-0 left-0 z-50 transform lg:translate-x-0 lg:relative lg:inset-auto lg:z-auto transition-transform duration-300 ease-in-out overflow-hidden shadow-[10px_0_40px_rgba(0,0,0,0.02)] dark:shadow-[10px_0_40px_rgba(0,0,0,0.5)] beauty-erp-sidebar shrink-0",
+        "w-80 bg-[#FAFAFA] border-r border-slate-200/50 dark:bg-[#1C1B19] dark:border-[#3E3A35] flex flex-col h-screen lg:h-screen h-[100dvh] fixed inset-y-0 left-0 z-50 transform lg:translate-x-0 lg:relative lg:inset-auto lg:z-auto transition-transform duration-300 ease-in-out overflow-hidden shadow-[10px_0_40px_rgba(0,0,0,0.02)] dark:shadow-[10px_0_40px_rgba(0,0,0,0.5)] beauty-erp-sidebar shrink-0",
         isBeautySpaShell && "beauty-erp-sidebar",
         isIndustrialCleaningShell && "beauty-erp-sidebar", // Apply same class for theme CSS
         isRealEstateShell && "beauty-erp-sidebar",
@@ -1072,7 +1072,7 @@ export function Sidebar() {
         </nav>
 
         {/* ── Theme Switcher, User Profile & Logout — pinned at bottom ── */}
-        <div className="mt-auto shrink-0 relative z-10 px-4 pt-4 pb-4 flex flex-col gap-2">
+        <div className="mt-auto shrink-0 relative z-10 px-4 pt-4 pb-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] flex flex-col gap-2">
           {/* Unified Profile & Actions Panel */}
           <div className={cn(
             "bg-white/80 dark:bg-[#1C1B19] rounded-[1.25rem] shadow-[0_4px_20px_rgba(219,39,119,0.06)] dark:shadow-none border border-[#FFE4E6] dark:border-[#3E3A35] flex flex-col overflow-hidden transition-all duration-300 hover:border-rose-300 dark:hover:border-[#A67D44]/30",

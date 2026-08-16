@@ -24,7 +24,7 @@ export function CustomerProfilePanel({
 
   return (
         <div className="space-y-6 xl:col-span-1 xl:space-y-8">
-          <div className="relative overflow-hidden rounded-[2rem] border border-slate-100 bg-white p-5 shadow-xl shadow-slate-200/50 sm:p-8 xl:rounded-[3rem]">
+          <div className="relative overflow-hidden customer-detail-card rounded-[2rem] border border-slate-100 bg-white p-5 shadow-xl shadow-slate-200/50 sm:p-8 xl:rounded-[3rem]">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl" />
             <div className="flex flex-col items-center text-center relative z-10">
               <div className={cn(
@@ -112,7 +112,7 @@ export function CustomerProfilePanel({
             </div>
           </div>
 
-          <div className="rounded-[2rem] border border-slate-100 bg-white p-5 shadow-xl shadow-slate-200/50 sm:p-8 xl:rounded-[3rem]">
+          <div className="rounded-[2rem] customer-detail-card border border-slate-100 bg-white p-5 shadow-xl shadow-slate-200/50 sm:p-8 xl:rounded-[3rem]">
             <h3 className="text-lg font-black text-slate-900 mb-6 flex items-center gap-3">
               <SecondaryIcon className="text-primary w-6 h-6" />
               {customerLabels.secondaryInfoTitle}

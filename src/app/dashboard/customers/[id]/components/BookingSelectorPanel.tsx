@@ -52,7 +52,7 @@ export function BookingSelectorPanel({
   const selectedCount = selectedBookingIds?.size ?? 0;
 
   return (
-          <div className="relative mb-8 overflow-hidden rounded-[2.5rem] border-2 border-primary/20 bg-white p-6 shadow-[0_18px_45px_rgba(190,24,93,0.13)] ring-4 ring-primary/5">
+          <div className="relative mb-8 overflow-hidden rounded-[2.5rem] customer-detail-card bg-white p-6">
             <div className="pointer-events-none absolute inset-x-8 top-0 h-1.5 rounded-b-full bg-gradient-to-r from-primary/20 via-primary to-primary/20 animate-pulse" />
             <div className="flex flex-col gap-3 px-2 mb-4 sm:flex-row sm:items-center sm:justify-between">
               <div>

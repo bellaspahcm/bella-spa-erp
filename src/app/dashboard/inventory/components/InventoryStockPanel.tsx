@@ -35,7 +35,7 @@ export function InventoryStockPanel({
   setShowCreateRequest,
 }: InventoryStockPanelProps) {
   return (
-    <div className="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-xl sm:rounded-[3rem]">
+    <div className="overflow-hidden customer-detail-card rounded-[2rem] border border-slate-100 bg-white shadow-xl sm:rounded-[3rem]">
       <div className="flex flex-col gap-3 border-b border-slate-50 p-4 sm:p-8">
         <div className="bella-toolbar flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
           <div className="relative w-full min-w-0 flex-grow lg:max-w-sm">

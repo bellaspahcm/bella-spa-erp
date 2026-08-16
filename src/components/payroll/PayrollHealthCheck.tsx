@@ -404,20 +404,28 @@ export function PayrollHealthCheck({ salaries, currentMonth }: PayrollHealthChec
       {/* Healthy State - Show Quick Stats */}
       {isExpanded && isHealthy && (
         <div className="mt-5 pt-5 border-t-2 border-white">
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-white p-3 rounded-lg">
-              <p className="text-xs text-gray-600 mb-1">Tổng {vocab.worker.short}</p>
-              <p className="text-2xl font-bold text-gray-900">{salaries.length}</p>
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
+            <div className="bg-white p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200/60 shadow-md hover:shadow-lg transition-all min-w-0">
+              <p className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-wider mb-1 truncate" title={`Tổng ${vocab.worker.short}`}>
+                Tổng {vocab.worker.short}
+              </p>
+              <p className="text-sm sm:text-lg md:text-xl lg:text-2xl font-black text-slate-900 truncate">
+                {salaries.length}
+              </p>
             </div>
-            <div className="bg-white p-3 rounded-lg">
-              <p className="text-xs text-gray-600 mb-1">Lương trung bình</p>
-              <p className="text-2xl font-bold text-gray-900">
+            <div className="bg-white p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200/60 shadow-md hover:shadow-lg transition-all min-w-0">
+              <p className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-wider mb-1 truncate" title="Lương trung bình">
+                Lương trung bình
+              </p>
+              <p className="text-sm sm:text-lg md:text-xl lg:text-2xl font-black text-slate-900 truncate" title={`${Math.round(salaries.reduce((sum, s) => sum + s.totalSalary, 0) / salaries.length).toLocaleString()}đ`}>
                 {Math.round(salaries.reduce((sum, s) => sum + s.totalSalary, 0) / salaries.length).toLocaleString()}đ
               </p>
             </div>
-            <div className="bg-white p-3 rounded-lg">
-              <p className="text-xs text-gray-600 mb-1">Tổng quỹ lương</p>
-              <p className="text-2xl font-bold text-gray-900">
+            <div className="bg-white p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200/60 shadow-md hover:shadow-lg transition-all min-w-0">
+              <p className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-wider mb-1 truncate" title="Tổng quỹ lương">
+                Tổng quỹ lương
+              </p>
+              <p className="text-sm sm:text-lg md:text-xl lg:text-2xl font-black text-slate-900 truncate" title={`${salaries.reduce((sum, s) => sum + s.totalSalary, 0).toLocaleString()}đ`}>
                 {salaries.reduce((sum, s) => sum + s.totalSalary, 0).toLocaleString()}đ
               </p>
             </div>

@@ -32,7 +32,7 @@ export function SessionHistoryPanel({
   const vocab = useModuleVocabulary(tenantModuleKey);
   
   return (
-          <div className="bg-white rounded-[3rem] p-8 shadow-xl shadow-slate-200/50 border border-slate-100">
+          <div className="bg-white customer-detail-card rounded-[3rem] p-8 shadow-xl shadow-slate-200/50 border border-slate-100">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 flex-wrap">
                 <History className="text-primary w-6 h-6 flex-shrink-0" />

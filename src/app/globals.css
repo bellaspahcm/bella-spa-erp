@@ -545,14 +545,14 @@ html[data-tenant-module="pending"] .ktv-profile-btn-primary:hover {
 .glass-pink {
   background: rgba(255, 240, 243, 0.6);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 133, 162, 0.1);
+  border: 1.2px solid color-mix(in srgb, var(--primary) 65%, transparent) !important;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .luxury-box-hover:hover {
   transform: translateY(-6px);
-  box-shadow: 0 20px 30px -10px rgba(157, 23, 77, 0.08);
-  border-color: rgba(157, 23, 77, 0.2);
+  box-shadow: 0 20px 30px -10px color-mix(in srgb, var(--primary) 12%, transparent);
+  border-color: var(--primary) !important;
 }
 
 /* Custom Scrollbar */
@@ -679,6 +679,33 @@ html[data-tenant-module="pending"] .ktv-profile-btn-primary:hover {
 .bella-data-table th > *,
 .bella-data-table td > * {
   max-width: none;
+}
+
+/* ==========================================================================
+   BELLA DATA TABLE - CONTRAST & LEGIBILITY ENHANCEMENTS FOR LIGHT MODE
+   Prevents table headers and rows from blending into card backgrounds
+   ========================================================================== */
+html:not(.dark) .bella-data-table {
+  width: 100%;
+}
+html:not(.dark) .bella-data-table thead tr {
+  border-bottom: 2px solid #cbd5e1 !important; /* slate-300 divider */
+}
+html:not(.dark) .bella-data-table thead tr th {
+  background-color: #f1f5f9 !important; /* slate-100 for clear header contrast */
+  color: #475569 !important; /* slate-600 for readability */
+}
+html:not(.dark) .bella-data-table tbody tr {
+  border-bottom: 1px solid #e2e8f0 !important; /* slate-200 row border for high contrast */
+}
+html:not(.dark) .bella-data-table tbody tr:nth-child(odd) td {
+  background-color: #ffffff !important;
+}
+html:not(.dark) .bella-data-table tbody tr:nth-child(even) td {
+  background-color: #f8fafc !important; /* slate-50 background for alternate rows */
+}
+html:not(.dark) .bella-data-table tbody tr:hover td {
+  background-color: #e2e8f0 !important; /* slate-200 on hover */
 }
 
 .dashboard-schedule-list {
@@ -816,7 +843,7 @@ input[type="time"]::-webkit-datetime-edit-ampm-field {
 
 .dark .glass-pink {
   background: rgba(28, 27, 25, 0.55);
-  border: 1px solid rgba(93, 28, 52, 0.15);
+  border: 1px solid color-mix(in srgb, var(--primary) 65%, transparent) !important;
 }
 
 .dark .luxury-card-white {
@@ -830,8 +857,8 @@ input[type="time"]::-webkit-datetime-edit-ampm-field {
 }
 
 .dark .luxury-box-hover:hover {
-  box-shadow: 0 20px 30px -10px rgba(166, 125, 68, 0.05);
-  border-color: rgba(166, 125, 68, 0.2);
+  box-shadow: 0 20px 30px -10px color-mix(in srgb, var(--primary) 15%, transparent);
+  border-color: var(--primary) !important;
 }
 
 .dark .custom-scrollbar::-webkit-scrollbar-track {
@@ -856,14 +883,14 @@ input[type="time"]::-webkit-datetime-edit-ampm-field {
 .dark [class*="bg-white/10"],
 .dark [class*="glass-pink"] {
   background-color: rgba(28, 27, 25, 0.6) !important;
-  border-color: rgba(205, 188, 171, 0.05) !important;
+  border-color: color-mix(in srgb, var(--primary) 65%, transparent) !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
 }
 
 .dark .group.bg-white\/30:hover,
 .dark [class*="bg-white/30"]:hover {
   background-color: rgba(28, 27, 25, 0.85) !important;
-  border-color: rgba(166, 125, 68, 0.25) !important;
+  border-color: var(--primary) !important;
 }
 
 /* Rounded white avatars/icons to be elegant dark gold/bronze instead */
@@ -5089,6 +5116,15 @@ html, body {
 /* ============================================
    Beauty Spa Text Contrast & Visibility Overrides
    ============================================ */
+html[data-tenant-module="beauty_spa"] .luxury-card-pink {
+  background: linear-gradient(135deg, #074E44 0%, #065f46 50%, #047857 100%) !important;
+  box-shadow: 0 10px 20px -5px rgba(7, 78, 68, 0.2) !important;
+}
+
+html[data-tenant-module="beauty_spa"] .luxury-card-pink:hover {
+  box-shadow: 0 25px 50px -12px rgba(7, 78, 68, 0.4) !important;
+}
+
 html[data-tenant-module="beauty_spa"] .luxury-card-pink,
 html[data-tenant-module="beauty_spa"] .luxury-card-pink *:not(.bg-white):not(.bg-white *):not([class*="bg-white"]):not([class*="bg-white"] *):not(.bg-slate-50):not(.bg-slate-50 *):not([class*="bg-slate-50"]):not([class*="bg-slate-50"] *):not([class*="bg-gradient-to-b"]):not([class*="bg-gradient-to-b"] *):not(.bg-amber-50):not(.bg-amber-50 *),
 .reconciliation-kpi-card,
@@ -5354,3 +5390,89 @@ html[data-tenant-brand-button="minimal"][data-tenant-module="real_estate"] .beau
 html[data-tenant-brand-button="pill"]    { --brand-button-radius: 9999px; }
 html[data-tenant-brand-button="rounded"] { --brand-button-radius: 0.875rem; }
 html[data-tenant-brand-button="minimal"] { --brand-button-radius: 0.5rem; }
+
+/* =========================================================================
+   Tenant-Specific Customer Cards & Panels Styling
+   Ensure cards stand out clearly from the background with nice shadows and tenant borders.
+   ========================================================================= */
+
+.customer-card,
+.customer-detail-card {
+  background: #ffffff !important;
+  border-width: 1.5px !important;
+  border-style: solid !important;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.dark .customer-card,
+.dark .customer-detail-card {
+  background: var(--card) !important;
+}
+
+/* 1. Bella Spa (baby_care / babycare / pending) */
+html[data-tenant-module="baby_care"] .customer-card,
+html[data-tenant-module="babycare"] .customer-card,
+html[data-tenant-module="pending"] .customer-card,
+html[data-tenant-module="baby_care"] .customer-detail-card,
+html[data-tenant-module="babycare"] .customer-detail-card,
+html[data-tenant-module="pending"] .customer-detail-card {
+  border-color: rgba(244, 63, 94, 0.22) !important; /* Rose-500 with 22% opacity */
+  box-shadow: 0 10px 25px -5px rgba(244, 63, 94, 0.06), 0 8px 16px -6px rgba(244, 63, 94, 0.04) !important;
+}
+
+html[data-tenant-module="baby_care"] .customer-card:hover,
+html[data-tenant-module="babycare"] .customer-card:hover,
+html[data-tenant-module="pending"] .customer-card:hover,
+html[data-tenant-module="baby_care"] .customer-detail-card:hover,
+html[data-tenant-module="babycare"] .customer-detail-card:hover,
+html[data-tenant-module="pending"] .customer-detail-card:hover {
+  border-color: rgba(244, 63, 94, 0.6) !important;
+  box-shadow: 0 20px 40px -10px rgba(244, 63, 94, 0.18) !important;
+  transform: translateY(-4px);
+}
+
+.dark[data-tenant-module="baby_care"] .customer-card,
+.dark[data-tenant-module="babycare"] .customer-card,
+.dark[data-tenant-module="pending"] .customer-card,
+.dark[data-tenant-module="baby_care"] .customer-detail-card,
+.dark[data-tenant-module="babycare"] .customer-detail-card,
+.dark[data-tenant-module="pending"] .customer-detail-card {
+  border-color: rgba(244, 63, 94, 0.3) !important;
+  box-shadow: 0 12px 34px -5px rgba(0, 0, 0, 0.55), inset 0 1px 0 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+.dark[data-tenant-module="baby_care"] .customer-card:hover,
+.dark[data-tenant-module="babycare"] .customer-card:hover,
+.dark[data-tenant-module="pending"] .customer-card:hover,
+.dark[data-tenant-module="baby_care"] .customer-detail-card:hover,
+.dark[data-tenant-module="babycare"] .customer-detail-card:hover,
+.dark[data-tenant-module="pending"] .customer-detail-card:hover {
+  border-color: rgba(244, 63, 94, 0.7) !important;
+  box-shadow: 0 20px 45px -5px rgba(0, 0, 0, 0.7), inset 0 1px 0 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 2. Beauty Spa (beauty_spa) */
+html[data-tenant-module="beauty_spa"] .customer-card,
+html[data-tenant-module="beauty_spa"] .customer-detail-card {
+  border-color: rgba(16, 185, 129, 0.22) !important; /* Emerald-500 with 22% opacity */
+  box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.06), 0 8px 16px -6px rgba(16, 185, 129, 0.04) !important;
+}
+
+html[data-tenant-module="beauty_spa"] .customer-card:hover,
+html[data-tenant-module="beauty_spa"] .customer-detail-card:hover {
+  border-color: rgba(16, 185, 129, 0.6) !important;
+  box-shadow: 0 20px 40px -10px rgba(16, 185, 129, 0.18) !important;
+  transform: translateY(-4px);
+}
+
+.dark[data-tenant-module="beauty_spa"] .customer-card,
+.dark[data-tenant-module="beauty_spa"] .customer-detail-card {
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  box-shadow: 0 12px 34px -5px rgba(0, 0, 0, 0.55), inset 0 1px 0 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+.dark[data-tenant-module="beauty_spa"] .customer-card:hover,
+.dark[data-tenant-module="beauty_spa"] .customer-detail-card:hover {
+  border-color: rgba(16, 185, 129, 0.7) !important;
+  box-shadow: 0 20px 45px -5px rgba(0, 0, 0, 0.7), inset 0 1px 0 0 rgba(255, 255, 255, 0.1) !important;
+}
