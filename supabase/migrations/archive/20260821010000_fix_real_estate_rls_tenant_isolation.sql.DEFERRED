@@ -1,0 +1,168 @@
+-- =========================================================================
+-- Migration: 20260821010000_fix_real_estate_rls_tenant_isolation
+-- Purpose: Fix CRITICAL P0 RLS violations in real-estate tables
+-- Issue: Real-estate tables using USING (true) bypass tenant isolation
+-- Impact: Cross-tenant data leakage - pricing, inventory, promotions
+-- =========================================================================
+--
+-- BACKGROUND:
+--   Migration 20260801010000_real_estate_foundation_tables.sql created
+--   real-estate tables with permissive USING (true) policies.
+--   This violates Gate 0/P0 tenant isolation requirements.
+--
+-- FIX:
+--   Replace USING (true) with proper tenant_id filtering
+--
+-- TABLES AFFECTED:
+--   - re_zones
+--   - re_blocks
+--   - re_price_lists
+--   - re_product_prices
+--   - re_promotions
+--   - re_price_history
+--   - rm_inventory_matrix
+-- =========================================================================
+
+-- =========================================================================
+-- 1. RE_ZONES (Real Estate Zones)
+-- =========================================================================
+DROP POLICY IF EXISTS "Allow authenticated users full access to re_zones" ON public.re_zones;
+DROP POLICY IF EXISTS "re_zones_tenant_isolation" ON public.re_zones;
+
+CREATE POLICY "re_zones_tenant_isolation" ON public.re_zones
+    FOR ALL TO authenticated, service_role
+    USING (
+        current_user IN ('service_role', 'postgres', 'supabase_admin')
+        OR tenant_id = public.get_auth_tenant_id()
+    )
+    WITH CHECK (
+        current_user IN ('service_role', 'postgres', 'supabase_admin')
+        OR tenant_id = public.get_auth_tenant_id()
+    );
+
+-- =========================================================================
+-- 2. RE_BLOCKS (Real Estate Blocks)
+-- =========================================================================
+DROP POLICY IF EXISTS "Allow authenticated users full access to re_blocks" ON public.re_blocks;
+DROP POLICY IF EXISTS "re_blocks_tenant_isolation" ON public.re_blocks;
+
+CREATE POLICY "re_blocks_tenant_isolation" ON public.re_blocks
+    FOR ALL TO authenticated, service_role
+    USING (
+        current_user IN ('service_role', 'postgres', 'supabase_admin')
+        OR tenant_id = public.get_auth_tenant_id()
+    )
+    WITH CHECK (
+        current_user IN ('service_role', 'postgres', 'supabase_admin')
+        OR tenant_id = public.get_auth_tenant_id()
+    );
+
+-- =========================================================================
+-- 3. RE_PRICE_LISTS (Critical - Pricing Strategy)
+-- =========================================================================
+DROP POLICY IF EXISTS "Allow authenticated users full access to re_price_lists" ON public.re_price_lists;
+DROP POLICY IF EXISTS "re_price_lists_tenant_isolation" ON public.re_price_lists;
+
+CREATE POLICY "re_price_lists_tenant_isolation" ON public.re_price_lists
+    FOR ALL TO authenticated, service_role
+    USING (
+        current_user IN ('service_role', 'postgres', 'supabase_admin')
+        OR tenant_id = public.get_auth_tenant_id()
+    )
+    WITH CHECK (
+        current_user IN ('service_role', 'postgres', 'supabase_admin')
+        OR tenant_id = public.get_auth_tenant_id()
+    );
+
+COMMENT ON POLICY "re_price_lists_tenant_isolation" ON public.re_price_lists IS
+    'P0 Gate 0: Pricing is commercially sensitive. '
+    'Cross-tenant access = competitive intelligence leak.';
+
+-- =========================================================================
+-- 4. RE_PRODUCT_PRICES (Critical - Commercial Data)
+-- =========================================================================
+DROP POLICY IF EXISTS "Allow authenticated users full access to re_product_prices" ON public.re_product_prices;
+DROP POLICY IF EXISTS "re_product_prices_tenant_isolation" ON public.re_product_prices;
+
+CREATE POLICY "re_product_prices_tenant_isolation" ON public.re_product_prices
+    FOR ALL TO authenticated, service_role
+    USING (
+        current_user IN ('service_role', 'postgres', 'supabase_admin')
+        OR tenant_id = public.get_auth_tenant_id()
+    )
+    WITH CHECK (
+        current_user IN ('service_role', 'postgres', 'supabase_admin')
+        OR tenant_id = public.get_auth_tenant_id()
+    );
+
+COMMENT ON POLICY "re_product_prices_tenant_isolation" ON public.re_product_prices IS
+    'P0 Gate 0: Product pricing is commercially sensitive.';
+
+-- =========================================================================
+-- 5. RE_PROMOTIONS (Marketing Strategy)
+-- =========================================================================
+DROP POLICY IF EXISTS "Allow authenticated users full access to re_promotions" ON public.re_promotions;
+
+CREATE POLICY "re_promotions_tenant_isolation" ON public.re_promotions
+    FOR ALL TO authenticated, service_role
+    USING (
+        current_user IN ('service_role', 'postgres', 'supabase_admin')
+        OR tenant_id = public.get_auth_tenant_id()
+    )
+    WITH CHECK (
+        current_user IN ('service_role', 'postgres', 'supabase_admin')
+        OR tenant_id = public.get_auth_tenant_id()
+    );
+
+-- =========================================================================
+-- 6. RE_PRICE_HISTORY (Audit Trail)
+-- =========================================================================
+DROP POLICY IF EXISTS "Allow authenticated users full access to re_price_history" ON public.re_price_history;
+
+CREATE POLICY "re_price_history_tenant_isolation" ON public.re_price_history
+    FOR ALL TO authenticated, service_role
+    USING (
+        current_user IN ('service_role', 'postgres', 'supabase_admin')
+        OR tenant_id = public.get_auth_tenant_id()
+    )
+    WITH CHECK (
+        current_user IN ('service_role', 'postgres', 'supabase_admin')
+        OR tenant_id = public.get_auth_tenant_id()
+    );
+
+-- =========================================================================
+-- 7. RM_INVENTORY_MATRIX (Critical - Availability Data)
+-- =========================================================================
+DROP POLICY IF EXISTS "Allow authenticated users full access to rm_inventory_matrix" ON public.rm_inventory_matrix;
+
+CREATE POLICY "rm_inventory_matrix_tenant_isolation" ON public.rm_inventory_matrix
+    FOR ALL TO authenticated, service_role
+    USING (
+        current_user IN ('service_role', 'postgres', 'supabase_admin')
+        OR tenant_id = public.get_auth_tenant_id()
+    )
+    WITH CHECK (
+        current_user IN ('service_role', 'postgres', 'supabase_admin')
+        OR tenant_id = public.get_auth_tenant_id()
+    );
+
+COMMENT ON POLICY "rm_inventory_matrix_tenant_isolation" ON public.rm_inventory_matrix IS
+    'P0 Gate 0: Real-time inventory = competitive intelligence. '
+    'Must not leak between competing real estate projects.';
+
+-- =========================================================================
+-- VERIFICATION COMMENT
+-- =========================================================================
+-- This migration fixes P0 Gate 0 violations in real-estate tables.
+-- Before: USING (true) allowed cross-tenant data access
+-- After: Strict tenant_id filtering enforced
+--
+-- Business Impact:
+--   - Prevents competitor pricing visibility
+--   - Prevents inventory leakage
+--   - Maintains commercial confidentiality
+--
+-- Security Impact:
+--   - Satisfies Gate 0 constitutional requirement
+--   - Prevents multi-tenant data leakage
+-- =========================================================================
