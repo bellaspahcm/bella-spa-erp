@@ -120,10 +120,11 @@ export class AccountingService implements IAccountingContract {
         success: true,
         entryId: entry.id
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       return {
         success: false,
-        error: `SYSTEM_ERROR: ${err.message}`
+        error: `SYSTEM_ERROR: ${errorMessage}`
       };
     }
   }

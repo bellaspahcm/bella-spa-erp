@@ -218,7 +218,7 @@ export class CourseRepository {
    * Map database row to domain model
    */
   private static mapRowToDomain(row: CoursesTableRow): Course {
-    const meta = (row.metadata || {}) as Record<string, any>;
+    const meta = (row.metadata || {}) as Record<string, unknown>;
     return {
       courseId: row.course_id,
       tenantId: row.tenant_id,

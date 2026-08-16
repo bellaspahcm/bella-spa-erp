@@ -620,8 +620,7 @@ export function PnLStatementChart({
             width={70}
           />
           <Tooltip
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            formatter={(value: any) => [formatVNDFull(Number(value)), 'Số tiền'] as any}
+            formatter={(value: number | string) => [formatVNDFull(Number(value)), 'Số tiền'] as [string, string]}
             contentStyle={{
               backgroundColor: 'rgba(255, 255, 255, 0.95)',
               borderRadius: '16px',

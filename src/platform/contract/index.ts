@@ -175,7 +175,7 @@ class ContractEngine {
     return this.repo.findById(tenantId, id);
   }
 
-  /** Get all contracts for a party (as any role) */
+  /** Get all contracts for a party (in any role) */
   async getByParty(tenantId: string, partyId: string, filter?: Partial<ContractFilter>): Promise<Contract[]> {
     return this.repo.findMany(tenantId, { ...filter, partyId });
   }

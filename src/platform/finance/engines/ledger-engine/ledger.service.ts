@@ -42,11 +42,11 @@ export class LedgerEngineService implements ILedgerEngine {
 
   constructor(private readonly supabase: SupabaseClient<Database>) {}
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private get client(): SupabaseClient<any> {
-    // Cast to any-schema client for dynamic table/RPC access not yet in codegen types.
-    // All public methods remain strictly typed via their return types.
-    return this.supabase as unknown as SupabaseClient<any>;
+  // Typed client accessor for database operations  
+  private get client(): SupabaseClient<Database> {
+    // Cast to typed client for dynamic table/RPC access
+    // All public methods remain strictly typed via their return types
+    return this.supabase as unknown as SupabaseClient<Database>;
   }
 
 

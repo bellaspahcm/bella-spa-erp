@@ -230,9 +230,15 @@ export class SupabaseEducationRepository extends BaseSupabaseRepositoryPrimitive
     }
 
     // Keep only graded assessments with non-null scores
+    interface AssessmentRow {
+      status: string;
+      score: number | null;
+      assessments: { course_id: string };
+    }
+    
     return data
-      .filter((r: any) => r.status === 'graded' && r.score !== null)
-      .map((r: any) => ({
+      .filter((r: AssessmentRow) => r.status === 'graded' && r.score !== null)
+      .map((r: AssessmentRow) => ({
         courseId: r.assessments.course_id,
         score: Number(r.score),
       }));

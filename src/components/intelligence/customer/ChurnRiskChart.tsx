@@ -36,7 +36,7 @@ export function ChurnRiskChart({ data, height = 350 }: ChurnRiskChartProps) {
   ].filter(item => item.count > 0); // Only show segments with data
 
   // Custom tooltips matching glassmorphism
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: { count: number; name: string } }> }) => {
     if (active && payload && payload.length) {
       const entry = payload[0].payload;
       const percent = total > 0 ? ((entry.count / total) * 100).toFixed(1) : '0.0';
@@ -53,10 +53,10 @@ export function ChurnRiskChart({ data, height = 350 }: ChurnRiskChartProps) {
   };
 
   const renderLegend = (props: Record<string, unknown>) => {
-    const { payload } = props;
+    const { payload } = props as { payload: Array<{ payload: { count: number }; value: string; color: string }> };
     return (
       <ul className="flex justify-center gap-6 mt-4 flex-wrap">
-        {payload.map((entry: any, index: number) => {
+        {payload.map((entry, index: number) => {
           const percent = total > 0 ? ((entry.payload.count / total) * 100).toFixed(0) : '0';
           return (
             <li key={`legend-${index}`} className="flex items-center gap-2 text-xs font-bold text-slate-600">

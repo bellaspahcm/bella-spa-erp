@@ -34,8 +34,9 @@ export class ReservationService implements IReservationContract {
     // 2. Perform state transition checks inside Domain entity (Aggregate Root)
     try {
       unit.reserve(params.customerId);
-    } catch (err: any) {
-      return { success: false, error: err.message };
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Reservation failed';
+      return { success: false, error: errorMessage };
     }
 
     // 3. Save property unit back to DB via repository

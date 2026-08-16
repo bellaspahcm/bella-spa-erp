@@ -1,7 +1,7 @@
 import { IPolicyRegistryContract, PolicyValue } from './policy-registry.contract';
 
 // Central configuration registry. Tenant IDs are scoped only within config maps.
-const POLICY_REGISTRY: Record<string, Record<string, any>> = {
+const POLICY_REGISTRY: Record<string, Record<string, unknown>> = {
   'tenant-standard': {
     'education.max_credits': 24,
     'education.passing_threshold': 5.0,

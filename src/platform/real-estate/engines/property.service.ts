@@ -48,7 +48,7 @@ export class PropertyService implements IPropertyContract {
         contract_no: contractNo,
         contract_price: params.contractPrice,
         state: 'DRAFT',
-        installments: params.installments as any
+        installments: params.installments as unknown as Database['public']['Tables']['real_estate_contracts']['Insert']['installments']
       })
       .select('*')
       .single();

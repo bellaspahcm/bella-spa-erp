@@ -40,9 +40,9 @@ export class CashEngineService implements ICashReportingEngine, ICashReconstruct
     private readonly permissions: string[] = []
   ) {}
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private get client(): SupabaseClient<any> {
-    return this.supabase as unknown as SupabaseClient<any>;
+  // Typed client accessor for database operations
+  private get client(): SupabaseClient<Database> {
+    return this.supabase as unknown as SupabaseClient<Database>;
   }
 
   /**

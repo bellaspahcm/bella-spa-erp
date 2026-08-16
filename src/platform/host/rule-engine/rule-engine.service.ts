@@ -184,18 +184,18 @@ export class RuleEngineService {
         tenant_id: this.tenantId,
         rule_key: params.ruleKey,
         version: params.version,
-        domain: params.domain as any,
+        domain: params.domain,
         name: params.name,
         description: params.description ?? null,
         status: 'DRAFT',
         severity: params.severity ?? 'LOW',
         conditions: params.conditions as unknown as Database['public']['Tables']['platform_business_rules']['Insert']['conditions'],
         action_type: params.actionType ?? 'NOTIFY',
-        action_params: (params.actionParams ?? {}) as any,
+        action_params: (params.actionParams ?? {}) as Record<string, unknown>,
         effective_from: params.effectiveFrom ?? null,
         effective_to: params.effectiveTo ?? null,
         created_by: params.createdBy ?? null,
-        metadata: (params.metadata ?? {}) as any,
+        metadata: (params.metadata ?? {}) as Record<string, unknown>,
       })
       .select()
       .single();
@@ -284,7 +284,7 @@ export class RuleEngineService {
       .from('platform_business_rules')
       .update({
         status: 'SUSPENDED',
-        metadata: { suspendReason: reason, suspendedAt: new Date().toISOString() } as any,
+        metadata: { suspendReason: reason, suspendedAt: new Date().toISOString() } as Record<string, unknown>,
       })
       .eq('id', ruleId)
       .eq('tenant_id', this.tenantId);
@@ -373,7 +373,7 @@ export class RuleEngineService {
       .from('platform_business_rules')
       .select('id')
       .eq('tenant_id', this.tenantId)
-      .eq('domain', domain as any)
+      .eq('domain', domain)
       .eq('status', 'ACTIVE');
 
     if (error) throw new Error(`evaluateAllActiveRules failed: ${error.message}`);
@@ -447,11 +447,11 @@ export class RuleEngineService {
         rule_version: rule.version,
         context_type: params.contextType,
         context_id: params.contextId ?? null,
-        input_data: params.inputData as any,
+        input_data: params.inputData as Record<string, unknown>,
         outcome,
         conditions_met: conditionsMet,
         action_taken: actionTaken ?? null,
-        action_result: actionResult as any,
+        action_result: actionResult as Record<string, unknown>,
         evaluated_by: params.evaluatedBy ?? null,
         correlation_id: params.correlationId ?? null,
       });

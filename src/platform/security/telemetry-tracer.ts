@@ -82,9 +82,10 @@ export class TelemetryTracer {
         success,
         error
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Log warning but suppress error to isolate system failure (Production Failure Containment Law 7)
-      console.warn(`[Telemetry Warning] Telemetry trace failed to record: ${err.message}`);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      console.warn(`[Telemetry Warning] Telemetry trace failed to record: ${errorMessage}`);
     }
   }
 
@@ -105,9 +106,10 @@ export class TelemetryTracer {
       const durationMs = Date.now() - start;
       this.endTrace(traceId, tenantId, vertical, operation, durationMs, true);
       return result;
-    } catch (err: any) {
+    } catch (err: unknown) {
       const durationMs = Date.now() - start;
-      this.endTrace(traceId, tenantId, vertical, operation, durationMs, false, err.message);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      this.endTrace(traceId, tenantId, vertical, operation, durationMs, false, errorMessage);
       throw err;
     }
   }

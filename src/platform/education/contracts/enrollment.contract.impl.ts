@@ -8,10 +8,10 @@ export class EnrollmentContractImpl implements IEducationEnrollmentContract {
   public async enrollStudent(input: EnrollStudentInput): Promise<EducationEnrollmentDTO> {
     const supabase = createClient();
     const repository = new SupabaseEducationRepository(supabase);
-    // Note: The eventBus conforms to EventBusPort
-    const service = new EducationEngineService(repository, eventBus as any);
+    // Note: The eventBus conforms to EventBusPort - type assertion safe here
+    const service = new EducationEngineService(repository, eventBus);
 
-    let overrideRequest = (input as any).overrideRequest;
+    let overrideRequest = (input as EnrollStudentInput & {overrideRequest?: unknown}).overrideRequest;
     if (!overrideRequest && input.overrideJustification) {
       try {
         overrideRequest = JSON.parse(input.overrideJustification);
@@ -37,7 +37,7 @@ export class EnrollmentContractImpl implements IEducationEnrollmentContract {
       tenantId: result.enrollment.tenantId,
       studentPartyId: result.enrollment.studentPartyId,
       courseId: result.enrollment.courseId,
-      status: result.enrollment.status as any,
+      status: result.enrollment.status,
       enrolledAt: result.enrollment.enrolledAt,
     };
   }
@@ -55,7 +55,7 @@ export class EnrollmentContractImpl implements IEducationEnrollmentContract {
       tenantId: enrollment.tenantId,
       studentPartyId: enrollment.studentPartyId,
       courseId: enrollment.courseId,
-      status: enrollment.status as any,
+      status: enrollment.status,
       enrolledAt: enrollment.enrolledAt.toISOString(),
     };
   }

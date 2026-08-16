@@ -111,7 +111,7 @@ export async function getCache<T>(key: string): Promise<T | null> {
 
   // 2. L1 Miss -> Kiểm tra L2 Cache (Upstash Redis)
   try {
-    const cachedL2 = await client.get<any>(key);
+    const cachedL2 = await client.get<T>(key);
     if (!cachedL2) return null;
 
     let parsed: T;
