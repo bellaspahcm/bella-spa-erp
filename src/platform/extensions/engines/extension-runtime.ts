@@ -20,14 +20,17 @@ import {
 import crypto from 'crypto';
 
 // Central Registry of all available extensions in the marketplace
-export const AVAILABLE_EXTENSIONS: Record<string, { manifest: ExtensionManifest; execute: (context: ExtensionExecutionContext, input: any) => Promise<any> }> = {};
+export const AVAILABLE_EXTENSIONS: Record<string, { 
+  manifest: ExtensionManifest; 
+  execute: (context: ExtensionExecutionContext, input: unknown) => Promise<unknown> 
+}> = {};
 
 // Deep freeze helper to prevent in-memory privilege escalation attacks
 function deepFreeze<T>(obj: T): T {
   if (obj && typeof obj === 'object') {
     Object.freeze(obj);
     Object.keys(obj).forEach((key) => {
-      const prop = (obj as any)[key];
+      const prop = (obj as Record<string, unknown>)[key];
       if (prop && typeof prop === 'object' && !Object.isFrozen(prop)) {
         deepFreeze(prop);
       }
@@ -48,7 +51,7 @@ function sanitizeString(msg: string): string {
   return msg.replace(/SUPER-SECRET-PLAINTEXT-VALUE|credentials_secret|BELLA-PLATFORM-SUPREME-MASTER-KMS/gi, '[REDACTED_SECRET]');
 }
 
-function sanitizeArgs(args: any[]): any[] {
+function sanitizeArgs(args: unknown[]): unknown[] {
   return args.map((arg) => {
     if (typeof arg === 'string') {
       return sanitizeString(arg);
@@ -58,9 +61,9 @@ function sanitizeArgs(args: any[]): any[] {
 }
 
 // Overwrite console outputs with sanitizing wrappers
-console.log = (...args: any[]) => originalConsole.log(...sanitizeArgs(args));
-console.error = (...args: any[]) => originalConsole.error(...sanitizeArgs(args));
-console.warn = (...args: any[]) => originalConsole.warn(...sanitizeArgs(args));
+console.log = (...args: unknown[]) => originalConsole.log(...sanitizeArgs(args));
+console.error = (...args: unknown[]) => originalConsole.error(...sanitizeArgs(args));
+console.warn = (...args: unknown[]) => originalConsole.warn(...sanitizeArgs(args));
 
 
 export class ExtensionRuntimeEngine implements IExtensionMarketplaceContract {
@@ -200,8 +203,9 @@ export class ExtensionRuntimeEngine implements IExtensionMarketplaceContract {
       const result = await ext.execute(context, input);
       this.logAudit(tenantId, 'EXTENSION_HOOK_SUCCESS', `Completed hook ${hookName}`);
       return result as TOutput;
-    } catch (err: any) {
-      this.logAudit(tenantId, 'EXTENSION_HOOK_FAILED', `Failed hook ${hookName}: ${err.message}`);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      this.logAudit(tenantId, 'EXTENSION_HOOK_FAILED', `Failed hook ${hookName}: ${errorMessage}`);
       throw err;
     }
   }

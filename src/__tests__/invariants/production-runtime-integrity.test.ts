@@ -13,7 +13,6 @@
  * Failure = Architecture violation = Build MUST fail.
  */
 
-import { describe, test, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import { glob } from 'glob';
@@ -77,6 +76,11 @@ async function getProductionFiles(): Promise<string[]> {
 // =========================================================================
 
 function readFileContent(filePath: string): string {
+  // Skip directories
+  const stats = fs.statSync(filePath);
+  if (stats.isDirectory()) {
+    return '';
+  }
   return fs.readFileSync(filePath, 'utf-8');
 }
 

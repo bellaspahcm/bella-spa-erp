@@ -76,7 +76,7 @@ export class EducationEngineService {
     // 2. Resolve & Enforce Tenant-scoped Credit Cap with Invariant Supremacy
     let maxCredits = 24; // Standard fallback
     try {
-      const policyVal = await this.policyRegistry.getPolicy<any>(input.tenantId, 'education.max_credits', input.tenantId);
+      const policyVal = await this.policyRegistry.getPolicy<{value: string | number}>(input.tenantId, 'education.max_credits', input.tenantId);
       if (policyVal.value === 'unlimited') {
         maxCredits = 999999;
       } else {
@@ -215,7 +215,8 @@ export class EducationEngineService {
         updatedAt: new Date(),
       });
       await this.repository.saveEnrollment(updatedEnrollment);
-      (enrollment as any).status = targetStatus;
+      // Type-safe status update via object spread
+      enrollment = { ...enrollment, status: targetStatus };
     }
 
     // 7. Event-After-Persistence event publication

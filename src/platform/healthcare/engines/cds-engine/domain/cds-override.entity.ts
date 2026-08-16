@@ -8,7 +8,7 @@ export class CdsOverride {
     readonly reason: string,
     readonly ruleVersion: string,
     readonly decisionResult: string,
-    readonly authorizationContext: Record<string, any> | null,
+    readonly authorizationContext: Record<string, unknown> | null,
     readonly policyVersion: string,
     readonly overrideAt: string
   ) {}
