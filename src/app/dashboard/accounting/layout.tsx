@@ -177,8 +177,8 @@ export default function AccountingLayout({
                         const GroupIcon = group.icon;
                         return (
                           <div key={group.label} className="py-1">
-                            <div className="px-5 py-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-[#CDBCAB]/60">
-                              <GroupIcon className="w-3.5 h-3.5" />
+                            <div className="px-5 py-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary dark:text-[#A67D44] border-t border-slate-50 dark:border-zinc-800 first:border-0 pt-3 first:pt-1">
+                              <GroupIcon className="w-3.5 h-3.5 text-primary dark:text-[#A67D44] shrink-0" />
                               {group.label}
                             </div>
                             {group.items.map((item) => {
@@ -190,7 +190,7 @@ export default function AccountingLayout({
                                   href={item.href}
                                   onClick={() => setIsOpen(false)}
                                   className={cn(
-                                    "w-full flex items-center justify-between px-5 py-3 text-left transition-colors",
+                                    "w-full flex items-center justify-between pl-9 pr-5 py-2.5 text-left transition-colors",
                                     isActive
                                       ? "bg-rose-50/50 dark:bg-[#5D1C34]/20 text-[#BE185D] dark:text-[#EFE9E1] font-black"
                                       : "text-slate-600 dark:text-[#CDBCAB] hover:bg-slate-50 dark:hover:bg-[#11100F] hover:text-slate-900 dark:hover:text-[#EFE9E1]"
@@ -198,7 +198,7 @@ export default function AccountingLayout({
                                 >
                                   <div className="flex items-center gap-3 min-w-0">
                                     <ItemIcon className={cn(
-                                      "w-4 h-4 transition-colors shrink-0",
+                                      "w-3.5 h-3.5 transition-colors shrink-0",
                                       isActive ? "text-[#BE185D] dark:text-[#A67D44]" : "text-slate-400 dark:text-[#CDBCAB]/60"
                                     )} />
                                     <span className="text-xs font-bold uppercase tracking-wider truncate">
