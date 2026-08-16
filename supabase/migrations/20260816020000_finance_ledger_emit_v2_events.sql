@@ -163,6 +163,7 @@ BEGIN
     -- 7. Query and construct candidate cash legs (ASSET type accounts)
     SELECT COALESCE(jsonb_agg(
         jsonb_build_object(
+            'cash_leg_id', l.id,
             'account_id', l.account_id,
             'account_code', a.code,
             'direction', CASE WHEN l.debit_amount > 0 THEN 'INFLOW' ELSE 'OUTFLOW' END,
@@ -372,6 +373,7 @@ BEGIN
     -- 9. Construct candidate cash legs for the reversal transaction (from newly copied lines)
     SELECT COALESCE(jsonb_agg(
         jsonb_build_object(
+            'cash_leg_id', l.id,
             'account_id', l.account_id,
             'account_code', a.code,
             -- Swapped direction compared to original lines

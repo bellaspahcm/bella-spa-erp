@@ -186,7 +186,7 @@ ALTER TABLE public.finance_cash_positions
 CREATE TABLE public.finance_cash_quarantine (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
-    event_id UUID NOT NULL,
+    event_id UUID NOT NULL CONSTRAINT uq_finance_cash_quarantine_event UNIQUE,
     event_type VARCHAR(255) NOT NULL,
     payload JSONB NOT NULL,
     failure_reason TEXT NOT NULL,

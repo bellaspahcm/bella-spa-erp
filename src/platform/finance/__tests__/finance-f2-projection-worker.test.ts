@@ -922,6 +922,12 @@ describe('F2.2 Cash Projection Worker Integration Tests', () => {
       .maybeSingle();
     const balanceBefore = Number(posBefore?.balance_minor || 0);
 
+    // Clear outbox to ensure test isolation
+    await supabase
+      .from('finance_outbox_events' as unknown as 'tenants')
+      .delete()
+      .eq('tenant_id' as unknown as 'id', testTenantId);
+
     // 1. Post original cash transaction
     const postRes = await ledgerService.postTransaction({
       tenant_id: testTenantId,

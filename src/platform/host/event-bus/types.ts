@@ -183,6 +183,8 @@ export interface MedicationAdministeredPayload {
  * These are candidates only. F1 remains the sole source of financial truth.
  */
 export interface CandidateCashLeg {
+  /** Stable unique leg UUID mapping to F1 transaction line ID */
+  cash_leg_id: string;
   /** F1 account UUID */
   account_id: string;
   /** Account code (e.g. '1111') */

@@ -106,3 +106,14 @@ export interface ICashReportingEngine {
   // Quarantine Diagnostics
   getQuarantineEvents(tenantId: string, status?: 'PENDING' | 'RESOLVED'): Promise<FinanceEngineResponse<CashQuarantineEvent[]>>;
 }
+
+export interface ICashReconstructionEngine {
+  /**
+   * Reconstructs derived cash position records from immutable movement history.
+   * Can be scoped to a single bank account or run for all accounts of a tenant.
+   */
+  reconstructCashPositions(
+    tenantId: string,
+    bankAccountId?: string
+  ): Promise<FinanceEngineResponse<{ reconstructed_accounts_count: number }>>;
+}

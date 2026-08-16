@@ -265,7 +265,7 @@ export class CashProjectionWorker {
       // Project leg record
       projectionLegs.push({
         bank_account_id: bankAccount.id,
-        cash_leg_reference: leg.account_code,
+        cash_leg_reference: leg.cash_leg_id || leg.account_code,
         direction: leg.direction,
         amount_minor: leg.amount_minor,
         currency: leg.currency,
@@ -415,7 +415,7 @@ export class CashProjectionWorker {
 
       projectionLegs.push({
         bank_account_id: bankAccount.id,
-        cash_leg_reference: leg.account_code,
+        cash_leg_reference: leg.cash_leg_id || leg.account_code,
         direction: leg.direction,
         amount_minor: leg.amount_minor,
         currency: leg.currency,

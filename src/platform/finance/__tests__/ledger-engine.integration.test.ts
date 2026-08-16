@@ -341,7 +341,7 @@ describe('Ledger Engine Service Integration Tests (F1.3)', () => {
       .from('finance_accounting_periods' as unknown as 'tenants')
       .select('id')
       .eq('tenant_id' as unknown as 'id', testTenantId)
-      .eq('name' as unknown as 'id', '2026-08')
+      .eq('name' as unknown as 'id', sharedPeriodName)
       .single();
     
     const periodId = String((period as Record<string, unknown>).id);

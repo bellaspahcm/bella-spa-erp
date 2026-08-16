@@ -69,6 +69,46 @@ async function applyMigrations() {
         file: 'supabase/migrations/20260815040000_finance_trigger_reversal_fix.sql'
       },
       {
+        version: '20260816000000',
+        name: 'finance_cash_engine_v1',
+        file: 'supabase/migrations/20260816000000_finance_cash_engine_v1.sql'
+      },
+      {
+        version: '20260816005000',
+        name: 'finance_cash_projection_rpc',
+        file: 'supabase/migrations/20260816005000_finance_cash_projection_rpc.sql'
+      },
+      {
+        version: '20260816010000',
+        name: 'finance_cash_engine_grants',
+        file: 'supabase/migrations/20260816010000_finance_cash_engine_grants.sql'
+      },
+      {
+        version: '20260816020000',
+        name: 'finance_ledger_emit_v2_events',
+        file: 'supabase/migrations/20260816020000_finance_ledger_emit_v2_events.sql'
+      },
+      {
+        version: '20260816021000',
+        name: 'finance_quarantine_rpc',
+        file: 'supabase/migrations/20260816021000_finance_quarantine_rpc.sql'
+      },
+      {
+        version: '20260816022000',
+        name: 'finance_project_transaction_rpc',
+        file: 'supabase/migrations/20260816022000_finance_project_transaction_rpc.sql'
+      },
+      {
+        version: '20260816030000',
+        name: 'finance_cash_reconstruction_rpc',
+        file: 'supabase/migrations/20260816030000_finance_cash_reconstruction_rpc.sql'
+      },
+      {
+        version: '20260816040000',
+        name: 'finance_cash_concurrency_locks',
+        file: 'supabase/migrations/20260816040000_finance_cash_concurrency_locks.sql'
+      },
+      {
         version: '20260816050000',
         name: 'finance_f3_proof_setup',
         file: 'supabase/migrations/20260816050000_finance_f3_proof_setup.sql'
@@ -87,6 +127,11 @@ async function applyMigrations() {
         version: '20260817020000',
         name: 'finance_payment_allocation_rpcs',
         file: 'supabase/migrations/20260817020000_finance_payment_allocation_rpcs.sql'
+      },
+      {
+        version: '20260818000000',
+        name: 'finance_ap_engine_v1',
+        file: 'supabase/migrations/20260818000000_finance_ap_engine_v1.sql'
       }
     ];
 
