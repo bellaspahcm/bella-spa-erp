@@ -11,7 +11,7 @@
 - F1 outbox event (finance.transaction.posted.v2 or v1) is inserted into public.finance_outbox_events inside the exact same database transaction block.
 
 ## Observed
-- F1 Transaction ID: 66ba694c-cb4c-4ccf-8cba-6944703b03a6
+- F1 Transaction ID: 646a729f-82cf-435a-93b4-b1c8019193e2
 - Associated Outbox Event Count: 2
 - First Event Type: finance.transaction.posted.v1
 

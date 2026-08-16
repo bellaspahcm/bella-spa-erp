@@ -1,7 +1,7 @@
 # Proof G1-02: Resource Type Namespace Isolation
 
 ## Setup
-- Same UUID: df2e495c-afd9-4ab8-b0b9-06c9e645e431, same tenant, different resource_type
+- Same UUID: 53128c19-0f85-44f7-a6dc-a296c01e85da, same tenant, different resource_type
 
 ## Action
 - Compare CASH_MOVEMENT vs VENDOR_BILL key pairs for identical resource_id
