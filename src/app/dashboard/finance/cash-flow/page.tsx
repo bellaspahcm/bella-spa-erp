@@ -306,7 +306,7 @@ export default function CashFlowDashboardPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 lg:col-span-2"
+          className="bg-white customer-detail-card-static rounded-xl shadow-sm border border-slate-200 p-6 lg:col-span-2"
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -381,7 +381,7 @@ export default function CashFlowDashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white rounded-xl shadow-sm border border-slate-200 p-6"
+          className="bg-white customer-detail-card-static rounded-xl shadow-sm border border-slate-200 p-6"
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -409,7 +409,7 @@ export default function CashFlowDashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 lg:col-span-2"
+          className="bg-white customer-detail-card-static rounded-xl shadow-sm border border-slate-200 p-6 lg:col-span-2"
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -455,7 +455,7 @@ export default function CashFlowDashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-white rounded-xl shadow-sm border border-slate-200 p-6"
+          className="bg-white customer-detail-card-static rounded-xl shadow-sm border border-slate-200 p-6"
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">

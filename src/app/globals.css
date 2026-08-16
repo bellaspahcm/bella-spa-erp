@@ -5397,7 +5397,8 @@ html[data-tenant-brand-button="minimal"] { --brand-button-radius: 0.5rem; }
    ========================================================================= */
 
 .customer-card,
-.customer-detail-card {
+.customer-detail-card,
+.customer-detail-card-static {
   background: #ffffff !important;
   border-width: 1.5px !important;
   border-style: solid !important;
@@ -5405,7 +5406,8 @@ html[data-tenant-brand-button="minimal"] { --brand-button-radius: 0.5rem; }
 }
 
 .dark .customer-card,
-.dark .customer-detail-card {
+.dark .customer-detail-card,
+.dark .customer-detail-card-static {
   background: var(--card) !important;
 }
 
@@ -5415,7 +5417,10 @@ html[data-tenant-module="babycare"] .customer-card,
 html[data-tenant-module="pending"] .customer-card,
 html[data-tenant-module="baby_care"] .customer-detail-card,
 html[data-tenant-module="babycare"] .customer-detail-card,
-html[data-tenant-module="pending"] .customer-detail-card {
+html[data-tenant-module="pending"] .customer-detail-card,
+html[data-tenant-module="baby_care"] .customer-detail-card-static,
+html[data-tenant-module="babycare"] .customer-detail-card-static,
+html[data-tenant-module="pending"] .customer-detail-card-static {
   border-color: rgba(244, 63, 94, 0.22) !important; /* Rose-500 with 22% opacity */
   box-shadow: 0 10px 25px -5px rgba(244, 63, 94, 0.06), 0 8px 16px -6px rgba(244, 63, 94, 0.04) !important;
 }
@@ -5436,7 +5441,10 @@ html[data-tenant-module="pending"] .customer-detail-card:hover {
 .dark[data-tenant-module="pending"] .customer-card,
 .dark[data-tenant-module="baby_care"] .customer-detail-card,
 .dark[data-tenant-module="babycare"] .customer-detail-card,
-.dark[data-tenant-module="pending"] .customer-detail-card {
+.dark[data-tenant-module="pending"] .customer-detail-card,
+.dark[data-tenant-module="baby_care"] .customer-detail-card-static,
+.dark[data-tenant-module="babycare"] .customer-detail-card-static,
+.dark[data-tenant-module="pending"] .customer-detail-card-static {
   border-color: rgba(244, 63, 94, 0.3) !important;
   box-shadow: 0 12px 34px -5px rgba(0, 0, 0, 0.55), inset 0 1px 0 0 rgba(255, 255, 255, 0.05) !important;
 }
@@ -5453,7 +5461,8 @@ html[data-tenant-module="pending"] .customer-detail-card:hover {
 
 /* 2. Beauty Spa (beauty_spa) */
 html[data-tenant-module="beauty_spa"] .customer-card,
-html[data-tenant-module="beauty_spa"] .customer-detail-card {
+html[data-tenant-module="beauty_spa"] .customer-detail-card,
+html[data-tenant-module="beauty_spa"] .customer-detail-card-static {
   border-color: rgba(16, 185, 129, 0.22) !important; /* Emerald-500 with 22% opacity */
   box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.06), 0 8px 16px -6px rgba(16, 185, 129, 0.04) !important;
 }
@@ -5466,7 +5475,8 @@ html[data-tenant-module="beauty_spa"] .customer-detail-card:hover {
 }
 
 .dark[data-tenant-module="beauty_spa"] .customer-card,
-.dark[data-tenant-module="beauty_spa"] .customer-detail-card {
+.dark[data-tenant-module="beauty_spa"] .customer-detail-card,
+.dark[data-tenant-module="beauty_spa"] .customer-detail-card-static {
   border-color: rgba(16, 185, 129, 0.3) !important;
   box-shadow: 0 12px 34px -5px rgba(0, 0, 0, 0.55), inset 0 1px 0 0 rgba(255, 255, 255, 0.05) !important;
 }

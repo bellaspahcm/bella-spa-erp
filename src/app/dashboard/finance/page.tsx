@@ -545,7 +545,7 @@ export default function FinancePage() {
       )}
 
       {/* Recent Transactions */}
-      <div className="bg-white rounded-3xl sm:rounded-[40px] border border-slate-100 shadow-sm overflow-hidden">
+      <div className="bg-white customer-detail-card-static rounded-3xl sm:rounded-[40px] border border-slate-100 shadow-sm overflow-hidden">
         <div className="p-6 md:p-8 border-b border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2 whitespace-nowrap">
             <CreditCard className="w-6 h-6 text-rose-500" />

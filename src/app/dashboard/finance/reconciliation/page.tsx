@@ -290,7 +290,7 @@ export default function FinancialReconciliationPage() {
       />
 
       {/* TABS & SEARCH */}
-      <div className="bg-white rounded-[32px] shadow-sm border border-slate-100 p-2 flex flex-col lg:flex-row justify-between items-center gap-4">
+      <div className="bg-white customer-detail-card-static rounded-[32px] shadow-sm border border-slate-100 p-2 flex flex-col lg:flex-row justify-between items-center gap-4">
         {/* Mobile Tab Dropdown Select */}
         <div className="block lg:hidden w-full relative">
           <button
@@ -415,7 +415,7 @@ export default function FinancialReconciliationPage() {
       </div>
 
       {/* DATA TABLES */}
-      <div className="bg-white rounded-3xl sm:rounded-[40px] shadow-sm border border-slate-100 overflow-hidden w-full max-w-full">
+      <div className="bg-white customer-detail-card-static rounded-3xl sm:rounded-[40px] shadow-sm border border-slate-100 overflow-hidden w-full max-w-full">
         {isLoading ? (
           <div className="p-20 text-center">
             <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4" />
@@ -430,7 +430,7 @@ export default function FinancialReconciliationPage() {
                 <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest">Khoản phải trả (Nợ chi nhánh khác)</h2>
               </div>
               
-              <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
+              <div className="bg-white customer-detail-card-static rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
                 <div className={tableWrapperClassName}>
                   <table className="bella-data-table min-w-[80rem] w-full">
                     <colgroup>
@@ -532,7 +532,7 @@ export default function FinancialReconciliationPage() {
                 <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest">Khoản phải thu (Chi nhánh khác nợ ta)</h2>
               </div>
               
-              <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
+              <div className="bg-white customer-detail-card-static rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
                 <div className={tableWrapperClassName}>
                   <table className="bella-data-table min-w-[80rem] w-full">
                     <colgroup>
