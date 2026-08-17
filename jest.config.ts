@@ -27,6 +27,10 @@ const config: Config = {
     '/playwright-report/',
     '/src/__tests__/e2e-(order-lifecycle-real|refund-full|accounting-gl-verification|payroll-month-close)\\.test\\.ts$',
   ],
+  // Transform ESM modules (uuid, etc.)
+  transformIgnorePatterns: [
+    'node_modules/(?!(uuid)/)',
+  ],
 }
  
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async

@@ -1,0 +1,40 @@
+{
+  "tenant_id": "da9e610b-88c5-4901-8ab9-5439f4931467",
+  "event_id": "evt_h1_1_v2_final",
+  "idempotency_key": "h1_1_v2_final",
+  "event_type": "PATIENT_SERVICE_COMPLETED",
+  "amount": "500000",
+  "currency": "VND",
+  "occurred_at": "2026-08-16T10:00:00Z",
+  "created_at": "2026-08-16T10:00:00Z",
+  "source_system": "HOSPITAL_OS",
+  "source_version": "1.0.0",
+  "correlation_id": "test_h1_001",
+  "business_context": {
+    "patient": {
+      "patient_id": "PAT-001",
+      "patient_type": "OUTPATIENT"
+    },
+    "encounter": {
+      "encounter_id": "ENC-001",
+      "encounter_type": "CONSULTATION",
+      "encounter_date": "2026-08-16T10:00:00Z"
+    },
+    "service": {
+      "service_id": "SRV-001",
+      "service_type": "CONSULTATION",
+      "quantity": 1
+    }
+  },
+  "business_references": [
+    {
+      "entity_type": "encounter",
+      "entity_id": "ENC-001"
+    },
+    {
+      "entity_type": "service",
+      "entity_id": "SRV-001",
+      "parent_id": "ENC-001"
+    }
+  ]
+}

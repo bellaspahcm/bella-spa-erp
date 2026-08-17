@@ -1,141 +1,234 @@
 # F5.6 Cash + Prepayment — Pre-Implementation Checklist
 
-> **Status:** 🔴 BLOCKED — Semantic specification incomplete
+> **Status:** 🔴 BLOCKED — Vietnamese accounting semantic research required
 > **Phase:** F5.6 Cash + Prepayment GL Balance control domains
 > **Dependency:** F5.5 AR_GL_BALANCE must be FROZEN (✅ complete)
-> **Constitution:** F5.0 Constitution v1.2-Final (FROZEN)
+> **Constitution:** F5.0 Constitution v1.2-Final + Amendment S0 (v1.2.1)
+> **Semantic Authority:** F5-S0 Vietnamese Accounting Semantic Authority
 
 ---
 
 ## Purpose
 
-This checklist ensures F5.6 implementation does NOT begin until all semantic boundaries
-and contract dependencies are explicitly specified. No AI coding until all items are GREEN.
+This checklist ensures F5.6 implementation does NOT begin until:
+1. Vietnamese accounting semantic research is complete (TT99/2025 + VAS)
+2. All semantic boundaries derived from legal framework
+3. Contract dependencies explicitly specified
+4. Human Architect approves semantic specification
+
+**No AI coding until all items are GREEN.**
+
+**Per F5-S0 Constitutional Amendment:**
+> "F5 reconciliation semantics SHALL be derived from Vietnamese accounting legal framework.
+> AI SHALL NOT invent accounting treatment, account mapping, debit/credit convention,
+> recognition timing, or reconstruction formulas."
+
+---
+
+## 🔴 F5-S0 Compliance: Vietnamese Accounting Research
+
+### ❌ Legal Framework Research
+
+- [ ] **TT99/2025 Access:** Official Circular 99/2025/TT-BTC obtained and reviewed
+- [ ] **VAS Review:** Relevant Vietnamese Accounting Standards (VAS 01, VAS 24) reviewed
+- [ ] **Chart of Accounts:** TT99/2025 COA for Cash (111, 112, 113) and Prepayment (331, 142) verified
+- [ ] **Authority Hierarchy:** Vietnamese Law → VAS → TT99/2025 → Enterprise Policy → F1 COA → F2/F4 → F5
+
+**Status:** ❌ **PENDING** — Research required  
+**Document:** `docs/architecture/F5_6_VIETNAMESE_ACCOUNTING_SEMANTIC_RESEARCH.md`  
+**Blocker:** Cannot proceed with F5.6 until research complete per F5-S0 Amendment
+
+### ❌ Cash Domain Research (Part B)
+
+- [ ] **B.1:** TT99/2025 cash accounts (111, 112, 113) confirmed with official source
+- [ ] **B.2:** Bella F1 COA mapping verified (bank_accounts.linked_finance_account_id)
+- [ ] **B.3:** F2 contract alignment with Vietnamese debit/credit convention verified
+- [ ] **B.4:** Cash reconstruction formula derived from Vietnamese accounting semantics
+- [ ] **B.5:** Cash temporal boundary aligned with Vietnamese accounting period concepts
+
+**Status:** ❌ **PENDING** — Research in progress  
+**Blocker:** 5/5 research sections incomplete
+
+### ❌ Prepayment Domain Research (Part C)
+
+- [ ] **C.1:** TT99/2025 prepayment accounts (331/142/other) confirmed with official source
+- [ ] **C.2:** VAS treatment of vendor advances documented
+- [ ] **C.3:** Bella F1 COA prepayment mapping verified
+- [ ] **C.4:** F4 contract alignment with Vietnamese prepayment semantics verified
+- [ ] **C.5:** Prepayment reconstruction formula derived from Vietnamese accounting
+- [ ] **C.6:** Prepayment temporal boundary aligned with Vietnamese accounting period
+
+**Status:** ❌ **PENDING** — Research in progress  
+**Blocker:** 6/6 research sections incomplete
+
+### ❌ Cross-Domain Research (Part D)
+
+- [ ] **D.1:** F1/F2/F4 temporal contract consistency verified
+- [ ] **D.2:** Vietnamese accounting period closing rules documented
+
+**Status:** ❌ **PENDING** — Research in progress  
+**Blocker:** 2/2 research sections incomplete
+
+### ❌ Human Architect Research Approval
+
+- [ ] **Research Document:** All sections in `F5_6_VIETNAMESE_ACCOUNTING_SEMANTIC_RESEARCH.md` completed
+- [ ] **Legal Citations:** All findings cite TT99/2025, VAS, or official MOF sources
+- [ ] **Bella Alignment:** F1 COA alignment with Vietnamese COA verified
+- [ ] **Human Sign-Off:** Human Architect certifies research complete and accurate
+
+**Status:** ❌ **PENDING** — Awaiting Human Architect  
+**Blocker:** Research document incomplete
 
 ---
 
 ## CASH_GL_BALANCE Semantic Specification
 
-### ❌ F2 Public Temporal Contract
+### ✅ F2 Public Temporal Contract (Source Identified)
 
-- [ ] **Contract Name:** `finance_cash_facts_as_of(p_tenant_id, p_as_of, p_version)` exists?
-- [ ] **Contract Owner:** F2 Treasury module or F1 Cash module?
-- [ ] **Return Schema:** Documented with columns (cash_account_id, balance_minor, currency, as_of)?
-- [ ] **Temporal Boundary:** Uses `created_at` or `transaction_date` or `posted_at`?
-- [ ] **Version Tag:** Stable version (e.g., `F2_CASH:v1`) published?
+- [x] **Contract Document:** `docs/architecture/frozen/F2_CONTRACT.md` (F2.5.0) — FOUND
+- [x] **Contract Owner:** F2 Cash & Treasury module
+- [x] **Source Table:** `finance_cash_movements` (confirmed in F2 contract)
+- [x] **Existing API:** F2 has `getCashMovements()` public API
 
-**Status:** ❌ PENDING — No F2 public contract identified  
-**Blocker:** Cannot implement CASH_GL_BALANCE without approved read contract
+**Status:** ✅ **CONTRACT FOUND**  
+**Note:** Temporal `as_of` version needs creation based on Vietnamese accounting research
 
-### ❌ Cash Account Identity
+### ❌ Cash → GL Account Mapping (TT99/2025 Research Required)
 
-- [ ] **Table Name:** `finance_cash_accounts` or `finance_bank_accounts` or other?
-- [ ] **Primary Key:** UUID or composite?
-- [ ] **GL Mapping:** How is cash account mapped to GL account code?
-  - Direct column `gl_account_id` on cash account table?
-  - Indirect via `finance_account_mappings` table?
-  - Hardcoded mapping (e.g., all cash accounts → GL 111)?
+**Vietnamese Accounting Question:**
+- According to TT99/2025 Chart of Accounts, which accounts represent cash?
+  - 111 Tiền mặt (Cash on hand)?
+  - 112 Tiền gửi ngân hàng (Cash in bank)?
+  - 113 Tiền đang chuyển (Cash in transit)?
 
-**Status:** ❌ PENDING — Cash account schema not confirmed  
-**Blocker:** Cannot write reconciliation loop without knowing source entity
+**Bella F1 COA Question:**
+- How does `finance_bank_accounts.linked_finance_account_id` map to TT99/2025 accounts?
+- Is mapping configurable per account or hardcoded?
 
-### ❌ Inflow/Outflow Semantics
+**Status:** ❌ **BLOCKED** — Requires Vietnamese accounting research (Part B.1, B.2)  
+**Document:** `F5_6_VIETNAMESE_ACCOUNTING_SEMANTIC_RESEARCH.md` Section B.1, B.2  
+**Blocker:** Cannot specify GL account without TT99/2025 legal basis
 
-- [ ] **Cash Movement Table:** `finance_cash_movements` or `finance_treasury_ledger` or other?
-- [ ] **Entry Types:** What are valid entry_type values?
-  - DEPOSIT / WITHDRAWAL?
-  - INFLOW / OUTFLOW?
-  - DEBIT / CREDIT?
-  - Other?
-- [ ] **Amount Sign Convention:** Is `amount_minor` always positive (like AR/AP ledgers)?
-- [ ] **Direction Field:** Separate `direction` column or embedded in `entry_type`?
+### ❌ Cash Reconstruction Formula (Vietnamese Semantics Required)
 
-**Status:** ❌ PENDING — Cash movement semantics undefined  
-**Blocker:** Cannot compute cash balance without knowing ledger structure
+**Vietnamese Accounting Question:**
+- Per TT99/2025 and VAS, what is normal balance for cash accounts?
+  - DEBIT-normal (asset)?
+- What is debit/credit convention?
+  - Cash increase = DEBIT (Nợ)?
+  - Cash decrease = CREDIT (Có)?
 
-### ❌ GL Account Normalization
+**F2 Contract Alignment:**
+- Does F2 `INFLOW` = Vietnamese debit (cash increase)?
+- Does F2 `OUTFLOW` = Vietnamese credit (cash decrease)?
 
-- [ ] **Account Type:** Cash account is ASSET, DEBIT-normal (like AR account 131)?
-- [ ] **GL Balance Formula:** GL = SUM(debit) - SUM(credit)? (same as AR)
-- [ ] **Account Code:** Hardcoded `111` or configurable per cash account?
-- [ ] **Multi-Currency:** Does each currency have separate GL account or single account?
+**Formula:**
+```sql
+-- PENDING Vietnamese accounting verification
+cash_balance = SUM(
+  CASE direction
+    WHEN 'INFLOW' THEN amount_minor   -- Debit (TBD)
+    WHEN 'OUTFLOW' THEN -amount_minor -- Credit (TBD)
+  END
+)
+```
 
-**Status:** ❌ PENDING — GL normalization not specified  
-**Blocker:** Cannot compute variance without knowing expected GL sign
+**Status:** ❌ **BLOCKED** — Requires Vietnamese accounting research (Part B.3, B.4)  
+**Document:** `F5_6_VIETNAMESE_ACCOUNTING_SEMANTIC_RESEARCH.md` Section B.3, B.4  
+**Blocker:** Cannot define formula without Vietnamese debit/credit convention
 
-### ❌ Historical as_of Support
+### ❌ Cash Temporal Boundary (Vietnamese Accounting Period)
 
-- [ ] **Temporal Column:** Cash movements use `created_at` or `transaction_date` or `posted_at`?
-- [ ] **F2 Contract Compliance:** F2 temporal contract filters by this column?
-- [ ] **GL Journal Compliance:** GL entries for cash have `posted_at` aligned with cash movement timestamp?
+**Vietnamese Accounting Question:**
+- Per TT99/2025, which date determines accounting period inclusion?
+  - Ngày nghiệp vụ (transaction date)?
+  - Ngày hạch toán (posting date)?
 
-**Status:** ❌ PENDING — Temporal semantics not verified  
-**Blocker:** Cannot satisfy G8 temporal determinism without confirmed column
+**F2 Contract Temporal Column:**
+- `finance_cash_movements.recorded_at` — Is this canonical?
+- Or should use `f1_transaction.posted_at`?
+
+**Status:** ❌ **BLOCKED** — Requires Vietnamese accounting research (Part B.5, D.1)  
+**Document:** `F5_6_VIETNAMESE_ACCOUNTING_SEMANTIC_RESEARCH.md` Section B.5, D.1  
+**Blocker:** Cannot satisfy G8 temporal determinism without Vietnamese accounting basis
 
 ---
 
 ## PREPAYMENT_GL_BALANCE Semantic Specification
 
-### ❌ F2 Public Temporal Contract
+### ✅ F4 Public Temporal Contract (Source Identified)
 
-- [ ] **Contract Name:** `finance_prepayment_facts_as_of(p_tenant_id, p_as_of, p_version)` exists?
-- [ ] **Contract Owner:** F2 Prepayment module or F3 AR module extension?
-- [ ] **Return Schema:** Documented with columns (prepayment_id, gross, applied, refunded, net_unapplied)?
-- [ ] **Temporal Boundary:** Uses `created_at` or `prepayment_date` or other?
-- [ ] **Version Tag:** Stable version (e.g., `F2_PREPAYMENT:v1`) published?
+- [x] **Contract Document:** `docs/architecture/frozen/F4_CONTRACT.md` (F4.1.0) — FOUND
+- [x] **Contract Owner:** F4 Accounts Payable module
+- [x] **Source Table:** `finance_vendor_prepayments` (confirmed in F4 contract)
+- [x] **Existing RPC:** F4 has `finance_calculate_payable_position()` RPC
 
-**Status:** ❌ PENDING — No F2 prepayment contract identified  
-**Blocker:** Cannot implement PREPAYMENT_GL_BALANCE without approved read contract
+**Status:** ✅ **CONTRACT FOUND**  
+**Note:** Temporal `as_of` version needs creation based on Vietnamese accounting research
 
-### ❌ Prepayment Ledger Structure
+### ❌ Prepayment → GL Clearing Account (TT99/2025 Research Required)
 
-- [ ] **Table Name:** `finance_prepayment_ledger` or `finance_customer_deposits` or other?
-- [ ] **Entry Types:** What are valid entry_type values?
-  - DEPOSIT_RECEIVED / APPLIED_TO_INVOICE / REFUNDED?
-  - PREPAYMENT_ACCRUAL / PREPAYMENT_ALLOCATION / PREPAYMENT_REFUND?
-  - Other?
-- [ ] **Amount Sign Convention:** Is `amount_minor` always positive?
-- [ ] **Balance Formula:** Net unapplied = DEPOSIT - APPLIED - REFUNDED?
+**Vietnamese Accounting Question:**
+- According to TT99/2025, which account represents vendor advances/prepayments?
+  - 331 Phải trả cho người bán (sub-account 3311 for advances)?
+  - 142 Chi phí trả trước (prepaid expenses)?
+  - Other account?
 
-**Status:** ❌ PENDING — Prepayment ledger semantics undefined  
-**Blocker:** Cannot reconstruct prepayment position without knowing ledger structure
+**Accounting Treatment:**
+- Is vendor prepayment an ASSET (debit-normal) or CONTRA-LIABILITY (credit-normal)?
+- What is normal balance direction?
 
-### ❌ GL Clearing Account Specification
+**Bella F1 COA Question:**
+- Which account does F4 post prepayments to?
+- Is it configurable or hardcoded?
 
-- [ ] **Account Code:** What is the prepayment clearing account?
-  - `331PP` (extended from AP account 331)?
-  - `234` (customer deposit liability)?
-  - `132` (prepaid receivable asset)?
-  - Other?
-- [ ] **Account Type:** LIABILITY (CREDIT-normal) or ASSET (DEBIT-normal)?
-- [ ] **GL Balance Formula:** If CREDIT-normal → GL = SUM(credit) - SUM(debit) (like AP)?
-- [ ] **Configuration:** Hardcoded or configurable per tenant/entity?
+**Status:** ❌ **BLOCKED** — Requires Vietnamese accounting research (Part C.1, C.3)  
+**Document:** `F5_6_VIETNAMESE_ACCOUNTING_SEMANTIC_RESEARCH.md` Section C.1, C.3  
+**Blocker:** Cannot specify GL account without TT99/2025 legal basis
 
-**Status:** ❌ PENDING — GL account identity not confirmed  
-**Blocker:** Cannot compute variance without knowing GL account and sign convention
+### ❌ Prepayment Reconstruction Formula (Vietnamese Semantics Required)
 
-### ❌ Applied vs. Unapplied Distinction
+**Vietnamese Accounting Question:**
+- Per TT99/2025 and VAS, what are debit/credit conventions for:
+  - Recording prepayment (advance paid)?
+  - Applying prepayment (to invoice)?
+  - Refunding prepayment?
 
-- [ ] **Application Tracking:** How is prepayment application to invoice recorded?
-  - Separate `finance_prepayment_applications` table?
-  - Entry in `finance_prepayment_ledger` with `entry_type = APPLIED`?
-  - Link via `finance_receivable_ledger` with special entry type?
-- [ ] **Refund Tracking:** How are prepayment refunds recorded?
-  - Entry in prepayment ledger with `entry_type = REFUNDED`?
-  - Separate refund transaction?
-- [ ] **Net Calculation:** Net unapplied = Gross - Applied - Refunded (confirmed formula)?
+**F4 Contract Fact Types:**
+- `PREPAYMENT_RECORDED` — Maps to which accounting entry?
+- `PREPAYMENT_APPLIED` — Maps to which accounting entry?
+- `PREPAYMENT_REFUNDED` — Maps to which accounting entry?
 
-**Status:** ❌ PENDING — Application semantics not specified  
-**Blocker:** Cannot compute expected outstanding without knowing calculation
+**Formula:**
+```sql
+-- PENDING Vietnamese accounting verification
+unapplied_prepayment = SUM(
+  CASE fact_type
+    WHEN 'PREPAYMENT_RECORDED' THEN amount_minor   -- Debit? (TBD)
+    WHEN 'PREPAYMENT_APPLIED' THEN -amount_minor   -- Credit? (TBD)
+    WHEN 'PREPAYMENT_REFUNDED' THEN -amount_minor  -- Credit? (TBD)
+  END
+)
+```
 
-### ❌ Historical as_of Support
+**Status:** ❌ **BLOCKED** — Requires Vietnamese accounting research (Part C.2, C.4, C.5)  
+**Document:** `F5_6_VIETNAMESE_ACCOUNTING_SEMANTIC_RESEARCH.md` Section C.2, C.4, C.5  
+**Blocker:** Cannot define formula without Vietnamese debit/credit convention
 
-- [ ] **Temporal Column:** Prepayment movements use `created_at` or `prepayment_date` or `posted_at`?
-- [ ] **F2 Contract Compliance:** F2 temporal contract filters by this column?
-- [ ] **GL Journal Compliance:** GL entries for prepayments have `posted_at` aligned with movement timestamp?
+### ❌ Prepayment Temporal Boundary (Vietnamese Accounting Period)
 
-**Status:** ❌ PENDING — Temporal semantics not verified  
-**Blocker:** Cannot satisfy G8 temporal determinism without confirmed column
+**Vietnamese Accounting Question:**
+- Per TT99/2025, when is prepayment recognized in accounting period?
+  - Ngày nghiệp vụ (payment date)?
+  - Ngày hạch toán (posting date)?
+
+**F4 Contract Temporal Column:**
+- `finance_vendor_prepayments.created_at` — Is this canonical?
+- Or should use `f1_transaction.posted_at`?
+
+**Status:** ❌ **BLOCKED** — Requires Vietnamese accounting research (Part C.6, D.1)  
+**Document:** `F5_6_VIETNAMESE_ACCOUNTING_SEMANTIC_RESEARCH.md` Section C.6, D.1  
+**Blocker:** Cannot satisfy G8 temporal determinism without Vietnamese accounting basis
 
 ---
 
@@ -143,24 +236,91 @@ and contract dependencies are explicitly specified. No AI coding until all items
 
 **F5.6 implementation MUST NOT begin until:**
 
-1. ✅ F5.5 AR_GL_BALANCE is FROZEN (COMPLETE)
-2. ❌ All CASH_GL_BALANCE checklist items are GREEN
-3. ❌ All PREPAYMENT_GL_BALANCE checklist items are GREEN
-4. ❌ F2 public contracts are published and version-tagged
-5. ❌ Migration plan reviewed by Human Architect
+### Phase 1: Vietnamese Accounting Research (F5-S0 Compliance)
+1. ❌ TT99/2025 + VAS research complete (`F5_6_VIETNAMESE_ACCOUNTING_SEMANTIC_RESEARCH.md`)
+2. ❌ Cash domain research (Part B: 5 sections) — All GREEN
+3. ❌ Prepayment domain research (Part C: 6 sections) — All GREEN
+4. ❌ Cross-domain research (Part D: 2 sections) — All GREEN
+5. ❌ Human Architect signs off on research findings
 
-**Current Status:** 🔴 **BLOCKED**
+### Phase 2: Semantic Specification (Derived from Research)
+6. ❌ `F5_6_CASH_PREPAYMENT_SEMANTIC_SPEC.md` updated with research findings
+7. ❌ All semantic decisions cite Vietnamese accounting legal basis (TT99/2025, VAS)
+8. ❌ Cash GL mapping derived from TT99/2025 COA + Bella F1 COA
+9. ❌ Prepayment GL mapping derived from TT99/2025 COA + Bella F1 COA
+10. ❌ Reconstruction formulas reflect Vietnamese debit/credit conventions
+11. ❌ Temporal boundaries align with Vietnamese accounting period concepts
+12. ❌ Human Architect approves semantic specification
+
+### Phase 3: Contract Creation (Implementation Prerequisites)
+13. ✅ F5.5 AR_GL_BALANCE FROZEN (COMPLETE — 8/8 tests pass)
+14. ✅ F2 Cash source contract identified (`F2_CONTRACT.md` v2.5.0)
+15. ✅ F4 Prepayment source contract identified (`F4_CONTRACT.md` v4.1.0)
+16. ❌ F2 temporal contract `finance_cash_facts_as_of()` created
+17. ❌ F4 temporal contract `finance_prepayment_facts_as_of()` created
+
+### Phase 4: Only Then → AI Coding
+18. ❌ F5.6 Cash implementation (migrations, engine, tests, G1-G8 proof)
+19. ❌ F5.6 Prepayment implementation (migrations, engine, tests, G1-G8 proof)
+20. ❌ F5.6 regression suite (verify F5.0-F5.5 still pass)
+
+**Current Status:** 🔴 **BLOCKED at Phase 1** — Vietnamese accounting research required
+
+**Progress:** 3/20 gates cleared (15%)
+- ✅ F5.5 baseline frozen
+- ✅ F2 contract found
+- ✅ F4 contract found
+- ❌ 17 gates remain (Vietnamese research → Semantic spec → Implementation)
 
 ---
 
-## Next Steps
+## Next Steps (Human Architect Actions Required)
 
-1. **Human Architect Review:** Specify F2 cash and prepayment public contracts
-2. **Schema Verification:** Document cash account and prepayment ledger structure
-3. **GL Account Mapping:** Confirm GL clearing accounts and sign conventions
-4. **Temporal Column Confirmation:** Verify as_of boundary columns for F2 contracts
-5. **Gate Approval:** Human Architect approves F5.6 semantic specification
-6. **Only Then:** AI coding begins F5.6 implementation
+### Immediate (Phase 1: Research)
 
-**No AI coding until this checklist is GREEN.**
+1. **Access TT99/2025 Official Documents**
+   - Obtain Thông tư 99/2025/TT-BTC from Ministry of Finance
+   - Review Chart of Accounts section
+   - Document cash accounts (111, 112, 113)
+   - Document prepayment accounts (331, 142, or other)
+
+2. **Review Relevant VAS**
+   - VAS 01 (General Standards) — Recognition and measurement
+   - VAS 24 (Cash Flow Statements) — Cash equivalents definition
+   - Extract debit/credit conventions
+   - Document prepayment treatment
+
+3. **Complete Research Document**
+   - Fill in all `[TO BE COMPLETED BY HUMAN ARCHITECT]` sections
+   - Cite official sources for all findings
+   - Document Bella F1 COA alignment
+   - Sign research approval (Part F.1)
+
+### Then (Phase 2: Semantic Specification)
+
+4. **Update Semantic Spec**
+   - Transfer research findings to `F5_6_CASH_PREPAYMENT_SEMANTIC_SPEC.md`
+   - Resolve 4 blocked items for Cash domain
+   - Resolve 4 blocked items for Prepayment domain
+   - Add legal citations for every semantic decision
+   - Get Human Architect approval
+
+### Then (Phase 3: Contract Creation)
+
+5. **Create Temporal Contracts**
+   - F2: Create `finance_cash_facts_as_of()` function
+   - F4: Create `finance_prepayment_facts_as_of()` function
+   - Update F2/F4 contract documents with version bump
+
+### Finally (Phase 4: Implementation)
+
+6. **AI Coding Begins** (only after gates 1-17 GREEN)
+   - Generate F5.6 migrations
+   - Implement cash reconciliation engine
+   - Implement prepayment reconciliation engine
+   - Write integration tests
+   - Generate G1-G8 proof documents
+   - Run regression suite
+
+**No AI coding until gates 1-17 are GREEN.**
 

@@ -1,0 +1,20 @@
+{
+  "tenant_id": "da9e610b-88c5-4901-8ab9-5439f4931467",
+  "event_id": "evt_n2_cross_tenant_attack",
+  "idempotency_key": "n2_cross_tenant_attack",
+  "event_type": "PATIENT_SERVICE_COMPLETED",
+  "amount": "999999",
+  "currency": "VND",
+  "occurred_at": "2026-08-16T10:00:00Z",
+  "created_at": "2026-08-16T10:00:00Z",
+  "source_system": "HOSPITAL_OS",
+  "source_version": "1.0.0",
+  "correlation_id": "n2_attack",
+  "business_context": {
+    "patient": {
+      "patient_id": "ATTACKER",
+      "patient_type": "OUTPATIENT"
+    }
+  },
+  "business_references": []
+}

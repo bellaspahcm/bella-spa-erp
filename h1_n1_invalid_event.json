@@ -1,0 +1,15 @@
+{
+  "tenant_id": "da9e610b-88c5-4901-8ab9-5439f4931467",
+  "event_id": "evt_n1_test_001",
+  "idempotency_key": "n1_test_001",
+  "event_type": "UNKNOWN_EVENT_TYPE",
+  "amount": "100000",
+  "currency": "VND",
+  "occurred_at": "2026-08-16T10:00:00Z",
+  "created_at": "2026-08-16T10:00:00Z",
+  "source_system": "HOSPITAL_OS",
+  "source_version": "1.0.0",
+  "correlation_id": "n1_test",
+  "business_context": {},
+  "business_references": []
+}
