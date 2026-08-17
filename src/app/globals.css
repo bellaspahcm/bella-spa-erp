@@ -5486,3 +5486,11 @@ html[data-tenant-module="beauty_spa"] .customer-detail-card:hover {
   border-color: rgba(16, 185, 129, 0.7) !important;
   box-shadow: 0 20px 45px -5px rgba(0, 0, 0, 0.7), inset 0 1px 0 0 rgba(255, 255, 255, 0.1) !important;
 }
+
+/* Custom spacing for Mobile Top Header Bar to avoid double-box separation visual glitch */
+@media (max-width: 1023px) {
+  main > div.flex-1 {
+    padding-top: 1.5rem !important; /* pt-6: 24px space before content text, keeping background unified */
+  }
+}
+
