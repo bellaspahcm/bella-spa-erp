@@ -25,12 +25,17 @@ This is NOT just "connect Education to Finance."
 
 **MUST complete before Education integration:**
 
-1. ✅ H1.2 FROZEN authorization
-2. ✅ O1.1 remediation complete
-3. ✅ Targeted regression PASS (O1, O2, O3, O5)
-4. ✅ Full regression PASS (TC1-TC4 + O1-O10)
+1. ⏳ H1.2 FROZEN authorization
+2. ⏳ O1.1 remediation
+3. ⏳ Targeted regression (O1, O2, O3, O5)
+4. ⏳ Full regression (TC1-TC4 + O1-O10)
 
-**Current status:** H1.2 PROVEN (commit `6ce2ce47`), awaiting FROZEN authorization
+**Current status:**
+- H1.2: ✅ PROVEN (commit `6ce2ce47`)
+- H1.2 FROZEN: ⏳ PENDING (awaiting stakeholder authorization)
+- O1.1 remediation: ⏳ PENDING
+- Targeted regression: ⏳ PENDING
+- Full regression: ⏳ PENDING
 
 **No Education integration work until H1.2 FROZEN + regressions complete.**
 
@@ -61,6 +66,12 @@ This is NOT just "connect Education to Finance."
 │ Phase 3: Contract Design                                │
 │ └─ Financial Integration Contract                       │
 │    Duration: 3-4 days                                   │
+└─────────────────────────────────────────────────────────┘
+                      ↓
+┌─────────────────────────────────────────────────────────┐
+│ Phase 3.5: Architecture Approval Gate (E-ARCH-1)        │
+│ └─ Validate architecture before implementation          │
+│    Duration: 1-2 days                                   │
 └─────────────────────────────────────────────────────────┘
                       ↓
 ┌─────────────────────────────────────────────────────────┐
@@ -117,7 +128,7 @@ This is NOT just "connect Education to Finance."
 │    Duration: 2-3 days                                   │
 └─────────────────────────────────────────────────────────┘
 
-Total: 38-53 days (excluding Phase 0 blocking period)
+Total: 39-55 days (excluding Phase 0 blocking period)
 ```
 
 ---
@@ -308,7 +319,14 @@ Design **Financial Integration Contract** reusable across industries.
    - Business rule validation
    - Tenant boundary validation
 
-5. **Contract Extension Points**
+5. **Contract Generality Verification**
+   - Prove contract can represent Hospital financial intents
+   - Prove contract can represent Education financial intents
+   - Identify extension points for future industries (Real Estate, Automotive, Retail)
+   - Document industry-specific vs shared fields
+   - **Contract Generality Gate:** Contract must support at least Hospital + Education without Finance Kernel modification
+
+6. **Contract Extension Points**
    - Industry-specific metadata
    - Custom intent types
    - Future extensibility
@@ -326,6 +344,7 @@ Design **Financial Integration Contract** reusable across industries.
 - Versioning strategy documented
 - Provenance requirements clear
 - Validation rules specified
+- **Contract Generality Gate PASS:** Contract proven to support Hospital + Education + future industries
 - Review by Finance OS team PASS
 
 ### Risk
@@ -333,6 +352,109 @@ Design **Financial Integration Contract** reusable across industries.
 **High** — Contract too rigid → can't support future industries; too flexible → loses safety
 
 **Mitigation:** Design for extensibility with strong validation; review with Hospital OS as reference
+
+---
+
+## Phase 3.5: Architecture Approval Gate (E-ARCH-1)
+
+**Duration:** 1-2 days  
+**Owner:** Platform Architect + Stakeholders  
+**Status:** ⏸️ NOT STARTED
+
+### Objective
+
+**GATE: E-ARCH-1 — Integration Architecture Approval**
+
+Prove architecture design before implementation begins. This gate prevents implementation work until architecture is validated.
+
+### Approval Criteria
+
+Must prove ALL of the following:
+
+#### **1. Finance Kernel Protection**
+- [ ] No Finance Kernel modifications required
+- [ ] No changes to F1-F5 behavior
+- [ ] Finance authoritative state remains protected
+
+#### **2. Contract Generality**
+- [ ] Contract supports Hospital financial intents
+- [ ] Contract supports Education financial intents
+- [ ] Contract extensible to future industries (Real Estate, Automotive, Retail)
+- [ ] Industry-specific vs shared fields clearly separated
+
+#### **3. Integration Boundary**
+- [ ] Education cannot write directly to Finance DB
+- [ ] All writes through Integration Hub
+- [ ] Adapter boundary clearly defined
+
+#### **4. Capability Reuse**
+- [ ] H1.2 retry/quarantine/replay mechanisms reused
+- [ ] Finance idempotency mechanisms reused
+- [ ] No parallel recovery mechanisms created
+
+#### **5. Tenant Isolation**
+- [ ] Tenant boundary clear and enforced
+- [ ] No cross-tenant access possible
+- [ ] Security model reviewed and approved
+
+#### **6. Hospital Integration Protection**
+- [ ] Hospital integration unaffected by Education
+- [ ] No Hospital behavior changes required
+- [ ] Hospital + Education can coexist
+
+#### **7. Extensibility**
+- [ ] Contract can accommodate Industry 3+ without redesign
+- [ ] Adapter pattern reusable for future industries
+- [ ] Template extraction possible after Education
+
+#### **8. Additive Integration**
+- [ ] Education adds capability, does not modify existing
+- [ ] All changes follow "Integration Must Be Additive" principle
+- [ ] Any behavior modifications explicitly documented and approved
+
+### Review Process
+
+1. **Architecture Document Review**
+   - Phase 1: Meta-Platform Constitution
+   - Phase 2: Education Discovery
+   - Phase 3: Contract Design
+   - Phase 4: Security & Boundary
+
+2. **Stakeholder Review**
+   - Platform Architect
+   - Finance OS Lead
+   - Education OS Lead
+   - Security Architect
+
+3. **Gate Decision**
+   - **PASS:** Proceed to Phase 5 (Implementation)
+   - **CONDITIONAL PASS:** Address specific concerns, then proceed
+   - **FAIL:** Return to architecture design, fix issues, re-submit
+
+### Deliverables
+
+- Architecture approval document
+- Gate checklist (all items PASS)
+- Stakeholder sign-offs
+- Identified risks and mitigations
+
+### Exit Criteria
+
+- All 8 approval criteria PASS
+- All stakeholders approved
+- Architecture frozen for implementation
+- No blocking concerns
+
+### Risk
+
+**Critical** — Starting implementation without architecture approval could lead to:
+- Finance Kernel changes mid-implementation
+- Contract redesign after adapter built
+- Security issues discovered late
+- Regression failures
+- Wasted implementation effort
+
+**Mitigation:** Strict gate enforcement, comprehensive architecture review, stakeholder alignment before coding
 
 ---
 
@@ -470,7 +592,7 @@ Build **Education Finance Adapter** (anti-corruption layer).
 
 ---
 
-## Phase 6: Idempotency & Exactly-Once
+## Phase 6: Idempotency & At-Most-Once Financial Effect
 
 **Duration:** 3-4 days  
 **Owner:** Integration Team + Finance OS Team  
@@ -484,6 +606,12 @@ Prove Education integration achieves **at-most-once financial effect** using Fin
 > Each valid Financial Intent creates **at most one** financial effect.  
 > When processing **succeeds** → effect created **exactly once**.  
 > When processing **fails completely** → **zero** effects is correct (not a violation).
+
+**NOT claiming:**
+> Distributed "exactly-once processing" (impossible in general distributed systems)
+
+**BUT proving:**
+> At-most-once financial effect with exactly-once guarantee on successful processing
 
 ### Tasks
 
@@ -1039,13 +1167,14 @@ Formalize Education Finance Integration as PROVEN and freeze evidence.
 
 ### Estimated Duration
 
-**Total: 38-53 days** (excluding Phase 0 blocking period)
+**Total: 39-55 days** (excluding Phase 0 blocking period)
 
 **Breakdown:**
 - Phase 0: BLOCKED (awaiting H1.2 FROZEN authorization)
 - Phase 1: 2-3 days (Meta-platform constitution)
 - Phase 2: 3-5 days (Education discovery)
 - Phase 3: 3-4 days (Contract design)
+- Phase 3.5: 1-2 days (Architecture approval gate E-ARCH-1)
 - Phase 4: 2-3 days (Security & boundary)
 - Phase 5: 5-7 days (Adapter implementation)
 - Phase 6: 3-4 days (Idempotency)
@@ -1059,20 +1188,21 @@ Formalize Education Finance Integration as PROVEN and freeze evidence.
 ### Critical Path
 
 ```
-H1.2 FROZEN → Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5
-                                                        ↓
-                                              Phase 6 → Phase 7
-                                                        ↓
-                                      Phase 8 → Phase 9 → Phase 10
-                                                        ↓
-                                              Phase 11 → Phase 12
+H1.2 FROZEN → Phase 1 → Phase 2 → Phase 3 → Phase 3.5 (E-ARCH-1) → Phase 4 → Phase 5
+                                                                              ↓
+                                                                    Phase 6 → Phase 7
+                                                                              ↓
+                                                            Phase 8 → Phase 9 → Phase 10
+                                                                              ↓
+                                                                    Phase 11 → Phase 12
 ```
 
-**Cannot parallelize:** Phases are sequential due to dependencies
+**Cannot parallelize:** Most phases are sequential due to dependencies
 
-**Can parallelize (limited):**
-- Phase 1 (constitution) can start planning during H1.2 FROZEN wait
-- Phase 11 (template) planning can start during Phase 9-10
+**Limited parallelization possible:**
+- Phase 1 (constitution) planning can start during H1.2 FROZEN wait
+- Phase 4 (security) threat modeling can start during Phase 3 contract design (partial overlap)
+- Phase 11 (template) planning can start during Phase 9-10 (evidence collection continues)
 
 ---
 
@@ -1245,7 +1375,19 @@ H1.2 FROZEN → Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5
 - [ ] Versioning strategy documented
 - [ ] Provenance requirements specified
 - [ ] Validation rules complete
+- [ ] **Contract Generality Gate PASS** (supports Hospital + Education + future industries)
 - [ ] Stakeholder review PASS
+
+### Architecture Approval (E-ARCH-1)
+- [ ] Finance Kernel protection verified
+- [ ] Contract generality proven
+- [ ] Integration boundary clear
+- [ ] H1.2 capability reuse confirmed
+- [ ] Tenant isolation design approved
+- [ ] Hospital protection verified
+- [ ] Extensibility proven
+- [ ] Additive integration confirmed
+- [ ] All stakeholders approved
 
 ### Security
 - [ ] Tenant isolation design reviewed
@@ -1307,6 +1449,8 @@ H1.2 FROZEN → Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5
 
 ## Appendix C: Key Principles Summary
 
+### Core Integration Principles
+
 1. **Finance OS is Protected Financial Core** — No weakening allowed
 2. **No Direct Finance Writes** — Integration boundary mandatory
 3. **Reuse, Don't Rebuild** — Inherit H1.2 capabilities
@@ -1316,6 +1460,32 @@ H1.2 FROZEN → Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5
 7. **Regression Protection** — Prove no Finance baseline changes
 8. **Template for Future** — Each industry faster than the last
 9. **Integration Must Be Additive** — Industry integration must be additive by default. Any modification to existing Finance OS behavior requires explicit architecture change approval and full regression. New industries may add: adapters, contracts, mappings, extensions. Modifying Finance Kernel requires Architecture Change Request → Impact Assessment → Approval → Full Regression
+
+### Bella Platform Law (Elevated from Principle #9)
+
+**Industry Integration Law:**
+
+> Every new Industry OS must integrate with existing Platform Core through **additive extensions by default**. Existing authoritative behavior must remain **unchanged**. Any modification to an existing Core requires explicit **Architecture Change Request**, **impact assessment**, **approval**, and **full cross-industry regression**.
+
+**Rationale:**
+
+This prevents architectural entropy as Bella scales to multiple industries. Without this law:
+- Industry 2 might modify Finance Core for convenience
+- Industry 3 might conflict with Industry 2's changes  
+- Industry 4 might break Industries 1-3
+- Finance OS becomes unstable with each new industry
+
+**With this law:**
+- Each industry extends Finance Core (additive)
+- Finance Core becomes more stable over time
+- Industries 1-N continue working as new industries added
+- Platform integrity maintained at scale
+
+**Enforcement:**
+
+- Phase 3.5: E-ARCH-1 gate enforces this law before implementation
+- Phase 10: Regression verifies this law after implementation
+- Any Finance Kernel change → Architecture Change Request (mandatory)
 
 ---
 
