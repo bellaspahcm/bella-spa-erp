@@ -354,10 +354,10 @@ describe('O1: Retry Policy Enforcement', () => {
     const quarantined = afterState.rows[0];
     
     expect(quarantined.status).toBe('QUARANTINED');
-    // NOTE: Implementation bug - retry_count should be 10 but quarantineEvent() doesn't increment it
-    // Constitution C1: retry_count should increment AFTER Finance failure response
-    // TODO: Fix after O1-O10 verification - quarantineEvent() should accept and persist newRetryCount
-    expect(quarantined.retry_count).toBe(MAX_RETRY - 1); // Current: 9 (should be 10)
+    // O1.1 FIX VERIFIED: retry_count now persisted correctly after quarantine
+    // Constitution C1: retry_count increments AFTER Finance failure response
+    // Fix applied: quarantineEvent() now accepts and persists newRetryCount
+    expect(quarantined.retry_count).toBe(MAX_RETRY); // Fixed: now 10 (was 9 before O1.1)
     expect(quarantined.quarantine_reason).toBe('MAX_RETRY_EXCEEDED');
     expect(quarantined.quarantined_at).not.toBeNull();
     expect(quarantined.failure_classification).toBe('TRANSIENT');
