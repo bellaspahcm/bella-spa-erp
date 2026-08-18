@@ -147,7 +147,8 @@ async function handleFailure(
       'PERMANENT_FAILURE',
       response.error || 'Permanent failure detected',
       classification,
-      db
+      db,
+      event.retry_count
     );
     return;
   }
@@ -162,7 +163,8 @@ async function handleFailure(
       'MAX_RETRY_EXCEEDED',
       response.error || 'Max retry limit reached',
       classification,
-      db
+      db,
+      newRetryCount
     );
     return;
   }
@@ -238,7 +240,8 @@ async function quarantineEvent(
   reason: string,
   error: string,
   classification: FailureClassification,
-  db: Pool
+  db: Pool,
+  retryCount: number
 ): Promise<void> {
   await db.query(`
     UPDATE finance_outbox_events
@@ -247,10 +250,11 @@ async function quarantineEvent(
       quarantine_reason = $2,
       quarantined_at = now(),
       last_error = $3,
-      failure_classification = $4
+      failure_classification = $4,
+      retry_count = $5
     WHERE event_id = $1
       AND status IN ('PROCESSING', 'FAILED')
-  `, [eventId, reason, error, classification]);
+  `, [eventId, reason, error, classification, retryCount]);
 }
 
 // ============================================================================
