@@ -3,7 +3,11 @@
  * 
  * Hook for consuming Bed Engine operations in Hospital pages.
  * 
- * **STATUS:** ✅ IMPLEMENTED (Phase 0 Week 4)
+ * **STATUS:** ✅ MIGRATED TO CONTRACT-FIRST (Week 2 Day 3 - P1 Remediation)
+ * 
+ * **Architecture Change:**
+ * - Before: Direct engine import (P1 violation)
+ * - After: Service Locator + Contract-only import
  * 
  * @example
  * ```tsx
@@ -20,9 +24,10 @@
 
 'use client';
 
-import { useState } from 'react';
-import { BedEngineService } from '@/platform/healthcare/engines/bed-engine';
+import { useState, useMemo } from 'react';
+import { getHealthcareService } from '@/platform/healthcare';
 import { createClient } from '@/lib/supabase-client';
+import type { BedEngineContract } from '@/platform/healthcare/contracts/bed-engine.contract';
 import type {
   BedAllocationRequest,
   BedReleaseRequest,
@@ -35,9 +40,12 @@ export function useBedEngine() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  // Initialize engine
+  // Initialize engine via Service Locator (contract-first)
   const supabase = createClient();
-  const bedEngine = new BedEngineService(supabase);
+  const bedEngine = useMemo(
+    () => getHealthcareService<BedEngineContract>('bed-engine', supabase),
+    [supabase]
+  );
 
   const allocateBed = async (request: BedAllocationRequest): Promise<EngineResponse<Bed>> => {
     setLoading(true);

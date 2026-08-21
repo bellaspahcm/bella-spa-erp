@@ -1,0 +1,46 @@
+================================================================================
+BDGF EVIDENCE LOG
+================================================================================
+
+Deployment: g3a-audit-5
+Gate: test-exception
+Start Time: 2026-08-20T03:16:51.840Z
+End Time: 2026-08-20T03:16:51.842Z
+
+Summary:
+  Total Checks: 1
+  Pass: 0
+  Fail: 1
+  Warn: 0
+
+================================================================================
+CHECK RESULTS
+================================================================================
+
+FAILED CHECKS (1):
+--------------------------------------------------------------------------------
+✗ test-invalid-type [test-invalid-type]
+  Message: Check execution error: Unknown check type: this-check-type-does-not-exist
+  Evidence: {
+    "error": "Unknown check type: this-check-type-does-not-exist",
+    "stack": "Error: Unknown check type: this-check-type-does-not-exist\n    at CheckRegistryClass.execute (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/bdgf/check-registry.mjs:75:13)\n    at GateRunner.executeCheck (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/bdgf/gate-runner.mjs:178:42)\n    at GateRunner.executeChecksSequential (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/bdgf/gate-runner.mjs:146:18)\n    at GateRunner.execute (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/bdgf/gate-runner.mjs:133:18)\n    at async GateRunner.run (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/bdgf/gate-contract.mjs:126:22)\n    at async main (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/bdgf-amendment-12/test-exception.mjs:23:20)"
+  }
+  Timestamp: 2026-08-20T03:16:51.842Z
+
+
+================================================================================
+LOG ENTRIES
+================================================================================
+
+[2026-08-20T03:16:51.841Z] Gate: test-exception
+[2026-08-20T03:16:51.841Z] Version: 1.0.0
+[2026-08-20T03:16:51.841Z] Deployment: g3a-audit-5
+[2026-08-20T03:16:51.841Z] Checks: 1
+[2026-08-20T03:16:51.841Z] Mode: LIVE
+[2026-08-20T03:16:51.841Z] Execution: SEQUENTIAL
+[2026-08-20T03:16:51.841Z] 
+[2026-08-20T03:16:51.842Z] [FAIL] test-invalid-type: Check execution error: Unknown check type: this-check-type-does-not-exist
+
+================================================================================
+END OF EVIDENCE LOG
+================================================================================

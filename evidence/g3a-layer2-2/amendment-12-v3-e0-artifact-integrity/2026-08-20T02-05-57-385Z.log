@@ -1,0 +1,169 @@
+================================================================================
+BDGF EVIDENCE LOG
+================================================================================
+
+Deployment: g3a-layer2-2
+Gate: amendment-12-v3-e0-artifact-integrity
+Start Time: 2026-08-20T02:05:53.872Z
+End Time: 2026-08-20T02:05:57.378Z
+
+Summary:
+  Total Checks: 33
+  Pass: 33
+  Fail: 0
+  Warn: 0
+
+================================================================================
+CHECK RESULTS
+================================================================================
+
+PASSED CHECKS (33):
+--------------------------------------------------------------------------------
+✓ e0-a01-migration-e1-exists [e0-a01-migration-e1-exists]
+  Message: All 1 files exist
+
+✓ e0-a02-migration-05a-exists [e0-a02-migration-05a-exists]
+  Message: All 1 files exist
+
+✓ e0-a03-migration-e2-exists [e0-a03-migration-e2-exists]
+  Message: All 1 files exist
+
+✓ e0-a04-migration-05b-exists [e0-a04-migration-05b-exists]
+  Message: All 1 files exist
+
+✓ e0-a05-migration-05c-exists [e0-a05-migration-05c-exists]
+  Message: All 1 files exist
+
+✓ e0-a06-migration-e3-exists [e0-a06-migration-e3-exists]
+  Message: All 1 files exist
+
+✓ e0-a07-verifier-package-exists [e0-a07-verifier-package-exists]
+  Message: All 1 files exist
+
+✓ e0-a08-verifier-e1-exists [e0-a08-verifier-e1-exists]
+  Message: All 1 files exist
+
+✓ e0-a09-verifier-e0-exists [e0-a09-verifier-e0-exists]
+  Message: All 1 files exist
+
+✓ e0-a10-doc-package-review-exists [e0-a10-doc-package-review-exists]
+  Message: All 1 files exist
+
+✓ e0-a11-05a-canonical-map-table [e0-a11-05a-canonical-map-table]
+  Message: Pattern check passed
+
+✓ e0-a12-05a-p4-collision-gate [e0-a12-05a-p4-collision-gate]
+  Message: Pattern check passed
+
+✓ e0-a13-05b-immutability-trigger [e0-a13-05b-immutability-trigger]
+  Message: Pattern check passed
+
+✓ e0-a14-05b-orphan-deletion [e0-a14-05b-orphan-deletion]
+  Message: Pattern check passed
+
+✓ e0-a15-e2-orphan-safety [e0-a15-e2-orphan-safety]
+  Message: Pattern check passed
+
+✓ e0-b01-dependency-runtime-registry-exists [e0-b01-dependency-runtime-registry-exists]
+  Message: Table public.runtime_tenant_registry exists
+
+✓ e0-b02-dependency-tenant-id-type-text [e0-b02-dependency-tenant-id-type-text]
+  Message: Column public.runtime_tenant_registry.tenant_id type is text
+
+✓ e0-b03-dependency-tenants-table-exists [e0-b03-dependency-tenants-table-exists]
+  Message: Table public.tenants exists
+
+✓ e0-b04-dependency-tenants-id-type-uuid [e0-b04-dependency-tenants-id-type-uuid]
+  Message: Column public.tenants.id type is uuid
+
+✓ e0-b05-precondition-migration-evidence-not-exists [e0-b05-precondition-migration-evidence-not-exists]
+  Message: Schema migration_evidence does not exist (as expected)
+
+✓ e0-b06-precondition-canonical-map-not-exists [e0-b06-precondition-canonical-map-not-exists]
+  Message: Table migration_evidence.canonical_tenant_map does not exist (as expected)
+
+✓ e0-c01-precondition-5-text-fixtures [e0-c01-precondition-5-text-fixtures]
+  Message: Query executed successfully
+
+✓ e0-c02-precondition-no-fk-on-tenant-id [e0-c02-precondition-no-fk-on-tenant-id]
+  Message: Query executed successfully
+
+✓ e0-c03-precondition-postgresql-version [e0-c03-precondition-postgresql-version]
+  Message: Database version 17.6 meets minimum 12.0
+
+✓ e0-c04-precondition-create-privileges [e0-c04-precondition-create-privileges]
+  Message: All required privileges present
+
+✓ e0-d01-gate-e1-function-defined [e0-d01-gate-e1-function-defined]
+  Message: Pattern check passed
+
+✓ e0-d02-gate-e1-returns-table [e0-d02-gate-e1-returns-table]
+  Message: Pattern check passed
+
+✓ e0-d03-gate-e2-function-defined [e0-d03-gate-e2-function-defined]
+  Message: Pattern check passed
+
+✓ e0-d04-gate-e3-function-defined [e0-d04-gate-e3-function-defined]
+  Message: Pattern check passed
+
+✓ e0-d05-gate-05b-calls-e2-before-delete [e0-d05-gate-05b-calls-e2-before-delete]
+  Message: Ordering verified: Pattern 1 appears before Pattern 2
+
+✓ e0-d06-gate-05b-blocks-if-e2-fails [e0-d06-gate-05b-blocks-if-e2-fails]
+  Message: Pattern check passed
+
+✓ e0-d07-gate-e2-uses-exception [e0-d07-gate-e2-uses-exception]
+  Message: Pattern check passed
+
+✓ e0-d08-gate-advisory-lock [e0-d08-gate-advisory-lock]
+  Message: Pattern check passed
+
+
+================================================================================
+LOG ENTRIES
+================================================================================
+
+[2026-08-20T02:05:53.873Z] Gate: amendment-12-v3-e0-artifact-integrity
+[2026-08-20T02:05:53.873Z] Version: 1.0
+[2026-08-20T02:05:53.873Z] Deployment: g3a-layer2-2
+[2026-08-20T02:05:53.873Z] Checks: 33
+[2026-08-20T02:05:53.873Z] Mode: LIVE
+[2026-08-20T02:05:53.873Z] Execution: SEQUENTIAL
+[2026-08-20T02:05:53.873Z] 
+[2026-08-20T02:05:53.873Z] [PASS] e0-a01-migration-e1-exists: All 1 files exist
+[2026-08-20T02:05:53.873Z] [PASS] e0-a02-migration-05a-exists: All 1 files exist
+[2026-08-20T02:05:53.873Z] [PASS] e0-a03-migration-e2-exists: All 1 files exist
+[2026-08-20T02:05:53.874Z] [PASS] e0-a04-migration-05b-exists: All 1 files exist
+[2026-08-20T02:05:53.874Z] [PASS] e0-a05-migration-05c-exists: All 1 files exist
+[2026-08-20T02:05:53.874Z] [PASS] e0-a06-migration-e3-exists: All 1 files exist
+[2026-08-20T02:05:53.874Z] [PASS] e0-a07-verifier-package-exists: All 1 files exist
+[2026-08-20T02:05:53.874Z] [PASS] e0-a08-verifier-e1-exists: All 1 files exist
+[2026-08-20T02:05:53.874Z] [PASS] e0-a09-verifier-e0-exists: All 1 files exist
+[2026-08-20T02:05:53.874Z] [PASS] e0-a10-doc-package-review-exists: All 1 files exist
+[2026-08-20T02:05:53.881Z] [PASS] e0-a11-05a-canonical-map-table: Pattern check passed
+[2026-08-20T02:05:53.882Z] [PASS] e0-a12-05a-p4-collision-gate: Pattern check passed
+[2026-08-20T02:05:53.884Z] [PASS] e0-a13-05b-immutability-trigger: Pattern check passed
+[2026-08-20T02:05:53.886Z] [PASS] e0-a14-05b-orphan-deletion: Pattern check passed
+[2026-08-20T02:05:53.888Z] [PASS] e0-a15-e2-orphan-safety: Pattern check passed
+[2026-08-20T02:05:54.294Z] [PASS] e0-b01-dependency-runtime-registry-exists: Table public.runtime_tenant_registry exists
+[2026-08-20T02:05:54.644Z] [PASS] e0-b02-dependency-tenant-id-type-text: Column public.runtime_tenant_registry.tenant_id type is text
+[2026-08-20T02:05:54.965Z] [PASS] e0-b03-dependency-tenants-table-exists: Table public.tenants exists
+[2026-08-20T02:05:55.369Z] [PASS] e0-b04-dependency-tenants-id-type-uuid: Column public.tenants.id type is uuid
+[2026-08-20T02:05:55.685Z] [PASS] e0-b05-precondition-migration-evidence-not-exists: Schema migration_evidence does not exist (as expected)
+[2026-08-20T02:05:56.001Z] [PASS] e0-b06-precondition-canonical-map-not-exists: Table migration_evidence.canonical_tenant_map does not exist (as expected)
+[2026-08-20T02:05:56.333Z] [PASS] e0-c01-precondition-5-text-fixtures: Query executed successfully
+[2026-08-20T02:05:56.696Z] [PASS] e0-c02-precondition-no-fk-on-tenant-id: Query executed successfully
+[2026-08-20T02:05:57.004Z] [PASS] e0-c03-precondition-postgresql-version: Database version 17.6 meets minimum 12.0
+[2026-08-20T02:05:57.369Z] [PASS] e0-c04-precondition-create-privileges: All required privileges present
+[2026-08-20T02:05:57.371Z] [PASS] e0-d01-gate-e1-function-defined: Pattern check passed
+[2026-08-20T02:05:57.372Z] [PASS] e0-d02-gate-e1-returns-table: Pattern check passed
+[2026-08-20T02:05:57.373Z] [PASS] e0-d03-gate-e2-function-defined: Pattern check passed
+[2026-08-20T02:05:57.374Z] [PASS] e0-d04-gate-e3-function-defined: Pattern check passed
+[2026-08-20T02:05:57.375Z] [PASS] e0-d05-gate-05b-calls-e2-before-delete: Ordering verified: Pattern 1 appears before Pattern 2
+[2026-08-20T02:05:57.376Z] [PASS] e0-d06-gate-05b-blocks-if-e2-fails: Pattern check passed
+[2026-08-20T02:05:57.377Z] [PASS] e0-d07-gate-e2-uses-exception: Pattern check passed
+[2026-08-20T02:05:57.378Z] [PASS] e0-d08-gate-advisory-lock: Pattern check passed
+
+================================================================================
+END OF EVIDENCE LOG
+================================================================================

@@ -132,7 +132,8 @@
     "smoke:test": "npx tsx scripts/smoke-test-position-tier-hire-date.ts",
     "smoke:test:bash": "bash scripts/smoke-test.sh",
     "check:any-types": "node scripts/check-any-types.js",
-    "type-check": "tsc --noEmit --strict"
+    "type-check": "tsc --noEmit --strict",
+    "prepare": "husky"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
@@ -188,14 +189,16 @@
     "cross-env": "^10.1.0",
     "eslint": "^9",
     "eslint-config-next": "^16.2.11",
+    "husky": "^9.1.7",
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
     "jsonwebtoken": "^9.0.3",
+    "lint-staged": "^17.3.0",
     "marked": "^18.0.5",
     "md-to-pdf": "^5.2.5",
     "metro": "^0.80.12",
     "metro-resolver": "^0.80.12",
-    "pg": "^8.22.0",
+    "pg": "^8.23.0",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "tsx": "^4.22.4",

@@ -1,0 +1,235 @@
+{
+  "deployment": "g3a-layer2-3",
+  "gate": "amendment-12-v3-e1-runtime-preconditions",
+  "startTime": "2026-08-20T02:17:48.936Z",
+  "endTime": "2026-08-20T02:17:52.479Z",
+  "checks": [
+    {
+      "id": "e1-01-fixture-count",
+      "name": "e1-01-fixture-count",
+      "status": "PASS",
+      "evidence": {
+        "query": "SELECT COUNT(*) as count FROM runtime_tenant_registry WHERE tenant_id IN ($1, $2, $3, $4, $5)",
+        "params": [
+          "test-e2e-tenant-a",
+          "test-e2e-tenant-b",
+          "test-e2e-tenant-attacker",
+          "test-quarantine-tenant-a",
+          "test-quarantine-tenant-b"
+        ],
+        "result": {
+          "count": "5"
+        }
+      },
+      "message": "Query executed successfully",
+      "timestamp": "2026-08-20T02:17:49.377Z"
+    },
+    {
+      "id": "e1-02-rls-enabled",
+      "name": "e1-02-rls-enabled",
+      "status": "PASS",
+      "evidence": {
+        "query": "SELECT relrowsecurity FROM pg_class WHERE oid = 'public.runtime_tenant_registry'::regclass",
+        "params": [],
+        "result": {
+          "relrowsecurity": true
+        }
+      },
+      "message": "Query executed successfully",
+      "timestamp": "2026-08-20T02:17:49.721Z"
+    },
+    {
+      "id": "e1-03-rls-policy-count",
+      "name": "e1-03-rls-policy-count",
+      "status": "PASS",
+      "evidence": {
+        "query": "SELECT COUNT(*) as count FROM pg_policies WHERE schemaname = 'public' AND tablename = 'runtime_tenant_registry'",
+        "params": [],
+        "result": {
+          "count": "1"
+        }
+      },
+      "message": "Query executed successfully",
+      "timestamp": "2026-08-20T02:17:50.038Z"
+    },
+    {
+      "id": "e1-04-migration-history-clean",
+      "name": "e1-04-migration-history-clean",
+      "status": "PASS",
+      "evidence": {
+        "schemaName": "migration_evidence",
+        "exists": false
+      },
+      "message": "Schema migration_evidence does not exist (as expected)",
+      "timestamp": "2026-08-20T02:17:50.347Z"
+    },
+    {
+      "id": "e1-05-orphan-detection",
+      "name": "e1-05-orphan-detection",
+      "status": "PASS",
+      "evidence": {
+        "query": "SELECT COUNT(*) as count FROM runtime_tenant_registry WHERE tenant_id IN ($1, $2)",
+        "params": [
+          "test-quarantine-tenant-a",
+          "test-quarantine-tenant-b"
+        ],
+        "result": {
+          "count": "2"
+        }
+      },
+      "message": "Query executed successfully",
+      "timestamp": "2026-08-20T02:17:50.677Z"
+    },
+    {
+      "id": "e1-06-schema-compatibility-tenant-id-text",
+      "name": "e1-06-schema-compatibility-tenant-id-text",
+      "status": "PASS",
+      "evidence": {
+        "schema": "public",
+        "tableName": "runtime_tenant_registry",
+        "columnName": "tenant_id",
+        "dataType": "text"
+      },
+      "message": "Column public.runtime_tenant_registry.tenant_id type is text",
+      "timestamp": "2026-08-20T02:17:51.046Z"
+    },
+    {
+      "id": "e1-07-fk-constraint-absence",
+      "name": "e1-07-fk-constraint-absence",
+      "status": "PASS",
+      "evidence": {
+        "query": "SELECT COUNT(*) as count FROM information_schema.table_constraints tc JOIN information_schema.constraint_column_usage ccu ON tc.constraint_name = ccu.constraint_name WHERE tc.table_schema = 'public' AND tc.table_name = 'runtime_tenant_registry' AND tc.constraint_type = 'FOREIGN KEY' AND ccu.column_name = 'tenant_id'",
+        "params": [],
+        "result": {
+          "count": "0"
+        }
+      },
+      "message": "Query executed successfully",
+      "timestamp": "2026-08-20T02:17:51.375Z"
+    },
+    {
+      "id": "e1-08-canonical-tenant-table-exists",
+      "name": "e1-08-canonical-tenant-table-exists",
+      "status": "PASS",
+      "evidence": {
+        "schema": "public",
+        "tableName": "tenants",
+        "exists": true
+      },
+      "message": "Table public.tenants exists",
+      "timestamp": "2026-08-20T02:17:51.699Z"
+    },
+    {
+      "id": "e1-09-canonical-identity-type-uuid",
+      "name": "e1-09-canonical-identity-type-uuid",
+      "status": "PASS",
+      "evidence": {
+        "schema": "public",
+        "tableName": "tenants",
+        "columnName": "id",
+        "dataType": "uuid"
+      },
+      "message": "Column public.tenants.id type is uuid",
+      "timestamp": "2026-08-20T02:17:52.097Z"
+    },
+    {
+      "id": "e1-10-database-privileges",
+      "name": "e1-10-database-privileges",
+      "status": "PASS",
+      "evidence": {
+        "privileges": [
+          {
+            "type": "schema",
+            "name": "public",
+            "privilege": "CREATE",
+            "hasPrivilege": true
+          },
+          {
+            "type": "database",
+            "privilege": "CREATE",
+            "hasPrivilege": true
+          }
+        ]
+      },
+      "message": "All required privileges present",
+      "timestamp": "2026-08-20T02:17:52.478Z"
+    }
+  ],
+  "summary": {
+    "total": 10,
+    "pass": 10,
+    "fail": 0,
+    "warn": 0
+  },
+  "logs": [
+    {
+      "timestamp": "2026-08-20T02:17:48.938Z",
+      "message": "Gate: amendment-12-v3-e1-runtime-preconditions"
+    },
+    {
+      "timestamp": "2026-08-20T02:17:48.938Z",
+      "message": "Version: 1.0"
+    },
+    {
+      "timestamp": "2026-08-20T02:17:48.938Z",
+      "message": "Deployment: g3a-layer2-3"
+    },
+    {
+      "timestamp": "2026-08-20T02:17:48.938Z",
+      "message": "Checks: 10"
+    },
+    {
+      "timestamp": "2026-08-20T02:17:48.938Z",
+      "message": "Mode: LIVE"
+    },
+    {
+      "timestamp": "2026-08-20T02:17:48.938Z",
+      "message": "Execution: SEQUENTIAL"
+    },
+    {
+      "timestamp": "2026-08-20T02:17:48.938Z",
+      "message": ""
+    },
+    {
+      "timestamp": "2026-08-20T02:17:49.377Z",
+      "message": "[PASS] e1-01-fixture-count: Query executed successfully"
+    },
+    {
+      "timestamp": "2026-08-20T02:17:49.721Z",
+      "message": "[PASS] e1-02-rls-enabled: Query executed successfully"
+    },
+    {
+      "timestamp": "2026-08-20T02:17:50.038Z",
+      "message": "[PASS] e1-03-rls-policy-count: Query executed successfully"
+    },
+    {
+      "timestamp": "2026-08-20T02:17:50.347Z",
+      "message": "[PASS] e1-04-migration-history-clean: Schema migration_evidence does not exist (as expected)"
+    },
+    {
+      "timestamp": "2026-08-20T02:17:50.677Z",
+      "message": "[PASS] e1-05-orphan-detection: Query executed successfully"
+    },
+    {
+      "timestamp": "2026-08-20T02:17:51.046Z",
+      "message": "[PASS] e1-06-schema-compatibility-tenant-id-text: Column public.runtime_tenant_registry.tenant_id type is text"
+    },
+    {
+      "timestamp": "2026-08-20T02:17:51.375Z",
+      "message": "[PASS] e1-07-fk-constraint-absence: Query executed successfully"
+    },
+    {
+      "timestamp": "2026-08-20T02:17:51.699Z",
+      "message": "[PASS] e1-08-canonical-tenant-table-exists: Table public.tenants exists"
+    },
+    {
+      "timestamp": "2026-08-20T02:17:52.097Z",
+      "message": "[PASS] e1-09-canonical-identity-type-uuid: Column public.tenants.id type is uuid"
+    },
+    {
+      "timestamp": "2026-08-20T02:17:52.478Z",
+      "message": "[PASS] e1-10-database-privileges: All required privileges present"
+    }
+  ],
+  "artifacts": {}
+}

@@ -1,0 +1,429 @@
+{
+  "gateName": "amendment-12-v3-e0-artifact-integrity",
+  "gateVersion": "1.0",
+  "description": "E0 Gate: Artifact + Environment + Precondition Integrity Verification",
+  "deployment": "g3a-layer2-2",
+  "amendment": "Amendment 12 v3",
+  "migration": "05-A/B/C Identity Reconciliation",
+  "purpose": "Verify package/database state before E1 execution",
+  "database": {
+    "connectionString": "${DATABASE_URL}"
+  },
+  "checks": [
+    {
+      "id": "e0-a01-migration-e1-exists",
+      "group": "A",
+      "name": "Migration file exists: E1 gate (schema safe)",
+      "type": "file-existence",
+      "severity": "critical",
+      "config": {
+        "files": [
+          "supabase/migrations/20260819040000_runtime_migration_e1_gate_schema_safe.sql"
+        ]
+      }
+    },
+    {
+      "id": "e0-a02-migration-05a-exists",
+      "group": "A",
+      "name": "Migration file exists: 05-A classification + reservation",
+      "type": "file-existence",
+      "severity": "critical",
+      "config": {
+        "files": [
+          "supabase/migrations/20260819050000_runtime_migration_05a_classification_reservation.sql"
+        ]
+      }
+    },
+    {
+      "id": "e0-a03-migration-e2-exists",
+      "group": "A",
+      "name": "Migration file exists: E2 orphan safety gate",
+      "type": "file-existence",
+      "severity": "critical",
+      "config": {
+        "files": [
+          "supabase/migrations/20260819050001_runtime_migration_05_e2_orphan_safety_gate.sql"
+        ]
+      }
+    },
+    {
+      "id": "e0-a04-migration-05b-exists",
+      "group": "A",
+      "name": "Migration file exists: 05-B canonical tenant creation",
+      "type": "file-existence",
+      "severity": "critical",
+      "config": {
+        "files": [
+          "supabase/migrations/20260819050002_runtime_migration_05b_canonical_tenant_creation.sql"
+        ]
+      }
+    },
+    {
+      "id": "e0-a05-migration-05c-exists",
+      "group": "A",
+      "name": "Migration file exists: 05-C TEXT to UUID type migration",
+      "type": "file-existence",
+      "severity": "critical",
+      "config": {
+        "files": [
+          "supabase/migrations/20260819050003_runtime_migration_05c_text_to_uuid_type_migration.sql"
+        ]
+      }
+    },
+    {
+      "id": "e0-a06-migration-e3-exists",
+      "group": "A",
+      "name": "Migration file exists: E3 post-05C verification",
+      "type": "file-existence",
+      "severity": "critical",
+      "config": {
+        "files": [
+          "supabase/migrations/20260819050004_runtime_migration_e3_post_05c_verification.sql"
+        ]
+      }
+    },
+    {
+      "id": "e0-a07-verifier-package-exists",
+      "group": "A",
+      "name": "Verification script exists: Package Integrity",
+      "type": "file-existence",
+      "severity": "critical",
+      "config": {
+        "files": [
+          "scripts/verify-amendment-12-v3-package-integrity.mjs"
+        ]
+      }
+    },
+    {
+      "id": "e0-a08-verifier-e1-exists",
+      "group": "A",
+      "name": "Verification script exists: E1 gate",
+      "type": "file-existence",
+      "severity": "critical",
+      "config": {
+        "files": [
+          "scripts/run-e1-verification.mjs"
+        ]
+      }
+    },
+    {
+      "id": "e0-a09-verifier-e0-exists",
+      "group": "A",
+      "name": "Verification script exists: E0 gate (self)",
+      "type": "file-existence",
+      "severity": "critical",
+      "config": {
+        "files": [
+          "scripts/run-e0-artifact-integrity-gate.mjs"
+        ]
+      }
+    },
+    {
+      "id": "e0-a10-doc-package-review-exists",
+      "group": "A",
+      "name": "Documentation exists: Package Review",
+      "type": "file-existence",
+      "severity": "critical",
+      "config": {
+        "files": [
+          "docs/architecture/BELLA_RUNTIME_MIGRATION_05_PACKAGE_REVIEW.md"
+        ]
+      }
+    },
+    {
+      "id": "e0-a11-05a-canonical-map-table",
+      "group": "A",
+      "name": "05-A structure: canonical_tenant_map table definition",
+      "type": "regex-match",
+      "severity": "critical",
+      "config": {
+        "target": "supabase/migrations/20260819050000_runtime_migration_05a_classification_reservation.sql",
+        "pattern": "CREATE TABLE migration_evidence\\.canonical_tenant_map",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "e0-a12-05a-p4-collision-gate",
+      "group": "A",
+      "name": "05-A structure: P4 collision gate function",
+      "type": "regex-match",
+      "severity": "critical",
+      "config": {
+        "target": "supabase/migrations/20260819050000_runtime_migration_05a_classification_reservation.sql",
+        "pattern": "migration_05a_preflight_p4_collision_gate",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "e0-a13-05b-immutability-trigger",
+      "group": "A",
+      "name": "05-B structure: Immutability trigger function",
+      "type": "regex-match",
+      "severity": "critical",
+      "config": {
+        "target": "supabase/migrations/20260819050002_runtime_migration_05b_canonical_tenant_creation.sql",
+        "pattern": "prevent_canonical_id_change",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "e0-a14-05b-orphan-deletion",
+      "group": "A",
+      "name": "05-B structure: Orphan deletion logic",
+      "type": "regex-match",
+      "severity": "critical",
+      "config": {
+        "target": "supabase/migrations/20260819050002_runtime_migration_05b_canonical_tenant_creation.sql",
+        "pattern": "DELETE FROM runtime_tenant_registry",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "e0-a15-e2-orphan-safety",
+      "group": "A",
+      "name": "E2 structure: Orphan safety verification function",
+      "type": "regex-match",
+      "severity": "critical",
+      "config": {
+        "target": "supabase/migrations/20260819050001_runtime_migration_05_e2_orphan_safety_gate.sql",
+        "pattern": "migration_05_e2_orphan_safety_gate",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "e0-b01-dependency-runtime-registry-exists",
+      "group": "B",
+      "name": "Dependency: runtime_tenant_registry table exists",
+      "type": "database-table-exists",
+      "severity": "critical",
+      "config": {
+        "schema": "public",
+        "tableName": "runtime_tenant_registry",
+        "expectExists": true
+      }
+    },
+    {
+      "id": "e0-b02-dependency-tenant-id-type-text",
+      "group": "B",
+      "name": "Dependency: tenant_id type = TEXT (pre-migration state)",
+      "type": "database-column-type",
+      "severity": "critical",
+      "config": {
+        "schema": "public",
+        "tableName": "runtime_tenant_registry",
+        "columnName": "tenant_id",
+        "expectedTypes": ["text", "character varying"]
+      }
+    },
+    {
+      "id": "e0-b03-dependency-tenants-table-exists",
+      "group": "B",
+      "name": "Dependency: public.tenants table exists",
+      "type": "database-table-exists",
+      "severity": "critical",
+      "config": {
+        "schema": "public",
+        "tableName": "tenants",
+        "expectExists": true
+      }
+    },
+    {
+      "id": "e0-b04-dependency-tenants-id-type-uuid",
+      "group": "B",
+      "name": "Dependency: public.tenants.id type = uuid",
+      "type": "database-column-type",
+      "severity": "critical",
+      "config": {
+        "schema": "public",
+        "tableName": "tenants",
+        "columnName": "id",
+        "expectedTypes": ["uuid"]
+      }
+    },
+    {
+      "id": "e0-b05-precondition-migration-evidence-not-exists",
+      "group": "B",
+      "name": "Precondition: migration_evidence schema does NOT exist",
+      "type": "database-schema-exists",
+      "severity": "critical",
+      "config": {
+        "schemaName": "migration_evidence",
+        "expectExists": false
+      }
+    },
+    {
+      "id": "e0-b06-precondition-canonical-map-not-exists",
+      "group": "B",
+      "name": "Precondition: canonical_tenant_map does NOT exist",
+      "type": "database-table-exists",
+      "severity": "critical",
+      "config": {
+        "schema": "migration_evidence",
+        "tableName": "canonical_tenant_map",
+        "expectExists": false
+      }
+    },
+    {
+      "id": "e0-c01-precondition-5-text-fixtures",
+      "group": "C",
+      "name": "Precondition: 5 TEXT fixtures present",
+      "type": "database-query",
+      "severity": "critical",
+      "config": {
+        "query": "SELECT COUNT(*) as count FROM runtime_tenant_registry WHERE tenant_id IN ($1, $2, $3, $4, $5)",
+        "params": [
+          "test-e2e-tenant-a",
+          "test-e2e-tenant-b",
+          "test-e2e-tenant-attacker",
+          "test-quarantine-tenant-a",
+          "test-quarantine-tenant-b"
+        ],
+        "expectedResult": {
+          "count": 5
+        }
+      }
+    },
+    {
+      "id": "e0-c02-precondition-no-fk-on-tenant-id",
+      "group": "C",
+      "name": "Precondition: No FK constraint on tenant_id",
+      "type": "database-query",
+      "severity": "critical",
+      "config": {
+        "query": "SELECT COUNT(*) as count FROM information_schema.table_constraints tc JOIN information_schema.constraint_column_usage ccu ON tc.constraint_name = ccu.constraint_name WHERE tc.table_schema = 'public' AND tc.table_name = 'runtime_tenant_registry' AND tc.constraint_type = 'FOREIGN KEY' AND ccu.column_name = 'tenant_id'",
+        "params": [],
+        "expectedResult": {
+          "count": 0
+        }
+      }
+    },
+    {
+      "id": "e0-c03-precondition-postgresql-version",
+      "group": "C",
+      "name": "Precondition: PostgreSQL >= 12 (partial UNIQUE index)",
+      "type": "database-version",
+      "severity": "critical",
+      "config": {
+        "minVersion": "12.0",
+        "expectedDatabase": "postgresql"
+      }
+    },
+    {
+      "id": "e0-c04-precondition-create-privileges",
+      "group": "C",
+      "name": "Precondition: Database user has CREATE privileges",
+      "type": "database-privilege",
+      "severity": "critical",
+      "config": {
+        "privileges": [
+          {
+            "type": "schema",
+            "name": "public",
+            "privilege": "CREATE"
+          },
+          {
+            "type": "database",
+            "privilege": "CREATE"
+          }
+        ]
+      }
+    },
+    {
+      "id": "e0-d01-gate-e1-function-defined",
+      "group": "D",
+      "name": "Gate integrity: E1 defined as SQL function",
+      "type": "regex-match",
+      "severity": "critical",
+      "config": {
+        "target": "supabase/migrations/20260819040000_runtime_migration_e1_gate_schema_safe.sql",
+        "pattern": "CREATE OR REPLACE FUNCTION migration_05_e1_gate\\(\\)",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "e0-d02-gate-e1-returns-table",
+      "group": "D",
+      "name": "Gate integrity: E1 returns structured results",
+      "type": "regex-match",
+      "severity": "critical",
+      "config": {
+        "target": "supabase/migrations/20260819040000_runtime_migration_e1_gate_schema_safe.sql",
+        "pattern": "RETURNS TABLE",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "e0-d03-gate-e2-function-defined",
+      "group": "D",
+      "name": "Gate integrity: E2 defined as SQL function",
+      "type": "regex-match",
+      "severity": "critical",
+      "config": {
+        "target": "supabase/migrations/20260819050001_runtime_migration_05_e2_orphan_safety_gate.sql",
+        "pattern": "CREATE OR REPLACE FUNCTION migration_05_e2_orphan_safety_gate\\(\\)",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "e0-d04-gate-e3-function-defined",
+      "group": "D",
+      "name": "Gate integrity: E3 defined as SQL function",
+      "type": "regex-match",
+      "severity": "critical",
+      "config": {
+        "target": "supabase/migrations/20260819050004_runtime_migration_e3_post_05c_verification.sql",
+        "pattern": "CREATE OR REPLACE FUNCTION migration_05_e3_gate\\(\\)",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "e0-d05-gate-05b-calls-e2-before-delete",
+      "group": "D",
+      "name": "Gate integrity: 05-B calls E2 BEFORE deletion",
+      "type": "custom",
+      "severity": "critical",
+      "config": {
+        "validator": "e2-before-delete-ordering",
+        "file": "supabase/migrations/20260819050002_runtime_migration_05b_canonical_tenant_creation.sql",
+        "pattern1": "migration_05_e2_orphan_safety_gate\\(\\)",
+        "pattern2": "DELETE FROM runtime_tenant_registry"
+      }
+    },
+    {
+      "id": "e0-d06-gate-05b-blocks-if-e2-fails",
+      "group": "D",
+      "name": "Gate integrity: 05-B blocks if E2 fails",
+      "type": "regex-match",
+      "severity": "critical",
+      "config": {
+        "target": "supabase/migrations/20260819050002_runtime_migration_05b_canonical_tenant_creation.sql",
+        "pattern": "IF v_e2_result\\.status = 'FAIL' THEN.*RAISE EXCEPTION",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "e0-d07-gate-e2-uses-exception",
+      "group": "D",
+      "name": "Gate integrity: E2 uses EXCEPTION for hard stops",
+      "type": "regex-match",
+      "severity": "critical",
+      "config": {
+        "target": "supabase/migrations/20260819050001_runtime_migration_05_e2_orphan_safety_gate.sql",
+        "pattern": "(RAISE EXCEPTION|status := 'FAIL')",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "e0-d08-gate-advisory-lock",
+      "group": "D",
+      "name": "Gate integrity: Advisory lock prevents concurrent execution",
+      "type": "regex-match",
+      "severity": "critical",
+      "config": {
+        "target": "supabase/migrations/20260819050002_runtime_migration_05b_canonical_tenant_creation.sql",
+        "pattern": "pg_try_advisory_xact_lock",
+        "failOn": "not-found"
+      }
+    }
+  ]
+}

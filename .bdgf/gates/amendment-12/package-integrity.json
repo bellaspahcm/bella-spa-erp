@@ -1,0 +1,515 @@
+{
+  "gateName": "amendment-12-v3-package-integrity",
+  "gateVersion": "1.0",
+  "deployment": "g3a-layer2-1",
+  "description": "Verify 5 mandatory conditions implemented before Package Review (Approval 3 GRANTED 2026-08-19)",
+  "minChecks": 52,
+  "checks": [
+    {
+      "id": "file-e1-gate",
+      "name": "File: E1 gate SQL",
+      "type": "file-existence",
+      "config": {
+        "files": ["supabase/migrations/20260819040000_runtime_migration_e1_gate_schema_safe.sql"]
+      }
+    },
+    {
+      "id": "file-e2-gate",
+      "name": "File: E2 gate SQL",
+      "type": "file-existence",
+      "config": {
+        "files": ["supabase/migrations/20260819050001_runtime_migration_05_e2_orphan_safety_gate.sql"]
+      }
+    },
+    {
+      "id": "file-e3-gate",
+      "name": "File: E3 gate SQL",
+      "type": "file-existence",
+      "config": {
+        "files": ["supabase/migrations/20260819050004_runtime_migration_e3_post_05c_verification.sql"]
+      }
+    },
+    {
+      "id": "file-migration-05a",
+      "name": "File: Migration 05-A SQL",
+      "type": "file-existence",
+      "config": {
+        "files": ["supabase/migrations/20260819050000_runtime_migration_05a_classification_reservation.sql"]
+      }
+    },
+    {
+      "id": "file-migration-05b",
+      "name": "File: Migration 05-B SQL",
+      "type": "file-existence",
+      "config": {
+        "files": ["supabase/migrations/20260819050002_runtime_migration_05b_canonical_tenant_creation.sql"]
+      }
+    },
+    {
+      "id": "file-migration-05c",
+      "name": "File: Migration 05-C SQL",
+      "type": "file-existence",
+      "config": {
+        "files": ["supabase/migrations/20260819050003_runtime_migration_05c_text_to_uuid_type_migration.sql"]
+      }
+    },
+    {
+      "id": "file-e1-script",
+      "name": "File: E1 verification script",
+      "type": "file-existence",
+      "config": {
+        "files": ["scripts/run-e1-verification.mjs"]
+      }
+    },
+    {
+      "id": "cond1-doc",
+      "name": "Condition #1: P4 metadata validation documented",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050000_runtime_migration_05a_classification_reservation.sql",
+        "pattern": "created_at \\+ provisioned_by",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond1-created-at",
+      "name": "Condition #1: created_at introspection",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050000_runtime_migration_05a_classification_reservation.sql",
+        "pattern": "v_created_at_column_exists",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond1-provisioned-by-syntax",
+      "name": "Condition #1: provisioned_by extraction (syntax)",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050000_runtime_migration_05a_classification_reservation.sql",
+        "pattern": "metadata\\s*->>\\s*'provisioned_by'",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond1-coalesce",
+      "name": "Condition #1: provisioned_by missing-value handling (COALESCE)",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050000_runtime_migration_05a_classification_reservation.sql",
+        "pattern": "COALESCE\\([^)]*metadata\\s*->>\\s*'provisioned_by'[^)]*\\)",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond1-unknown-stop",
+      "name": "Condition #1: UNKNOWN classification → STOP (no fallback)",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050000_runtime_migration_05a_classification_reservation.sql",
+        "pattern": "COLLISION CLASSIFICATION = UNKNOWN[\\s\\S]{0,300}STOP",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond1-unknown-handling",
+      "name": "Condition #1: UNKNOWN classification handling",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050000_runtime_migration_05a_classification_reservation.sql",
+        "pattern": "CLASSIFICATION = UNKNOWN",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond2-lock-05a",
+      "name": "Condition #2: Advisory lock in 05-A",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050000_runtime_migration_05a_classification_reservation.sql",
+        "pattern": "pg_try_advisory_xact_lock",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond2-lock-key",
+      "name": "Condition #2: Advisory lock key",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050000_runtime_migration_05a_classification_reservation.sql",
+        "pattern": "hashtext\\('BELLA_MIGRATION_05'\\)",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond2-lock-05b",
+      "name": "Condition #2: Advisory lock in 05-B",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050002_runtime_migration_05b_canonical_tenant_creation.sql",
+        "pattern": "pg_try_advisory_xact_lock",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond2-lock-check",
+      "name": "Condition #2: Lock acquisition check + failure handling",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050000_runtime_migration_05a_classification_reservation.sql",
+        "pattern": "IF NOT v_lock_acquired THEN[\\s\\S]*?RAISE EXCEPTION",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond3-function",
+      "name": "Condition #3: Immutability trigger function",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050002_runtime_migration_05b_canonical_tenant_creation.sql",
+        "pattern": "prevent_canonical_id_change",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond3-trigger",
+      "name": "Condition #3: Trigger creation",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050002_runtime_migration_05b_canonical_tenant_creation.sql",
+        "pattern": "CREATE TRIGGER trigger_prevent_canonical_id_change",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond3-phase-check",
+      "name": "Condition #3: Phase check in trigger",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050002_runtime_migration_05b_canonical_tenant_creation.sql",
+        "pattern": "OLD\\.reconciliation_phase = 'COMPLETE'",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond3-id-change",
+      "name": "Condition #3: Canonical ID change detection",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050002_runtime_migration_05b_canonical_tenant_creation.sql",
+        "pattern": "OLD\\.canonical_tenant_id IS DISTINCT FROM NEW\\.canonical_tenant_id",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond4-transaction",
+      "name": "Condition #4: Transaction boundaries (implicit in migration file)",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050000_runtime_migration_05a_classification_reservation.sql",
+        "pattern": "BEGIN",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond4-unique-reserved",
+      "name": "Condition #4: UNIQUE index on reserved_tenant_id",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050000_runtime_migration_05a_classification_reservation.sql",
+        "pattern": "CREATE UNIQUE INDEX uq_canonical_map_reserved_uuid",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond4-unique-canonical",
+      "name": "Condition #4: UNIQUE index on canonical_tenant_id",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050000_runtime_migration_05a_classification_reservation.sql",
+        "pattern": "CREATE UNIQUE INDEX uq_canonical_map_canonical_uuid",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond4-gate-p4",
+      "name": "Condition #4: P4 verification gate",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050000_runtime_migration_05a_classification_reservation.sql",
+        "pattern": "migration_05a_preflight_p4_collision_gate",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond4-gate-p2",
+      "name": "Condition #4: P2 verification gate",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050002_runtime_migration_05b_canonical_tenant_creation.sql",
+        "pattern": "migration_05b_preflight_p2_reservation_complete",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond4-gate-p3",
+      "name": "Condition #4: P3 verification gate",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050002_runtime_migration_05b_canonical_tenant_creation.sql",
+        "pattern": "migration_05b_preflight_p3_schema_compatibility",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond4-gate-p4-recheck",
+      "name": "Condition #4: P4 recheck gate",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050002_runtime_migration_05b_canonical_tenant_creation.sql",
+        "pattern": "migration_05b_preflight_collision_recheck",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond5-deleted-at-def",
+      "name": "Condition #5: deleted_at column definition",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050000_runtime_migration_05a_classification_reservation.sql",
+        "pattern": "deleted_at TIMESTAMPTZ",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond5-deleted-by-def",
+      "name": "Condition #5: deleted_by column definition",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050000_runtime_migration_05a_classification_reservation.sql",
+        "pattern": "deleted_by TEXT",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond5-deletion-reason-def",
+      "name": "Condition #5: deletion_reason column definition",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050000_runtime_migration_05a_classification_reservation.sql",
+        "pattern": "deletion_reason TEXT",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond5-deleted-at-pop",
+      "name": "Condition #5: deleted_at population (syntax)",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050002_runtime_migration_05b_canonical_tenant_creation.sql",
+        "pattern": "deleted_at\\s*=\\s*NOW\\(\\)",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond5-audit-trail",
+      "name": "Condition #5: Complete audit trail (deleted_at + deleted_by + deletion_reason)",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050002_runtime_migration_05b_canonical_tenant_creation.sql",
+        "pattern": "deleted_at\\s*=\\s*NOW\\(\\)[\\s\\S]{0,100}deleted_by\\s*=[\\s\\S]{0,100}deletion_reason\\s*=",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond5-atomicity",
+      "name": "Condition #5: Audit UPDATE before DELETE (atomicity)",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050002_runtime_migration_05b_canonical_tenant_creation.sql",
+        "pattern": "UPDATE.*canonical_tenant_map[\\s\\S]{0,200}deleted_at[\\s\\S]{0,300}DELETE FROM runtime_tenant_registry",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond5-deleted-by-pop",
+      "name": "Condition #5: deleted_by population in 05-B",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050002_runtime_migration_05b_canonical_tenant_creation.sql",
+        "pattern": "deleted_by = CURRENT_USER",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "cond5-deletion-reason-pop",
+      "name": "Condition #5: deletion_reason population in 05-B",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050002_runtime_migration_05b_canonical_tenant_creation.sql",
+        "pattern": "deletion_reason = 'E2 orphan safety gate PASS",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "design-reserved-uuid",
+      "name": "Design: Separate reserved_tenant_id column (Correction 1)",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050000_runtime_migration_05a_classification_reservation.sql",
+        "pattern": "reserved_tenant_id UUID",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "design-canonical-uuid",
+      "name": "Design: Separate canonical_tenant_id column (Correction 1)",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050000_runtime_migration_05a_classification_reservation.sql",
+        "pattern": "canonical_tenant_id UUID",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "design-no-fk-reservation",
+      "name": "Design: NO FK during reservation phase (Correction 1)",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050000_runtime_migration_05a_classification_reservation.sql",
+        "pattern": "-- NO FK constraint during reservation",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "design-fk-05b",
+      "name": "Design: FK added by 05-B after tenant creation (Correction 1)",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050002_runtime_migration_05b_canonical_tenant_creation.sql",
+        "pattern": "ADD CONSTRAINT fk_canonical_tenant",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "design-introspection-e1",
+      "name": "Design: Schema introspection before querying (Correction 3)",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819040000_runtime_migration_e1_gate_schema_safe.sql",
+        "pattern": "information_schema\\.columns",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "design-introspection-05b",
+      "name": "Design: Schema-adaptive tenant creation (Correction 4)",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050002_runtime_migration_05b_canonical_tenant_creation.sql",
+        "pattern": "information_schema\\.columns",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "design-e2-gate",
+      "name": "Design: E2 orphan safety gate (Correction 6)",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050001_runtime_migration_05_e2_orphan_safety_gate.sql",
+        "pattern": "E2-A",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "gate-e1",
+      "name": "Gate: E1 (pre-migration state verification)",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819040000_runtime_migration_e1_gate_schema_safe.sql",
+        "pattern": "migration_05_e1_gate",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "gate-e2",
+      "name": "Gate: E2 (orphan deletion safety)",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050001_runtime_migration_05_e2_orphan_safety_gate.sql",
+        "pattern": "migration_05_e2_orphan_safety_gate",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "gate-e3",
+      "name": "Gate: E3 (post-05-C verification)",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050004_runtime_migration_e3_post_05c_verification.sql",
+        "pattern": "migration_05_e3_gate",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "gate-p4",
+      "name": "Gate: P4 (UUID collision detection)",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050000_runtime_migration_05a_classification_reservation.sql",
+        "pattern": "migration_05a_preflight_p4_collision_gate",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "gate-p3",
+      "name": "Gate: P3 (schema compatibility)",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050002_runtime_migration_05b_canonical_tenant_creation.sql",
+        "pattern": "migration_05b_preflight_p3_schema_compatibility",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "neg-no-fuzzy",
+      "name": "Negative: NO fuzzy matching in 05-C",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050003_runtime_migration_05c_text_to_uuid_type_migration.sql",
+        "pattern": "NO slug lookup|NO fuzzy match",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "neg-no-auto-delete",
+      "name": "Negative: NO auto-delete/reassign in P4",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050000_runtime_migration_05a_classification_reservation.sql",
+        "pattern": "NO auto-delete|NO auto-reassign",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "neg-unmapped-exception",
+      "name": "Negative: Unmapped TEXT ID → EXCEPTION",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050003_runtime_migration_05c_text_to_uuid_type_migration.sql",
+        "pattern": "unmapped.*EXCEPTION|unmapped.*STOP",
+        "failOn": "not-found"
+      }
+    },
+    {
+      "id": "neg-no-degradation",
+      "name": "Negative: NO graceful degradation in E2",
+      "type": "regex-match",
+      "config": {
+        "target": "supabase/migrations/20260819050001_runtime_migration_05_e2_orphan_safety_gate.sql",
+        "pattern": "NO graceful degradation",
+        "failOn": "not-found"
+      }
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+================================================================================
+BDGF EVIDENCE LOG
+================================================================================
+
+Deployment: g3a-layer2-3
+Gate: amendment-12-v3-e1-runtime-preconditions
+Start Time: 2026-08-20T02:17:48.936Z
+End Time: 2026-08-20T02:17:52.479Z
+
+Summary:
+  Total Checks: 10
+  Pass: 10
+  Fail: 0
+  Warn: 0
+
+================================================================================
+CHECK RESULTS
+================================================================================
+
+PASSED CHECKS (10):
+--------------------------------------------------------------------------------
+✓ e1-01-fixture-count [e1-01-fixture-count]
+  Message: Query executed successfully
+
+✓ e1-02-rls-enabled [e1-02-rls-enabled]
+  Message: Query executed successfully
+
+✓ e1-03-rls-policy-count [e1-03-rls-policy-count]
+  Message: Query executed successfully
+
+✓ e1-04-migration-history-clean [e1-04-migration-history-clean]
+  Message: Schema migration_evidence does not exist (as expected)
+
+✓ e1-05-orphan-detection [e1-05-orphan-detection]
+  Message: Query executed successfully
+
+✓ e1-06-schema-compatibility-tenant-id-text [e1-06-schema-compatibility-tenant-id-text]
+  Message: Column public.runtime_tenant_registry.tenant_id type is text
+
+✓ e1-07-fk-constraint-absence [e1-07-fk-constraint-absence]
+  Message: Query executed successfully
+
+✓ e1-08-canonical-tenant-table-exists [e1-08-canonical-tenant-table-exists]
+  Message: Table public.tenants exists
+
+✓ e1-09-canonical-identity-type-uuid [e1-09-canonical-identity-type-uuid]
+  Message: Column public.tenants.id type is uuid
+
+✓ e1-10-database-privileges [e1-10-database-privileges]
+  Message: All required privileges present
+
+
+================================================================================
+LOG ENTRIES
+================================================================================
+
+[2026-08-20T02:17:48.938Z] Gate: amendment-12-v3-e1-runtime-preconditions
+[2026-08-20T02:17:48.938Z] Version: 1.0
+[2026-08-20T02:17:48.938Z] Deployment: g3a-layer2-3
+[2026-08-20T02:17:48.938Z] Checks: 10
+[2026-08-20T02:17:48.938Z] Mode: LIVE
+[2026-08-20T02:17:48.938Z] Execution: SEQUENTIAL
+[2026-08-20T02:17:48.938Z] 
+[2026-08-20T02:17:49.377Z] [PASS] e1-01-fixture-count: Query executed successfully
+[2026-08-20T02:17:49.721Z] [PASS] e1-02-rls-enabled: Query executed successfully
+[2026-08-20T02:17:50.038Z] [PASS] e1-03-rls-policy-count: Query executed successfully
+[2026-08-20T02:17:50.347Z] [PASS] e1-04-migration-history-clean: Schema migration_evidence does not exist (as expected)
+[2026-08-20T02:17:50.677Z] [PASS] e1-05-orphan-detection: Query executed successfully
+[2026-08-20T02:17:51.046Z] [PASS] e1-06-schema-compatibility-tenant-id-text: Column public.runtime_tenant_registry.tenant_id type is text
+[2026-08-20T02:17:51.375Z] [PASS] e1-07-fk-constraint-absence: Query executed successfully
+[2026-08-20T02:17:51.699Z] [PASS] e1-08-canonical-tenant-table-exists: Table public.tenants exists
+[2026-08-20T02:17:52.097Z] [PASS] e1-09-canonical-identity-type-uuid: Column public.tenants.id type is uuid
+[2026-08-20T02:17:52.478Z] [PASS] e1-10-database-privileges: All required privileges present
+
+================================================================================
+END OF EVIDENCE LOG
+================================================================================

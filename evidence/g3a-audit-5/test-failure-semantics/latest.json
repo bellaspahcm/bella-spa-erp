@@ -1,0 +1,96 @@
+{
+  "deployment": "g3a-audit-5",
+  "gate": "test-failure-semantics",
+  "startTime": "2026-08-20T03:15:51.513Z",
+  "endTime": "2026-08-20T03:15:51.516Z",
+  "checks": [
+    {
+      "id": "test-01-should-pass",
+      "name": "test-01-should-pass",
+      "status": "PASS",
+      "evidence": {
+        "files": [
+          "package.json"
+        ]
+      },
+      "message": "All 1 files exist",
+      "timestamp": "2026-08-20T03:15:51.515Z"
+    },
+    {
+      "id": "test-02-should-fail",
+      "name": "test-02-should-fail",
+      "status": "FAIL",
+      "evidence": {
+        "missing": [
+          "this-file-does-not-exist.txt"
+        ]
+      },
+      "message": "Missing files: this-file-does-not-exist.txt",
+      "timestamp": "2026-08-20T03:15:51.516Z"
+    },
+    {
+      "id": "test-03-should-pass-after-fail",
+      "name": "test-03-should-pass-after-fail",
+      "status": "PASS",
+      "evidence": {
+        "files": [
+          "README.md"
+        ]
+      },
+      "message": "All 1 files exist",
+      "timestamp": "2026-08-20T03:15:51.516Z"
+    }
+  ],
+  "summary": {
+    "total": 3,
+    "pass": 2,
+    "fail": 1,
+    "warn": 0
+  },
+  "logs": [
+    {
+      "timestamp": "2026-08-20T03:15:51.515Z",
+      "message": "Gate: test-failure-semantics"
+    },
+    {
+      "timestamp": "2026-08-20T03:15:51.515Z",
+      "message": "Version: 1.0.0"
+    },
+    {
+      "timestamp": "2026-08-20T03:15:51.515Z",
+      "message": "Deployment: g3a-audit-5"
+    },
+    {
+      "timestamp": "2026-08-20T03:15:51.515Z",
+      "message": "Checks: 3"
+    },
+    {
+      "timestamp": "2026-08-20T03:15:51.515Z",
+      "message": "Mode: LIVE"
+    },
+    {
+      "timestamp": "2026-08-20T03:15:51.515Z",
+      "message": "Execution: SEQUENTIAL"
+    },
+    {
+      "timestamp": "2026-08-20T03:15:51.515Z",
+      "message": ""
+    },
+    {
+      "timestamp": "2026-08-20T03:15:51.515Z",
+      "message": "[PASS] test-01-should-pass: All 1 files exist"
+    },
+    {
+      "timestamp": "2026-08-20T03:15:51.516Z",
+      "message": "[FAIL] test-02-should-fail: Missing files: this-file-does-not-exist.txt"
+    },
+    {
+      "timestamp": "2026-08-20T03:15:51.516Z",
+      "message": "[PASS] test-03-should-pass-after-fail: All 1 files exist"
+    }
+  ],
+  "artifacts": {
+    "evidenceFile": "D:\\Antigravity\\Projects\\BELLA SPA ERP\\evidence\\g3a-audit-5\\test-failure-semantics\\2026-08-20T03-15-51-517Z.json",
+    "logFile": "D:\\Antigravity\\Projects\\BELLA SPA ERP\\evidence\\g3a-audit-5\\test-failure-semantics\\2026-08-20T03-15-51-517Z.log"
+  }
+}

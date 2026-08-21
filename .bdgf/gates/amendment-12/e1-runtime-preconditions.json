@@ -1,0 +1,150 @@
+{
+  "gateName": "amendment-12-v3-e1-runtime-preconditions",
+  "gateVersion": "1.0",
+  "description": "E1 Gate: Database State Verification (Runtime Preconditions)",
+  "deployment": "g3a-layer2-3",
+  "amendment": "Amendment 12 v3",
+  "migration": "05-A/B/C Identity Reconciliation",
+  "purpose": "Verify runtime preconditions before Migration 05-A execution",
+  "mode": "READ-ONLY (0 mutations)",
+  "database": {
+    "connectionString": "${DATABASE_URL}"
+  },
+  "checks": [
+    {
+      "id": "e1-01-fixture-count",
+      "name": "CHECK 1: Fixture Count - 5/5 TEXT fixtures present",
+      "type": "database-query",
+      "severity": "critical",
+      "config": {
+        "query": "SELECT COUNT(*) as count FROM runtime_tenant_registry WHERE tenant_id IN ($1, $2, $3, $4, $5)",
+        "params": [
+          "test-e2e-tenant-a",
+          "test-e2e-tenant-b",
+          "test-e2e-tenant-attacker",
+          "test-quarantine-tenant-a",
+          "test-quarantine-tenant-b"
+        ],
+        "expectedResult": {
+          "count": 5
+        }
+      }
+    },
+    {
+      "id": "e1-02-rls-enabled",
+      "name": "CHECK 2a: RLS Policy State - RLS enabled on runtime_tenant_registry",
+      "type": "database-query",
+      "severity": "warning",
+      "config": {
+        "query": "SELECT relrowsecurity FROM pg_class WHERE oid = 'public.runtime_tenant_registry'::regclass",
+        "params": [],
+        "expectedResult": {
+          "relrowsecurity": true
+        }
+      }
+    },
+    {
+      "id": "e1-03-rls-policy-count",
+      "name": "CHECK 2b: RLS Policy State - Policy count",
+      "type": "database-query",
+      "severity": "info",
+      "config": {
+        "query": "SELECT COUNT(*) as count FROM pg_policies WHERE schemaname = 'public' AND tablename = 'runtime_tenant_registry'",
+        "params": []
+      }
+    },
+    {
+      "id": "e1-04-migration-history-clean",
+      "name": "CHECK 3: Migration History - migration_evidence schema does NOT exist",
+      "type": "database-schema-exists",
+      "severity": "critical",
+      "config": {
+        "schemaName": "migration_evidence",
+        "expectExists": false
+      }
+    },
+    {
+      "id": "e1-05-orphan-detection",
+      "name": "CHECK 4: Orphan Detection - 2/2 orphan fixtures detected",
+      "type": "database-query",
+      "severity": "critical",
+      "config": {
+        "query": "SELECT COUNT(*) as count FROM runtime_tenant_registry WHERE tenant_id IN ($1, $2)",
+        "params": [
+          "test-quarantine-tenant-a",
+          "test-quarantine-tenant-b"
+        ],
+        "expectedResult": {
+          "count": 2
+        }
+      }
+    },
+    {
+      "id": "e1-06-schema-compatibility-tenant-id-text",
+      "name": "CHECK 5: Schema Compatibility - tenant_id type = TEXT",
+      "type": "database-column-type",
+      "severity": "critical",
+      "config": {
+        "schema": "public",
+        "tableName": "runtime_tenant_registry",
+        "columnName": "tenant_id",
+        "expectedTypes": ["text", "character varying"]
+      }
+    },
+    {
+      "id": "e1-07-fk-constraint-absence",
+      "name": "CHECK 6: FK Constraint Absence - No FK on tenant_id",
+      "type": "database-query",
+      "severity": "critical",
+      "config": {
+        "query": "SELECT COUNT(*) as count FROM information_schema.table_constraints tc JOIN information_schema.constraint_column_usage ccu ON tc.constraint_name = ccu.constraint_name WHERE tc.table_schema = 'public' AND tc.table_name = 'runtime_tenant_registry' AND tc.constraint_type = 'FOREIGN KEY' AND ccu.column_name = 'tenant_id'",
+        "params": [],
+        "expectedResult": {
+          "count": 0
+        }
+      }
+    },
+    {
+      "id": "e1-08-canonical-tenant-table-exists",
+      "name": "CHECK 7a: Canonical Tenant Table - public.tenants exists",
+      "type": "database-table-exists",
+      "severity": "critical",
+      "config": {
+        "schema": "public",
+        "tableName": "tenants",
+        "expectExists": true
+      }
+    },
+    {
+      "id": "e1-09-canonical-identity-type-uuid",
+      "name": "CHECK 7b: Canonical Identity Type - public.tenants.id type = uuid",
+      "type": "database-column-type",
+      "severity": "critical",
+      "config": {
+        "schema": "public",
+        "tableName": "tenants",
+        "columnName": "id",
+        "expectedTypes": ["uuid"]
+      }
+    },
+    {
+      "id": "e1-10-database-privileges",
+      "name": "CHECK 8: Database Privileges - CREATE schema and table privileges",
+      "type": "database-privilege",
+      "severity": "critical",
+      "config": {
+        "privileges": [
+          {
+            "type": "schema",
+            "name": "public",
+            "privilege": "CREATE"
+          },
+          {
+            "type": "database",
+            "privilege": "CREATE"
+          }
+        ]
+      }
+    }
+  ]
+}

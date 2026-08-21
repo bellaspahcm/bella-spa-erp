@@ -1,0 +1,128 @@
+name: Architecture Guard
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'src/**/*.ts'
+      - 'src/**/*.tsx'
+  push:
+    branches: [main, develop]
+
+jobs:
+  architecture-compliance:
+    name: Healthcare Constitution Enforcement
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run ESLint Architecture Rules
+        run: npx eslint --config .eslintrc.architecture.js "src/**/*.{ts,tsx}" --max-warnings 0
+      
+      - name: Run Healthcare Architecture Guard
+        run: npm run healthcare:guard
+      
+      - name: Verify Zero Direct Engine Imports
+        run: |
+          echo "🔍 Scanning for P1 violations (direct engine imports)..."
+          VIOLATIONS=$(grep -r "from.*@/platform.*engines/" src/products || true)
+          if [ -n "$VIOLATIONS" ]; then
+            echo "❌ P1 VIOLATION DETECTED:"
+            echo "$VIOLATIONS"
+            echo ""
+            echo "Products must access Kernels via contracts only."
+            echo "Use getHealthcareService<Contract>() pattern."
+            exit 1
+          fi
+          echo "✅ No P1 violations found."
+      
+      - name: Run Healthcare Regression Tests
+        run: npm run healthcare:test
+      
+      - name: Report Status
+        if: always()
+        run: |
+          echo "📊 Architecture Guard Results:"
+          echo "- ESLint rules: ${{ job.status }}"
+          echo "- Healthcare guard: ${{ job.status }}"
+          echo "- P1 boundary check: ${{ job.status }}"
+          echo "- Regression tests: ${{ job.status }}"
+  
+  education-compliance:
+    name: Education Constitution Enforcement
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.changed_files, 'src/platform/education') || contains(github.event.pull_request.changed_files, 'src/products/bella-education')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run Education Architecture Tests
+        run: npm run education:architecture
+      
+      - name: Run Education Conformance Tests
+        run: npm run education:conformance
+  
+  core-freeze-guard:
+    name: Core Freeze Verification
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.changed_files, 'src/core')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Core Modification Detected
+        run: |
+          echo "⚠️  CORE MODIFICATION DETECTED"
+          echo ""
+          echo "Core is under freeze. Modifications require:"
+          echo "1. Architecture Review Board approval"
+          echo "2. ADR documentation"
+          echo "3. Zero-Core-Change validation"
+          echo ""
+          echo "Changed files:"
+          git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep "src/core"
+          echo ""
+          echo "Please review with Architecture Review Board."
+          exit 1
+
+  block-result:
+    name: Architecture Guard Summary
+    runs-on: ubuntu-latest
+    needs: [architecture-compliance]
+    if: failure()
+    
+    steps:
+      - name: Block PR
+        run: |
+          echo "❌ ARCHITECTURE VIOLATION"
+          echo ""
+          echo "This PR violates Bella's Architecture Constitution."
+          echo "Please fix violations before merge."
+          echo ""
+          echo "See:"
+          echo "- docs/HEALTHCARE_VERTICAL_CODING_CONSTITUTION.md"
+          echo "- docs/WEEK_2_DAY_3_P1_CLOSURE_EVIDENCE.md"
+          echo ""
+          exit 1

@@ -1,0 +1,24 @@
+{
+  "gateName": "test-all-pass",
+  "gateVersion": "1.0.0",
+  "deployment": "g3a-audit-5",
+  "description": "All PASS scenario for Audit 5 testing",
+  "checks": [
+    {
+      "id": "test-pass-01",
+      "name": "TEST PASS 1: package.json exists",
+      "type": "file-existence",
+      "config": {
+        "files": ["package.json"]
+      }
+    },
+    {
+      "id": "test-pass-02",
+      "name": "TEST PASS 2: README.md exists",
+      "type": "file-existence",
+      "config": {
+        "files": ["README.md"]
+      }
+    }
+  ]
+}

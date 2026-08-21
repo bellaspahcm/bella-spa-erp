@@ -5,14 +5,17 @@
  * Per Law 2: No direct DB queries, frontend consumes engine services.
  * Per Law 11: Strictly typed, zero `any` types.
  *
+ * **STATUS:** ✅ MIGRATED TO CONTRACT-FIRST (Week 2 Day 3 - P1 Remediation)
+ *
  * @module hooks/use-order-engine
  */
 
 'use client';
 
 import { useState, useMemo } from 'react';
-import { OrderEngineService } from '@/platform/healthcare/engines/order-engine';
+import { getHealthcareService } from '@/platform/healthcare';
 import { createClient } from '@/lib/supabase-client';
+import type { OrderEngineContract } from '@/platform/healthcare/contracts/order-engine.contract';
 import type {
   CreateOrderRequest,
   CreateOrderResult,
@@ -30,7 +33,10 @@ export function useOrderEngine() {
   const [error, setError] = useState<Error | null>(null);
 
   const supabase = createClient();
-  const orderEngine = useMemo(() => new OrderEngineService(supabase), [supabase]);
+  const orderEngine = useMemo(
+    () => getHealthcareService<OrderEngineContract>('order-engine', supabase),
+    [supabase]
+  );
 
   const createOrder = async (
     request: CreateOrderRequest

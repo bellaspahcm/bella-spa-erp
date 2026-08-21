@@ -4,7 +4,7 @@
  * Hook for consuming Pharmacy Engine (MAR) operations in Hospital pages.
  * Follows the same pattern as useBedEngine and useNursingEngine.
  *
- * **STATUS:** ✅ IMPLEMENTED (Phase 0 Week 4)
+ * **STATUS:** ✅ MIGRATED TO CONTRACT-FIRST (Week 2 Day 3 - P1 Remediation)
  *
  * @example
  * ```tsx
@@ -17,9 +17,10 @@
 
 'use client';
 
-import { useState } from 'react';
-import { PharmacyEngineService } from '@/platform/healthcare/engines/pharmacy-engine';
+import { useState, useMemo } from 'react';
+import { getHealthcareService } from '@/platform/healthcare';
 import { createClient } from '@/lib/supabase-client';
+import type { PharmacyEngineContract } from '@/platform/healthcare/contracts/pharmacy-engine.contract';
 import type { MARAdministrationRequest } from '@/platform/healthcare/contracts/pharmacy-engine.contract';
 import type { EngineResponse, MedicationOrder } from '@/platform/healthcare/shared-kernel/types';
 
@@ -27,9 +28,11 @@ export function usePharmacyEngine() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  // Initialize engine (same pattern as useBedEngine)
   const supabase = createClient();
-  const pharmacyEngine = new PharmacyEngineService(supabase);
+  const pharmacyEngine = useMemo(
+    () => getHealthcareService<PharmacyEngineContract>('pharmacy-engine', supabase),
+    [supabase]
+  );
 
   const getMedicationOrders = async (
     tenantId: string,
