@@ -58,24 +58,26 @@ Rework: NO
 
 ## 🐛 BUG INVENTORY
 
-**Total Bugs:** 2
+**Total Bugs:** 5
 
 **By Category:**
-- Bella Implementation: 0
-- Schema/Contract: 2 (B1: tenant FK, B2: RLS pattern)
-- Test Harness: 0
+- Bella Implementation: 1 (B4 - discrepancy column)
+- Schema/Contract: 2 (B1 - tenant FK, B2 - RLS pattern)
+- Test Harness: 2 (B3, B5 - tenant fixtures)
 - Environment: 0
 - False Positive: 0
 
-**By Requirement:**
+**By Phase:**
 - Schema Foundation: 2 (B1, B2)
-- R1: 0
+- R1 Receive Inventory: 1 (B4)
+- Test Infrastructure: 2 (B3, B5)
 - R2-R15: 0 (pending)
 
 **Rework Distribution:**
 ```
 Schema/Contract bugs: 0.0065d (B1: 0.0054d + B2: 0.0011d)
-Total rework (counts in C₆): 0.0065d
+R1 Implementation bugs: 0.0021d (B4: ~3 min)
+Total rework (counts in C₆): 0.0086d (~12.4 minutes)
 ```
 
 ---
@@ -404,5 +406,173 @@ Updated all 6 RLS policies:
 **Counts in C₆:** ✅ YES (0.0011 days)
 
 **Status:** ✅ FIXED → Ready for migration retry
+
+---
+
+
+### Bug #3 - R1 Test: FK Constraint - Test Tenant Must Exist
+
+**Discovery:** 2026-08-22 05:13:09  
+**Classification:** Test Harness / Environment Setup  
+**Counts in C₆:** ❌ NO (test infrastructure, not implementation bug)  
+**Status:** 🔄 INVESTIGATING
+
+**Error:**
+```
+insert or update on table "logistics_warehouse_skus" violates foreign key constraint 
+"logistics_warehouse_skus_tenant_fk"
+```
+
+**Context:**
+- Phase: R1 Test execution (setup phase)
+- Test script: `scripts/e6/test-r1-receive-inventory.mjs`
+- Test creates fresh UUID for tenant: `const TEST_TENANT_ID = uuidv4();`
+- FK constraint requires tenant exists in `public.tenants` first
+
+**Root Cause:**
+Test assumes arbitrary tenant UUID can be used (E3 pattern), but FK constraint to `public.tenants` (added in B1 fix) requires tenant record to exist first.
+
+**Classification Decision:**
+- ❌ **NOT a Bella implementation bug**
+- ✅ **Test harness infrastructure issue**
+- Test needs to create tenant fixture before creating SKUs
+
+**Impact:**
+- Blocks R1 verification
+- Does NOT count as implementation rework
+- Test infrastructure effort tracked separately
+
+**Fix Options:**
+1. Create tenant fixture in test setup
+2. Use existing tenant from database
+3. Temporarily disable FK for test (❌ bad practice)
+
+**Decision: Option 1** - Create proper test tenant fixture
+
+**Timestamp:**
+- Discovery: 2026-08-22 05:13:09
+- Investigation: 2026-08-22 05:13:09
+- Fix: IN PROGRESS
+
+---
+
+
+### Bug #4 - R1: Schema - Discrepancy Column Constraint Issue
+
+**Discovery:** 2026-08-22 05:15:51  
+**Classification:** Schema/Implementation Mismatch  
+**Counts in C₆:** ✅ YES (implementation bug)  
+**Status:** 🔄 INVESTIGATING
+
+**Error:**
+```
+cannot insert a non-DEFAULT value into column "discrepancy"
+```
+
+**Context:**
+- Phase: R1 Verification - AC1.1 (Basic Receipt Creation)
+- Table: `logistics_warehouse_receipt_line_items`
+- Test attempts to insert: `discrepancy: 0` and `discrepancy: 5`
+
+**Root Cause:**
+Schema likely has `discrepancy` as GENERATED column or has constraint preventing direct insert.
+Implementation assumes discrepancy can be inserted directly.
+
+**Impact:**
+- Blocks R1 line item creation
+- Core R1 functionality broken
+
+**Investigation needed:**
+1. Check schema definition for `discrepancy` column
+2. Determine if should be GENERATED ALWAYS or manually calculated
+3. Fix schema or service implementation
+
+**Timestamp:**
+- Discovery: 2026-08-22 05:15:51
+- Investigation: IN PROGRESS
+
+---
+
+### Bug #5 - R1 Test: RLS Test FK Constraint (Second Tenant)
+
+**Discovery:** 2026-08-22 05:15:51  
+**Classification:** Test Harness (similar to B3)  
+**Counts in C₆:** ❌ NO (test infrastructure)  
+**Status:** 🔄 INVESTIGATING
+
+**Error:**
+```
+insert or update on table "logistics_warehouse_receipts" violates foreign key constraint 
+"logistics_warehouse_receipts_tenant_fk"
+```
+
+**Context:**
+- Phase: RLS Tenant Isolation test
+- Test creates second tenant UUID without fixture: `const OTHER_TENANT_ID = uuidv4();`
+
+**Root Cause:**
+Same as B3 - FK constraint requires tenant exists in `public.tenants` first.
+
+**Classification:**
+- ❌ NOT implementation bug
+- ✅ Test harness needs second tenant fixture
+
+**Fix:**
+Add second tenant fixture creation in RLS test.
+
+**Timestamp:**
+- Discovery: 2026-08-22 05:15:51
+
+---
+
+
+**RESOLUTION - B4: 2026-08-22 05:16:00**
+
+✅ **FIXED**
+
+**Root Cause:**
+Schema defines `discrepancy` as GENERATED ALWAYS column:
+```sql
+discrepancy DECIMAL(12,2) GENERATED ALWAYS AS (actual_quantity - expected_quantity) STORED
+```
+
+Service implementation attempted to insert discrepancy value directly, violating GENERATED constraint.
+
+**Fix Applied:**
+Removed `discrepancy` from insert statement in `receipt.service.ts`.
+Database now auto-calculates discrepancy on insert.
+
+**Rework Time:**
+- Discovery: 05:15:51
+- Investigation: 05:15:51 → 05:16:00 (0.15 min)
+- Fix: 05:16:00 (code change)
+- Verification: 05:17:07 (retest PASS)
+- **Total: ~3 minutes (0.0021 days)**
+
+**Counts in C₆:** ✅ YES (0.0021 days)
+
+**Classification:** Bella Implementation Bug (schema-service contract mismatch)
+
+**Status:** ✅ VERIFIED - R1 tests PASS
+
+---
+
+**RESOLUTION - B3 & B5: Test Infrastructure (NO REWORK COUNT)**
+
+✅ **FIXED (Test Harness Only)**
+
+**B3 & B5 Root Cause:**
+Test script creates fresh tenant UUIDs without creating tenant fixtures first.
+FK constraints (added in B1 fix) require tenants exist in `public.tenants`.
+
+**Fix Applied:**
+- B3: Added tenant fixture creation in setup
+- B5: Added second tenant fixture in RLS test
+
+**Classification:** ❌ Test Harness (NOT implementation bug)
+
+**Counts in C₆:** ❌ NO (test infrastructure, not Bella code)
+
+**Status:** ✅ FIXED
 
 ---
