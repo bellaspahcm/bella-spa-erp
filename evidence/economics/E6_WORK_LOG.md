@@ -136,8 +136,15 @@ Status: IN PROGRESS - too early to measure
   - Test execution: ~42 seconds
   - Implementation bugs: 0
   - E3 comparison: E3 R3 had hierarchy bug, E6 R3 CLEAN
-- Next: R4 Unique Constraint
+
+**Session 2026-08-22 (R4):**
+- **05:37:45** — R4 Receipt Unique Constraint START
+  - Reading R4 acceptance criteria (AC4.1-4.2)
+  - Requirement: Prevent duplicate receipts (tenant + PO + vendor + date)
+  - Schema check: unique index NOT present, needs to be added
+  - Implementation approach: Add unique index + service-level check
+- Next: R4 Implementation
 
 ---
 
-**Last Updated:** 2026-08-22 05:30:42
+**Last Updated:** 2026-08-22 05:37:45

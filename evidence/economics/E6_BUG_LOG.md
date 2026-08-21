@@ -58,20 +58,29 @@ Rework: NO
 
 ## 🐛 BUG INVENTORY
 
-**Total Bugs:** 5
+**Total Bugs:** 6
 
 **By Category:**
 - Bella Implementation: 1 (B4 - discrepancy column)
 - Schema/Contract: 2 (B1 - tenant FK, B2 - RLS pattern)
 - Test Harness: 2 (B3, B5 - tenant fixtures)
-- Environment: 0
+- Environment/Tooling: 1 (B6 - migration automation, TBD)
 - False Positive: 0
 
 **By Phase:**
 - Schema Foundation: 2 (B1, B2)
 - R1 Receive Inventory: 1 (B4)
+- R4 Unique Constraint: 1 (B6 - pending classification)
 - Test Infrastructure: 2 (B3, B5)
-- R2-R15: 0 (pending)
+- R2-R3, R5-R15: 0
+
+**Rework Distribution:**
+```
+Schema/Contract bugs: 0.0065d (B1: 0.0054d + B2: 0.0011d)
+R1 Implementation bugs: 0.0021d (B4: ~3 min)
+R4 bugs: TBD (B6 pending classification)
+Total rework (counts in C₆): 0.0086d (~12.4 minutes) + B6 TBD
+```
 
 **Rework Distribution:**
 ```
@@ -574,5 +583,95 @@ FK constraints (added in B1 fix) require tenants exist in `public.tenants`.
 **Counts in C₆:** ❌ NO (test infrastructure, not Bella code)
 
 **Status:** ✅ FIXED
+
+---
+
+### Bug #6 - R4: Migration Automation - Unique Index Not Applied
+
+**Discovery:** 2026-08-22 05:41:50  
+**Classification:** TBD (pending investigation)  
+**Counts in C₆:** TBD  
+**Status:** 🔄 INVESTIGATING
+
+**Error:**
+```
+❌ Migration failed: supabase.rpc(...).catch is not a function
+⚠️  Manual application required
+```
+
+**Test Failure:**
+```
+❌ AC4.2: Duplicate receipt rejected: Duplicate was NOT rejected (BUG)
+```
+
+**Context:**
+- Phase: R4 Unique Constraint Validation
+- Requirement: AC4.1 - Create unique index on receipts
+- Migration script: `scripts/e6/apply-r4-migration.mjs`
+- Index SQL: `migrations/logistics/20260822_add_receipt_unique_constraint.sql`
+
+**Symptoms:**
+1. Migration automation script failed (RPC method issue)
+2. Unique index `idx_receipts_unique` NOT created in database
+3. R4 test AC4.2 failed - duplicate receipt was accepted (should have been rejected)
+4. Test results: 4/5 PASS (only AC4.2 failed)
+
+**Root Cause Analysis (In Progress):**
+
+**Possibility A: Migration Tooling Friction**
+- Automation script relies on Supabase RPC method
+- RPC method `.catch()` not available or wrong syntax
+- SQL itself is correct, but automation delivery failed
+- Classification: Tooling/Environment (❌ NOT Bella bug)
+
+**Possibility B: Schema Definition Error**
+- Unique index SQL has error
+- Would cause silent failure or wrong constraint
+- Classification: Schema/Contract bug (✅ Bella bug)
+
+**Possibility C: Database State Issue**
+- Conflicting data prevents index creation
+- Database permissions issue
+- Classification: Environment (❌ NOT Bella bug)
+
+**Investigation Steps:**
+1. ✅ Verify SQL syntax of unique index (appears correct)
+2. ⏳ Manual application via Supabase SQL Editor
+3. ⏳ Verify index created after manual application
+4. ⏳ Retest R4 after manual fix
+5. ⏳ Classify based on whether manual application succeeds
+
+**SQL to Apply Manually:**
+```sql
+CREATE UNIQUE INDEX IF NOT EXISTS idx_receipts_unique
+ON logistics_warehouse_receipts (tenant_id, po_number, vendor_id, received_date)
+WHERE deleted_at IS NULL;
+```
+
+**Timestamp Log:**
+- Discovery: 2026-08-22 05:41:50
+- Test failure confirmed: 2026-08-22 05:41:50
+- Investigation start: 2026-08-22 05:41:50
+- Manual application: PENDING USER ACTION
+
+**Impact:**
+- ⏸️ BLOCKS R4 verification
+- Cannot proceed to R5 until R4 PASS
+- T₆ continues running
+
+**Protocol:**
+1. User applies SQL manually via Supabase SQL Editor
+2. User confirms index created successfully
+3. Rerun test: `node scripts/e6/test-r4-unique-constraint.mjs`
+4. If PASS → classify as tooling friction (no C₆ rework)
+5. If FAIL → deeper investigation needed
+
+**Expected Classification:**
+Migration automation tooling issue (not implementation bug).
+SQL appears correct, delivery mechanism failed.
+
+**Counts in C₆:** TBD (likely NO if tooling issue)
+
+**Status:** ⏸️ PAUSED - Awaiting manual SQL execution
 
 ---
