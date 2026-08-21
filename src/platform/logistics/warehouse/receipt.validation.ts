@@ -182,3 +182,78 @@ export function calculateDiscrepancy(
     percentage
   };
 }
+
+/**
+ * R3: Location Hierarchy Validation
+ * 
+ * Validates target bin for putaway operations:
+ * - AC3.1: Bin exists in tenant scope
+ * - AC3.2: Hierarchy is complete (warehouse_id → zone_id → aisle_id)
+ * - AC3.3: Bin status is 'active'
+ */
+export interface BinInfo {
+  id: string;
+  tenant_id: string;
+  bin_code: string;
+  warehouse_id: string;
+  zone_id: string | null;
+  aisle_id: string | null;
+  status: string;
+}
+
+export function validatePutawayLocation(
+  bin: BinInfo | null,
+  lineItemIndex: number
+): ValidationResult {
+  const errors: ValidationError[] = [];
+
+  // AC3.1: Bin must exist
+  if (!bin) {
+    errors.push({
+      field: `line_items[${lineItemIndex}].target_bin_id`,
+      message: 'Target bin not found in tenant warehouse',
+      code: 'BIN_NOT_FOUND'
+    });
+    return { valid: false, errors };
+  }
+
+  // AC3.3: Bin must be active
+  if (bin.status !== 'active') {
+    errors.push({
+      field: `line_items[${lineItemIndex}].target_bin_id`,
+      message: `Bin ${bin.bin_code} is ${bin.status}, cannot be used for putaway`,
+      code: 'BIN_INVALID_STATUS'
+    });
+  }
+
+  // AC3.2: Hierarchy must be complete
+  // Warehouse → Zone → Aisle → Bin chain must exist
+  if (!bin.warehouse_id) {
+    errors.push({
+      field: `line_items[${lineItemIndex}].target_bin_id`,
+      message: `Bin ${bin.bin_code} has no warehouse_id in hierarchy`,
+      code: 'BIN_INCOMPLETE_HIERARCHY'
+    });
+  }
+
+  if (!bin.zone_id) {
+    errors.push({
+      field: `line_items[${lineItemIndex}].target_bin_id`,
+      message: `Bin ${bin.bin_code} has no zone_id in hierarchy`,
+      code: 'BIN_INCOMPLETE_HIERARCHY'
+    });
+  }
+
+  if (!bin.aisle_id) {
+    errors.push({
+      field: `line_items[${lineItemIndex}].target_bin_id`,
+      message: `Bin ${bin.bin_code} has no aisle_id in hierarchy`,
+      code: 'BIN_INCOMPLETE_HIERARCHY'
+    });
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+}

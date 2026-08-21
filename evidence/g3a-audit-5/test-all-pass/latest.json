@@ -1,0 +1,80 @@
+{
+  "deployment": "g3a-audit-5",
+  "gate": "test-all-pass",
+  "startTime": "2026-08-20T03:16:31.444Z",
+  "endTime": "2026-08-20T03:16:31.447Z",
+  "checks": [
+    {
+      "id": "test-pass-01",
+      "name": "test-pass-01",
+      "status": "PASS",
+      "evidence": {
+        "files": [
+          "package.json"
+        ]
+      },
+      "message": "All 1 files exist",
+      "timestamp": "2026-08-20T03:16:31.447Z"
+    },
+    {
+      "id": "test-pass-02",
+      "name": "test-pass-02",
+      "status": "PASS",
+      "evidence": {
+        "files": [
+          "README.md"
+        ]
+      },
+      "message": "All 1 files exist",
+      "timestamp": "2026-08-20T03:16:31.447Z"
+    }
+  ],
+  "summary": {
+    "total": 2,
+    "pass": 2,
+    "fail": 0,
+    "warn": 0
+  },
+  "logs": [
+    {
+      "timestamp": "2026-08-20T03:16:31.446Z",
+      "message": "Gate: test-all-pass"
+    },
+    {
+      "timestamp": "2026-08-20T03:16:31.446Z",
+      "message": "Version: 1.0.0"
+    },
+    {
+      "timestamp": "2026-08-20T03:16:31.446Z",
+      "message": "Deployment: g3a-audit-5"
+    },
+    {
+      "timestamp": "2026-08-20T03:16:31.446Z",
+      "message": "Checks: 2"
+    },
+    {
+      "timestamp": "2026-08-20T03:16:31.446Z",
+      "message": "Mode: LIVE"
+    },
+    {
+      "timestamp": "2026-08-20T03:16:31.446Z",
+      "message": "Execution: SEQUENTIAL"
+    },
+    {
+      "timestamp": "2026-08-20T03:16:31.446Z",
+      "message": ""
+    },
+    {
+      "timestamp": "2026-08-20T03:16:31.447Z",
+      "message": "[PASS] test-pass-01: All 1 files exist"
+    },
+    {
+      "timestamp": "2026-08-20T03:16:31.447Z",
+      "message": "[PASS] test-pass-02: All 1 files exist"
+    }
+  ],
+  "artifacts": {
+    "evidenceFile": "D:\\Antigravity\\Projects\\BELLA SPA ERP\\evidence\\g3a-audit-5\\test-all-pass\\2026-08-20T03-16-31-448Z.json",
+    "logFile": "D:\\Antigravity\\Projects\\BELLA SPA ERP\\evidence\\g3a-audit-5\\test-all-pass\\2026-08-20T03-16-31-448Z.log"
+  }
+}

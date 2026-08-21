@@ -1,0 +1,239 @@
+═══════════════════════════════════════════════════════════════════════════════
+R3 AUTHORITY #2 TEST RESULTS — Supabase CLI
+═══════════════════════════════════════════════════════════════════════════════
+
+TIMESTAMP: 2026-08-20T17:26:00Z
+TEST SCRIPT: scripts/bdgf/r3-test-supabase-cli-access.mjs + manual CLI test
+AUTHORITY: Supabase CLI as mutation authority
+
+───────────────────────────────────────────────────────────────────────────────
+AUTHORITY #2 DEFINITION (from R1)
+───────────────────────────────────────────────────────────────────────────────
+
+Developer can use Supabase CLI to push migrations directly to production database,
+bypassing governance approval system (BDGF).
+
+Commands tested:
+  - npx supabase projects list
+  - npx supabase db push --linked
+  - npx supabase db push --linked --include-all
+
+───────────────────────────────────────────────────────────────────────────────
+TEST RESULTS
+───────────────────────────────────────────────────────────────────────────────
+
+STEP 1: Check project link status
+Command: npx supabase projects list
+Result:
+  LINKED | ORG ID               | REFERENCE ID         | NAME                  
+  --------|----------------------|----------------------|-----------------------
+     ●    | xxgazkqqbxgvhgsttpyy | lvnvkpyxtuilhrabtlwv | bellaspahcm's Project 
+          | xxgazkqqbxgvhgsttpyy | bmnbqbcdbuklhopfbopv | bella-spa-erp-e2e     
+
+Finding: ✅ Developer IS linked to production project (lvnvkpyxtuilhrabtlwv)
+
+───────────────────────────────────────────────────────────────────────────────
+
+STEP 2: Check organization access
+Command: npx supabase orgs list
+Result:
+   ID                   | NAME        
+  ----------------------|-------------
+   xxgazkqqbxgvhgsttpyy | bellaspahcm 
+
+Finding: ✅ Developer has access to organization
+
+───────────────────────────────────────────────────────────────────────────────
+
+STEP 3: Test migration push capability
+Command: npx supabase db push --linked --include-all
+Result:
+  Initialising login role...
+  Connecting to remote database...
+  Do you want to push these migrations to the remote database?
+   • 20260819040000_runtime_migration_e1_gate_schema_safe.sql
+   • 20260819050000_runtime_migration_05a_classification_reservation.sql
+   • 20260819050001_runtime_migration_05_e2_orphan_safety_gate.sql
+   • 20260819050002_runtime_migration_05b_canonical_tenant_creation.sql
+   • 20260819050003_runtime_migration_05c_text_to_uuid_type_migration.sql
+   • 20260819050004_runtime_migration_e3_post_05c_verification.sql
+   • 20260820110000_database_role_separation_v2.sql
+   • 20260820140000_enable_rls_block_service_key.sql
+   • 20260820172536_r3_cli_test.sql
+   [Y/n]
+
+Finding: ⚠️ CLI CAN CONNECT to production and PROMPTS for push confirmation
+
+Test action: Answered "n" to refuse push
+Result: "context canceled" (push cancelled by user)
+
+───────────────────────────────────────────────────────────────────────────────
+CRITICAL FINDING
+───────────────────────────────────────────────────────────────────────────────
+
+❌ AUTHORITY #2 IS NOT FULLY CLOSED
+
+Evidence:
+1. ✅ Developer CAN link to production project
+2. ✅ Developer CAN connect to production database via CLI
+3. ✅ Developer CAN see pending migrations
+4. ✅ CLI PROMPTS for confirmation (not permission denied)
+5. ⚠️ If developer answers "Y", migrations WOULD BE PUSHED
+
+Current state:
+  - Developer has Supabase CLI access to production
+  - Only barrier is manual confirmation prompt [Y/n]
+  - No infrastructure-level permission denial
+  - Relies on developer discipline (not enforced)
+
+───────────────────────────────────────────────────────────────────────────────
+AUTHORITY #2 STATUS
+───────────────────────────────────────────────────────────────────────────────
+
+Status: 🔴 OPEN (Developer has capability, only manual discipline prevents use)
+
+This is DIFFERENT from Authority #1:
+  Authority #1: ✅ CLOSED via PostgreSQL permission denied (infrastructure)
+  Authority #2: 🔴 OPEN — Developer CAN push, only needs to answer "Y" (discipline)
+
+───────────────────────────────────────────────────────────────────────────────
+COMPARISON WITH R3 DESIGN GOAL
+───────────────────────────────────────────────────────────────────────────────
+
+R3 Goal: "Remove developer direct mutation capability via infrastructure enforcement"
+
+Authority #1 (DATABASE_URL):
+  ✅ ACHIEVED — PostgreSQL role permission denied (infrastructure enforcement)
+  Developer INSERT → ERROR: permission denied for table
+
+Authority #2 (Supabase CLI):
+  ❌ NOT ACHIEVED — Developer has capability, only discipline prevents use
+  Developer push → Prompt [Y/n] → If Y, mutation succeeds
+
+Authority #3 (SERVICE_ROLE_KEY):
+  ✅ ACHIEVED — Key removed from developer environment (infrastructure enforcement)
+  Developer lacks credential → Cannot bypass RLS
+
+───────────────────────────────────────────────────────────────────────────────
+THREAT ASSESSMENT
+───────────────────────────────────────────────────────────────────────────────
+
+Severity: HIGH
+
+Risk: Developer can bypass BDGF governance by:
+  1. Writing migration file locally
+  2. Running `npx supabase db push --linked --include-all`
+  3. Answering "Y" when prompted
+  4. Migration applies directly to production
+  5. No approval verification, no preflight, no governance gate
+
+This violates R2 governance requirement:
+  "All mutations must go through verify_approval() → bella_migration_executor"
+
+Current bypass path:
+  Developer → Supabase CLI → Production Database (bypasses BDGF entirely)
+
+───────────────────────────────────────────────────────────────────────────────
+REMEDIATION OPTIONS
+───────────────────────────────────────────────────────────────────────────────
+
+OPTION A: Remove developer from production project team
+  Action: Supabase Dashboard → Project Settings → Team → Remove developer role
+  Result: CLI commands would fail with "permission denied" or "not a member"
+  Impact: Developer loses ALL production access (read + write)
+  Risk: Developer cannot inspect production for debugging
+
+OPTION B: Change developer role to "Read-only" (if Supabase supports)
+  Action: Supabase Dashboard → Project Settings → Team → Change role to read-only
+  Result: Developer can inspect but cannot push migrations
+  Impact: Maintains read access, blocks write
+  Risk: Depends on Supabase role granularity (may not exist)
+
+OPTION C: Separate production and development projects entirely
+  Action: Create separate Supabase projects (prod vs dev)
+  Result: Developer only has access to dev project
+  Impact: Clean separation, prod access via CI/CD only
+  Risk: Requires project migration, different connection strings
+
+OPTION D: Use Supabase branching (if available)
+  Action: Developer works on preview branches, not main production
+  Result: Developer changes go through merge/review workflow
+  Impact: Git-like workflow for database
+  Risk: Requires Supabase branching feature (may not be available in current plan)
+
+OPTION E: Accept as controlled risk with process discipline
+  Action: Document that CLI access requires manual discipline
+  Result: Developer CAN push but governance requires they DON'T
+  Impact: Weakest enforcement, relies on human discipline
+  Risk: Human error or malicious bypass possible
+
+───────────────────────────────────────────────────────────────────────────────
+RECOMMENDED REMEDIATION
+───────────────────────────────────────────────────────────────────────────────
+
+PRIMARY RECOMMENDATION: Option C (Separate projects)
+  Why: Clean separation, infrastructure-enforced like Authority #1
+  Implementation:
+    1. Create bella-spa-erp-dev project (already exists: bmnbqbcdbuklhopfbopv)
+    2. Unlink developer CLI from production
+    3. Link developer CLI to dev project only
+    4. Production access via CI/CD with service role credentials
+
+SECONDARY RECOMMENDATION: Option A (Remove from team)
+  Why: Immediate closure, no new infrastructure needed
+  Implementation:
+    1. Supabase Dashboard → bellaspahcm's Project → Team
+    2. Remove developer user from team
+    3. Add service account for CI/CD deployments
+    4. Production access via service account only
+
+───────────────────────────────────────────────────────────────────────────────
+EVIDENCE CLASSIFICATION
+───────────────────────────────────────────────────────────────────────────────
+
+Type: CAPABILITY DISCOVERY (not denial evidence)
+Result: Developer HAS capability to push migrations via CLI
+Enforcement Level: DISCIPLINE (manual prompt, not infrastructure denial)
+
+This is NOT equivalent to Authority #1 closure:
+  Authority #1: Infrastructure says "NO" (permission denied)
+  Authority #2: Infrastructure says "Are you sure?" (user discipline required)
+
+───────────────────────────────────────────────────────────────────────════════
+R3 REVISED STATUS
+───────────────────────────────────────────────────────────────────────════════
+
+Authority #1 (DATABASE_URL):     ✅ CLOSED (explicit denial)
+Authority #2 (Supabase CLI):     🔴 OPEN (capability exists, discipline-based)
+Authority #3 (SERVICE_ROLE_KEY): ✅ CLOSED (key removed)
+
+Overall R3 Status: 🟡 2/3 CLOSED + 1/3 OPEN
+
+───────────────────────────────────────────────────────────────────────────────
+NEXT ACTIONS REQUIRED
+───────────────────────────────────────────────────────────────────────────────
+
+IMMEDIATE:
+1. Choose remediation option (recommend: Option C or Option A)
+2. Apply remediation
+3. Re-test Authority #2 after remediation
+4. Verify CLI push fails with permission denied
+5. Update R3 status to 3/3 CLOSED (if remediation successful)
+
+THEN:
+1. Lock R3 baseline
+2. Proceed to R4 (Migration Execution Gate)
+
+DO NOT proceed to R4 until Authority #2 is infrastructure-enforced closed.
+
+───────────────────────────────────────────────────────────────────────────────
+PRINCIPLE APPLIED
+───────────────────────────────────────────────────────────────────────────────
+
+"Evidence > Assumption"
+
+We did NOT assume Authority #2 was closed.
+We TESTED and DISCOVERED it is still open.
+This is correct evidence-based verification process.
+
+═══════════════════════════════════════════════════════════════════════════════

@@ -1,0 +1,32 @@
+{
+  "gateName": "test-failure-semantics",
+  "gateVersion": "1.0.0",
+  "deployment": "g3a-audit-5",
+  "description": "Controlled failure scenarios for Audit 5 testing",
+  "checks": [
+    {
+      "id": "test-01-should-pass",
+      "name": "TEST 1: File that exists (should PASS)",
+      "type": "file-existence",
+      "config": {
+        "files": ["package.json"]
+      }
+    },
+    {
+      "id": "test-02-should-fail",
+      "name": "TEST 2: File that does not exist (should FAIL)",
+      "type": "file-existence",
+      "config": {
+        "files": ["this-file-does-not-exist.txt"]
+      }
+    },
+    {
+      "id": "test-03-should-pass-after-fail",
+      "name": "TEST 3: Another file that exists (should PASS after FAIL)",
+      "type": "file-existence",
+      "config": {
+        "files": ["README.md"]
+      }
+    }
+  ]
+}

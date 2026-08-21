@@ -1,0 +1,877 @@
+{
+  "deployment": "g3a-layer2-1",
+  "gate": "amendment-12-v3-package-integrity",
+  "startTime": "2026-08-20T01:27:31.585Z",
+  "endTime": "2026-08-20T01:27:31.639Z",
+  "checks": [
+    {
+      "id": "file-e1-gate",
+      "name": "file-e1-gate",
+      "status": "PASS",
+      "evidence": {
+        "files": [
+          "supabase/migrations/20260819040000_runtime_migration_e1_gate_schema_safe.sql"
+        ]
+      },
+      "message": "All 1 files exist",
+      "timestamp": "2026-08-20T01:27:31.587Z"
+    },
+    {
+      "id": "file-e2-gate",
+      "name": "file-e2-gate",
+      "status": "PASS",
+      "evidence": {
+        "files": [
+          "supabase/migrations/20260819050001_runtime_migration_05_e2_orphan_safety_gate.sql"
+        ]
+      },
+      "message": "All 1 files exist",
+      "timestamp": "2026-08-20T01:27:31.587Z"
+    },
+    {
+      "id": "file-e3-gate",
+      "name": "file-e3-gate",
+      "status": "PASS",
+      "evidence": {
+        "files": [
+          "supabase/migrations/20260819050004_runtime_migration_e3_post_05c_verification.sql"
+        ]
+      },
+      "message": "All 1 files exist",
+      "timestamp": "2026-08-20T01:27:31.587Z"
+    },
+    {
+      "id": "file-migration-05a",
+      "name": "file-migration-05a",
+      "status": "PASS",
+      "evidence": {
+        "files": [
+          "supabase/migrations/20260819050000_runtime_migration_05a_classification_reservation.sql"
+        ]
+      },
+      "message": "All 1 files exist",
+      "timestamp": "2026-08-20T01:27:31.587Z"
+    },
+    {
+      "id": "file-migration-05b",
+      "name": "file-migration-05b",
+      "status": "PASS",
+      "evidence": {
+        "files": [
+          "supabase/migrations/20260819050002_runtime_migration_05b_canonical_tenant_creation.sql"
+        ]
+      },
+      "message": "All 1 files exist",
+      "timestamp": "2026-08-20T01:27:31.587Z"
+    },
+    {
+      "id": "file-migration-05c",
+      "name": "file-migration-05c",
+      "status": "PASS",
+      "evidence": {
+        "files": [
+          "supabase/migrations/20260819050003_runtime_migration_05c_text_to_uuid_type_migration.sql"
+        ]
+      },
+      "message": "All 1 files exist",
+      "timestamp": "2026-08-20T01:27:31.587Z"
+    },
+    {
+      "id": "file-e1-script",
+      "name": "file-e1-script",
+      "status": "PASS",
+      "evidence": {
+        "files": [
+          "scripts/run-e1-verification.mjs"
+        ]
+      },
+      "message": "All 1 files exist",
+      "timestamp": "2026-08-20T01:27:31.588Z"
+    },
+    {
+      "id": "cond1-doc",
+      "name": "cond1-doc",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "created_at \\+ provisioned_by",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.593Z"
+    },
+    {
+      "id": "cond1-created-at",
+      "name": "cond1-created-at",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "v_created_at_column_exists",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.595Z"
+    },
+    {
+      "id": "cond1-provisioned-by-syntax",
+      "name": "cond1-provisioned-by-syntax",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "metadata\\s*->>\\s*'provisioned_by'",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.596Z"
+    },
+    {
+      "id": "cond1-coalesce",
+      "name": "cond1-coalesce",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "COALESCE\\([^)]*metadata\\s*->>\\s*'provisioned_by'[^)]*\\)",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.598Z"
+    },
+    {
+      "id": "cond1-unknown-stop",
+      "name": "cond1-unknown-stop",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "COLLISION CLASSIFICATION = UNKNOWN[\\s\\S]{0,300}STOP",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.599Z"
+    },
+    {
+      "id": "cond1-unknown-handling",
+      "name": "cond1-unknown-handling",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "CLASSIFICATION = UNKNOWN",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.601Z"
+    },
+    {
+      "id": "cond2-lock-05a",
+      "name": "cond2-lock-05a",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "pg_try_advisory_xact_lock",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.602Z"
+    },
+    {
+      "id": "cond2-lock-key",
+      "name": "cond2-lock-key",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "hashtext\\('BELLA_MIGRATION_05'\\)",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.603Z"
+    },
+    {
+      "id": "cond2-lock-05b",
+      "name": "cond2-lock-05b",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "pg_try_advisory_xact_lock",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.604Z"
+    },
+    {
+      "id": "cond2-lock-check",
+      "name": "cond2-lock-check",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "IF NOT v_lock_acquired THEN[\\s\\S]*?RAISE EXCEPTION",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.605Z"
+    },
+    {
+      "id": "cond3-function",
+      "name": "cond3-function",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "prevent_canonical_id_change",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.606Z"
+    },
+    {
+      "id": "cond3-trigger",
+      "name": "cond3-trigger",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "CREATE TRIGGER trigger_prevent_canonical_id_change",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.607Z"
+    },
+    {
+      "id": "cond3-phase-check",
+      "name": "cond3-phase-check",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "OLD\\.reconciliation_phase = 'COMPLETE'",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.608Z"
+    },
+    {
+      "id": "cond3-id-change",
+      "name": "cond3-id-change",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "OLD\\.canonical_tenant_id IS DISTINCT FROM NEW\\.canonical_tenant_id",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.609Z"
+    },
+    {
+      "id": "cond4-transaction",
+      "name": "cond4-transaction",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "BEGIN",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.609Z"
+    },
+    {
+      "id": "cond4-unique-reserved",
+      "name": "cond4-unique-reserved",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "CREATE UNIQUE INDEX uq_canonical_map_reserved_uuid",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.611Z"
+    },
+    {
+      "id": "cond4-unique-canonical",
+      "name": "cond4-unique-canonical",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "CREATE UNIQUE INDEX uq_canonical_map_canonical_uuid",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.611Z"
+    },
+    {
+      "id": "cond4-gate-p4",
+      "name": "cond4-gate-p4",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "migration_05a_preflight_p4_collision_gate",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.612Z"
+    },
+    {
+      "id": "cond4-gate-p2",
+      "name": "cond4-gate-p2",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "migration_05b_preflight_p2_reservation_complete",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.613Z"
+    },
+    {
+      "id": "cond4-gate-p3",
+      "name": "cond4-gate-p3",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "migration_05b_preflight_p3_schema_compatibility",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.614Z"
+    },
+    {
+      "id": "cond4-gate-p4-recheck",
+      "name": "cond4-gate-p4-recheck",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "migration_05b_preflight_collision_recheck",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.615Z"
+    },
+    {
+      "id": "cond5-deleted-at-def",
+      "name": "cond5-deleted-at-def",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "deleted_at TIMESTAMPTZ",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.616Z"
+    },
+    {
+      "id": "cond5-deleted-by-def",
+      "name": "cond5-deleted-by-def",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "deleted_by TEXT",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.617Z"
+    },
+    {
+      "id": "cond5-deletion-reason-def",
+      "name": "cond5-deletion-reason-def",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "deletion_reason TEXT",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.619Z"
+    },
+    {
+      "id": "cond5-deleted-at-pop",
+      "name": "cond5-deleted-at-pop",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "deleted_at\\s*=\\s*NOW\\(\\)",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.619Z"
+    },
+    {
+      "id": "cond5-audit-trail",
+      "name": "cond5-audit-trail",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "deleted_at\\s*=\\s*NOW\\(\\)[\\s\\S]{0,100}deleted_by\\s*=[\\s\\S]{0,100}deletion_reason\\s*=",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.620Z"
+    },
+    {
+      "id": "cond5-atomicity",
+      "name": "cond5-atomicity",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "UPDATE.*canonical_tenant_map[\\s\\S]{0,200}deleted_at[\\s\\S]{0,300}DELETE FROM runtime_tenant_registry",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.621Z"
+    },
+    {
+      "id": "cond5-deleted-by-pop",
+      "name": "cond5-deleted-by-pop",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "deleted_by = CURRENT_USER",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.622Z"
+    },
+    {
+      "id": "cond5-deletion-reason-pop",
+      "name": "cond5-deletion-reason-pop",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "deletion_reason = 'E2 orphan safety gate PASS",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.623Z"
+    },
+    {
+      "id": "design-reserved-uuid",
+      "name": "design-reserved-uuid",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "reserved_tenant_id UUID",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.624Z"
+    },
+    {
+      "id": "design-canonical-uuid",
+      "name": "design-canonical-uuid",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "canonical_tenant_id UUID",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.625Z"
+    },
+    {
+      "id": "design-no-fk-reservation",
+      "name": "design-no-fk-reservation",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "-- NO FK constraint during reservation",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.625Z"
+    },
+    {
+      "id": "design-fk-05b",
+      "name": "design-fk-05b",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "ADD CONSTRAINT fk_canonical_tenant",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.626Z"
+    },
+    {
+      "id": "design-introspection-e1",
+      "name": "design-introspection-e1",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "information_schema\\.columns",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.627Z"
+    },
+    {
+      "id": "design-introspection-05b",
+      "name": "design-introspection-05b",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "information_schema\\.columns",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.628Z"
+    },
+    {
+      "id": "design-e2-gate",
+      "name": "design-e2-gate",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "E2-A",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.629Z"
+    },
+    {
+      "id": "gate-e1",
+      "name": "gate-e1",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "migration_05_e1_gate",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.630Z"
+    },
+    {
+      "id": "gate-e2",
+      "name": "gate-e2",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "migration_05_e2_orphan_safety_gate",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.631Z"
+    },
+    {
+      "id": "gate-e3",
+      "name": "gate-e3",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "migration_05_e3_gate",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.632Z"
+    },
+    {
+      "id": "gate-p4",
+      "name": "gate-p4",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "migration_05a_preflight_p4_collision_gate",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.633Z"
+    },
+    {
+      "id": "gate-p3",
+      "name": "gate-p3",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "migration_05b_preflight_p3_schema_compatibility",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.634Z"
+    },
+    {
+      "id": "neg-no-fuzzy",
+      "name": "neg-no-fuzzy",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "NO slug lookup|NO fuzzy match",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.635Z"
+    },
+    {
+      "id": "neg-no-auto-delete",
+      "name": "neg-no-auto-delete",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "NO auto-delete|NO auto-reassign",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.637Z"
+    },
+    {
+      "id": "neg-unmapped-exception",
+      "name": "neg-unmapped-exception",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "unmapped.*EXCEPTION|unmapped.*STOP",
+        "matchCount": 0,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.638Z"
+    },
+    {
+      "id": "neg-no-degradation",
+      "name": "neg-no-degradation",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "NO graceful degradation",
+        "matchCount": 1,
+        "totalFiles": 1
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T01:27:31.639Z"
+    }
+  ],
+  "summary": {
+    "total": 52,
+    "pass": 52,
+    "fail": 0,
+    "warn": 0
+  },
+  "logs": [
+    {
+      "timestamp": "2026-08-20T01:27:31.586Z",
+      "message": "Gate: amendment-12-v3-package-integrity"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.586Z",
+      "message": "Version: 1.0"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.586Z",
+      "message": "Deployment: g3a-layer2-1"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.586Z",
+      "message": "Checks: 52"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.586Z",
+      "message": "Mode: LIVE"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.586Z",
+      "message": "Execution: SEQUENTIAL"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.586Z",
+      "message": ""
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.587Z",
+      "message": "[PASS] file-e1-gate: All 1 files exist"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.587Z",
+      "message": "[PASS] file-e2-gate: All 1 files exist"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.587Z",
+      "message": "[PASS] file-e3-gate: All 1 files exist"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.587Z",
+      "message": "[PASS] file-migration-05a: All 1 files exist"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.587Z",
+      "message": "[PASS] file-migration-05b: All 1 files exist"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.587Z",
+      "message": "[PASS] file-migration-05c: All 1 files exist"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.588Z",
+      "message": "[PASS] file-e1-script: All 1 files exist"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.593Z",
+      "message": "[PASS] cond1-doc: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.595Z",
+      "message": "[PASS] cond1-created-at: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.596Z",
+      "message": "[PASS] cond1-provisioned-by-syntax: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.598Z",
+      "message": "[PASS] cond1-coalesce: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.599Z",
+      "message": "[PASS] cond1-unknown-stop: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.601Z",
+      "message": "[PASS] cond1-unknown-handling: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.602Z",
+      "message": "[PASS] cond2-lock-05a: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.603Z",
+      "message": "[PASS] cond2-lock-key: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.604Z",
+      "message": "[PASS] cond2-lock-05b: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.605Z",
+      "message": "[PASS] cond2-lock-check: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.606Z",
+      "message": "[PASS] cond3-function: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.607Z",
+      "message": "[PASS] cond3-trigger: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.608Z",
+      "message": "[PASS] cond3-phase-check: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.609Z",
+      "message": "[PASS] cond3-id-change: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.609Z",
+      "message": "[PASS] cond4-transaction: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.611Z",
+      "message": "[PASS] cond4-unique-reserved: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.611Z",
+      "message": "[PASS] cond4-unique-canonical: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.612Z",
+      "message": "[PASS] cond4-gate-p4: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.613Z",
+      "message": "[PASS] cond4-gate-p2: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.614Z",
+      "message": "[PASS] cond4-gate-p3: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.615Z",
+      "message": "[PASS] cond4-gate-p4-recheck: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.616Z",
+      "message": "[PASS] cond5-deleted-at-def: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.617Z",
+      "message": "[PASS] cond5-deleted-by-def: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.619Z",
+      "message": "[PASS] cond5-deletion-reason-def: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.619Z",
+      "message": "[PASS] cond5-deleted-at-pop: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.620Z",
+      "message": "[PASS] cond5-audit-trail: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.621Z",
+      "message": "[PASS] cond5-atomicity: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.622Z",
+      "message": "[PASS] cond5-deleted-by-pop: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.623Z",
+      "message": "[PASS] cond5-deletion-reason-pop: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.624Z",
+      "message": "[PASS] design-reserved-uuid: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.625Z",
+      "message": "[PASS] design-canonical-uuid: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.625Z",
+      "message": "[PASS] design-no-fk-reservation: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.626Z",
+      "message": "[PASS] design-fk-05b: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.627Z",
+      "message": "[PASS] design-introspection-e1: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.628Z",
+      "message": "[PASS] design-introspection-05b: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.629Z",
+      "message": "[PASS] design-e2-gate: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.630Z",
+      "message": "[PASS] gate-e1: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.631Z",
+      "message": "[PASS] gate-e2: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.632Z",
+      "message": "[PASS] gate-e3: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.633Z",
+      "message": "[PASS] gate-p4: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.634Z",
+      "message": "[PASS] gate-p3: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.635Z",
+      "message": "[PASS] neg-no-fuzzy: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.637Z",
+      "message": "[PASS] neg-no-auto-delete: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.638Z",
+      "message": "[PASS] neg-unmapped-exception: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T01:27:31.639Z",
+      "message": "[PASS] neg-no-degradation: Pattern check passed"
+    }
+  ],
+  "artifacts": {}
+}

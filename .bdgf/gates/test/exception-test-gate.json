@@ -1,0 +1,14 @@
+{
+  "gateName": "test-exception",
+  "gateVersion": "1.0.0",
+  "deployment": "g3a-audit-5",
+  "description": "Exception handling test for Audit 5",
+  "checks": [
+    {
+      "id": "test-invalid-type",
+      "name": "TEST: Invalid check type (should cause exception)",
+      "type": "this-check-type-does-not-exist",
+      "config": {}
+    }
+  ]
+}

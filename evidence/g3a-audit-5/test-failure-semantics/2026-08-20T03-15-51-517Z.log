@@ -1,0 +1,58 @@
+================================================================================
+BDGF EVIDENCE LOG
+================================================================================
+
+Deployment: g3a-audit-5
+Gate: test-failure-semantics
+Start Time: 2026-08-20T03:15:51.513Z
+End Time: 2026-08-20T03:15:51.516Z
+
+Summary:
+  Total Checks: 3
+  Pass: 2
+  Fail: 1
+  Warn: 0
+
+================================================================================
+CHECK RESULTS
+================================================================================
+
+FAILED CHECKS (1):
+--------------------------------------------------------------------------------
+✗ test-02-should-fail [test-02-should-fail]
+  Message: Missing files: this-file-does-not-exist.txt
+  Evidence: {
+    "missing": [
+      "this-file-does-not-exist.txt"
+    ]
+  }
+  Timestamp: 2026-08-20T03:15:51.516Z
+
+
+PASSED CHECKS (2):
+--------------------------------------------------------------------------------
+✓ test-01-should-pass [test-01-should-pass]
+  Message: All 1 files exist
+
+✓ test-03-should-pass-after-fail [test-03-should-pass-after-fail]
+  Message: All 1 files exist
+
+
+================================================================================
+LOG ENTRIES
+================================================================================
+
+[2026-08-20T03:15:51.515Z] Gate: test-failure-semantics
+[2026-08-20T03:15:51.515Z] Version: 1.0.0
+[2026-08-20T03:15:51.515Z] Deployment: g3a-audit-5
+[2026-08-20T03:15:51.515Z] Checks: 3
+[2026-08-20T03:15:51.515Z] Mode: LIVE
+[2026-08-20T03:15:51.515Z] Execution: SEQUENTIAL
+[2026-08-20T03:15:51.515Z] 
+[2026-08-20T03:15:51.515Z] [PASS] test-01-should-pass: All 1 files exist
+[2026-08-20T03:15:51.516Z] [FAIL] test-02-should-fail: Missing files: this-file-does-not-exist.txt
+[2026-08-20T03:15:51.516Z] [PASS] test-03-should-pass-after-fail: All 1 files exist
+
+================================================================================
+END OF EVIDENCE LOG
+================================================================================

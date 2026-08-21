@@ -1,0 +1,245 @@
+================================================================================
+BDGF EVIDENCE LOG
+================================================================================
+
+Deployment: g3a-layer2-1
+Gate: amendment-12-v3-package-integrity
+Start Time: 2026-08-20T02:20:30.712Z
+End Time: 2026-08-20T02:20:30.775Z
+
+Summary:
+  Total Checks: 52
+  Pass: 52
+  Fail: 0
+  Warn: 0
+
+================================================================================
+CHECK RESULTS
+================================================================================
+
+PASSED CHECKS (52):
+--------------------------------------------------------------------------------
+✓ file-e1-gate [file-e1-gate]
+  Message: All 1 files exist
+
+✓ file-e2-gate [file-e2-gate]
+  Message: All 1 files exist
+
+✓ file-e3-gate [file-e3-gate]
+  Message: All 1 files exist
+
+✓ file-migration-05a [file-migration-05a]
+  Message: All 1 files exist
+
+✓ file-migration-05b [file-migration-05b]
+  Message: All 1 files exist
+
+✓ file-migration-05c [file-migration-05c]
+  Message: All 1 files exist
+
+✓ file-e1-script [file-e1-script]
+  Message: All 1 files exist
+
+✓ cond1-doc [cond1-doc]
+  Message: Pattern check passed
+
+✓ cond1-created-at [cond1-created-at]
+  Message: Pattern check passed
+
+✓ cond1-provisioned-by-syntax [cond1-provisioned-by-syntax]
+  Message: Pattern check passed
+
+✓ cond1-coalesce [cond1-coalesce]
+  Message: Pattern check passed
+
+✓ cond1-unknown-stop [cond1-unknown-stop]
+  Message: Pattern check passed
+
+✓ cond1-unknown-handling [cond1-unknown-handling]
+  Message: Pattern check passed
+
+✓ cond2-lock-05a [cond2-lock-05a]
+  Message: Pattern check passed
+
+✓ cond2-lock-key [cond2-lock-key]
+  Message: Pattern check passed
+
+✓ cond2-lock-05b [cond2-lock-05b]
+  Message: Pattern check passed
+
+✓ cond2-lock-check [cond2-lock-check]
+  Message: Pattern check passed
+
+✓ cond3-function [cond3-function]
+  Message: Pattern check passed
+
+✓ cond3-trigger [cond3-trigger]
+  Message: Pattern check passed
+
+✓ cond3-phase-check [cond3-phase-check]
+  Message: Pattern check passed
+
+✓ cond3-id-change [cond3-id-change]
+  Message: Pattern check passed
+
+✓ cond4-transaction [cond4-transaction]
+  Message: Pattern check passed
+
+✓ cond4-unique-reserved [cond4-unique-reserved]
+  Message: Pattern check passed
+
+✓ cond4-unique-canonical [cond4-unique-canonical]
+  Message: Pattern check passed
+
+✓ cond4-gate-p4 [cond4-gate-p4]
+  Message: Pattern check passed
+
+✓ cond4-gate-p2 [cond4-gate-p2]
+  Message: Pattern check passed
+
+✓ cond4-gate-p3 [cond4-gate-p3]
+  Message: Pattern check passed
+
+✓ cond4-gate-p4-recheck [cond4-gate-p4-recheck]
+  Message: Pattern check passed
+
+✓ cond5-deleted-at-def [cond5-deleted-at-def]
+  Message: Pattern check passed
+
+✓ cond5-deleted-by-def [cond5-deleted-by-def]
+  Message: Pattern check passed
+
+✓ cond5-deletion-reason-def [cond5-deletion-reason-def]
+  Message: Pattern check passed
+
+✓ cond5-deleted-at-pop [cond5-deleted-at-pop]
+  Message: Pattern check passed
+
+✓ cond5-audit-trail [cond5-audit-trail]
+  Message: Pattern check passed
+
+✓ cond5-atomicity [cond5-atomicity]
+  Message: Pattern check passed
+
+✓ cond5-deleted-by-pop [cond5-deleted-by-pop]
+  Message: Pattern check passed
+
+✓ cond5-deletion-reason-pop [cond5-deletion-reason-pop]
+  Message: Pattern check passed
+
+✓ design-reserved-uuid [design-reserved-uuid]
+  Message: Pattern check passed
+
+✓ design-canonical-uuid [design-canonical-uuid]
+  Message: Pattern check passed
+
+✓ design-no-fk-reservation [design-no-fk-reservation]
+  Message: Pattern check passed
+
+✓ design-fk-05b [design-fk-05b]
+  Message: Pattern check passed
+
+✓ design-introspection-e1 [design-introspection-e1]
+  Message: Pattern check passed
+
+✓ design-introspection-05b [design-introspection-05b]
+  Message: Pattern check passed
+
+✓ design-e2-gate [design-e2-gate]
+  Message: Pattern check passed
+
+✓ gate-e1 [gate-e1]
+  Message: Pattern check passed
+
+✓ gate-e2 [gate-e2]
+  Message: Pattern check passed
+
+✓ gate-e3 [gate-e3]
+  Message: Pattern check passed
+
+✓ gate-p4 [gate-p4]
+  Message: Pattern check passed
+
+✓ gate-p3 [gate-p3]
+  Message: Pattern check passed
+
+✓ neg-no-fuzzy [neg-no-fuzzy]
+  Message: Pattern check passed
+
+✓ neg-no-auto-delete [neg-no-auto-delete]
+  Message: Pattern check passed
+
+✓ neg-unmapped-exception [neg-unmapped-exception]
+  Message: Pattern check passed
+
+✓ neg-no-degradation [neg-no-degradation]
+  Message: Pattern check passed
+
+
+================================================================================
+LOG ENTRIES
+================================================================================
+
+[2026-08-20T02:20:30.714Z] Gate: amendment-12-v3-package-integrity
+[2026-08-20T02:20:30.714Z] Version: 1.0
+[2026-08-20T02:20:30.714Z] Deployment: g3a-layer2-1
+[2026-08-20T02:20:30.714Z] Checks: 52
+[2026-08-20T02:20:30.714Z] Mode: LIVE
+[2026-08-20T02:20:30.714Z] Execution: SEQUENTIAL
+[2026-08-20T02:20:30.714Z] 
+[2026-08-20T02:20:30.714Z] [PASS] file-e1-gate: All 1 files exist
+[2026-08-20T02:20:30.714Z] [PASS] file-e2-gate: All 1 files exist
+[2026-08-20T02:20:30.714Z] [PASS] file-e3-gate: All 1 files exist
+[2026-08-20T02:20:30.714Z] [PASS] file-migration-05a: All 1 files exist
+[2026-08-20T02:20:30.715Z] [PASS] file-migration-05b: All 1 files exist
+[2026-08-20T02:20:30.715Z] [PASS] file-migration-05c: All 1 files exist
+[2026-08-20T02:20:30.715Z] [PASS] file-e1-script: All 1 files exist
+[2026-08-20T02:20:30.721Z] [PASS] cond1-doc: Pattern check passed
+[2026-08-20T02:20:30.724Z] [PASS] cond1-created-at: Pattern check passed
+[2026-08-20T02:20:30.725Z] [PASS] cond1-provisioned-by-syntax: Pattern check passed
+[2026-08-20T02:20:30.727Z] [PASS] cond1-coalesce: Pattern check passed
+[2026-08-20T02:20:30.728Z] [PASS] cond1-unknown-stop: Pattern check passed
+[2026-08-20T02:20:30.729Z] [PASS] cond1-unknown-handling: Pattern check passed
+[2026-08-20T02:20:30.731Z] [PASS] cond2-lock-05a: Pattern check passed
+[2026-08-20T02:20:30.732Z] [PASS] cond2-lock-key: Pattern check passed
+[2026-08-20T02:20:30.733Z] [PASS] cond2-lock-05b: Pattern check passed
+[2026-08-20T02:20:30.734Z] [PASS] cond2-lock-check: Pattern check passed
+[2026-08-20T02:20:30.735Z] [PASS] cond3-function: Pattern check passed
+[2026-08-20T02:20:30.736Z] [PASS] cond3-trigger: Pattern check passed
+[2026-08-20T02:20:30.738Z] [PASS] cond3-phase-check: Pattern check passed
+[2026-08-20T02:20:30.739Z] [PASS] cond3-id-change: Pattern check passed
+[2026-08-20T02:20:30.741Z] [PASS] cond4-transaction: Pattern check passed
+[2026-08-20T02:20:30.742Z] [PASS] cond4-unique-reserved: Pattern check passed
+[2026-08-20T02:20:30.743Z] [PASS] cond4-unique-canonical: Pattern check passed
+[2026-08-20T02:20:30.744Z] [PASS] cond4-gate-p4: Pattern check passed
+[2026-08-20T02:20:30.745Z] [PASS] cond4-gate-p2: Pattern check passed
+[2026-08-20T02:20:30.746Z] [PASS] cond4-gate-p3: Pattern check passed
+[2026-08-20T02:20:30.747Z] [PASS] cond4-gate-p4-recheck: Pattern check passed
+[2026-08-20T02:20:30.748Z] [PASS] cond5-deleted-at-def: Pattern check passed
+[2026-08-20T02:20:30.749Z] [PASS] cond5-deleted-by-def: Pattern check passed
+[2026-08-20T02:20:30.750Z] [PASS] cond5-deletion-reason-def: Pattern check passed
+[2026-08-20T02:20:30.751Z] [PASS] cond5-deleted-at-pop: Pattern check passed
+[2026-08-20T02:20:30.752Z] [PASS] cond5-audit-trail: Pattern check passed
+[2026-08-20T02:20:30.753Z] [PASS] cond5-atomicity: Pattern check passed
+[2026-08-20T02:20:30.755Z] [PASS] cond5-deleted-by-pop: Pattern check passed
+[2026-08-20T02:20:30.756Z] [PASS] cond5-deletion-reason-pop: Pattern check passed
+[2026-08-20T02:20:30.757Z] [PASS] design-reserved-uuid: Pattern check passed
+[2026-08-20T02:20:30.758Z] [PASS] design-canonical-uuid: Pattern check passed
+[2026-08-20T02:20:30.759Z] [PASS] design-no-fk-reservation: Pattern check passed
+[2026-08-20T02:20:30.760Z] [PASS] design-fk-05b: Pattern check passed
+[2026-08-20T02:20:30.761Z] [PASS] design-introspection-e1: Pattern check passed
+[2026-08-20T02:20:30.762Z] [PASS] design-introspection-05b: Pattern check passed
+[2026-08-20T02:20:30.763Z] [PASS] design-e2-gate: Pattern check passed
+[2026-08-20T02:20:30.764Z] [PASS] gate-e1: Pattern check passed
+[2026-08-20T02:20:30.765Z] [PASS] gate-e2: Pattern check passed
+[2026-08-20T02:20:30.766Z] [PASS] gate-e3: Pattern check passed
+[2026-08-20T02:20:30.767Z] [PASS] gate-p4: Pattern check passed
+[2026-08-20T02:20:30.768Z] [PASS] gate-p3: Pattern check passed
+[2026-08-20T02:20:30.771Z] [PASS] neg-no-fuzzy: Pattern check passed
+[2026-08-20T02:20:30.772Z] [PASS] neg-no-auto-delete: Pattern check passed
+[2026-08-20T02:20:30.774Z] [PASS] neg-unmapped-exception: Pattern check passed
+[2026-08-20T02:20:30.775Z] [PASS] neg-no-degradation: Pattern check passed
+
+================================================================================
+END OF EVIDENCE LOG
+================================================================================

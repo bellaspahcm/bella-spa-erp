@@ -1,0 +1,225 @@
+═══════════════════════════════════════════════════════════════════════════════
+R3 AUTHORITY #2 NEGATIVE TEST — FAILED
+═══════════════════════════════════════════════════════════════════════════════
+
+TIMESTAMP: 2026-08-20T18:30:00Z
+TEST: Verify developer cannot link to production after team removal
+RESULT: ❌ FAILED — Developer can still link to production
+
+───────────────────────────────────────────────────────────────────────────────
+TEST SEQUENCE
+───────────────────────────────────────────────────────────────────────────────
+
+Step 1: Unlink from production
+Command: npx supabase unlink
+Result: "Unlinking project: lvnvkpyxtuilhrabtlwv"
+        "Finished supabase unlink."
+Status: ✅ SUCCESS
+
+Step 2: Link to dev project
+Command: npx supabase link --project-ref bmnbqbcdbuklhopfbopv
+Result: "Finished supabase link."
+Status: ✅ SUCCESS
+
+Step 3: Verify dev project linked
+Command: npx supabase projects list
+Result:
+   LINKED | ORG ID               | REFERENCE ID         | NAME                  
+  --------|----------------------|----------------------|-----------------------
+          | xxgazkqqbxgvhgsttpyy | lvnvkpyxtuilhrabtlwv | bellaspahcm's Project
+     ●    | xxgazkqqbxgvhgsttpyy | bmnbqbcdbuklhopfbopv | bella-spa-erp-e2e
+Status: ✅ Dev project linked correctly
+
+───────────────────────────────────────────────────────────────────────────────
+NEGATIVE TEST (DECISIVE)
+───────────────────────────────────────────────────────────────────────────────
+
+Step 4: ATTEMPT PRODUCTION RE-LINK (intentional)
+Command: npx supabase link --project-ref lvnvkpyxtuilhrabtlwv
+Expected Result: "Error: Not a member of this project" OR permission denied
+Actual Result: "Finished supabase link."
+
+Status: ❌ FAILED — Link succeeded
+
+Verification:
+Command: npx supabase projects list
+Result:
+   LINKED | ORG ID               | REFERENCE ID         | NAME                  
+  --------|----------------------|----------------------|-----------------------
+     ●    | xxgazkqqbxgvhgsttpyy | lvnvkpyxtuilhrabtlwv | bellaspahcm's Project
+          | xxgazkqqbxgvhgsttpyy | bmnbqbcdbuklhopfbopv | bella-spa-erp-e2e
+
+Production project NOW LINKED (●)
+
+───────────────────────────────────────────────────────────────────────────────
+IDENTITY ANALYSIS
+───────────────────────────────────────────────────────────────────────────────
+
+CLI Authentication Method:
+Command: npx supabase projects list --debug
+Finding: "Using access token from env var..."
+
+Environment Check:
+SUPABASE_ACCESS_TOKEN: SET (length: 44 characters)
+
+Organization Access:
+Command: npx supabase orgs list
+Result:
+   ID                   | NAME        
+  ----------------------|-------------
+   xxgazkqqbxgvhgsttpyy | bellaspahcm
+
+Interpretation:
+- CLI is authenticated via SUPABASE_ACCESS_TOKEN environment variable
+- This is likely a Personal Access Token with Owner/Admin privileges
+- Token has access to organization: bellaspahcm (xxgazkqqbxgvhgsttpyy)
+- Token can link to production project (lvnvkpyxtuilhrabtlwv)
+
+───────────────────────────────────────────────────────────────────────────────
+ROOT CAUSE ANALYSIS
+───────────────────────────────────────────────────────────────────────────────
+
+Issue: Developer can still link to production despite expected team removal
+
+Possible Causes:
+
+1. SUPABASE_ACCESS_TOKEN has Owner/Admin privileges
+   - Personal Access Token (PAT) may bypass team member restrictions
+   - Token belongs to account with org-level or project-level admin access
+   - Team member removal does NOT revoke PAT access
+
+2. Developer was NOT actually removed from production team
+   - Manual Supabase Dashboard action was not completed
+   - Removal did not take effect
+   - Wrong user account was targeted for removal
+
+3. Multiple authentication paths exist
+   - CLI may have cached credentials
+   - Environment variable takes precedence over local profile
+   - Token may belong to a different account than expected
+
+───────────────────────────────────────────────────────────────────────────────
+AUTHORITY #2 STATUS
+───────────────────────────────────────────────────────────────────────────────
+
+Status: 🔴 OPEN — Infrastructure denial NOT verified
+
+Evidence:
+- Developer CAN link to production (link command succeeds)
+- Production project becomes LINKED (●)
+- NO "Error: Not a member" message
+- NO permission denied error
+
+This proves:
+- Authority #2 is NOT closed
+- Infrastructure enforcement NOT achieved
+- Developer retains capability to access production via CLI
+
+───────────────────────────────────────────────────────────────────────────────
+COMPARISON: EXPECTED VS ACTUAL
+───────────────────────────────────────────────────────────────────────────────
+
+Expected (PASS):
+  npx supabase link --project-ref lvnvkpyxtuilhrabtlwv
+  → Error: You are not a member of this project
+  → OR: Error: Permission denied
+  → Production project NOT linked
+
+Actual (FAIL):
+  npx supabase link --project-ref lvnvkpyxtuilhrabtlwv
+  → Finished supabase link.
+  → Production project IS linked (●)
+  → NO infrastructure denial
+
+───────────────────────────────────────────────────────────────────────────────
+NEXT ACTIONS REQUIRED
+───────────────────────────────────────────────────────────────────────────────
+
+IMMEDIATE:
+
+1. Verify SUPABASE_ACCESS_TOKEN identity
+   - Which account/user does this token belong to?
+   - What privileges does this token have?
+   - Is this an Owner/Admin token?
+
+2. Check Supabase Dashboard
+   - Navigate to: https://supabase.com/dashboard/project/lvnvkpyxtuilhrabtlwv
+   - Settings → Team / Access
+   - Verify which users have access
+   - Verify if expected "developer" account was actually removed
+
+3. Determine remediation path:
+
+   Option A: Revoke/rotate SUPABASE_ACCESS_TOKEN
+   - Remove token from environment
+   - Use CLI with user-level authentication (not PAT)
+   - Re-test negative test
+
+   Option B: Remove token owner from production team
+   - Identify account associated with SUPABASE_ACCESS_TOKEN
+   - Remove that account from production project team
+   - Re-test negative test
+
+   Option C: Use different authentication method
+   - Unset SUPABASE_ACCESS_TOKEN
+   - Authenticate CLI with lower-privilege account
+   - Re-test negative test
+
+───────────────────────────────────────────────────────────────────────────────
+PRINCIPLE REINFORCED
+───────────────────────────────────────────────────────────────────────────────
+
+"Evidence > Assumption"
+
+We did NOT assume:
+  ❌ "Developer was removed, so test will pass"
+  ❌ "Unlink is sufficient security control"
+  ❌ "CLI permissions match Supabase Dashboard settings"
+
+We DID test:
+  ✅ Actual CLI behavior with current credentials
+  ✅ Re-link capability (intentional attempt)
+  ✅ Infrastructure denial (or lack thereof)
+
+This negative test PROVES:
+  - Authority #2 is NOT closed
+  - Infrastructure enforcement NOT achieved
+  - Current authentication method retains production access
+
+This is correct evidence-based verification.
+
+───────────────────────────────────────────────────────────────────────────────
+R3 REVISED STATUS
+───────────────────────────────────────────────────────────────────────────────
+
+Authority #1 (DATABASE_URL):     ✅ CLOSED (PostgreSQL permission denied)
+Authority #2 (Supabase CLI):     🔴 OPEN (can link to production)
+Authority #3 (SERVICE_ROLE_KEY): ✅ CLOSED (key removed)
+
+Overall: 🔴 R3 BLOCKED (2/3 authorities)
+
+Cannot proceed to:
+  - R3 completion
+  - R3 baseline lock
+  - Credential rotation
+  - R4 design
+
+Must resolve Authority #2 first.
+
+───────────────────────────────────────────────────────────────────────────────
+CONCLUSION
+───────────────────────────────────────────────────────────────────────────────
+
+Negative test result: ❌ FAILED
+
+Developer can still link to production via Supabase CLI.
+
+Root cause: SUPABASE_ACCESS_TOKEN in environment variable provides
+            production access, likely with Owner/Admin privileges.
+
+Next step: Identify token owner, verify team access, determine correct
+           remediation path to achieve infrastructure denial.
+
+Authority #2 remains OPEN.
+
+═══════════════════════════════════════════════════════════════════════════════

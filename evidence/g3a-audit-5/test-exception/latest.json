@@ -1,0 +1,63 @@
+{
+  "deployment": "g3a-audit-5",
+  "gate": "test-exception",
+  "startTime": "2026-08-20T03:16:51.840Z",
+  "endTime": "2026-08-20T03:16:51.842Z",
+  "checks": [
+    {
+      "id": "test-invalid-type",
+      "name": "test-invalid-type",
+      "status": "FAIL",
+      "evidence": {
+        "error": "Unknown check type: this-check-type-does-not-exist",
+        "stack": "Error: Unknown check type: this-check-type-does-not-exist\n    at CheckRegistryClass.execute (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/bdgf/check-registry.mjs:75:13)\n    at GateRunner.executeCheck (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/bdgf/gate-runner.mjs:178:42)\n    at GateRunner.executeChecksSequential (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/bdgf/gate-runner.mjs:146:18)\n    at GateRunner.execute (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/bdgf/gate-runner.mjs:133:18)\n    at async GateRunner.run (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/bdgf/gate-contract.mjs:126:22)\n    at async main (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/bdgf-amendment-12/test-exception.mjs:23:20)"
+      },
+      "message": "Check execution error: Unknown check type: this-check-type-does-not-exist",
+      "timestamp": "2026-08-20T03:16:51.842Z"
+    }
+  ],
+  "summary": {
+    "total": 1,
+    "pass": 0,
+    "fail": 1,
+    "warn": 0
+  },
+  "logs": [
+    {
+      "timestamp": "2026-08-20T03:16:51.841Z",
+      "message": "Gate: test-exception"
+    },
+    {
+      "timestamp": "2026-08-20T03:16:51.841Z",
+      "message": "Version: 1.0.0"
+    },
+    {
+      "timestamp": "2026-08-20T03:16:51.841Z",
+      "message": "Deployment: g3a-audit-5"
+    },
+    {
+      "timestamp": "2026-08-20T03:16:51.841Z",
+      "message": "Checks: 1"
+    },
+    {
+      "timestamp": "2026-08-20T03:16:51.841Z",
+      "message": "Mode: LIVE"
+    },
+    {
+      "timestamp": "2026-08-20T03:16:51.841Z",
+      "message": "Execution: SEQUENTIAL"
+    },
+    {
+      "timestamp": "2026-08-20T03:16:51.841Z",
+      "message": ""
+    },
+    {
+      "timestamp": "2026-08-20T03:16:51.842Z",
+      "message": "[FAIL] test-invalid-type: Check execution error: Unknown check type: this-check-type-does-not-exist"
+    }
+  ],
+  "artifacts": {
+    "evidenceFile": "D:\\Antigravity\\Projects\\BELLA SPA ERP\\evidence\\g3a-audit-5\\test-exception\\2026-08-20T03-16-51-842Z.json",
+    "logFile": "D:\\Antigravity\\Projects\\BELLA SPA ERP\\evidence\\g3a-audit-5\\test-exception\\2026-08-20T03-16-51-842Z.log"
+  }
+}

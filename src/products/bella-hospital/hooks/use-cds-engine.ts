@@ -5,14 +5,17 @@
  * Per Law 2: No direct DB queries, frontend consumes engine services.
  * Per Law 11: Strictly typed, zero `any` types.
  *
+ * **STATUS:** ✅ MIGRATED TO CONTRACT-FIRST (Week 2 Day 3 - P1 Remediation)
+ *
  * @module hooks/use-cds-engine
  */
 
 'use client';
 
 import { useState, useMemo } from 'react';
-import { CdsEngineService } from '@/platform/healthcare/engines/cds-engine';
+import { getHealthcareService } from '@/platform/healthcare';
 import { createClient } from '@/lib/supabase-client';
+import type { CdsEngineContract } from '@/platform/healthcare/contracts/cds-engine.contract';
 import type {
   CheckDrugInteractionsRequest,
   CheckAllergyRequest,
@@ -29,7 +32,10 @@ export function useCdsEngine() {
   const [error, setError] = useState<Error | null>(null);
 
   const supabase = createClient();
-  const cdsEngine = useMemo(() => new CdsEngineService(supabase), [supabase]);
+  const cdsEngine = useMemo(
+    () => getHealthcareService<CdsEngineContract>('cds-engine', supabase),
+    [supabase]
+  );
 
   const checkDrugInteractions = async (
     request: CheckDrugInteractionsRequest

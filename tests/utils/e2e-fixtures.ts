@@ -21,19 +21,19 @@ export const E2E_TENANTS = {
   TENANT_A: {
     tenantId: 'test-e2e-tenant-a',
     tenantName: 'E2E Test Tenant A',
-    userId: 'user-a-001',
+    userId: '1176579a-50cc-48b2-800f-5bd5f24d6288',  // ✅ Real auth.users UUID
   } as E2ETenant,
   
   TENANT_B: {
     tenantId: 'test-e2e-tenant-b',
     tenantName: 'E2E Test Tenant B',
-    userId: 'user-b-001',
+    userId: '40ef93da-3381-4b16-a30e-eed7072bce72',  // ✅ Real auth.users UUID
   } as E2ETenant,
   
   TENANT_ATTACKER: {
     tenantId: 'test-e2e-tenant-attacker',
     tenantName: 'E2E Test Attacker',
-    userId: 'user-attacker-001',
+    userId: '73a1837f-4970-4c27-939f-ef7a4ee864ed',  // ✅ Real auth.users UUID
   } as E2ETenant,
 } as const;
 

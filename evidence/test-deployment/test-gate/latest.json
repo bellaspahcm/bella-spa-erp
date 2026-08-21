@@ -1,0 +1,97 @@
+{
+  "deployment": "test-deployment",
+  "gate": "test-gate",
+  "startTime": "2026-08-20T00:01:49.932Z",
+  "endTime": "2026-08-20T00:01:49.947Z",
+  "checks": [
+    {
+      "id": "check-001",
+      "name": "check-001",
+      "status": "PASS",
+      "evidence": {
+        "files": [
+          "scripts/bdgf/gate-runner.mjs",
+          "scripts/bdgf/check-registry.mjs",
+          "scripts/bdgf/evidence-collector.mjs"
+        ]
+      },
+      "message": "All 3 files exist",
+      "timestamp": "2026-08-20T00:01:49.935Z"
+    },
+    {
+      "id": "check-002",
+      "name": "check-002",
+      "status": "PASS",
+      "evidence": {
+        "pattern": "export class",
+        "matchCount": 2,
+        "totalFiles": 2
+      },
+      "message": "Pattern check passed",
+      "timestamp": "2026-08-20T00:01:49.941Z"
+    },
+    {
+      "id": "check-003",
+      "name": "check-003",
+      "status": "PASS",
+      "evidence": {
+        "antipattern": "eval\\(",
+        "filesChecked": 5
+      },
+      "message": "Anti-pattern not found",
+      "timestamp": "2026-08-20T00:01:49.946Z"
+    }
+  ],
+  "summary": {
+    "total": 3,
+    "pass": 3,
+    "fail": 0,
+    "warn": 0
+  },
+  "logs": [
+    {
+      "timestamp": "2026-08-20T00:01:49.934Z",
+      "message": "Gate: test-gate"
+    },
+    {
+      "timestamp": "2026-08-20T00:01:49.934Z",
+      "message": "Version: 1.0"
+    },
+    {
+      "timestamp": "2026-08-20T00:01:49.934Z",
+      "message": "Deployment: test-deployment"
+    },
+    {
+      "timestamp": "2026-08-20T00:01:49.934Z",
+      "message": "Checks: 3"
+    },
+    {
+      "timestamp": "2026-08-20T00:01:49.934Z",
+      "message": "Mode: LIVE"
+    },
+    {
+      "timestamp": "2026-08-20T00:01:49.934Z",
+      "message": "Execution: SEQUENTIAL"
+    },
+    {
+      "timestamp": "2026-08-20T00:01:49.934Z",
+      "message": ""
+    },
+    {
+      "timestamp": "2026-08-20T00:01:49.935Z",
+      "message": "[PASS] check-001: All 3 files exist"
+    },
+    {
+      "timestamp": "2026-08-20T00:01:49.941Z",
+      "message": "[PASS] check-002: Pattern check passed"
+    },
+    {
+      "timestamp": "2026-08-20T00:01:49.946Z",
+      "message": "[PASS] check-003: Anti-pattern not found"
+    }
+  ],
+  "artifacts": {
+    "evidenceFile": "D:\\Antigravity\\Projects\\BELLA SPA ERP\\evidence\\test-deployment\\test-gate\\2026-08-20T00-01-49-948Z.json",
+    "logFile": "D:\\Antigravity\\Projects\\BELLA SPA ERP\\evidence\\test-deployment\\test-gate\\2026-08-20T00-01-49-948Z.log"
+  }
+}
