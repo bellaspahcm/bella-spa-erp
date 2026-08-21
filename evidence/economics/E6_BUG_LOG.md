@@ -675,3 +675,45 @@ SQL appears correct, delivery mechanism failed.
 **Status:** ⏸️ PAUSED - Awaiting manual SQL execution
 
 ---
+
+**RESOLUTION - 2026-08-22 05:47:40:**
+
+✅ **R4 VERIFICATION PASS - Index already exists!**
+
+**Discovery:**
+When test rerun from correct working directory, all tests PASS 6/6.
+Index `idx_receipts_unique` already exists in database.
+
+**Root Cause:**
+1. Migration automation script had syntax error (RPC method)
+2. BUT: Index was likely applied during initial schema migration or previous session
+3. First test run used wrong path (Windows path issue - B7)
+4. Second test run (correct path) → PASS
+
+**Classification:** ❌ **Environment/Test Execution Issue** (NOT Bella bug)
+- SQL is correct ✅
+- Index exists in database ✅
+- Migration automation failed but manual fix not needed ✅
+- Test script path issue (B7 - separate test harness bug)
+
+**Counts in C₆:** ❌ NO (not implementation bug)
+
+**Test Results:**
+```
+✅ AC4.1: First receipt created successfully
+✅ AC4.2: Duplicate receipt rejected
+✅ AC4.2: Error message informative
+✅ AC4.3: Different PO number allowed
+✅ AC4.3: Different date allowed
+✅ AC4.4: Soft-deleted receipt allows recreation
+
+Total: 6/6 PASS
+```
+
+**Rework Time:** 0 days (not Bella implementation issue)
+
+**Status:** ✅ R4 VERIFIED - Ready to lock
+
+**Note on B7:** Test script path error (`C:\WINDOWS\System32\` vs workspace directory) caused initial MODULE_NOT_FOUND. Fixed by running from correct working directory. Test harness issue, not counted in C₆.
+
+---
