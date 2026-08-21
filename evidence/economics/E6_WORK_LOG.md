@@ -106,7 +106,17 @@ Status: IN PROGRESS - too early to measure
   - Implementation bugs: 1 (B4 - discrepancy column)
   - Test harness issues: 2 (B3, B5 - tenant fixtures)
   - B4 rework: ~3 minutes
-- Next: R2 SKU Validation
+- **05:21:26** — R2 SKU Validation START
+  - Enhanced R1 service with discontinued check (AC2.2)
+  - Added structured error format (AC2.3)
+  - Created `scripts/e6/test-r2-validate-sku.mjs`
+- **05:22:57** — ✅ R2 VERIFICATION PASS (3/3 tests)
+  - AC2.1: SKU Existence ✅
+  - AC2.2: Discontinued Check ✅
+  - AC2.3: Error Format ✅
+  - NO BUGS FOUND
+- **05:23:10** — R2 COMPLETE & LOCKED 🔒
+- Next: R3 Location Hierarchy Validation
 
 ---
 

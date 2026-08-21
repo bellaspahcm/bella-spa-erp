@@ -120,8 +120,7 @@ export class ReceiptService {
         };
       }
 
-      // R2 will validate: SKU exists in tenant scope
-      // For now, proceed with basic validation
+      // R2: SKU Validation - exists in tenant scope and not discontinued
       const skuIds = input.line_items.map(item => item.sku_id);
       const { data: skus, error: skuError } = await this.supabase
         .from('logistics_warehouse_skus')
@@ -140,18 +139,50 @@ export class ReceiptService {
         };
       }
 
-      // Validate all SKUs exist
+      // AC2.1: Validate all SKUs exist
       const foundSkuIds = new Set((skus as SKURow[] || []).map(s => s.id));
       const missingSKUs = skuIds.filter(id => !foundSkuIds.has(id));
       
       if (missingSKUs.length > 0) {
+        const firstMissingIndex = input.line_items.findIndex(
+          item => item.sku_id === missingSKUs[0]
+        );
+        
         return {
           success: false,
           error: {
-            code: 'SKU_NOT_FOUND',
-            message: `SKU(s) not found in tenant inventory: ${missingSKUs.join(', ')}`,
+            code: 'VALIDATION_FAILED',
+            message: `SKU not found in tenant inventory`,
+            details: [{
+              field: `line_items[${firstMissingIndex}].sku_id`,
+              message: `SKU ${missingSKUs[0]} not found in tenant inventory`,
+              code: 'SKU_NOT_FOUND'
+            }]
           },
         };
+      }
+
+      // AC2.2: Validate SKU status - cannot receive discontinued SKUs
+      const skuMap = new Map((skus as SKURow[]).map(s => [s.id, s]));
+      
+      for (let i = 0; i < input.line_items.length; i++) {
+        const item = input.line_items[i];
+        const sku = skuMap.get(item.sku_id);
+        
+        if (sku && sku.status === 'discontinued') {
+          return {
+            success: false,
+            error: {
+              code: 'VALIDATION_FAILED',
+              message: 'Cannot receive discontinued SKU',
+              details: [{
+                field: `line_items[${i}].sku_id`,
+                message: `Cannot receive discontinued SKU: ${sku.sku_code}`,
+                code: 'SKU_DISCONTINUED'
+              }]
+            },
+          };
+        }
       }
 
       // AC1.1: Create receipt header
