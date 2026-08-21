@@ -85,3 +85,8 @@ next-env.d.ts
 .env.*
 !.env.example
 .expo/
+
+# Supabase tokens and credentials (NEVER commit)
+.supabase_token*.txt
+*.supabase_token
+supabase_token_*.txt
