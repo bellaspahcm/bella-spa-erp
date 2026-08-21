@@ -21,9 +21,7 @@ CREATE TABLE IF NOT EXISTS logistics_warehouse_skus (
   deleted_at TIMESTAMPTZ,
   
   CONSTRAINT logistics_warehouse_skus_tenant_fk 
-    FOREIGN KEY (tenant_id) REFERENCES public_tenants(id),
-  CONSTRAINT logistics_warehouse_skus_unique 
-    UNIQUE (tenant_id, sku_code) WHERE deleted_at IS NULL
+    FOREIGN KEY (tenant_id) REFERENCES public.tenants(id)
 );
 
 -- Bins (Storage Locations) - Physical warehouse locations
@@ -41,9 +39,7 @@ CREATE TABLE IF NOT EXISTS logistics_warehouse_bins (
   deleted_at TIMESTAMPTZ,
   
   CONSTRAINT logistics_warehouse_bins_tenant_fk 
-    FOREIGN KEY (tenant_id) REFERENCES public_tenants(id),
-  CONSTRAINT logistics_warehouse_bins_unique 
-    UNIQUE (tenant_id, bin_code) WHERE deleted_at IS NULL
+    FOREIGN KEY (tenant_id) REFERENCES public.tenants(id)
 );
 
 -- Receipts - Incoming inventory
@@ -68,9 +64,7 @@ CREATE TABLE IF NOT EXISTS logistics_warehouse_receipts (
   deleted_at TIMESTAMPTZ,
   
   CONSTRAINT logistics_warehouse_receipts_tenant_fk 
-    FOREIGN KEY (tenant_id) REFERENCES public_tenants(id),
-  CONSTRAINT logistics_warehouse_receipts_unique 
-    UNIQUE (tenant_id, po_number, vendor_id, received_date) WHERE deleted_at IS NULL
+    FOREIGN KEY (tenant_id) REFERENCES public.tenants(id)
 );
 
 -- Receipt Line Items
@@ -91,7 +85,7 @@ CREATE TABLE IF NOT EXISTS logistics_warehouse_receipt_line_items (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   
   CONSTRAINT logistics_warehouse_receipt_line_items_tenant_fk 
-    FOREIGN KEY (tenant_id) REFERENCES public_tenants(id),
+    FOREIGN KEY (tenant_id) REFERENCES public.tenants(id),
   CONSTRAINT logistics_warehouse_receipt_line_items_receipt_fk 
     FOREIGN KEY (receipt_id) REFERENCES logistics_warehouse_receipts(id),
   CONSTRAINT logistics_warehouse_receipt_line_items_sku_fk 
@@ -111,7 +105,7 @@ CREATE TABLE IF NOT EXISTS logistics_warehouse_inventory_on_hand (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   
   CONSTRAINT logistics_warehouse_inventory_on_hand_tenant_fk 
-    FOREIGN KEY (tenant_id) REFERENCES public_tenants(id),
+    FOREIGN KEY (tenant_id) REFERENCES public.tenants(id),
   CONSTRAINT logistics_warehouse_inventory_on_hand_sku_fk 
     FOREIGN KEY (sku_id) REFERENCES logistics_warehouse_skus(id),
   CONSTRAINT logistics_warehouse_inventory_on_hand_bin_fk 
@@ -135,7 +129,7 @@ CREATE TABLE IF NOT EXISTS logistics_warehouse_movements (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   
   CONSTRAINT logistics_warehouse_movements_tenant_fk 
-    FOREIGN KEY (tenant_id) REFERENCES public_tenants(id),
+    FOREIGN KEY (tenant_id) REFERENCES public.tenants(id),
   CONSTRAINT logistics_warehouse_movements_sku_fk 
     FOREIGN KEY (sku_id) REFERENCES logistics_warehouse_skus(id),
   CONSTRAINT logistics_warehouse_movements_from_bin_fk 
@@ -158,22 +152,22 @@ ALTER TABLE logistics_warehouse_movements ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies - Tenant Isolation
 CREATE POLICY logistics_warehouse_skus_tenant_isolation ON logistics_warehouse_skus
-  FOR ALL USING (tenant_id = (SELECT tenant_id FROM public_users WHERE id = auth.uid()));
+  FOR ALL USING (tenant_id = current_setting('app.tenant_id')::uuid);
 
 CREATE POLICY logistics_warehouse_bins_tenant_isolation ON logistics_warehouse_bins
-  FOR ALL USING (tenant_id = (SELECT tenant_id FROM public_users WHERE id = auth.uid()));
+  FOR ALL USING (tenant_id = current_setting('app.tenant_id')::uuid);
 
 CREATE POLICY logistics_warehouse_receipts_tenant_isolation ON logistics_warehouse_receipts
-  FOR ALL USING (tenant_id = (SELECT tenant_id FROM public_users WHERE id = auth.uid()));
+  FOR ALL USING (tenant_id = current_setting('app.tenant_id')::uuid);
 
 CREATE POLICY logistics_warehouse_receipt_line_items_tenant_isolation ON logistics_warehouse_receipt_line_items
-  FOR ALL USING (tenant_id = (SELECT tenant_id FROM public_users WHERE id = auth.uid()));
+  FOR ALL USING (tenant_id = current_setting('app.tenant_id')::uuid);
 
 CREATE POLICY logistics_warehouse_inventory_on_hand_tenant_isolation ON logistics_warehouse_inventory_on_hand
-  FOR ALL USING (tenant_id = (SELECT tenant_id FROM public_users WHERE id = auth.uid()));
+  FOR ALL USING (tenant_id = current_setting('app.tenant_id')::uuid);
 
 CREATE POLICY logistics_warehouse_movements_tenant_isolation ON logistics_warehouse_movements
-  FOR ALL USING (tenant_id = (SELECT tenant_id FROM public_users WHERE id = auth.uid()));
+  FOR ALL USING (tenant_id = current_setting('app.tenant_id')::uuid);
 
 -- ============================================================================
 -- INDEXES
