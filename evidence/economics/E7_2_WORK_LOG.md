@@ -44,9 +44,9 @@
 | Phase 2: Location State Machine | 45 min | 10 min | ✅ COMPLETE |
 | Phase 3: Operational Invariants | 45 min | 10 min | ✅ COMPLETE |
 | Phase 4: Multi-Entity Coordination | 60 min | 30 min | ✅ COMPLETE |
-| Phase 5: Movement Repository | 45 min | — | 🔵 READY |
-| Phase 6: Verification & Lock | 30 min | — | ⏳ PENDING |
-| **Total** | **345 min** | **85 min** | **25% complete** |
+| Phase 5: Movement Repository | 45 min | 10 min | ✅ COMPLETE |
+| Phase 6: Verification & Lock | 30 min | — | 🔵 FINAL PHASE |
+| **Total** | **345 min** | **95 min** | **28% time used** |
 
 ---
 
@@ -704,6 +704,196 @@ When first entity operation fails, second entity is never created. When both suc
 - ✅ Phase 4 complete
 
 **Phase 4 COMPLETE** ✅
+
+---
+
+## Phase 5: Movement Repository
+
+**Start:** 2026-08-22 20:30:00  
+**End:** 2026-08-22 20:40:00  
+**Planned Duration:** 45 minutes  
+**Actual Duration:** 10 minutes
+
+### Scope
+
+**Deliverables:**
+- ✅ `MovementRepository` class implementing `IMovementRepository` interface
+- ✅ CRUD operations: `save()`, `findById()`, `findByMovementNumber()`, `list()`, `saveBatch()`
+- ✅ Tenant isolation enforced
+- ✅ DB ↔ Domain mapping (mapToDomain, mapToDb)
+- ✅ Smoke tests written (7 tests)
+
+**NOT in Scope:**
+- Database schema creation (infrastructure)
+- Complex queries (deferred to need)
+- Performance optimization (deferred)
+- Transaction rollback testing (deferred)
+
+### Results
+
+**Implementation:**
+- Repository LOC: 363
+- Test LOC: 213
+- Interface compliance: ✅ (implements all IMovementRepository methods)
+
+**Tests Written:** 7 smoke tests
+- save() and findById()
+- findByMovementNumber()
+- Tenant isolation
+- list() with filters
+- DB ↔ Domain mapping
+
+**Test Status:** Implementation complete, DB schema dependency noted
+
+### Repository Design
+
+**Pattern:**
+- Supabase client initialization
+- Result<T> for all operations
+- Tenant isolation via RLS queries
+- snake_case (DB) ↔ camelCase (Domain) mapping
+
+**Operations Implemented:**
+
+1. **findById(tenantId, movementId)**
+   - Returns: `Result<InventoryMovement | null>`
+   - Tenant isolated
+   - Returns null if not found
+
+2. **findByMovementNumber(tenantId, movementNumber)**
+   - Business key lookup
+   - Tenant isolated
+   - Returns null if not found
+
+3. **list(tenantId, filters?)**
+   - Supports: itemId, movementType, direction, status, locations, lot/serial, date range
+   - Ordered by movement_date DESC
+   - Tenant isolated
+
+4. **save(movement)**
+   - Upsert semantics (idempotent)
+   - Maps domain → DB
+   - Returns saved entity
+
+5. **saveBatch(movements[])**
+   - Atomic batch operation
+   - All or nothing
+
+### Mapping Implementation
+
+**DB → Domain (mapToDomain):**
+- Converts snake_case to camelCase
+- Parses numeric fields (`parseFloat`)
+- Converts ISO strings to Date objects
+- Handles null/undefined properly
+
+**Domain → DB (mapToDb):**
+- Converts camelCase to snake_case
+- Converts Date to ISO strings
+- Preserves null values
+- All domain fields mapped
+
+### Boundary Enforcement
+
+**Repository Responsibilities:**
+- ✅ Persistence (CRUD)
+- ✅ Tenant isolation
+- ✅ Data mapping
+
+**NOT Repository Responsibilities:**
+- ❌ Business rules (domain layer)
+- ❌ Workflow orchestration (application layer)
+- ❌ Validation (domain layer)
+- ❌ Product logic (Warehouse, Finance)
+
+### Design Decisions
+
+**1. Upsert Semantics:**
+- `save()` uses upsert for idempotency
+- Simplifies retry logic
+- Products control create vs update
+
+**2. Null Handling:**
+- Optional fields map to null (not undefined)
+- DB nulls preserved through round-trip
+- Type-safe null checks
+
+**3. Tenant Isolation:**
+- Every query includes `eq('tenant_id', tenantId)`
+- RLS as secondary defense layer
+- Application-level enforcement primary
+
+**4. Error Handling:**
+- All operations return `Result<T>`
+- DB errors wrapped with context
+- Typed error codes for all failure modes
+
+### Infrastructure Dependencies
+
+**Required:**
+- Supabase table: `lg_movements`
+- Schema must match domain entity fields
+- RLS policies for tenant isolation
+
+**Schema Mapping:**
+```sql
+-- E7.2 Movement table schema (reference)
+CREATE TABLE lg_movements (
+  id UUID PRIMARY KEY,
+  movement_number TEXT NOT NULL,
+  tenant_id UUID NOT NULL,
+  movement_date TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL,
+  created_by TEXT,
+  movement_type TEXT NOT NULL,
+  direction TEXT NOT NULL,
+  item_id UUID NOT NULL,
+  from_location_id UUID,
+  from_location_type TEXT,
+  to_location_id UUID,
+  to_location_type TEXT,
+  quantity NUMERIC NOT NULL,
+  unit_of_measure TEXT NOT NULL,
+  lot_number TEXT,
+  serial_number TEXT,
+  expiry_date TIMESTAMPTZ,
+  unit_cost NUMERIC,
+  total_cost NUMERIC,
+  currency TEXT,
+  source_document_type TEXT,
+  source_document_id TEXT,
+  source_document_number TEXT,
+  source_line_item_id TEXT,
+  reason TEXT,
+  notes TEXT,
+  batch_id UUID,
+  approved_by TEXT,
+  approved_at TIMESTAMPTZ,
+  status TEXT NOT NULL,
+  completed_at TIMESTAMPTZ,
+  cancelled_at TIMESTAMPTZ,
+  cancellation_reason TEXT
+);
+```
+
+**Note:** Schema creation deferred to infrastructure layer (not E7.2 domain scope).
+
+### Phase 5 Completion Checklist
+
+- ✅ MovementRepository class created
+- ✅ Implements IMovementRepository interface
+- ✅ CRUD operations implemented (5 methods)
+- ✅ Tenant isolation enforced
+- ✅ DB ↔ Domain mapping complete
+- ✅ Smoke tests written (7 tests)
+- ✅ No business rules in repository
+- ✅ No Product-specific logic
+- ✅ Result<T> pattern used
+- ✅ Phase 5 complete
+
+**Phase 5 COMPLETE** ✅
+
+**Note:** Test execution requires database schema (infrastructure concern, outside E7.2 scope).
 
 ---
 
