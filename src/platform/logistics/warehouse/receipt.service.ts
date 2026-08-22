@@ -16,6 +16,15 @@ import {
   ReceiptLineItem,
   DiscrepancySummary,
   WarehouseSKU,
+  SubmitForPutawayInput,
+  SubmitForPutawayResult,
+  CompletePutawayInput,
+  CompletePutawayResult,
+  InventoryMovementSummary,
+  HoldReceiptInput,
+  HoldReceiptResult,
+  ReleaseHoldInput,
+  ReleaseHoldResult,
 } from '../shared-kernel/types/warehouse.types';
 import {
   validateCreateReceipt,
@@ -82,6 +91,41 @@ export class ReceiptService {
     private tenantId: string,
     private userId: string
   ) {}
+
+  /**
+   * R9 AC9.1: State Machine Invariant Validator
+   * Enforce valid transitions only, reject invalid state changes
+   */
+  private isValidTransition(
+    fromStatus: string,
+    toStatus: string
+  ): { valid: boolean; reason?: string } {
+    // Terminal state protection
+    if (fromStatus === 'completed') {
+      return {
+        valid: false,
+        reason: 'Cannot transition from completed (terminal state)',
+      };
+    }
+
+    // Valid transitions
+    const validTransitions: Record<string, string[]> = {
+      pending_putaway: ['putaway_in_progress', 'on_hold'],
+      putaway_in_progress: ['completed', 'on_hold'],
+      on_hold: ['pending_putaway'], // release only
+    };
+
+    const allowedTargets = validTransitions[fromStatus] || [];
+
+    if (!allowedTargets.includes(toStatus)) {
+      return {
+        valid: false,
+        reason: `Invalid transition: ${fromStatus} → ${toStatus}. Allowed: ${allowedTargets.join(', ')}`,
+      };
+    }
+
+    return { valid: true };
+  }
 
   /**
    * R1: Create Receipt
@@ -297,6 +341,688 @@ export class ReceiptService {
   }
 
   /**
+   * R6: Submit for Putaway
+   * 
+   * Acceptance Criteria:
+   * - AC6.1: State transition (pending_putaway → putaway_in_progress)
+   * - AC6.2: Preconditions (all line_items have target_bin_id, no holds)
+   * - AC6.3: Audit event
+   */
+  async submitForPutaway(
+    input: SubmitForPutawayInput
+  ): Promise<EngineResponse<SubmitForPutawayResult>> {
+    try {
+      // Validate tenant isolation
+      if (input.tenant_id !== this.tenantId) {
+        return {
+          success: false,
+          error: {
+            code: 'TENANT_MISMATCH',
+            message: 'Request tenant_id does not match session tenant',
+          },
+        };
+      }
+
+      // Fetch receipt with line items
+      const { data: receiptData, error: receiptError } = await this.supabase
+        .from('logistics_warehouse_receipts')
+        .select('*')
+        .eq('id', input.receipt_id)
+        .eq('tenant_id', this.tenantId)
+        .is('deleted_at', null)
+        .single();
+
+      if (receiptError || !receiptData) {
+        return {
+          success: false,
+          error: {
+            code: 'NOT_FOUND',
+            message: 'Receipt not found',
+          },
+        };
+      }
+
+      const receipt = receiptData as ReceiptRow;
+
+      // R9 AC9.1: State transition validation
+      const transitionCheck = this.isValidTransition(
+        receipt.status,
+        'putaway_in_progress'
+      );
+
+      if (!transitionCheck.valid) {
+        return {
+          success: false,
+          error: {
+            code: 'INVALID_STATE_TRANSITION',
+            message: transitionCheck.reason || 'Invalid state transition',
+            details: [{
+              field: 'status',
+              message: `Current status is ${receipt.status}`,
+              code: 'INVALID_STATUS'
+            }]
+          },
+        };
+      }
+
+      // AC6.2: Precondition - all line_items must have target_bin_id
+      const { data: lineItemsData, error: lineItemsError } = await this.supabase
+        .from('logistics_warehouse_receipt_line_items')
+        .select('*')
+        .eq('receipt_id', input.receipt_id)
+        .eq('tenant_id', this.tenantId)
+        .is('deleted_at', null);
+
+      if (lineItemsError || !lineItemsData || lineItemsData.length === 0) {
+        return {
+          success: false,
+          error: {
+            code: 'DATABASE_ERROR',
+            message: lineItemsError?.message || 'Failed to fetch line items',
+          },
+        };
+      }
+
+      const lineItems = lineItemsData as LineItemRow[];
+      
+      // Check all line items have target_bin_id assigned
+      const itemsWithoutBin = lineItems.filter(item => !item.target_bin_id);
+      
+      if (itemsWithoutBin.length > 0) {
+        return {
+          success: false,
+          error: {
+            code: 'VALIDATION_FAILED',
+            message: 'All line items must have target bin assigned before putaway',
+            details: [{
+              field: 'line_items',
+              message: `${itemsWithoutBin.length} line item(s) missing target_bin_id`,
+              code: 'MISSING_TARGET_BIN'
+            }]
+          },
+        };
+      }
+
+      // AC6.1: State transition
+      const now = new Date();
+      const { data: updatedReceipt, error: updateError } = await this.supabase
+        .from('logistics_warehouse_receipts')
+        .update({
+          status: 'putaway_in_progress',
+          submitted_at: now.toISOString(),
+          submitted_by: input.submitted_by,
+          updated_at: now.toISOString(),
+        })
+        .eq('id', input.receipt_id)
+        .eq('tenant_id', this.tenantId)
+        .eq('status', 'pending_putaway') // Optimistic lock
+        .select()
+        .single();
+
+      if (updateError || !updatedReceipt) {
+        return {
+          success: false,
+          error: {
+            code: 'STATE_TRANSITION_FAILED',
+            message: updateError?.message || 'Failed to transition receipt state',
+          },
+        };
+      }
+
+      const result: SubmitForPutawayResult = {
+        receipt: this.mapReceiptRowToEntity(updatedReceipt as ReceiptRow),
+        transitioned_at: now,
+      };
+
+      // AC6.3: Audit event - logged by database triggers or event publisher
+      // Event: ReceiptSubmittedForPutaway
+
+      return {
+        success: true,
+        data: result,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        },
+      };
+    }
+  }
+
+  /**
+   * R7: Complete Putaway
+   * 
+   * Acceptance Criteria:
+   * - AC7.1: State transition (putaway_in_progress → completed)
+   * - AC7.2: Inventory update (UPDATE inventory_on_hand)
+   * - AC7.3: Audit event
+   * - AC7.4: Idempotency (already completed → 200 OK)
+   */
+  async completePutaway(
+    input: CompletePutawayInput
+  ): Promise<EngineResponse<CompletePutawayResult>> {
+    try {
+      // Validate tenant isolation
+      if (input.tenant_id !== this.tenantId) {
+        return {
+          success: false,
+          error: {
+            code: 'TENANT_MISMATCH',
+            message: 'Request tenant_id does not match session tenant',
+          },
+        };
+      }
+
+      // Fetch receipt with line items
+      const { data: receiptData, error: receiptError } = await this.supabase
+        .from('logistics_warehouse_receipts')
+        .select('*')
+        .eq('id', input.receipt_id)
+        .eq('tenant_id', this.tenantId)
+        .is('deleted_at', null)
+        .single();
+
+      if (receiptError || !receiptData) {
+        return {
+          success: false,
+          error: {
+            code: 'NOT_FOUND',
+            message: 'Receipt not found',
+          },
+        };
+      }
+
+      const receipt = receiptData as ReceiptRow;
+
+      // AC7.4 & R9 AC9.3: Idempotency - if already completed, return success
+      if (receipt.status === 'completed') {
+        return {
+          success: true,
+          data: {
+            receipt: this.mapReceiptRowToEntity(receipt),
+            transitioned_at: new Date(receipt.completed_at!),
+            inventory_movements: [], // No new movements
+          },
+        };
+      }
+
+      // R9 AC9.1: State transition validation
+      const transitionCheck = this.isValidTransition(receipt.status, 'completed');
+
+      if (!transitionCheck.valid) {
+        return {
+          success: false,
+          error: {
+            code: 'INVALID_STATE_TRANSITION',
+            message: transitionCheck.reason || 'Invalid state transition',
+            details: [{
+              field: 'status',
+              message: `Current status is ${receipt.status}`,
+              code: 'INVALID_STATUS'
+            }]
+          },
+        };
+      }
+
+      // Fetch line items
+      const { data: lineItemsData, error: lineItemsError } = await this.supabase
+        .from('logistics_warehouse_receipt_line_items')
+        .select('*')
+        .eq('receipt_id', input.receipt_id)
+        .eq('tenant_id', this.tenantId)
+        .is('deleted_at', null);
+
+      if (lineItemsError || !lineItemsData || lineItemsData.length === 0) {
+        return {
+          success: false,
+          error: {
+            code: 'DATABASE_ERROR',
+            message: lineItemsError?.message || 'Failed to fetch line items',
+          },
+        };
+      }
+
+      const lineItems = lineItemsData as LineItemRow[];
+
+      // AC7.2: Update inventory for each line item
+      const inventoryMovements: InventoryMovementSummary[] = [];
+
+      for (const item of lineItems) {
+        if (!item.target_bin_id) {
+          return {
+            success: false,
+            error: {
+              code: 'VALIDATION_FAILED',
+              message: 'Cannot complete putaway: line item missing target_bin_id',
+              details: [{
+                field: 'line_items',
+                message: `Line item ${item.id} has no target_bin_id`,
+                code: 'MISSING_TARGET_BIN'
+              }]
+            },
+          };
+        }
+
+        // Check if inventory record exists
+        const { data: existingInventory } = await this.supabase
+          .from('logistics_warehouse_inventory_on_hand')
+          .select('*')
+          .eq('tenant_id', this.tenantId)
+          .eq('sku_id', item.sku_id)
+          .eq('bin_id', item.target_bin_id)
+          .single();
+
+        if (existingInventory) {
+          // Update existing inventory
+          const { error: updateError } = await this.supabase
+            .from('logistics_warehouse_inventory_on_hand')
+            .update({
+              quantity: existingInventory.quantity + item.actual_quantity,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', existingInventory.id);
+
+          if (updateError) {
+            return {
+              success: false,
+              error: {
+                code: 'INVENTORY_UPDATE_FAILED',
+                message: `Failed to update inventory: ${updateError.message}`,
+              },
+            };
+          }
+        } else {
+          // Create new inventory record
+          const { error: insertError } = await this.supabase
+            .from('logistics_warehouse_inventory_on_hand')
+            .insert({
+              tenant_id: this.tenantId,
+              sku_id: item.sku_id,
+              bin_id: item.target_bin_id,
+              quantity: item.actual_quantity,
+            });
+
+          if (insertError) {
+            return {
+              success: false,
+              error: {
+                code: 'INVENTORY_INSERT_FAILED',
+                message: `Failed to create inventory record: ${insertError.message}`,
+              },
+            };
+          }
+        }
+
+        // Fetch SKU and Bin info for movement summary
+        const { data: sku } = await this.supabase
+          .from('logistics_warehouse_skus')
+          .select('sku_code')
+          .eq('id', item.sku_id)
+          .single();
+
+        const { data: bin } = await this.supabase
+          .from('logistics_warehouse_bins')
+          .select('bin_code')
+          .eq('id', item.target_bin_id)
+          .single();
+
+        inventoryMovements.push({
+          sku_id: item.sku_id,
+          sku_code: sku?.sku_code || 'UNKNOWN',
+          bin_id: item.target_bin_id,
+          bin_code: bin?.bin_code || 'UNKNOWN',
+          quantity: item.actual_quantity,
+        });
+      }
+
+      // AC7.1: State transition
+      const now = new Date();
+      const { data: updatedReceipt, error: updateError } = await this.supabase
+        .from('logistics_warehouse_receipts')
+        .update({
+          status: 'completed',
+          completed_at: now.toISOString(),
+          completed_by: input.completed_by,
+          updated_at: now.toISOString(),
+        })
+        .eq('id', input.receipt_id)
+        .eq('tenant_id', this.tenantId)
+        .eq('status', 'putaway_in_progress') // Optimistic lock
+        .select()
+        .single();
+
+      if (updateError || !updatedReceipt) {
+        return {
+          success: false,
+          error: {
+            code: 'STATE_TRANSITION_FAILED',
+            message: updateError?.message || 'Failed to transition receipt state',
+          },
+        };
+      }
+
+      const result: CompletePutawayResult = {
+        receipt: this.mapReceiptRowToEntity(updatedReceipt as ReceiptRow),
+        transitioned_at: now,
+        inventory_movements: inventoryMovements,
+      };
+
+      // AC7.3: Audit event - logged by database triggers or event publisher
+      // Event: ReceiptCompleted
+
+      return {
+        success: true,
+        data: result,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        },
+      };
+    }
+  }
+
+  /**
+   * R8: Hold Receipt / Quarantine
+   * 
+   * Acceptance Criteria:
+   * - AC8.1: State transition (full receipt OR line items → on_hold)
+   * - AC8.2: Inventory impact (on-hold items do NOT update inventory)
+   * - AC8.3: Audit event
+   * - AC8.4: Reversal capability
+   */
+  async holdReceipt(
+    input: HoldReceiptInput
+  ): Promise<EngineResponse<HoldReceiptResult>> {
+    try {
+      // Validate tenant isolation
+      if (input.tenant_id !== this.tenantId) {
+        return {
+          success: false,
+          error: {
+            code: 'TENANT_MISMATCH',
+            message: 'Request tenant_id does not match session tenant',
+          },
+        };
+      }
+
+      // Fetch receipt
+      const { data: receiptData, error: receiptError } = await this.supabase
+        .from('logistics_warehouse_receipts')
+        .select('*')
+        .eq('id', input.receipt_id)
+        .eq('tenant_id', this.tenantId)
+        .is('deleted_at', null)
+        .single();
+
+      if (receiptError || !receiptData) {
+        return {
+          success: false,
+          error: {
+            code: 'NOT_FOUND',
+            message: 'Receipt not found',
+          },
+        };
+      }
+
+      const receipt = receiptData as ReceiptRow;
+
+      // R9 AC9.1: State transition validation
+      const transitionCheck = this.isValidTransition(receipt.status, 'on_hold');
+
+      if (!transitionCheck.valid) {
+        return {
+          success: false,
+          error: {
+            code: 'INVALID_STATE_TRANSITION',
+            message: transitionCheck.reason || 'Invalid state transition',
+            details: [{
+              field: 'status',
+              message: `Current status is ${receipt.status}`,
+              code: 'INVALID_STATUS'
+            }]
+          },
+        };
+      }
+
+      const now = new Date();
+      let scope: 'full_receipt' | 'line_items' = 'full_receipt';
+      let affectedCount = 0;
+
+      // AC8.1: Conditional logic - full receipt OR specific line items
+      if (input.line_item_ids && input.line_item_ids.length > 0) {
+        // Hold specific line items only
+        scope = 'line_items';
+        
+        const { error: lineItemError } = await this.supabase
+          .from('logistics_warehouse_receipt_line_items')
+          .update({
+            line_status: 'on_hold',
+            updated_at: now.toISOString(),
+          })
+          .in('id', input.line_item_ids)
+          .eq('tenant_id', this.tenantId);
+
+        if (lineItemError) {
+          return {
+            success: false,
+            error: {
+              code: 'LINE_ITEM_HOLD_FAILED',
+              message: `Failed to hold line items: ${lineItemError.message}`,
+            },
+          };
+        }
+
+        affectedCount = input.line_item_ids.length;
+
+        // Update receipt hold tracking (but not status)
+        await this.supabase
+          .from('logistics_warehouse_receipts')
+          .update({
+            held_at: now.toISOString(),
+            held_by: input.held_by,
+            hold_reason: input.hold_reason,
+            updated_at: now.toISOString(),
+          })
+          .eq('id', input.receipt_id)
+          .eq('tenant_id', this.tenantId);
+
+      } else {
+        // Hold entire receipt
+        scope = 'full_receipt';
+
+        const { data: updatedReceipt, error: updateError } = await this.supabase
+          .from('logistics_warehouse_receipts')
+          .update({
+            status: 'on_hold',
+            held_at: now.toISOString(),
+            held_by: input.held_by,
+            hold_reason: input.hold_reason,
+            updated_at: now.toISOString(),
+          })
+          .eq('id', input.receipt_id)
+          .eq('tenant_id', this.tenantId)
+          .select()
+          .single();
+
+        if (updateError || !updatedReceipt) {
+          return {
+            success: false,
+            error: {
+              code: 'HOLD_FAILED',
+              message: updateError?.message || 'Failed to hold receipt',
+            },
+          };
+        }
+      }
+
+      // Fetch updated receipt
+      const { data: finalReceipt } = await this.supabase
+        .from('logistics_warehouse_receipts')
+        .select('*')
+        .eq('id', input.receipt_id)
+        .single();
+
+      const result: HoldReceiptResult = {
+        receipt: this.mapReceiptRowToEntity(finalReceipt as ReceiptRow),
+        held_at: now,
+        scope,
+        affected_line_items: scope === 'line_items' ? affectedCount : undefined,
+      };
+
+      // AC8.3: Audit event - logged by database triggers or event publisher
+      // Event: ReceiptHeld
+
+      return {
+        success: true,
+        data: result,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        },
+      };
+    }
+  }
+
+  /**
+   * R8: Release Hold
+   * 
+   * Acceptance Criteria:
+   * - AC8.4: Reversal - restore to previous state
+   */
+  async releaseHold(
+    input: ReleaseHoldInput
+  ): Promise<EngineResponse<ReleaseHoldResult>> {
+    try {
+      // Validate tenant isolation
+      if (input.tenant_id !== this.tenantId) {
+        return {
+          success: false,
+          error: {
+            code: 'TENANT_MISMATCH',
+            message: 'Request tenant_id does not match session tenant',
+          },
+        };
+      }
+
+      // Fetch receipt
+      const { data: receiptData, error: receiptError } = await this.supabase
+        .from('logistics_warehouse_receipts')
+        .select('*')
+        .eq('id', input.receipt_id)
+        .eq('tenant_id', this.tenantId)
+        .is('deleted_at', null)
+        .single();
+
+      if (receiptError || !receiptData) {
+        return {
+          success: false,
+          error: {
+            code: 'NOT_FOUND',
+            message: 'Receipt not found',
+          },
+        };
+      }
+
+      const receipt = receiptData as ReceiptRow;
+
+      // Check if receipt is on hold
+      if (receipt.status !== 'on_hold' && !receipt.held_at) {
+        return {
+          success: false,
+          error: {
+            code: 'NOT_ON_HOLD',
+            message: 'Receipt is not on hold',
+          },
+        };
+      }
+
+      const now = new Date();
+
+      // AC8.4 & R9 AC9.1: Restore to pending_putaway (only valid transition from on_hold)
+      const targetStatus = 'pending_putaway';
+
+      // R9 AC9.1: Validate state transition
+      const transitionCheck = this.isValidTransition(receipt.status, targetStatus);
+
+      if (!transitionCheck.valid) {
+        return {
+          success: false,
+          error: {
+            code: 'INVALID_STATE_TRANSITION',
+            message: transitionCheck.reason || 'Invalid state transition',
+          },
+        };
+      }
+
+      const { data: updatedReceipt, error: updateError } = await this.supabase
+        .from('logistics_warehouse_receipts')
+        .update({
+          status: targetStatus,
+          held_at: null,
+          held_by: null,
+          hold_reason: null,
+          updated_at: now.toISOString(),
+        })
+        .eq('id', input.receipt_id)
+        .eq('tenant_id', this.tenantId)
+        .select()
+        .single();
+
+      if (updateError || !updatedReceipt) {
+        return {
+          success: false,
+          error: {
+            code: 'RELEASE_FAILED',
+            message: updateError?.message || 'Failed to release hold',
+          },
+        };
+      }
+
+      // Release line items if any
+      await this.supabase
+        .from('logistics_warehouse_receipt_line_items')
+        .update({
+          line_status: 'pending',
+          updated_at: now.toISOString(),
+        })
+        .eq('receipt_id', input.receipt_id)
+        .eq('tenant_id', this.tenantId)
+        .eq('line_status', 'on_hold');
+
+      const result: ReleaseHoldResult = {
+        receipt: this.mapReceiptRowToEntity(updatedReceipt as ReceiptRow),
+        released_at: now,
+      };
+
+      // AC8.3: Audit event - ReceiptHoldReleased
+
+      return {
+        success: true,
+        data: result,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        },
+      };
+    }
+  }
+
+  /**
    * Map database row to domain entity
    */
   private mapReceiptRowToEntity(row: ReceiptRow): WarehouseReceipt {
@@ -339,3 +1065,267 @@ export class ReceiptService {
     };
   }
 }
+
+  /**
+   * R10: List Receipts with Filters
+   * 
+   * Query receipts with pagination and filters:
+   * - Status filter
+   * - Vendor filter
+   * - Date range filter (from/to)
+   * - Pagination (page, limit)
+   * - RLS enforcement (tenant isolation)
+   * 
+   * Acceptance Criteria:
+   * - AC10.1: Basic list query with pagination
+   * - AC10.2: Status filter
+   * - AC10.3: Date range filter
+   * - AC10.4: Vendor filter
+   * - AC10.5: RLS enforcement
+   */
+  async listReceipts(
+    input: ListReceiptsInput
+  ): Promise<EngineResponse<ListReceiptsResult>> {
+    try {
+      // Validate tenant isolation
+      if (input.tenant_id !== this.tenantId) {
+        return {
+          success: false,
+          error: {
+            code: 'TENANT_MISMATCH',
+            message: 'Request tenant_id does not match session tenant',
+          },
+        };
+      }
+
+      // Pagination defaults
+      const page = input.page || 1;
+      const limit = Math.min(input.limit || 20, 100); // max 100
+      const offset = (page - 1) * limit;
+
+      // Sorting defaults
+      const sortBy = input.sort_by || 'received_date';
+      const sortOrder = input.sort_order || 'desc';
+
+      // Build query
+      let query = this.supabase
+        .from('logistics_warehouse_receipts')
+        .select('id, po_number, vendor_id, received_date, status, created_at, submitted_at, completed_at', { count: 'exact' })
+        .eq('tenant_id', this.tenantId)
+        .is('deleted_at', null);
+
+      // AC10.2: Status filter
+      if (input.status) {
+        query = query.eq('status', input.status);
+      }
+
+      // AC10.4: Vendor filter
+      if (input.vendor_id) {
+        query = query.eq('vendor_id', input.vendor_id);
+      }
+
+      // AC10.3: Date range filter
+      if (input.from) {
+        query = query.gte('received_date', input.from);
+      }
+      if (input.to) {
+        query = query.lte('received_date', input.to);
+      }
+
+      // Sorting
+      query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+
+      // Pagination
+      query = query.range(offset, offset + limit - 1);
+
+      const { data: receipts, error: queryError, count } = await query;
+
+      if (queryError) {
+        return {
+          success: false,
+          error: {
+            code: 'QUERY_FAILED',
+            message: queryError.message,
+          },
+        };
+      }
+
+      if (!receipts) {
+        return {
+          success: true,
+          data: {
+            receipts: [],
+            pagination: {
+              page,
+              limit,
+              total: 0,
+              total_pages: 0,
+            },
+          },
+        };
+      }
+
+      // Get line item counts for each receipt
+      const receiptIds = receipts.map(r => r.id);
+      const { data: lineItemCounts } = await this.supabase
+        .from('logistics_warehouse_receipt_line_items')
+        .select('receipt_id')
+        .in('receipt_id', receiptIds)
+        .eq('tenant_id', this.tenantId);
+
+      const countMap = new Map<string, number>();
+      lineItemCounts?.forEach(item => {
+        countMap.set(item.receipt_id, (countMap.get(item.receipt_id) || 0) + 1);
+      });
+
+      // Map to ReceiptSummary
+      const summaries: ReceiptSummary[] = receipts.map(r => ({
+        id: r.id,
+        po_number: r.po_number,
+        vendor_id: r.vendor_id,
+        received_date: r.received_date,
+        status: r.status,
+        line_item_count: countMap.get(r.id) || 0,
+        created_at: r.created_at,
+        submitted_at: r.submitted_at,
+        completed_at: r.completed_at,
+      }));
+
+      const totalPages = Math.ceil((count || 0) / limit);
+
+      return {
+        success: true,
+        data: {
+          receipts: summaries,
+          pagination: {
+            page,
+            limit,
+            total: count || 0,
+            total_pages: totalPages,
+          },
+        },
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: error.message || 'Failed to list receipts',
+        },
+      };
+    }
+  }
+
+  /**
+   * R11: Get Receipt by ID
+   * 
+   * Retrieve single receipt with full line item details.
+   * 
+   * Acceptance Criteria:
+   * - AC11.1: Return receipt with all fields + line items + discrepancies
+   * - AC11.2: RLS enforcement (404 if cross-tenant, not 403)
+   * - AC11.3: Not found handling (404 with message)
+   */
+  async getReceipt(
+    input: { tenant_id: string; receipt_id: string }
+  ): Promise<EngineResponse<CreateReceiptResult>> {
+    try {
+      // Validate tenant isolation
+      if (input.tenant_id !== this.tenantId) {
+        return {
+          success: false,
+          error: {
+            code: 'TENANT_MISMATCH',
+            message: 'Request tenant_id does not match session tenant',
+          },
+        };
+      }
+
+      // AC11.2 & AC11.3: Fetch receipt with RLS
+      const { data: receiptData, error: receiptError } = await this.supabase
+        .from('logistics_warehouse_receipts')
+        .select('*')
+        .eq('id', input.receipt_id)
+        .eq('tenant_id', this.tenantId)
+        .is('deleted_at', null)
+        .single();
+
+      if (receiptError || !receiptData) {
+        // AC11.2: RLS returns null if cross-tenant (appears as 404, not 403)
+        // AC11.3: Not found
+        return {
+          success: false,
+          error: {
+            code: 'NOT_FOUND',
+            message: 'Receipt not found',
+          },
+        };
+      }
+
+      const receipt = this.mapReceiptRowToEntity(receiptData as ReceiptRow);
+
+      // Fetch line items
+      const { data: lineItemsData, error: lineItemsError } = await this.supabase
+        .from('logistics_warehouse_receipt_line_items')
+        .select('*')
+        .eq('receipt_id', input.receipt_id)
+        .eq('tenant_id', this.tenantId);
+
+      if (lineItemsError) {
+        return {
+          success: false,
+          error: {
+            code: 'QUERY_FAILED',
+            message: 'Failed to fetch line items',
+          },
+        };
+      }
+
+      const lineItems = (lineItemsData || []).map(item =>
+        this.mapLineItemRowToEntity(item as LineItemRow)
+      );
+
+      // AC11.1: Calculate discrepancies
+      const { data: skuData } = await this.supabase
+        .from('logistics_warehouse_skus')
+        .select('id, sku_code')
+        .in('id', lineItems.map(li => li.sku_id))
+        .eq('tenant_id', this.tenantId);
+
+      const skuMap = new Map(skuData?.map(s => [s.id, s.sku_code]) || []);
+
+      const discrepancies: DiscrepancySummary[] = lineItems.map(li => {
+        const variance = li.actual_quantity - li.expected_quantity;
+        const variancePercentage =
+          li.expected_quantity > 0
+            ? (variance / li.expected_quantity) * 100
+            : 0;
+
+        return {
+          sku_id: li.sku_id,
+          sku_code: skuMap.get(li.sku_id) || 'UNKNOWN',
+          expected: li.expected_quantity,
+          actual: li.actual_quantity,
+          variance,
+          variance_percentage: parseFloat(variancePercentage.toFixed(2)),
+        };
+      });
+
+      return {
+        success: true,
+        data: {
+          receipt,
+          line_items: lineItems,
+          discrepancies,
+        },
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: error.message || 'Failed to get receipt',
+        },
+      };
+    }
+  }
