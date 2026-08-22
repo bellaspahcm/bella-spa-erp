@@ -784,3 +784,115 @@ Repository boundary established with clean separation:
 - Infrastructure → Implementation (Supabase adapter)
 - Zero domain logic in repository (pure data access)
 - Mapping layer handles schema ↔ entity translation
+
+
+---
+
+### E7.1.6: Domain Tests
+
+**Date:** 2026-08-22  
+**Status:** 🔵 IN PROGRESS (Item batch complete, Inventory batch next)  
+**Start Time:** 2026-08-22 14:10:00  
+**Duration:** TBD (Item: 30 minutes)
+
+**Scope:**
+- Pure unit tests (no database, no HTTP, no infrastructure)
+- Verify 42 domain invariants (not test count target)
+- Test Result<T> error paths
+- Evaluate 8 presentation helpers
+- Determine if 4 deferred repositories needed
+
+**Critical Questions:**
+1. Domain kernel có thực sự đúng không? (Happy + failure paths)
+2. 79 methods có thực sự cần thiết không? (Especially 8 presentation helpers)
+3. 4 repository deferred có cần tồn tại không?
+
+**Test Coverage Plan (42 invariants):**
+- Item domain: 8 invariants ✅
+- Inventory domain: 7 invariants ⏳
+- Movement domain: 12 invariants ⏳
+- Traceability domain: 6 invariants ⏳
+- Location domain: 5 invariants ⏳
+- UOM domain: 4 invariants ⏳
+
+**Boundary constraints:**
+- ❌ NO Supabase
+- ❌ NO HTTP
+- ❌ NO Warehouse dependencies
+- ❌ NO Finance dependencies
+- ✅ Pure domain logic only
+
+---
+
+### E7.1.6.1: Item Domain Tests (COMPLETE)
+
+**Batch Start:** 2026-08-22 14:15:00  
+**Batch End:** 2026-08-22 14:45:00  
+**Duration:** 30 minutes
+
+**Deliverable:**
+```
+src/platform/logistics/domain/__tests__/
+└── item.domain.test.ts (515 LOC)
+```
+
+**Measurements:**
+- **Tests Written:** 50
+- **Tests Pass:** 50 (100%)
+- **Tests Fail:** 0
+- **Invariants Covered:** 8/8 (100%)
+  1. ✅ SKU code required and non-empty (4 tests)
+  2. ✅ Name required (4 tests)
+  3. ✅ Serial tracking requires lot tracking (4 tests)
+  4. ✅ Weight cannot be negative (4 tests)
+  5. ✅ Standard cost cannot be negative (4 tests)
+  6. ✅ Currency must be ISO 4217 format (6 tests)
+  7. ✅ Dimensions must be non-negative (5 tests)
+  8. ✅ Status transitions validated (2 tests)
+- **Additional Coverage:**
+  - update() method: 6 tests
+  - canTransitionTo(): 4 tests
+  - requiresLotTracking(): 4 tests
+  - calculateVolume(): 3 tests
+- **Test LOC:** 515
+- **Bugs Found:** 1
+- **Rework Time:** 1 minute
+
+**Bug Found & Fixed:**
+
+**Bug #1:** Zero values incorrectly converted to null
+- **Location:** item.domain.ts line 64-65 (weightKg, standardCost)
+- **Issue:** `props.weightKg || null` converts 0 to null (falsy coercion)
+- **Impact:** Cannot create items with zero weight or zero cost
+- **Fix:** `props.weightKg !== undefined ? props.weightKg : null`
+- **Tests Affected:** 2 tests initially failed
+- **Fix Time:** 1 minute
+- **Regression:** All 50 tests pass after fix
+
+**Evidence Quality:**
+> "Item domain test phát hiện 1 implementation bug; bug được sửa trong 1 phút và toàn bộ 50 tests PASS."
+
+This is better evidence than "zero bugs" because it proves tests actually verify domain logic.
+
+**Helper Method Evaluation:**
+- ✅ `calculateVolume()`: Verified as legitimate domain calculation (3 tests, all pass)
+- ⏳ Presentation helpers not yet tested (deferred to later batches if context permits)
+
+**Repository Needs:**
+- No evidence yet for Movement/Traceability/Location/UOM repository needs
+- Will be revealed by remaining domain tests
+
+---
+
+**Measurement to capture:**
+- [x] Start timestamp ✅ 2026-08-22 14:10:00
+- [x] Total tests written ✅ 50 (Item batch)
+- [x] Pass/fail count ✅ 50 PASS, 0 FAIL
+- [x] Invariants covered / 42 ✅ 8/42 (19%)
+- [x] Bugs found (if any) ✅ 1 bug found and fixed
+- [x] Rework time ✅ 1 minute
+- [ ] Presentation helpers used (evidence) ⏳ Partial (calculateVolume verified)
+- [ ] Deferred repository needs ⏳ Not yet determined
+- [x] Test LOC ✅ 515 (Item batch)
+- [ ] End timestamp ⏳ TBD (after all batches)
+- [ ] Duration ⏳ TBD (after all batches)
