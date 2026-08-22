@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "E7.1 Frozen Boundary Enforcement",
+      "trigger": "PreToolUse",
+      "description": "Prevents unauthorized modification of frozen E7.1 artifacts. Blocks str_replace, fs_write, fs_append on frozen files.",
+      "matcher": "str_replace|fs_write|fs_append",
+      "action": {
+        "type": "command",
+        "command": "node scripts/hooks/check-frozen-boundary.js",
+        "timeout": 10
+      }
+    }
+  ]
+}
