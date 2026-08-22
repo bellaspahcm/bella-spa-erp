@@ -207,7 +207,53 @@ export class UOMDomain {
       );
     }
 
-    // Both must have conversion factors
+    const fromIsBase = this.isBaseUOM(fromUOM);
+    const toIsBase = this.isBaseUOM(toUOM);
+
+    // If converting between base and derived UOM
+    if (fromIsBase && !toIsBase) {
+      // Base → Derived: divide by conversion factor
+      if (!toUOM.conversionFactor) {
+        return Result.fail(
+          'Target UOM must have conversion factor defined',
+          'UOM_CONVERSION_FACTOR_MISSING'
+        );
+      }
+      
+      // Verify fromUOM is the base of toUOM
+      if (fromUOM.uomCode !== toUOM.baseUomCode) {
+        return Result.fail(
+          'UOMs are not related (different base UOM)',
+          'UOM_DIFFERENT_BASE_UOM'
+        );
+      }
+
+      const result = quantity / toUOM.conversionFactor;
+      return Result.ok(this.roundToDecimals(result, toUOM.decimals));
+    }
+
+    if (!fromIsBase && toIsBase) {
+      // Derived → Base: multiply by conversion factor
+      if (!fromUOM.conversionFactor) {
+        return Result.fail(
+          'Source UOM must have conversion factor defined',
+          'UOM_CONVERSION_FACTOR_MISSING'
+        );
+      }
+
+      // Verify toUOM is the base of fromUOM
+      if (toUOM.uomCode !== fromUOM.baseUomCode) {
+        return Result.fail(
+          'UOMs are not related (different base UOM)',
+          'UOM_DIFFERENT_BASE_UOM'
+        );
+      }
+
+      const result = quantity * fromUOM.conversionFactor;
+      return Result.ok(this.roundToDecimals(result, toUOM.decimals));
+    }
+
+    // Both are derived UOMs - must have same base
     if (!fromUOM.conversionFactor || !toUOM.conversionFactor) {
       return Result.fail(
         'Both UOMs must have conversion factors defined',

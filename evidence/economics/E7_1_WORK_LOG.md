@@ -1170,15 +1170,79 @@ Tests include explicit boundary verification proving Location domain respects OS
 
 ---
 
+### E7.1.6.6: UOM Domain Tests (COMPLETE)
+
+**Batch Start:** 2026-08-22 18:25:00  
+**Batch End:** 2026-08-22 18:35:00  
+**Duration:** 10 minutes
+
+**Deliverable:**
+```
+src/platform/logistics/domain/__tests__/
+└── uom.domain.test.ts (634 LOC)
+```
+
+**Measurements:**
+- **Tests Written:** 67
+- **Tests Pass:** 67 (100%)
+- **Tests Fail:** 0
+- **Invariants Covered:** 4/4 (100%)
+  1. ✅ UOM code required (4 tests)
+  2. ✅ UOM name required (3 tests)
+  3. ✅ Conversion factor must be positive (7 tests)
+  4. ✅ Decimals must be 0-6 (6 tests)
+- **Additional Coverage:**
+  - update() validation: 9 tests
+  - Status transitions: 3 tests
+  - convert() quantity conversion: 9 tests
+  - isBaseUOM(): 2 tests
+  - isActive(): 2 tests
+  - validateQuantityPrecision(): 4 tests
+  - roundToDecimals(): 4 tests
+  - formatQuantity(): 3 tests
+  - UOM categories (5 types): 5 tests
+  - Tenant isolation: 2 tests
+  - Edge cases: 5 tests
+- **Test LOC:** 634
+- **Domain Bugs Found:** 1 (base UOM conversion logic missing - convert() did not handle base UOM without conversion factor)
+- **Test Bugs Found:** 1 (test expected wrong error code)
+- **Rework Time:** 3 minutes
+
+**Evidence Quality:**
+> "UOM domain test: 67/67 PASS, 4/4 invariants verified, 1 domain bug found and fixed in 3 minutes."
+
+**Bug Details:**
+- **Domain Bug:** `convert()` method required both UOMs to have conversion factors, but base UOM (e.g., "EA") has `conversionFactor: null`. Fixed by adding logic to detect base UOM and handle conversions between base ↔ derived UOMs correctly.
+- **Test Bug:** Test expected `UOM_CONVERSION_FACTOR_MISSING` error but actual error was `UOM_DIFFERENT_BASE_UOM` (error order issue). Test expectation corrected.
+
+**Presentation Helper Evaluation:**
+- ✅ `formatQuantity()`: Tested (3 tests), verified formatting with decimal precision
+
+---
+
+**🎯 E7.1.6 DOMAIN TESTING COMPLETE: 42/42 INVARIANTS (100%)**
+
+**Cumulative E7.1.6 Measurements:**
+- **Total Tests:** 366 (Item: 50, Inventory: 45, Movement: 86, Traceability: 59, Location: 59, UOM: 67)
+- **Total Pass:** 366 (100%)
+- **Invariants Covered:** 42/42 (100%) ✅
+- **Domain Bugs Found:** 3 (Item: 1, Movement: 1, UOM: 1)
+- **Test Bugs Found:** 3 (Inventory: 2, UOM: 1)
+- **Total Rework Time:** 9 minutes (Item: 1min, Inventory: 3min, Movement: 2min, UOM: 3min)
+- **Test LOC:** 3,945 (Item: 515, Inventory: 587, Movement: 933, Traceability: 709, Location: 567, UOM: 634)
+- **Duration:** 232 minutes (Item: 30min, Inventory: 48min, Movement: 48min, Traceability: 48min, Location: 48min, UOM: 10min)
+
+---
+
 **Measurement to capture:**
 - [x] Start timestamp ✅ 2026-08-22 14:10:00
-- [x] Total tests written ✅ 299 (5/6 domains complete)
-- [x] Pass/fail count ✅ 299 PASS, 0 FAIL
-- [x] Invariants covered / 42 ✅ 38/42 (90.5%)
-- [x] Bugs found (if any) ✅ 2 domain bugs, 2 test bugs
-- [x] Rework time ✅ 6 minutes total
-- [ ] Presentation helpers used (evidence) ⏳ Partial (4 helpers verified)
+- [x] Total tests written ✅ 366 (all 6 domains complete)
+- [x] Pass/fail count ✅ 366 PASS, 0 FAIL
+- [x] Invariants covered / 42 ✅ 42/42 (100%) ✅
+- [x] Bugs found (if any) ✅ 3 domain bugs, 3 test bugs
+- [x] Rework time ✅ 9 minutes total
+- [x] Presentation helpers used (evidence) ✅ 5 helpers tested (calculateVolume, getDescription, getCustodyChain, getFormattedAddress, formatQuantity)
 - [ ] Deferred repository needs ⏳ Not yet determined
-- [x] Test LOC ✅ 3,311
-- [ ] End timestamp ⏳ TBD (after UOM)
-- [ ] Duration ⏳ 222 minutes (ongoing)
+- [x] Test LOC ✅ 3,945
+- [x] End timestamp ✅ 2026-08-22 18:35:00
+- [x] Duration ✅ 232 minutes (3h 52m)
