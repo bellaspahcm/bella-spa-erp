@@ -43,10 +43,10 @@
 | Phase 1.5: Frozen Boundary Enforcement | 30 min | 10 min | ✅ COMPLETE |
 | Phase 2: Location State Machine | 45 min | 10 min | ✅ COMPLETE |
 | Phase 3: Operational Invariants | 45 min | 10 min | ✅ COMPLETE |
-| Phase 4: Multi-Entity Coordination | 60 min | — | 🔵 READY |
-| Phase 5: Movement Repository | 45 min | — | ⏳ PENDING |
+| Phase 4: Multi-Entity Coordination | 60 min | 30 min | ✅ COMPLETE |
+| Phase 5: Movement Repository | 45 min | — | 🔵 READY |
 | Phase 6: Verification & Lock | 30 min | — | ⏳ PENDING |
-| **Total** | **345 min** | **55 min** | **16% complete** |
+| **Total** | **345 min** | **85 min** | **25% complete** |
 
 ---
 
@@ -521,6 +521,189 @@ This proves E7.2 design was sound from Phase 1 - operations were built with safe
 - ✅ Phase 3 complete
 
 **Phase 3 COMPLETE** ✅
+
+---
+
+## Phase 4: Multi-Entity Coordination
+
+**Start:** 2026-08-22 20:00:00  
+**End:** 2026-08-22 20:30:00  
+**Planned Duration:** 60 minutes  
+**Actual Duration:** 30 minutes
+
+### Scope
+
+**Deliverables:**
+- ✅ `InventoryOperationsDomain` service class
+- ✅ `reserveWithMovement()` - coordinates Inventory + Movement
+- ✅ `shipWithMovement()` - coordinates ship + movement
+- ✅ `cancelWithMovement()` - coordinates cancel + reversal
+- ✅ Atomic failure behavior (first entity fails → no second entity)
+- ✅ Boundary enforcement (NO Product workflow)
+
+### Results
+
+**Tests:**
+- E7.2 coordination tests: 15/15 PASS (100%)
+- E7.1 regression: 366/366 PASS (100%)
+- E7.2 total: 73 tests (P1:17, P2:21, P3:20, P4:15)
+- **Total: 439/439 PASS (100%)**
+
+**Test LOC:** 279  
+**Domain LOC:** 212 (InventoryOperationsDomain service)
+
+**Gaps Found:** 1 (E7.1 frozen contract adaptation)
+
+**Rework Time:** 20 minutes (frozen contract adaptation)
+
+### Gap Found: E7.1 Frozen Contract Adaptation
+
+**Discovery:** E7.2 coordination operations initially failed because they didn't provide required E7.1 parameters.
+
+**Frozen Contract Requirements:**
+- ✅ `movementNumber` is required (non-empty string)
+- ✅ `unitOfMeasure` is required
+- ✅ `movementType` must be valid enum value
+- ✅ `direction` must be valid enum value
+
+**E7.2 Adaptations Made:**
+1. Generate `movementNumber`: `MV-{UUID-8-chars}`
+2. Use `unitOfMeasure` from inventory (`inventory.uomId`)
+3. Map operations to E7.1 movement types:
+   - Reservation → `ISSUE` (OUTBOUND)
+   - Shipment → `SHIPMENT` (OUTBOUND)
+   - Cancellation → `RETURN_RECEIPT` (INBOUND)
+4. Use `sourceDocumentType/Id` instead of non-existent `referenceType/Id`
+
+**Evidence Value:**
+
+This gap proves frozen boundary enforcement works:
+- E7.2 MUST adapt to E7.1 contracts
+- E7.2 CANNOT modify E7.1 enums/types
+- Regression tests caught all violations
+- E7.1 remained unchanged
+
+**Failure Analysis:** `evidence/economics/E7_2_PHASE_4_FAILURE_ANALYSIS.md` (116 lines)
+
+### Coordination Patterns Verified
+
+**1. Success Path:**
+```typescript
+reserveWithMovement(inventory, { quantity, reason, requestedBy })
+  ↓
+Step 1: Reserve inventory (AVAILABLE → RESERVED)
+  ↓ SUCCESS
+Step 2: Create movement (ISSUE, OUTBOUND)
+  ↓ SUCCESS
+Return: { inventory, movement }
+```
+
+**2. Atomic Failure (Inventory Fails):**
+```typescript
+reserveWithMovement(inventory, { quantity: 999 }) // exceeds available
+  ↓
+Step 1: Reserve inventory
+  ↓ FAIL (INSUFFICIENT_QUANTITY)
+Step 2: Movement creation SKIPPED
+  ↓
+Return: Result.fail()
+  NO movement created ✅
+```
+
+**3. Pure Function Pattern:**
+```typescript
+// Original inventory NOT mutated
+inventory.quantityReserved = 0 (unchanged)
+
+// New inventory returned
+result.value.inventory.quantityReserved = 30 (new object)
+```
+
+### Boundary Enforcement Verified
+
+**Allowed Operations:**
+- ✅ Coordinate Inventory + Movement
+- ✅ Return entity tuples
+- ✅ Pure domain logic
+
+**Prohibited Operations:**
+- ❌ Warehouse workflows (bin selection, putaway, QA)
+- ❌ Finance workflows (invoicing, COGS, GL)
+- ❌ Transaction management (Product layer responsibility)
+- ❌ Persistence orchestration (Product layer responsibility)
+
+**API Surface Check:**
+- Methods: 3 (reserveWithMovement, shipWithMovement, cancelWithMovement)
+- Returns: `{ inventory, movement }` tuple only
+- No warehouse/finance methods in API
+
+### Design Decisions
+
+**1. Domain Service Pattern:**
+- Static methods (no instance state)
+- No infrastructure dependencies
+- Pure functions returning entity tuples
+- Products orchestrate persistence
+
+**2. Movement Number Generation:**
+- UUID-based: `MV-{8-char-UUID}`
+- No sequence coordination required
+- Collision-resistant
+- Products can override later
+
+**3. Movement Type Mapping:**
+- E7.2 semantics → E7.1 frozen enums
+- Reservation → ISSUE (outbound allocation)
+- Shipment → SHIPMENT (outbound transfer)
+- Cancellation → RETURN_RECEIPT (inbound reversal)
+
+### Test Coverage
+
+**Coordination Success (5 tests):**
+- ✅ Reserve with movement created
+- ✅ Fully reserve (status change)
+- ✅ Custom source document
+- ✅ Ship with movement
+- ✅ Cancel with movement
+
+**Atomic Failure (5 tests):**
+- ✅ Over-reservation fails (no movement)
+- ✅ Invalid status fails (no movement)
+- ✅ Invalid quantity fails (no movement)
+- ✅ Ship non-reserved fails (no movement)
+- ✅ Over-cancel fails (no movement)
+
+**Boundary Enforcement (3 tests):**
+- ✅ No warehouse operations in API
+- ✅ No finance operations in API
+- ✅ Only returns { inventory, movement } tuple
+
+**Domain Service Characteristics (2 tests):**
+- ✅ Pure functions (no infrastructure)
+- ✅ Typed Result for all failures
+
+### Key Achievement
+
+**Multi-entity coordination with atomic failure semantics:**
+
+When first entity operation fails, second entity is never created. When both succeed, Products orchestrate persistence with transaction boundaries.
+
+**E7.2 successfully extended E7.1 without modifying frozen contracts.**
+
+### Phase 4 Completion Checklist
+
+- ✅ `InventoryOperationsDomain` service created
+- ✅ `reserveWithMovement()` implemented and tested
+- ✅ `shipWithMovement()` implemented and tested
+- ✅ `cancelWithMovement()` implemented and tested
+- ✅ Atomic failure verified (5 tests)
+- ✅ Boundary enforcement verified (3 tests)
+- ✅ Pure function pattern verified
+- ✅ E7.1 frozen contract adapted (not modified)
+- ✅ Failure analysis documented
+- ✅ Phase 4 complete
+
+**Phase 4 COMPLETE** ✅
 
 ---
 
