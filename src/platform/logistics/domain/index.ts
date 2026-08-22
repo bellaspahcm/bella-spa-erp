@@ -1,32 +1,78 @@
 /**
- * Logistics OS — Domain Layer
+ * Logistics OS Domain Kernel - Public API
  * 
- * Core domain types and contracts for Logistics OS.
+ * E7.1: Pure domain layer (zero infrastructure dependencies)
  * 
- * Architecture:
- * - Pure TypeScript interfaces (no implementation)
- * - Warehouse-agnostic (no Receipt, Bin, Putaway concepts)
- * - Finance-agnostic (no accounting logic)
- * - Product-agnostic (serves all Logistics Products)
+ * This module exports domain logic for:
+ * - Item/SKU management
+ * - Inventory balance and reservations
+ * - Inventory movements (transactions)
+ * - Traceability (lot/serial tracking)
+ * - Location management (generic)
+ * - Unit of measure
  * 
- * @module logistics/domain
+ * All domain logic is:
+ * - Infrastructure-independent (no DB, no HTTP)
+ * - Product-independent (no Warehouse/Finance knowledge)
+ * - Testable without external dependencies
+ * - Pure TypeScript (Result<T> pattern for errors)
  */
 
-// Item domain
-export * from './item.types';
+// Core utilities
+export { Result } from './core/result';
+export type { Result as ResultType } from './core/result';
 
-// Inventory domain
-export * from './inventory.types';
+// Domain kernels
+export { ItemDomain } from './item.domain';
+export { InventoryDomain } from './inventory.domain';
+export { MovementDomain } from './movement.domain';
+export { TraceabilityDomain } from './traceability.domain';
+export { LocationDomain } from './location.domain';
+export { UOMDomain } from './uom.domain';
 
-// Movement domain
-export * from './movement.types';
-
-// Traceability domain
-export * from './traceability.types';
-
-// Location domain
-export * from './location.types';
-
-// UOM domain
-export * from './uom.types';
-
+// Types (re-export from types layer)
+export type {
+  // Item types
+  Item,
+  CreateItemProps,
+  UpdateItemProps,
+  ItemType,
+  ItemStatus,
+  
+  // Inventory types
+  Inventory,
+  CreateInventoryProps,
+  UpdateInventoryQuantityProps,
+  ReserveInventoryProps,
+  ReleaseReservationProps,
+  InventoryStatus,
+  
+  // Movement types
+  InventoryMovement,
+  CreateMovementProps,
+  MovementType,
+  MovementDirection,
+  MovementStatus,
+  
+  // Traceability types
+  Traceability,
+  CreateTraceabilityProps,
+  AddCustodyEventProps,
+  CustodyEvent,
+  RecallStatus,
+  ComplianceStatus,
+  
+  // Location types
+  Location,
+  CreateLocationProps,
+  UpdateLocationProps,
+  LocationType,
+  LocationStatus,
+  
+  // UOM types
+  UnitOfMeasure,
+  CreateUOMProps,
+  UpdateUOMProps,
+  UOMCategory,
+  UOMStatus,
+} from './item.types';
