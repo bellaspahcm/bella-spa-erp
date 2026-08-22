@@ -122,8 +122,8 @@ export class MovementDomain {
       serialNumber: props.serialNumber || null,
       expiryDate: props.expiryDate || null,
       
-      unitCost: props.unitCost || null,
-      totalCost: props.totalCost || null,
+      unitCost: props.unitCost !== undefined ? props.unitCost : null,
+      totalCost: props.totalCost !== undefined ? props.totalCost : null,
       currency: props.currency || null,
       
       sourceDocumentType: props.sourceDocumentType || null,

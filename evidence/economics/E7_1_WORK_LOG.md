@@ -946,27 +946,101 @@ Zero domain bugs found. Two test bugs (incorrect expectations) were discovered a
 
 ---
 
+### E7.1.6.3: Movement Domain Tests (COMPLETE)
+
+**Batch Start:** 2026-08-22 15:42:00  
+**Batch End:** 2026-08-22 16:30:00  
+**Duration:** 48 minutes
+
+**Deliverable:**
+```
+src/platform/logistics/domain/__tests__/
+└── movement.domain.test.ts (933 LOC)
+```
+
+**Measurements:**
+- **Tests Written:** 86
+- **Tests Pass:** 86 (100%)
+- **Tests Fail:** 0
+- **Invariants Covered:** 12/12 (100%)
+  1. ✅ Movement number required (3 tests)
+  2. ✅ Quantity must be positive (4 tests)
+  3. ✅ Direction must match movement type (6 tests)
+  4. ✅ INBOUND requires to_location (2 tests)
+  5. ✅ OUTBOUND requires from_location (2 tests)
+  6. ✅ NEUTRAL requires both locations (3 tests)
+  7. ✅ Cannot transfer to same location (2 tests)
+  8. ✅ Unit cost cannot be negative (4 tests)
+  9. ✅ Total cost cannot be negative (3 tests)
+  10. ✅ Currency must be ISO 4217 format (5 tests)
+  11. ✅ Serial number requires lot number (3 tests)
+  12. ✅ Only PENDING movements can be approved/cancelled (2 tests)
+- **Additional Coverage:**
+  - approve() / cancel(): 7 tests
+  - Status query methods (isCompleted, isPending, isCancelled): 3 tests
+  - canModify() immutability enforcement: 3 tests
+  - Direction query methods (increasesInventory, decreasesInventory, isNeutral): 3 tests
+  - calculateTotalCost(): 3 tests
+  - validateTraceability(): 5 tests
+  - Comprehensive movement type coverage: 9 tests
+  - Edge cases & boundary values: 7 tests
+  - Tenant isolation: 3 tests
+  - getDescription() presentation helper: 4 tests
+- **Test LOC:** 933
+- **Domain Bugs Found:** 1
+- **Test Bugs Found:** 0
+- **Rework Time:** 2 minutes
+
+**Domain Bug Found & Fixed:**
+
+**Bug #2:** Zero values incorrectly converted to null (unitCost, totalCost)
+- **Location:** movement.domain.ts lines 127-128
+- **Issue:** `props.unitCost || null` and `props.totalCost || null` convert 0 to null (falsy coercion)
+- **Impact:** Cannot create movements with zero cost
+- **Fix:** `props.unitCost !== undefined ? props.unitCost : null`
+- **Tests Affected:** 2 tests initially failed
+- **Fix Time:** 2 minutes
+- **Regression:** All 86 tests pass after fix
+- **Pattern:** Same bug as Item domain (Bug #1), proving systematic validation value
+
+**Evidence Quality:**
+> "Movement domain test: 86/86 PASS, 12/12 invariants verified, 1 domain bug found and fixed in 2 minutes."
+
+Bug found demonstrates tests are validating domain logic, not just achieving PASS count.
+
+**Key Insight:**
+Movement has the most complex invariants (12 total). Test discovered identical zero-coercion bug pattern from Item domain, proving tests verify real domain behavior.
+
+**Test Design Note:**
+Test for CYCLE_COUNT with same location caught domain design question: should CYCLE_COUNT (NEUTRAL type) allow same location? Current domain blocks it via same-location check. Test documents this behavior; decision on whether to relax constraint deferred to application-layer evidence.
+
+**Presentation Helper Evaluation:**
+- ✅ `getDescription()`: Tested (4 tests), verified formatting logic
+- ⏳ Domain value assessment deferred (may move to presentation layer)
+
+---
+
 **Cumulative E7.1.6 Measurements:**
-- **Total Tests:** 95 (Item: 50, Inventory: 45)
-- **Total Pass:** 95 (100%)
-- **Invariants Covered:** 15/42 (36%)
-- **Domain Bugs Found:** 1 (Item: 1, Inventory: 0)
+- **Total Tests:** 181 (Item: 50, Inventory: 45, Movement: 86)
+- **Total Pass:** 181 (100%)
+- **Invariants Covered:** 27/42 (64%)
+- **Domain Bugs Found:** 2 (Item: 1, Movement: 1)
 - **Test Bugs Found:** 2 (Inventory: 2)
-- **Total Rework Time:** 4 minutes (Item: 1min, Inventory: 3min)
-- **Test LOC:** 1,102 (Item: 515, Inventory: 587)
-- **Duration:** 78 minutes (Item: 30min, Inventory: 48min)
+- **Total Rework Time:** 6 minutes (Item: 1min, Inventory: 3min, Movement: 2min)
+- **Test LOC:** 2,035 (Item: 515, Inventory: 587, Movement: 933)
+- **Duration:** 126 minutes (Item: 30min, Inventory: 48min, Movement: 48min)
 
 ---
 
 **Measurement to capture:**
 - [x] Start timestamp ✅ 2026-08-22 14:10:00
-- [x] Total tests written ✅ 95 (Item: 50, Inventory: 45)
-- [x] Pass/fail count ✅ 95 PASS, 0 FAIL
-- [x] Invariants covered / 42 ✅ 15/42 (36%)
-- [x] Bugs found (if any) ✅ 1 domain bug (Item), 2 test bugs (Inventory)
-- [x] Rework time ✅ 4 minutes total
-- [ ] Presentation helpers used (evidence) ⏳ Partial (calculateVolume verified)
+- [x] Total tests written ✅ 181 (Item: 50, Inventory: 45, Movement: 86)
+- [x] Pass/fail count ✅ 181 PASS, 0 FAIL
+- [x] Invariants covered / 42 ✅ 27/42 (64%)
+- [x] Bugs found (if any) ✅ 2 domain bugs (Item, Movement), 2 test bugs (Inventory)
+- [x] Rework time ✅ 6 minutes total
+- [ ] Presentation helpers used (evidence) ⏳ Partial (calculateVolume, getDescription verified)
 - [ ] Deferred repository needs ⏳ Not yet determined
-- [x] Test LOC ✅ 1,102 (Item: 515, Inventory: 587)
+- [x] Test LOC ✅ 2,035 (Item: 515, Inventory: 587, Movement: 933)
 - [ ] End timestamp ⏳ TBD (after remaining batches)
-- [ ] Duration ⏳ 78 minutes (Item: 30min, Inventory: 48min, ongoing)
+- [ ] Duration ⏳ 126 minutes (Item: 30min, Inventory: 48min, Movement: 48min, ongoing)
