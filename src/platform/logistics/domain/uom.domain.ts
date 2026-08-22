@@ -277,6 +277,10 @@ export class UOMDomain {
 
   /**
    * Format quantity with UOM code
+   * 
+   * NOTE: Presentation helper.
+   * May move to API/presentation layer if tests show no domain-level need.
+   * Do not treat this as a Logistics OS primitive.
    */
   static formatQuantity(quantity: number, uom: UnitOfMeasure): string {
     const rounded = this.roundToDecimals(quantity, uom.decimals);

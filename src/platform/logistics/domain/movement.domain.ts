@@ -399,6 +399,10 @@ export class MovementDomain {
 
   /**
    * Get human-readable movement description
+   * 
+   * NOTE: Presentation helper.
+   * May move to API/presentation layer if tests show no domain-level need.
+   * Do not treat this as a Logistics OS primitive.
    */
   static getDescription(movement: InventoryMovement): string {
     const parts: string[] = [
