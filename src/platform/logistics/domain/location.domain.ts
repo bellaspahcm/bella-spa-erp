@@ -256,6 +256,10 @@ export class LocationDomain {
 
   /**
    * Get address string (formatted)
+   * 
+   * NOTE: Presentation helper.
+   * May move to API/presentation layer if tests show no domain-level need.
+   * Do not treat this as a Logistics OS primitive.
    */
   static getFormattedAddress(location: Location): string | null {
     if (!location.addressJson) return null;

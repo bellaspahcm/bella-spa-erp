@@ -282,6 +282,10 @@ export class TraceabilityDomain {
 
   /**
    * Get chain of custody summary
+   * 
+   * NOTE: Query/read-model helper.
+   * May belong in repository query layer or API/presentation layer.
+   * Consider whether this is a domain primitive or a reporting concern.
    */
   static getCustodyChain(traceability: Traceability): string[] {
     return traceability.custodyEvents.map(event => {
