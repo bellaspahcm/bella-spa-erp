@@ -193,6 +193,25 @@ export interface ReceiptSummary {
   completed_at?: string | null;
 }
 
+/**
+ * R12: Count Receipts by Status Request
+ * Aggregate metrics for dashboard
+ */
+export interface CountReceiptsByStatusRequest {
+  tenant_id: string;
+}
+
+/**
+ * R12: Count Receipts by Status Result
+ * Returns count of receipts grouped by status
+ */
+export interface CountReceiptsByStatusResult {
+  pending_putaway: number;
+  putaway_in_progress: number;
+  completed: number;
+  on_hold: number;
+}
+
 export interface GetReceiptRequest {
   tenant_id: string;
   receipt_id: string;
@@ -366,6 +385,25 @@ export interface WarehouseContract {
   listReceipts(
     request: ListReceiptsRequest
   ): Promise<EngineResponse<ListReceiptsResult>>;
+  
+  /**
+   * R12: Count receipts by status
+   * 
+   * @param request - Tenant-scoped count request
+   * @returns EngineResponse with counts grouped by status
+   * 
+   * **Metrics:**
+   * - Aggregate count by status (pending_putaway, putaway_in_progress, completed, on_hold)
+   * - Uses COUNT aggregate (not fetch-and-count)
+   * - RLS enforcement (tenant isolation)
+   * 
+   * **Platform:**
+   * - Tenant isolation enforced via RLS
+   * - Performance optimized (<100ms for 10k receipts)
+   */
+  countReceiptsByStatus(
+    request: CountReceiptsByStatusRequest
+  ): Promise<EngineResponse<CountReceiptsByStatusResult>>;
   
   /**
    * Get receipts by status
