@@ -79,6 +79,22 @@
 **Key Insight:**
 Contract design took ~45 minutes. Most time spent on Movement types (384 LOC) due to comprehensive direction/type taxonomy. Inventory types (306 LOC) second-largest due to reservation/allocation support.
 
+**LOC Analysis:**
+- **Target:** 200-300 LOC
+- **Actual:** 1,304 LOC (4.3x larger)
+- **Assessment:** NOT technical debt. Breakdown:
+  - Type definitions: ~60% (domain semantics)
+  - Documentation: ~25% (JSDoc comments)
+  - Error codes: ~10% (validation contracts)
+  - Implementation: 0% (pure contracts)
+
+**Verdict:** Contract complexity is evidence of OS design challenge, not failure. Movement (384 LOC) and Inventory (306 LOC) reflect comprehensive taxonomy needed for cross-product reuse. Will measure in E7.5 if this complexity delivers value to Products or is premature generalization.
+
+**Principle Applied:**
+> "Không optimize code để đạt target. Optimize architecture để tạo ra evidence."
+
+Keeping 1,304 LOC as-is. E7.5 (Warehouse integration) will prove if complexity justified.
+
 **Scope:**
 - Item / SKU contracts
 - Inventory contracts
@@ -363,7 +379,95 @@ Date: [When decided]
 
 ---
 
-## Key Insights (Captured During E7.1)
+### E7.1.3: Define Persistence Model
+
+**Date:** 2026-08-22  
+**Status:** ✅ COMPLETE  
+**Start Time:** 2026-08-22 11:35:00  
+**End Time:** 2026-08-22 11:52:00  
+**Duration:** 17 minutes
+
+**Scope:**
+- Database schema for Logistics OS
+- 6 core tables (separate `logistics` schema)
+- RLS policies (tenant isolation)
+- Constraints (domain invariants)
+- Indexes (performance)
+
+**Critical Question:**
+> "Logistics OS có thể tồn tại như một domain độc lập ở tầng persistence mà không biết Product nào đang sử dụng nó hay không?"
+
+**Answer:** ✅ YES. Schema demonstrates complete independence:
+- No FK constraints to Warehouse tables (receipt_id, bin_id, vendor_id)
+- No FK constraints to Finance tables (GL accounts, journal entries)
+- Generic `source_document_id` (no FK) allows Products to reference OS
+- Products hold references to OS tables, not reverse
+
+**Schema Principles:**
+- ✅ Separate `logistics.*` schema (not `logistics_warehouse_*`)
+- ✅ Zero Warehouse references (no receipt_id, bin_id, vendor_id as FK)
+- ✅ Zero Finance references (no GL accounts, journal entries)
+- ✅ Products reference OS (Warehouse → Logistics OS), not reverse
+- ✅ RLS enforces tenant isolation (P0 Gate)
+
+**Deliverable:**
+```
+migrations/logistics/
+└── 20260822_logistics_os_domain_kernel.sql (455 LOC)
+```
+
+**Measurements:**
+- **Schema LOC:** 455
+- **Tables:** 6
+  - `logistics.items` (SKU master data)
+  - `logistics.locations` (generic location abstraction)
+  - `logistics.inventory` (balance by item/location)
+  - `logistics.inventory_movements` (immutable transaction log)
+  - `logistics.traceability` (lot/serial tracking)
+  - `logistics.uom` (unit of measure)
+- **Primary Key Constraints:** 6 (one per table)
+- **Foreign Key Constraints:** 14 (all within Logistics OS, zero to Products)
+- **Check Constraints:** 38 (domain invariants)
+- **Unique Constraints:** 7 (business key enforcement)
+- **RLS Policies:** 6 (tenant isolation, P0 Gate)
+- **Indexes:** 35 (performance, tenant scoping)
+- **Audit Triggers:** 5 (updated_at, movements excluded - immutable)
+
+**Key Design Decisions:**
+
+1. **Immutable Movements:** `inventory_movements` has no `updated_at` column or UPDATE trigger. Movements cannot be modified after creation (audit trail integrity).
+
+2. **Generic Location Reference:** Products can extend locations (Warehouse adds bins), but OS only knows generic location types (WAREHOUSE, STORE, 3PL, etc.).
+
+3. **Cost Hints (not authoritative):** `items.standard_cost` and `movements.unit_cost` are hints for Finance OS. Finance OS remains authoritative for costing.
+
+4. **Source Document Pattern:** `movements.source_document_id` is UUID with no FK constraint. Products reference OS, OS doesn't know Product schemas.
+
+5. **Traceability Chain of Custody:** `custody_events` JSONB array is append-only (immutable audit trail).
+
+6. **Quantity Precision:** DECIMAL(12, 4) supports fractional quantities (0.0001 precision).
+
+**Boundary Enforcement:**
+
+❌ **EXCLUDED from schema:**
+- receipt_id, receipt_line_id (Warehouse Product domain)
+- bin_id, bin_capacity (Warehouse Product domain)
+- putaway_id, putaway workflow (Warehouse Product domain)
+- vendor_id as FK (Warehouse Product domain)
+- GL accounts, journal entries (Finance OS domain)
+- warehouse-specific status codes (e.g., BIN_FULL, NEEDS_PUTAWAY)
+
+✅ **INCLUDED in schema:**
+- Generic location_type (extensible by Products)
+- Generic source_document_id (no FK, Products control)
+- Lot/serial/expiry tracking (cross-product primitive)
+- Movement type taxonomy (comprehensive, cross-product)
+- RLS tenant isolation (Platform P0 Gate)
+
+**Evidence:**
+Answer to critical question is YES. Schema can exist independently. Products consume OS via references, OS has no knowledge of Product schemas.
+
+---
 
 **Purpose:** Document learnings, surprises, architectural insights
 
