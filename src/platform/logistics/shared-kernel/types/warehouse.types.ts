@@ -241,3 +241,146 @@ export interface DiscrepancySummary {
   variance: number;
   variance_percentage: number;
 }
+
+/**
+ * R6 - Submit for Putaway Input
+ */
+export interface SubmitForPutawayInput {
+  tenant_id: string;
+  receipt_id: string;
+  submitted_by: string; // user_id
+}
+
+/**
+ * R6 - Submit for Putaway Result
+ */
+export interface SubmitForPutawayResult {
+  receipt: WarehouseReceipt;
+  transitioned_at: Date;
+}
+
+/**
+ * R7 - Complete Putaway Input
+ */
+export interface CompletePutawayInput {
+  tenant_id: string;
+  receipt_id: string;
+  completed_by: string; // user_id
+}
+
+/**
+ * R7 - Complete Putaway Result
+ */
+export interface CompletePutawayResult {
+  receipt: WarehouseReceipt;
+  transitioned_at: Date;
+  inventory_movements: InventoryMovementSummary[];
+}
+
+export interface InventoryMovementSummary {
+  sku_id: string;
+  sku_code: string;
+  bin_id: string;
+  bin_code: string;
+  quantity: number;
+}
+
+/**
+ * R8 - Hold Receipt Input
+ */
+export interface HoldReceiptInput {
+  tenant_id: string;
+  receipt_id: string;
+  held_by: string; // user_id
+  hold_reason: 'quality_issue' | 'quantity_discrepancy' | 'damaged_goods';
+  notes?: string;
+  line_item_ids?: string[]; // optional - specific line items
+}
+
+/**
+ * R8 - Hold Receipt Result
+ */
+export interface HoldReceiptResult {
+  receipt: WarehouseReceipt;
+  held_at: Date;
+  scope: 'full_receipt' | 'line_items';
+  affected_line_items?: number;
+}
+
+/**
+ * R8 - Release Hold Input
+ */
+export interface ReleaseHoldInput {
+  tenant_id: string;
+  receipt_id: string;
+  released_by: string; // user_id
+  notes?: string;
+}
+
+/**
+ * R8 - Release Hold Result
+ */
+export interface ReleaseHoldResult {
+  receipt: WarehouseReceipt;
+  released_at: Date;
+}
+
+/**
+ * R6-R8 - Workflow Validation Errors
+ */
+export interface WorkflowValidationError {
+  field: string;
+  code: string;
+  message: string;
+}
+
+/**
+ * R10 - List Receipts Input
+ */
+export interface ListReceiptsInput {
+  tenant_id: string;
+  
+  // Pagination
+  page?: number;
+  limit?: number;
+  
+  // Filters
+  status?: ReceiptStatus;
+  vendor_id?: string;
+  from?: string; // YYYY-MM-DD
+  to?: string;   // YYYY-MM-DD
+  
+  // Sorting
+  sort_by?: 'received_date' | 'created_at' | 'po_number';
+  sort_order?: 'asc' | 'desc';
+}
+
+/**
+ * R10 - List Receipts Result
+ */
+export interface ListReceiptsResult {
+  receipts: ReceiptSummary[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    total_pages: number;
+  };
+}
+
+/**
+ * R10 - Receipt Summary
+ * Lightweight receipt for list views
+ */
+export interface ReceiptSummary {
+  id: string;
+  po_number: string;
+  vendor_id: string | null;
+  vendor_name?: string;
+  received_date: string;
+  status: ReceiptStatus;
+  line_item_count: number;
+  created_at: string;
+  submitted_at?: string | null;
+  completed_at?: string | null;
+}
