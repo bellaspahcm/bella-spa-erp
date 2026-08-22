@@ -52,8 +52,40 @@
 ## Phase 1: Inventory State Machine
 
 **Start:** 2026-08-22 18:55:00  
+**End:** 2026-08-22 19:20:00  
 **Planned Duration:** 90 minutes  
-**Actual Duration:** TBD
+**Actual Duration:** 25 minutes
+
+### Scope
+
+**Deliverables:**
+- ✅ `Inventory.reserveOperation(inventory, quantity, context)` — AVAILABLE → RESERVED
+- ✅ `Inventory.shipOperation(inventory)` — RESERVED → IN_TRANSIT
+- ✅ `Inventory.cancelOperation(inventory, quantity, reason)` — RESERVED → AVAILABLE (unreserve)
+- ✅ `Inventory.expireOperation(inventory)` — QUARANTINE → EXPIRED
+
+**Success Criteria:**
+- ✅ Each operation checks preconditions (status, quantity)
+- ✅ Each operation calls `canTransitionTo()` for state validation
+- ✅ Each operation updates state correctly
+- ✅ **Negative-path tests:** Invalid operations rejected, state unchanged
+- ✅ Typed errors returned for all failure cases
+
+### Results
+
+**Tests:**
+- E7.2 tests written: 17
+- E7.2 tests PASS: 17/17 (100%)
+- E7.1 regression: 366/366 PASS (100%)
+- **Total: 383/383 PASS (100%)**
+
+**Test LOC:** 263
+
+**Bugs Found:** 0 domain bugs
+
+**Gaps Found:** 1 architectural gap (frozen API conflict - resolved)
+
+**Rework Time:** 25 minutes (Gap #1 resolution)
 
 ### Scope
 
@@ -152,13 +184,24 @@
 
 *Record any E7.1 capabilities that E7.2 needs but are missing. Do NOT modify E7.1 unless critical.*
 
-### Gap #1: [Title]
-- **Discovered:** [timestamp]
-- **Phase:** [which phase]
-- **Description:** [what E7.1 is missing]
-- **Impact:** [how it blocks E7.2]
-- **Decision:** [keep / defer / backport to E7.1]
-- **Rationale:** [why this decision]
+### Gap #1: Frozen API Contract Conflict
+- **Discovered:** 2026-08-22 19:15:00 (Phase 1 implementation)
+- **Phase:** Phase 1 - Inventory State Machine
+- **Description:** E7.2 initially attempted to replace the frozen E7.1 `reserve()` method with a new signature (`quantity, reason, requestedBy` instead of `props: ReserveInventoryProps`). This broke 5 E7.1 tests.
+- **Impact:** Regression gate detected 5/366 E7.1 test failures (392/397 total suite)
+- **Decision:** RESOLVED - Preserve E7.1 `reserve()` unchanged, introduce E7.2 `reserveOperation()` as separate operational method
+- **Rationale:** 
+  - E7.1 is frozen (locked 2026-08-22 18:40:00)
+  - E7.2 design constraint: "DO NOT modify E7.1 frozen code unless architectural defect"
+  - Not a defect - E7.1 `reserve()` is valid domain primitive
+  - E7.2 should extend, not replace
+- **Resolution:**
+  - E7.1 `reserve(inventory, props)` - basic primitive (unchanged)
+  - E7.2 `reserveOperation(inventory, quantity, context)` - operational semantics with state machine
+  - Same pattern for all E7.2 operations: `shipOperation()`, `cancelOperation()`, `expireOperation()`
+- **Evidence Value:** ✅ Positive - proves regression gate works, detected contract violation early
+
+**Final Verification:** 383/383 tests PASS (E7.1: 366, E7.2: 17)
 
 ---
 

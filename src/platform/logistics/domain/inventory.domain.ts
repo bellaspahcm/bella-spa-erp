@@ -143,6 +143,48 @@ export class InventoryDomain {
    * 
    * Reduces available quantity without physical movement.
    * Used when order is placed but not yet picked/shipped.
+   * 
+   * E7.1 implementation - basic reservation logic
+   */
+  static reserveQuantity(
+    inventory: Inventory,
+    props: ReserveInventoryProps
+  ): Result<Inventory> {
+    if (props.quantity <= 0) {
+      return Result.fail(
+        'Reservation quantity must be positive',
+        'INVENTORY_RESERVE_QUANTITY_INVALID'
+      );
+    }
+
+    const newQuantityReserved = inventory.quantityReserved + props.quantity;
+
+    if (newQuantityReserved > inventory.quantityOnHand) {
+      return Result.fail(
+        `Insufficient inventory to reserve ${props.quantity} (available: ${inventory.quantityAvailable})`,
+        'INVENTORY_INSUFFICIENT_FOR_RESERVATION'
+      );
+    }
+
+    const updated: Inventory = {
+      ...inventory,
+      quantityReserved: newQuantityReserved,
+      quantityAvailable: inventory.quantityOnHand - newQuantityReserved,
+      status: newQuantityReserved === inventory.quantityOnHand ? 'RESERVED' : inventory.status,
+      updatedAt: new Date(),
+    };
+
+    return Result.ok(updated);
+  }
+
+  /**
+   * Reserve inventory (E7.1 basic primitive)
+   * 
+   * Basic reservation logic without operational constraints.
+   * For operational semantics with state machine, use reserveOperation().
+   * 
+   * Reduces available quantity without physical movement.
+   * Used when order is placed but not yet picked/shipped.
    */
   static reserve(
     inventory: Inventory,
@@ -173,6 +215,290 @@ export class InventoryDomain {
     };
 
     return Result.ok(updated);
+  }
+
+  /**
+   * Reserve inventory with operational semantics (E7.2 operational method)
+   * 
+   * Full operational semantics with state machine integration.
+   * For basic reservation without operational constraints, use reserve().
+   * 
+   * Preconditions:
+   * - Inventory must be in AVAILABLE status
+   * - Quantity must be positive
+   * - Sufficient available quantity
+   * 
+   * Postconditions:
+   * - Inventory status transitions to RESERVED (if fully reserved) or stays AVAILABLE
+   * - Quantity reserved increases
+   * - Quantity available decreases
+   * 
+   * Invariants preserved:
+   * - reserved + available = on_hand
+   * - reserved <= on_hand
+   */
+  static reserveOperation(
+    inventory: Inventory,
+    quantity: number,
+    context: { reason: string; requestedBy: string }
+  ): Result<Inventory> {
+    // Operational invariant: quantity must be positive
+    if (quantity <= 0) {
+      return Result.fail(
+        'Reservation quantity must be positive',
+        'INVENTORY_RESERVE_QUANTITY_INVALID'
+      );
+    }
+
+    // Operational invariant: can only reserve AVAILABLE inventory
+    if (inventory.status !== 'AVAILABLE') {
+      return Result.fail(
+        `Cannot reserve inventory in ${inventory.status} status (must be AVAILABLE)`,
+        'INVENTORY_INVALID_STATUS_FOR_RESERVE'
+      );
+    }
+
+    // Operational invariant: sufficient quantity available
+    if (quantity > inventory.quantityAvailable) {
+      return Result.fail(
+        `Insufficient inventory to reserve ${quantity} (available: ${inventory.quantityAvailable})`,
+        'INVENTORY_INSUFFICIENT_QUANTITY'
+      );
+    }
+
+    // Calculate new quantities
+    const newQuantityReserved = inventory.quantityReserved + quantity;
+    const newQuantityAvailable = inventory.quantityOnHand - newQuantityReserved;
+
+    // Determine new status
+    const newStatus: InventoryStatus = newQuantityAvailable === 0 ? 'RESERVED' : 'AVAILABLE';
+
+    // Check state transition is valid
+    if (newStatus !== inventory.status) {
+      const transitionCheck = this.canTransitionTo(inventory, newStatus);
+      if (transitionCheck.isFailure) {
+        return Result.fail(
+          `State transition not allowed: ${transitionCheck.error}`,
+          transitionCheck.errorCode || 'INVENTORY_INVALID_TRANSITION'
+        );
+      }
+    }
+
+    const updated: Inventory = {
+      ...inventory,
+      quantityReserved: newQuantityReserved,
+      quantityAvailable: newQuantityAvailable,
+      status: newStatus,
+      updatedAt: new Date(),
+    };
+
+    return Result.ok(updated);
+  }
+
+  /**
+   * Ship inventory (E7.2 operational method)
+   * 
+   * Transitions inventory from RESERVED to IN_TRANSIT.
+   * Represents physical movement initiation.
+   * 
+   * Preconditions:
+   * - Inventory must be in RESERVED status
+   * - Must have reserved quantity
+   * 
+   * Postconditions:
+   * - Status transitions to TRANSIT (IN_TRANSIT)
+   * - Reserved quantity moves to in-transit tracking
+   */
+  static shipOperation(inventory: Inventory): Result<Inventory> {
+    // Operational invariant: can only ship RESERVED inventory
+    if (inventory.status !== 'RESERVED') {
+      return Result.fail(
+        `Cannot ship inventory in ${inventory.status} status (must be RESERVED)`,
+        'INVENTORY_INVALID_STATUS_FOR_SHIP'
+      );
+    }
+
+    // Operational invariant: must have reserved quantity to ship
+    if (inventory.quantityReserved === 0) {
+      return Result.fail(
+        'Cannot ship inventory with no reserved quantity',
+        'INVENTORY_NO_RESERVED_QUANTITY'
+      );
+    }
+
+    // Check state transition is valid
+    const transitionCheck = this.canTransitionTo(inventory, 'TRANSIT');
+    if (transitionCheck.isFailure) {
+      return Result.fail(
+        `State transition not allowed: ${transitionCheck.error}`,
+        transitionCheck.errorCode || 'INVENTORY_INVALID_TRANSITION'
+      );
+    }
+
+    const updated: Inventory = {
+      ...inventory,
+      status: 'TRANSIT',
+      updatedAt: new Date(),
+    };
+
+    return Result.ok(updated);
+  }
+
+  /**
+   * Cancel reservation (E7.2 operational method)
+   * 
+   * Releases reserved quantity back to available.
+   * Represents order cancellation or reservation expiry.
+   * 
+   * Preconditions:
+   * - Must have reserved quantity
+   * - Quantity to cancel must not exceed reserved
+   * 
+   * Postconditions:
+   * - Reserved quantity decreases
+   * - Available quantity increases
+   * - Status may transition from RESERVED to AVAILABLE (if fully released)
+   */
+  static cancelOperation(
+    inventory: Inventory,
+    quantity: number,
+    reason: string
+  ): Result<Inventory> {
+    // Operational invariant: quantity must be positive
+    if (quantity <= 0) {
+      return Result.fail(
+        'Cancel quantity must be positive',
+        'INVENTORY_CANCEL_QUANTITY_INVALID'
+      );
+    }
+
+    // Operational invariant: cannot cancel more than reserved
+    if (quantity > inventory.quantityReserved) {
+      return Result.fail(
+        `Cannot cancel ${quantity} units (only ${inventory.quantityReserved} reserved)`,
+        'INVENTORY_CANCEL_EXCEEDS_RESERVED'
+      );
+    }
+
+    // Operational invariant: can only cancel RESERVED or AVAILABLE inventory
+    if (inventory.status !== 'RESERVED' && inventory.status !== 'AVAILABLE') {
+      return Result.fail(
+        `Cannot cancel reservation for inventory in ${inventory.status} status`,
+        'INVENTORY_INVALID_STATUS_FOR_CANCEL'
+      );
+    }
+
+    // Calculate new quantities
+    const newQuantityReserved = inventory.quantityReserved - quantity;
+    const newQuantityAvailable = inventory.quantityOnHand - newQuantityReserved;
+
+    // Determine new status (transition to AVAILABLE if no reservations left)
+    const newStatus: InventoryStatus = newQuantityReserved === 0 && inventory.status === 'RESERVED'
+      ? 'AVAILABLE'
+      : inventory.status;
+
+    // Check state transition if status changes
+    if (newStatus !== inventory.status) {
+      const transitionCheck = this.canTransitionTo(inventory, newStatus);
+      if (transitionCheck.isFailure) {
+        return Result.fail(
+          `State transition not allowed: ${transitionCheck.error}`,
+          transitionCheck.errorCode || 'INVENTORY_INVALID_TRANSITION'
+        );
+      }
+    }
+
+    const updated: Inventory = {
+      ...inventory,
+      quantityReserved: newQuantityReserved,
+      quantityAvailable: newQuantityAvailable,
+      status: newStatus,
+      updatedAt: new Date(),
+    };
+
+    return Result.ok(updated);
+  }
+
+  /**
+   * Expire inventory (E7.2 operational method)
+   * 
+   * Marks inventory as EXPIRED. Must go through QUARANTINE first.
+   * Terminal state - cannot be reversed.
+   * 
+   * Preconditions:
+   * - Inventory must be in QUARANTINE status
+   * - Cannot have reserved quantity
+   * 
+   * Postconditions:
+   * - Status transitions to EXPIRED (terminal)
+   * - Inventory becomes unusable
+   */
+  static expireOperation(inventory: Inventory): Result<Inventory> {
+    // Operational invariant: can only expire QUARANTINE inventory
+    if (inventory.status !== 'QUARANTINE') {
+      return Result.fail(
+        `Cannot expire inventory in ${inventory.status} status (must be QUARANTINE)`,
+        'INVENTORY_INVALID_STATUS_FOR_EXPIRE'
+      );
+    }
+
+    // Operational invariant: cannot expire reserved inventory
+    if (inventory.quantityReserved > 0) {
+      return Result.fail(
+        `Cannot expire inventory with ${inventory.quantityReserved} reserved units`,
+        'INVENTORY_HAS_RESERVED_QUANTITY'
+      );
+    }
+
+    // Check state transition is valid
+    const transitionCheck = this.canTransitionTo(inventory, 'EXPIRED');
+    if (transitionCheck.isFailure) {
+      return Result.fail(
+        `State transition not allowed: ${transitionCheck.error}`,
+        transitionCheck.errorCode || 'INVENTORY_INVALID_TRANSITION'
+      );
+    }
+
+    const updated: Inventory = {
+      ...inventory,
+      status: 'EXPIRED',
+      quantityAvailable: 0, // Expired inventory has zero availability
+      updatedAt: new Date(),
+    };
+
+    return Result.ok(updated);
+  }
+
+  /**
+   * Check if status transition is valid
+   * 
+   * E7.1 method - used by E7.2 operational methods
+   */
+  private static canTransitionTo(
+    inventory: Inventory,
+    newStatus: InventoryStatus
+  ): Result<void> {
+    const validTransitions: Record<InventoryStatus, InventoryStatus[]> = {
+      AVAILABLE: ['RESERVED', 'ALLOCATED', 'QUARANTINE', 'DAMAGED', 'BLOCKED', 'TRANSIT'],
+      RESERVED: ['AVAILABLE', 'ALLOCATED', 'QUARANTINE', 'BLOCKED', 'TRANSIT'],
+      ALLOCATED: ['TRANSIT', 'QUARANTINE', 'DAMAGED'],
+      QUARANTINE: ['AVAILABLE', 'DAMAGED', 'EXPIRED'],
+      DAMAGED: [], // Terminal
+      EXPIRED: [], // Terminal
+      TRANSIT: ['AVAILABLE', 'QUARANTINE'],
+      BLOCKED: ['AVAILABLE', 'QUARANTINE'],
+    };
+
+    const allowed = validTransitions[inventory.status] || [];
+
+    if (!allowed.includes(newStatus)) {
+      return Result.fail(
+        `Cannot transition from ${inventory.status} to ${newStatus}`,
+        'INVENTORY_INVALID_STATUS_TRANSITION'
+      );
+    }
+
+    return Result.ok(undefined);
   }
 
   /**

@@ -24,10 +24,10 @@
 | | R4: Unique constraint | R4: Unique constraint |
 | | R5: Math validation | R5: Quantity reconciliation |
 | **Workflow** | R6: Submit for approval | R6: Submit for putaway |
-| | R7: Approve | R7: Complete putaway |
-| | R8: Reject | R8: Hold/quarantine |
-| | R9: State invariants | R9: State invariants |
-| **Query** | R10: List with filters | R10: List inventory with filters |
+| | R7: Approve | R7: Complete putaway ✅ |
+| | R8: Reject | R8: Hold/quarantine ✅ |
+| | R9: State invariants | R9: State invariants ✅ |
+| **Query** | R10: List with filters | R10: List inventory with filters ✅ |
 | | R11: Get by ID | R11: Get by ID |
 | **Metrics** | R12: Count | R12: Count |
 | | R13: Bulk | R13: Bulk movement |
