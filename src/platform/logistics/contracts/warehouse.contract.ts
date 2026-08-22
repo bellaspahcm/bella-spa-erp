@@ -212,6 +212,49 @@ export interface CountReceiptsByStatusResult {
   on_hold: number;
 }
 
+/**
+ * R13: Bulk Inventory Movement Request
+ * Create multiple inventory movements in a single transaction
+ */
+export interface BulkInventoryMovementRequest {
+  tenant_id: string;
+  movement_type: 'cycle_count_adjustment' | 'inter_bin_transfer';
+  movements: InventoryMovementInput[];
+  approved_by: string; // user_id
+}
+
+export interface InventoryMovementInput {
+  sku_id: string;
+  from_bin_id?: string | null; // null for adjustments
+  to_bin_id?: string | null;
+  quantity: number;
+  reason?: string;
+}
+
+/**
+ * R13: Bulk Inventory Movement Result
+ * Returns created movements with batch tracking
+ */
+export interface BulkInventoryMovementResult {
+  batch_id: string;
+  movement_count: number;
+  movements: InventoryMovement[];
+}
+
+export interface InventoryMovement {
+  id: string;
+  tenant_id: string;
+  sku_id: string;
+  from_bin_id?: string | null;
+  to_bin_id?: string | null;
+  quantity: number;
+  movement_type: string;
+  reason?: string;
+  batch_id: string;
+  approved_by: string;
+  created_at: Date;
+}
+
 export interface GetReceiptRequest {
   tenant_id: string;
   receipt_id: string;
@@ -404,6 +447,27 @@ export interface WarehouseContract {
   countReceiptsByStatus(
     request: CountReceiptsByStatusRequest
   ): Promise<EngineResponse<CountReceiptsByStatusResult>>;
+  
+  /**
+   * R13: Create bulk inventory movements
+   * 
+   * @param request - Bulk movement creation payload
+   * @returns EngineResponse with created movements
+   * 
+   * **Domain Rules:**
+   * - All movements executed atomically (transaction boundary)
+   * - Each movement logged separately with shared batch_id
+   * - Inventory on-hand updated for affected SKU/bin combinations
+   * - Movement types: cycle_count_adjustment, inter_bin_transfer
+   * 
+   * **Platform:**
+   * - Transaction isolation enforced
+   * - Audit trail recorded per movement
+   * - Tenant isolation enforced via RLS
+   */
+  createBulkMovements(
+    request: BulkInventoryMovementRequest
+  ): Promise<EngineResponse<BulkInventoryMovementResult>>;
   
   /**
    * Get receipts by status

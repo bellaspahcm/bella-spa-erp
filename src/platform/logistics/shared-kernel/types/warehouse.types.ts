@@ -384,3 +384,47 @@ export interface ReceiptSummary {
   submitted_at?: string | null;
   completed_at?: string | null;
 }
+
+
+/**
+ * R13: Bulk Inventory Movement Input
+ * Input for creating multiple inventory movements in a transaction
+ */
+export interface BulkInventoryMovementInput {
+  tenant_id: string;
+  movement_type: 'cycle_count_adjustment' | 'inter_bin_transfer';
+  movements: InventoryMovementInput[];
+  approved_by: string;
+}
+
+export interface InventoryMovementInput {
+  sku_id: string;
+  from_bin_id?: string | null;
+  to_bin_id?: string | null;
+  quantity: number;
+  reason?: string;
+}
+
+/**
+ * R13: Bulk Inventory Movement Result
+ * Result after bulk movement creation
+ */
+export interface BulkInventoryMovementResult {
+  batch_id: string;
+  movement_count: number;
+  movements: InventoryMovementRecord[];
+}
+
+export interface InventoryMovementRecord {
+  id: string;
+  tenant_id: string;
+  sku_id: string;
+  from_bin_id?: string | null;
+  to_bin_id?: string | null;
+  quantity: number;
+  movement_type: string;
+  reason?: string;
+  batch_id: string;
+  approved_by: string;
+  created_at: Date;
+}
