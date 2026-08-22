@@ -27,7 +27,7 @@ REMEDIATION ACTIONS TAKEN
    File: mcp-server/.env
    Before:
      SUPABASE_URL=https://lvnvkpyxtuilhrabtlwv.supabase.co
-     SUPABASE_SERVICE_ROLE_KEY=sb_secret_oQsCOXzMQ7XsZZNdkKHAUg_fuEtN8f3
+     SUPABASE_SERVICE_ROLE_KEY=[REDACTED - old key revoked during R3 remediation]
 
    After:
      SUPABASE_URL=https://lvnvkpyxtuilhrabtlwv.supabase.co
