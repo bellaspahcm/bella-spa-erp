@@ -1,7 +1,7 @@
 # Proof G1-03: Tenant Isolation in Lock Keys
 
 ## Setup
-- Same movement ID: 8e6c4214-ea7e-4d92-b746-679796047bdb
+- Same movement ID: f21238dd-6f29-47c3-820f-bd7a399a268c
 - Two different tenant IDs
 
 ## Assertions

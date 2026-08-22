@@ -1,7 +1,7 @@
 # Proof G2-01: Validation Failure → Zero Mutation
 
 ## Setup
-- Bill: bfb47053-bce6-4275-be07-591e71d80e65, total = 500000
+- Bill: 61db1651-250a-479a-b20a-2a674ebffd96, total = 500000
 - Disbursement attempt: 800000 (> 500000)
 
 ## Assertions

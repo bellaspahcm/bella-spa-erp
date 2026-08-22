@@ -1,8 +1,8 @@
 # Proof G1-01: Lock Key Hash Identity
 
 ## Setup
-- Tenant ID: 6c7d9ae6-eacf-4f87-9af2-a37b284e5f30
-- Test movement ID: 0c56dd17-6d7c-408e-afec-3d3c1a8bcc48
+- Tenant ID: 00e15ca5-1a95-4751-b4a7-39b85e28131b
+- Test movement ID: b31b6288-a661-4aee-b432-8d6e17cf1907
 
 ## Action
 - Call finance_financial_lock_key(tenant, 'CASH_MOVEMENT', mvId)
@@ -12,6 +12,6 @@
 ## Assertions
 - key1 match: true
 - key2 match: true
-- finance_financial_lock_key output: (-540904126, 1046631746)
+- finance_financial_lock_key output: (-1212360777, 729163130)
 
 ## Verdict: PASS

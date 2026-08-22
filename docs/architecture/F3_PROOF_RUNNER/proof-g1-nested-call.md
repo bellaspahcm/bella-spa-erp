@@ -16,7 +16,7 @@
 - Invoice status transitions to FINALIZED.
 
 ## Observed
-- F1 Transaction ID: df3eb068-5af9-4d87-95b9-5e6b4e376eb5 (Status: POSTED)
+- F1 Transaction ID: 1cfa6aa2-1ac1-4339-b053-3206b4c2ac40 (Status: POSTED)
 - F3 Subledger records: 1 row
 - F3 Position outstanding: 1000000 minor units
 - Invoice final status: FINALIZED

@@ -1,8 +1,8 @@
 # Proof G2-03: Successful Disbursement — All 4 Mutations Atomic
 
 ## Setup
-- Bill: 821b4da3-9a96-4bf8-af13-fd454fcc5e63, disbursement: 300000
-- F1 posting_attempt_id: G2-03-ATTEMPT-MSVEUOAF
+- Bill: a7c541de-2bc6-4afc-ac71-f9555945d575, disbursement: 300000
+- F1 posting_attempt_id: G2-03-ATTEMPT-MT4HHRK3
 
 ## Assertions
 - F1 transactions delta: 1
