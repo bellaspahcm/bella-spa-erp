@@ -26,3 +26,9 @@ export * from './item.contract';
 // ============================================================================
 
 export * from './traceability.contract';
+
+// ============================================================================
+// OPERATIONAL EVENTS (Logistics → Finance OS Integration)
+// ============================================================================
+
+export * from './events.contract';
