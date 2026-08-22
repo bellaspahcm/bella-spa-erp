@@ -1,0 +1,147 @@
+{
+  "version": "1.0.0",
+  "frozenDate": "2026-08-22T18:40:00Z",
+  "milestone": "E7.1 Domain Kernel",
+  "lockCommit": "e421b9cf",
+  "description": "E7.1 Domain Kernel artifacts are frozen. Any modification requires Architecture Change Request (ADR) + review + re-baseline.",
+  
+  "frozenArtifacts": {
+    "domain": [
+      "src/platform/logistics/domain/item.domain.ts",
+      "src/platform/logistics/domain/inventory.domain.ts",
+      "src/platform/logistics/domain/movement.domain.ts",
+      "src/platform/logistics/domain/traceability.domain.ts",
+      "src/platform/logistics/domain/location.domain.ts",
+      "src/platform/logistics/domain/uom.domain.ts",
+      "src/platform/logistics/domain/core/result.ts"
+    ],
+    "types": [
+      "src/platform/logistics/domain/item.types.ts",
+      "src/platform/logistics/domain/inventory.types.ts",
+      "src/platform/logistics/domain/movement.types.ts",
+      "src/platform/logistics/domain/traceability.types.ts",
+      "src/platform/logistics/domain/location.types.ts",
+      "src/platform/logistics/domain/uom.types.ts"
+    ],
+    "contracts": [
+      "src/platform/logistics/contracts/item.contract.ts",
+      "src/platform/logistics/contracts/inventory.contract.ts",
+      "src/platform/logistics/contracts/movement.contract.ts",
+      "src/platform/logistics/contracts/traceability.contract.ts",
+      "src/platform/logistics/contracts/location.contract.ts",
+      "src/platform/logistics/contracts/uom.contract.ts",
+      "src/platform/logistics/contracts/repository.contract.ts"
+    ],
+    "schema": [
+      "src/platform/logistics/schema/logistics.schema.ts"
+    ],
+    "repository": [
+      "src/platform/logistics/repository/item.repository.ts",
+      "src/platform/logistics/repository/inventory.repository.ts"
+    ],
+    "migrations": [
+      "migrations/logistics/20260822_logistics_os_domain_kernel.sql"
+    ],
+    "tests": [
+      "src/platform/logistics/domain/__tests__/item.domain.test.ts",
+      "src/platform/logistics/domain/__tests__/inventory.domain.test.ts",
+      "src/platform/logistics/domain/__tests__/movement.domain.test.ts",
+      "src/platform/logistics/domain/__tests__/traceability.domain.test.ts",
+      "src/platform/logistics/domain/__tests__/location.domain.test.ts",
+      "src/platform/logistics/domain/__tests__/uom.domain.test.ts"
+    ]
+  },
+
+  "frozenContracts": {
+    "ItemDomain": {
+      "create": "static create(props: CreateItemProps): Result<Item>",
+      "update": "static update(existingItem: Item, updates: Partial<UpdateItemProps>): Result<Item>",
+      "canTransitionTo": "static canTransitionTo(item: Item, newStatus: ItemStatus): Result<void>"
+    },
+    "InventoryDomain": {
+      "create": "static create(props: CreateInventoryProps): Result<Inventory>",
+      "reserve": "static reserve(inventory: Inventory, props: ReserveInventoryProps): Result<Inventory>",
+      "releaseReservation": "static releaseReservation(inventory: Inventory, props: ReleaseReservationProps): Result<Inventory>",
+      "updateQuantity": "static updateQuantity(inventory: Inventory, props: UpdateInventoryQuantityProps): Result<Inventory>",
+      "changeStatus": "static changeStatus(inventory: Inventory, newStatus: InventoryStatus, reason?: string): Result<Inventory>"
+    },
+    "MovementDomain": {
+      "create": "static create(props: CreateMovementProps): Result<Movement>",
+      "canTransitionTo": "static canTransitionTo(movement: Movement, newStatus: MovementStatus): Result<void>"
+    },
+    "TraceabilityDomain": {
+      "createLot": "static createLot(props: CreateLotProps): Result<Lot>",
+      "createSerial": "static createSerial(props: CreateSerialProps): Result<Serial>"
+    },
+    "LocationDomain": {
+      "create": "static create(props: CreateLocationProps): Result<Location>",
+      "update": "static update(existingLocation: Location, updates: Partial<UpdateLocationProps>): Result<Location>",
+      "canTransitionTo": "static canTransitionTo(location: Location, newStatus: LocationStatus): Result<void>"
+    },
+    "UOMDomain": {
+      "create": "static create(props: CreateUOMProps): Result<UnitOfMeasure>",
+      "update": "static update(existingUOM: UnitOfMeasure, updates: Partial<UpdateUOMProps>): Result<UnitOfMeasure>",
+      "convert": "static convert(quantity: number, fromUOM: UnitOfMeasure, toUOM: UnitOfMeasure): Result<number>",
+      "canTransitionTo": "static canTransitionTo(uom: UnitOfMeasure, newStatus: UOMStatus): Result<void>"
+    }
+  },
+
+  "frozenInvariants": [
+    "Item SKU must be unique per tenant",
+    "Quantity on hand >= 0",
+    "Quantity reserved >= 0",
+    "Quantity reserved <= quantity on hand",
+    "Available = on hand - reserved",
+    "UOM code must be unique per tenant",
+    "UOM conversion factor must be positive",
+    "UOM decimals must be 0-6",
+    "Location code must be unique per tenant",
+    "Movement quantity must be positive",
+    "Serial number must be unique per item",
+    "Lot number required for serial number"
+  ],
+
+  "regressionSuite": {
+    "testCount": 366,
+    "invariantsCovered": 42,
+    "files": [
+      "src/platform/logistics/domain/__tests__/item.domain.test.ts",
+      "src/platform/logistics/domain/__tests__/inventory.domain.test.ts",
+      "src/platform/logistics/domain/__tests__/movement.domain.test.ts",
+      "src/platform/logistics/domain/__tests__/traceability.domain.test.ts",
+      "src/platform/logistics/domain/__tests__/location.domain.test.ts",
+      "src/platform/logistics/domain/__tests__/uom.domain.test.ts"
+    ],
+    "requirement": "All 366 tests must pass on every commit touching Logistics OS"
+  },
+
+  "changeProcess": {
+    "prohibition": "Direct modification of frozen artifacts is PROHIBITED without explicit architecture review",
+    "procedure": [
+      "1. Identify suspected defect or required change",
+      "2. Create Architecture Change Request (ACR) document",
+      "3. Include: rationale, impact analysis, alternative approaches",
+      "4. Architecture review (human approval required)",
+      "5. If approved: create ADR documenting decision",
+      "6. Make changes with explicit ACR reference",
+      "7. Re-run full regression suite (366 tests)",
+      "8. Update frozen manifest version",
+      "9. Create new baseline commit",
+      "10. Document in evidence package"
+    ],
+    "exemptions": []
+  },
+
+  "enforcement": {
+    "preToolUseHook": ".kiro/hooks/frozen-boundary-check.json",
+    "enforcementScript": "scripts/hooks/check-frozen-boundary.js",
+    "ciRegressionGate": "Always run E7.1 test suite on every commit",
+    "blockOnViolation": true
+  },
+
+  "evidence": {
+    "lockEvidence": "evidence/economics/E7_1_FINAL_ANALYSIS.md",
+    "workLog": "evidence/economics/E7_1_WORK_LOG.md",
+    "independenceVerification": "evidence/economics/E7_1_7_OS_INDEPENDENCE_VERIFICATION.md"
+  }
+}
