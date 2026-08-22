@@ -1787,3 +1787,113 @@ export class ReceiptService {
     }
   }
 }
+
+  /**
+   * R15: Check Bin Capacity
+   * 
+   * Validates bin capacity before inventory operation.
+   * Ensures (current_quantity + additional_quantity) <= max_capacity.
+   * 
+   * **Acceptance Criteria:**
+   * - AC15.1: Capacity check (reject if exceeds)
+   * - AC15.2: Capacity calculation (SUM current + new)
+   * - AC15.3: Validation at app level
+   */
+  async checkBinCapacity(
+    input: {
+      tenant_id: string;
+      bin_id: string;
+      additional_quantity: number;
+    }
+  ): Promise<EngineResponse<{
+    bin_id: string;
+    max_capacity: number;
+    current_quantity: number;
+    available_capacity: number;
+    requested_quantity: number;
+    is_valid: boolean;
+    error_message?: string;
+  }>> {
+    try {
+      // Validate tenant isolation
+      if (input.tenant_id !== this.tenantId) {
+        return {
+          success: false,
+          error: {
+            code: 'TENANT_MISMATCH',
+            message: 'Request tenant_id does not match session tenant',
+          },
+        };
+      }
+
+      // AC15.2: Get bin max_capacity
+      const { data: binData, error: binError } = await this.supabase
+        .from('logistics_warehouse_bins')
+        .select('max_capacity')
+        .eq('id', input.bin_id)
+        .eq('tenant_id', this.tenantId)
+        .single();
+
+      if (binError || !binData) {
+        return {
+          success: false,
+          error: {
+            code: 'BIN_NOT_FOUND',
+            message: 'Bin not found or access denied',
+          },
+        };
+      }
+
+      const max_capacity = parseFloat(binData.max_capacity.toString());
+
+      // AC15.2: Calculate current quantity (SUM inventory in bin)
+      const { data: inventoryData, error: inventoryError } = await this.supabase
+        .from('logistics_warehouse_inventory_on_hand')
+        .select('quantity')
+        .eq('bin_id', input.bin_id)
+        .eq('tenant_id', this.tenantId);
+
+      if (inventoryError) {
+        return {
+          success: false,
+          error: {
+            code: 'QUERY_FAILED',
+            message: `Failed to query inventory: ${inventoryError.message}`,
+          },
+        };
+      }
+
+      const current_quantity = (inventoryData || []).reduce(
+        (sum, row) => sum + parseFloat(row.quantity.toString()),
+        0
+      );
+
+      // AC15.1: Capacity check
+      const available_capacity = max_capacity - current_quantity;
+      const is_valid = (current_quantity + input.additional_quantity) <= max_capacity;
+
+      return {
+        success: true,
+        data: {
+          bin_id: input.bin_id,
+          max_capacity,
+          current_quantity,
+          available_capacity,
+          requested_quantity: input.additional_quantity,
+          is_valid,
+          error_message: is_valid
+            ? undefined
+            : `Bin capacity exceeded: ${current_quantity + input.additional_quantity} > ${max_capacity}`,
+        },
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: error.message || 'Failed to check bin capacity',
+        },
+      };
+    }
+  }
+}
