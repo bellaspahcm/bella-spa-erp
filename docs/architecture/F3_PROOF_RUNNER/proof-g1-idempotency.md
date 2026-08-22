@@ -16,7 +16,7 @@
 - Receivable position outstanding is correctly 1,000,000 (no doubled values).
 
 ## Observed
-- F1 Transaction count: 1 (Canonical ID: 7ea3ae12-7910-469b-b45a-497d35be0692)
+- F1 Transaction count: 1 (Canonical ID: 70e588b7-8a56-43ed-af7d-3e4629e387b7)
 - F3 Subledger count: 1
 - Outstanding position: 1000000 minor units
 

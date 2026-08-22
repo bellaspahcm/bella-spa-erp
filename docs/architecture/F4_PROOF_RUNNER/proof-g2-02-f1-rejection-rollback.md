@@ -1,7 +1,7 @@
 # Proof G2-02: F1 Rejection → Zero F4 Orphaned Records
 
 ## Setup
-- Bill: 8c0fe5db-4e96-4a4e-bd22-428ab5d005bc, valid disbursement amount
+- Bill: c9784e89-327f-4277-8867-724e7c6a2890, valid disbursement amount
 - Period closed to force F1 rejection at Step 6
 
 ## Assertions
