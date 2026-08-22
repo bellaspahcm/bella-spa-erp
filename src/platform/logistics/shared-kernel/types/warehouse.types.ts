@@ -428,3 +428,29 @@ export interface InventoryMovementRecord {
   approved_by: string;
   created_at: Date;
 }
+
+
+/**
+ * R14: Inventory Value by SKU Input
+ * Request for inventory value aggregation
+ */
+export interface GetInventoryValueInput {
+  tenant_id: string;
+}
+
+/**
+ * R14: Inventory Value by SKU Result
+ * Aggregated inventory value by SKU
+ */
+export interface GetInventoryValueResult {
+  items: InventoryValueItem[];
+  total_value: number;
+}
+
+export interface InventoryValueItem {
+  sku_id: string;
+  sku_code: string;
+  on_hand_quantity: number;
+  unit_cost: number;
+  total_value: number;
+}

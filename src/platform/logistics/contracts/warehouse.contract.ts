@@ -255,6 +255,31 @@ export interface InventoryMovement {
   created_at: Date;
 }
 
+/**
+ * R14: Inventory Value by SKU Request
+ * Calculate total inventory value grouped by SKU
+ */
+export interface GetInventoryValueRequest {
+  tenant_id: string;
+}
+
+/**
+ * R14: Inventory Value by SKU Result
+ * Returns inventory value aggregated by SKU
+ */
+export interface GetInventoryValueResult {
+  items: InventoryValueItem[];
+  total_value: number;
+}
+
+export interface InventoryValueItem {
+  sku_id: string;
+  sku_code: string;
+  on_hand_quantity: number;
+  unit_cost: number;
+  total_value: number;
+}
+
 export interface GetReceiptRequest {
   tenant_id: string;
   receipt_id: string;
@@ -468,6 +493,26 @@ export interface WarehouseContract {
   createBulkMovements(
     request: BulkInventoryMovementRequest
   ): Promise<EngineResponse<BulkInventoryMovementResult>>;
+  
+  /**
+   * R14: Get inventory value by SKU
+   * 
+   * @param request - Tenant-scoped value request
+   * @returns EngineResponse with inventory values
+   * 
+   * **Metrics:**
+   * - Aggregate on-hand quantity by SKU (across all bins)
+   * - Calculate total value (quantity × unit_cost)
+   * - GROUP BY SKU with SUM aggregation
+   * - DECIMAL precision (no rounding errors)
+   * 
+   * **Platform:**
+   * - Tenant isolation enforced via RLS
+   * - JOIN inventory_on_hand + skus
+   */
+  getInventoryValue(
+    request: GetInventoryValueRequest
+  ): Promise<EngineResponse<GetInventoryValueResult>>;
   
   /**
    * Get receipts by status

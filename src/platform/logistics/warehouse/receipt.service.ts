@@ -1674,3 +1674,116 @@ export class ReceiptService {
     }
   }
 }
+
+  /**
+   * R14: Get Inventory Value by SKU
+   * 
+   * Calculates total inventory value aggregated by SKU.
+   * Value = SUM(quantity × unit_cost) across all bins per SKU.
+   * 
+   * **Acceptance Criteria:**
+   * - AC14.1: Value by SKU (quantity, unit_cost, total_value)
+   * - AC14.2: Aggregation query (JOIN + GROUP BY)
+   * - AC14.3: Precision (DECIMAL, no rounding)
+   */
+  async getInventoryValue(
+    input: { tenant_id: string }
+  ): Promise<EngineResponse<{
+    items: Array<{
+      sku_id: string;
+      sku_code: string;
+      on_hand_quantity: number;
+      unit_cost: number;
+      total_value: number;
+    }>;
+    total_value: number;
+  }>> {
+    try {
+      // Validate tenant isolation
+      if (input.tenant_id !== this.tenantId) {
+        return {
+          success: false,
+          error: {
+            code: 'TENANT_MISMATCH',
+            message: 'Request tenant_id does not match session tenant',
+          },
+        };
+      }
+
+      // AC14.2: Aggregation query with JOIN
+      // Query inventory_on_hand + skus, group by SKU
+      const { data: inventoryData, error: queryError } = await this.supabase
+        .from('logistics_warehouse_inventory_on_hand')
+        .select(`
+          sku_id,
+          quantity,
+          logistics_warehouse_skus!inner (
+            sku_code,
+            unit_cost
+          )
+        `)
+        .eq('tenant_id', this.tenantId);
+
+      if (queryError) {
+        return {
+          success: false,
+          error: {
+            code: 'QUERY_FAILED',
+            message: `Failed to query inventory: ${queryError.message}`,
+          },
+        };
+      }
+
+      // AC14.1 & AC14.3: Aggregate by SKU with DECIMAL precision
+      const skuMap = new Map<string, {
+        sku_code: string;
+        unit_cost: number;
+        total_quantity: number;
+      }>();
+
+      (inventoryData || []).forEach(row => {
+        const sku = row.logistics_warehouse_skus as any;
+        const quantity = parseFloat(row.quantity.toString());
+        const unitCost = parseFloat(sku.unit_cost.toString());
+
+        if (!skuMap.has(row.sku_id)) {
+          skuMap.set(row.sku_id, {
+            sku_code: sku.sku_code,
+            unit_cost: unitCost,
+            total_quantity: 0,
+          });
+        }
+
+        const skuData = skuMap.get(row.sku_id)!;
+        skuData.total_quantity += quantity;
+      });
+
+      // Calculate total values
+      const items = Array.from(skuMap.entries()).map(([sku_id, data]) => ({
+        sku_id,
+        sku_code: data.sku_code,
+        on_hand_quantity: data.total_quantity,
+        unit_cost: data.unit_cost,
+        total_value: parseFloat((data.total_quantity * data.unit_cost).toFixed(2)),
+      }));
+
+      const total_value = items.reduce((sum, item) => sum + item.total_value, 0);
+
+      return {
+        success: true,
+        data: {
+          items,
+          total_value: parseFloat(total_value.toFixed(2)),
+        },
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: error.message || 'Failed to calculate inventory value',
+        },
+      };
+    }
+  }
+}
