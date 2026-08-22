@@ -1,8 +1,43 @@
 # E7.2 Operational Kernel — Design Plan
 
 **Design Date:** 2026-08-22  
-**Status:** 📋 DESIGN PHASE (not locked yet)  
+**Status:** 🔒 **DESIGN LOCKED** (ready for implementation)  
+**Locked By:** Architecture Review + User Approval  
 **Purpose:** Define scope, architecture, and success criteria for E7.2 before implementation
+
+---
+
+## Design Lock Status
+
+### Review Summary
+
+| Decision | Status | Notes |
+|----------|--------|-------|
+| **Scope** | ✅ APPROVED | Operational kernel, no Product integration |
+| **ADR-006** | ✅ APPROVED | Domain-specific state methods |
+| **ADR-007** | ✅ APPROVED | Domain Service with boundary constraint |
+| **ADR-008** | ✅ APPROVED | Operational invariants in domain |
+| **ADR-009** | ✅ APPROVED | Implement Movement repository |
+| **ADR-010** | ✅ APPROVED | In-memory transactions (test infrastructure) |
+| **ADR-011** | ✅ APPROVED | Idempotency semantics defined, infrastructure deferred |
+| **Estimate** | ✅ APPROVED | 5h15m planning estimate (not commitment) |
+| **Success Criteria** | ✅ APPROVED | State correctness + negative-path integrity |
+
+### Key Constraints
+
+1. **No Product Integration:** E7.2 does NOT include Warehouse/Finance integration (deferred to E7.5)
+2. **Domain Service Boundary:** Must NOT become Product workflow engine (see ADR-007)
+3. **Negative-Path Integrity:** MANDATORY — invalid operations must leave state unchanged
+4. **E7.1 Regression:** All 366 E7.1 tests must still PASS (zero regression)
+
+### Approval
+
+- ✅ Architecture review complete
+- ✅ ADRs approved (006-011)
+- ✅ Success criteria locked
+- ✅ Ready for Phase 1 implementation
+
+**Design is LOCKED. Implementation may begin.**
 
 ---
 
@@ -648,9 +683,10 @@ try {
 - **Reason:** Adds infrastructure dependency
 - **Defer to:** E7.5 (when Warehouse integration reveals need)
 
-#### 2. Idempotency
-- **Reason:** Product responsibility
-- **Defer to:** E7.5 (guidance document for Products)
+#### 2. Idempotency Infrastructure
+- **Reason:** E7.2 defines idempotency semantics; infrastructure implementation deferred until evidence requires it
+- **Defer to:** E7.5 (when Product integration reveals infrastructure needs)
+- **Note:** OS must define what "same operation" means, even if enforcement is deferred
 
 #### 3. Concurrency Control (Optimistic Locking)
 - **Reason:** No evidence of concurrent conflicts yet
@@ -809,34 +845,98 @@ try {
 
 E7.2 will be considered COMPLETE when:
 
-### Functional Criteria
-- [ ] Inventory state machine operational: `reserve()`, `ship()`, `cancel()`, `expire()`
-- [ ] Location state machine operational: `deactivate()`, `close()`, `reactivate()`
-- [ ] All state transitions tested (valid + invalid paths)
-- [ ] Operational invariants enforced and tested (quantity checks, status checks)
-- [ ] Multi-entity coordination pattern demonstrated (`reserveWithMovement()`)
+### P0 — State Correctness (MANDATORY)
+- [ ] Inventory transitions implemented and valid (AVAILABLE → RESERVED → IN_TRANSIT → DELIVERED)
+- [ ] Invalid Inventory transitions rejected (e.g., EXPIRED → RESERVED)
+- [ ] Location transitions implemented and valid (ACTIVE ↔ INACTIVE → CLOSED)
+- [ ] Invalid Location transitions rejected
+- [ ] State invariants cannot be bypassed via domain API
+- [ ] **Negative-path integrity:** Invalid operations leave state unchanged (no partial mutations)
+
+### P0 — Operational Invariants (MANDATORY)
+- [ ] Quantity validation enforced (cannot reserve > available)
+- [ ] Reservation consistency enforced (reserved + available = on_hand)
+- [ ] Movement direction consistency enforced
+- [ ] Status-based rules enforced (cannot reserve EXPIRED inventory)
+- [ ] **Negative-path integrity:** Failed operations do not mutate state
+
+### P0 — Multi-Entity Coordination (MANDATORY)
+- [ ] `reserveWithMovement()` pattern implemented
+- [ ] Both entities (Inventory + Movement) created correctly
+- [ ] Coordination logic tested (domain level, not persistence)
+- [ ] **Negative-path integrity:** Failure in one entity prevents both (no half-success)
+
+### P1 — Repository Abstraction (HIGH PRIORITY)
 - [ ] Movement repository implemented (basic CRUD)
+- [ ] Movement repository interface verified
+- [ ] Smoke test passes (create + findById)
 
-### Quality Criteria
+### P1 — Independence (HIGH PRIORITY)
+- [ ] Zero Warehouse dependencies (import scan clean)
+- [ ] Zero Finance dependencies (import scan clean)
+- [ ] Zero Product workflow logic in OS
 - [ ] All E7.1 tests still PASS (366/366, zero regression)
-- [ ] E7.2 tests achieve target coverage (estimate: 60-80 new tests)
-- [ ] Test pass rate: 100%
-- [ ] Zero new external dependencies added
-- [ ] FK boundary remains clean (schema unchanged or additive only)
 
-### Evidence Criteria
+### P1 — Evidence Package (HIGH PRIORITY)
 - [ ] Evidence document created: `E7_2_OPERATIONAL_KERNEL_EVIDENCE.md`
 - [ ] Work log created: `E7_2_WORK_LOG.md`
-- [ ] All ADRs documented (ADR-006 through ADR-010)
+- [ ] All ADRs documented (ADR-006 through ADR-011)
 - [ ] Bugs found (if any) documented with rework time
 - [ ] Baseline metrics recorded (time, LOC, tests, bugs)
 
-### Lock Criteria
-- [ ] Design plan reviewed and approved
-- [ ] Implementation complete
-- [ ] All tests passing
-- [ ] Evidence package complete
-- [ ] **E7.2 LOCKED 🔒**
+### P2 — Test Coverage (MEDIUM PRIORITY)
+- [ ] E7.2 tests achieve target coverage (estimate: 60-80 new tests)
+- [ ] Test pass rate: 100%
+- [ ] Each operational invariant has 3-5 negative-path tests
+- [ ] Each state transition has negative-path test
+
+### Operational Definition
+
+**"Operational" means:**
+
+Logistics OS can receive an operational command and protect domain state:
+
+```
+reserve(item, quantity)
+    ↓
+validate preconditions
+    ↓
+check state (AVAILABLE?)
+    ↓
+check quantity (sufficient?)
+    ↓
+update inventory state
+    ↓
+create movement record
+    ↓
+return Result<{ inventory, movement }>
+```
+
+When invalid:
+```
+reserve(quantity: 100)
+available: 50
+    ↓
+REJECT with typed error
+    ↓
+inventory state UNCHANGED
+    ↓
+no invalid movement created
+    ↓
+return Result.fail('INSUFFICIENT_QUANTITY')
+```
+
+**This is operational correctness.**
+
+E7.2 does NOT need to prove:
+- ❌ Warehouse runs production on Logistics OS (that's E7.5)
+- ❌ Multi-tenant load testing (deferred to E7.5)
+- ❌ Database transaction semantics (deferred to E7.5)
+
+E7.2 MUST prove:
+- ✅ OS protects domain state under operational commands
+- ✅ Invalid operations cannot corrupt state
+- ✅ Multi-entity coordination is logically correct
 
 ---
 
@@ -852,12 +952,20 @@ E7.2 will be considered COMPLETE when:
 - E7.1 pattern already domain-specific (`canTransitionTo()`)
 - YAGNI: Generic state machine is premature until 5+ domains
 
+**Why This Matters:**
+
+A Logistics OS should not just know: `AVAILABLE → RESERVED`
+
+It should know: **Why** is this transition allowed? What are the preconditions?
+
+Generic state machines are beautiful abstractions but can lack semantic depth.
+
 **Consequences:**
 - Each domain implements state logic separately
 - State machines less visible (no centralized graph)
-- But: Better type safety, simpler implementation
+- But: Better type safety, simpler implementation, richer semantics
 
-### ADR-007: Domain Service Coordination
+### ADR-007: Domain Service Coordination (WITH BOUNDARY)
 
 **Decision:** Use Domain Service for multi-entity coordination, Products orchestrate persistence.
 
@@ -866,10 +974,25 @@ E7.2 will be considered COMPLETE when:
 - Products decide transaction strategy (single DB transaction, saga, etc.)
 - Balance reusability + flexibility
 
+**Boundary Constraint:**
+Domain Service may coordinate domain entities, but MUST NOT become Product workflow engine.
+
+✅ **Allowed:**
+- `reserveWithMovement()` — coordinates Inventory + Movement
+- `expireWithAudit()` — coordinates Inventory + TraceabilityLog
+
+❌ **NOT Allowed:**
+- `receiveWarehouseReceipt()` — Warehouse workflow, not OS primitive
+- `processFinanceInvoice()` — Finance workflow, not OS primitive
+- Putaway strategy, Bin selection, QA checks — Product responsibility
+
+**Rule:** If operation requires Product-specific knowledge (Warehouse Bin, Finance Account), it belongs in Product layer, not OS.
+
 **Consequences:**
 - Domain Service returns tuples of entities (no persistence)
 - Products must implement transaction orchestration
 - Application Service layer may be added in E7.3+ if evidence demands
+- Clear boundary prevents "God OS" anti-pattern
 
 ### ADR-008: Operational Invariants in Domain
 
@@ -898,7 +1021,71 @@ E7.2 will be considered COMPLETE when:
 - 3/6 repositories implemented after E7.2
 - 3/6 still deferred (will implement when evidence demands)
 
-### ADR-010: In-Memory Transactions for E7.2
+### ADR-010: In-Memory Transactions for E7.2 (TEST INFRASTRUCTURE)
+
+**Decision:** Use in-memory transactions for E7.2 tests, defer database integration to E7.5.
+
+**Rationale:**
+- E7.2 goal: verify domain logic, not database
+- E7.1 pattern: domain tests don't need database (all 366 tests are pure domain)
+- Product integration (E7.5) will add database integration tests with real transactions
+
+**Important:** This is TEST infrastructure only. E7.2 does NOT implement production transaction management.
+
+**Consequences:**
+- Fast tests (no database roundtrips)
+- Does not verify real database transaction semantics (isolation, rollback on constraint violation)
+- Database integration deferred to when Warehouse consumes OS (E7.5)
+- Production transaction strategy (single DB transaction, saga, event sourcing) is Product decision
+
+### ADR-011: Idempotency Semantics Before Infrastructure
+
+**Decision:** E7.2 defines idempotency semantics for operational commands; infrastructure implementation deferred until evidence requires it.
+
+**Rationale:**
+
+Need to distinguish:
+
+**Business Idempotency (Application/Product responsibility):**
+```typescript
+// Same requestId → same result
+reserve({ requestId: 'ABC', itemId: 'item-1', quantity: 10 })
+reserve({ requestId: 'ABC', itemId: 'item-1', quantity: 10 })
+// Product checks requestId, calls OS once
+```
+
+**Operational Idempotency (OS semantics):**
+```typescript
+// Same operation parameters → predictable outcome
+reserve({ itemId: 'item-1', quantity: 10 })
+reserve({ itemId: 'item-1', quantity: 10 })
+// What should happen? Reserve twice or detect duplicate?
+```
+
+**E7.2 Decision:**
+- OS defines what "same operation" means (domain semantics)
+- OS does NOT implement distributed deduplication infrastructure (yet)
+- Products may implement requestId checking until OS provides infrastructure
+
+**Example Semantics:**
+```typescript
+// Domain method signature includes semantic intent
+static reserve(
+  inventory: Inventory,
+  quantity: number,
+  reason: string,
+  requestedBy: string
+): Result<Inventory>
+
+// Idempotency: "same inventory + quantity + reason + requester = same operation"
+// But enforcement (requestId check, distributed cache) deferred to infrastructure layer
+```
+
+**Consequences:**
+- E7.2 documents idempotency semantics in domain contracts
+- Infrastructure (requestId deduplication, distributed cache) deferred to E7.5 or when evidence shows need
+- Prevents each Product from defining incompatible idempotency semantics
+- OS maintains authority over "what is a duplicate operation" even if enforcement is external
 
 **Decision:** Use in-memory transactions for E7.2 tests, defer database integration to E7.5.
 
@@ -914,60 +1101,51 @@ E7.2 will be considered COMPLETE when:
 
 ---
 
-## Questions for Review Before Lock
-
-Before locking this design and starting implementation:
-
-### Question 1: Is E7.2 scope appropriate?
-
-**Too small?**
-- Missing: Domain events, idempotency, concurrency control
-- Should we add any of these to E7.2?
-
-**Too large?**
-- Could we defer Location state machine to E7.3?
-- Could we defer Movement repository to E7.3?
-
-### Question 2: Are ADRs sound?
-
-- ADR-006: Domain-specific state methods vs generic state machine
-- ADR-007: Domain Service vs Application Service
-- ADR-008: Operational invariants in domain
-- ADR-009: Implement Movement repository
-- ADR-010: In-memory transactions
-
-Do any of these need reconsideration?
-
-### Question 3: Is 5h15m estimate realistic?
-
-- E7.1 overran by 30% (planned 315m → actual 411m)
-- E7.2 estimate: 315m
-- Should we add contingency buffer (e.g., plan for 400-420m)?
-
-### Question 4: What is success criteria for "operational"?
-
-E7.2 aims to make Logistics OS "operationally usable". What does that mean?
-
-- Products CAN consume OS (but don't yet) ✅
-- State machines enforce valid operations ✅
-- Coordination patterns demonstrated ✅
-- Transaction guidance provided ✅
-
-Is this sufficient, or should E7.2 include actual Product integration?
-
----
-
 ## Next Action
 
-**Review this design plan:**
-1. Validate scope (in/out decisions)
-2. Validate ADRs (architectural decisions)
-3. Validate estimates (time, tests)
-4. Validate success criteria
+**E7.2 Design is LOCKED.**
 
-**Once locked:**
-- Create ADR documents (ADR-006 through ADR-010)
-- Start Phase 1 implementation
-- Track time and progress in `E7_2_WORK_LOG.md`
+**Begin Phase 1 Implementation:**
+1. Create work log: `E7_2_WORK_LOG.md`
+2. Start Phase 1: Inventory State Machine (90min estimate)
+3. Track time and progress in work log
+4. Follow 6-phase plan (Inventory → Location → Invariants → Coordination → Repository → Verification)
 
-**DO NOT start coding until design is locked.**
+**Roadmap:**
+
+```
+E6 — Product baseline ✅
+  ↓
+E7.1 — Domain Kernel 🔒
+  OS can exist independently
+  ↓
+E7.2 — Operational Kernel 🔒 (DESIGN LOCKED, implementation starting)
+  OS can control operations safely
+  ↓
+E7.3 — Rules & Traceability
+  OS can enforce business rules and lineage
+  ↓
+E7.4 — Finance Integration
+  OS-to-OS communication
+  ↓
+E7.5 — Warehouse Integration
+  First Product consumes OS
+  ↓
+E8 — Product #2
+  Verify leverage
+  ↓
+E9 — Product #3
+  Verify marginal cost curve
+```
+
+**Track these metrics during E7.2:**
+- Planned vs actual time per phase
+- Bugs found (domain bugs vs test bugs)
+- Rework time
+- Negative-path test coverage
+- New architectural decisions (if any)
+
+**DO NOT:**
+- Add Warehouse/Finance integration to E7.2
+- Skip negative-path tests
+- Allow Product workflow logic into Domain Service
