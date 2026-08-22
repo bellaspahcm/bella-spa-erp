@@ -1,12 +1,28 @@
 /**
- * Logistics Platform Contracts
+ * Logistics OS: Domain Contracts
  * 
- * Public API contracts for all Logistics engines.
- * Product Verticals must only import from this module.
+ * TypeScript interfaces defining the boundary between Logistics OS and Products.
+ * Products (Warehouse, Fulfillment, Transportation, etc.) consume these contracts.
  * 
- * @module platform/logistics/contracts
+ * Contracts define WHAT the OS provides, not HOW it's implemented.
+ * 
+ * @module LogisticsOS/Contracts
  */
 
-export * from './shipment-management.contract';
-export * from './route-management.contract';
-export * from './freight-audit.contract'; // E3: Freight Audit & Payment
+// ============================================================================
+// INVENTORY DOMAIN
+// ============================================================================
+
+export * from './inventory.contract';
+
+// ============================================================================
+// ITEM MASTER DATA
+// ============================================================================
+
+export * from './item.contract';
+
+// ============================================================================
+// TRACEABILITY & AUDIT
+// ============================================================================
+
+export * from './traceability.contract';
