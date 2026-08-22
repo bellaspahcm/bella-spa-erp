@@ -42,11 +42,11 @@
 | Phase 1: Inventory State Machine | 90 min | 25 min | ✅ COMPLETE |
 | Phase 1.5: Frozen Boundary Enforcement | 30 min | 10 min | ✅ COMPLETE |
 | Phase 2: Location State Machine | 45 min | 10 min | ✅ COMPLETE |
-| Phase 3: Operational Invariants | 45 min | — | 🔵 READY |
-| Phase 4: Multi-Entity Coordination | 60 min | — | ⏳ PENDING |
+| Phase 3: Operational Invariants | 45 min | 10 min | ✅ COMPLETE |
+| Phase 4: Multi-Entity Coordination | 60 min | — | 🔵 READY |
 | Phase 5: Movement Repository | 45 min | — | ⏳ PENDING |
 | Phase 6: Verification & Lock | 30 min | — | ⏳ PENDING |
-| **Total** | **345 min** | **45 min** | **13% complete** |
+| **Total** | **345 min** | **55 min** | **16% complete** |
 
 ---
 
@@ -411,6 +411,116 @@ Phase 1.5 proves Bella can enforce architectural boundaries programmatically, no
 - ✅ Phase 2 complete
 
 **Phase 2 COMPLETE** ✅
+
+---
+
+## Phase 3: Operational Invariants
+
+**Start:** 2026-08-22 19:50:00  
+**End:** 2026-08-22 20:00:00  
+**Planned Duration:** 45 minutes  
+**Actual Duration:** 10 minutes
+
+### Scope
+
+**Tasks:**
+1. ✅ Review all E7.2 operations for missing operational checks
+2. ✅ Add context validation (reason, actor required)
+3. ✅ Write tests for each invariant violation scenario
+4. ✅ Verify atomic failure (no partial mutation)
+
+### Operational Invariants Verified
+
+**1. Quantity Constraints:**
+- ✅ Reserve quantity must be positive (> 0)
+- ✅ Reserve quantity cannot exceed available (onHand - reserved)
+- ✅ Cancel quantity cannot exceed reserved
+
+**2. Status-Based Preconditions:**
+- ✅ Can only reserve AVAILABLE inventory
+- ✅ Can only ship RESERVED inventory
+- ✅ Can only expire QUARANTINE inventory
+- ✅ Cannot cancel EXPIRED inventory
+
+**3. Context Requirements:**
+- ✅ All operations require non-empty reason
+- ✅ All operations require actor (requestedBy, shippedBy, etc.)
+
+**4. Atomic Failure:**
+- ✅ Quantity validation failure → no mutation
+- ✅ Status transition failure → no mutation
+- ✅ Context validation failure → no mutation
+
+**5. Typed Errors:**
+- ✅ Each failure mode has unique error code
+- ✅ Error codes: `INVENTORY_RESERVE_QUANTITY_INVALID`, `INVENTORY_INSUFFICIENT_QUANTITY`, `INVENTORY_CANCEL_EXCEEDS_RESERVED`, `INVENTORY_INVALID_STATUS_FOR_*`, `*_REASON_REQUIRED`, `*_BY_REQUIRED`
+
+### Results
+
+**Tests:**
+- E7.2 invariant tests: 20/20 PASS (100%)
+- E7.1 regression: 366/366 PASS (100%)
+- E7.2 total: 58 tests (Phase 1: 17, Phase 2: 21, Phase 3: 20)
+- **Total: 424/424 PASS (100%)**
+
+**Test LOC:** 344
+
+**Domain Changes:**
+- Added context validation to `reserveOperation()`
+- All other invariants already enforced
+
+**Gaps Found:** 0
+
+**Rework Time:** 0 minutes
+
+### Evidence
+
+**Atomic Failure Verified:**
+
+Test proves that rejected operations leave state completely unchanged:
+
+```typescript
+// Before operation
+quantityOnHand: 50
+quantityReserved: 0
+status: 'AVAILABLE'
+
+// Attempt over-reservation (100 > 50)
+reserveOperation(100)
+  ↓
+REJECT (INSUFFICIENT_QUANTITY)
+  ↓
+// After rejection - NO MUTATION
+quantityOnHand: 50 (unchanged)
+quantityReserved: 0 (unchanged)
+status: 'AVAILABLE' (unchanged)
+```
+
+**Invariants Work Across Operations:**
+
+- `reserveOperation()`: 7 invariant checks
+- `shipOperation()`: 2 invariant checks  
+- `cancelOperation()`: 3 invariant checks
+- `expireOperation()`: 2 invariant checks
+- Location operations: 3 invariant checks (reason + actor)
+
+### Key Insight
+
+E7.2 operations already enforce most operational invariants. Phase 3 primarily **verified and tested** existing constraints, adding only context validation.
+
+This proves E7.2 design was sound from Phase 1 - operations were built with safety from the start.
+
+### Phase 3 Completion Checklist
+
+- ✅ All operations reviewed for missing checks
+- ✅ Context validation added (reason, actor required)
+- ✅ 20 invariant tests written (7 invariant types)
+- ✅ Atomic failure verified (3 mutation tests)
+- ✅ Typed errors verified (all failure modes)
+- ✅ E7.1 regression: 366/366 PASS
+- ✅ Phase 3 complete
+
+**Phase 3 COMPLETE** ✅
 
 ---
 

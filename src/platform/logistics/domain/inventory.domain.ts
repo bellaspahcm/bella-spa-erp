@@ -242,6 +242,21 @@ export class InventoryDomain {
     quantity: number,
     context: { reason: string; requestedBy: string }
   ): Result<Inventory> {
+    // Context validation
+    if (!context.reason || context.reason.trim() === '') {
+      return Result.fail(
+        'Reservation reason is required',
+        'RESERVE_REASON_REQUIRED'
+      );
+    }
+
+    if (!context.requestedBy || context.requestedBy.trim() === '') {
+      return Result.fail(
+        'requestedBy is required',
+        'REQUESTED_BY_REQUIRED'
+      );
+    }
+
     // Operational invariant: quantity must be positive
     if (quantity <= 0) {
       return Result.fail(
