@@ -94,10 +94,10 @@ export class ItemDomain {
       category: props.category?.trim() || null,
       
       baseUom: props.baseUom,
-      weightKg: props.weightKg || null,
+      weightKg: props.weightKg !== undefined ? props.weightKg : null,
       dimensionsJson: props.dimensionsJson || null,
       
-      standardCost: props.standardCost || null,
+      standardCost: props.standardCost !== undefined ? props.standardCost : null,
       currency: props.currency || 'VND',
       
       lotTracked: props.lotTracked || false,
