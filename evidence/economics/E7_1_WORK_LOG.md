@@ -668,3 +668,119 @@ src/platform/logistics/domain/
 
 **Evidence:**
 Answer to critical question is YES. Domain kernel can execute independently. Zero infrastructure dependencies verified by file inspection.
+
+
+---
+
+### E7.1.5: Implement Repository Boundary
+
+**Date:** 2026-08-22  
+**Status:** ✅ COMPLETE  
+**Start Time:** 2026-08-22 13:20:00  
+**End Time:** 2026-08-22 14:05:00  
+**Duration:** 45 minutes
+
+**Scope:**
+- Phase 1: Repository contracts (6 interfaces) ✅
+- Phase 2: Item + Inventory implementation (Supabase adapter) ✅
+- Phase 3: Deferred (Movement, Traceability, Location, UOM) ✅
+
+**Critical Principle:**
+> "Full CRUD không phải mục tiêu. Correct repository boundary mới là mục tiêu."
+
+**Strategy:**
+- Interface-first (define contracts without implementation)
+- Evidence-driven implementation (only Item + Inventory)
+- Tests (E7.1.6) will reveal if 4 deferred repositories needed
+
+**Deliverable:**
+```
+src/platform/logistics/repositories/
+├── item.repository.interface.ts (90 LOC)
+├── item.repository.ts (294 LOC)
+├── inventory.repository.interface.ts (99 LOC)
+├── inventory.repository.ts (424 LOC)
+├── movement.repository.interface.ts (37 LOC - contract only)
+├── traceability.repository.interface.ts (34 LOC - contract only)
+├── location.repository.interface.ts (33 LOC - contract only)
+├── uom.repository.interface.ts (30 LOC - contract only)
+└── index.ts (32 LOC)
+```
+
+**Measurements:**
+- **Total LOC:** 1,073
+  - Contracts (6 interfaces): 323 LOC
+  - Implementations (2 repositories): 718 LOC
+  - Index: 32 LOC
+- **Phase 1 (Contracts):** 323 LOC
+  - Item interface: 90
+  - Inventory interface: 99
+  - Movement interface: 37 (deferred impl)
+  - Traceability interface: 34 (deferred impl)
+  - Location interface: 33 (deferred impl)
+  - UOM interface: 30 (deferred impl)
+- **Phase 2 (Implementations):** 718 LOC
+  - ItemRepository: 294 LOC
+    - CRUD operations: findById, findBySkuCode, list, save, delete
+    - Uniqueness check: exists()
+    - Mapping: mapToDomain, mapToInsert, mapToUpdate
+  - InventoryRepository: 424 LOC
+    - CRUD operations: findById, findByUnique, list, save, saveBatch, delete
+    - Aggregations: getSummaryByItem, getSummaryByLocation
+    - Inventory check: hasInventory()
+    - Mapping: mapToDomain, mapToInsert, mapToUpdate
+- **Phase 3 (Deferred):** 4 interfaces defined, 0 implementations
+
+**Mapping Complexity (DB ↔ Domain):**
+- Item: 3 mapping methods (to/from domain, update)
+- Inventory: 3 mapping methods (to/from domain, update)
+- Field transformations:
+  - snake_case (DB) ↔ camelCase (Domain)
+  - ISO timestamps (DB) ↔ Date objects (Domain)
+  - JSONB (DB) ↔ Record<string, unknown> (Domain)
+  - Enum strings (DB) ↔ TypeScript literal types (Domain)
+
+**Key Design Decisions:**
+
+1. **Interface-first approach:**
+   - All 6 repository contracts defined upfront
+   - Only 2 implementations (Item, Inventory) in E7.1.5
+   - 4 deferred to test-driven need (E7.1.6)
+
+2. **Dependency Inversion:**
+   - Domain depends on interfaces (not implementations)
+   - Infrastructure implements interfaces
+   - Supabase dependency isolated to implementation layer
+
+3. **Result<T> pattern throughout:**
+   - All repository methods return Result<T>
+   - Database errors wrapped in Result.fail()
+   - No exceptions thrown from repository
+
+4. **Tenant isolation enforced:**
+   - Every query scoped by tenant_id
+   - RLS policies provide backup enforcement
+
+5. **saveBatch() implementation:**
+   - Sequential saves (not parallel)
+   - Transaction support deferred (Supabase limitation)
+   - Acceptable for E7.1 (optimize later if needed)
+
+6. **Soft delete for Items:**
+   - delete() sets status to DISCONTINUED
+   - Physical deletion not allowed (audit trail)
+
+7. **Hard delete for Inventory:**
+   - Physical deletion allowed for zero-balance records
+   - Domain layer should check before calling delete()
+
+**Bugs Found:** 0  
+**Dependency Violations:** 0  
+**Rework Time:** 0 minutes
+
+**Evidence:**
+Repository boundary established with clean separation:
+- Domain → Interface (dependency inversion)
+- Infrastructure → Implementation (Supabase adapter)
+- Zero domain logic in repository (pure data access)
+- Mapping layer handles schema ↔ entity translation
