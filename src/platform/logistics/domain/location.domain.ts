@@ -275,4 +275,171 @@ export class LocationDomain {
 
     return parts.length > 0 ? parts.join(', ') : null;
   }
+
+  // ========================================================================
+  // E7.2 OPERATIONAL EXTENSIONS
+  // ========================================================================
+
+  /**
+   * E7.2: Deactivate location operation
+   * 
+   * Transition: ACTIVE → INACTIVE
+   * 
+   * Use case: Temporary suspension (maintenance, capacity issues)
+   * 
+   * Invariants:
+   * - Must be ACTIVE status
+   * - Reason required
+   * - Actor (deactivatedBy) required
+   */
+  static deactivateOperation(
+    location: Location,
+    context: {
+      reason: string;
+      deactivatedBy: string;
+    }
+  ): Result<Location> {
+    // Validate reason
+    if (!context.reason || context.reason.trim() === '') {
+      return Result.fail(
+        'Deactivation reason is required',
+        'DEACTIVATION_REASON_REQUIRED'
+      );
+    }
+
+    // Validate actor
+    if (!context.deactivatedBy || context.deactivatedBy.trim() === '') {
+      return Result.fail(
+        'deactivatedBy is required',
+        'DEACTIVATED_BY_REQUIRED'
+      );
+    }
+
+    // Check if already closed
+    if (location.status === 'CLOSED') {
+      return Result.fail(
+        'Cannot deactivate closed location',
+        'LOCATION_ALREADY_CLOSED'
+      );
+    }
+
+    // Use E7.1 frozen contract for transition validation
+    const transitionResult = this.canTransitionTo(location, 'INACTIVE');
+    if (transitionResult.isFailure) {
+      return transitionResult as Result<Location>;
+    }
+
+    // Apply state change
+    const updated: Location = {
+      ...location,
+      status: 'INACTIVE',
+      updatedAt: new Date(),
+    };
+
+    return Result.ok(updated);
+  }
+
+  /**
+   * E7.2: Close location operation
+   * 
+   * Transition: ACTIVE/INACTIVE → CLOSED
+   * 
+   * Use case: Permanent closure (decommission, consolidation)
+   * 
+   * Invariants:
+   * - Cannot close already CLOSED location
+   * - Reason required
+   * - Actor (closedBy) required
+   * - CLOSED is terminal state
+   */
+  static closeOperation(
+    location: Location,
+    context: {
+      reason: string;
+      closedBy: string;
+    }
+  ): Result<Location> {
+    // Validate reason
+    if (!context.reason || context.reason.trim() === '') {
+      return Result.fail(
+        'Close reason is required',
+        'CLOSE_REASON_REQUIRED'
+      );
+    }
+
+    // Validate actor
+    if (!context.closedBy || context.closedBy.trim() === '') {
+      return Result.fail(
+        'closedBy is required',
+        'CLOSED_BY_REQUIRED'
+      );
+    }
+
+    // Use E7.1 frozen contract for transition validation
+    const transitionResult = this.canTransitionTo(location, 'CLOSED');
+    if (transitionResult.isFailure) {
+      return transitionResult as Result<Location>;
+    }
+
+    // Apply state change
+    const updated: Location = {
+      ...location,
+      status: 'CLOSED',
+      updatedAt: new Date(),
+    };
+
+    return Result.ok(updated);
+  }
+
+  /**
+   * E7.2: Reactivate location operation
+   * 
+   * Transition: INACTIVE → ACTIVE
+   * 
+   * Use case: Resume operations after temporary suspension
+   * 
+   * Invariants:
+   * - Must be INACTIVE status
+   * - Cannot reactivate CLOSED locations
+   * - Reason required
+   * - Actor (reactivatedBy) required
+   */
+  static reactivateOperation(
+    location: Location,
+    context: {
+      reason: string;
+      reactivatedBy: string;
+    }
+  ): Result<Location> {
+    // Validate reason
+    if (!context.reason || context.reason.trim() === '') {
+      return Result.fail(
+        'Reactivation reason is required',
+        'REACTIVATION_REASON_REQUIRED'
+      );
+    }
+
+    // Validate actor
+    if (!context.reactivatedBy || context.reactivatedBy.trim() === '') {
+      return Result.fail(
+        'reactivatedBy is required',
+        'REACTIVATED_BY_REQUIRED'
+      );
+    }
+
+    // Use E7.1 frozen contract for transition validation
+    const transitionResult = this.canTransitionTo(location, 'ACTIVE');
+    if (transitionResult.isFailure) {
+      return transitionResult as Result<Location>;
+    }
+
+    // Apply state change
+    const updated: Location = {
+      ...location,
+      status: 'ACTIVE',
+      updatedAt: new Date(),
+    };
+
+    return Result.ok(updated);
+  }
 }

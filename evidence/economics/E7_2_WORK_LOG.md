@@ -41,12 +41,12 @@
 |-------|----------|--------|--------|
 | Phase 1: Inventory State Machine | 90 min | 25 min | ✅ COMPLETE |
 | Phase 1.5: Frozen Boundary Enforcement | 30 min | 10 min | ✅ COMPLETE |
-| Phase 2: Location State Machine | 45 min | — | 🔵 READY |
-| Phase 3: Operational Invariants | 45 min | — | ⏳ PENDING |
+| Phase 2: Location State Machine | 45 min | 10 min | ✅ COMPLETE |
+| Phase 3: Operational Invariants | 45 min | — | 🔵 READY |
 | Phase 4: Multi-Entity Coordination | 60 min | — | ⏳ PENDING |
 | Phase 5: Movement Repository | 45 min | — | ⏳ PENDING |
 | Phase 6: Verification & Lock | 30 min | — | ⏳ PENDING |
-| **Total** | **345 min** | **35 min** | **10% complete** |
+| **Total** | **345 min** | **45 min** | **13% complete** |
 
 ---
 
@@ -286,6 +286,131 @@ Phase 1.5 proves Bella can enforce architectural boundaries programmatically, no
 - ✅ Ready for commit
 
 **Phase 1.5 COMPLETE** ✅
+
+---
+
+## Phase 2: Location State Machine
+
+**Start:** 2026-08-22 19:40:00  
+**End:** 2026-08-22 19:50:00  
+**Planned Duration:** 45 minutes  
+**Actual Duration:** 10 minutes
+
+### Scope
+
+**Deliverables:**
+- ✅ `LocationDomain.deactivateOperation(location, context)` — ACTIVE → INACTIVE
+- ✅ `LocationDomain.closeOperation(location, context)` — ACTIVE/INACTIVE → CLOSED
+- ✅ `LocationDomain.reactivateOperation(location, context)` — INACTIVE → ACTIVE
+
+**Success Criteria:**
+- ✅ Each operation checks preconditions (status, reason, actor)
+- ✅ Each operation uses E7.1 frozen `canTransitionTo()` for validation
+- ✅ Each operation updates state correctly
+- ✅ **Negative-path tests:** Invalid operations rejected, state unchanged
+- ✅ Typed errors returned for all failure cases
+- ✅ E7.1 boundary preserved (no Warehouse/Product concepts)
+
+### Results
+
+**Tests:**
+- E7.2 tests written: 21
+- E7.2 tests PASS: 21/21 (100%)
+- E7.1 regression: 366/366 PASS (100%)
+- **Total: 387/387 PASS (100%)**
+
+**Test LOC:** 262
+
+**Domain LOC Added:** 168 lines (E7.2 operations only, E7.1 unchanged)
+
+**Bugs Found:** 0
+
+**Gaps Found:** 0
+
+**Rework Time:** 0 minutes
+
+**Design Adherence:**
+- ✅ NO Warehouse concepts (bins, putaway, zones)
+- ✅ NO Product workflow logic
+- ✅ Operational semantics only (state + context)
+- ✅ E7.1 frozen contract preserved (`canTransitionTo()` reused)
+- ✅ Negative-path integrity verified (failures don't mutate state)
+
+### Key Design Decisions
+
+**1. Context Pattern:**
+- Each operation requires `{ reason, [actor]By }` context
+- Forces operational traceability
+- Actor: `deactivatedBy`, `closedBy`, `reactivatedBy`
+
+**2. E7.1 Contract Reuse:**
+- All operations delegate to E7.1 `canTransitionTo()`
+- Preserves frozen state machine logic
+- E7.2 adds context layer, doesn't replace validation
+
+**3. Terminal State Enforcement:**
+- CLOSED is terminal (E7.1 contract)
+- `reactivateOperation()` cannot reopen CLOSED locations
+- Must respect E7.1 transition rules
+
+### Test Coverage
+
+**For `deactivateOperation()`:**
+- ✅ Valid: ACTIVE → INACTIVE with reason + actor
+- ❌ Invalid: Deactivate INACTIVE location → REJECT
+- ❌ Invalid: Deactivate CLOSED location → REJECT
+- ❌ Invalid: Empty reason → REJECT
+- ❌ Invalid: Empty deactivatedBy → REJECT
+
+**For `closeOperation()`:**
+- ✅ Valid: ACTIVE → CLOSED with reason + actor
+- ✅ Valid: INACTIVE → CLOSED with reason + actor
+- ❌ Invalid: Close already CLOSED → REJECT
+- ❌ Invalid: Empty reason → REJECT
+- ❌ Invalid: Empty closedBy → REJECT
+
+**For `reactivateOperation()`:**
+- ✅ Valid: INACTIVE → ACTIVE with reason + actor
+- ❌ Invalid: Reactivate ACTIVE location → REJECT
+- ❌ Invalid: Reactivate CLOSED location → REJECT
+- ❌ Invalid: Empty reason → REJECT
+- ❌ Invalid: Empty reactivatedBy → REJECT
+
+**Negative-Path Integrity:**
+- ✅ Failed deactivation doesn't mutate location
+- ✅ Failed close doesn't mutate location
+- ✅ Failed reactivation doesn't mutate location
+
+**E7.1 Boundary Tests:**
+- ✅ E7.1 `canTransitionTo()` behavior unchanged
+- ✅ E7.1 `create()` contract preserved
+- ✅ E7.2 operations use E7.1 validation
+
+### Evidence
+
+**No Warehouse Contamination:**
+- No `bin`, `zone`, `rack`, `putaway` concepts
+- No inventory receiving logic
+- No QA/quarantine workflow (that's Inventory domain)
+- Pure operational state machine
+
+**Frozen Boundary Respected:**
+- E7.1 `canTransitionTo()` unchanged
+- E7.1 status transitions unchanged
+- E7.2 extends, doesn't replace
+
+### Phase 2 Completion Checklist
+
+- ✅ `deactivateOperation()` implemented and tested
+- ✅ `closeOperation()` implemented and tested
+- ✅ `reactivateOperation()` implemented and tested
+- ✅ All negative-path tests written (3 integrity tests)
+- ✅ State unchanged verification on rejection
+- ✅ E7.1 boundary preservation verified (3 tests)
+- ✅ No Warehouse concepts introduced
+- ✅ Phase 2 complete
+
+**Phase 2 COMPLETE** ✅
 
 ---
 
