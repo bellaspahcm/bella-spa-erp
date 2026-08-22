@@ -1098,15 +1098,87 @@ Traceability has cleanest implementation - zero bugs found. This demonstrates th
 
 ---
 
+---
+
+### E7.1.6.5: Location Domain Tests (COMPLETE)
+
+**Batch Start:** 2026-08-22 17:35:00  
+**Batch End:** 2026-08-22 18:23:00  
+**Duration:** 48 minutes
+
+**Deliverable:**
+```
+src/platform/logistics/domain/__tests__/
+└── location.domain.test.ts (567 LOC)
+```
+
+**Measurements:**
+- **Tests Written:** 59
+- **Tests Pass:** 59 (100%)
+- **Tests Fail:** 0
+- **Invariants Covered:** 5/5 (100%)
+  1. ✅ Location code required (4 tests)
+  2. ✅ Location name required (3 tests)
+  3. ✅ Location type required (5 tests)
+  4. ✅ Cannot be parent of itself (3 tests)
+  5. ✅ Cannot be self-parent (update validation) (7 tests)
+- **Additional Coverage:**
+  - Address validation: 6 tests
+  - Status transitions (ACTIVE/INACTIVE/CLOSED): 6 tests
+  - canDeactivate(): 3 tests
+  - validateHierarchy() circular prevention: 4 tests
+  - Query methods: 4 tests
+  - getFormattedAddress(): 4 tests
+  - Tenant isolation: 2 tests
+  - **Boundary verification (critical):** 4 tests
+  - Edge cases: 4 tests
+- **Test LOC:** 567
+- **Domain Bugs Found:** 0
+- **Test Bugs Found:** 0
+- **Rework Time:** 0 minutes
+
+**Evidence Quality:**
+> "Location domain test: 59/59 PASS, 5/5 invariants verified, 0 bugs found, boundary verification PASS."
+
+**Boundary Verification Evidence (Critical Achievement):**
+✅ Location has ZERO Warehouse-specific concepts:
+- ❌ NO Bin fields (binCode, binCapacity, zoneId, aisleId, rackId)
+- ❌ NO Putaway fields (putawayStrategy, putawayPriority, pickSequence)
+- ❌ NO Warehouse-specific status values (BIN_FULL, DAMAGED, NEEDS_PUTAWAY)
+- ✅ ONLY generic location types (WAREHOUSE, STORE, 3PL, DISTRIBUTION_CENTER, VIRTUAL)
+
+This proves Location is a true OS primitive, not a disguised Warehouse entity.
+
+**Key Architectural Evidence:**
+Tests include explicit boundary verification proving Location domain respects OS/Product separation. This is architectural validation, not just functional testing.
+
+**Presentation Helper Evaluation:**
+- ✅ `getFormattedAddress()`: Tested (4 tests), verified formatting
+- ⏳ Domain value assessment: This is presentation logic, should move to API layer
+
+---
+
+**Cumulative E7.1.6 Measurements:**
+- **Total Tests:** 299 (Item: 50, Inventory: 45, Movement: 86, Traceability: 59, Location: 59)
+- **Total Pass:** 299 (100%)
+- **Invariants Covered:** 38/42 (90.5%)
+- **Domain Bugs Found:** 2 (Item: 1, Movement: 1)
+- **Test Bugs Found:** 2 (Inventory: 2)
+- **Total Rework Time:** 6 minutes
+- **Test LOC:** 3,311 (Item: 515, Inventory: 587, Movement: 933, Traceability: 709, Location: 567)
+- **Duration:** 222 minutes (Item: 30min, Inventory: 48min, Movement: 48min, Traceability: 48min, Location: 48min)
+
+---
+
 **Measurement to capture:**
 - [x] Start timestamp ✅ 2026-08-22 14:10:00
-- [x] Total tests written ✅ 240 (Item: 50, Inventory: 45, Movement: 86, Traceability: 59)
-- [x] Pass/fail count ✅ 240 PASS, 0 FAIL
-- [x] Invariants covered / 42 ✅ 33/42 (79%)
-- [x] Bugs found (if any) ✅ 2 domain bugs (Item, Movement), 2 test bugs (Inventory)
+- [x] Total tests written ✅ 299 (5/6 domains complete)
+- [x] Pass/fail count ✅ 299 PASS, 0 FAIL
+- [x] Invariants covered / 42 ✅ 38/42 (90.5%)
+- [x] Bugs found (if any) ✅ 2 domain bugs, 2 test bugs
 - [x] Rework time ✅ 6 minutes total
-- [ ] Presentation helpers used (evidence) ⏳ Partial (calculateVolume, getDescription, getCustodyChain verified)
+- [ ] Presentation helpers used (evidence) ⏳ Partial (4 helpers verified)
 - [ ] Deferred repository needs ⏳ Not yet determined
-- [x] Test LOC ✅ 2,744 (Item: 515, Inventory: 587, Movement: 933, Traceability: 709)
-- [ ] End timestamp ⏳ TBD (after remaining batches)
-- [ ] Duration ⏳ 174 minutes (ongoing)
+- [x] Test LOC ✅ 3,311
+- [ ] End timestamp ⏳ TBD (after UOM)
+- [ ] Duration ⏳ 222 minutes (ongoing)
