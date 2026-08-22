@@ -280,6 +280,30 @@ export interface InventoryValueItem {
   total_value: number;
 }
 
+/**
+ * R15: Check Bin Capacity Request
+ * Validate bin capacity before inventory operation
+ */
+export interface CheckBinCapacityRequest {
+  tenant_id: string;
+  bin_id: string;
+  additional_quantity: number;
+}
+
+/**
+ * R15: Check Bin Capacity Result
+ * Returns capacity validation result
+ */
+export interface CheckBinCapacityResult {
+  bin_id: string;
+  max_capacity: number;
+  current_quantity: number;
+  available_capacity: number;
+  requested_quantity: number;
+  is_valid: boolean;
+  error_message?: string;
+}
+
 export interface GetReceiptRequest {
   tenant_id: string;
   receipt_id: string;
@@ -513,6 +537,26 @@ export interface WarehouseContract {
   getInventoryValue(
     request: GetInventoryValueRequest
   ): Promise<EngineResponse<GetInventoryValueResult>>;
+  
+  /**
+   * R15: Check bin capacity
+   * 
+   * @param request - Bin capacity check request
+   * @returns EngineResponse with capacity validation result
+   * 
+   * **Domain Rules:**
+   * - Calculate: current_quantity = SUM(inventory_on_hand.quantity) for bin
+   * - Validate: (current_quantity + additional_quantity) <= bin.max_capacity
+   * - Reject if capacity exceeded
+   * 
+   * **Platform:**
+   * - Tenant isolation enforced via RLS
+   * - Read bin max_capacity
+   * - Aggregate current inventory
+   */
+  checkBinCapacity(
+    request: CheckBinCapacityRequest
+  ): Promise<EngineResponse<CheckBinCapacityResult>>;
   
   /**
    * Get receipts by status

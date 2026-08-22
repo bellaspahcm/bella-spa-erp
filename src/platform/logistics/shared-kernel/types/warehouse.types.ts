@@ -454,3 +454,28 @@ export interface InventoryValueItem {
   unit_cost: number;
   total_value: number;
 }
+
+
+/**
+ * R15: Check Bin Capacity Input
+ * Request for bin capacity validation
+ */
+export interface CheckBinCapacityInput {
+  tenant_id: string;
+  bin_id: string;
+  additional_quantity: number;
+}
+
+/**
+ * R15: Check Bin Capacity Result
+ * Capacity validation result
+ */
+export interface CheckBinCapacityResult {
+  bin_id: string;
+  max_capacity: number;
+  current_quantity: number;
+  available_capacity: number;
+  requested_quantity: number;
+  is_valid: boolean;
+  error_message?: string;
+}
