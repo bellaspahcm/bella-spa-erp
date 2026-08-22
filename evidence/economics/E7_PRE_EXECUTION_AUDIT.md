@@ -1015,10 +1015,47 @@ E7 IS "build OS layer, then verify Product adoption."
 **AUDIT COMPLETE — 2026-08-22**
 
 ### Step 2: Verify Finance OS Boundary
-- [ ] Re-read Healthcare → Finance integration
-- [ ] Confirm event envelope contract
-- [ ] Confirm semantic resolution pattern
-- [ ] Design Logistics event types
+- [x] Re-read Healthcare → Finance integration
+- [x] Confirm event envelope contract
+- [x] Confirm semantic resolution pattern
+- [x] Design Logistics event types
+
+**AUDIT COMPLETE — 2026-08-22**
+
+**Key Findings:**
+1. ✅ **Standard FinanceEventEnvelope** exists (v1.0)
+2. ✅ **OS-to-OS pattern proven** (Healthcare → Finance)
+3. ✅ **5-layer separation** confirmed:
+   - Event Publisher (Vertical OS)
+   - Event Envelope (Standard Contract)
+   - Semantic Resolver (Finance OS)
+   - Intent Generator (Finance OS)
+   - COA Resolver → Kernel (Finance OS)
+4. ✅ **Logistics can extend** `BusinessContext` (add LogisticsContext, InventoryContext)
+5. ✅ **No accounting in Vertical OS** (boundary clean)
+
+**Pattern to follow:**
+```
+Logistics OS
+     ↓
+FinanceEventPublisher.publish()
+     ↓
+FinanceEventEnvelope {
+  event_type: "INVENTORY_RECEIVED",
+  business_context: {
+    logistics: { ... },
+    inventory: { ... },
+  },
+}
+     ↓
+Integration Hub (Outbox + Idempotency)
+     ↓
+Finance OS Handler
+     ↓
+Semantic Resolver → Intent Generator → COA Resolver
+     ↓
+Finance Kernel (F1-F4)
+```
 
 ### Step 3: Design OS Contracts (Before Implementation)
 - [ ] Item contract
