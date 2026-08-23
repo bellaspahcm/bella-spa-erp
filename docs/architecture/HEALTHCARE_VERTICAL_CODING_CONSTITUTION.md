@@ -1,3 +1,12 @@
+---
+tier: GOVERNANCE
+domain: healthcare
+status: ACTIVE
+last_verified: "2026-08-17"
+description: "20 Laws bắt buộc cho mọi Healthcare Product Vertical. Đọc TRƯỚC KHI code."
+freeze_status: "H1-H12 FROZEN"
+---
+
 # BELLA HEALTHCARE OS — HEALTHCARE VERTICAL CODING CONSTITUTION
 
 > **Status:** FINAL MANDATORY SPECIFICATION FOR ALL AI CODING AGENTS  
