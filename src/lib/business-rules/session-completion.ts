@@ -18,6 +18,7 @@ export type BookingCompletionUpdate = {
   last_updated_date: string;
   updated_at: string;
   status?: BookingCompletionStatus;
+  is_in_care?: boolean;
 };
 
 export type RollbackResultLike = { success?: boolean; error?: string | null };
@@ -64,6 +65,7 @@ export function calculateBookingCompletionUpdate(input: {
 
   if (totalSessions > 0 && completedSessionCount >= totalSessions) {
     update.status = 'completed';
+    update.is_in_care = false; // Clear "Đang có liệu trình" flag when package completes
   }
 
   return update;
