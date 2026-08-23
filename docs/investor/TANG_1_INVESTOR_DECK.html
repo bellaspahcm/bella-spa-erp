@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bella AI Platform - Investor Deck</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+
+    :root {
+      --bg-app: #f1f5f9;
+      --bg-deck: #ffffff;
+      --bg-sidebar: #0f172a;
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-tertiary: #64748b;
+      
+      --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      --accent-color: #3b82f6;
+      --accent-light: #eff6ff;
+      --accent-border: #bfdbfe;
+      
+      --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      --success-light: #ecfdf5;
+      
+      --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      --warning-light: #fffbeb;
+      
+      --border-color: #e2e8f0;
+      
+      --radius-sm: 8px;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+      
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+      --font-title: 'Outfit', sans-serif;
+      
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-body);
+      color: var(--text-secondary);
+      background-color: var(--bg-app);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Left Sidebar Navigation */
+    .sidebar {
+      width: 320px;
+      background-color: var(--bg-sidebar);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      color: white;
+      flex-shrink: 0;
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 1.5rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      background: var(--accent-gradient);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .brand-logo svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: white;
+      stroke-width: 2;
+    }
+
+    .brand-name {
+      font-family: var(--font-title);
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: white;
+    }
+
+    .slide-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      overflow-y: auto;
+      flex: 1;
+      padding-right: 0.25rem;
+    }
+
+    .slide-list::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .slide-list::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+    }
+
+    .slide-item {
+      padding: 0.75rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.7);
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .slide-item:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+      color: white;
+    }
+
+    .slide-item.active {
+      background-color: rgba(59, 130, 246, 0.2);
+      border-left: 3px solid var(--accent-color);
+      color: white;
+      font-weight: 600;
+    }
+
+    .slide-num {
+      width: 20px;
+      height: 20px;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .slide-item.active .slide-num {
+      background-color: var(--accent-color);
+    }
+
+    /* Main Player Container */
+    .deck-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      position: relative;
+    }
+
+    /* Slides viewport */
+    .slides-viewport {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem;
+      overflow: hidden;
+    }
+
+    .slide-card {
+      width: 100%;
+      max-width: 1100px;
+      height: 100%;
+      max-height: 650px;
+      background: var(--bg-deck);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      padding: 3.5rem;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+    }
+
+    .slide-card.active {
+      display: flex;
+      animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: scale(0.98) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    /* Slide Header */
+    .slide-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 2rem;
+    }
+
+    .slide-title-wrapper {
+      max-width: 80%;
+    }
+
+    .slide-title {
+      font-family: var(--font-title);
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .slide-subtitle {
+      font-size: 1.05rem;
+      color: var(--text-tertiary);
+      margin-top: 0.35rem;
+      font-weight: 500;
+    }
+
+    .slide-logo-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background-color: var(--accent-light);
+      border: 1px solid var(--accent-border);
+      border-radius: 50px;
+      font-family: var(--font-title);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--accent-color);
+    }
+
+    /* Slide Content templates */
+    .slide-body {
+      flex: 1;
+      display: flex;
+      gap: 3rem;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .slide-text-content {
+      flex: 1.2;
+    }
+
+    .slide-visual-content {
+      flex: 0.8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+    }
+
+    /* Standard bullet points list */
+    .slide-bullets {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .slide-bullets li {
+      position: relative;
+      padding-left: 2rem;
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .slide-bullets li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 9px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent-gradient);
+    }
+
+    .slide-bullets li strong {
+      color: var(--text-primary);
+      font-weight: 700;
+    }
+
+    /* Metrics grid style */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      width: 100%;
+    }
+
+    .metric-box {
+      background-color: var(--bg-app);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.75rem;
+      text-align: center;
+      transition: var(--transition);
+    }
+
+    .metric-box:hover {
+      transform: translateY(-3px);
+      border-color: var(--accent-border);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+    }
+
+    .metric-num {
+      font-family: var(--font-title);
+      font-size: 2.75rem;
+      font-weight: 900;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+
+    .metric-label {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .metric-desc {
+      font-size: 0.8rem;
+      color: var(--text-tertiary);
+    }
+
+    /* Cover slide template */
+    .slide-card.cover {
+      background: radial-gradient(circle at 100% 100%, #eff6ff 0%, #ffffff 100%);
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      border-left: 8px solid var(--accent-color);
+    }
+
+    .cover-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.65rem 1.25rem;
+      background-color: #1e293b;
+      color: white;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      margin-bottom: 1.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .cover-title {
+      font-family: var(--font-title);
+      font-size: 3.5rem;
+      font-weight: 900;
+      color: var(--text-primary);
+      line-height: 1.15;
+      letter-spacing: -0.04em;
+      margin-bottom: 1rem;
+    }
+
+    .cover-title span {
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .cover-desc {
+      font-size: 1.3rem;
+      color: var(--text-secondary);
+      max-width: 750px;
+      margin-bottom: 3rem;
+      line-height: 1.6;
+    }
+
+    /* Slide Footer */
+    .slide-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--border-color);
+      padding-top: 1.25rem;
+      color: var(--text-tertiary);
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    /* Deck Controls & Speaker Notes Drawer */
+    .deck-controls {
+      height: 70px;
+      background-color: var(--bg-deck);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 3rem;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    .nav-buttons {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .control-btn {
+      background: white;
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-family: var(--font-body);
+      font-size: 0.88rem;
+      font-weight: 700;
+      padding: 0.65rem 1.25rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: var(--transition);
+    }
+
+    .control-btn:hover {
+      background-color: var(--accent-light);
+      border-color: var(--accent-border);
+      color: var(--accent-color);
+    }
+
+    .control-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke-width: 2;
+    }
+
+    .notes-toggle {
+      background: none;
+      border: none;
+      color: var(--text-tertiary);
+      font-weight: 600;
+      font-size: 0.88rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: var(--transition);
+    }
+
+    .notes-toggle:hover {
+      color: var(--text-primary);
+    }
+
+    .progress-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex: 1;
+      max-width: 400px;
+      margin: 0 2rem;
+    }
+
+    .progress-bar-container {
+      flex: 1;
+      height: 6px;
+      background-color: var(--border-color);
+      border-radius: 50px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent-gradient);
+      width: 0%;
+      border-radius: 50px;
+      transition: var(--transition);
+    }
+
+    .progress-text {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    /* Speaker Notes Panel */
+    .speaker-notes-drawer {
+      height: 0;
+      background-color: #0f172a;
+      color: #94a3b8;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      transition: var(--transition);
+      overflow: hidden;
+      padding: 0 3rem;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .speaker-notes-drawer.open {
+      height: 200px;
+      padding: 1.5rem 3rem;
+    }
+
+    .notes-header {
+      font-family: var(--font-title);
+      font-size: 0.95rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: white;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .notes-body {
+      font-size: 0.9rem;
+      line-height: 1.6;
+      overflow-y: auto;
+    }
+
+    /* Custom Diagram SVG styles */
+    .diag-box {
+      background: white;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+      font-weight: 700;
+      font-size: 0.88rem;
+      text-align: center;
+      width: 100%;
+      transition: var(--transition);
+    }
+
+    .diag-box.accent {
+      background-color: var(--accent-light);
+      border-color: var(--accent-border);
+      color: var(--accent-color);
+    }
+
+    .diag-box.success {
+      background-color: var(--success-light);
+      border-color: #a7f3d0;
+      color: #059669;
+    }
+
+    .diag-box.dark {
+      background-color: #1e293b;
+      color: white;
+      border-color: #334155;
+    }
+
+    .arrow-icon {
+      width: 24px;
+      height: 24px;
+      color: var(--text-tertiary);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Slide List Left Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor"/>
+        </svg>
+      </div>
+      <div class="brand-name">BELLA AI PLATFORM</div>
+    </div>
+    
+    <ul class="slide-list" id="slide-list">
+      <!-- Generated via JS -->
+    </ul>
+    
+    <div class="sidebar-footer">
+      <div>Bella Investor Data Room</div>
+      <div>Confidential © 2026</div>
+    </div>
+  </aside>
+
+  <!-- Slide Presentation viewport -->
+  <main class="deck-container">
+    <div class="slides-viewport" id="slides-viewport">
+      
+      <!-- Slide 1: Cover -->
+      <div class="slide-card cover active" data-slide-name="Cover Slide" data-notes="Bắt đầu buổi thuyết trình bằng việc nhấn mạnh Bella không phải một phần mềm SaaS thông thường mà là một 'OS Factory' dành cho các doanh nghiệp SME Việt Nam.">
+        <div class="cover-badge">Platform OS Factory</div>
+        <h1 class="cover-title">Bella AI Platform:<br>The <span>Enterprise Multi-Industry OS</span></h1>
+        <p class="cover-desc">Nền tảng công nghệ lõi ổn định, cách ly an toàn bảo mật cấp cao, vận hành và mở rộng quy mô phi tuyến tính cho mọi ngành dọc.</p>
+        <div class="metrics-grid" style="max-width: 800px; margin-top: 1rem;">
+          <div class="metric-box" style="background: rgba(255,255,255,0.7)">
+            <div class="metric-num">1:3</div>
+            <div class="metric-label">Healthcare Ratio</div>
+            <div class="metric-desc">1 Kernel -> 3 Sản phẩm</div>
+          </div>
+          <div class="metric-box" style="background: rgba(255,255,255,0.7)">
+            <div class="metric-num">0%</div>
+            <div class="metric-label">Core Changes</div>
+            <div class="metric-desc">Khi xây phân hệ mới</div>
+          </div>
+          <div class="metric-box" style="background: rgba(255,255,255,0.7)">
+            <div class="metric-num">0</div>
+            <div class="metric-label">P0 Violations</div>
+            <div class="metric-desc">Rào chắn kiến trúc tự động</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slide 2: The Core Problem -->
+      <div class="slide-card" data-slide-name="The Core Problem" data-notes="Trực quan hóa nỗi đau của doanh nghiệp Việt Nam khi chuyển đổi số: Sự chắp vá và chi phí phình to tuyến tính khi mở rộng.">
+        <div class="slide-header">
+          <div class="slide-title-wrapper">
+            <h2 class="slide-title">Nỗi đau ERP & SaaS của SME Việt Nam</h2>
+            <p class="slide-subtitle">Thực trạng phân mảnh phần mềm và chi phí phát triển phình to.</p>
+          </div>
+          <div class="slide-logo-badge">Problem Statement</div>
+        </div>
+        <div class="slide-body">
+          <div class="slide-text-content">
+            <ul class="slide-bullets">
+              <li><strong>Phân mảnh nghiêm trọng:</strong> Trung bình các SME phải kết hợp từ 5-10 phần mềm rời rạc như POS, CRM, Excel, Chat khiến dữ liệu bị phân mảnh và thất thoát.</li>
+              <li><strong>Sản phẩm nước ngoài thiếu tùy biến:</strong> Các phần mềm toàn cầu như Salesforce hay Odoo quá đắt đỏ và không hỗ trợ kế toán kép nội địa (e.g. TT133/2016).</li>
+              <li><strong>Chi phí biên tuyến tính:</strong> Các công ty phần mềm Việt Nam thường phải xây dựng lại hệ thống cho mỗi ngành dọc mới, dẫn đến lãng phí thời gian và tích tụ nợ kỹ thuật.</li>
+              <li><strong>AI hời hợt (Bolt-on):</strong> AI hầu hết chỉ được thêm vào như một tính năng chat phụ họa, không trực tiếp xử lý quy trình hay đối soát tài chính.</li>
+            </ul>
+          </div>
+          <div class="slide-visual-content">
+            <div style="display: flex; flex-direction: column; gap: 1rem; width: 100%;">
+              <div class="diag-box dark" style="background-color: #ef4444; border-color: #fca5a5;">MISA (Kế toán cứng nhắc)</div>
+              <div class="diag-box dark" style="background-color: #ef4444; border-color: #fca5a5;">KiotViet (POS đơn lẻ, không mở rộng)</div>
+              <div class="diag-box dark" style="background-color: #ef4444; border-color: #fca5a5;">Salesforce (Quá đắt, không bản địa hóa)</div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-footer">
+          <div>Bella AI Platform Investor Deck</div>
+          <div>Slide 2/17</div>
+        </div>
+      </div>
+
+      <!-- Slide 3: The Bella Vision -->
+      <div class="slide-card" data-slide-name="The Bella Vision" data-notes="Nhấn mạnh Bella không phải phần mềm kế toán hay chăm sóc khách hàng độc lập. Nó là một nhà máy thiết kế OS doanh nghiệp.">
+        <div class="slide-header">
+          <div class="slide-title-wrapper">
+            <h2 class="slide-title">Tầm nhìn Bella: Nền tảng Platform of Platforms</h2>
+            <p class="slide-subtitle">Xây dựng & vận hành các hệ thống ERP chuyên ngành trên cùng một nền tảng lõi.</p>
+          </div>
+          <div class="slide-logo-badge">Our Vision</div>
+        </div>
+        <div class="slide-body">
+          <div class="slide-text-content">
+            <ul class="slide-bullets">
+              <li><strong>Một lõi dùng chung:</strong> Bella cung cấp các Capabilities phổ quát (Định danh, Sự kiện, Dòng tiền, Quy tắc duyệt, Vận hành AI).</li>
+              <li><strong>Các Kernel nghiệp vụ dọc:</strong> Mỗi ngành dọc là một Kernel đóng gói tri thức chuyên môn (e.g. Y tế, Logistics, Giáo dục, Bất động sản).</li>
+              <li><strong>Tái sử dụng vượt trội:</strong> Không viết lại mã nguồn, chỉ cấu hình để tạo sản phẩm mới.</li>
+              <li><strong>Đồng kiến tạo bởi AI:</strong> Lớp nhân viên AI Workforce đóng vai trò đồng hành vận hành thay thế con người ở các luồng xử lý thủ công.</li>
+            </ul>
+          </div>
+          <div class="slide-visual-content">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 0.75rem; width: 100%;">
+              <div class="diag-box accent">Bella Core Platform</div>
+              <div style="display: flex; gap: 0.5rem; width: 100%;">
+                <div class="diag-box success">Healthcare</div>
+                <div class="diag-box success">Finance</div>
+                <div class="diag-box success">Real Estate</div>
+              </div>
+              <div style="display: flex; gap: 0.5rem; width: 100%;">
+                <div class="diag-box" style="font-size: 0.75rem;">bella-hospital</div>
+                <div class="diag-box" style="font-size: 0.75rem;">bella-land</div>
+                <div class="diag-box" style="font-size: 0.75rem;">bella-spa</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-footer">
+          <div>Bella AI Platform Investor Deck</div>
+          <div>Slide 3/17</div>
+        </div>
+      </div>
+
+      <!-- Slide 4: Architecture - 3-Layer Isolation -->
+      <div class="slide-card" data-slide-name="Architecture" data-notes="Kiến trúc 3 lớp cách ly giúp bảo vệ tính toàn vẹn của Core và Kernel, đồng thời đẩy nhanh tốc độ triển khai Product Verticals.">
+        <div class="slide-header">
+          <div class="slide-title-wrapper">
+            <h2 class="slide-title">Kiến trúc 3 lớp: Tách biệt biên giới tuyệt đối</h2>
+            <p class="slide-subtitle">Không cho phép kết hợp ngược chiều nhằm bảo vệ tính nguyên bản của lõi hệ thống.</p>
+          </div>
+          <div class="slide-logo-badge">Architecture</div>
+        </div>
+        <div class="slide-body">
+          <div class="slide-text-content">
+            <ul class="slide-bullets">
+              <li><strong>Product Layer (UI & Orchestration):</strong> Giao diện hiển thị, cấu hình giao dịch tùy biến theo từng doanh nghiệp (e.g. `bella-hospital`, `bella-land`).</li>
+              <li><strong>Kernel Layer (Domain Logic):** Chứa các động cơ nghiệp vụ lớn của ngành dọc (ví dụ: EMR y tế, Sổ cái kế toán, Hoa hồng môi giới).</li>
+              <li><strong>Core Layer (Frozen Platform Core):** Hạ tầng lõi bất biến, cung cấp các engine nền tảng như Event Bus, State Machine, Policy Engine.</li>
+            </ul>
+          </div>
+          <div class="slide-visual-content">
+            <div style="border: 1px solid var(--border-color); padding: 1.5rem; border-radius: var(--radius-md); background: #fafafa; width: 100%;">
+              <div style="font-weight: 700; margin-bottom: 0.75rem; font-size: 0.85rem; text-transform: uppercase; color: var(--text-tertiary);">Dependency Flow Control</div>
+              <div style="display: flex; flex-direction: column; gap: 0.5rem; align-items: center;">
+                <div class="diag-box accent" style="width: 80%;">Product Layer</div>
+                <div style="color: var(--text-tertiary); font-weight: bold;">↓ calls contracts</div>
+                <div class="diag-box success" style="width: 80%;">Kernel Layer (Frozen/Sealed)</div>
+                <div style="color: var(--text-tertiary); font-weight: bold;">↓ calls infra</div>
+                <div class="diag-box dark" style="width: 80%;">Platform Core (Frozen)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-footer">
+          <div>Bella AI Platform Investor Deck</div>
+          <div>Slide 4/17</div>
+        </div>
+      </div>
+
+      <!-- Slide 5: Platform Core - The Engine Room -->
+      <div class="slide-card" data-slide-name="Platform Core" data-notes="Giải thích về các thành phần cốt lõi của Core. Policy Engine và Event Bus giúp hệ thống khả cấu hình và mở rộng phi đồng bộ.">
+        <div class="slide-header">
+          <div class="slide-title-wrapper">
+            <h2 class="slide-title">Platform Core: Bộ não công nghệ bất biến</h2>
+            <p class="slide-subtitle">Quản lý cơ sở dữ liệu System of Record và cung cấp hạ tầng chung.</p>
+          </div>
+          <div class="slide-logo-badge">Core Engines</div>
+        </div>
+        <div class="slide-body">
+          <div class="slide-text-content">
+            <ul class="slide-bullets">
+              <li><strong>Platform Foundation (`src/foundation/`):</strong> Quản lý thực thể chung như Tổ chức (`organization`), Con người (`people`), Phân vai trò giao việc (`assignment`).</li>
+              <li><strong>Event Bus (`core/events/`):</strong> Triển khai Outbox Pattern đảm bảo đồng bộ trạng thái phi đồng bộ, chống nghẽn DB.</li>
+              <li><strong>Policy Engine (`core/policy-engine/`):</strong> Đánh giá luật nghiệp vụ linh hoạt thông qua JSON Rules chạy trực tiếp trên RAM/Redis.</li>
+              <li><strong>AI Orchestrator:</strong> Điều phối các mô hình ngôn ngữ lớn (LLM/Gemini) tham gia duyệt và ra quyết định bán tự động.</li>
+            </ul>
+          </div>
+          <div class="slide-visual-content">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; width: 100%;">
+              <div class="diag-box" style="padding: 1.5rem;">Event Bus<br><span style="font-size: 0.75rem; font-weight: normal; color: var(--text-tertiary);">Outbox Pattern</span></div>
+              <div class="diag-box" style="padding: 1.5rem;">Policy Engine<br><span style="font-size: 0.75rem; font-weight: normal; color: var(--text-tertiary);">JSON Rules</span></div>
+              <div class="diag-box" style="padding: 1.5rem;">State Machine<br><span style="font-size: 0.75rem; font-weight: normal; color: var(--text-tertiary);">Workflow Engine</span></div>
+              <div class="diag-box" style="padding: 1.5rem;">AI Orchestrator<br><span style="font-size: 0.75rem; font-weight: normal; color: var(--text-tertiary);">Agentic SOPs</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-footer">
+          <div>Bella AI Platform Investor Deck</div>
+          <div>Slide 5/17</div>
+        </div>
+      </div>
+
+      <!-- Slide 6: Industry Kernels - Specialized Powerhouses -->
+      <div class="slide-card" data-slide-name="Industry Kernels" data-notes="Kernels là nơi lưu trữ tri thức chuyên môn của từng ngành. Hệ thống hiện có 5 Kernels khác nhau đã được chứng minh trong thực tế.">
+        <div class="slide-header">
+          <div class="slide-title-wrapper">
+            <h2 class="slide-title">Industry Kernels: Sức mạnh chuyên biệt hóa</h2>
+            <p class="slide-subtitle">Tri thức nghiệp vụ chuyên biệt của 5 ngành dọc cốt lõi.</p>
+          </div>
+          <div class="slide-logo-badge">Industry Kernels</div>
+        </div>
+        <div class="slide-body">
+          <div class="slide-text-content">
+            <ul class="slide-bullets">
+              <li><strong>Healthcare Kernel (27 Engines):</strong> Quản lý giường bệnh (`bed`), bệnh án điện tử (`EMR`), cấp phát thuốc (`pharmacy`), hỗ trợ chẩn đoán lâm sàng (`CDS`).</li>
+              <li><strong>Finance Kernel (F1-F5):</strong> Sổ cái kế toán kép (`ledger`), quản lý dòng tiền (`cash`), tích toán công nợ (`AR/AP`).</li>
+              <li><strong>Real Estate Kernel (4 Services):</strong> Quản lý giỏ hàng bất động sản (`property inventory`), giữ chỗ (`reservation`), hoa hồng (`commission`).</li>
+              <li><strong>Education Kernel (5 Domains):</strong> Khóa học, tuyển sinh, điểm danh, kết quả học tập.</li>
+            </ul>
+          </div>
+          <div class="slide-visual-content">
+            <div style="border: 1px solid var(--border-color); padding: 1.5rem; border-radius: var(--radius-md); background: #fafafa; width: 100%; text-align: center;">
+              <h4 style="margin-bottom: 0.75rem;">Tổng số động cơ nghiệp vụ dọc</h4>
+              <div style="font-size: 3rem; font-family: var(--font-title); font-weight: 900; color: var(--accent-color);">39+</div>
+              <div style="font-size: 0.85rem; color: var(--text-tertiary); margin-bottom: 1rem;">Đã đóng gói hoàn chỉnh trong mã nguồn</div>
+              <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center;">
+                <span class="slide-logo-badge" style="background: white; font-size: 0.75rem;">Healthcare (27)</span>
+                <span class="slide-logo-badge" style="background: white; font-size: 0.75rem;">Finance (2)</span>
+                <span class="slide-logo-badge" style="background: white; font-size: 0.75rem;">Real Estate (4)</span>
+                <span class="slide-logo-badge" style="background: white; font-size: 0.75rem;">Education (5)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-footer">
+          <div>Bella AI Platform Investor Deck</div>
+          <div>Slide 6/17</div>
+        </div>
+      </div>
+
+      <!-- Slide 7: Tenant Isolation & Security -->
+      <div class="slide-card" data-slide-name="Tenant Isolation" data-notes="An toàn bảo mật dữ liệu là ưu tiên số một. RLS đảm bảo dữ liệu được cách ly trực tiếp từ truy vấn cơ sở dữ liệu PostgreSQL.">
+        <div class="slide-header">
+          <div class="slide-title-wrapper">
+            <h2 class="slide-title">Cách ly Tenant Tuyệt đối & RLS Database</h2>
+            <p class="slide-subtitle">Đảm bảo an toàn bảo mật cấp cao cho 10,000+ doanh nghiệp trên cùng cơ sở dữ liệu.</p>
+          </div>
+          <div class="slide-logo-badge">Security</div>
+        </div>
+        <div class="slide-body">
+          <div class="slide-text-content">
+            <ul class="slide-bullets">
+              <li><strong>Row-Level Security (RLS) bắt buộc:</strong> Thiết lập chính sách bảo mật trực tiếp trên các bảng PostgreSQL. Client không thể đọc dữ liệu chéo của tenant khác.</li>
+              <li><strong>Middleware Token Memoization:</strong> Next.js Serverless Middleware tự động phân tách JWT Bearer token và chèn vào client DB để kích hoạt RLS đúng đắn.</li>
+              <li><strong>Kiểm thử bảo mật tự động:</strong> CI chạy test kiểm tra ranh giới cách ly tenant cho mỗi Pull Request, cam kết **0 P0 violations**.</li>
+            </ul>
+          </div>
+          <div class="slide-visual-content">
+            <div style="border: 1px solid var(--border-color); padding: 1.5rem; border-radius: var(--radius-md); background: #fafafa; width: 100%;">
+              <div style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.85rem;">PostgreSQL RLS Architecture</div>
+              <div style="font-family: monospace; font-size: 0.8rem; background: #0f172a; color: #a7f3d0; padding: 1rem; border-radius: var(--radius-sm); overflow-x: auto;">
+                -- Enforces Tenant isolation<br>
+                ALTER TABLE users ENABLE RLS;<br>
+                CREATE POLICY tenant_isolation ON users<br>
+                &nbsp;&nbsp;FOR ALL<br>
+                &nbsp;&nbsp;USING (tenant_id = auth.jwt() ->> 'tenant_id');
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-footer">
+          <div>Bella AI Platform Investor Deck</div>
+          <div>Slide 7/17</div>
+        </div>
+      </div>
+
+      <!-- Slide 8: Reusability - Healthcare 1:3 Proof -->
+      <div class="slide-card" data-slide-name="Reusability Proof" data-notes="Chứng minh tỷ lệ tái sử dụng 1:3 của Healthcare Kernel: 1 lõi phục vụ 3 phân hệ độc lập mà không copy code.">
+        <div class="slide-header">
+          <div class="slide-title-wrapper">
+            <h2 class="slide-title">Minh chứng tái sử dụng: Hệ sinh thái Healthcare 1:3</h2>
+            <p class="slide-subtitle">Sản phẩm tiếp theo chỉ tốn dưới 20% chi phí xây dựng từ đầu.</p>
+          </div>
+          <div class="slide-logo-badge">Reusability Evidence</div>
+        </div>
+        <div class="slide-body">
+          <div class="slide-text-content">
+            <ul class="slide-bullets">
+              <li><strong>1 Kernel -> 3 Sản phẩm:</strong> Healthcare Kernel vận hành đồng thời 3 hệ thống Hospital, Medical Clinic, và Dental Clinic.</li>
+              <li><strong>Không trùng lặp động cơ:</strong> 0% duplicated engine code. Mọi tương tác thông qua Public Contracts ổn định.</li>
+              <li><strong>Sự trưởng thành kỹ thuật:</strong> Khi mở rộng sang sản phẩm thứ 4 (e.g. Thú y hoặc Chăm sóc tại nhà), chúng tôi chỉ cần tái cấu hình UI và quy trình.</li>
+            </ul>
+          </div>
+          <div class="slide-visual-content">
+            <div style="display: flex; flex-direction: column; gap: 0.5rem; width: 100%; padding: 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: white;">
+              <div class="diag-box accent" style="font-weight: 800;">Healthcare Kernel (27 Engines)</div>
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 1rem;">
+                <span class="arrow-icon">↙</span>
+                <span class="arrow-icon">↓</span>
+                <span class="arrow-icon">↘</span>
+              </div>
+              <div style="display: flex; gap: 0.5rem; width: 100%;">
+                <div class="diag-box success" style="font-size: 0.75rem; padding: 0.5rem;">Hospital (EMR, Bed, CDS)</div>
+                <div class="diag-box success" style="font-size: 0.75rem; padding: 0.5rem;">Clinic (Encounter, Order)</div>
+                <div class="diag-box success" style="font-size: 0.75rem; padding: 0.5rem;">Dental (Audit, CDS, Scheduler)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-footer">
+          <div>Bella AI Platform Investor Deck</div>
+          <div>Slide 8/17</div>
+        </div>
+      </div>
+
+      <!-- Slide 9: Platform Economics - Marginal Cost Curve -->
+      <div class="slide-card" data-slide-name="Platform Economics" data-notes="Đường cong chi phí biên giảm dần cho thấy khi số lượng sản phẩm/vertical tăng lên, chi phí phát triển của Bella tiệm cận về 0.">
+        <div class="slide-header">
+          <div class="slide-title-wrapper">
+            <h2 class="slide-title">Kinh tế học Platform: Chi phí biên giảm dần</h2>
+            <p class="slide-subtitle">Doanh thu tăng trưởng phi tuyến tính dựa trên tích lũy tri thức công nghệ lõi.</p>
+          </div>
+          <div class="slide-logo-badge">Economics</div>
+        </div>
+        <div class="slide-body">
+          <div class="slide-text-content">
+            <ul class="slide-bullets">
+              <li><strong>Sản phẩm #1 (Hospital):</strong> Đầu tư 100% nỗ lực nghiên cứu, kiểm thử và thiết lập Kernel y tế.</li>
+              <li><strong>Sản phẩm #2 (Clinic):</strong> Thừa hưởng các engines cốt lõi, chỉ mất ~30% nỗ lực để tùy biến.</li>
+              <li><strong>Sản phẩm #3 (Dental):</strong> Chi phí biên tiếp tục giảm xuống **20%** nỗ lực của sản phẩm đầu tiên.</li>
+              <li><strong>Biên lợi nhuận gộp (Gross Margin):</strong> Vượt mốc **80-85%** khi triển khai diện rộng ở phân hệ thứ 4 trở đi.</li>
+            </ul>
+          </div>
+          <div class="slide-visual-content">
+            <div style="width: 100%; display: flex; flex-direction: column; gap: 0.85rem;">
+              <div style="font-size: 0.85rem; font-weight: bold; color: var(--text-tertiary); text-transform: uppercase;">Marginal Effort per Product Vertical</div>
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: bold; margin-bottom: 0.25rem;">
+                  <span>Product #1 (Hospital)</span>
+                  <span>100%</span>
+                </div>
+                <div class="progress-track"><div class="progress-bar" style="width: 100%;"></div></div>
+              </div>
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: bold; margin-bottom: 0.25rem;">
+                  <span>Product #2 (Clinic)</span>
+                  <span>30%</span>
+                </div>
+                <div class="progress-track"><div class="progress-bar" style="width: 30%;"></div></div>
+              </div>
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: bold; margin-bottom: 0.25rem;">
+                  <span>Product #3 (Dental)</span>
+                  <span>20%</span>
+                </div>
+                <div class="progress-track"><div class="progress-bar" style="width: 20%;"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-footer">
+          <div>Bella AI Platform Investor Deck</div>
+          <div>Slide 9/17</div>
+        </div>
+      </div>
+
+      <!-- Slide 10: Moat 1 - Architecture Guard -->
+      <div class="slide-card" data-slide-name="Architecture Guard" data-notes="Architecture Guard là vũ khí chống phình to nợ kỹ thuật. Nó từ chối mọi đoạn code vi phạm ranh giới hệ thống một cách tự động.">
+        <div class="slide-header">
+          <div class="slide-title-wrapper">
+            <h2 class="slide-title">Rào chắn Kiến trúc (Architecture Guard) tự động</h2>
+            <p class="slide-subtitle">Bộ quy tắc cứng ngăn chặn nợ kỹ thuật và bảo vệ tính nguyên bản của lõi hệ thống.</p>
+          </div>
+          <div class="slide-logo-badge">Moat Layer 1</div>
+        </div>
+        <div class="slide-body">
+          <div class="slide-text-content">
+            <ul class="slide-bullets">
+              <li><strong>Cấm nhập ngược chiều:</strong> Core và Foundation không được phép import bất kỳ tệp tin nào từ Kernel hay Product Verticals.</li>
+              <li><strong>Khóa băng file tĩnh:</strong> Tự động chặn và từ chối các commit sửa đổi tệp tin miền cốt lõi đã niêm phong (e.g. `Patient`, `Encounter` trong Healthcare).</li>
+              <li><strong>Tích hợp CI Gate:</strong> Mọi pull request vi phạm hiến pháp kiến trúc đều bị từ chối tự động trước khi merge.</li>
+            </ul>
+          </div>
+          <div class="slide-visual-content">
+            <div style="border: 1px solid var(--border-color); padding: 1.5rem; border-radius: var(--radius-md); background: #fafafa; width: 100%; display: flex; flex-direction: column; gap: 0.75rem;">
+              <div style="font-weight: 700; font-size: 0.85rem; color: var(--text-primary); text-transform: uppercase;">CI Verification Pipeline</div>
+              <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; font-family: monospace; background: #0f172a; padding: 1rem; border-radius: var(--radius-sm); color: #94a3b8;">
+                <div>$ npm run healthcare:verify<br><span style="color: #10b981;">✓ 52/52 Regression tests passed</span><br><span style="color: #10b981;">✓ Zero circular dependencies</span><br><span style="color: #10b981;">✓ Zero boundary violations</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-footer">
+          <div>Bella AI Platform Investor Deck</div>
+          <div>Slide 10/17</div>
+        </div>
+      </div>
+
+      <!-- Slide 11: Moat 2 - BDGF -->
+      <div class="slide-card" data-slide-name="BDGF Governance" data-notes="BDGF ngăn chặn việc quản trị viên truy cập database sửa đổi cấu hình trái phép. Toàn bộ thay đổi phải được ký số và có audit trail.">
+        <div class="slide-header">
+          <div class="slide-title-wrapper">
+            <h2 class="slide-title">BDGF: Quản trị phi tập trung & Chống sửa đổi cấu hình</h2>
+            <p class="slide-subtitle">Quy trình duyệt và thực thi cấu hình hệ thống bằng mật mã chữ ký số.</p>
+          </div>
+          <div class="slide-logo-badge">Moat Layer 2</div>
+        </div>
+        <div class="slide-body">
+          <div class="slide-text-content">
+            <ul class="slide-bullets">
+              <li><strong>Ngăn chặn bypass DB:</strong> Cấu hình hệ thống (đặc biệt là phân hệ tài chính và quyền hạn) không thể sửa đổi thủ công trực tiếp từ admin dashboard.</li>
+              <li><strong>Luồng duyệt 5 bước khép kín:</strong> Yêu cầu -> ARB Phê duyệt -> Cấp token an toàn -> Thực thi tự động -> Lưu nhật ký kiểm toán.</li>
+              <li><strong>Bảo mật mật mã:</strong> Mã khóa ký số được quản lý qua **AWS Secrets Manager**, hỗ trợ xoay vòng tự động 24h.</li>
+            </ul>
+          </div>
+          <div class="slide-visual-content">
+            <div style="border: 1px solid var(--border-color); padding: 1.5rem; border-radius: var(--radius-md); background: #fafafa; width: 100%; display: flex; flex-direction: column; gap: 0.5rem;">
+              <div class="diag-box accent" style="font-size: 0.8rem; padding: 0.5rem;">Request configuration change</div>
+              <div style="text-align: center; font-size: 0.8rem; font-weight: bold; color: var(--text-tertiary);">↓ approval</div>
+              <div class="diag-box success" style="font-size: 0.8rem; padding: 0.5rem;">Get Sign-Off Token (AWS Keys)</div>
+              <div style="text-align: center; font-size: 0.8rem; font-weight: bold; color: var(--text-tertiary);">↓ execute</div>
+              <div class="diag-box dark" style="font-size: 0.8rem; padding: 0.5rem;">Audit record permanently appended</div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-footer">
+          <div>Bella AI Platform Investor Deck</div>
+          <div>Slide 11/17</div>
+        </div>
+      </div>
+
+      <!-- Slide 12: Moat 3 - AI Workforce & Intelligent Orchestration -->
+      <div class="slide-card" data-slide-name="AI Workforce" data-notes="Nhân viên AI của Bella không chỉ chat mà hoạt động dựa trên các Agentic SOPs có khả năng đối soát tài chính thực tế.">
+        <div class="slide-header">
+          <div class="slide-title-wrapper">
+            <h2 class="slide-title">AI Workforce: Nhân viên AI vận hành thực tế</h2>
+            <p class="slide-subtitle">Trực tiếp giải quyết các quy trình nghiệp vụ và kiểm soát đối soát tự động.</p>
+          </div>
+          <div class="slide-logo-badge">Moat Layer 3</div>
+        </div>
+        <div class="slide-body">
+          <div class="slide-text-content">
+            <ul class="slide-bullets">
+              <li><strong>Tích hợp sâu trong luồng nghiệp vụ:</strong> AI tham gia duyệt hồ sơ đăng ký đối tác (Bất động sản) và đối soát sai lệch ca dịch vụ (Spa).</li>
+              <li><strong>Đối soát lương thông minh (Salary Reconciliation):</strong> Tự động đối so sánh lịch đặt chỗ, đánh giá khách hàng và hoa hồng để phát hiện bất thường.</li>
+              <li><strong>Báo cáo giải trình AI (Explainability):</strong> Mọi quyết định hay đề xuất của AI đều ghi chép rõ các yếu tố đầu vào và logic suy luận để con người kiểm tra.</li>
+            </ul>
+          </div>
+          <div class="slide-visual-content">
+            <div style="border: 1px solid var(--border-color); padding: 1.5rem; border-radius: var(--radius-md); background: #fafafa; width: 100%; text-align: center;">
+              <h4 style="margin-bottom: 0.5rem;">AI Salary Reconciliation Efficacy</h4>
+              <div style="font-size: 2.5rem; font-family: var(--font-title); font-weight: 800; color: #10b981;">&gt; 95%</div>
+              <div style="font-size: 0.85rem; color: var(--text-tertiary); margin-bottom: 0.75rem;">Độ chính xác phát hiện sai sót tính lương</div>
+              <div style="font-size: 0.8rem; font-weight: bold; background: white; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">Tiết kiệm 30% thời gian đối soát kế toán</div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-footer">
+          <div>Bella AI Platform Investor Deck</div>
+          <div>Slide 12/17</div>
+        </div>
+      </div>
+
+      <!-- Slide 13: Performance - Production-Ready Evidence -->
+      <div class="slide-card" data-slide-name="Performance Evidence" data-notes="k6 benchmarks chứng minh hiệu năng hệ thống. Chúng tôi có giới hạn dung lượng tải an toàn rõ ràng (~70 VUs/120 RPS).">
+        <div class="slide-header">
+          <div class="slide-title-wrapper">
+            <h2 class="slide-title">Bằng chứng hiệu năng hệ thống thực tế</h2>
+            <p class="slide-subtitle">Kiểm thử tải concurrency cực hạn bằng công cụ k6 Load Test.</p>
+          </div>
+          <div class="slide-logo-badge">Performance Benchmark</div>
+        </div>
+        <div class="slide-body">
+          <div class="slide-text-content">
+            <ul class="slide-bullets">
+              <li><strong>Khả năng tải an toàn:</strong> Sustains **~70 VUs (~120 RPS)** with **sub-300ms** latency.</li>
+              <li><strong>Độ trễ xử lý quy tắc duyệt:</strong> Động cơ tính hoa hồng (Commission Provider) xử lý hơn **65,244 decisions/second** với độ trễ siêu nhỏ **0.11ms - 1.50ms**.</li>
+              <li><strong>Tự phòng vệ thông minh:</strong> Rate-limiting kích hoạt `HTTP 429` để bảo vệ cơ sở dữ liệu khi concurrency vọt lên trên 200 VUs.</li>
+            </ul>
+          </div>
+          <div class="slide-visual-content">
+            <div style="width: 100%;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
+                <thead>
+                  <tr style="border-bottom: 2px solid var(--border-color);">
+                    <th style="padding: 0.5rem 0;">Workload (k6)</th>
+                    <th style="padding: 0.5rem 0;">VUs</th>
+                    <th style="padding: 0.5rem 0;">P95 Latency</th>
+                    <th style="padding: 0.5rem 0;">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 0.5rem 0;">Warmup</td>
+                    <td style="padding: 0.5rem 0;">50 VUs</td>
+                    <td style="padding: 0.5rem 0; color: #10b981; font-weight: bold;">&lt; 200 ms</td>
+                    <td style="padding: 0.5rem 0;">🟢 PASS</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 0.5rem 0;">Capacity 100</td>
+                    <td style="padding: 0.5rem 0;">100 VUs</td>
+                    <td style="padding: 0.5rem 0; color: #f59e0b; font-weight: bold;">593 ms</td>
+                    <td style="padding: 0.5rem 0;">🟡 PASS (SLA Limit)</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 0.5rem 0;">Capacity 200</td>
+                    <td style="padding: 0.5rem 0;">200 VUs</td>
+                    <td style="padding: 0.5rem 0; color: #ef4444; font-weight: bold;">5.78 s</td>
+                    <td style="padding: 0.5rem 0;">🔴 FAIL (Knee Point)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="slide-footer">
+          <div>Bella AI Platform Investor Deck</div>
+          <div>Slide 13/17</div>
+        </div>
+      </div>
+
+      <!-- Slide 14: Industry Expansion Plan (2026-2027) -->
+      <div class="slide-card" data-slide-name="Expansion Plan" data-notes="Lộ trình mở rộng 10 ngành đến năm 2027. Mỗi ngành dọc mới giúp lõi hệ thống tích lũy thêm capabilities và mạnh mẽ hơn.">
+        <div class="slide-header">
+          <div class="slide-title-wrapper">
+            <h2 class="slide-title">Kế hoạch mở rộng: 10 ngành dọc đến năm 2027</h2>
+            <p class="slide-subtitle">Chiến lược nhân bản nhanh dựa trên sự hoàn thiện của Capabilities lõi.</p>
+          </div>
+          <div class="slide-logo-badge">Roadmap</div>
+        </div>
+        <div class="slide-body">
+          <div class="slide-text-content">
+            <ul class="slide-bullets">
+              <li><strong>2024-2025:</strong> Chứng minh thực tế phân hệ Beauty Spa & Babycare y tế tại Việt Nam.</li>
+              <li><strong>2026:</strong> Hoàn thiện Bất động sản (Real Estate Partner Portal) và triển khai thử nghiệm hệ điều hành Y tế (Healthcare OS).</li>
+              <li><strong>2027:</strong> Tăng tốc nhân rộng sang Bán lẻ (Retail POS), Vận chuyển (Logistics OS) và Giáo dục học đường (Education OS).</li>
+            </ul>
+          </div>
+          <div class="slide-visual-content">
+            <div style="position: relative; padding-left: 2rem; width: 100%;">
+              <div style="position: absolute; left: 6px; top: 5px; bottom: 5px; width: 2px; background: var(--border-color);"></div>
+              <div style="position: relative; margin-bottom: 1rem;">
+                <div style="position: absolute; left: -2.35rem; width: 14px; height: 14px; border-radius: 50%; background: #10b981;"></div>
+                <div style="font-weight: 700; font-size: 0.9rem;">2024 - 2025 (Foundation)</div>
+                <div style="font-size: 0.8rem; color: var(--text-tertiary);">Beauty Spa, Babycare</div>
+              </div>
+              <div style="position: relative; margin-bottom: 1rem;">
+                <div style="position: absolute; left: -2.35rem; width: 14px; height: 14px; border-radius: 50%; background: var(--accent-color);"></div>
+                <div style="font-weight: 700; font-size: 0.9rem;">2026 (Expansion)</div>
+                <div style="font-size: 0.8rem; color: var(--text-tertiary);">Healthcare OS, Real Estate</div>
+              </div>
+              <div style="position: relative;">
+                <div style="position: absolute; left: -2.35rem; width: 14px; height: 14px; border-radius: 50%; background: #f59e0b;"></div>
+                <div style="font-weight: 700; font-size: 0.9rem;">2027 (Scale)</div>
+                <div style="font-size: 0.8rem; color: var(--text-tertiary);">Retail, Logistics, Education</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-footer">
+          <div>Bella AI Platform Investor Deck</div>
+          <div>Slide 14/17</div>
+        </div>
+      </div>
+
+      <!-- Slide 15: Commercial Model & Economics -->
+      <div class="slide-card" data-slide-name="Business Model" data-notes="Mô hình thương mại kết hợp nhiều dòng doanh thu: Thuê bao, lượt gọi AI và hoa hồng marketplace.">
+        <div class="slide-header">
+          <div class="slide-title-wrapper">
+            <h2 class="slide-title">Mô hình doanh thu & Kinh tế học SaaS</h2>
+            <p class="slide-subtitle">Tối ưu hiệu quả tài chính doanh nghiệp thông qua tỷ lệ LTV/CAC vượt trội.</p>
+          </div>
+          <div class="slide-logo-badge">Business Model</div>
+        </div>
+        <div class="slide-body">
+          <div class="slide-text-content">
+            <ul class="slide-bullets">
+              <li><strong>Subscription Fee (70%):</strong> Thuê bao hàng tháng dựa trên quy mô chi nhánh và số lượng người dùng.</li>
+              <li><strong>Usage Fee (15%):** Thu phí theo số lượng giao dịch, lượt gọi AI, hoặc lượng SMS gửi đối thoại.</li>
+              <li><strong>Marketplace (10%):</strong> Cổng ăn chia hoa hồng 15-20% từ các nhà phát triển thứ 3.</li>
+              <li><strong>Unit Economics xuất sắc:</strong> LTV/CAC đạt tỷ lệ **10x** nhờ chi phí vận hành serverless cực thấp.</li>
+            </ul>
+          </div>
+          <div class="slide-visual-content">
+            <div class="metrics-grid" style="grid-template-columns: 1fr; gap: 0.75rem; width: 100%;">
+              <div class="metric-box" style="padding: 1rem; display: flex; align-items: center; justify-content: space-between; text-align: left;">
+                <div>
+                  <div style="font-weight: 700; font-size: 0.9rem;">Gross Margin Target</div>
+                  <div style="font-size: 0.75rem; color: var(--text-tertiary);">Hiệu quả dòng tiền</div>
+                </div>
+                <div style="font-family: var(--font-title); font-size: 1.75rem; font-weight: 900; color: #10b981;">80%+</div>
+              </div>
+              <div class="metric-box" style="padding: 1rem; display: flex; align-items: center; justify-content: space-between; text-align: left;">
+                <div>
+                  <div style="font-weight: 700; font-size: 0.9rem;">LTV / CAC Ratio</div>
+                  <div style="font-size: 0.75rem; color: var(--text-tertiary);">Chỉ số sức khỏe khách hàng</div>
+                </div>
+                <div style="font-family: var(--font-title); font-size: 1.75rem; font-weight: 900; color: #10b981;">10x</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-footer">
+          <div>Bella AI Platform Investor Deck</div>
+          <div>Slide 15/17</div>
+        </div>
+      </div>
+
+      <!-- Slide 16: Roadmap 2026 - 2027 -->
+      <div class="slide-card" data-slide-name="Strategic Roadmap" data-notes="Chi tiết lộ trình 2 năm sắp tới. Chúng tôi đặt mục tiêu đạt 50 tỷ ARR vào cuối năm 2027.">
+        <div class="slide-header">
+          <div class="slide-title-wrapper">
+            <h2 class="slide-title">Lộ trình cột mốc phát triển sản phẩm & Tài chính</h2>
+            <p class="slide-subtitle">Sẵn sàng tăng trưởng quy mô lớn trong năm 2027.</p>
+          </div>
+          <div class="slide-logo-badge">Roadmap 2026-2027</div>
+        </div>
+        <div class="slide-body">
+          <div class="slide-text-content">
+            <ul class="slide-bullets">
+              <li><strong>Q1-Q2 2026:</strong> Unify Identity Platform (ADR-001) và ra mắt hệ thống Real Estate Portal.</li>
+              <li><strong>Q3-Q4 2026 (Hiện tại):** Khóa băng Platform Core (ADR-002), thử nghiệm Healthcare OS.</li>
+              <li><strong>2027 (Scale Year):** Đưa Marketplace đi vào hoạt động, mở rộng sang Education OS và Retail OS.</li>
+              <li><strong>Tài chính mục tiêu:</strong> Đạt **50 tỷ VND ARR** với 10,000+ tenants hoạt động vào cuối 2027.</li>
+            </ul>
+          </div>
+          <div class="slide-visual-content">
+            <div style="border: 1px solid var(--border-color); padding: 1.5rem; border-radius: var(--radius-md); background: #fafafa; width: 100%; text-align: center;">
+              <h4 style="margin-bottom: 0.5rem; font-size: 0.9rem;">ARR TARGET BY END 2027</h4>
+              <div style="font-size: 2.75rem; font-family: var(--font-title); font-weight: 900; color: var(--accent-color);">50B+ VND</div>
+              <div style="font-size: 0.8rem; color: var(--text-tertiary);">Sự tự tin đến từ khả năng nhân bản OS tự động</div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-footer">
+          <div>Bella AI Platform Investor Deck</div>
+          <div>Slide 16/17</div>
+        </div>
+      </div>
+
+      <!-- Slide 17: The Investment Thesis -->
+      <div class="slide-card" data-slide-name="Investment Thesis" data-notes="Tóm tắt 4 lý do chính tại sao Bella đáng đầu tư vào lúc này. Mở cơ hội thảo luận Q&A.">
+        <div class="slide-header">
+          <div class="slide-title-wrapper">
+            <h2 class="slide-title">Luận điểm đầu tư: Tại sao chọn Bella?</h2>
+            <p class="slide-subtitle">Sự bùng nổ của doanh nghiệp SME Việt Nam kết hợp cùng kỷ luật công nghệ xuất sắc.</p>
+          </div>
+          <div class="slide-logo-badge">Investment Highlights</div>
+        </div>
+        <div class="slide-body">
+          <div class="slide-text-content">
+            <ul class="slide-bullets">
+              <li><strong>Công nghệ thực tế, đáng tin cậy:</strong> Có kiến trúc cụ thể, bằng chứng kiểm thử pass rate 99.5% và hiệu năng sub-millisecond rõ ràng.</li>
+              <li><strong>Lợi thế kinh tế biên:</strong> Khả năng mở rộng quy mô phi tuyến tính, biên lợi nhuận gộp tiệm cận 85% ở các ngành tiếp theo.</li>
+              <li><strong>Rào chắn kỹ thuật kiên cố:</strong> Architecture Guard và BDGF khóa nợ kỹ thuật từ gốc, bảo đảm tính ổn định lâu dài.</li>
+              <li><strong>Thời điểm rơi vàng (Timing):</strong> Làn sóng chuyển đổi số SME kết hợp AI nhân lực (AI Workforce) đang bùng nổ mạnh mẽ tại Đông Nam Á.</li>
+            </ul>
+          </div>
+          <div class="slide-visual-content">
+            <div style="border: 1px solid var(--accent-border); background-color: var(--accent-light); padding: 2rem; border-radius: var(--radius-md); width: 100%; text-align: center;">
+              <h3 style="font-family: var(--font-title); font-size: 1.5rem; color: var(--accent-color); margin-bottom: 0.5rem;">SẴN SÀNG GỌI VỐN</h3>
+              <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5;">Liên hệ Đội ngũ Sáng lập Bella để nhận toàn bộ tài liệu Due Diligence và source code audit logs.</p>
+            </div>
+          </div>
+        </div>
+        <div class="slide-footer">
+          <div>Bella AI Platform Investor Deck</div>
+          <div>Slide 17/17</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Deck Navigation controls bottom bar -->
+    <footer class="deck-controls">
+      <button class="notes-toggle" id="notes-toggle">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width: 18px; height: 18px;">
+          <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        <span>Hiện ghi chú người thuyết trình</span>
+      </button>
+
+      <div class="progress-wrapper">
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="progress-bar-fill"></div>
+        </div>
+        <div class="progress-text" id="progress-text">Slide 1 / 17</div>
+      </div>
+
+      <div class="nav-buttons">
+        <button class="control-btn" id="btn-prev">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M15 19l-7-7 7-7"/>
+          </svg>
+          <span>Trước</span>
+        </button>
+        <button class="control-btn" id="btn-next" style="background-color: var(--accent-color); color: white; border-color: var(--accent-color);">
+          <span>Tiếp</span>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M9 5l7 7-7 7"/>
+          </svg>
+        </button>
+      </div>
+    </footer>
+
+    <!-- Speaker Notes drawer -->
+    <div class="speaker-notes-drawer" id="speaker-notes-drawer">
+      <div class="notes-header">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width: 18px; height: 18px;">
+          <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+        </svg>
+        <span>Presenter Notes (Ghi chú diễn thuyết)</span>
+      </div>
+      <div class="notes-body" id="notes-body">
+        <!-- Load dynamically -->
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const slides = Array.from(document.querySelectorAll('.slide-card'));
+      const listContainer = document.getElementById('slide-list');
+      const btnPrev = document.getElementById('btn-prev');
+      const btnNext = document.getElementById('btn-next');
+      const progressFill = document.getElementById('progress-bar-fill');
+      const progressText = document.getElementById('progress-text');
+      const notesToggle = document.getElementById('notes-toggle');
+      const notesDrawer = document.getElementById('speaker-notes-drawer');
+      const notesBody = document.getElementById('notes-body');
+      
+      let currentIdx = 0;
+
+      // 1. Generate Left Sidebar Items
+      slides.forEach((slide, idx) => {
+        const name = slide.getAttribute('data-slide-name');
+        const li = document.createElement('li');
+        li.className = `slide-item ${idx === 0 ? 'active' : ''}`;
+        li.innerHTML = `<span class="slide-num">${idx + 1}</span> <span>${name}</span>`;
+        li.addEventListener('click', () => jumpToSlide(idx));
+        listContainer.appendChild(li);
+      });
+
+      const listItems = Array.from(listContainer.querySelectorAll('.slide-item'));
+
+      // 2. Navigation logic
+      function updateDeck() {
+        slides.forEach((slide, idx) => {
+          slide.classList.toggle('active', idx === currentIdx);
+          listItems[idx].classList.toggle('active', idx === currentIdx);
+        });
+
+        // Scroll sidebar item into view
+        listItems[currentIdx].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+
+        // Update progress bar
+        const percent = ((currentIdx + 1) / slides.length) * 100;
+        progressFill.style.width = `${percent}%`;
+        progressText.textContent = `Slide ${currentIdx + 1} / ${slides.length}`;
+
+        // Load Speaker Notes
+        const activeSlide = slides[currentIdx];
+        notesBody.textContent = activeSlide.getAttribute('data-notes') || 'Không có ghi chú cho slide này.';
+      }
+
+      function jumpToSlide(idx) {
+        currentIdx = idx;
+        updateDeck();
+      }
+
+      btnPrev.addEventListener('click', () => {
+        if (currentIdx > 0) {
+          currentIdx--;
+          updateDeck();
+        }
+      });
+
+      btnNext.addEventListener('click', () => {
+        if (currentIdx < slides.length - 1) {
+          currentIdx++;
+          updateDeck();
+        }
+      });
+
+      // Key navigation
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ') {
+          if (currentIdx < slides.length - 1) {
+            currentIdx++;
+            updateDeck();
+          }
+        } else if (e.key === 'ArrowLeft') {
+          if (currentIdx > 0) {
+            currentIdx--;
+            updateDeck();
+          }
+        }
+      });
+
+      // Speaker Notes toggle
+      notesToggle.addEventListener('click', () => {
+        notesDrawer.classList.toggle('open');
+        const isOpen = notesDrawer.classList.contains('open');
+        notesToggle.querySelector('span').textContent = isOpen ? 'Ẩn ghi chú diễn thuyết' : 'Hiện ghi chú diễn thuyết';
+      });
+
+      // Init
+      updateDeck();
+    });
+  </script>
+</body>
+</html>

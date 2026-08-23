@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bella AI Platform - Technical Due Diligence Brief</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f8fafc;
+      --bg-tertiary: #f1f5f9;
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-tertiary: #64748b;
+      
+      --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      --accent-color: #3b82f6;
+      --accent-light: #eff6ff;
+      --accent-border: #bfdbfe;
+      
+      --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      --success-light: #ecfdf5;
+      --success-border: #a7f3d0;
+      --success-color: #059669;
+      
+      --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      --warning-light: #fffbeb;
+      --warning-border: #fde68a;
+      --warning-color: #d97706;
+
+      --danger-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      --danger-light: #fef2f2;
+      --danger-border: #fca5a5;
+      --danger-color: #dc2626;
+      
+      --border-color: #e2e8f0;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.03);
+      
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+      --font-title: 'Outfit', sans-serif;
+      
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-body);
+      color: var(--text-secondary);
+      background-color: var(--bg-secondary);
+      line-height: 1.6;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar Navigation */
+    .sidebar {
+      width: 300px;
+      background-color: #0f172a;
+      border-right: 1px solid var(--border-color);
+      padding: 2.5rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      height: 100vh;
+      left: 0;
+      top: 0;
+      z-index: 100;
+      color: white;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .brand-logo {
+      width: 38px;
+      height: 38px;
+      background: var(--accent-gradient);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .brand-logo svg {
+      width: 22px;
+      height: 22px;
+      fill: none;
+      stroke: white;
+      stroke-width: 2;
+    }
+
+    .brand-name {
+      font-family: var(--font-title);
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: white;
+    }
+
+    .nav-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .nav-item a {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      color: #94a3b8;
+      text-decoration: none;
+      border-radius: var(--radius-sm);
+      font-weight: 500;
+      font-size: 0.88rem;
+      transition: var(--transition);
+    }
+
+    .nav-item a:hover {
+      background-color: rgba(255,255,255,0.05);
+      color: white;
+    }
+
+    .nav-item.active a {
+      background-color: rgba(59, 130, 246, 0.15);
+      color: var(--accent-color);
+      font-weight: 600;
+    }
+
+    .sidebar-footer {
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+
+    /* Main Content Area */
+    .main-content {
+      flex: 1;
+      margin-left: 300px;
+      padding: 3rem 4rem;
+      max-width: 1200px;
+    }
+
+    /* Header section */
+    .header-banner {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 2.5rem;
+      margin-bottom: 2.5rem;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header-banner::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 6px;
+      height: 100%;
+      background: var(--accent-gradient);
+    }
+
+    .header-info h1 {
+      font-size: 2rem;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+    }
+
+    .header-info p {
+      color: var(--text-tertiary);
+      font-size: 1rem;
+    }
+
+    .badge-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-success {
+      background-color: var(--success-light);
+      color: var(--success-color);
+      border: 1px solid var(--success-border);
+    }
+
+    .badge-warning {
+      background-color: var(--warning-light);
+      color: var(--warning-color);
+      border: 1px solid var(--warning-border);
+    }
+
+    .badge-danger {
+      background-color: var(--danger-light);
+      color: var(--danger-color);
+      border: 1px solid var(--danger-border);
+    }
+
+    /* Bento Grid */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .card {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--accent-border);
+    }
+
+    .card-metric {
+      font-size: 2.25rem;
+      font-weight: 800;
+      font-family: var(--font-title);
+      color: var(--text-primary);
+      line-height: 1.1;
+      margin-bottom: 0.25rem;
+    }
+
+    .card-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .card-desc {
+      font-size: 0.8rem;
+      color: var(--text-tertiary);
+    }
+
+    /* Sections */
+    .doc-section {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 2.5rem;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 2.5rem;
+      scroll-margin-top: 2rem;
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--bg-secondary);
+      position: relative;
+    }
+
+    .section-title::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 50px;
+      height: 2px;
+      background: var(--accent-gradient);
+    }
+
+    p {
+      margin-bottom: 1.25rem;
+      color: var(--text-secondary);
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    /* Bullet List */
+    .bullet-list {
+      list-style: none;
+      margin-bottom: 1.5rem;
+    }
+
+    .bullet-list li {
+      position: relative;
+      padding-left: 1.75rem;
+      margin-bottom: 0.75rem;
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+    }
+
+    .bullet-list li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--success-color);
+      font-weight: bold;
+    }
+
+    /* Tables */
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+    }
+
+    .info-table th {
+      background-color: var(--bg-secondary);
+      font-weight: 700;
+      color: var(--text-primary);
+      padding: 0.85rem 1rem;
+      border-bottom: 2px solid var(--border-color);
+      text-align: left;
+    }
+
+    .info-table td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-secondary);
+    }
+
+    .info-table tr:hover {
+      background-color: var(--bg-secondary);
+    }
+
+    /* Code Panel */
+    .code-panel {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 1.25rem;
+      border-radius: var(--radius-sm);
+      font-family: monospace;
+      font-size: 0.85rem;
+      overflow-x: auto;
+      margin-bottom: 1.5rem;
+      border: 1px solid #334155;
+    }
+
+    .code-diff {
+      color: #a7f3d0;
+    }
+
+    .code-comment {
+      color: #64748b;
+    }
+
+    /* Diagram SVG Styles */
+    .diagram-box {
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      background: var(--bg-secondary);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .diagram-item {
+      background: white;
+      border: 1px solid var(--border-color);
+      padding: 0.85rem 1.25rem;
+      border-radius: var(--radius-sm);
+      font-weight: bold;
+      text-align: center;
+      font-size: 0.85rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .diagram-item.accent {
+      background: var(--accent-light);
+      border-color: var(--accent-border);
+      color: var(--accent-color);
+    }
+
+    .diagram-item.success {
+      background: var(--success-light);
+      border-color: var(--success-border);
+      color: var(--success-color);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar Menu -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor"/>
+        </svg>
+      </div>
+      <div class="brand-name">BELLA DUE DILIGENCE</div>
+    </div>
+    
+    <ul class="nav-list">
+      <li class="nav-item active"><a href="#section-1">1. Tổng quan Kiến trúc</a></li>
+      <li class="nav-item"><a href="#section-2">2. Quy tắc Phân chia Biên giới</a></li>
+      <li class="nav-item"><a href="#section-3">3. Quản trị BDGF & Guard</a></li>
+      <li class="nav-item"><a href="#section-4">4. Cách ly Multi-Tenancy</a></li>
+      <li class="nav-item"><a href="#section-5">5. Chứng minh Tái sử dụng</a></li>
+      <li class="nav-item"><a href="#section-6">6. Technology Moat</a></li>
+      <li class="nav-item"><a href="#section-7">7. Kịch bản Thử nghiệm</a></li>
+      <li class="nav-item"><a href="#section-8">8. Mô hình Kinh doanh</a></li>
+      <li class="nav-item"><a href="#section-9">9. Hiện trạng & Lộ trình</a></li>
+      <li class="nav-item"><a href="#section-10">10. Luận điểm Đầu tư</a></li>
+    </ul>
+    
+    <div class="sidebar-footer">
+      <div>Bella Investor Data Room</div>
+      <div>Confidential • Tier 2</div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    
+    <!-- Top Header Banner -->
+    <header class="header-banner">
+      <div class="header-info">
+        <h1>Bella AI Platform - Technical Due Diligence Brief</h1>
+        <p>Báo cáo thẩm định kỹ thuật kiến trúc, mức độ an toàn và khả năng mở rộng phi tuyến tính.</p>
+        <div class="badge-group">
+          <span class="badge badge-success">Sản xuất: Hoạt động tốt</span>
+          <span class="badge badge-success">RLS: 100% Cô lập</span>
+          <span class="badge badge-warning">Core Freeze: Hoàn thành</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Bento Grid Metrics -->
+    <section class="bento-grid">
+      <div class="card">
+        <div class="card-metric">1:3</div>
+        <div class="card-title">Tỷ lệ Tái sử dụng</div>
+        <div class="card-desc">1 Kernel -> 3 Phân hệ y tế</div>
+      </div>
+      <div class="card">
+        <div class="card-metric">0%</div>
+        <div class="card-title">Core Changes</div>
+        <div class="card-desc">Khi mở rộng sang OS mới</div>
+      </div>
+      <div class="card">
+        <div class="card-metric">547</div>
+        <div class="card-title">Kiểm thử Logistics</div>
+        <div class="card-desc">Regression test suite pass hoàn toàn</div>
+      </div>
+      <div class="card">
+        <div class="card-metric">0.11ms</div>
+        <div class="card-title">Độ trễ Xử lý</div>
+        <div class="card-desc">Động cơ tính lương lõi</div>
+      </div>
+    </section>
+
+    <!-- Section 1: Tổng quan Kiến trúc -->
+    <section class="doc-section" id="section-1">
+      <h2 class="section-title">1. Tổng quan Kiến trúc Hệ thống (Platform Architecture)</h2>
+      <p>Bella AI Platform được xây dựng dựa trên mô hình **Platform-of-Platforms** (Nền tảng của các Phân hệ chuyên ngành). Thay vì thiết kế một hệ thống ERP cồng kềnh với hàng trăm bảng liên kết chặt chẽ (Tightly Coupled), chúng tôi chia nhỏ hệ thống thành 3 tầng trừu tượng độc lập.</p>
+      
+      <div class="diagram-box">
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; width: 80%;">
+          <div class="diagram-item">Product Layer (Giao diện UI & Tùy biến doanh nghiệp)</div>
+          <div style="text-align: center; font-weight: bold; color: var(--text-tertiary);">↓ Gọi qua Hợp đồng giao tiếp (Contracts)</div>
+          <div class="diagram-item success">Kernel Layer (Nghiệp vụ Y tế, Tài chính, Bất động sản...)</div>
+          <div style="text-align: center; font-weight: bold; color: var(--text-tertiary);">↓ Sử dụng hạ tầng lõi</div>
+          <div class="diagram-item accent">Platform Core (Định danh, Event Bus, State Machine)</div>
+        </div>
+      </div>
+      
+      <ul class="bullet-list">
+        <li><strong>Runtime:</strong> Node.js 20 LTS kết hợp TypeScript 5.x. TypeScript strict-mode được kích hoạt 100%, cấm kiểu `any`.</li>
+        <li><strong>Database:</strong> PostgreSQL 17 (quản lý bởi Supabase) đóng vai trò là System of Record đảm bảo tính toàn vẹn tài chính.</li>
+        <li><strong>Cache:</strong> Redis (Upstash) lưu trữ cache quy tắc nghiệp vụ để đạt tốc độ xử lý dưới 1ms.</li>
+      </ul>
+    </section>
+
+    <!-- Section 2: Quy tắc Phân chia Biên giới -->
+    <section class="doc-section" id="section-2">
+      <h2 class="section-title">2. Quy tắc Phân chia Biên giới Core / Kernel / Product</h2>
+      <p>Để duy trì tốc độ mở rộng quy mô mà không làm mất đi tính ổn định của hệ thống lõi, Bella áp dụng triết lý phân chia biên giới kiến trúc nghiêm ngặt (định nghĩa chính thức tại ADR-001 và ADR-002).</p>
+      <ul class="bullet-list">
+        <li><strong>Tầng Platform Core (Frozen):</strong> Không chứa bất kỳ dòng mã nào liên quan đến nghiệp vụ ngành cụ thể. Trạng thái đã KHÓA BĂNG và cấm sửa đổi thủ công.</li>
+        <li><strong>Tầng Industry Kernels (Specialized):</strong> Chứa toàn bộ logic miền (Domain Logic) nghiệp vụ dọc. Các Kernel y tế (H1-H12) và Logistics (E7.1-E7.3) đã đóng băng hoàn tất kiểm thử hồi quy.</li>
+        <li><strong>Tầng Product Verticals:</strong> Chịu trách nhiệm hiển thị UI/UX và điều phối luồng quy trình mà không có trạng thái dữ liệu riêng.</li>
+      </ul>
+    </section>
+
+    <!-- Section 3: Quản trị BDGF & Guard -->
+    <section class="doc-section" id="section-3">
+      <h2 class="section-title">3. Hệ thống Quản trị BDGF & Chống rò rỉ Kiến trúc</h2>
+      <p>Bella duy trì độ an toàn hệ thống thông qua hai lá chắn tự động hóa cao: **BDGF** và **Architecture Guard**.</p>
+      <p><strong>BDGF (Bella Decentralized Governance Framework):</strong> Quy trình thay đổi cấu hình dữ liệu lớn trên môi trường Production bắt buộc phải đi qua luồng duyệt ký số mật mã. Toàn bộ signing keys được lưu trữ và xoay vòng tự động tại AWS Secrets Manager.</p>
+      <p><strong>Architecture Guard:</strong> Chạy tự động tại local máy phát triển và trên CI/CD thông qua script `scripts/architecture/architecture-guard.ts`. Bộ rào chắn ngăn cấm hành vi import ngược dòng (`Core ──► Kernel`), phát hiện các thay đổi tại file đã niêm phong và từ chối build lập tức.</p>
+    </section>
+
+    <!-- Section 4: Cách ly Multi-Tenancy -->
+    <section class="doc-section" id="section-4">
+      <h2 class="section-title">4. Cách ly Multi-Tenancy & Phân luồng Tập trung</h2>
+      <p>Tất cả các bảng trong cơ sở dữ liệu Supabase/PostgreSQL đều kích hoạt Row-Level Security (RLS) để cô lập dữ liệu doanh nghiệp an toàn.</p>
+      
+      <div class="code-panel">
+        <span class="code-comment">-- Kích hoạt chính sách bảo mật cô lập Tenant</span><br>
+        ALTER TABLE identities ENABLE ROW LEVEL SECURITY;<br>
+        CREATE POLICY tenant_isolation_policy ON identities<br>
+        &nbsp;&nbsp;FOR ALL<br>
+        &nbsp;&nbsp;USING (tenant_id = auth.jwt() -&gt;&gt; 'tenant_id');
+      </div>
+      
+      <p>Chúng tôi đã khắc phục triệt để lỗi rò rỉ ngữ cảnh người dùng khi Next.js gọi các API Route qua Serverless Middleware bằng cách tự động đồng bộ hóa token xác thực đến client PostgREST:</p>
+      <div class="code-panel">
+        <span class="code-diff">+ if (client.rest) {</span><br>
+        <span class="code-diff">+ &nbsp;&nbsp;client.rest.headers.set('Authorization', `Bearer ${token}`);</span><br>
+        <span class="code-diff">+ }</span>
+      </div>
+    </section>
+
+    <!-- Section 5: Chứng minh Tái sử dụng -->
+    <section class="doc-section" id="section-5">
+      <h2 class="section-title">5. Chứng minh khả năng tái sử dụng (Reusability Proof)</h2>
+      <p>Đo lường các chỉ số tái sử dụng thực tế của phân hệ nghiệp vụ dọc đối với các ứng dụng sản phẩm đầu cuối:</p>
+      
+      <table class="info-table">
+        <thead>
+          <tr>
+            <th>Industry Kernel</th>
+            <th>Số lượng Engines</th>
+            <th>Sản phẩm vận hành thực tế</th>
+            <th>Tỷ lệ tái sử dụng</th>
+            <th>Trạng thái kỹ thuật</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Healthcare</strong></td>
+            <td>27 engines</td>
+            <td>3 (Hospital, Clinic, Dental)</td>
+            <td><strong>1:3</strong></td>
+            <td>✅ Hoạt động tốt, không trùng code</td>
+          </tr>
+          <tr>
+            <td><strong>Finance</strong></td>
+            <td>2 engines</td>
+            <td>2 (Spa Ledger, Education Billing)</td>
+            <td><strong>1:2</strong></td>
+            <td>🟢 Được kích hoạt làm Infra chung</td>
+          </tr>
+          <tr>
+            <td><strong>Real Estate</strong></td>
+            <td>4 services</td>
+            <td>1 (bella-land Portal)</td>
+            <td><strong>1:1</strong></td>
+            <td>🟢 Đang vận hành ổn định</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Section 6: Technology Moat -->
+    <section class="doc-section" id="section-6">
+      <h2 class="section-title">6. Rào chắn cạnh tranh kỹ thuật (Technology Moat)</h2>
+      <ul class="bullet-list">
+        <li><strong>Bảo vệ hiến pháp kiến trúc tự động:</strong> Loại bỏ 100% spaghetti code của mô hình outsource truyền thống nhờ rào chắn CI/CD.</li>
+        <li><strong>Định danh tài khoản quy nhất:</strong> Quản lý tập trung mọi tài khoản con người và AI nhân viên (AI Employee) tại bảng `identities` dùng chung.</li>
+        <li><strong>Quy tắc nghiệp vụ động (Runtime Policy):</strong> Cho phép thay đổi chính sách chiết khấu/lương thưởng trên UI mà không cần can thiệp mã nguồn.</li>
+        <li><strong>Không có tuyên bố thiếu bằng chứng:</strong> 100% các metrics hiệu năng, bảo mật đều được sinh ra tự động từ logs kiểm thử hồi quy.</li>
+      </ul>
+    </section>
+
+    <!-- Section 7: Kịch bản Thử nghiệm -->
+    <section class="doc-section" id="section-7">
+      <h2 class="section-title">7. Kịch bản thử nghiệm chứng minh (Product Demo)</h2>
+      <p><strong>Demo 1: Ngăn chặn lỗi lập trình kiến trúc</strong></p>
+      <p>Khi nhà phát triển cố ý viết mã nguồn import sai layer, hoặc chỉnh sửa trực tiếp file y tế đã khóa băng, git pre-commit hook và pipeline CI sẽ chặn đứng lệnh commit, từ chối build sản phẩm và báo cáo lỗi đỏ về Dashboard CTO.</p>
+      <p><strong>Demo 2: Đối soát lương tự động qua AI Workforce</strong></p>
+      <p>Kích hoạt AI đối soát ca phục vụ trên dashboard Spa. AI sẽ tự động rà soát lịch đặt dịch vụ, hóa đơn và KPI nhân viên để đưa ra bảng đề xuất lương chính xác nhất, cắm cờ các ca sai sót.</p>
+    </section>
+
+    <!-- Section 8: Mô hình Kinh doanh -->
+    <section class="doc-section" id="section-8">
+      <h2 class="section-title">8. Mô hình kinh doanh & Kinh tế học Platform</h2>
+      <p>Mô hình Platform giúp hạ giá thành phát triển phân hệ ngành mới về mức tiệm cận 0 nhờ vào tính chất lũy thừa capabilities tích lũy:</p>
+      <ul class="bullet-list">
+        <li>Xây dựng OS đầu tiên (Spa): Thiết lập Core + Identity -> Tốn 100% nỗ lực đầu tư.</li>
+        <li>Xây dựng OS thứ hai (Real Estate): Tái sử dụng 80% Core -> Chỉ tốn 20% nỗ lực.</li>
+        <li>Xây dựng OS thứ ba (Healthcare): Tái sử dụng 90% Core + thư viện -> Chỉ tốn 10% nỗ lực.</li>
+      </ul>
+      <p>Bella thu phí bản quyền SaaS thuê bao, phí bản quyền nhân viên AI hoạt động (AI Workforce License) và phí hoa hồng từ chợ phân hệ tích hợp (Marketplace).</p>
+    </section>
+
+    <!-- Section 9: Hiện trạng & Lộ trình -->
+    <section class="doc-section" id="section-9">
+      <h2 class="section-title">9. Hiện trạng & Lộ trình phát triển 2026 - 2030</h2>
+      <ul class="bullet-list">
+        <li><strong>Đang vận hành (Production):</strong> Phân hệ Beauty Spa ERP và Babycare.</li>
+        <li><strong>Đã xác thực kiểm thử (Validated):</strong> Platform Core và Healthcare OS (Hospital, Medical, Dental) trong môi trường CI.</li>
+        <li><strong>Lộ trình 2027:</strong> Ra mắt Marketplace phân hệ, mở rộng sang Education OS và Retail OS, đưa AI Recruiter/AI Accountant vào vận hành thương mại.</li>
+        <li><strong>Lộ trình 2028-2030:</strong> Mở rộng thị trường Đông Nam Á (Thái Lan, Indonesia), tối ưu hóa điện toán biên.</li>
+      </ul>
+    </section>
+
+    <!-- Section 10: Luận điểm Đầu tư -->
+    <section class="doc-section" id="section-10">
+      <h2 class="section-title">10. Luận điểm đầu tư cốt lõi (Investment Thesis)</h2>
+      <p>1. **Khả năng nhân bản phần mềm tự động:** Bella bán một Nhà máy phần mềm (Software Factory) có khả năng sinh ra các OS chuyên ngành ổn định chứ không bán ứng dụng đơn lẻ.</p>
+      <p>2. **Biên lợi nhuận gộp cao:** Tỷ lệ LTV/CAC mục tiêu đạt **10x** nhờ chi phí biên của việc vận hành hạ tầng serverless dùng chung cực thấp.</p>
+      <p>3. **Vận hành AI thực tiễn:** AI trực tiếp xử lý các quy trình kế toán, HR và đối soát tài chính doanh nghiệp dưới sự kiểm soát an toàn của con người.</p>
+    </section>
+
+  </main>
+
+  <script>
+    // Smooth scrolling active state on sidebar navigation
+    window.addEventListener('DOMContentLoaded', () => {
+      const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          const id = entry.target.getAttribute('id');
+          if (entry.intersectionRatio > 0.3) {
+            document.querySelectorAll('.nav-item').forEach(item => {
+              item.classList.toggle('active', item.querySelector('a').getAttribute('href') === `#${id}`);
+            });
+          }
+        });
+      }, { threshold: [0.1, 0.3, 0.5] });
+
+      document.querySelectorAll('.doc-section').forEach(section => {
+        observer.observe(section);
+      });
+    });
+  </script>
+</body>
+</html>
