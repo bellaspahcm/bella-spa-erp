@@ -11,3 +11,6 @@ export * from './rule.helpers';
 export * from './expiry.rule';
 export * from './quantity.rule';
 export * from './traceability.rule';
+export * from './traceability.operations';
+export * from './compliance.evaluation';
+export * from './rule.composition';

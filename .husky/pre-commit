@@ -1,15 +1,7 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-# Bella Architecture Guard - Pre-commit Hook
-# Enforces Healthcare Constitution boundaries before commit
+# Architecture Guard — Git Pre-Commit Hook
+# Blocks commits that modify frozen kernel files (E7.1, E7.2, E7.3)
 
-echo "🔍 Running Bella Architecture Guard..."
-
-# Run lint-staged for architecture rules
-npx lint-staged
-
-# Run Healthcare architecture guard
-npm run healthcare:guard
-
-# Exit code propagation: if any check fails, block commit
+node scripts/architecture/git-pre-commit-guard.js

@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Architecture Guard - Frozen Boundary Protection",
+      "trigger": "PreToolUse",
+      "description": "Blocks AI/tool modifications to frozen E7.1, E7.2, E7.3 artifacts. Requires ACR for changes.",
+      "matcher": "fs_write|str_replace|fs_append",
+      "action": {
+        "type": "command",
+        "command": "node scripts/architecture/pre-tool-guard.js",
+        "timeout": 10
+      }
+    }
+  ]
+}
