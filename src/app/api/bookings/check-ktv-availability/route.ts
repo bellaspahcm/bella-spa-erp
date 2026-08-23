@@ -265,7 +265,7 @@ export async function GET(request: NextRequest) {
         `)
         .eq('assigned_date', date)
         .eq('tenant_id', tenantId)
-        .in('status', ['scheduled', 'in_progress', 'completed'])
+        .in('status', ['scheduled', 'in_progress']) // Exclude 'completed' - past sessions don't block availability
     ]);
 
     serverTimingParts.push(`db;dur=${Date.now() - tDbStart}`);
