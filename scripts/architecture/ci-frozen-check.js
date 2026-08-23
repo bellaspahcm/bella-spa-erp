@@ -115,8 +115,21 @@ function isFrozenFile(filePath) {
 
 function getChangedFiles() {
   try {
-    // Detect base branch
-    const baseBranch = process.env.GITHUB_BASE_REF || 'origin/main';
+    // In GitHub Actions PR context, use GitHub's merge base
+    // GITHUB_BASE_REF is set for pull_request events (e.g., "main")
+    // We need to use origin/GITHUB_BASE_REF to reference the remote branch
+    let baseBranch;
+    
+    if (process.env.GITHUB_BASE_REF) {
+      // PR context - use origin/ prefix
+      baseBranch = `origin/${process.env.GITHUB_BASE_REF}`;
+    } else if (process.env.GITHUB_REF) {
+      // Push context - compare against origin/main
+      baseBranch = 'origin/main';
+    } else {
+      // Local/unknown context
+      baseBranch = 'origin/main';
+    }
     
     // Get all changed files (modified, added, renamed, deleted)
     const output = execSync(
@@ -166,7 +179,14 @@ function main() {
   const isCi = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
   console.log(`   Environment: ${isCi ? 'CI (GitHub Actions)' : 'Local'}`);
   
-  const baseBranch = process.env.GITHUB_BASE_REF || 'origin/main';
+  // Determine base branch
+  let baseBranch;
+  if (process.env.GITHUB_BASE_REF) {
+    baseBranch = `origin/${process.env.GITHUB_BASE_REF}`;
+  } else {
+    baseBranch = 'origin/main';
+  }
+  
   console.log(`   Base branch: ${baseBranch}`);
   console.log(`   Checking for frozen file modifications...\n`);
   
