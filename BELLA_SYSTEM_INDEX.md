@@ -24,6 +24,7 @@ supersedes: "docs/index.md"
 | **Xem trạng thái toàn bộ hệ thống hiện tại** | [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) |
 | **Hiểu Bella là gì và kiến trúc tổng quan** | [`docs/architecture/BELLA_PLATFORM_VISION.md`](docs/architecture/BELLA_PLATFORM_VISION.md) |
 | **Kiểm tra Healthcare OS / H1–H12** | [→ Healthcare OS](#healthcare-os) bên dưới |
+| **Kiểm tra Bella Dental Product Vertical** | [→ Bella Dental](#bella-dental) bên dưới |
 | **Kiểm tra Finance OS / F1–F5** | [→ Finance OS](#finance-os) bên dưới |
 | **Kiểm tra Logistics OS / E7** | [→ Logistics OS](#logistics-os) bên dưới |
 | **Biết quy tắc nào AI/developer phải tuân theo** | [`AGENTS.md`](AGENTS.md) + [`docs/architecture/HEALTHCARE_VERTICAL_CODING_CONSTITUTION.md`](docs/architecture/HEALTHCARE_VERTICAL_CODING_CONSTITUTION.md) |
@@ -135,6 +136,73 @@ supersedes: "docs/index.md"
 
 ### Bắt đầu audit Healthcare:
 > `docs/CURRENT_STATE.md` → **Healthcare OS** → chọn Engine → xem Code + Tests + Evidence
+
+---
+
+## 🦷 BELLA DENTAL (Healthcare Product Vertical) {#bella-dental}
+
+**Status:** Phase 1 ✅ COMPLETE | Phase 2 ⏸️ PENDING REVIEW | Phase 3 ⏸️ NOT STARTED
+
+### Phase 1 — Architecture Analysis (COMPLETE)
+
+```
+BELLA DENTAL PHASE 1 — ARCHITECTURE ANALYSIS
+────────────────────────────────────────────────────────────
+Status:              🔒 COMPLETE (5/5 documents, 2365+ lines)
+Architecture Proof:  ✅ Zero Kernel modifications required
+Product Tables:      7 (dental_*)
+Kernel Contracts:    8 (Person, Encounter, Clinical, CDS, Temporal, Governance, Audit, Finance)
+RLS Policies:        7 (tenant isolation)
+Verification Gates:  11 (8 blocking, 3 warning)
+Next Action:         🟡 HUMAN ARCHITECT REVIEW
+```
+
+### Phase 1 Documents
+
+| Document | Purpose | Location |
+|---|---|---|
+| Product Manifest | Scope, features, user stories, metrics | [`docs/products/dental/PRODUCT_MANIFEST.md`](docs/products/dental/PRODUCT_MANIFEST.md) |
+| Ownership Map | Data ownership boundaries (Kernel vs Product) | [`docs/products/dental/OWNERSHIP_MAP.md`](docs/products/dental/OWNERSHIP_MAP.md) |
+| Contract Dependency Map | Product → Contract → Kernel mappings | [`docs/products/dental/CONTRACT_DEPENDENCY_MAP.md`](docs/products/dental/CONTRACT_DEPENDENCY_MAP.md) |
+| Database Migration Plan | 7 tables, RLS, indexes (additive only) | [`docs/products/dental/DB_MIGRATION_PLAN.md`](docs/products/dental/DB_MIGRATION_PLAN.md) |
+| Verification Gates Test Plan | 11 automated verification gates | [`docs/products/dental/VERIFICATION_GATES_TEST_PLAN.md`](docs/products/dental/VERIFICATION_GATES_TEST_PLAN.md) |
+
+### Dental Architecture Proof Points
+
+✅ **Zero Kernel modifications** - All interactions via Public Contracts  
+✅ **7 Product tables** - `dental_tooth_chart`, `dental_assessments`, `dental_treatment_plans`, `dental_treatment_plan_steps`, `dental_procedures`, `dental_procedure_materials`, `dental_billing_projections`  
+✅ **8 Kernel Contracts used** - Person, Encounter, Clinical, CDS, Temporal, Governance, Audit, Finance  
+✅ **11 FK constraints** - All Kernel references enforced  
+✅ **RLS on all tables** - Tenant isolation enforced  
+✅ **27 performance indexes** - Query optimization  
+✅ **11 verification gates** - 8 blocking (architecture/security), 3 warning (clinical safety)
+
+### Phase 2 — Contracts Implementation (PENDING REVIEW)
+
+**Status:** ⏸️ **NOT STARTED** — Awaiting Phase 1 Architecture Review
+
+**Requirements:**
+- [ ] Human Architect review Contract Dependency Map
+- [ ] Human Architect review Database Migration Plan
+- [ ] Human Architect review 11 Verification Gates
+- [ ] Architecture approval gate passed
+- [ ] Phase 1 → Phase 2 authorization granted
+
+**Scope (when authorized):**
+- Implement 8 TypeScript Contract interfaces
+- Mock Kernel for Contract testing
+- Gate 2 verification (Contract Boundary Test)
+- **NO Product code** (Phase 3 only)
+
+### Phase 3 — Product Implementation (NOT STARTED)
+
+**Status:** ⏸️ **LOCKED** — Requires Phase 2 completion
+
+### Governance
+
+- Must follow Healthcare Constitution: [`HEALTHCARE_VERTICAL_CODING_CONSTITUTION.md`](docs/architecture/HEALTHCARE_VERTICAL_CODING_CONSTITUTION.md)
+- Requires Architecture Guard PASS
+- All 11 gates must GREEN before production
 
 ---
 
