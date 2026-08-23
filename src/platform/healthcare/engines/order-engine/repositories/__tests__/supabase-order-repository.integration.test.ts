@@ -140,7 +140,7 @@ describe('SupabaseOrderRepository Integration Tests', () => {
 
     test('should create order with requestId for idempotency', async () => {
       const order = createTestOrder();
-      const requestId = 'test-request-123';
+      const requestId = `test-request-123-${Math.random().toString(36).substring(7)}`;
 
       const created = await repository.create(order, requestId);
 
@@ -226,7 +226,7 @@ describe('SupabaseOrderRepository Integration Tests', () => {
 
     test('should find order by requestId', async () => {
       const order = createTestOrder();
-      const requestId = 'find-by-request-id';
+      const requestId = `find-by-request-id-${Math.random().toString(36).substring(7)}`;
       await repository.create(order, requestId);
 
       const found = await repository.findByRequestId(testTenantId, requestId);
@@ -339,7 +339,7 @@ describe('SupabaseOrderRepository Integration Tests', () => {
     test('should throw IdempotencyConflictError for duplicate requestId in same tenant', async () => {
       const order1 = createTestOrder();
       const order2 = createTestOrder();
-      const requestId = 'duplicate-request';
+      const requestId = `duplicate-request-${Math.random().toString(36).substring(7)}`;
 
       await repository.create(order1, requestId);
 
@@ -350,7 +350,7 @@ describe('SupabaseOrderRepository Integration Tests', () => {
 
     test('should allow same requestId in different tenants', async () => {
       const order1 = createTestOrder();
-      const requestId = 'cross-tenant-request';
+      const requestId = `cross-tenant-request-${Math.random().toString(36).substring(7)}`;
       await repository.create(order1, requestId);
 
       // Create second order with different tenant (mock tenant)
@@ -362,7 +362,7 @@ describe('SupabaseOrderRepository Integration Tests', () => {
 
     test('should return existing order when querying by requestId', async () => {
       const order = createTestOrder();
-      const requestId = 'idempotency-check';
+      const requestId = `idempotency-check-${Math.random().toString(36).substring(7)}`;
       await repository.create(order, requestId);
 
       const found = await repository.findByRequestId(testTenantId, requestId);

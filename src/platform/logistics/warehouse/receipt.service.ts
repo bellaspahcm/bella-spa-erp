@@ -1064,7 +1064,6 @@ export class ReceiptService {
       deleted_at: row.deleted_at ? new Date(row.deleted_at) : undefined,
     };
   }
-}
 
   /**
    * R10: List Receipts with Filters
@@ -1407,7 +1406,6 @@ export class ReceiptService {
       };
     }
   }
-}
 
   /**
    * R13: Create Bulk Inventory Movements
@@ -1673,7 +1671,6 @@ export class ReceiptService {
       };
     }
   }
-}
 
   /**
    * R14: Get Inventory Value by SKU
@@ -1786,7 +1783,6 @@ export class ReceiptService {
       };
     }
   }
-}
 
   /**
    * R15: Check Bin Capacity
