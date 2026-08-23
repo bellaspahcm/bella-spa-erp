@@ -14,7 +14,11 @@
  *   npx tsx scripts/migrations/fix-completed-bookings-is-in-care.ts
  */
 
+import { config } from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
+
+// Load environment variables
+config({ path: ['.env.local', '.env'] });
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -58,24 +62,28 @@ async function main() {
     .select('id, tenant_id, package_name, status, completed_sessions, total_sessions, is_in_care')
     .neq('status', 'completed')
     .neq('status', 'cancelled')
-    .gt('total_sessions', 0)
-    .filter('completed_sessions', 'gte', 'total_sessions');
+    .gt('total_sessions', 0);
 
   if (queryError2) {
     console.error('❌ Query error:', queryError2.message);
     process.exit(1);
   }
 
-  console.log(`\n📊 Found ${shouldBeCompleted?.length || 0} bookings that should be completed but aren't`);
+  // Filter in JavaScript to compare columns
+  const filteredShouldBeCompleted = shouldBeCompleted?.filter(
+    booking => (booking.completed_sessions || 0) >= (booking.total_sessions || 0)
+  ) || [];
+
+  console.log(`\n📊 Found ${filteredShouldBeCompleted.length} bookings that should be completed but aren't`);
   
-  if (shouldBeCompleted && shouldBeCompleted.length > 0) {
+  if (filteredShouldBeCompleted.length > 0) {
     console.log('\nBookings to update:');
-    shouldBeCompleted.forEach((booking, idx) => {
+    filteredShouldBeCompleted.forEach((booking, idx) => {
       console.log(`  ${idx + 1}. ${booking.package_name} (${booking.completed_sessions}/${booking.total_sessions}) - Status: ${booking.status}`);
     });
   }
 
-  const totalToFix = (completedWithFlag?.length || 0) + (shouldBeCompleted?.length || 0);
+  const totalToFix = (completedWithFlag?.length || 0) + filteredShouldBeCompleted.length;
 
   if (totalToFix === 0) {
     console.log('\n✅ No bookings need fixing. Database is clean!');
@@ -108,8 +116,10 @@ async function main() {
   }
 
   // 4. Fix bookings where completed_sessions >= total_sessions
-  if (shouldBeCompleted && shouldBeCompleted.length > 0) {
+  if (filteredShouldBeCompleted.length > 0) {
     console.log('\n🔧 Fixing bookings that should be completed...');
+    
+    const idsToUpdate = filteredShouldBeCompleted.map(b => b.id);
     
     const { error: updateError2 } = await supabase
       .from('bookings')
@@ -118,17 +128,14 @@ async function main() {
         is_in_care: false,
         updated_at: new Date().toISOString()
       })
-      .neq('status', 'completed')
-      .neq('status', 'cancelled')
-      .gt('total_sessions', 0)
-      .filter('completed_sessions', 'gte', 'total_sessions');
+      .in('id', idsToUpdate);
 
     if (updateError2) {
       console.error('❌ Update error:', updateError2.message);
       process.exit(1);
     }
 
-    console.log(`✅ Fixed ${shouldBeCompleted.length} incomplete bookings`);
+    console.log(`✅ Fixed ${filteredShouldBeCompleted.length} incomplete bookings`);
   }
 
   // 5. Verification
