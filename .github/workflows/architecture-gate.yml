@@ -1,194 +1,88 @@
-name: Architecture Gate - Zero New Legacy Debt
+name: Architecture Gate
 
 on:
   pull_request:
     branches: [main, develop]
-    paths:
-      - 'src/**'
-      - 'supabase/migrations/**'
+  push:
+    branches: [main]
 
 jobs:
-  architecture-gate:
+  frozen-files:
+    name: Frozen File Check
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # Need full history for diff
       
-      - name: Check Zero New Legacy Debt compliance
-        run: |
-          echo "🔍 Architecture Gate - Zero New Legacy Debt"
-          echo "============================================"
-          echo ""
-          
-          # Get changed files in this PR
-          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
-          
-          VIOLATIONS=0
-          
-          # ============================================
-          # Check 1: Block new service files in Real Estate context
-          # ============================================
-          echo "📋 Check 1: Service Layer (Real Estate)"
-          echo "----------------------------------------"
-          
-          NEW_SERVICES=$(echo "$CHANGED_FILES" | grep -E "src/services/.*(real.*estate|re_)" || true)
-          
-          if [ -n "$NEW_SERVICES" ]; then
-            echo "❌ BLOCKED: New service files detected in Real Estate context:"
-            echo "$NEW_SERVICES"
-            echo ""
-            echo "Zero New Legacy Debt Policy:"
-            echo "  ❌ FORBIDDEN: NEW features in src/services (Real Estate)"
-            echo "  ✅ REQUIRED: Use platform layer"
-            echo ""
-            echo "Architecture: Product → Industry Capability → Host Platform → Infrastructure"
-            echo "Reference: docs/architecture/BELLA_PLATFORM_ARCHITECTURE_TREE_2026_08_10.md"
-            echo ""
-            VIOLATIONS=$((VIOLATIONS + 1))
-          else
-            echo "✅ No new Real Estate service files"
-          fi
-          
-          echo ""
-          
-          # ============================================
-          # Check 2: New database migrations require manual review
-          # ============================================
-          echo "📋 Check 2: Database Migrations"
-          echo "----------------------------------------"
-          
-          NEW_MIGRATIONS=$(echo "$CHANGED_FILES" | grep "supabase/migrations/.*\.sql" || true)
-          
-          if [ -n "$NEW_MIGRATIONS" ]; then
-            echo "⚠️  New database migrations detected:"
-            echo "$NEW_MIGRATIONS"
-            echo ""
-            echo "Manual Architecture Review Required:"
-            echo "  - Does this table belong to Product Pack or Host Platform?"
-            echo "  - Should this use existing platform primitives (persons, organizations, documents)?"
-            echo "  - Is this additive only (no breaking changes)?"
-            echo "  - Does this follow tenant isolation pattern?"
-            echo ""
-            echo "Required: Architecture reviewer MUST approve before merge"
-            echo "Label this PR with: 'architecture-review-required'"
-            echo ""
-            
-            # Check if PR has required label (will fail if label not present)
-            if [ "${{ github.event.pull_request.labels }}" == "[]" ]; then
-              echo "❌ Missing required label: 'architecture-review-required'"
-              echo "Add label to PR before merging"
-              VIOLATIONS=$((VIOLATIONS + 1))
-            fi
-          else
-            echo "✅ No new migrations"
-          fi
-          
-          echo ""
-          
-          # ============================================
-          # Check 3: Direct DB queries in Real Estate files
-          # ============================================
-          echo "📋 Check 3: Direct DB Queries (Real Estate)"
-          echo "----------------------------------------"
-          
-          REAL_ESTATE_FILES=$(echo "$CHANGED_FILES" | grep "src/modules/real_estate/" || true)
-          
-          if [ -n "$REAL_ESTATE_FILES" ]; then
-            DIRECT_QUERY_FOUND=0
-            
-            for file in $REAL_ESTATE_FILES; do
-              if [ -f "$file" ]; then
-                # Check for direct supabase.from() calls
-                DIRECT_QUERIES=$(grep -n "supabase\.from(" "$file" 2>/dev/null || true)
-                
-                if [ -n "$DIRECT_QUERIES" ]; then
-                  if [ $DIRECT_QUERY_FOUND -eq 0 ]; then
-                    echo "⚠️  Direct DB queries detected:"
-                    DIRECT_QUERY_FOUND=1
-                  fi
-                  
-                  echo ""
-                  echo "File: $file"
-                  echo "$DIRECT_QUERIES"
-                fi
-              fi
-            done
-            
-            if [ $DIRECT_QUERY_FOUND -eq 1 ]; then
-              echo ""
-              echo "Recommendation:"
-              echo "  - Consider using Host Platform primitives:"
-              echo "    • Person Center (instead of re_customers)"
-              echo "    • Organization Center (instead of custom org tables)"
-              echo "    • Document Management (instead of custom file storage)"
-              echo "    • Notification Hub (instead of custom notifications)"
-              echo ""
-              echo "If direct queries are justified, document reason in PR description."
-              echo ""
-            else
-              echo "✅ No direct DB queries"
-            fi
-          else
-            echo "✅ No Real Estate file changes"
-          fi
-          
-          echo ""
-          echo "============================================"
-          
-          # ============================================
-          # Final decision
-          # ============================================
-          if [ $VIOLATIONS -gt 0 ]; then
-            echo "❌ Architecture Gate FAILED: $VIOLATIONS violation(s)"
-            echo ""
-            echo "Action Required:"
-            echo "  1. Review violations above"
-            echo "  2. Refactor to use platform layer OR"
-            echo "  3. Request architecture review (add label + justification)"
-            echo ""
-            exit 1
-          else
-            echo "✅ Architecture Gate PASSED"
-            echo ""
-            echo "Zero New Legacy Debt compliance verified."
-            echo "PR can proceed to code review."
-          fi
-
-      - name: Comment on PR (if violations found)
-        if: failure()
-        uses: actions/github-script@v6
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `## ❌ Architecture Gate Failed
+          node-version: 18
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Check for frozen file modifications
+        run: node scripts/architecture/ci-frozen-check.js
 
-**Zero New Legacy Debt Policy Violation Detected**
+  guard:
+    name: Architecture Guard Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Verify Architecture Guard integrity
+        run: node scripts/architecture/ci-guard-integrity.js
+      
+      - name: Run Architecture Guard
+        run: npm run arch:guard
 
-This PR violates the platform architecture requirements. Please review the CI log for details.
+  dependency:
+    name: Dependency Boundary Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Check dependency boundaries
+        run: node scripts/architecture/ci-dependency-check.js
 
-### Common Issues:
-- ❌ New features added to \`src/services\` (Real Estate)
-- ❌ New custom tables without architectural justification
-- ❌ Direct DB queries bypassing platform layer
-
-### Required Actions:
-1. Review CI log for specific violations
-2. Refactor to use Host Platform primitives:
-   - Person Center (\`persons\` + \`party_roles\`)
-   - Organization Center (\`organization_units\`)
-   - Document Management (\`documents\`)
-   - Notification Hub (\`notifications\`)
-3. OR request architecture review (add label \`architecture-review-required\` + justification)
-
-### Reference:
-- [Platform Architecture Tree](../docs/architecture/BELLA_PLATFORM_ARCHITECTURE_TREE_2026_08_10.md)
-- [Day 1 Checklist](../docs/execution/DAY_1_CHECKLIST_2026_08_11.md)
-
-**This is an automated check to protect platform economics. Questions? Contact Platform Architecture Team.**`
-            })
+  regression:
+    name: Logistics Kernel Regression
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run Logistics kernel tests
+        run: npm run logistics:verify
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
