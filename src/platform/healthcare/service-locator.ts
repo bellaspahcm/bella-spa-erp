@@ -163,31 +163,31 @@ export function getHealthcareService<T extends HealthcareServiceMap[ServiceKey]>
       serviceInstance = new BedEngineService(supabase);
       break;
     }
-    case 'billing-engine': {
-      const { BillingEngineService } = require('./engines/billing-engine');
-      serviceInstance = new BillingEngineService(supabase);
-      break;
-    }
+    // case 'billing-engine': {
+    //   const { BillingEngineService } = require('./engines/billing-engine');
+    //   serviceInstance = new BillingEngineService(supabase);
+    //   break;
+    // }
     case 'cds-engine': {
       const { CdsEngineService } = require('./engines/cds-engine');
       serviceInstance = new CdsEngineService(supabase);
       break;
     }
-    case 'clinical-engine': {
-      const { ClinicalEngineService } = require('./engines/clinical-engine');
-      serviceInstance = new ClinicalEngineService(supabase);
-      break;
-    }
+    // case 'clinical-engine': {
+    //   const { ClinicalEngineService } = require('./engines/clinical-engine');
+    //   serviceInstance = new ClinicalEngineService(supabase);
+    //   break;
+    // }
     case 'encounter-engine': {
       const { EncounterEngineService } = require('./engines/encounter-engine');
       serviceInstance = new EncounterEngineService(supabase);
       break;
     }
-    case 'insurance-engine': {
-      const { InsuranceEngineService } = require('./engines/insurance-engine');
-      serviceInstance = new InsuranceEngineService(supabase);
-      break;
-    }
+    // case 'insurance-engine': {
+    //   const { InsuranceEngineService } = require('./engines/insurance-engine');
+    //   serviceInstance = new InsuranceEngineService(supabase);
+    //   break;
+    // }
     case 'nursing-engine': {
       const { NursingEngineService } = require('./engines/nursing-engine');
       serviceInstance = new NursingEngineService(supabase);
@@ -203,31 +203,31 @@ export function getHealthcareService<T extends HealthcareServiceMap[ServiceKey]>
       serviceInstance = new PharmacyEngineService(supabase);
       break;
     }
-    case 'mpi-engine': {
-      const { MPIEngineService } = require('./engines/mpi-engine');
-      serviceInstance = new MPIEngineService(supabase);
-      break;
-    }
+    // case 'mpi-engine': {
+    //   const { MPIEngineService } = require('./engines/mpi-engine');
+    //   serviceInstance = new MPIEngineService(supabase);
+    //   break;
+    // }
     case 'laboratory-engine': {
       const { LaboratoryEngineService } = require('./engines/laboratory-engine');
       serviceInstance = new LaboratoryEngineService(supabase);
       break;
     }
-    case 'imaging-engine': {
-      const { ImagingEngineService } = require('./engines/imaging-engine');
-      serviceInstance = new ImagingEngineService(supabase);
-      break;
-    }
-    case 'scheduling-engine': {
-      const { SchedulingEngineService } = require('./engines/scheduling-engine');
-      serviceInstance = new SchedulingEngineService(supabase);
-      break;
-    }
-    case 'queue-engine': {
-      const { QueueEngineService } = require('./engines/queue-engine');
-      serviceInstance = new QueueEngineService(supabase);
-      break;
-    }
+    // case 'imaging-engine': {
+    //   const { ImagingEngineService } = require('./engines/imaging-engine');
+    //   serviceInstance = new ImagingEngineService(supabase);
+    //   break;
+    // }
+    // case 'scheduling-engine': {
+    //   const { SchedulingEngineService } = require('./engines/scheduling-engine');
+    //   serviceInstance = new SchedulingEngineService(supabase);
+    //   break;
+    // }
+    // case 'queue-engine': {
+    //   const { QueueEngineService } = require('./engines/queue-engine');
+    //   serviceInstance = new QueueEngineService(supabase);
+    //   break;
+    // }
     case 'or-engine': {
       const { OREngineService } = require('./engines/or-engine');
       serviceInstance = new OREngineService(supabase);
