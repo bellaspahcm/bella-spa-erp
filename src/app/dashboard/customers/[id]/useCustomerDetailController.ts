@@ -412,12 +412,41 @@ export function useCustomerDetailController() {
     if (isSavingBooking) return;
     if (!activeBooking) return;
 
-    setIsSavingBooking(true);
-    try {
-      const baseSessions = parseIntegerInput(editBookingData.total_sessions, { min: 0, max: 100 });
-      const giftSessions = parseIntegerInput(editBookingData.gift_sessions, { min: 0, max: 100 });
-      const totalSessions = baseSessions + giftSessions;
+    const baseSessions = parseIntegerInput(editBookingData.total_sessions, { min: 0, max: 100 });
+    const giftSessions = parseIntegerInput(editBookingData.gift_sessions, { min: 0, max: 100 });
+    const totalSessions = baseSessions + giftSessions;
 
+    // ── OPTIMISTIC UI UPDATE ──────────────────────────────────────────────────
+    // Close modal immediately for better UX (don't block on server response)
+    setIsEditBookingModalOpen(false);
+    
+    // Update local state optimistically
+    setActiveBooking(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        package_name: editBookingData.package_name || prev.package_name,
+        full_price: parseMoneyInput(editBookingData.full_price),
+        deposit_amount: parseMoneyInput(editBookingData.deposit_amount),
+        discount_percent: normalizeDiscountPercent(editBookingData.discount_percent),
+        total_sessions: totalSessions,
+        completed_sessions: parseIntegerInput(editBookingData.completed_sessions, { min: 0, max: 100 }),
+        preferred_time: editBookingData.preferred_time || prev.preferred_time,
+        start_date: editBookingData.start_date || prev.start_date,
+        status: editBookingData.status,
+        metadata: {
+          ...((prev.metadata as Record<string, unknown>) || {}),
+          gift_sessions: giftSessions,
+        },
+      };
+    });
+
+    // Show background loading toast
+    toast.loading('Đang lưu thay đổi...', { id: 'save-booking' });
+    setIsSavingBooking(true);
+
+    // ── BACKGROUND SERVER UPDATE ──────────────────────────────────────────────
+    try {
       const result = await updateBooking(activeBooking.id, {
         package_name: editBookingData.package_name || null,
         full_price: parseMoneyInput(editBookingData.full_price),
@@ -436,11 +465,13 @@ export function useCustomerDetailController() {
 
       if (result.error) throw new Error(result.error);
 
-      toast.success('Cập nhật gói dịch vụ thành công!');
-      setIsEditBookingModalOpen(false);
+      toast.success('Cập nhật gói dịch vụ thành công!', { id: 'save-booking' });
+      // Refresh from server to get authoritative state
       await loadData();
     } catch (error: unknown) {
-      toast.error('Lỗi cập nhật gói: ' + getErrorMessage(error));
+      toast.error('Lỗi cập nhật gói: ' + getErrorMessage(error), { id: 'save-booking' });
+      // On error, reload data to revert optimistic update
+      await loadData();
     } finally {
       setIsSavingBooking(false);
     }
