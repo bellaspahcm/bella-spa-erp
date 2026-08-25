@@ -1,0 +1,13 @@
+{
+  "approval_id": "test-approval-t1-1787646773289",
+  "migration_id": "20260825083253_t1_test_migration",
+  "migration_file": "supabase/migrations/20260825083253_t1_test_migration.sql",
+  "migration_hash": "40575568a637ab7eb2b43cd2ed67c94474e987bb4387475834861eb78a6dd450",
+  "commit_sha": "ac2bcef2f2db761af005b5efa19d91125f5ff6fa",
+  "parent_sha": "6cbcf214d9d4ef470bb82302fe18977e59f9d254",
+  "triggered_by": "test-user",
+  "workflow_run_id": "test-run-1787646773671",
+  "execution_time": "2026-08-25T08:32:53.671Z",
+  "environment": "test",
+  "result": "SUCCESS"
+}
