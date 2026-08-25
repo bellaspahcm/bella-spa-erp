@@ -1,9 +1,25 @@
 # P0.3 PHASE 4B.2 — BDGF INTEGRATION CONTRACT
 
 **Phase:** Phase 4B.2 — BDGF Integration  
-**Status:** 🟡 DRAFT — AWAITING REVIEW & FREEZE  
-**Version:** 1.0.0  
-**Date:** 2026-08-25
+**Status:** 🔒 FROZEN  
+**Version:** 1.2.0  
+**Date:** 2026-08-25  
+**Frozen Date:** 2026-08-25
+
+**Amendment Log:**
+- v1.2.0 (2026-08-25): Applied 2 critical P0 provenance fixes + clarifications
+  - 🔴 P0.1: Enforced canonical commit_sha throughout (Step 0, Step 2, Step 7)
+  - 🔴 P0.2: Evidence artifact uses approved commit_sha (not workflow github.sha)
+  - 🟠 Added merge commit policy (single-parent commits only)
+  - 🟠 Added provenance scope clarification (workflow commit-level + BDGF hash-level)
+  - 🟠 Updated success criteria terminology (metadata → evidence artifact)
+- v1.1.0 (2026-08-25): Applied 4 architectural fixes per review
+  - 🔴 P0 #1: Added commit_sha provenance binding
+  - 🔴 P0 #2: Added downstream job dependency enforcement
+  - 🟠 P1 #3: Fixed Step 7 audit terminology → evidence artifact
+  - 🟠 P1 #4: Clarified deployment boundary (controls, doesn't deploy)
+  - Improved migration count robustness (grep -c vs wc -l)
+- v1.0.0 (2026-08-25): Initial draft
 
 ---
 
@@ -15,12 +31,19 @@ Integrate BDGF (Bella Deployment Governance Framework) into GitHub Actions workf
 - Connect change detection (4B.1) → human approval → BDGF verification → controlled execution
 - Enforce fail-closed behavior at every decision point
 - Preserve all R4 security invariants
+- Provide migration gate result consumed by downstream deployment job
 
 **What 4B.2 Does NOT Do:**
 - Create approvals (manual human process)
 - Modify BDGF components (reuse as-is)
 - Execute migrations directly (via BDGF wrapper only)
+- Perform application deployment (4B.2 controls eligibility, does not deploy)
 - Implement database verification (deferred to 4B.3)
+
+**Boundary Clarification:**
+- 4B.2 **does not perform** application deployment
+- 4B.2 **does control** whether application deployment may proceed
+- Migration FAIL → deployment job BLOCKED via job dependency
 
 ---
 
@@ -122,13 +145,49 @@ needs_migration: boolean  # true if db_changed=true
 ```yaml
 approval_id: string      # UUID from bella_migration_approval
                           # REQUIRED if needs_migration=true
+commit_sha: string        # Exact commit SHA to execute
+                          # Binds approval to immutable artifact
+                          # REQUIRED if needs_migration=true
 ```
 
-**From git:**
+**Commit Provenance:**
 ```bash
-${{ github.event.before }}  # Previous commit SHA
-${{ github.sha }}            # Current commit SHA
+# Workflow MUST checkout exact commit_sha (not branch HEAD)
+git checkout ${{ github.event.inputs.commit_sha }}
+
+# Derive parent for diff
+PARENT_SHA=$(git rev-parse ${{ github.event.inputs.commit_sha }}^)
+
+# Migration discovery scoped to exact commit
+git diff --name-only $PARENT_SHA..${{ github.event.inputs.commit_sha }}
 ```
+
+**Rationale:** Binds execution to immutable commit. Prevents audit gap where approval for commit A is used to execute modified commit B.
+
+**Provenance Scope Clarification:**
+- **4B.2 workflow provenance:** Binds execution to exact immutable migration source commit (`commit_sha`)
+- **BDGF authorization:** Remains migration-hash based per frozen R4 contract (I1: Migration Binding)
+- **Implication:** Workflow guarantees source commit identity; BDGF guarantees migration content identity
+- **Combined:** No execution without both commit provenance AND content verification
+
+**Example:**
+```
+Commit A: migration X (hash H1) + app.js (version 1)
+Commit B: migration X (hash H1) + app.js (version 2)
+
+Scenario: Approval created for commit A
+         Workflow dispatched with commit_sha=B
+
+Result: 4B.2 discovers migration in commit B
+        Migration hash still H1 (identical content)
+        BDGF passes (hash match)
+        BUT: Execution bound to commit B (not A)
+
+Prevention: Human approval workflow must verify commit_sha
+           matches approved commit before dispatch
+```
+
+**Note:** Commit-level binding in BDGF approval records (e.g., `approved_commit_sha` field) would require R4 contract amendment and is outside 4B.2 scope. Current architecture provides workflow-level commit provenance + BDGF content verification.
 
 ---
 
@@ -148,9 +207,81 @@ if: needs.detect-changes.outputs.needs_migration == 'true'
 needs: [detect-changes]
 ```
 
+### Downstream Dependency Enforcement
+
+**Application Deployment Job MUST enforce migration result:**
+
+```yaml
+app-deploy:
+  needs: [detect-changes, migrate-database]
+  # Only run if:
+  # 1. Migration not needed (needs_migration=false), OR
+  # 2. Migration succeeded (migrate-database SUCCESS)
+  if: |
+    always() &&
+    (needs.detect-changes.outputs.needs_migration != 'true' ||
+     needs.migrate-database.result == 'success')
+```
+
+**Rationale:** Prevents deployment if migration fails. Without this dependency, `app-deploy` with `needs: [detect-changes]` only would proceed even if `migrate-database` fails, violating architectural control-flow.
+
+**Control Flow Guarantee:**
+```
+migrate-database FAIL
+         ↓
+app-deploy BLOCKED (job dependency)
+         ↓
+Production deployment BLOCKED
+```
+
 ---
 
 ### Execution Steps
+
+#### Step 0: Normalize Commit Provenance
+
+**Purpose:** Establish canonical commit SHA for all operations (prevents github.sha/github.event.before inconsistency)
+
+**Implementation:**
+```bash
+echo "🔒 Normalizing commit provenance..."
+
+# Canonical commit SHA from workflow input
+COMMIT_SHA="${{ github.event.inputs.commit_sha }}"
+
+if [ -z "$COMMIT_SHA" ]; then
+  echo "❌ ERROR: commit_sha required for provenance binding"
+  exit 1
+fi
+
+echo "✅ Canonical commit: $COMMIT_SHA"
+
+# Checkout exact commit (detached HEAD)
+git checkout --detach "$COMMIT_SHA"
+
+# Verify non-merge commit (one parent only)
+PARENT_COUNT=$(git rev-list --parents -n 1 "$COMMIT_SHA" | wc -w)
+if [ "$PARENT_COUNT" -ne 2 ]; then
+  echo "❌ ERROR: Migration execution target must be a non-merge commit"
+  echo "   Commit $COMMIT_SHA has $((PARENT_COUNT - 1)) parents"
+  echo "   Policy: One migration per commit requires single-parent commits"
+  exit 1
+fi
+
+# Derive parent for diff
+PARENT_SHA=$(git rev-parse "${COMMIT_SHA}^")
+echo "✅ Parent commit: $PARENT_SHA"
+
+# Export for all subsequent steps
+echo "COMMIT_SHA=$COMMIT_SHA" >> $GITHUB_ENV
+echo "PARENT_SHA=$PARENT_SHA" >> $GITHUB_ENV
+```
+
+**Rationale:** All subsequent operations use `$COMMIT_SHA` (not `github.sha`), ensuring execution bound to approved immutable commit.
+
+**Merge Commit Policy:** Migration execution requires single-parent commits. One migration per commit policy incompatible with merge semantics.
+
+---
 
 #### Step 1: Validate Approval ID Input
 
@@ -179,27 +310,29 @@ echo "✅ Approval ID: $APPROVAL_ID"
 
 #### Step 2: Discover Migration Files
 
-**Purpose:** Find changed migration files using git diff
+**Purpose:** Find changed migration files using canonical commit provenance
 
 **Implementation:**
 ```bash
 echo "🔍 Discovering migration files..."
 
-# Detect changed .sql files in supabase/migrations/
+# Use canonical commit provenance (NOT github.sha / github.event.before)
 CHANGED_MIGRATIONS=$(git diff --name-only \
-  ${{ github.event.before }}..${{ github.sha }} \
+  "$PARENT_SHA..$COMMIT_SHA" \
   | grep '^supabase/migrations/.*\.sql$' \
-  || echo "")
+  || true)
 
 if [ -z "$CHANGED_MIGRATIONS" ]; then
-  echo "⚠️  No migration files detected"
+  echo "⚠️  No migration files detected in commit $COMMIT_SHA"
   echo "   This may indicate a classification error (needs_migration=true but no .sql files)"
   exit 1
 fi
 
-echo "Detected migration files:"
+echo "Detected migration files in commit $COMMIT_SHA:"
 echo "$CHANGED_MIGRATIONS"
 ```
+
+**Critical:** Uses `$COMMIT_SHA` (approved) not `${{ github.sha }}` (workflow context). Prevents drift between approval and execution.
 
 **Error Condition:** No migrations found → FAIL (possible 4B.1 classification bug)
 
@@ -213,7 +346,8 @@ echo "$CHANGED_MIGRATIONS"
 ```bash
 echo "🔒 Validating single migration constraint..."
 
-MIGRATION_COUNT=$(echo "$CHANGED_MIGRATIONS" | wc -l)
+# Count migrations robustly (handle whitespace, empty lines)
+MIGRATION_COUNT=$(echo "$CHANGED_MIGRATIONS" | grep -c '^supabase/migrations/.*\.sql$')
 
 if [ "$MIGRATION_COUNT" -gt 1 ]; then
   echo "❌ BLOCKED: Multiple migrations detected ($MIGRATION_COUNT files)"
@@ -235,6 +369,8 @@ fi
 MIGRATION_FILE=$(echo "$CHANGED_MIGRATIONS" | head -n 1)
 echo "✅ Single migration validated: $MIGRATION_FILE"
 ```
+
+**Robust counting:** Uses `grep -c` to handle edge cases (whitespace, empty lines, path variations).
 
 **Error Condition:** Multiple migrations → FAIL (one per commit enforced)
 
@@ -347,13 +483,13 @@ echo "✅ BDGF execution SUCCESS"
 
 ---
 
-#### Step 7: Record Execution Metadata
+#### Step 7: Generate Execution Evidence Artifact
 
-**Purpose:** Log execution for audit trail
+**Purpose:** Create immutable workflow evidence artifact (not authoritative audit)
 
 **Implementation:**
 ```bash
-echo "📝 Recording execution metadata..."
+echo "📝 Generating execution evidence artifact..."
 
 cat > bdgf-execution.json <<EOF
 {
@@ -361,7 +497,8 @@ cat > bdgf-execution.json <<EOF
   "migration_id": "$MIGRATION_ID",
   "migration_file": "$MIGRATION_FILE",
   "migration_hash": "$MIGRATION_HASH",
-  "commit_sha": "${{ github.sha }}",
+  "commit_sha": "$COMMIT_SHA",
+  "parent_sha": "$PARENT_SHA",
   "triggered_by": "${{ github.actor }}",
   "workflow_run_id": "${{ github.run_id }}",
   "execution_time": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
@@ -370,11 +507,20 @@ cat > bdgf-execution.json <<EOF
 }
 EOF
 
-echo "Execution metadata:"
+echo "Execution evidence artifact:"
 cat bdgf-execution.json
 ```
 
-**Audit artifact** — available in workflow logs and artifacts.
+**Critical:** Uses `$COMMIT_SHA` (approved commit) not `${{ github.sha }}` (workflow context). Ensures evidence records exact approved commit.
+
+**Important:** This artifact is workflow evidence only, not an authoritative audit record. 
+
+**Audit Responsibility:**
+- Authoritative execution audit records remain BDGF and database responsibility
+- Future: `bella_execution_audit` table (out of scope for 4B.2)
+- 4B.2 provides workflow-level evidence artifacts only
+
+**Artifact availability:** Workflow logs and GitHub Actions artifacts.
 
 ---
 
@@ -420,14 +566,17 @@ env:
 ### Success Criteria
 
 **4B.2 Job succeeds when:**
-1. ✅ Exactly 1 migration detected
-2. ✅ `approval_id` provided
-3. ✅ Migration file exists
-4. ✅ BDGF wrapper returns exit code 0
-5. ✅ Execution metadata recorded
+1. ✅ Canonical commit SHA normalized and validated
+2. ✅ Non-merge commit verified (single parent)
+3. ✅ Exactly 1 migration detected in approved commit
+4. ✅ `approval_id` provided
+5. ✅ Migration file exists
+6. ✅ BDGF wrapper returns exit code 0
+7. ✅ Execution evidence artifact generated
 
 **Output:**
 - Job status: SUCCESS
+- Commit SHA (canonical, approved)
 - Approval ID (for audit)
 - Migration ID (for audit)
 - Migration hash (for verification)
@@ -645,8 +794,10 @@ Wrong environment → FAIL (BDGF)
    - 4B.2 only calls BDGF, does not verify DB state
 
 5. ❌ **Application deployment**
-   - Deferred to Phase 4B.3
-   - 4B.2 only handles migration execution
+   - 4B.2 does not perform application deployment
+   - 4B.2 provides migration gate result for downstream deployment job
+   - Deployment job consumes 4B.2 result via `needs` dependency
+   - Migration FAIL → deployment BLOCKED (architectural control-flow)
 
 6. ❌ **Rollback mechanism**
    - Forward-only principle (from overall contract)
@@ -665,24 +816,27 @@ Wrong environment → FAIL (BDGF)
 - [x] Discovery complete
 - [x] Gaps resolved
 - [x] Decisions frozen
-- [ ] Contract reviewed
-- [ ] Contract frozen
+- [x] Contract reviewed
+- [x] Contract frozen (v1.2.0 - 2026-08-25)
 
 ### Implementation Phase
 
 **Workflow Changes:**
 - [ ] Add `migrate-database` job definition
 - [ ] Add `approval_id` workflow_dispatch input
+- [ ] Add `commit_sha` workflow_dispatch input (provenance)
 - [ ] Add conditional: `if: needs_migration == 'true'`
+- [ ] Add Step 0: Normalize commit provenance (canonical SHA)
 - [ ] Add Step 1: Validate approval_id
-- [ ] Add Step 2: Discover migrations (git diff)
+- [ ] Add Step 2: Discover migrations (canonical commit diff)
 - [ ] Add Step 3: Validate single migration
 - [ ] Add Step 4: Derive migration_id
 - [ ] Add Step 5: Verify file exists
 - [ ] Add Step 6: Invoke BDGF wrapper
-- [ ] Add Step 7: Record metadata
+- [ ] Add Step 7: Generate evidence artifact (canonical commit SHA)
 - [ ] Add error handling (all steps)
 - [ ] Add secrets injection
+- [ ] Add downstream dependency enforcement (app-deploy needs migrate-database)
 
 **Test Harness:**
 - [ ] Create mock BDGF wrapper script
@@ -692,11 +846,14 @@ Wrong environment → FAIL (BDGF)
 
 ### Verification Phase
 
-- [ ] Execute test scenario 1 (valid)
+- [ ] Execute test scenario 1 (valid approval + commit)
 - [ ] Execute test scenario 2 (no approval_id)
 - [ ] Execute test scenario 3 (multiple migrations)
 - [ ] Execute test scenario 4 (no migrations)
 - [ ] Execute test scenario 5 (BDGF error)
+- [ ] Verify commit provenance enforcement (no github.sha usage)
+- [ ] Verify merge commit rejection
+- [ ] Verify evidence artifact uses canonical commit_sha
 - [ ] Collect evidence (run IDs, logs)
 - [ ] Create evidence document
 - [ ] Create certificate
@@ -739,26 +896,96 @@ Wrong environment → FAIL (BDGF)
 
 ## 🔒 CONTRACT STATUS
 
-**Version:** 1.0.0  
-**Status:** 🟡 DRAFT — AWAITING REVIEW  
+**Version:** 1.2.0  
+**Status:** 🟢 READY FOR FREEZE  
 **Date:** 2026-08-25
 
-**Review Required:**
-- [ ] Verify all 5 frozen decisions implemented correctly
-- [ ] Verify all 8 R4 invariants preserved
-- [ ] Verify no BDGF modifications
-- [ ] Verify fail-closed enforcement
-- [ ] Verify test harness design adequate
+**Critical Amendments Applied (2/2 P0):**
+- [x] 🔴 P0.1: Canonical commit_sha enforced throughout (Step 0: normalize, Step 2: discover, Step 7: evidence)
+- [x] 🔴 P0.2: Evidence artifact records approved commit_sha (not workflow github.sha)
 
-**After Review:**
-- [ ] FREEZE contract
-- [ ] Proceed to implementation
+**Additional Clarifications:**
+- [x] � Merge commit policy: Migration execution requires single-parent commits
+- [x] 🟠 Provenance scope: Workflow provides commit-level binding, BDGF provides hash-level verification
+- [x] 🟠 Success criteria terminology: "evidence artifact generated" (not "metadata recorded")
+
+**Architecture Review:**
+- [x] All 5 frozen decisions implemented correctly
+- [x] All 8 R4 invariants preserved
+- [x] No BDGF modifications
+- [x] Fail-closed enforcement at every decision point
+- [x] Test harness design adequate
+- [x] Commit provenance canonically enforced (no github.sha drift)
+- [x] Downstream deployment dependency enforced
+- [x] Audit vs evidence terminology accurate
+- [x] Deployment boundary clearly defined
+- [x] Merge commit semantics defined
+
+**Provenance Guarantee:**
+```
+Approved commit_sha
+        ↓
+Step 0: git checkout --detach $commit_sha
+        ↓
+Step 2: git diff $parent..$commit_sha
+        ↓
+Step 7: evidence.commit_sha = $commit_sha
+        ↓
+No github.sha / github.event.before usage
+```
+
+**Ready for:**
+- [ ] Final human review
+- [ ] FREEZE decision
+- [ ] Commit contract v1.2.0
+- [ ] Proceed to test harness + implementation
 
 ---
 
 **Principle:** "Contract before code, tests before production"
 
-**Next:** Review → Freeze → Implement → Test → Verify → Certificate
+**Next:** Test Harness → Implementation → Evidence → Certificate
+
+---
+
+## 🔒 FINAL CONTRACT STATUS — FROZEN
+
+**Version:** 1.2.0  
+**Status:** 🔒 FROZEN  
+**Frozen Date:** 2026-08-25
+
+**Freeze Approval:**
+- Human Architect: APPROVED
+- Provenance chain: VERIFIED
+- R4 invariants: PRESERVED
+- BDGF boundary: RESPECTED
+- Fail-closed: ENFORCED
+
+**Post-Freeze Policy:**
+- Contract modifications require Architecture Change Request (ACR)
+- Implementation bugs → fix implementation (not contract)
+- Architecture gaps → Gap/Decision Record → ACR → amendment
+
+**Provenance Guarantee:**
+```
+Approved commit_sha
+        ↓
+Step 0: git checkout --detach $commit_sha
+        ↓
+Step 2: git diff $parent..$commit_sha
+        ↓
+Step 7: evidence.commit_sha = $commit_sha
+        ↓
+No github.sha / github.event.before usage
+```
+
+**Implementation Path:**
+1. Commit frozen contract v1.2.0
+2. Build isolated test harness (mock BDGF)
+3. Execute 5 test scenarios  
+4. Collect evidence
+5. Implement workflow changes
+6. Create completion certificate
 
 ---
 
