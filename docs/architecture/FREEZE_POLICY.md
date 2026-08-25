@@ -1,3 +1,13 @@
+---
+tier: GOVERNANCE
+domain: platform
+status: ACTIVE
+last_verified: "2026-08-22"
+description: "Chính sách freeze và quy trình ACR cho các sealed layers (E7.1, E7.2, E7.3)"
+sealed_layers: "E7.1, E7.2, E7.3"
+total_tests: "547"
+---
+
 # BELLA ARCHITECTURE FREEZE POLICY
 
 **Version:** 1.0.0  

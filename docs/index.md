@@ -1,6 +1,15 @@
 # Chỉ Mục Tri Thức Bella ERP
 
-**Last Updated:** July 25, 2026
+> ## ⚡ ĐỌC TRƯỚC: Tài liệu này đã có phiên bản mới hơn
+>
+> **Điểm vào mới (2026-08-23):** [`BELLA_SYSTEM_INDEX.md`](../BELLA_SYSTEM_INDEX.md)  
+> **Trạng thái hệ thống hiện tại:** [`docs/CURRENT_STATE.md`](CURRENT_STATE.md)
+>
+> Hai file trên thay thế vai trò điều hướng của trang này. Nội dung bên dưới vẫn hợp lệ nhưng có thể lỗi thời ở một số phần.
+
+---
+
+**Last Updated:** July 25, 2026 *(index này — xem CURRENT_STATE.md cho trạng thái 2026-08-23)*
 
 Đây là tài liệu đầu tiên cần mở khi một lập trình viên, quản lý kỹ thuật, hoặc AI agent mới tham gia dự án.
 

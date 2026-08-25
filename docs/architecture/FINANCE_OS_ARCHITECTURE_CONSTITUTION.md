@@ -1,3 +1,12 @@
+---
+tier: GOVERNANCE
+domain: finance
+status: ACTIVE
+last_verified: "2026-08-23"
+description: "Finance OS constitution — F1-F5 boundaries, invariants, 9 verification gates"
+freeze_status: "F1-F5 Pending Architecture Gate / Partially FROZEN"
+---
+
 # BELLA FINANCE OS — ARCHITECTURE CONSTITUTION v1.0
 
 > **Status:** PENDING ARCHITECTURE GATE APPROVAL  
