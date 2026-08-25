@@ -1,0 +1,17 @@
+# Phase 4B.1 Test Scenario 5: Infrastructure Change
+#
+# Purpose: Test infrastructure routing for workflow file changes
+#
+# This file exists solely to trigger infra_changed=true classification
+
+name: Test Scenario 5 Infra Marker
+
+on:
+  workflow_dispatch:
+
+jobs:
+  marker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scenario 5 Marker
+        run: echo "This workflow file triggers infra_changed classification"
