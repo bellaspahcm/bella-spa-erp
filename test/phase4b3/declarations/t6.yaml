@@ -1,0 +1,11 @@
+verification:
+  tables:
+    test_hc_encounters:
+      columns:
+        encounter_id: uuid  # ← Declared as UUID (actual is text)
+        patient_id: uuid
+        tenant_id: uuid
+        status: text
+        created_at: timestamptz
+      primary_key: [encounter_id]
+      rls: required
