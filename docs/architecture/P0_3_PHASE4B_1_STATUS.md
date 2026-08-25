@@ -194,27 +194,38 @@ After scenarios 1 and 5 validate correctly, create commits for:
 
 ## 🧪 VERIFICATION REQUIRED BEFORE 4B.2
 
-**User Action Required:**
-1. Run workflow: `gh workflow run deploy-production.yml --ref p0.3-phase4b.1-change-detection`
-2. Verify docs-only classification (commit `ca271197`)
-3. Verify infra classification (commit `941c5bc3` — workflow changed)
-4. Create and test 3 remaining scenarios (app-only, DB-only, mixed)
-5. Confirm all 5 scenarios PASS
+**Current Status:** 🟡 PARTIALLY VERIFIED — CLASSIFICATION ENGINE PASS, ROUTING MATRIX UNVERIFIED
 
-**Only after ALL 5 scenarios verified → 4B.1 can be marked PASS**
+**What's Verified:**
+- ✅ Change detection logic executes
+- ✅ Infra classification correct (`infra_changed=true`, `CRITICAL`)
+- ✅ Outputs propagate to dependent jobs
+
+**What's NOT Verified:**
+- ❌ Docs-only routing (skip jobs)
+- ❌ App-only routing
+- ❌ DB-only routing
+- ❌ Mixed routing
+- ❌ Full routing matrix execution
+
+**User Action Required:**
+1. Create test commits for 5 scenarios
+2. Run test harness: `gh workflow run test-change-detection.yml --ref p0.3-phase4b.1-change-detection`
+3. Verify all 5 routing paths execute correctly
+4. Save evidence
+5. Only after ALL 5 scenarios PASS → mark 4B.1 COMPLETE
+
+**Test Harness:** `.github/workflows/test-change-detection.yml` (no production credentials, no deployment)
 
 ---
 
-## ⏳ BLOCKING 4B.2
+## 🚫 4B.2 BLOCKED UNTIL 5/5 SCENARIOS VERIFIED
 
-**4B.2 (BDGF Integration) is BLOCKED until:**
-- [ ] Change detection verified on GitHub Actions
-- [ ] All 5 scenarios tested and PASS
-- [ ] Classification logic confirmed correct
-- [ ] No false positives (tooling classified as migration)
-- [ ] No false negatives (migration classified as docs)
+**Reason:** Control plane routing must be fully verified BEFORE adding BDGF execution. Partial verification + BDGF = production mutation risk.
 
-**Reason:** Control plane routing must be deterministic and correct BEFORE adding BDGF execution. Wrong routing with BDGF = production mutation risk.
+**Principle:** Testability ≠ Weakening production security.
+
+**Status:** Waiting for complete routing matrix verification.
 
 ---
 
