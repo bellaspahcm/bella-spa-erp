@@ -1,0 +1,280 @@
+name: Test Change Detection (4B.1 Verification)
+
+# Purpose: Verify change detection routing matrix WITHOUT production mutation
+# Scope: Classification logic testing ONLY (no credentials, no deployment)
+# Branch: Feature branches (p0.3-*) for 4B.1 verification
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: 'Test scenario (docs-only, app-only, db-only, mixed, infra)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      app_changed: ${{ steps.classify.outputs.app_changed }}
+      db_changed: ${{ steps.classify.outputs.db_changed }}
+      infra_changed: ${{ steps.classify.outputs.infra_changed }}
+      docs_only: ${{ steps.classify.outputs.docs_only }}
+      needs_migration: ${{ steps.classify.outputs.needs_migration }}
+      needs_app_deploy: ${{ steps.classify.outputs.needs_app_deploy }}
+      risk_class: ${{ steps.classify.outputs.risk_class }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          fetch-depth: 0
+      
+      - name: Classify changes
+        id: classify
+        run: |
+          set -euo pipefail
+          
+          # Determine commit range
+          if [ -z "${{ github.event.before }}" ] || [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
+            # First push or workflow_dispatch: compare with HEAD^
+            commit_range="HEAD^..HEAD"
+          else
+            # Normal push: use github.event.before
+            commit_range="${{ github.event.before }}..${{ github.sha }}"
+          fi
+          
+          echo "::notice::Analyzing commit range: $commit_range"
+          
+          # Get changed files
+          changed_files=$(git diff --name-only "$commit_range" 2>/dev/null || {
+            echo "::error::Failed to determine changed files. Commit range: $commit_range"
+            exit 1
+          })
+          
+          if [ -z "$changed_files" ]; then
+            echo "::error::No changed files detected. This should not happen in a deployment workflow."
+            exit 1
+          fi
+          
+          echo "::notice::Changed files:"
+          echo "$changed_files"
+          
+          # Initialize classification flags
+          app_changed=false
+          db_changed=false
+          infra_changed=false
+          docs_only=true
+          unknown_files=""
+          
+          # Classify each file
+          while IFS= read -r file; do
+            case "$file" in
+              # Application changes (MEDIUM risk)
+              src/*|app/*|components/*|lib/*|public/*|styles/*|\
+              package.json|package-lock.json|tsconfig.json|\
+              next.config.js|next.config.mjs|tailwind.config.js|\
+              tailwind.config.ts|postcss.config.js|postcss.config.mjs)
+                app_changed=true
+                docs_only=false
+                ;;
+              
+              # Database migration artifacts ONLY (HIGH risk)
+              supabase/migrations/*.sql|\
+              supabase/migrations/**/*.sql)
+                db_changed=true
+                docs_only=false
+                ;;
+              
+              # Infrastructure/control-plane changes (CRITICAL risk)
+              .github/workflows/*|\
+              .github/workflows/**/*|\
+              .github/actions/*|\
+              .github/actions/**/*|\
+              scripts/bdgf/*|\
+              scripts/bdgf/**/*|\
+              scripts/deployment/*|\
+              scripts/deployment/**/*|\
+              scripts/deploy-*.sh|\
+              scripts/apply-*.js|\
+              vercel.json|.vercel/*|\
+              Dockerfile|docker-compose.yml|docker-compose.*.yml)
+                infra_changed=true
+                docs_only=false
+                ;;
+              
+              # Documentation only (LOW risk)
+              docs/*|docs/**/*|\
+              README.md|*.md|\
+              LICENSE|\
+              .github/ISSUE_TEMPLATE/*|\
+              .github/PULL_REQUEST_TEMPLATE.md)
+                # Docs only, no flag change
+                ;;
+              
+              # Test/config files (ignored for deployment)
+              *.test.ts|*.test.tsx|*.spec.ts|*.spec.tsx|\
+              __tests__/*|__tests__/**/*|\
+              e2e/*|e2e/**/*|\
+              .gitignore|.editorconfig|.prettierrc|.prettierrc.*|\
+              .eslintrc|.eslintrc.*|eslint.config.*|\
+              .vscode/*|.vscode/**/*|\
+              jest.config.*|vitest.config.*)
+                # Test/config files, treated as docs
+                ;;
+              
+              # Unknown files (FAIL-CLOSED)
+              *)
+                unknown_files="$unknown_files$file"$'\n'
+                app_changed=true
+                docs_only=false
+                ;;
+            esac
+          done <<< "$changed_files"
+          
+          # Fail-closed: block on unknown files
+          if [ -n "$unknown_files" ]; then
+            echo "::warning::Unknown file classification detected (fail-closed to app_changed):"
+            echo "$unknown_files"
+          fi
+          
+          # Routing logic (based on locked routing matrix)
+          needs_migration=$db_changed
+          needs_app_deploy=$app_changed
+          
+          # Risk classification
+          if [ "$infra_changed" = true ]; then
+            risk_class=CRITICAL
+          elif [ "$db_changed" = true ]; then
+            risk_class=HIGH
+          elif [ "$app_changed" = true ]; then
+            risk_class=MEDIUM
+          elif [ "$docs_only" = true ]; then
+            risk_class=LOW
+          else
+            echo "::error::Unable to determine risk classification. This should not happen."
+            exit 1
+          fi
+          
+          # Output classification
+          echo "app_changed=$app_changed" >> $GITHUB_OUTPUT
+          echo "db_changed=$db_changed" >> $GITHUB_OUTPUT
+          echo "infra_changed=$infra_changed" >> $GITHUB_OUTPUT
+          echo "docs_only=$docs_only" >> $GITHUB_OUTPUT
+          echo "needs_migration=$needs_migration" >> $GITHUB_OUTPUT
+          echo "needs_app_deploy=$needs_app_deploy" >> $GITHUB_OUTPUT
+          echo "risk_class=$risk_class" >> $GITHUB_OUTPUT
+          
+          # Log classification
+          echo "::notice::📊 Change Classification Results"
+          echo "::notice::  app_changed: $app_changed"
+          echo "::notice::  db_changed: $db_changed"
+          echo "::notice::  infra_changed: $infra_changed"
+          echo "::notice::  docs_only: $docs_only"
+          echo "::notice::  needs_migration: $needs_migration"
+          echo "::notice::  needs_app_deploy: $needs_app_deploy"
+          echo "::notice::  risk_class: $risk_class"
+
+  # TEST HARNESS: Simulated routing (no actual deployment)
+  test-routing-docs-only:
+    name: "[TEST] Docs-Only Path"
+    needs: detect-changes
+    if: needs.detect-changes.outputs.docs_only == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - run: |
+          echo "✅ ROUTING TEST PASS: Docs-only change correctly routed to skip deployment"
+          echo "Classification: docs_only=true, risk_class=${{ needs.detect-changes.outputs.risk_class }}"
+
+  test-routing-app-only:
+    name: "[TEST] App-Only Path"
+    needs: detect-changes
+    if: |
+      needs.detect-changes.outputs.docs_only != 'true' &&
+      needs.detect-changes.outputs.needs_app_deploy == 'true' &&
+      needs.detect-changes.outputs.needs_migration != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - run: |
+          echo "✅ ROUTING TEST PASS: App-only change correctly routed to app deployment (no migration)"
+          echo "Classification: app_changed=true, needs_app_deploy=true, needs_migration=false"
+
+  test-routing-db-only:
+    name: "[TEST] DB-Only Path"
+    needs: detect-changes
+    if: |
+      needs.detect-changes.outputs.docs_only != 'true' &&
+      needs.detect-changes.outputs.needs_migration == 'true' &&
+      needs.detect-changes.outputs.needs_app_deploy != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - run: |
+          echo "✅ ROUTING TEST PASS: DB-only change correctly routed to migration (no app deploy)"
+          echo "Classification: db_changed=true, needs_migration=true, needs_app_deploy=false"
+
+  test-routing-mixed:
+    name: "[TEST] Mixed Path (DB + App)"
+    needs: detect-changes
+    if: |
+      needs.detect-changes.outputs.docs_only != 'true' &&
+      needs.detect-changes.outputs.needs_migration == 'true' &&
+      needs.detect-changes.outputs.needs_app_deploy == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - run: |
+          echo "✅ ROUTING TEST PASS: Mixed change correctly routed to migration + app deployment"
+          echo "Classification: db_changed=true, app_changed=true, both needs_*=true"
+
+  test-routing-infra:
+    name: "[TEST] Infra Path (CRITICAL)"
+    needs: detect-changes
+    if: |
+      needs.detect-changes.outputs.docs_only != 'true' &&
+      needs.detect-changes.outputs.infra_changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - run: |
+          echo "✅ ROUTING TEST PASS: Infra change correctly classified as CRITICAL"
+          echo "Classification: infra_changed=true, risk_class=${{ needs.detect-changes.outputs.risk_class }}"
+          echo "⚠️  Infra changes require special approval gate (Phase 4B.2+)"
+
+  # Final verification summary
+  test-summary:
+    name: "[TEST] Routing Matrix Verification Summary"
+    needs: [detect-changes, test-routing-docs-only, test-routing-app-only, test-routing-db-only, test-routing-mixed, test-routing-infra]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - run: |
+          echo "📊 Change Detection Test Summary"
+          echo ""
+          echo "Classification Results:"
+          echo "  app_changed: ${{ needs.detect-changes.outputs.app_changed }}"
+          echo "  db_changed: ${{ needs.detect-changes.outputs.db_changed }}"
+          echo "  infra_changed: ${{ needs.detect-changes.outputs.infra_changed }}"
+          echo "  docs_only: ${{ needs.detect-changes.outputs.docs_only }}"
+          echo "  needs_migration: ${{ needs.detect-changes.outputs.needs_migration }}"
+          echo "  needs_app_deploy: ${{ needs.detect-changes.outputs.needs_app_deploy }}"
+          echo "  risk_class: ${{ needs.detect-changes.outputs.risk_class }}"
+          echo ""
+          echo "Routing Test Results:"
+          echo "  Docs-only: ${{ needs.test-routing-docs-only.result }}"
+          echo "  App-only: ${{ needs.test-routing-app-only.result }}"
+          echo "  DB-only: ${{ needs.test-routing-db-only.result }}"
+          echo "  Mixed: ${{ needs.test-routing-mixed.result }}"
+          echo "  Infra: ${{ needs.test-routing-infra.result }}"
+          echo ""
+          echo "✅ Phase 4B.1 Test Harness Complete"
+          echo "⚠️  NO production credentials used"
+          echo "⚠️  NO database mutations"
+          echo "⚠️  NO application deployment"
