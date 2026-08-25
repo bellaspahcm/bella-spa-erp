@@ -1,0 +1,98 @@
+{
+  "timestamp": "2026-08-25T08:32:59.051Z",
+  "contract_version": "1.2.0",
+  "tests_run": 7,
+  "tests_passed": 7,
+  "tests_failed": 0,
+  "results": [
+    {
+      "name": "T1: Valid approval + 1 migration",
+      "status": "PASS",
+      "assertions": {
+        "passed": 7,
+        "failed": 0
+      },
+      "error": null,
+      "evidence": {
+        "approval_id": "test-approval-t1-1787646773289",
+        "migration_id": "20260825083253_t1_test_migration",
+        "migration_file": "supabase/migrations/20260825083253_t1_test_migration.sql",
+        "migration_hash": "40575568a637ab7eb2b43cd2ed67c94474e987bb4387475834861eb78a6dd450",
+        "commit_sha": "ac2bcef2f2db761af005b5efa19d91125f5ff6fa",
+        "parent_sha": "6cbcf214d9d4ef470bb82302fe18977e59f9d254",
+        "triggered_by": "test-user",
+        "workflow_run_id": "test-run-1787646773671",
+        "execution_time": "2026-08-25T08:32:53.671Z",
+        "environment": "test",
+        "result": "SUCCESS"
+      }
+    },
+    {
+      "name": "T2: Missing approval_id",
+      "status": "PASS",
+      "assertions": {
+        "passed": 3,
+        "failed": 0
+      },
+      "error": null
+    },
+    {
+      "name": "T3: Multiple migrations",
+      "status": "PASS",
+      "assertions": {
+        "passed": 2,
+        "failed": 0
+      },
+      "error": null
+    },
+    {
+      "name": "T4: No migrations",
+      "status": "PASS",
+      "assertions": {
+        "passed": 2,
+        "failed": 0
+      },
+      "error": null
+    },
+    {
+      "name": "T5: BDGF failure",
+      "status": "PASS",
+      "assertions": {
+        "passed": 3,
+        "failed": 0
+      },
+      "error": null
+    },
+    {
+      "name": "T6: Provenance binding (P0 CRITICAL)",
+      "status": "PASS",
+      "assertions": {
+        "passed": 5,
+        "failed": 0
+      },
+      "error": null,
+      "evidence": {
+        "approval_id": "test-t6-approval-1787646777536",
+        "migration_id": "20260825083257_t6_provenance_test",
+        "migration_file": "supabase/migrations/20260825083257_t6_provenance_test.sql",
+        "migration_hash": "58ddceaa3cde6163dae9b4b23bbcc30648ba46d1f35576f112018785e1bae56b",
+        "commit_sha": "870bae3626bb3891f1b3df33d50ac9d9652dacc9",
+        "parent_sha": "d630e31ae9d658b46d3657fd1e9886ad52c13468",
+        "triggered_by": "test-user",
+        "workflow_run_id": "test-run-1787646777939",
+        "execution_time": "2026-08-25T08:32:57.939Z",
+        "environment": "test",
+        "result": "SUCCESS"
+      }
+    },
+    {
+      "name": "T7: Merge commit rejection",
+      "status": "PASS",
+      "assertions": {
+        "passed": 3,
+        "failed": 0
+      },
+      "error": null
+    }
+  ]
+}
