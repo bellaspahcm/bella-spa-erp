@@ -81,26 +81,24 @@ jobs:
                 docs_only=false
                 ;;
               
-              # Database changes (HIGH risk)
+              # Database migration artifacts ONLY (HIGH risk)
               supabase/migrations/*.sql|\
-              supabase/migrations/**/*.sql|\
-              scripts/deploy-*.sh|\
-              scripts/deploy-migration.js|\
-              scripts/apply-*.js|\
-              scripts/bdgf/migration-executor.mjs|\
-              scripts/bdgf/deploy-schema.mjs|\
-              scripts/bdgf/execute-migration-wrapper.mjs)
+              supabase/migrations/**/*.sql)
                 db_changed=true
                 docs_only=false
                 ;;
               
-              # Infrastructure changes (CRITICAL risk)
+              # Infrastructure/control-plane changes (CRITICAL risk)
               .github/workflows/*|\
               .github/workflows/**/*|\
               .github/actions/*|\
               .github/actions/**/*|\
-              scripts/bdgf/gate-*.mjs|\
-              scripts/bdgf/*gate*.mjs|\
+              scripts/bdgf/*|\
+              scripts/bdgf/**/*|\
+              scripts/deployment/*|\
+              scripts/deployment/**/*|\
+              scripts/deploy-*.sh|\
+              scripts/apply-*.js|\
               vercel.json|.vercel/*|\
               Dockerfile|docker-compose.yml|docker-compose.*.yml)
                 infra_changed=true

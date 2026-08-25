@@ -1,8 +1,8 @@
 # P0.3-PHASE 4B.1: CHANGE DETECTION STATUS
 
 **Phase:** Phase 4B.1 — Change Detection  
-**Status:** IMPLEMENTATION COMPLETE — READY FOR TESTING ✅  
-**Date:** 2026-08-25
+**Status:** 🟡 IMPLEMENTED — AWAITING RUNTIME VERIFICATION  
+**Prerequisite:** Phase 4B.0 APPROVED ✅
 
 ---
 
@@ -15,11 +15,17 @@
    - Outputs: `app_changed`, `db_changed`, `infra_changed`, `docs_only`, `needs_migration`, `needs_app_deploy`, `risk_class`
 
 2. **Implemented file classification logic:**
-   - App changes: `src/**, app/**, components/**, lib/**, package.json, *.config.*`
-   - DB changes: `supabase/migrations/**.sql, scripts/deploy-*.sh, scripts/apply-*.js, scripts/bdgf/migration-executor.mjs`
-   - Infra changes: `.github/workflows/**, scripts/bdgf/gate-*.mjs, vercel.json, Dockerfile`
-   - Docs only: `docs/**, README.md, *.md, LICENSE`
-   - Test/ignore: `*.test.ts, __tests__/**, e2e/**, .gitignore`
+   - **App changes:** `src/**, app/**, components/**, lib/**, package.json, *.config.*`
+   - **DB migration artifacts ONLY:** `supabase/migrations/**.sql` (NOT tooling, NOT legacy scripts)
+   - **Infra/control-plane:** `.github/workflows/**, scripts/bdgf/**, scripts/deploy-*.sh, scripts/apply-*.js, vercel.json, Dockerfile`
+   - **Docs only:** `docs/**, README.md, *.md, LICENSE`
+   - **Test/ignore:** `*.test.ts, __tests__/**, e2e/**, .gitignore`
+
+3. **Critical distinction (FIXED):**
+   - ✅ `supabase/migrations/*.sql` → `db_changed=true` (migration artifact)
+   - ✅ `scripts/bdgf/migration-executor.mjs` → `infra_changed=true` (control plane tooling)
+   - ✅ `scripts/deploy-*.sh` → `infra_changed=true` (legacy deployment, CRITICAL)
+   - ✅ `scripts/apply-*.js` → `infra_changed=true` (legacy deployment, CRITICAL)
 
 3. **Implemented routing matrix:**
    - Docs-only → skip all deployment jobs (LOW risk)
@@ -158,18 +164,57 @@ After scenarios 1 and 5 validate correctly, create commits for:
 
 ---
 
-## 🚀 READY FOR USER TESTING
+## 🚀 CURRENT STATUS: AWAITING VERIFICATION
 
-**Status:** Implementation complete, ready for workflow execution testing
+**Implementation Status:** 🟡 IMPLEMENTED — NOT YET VERIFIED
+
+**What's Complete:**
+- ✅ Change detection logic implemented
+- ✅ File classification fixed (migration artifact ≠ tooling)
+- ✅ Routing matrix implemented
+- ✅ Jobs made conditional
+- ✅ Fail-closed behavior
+
+**What's NOT Complete:**
+- ❌ Runtime verification on GitHub Actions
+- ❌ 5 scenario testing (docs/app/DB/mixed/infra)
+- ❌ Actual workflow execution proof
+
+**Critical Fix Applied:**
+- Migration artifacts (`supabase/migrations/*.sql`) → `db_changed=true`
+- Control plane tooling (`scripts/bdgf/**`) → `infra_changed=true` (CRITICAL)
+- Legacy deploy scripts (`scripts/deploy-*.sh`) → `infra_changed=true` (CRITICAL)
+
+**Why This Matters:**
+- Changing `migration-executor.mjs` should NOT trigger `needs_migration=true`
+- It should trigger CRITICAL risk gate (control plane change)
+- Wrong classification = wrong routing = bypass safety gates
+
+---
+
+## 🧪 VERIFICATION REQUIRED BEFORE 4B.2
 
 **User Action Required:**
-1. Review implementation in `.github/workflows/deploy-production.yml`
-2. Run test workflow: `gh workflow run deploy-production.yml --ref p0.3-phase4b.1-change-detection`
-3. Verify classification output in workflow logs
-4. If PASS → proceed to create/test remaining scenarios
-5. If FAIL → debug and fix classification logic
+1. Run workflow: `gh workflow run deploy-production.yml --ref p0.3-phase4b.1-change-detection`
+2. Verify docs-only classification (commit `ca271197`)
+3. Verify infra classification (commit `941c5bc3` — workflow changed)
+4. Create and test 3 remaining scenarios (app-only, DB-only, mixed)
+5. Confirm all 5 scenarios PASS
 
-**No production impact:** All tests on feature branch, no credentials, no actual deployment
+**Only after ALL 5 scenarios verified → 4B.1 can be marked PASS**
+
+---
+
+## ⏳ BLOCKING 4B.2
+
+**4B.2 (BDGF Integration) is BLOCKED until:**
+- [ ] Change detection verified on GitHub Actions
+- [ ] All 5 scenarios tested and PASS
+- [ ] Classification logic confirmed correct
+- [ ] No false positives (tooling classified as migration)
+- [ ] No false negatives (migration classified as docs)
+
+**Reason:** Control plane routing must be deterministic and correct BEFORE adding BDGF execution. Wrong routing with BDGF = production mutation risk.
 
 ---
 

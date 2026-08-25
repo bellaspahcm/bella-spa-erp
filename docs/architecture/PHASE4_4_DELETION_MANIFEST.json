@@ -1,0 +1,2468 @@
+[
+  {
+    "id": "2d2f3be8-8742-448d-9bd1-2c56c60fbc83",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-t02",
+    "tenant_id": "5eb84dd2-fd42-4fe7-af44-a60fc9c8fb83",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "be25ba44-f543-429b-b388-0be7150dfa8b",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-t04",
+    "tenant_id": "5eb84dd2-fd42-4fe7-af44-a60fc9c8fb83",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "dc91687c-d806-4e01-8636-ba5b00136635",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-t13b",
+    "tenant_id": "5eb84dd2-fd42-4fe7-af44-a60fc9c8fb83",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "a2bfc31f-77b3-45a6-91ed-cce8a99d457b",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-001",
+    "tenant_id": "b54aa248-06c8-428f-b327-1a2cafd25c2c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "1249aca2-26dd-4737-b7d3-9f91670a38c5",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-idem",
+    "tenant_id": "b54aa248-06c8-428f-b327-1a2cafd25c2c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "de0955f3-69c5-4642-93cd-ac18d7621802",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-race",
+    "tenant_id": "b54aa248-06c8-428f-b327-1a2cafd25c2c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "671585ba-bb01-4274-a497-992271c1ed07",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-outbox",
+    "tenant_id": "b54aa248-06c8-428f-b327-1a2cafd25c2c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "89d5a626-2b70-4219-b796-37a59cffa634",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-t02",
+    "tenant_id": "0d181c9b-0160-41bc-a08f-f2047441854a",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "fe1473cb-3010-41df-8905-fd7da0a9b962",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-t04",
+    "tenant_id": "0d181c9b-0160-41bc-a08f-f2047441854a",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "0d1ec130-0a3e-4d10-9844-eb747ac6d469",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-t13b",
+    "tenant_id": "0d181c9b-0160-41bc-a08f-f2047441854a",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "6960f3b6-99fd-46b1-bc63-18d7c5f7ddca",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-t02",
+    "tenant_id": "3d660af5-18d5-4f14-8e11-b456ca411532",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "363268dd-f77d-4b8d-a58e-c17c5dbec437",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-t04",
+    "tenant_id": "3d660af5-18d5-4f14-8e11-b456ca411532",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "dcdb611d-a213-4468-8c02-4032d8995c35",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-idem",
+    "tenant_id": "b54aa248-06c8-428f-b327-1a2cafd25c2c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "48a26583-59f8-4835-899f-26c5032901de",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-t13b",
+    "tenant_id": "3d660af5-18d5-4f14-8e11-b456ca411532",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "5226a52a-f29b-4ed0-911f-c87baa8a583c",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-001",
+    "tenant_id": "b54aa248-06c8-428f-b327-1a2cafd25c2c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "35c15bcd-a77a-4e46-87b0-852976fe299f",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-race",
+    "tenant_id": "b54aa248-06c8-428f-b327-1a2cafd25c2c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "587416cd-5030-4a1e-9281-c81b4e9ea123",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-race",
+    "tenant_id": "b54aa248-06c8-428f-b327-1a2cafd25c2c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "e5b6118e-e12c-449f-8b5b-16f0456585a3",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-outbox",
+    "tenant_id": "b54aa248-06c8-428f-b327-1a2cafd25c2c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "5032aff7-8ca6-481c-877a-c655892b55ab",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-001",
+    "tenant_id": "b54aa248-06c8-428f-b327-1a2cafd25c2c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "9a307aa3-2f41-4f68-9ac0-b84cd000fdee",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-idem",
+    "tenant_id": "b54aa248-06c8-428f-b327-1a2cafd25c2c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "722b8e84-3698-4455-b2ff-0a7d7caad093",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-t02",
+    "tenant_id": "3402890e-b91f-4bc6-abd1-babd31b363dd",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "b27732a8-2079-4c45-bb8e-dfc1743da983",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-t04",
+    "tenant_id": "3402890e-b91f-4bc6-abd1-babd31b363dd",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "e21a4404-084b-46bf-82dd-4cb1b3fdd91b",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-t13b",
+    "tenant_id": "3402890e-b91f-4bc6-abd1-babd31b363dd",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "6e168bab-66b2-4246-84bf-a4479e824f9d",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-outbox",
+    "tenant_id": "b54aa248-06c8-428f-b327-1a2cafd25c2c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "6907dd26-a840-43a2-845b-3f0b406c3199",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-idem",
+    "tenant_id": "b54aa248-06c8-428f-b327-1a2cafd25c2c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "091cbe5a-bfb6-482f-9f62-63efdbc0111e",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-001",
+    "tenant_id": "b54aa248-06c8-428f-b327-1a2cafd25c2c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "1796d426-219b-4c6c-8a92-e699b38f145a",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-t13a",
+    "tenant_id": "7d9c2206-f775-4ebc-8a75-66d147edeedb",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "1ecf0aa9-5b1f-445f-ad84-66f783c90f9f",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-race",
+    "tenant_id": "b54aa248-06c8-428f-b327-1a2cafd25c2c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "3731a669-60ae-4d5f-8a46-479976fe8b71",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-outbox",
+    "tenant_id": "b54aa248-06c8-428f-b327-1a2cafd25c2c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "654bb578-a18c-49e5-89a7-71fdf5e7e16b",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-t13b",
+    "tenant_id": "7d9c2206-f775-4ebc-8a75-66d147edeedb",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "89f3bba8-a199-41be-815c-9c75e6f013ef",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-t15",
+    "tenant_id": "7d9c2206-f775-4ebc-8a75-66d147edeedb",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "adb4c38f-d450-4f0a-a5ae-5f12625b1e9c",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-conc-test",
+    "tenant_id": "c027078e-13d6-4d56-a54e-c83e9b6ae4d6",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "99f83758-d1fa-495f-9e7a-541aa3857d83",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-t02",
+    "tenant_id": "7d9c2206-f775-4ebc-8a75-66d147edeedb",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "1c17dab3-5890-4526-8770-58d0772a7d77",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-conc-test",
+    "tenant_id": "c027078e-13d6-4d56-a54e-c83e9b6ae4d6",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "5f3ccfc8-3a07-49b7-b5f0-e3c80c674871",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-conc-test",
+    "tenant_id": "c027078e-13d6-4d56-a54e-c83e9b6ae4d6",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "dcea5c77-bff9-487f-8b42-f2bd9cff9699",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-conc-test",
+    "tenant_id": "c027078e-13d6-4d56-a54e-c83e9b6ae4d6",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "434201bf-0d36-492f-9098-673ffc34af34",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-conc-test",
+    "tenant_id": "c027078e-13d6-4d56-a54e-c83e9b6ae4d6",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "d1e89b4b-04c0-4495-a868-84f92b066983",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-conc-test",
+    "tenant_id": "c027078e-13d6-4d56-a54e-c83e9b6ae4d6",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "085c449f-4ed7-48ac-8617-500853748a1f",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-conc-test",
+    "tenant_id": "c027078e-13d6-4d56-a54e-c83e9b6ae4d6",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "81a13add-5f19-4db4-88c8-d021b87aba29",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-conc-test",
+    "tenant_id": "c027078e-13d6-4d56-a54e-c83e9b6ae4d6",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "74b20809-26bf-46d1-9f44-f701d4af780f",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-conc-test",
+    "tenant_id": "c027078e-13d6-4d56-a54e-c83e9b6ae4d6",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "9ce0a0ec-4722-434e-9f41-86ad319d33dd",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-001",
+    "tenant_id": "b54aa248-06c8-428f-b327-1a2cafd25c2c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "11038cfd-25db-435a-a10a-6dca9b8c7b96",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-idem",
+    "tenant_id": "b54aa248-06c8-428f-b327-1a2cafd25c2c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "207233b9-0ddb-4dd7-9f1c-4ad42bc14f24",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-race",
+    "tenant_id": "b54aa248-06c8-428f-b327-1a2cafd25c2c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "7523be7c-f104-4fc8-a65e-525ac7e9b114",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-outbox",
+    "tenant_id": "b54aa248-06c8-428f-b327-1a2cafd25c2c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "756a3d1f-331f-4edd-af39-2b721e49832a",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-t02",
+    "tenant_id": "685a8f72-5965-4abd-a4df-6867c04c96a3",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "e16c3d67-f6f5-47f6-9bbe-c88bcec8c55f",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-conc-test",
+    "tenant_id": "c027078e-13d6-4d56-a54e-c83e9b6ae4d6",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "be699ad7-f209-4628-a160-ce229fd035a0",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-conc-test",
+    "tenant_id": "c027078e-13d6-4d56-a54e-c83e9b6ae4d6",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "74488605-06c0-454a-aac4-fe3877512026",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-conc-test",
+    "tenant_id": "c027078e-13d6-4d56-a54e-c83e9b6ae4d6",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "3cc736a3-53ee-4689-b9c3-2d4fadf64b23",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-t01",
+    "tenant_id": "7d9c2206-f775-4ebc-8a75-66d147edeedb",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "b077088f-63e3-4731-ad67-010251d547b0",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-conc-test",
+    "tenant_id": "c027078e-13d6-4d56-a54e-c83e9b6ae4d6",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "75ad689b-5862-4d96-a03a-10374cd495c2",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-conc-test",
+    "tenant_id": "c027078e-13d6-4d56-a54e-c83e9b6ae4d6",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "8de5aa34-d26f-4f66-9880-16c80e8cf60b",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-conc-test",
+    "tenant_id": "c027078e-13d6-4d56-a54e-c83e9b6ae4d6",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "5fca42bb-337b-4c47-ab5d-0a9bacc0c0a3",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-conc-test",
+    "tenant_id": "c027078e-13d6-4d56-a54e-c83e9b6ae4d6",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "7b04ab83-9367-42f7-b1cd-42d3b2a1824b",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-t04",
+    "tenant_id": "685a8f72-5965-4abd-a4df-6867c04c96a3",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "1b9a5eb3-cb1c-40dd-9c2c-501b003029ca",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-conc-test",
+    "tenant_id": "c027078e-13d6-4d56-a54e-c83e9b6ae4d6",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "400ed724-b166-4c60-8277-c8c0ea6841e7",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-conc-test",
+    "tenant_id": "c027078e-13d6-4d56-a54e-c83e9b6ae4d6",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "c7260e1b-1bed-47bc-87a0-317ee33fb65d",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-t04",
+    "tenant_id": "7d9c2206-f775-4ebc-8a75-66d147edeedb",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "c292b9ba-4fbd-4f20-94b0-2010e1b1f28b",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-conc-test",
+    "tenant_id": "c027078e-13d6-4d56-a54e-c83e9b6ae4d6",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "97abdd9a-6868-401b-8a4d-0cb971dea2fc",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-conc-test",
+    "tenant_id": "c027078e-13d6-4d56-a54e-c83e9b6ae4d6",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "dcbba584-b247-4f80-ab92-3473928b2312",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-conc-test",
+    "tenant_id": "c027078e-13d6-4d56-a54e-c83e9b6ae4d6",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "0ab251da-3e5d-4059-91a3-4b26144d0182",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-conc-test",
+    "tenant_id": "c027078e-13d6-4d56-a54e-c83e9b6ae4d6",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "b481a4af-f6e3-4adf-9867-59e6d95a936a",
+    "source_type": "SALES_ORDER",
+    "source_id": "so-t13b",
+    "tenant_id": "685a8f72-5965-4abd-a4df-6867c04c96a3",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "cf84af27-aa6f-4bf7-b014-cb2456d5b15e",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "00e15ca5-1a95-4751-b4a7-39b85e28131b",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "49844c58-3643-41df-8085-e5107f86438e",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "00e15ca5-1a95-4751-b4a7-39b85e28131b",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "cbacad61-0e11-4010-932d-1d39ab6bff38",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "00e15ca5-1a95-4751-b4a7-39b85e28131b",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "a687bc52-2261-406e-bc25-d1ab8098666d",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "84d439ce-d8ab-47b7-a211-ae6065e3aed0",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "5dd76198-3e83-493c-a121-baa392a0109d",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "84d439ce-d8ab-47b7-a211-ae6065e3aed0",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "f82d275c-5b6b-46cb-9ee6-b4d97a1f4760",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "84d439ce-d8ab-47b7-a211-ae6065e3aed0",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "c57e862f-0a99-4694-8b1c-b0b7784958b7",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "84d439ce-d8ab-47b7-a211-ae6065e3aed0",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "a686dcb1-5e28-4337-890a-9ede8f4f360a",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "84d439ce-d8ab-47b7-a211-ae6065e3aed0",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "743e5db2-2d25-43e3-b30e-2df6491de765",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "84d439ce-d8ab-47b7-a211-ae6065e3aed0",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "b732bf8a-4539-4c99-a47b-3f5d0a86eb42",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "84d439ce-d8ab-47b7-a211-ae6065e3aed0",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "00579642-eaae-47d5-98af-6e1315ccc8d4",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "84d439ce-d8ab-47b7-a211-ae6065e3aed0",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "21d797f2-97bb-4581-894f-307cbd95e06a",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "84d439ce-d8ab-47b7-a211-ae6065e3aed0",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "68a628c3-35d6-4f03-88b3-2de046a831e3",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "abe55903-2af1-46b3-b3d4-61c87276d940",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "f2682265-9805-4e9e-aa22-53558032f12f",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "abe55903-2af1-46b3-b3d4-61c87276d940",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "3a383c2a-dc7e-4dcd-b577-c35f8d310334",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "abe55903-2af1-46b3-b3d4-61c87276d940",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "7558de77-67de-4270-8d1c-ad98e77d5ac3",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "abe55903-2af1-46b3-b3d4-61c87276d940",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "abde4580-c6e5-4b4a-bee7-906dba62aa16",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "abe55903-2af1-46b3-b3d4-61c87276d940",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "ca17d478-ab08-4934-a76d-ea852429c665",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "abe55903-2af1-46b3-b3d4-61c87276d940",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "6c434bd9-1bc8-4526-942e-92485eebf0a5",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "abe55903-2af1-46b3-b3d4-61c87276d940",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "c6ea5ddd-d234-4525-89f5-7088acd00ac0",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "abe55903-2af1-46b3-b3d4-61c87276d940",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "879afdb7-5cf3-4f34-851c-70df165630f4",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "abe55903-2af1-46b3-b3d4-61c87276d940",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "0fccbfd2-942d-40e9-950a-50ef1926c43c",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "6511c814-a119-42d1-a089-5f41c004473e",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "26e66793-5d60-441f-9f4a-4a7d32b78d98",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "6511c814-a119-42d1-a089-5f41c004473e",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "ea462579-d26c-4353-a814-4ea7fbf676d4",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "6511c814-a119-42d1-a089-5f41c004473e",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "3dd04dec-f239-47be-b503-99ec865bfe1b",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "6511c814-a119-42d1-a089-5f41c004473e",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "07c7d0c7-e762-4c01-b668-b64d945088e7",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "6511c814-a119-42d1-a089-5f41c004473e",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "89d3a3b3-8219-4980-a961-3e53ec4b780e",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "6511c814-a119-42d1-a089-5f41c004473e",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "19ff1a0f-9d32-4903-b988-c8ad38f4dca5",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "6511c814-a119-42d1-a089-5f41c004473e",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "efa16c21-3358-47c1-a406-3dd73445ebf4",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "6511c814-a119-42d1-a089-5f41c004473e",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "4acda84d-5106-49e3-bf11-400474202621",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "6511c814-a119-42d1-a089-5f41c004473e",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "5edbafb8-660a-49e3-8778-2c92266439eb",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "97d1349b-9075-4418-8696-6212f82a4137",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "a6d6d171-7d8c-4617-8bb7-bc0c84e08124",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "97d1349b-9075-4418-8696-6212f82a4137",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "a6ede127-427a-4118-875f-747f6a5433aa",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "97d1349b-9075-4418-8696-6212f82a4137",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "dd23ea2f-3ef2-4e8c-9613-32201a46728e",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "97d1349b-9075-4418-8696-6212f82a4137",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "39f12ac6-c6c1-417c-9e34-9faa6272f65f",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "97d1349b-9075-4418-8696-6212f82a4137",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "53982cb5-027f-4c24-b486-150c7e8a3f27",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "97d1349b-9075-4418-8696-6212f82a4137",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "643c2175-eb14-4761-93d0-c9b5f48b3183",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "97d1349b-9075-4418-8696-6212f82a4137",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "296213e4-9947-4da1-b505-885abbe45ea1",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "97d1349b-9075-4418-8696-6212f82a4137",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "3ef5fd8f-620f-444a-815d-f2fce27c316d",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "97d1349b-9075-4418-8696-6212f82a4137",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "33c1446b-06d4-4590-a0b0-3d9f800759ad",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "ad901081-7116-4092-afe0-78268310315c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "c706ebb1-bd0c-489f-bf6f-cdaf8fbc5cec",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "ad901081-7116-4092-afe0-78268310315c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "43791014-b04f-47c9-9246-f6dbdc8ea95c",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "ad901081-7116-4092-afe0-78268310315c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "aa0f7c64-0061-4c64-b46d-e20ade7077d2",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "ad901081-7116-4092-afe0-78268310315c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "68d6af01-03c6-41e3-ad20-396e5d8f6bd4",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "ad901081-7116-4092-afe0-78268310315c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "f87bc945-504b-4525-9e9f-0108992df0d0",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "ad901081-7116-4092-afe0-78268310315c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "eae00185-0c48-458e-82d0-8a16bc6f40af",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "ad901081-7116-4092-afe0-78268310315c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "a03edd32-9035-4f66-8608-97d1d6a99569",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "ad901081-7116-4092-afe0-78268310315c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "33da3364-b029-4df3-8e78-ff431fb61eca",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "ad901081-7116-4092-afe0-78268310315c",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "b1696452-2d54-4679-a538-45b981aaba44",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "00e15ca5-1a95-4751-b4a7-39b85e28131b",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "24f507f8-3ffe-4e80-8f86-8a9ba8a301de",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "6c7d9ae6-eacf-4f87-9af2-a37b284e5f30",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "0565fc71-4366-4d29-90fe-516078f0d50b",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "00e15ca5-1a95-4751-b4a7-39b85e28131b",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "96514858-ca0b-4b35-8683-125aa0bf902b",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "00e15ca5-1a95-4751-b4a7-39b85e28131b",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "129e9f42-a91a-45fe-ba0b-da0f4f8348aa",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "00e15ca5-1a95-4751-b4a7-39b85e28131b",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "3dfeeb79-a874-4d14-ad86-a946b6093855",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "6c7d9ae6-eacf-4f87-9af2-a37b284e5f30",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "52b423e7-edd8-4e29-a572-1425f19356bc",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "6c7d9ae6-eacf-4f87-9af2-a37b284e5f30",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "453263a4-93bd-43c1-9a07-1c1421edc638",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "6c7d9ae6-eacf-4f87-9af2-a37b284e5f30",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "e3e19fe0-c235-4298-97d1-33e18f377bf6",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "6c7d9ae6-eacf-4f87-9af2-a37b284e5f30",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "f6e5bd8e-b55d-46f8-b506-0a45c5644bf2",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "6c7d9ae6-eacf-4f87-9af2-a37b284e5f30",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "810efddf-921a-425b-a8f3-5e3f67a585b6",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "6c7d9ae6-eacf-4f87-9af2-a37b284e5f30",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "7377cebf-3c0c-4224-b486-506fbc9b06b2",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "6c7d9ae6-eacf-4f87-9af2-a37b284e5f30",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "5e882a94-bf4b-4838-8558-f2fb967bc605",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "6c7d9ae6-eacf-4f87-9af2-a37b284e5f30",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "d0cbad47-e455-40da-b60c-44d7498ac889",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "00e15ca5-1a95-4751-b4a7-39b85e28131b",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "02849456-5d02-4b3d-b578-ed58b2192450",
+    "source_type": "AP_PAYMENT",
+    "source_id": "PROOF",
+    "tenant_id": "00e15ca5-1a95-4751-b4a7-39b85e28131b",
+    "reason": "TEST_ARTIFACT (custom ID, no source table)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no F2 dependency)"
+  },
+  {
+    "id": "d021c633-2821-493d-931b-9bc4ae5a02c3",
+    "source_type": "VERIFICATION",
+    "source_id": "v-061",
+    "tenant_id": "57c2f7a0-a075-4c4a-ad06-f72fca2f5a53",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "fe88166e-b00b-4d3d-a72d-8a11e7abb8ef",
+    "source_type": "VERIFICATION",
+    "source_id": "v-001",
+    "tenant_id": "854b753b-a55b-41be-86e1-9e2d22a4219a",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "a4bd96b4-11b6-4f50-9ca6-f30d28d528e5",
+    "source_type": "VERIFICATION",
+    "source_id": "v-020",
+    "tenant_id": "854b753b-a55b-41be-86e1-9e2d22a4219a",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "a4fb15b0-80c5-4e10-bc38-4d0244350c9a",
+    "source_type": "VERIFICATION",
+    "source_id": "v-040",
+    "tenant_id": "854b753b-a55b-41be-86e1-9e2d22a4219a",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "a6069d15-a4ca-4a7a-b042-d24b2374a1dc",
+    "source_type": "VERIFICATION",
+    "source_id": "v-041",
+    "tenant_id": "854b753b-a55b-41be-86e1-9e2d22a4219a",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "8ae6b8a2-788a-4e3e-9ac9-bfd82f67eb13",
+    "source_type": "VERIFICATION",
+    "source_id": "v-042",
+    "tenant_id": "854b753b-a55b-41be-86e1-9e2d22a4219a",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "e8c37405-cbde-438c-ae97-1bfa9169a7cc",
+    "source_type": "VERIFICATION",
+    "source_id": "v-050",
+    "tenant_id": "854b753b-a55b-41be-86e1-9e2d22a4219a",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "f1ef4925-813e-4970-ad08-54d7b6b9ef4f",
+    "source_type": "VERIFICATION",
+    "source_id": "v-060",
+    "tenant_id": "854b753b-a55b-41be-86e1-9e2d22a4219a",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "560546d2-108d-439c-82ab-d0dbdf218464",
+    "source_type": "VERIFICATION",
+    "source_id": "v-061",
+    "tenant_id": "854b753b-a55b-41be-86e1-9e2d22a4219a",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "b05fb33b-9d72-40e6-8d9a-618ad09113ef",
+    "source_type": "VERIFICATION",
+    "source_id": "v-001",
+    "tenant_id": "8cdf3446-0783-406d-8d6e-b2cbd2982cd3",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "3d9b82bb-d7ec-4e62-8380-50d98835c033",
+    "source_type": "VERIFICATION",
+    "source_id": "v-060",
+    "tenant_id": "8cdf3446-0783-406d-8d6e-b2cbd2982cd3",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "01bb3555-5f9c-4991-b1a6-5a431359d7fc",
+    "source_type": "VERIFICATION",
+    "source_id": "v-061",
+    "tenant_id": "8cdf3446-0783-406d-8d6e-b2cbd2982cd3",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "62741452-c6e4-42ec-9535-75a1ac4f6b3c",
+    "source_type": "VERIFICATION",
+    "source_id": "v-020",
+    "tenant_id": "8cdf3446-0783-406d-8d6e-b2cbd2982cd3",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "f95e760e-e956-4b1a-b40d-a485cce3ddcd",
+    "source_type": "VERIFICATION",
+    "source_id": "v-040",
+    "tenant_id": "8cdf3446-0783-406d-8d6e-b2cbd2982cd3",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "982a49c6-a39a-434d-8241-39686f478ec5",
+    "source_type": "VERIFICATION",
+    "source_id": "v-050",
+    "tenant_id": "8cdf3446-0783-406d-8d6e-b2cbd2982cd3",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "fb0a9d0f-627d-4257-97aa-7b904a643fa9",
+    "source_type": "VERIFICATION",
+    "source_id": "v-041",
+    "tenant_id": "8cdf3446-0783-406d-8d6e-b2cbd2982cd3",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "a3d25c2f-79aa-4ea1-b4de-4d8582883957",
+    "source_type": "VERIFICATION",
+    "source_id": "v-042",
+    "tenant_id": "8cdf3446-0783-406d-8d6e-b2cbd2982cd3",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "9bac3c8b-e445-40de-98dc-917dbed43f79",
+    "source_type": "VERIFICATION",
+    "source_id": "v-060",
+    "tenant_id": "0c0618d5-58d5-4ae4-8e69-2c0a827ac528",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "0a6b13ce-90bb-482a-90df-b6444f8ca7c9",
+    "source_type": "VERIFICATION",
+    "source_id": "v-041",
+    "tenant_id": "0c0618d5-58d5-4ae4-8e69-2c0a827ac528",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "4100a8eb-f4ff-4d57-a981-b1e9b4a99158",
+    "source_type": "VERIFICATION",
+    "source_id": "v-061",
+    "tenant_id": "0c0618d5-58d5-4ae4-8e69-2c0a827ac528",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "c18fec5b-c1fc-4e89-bb03-e7df1dcb3c9e",
+    "source_type": "VERIFICATION",
+    "source_id": "v-001",
+    "tenant_id": "0c0618d5-58d5-4ae4-8e69-2c0a827ac528",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "8cfe3f96-b968-477d-9d96-81898280dae3",
+    "source_type": "VERIFICATION",
+    "source_id": "v-040",
+    "tenant_id": "0c0618d5-58d5-4ae4-8e69-2c0a827ac528",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "2f30d11f-bd44-4315-b246-4d0aa4fbc65e",
+    "source_type": "VERIFICATION",
+    "source_id": "v-042",
+    "tenant_id": "0c0618d5-58d5-4ae4-8e69-2c0a827ac528",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "75adba4f-4ab7-48c9-b25e-4e0902d772ac",
+    "source_type": "VERIFICATION",
+    "source_id": "v-050",
+    "tenant_id": "0c0618d5-58d5-4ae4-8e69-2c0a827ac528",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "f14579d4-1e97-49d2-8080-290ebdfa87a9",
+    "source_type": "VERIFICATION",
+    "source_id": "v-020",
+    "tenant_id": "0c0618d5-58d5-4ae4-8e69-2c0a827ac528",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "7b12c47f-4e2f-4e22-bea9-817cc0e2ab21",
+    "source_type": "VERIFICATION",
+    "source_id": "v-001",
+    "tenant_id": "57c2f7a0-a075-4c4a-ad06-f72fca2f5a53",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "37c4fa06-2d4b-4535-b31a-b33bc576b346",
+    "source_type": "VERIFICATION",
+    "source_id": "v-001",
+    "tenant_id": "dcf009a5-dc2a-4039-b2ac-405c7db9a441",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "fa9bd601-623c-401d-8d70-fc3dacd91847",
+    "source_type": "VERIFICATION",
+    "source_id": "v-041",
+    "tenant_id": "57c2f7a0-a075-4c4a-ad06-f72fca2f5a53",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "32405c1a-dd43-4b8e-95dd-4321b28c097a",
+    "source_type": "VERIFICATION",
+    "source_id": "v-020",
+    "tenant_id": "57c2f7a0-a075-4c4a-ad06-f72fca2f5a53",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "0bfc0054-e682-4c28-a473-9188c857d47c",
+    "source_type": "VERIFICATION",
+    "source_id": "v-050",
+    "tenant_id": "57c2f7a0-a075-4c4a-ad06-f72fca2f5a53",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "4b941cca-cd37-4523-ae62-61e0083ded12",
+    "source_type": "VERIFICATION",
+    "source_id": "v-020",
+    "tenant_id": "dcf009a5-dc2a-4039-b2ac-405c7db9a441",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "913bf1b5-4415-4156-88d9-e9089a71fdbb",
+    "source_type": "VERIFICATION",
+    "source_id": "v-040",
+    "tenant_id": "dcf009a5-dc2a-4039-b2ac-405c7db9a441",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "54f906e2-aed7-45ea-98c6-87362d037a92",
+    "source_type": "VERIFICATION",
+    "source_id": "v-040",
+    "tenant_id": "57c2f7a0-a075-4c4a-ad06-f72fca2f5a53",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "8c64e551-b4de-4a58-a766-301d33f80cfd",
+    "source_type": "VERIFICATION",
+    "source_id": "v-041",
+    "tenant_id": "dcf009a5-dc2a-4039-b2ac-405c7db9a441",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "00257b8c-5014-4fac-a29a-84bc1cc7edfa",
+    "source_type": "VERIFICATION",
+    "source_id": "v-060",
+    "tenant_id": "57c2f7a0-a075-4c4a-ad06-f72fca2f5a53",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "a4713915-5715-42fb-8de9-78f8e5f09f7c",
+    "source_type": "VERIFICATION",
+    "source_id": "v-042",
+    "tenant_id": "57c2f7a0-a075-4c4a-ad06-f72fca2f5a53",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "de551e17-ae88-4226-b15a-ac5aea94cdf9",
+    "source_type": "VERIFICATION",
+    "source_id": "v-042",
+    "tenant_id": "dcf009a5-dc2a-4039-b2ac-405c7db9a441",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "449af2a8-6f3b-44a7-8739-ab0598a977a5",
+    "source_type": "VERIFICATION",
+    "source_id": "v-050",
+    "tenant_id": "dcf009a5-dc2a-4039-b2ac-405c7db9a441",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "f6bff692-0540-47f4-b66d-c7110be45979",
+    "source_type": "VERIFICATION",
+    "source_id": "v-060",
+    "tenant_id": "dcf009a5-dc2a-4039-b2ac-405c7db9a441",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "ca3cb661-dfa3-46ff-97ca-d69a91df3a5c",
+    "source_type": "VERIFICATION",
+    "source_id": "v-061",
+    "tenant_id": "dcf009a5-dc2a-4039-b2ac-405c7db9a441",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "fbc83ad9-966f-478d-ac75-07ec1a26b85d",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786835866808",
+    "tenant_id": "4918a808-636a-45bd-8690-2f64eab57cd4",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "4afc6983-383b-4f0d-9fec-31c65e969ff2",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786835866809",
+    "tenant_id": "4918a808-636a-45bd-8690-2f64eab57cd4",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "20746815-4724-4560-aed7-ce4f82b6bc41",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786835868932",
+    "tenant_id": "4918a808-636a-45bd-8690-2f64eab57cd4",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "541342be-fe62-43aa-b2a4-db5e7ba7d962",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786835866809",
+    "tenant_id": "4918a808-636a-45bd-8690-2f64eab57cd4",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "536f755a-b8e7-4193-b816-d0087b485fd6",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786835866809",
+    "tenant_id": "4918a808-636a-45bd-8690-2f64eab57cd4",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "ae398bd8-e132-4a9a-a1ec-07c2cccadb2b",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786835867688",
+    "tenant_id": "4918a808-636a-45bd-8690-2f64eab57cd4",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "be28eed9-9700-490d-bee9-048c08280f89",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786835868931",
+    "tenant_id": "4918a808-636a-45bd-8690-2f64eab57cd4",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "e4aacd99-35ce-431d-8134-83e338f4b6c8",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786835866809",
+    "tenant_id": "4918a808-636a-45bd-8690-2f64eab57cd4",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "ca65eba7-4a2b-4ff2-8135-0bc77beb3d58",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786835868932",
+    "tenant_id": "4918a808-636a-45bd-8690-2f64eab57cd4",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "604ecab1-9b55-4a33-b66f-6eec94ea882e",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786835866809",
+    "tenant_id": "4918a808-636a-45bd-8690-2f64eab57cd4",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "a4e1ab2a-c739-4af1-a729-2823249279d8",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786835866809",
+    "tenant_id": "4918a808-636a-45bd-8690-2f64eab57cd4",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "3e511fc4-b508-4a4f-bd4d-6d106c4096d1",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786835868932",
+    "tenant_id": "4918a808-636a-45bd-8690-2f64eab57cd4",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "02b7eb46-d47d-4490-81f7-778c709a6460",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786835868932",
+    "tenant_id": "4918a808-636a-45bd-8690-2f64eab57cd4",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "3a2d178c-eae3-4dd0-809c-27c3a5e9c576",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786835868932",
+    "tenant_id": "4918a808-636a-45bd-8690-2f64eab57cd4",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "a712877f-8b47-43b4-9abf-325be5883a33",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786835866809",
+    "tenant_id": "4918a808-636a-45bd-8690-2f64eab57cd4",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "82cbf082-b9b2-492a-bc21-3e47dae10c94",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786835868932",
+    "tenant_id": "4918a808-636a-45bd-8690-2f64eab57cd4",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "291ad9cf-0a6f-43c0-817e-abdbc9951d8e",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786835866809",
+    "tenant_id": "4918a808-636a-45bd-8690-2f64eab57cd4",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "0ec0b8b0-429f-419f-b64c-4a881e9a96c3",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786835868932",
+    "tenant_id": "4918a808-636a-45bd-8690-2f64eab57cd4",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "560ebcfc-496c-413e-934a-9f45daf298b9",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786835868932",
+    "tenant_id": "4918a808-636a-45bd-8690-2f64eab57cd4",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "f34793e1-0e93-4b5f-b930-9d1fc77df9ec",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786835866809",
+    "tenant_id": "4918a808-636a-45bd-8690-2f64eab57cd4",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "ddc64cfc-46bb-40bf-8a73-a0b4611bd390",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786835868932",
+    "tenant_id": "4918a808-636a-45bd-8690-2f64eab57cd4",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "5cf5550d-91d3-4996-9623-b05de9b56c27",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1787409571027",
+    "tenant_id": "a8306074-2d25-4aff-a7fc-12fbdfa89b10",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "f82f3d6b-a3ad-4cc4-a0ef-679f9548b864",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1787409571027",
+    "tenant_id": "a8306074-2d25-4aff-a7fc-12fbdfa89b10",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "7a6ee55c-963c-4aa2-a9e6-501903244850",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1787409574676",
+    "tenant_id": "a8306074-2d25-4aff-a7fc-12fbdfa89b10",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "0c290000-9190-4f7b-bdf0-e32e7075897d",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1787409571026",
+    "tenant_id": "a8306074-2d25-4aff-a7fc-12fbdfa89b10",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "f843d777-e34e-44f7-8ddb-1fb031198307",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1787409571027",
+    "tenant_id": "a8306074-2d25-4aff-a7fc-12fbdfa89b10",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "2e084f0d-aa92-4f5c-a001-afe66ac9405e",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1787409572163",
+    "tenant_id": "a8306074-2d25-4aff-a7fc-12fbdfa89b10",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "5e98c86a-995b-4528-9db0-60f84b5148f7",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1787409573469",
+    "tenant_id": "a8306074-2d25-4aff-a7fc-12fbdfa89b10",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "a80371a1-3960-4958-bed9-407151d9edb5",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1787409574676",
+    "tenant_id": "a8306074-2d25-4aff-a7fc-12fbdfa89b10",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "538572ca-5ee6-42d6-b83e-c031a5d10500",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1787409571027",
+    "tenant_id": "a8306074-2d25-4aff-a7fc-12fbdfa89b10",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "960b01b6-18d3-4836-a44d-86b26131842a",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1787409571027",
+    "tenant_id": "a8306074-2d25-4aff-a7fc-12fbdfa89b10",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "a8801b90-09ad-4f72-825b-1680d46dbfd9",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1787409574676",
+    "tenant_id": "a8306074-2d25-4aff-a7fc-12fbdfa89b10",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "6578d7ed-38a0-4716-af06-8fea59e15be9",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1787409571027",
+    "tenant_id": "a8306074-2d25-4aff-a7fc-12fbdfa89b10",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "a52ae8c6-18f4-4d8b-bd0f-de6c20fd00b5",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1787409571028",
+    "tenant_id": "a8306074-2d25-4aff-a7fc-12fbdfa89b10",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "be90fdc6-5be5-4bf2-969e-8d5f2fc59c77",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1787409571027",
+    "tenant_id": "a8306074-2d25-4aff-a7fc-12fbdfa89b10",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "f4f11be2-bd6a-4294-b5ee-d61d8c6c845c",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786836022102",
+    "tenant_id": "74f2605d-5d8c-4dcb-af2e-128c6ba03946",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "2bc8c018-d3d4-4103-84b0-ad49ec7938fd",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786836022103",
+    "tenant_id": "74f2605d-5d8c-4dcb-af2e-128c6ba03946",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "d6b7a124-220f-4669-af61-2adefd89914f",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786836022104",
+    "tenant_id": "74f2605d-5d8c-4dcb-af2e-128c6ba03946",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "4b02c858-60e9-458f-8d23-2b8d2a2d1b72",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786836022104",
+    "tenant_id": "74f2605d-5d8c-4dcb-af2e-128c6ba03946",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "abe40457-de86-472d-b9f8-a883943ee70c",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786836024719",
+    "tenant_id": "74f2605d-5d8c-4dcb-af2e-128c6ba03946",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "0e9c94d0-7f8b-4148-8b9a-aeff27d4bb29",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786836025140",
+    "tenant_id": "74f2605d-5d8c-4dcb-af2e-128c6ba03946",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "aaf19171-5f3e-4cb5-ab84-f0a8b9c36275",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786836026139",
+    "tenant_id": "74f2605d-5d8c-4dcb-af2e-128c6ba03946",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "d680a7a4-22bf-41f4-9075-4d5ac1b261f5",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786836026140",
+    "tenant_id": "74f2605d-5d8c-4dcb-af2e-128c6ba03946",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "89925afc-7886-46ea-862e-82bc3f89605c",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786836026139",
+    "tenant_id": "74f2605d-5d8c-4dcb-af2e-128c6ba03946",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "2312b84b-7cda-4145-a50c-4d1462e37333",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786836026139",
+    "tenant_id": "74f2605d-5d8c-4dcb-af2e-128c6ba03946",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "0cc84304-7d77-4fad-a16e-e18c5e630d92",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1787409571027",
+    "tenant_id": "a8306074-2d25-4aff-a7fc-12fbdfa89b10",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "5d86acd1-4716-4927-a403-a0b7c17312e4",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1787409574676",
+    "tenant_id": "a8306074-2d25-4aff-a7fc-12fbdfa89b10",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "51112f25-a6c4-4266-8257-775fd05cabb3",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786836022104",
+    "tenant_id": "74f2605d-5d8c-4dcb-af2e-128c6ba03946",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "807e5dfe-794d-41d6-8cf4-3944d050c4fd",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786836022104",
+    "tenant_id": "74f2605d-5d8c-4dcb-af2e-128c6ba03946",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "e9ae5bd6-d3fb-43d3-9ccd-cba2dba823c2",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786836022104",
+    "tenant_id": "74f2605d-5d8c-4dcb-af2e-128c6ba03946",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "e000c7e4-c9a1-4014-af2d-4f0e197bf772",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786836022103",
+    "tenant_id": "74f2605d-5d8c-4dcb-af2e-128c6ba03946",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "e2d93e61-b80c-4d67-9025-fc637a8b5639",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786836022104",
+    "tenant_id": "74f2605d-5d8c-4dcb-af2e-128c6ba03946",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "2e72a997-dc42-43e5-b18e-f2e798c3e2df",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786836022104",
+    "tenant_id": "74f2605d-5d8c-4dcb-af2e-128c6ba03946",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "96e98ee2-2f01-49b4-98b3-1025c00ca33b",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786836026139",
+    "tenant_id": "74f2605d-5d8c-4dcb-af2e-128c6ba03946",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "84d9c51d-b56a-46ea-9e48-1eab37984d1e",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786836026139",
+    "tenant_id": "74f2605d-5d8c-4dcb-af2e-128c6ba03946",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "8a895f3c-115f-47e3-b589-a1cbfc9e6486",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786836026140",
+    "tenant_id": "74f2605d-5d8c-4dcb-af2e-128c6ba03946",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "2d633878-2814-494c-b47e-ad719f7b6903",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786836026140",
+    "tenant_id": "74f2605d-5d8c-4dcb-af2e-128c6ba03946",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "4a2eb651-093f-46e9-a1fd-bd25a512da2d",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786836026140",
+    "tenant_id": "74f2605d-5d8c-4dcb-af2e-128c6ba03946",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "d1d8e6db-371b-4142-b530-24bc9172786c",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786836026139",
+    "tenant_id": "74f2605d-5d8c-4dcb-af2e-128c6ba03946",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "3493f7c5-0ce6-43b3-9f34-ac5e0937ba4e",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1787409574676",
+    "tenant_id": "a8306074-2d25-4aff-a7fc-12fbdfa89b10",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "88e81933-5c2d-4a7b-9466-79780ee97203",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786840593973",
+    "tenant_id": "9f84caa9-ac2d-4b9a-b318-008dc61b2e8b",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "993cdc48-b469-4f56-a704-d07f435e77a7",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786840596418",
+    "tenant_id": "9f84caa9-ac2d-4b9a-b318-008dc61b2e8b",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "d1fd99b9-75c0-402c-9089-0664792ec445",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786840593973",
+    "tenant_id": "9f84caa9-ac2d-4b9a-b318-008dc61b2e8b",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "d54efb66-e32d-41f2-a67c-48bf70822293",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786840596417",
+    "tenant_id": "9f84caa9-ac2d-4b9a-b318-008dc61b2e8b",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "8f5be3c3-bfa1-4bbc-8d89-7ce16baf3270",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786840596417",
+    "tenant_id": "9f84caa9-ac2d-4b9a-b318-008dc61b2e8b",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "a856146c-2729-4a98-b33d-c5e990d66940",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1787409574676",
+    "tenant_id": "a8306074-2d25-4aff-a7fc-12fbdfa89b10",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "551a322d-b013-4566-a440-3edf035c5814",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1787409574676",
+    "tenant_id": "a8306074-2d25-4aff-a7fc-12fbdfa89b10",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "26f1870a-373b-4465-a755-0cc14e748a22",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1787409574676",
+    "tenant_id": "a8306074-2d25-4aff-a7fc-12fbdfa89b10",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "57b0fc81-e954-432b-8ca8-39c175073777",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786840593972",
+    "tenant_id": "9f84caa9-ac2d-4b9a-b318-008dc61b2e8b",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "80d6f310-412d-4e73-9792-426dd0853290",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786840595042",
+    "tenant_id": "9f84caa9-ac2d-4b9a-b318-008dc61b2e8b",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "15fc726f-e225-453a-b162-d84f39a19cc3",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786840596417",
+    "tenant_id": "9f84caa9-ac2d-4b9a-b318-008dc61b2e8b",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "596850e6-0433-4969-9416-6bf0b6274148",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786840593971",
+    "tenant_id": "9f84caa9-ac2d-4b9a-b318-008dc61b2e8b",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "5cef7fc2-591f-4101-a6e6-ac62bc46f790",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786840593973",
+    "tenant_id": "9f84caa9-ac2d-4b9a-b318-008dc61b2e8b",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "614085d9-8c0b-42f3-8035-490c28f574d2",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786840593972",
+    "tenant_id": "9f84caa9-ac2d-4b9a-b318-008dc61b2e8b",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "d9a81941-141b-4558-9ac4-5b693db66b3b",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786840596417",
+    "tenant_id": "9f84caa9-ac2d-4b9a-b318-008dc61b2e8b",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "269e45e3-e3df-4cee-9d32-e81c390d035a",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786840596418",
+    "tenant_id": "9f84caa9-ac2d-4b9a-b318-008dc61b2e8b",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "0b71056f-a181-43a9-857b-4022743172b0",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786840596417",
+    "tenant_id": "9f84caa9-ac2d-4b9a-b318-008dc61b2e8b",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "99fd38c3-dc9c-4db4-925c-7d35ffd5be3d",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1787409574676",
+    "tenant_id": "a8306074-2d25-4aff-a7fc-12fbdfa89b10",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "85b85561-9d5e-453c-8c80-0a8cfae68453",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786840593973",
+    "tenant_id": "9f84caa9-ac2d-4b9a-b318-008dc61b2e8b",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "68a1ec77-508a-4c6a-afa6-5c5cdea43fee",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786840593973",
+    "tenant_id": "9f84caa9-ac2d-4b9a-b318-008dc61b2e8b",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "5ff5d723-8b84-4b5e-be16-226ed78d0c71",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786840593973",
+    "tenant_id": "9f84caa9-ac2d-4b9a-b318-008dc61b2e8b",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "0d103328-77c0-4410-9af3-51fe4c7e0adb",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786840593973",
+    "tenant_id": "9f84caa9-ac2d-4b9a-b318-008dc61b2e8b",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "234af1a9-ae98-416f-8ba5-223b3f26322e",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786840595431",
+    "tenant_id": "9f84caa9-ac2d-4b9a-b318-008dc61b2e8b",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "8b360adc-ef7f-40f4-8e06-71833af4ac57",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786840596417",
+    "tenant_id": "9f84caa9-ac2d-4b9a-b318-008dc61b2e8b",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "ad9dc268-b2c0-4b84-b492-085e6dd6a45d",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786840596417",
+    "tenant_id": "9f84caa9-ac2d-4b9a-b318-008dc61b2e8b",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "611cb563-f152-40d0-9854-4b4d99a29307",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786840596418",
+    "tenant_id": "9f84caa9-ac2d-4b9a-b318-008dc61b2e8b",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "6cc920d8-f05b-437b-90de-9c1c54301263",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1787409574676",
+    "tenant_id": "a8306074-2d25-4aff-a7fc-12fbdfa89b10",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "49cfb0db-8d96-48e3-9503-f36184030270",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786860931553",
+    "tenant_id": "afb04b3c-16a7-41e6-b115-7ff61d375556",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "22178b9a-e339-4d51-8c82-b6f6d5151e43",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786860937112",
+    "tenant_id": "afb04b3c-16a7-41e6-b115-7ff61d375556",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "4dae594a-605d-417d-8b17-03307ed3a819",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786860931553",
+    "tenant_id": "afb04b3c-16a7-41e6-b115-7ff61d375556",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "a4e82955-f3c5-4010-919b-86812cdc3e0b",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786860931553",
+    "tenant_id": "afb04b3c-16a7-41e6-b115-7ff61d375556",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "fc50d662-5943-427b-9114-368c3e7f9c8b",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786860931551",
+    "tenant_id": "afb04b3c-16a7-41e6-b115-7ff61d375556",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "522a1a74-8bd6-45e7-98f9-a5df4edd2ad4",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786860931553",
+    "tenant_id": "afb04b3c-16a7-41e6-b115-7ff61d375556",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "3af4e120-38a8-4a42-b7d8-1fb02775ed7b",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786860931553",
+    "tenant_id": "afb04b3c-16a7-41e6-b115-7ff61d375556",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "d7d95c36-14e5-4f02-8b0d-1ca7ddc4888f",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786860931552",
+    "tenant_id": "afb04b3c-16a7-41e6-b115-7ff61d375556",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "dc5edbd6-f1d1-469c-b499-282cf9d1a45a",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786860931553",
+    "tenant_id": "afb04b3c-16a7-41e6-b115-7ff61d375556",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "0322edb1-0dcc-47b4-8c8a-082afc67b08b",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786860931553",
+    "tenant_id": "afb04b3c-16a7-41e6-b115-7ff61d375556",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "9981af5c-ded8-4532-ba03-6fb09dc4618c",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786860931553",
+    "tenant_id": "afb04b3c-16a7-41e6-b115-7ff61d375556",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "20f3c6ca-c49c-496e-b4e1-b3722bc01306",
+    "source_type": "CONCURRENCY_TEST",
+    "source_id": "conc-1786860935991",
+    "tenant_id": "afb04b3c-16a7-41e6-b115-7ff61d375556",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "36986ccc-559d-4853-b5b1-301a3396b57b",
+    "source_type": "F2_REGRESSION",
+    "source_id": "F2-REG-MT4HHS00",
+    "tenant_id": "02dc5876-e626-4496-a457-6715940bc967",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "915903de-1389-4dc5-aad0-96579cf185d0",
+    "source_type": "F2_REGRESSION",
+    "source_id": "F2-REG-MSV00ZPB",
+    "tenant_id": "4ed441ca-f096-4df3-8e4e-d3ac0deb6293",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "d156a7a3-a539-415c-8f3d-0b71bb21feee",
+    "source_type": "F2_REGRESSION",
+    "source_id": "F2-REG-MSV2RJTG",
+    "tenant_id": "b7413781-32a5-450a-a06f-67f4671ee92c",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "3baebb12-22c4-4558-a628-b7f20ee144fe",
+    "source_type": "F2_REGRESSION",
+    "source_id": "F2-REG-MSUZXR39",
+    "tenant_id": "df556ebf-542b-46de-9267-7b3a896da8bd",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "79f93703-f602-4ede-b9db-2f7455b78149",
+    "source_type": "F2_REGRESSION",
+    "source_id": "F2-REG-MSVEUO9L",
+    "tenant_id": "f24fb896-ace9-48af-94d8-1009b975bddf",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "ba85d1a9-d62d-41c3-be82-28885f24c297",
+    "source_type": "test",
+    "source_id": "rev-race-orig-1786835868349",
+    "tenant_id": "4918a808-636a-45bd-8690-2f64eab57cd4",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "b2b1bcf3-8957-43e6-80dc-7eb8ef870109",
+    "source_type": "test",
+    "source_id": "rev-race-orig-1786836025516",
+    "tenant_id": "74f2605d-5d8c-4dcb-af2e-128c6ba03946",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "254fd8b4-e37d-42ca-9dbc-e141cb3e950e",
+    "source_type": "test",
+    "source_id": "rev-race-orig-1786840595779",
+    "tenant_id": "9f84caa9-ac2d-4b9a-b318-008dc61b2e8b",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  },
+  {
+    "id": "f7423604-26d2-436c-a3f6-8b12184dee84",
+    "source_type": "test",
+    "source_id": "rev-race-orig-1787409573983",
+    "tenant_id": "a8306074-2d25-4aff-a7fc-12fbdfa89b10",
+    "reason": "TEST_ARTIFACT (explicit test source_type)",
+    "f2_dependency_count": 0,
+    "gate_status": "PASS (no dependencies)"
+  }
+]
