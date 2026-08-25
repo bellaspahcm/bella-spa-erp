@@ -8,9 +8,13 @@
  * CONTRACT: P0_3_PHASE4B_3_CONTRACT.md v1.0.0 (commit 37ae4544) — IMMUTABLE
  */
 
-import { verifyMigration } from '../../src/platform/migration-governance/verification';
+import { verifyMigration } from '../../src/platform/migration-governance/verification/index.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import * as dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config({ path: '.env.local' });
 
 // Test configuration
 const TESTS = [
@@ -139,9 +143,10 @@ async function runTest(test: typeof TESTS[0]): Promise<TestResult> {
     }
 
     // Step 2: Execute verification
-    const databaseUrl = test.connection || process.env.TEST_DATABASE_URL;
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const databaseUrl = test.connection || supabaseUrl;
     if (!databaseUrl) {
-      throw new Error('TEST_DATABASE_URL environment variable not set');
+      throw new Error('SUPABASE_URL environment variable not set');
     }
 
     const result = await verifyMigration({

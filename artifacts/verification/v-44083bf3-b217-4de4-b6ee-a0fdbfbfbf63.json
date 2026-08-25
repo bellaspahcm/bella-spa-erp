@@ -1,0 +1,25 @@
+{
+  "verification_id": "v-44083bf3-b217-4de4-b6ee-a0fdbfbfbf63",
+  "migration_id": "debug-t1",
+  "commit_sha": "test-debug",
+  "approval_id": "test-approval",
+  "environment": "test",
+  "overall_result": "ERROR",
+  "deployment_eligible": false,
+  "checks": [],
+  "summary": {
+    "total_checks": 0,
+    "passed": 0,
+    "warnings": 0,
+    "failed": 0,
+    "errors": 1
+  },
+  "error": {
+    "type": "Error",
+    "message": "Failed to check table existence: Could not find the function public.query_table_exists(schema_name, table_name) in the schema cache",
+    "stack": "Error: Failed to check table existence: Could not find the function public.query_table_exists(schema_name, table_name) in the schema cache\n    at SupabaseAdapter.queryTableExists (D:\\Antigravity\\Projects\\BELLA SPA ERP\\src\\platform\\migration-governance\\verification\\database-adapter.ts:97:13)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async VerificationEngine.queryActualState (D:\\Antigravity\\Projects\\BELLA SPA ERP\\src\\platform\\migration-governance\\verification\\verification-engine.ts:188:22)\n    at async VerificationEngine.execute (D:\\Antigravity\\Projects\\BELLA SPA ERP\\src\\platform\\migration-governance\\verification\\verification-engine.ts:65:27)\n    at async verifyMigration (D:\\Antigravity\\Projects\\BELLA SPA ERP\\src\\platform\\migration-governance\\verification\\index.ts:44:10)\n    at async debugTest (D:\\Antigravity\\Projects\\BELLA SPA ERP\\test\\phase4b3\\debug-single-test.ts:18:20)",
+    "timestamp": "2026-08-25T10:18:30.193Z"
+  },
+  "execution_time_ms": 1176,
+  "timestamp": "2026-08-25T10:18:30.194Z"
+}

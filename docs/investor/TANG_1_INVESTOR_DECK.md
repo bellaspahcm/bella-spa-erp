@@ -19,6 +19,7 @@ graph TD
 * **Key Stats:**
   - **Reusability Ratio:** 1:3 (Healthcare Kernel)
   - **Core Modification Rate:** 0 (ReadOnly Core)
+  - **Automated Verification:** 12,948+ test cases · 85.2% code coverage
   - **Failing Tests (CI Gate):** 0 P0 Violations
 
 ---
@@ -36,11 +37,11 @@ graph TD
 ---
 
 ## 🛝 SLIDE 3: The Bella Vision
-### Title: **Tầm nhìn Bella: Nền tảng "Platform of Platforms" đầu tiên tại SEA**
-#### Subtitle: *Định nghĩa lại cách xây dựng phần mềm doanh nghiệp thông qua khả năng tái sử dụng tối đa.*
+### Title: **Tầm nhìn Bella: Enterprise Software Factory**
+#### Subtitle: *Bella is building an enterprise software factory: one governed platform, reusable industry kernels, and independently deployable vertical products.*
 
 * **Core Message:**
-  > **Bella không phải là một SaaS đơn lẻ. Bella là một Nền tảng AI Doanh nghiệp có khả năng tạo ra nhiều Industry OS với chi phí và thời gian giảm dần theo đường cong lũy thừa.**
+  > **Bella không phải là một SaaS đơn lẻ. Bella là một Nhà máy Phần mềm Doanh nghiệp (Enterprise Software Factory) giúp sản sinh các Industry OS với tốc độ nhanh hơn và chi phí biên giảm dần.**
 
 * **Visual Concept:**
 ```
@@ -174,7 +175,7 @@ graph BT
 
 ## 🛝 SLIDE 10: Moat 1 - Architecture Guard
 ### Title: **Rào chắn Kiến trúc (Architecture Guard) tự động**
-#### Subtitle: *Ngăn chặn nợ kỹ thuật và bảo vệ tính nguyên bản của Platform Core.*
+#### Subtitle: *Ngăn chặn sự xê dịch kiến trúc và liên tục thực thi các bất biến kiến trúc đã được định nghĩa.*
 
 * **Visual Concept:**
 ```
@@ -220,10 +221,10 @@ graph BT
 #### Subtitle: *Đảm bảo SLA phụ-giây (sub-second) dưới tải nặng.*
 
 * **Key Performance Benchmarks (k6 Load Test):**
-  - **Safe Capacity Limit:** Sustains **~70 VUs (~120 RPS)** with **sub-300ms** latency.
-  - **SLA Compliance:** Latency for critical paths (e.g., `biz_customer_read`) stays below **500ms** under capacity.
-  - **Decision Engine Throughput:** Over **65,000 decisions/second** (Commission Provider), with latencies ranging from **0.11ms to 1.50ms** (67x-909x faster than Drools/Camunda).
-  - **Rate Limiting:** Active self-protection triggers `HTTP 429` when API concurrency thresholds are exceeded, ensuring core database stability.
+  - **Optimization Journey:** Quá trình tải leo thang 100-200 VUs ban đầu làm bộc lộ các điểm bão hòa ở cổng kết nối DB và xử lý JWT. Bằng cách chèn token memoization, kích hoạt pooling qua PgBouncer và cache Redis, hệ thống đã tối ưu hóa vượt bậc:
+  - **Sustained Capacity:** Duy trì tải ổn định **100 VUs (~160 RPS)** với độ trễ **~320ms** và **200 VUs (~280 RPS)** với độ trễ **~450ms** (đáp ứng tốt SLA sub-500ms).
+  - **Decision Engine Throughput:** Đạt trên **65,000 quyết định/giây** (Commission Provider), độ trễ từ **0.11ms đến 1.50ms** (nhanh hơn 67x-909x so với Drools/Camunda).
+  - **Rate Limiting:** Tự động kích hoạt `HTTP 429` bảo vệ hệ thống khi vượt quá ngưỡng tải cực hạn để duy trì sự ổn định lõi.
 
 ---
 
@@ -277,9 +278,9 @@ graph BT
 #### Subtitle: *Cơ hội sở hữu cổ phần của một cơ sở sản xuất phần mềm doanh nghiệp tự động hóa.*
 
 * **4 Cột trụ đầu tư:**
-  1. **Công nghệ thực tế, đã chạy thực tế:** Kiến trúc đã được chứng minh qua **6 Industries, 5 Products, 45+ dashboard modules** với 12,948+ test cases và bằng chứng kiểm thử rõ ràng (xem Slide 18).
+  1. **Công nghệ thực tế, đã chạy thực tế:** Kiến trúc đã được chứng minh qua các vertical products trên cùng hệ thống lõi với 12,948+ automated test cases, 1,194 test suites và 85.2% measured code coverage để bảo vệ các critical paths của hệ thống (xem Slide 18).
   2. **Kinh tế học compounding cực mạnh:** Càng nhiều ngành tham gia, lõi càng mạnh và chi phí biên càng tiệm cận về 0.
-  3. **Rào chắn bảo vệ vững chắc:** BDGF, Architecture Guard, HR Payroll switching cost, và Franchise royalty lock-in ngăn ngừa nợ kỹ thuật và churn.
+  3. **Rào chắn bảo vệ vững chắc:** BDGF, Architecture Guard, HR Payroll switching cost, và Franchise royalty lock-in ngăn ngừa sự xê dịch kiến trúc, vi phạm ranh giới hệ thống và churn.
   4. **Điểm rơi thị trường (Timing):** SME Việt Nam đang khát khao chuyển đổi số chi phí thấp kết hợp AI. Bella là giải pháp phù hợp nhất về cả giá cả và nghiệp vụ bản địa (TT133, hoa hồng KTV, payroll tiếng Việt).
 
 ---
@@ -309,12 +310,12 @@ graph BT
 
 | Industry | Kernel | Products | Status |
 | :--- | :---: | :--- | :---: |
-| **Beauty Spa** | Logistics E7 | Bella Spa ERP | 🟢 Production |
-| **Baby Care** | Logistics E7 + Policy | Bella Auto (Babycare) | 🟢 Production |
-| **Healthcare** | H1-H12 (27 engines) | Hospital · Dental · Medical | 🔵 Validated CI |
-| **Real Estate** | Real Estate Kernel | bella-land | 🟢 Running |
-| **Education** | Education Kernel | bella-education | 🟡 In Development |
-| **Industrial Cleaning** | Logistics E7 | CleanPro | 🟡 In Development |
+| **Beauty Spa** | Logistics E7 | Bella Spa ERP | `L4 — Production` |
+| **Baby Care** | Logistics E7 + Policy | Bella Auto (Babycare) | `L4 — Production` |
+| **Healthcare** | H1-H12 (27 engines) | Hospital · Dental · Medical | `L3 — Validated` (Kernel `L5`) |
+| **Real Estate** | Real Estate Kernel | bella-land | `L1 — Implemented` |
+| **Education** | Education Kernel | bella-education | `L0 — Designed` |
+| **Industrial Cleaning** | Logistics E7 | CleanPro | `L0 — Designed` |
 
 * **Proof: 1 Kernel → N Products, Zero Code Duplication.**
   Logistics Kernel E7 phục vụ đồng thời Spa scheduling, Babycare session management, và CleanPro site jobs — không phân nhánh code, chỉ cấu hình nghiệp vụ khác nhau.
@@ -327,7 +328,7 @@ graph BT
 
 * **Finance OS — Double-Entry TT133 Native:**
   - **Chuẩn kế toán TT133/2016:** Chart of Accounts hoàn chỉnh theo chuẩn Thông tư 133 của Bộ Tài chính Việt Nam, nhãn song ngữ (Việt/Anh).
-  - **Kế toán kép tự động (Automated Double-Entry):** Mọi giao dịch nghiệp vụ (đặt lịch, thanh toán, hoàn tiền) tự động sinh journal entry đúng chuẩn — không cần kế toán viên nhập tay.
+  - **Kế toán kép tự động (Automated Double-Entry):** Trong các business flows đã được tích hợp với Finance Ledger Engine, business events có thể tự động sinh double-entry journal theo policy/accounting mapping tương ứng (Maturity: `L1 — Implemented` làm hạ tầng chung).
   - **Báo cáo tài chính đầy đủ:** P&L, Balance Sheet, Cash Flow Statement, Trial Balance, Budget vs. Actual — realtime.
   - **Franchise Royalty Engine:** Tự động tính và hạch toán phí nhượng quyền từ doanh thu chi nhánh, inter-branch clearing, consolidated P&L toàn hệ thống.
   - **Accounting Outbox:** Queue-based eventual consistency — đảm bảo tính toàn vẹn tài chính ngay cả khi có downtime.
@@ -382,10 +383,10 @@ graph BT
 | **Multi-tenant white-label** | ⚠️ Phức tạp | ❌ Không có | ❌ Không có | ✅ Fully isolated |
 | **Commission engine bản địa** | ❌ Không có | ❌ Không có | ❌ Không có | ✅ KTV/Agent model |
 | **Franchise Royalty** | ❌ Phải custom | ❌ Phải custom | ❌ Không có | ✅ Built-in |
-| **Architecture Guard (no debt)** | ❌ Không có | ❌ Không có | ❌ Không có | ✅ Tự động CI/CD |
+| **Architecture Guard (invariants)** | ❌ Không có | ❌ Không có | ❌ Không có | ✅ Enforces Invariants |
 
 * **Positioning Statement:**
-  > Bella không phải ERP thay thế Odoo hay SAP. Bella là **OS Factory** — cơ sở hạ tầng phần mềm cho các đối tác xây dựng vertical SaaS với chi phí phát triển thấp hơn 10x và không bao giờ tích lũy nợ kỹ thuật.
+  > Bella không phải ERP thay thế Odoo hay SAP. Bella là **OS Factory** — cơ sở hạ tầng phần mềm cho các đối tác xây dựng vertical SaaS với chi phí phát triển thấp và khả năng ngăn ngừa xê dịch kiến trúc.
 
 * **Tại sao các ERP toàn cầu không thể copy:**
   1. Thị trường Việt Nam quá nhỏ để họ đầu tư bản địa hóa thực sự.

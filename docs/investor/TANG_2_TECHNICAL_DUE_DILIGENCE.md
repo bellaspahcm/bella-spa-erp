@@ -8,7 +8,7 @@
 
 ## 🏛️ 1. TỔNG QUAN KIẾN TRÚC HỆ THỐNG (PLATFORM ARCHITECTURE DEEP-DIVE)
 
-Bella AI Platform được xây dựng dựa trên mô hình **Platform-of-Platforms** (Nền tảng của các Phân hệ chuyên ngành). Thay vì thiết kế một hệ thống ERP cồng kềnh với hàng trăm bảng liên kết chặt chẽ (Tightly Coupled), chúng tôi chia nhỏ hệ thống thành 3 tầng trừu tượng độc lập:
+Bella AI Platform được xây dựng dựa trên mô hình **Enterprise Software Factory** (Nhà máy phần mềm doanh nghiệp: một nền tảng quản trị thống nhất, các nhân nghiệp vụ ngành dọc có thể tái sử dụng, và các sản phẩm ứng dụng độc lập). Thay vì thiết kế một hệ thống ERP cồng kềnh với hàng trăm bảng liên kết chặt chẽ (Tightly Coupled), chúng tôi chia nhỏ hệ thống thành 3 tầng trừu tượng độc lập:
 
 ### 1.1. Sơ đồ Phân lớp và Luồng dữ liệu (Mermaid)
 
@@ -22,22 +22,22 @@ graph TD
     end
 
     subgraph Layer_Kernel [Tầng Industry Kernels - Nghiệp vụ chuyên ngành]
-        subgraph HC_Kernel [Healthcare Kernel - FROZEN H1-H12]
+        subgraph HC_Kernel [Healthcare Kernel - L5 Frozen/Sealed]
             EMR[EMR Engine]
             CDS[Clinical Decision Support]
             Bed[Bed Management]
         end
-        subgraph FI_Kernel [Finance Kernel]
+        subgraph FI_Kernel [Finance Kernel - L1 Implemented]
             Ledger[Double-Entry Ledger]
             Cash[Cash Management]
         end
-        subgraph RE_Kernel [Real Estate Kernel]
+        subgraph RE_Kernel [Real Estate Kernel - L1 Implemented]
             Property[Property Inventory]
             Comm[Commission Engine]
         end
     end
 
-    subgraph Layer_Core [Tầng Platform Core - FROZEN & READ-ONLY]
+    subgraph Layer_Core [Tầng Platform Core - L5 Frozen/Sealed]
         Foundation[Foundation: Org, People, Assignment]
         EventBus[Async Event Bus - Outbox Pattern]
         Policy[Policy & Rule Engine - Runtime Config]
@@ -61,15 +61,15 @@ graph TD
 
 Để duy trì tốc độ mở rộng quy mô mà không làm mất đi tính ổn định của hệ thống lõi, Bella áp dụng triết lý phân chia biên giới kiến trúc nghiêm ngặt (định nghĩa chính thức tại [ADR-001](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/docs/architecture/ADR-001-CORE-KERNEL-BOUNDARY.md) và [ADR-002](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/docs/architecture/ADR-002-PLATFORM-CORE-FREEZE.md)).
 
-### 2.1. Tầng Platform Core (Frozen & Read-Only)
+### 2.1. Tầng Platform Core (Maturity: `L5 — Frozen/Sealed`)
 * **Quyền hạn:** Không chứa bất kỳ dòng mã nào liên quan đến nghiệp vụ ngành cụ thể. Chỉ cung cấp khả năng hạ tầng cơ bản.
-* **Trạng thái:** **FROZEN (KHÓA BĂNG)**. Mọi thay đổi tại Core bắt buộc phải qua Hội đồng Kiến trúc (ARB) phê duyệt, chứng minh được năng lực phục vụ từ **2 ngành dọc trở lên** và không gây phá vỡ các hợp đồng API hiện có (Public Contracts).
+* **Trạng thái:** **L5 — Frozen/Sealed**. Mọi thay đổi tại Core bắt buộc phải qua Hội đồng Kiến trúc (ARB) phê duyệt, chứng minh được năng lực phục vụ từ **2 ngành dọc trở lên** và không gây phá vỡ các hợp đồng API hiện có (Public Contracts).
 
 ### 2.2. Tầng Industry Kernels (Nghiệp vụ chuyên ngành)
 * **Quyền hạn:** Chứa toàn bộ logic miền (Domain Logic) và luật nghiệp vụ đặc thù của ngành dọc.
-* **Trạng thái đóng băng y tế & logistics:**
-  - **Healthcare Kernel (H1-H12):** Đã **FROZEN** toàn bộ 12 động cơ cốt lõi (Domain Primitives). Không cho phép sửa đổi hoặc tạo mới động cơ trong `src/platform/healthcare/engines/`.
-  - **Logistics OS Kernel (E7.1, E7.2, E7.3):** Đã **SEALED (NIÊM PHONG PHÁP LÝ)** bao gồm 12 artifact của miền nghiệp vụ sơ cấp (E7.1 - 366 bài test), 4 thành phần vận hành (E7.2 - 73 bài test) và 9 quy tắc kiểm tra nguồn gốc (E7.3 - 108 bài test).
+* **Trạng thái đóng băng y tế & logistics (Maturity: `L5 — Frozen/Sealed`):**
+  - **Healthcare Kernel (H1-H12):** Đã đạt trạng thái **L5 — Frozen/Sealed** toàn bộ 12 động cơ cốt lõi (Domain Primitives). Không cho phép sửa đổi hoặc tạo mới động cơ trong `src/platform/healthcare/engines/`.
+  - **Logistics OS Kernel (E7.1, E7.2, E7.3):** Đã đạt trạng thái **L5 — Frozen/Sealed** bao gồm 12 artifact của miền nghiệp vụ sơ cấp (E7.1 - 366 bài test), 4 thành phần vận hành (E7.2 - 73 bài test) và 9 quy tắc kiểm tra nguồn gốc (E7.3 - 108 bài test).
 
 ### 2.3. Tầng Product Verticals (Ứng dụng đầu cuối)
 * **Quyền hạn:** Chỉ chịu trách nhiệm về giao diện người dùng (UI/UX) và điều phối luồng quy trình (Orchestration). Không lưu trữ trạng thái hoặc logic nghiệp vụ cốt lõi. Giao tiếp với Kernel thông qua các Contract Interface định nghĩa sẵn.
@@ -130,16 +130,16 @@ Trong quá trình k6 stress test tải cao, chúng tôi đã phát hiện lỗi 
 
 ### 5.1. Bảng chỉ số tái sử dụng đầy đủ (toàn platform)
 
-| Industry | Kernel được tái sử dụng | Sản phẩm thực tế | Ratio | Trạng thái |
+| Industry | Kernel được tái sử dụng | Sản phẩm thực tế | Ratio | Trạng thái (Maturity state) |
 | :--- | :---: | :--- | :---: | :--- |
-| **Healthcare** | H1-H12 (27 engines) | Hospital, Dental, Medical | **1:3** | ✅ Validated CI, 504 tests pass |
-| **Beauty Spa** | Logistics E7 + Policy | Bella Spa ERP | **1:1** | 🟢 Production |
-| **Baby Care** | Logistics E7 + Policy | Bella Auto (Babycare) | **1:1** | 🟢 Production (2nd vertical on same kernel) |
-| **Industrial Cleaning** | Logistics E7 | CleanPro | **1:1** | 🟡 In Development (3rd vertical on same kernel) |
-| **Real Estate** | Real Estate Kernel (4 services) | bella-land | **1:1** | 🟢 Running |
-| **Finance** | Finance Engine (2 engines) | Spa Ledger, Education Billing | **1:2** | 🟢 Active infra |
-| **Education** | Education Kernel (5 domains) | bella-education | **1:1** | 🟡 In Development |
-| **Accounting** | Accounting Service | bella-education accounting | **1:1** | 🟢 Running |
+| **Healthcare** | H1-H12 (27 engines) | Hospital, Dental, Medical | **1:3** | `L3 — Validated` (Kernel `L5 — Frozen/Sealed`) |
+| **Beauty Spa** | Logistics E7 + Policy | Bella Spa ERP | **1:1** | `L4 — Production` |
+| **Baby Care** | Logistics E7 + Policy | Bella Auto (Babycare) | **1:1** | `L4 — Production` |
+| **Industrial Cleaning** | Logistics E7 | CleanPro | **1:1** | `L0 — Designed` |
+| **Real Estate** | Real Estate Kernel (4 services) | bella-land | **1:1** | `L1 — Implemented` |
+| **Finance** | Finance Engine (2 engines) | Spa Ledger, Education Billing | **1:2** | `L1 — Implemented` (Active infra) |
+| **Education** | Education Kernel (5 domains) | bella-education | **1:1** | `L0 — Designed` |
+| **Accounting** | Accounting Service | bella-education accounting | **1:1** | `L1 — Implemented` |
 
 > **Kết luận nổi bật:** Logistics Kernel E7 được tái sử dụng cho **3 ngành hoàn toàn khác nhau** (Spa, Babycare, CleanPro) mà **không phân nhánh code**. Đây là bằng chứng thực tế mạnh nhất cho luận điểm Platform Play.
 
@@ -154,14 +154,6 @@ Trong quá trình k6 stress test tải cao, chúng tôi đã phát hiện lỗi 
   ✔ E7.3 Rules & Traceability (9 artifacts: PolicyRegistry, AuditTrail...)
   ✔ Platform Core (Identity, Event Bus, BDGF, RLS, Notification Hub)
   ✔ Finance Engine (Payment, Invoice, Ledger)
-
-Chỉ cấu hình thêm (không viết code logic mới):
-  + BabyCare-specific fields (baby_name, dob, health_notes, mother_id)
-  + Package multipliers cho Babycare (1.0x standard, 1.5x premium, 2.0x VIP)
-  + UI theme (pink/rose, serif font, 'Mẹ & Bé' labels)
-  + Business rules: tối đa 2 KTV/session, số lượng session/gói
-
-Khoan trắng (Chỉ cần viết UI và config — không có backend mới)
 ```
 
 **Kết quả:** Bella Auto ra mắt trên nền tảng Spa có sẵn với **chi phí phát triển thấp hơn 10x** so với viết mới từ đầu. Hiện đang vận hành thực tế.
@@ -171,10 +163,6 @@ Khoan trắng (Chỉ cần viết UI và config — không có backend mới)
 **Bải toán:** Ngành Vệ sinh Công nghiệp khác hoàn toàn với Spa. Liệu có thể dùng cùng Logistics Kernel?
 
 ```
-Spa (Bella):             Booking → KTV → Treatment Room → Session Log
-Babycare (Bella Auto):   Booking → KTV → Home Visit    → Session Log
-Cleaning (CleanPro):     Booking → Team → Client Site   → Session Log
-
 → Tất cả đều là cùng 1 domain primitive: Service Booking with Resource Assignment
 → E7.1 ConflictEngine giải quyết dữ liệu khác nhau bằng cách cấu hình resource_type
 → Site photos, before/after, quality scores — chỉ là UI và metadata thêm vào
@@ -234,20 +222,25 @@ Mỗi khi tích lũy thêm một capability mới từ một ngành dọc, toàn
 
 ## 📊 9. TRẠNG THÁI HIỆN TẠI & LỘ TRÌNH PHÁT TRIỂN 2026 - 2030
 
-### 9.1. Phân loại trạng thái hệ thống thực tế
+### 9.1. Phân loại trạng thái hệ thống thực tế (Maturity Taxonomy)
 
-* **PRODUCTION (Đang vận hành thực tế):**
-  - **Bella Spa ERP:** Live tại thị trường Việt Nam, quản lý vận hành đặt lịch, hoa hồng và kế toán cho hệ thống đối tác spa.
-  - **Bella Babycare:** Hệ thống quản lý thẻ liệu trình và lịch chăm sóc tại nhà.
-* **VALIDATED (Đã kiểm thử & xác thực kiến trúc):**
+Chúng tôi phân loại toàn bộ hệ thống theo 6 cấp độ trưởng thành kỹ thuật duy nhất:
+
+* **L5 — Frozen/Sealed (Đã đóng băng/Niêm phong pháp lý):**
   - **Platform Core:** Khóa băng hoàn chỉnh, bảo vệ bởi BDGF và Architecture Guard.
-  - **Healthcare OS (H1-H12):** Hoàn thành tích hợp 3 sản phẩm (Hospital, Medical, Dental) trong môi trường thử nghiệm với 100% test pass.
-  - **Logistics OS Kernels (E7.1-E7.3):** 19 suites / 571 test cases hồi quy pass hoàn toàn (E7.1: 366 cases, E7.2: 73, E7.3: 132).
-* **IN DEVELOPMENT (Đang phát triển):**
-  - **Finance OS Integration:** Đối soát tự động tích hợp sâu với ngân hàng Việt Nam.
-  - **Real Estate OS:** Xây dựng luồng lead rotation tự động bằng AI.
-* **ROADMAP (Kế hoạch):**
-  - Mở rộng phân hệ Giáo dục (Education OS) và Bán lẻ (Retail OS) trong năm 2027.
+  - **Healthcare Kernel:** 12 động cơ nghiệp vụ lõi đã niêm phong vĩnh viễn.
+  - **Logistics Kernel:** 25 artifacts nghiệp vụ và kiểm soát đã niêm phong.
+* **L4 — Production (Đang vận hành thực tế):**
+  - **Bella Spa ERP:** Live tại Việt Nam, quản lý đặt lịch, hoa hồng và kế toán cho spa.
+  - **Bella Auto (Babycare):** Hệ thống quản lý lịch chăm sóc Mẹ & Bé tại nhà.
+* **L3 — Validated (Đã kiểm thử & xác thực tích hợp):**
+  - **Healthcare OS Products:** Hoàn thành tích hợp 3 sản phẩm (Hospital, Medical, Dental) trong môi trường thử nghiệm với 100% test suites pass.
+* **L1 — Implemented (Đã xây dựng hạ tầng/Ledger):**
+  - **Finance Ledger Engine:** Tích hợp kế toán kép qua Accounting Outbox cho các flows được cấu hình.
+  - **Real Estate OS & bella-land:** Cấu hình property inventory và commission engine cơ bản.
+* **L0 — Designed (Mới thiết kế/Đang phát triển sơ bộ):**
+  - **Education OS & bella-education:** Bản thiết kế domains học vụ và quản lý thẻ học sinh.
+  - **Industrial Cleaning (CleanPro):** Đang thiết kế cấu hình tài nguyên site jobs trên Logistics Kernel E7.
 
 ### 9.2. Lộ trình chiến lược 2026 - 2030
 * **2026:** Khóa băng lõi kỹ thuật, thu thập bằng chứng vận hành, ra mắt 4 phân hệ ngành dọc đầu tiên tại Việt Nam.
@@ -256,21 +249,13 @@ Mỗi khi tích lũy thêm một capability mới từ một ngành dọc, toàn
 
 ---
 
-## 💡 10. LUẬN ĐIỂM ĐẦU TƯ CỐT LÕI (INVESTMENT THESIS)
-
-1. **Công nghệ độc nhất mang tính cách mạng:** Bella giải quyết triệt để bài toán "nợ kỹ thuật" của phần mềm doanh nghiệp thông qua rào chắn kiến trúc tự động. Chúng tôi bán một **Nhà máy phần mềm (Software Factory)** chứ không bán các sản phẩm đơn lẻ.
-2. **Hiệu quả dòng tiền vượt trội:** Tỷ lệ LTV/CAC mục tiêu đạt **10x** nhờ chi phí biên của việc triển khai khách hàng mới cực thấp.
-3. **Đón đầu làn sóng AI thực tiễn:** Khác với các chatbot hỗ trợ thông thường, AI của Bella tham gia trực tiếp vào luồng dữ liệu nghiệp vụ của doanh nghiệp dưới dạng các nhân viên xử lý tự động có đối soát và kiểm toán rõ ràng.
-4. **Đội ngũ kỷ luật kỹ thuật cao:** Sự nghiêm túc được chứng minh qua 75,000 dòng code và hệ thống tài liệu kiến trúc kỹ thuật chi tiết nhất Việt Nam.
----
-
 ## 💰 10. FINANCE OS — DIFFERENTIATOR THỊ TRƯỜNG VIỆT NAM
 
 ### 10.1. Vấn đề với ERP toàn cầu tại Việt Nam
 
 Chuẩn kế toán Thông tư 133/2016 của Bộ Tài chính Việt Nam yêu cầu cấu trúc Chart of Accounts riêng, quy trình đóng sổ kế toán theo quý, và hạch toán đặc thù theo phương pháp dồn tích. Odoo, SAP, hay Salesforce không có bản TT133 native — phải dùng consultant cấu hình tốn hàng chục ngàn đôla.
 
-### 10.2. Finance OS của Bella — được xây từ TT133 ngay từ đầu
+### 10.2. Finance OS của Bella — được xây từ TT133 ngay từ đầu (Maturity: `L1 — Implemented`)
 
 ```
 Chart of Accounts (TT133/2016):
@@ -289,9 +274,9 @@ Chart of Accounts (TT133/2016):
   ✔ Hỗ trợ đóng sổ kế toán theo tháng, quý, năm
 ```
 
-### 10.3. Kế toán kép tự động — Zero Manual Entry
+### 10.3. Kế toán kép tự động qua Ledger Engine (Maturity: `L1 — Implemented`)
 
-Moại sự kiện nghiệp vụ (đặt lịch, thanh toán, hoàn tiền) được xử lý bởi **Accounting Outbox** — queue-based event-driven journal entry generation:
+Trong các business flows đã được tích hợp với Finance Ledger Engine, business events có thể tự động sinh double-entry journal theo policy/accounting mapping tương ứng thông qua **Accounting Outbox**:
 
 ```
 [Business Event: Payment Received $500K VND]

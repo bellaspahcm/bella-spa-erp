@@ -497,15 +497,15 @@
     <!-- Section 1: Tổng quan Kiến trúc -->
     <section class="doc-section" id="section-1">
       <h2 class="section-title">1. Tổng quan Kiến trúc Hệ thống (Platform Architecture)</h2>
-      <p>Bella AI Platform được xây dựng dựa trên mô hình **Platform-of-Platforms** (Nền tảng của các Phân hệ chuyên ngành). Thay vì thiết kế một hệ thống ERP cồng kềnh với hàng trăm bảng liên kết chặt chẽ (Tightly Coupled), chúng tôi chia nhỏ hệ thống thành 3 tầng trừu tượng độc lập.</p>
+      <p>Bella AI Platform được xây dựng dựa trên mô hình **Enterprise Software Factory** (Nhà máy phần mềm doanh nghiệp: một nền tảng quản trị thống nhất, các nhân nghiệp vụ ngành dọc có thể tái sử dụng, và các sản phẩm ứng dụng độc lập). Thay vì thiết kế một hệ thống ERP cồng kềnh với hàng trăm bảng liên kết chặt chẽ (Tightly Coupled), chúng tôi chia nhỏ hệ thống thành 3 tầng trừu tượng độc lập.</p>
       
       <div class="diagram-box">
         <div style="display: flex; flex-direction: column; gap: 0.75rem; width: 80%;">
           <div class="diagram-item">Product Layer (Giao diện UI & Tùy biến doanh nghiệp)</div>
           <div style="text-align: center; font-weight: bold; color: var(--text-tertiary);">↓ Gọi qua Hợp đồng giao tiếp (Contracts)</div>
-          <div class="diagram-item success">Kernel Layer (Nghiệp vụ Y tế, Tài chính, Bất động sản...)</div>
+          <div class="diagram-item success">Kernel Layer (Maturity L5 / L1 - Specialized Domain logic)</div>
           <div style="text-align: center; font-weight: bold; color: var(--text-tertiary);">↓ Sử dụng hạ tầng lõi</div>
-          <div class="diagram-item accent">Platform Core (Định danh, Event Bus, State Machine)</div>
+          <div class="diagram-item accent">Platform Core (Maturity L5 - Frozen Platform Core)</div>
         </div>
       </div>
       
@@ -521,8 +521,8 @@
       <h2 class="section-title">2. Quy tắc Phân chia Biên giới Core / Kernel / Product</h2>
       <p>Để duy trì tốc độ mở rộng quy mô mà không làm mất đi tính ổn định của hệ thống lõi, Bella áp dụng triết lý phân chia biên giới kiến trúc nghiêm ngặt (định nghĩa chính thức tại ADR-001 và ADR-002).</p>
       <ul class="bullet-list">
-        <li><strong>Tầng Platform Core (Frozen):</strong> Không chứa bất kỳ dòng mã nào liên quan đến nghiệp vụ ngành cụ thể. Trạng thái đã KHÓA BĂNG và cấm sửa đổi thủ công.</li>
-        <li><strong>Tầng Industry Kernels (Specialized):</strong> Chứa toàn bộ logic miền (Domain Logic) nghiệp vụ dọc. Các Kernel y tế (H1-H12) và Logistics (E7.1-E7.3) đã đóng băng hoàn tất kiểm thử hồi quy.</li>
+        <li><strong>Tầng Platform Core (Maturity: L5 — Frozen/Sealed):</strong> Không chứa bất kỳ dòng mã nào liên quan đến nghiệp vụ ngành cụ thể. Trạng thái đã KHÓA BĂNG và cấm sửa đổi thủ công.</li>
+        <li><strong>Tầng Industry Kernels (Specialized):</strong> Chứa toàn bộ logic miền (Domain Logic) nghiệp vụ dọc. Các Kernel y tế (H1-H12) và Logistics (E7.1-E7.3) đã đạt trạng thái đóng băng L5 — Frozen/Sealed.</li>
         <li><strong>Tầng Product Verticals:</strong> Chịu trách nhiệm hiển thị UI/UX và điều phối luồng quy trình mà không có trạng thái dữ liệu riêng.</li>
       </ul>
     </section>
@@ -568,7 +568,7 @@
             <th>Kernel được tái sử dụng</th>
             <th>Sản phẩm thực tế</th>
             <th>Tỷ lệ tái sử dụng</th>
-            <th>Trạng thái</th>
+            <th>Trạng thái (Maturity state)</th>
           </tr>
         </thead>
         <tbody>
@@ -577,42 +577,42 @@
             <td>H1-H12 (27 engines)</td>
             <td>Hospital, Dental, Medical</td>
             <td><strong>1:3</strong></td>
-            <td>✅ Validated CI, 504 tests pass</td>
+            <td>L3 — Validated (Kernel L5 — Frozen/Sealed)</td>
           </tr>
           <tr>
             <td><strong>Beauty Spa</strong></td>
             <td>Logistics E7 + Policy</td>
             <td>Bella Spa ERP</td>
             <td><strong>1:1</strong></td>
-            <td>🟢 Production</td>
+            <td>L4 — Production</td>
           </tr>
           <tr>
             <td><strong>Baby Care</strong></td>
             <td>Logistics E7 + Policy</td>
             <td>Bella Auto (Babycare)</td>
             <td><strong>1:1</strong></td>
-            <td>🟢 Production (Tái sử dụng E7)</td>
+            <td>L4 — Production</td>
           </tr>
           <tr>
             <td><strong>Industrial Cleaning</strong></td>
             <td>Logistics E7</td>
             <td>CleanPro</td>
             <td><strong>1:1</strong></td>
-            <td>🟡 In Development</td>
+            <td>L0 — Designed</td>
           </tr>
           <tr>
             <td><strong>Real Estate</strong></td>
             <td>Real Estate Kernel</td>
             <td>bella-land Portal</td>
             <td><strong>1:1</strong></td>
-            <td>🟢 Đang vận hành ổn định</td>
+            <td>L1 — Implemented</td>
           </tr>
           <tr>
             <td><strong>Finance</strong></td>
             <td>Finance Engine</td>
             <td>Spa Ledger, Education Billing</td>
             <td><strong>1:2</strong></td>
-            <td>🟢 Hoạt động làm Infra chung</td>
+            <td>L1 — Implemented (Active infra)</td>
           </tr>
         </tbody>
       </table>
@@ -625,7 +625,7 @@
     <section class="doc-section" id="section-6">
       <h2 class="section-title">6. Rào chắn cạnh tranh kỹ thuật (Technology Moat)</h2>
       <ul class="bullet-list">
-        <li><strong>Bảo vệ hiến pháp kiến trúc tự động:</strong> Loại bỏ 100% spaghetti code của mô hình outsource truyền thống nhờ rào chắn CI/CD.</li>
+        <li><strong>Bảo vệ hiến pháp kiến trúc tự động:</strong> Ngăn chặn xê dịch kiến trúc và thực thi các invariants tự động trong CI/CD.</li>
         <li><strong>Định danh tài khoản quy nhất:</strong> Quản lý tập trung mọi tài khoản con người và AI nhân viên (AI Employee) tại bảng `identities` dùng chung.</li>
         <li><strong>Quy tắc nghiệp vụ động (Runtime Policy):</strong> Cho phép thay đổi chính sách chiết khấu/lương thưởng trên UI mà không cần can thiệp mã nguồn.</li>
         <li><strong>Không có tuyên bố thiếu bằng chứng:</strong> 100% các metrics hiệu năng, bảo mật đều được sinh ra tự động từ logs kiểm thử hồi quy.</li>
@@ -657,20 +657,21 @@
     <section class="doc-section" id="section-9">
       <h2 class="section-title">9. Hiện trạng & Lộ trình phát triển 2026 - 2030</h2>
       <ul class="bullet-list">
-        <li><strong>Đang vận hành (Production):</strong> Phân hệ Beauty Spa ERP và Babycare.</li>
-        <li><strong>Đã xác thực kiểm thử (Validated):</strong> Platform Core và Healthcare OS (Hospital, Medical, Dental) trong môi trường CI.</li>
-        <li><strong>Lộ trình 2027:</strong> Ra mắt Marketplace phân hệ, mở rộng sang Education OS và Retail OS, đưa AI Recruiter/AI Accountant vào vận hành thương mại.</li>
-        <li><strong>Lộ trình 2028-2030:</strong> Mở rộng thị trường Đông Nam Á (Thái Lan, Indonesia), tối ưu hóa điện toán biên.</li>
+        <li><strong>L5 — Frozen/Sealed:</strong> Platform Core, Healthcare Kernel (H1-H12), Logistics Kernel (E7.1-E7.3).</li>
+        <li><strong>L4 — Production:</strong> Phân hệ Beauty Spa ERP và Babycare.</li>
+        <li><strong>L3 — Validated:</strong> Healthcare OS Products (Hospital, Medical, Dental) trong môi trường tích hợp.</li>
+        <li><strong>L1 — Implemented:</strong> Finance OS Ledger Engine và Real Estate OS (bella-land).</li>
+        <li><strong>L0 — Designed:</strong> Education OS &amp; bella-education, Industrial Cleaning (CleanPro).</li>
       </ul>
     </section>
 
     <!-- Section 10: Finance OS -->
     <section class="doc-section" id="section-10">
-      <h2 class="section-title">10. Finance OS — Rào chắn thị trường nội địa</h2>
+      <h2 class="section-title">10. Finance OS — Rào chắn thị trường nội địa (Maturity: L1 — Implemented)</h2>
       <p>Chuẩn kế toán Thông tư 133/2016 của Việt Nam yêu cầu hệ thống tài khoản (Chart of Accounts) riêng biệt và quy tắc đóng sổ nghiêm ngặt. Odoo hay các ERP nước ngoài không hỗ trợ mặc định, trong khi Bella OS tích hợp sâu TT133 ngay từ thiết kế lõi.</p>
       
       <div class="code-panel">
-        <span class="code-comment">// Tự động phát sinh bút toán kép theo TT133 qua Accounting Outbox</span><br>
+        <span class="code-comment">// Tự động phát sinh bút toán kép theo TT133 cho các flows tích hợp</span><br>
         const transaction = await LedgerEngine.post({<br>
         &nbsp;&nbsp;eventId: 'evt_booking_completed_992',<br>
         &nbsp;&nbsp;amount: 500000,<br>
@@ -681,7 +682,7 @@
         expect(transaction.credit).toBe('511'); // Có TK 511 (Doanh thu)
       </div>
       
-      <p>Hệ thống tự động đồng bộ hóa hóa đơn, tính phí nhượng quyền (Franchise Royalty Engine) và đối soát doanh thu liên chi nhánh (Inter-branch consolidated P&L) tự động theo thời gian thực.</p>
+      <p>Trong các business flows đã được tích hợp với Finance Ledger Engine, business events có thể tự động sinh double-entry journal theo policy/accounting mapping tương ứng.</p>
     </section>
 
     <!-- Section 11: Mobile App & CRM -->
