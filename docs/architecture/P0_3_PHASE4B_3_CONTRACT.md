@@ -1,8 +1,9 @@
 # P0.3 PHASE 4B.3 — DATABASE VERIFICATION CONTRACT
 
 **Phase:** Phase 4B.3 — Database Verification  
-**Status:** 🟡 DRAFT — PENDING FREEZE  
-**Version:** 1.0.0-draft  
+**Status:** 🔒 FROZEN  
+**Version:** 1.0.0  
+**Frozen:** 2026-08-25  
 **Date:** 2026-08-25
 
 **Foundation Documents:**
@@ -253,44 +254,169 @@ try {
 
 **Purpose:** Determine what database state SHOULD be after migration
 
+**Expected State Principle:**
+
+> **4B.3 MUST never infer correctness from actual database state alone. Expected state MUST originate from a declared contract invariant or explicit migration declaration.**
+
+**Hybrid Approach (Option C):**
+
+```
+Expected State = Contract Invariants + Migration Declaration
+                        │                      │
+                        │                      ├─ Machine-readable
+                        │                      ├─ Explicit expectations
+                        │                      └─ NOT proof (must verify)
+                        │
+                        ├─ Security invariants
+                        ├─ Tenant isolation
+                        └─ Core structural requirements
+```
+
 **Implementation:**
 ```javascript
-// Phase 1: Derive from contract invariants
-const expectedState = {
+// Source 1: Contract Invariants (Always)
+const contractInvariants = {
   securityCriticalTables: identifySecurityCriticalTables(),
-  rlsRequirements: RLS_REQUIREMENTS,
-  tenantIsolationEnforced: true,
+  rlsRequirements: {
+    enabled: true,
+    policies: ['SELECT', 'INSERT', 'UPDATE', 'DELETE'],
+    tenantIsolationEnforced: true,
+  },
+  coreConstraints: {
+    primaryKeysRequired: true,
+    foreignKeysValidated: true,
+    notNullEnforced: true,
+  },
 };
 
-// Future phases: Parse .expect.json if exists
-// const declaredExpectations = parseExpectationFile(migration_id);
-// expectedState = merge(expectedState, declaredExpectations);
+// Source 2: Migration Declaration (Optional in Phase 1)
+const migrationDeclaration = await parseMigrationDeclaration(migration_file);
+// Format: YAML/JSON front-matter or adjacent .declaration.json file
+// Example:
+// {
+//   "tables": {
+//     "hc_appointments": {
+//       "columns": {
+//         "appointment_id": "uuid",
+//         "patient_id": "uuid",
+//         "status": "text"
+//       },
+//       "primary_key": ["appointment_id"],
+//       "foreign_keys": [
+//         {"column": "patient_id", "references": "hc_patients(patient_id)"}
+//       ]
+//     }
+//   },
+//   "rls": "required"
+// }
+
+// Merge: Contract invariants take precedence
+const expectedState = {
+  securityInvariants: contractInvariants,
+  migrationExpectations: migrationDeclaration || {
+    // Fallback: Empty in Phase 1 if no declaration
+    tables: {},
+    columns: {},
+    constraints: {},
+  },
+};
 ```
 
 **Expected State Structure:**
 ```javascript
 {
-  // Security invariants (always checked)
+  // Contract Invariants (ALWAYS verified)
   securityInvariants: {
     tenantIsolation: {
-      tables: ['hc_patients', 'edu_students', ...],
+      tables: ['hc_patients', 'edu_students', 'logistics_shipments', ...],
       rlsEnabled: true,
       policiesRequired: ['SELECT', 'INSERT', 'UPDATE', 'DELETE'],
     },
+    coreConstraints: {
+      primaryKeysRequired: true,
+      foreignKeysValidated: true,
+      notNullEnforced: true,
+    },
   },
   
-  // Migration-specific expectations (Phase 1: minimal)
+  // Migration-Specific Expectations (from declaration)
   migrationExpectations: {
-    // Can be inferred from migration SQL or declared in .expect.json
-    tablesCreated: [], // e.g., ['hc_appointments']
-    columnsAdded: {},  // e.g., { hc_patients: ['status'] }
+    tables: {
+      hc_appointments: {
+        columns: {
+          appointment_id: 'uuid',
+          patient_id: 'uuid',
+          tenant_id: 'uuid',
+          status: 'text',
+        },
+        primary_key: ['appointment_id'],
+        foreign_keys: [
+          { column: 'patient_id', references: 'hc_patients(patient_id)' },
+          { column: 'tenant_id', references: 'runtime_tenant_registry(tenant_id)' },
+        ],
+        rls_required: true,
+      },
+    },
   },
 }
 ```
 
+**Migration Declaration Format (Phase 1):**
+
+**Option A: YAML Front-Matter**
+```sql
+-- Migration: 20260825120000_add_appointments.sql
+/*
+verification:
+  tables:
+    hc_appointments:
+      columns:
+        appointment_id: uuid
+        patient_id: uuid
+        tenant_id: uuid
+        status: text
+      primary_key: [appointment_id]
+      foreign_keys:
+        - column: patient_id
+          references: hc_patients(patient_id)
+        - column: tenant_id
+          references: runtime_tenant_registry(tenant_id)
+      rls: required
+*/
+
+CREATE TABLE hc_appointments (...);
+```
+
+**Option B: Adjacent Declaration File**
+```
+supabase/migrations/
+├── 20260825120000_add_appointments.sql
+└── 20260825120000_add_appointments.declaration.json
+```
+
+**Phase 1 Implementation:** Parse front-matter if present; fallback to security invariants only.
+
+**Critical Distinction:**
+
+**Declaration says:**
+```
+"I declare hc_appointments will have patient_id: uuid"
+```
+
+**Verification checks:**
+```
+Expected: patient_id: uuid (from declaration)
+Actual:   patient_id: text (from PostgreSQL introspection)
+Result:   FAIL
+```
+
+**Declaration ≠ Proof. It's an expectation that MUST be verified against actual database state.**
+
 **Success Criteria:**
-- ✅ Expected state derived from invariants
-- ✅ Security requirements identified
+- ✅ Contract invariants loaded
+- ✅ Migration declaration parsed (if present)
+- ✅ Expected state structure created
+- ✅ NO inference from actual database state
 
 ---
 
