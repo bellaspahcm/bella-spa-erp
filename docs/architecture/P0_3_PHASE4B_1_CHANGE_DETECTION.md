@@ -50,19 +50,25 @@ postcss.config.js
 .env.example (non-sensitive)
 ```
 
-### DB Changes (High Risk)
+### DB Migration Artifacts ONLY (High Risk)
 ```
 supabase/migrations/**/*.sql
-supabase/seed.sql
-scripts/migrations/**
+supabase/seed.sql (if used for production data migration)
 ```
 
-### Infra Changes (Critical Risk)
+**IMPORTANT:** Migration artifacts ≠ Migration tooling
+- `supabase/migrations/*.sql` = MIGRATION (db_changed)
+- `scripts/bdgf/migration-executor.mjs` = TOOLING (infra_changed)
+
+### Infra/Control-Plane Changes (Critical Risk)
 ```
 .github/workflows/**
 .github/actions/**
-scripts/bdgf/**
+scripts/bdgf/** (ALL BDGF tooling)
 scripts/deployment/**
+scripts/deploy-*.sh (legacy deployment scripts)
+scripts/apply-*.js (legacy migration scripts)
+scripts/deploy-migration.js (legacy tooling)
 vercel.json
 .vercel/**
 Dockerfile
