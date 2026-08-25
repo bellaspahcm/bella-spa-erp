@@ -164,7 +164,7 @@ function detectAdditiveChanges(expectedState: ExpectedState, actualState: Actual
   }
 
   // Check for new columns on existing tables
-  for (const tableName of expectedTables) {
+  for (const tableName of Array.from(expectedTables)) {
     const actualTable = actualState.tables[tableName];
 
     if (!actualTable || !actualTable.exists || !actualTable.columns) {

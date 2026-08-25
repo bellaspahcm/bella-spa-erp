@@ -79,7 +79,17 @@ export async function verifyRLS(
 
     // Check 3: Required policies present (CRITICAL)
     const actualPolicies = actualTable.rls?.policies || [];
-    const actualPolicyCommands = new Set(actualPolicies.map((p) => p.command));
+    
+    // D2: Expand 'ALL' to individual commands for semantic coverage check
+    // Contract requirement: All 4 commands (SELECT, INSERT, UPDATE, DELETE) must be covered
+    // PostgreSQL FOR ALL policy semantically covers all 4 commands
+    const actualPolicyCommands = new Set(
+      actualPolicies.flatMap((p) => 
+        p.command === 'ALL' 
+          ? ['SELECT', 'INSERT', 'UPDATE', 'DELETE']  // Semantic expansion
+          : [p.command]
+      )
+    );
 
     const missingPolicies = requiredPolicies.filter((cmd) => !actualPolicyCommands.has(cmd));
 

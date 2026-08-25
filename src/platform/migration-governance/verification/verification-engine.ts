@@ -132,10 +132,37 @@ export class VerificationEngine {
    * @throws Error if connection fails → ERROR → BLOCK
    */
   private async connectToDatabase(databaseUrl: string, environment: string): Promise<DatabaseAdapter> {
-    const serviceRoleKey = process.env.DATABASE_EXECUTOR_SERVICE_ROLE_KEY;
+    // Phase 1: Support both Direct and Supabase RPC adapters
+    const useDirect = process.env.USE_DIRECT_ADAPTER === 'true';
+    
+    const serviceRoleKey = 
+      process.env.DATABASE_EXECUTOR_SERVICE_ROLE_KEY || 
+      process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+    // Direct adapter uses PostgreSQL connection string
+    // Supabase adapter uses HTTP URL + service role key
+    if (useDirect) {
+      // Use DATABASE_EXECUTOR_URL (PostgreSQL connection string)
+      const connectionString = process.env.DATABASE_EXECUTOR_URL;
+      if (!connectionString) {
+        throw new Error('DATABASE_EXECUTOR_URL environment variable required for Direct adapter');
+      }
+      
+      const adapter = createDatabaseAdapter(connectionString);
+      
+      try {
+        await adapter.connect();
+        return adapter;
+      } catch (error) {
+        throw new Error(
+          `Cannot connect to database (${environment}): ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+    }
+    
+    // Supabase RPC adapter (current)
     if (!serviceRoleKey && databaseUrl.includes('supabase.co')) {
-      throw new Error('DATABASE_EXECUTOR_SERVICE_ROLE_KEY environment variable required for Supabase');
+      throw new Error('DATABASE_EXECUTOR_SERVICE_ROLE_KEY or SUPABASE_SERVICE_ROLE_KEY environment variable required for Supabase');
     }
 
     const adapter = createDatabaseAdapter(databaseUrl, serviceRoleKey);
@@ -182,7 +209,7 @@ export class VerificationEngine {
     }
 
     // Query each table
-    for (const tableName of tablesToCheck) {
+    for (const tableName of Array.from(tablesToCheck)) {
       const exists = await this.adapter.queryTableExists(tableName);
 
       if (!exists) {
@@ -206,7 +233,12 @@ export class VerificationEngine {
         foreign_keys,
         rls: {
           enabled: rlsStatus.enabled,
-          policies: rlsPolicies,
+          policies: rlsPolicies.map(p => ({
+            name: p.name,
+            command: p.command as 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE',
+            using: p.using,
+            check: p.check,
+          })),
         },
       };
     }

@@ -192,8 +192,20 @@ export interface DatabaseAdapter {
  * NOTE: In production, this should be derived from Kernel metadata, not hardcoded.
  * Phase 1: Hardcoded for proof of concept.
  */
+/**
+ * Security-Critical Tables (Contract v1.0.0 corrected)
+ * 
+ * Architecture validation (2026-08-25):
+ * - Removed: edu_students (Constitution Law #5 violation)
+ * - Removed: edu_grades (implementation gap - backlog)
+ * - Removed: logistics_shipments (does not exist as table)
+ * - Corrected: logistics_inventory → inventory (E7 actual table name)
+ * - Added: lg_movements (E7 canonical movement tracking)
+ * 
+ * Canonical inventory: 9 tables (6 Healthcare + 1 Education + 2 Logistics E7)
+ */
 export const SECURITY_CRITICAL_TABLES = [
-  // Healthcare Kernel
+  // Healthcare Kernel (6 tables)
   'hc_patients',
   'hc_encounters',
   'hc_medications',
@@ -201,14 +213,12 @@ export const SECURITY_CRITICAL_TABLES = [
   'hc_patient_notes',
   'hc_appointments',
 
-  // Education Kernel
-  'edu_students',
+  // Education Kernel (1 table)
   'edu_enrollments',
-  'edu_grades',
 
-  // Logistics Kernel
-  'logistics_shipments',
-  'logistics_inventory',
+  // Logistics E7 Kernel (2 tables)
+  'lg_movements',
+  'inventory',
 ] as const;
 
 /**
