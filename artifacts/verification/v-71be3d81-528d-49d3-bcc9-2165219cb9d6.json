@@ -1,0 +1,956 @@
+{
+  "verification_id": "v-71be3d81-528d-49d3-bcc9-2165219cb9d6",
+  "migration_id": "t1-happy-path-test_t1_1787677875085",
+  "commit_sha": "37ae4544",
+  "approval_id": "appr-t1-1787677878356",
+  "environment": "test",
+  "overall_result": "FAIL",
+  "deployment_eligible": false,
+  "checks": [
+    {
+      "check_id": "rls-enabled-hc_encounters",
+      "check_type": "RLS_VERIFICATION",
+      "check_name": "hc_encounters.rls_enabled",
+      "expected": true,
+      "actual": true,
+      "result": "PASS",
+      "severity": "CRITICAL",
+      "message": "RLS enabled on hc_encounters"
+    },
+    {
+      "check_id": "rls-policies-hc_encounters",
+      "check_type": "RLS_VERIFICATION",
+      "check_name": "hc_encounters.rls_policies",
+      "expected": [
+        "SELECT",
+        "INSERT",
+        "UPDATE",
+        "DELETE"
+      ],
+      "actual": [
+        "SELECT",
+        "INSERT",
+        "UPDATE",
+        "DELETE"
+      ],
+      "result": "PASS",
+      "severity": "CRITICAL",
+      "message": "All required policies present on hc_encounters"
+    },
+    {
+      "check_id": "tenant-isolation-hc_encounters",
+      "check_type": "RLS_VERIFICATION",
+      "check_name": "hc_encounters.tenant_isolation",
+      "expected": "All policies enforce tenant_id = current_tenant_id()",
+      "actual": "Policy 'tenant_isolation_select' (SELECT) does not enforce tenant isolation",
+      "result": "FAIL",
+      "severity": "CRITICAL",
+      "message": "Policy 'tenant_isolation_select' on hc_encounters does not enforce tenant isolation. Cross-tenant data access possible."
+    },
+    {
+      "check_id": "rls-enabled-hc_prescriptions",
+      "check_type": "RLS_VERIFICATION",
+      "check_name": "hc_prescriptions.rls_enabled",
+      "expected": true,
+      "actual": true,
+      "result": "PASS",
+      "severity": "CRITICAL",
+      "message": "RLS enabled on hc_prescriptions"
+    },
+    {
+      "check_id": "rls-policies-hc_prescriptions",
+      "check_type": "RLS_VERIFICATION",
+      "check_name": "hc_prescriptions.rls_policies",
+      "expected": [
+        "SELECT",
+        "INSERT",
+        "UPDATE",
+        "DELETE"
+      ],
+      "actual": [],
+      "result": "FAIL",
+      "severity": "CRITICAL",
+      "message": "Missing RLS policies on hc_prescriptions: SELECT, INSERT, UPDATE, DELETE. Tenant isolation incomplete."
+    },
+    {
+      "check_id": "rls-enabled-hc_appointments",
+      "check_type": "RLS_VERIFICATION",
+      "check_name": "hc_appointments.rls_enabled",
+      "expected": true,
+      "actual": true,
+      "result": "PASS",
+      "severity": "CRITICAL",
+      "message": "RLS enabled on hc_appointments"
+    },
+    {
+      "check_id": "rls-policies-hc_appointments",
+      "check_type": "RLS_VERIFICATION",
+      "check_name": "hc_appointments.rls_policies",
+      "expected": [
+        "SELECT",
+        "INSERT",
+        "UPDATE",
+        "DELETE"
+      ],
+      "actual": [],
+      "result": "FAIL",
+      "severity": "CRITICAL",
+      "message": "Missing RLS policies on hc_appointments: SELECT, INSERT, UPDATE, DELETE. Tenant isolation incomplete."
+    },
+    {
+      "check_id": "rls-enabled-edu_enrollments",
+      "check_type": "RLS_VERIFICATION",
+      "check_name": "edu_enrollments.rls_enabled",
+      "expected": true,
+      "actual": true,
+      "result": "PASS",
+      "severity": "CRITICAL",
+      "message": "RLS enabled on edu_enrollments"
+    },
+    {
+      "check_id": "rls-policies-edu_enrollments",
+      "check_type": "RLS_VERIFICATION",
+      "check_name": "edu_enrollments.rls_policies",
+      "expected": [
+        "SELECT",
+        "INSERT",
+        "UPDATE",
+        "DELETE"
+      ],
+      "actual": [
+        "SELECT",
+        "INSERT",
+        "UPDATE",
+        "DELETE"
+      ],
+      "result": "PASS",
+      "severity": "CRITICAL",
+      "message": "All required policies present on edu_enrollments"
+    },
+    {
+      "check_id": "tenant-isolation-edu_enrollments",
+      "check_type": "RLS_VERIFICATION",
+      "check_name": "edu_enrollments.tenant_isolation",
+      "expected": "All policies enforce tenant_id = current_tenant_id()",
+      "actual": "Policy 'edu_enrollments_tenant_isolation' (ALL) does not enforce tenant isolation",
+      "result": "FAIL",
+      "severity": "CRITICAL",
+      "message": "Policy 'edu_enrollments_tenant_isolation' on edu_enrollments does not enforce tenant isolation. Cross-tenant data access possible."
+    },
+    {
+      "check_id": "table-exists-test_t1_1787677875085_appointments",
+      "check_type": "SCHEMA_STRUCTURE",
+      "check_name": "test_t1_1787677875085_appointments.exists",
+      "expected": true,
+      "actual": true,
+      "result": "PASS",
+      "severity": "HIGH",
+      "message": "Table test_t1_1787677875085_appointments exists"
+    },
+    {
+      "check_id": "column-type-test_t1_1787677875085_appointments-appointment_id",
+      "check_type": "SCHEMA_STRUCTURE",
+      "check_name": "test_t1_1787677875085_appointments.appointment_id.type",
+      "expected": "uuid",
+      "actual": "uuid",
+      "result": "PASS",
+      "severity": "HIGH",
+      "message": "Column test_t1_1787677875085_appointments.appointment_id type matches declaration (uuid)"
+    },
+    {
+      "check_id": "column-type-test_t1_1787677875085_appointments-patient_id",
+      "check_type": "SCHEMA_STRUCTURE",
+      "check_name": "test_t1_1787677875085_appointments.patient_id.type",
+      "expected": "uuid",
+      "actual": "uuid",
+      "result": "PASS",
+      "severity": "HIGH",
+      "message": "Column test_t1_1787677875085_appointments.patient_id type matches declaration (uuid)"
+    },
+    {
+      "check_id": "column-type-test_t1_1787677875085_appointments-tenant_id",
+      "check_type": "SCHEMA_STRUCTURE",
+      "check_name": "test_t1_1787677875085_appointments.tenant_id.type",
+      "expected": "uuid",
+      "actual": "uuid",
+      "result": "PASS",
+      "severity": "HIGH",
+      "message": "Column test_t1_1787677875085_appointments.tenant_id type matches declaration (uuid)"
+    },
+    {
+      "check_id": "column-type-test_t1_1787677875085_appointments-status",
+      "check_type": "SCHEMA_STRUCTURE",
+      "check_name": "test_t1_1787677875085_appointments.status.type",
+      "expected": "text",
+      "actual": "text",
+      "result": "PASS",
+      "severity": "HIGH",
+      "message": "Column test_t1_1787677875085_appointments.status type matches declaration (text)"
+    },
+    {
+      "check_id": "column-type-test_t1_1787677875085_appointments-created_at",
+      "check_type": "SCHEMA_STRUCTURE",
+      "check_name": "test_t1_1787677875085_appointments.created_at.type",
+      "expected": "timestamptz",
+      "actual": "timestamptz",
+      "result": "PASS",
+      "severity": "HIGH",
+      "message": "Column test_t1_1787677875085_appointments.created_at type matches declaration (timestamptz)"
+    },
+    {
+      "check_id": "primary-key-test_t1_1787677875085_appointments",
+      "check_type": "CONSTRAINT_VERIFICATION",
+      "check_name": "test_t1_1787677875085_appointments.primary_key",
+      "expected": [
+        "appointment_id"
+      ],
+      "actual": [
+        "appointment_id"
+      ],
+      "result": "PASS",
+      "severity": "HIGH",
+      "message": "Primary key on test_t1_1787677875085_appointments matches declaration"
+    },
+    {
+      "check_id": "foreign-key-test_t1_1787677875085_appointments-patient_id",
+      "check_type": "CONSTRAINT_VERIFICATION",
+      "check_name": "test_t1_1787677875085_appointments.fk_patient_id",
+      "expected": "patient_id → hc_patients(patient_id)",
+      "actual": "Missing",
+      "result": "FAIL",
+      "severity": "HIGH",
+      "message": "Foreign key missing on test_t1_1787677875085_appointments.patient_id → hc_patients(patient_id)"
+    },
+    {
+      "check_id": "foreign-key-test_t1_1787677875085_appointments-tenant_id",
+      "check_type": "CONSTRAINT_VERIFICATION",
+      "check_name": "test_t1_1787677875085_appointments.fk_tenant_id",
+      "expected": "tenant_id → runtime_tenant_registry(tenant_id)",
+      "actual": "Missing",
+      "result": "FAIL",
+      "severity": "HIGH",
+      "message": "Foreign key missing on test_t1_1787677875085_appointments.tenant_id → runtime_tenant_registry(tenant_id)"
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-id",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'id' (type: uuid, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'id' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-tenant_id",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New security-critical column 'tenant_id' on hc_encounters",
+      "result": "FAIL",
+      "severity": "CRITICAL",
+      "message": "Additive security-critical column 'tenant_id' on hc_encounters detected without declaration. Security implications must be verified."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-care_journey_id",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'care_journey_id' (type: uuid, nullable: true)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'care_journey_id' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-patient_party_id",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'patient_party_id' (type: uuid, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'patient_party_id' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-doctor_party_id",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'doctor_party_id' (type: uuid, nullable: true)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'doctor_party_id' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-encounter_class",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'encounter_class' (type: text, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'encounter_class' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-status",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'status' (type: text, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'status' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-scheduled_at",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'scheduled_at' (type: timestamptz, nullable: true)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'scheduled_at' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-arrived_at",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'arrived_at' (type: timestamptz, nullable: true)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'arrived_at' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-started_at",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'started_at' (type: timestamptz, nullable: true)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'started_at' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-finished_at",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'finished_at' (type: timestamptz, nullable: true)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'finished_at' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-queue_number",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'queue_number' (type: int4, nullable: true)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'queue_number' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-chief_complaint",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'chief_complaint' (type: text, nullable: true)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'chief_complaint' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-notes",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'notes' (type: text, nullable: true)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'notes' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-version",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'version' (type: int4, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'version' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-created_by",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'created_by' (type: uuid, nullable: true)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'created_by' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-updated_by",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'updated_by' (type: uuid, nullable: true)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'updated_by' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-created_at",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'created_at' (type: timestamptz, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'created_at' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-updated_at",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'updated_at' (type: timestamptz, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'updated_at' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-deleted_at",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'deleted_at' (type: timestamptz, nullable: true)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'deleted_at' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-completed_at",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'completed_at' (type: timestamptz, nullable: true)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'completed_at' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-encounter_type",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'encounter_type' (type: text, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'encounter_type' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-period_start",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'period_start' (type: timestamptz, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'period_start' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-period_end",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'period_end' (type: timestamptz, nullable: true)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'period_end' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-parent_encounter_id",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'parent_encounter_id' (type: uuid, nullable: true)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'parent_encounter_id' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-department_id",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'department_id' (type: uuid, nullable: true)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'department_id' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-location_id",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'location_id' (type: uuid, nullable: true)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'location_id' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-reason_code",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'reason_code' (type: jsonb, nullable: true)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'reason_code' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-diagnosis",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'diagnosis' (type: jsonb, nullable: true)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'diagnosis' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_encounters-metadata",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'metadata' (type: jsonb, nullable: true)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'metadata' detected on hc_encounters. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_prescriptions-id",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'id' (type: uuid, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'id' detected on hc_prescriptions. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_prescriptions-tenant_id",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New security-critical column 'tenant_id' on hc_prescriptions",
+      "result": "FAIL",
+      "severity": "CRITICAL",
+      "message": "Additive security-critical column 'tenant_id' on hc_prescriptions detected without declaration. Security implications must be verified."
+    },
+    {
+      "check_id": "drift-additive-hc_prescriptions-encounter_id",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'encounter_id' (type: uuid, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'encounter_id' detected on hc_prescriptions. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_prescriptions-patient_party_id",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'patient_party_id' (type: uuid, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'patient_party_id' detected on hc_prescriptions. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_prescriptions-doctor_party_id",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'doctor_party_id' (type: uuid, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'doctor_party_id' detected on hc_prescriptions. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_prescriptions-drugs",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'drugs' (type: jsonb, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'drugs' detected on hc_prescriptions. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_prescriptions-diagnosis",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'diagnosis' (type: text, nullable: true)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'diagnosis' detected on hc_prescriptions. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_prescriptions-notes",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'notes' (type: text, nullable: true)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'notes' detected on hc_prescriptions. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_prescriptions-version",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'version' (type: int4, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'version' detected on hc_prescriptions. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_prescriptions-created_by",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'created_by' (type: uuid, nullable: true)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'created_by' detected on hc_prescriptions. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_prescriptions-updated_by",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'updated_by' (type: uuid, nullable: true)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'updated_by' detected on hc_prescriptions. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_prescriptions-created_at",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'created_at' (type: timestamptz, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'created_at' detected on hc_prescriptions. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_prescriptions-updated_at",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'updated_at' (type: timestamptz, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'updated_at' detected on hc_prescriptions. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_prescriptions-deleted_at",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'deleted_at' (type: timestamptz, nullable: true)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'deleted_at' detected on hc_prescriptions. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_prescriptions-status",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'status' (type: text, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'status' detected on hc_prescriptions. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_prescriptions-clinical_order_id",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'clinical_order_id' (type: uuid, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'clinical_order_id' detected on hc_prescriptions. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_appointments-id",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'id' (type: uuid, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'id' detected on hc_appointments. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_appointments-tenant_id",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New security-critical column 'tenant_id' on hc_appointments",
+      "result": "FAIL",
+      "severity": "CRITICAL",
+      "message": "Additive security-critical column 'tenant_id' on hc_appointments detected without declaration. Security implications must be verified."
+    },
+    {
+      "check_id": "drift-additive-hc_appointments-appointment_code",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'appointment_code' (type: text, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'appointment_code' detected on hc_appointments. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_appointments-patient_name",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'patient_name' (type: text, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'patient_name' detected on hc_appointments. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_appointments-patient_phone",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'patient_phone' (type: text, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'patient_phone' detected on hc_appointments. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_appointments-specialty",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'specialty' (type: text, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'specialty' detected on hc_appointments. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_appointments-doctor_name",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'doctor_name' (type: text, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'doctor_name' detected on hc_appointments. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_appointments-appointment_date",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'appointment_date' (type: date, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'appointment_date' detected on hc_appointments. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_appointments-slot_time",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'slot_time' (type: text, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'slot_time' detected on hc_appointments. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_appointments-status",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'status' (type: text, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'status' detected on hc_appointments. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_appointments-channel",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'channel' (type: text, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'channel' detected on hc_appointments. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_appointments-qr_code",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'qr_code' (type: text, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'qr_code' detected on hc_appointments. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_appointments-reminder_sent",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'reminder_sent' (type: bool, nullable: true)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'reminder_sent' detected on hc_appointments. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_appointments-notes",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'notes' (type: text, nullable: true)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'notes' detected on hc_appointments. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_appointments-created_at",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'created_at' (type: timestamptz, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'created_at' detected on hc_appointments. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-hc_appointments-updated_at",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'updated_at' (type: timestamptz, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'updated_at' detected on hc_appointments. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-edu_enrollments-id",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'id' (type: uuid, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'id' detected on edu_enrollments. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-edu_enrollments-tenant_id",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New security-critical column 'tenant_id' on edu_enrollments",
+      "result": "FAIL",
+      "severity": "CRITICAL",
+      "message": "Additive security-critical column 'tenant_id' on edu_enrollments detected without declaration. Security implications must be verified."
+    },
+    {
+      "check_id": "drift-additive-edu_enrollments-student_party_id",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'student_party_id' (type: uuid, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'student_party_id' detected on edu_enrollments. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-edu_enrollments-course_id",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'course_id' (type: uuid, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'course_id' detected on edu_enrollments. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-edu_enrollments-status",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'status' (type: text, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'status' detected on edu_enrollments. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-edu_enrollments-enrolled_at",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'enrolled_at' (type: timestamptz, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'enrolled_at' detected on edu_enrollments. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-edu_enrollments-created_at",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'created_at' (type: timestamptz, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'created_at' detected on edu_enrollments. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-edu_enrollments-updated_at",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'updated_at' (type: timestamptz, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'updated_at' detected on edu_enrollments. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    },
+    {
+      "check_id": "drift-additive-edu_enrollments-request_id",
+      "check_type": "DRIFT_DETECTION",
+      "check_name": "additive_change",
+      "expected": "No expectation (no declaration)",
+      "actual": "New column 'request_id' (type: text, nullable: false)",
+      "result": "WARNING",
+      "severity": "WARNING",
+      "message": "New non-security column 'request_id' detected on edu_enrollments. Not declared in migration. Security invariants intact. Review recommended but not blocking deployment."
+    }
+  ],
+  "summary": {
+    "total_checks": 90,
+    "passed": 13,
+    "warnings": 67,
+    "failed": 10,
+    "errors": 0,
+    "critical_passed": 6,
+    "critical_failed": 8
+  },
+  "execution_time_ms": 3423,
+  "timestamp": "2026-08-25T17:11:21.779Z"
+}

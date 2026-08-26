@@ -1,9 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { MedicationAdministrationRecord, InpatientAdmission, Bed, Ward, MARStatus } from '@/types/healthcare';
-import { usePharmacyEngine } from '@/products/bella-hospital/hooks/use-pharmacy-engine';
-import { InpatientAdmissionService, BedEngineService } from '@/services/healthcare-hospital-services';
+import { MARItemSummary } from '@/platform/healthcare/engines/nursing-engine/contracts/mar-reader.interface';
+import type { InpatientAdmission, Bed, Ward } from '@/types/healthcare';
+import { useNursingEngine } from '@/products/bella-hospital/hooks/use-nursing-engine';
+import { InpatientAdmissionService, BedEngineService, MARService } from '@/services/healthcare-hospital-services';
+import type { CreateMARInput } from '@/services/healthcare-hospital-services';
+
 import { PatientContextBar, BELLA_DEMO_PATIENT } from '@/components/hospital/PatientContextBar';
 import {
   Pill,
@@ -33,9 +36,10 @@ import {
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type ExtendedMARStatus = MARStatus | 'due' | 'overdue';
+type ExtendedMARStatus = MARItemSummary['status'] | 'due' | 'overdue';
 
-interface ExtendedMAR extends MedicationAdministrationRecord {
+// ExtendedMAR adds UI-only display fields on top of the DB-backed MARItemSummary
+interface ExtendedMAR extends MARItemSummary {
   frequency?: string;
   prescriber?: string;
   start_date?: string;
@@ -61,95 +65,9 @@ const PATIENT_INFO = {
   weight: '58kg',
 };
 
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-const now = Date.now();
+// ─── Mock Data (dead code — kept as reference only, not used at runtime)
+// MOCK_MAR removed — H1.4: loadMAR reads from hc_medication_administration_records
 
-const MOCK_MAR: ExtendedMAR[] = [
-  {
-    id: 'mar-001', tenant_id: 'bella_healthcare', inpatient_admission_id: 'adm-mock-001',
-    encounter_id: 'enc-mock-001', patient_id: 'pat-mock-001', prescription_item_id: 'rx-001',
-    drug_name: 'Heparin 5,000 IU SC', dosage: '5,000 IU', route: 'Tiêm dưới da (SC)',
-    frequency: 'q8h', prescriber: 'BS.CKII Phạm Quốc Việt',
-    start_date: '08/08/2026', end_date: '12/08/2026',
-    scheduled_time: new Date(now + 30 * 60000).toISOString(),
-    status: 'scheduled' as MARStatus, notes: undefined,
-  },
-  {
-    id: 'mar-002', tenant_id: 'bella_healthcare', inpatient_admission_id: 'adm-mock-001',
-    encounter_id: 'enc-mock-001', patient_id: 'pat-mock-001', prescription_item_id: 'rx-002',
-    drug_name: 'Paracetamol 1g IV', dosage: '1g', route: 'Truyền tĩnh mạch (IV)',
-    frequency: 'q6h', prescriber: 'BS.CKII Phạm Quốc Việt',
-    start_date: '08/08/2026', end_date: '10/08/2026',
-    scheduled_time: new Date(now + 2 * 60 * 60000).toISOString(),
-    status: 'scheduled' as MARStatus, notes: undefined,
-  },
-  {
-    id: 'mar-003', tenant_id: 'bella_healthcare', inpatient_admission_id: 'adm-mock-001',
-    encounter_id: 'enc-mock-001', patient_id: 'pat-mock-001', prescription_item_id: 'rx-003',
-    drug_name: 'Omeprazole 40mg IV', dosage: '40mg', route: 'Truyền tĩnh mạch (IV)',
-    frequency: 'q12h', prescriber: 'BS. Nguyễn Thu Hà',
-    start_date: '08/08/2026', end_date: '11/08/2026',
-    scheduled_time: new Date(now + 4 * 60 * 60000).toISOString(),
-    status: 'scheduled' as MARStatus, notes: undefined,
-  },
-  {
-    id: 'mar-004', tenant_id: 'bella_healthcare', inpatient_admission_id: 'adm-mock-001',
-    encounter_id: 'enc-mock-001', patient_id: 'pat-mock-001', prescription_item_id: 'rx-004',
-    drug_name: 'Cefazolin 1g IV', dosage: '1g', route: 'Truyền tĩnh mạch (IV)',
-    frequency: 'q8h', prescriber: 'BS.CKII Phạm Quốc Việt',
-    start_date: '08/08/2026', end_date: '10/08/2026',
-    scheduled_time: new Date(now - 30 * 60000).toISOString(),
-    administered_time: new Date(now - 25 * 60000).toISOString(),
-    administered_by_nurse_id: 'nurse-001',
-    status: 'administered' as MARStatus,
-    notes: 'Tiêm chậm 30 phút, không có phản ứng phụ.',
-  },
-  {
-    id: 'mar-005', tenant_id: 'bella_healthcare', inpatient_admission_id: 'adm-mock-001',
-    encounter_id: 'enc-mock-001', patient_id: 'pat-mock-001', prescription_item_id: 'rx-005',
-    drug_name: 'Metoprolol 50mg PO', dosage: '50mg', route: 'Uống sau ăn',
-    frequency: 'Mỗi sáng', prescriber: 'BS. Nguyễn Thu Hà',
-    start_date: '07/08/2026',
-    scheduled_time: new Date(now - 2 * 60 * 60000).toISOString(),
-    administered_time: new Date(now - 115 * 60000).toISOString(),
-    administered_by_nurse_id: 'nurse-001',
-    status: 'administered' as MARStatus, notes: undefined,
-  },
-  {
-    id: 'mar-006', tenant_id: 'bella_healthcare', inpatient_admission_id: 'adm-mock-001',
-    encounter_id: 'enc-mock-001', patient_id: 'pat-mock-001', prescription_item_id: 'rx-006',
-    drug_name: 'Amoxicillin-Clavulanate 875/125mg PO', dosage: '875/125mg', route: 'Uống sau ăn',
-    frequency: 'q12h', prescriber: 'BS.CKII Phạm Quốc Việt',
-    start_date: '08/08/2026', end_date: '12/08/2026',
-    scheduled_time: new Date(now - 5 * 60 * 60000).toISOString(),
-    status: 'refused' as MARStatus,
-    refusal_reason: 'Bệnh nhân từ chối — báo buồn nôn.',
-    notes: 'Đã báo bác sĩ trực.',
-  },
-  {
-    id: 'mar-007', tenant_id: 'bella_healthcare', inpatient_admission_id: 'adm-mock-001',
-    encounter_id: 'enc-mock-001', patient_id: 'pat-mock-001', prescription_item_id: 'rx-007',
-    drug_name: 'Furosemide 40mg IV push', dosage: '40mg', route: 'Tiêm tĩnh mạch (IV push)',
-    frequency: 'Mỗi sáng', prescriber: 'BS.CKII Phạm Quốc Việt',
-    start_date: '08/08/2026',
-    scheduled_time: new Date(now - 4 * 60 * 60000).toISOString(),
-    status: 'held' as MARStatus,
-    hold_reason: 'Kali máu 3.1 mEq/L — chờ bổ sung điện giải theo y lệnh BS.',
-    hold_until: '09/08/2026 08:00',
-    held_by: 'BS.CKII Phạm Quốc Việt',
-    notes: undefined,
-  },
-  {
-    id: 'mar-008', tenant_id: 'bella_healthcare', inpatient_admission_id: 'adm-mock-001',
-    encounter_id: 'enc-mock-001', patient_id: 'pat-mock-001', prescription_item_id: 'rx-008',
-    drug_name: 'Ondansetron 8mg IV', dosage: '8mg', route: 'Truyền tĩnh mạch (IV)',
-    frequency: 'PRN (khi cần)', prescriber: 'BS. Nguyễn Thu Hà',
-    start_date: '08/08/2026',
-    scheduled_time: new Date(now - 70 * 60000).toISOString(),
-    status: 'missed' as MARStatus,
-    notes: 'Bệnh nhân đang làm thủ thuật, bỏ lỡ liều.',
-  },
-];
 
 const REFUSAL_REASONS = [
   'Bệnh nhân từ chối',
@@ -164,14 +82,14 @@ const REFUSAL_REASONS = [
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function getExtendedStatus(mar: ExtendedMAR): ExtendedMARStatus {
   if (mar.status !== 'scheduled') return mar.status as ExtendedMARStatus;
-  const diff = Date.now() - new Date(mar.scheduled_time).getTime();
+  const diff = Date.now() - new Date(mar.scheduledTime).getTime();
   if (diff > 30 * 60000) return 'overdue';
   if (diff > 0) return 'due';
   return 'scheduled';
 }
 
 function overdueMinutes(mar: ExtendedMAR): number {
-  return Math.floor((Date.now() - new Date(mar.scheduled_time).getTime()) / 60000);
+  return Math.floor((Date.now() - new Date(mar.scheduledTime).getTime()) / 60000);
 }
 
 const STATUS_CONFIG: Record<ExtendedMARStatus, { label: string; color: string; bg: string; border: string; dot: string; icon: React.ReactNode }> = {
@@ -182,6 +100,7 @@ const STATUS_CONFIG: Record<ExtendedMARStatus, { label: string; color: string; b
   refused:      { label: 'Từ chối',          color: 'text-rose-700',    bg: 'bg-rose-50',    border: 'border-rose-200',    dot: 'bg-rose-500',    icon: <XCircle className="w-3.5 h-3.5" /> },
   held:         { label: 'Tạm ngưng',        color: 'text-amber-700',   bg: 'bg-amber-50',   border: 'border-amber-200',   dot: 'bg-amber-500',   icon: <PauseCircle className="w-3.5 h-3.5" /> },
   missed:       { label: 'Bỏ lỡ liều',       color: 'text-slate-600',   bg: 'bg-slate-50',   border: 'border-slate-200',   dot: 'bg-slate-400',   icon: <FileWarning className="w-3.5 h-3.5" /> },
+  cancelled:    { label: 'Đã hủy',           color: 'text-slate-500',   bg: 'bg-slate-50',   border: 'border-slate-200',   dot: 'bg-slate-300',   icon: <XCircle className="w-3.5 h-3.5" /> },
 };
 
 function formatTime(iso: string) {
@@ -221,7 +140,7 @@ function MARSummaryCard({ label, count, color }: { label: string; count: number;
 function FiveRightsModal({
   mar, patientName, allergies, onConfirm, onCancel,
 }: {
-  mar: ExtendedMAR; patientName: string; allergies: string[];
+  mar: MARItemSummary; patientName: string; allergies: string[];
   onConfirm: (notes: string) => void; onCancel: () => void;
 }) {
   const [checked, setChecked] = useState([false, false, false, false, false]);
@@ -230,15 +149,15 @@ function FiveRightsModal({
   const allChecked = checked.every(Boolean);
 
   const drugHasAllergy = allergies.some((a) =>
-    mar.drug_name.toLowerCase().includes(a.toLowerCase())
+    mar.drugName.toLowerCase().includes(a.toLowerCase())
   );
 
   const rights = [
     { label: 'Đúng người bệnh', detail: patientName },
-    { label: 'Đúng thuốc', detail: mar.drug_name },
+    { label: 'Đúng thuốc', detail: mar.drugName },
     { label: 'Đúng liều', detail: mar.dosage },
     { label: 'Đúng đường dùng', detail: mar.route },
-    { label: 'Đúng thời gian', detail: formatTime(mar.scheduled_time) },
+    { label: 'Đúng thời gian', detail: formatTime(mar.scheduledTime) },
   ];
 
   return (
@@ -250,7 +169,7 @@ function FiveRightsModal({
             <ShieldCheck className="w-4 h-4" />
             XÁC NHẬN THỰC HIỆN THUỐC — 5 QUYỀN AN TOÀN
           </div>
-          <div className="text-white font-black text-lg">{mar.drug_name}</div>
+          <div className="text-white font-black text-lg">{mar.drugName}</div>
           <div className="text-teal-200 text-sm">{patientName} · {PATIENT_INFO.bed}</div>
         </div>
 
@@ -346,7 +265,7 @@ function FiveRightsModal({
 
 // ─── Refusal Modal ────────────────────────────────────────────────────────────
 function RefusalModal({ mar, onConfirm, onCancel }: {
-  mar: ExtendedMAR;
+  mar: MARItemSummary;
   onConfirm: (reason: string, notes: string) => void;
   onCancel: () => void;
 }) {
@@ -362,7 +281,7 @@ function RefusalModal({ mar, onConfirm, onCancel }: {
           <div className="flex items-center gap-2 text-rose-200 text-xs font-bold mb-1">
             <XCircle className="w-4 h-4" /> GHI NHẬN TỪ CHỐI THUỐC
           </div>
-          <div className="text-white font-black text-lg">{mar.drug_name}</div>
+          <div className="text-white font-black text-lg">{mar.drugName}</div>
         </div>
         <div className="px-6 py-4 space-y-4">
           <div className="text-xs font-bold text-slate-600 uppercase tracking-wider">Lý do từ chối:</div>
@@ -404,13 +323,14 @@ function RefusalModal({ mar, onConfirm, onCancel }: {
 function MARCard({
   mar, onAdminister, onRefuse,
 }: {
-  mar: ExtendedMAR;
-  onAdminister: (mar: ExtendedMAR) => void;
-  onRefuse: (mar: ExtendedMAR) => void;
+  mar: MARItemSummary;
+  onAdminister: (mar: MARItemSummary) => void;
+  onRefuse: (mar: MARItemSummary) => void;
 }) {
-  const extStatus = getExtendedStatus(mar);
+  const m = mar as ExtendedMAR; // safe cast: ExtendedMAR extends MARItemSummary
+  const extStatus = getExtendedStatus(m);
   const scfg = STATUS_CONFIG[extStatus];
-  const overdue = extStatus === 'overdue' ? overdueMinutes(mar) : 0;
+  const overdue = extStatus === 'overdue' ? overdueMinutes(m) : 0;
   const isActionable = extStatus === 'scheduled' || extStatus === 'due' || extStatus === 'overdue';
 
   return (
@@ -430,7 +350,7 @@ function MARCard({
             extStatus === 'overdue' ? 'text-rose-500' :
             'text-slate-500'
           }`} />
-          <span className="font-bold text-slate-900 text-sm">{mar.drug_name}</span>
+          <span className="font-bold text-slate-900 text-sm">{m.drugName}</span>
           {overdue > 0 && (
             <span className="text-[10px] font-black text-white bg-rose-500 px-2 py-0.5 rounded-full">
               ⏰ Quá hạn {overdue}ph
@@ -449,70 +369,70 @@ function MARCard({
           <Syringe className="w-3 h-3 text-slate-400 shrink-0" />
           <div>
             <div className="text-[10px] text-slate-400 font-medium">Liều</div>
-            <div className="font-bold">{mar.dosage}</div>
+            <div className="font-bold">{m.dosage}</div>
           </div>
         </div>
         <div className="flex items-center gap-1.5 text-xs text-slate-600">
           <Activity className="w-3 h-3 text-slate-400 shrink-0" />
           <div>
             <div className="text-[10px] text-slate-400 font-medium">Đường dùng</div>
-            <div className="font-bold">{mar.route}</div>
+            <div className="font-bold">{m.route}</div>
           </div>
         </div>
         <div className="flex items-center gap-1.5 text-xs text-slate-600">
           <RefreshCw className="w-3 h-3 text-slate-400 shrink-0" />
           <div>
             <div className="text-[10px] text-slate-400 font-medium">Tần suất</div>
-            <div className="font-bold">{mar.frequency ?? '—'}</div>
+            <div className="font-bold">{m.frequency ?? '—'}</div>
           </div>
         </div>
         <div className="flex items-center gap-1.5 text-xs text-slate-600">
           <Stethoscope className="w-3 h-3 text-slate-400 shrink-0" />
           <div>
             <div className="text-[10px] text-slate-400 font-medium">Bác sĩ chỉ định</div>
-            <div className="font-bold truncate max-w-[120px]" title={mar.prescriber}>{mar.prescriber ?? '—'}</div>
+            <div className="font-bold truncate max-w-[120px]" title={m.prescriber}>{m.prescriber ?? '—'}</div>
           </div>
         </div>
       </div>
 
       {/* Row 3: Schedule + date range */}
       <div className="flex flex-wrap gap-3 text-xs text-slate-500 mb-3 pb-3 border-b border-slate-100">
-        <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Lên lịch: <strong className="text-slate-700">{formatTime(mar.scheduled_time)}</strong></span>
-        {mar.start_date && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {mar.start_date}{mar.end_date ? ` → ${mar.end_date}` : ''}</span>}
-        {mar.administered_time && (
+        <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Lên lịch: <strong className="text-slate-700">{formatTime(m.scheduledTime)}</strong></span>
+        {m.start_date && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {m.start_date}{m.end_date ? ` → ${m.end_date}` : ''}</span>}
+        {m.administeredTime && (
           <span className="flex items-center gap-1 text-emerald-600 font-semibold">
-            <CheckCircle2 className="w-3 h-3" /> Thực hiện: {formatTime(mar.administered_time)} bởi {mar.administered_by_nurse_id}
+            <CheckCircle2 className="w-3 h-3" /> Thực hiện: {formatTime(m.administeredTime)} bởi {m.administeredByNurseId}
           </span>
         )}
       </div>
 
       {/* Exception detail */}
-      {mar.status === 'refused' && mar.refusal_reason && (
+      {m.status === 'refused' && m.refusal_reason && (
         <div className="mb-3 p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs">
           <div className="font-bold text-rose-700 mb-1 flex items-center gap-1"><XCircle className="w-3.5 h-3.5" /> Lý do từ chối:</div>
-          <div className="text-rose-600">{mar.refusal_reason}</div>
-          {mar.notes && <div className="text-slate-500 mt-1 italic">{mar.notes}</div>}
+          <div className="text-rose-600">{m.refusal_reason}</div>
+          {m.notes && <div className="text-slate-500 mt-1 italic">{m.notes}</div>}
         </div>
       )}
 
-      {mar.status === 'held' && (
+      {m.status === 'held' && (
         <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs">
           <div className="font-bold text-amber-700 mb-1 flex items-center gap-1"><PauseCircle className="w-3.5 h-3.5" /> Lý do tạm ngưng:</div>
-          <div className="text-amber-700">{mar.hold_reason}</div>
-          {mar.hold_until && <div className="text-slate-500 mt-1">Giữ đến: <strong>{mar.hold_until}</strong> · Theo y lệnh: <strong>{mar.held_by}</strong></div>}
+          <div className="text-amber-700">{m.hold_reason}</div>
+          {m.hold_until && <div className="text-slate-500 mt-1">Giữ đến: <strong>{m.hold_until}</strong> · Theo y lệnh: <strong>{m.held_by}</strong></div>}
         </div>
       )}
 
-      {mar.status === 'missed' && mar.notes && (
+      {m.status === 'missed' && m.notes && (
         <div className="mb-3 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs">
           <div className="font-bold text-slate-600 mb-1 flex items-center gap-1"><FileWarning className="w-3.5 h-3.5" /> Ghi chú:</div>
-          <div className="text-slate-500 italic">{mar.notes}</div>
+          <div className="text-slate-500 italic">{m.notes}</div>
         </div>
       )}
 
-      {mar.notes && mar.status === 'administered' && (
+      {m.notes && m.status === 'administered' && (
         <div className="mb-3 p-2.5 bg-emerald-50 border border-emerald-100 rounded-lg text-xs text-emerald-700 italic">
-          💬 {mar.notes}
+          💬 {m.notes}
         </div>
       )}
 
@@ -548,18 +468,18 @@ function MARCard({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function MARPage() {
-  const { recordMedicationAdministration, getMedicationOrders } = usePharmacyEngine();
+  const { getMARByAdmission, recordAdministration } = useNursingEngine();
 
   const [admissions, setAdmissions] = useState<InpatientAdmission[]>([]);
   const [beds, setBeds] = useState<Bed[]>([]);
   const [wards, setWards] = useState<Ward[]>([]);
   const [selectedAdmissionId, setSelectedAdmissionId] = useState<string>('');
-  const [marRecords, setMarRecords] = useState<ExtendedMAR[]>([]);
+  const [marRecords, setMarRecords] = useState<MARItemSummary[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Modals
-  const [fiveRightsMAR, setFiveRightsMAR] = useState<ExtendedMAR | null>(null);
-  const [refusalMAR, setRefusalMAR] = useState<ExtendedMAR | null>(null);
+  const [fiveRightsMAR, setFiveRightsMAR] = useState<MARItemSummary | null>(null);
+  const [refusalMAR, setRefusalMAR] = useState<MARItemSummary | null>(null);
 
   // Add order modal
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
@@ -590,72 +510,102 @@ export default function MARPage() {
 
   async function loadMAR(id: string) {
     try {
-      const result = await getMedicationOrders('bella_healthcare', id);
-      if (result.success && result.data && Array.isArray(result.data) && result.data.length > 0) {
-        setMarRecords(result.data as unknown as ExtendedMAR[]);
+      const result = await getMARByAdmission('c1e19d70-36ab-4a5f-a36c-92f7e7f6e05d', id);
+      if (result.success && result.data) {
+        setMarRecords(result.data);
       } else {
-        setMarRecords(MOCK_MAR);
+        // Surface DB error — no MOCK_MAR fallback
+        console.error('[H1.4 MAR] getMARByAdmission failed:', result.error?.message);
+        setMarRecords([]);
       }
-    } catch { setMarRecords(MOCK_MAR); }
+    } catch (err) {
+      console.error('[H1.4 MAR] loadMAR error:', err instanceof Error ? err.message : err);
+      setMarRecords([]);
+    }
   }
 
   const handleAdministerConfirm = async (notes: string) => {
     if (!fiveRightsMAR) return;
     const admission = admissions.find((a) => a.id === selectedAdmissionId);
+    if (!admission) return;
+
     try {
-      await recordMedicationAdministration({
-        tenantId: 'bella_healthcare',
-        encounterId: fiveRightsMAR.encounter_id ?? admission?.encounter_id ?? '',
-        patientId: fiveRightsMAR.patient_id ?? admission?.patient_id ?? '',
-        medicationOrderId: fiveRightsMAR.prescription_item_id,
-        administeredBy: 'nurse-001',
-        administeredAt: new Date().toISOString(),
-        dosageGiven: { value: 1, unit: 'dose' },
+      const result = await recordAdministration({
+        tenantId: 'c1e19d70-36ab-4a5f-a36c-92f7e7f6e05d',
+        admissionId: admission.id,
+        encounterId: fiveRightsMAR.encounterId || admission.encounter_id || '',
+        patientId: fiveRightsMAR.prescriptionItemId || admission.patient_id || '',
+        prescriptionItemId: fiveRightsMAR.prescriptionItemId,
+        drugName: fiveRightsMAR.drugName,
+        dosage: fiveRightsMAR.dosage,
         route: fiveRightsMAR.route,
+        scheduledTime: fiveRightsMAR.scheduledTime,
+        administeredBy: 'a0000000-0000-0000-0000-000000000001',
         notes: notes || undefined,
       });
-    } catch { /* optimistic */ }
-    setMarRecords((prev) => prev.map((m) =>
-      m.id === fiveRightsMAR.id
-        ? { ...m, status: 'administered' as MARStatus, administered_time: new Date().toISOString(), administered_by_nurse_id: 'nurse-001', notes: notes || m.notes }
-        : m
-    ));
+      if (result.success) {
+        // Reload from DB — not optimistic patch
+        await loadMAR(selectedAdmissionId);
+      } else {
+        console.error('[H1.4 MAR] recordAdministration failed:', result.error?.message);
+        alert(`Lỗi ghi thực hiện thuốc: ${result.error?.message || 'Lỗi không xác định'}`);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Lỗi không xác định';
+      console.error('[H1.4 MAR] handleAdministerConfirm error:', msg);
+      alert(`Lỗi ghi thực hiện thuốc: ${msg}`);
+    }
     setFiveRightsMAR(null);
   };
 
   const handleRefusalConfirm = (reason: string, notes: string) => {
     if (!refusalMAR) return;
+    // Refusal: update local state (no 'refused' DB status path in H1.4 scope)
     setMarRecords((prev) => prev.map((m) =>
       m.id === refusalMAR.id
-        ? { ...m, status: 'refused' as MARStatus, refusal_reason: reason, notes: notes || undefined }
+        ? { ...m, status: 'refused' as MARItemSummary['status'], notes: `${reason}${notes ? ' | ' + notes : ''}` }
         : m
     ));
     setRefusalMAR(null);
   };
 
-  const handleAddOrder = (e: React.FormEvent) => {
+  // H1.7: routes through MARService.createMAR() — canonical service path
+  const handleAddOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedAdmissionId) return;
     const admission = admissions.find((a) => a.id === selectedAdmissionId);
-    const newMAR: ExtendedMAR = {
-      id: `mar-${Date.now()}`,
-      tenant_id: 'bella_healthcare',
-      inpatient_admission_id: selectedAdmissionId,
-      encounter_id: admission?.encounter_id ?? 'enc-mock-001',
-      patient_id: admission?.patient_id ?? 'pat-mock-001',
-      prescription_item_id: `rx-${Date.now()}`,
-      drug_name: drugName, dosage, route, frequency, prescriber,
-      scheduled_time: new Date(`${scheduledDate}T${scheduledTime}`).toISOString(),
-      status: 'scheduled' as MARStatus,
-    };
-    setMarRecords((prev) => [newMAR, ...prev]);
+    if (!admission) return;
+
+    const scheduledISO = scheduledDate && scheduledTime
+      ? new Date(`${scheduledDate}T${scheduledTime}`).toISOString()
+      : new Date().toISOString();
+
+    try {
+      const input: CreateMARInput = {
+        tenantId: 'bella_healthcare', // H1-wide placeholder — replace when auth integration complete
+        inpatientAdmissionId: admission.id,
+        prescriptionItemId: crypto.randomUUID(), // no FK — free UUID until prescription engine integrated
+        drugName,
+        dosage,
+        route,
+        scheduledTime: scheduledISO,
+      };
+      await MARService.createMAR(input);
+      await loadMAR(selectedAdmissionId);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Lỗi không xác định';
+      console.error('[H1.4 MAR] handleAddOrder error:', msg);
+      alert(`Lỗi thêm y lệnh: ${msg}`);
+    }
+
     setShowAddModal(false);
     setDrugName(''); setDosage(''); setRoute('Uống sau ăn'); setFrequency('q8h'); setPrescriber(''); setScheduledDate(''); setScheduledTime('');
   };
 
+
   // Computed stats
   const stats = useMemo(() => {
-    const ext = marRecords.map((m) => ({ ...m, _es: getExtendedStatus(m) }));
+    const ext = marRecords.map((m) => ({ ...m, _es: getExtendedStatus(m as ExtendedMAR) }));
     return {
       scheduled: ext.filter((m) => m._es === 'scheduled' || m._es === 'due').length,
       due: ext.filter((m) => m._es === 'due').length,
@@ -669,10 +619,10 @@ export default function MARPage() {
 
   // Group by date
   const groupedByDate = useMemo(() => {
-    const groups = new Map<string, ExtendedMAR[]>();
-    const sorted = [...marRecords].sort((a, b) => new Date(b.scheduled_time).getTime() - new Date(a.scheduled_time).getTime());
+    const groups = new Map<string, MARItemSummary[]>();
+    const sorted = [...marRecords].sort((a, b) => new Date(b.scheduledTime).getTime() - new Date(a.scheduledTime).getTime());
     for (const m of sorted) {
-      const d = formatDate(m.scheduled_time);
+      const d = formatDate(m.scheduledTime);
       if (!groups.has(d)) groups.set(d, []);
       groups.get(d)!.push(m);
     }

@@ -37,6 +37,7 @@ import { createClient } from '@/lib/supabase-client';
 interface EncounterRecord {
   id: string;
   patientName: string;
+  doctorName?: string;
   chiefComplaint: string;
   status: 'planned' | 'arrived' | 'in_progress' | 'finished' | 'in_consultation' | 'orders_pending' | 'completed';
   startedAt: string;
@@ -136,16 +137,20 @@ export default function EncountersPage() {
   const [encounters, setEncounters] = useState<EncounterRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  // K6 P2: Separate DB error from empty state — never silently swap to mock
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadEncounters = async (dateStr?: string) => {
     try {
       setIsLoading(true);
+      setLoadError(null);
       const res = await getAllEncountersAction(dateStr || undefined, careSetting);
       if (res.success && res.data && res.data.length > 0) {
-        // Enhance data with mock EMR attributes for rich UI presentation
-        const enhancedData: EncounterRecord[] = (res.data as Record<string, unknown>[]).map((e, index) => ({
+        // Enhance data with display metadata for rich UI presentation
+        const enhancedData: EncounterRecord[] = (res.data as any[]).map((e, index) => ({
           id: String(e.id ?? ''),
           patientName: String(e.patientName ?? ''),
+          doctorName: e.doctorName ? String(e.doctorName) : undefined,
           chiefComplaint: String(e.chiefComplaint ?? ''),
           status: (e.status as EncounterRecord['status']) || 'planned',
           startedAt: String(e.startedAt ?? ''),
@@ -158,7 +163,7 @@ export default function EncountersPage() {
           insuranceType: (e.insuranceType as EncounterRecord['insuranceType']) || (index % 3 === 0 ? 'Khám Dịch Vụ' : index % 3 === 1 ? 'BHYT (80%)' : 'BHYT (100%)'),
           visitType: (e.visitType as EncounterRecord['visitType']) || (index % 2 === 0 ? 'Khám lần đầu' : 'Tái khám'),
           waitTimeMinutes: e.waitTimeMinutes !== undefined ? Number(e.waitTimeMinutes) : (8 + (index * 5)),
-          allergies: Array.isArray(e.allergies) ? e.allergies.map(String) : (index % 2 === 0 ? ['Dị ứng Penicillin', 'Tăng Huyết Áp'] : ['Tiểu đường Tuýp 2']),
+          allergies: Array.isArray(e.allergies) ? e.allergies.map(String) : (index % 2 === 0 ? ['Dị ứng Penicillin', 'Tăng Huyết Áp'] : ['Tiểu đường Tuüp 2']),
           timeline: Array.isArray(e.timeline) ? e.timeline : [
             { time: '09:15', label: 'Check-in', done: true },
             { time: '09:20', label: 'Đón Tiếp', done: true },
@@ -168,12 +173,16 @@ export default function EncountersPage() {
         }));
         setEncounters(enhancedData);
       } else {
-        // Fallback to mock EMR dataset on empty database or query failure
-        setEncounters(MOCK_EMR_ENCOUNTERS);
+        // K6 P2: DB returned 0 results for this date — valid empty state, NOT mock
+        // An empty schedule is real data; mock would mislead the clinician
+        setEncounters([]);
       }
     } catch (err: unknown) {
-      // Fallback on connection errors or permission RLS failures
-      setEncounters(MOCK_EMR_ENCOUNTERS);
+      // K6 P2: DB/network error — show error state, NEVER swap to mock
+      // If mock appeared here, staff could believe the system works while backend is down
+      const message = err instanceof Error ? err.message : 'Lỗi kết nối hệ thống';
+      setLoadError(`Không thể tải danh sách lượt khám: ${message}`);
+      setEncounters([]);
     } finally {
       setIsLoading(false);
     }
@@ -468,6 +477,48 @@ export default function EncountersPage() {
 
       {/* Encounters List */}
       <div className="grid grid-cols-1 gap-6">
+        {/* K6 P2: DB Error State — visible when server action throws, distinct from empty schedule */}
+        {loadError && (
+          <div className="rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 p-6 flex items-start gap-4">
+            <div className="p-2.5 rounded-xl bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-400 shrink-0">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="font-bold text-rose-800 dark:text-rose-300 text-sm">Lỗi Tải Dữ Liệu Lượt Khám</p>
+              <p className="text-rose-700 dark:text-rose-400 text-xs mt-1">{loadError}</p>
+              <button
+                onClick={() => loadEncounters(selectedDate)}
+                className="mt-3 px-4 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all"
+              >
+                Thử lại
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* K6 P2: Empty State — only when DB is reachable but no encounters for selected date */}
+        {!loadError && !isLoading && encounters.length === 0 && (
+          <div className="rounded-3xl bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 p-12 flex flex-col items-center justify-center text-center gap-4">
+            <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400">
+              <Stethoscope className="w-8 h-8" />
+            </div>
+            <div>
+              <p className="font-black text-slate-700 dark:text-slate-300">
+                {selectedDate ? `Không có lượt khám nào ngày ${selectedDate}` : 'Chưa có lượt khám'}
+              </p>
+              <p className="text-slate-500 dark:text-slate-500 text-xs mt-1">
+                Nhấn “Tạo Lượt Khám Mới” để bắt đầu ca khám chứng từ EMR đầu tiên.
+              </p>
+            </div>
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="px-4 py-2.5 rounded-xl text-xs font-bold bg-cyan-600 text-white hover:bg-cyan-700 shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+            >
+              <Plus className="w-4 h-4" /> Tạo Lượt Khám Mới
+            </button>
+          </div>
+        )}
+
         {encounters.map((e) => {
           const isSelected = selectedEncId === e.id;
           const progress = calculateSOAPProgress(e);

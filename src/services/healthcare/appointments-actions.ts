@@ -2,6 +2,7 @@
 
 import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
 import { getCurrentUser } from '@/services/user-actions';
+import { getEncounterEngine } from '@/platform/healthcare/engines/encounter-engine';
 
 async function getTenantIdOrThrow(): Promise<string> {
   const user = await getCurrentUser();
@@ -145,6 +146,8 @@ export async function updateAppointmentStatusAction(
             .maybeSingle();
           const careJourneyId = journey ? journey.id : '99999999-9999-9999-9999-999999999999';
 
+          const encounterEngine = getEncounterEngine(supabase);
+
           const { data: enc } = await db
             .from('hc_encounters')
             .select('id')
@@ -154,31 +157,43 @@ export async function updateAppointmentStatusAction(
 
           let encId = enc?.id;
 
+          // Use a system sentinel UUID — 'system' string is not valid for uuid columns
+          const SYSTEM_UUID = '00000000-0000-0000-0000-000000000000';
+
           if (encId) {
-            await db
-              .from('hc_encounters')
-              .update({
-                status: 'arrived',
-                arrived_at: new Date().toISOString(),
-                chief_complaint: appData.notes || appData.specialty || 'Khám theo lịch hẹn',
-                updated_at: new Date().toISOString(),
-              })
-              .eq('id', encId);
+            const response = await encounterEngine.updateStatus({
+              tenantId,
+              encounterId: encId,
+              status: 'arrived',
+              userId: SYSTEM_UUID,
+            });
+            if (!response.success) {
+              console.error('Error updating encounter status via engine:', response.error);
+            }
           } else {
-            const { data: newEnc } = await db
-              .from('hc_encounters')
-              .insert({
-                tenant_id: tenantId,
-                care_journey_id: careJourneyId,
-                patient_party_id: partyId,
-                encounter_class: 'walk_in',
+            const response = await encounterEngine.createEncounter({
+              tenantId,
+              patientId: partyId,
+              encounterClass: 'AMB',
+              chiefComplaint: appData.notes || appData.specialty || 'Khám theo lịch hẹn',
+              userId: SYSTEM_UUID,
+            });
+
+            if (response.success && response.encounter) {
+              encId = response.encounter.id;
+              // Transition the newly created encounter to 'arrived'
+              const statusResult = await encounterEngine.updateStatus({
+                tenantId,
+                encounterId: encId,
                 status: 'arrived',
-                arrived_at: new Date().toISOString(),
-                chief_complaint: appData.notes || appData.specialty || 'Khám theo lịch hẹn',
-              })
-              .select()
-              .single();
-            encId = newEnc?.id;
+                userId: SYSTEM_UUID,
+              });
+              if (!statusResult.success) {
+                console.error('Error transitioning new encounter to arrived via engine:', statusResult.error);
+              }
+            } else {
+              console.error('Error creating encounter via engine:', response.error);
+            }
           }
 
           if (encId) {

@@ -103,7 +103,7 @@ export default function ClinicalWorkspaceEnginePage() {
       
       const dbRes = await getEncounterByIdAction(encounterId);
       if (dbRes.success && dbRes.data) {
-        const encData = dbRes.data;
+        const encData = dbRes.data as any;
         
         // Map database columns to EncounterContext structure
         const mappedEncounter: EncounterContext = {
@@ -134,7 +134,7 @@ export default function ClinicalWorkspaceEnginePage() {
         };
 
         if (patRes.success && patRes.data) {
-          const matched = patRes.data.find((p: Record<string, unknown>) => p.name === encData.patient_name);
+          const matched = (patRes.data as any[]).find((p: any) => p.name === encData.patient_name);
           if (matched) {
             matchedPatient = {
               id: matched.id,
@@ -145,7 +145,7 @@ export default function ClinicalWorkspaceEnginePage() {
               bloodType: matched.bloodType || 'O+',
               allergies: matched.allergies || ['Penicillin'],
               bhytCode: matched.bhytCode || 'GD4797912400215',
-              benefitRate: matched.benefitRate || 80,
+              benefitRate: matched.bhytBenefitRate || 80,
             };
           }
         }
