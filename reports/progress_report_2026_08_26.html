@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bella Platform - Báo cáo Tiến độ Kiến trúc 26/08/2026</title>
+    <!-- Google Fonts: Plus Jakarta Sans (body) & Be Vietnam Pro (headings/tech UI with full Vietnamese support) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* System Colors - Premium Sophisticated Gradients */
+            --bg-mesh-1: #f5f3ff;
+            --bg-mesh-2: #ecfeff;
+            --bg-mesh-3: #fef2f2;
+            
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(226, 232, 240, 0.8);
+            
+            --gradient-primary: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            --gradient-secondary: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+            --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            --gradient-danger: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            --gradient-info: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+            --gradient-silver: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+            
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --text-light: #64748b;
+            
+            --shadow-sm: 0 2px 8px -2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 12px 24px -10px rgba(99, 102, 241, 0.08);
+            --shadow-lg: 0 20px 40px -15px rgba(15, 23, 42, 0.05);
+            
+            --radius-xl: 24px;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #fafbfd;
+            background-image: 
+                radial-gradient(at 0% 0%, var(--bg-mesh-1) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, var(--bg-mesh-2) 0px, transparent 50%),
+                radial-gradient(at 50% 100%, var(--bg-mesh-3) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* SIDEBAR PANEL */
+        .sidebar {
+            width: 320px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--glass-border);
+            padding: 40px 24px;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            z-index: 10;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 40px;
+        }
+
+        .sidebar-logo {
+            width: 40px;
+            height: 40px;
+            background: var(--gradient-primary);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-family: 'Be Vietnam Pro', sans-serif;
+            font-weight: 850;
+            font-size: 1.5rem;
+            box-shadow: 0 8px 16px -4px rgba(99, 102, 241, 0.4);
+        }
+
+        .brand-text {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            font-weight: 800;
+            font-size: 1.35rem;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, #1e1b4b 0%, #4f46e5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .menu-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border-radius: var(--radius-md);
+            transition: var(--transition);
+        }
+
+        .menu-link:hover, .menu-link.active {
+            color: #4f46e5;
+            background: rgba(99, 102, 241, 0.08);
+        }
+
+        .sidebar-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: var(--radius-lg);
+            margin-top: auto;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .sidebar-card h4 {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sidebar-card p {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            line-height: 1.4;
+        }
+
+        /* MAIN CONTENT AREA */
+        .main-content {
+            margin-left: 320px;
+            padding: 40px 48px;
+            flex: 1;
+            max-width: 1300px;
+        }
+
+        /* HEADER GRID */
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 40px;
+        }
+
+        .header-left h2 {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            font-size: 2.25rem;
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            background: linear-gradient(135deg, #0f172a 30%, #312e81 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .header-left p {
+            color: var(--text-muted);
+            font-size: 1rem;
+            font-weight: 400;
+        }
+
+        .header-badge-list {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .badge-pill {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 50px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid rgba(226, 232, 240, 0.5);
+            background: white;
+            color: var(--text-muted);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .badge-pill.active {
+            background: var(--gradient-primary);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 12px -3px rgba(99, 102, 241, 0.3);
+        }
+
+        /* BENTO GRID STATS */
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .bento-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            box-shadow: var(--shadow-md);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: var(--transition);
+        }
+
+        .bento-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(99, 102, 241, 0.4);
+        }
+
+        .bento-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, rgba(99, 102, 241, 0) 70%);
+            border-radius: 50%;
+        }
+
+        .bento-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .bento-icon.prod { background: #eef2ff; color: #4f46e5; }
+        .bento-icon.test { background: #ecfdf5; color: #10b981; }
+        .bento-icon.support { background: #fffbeb; color: #f59e0b; }
+        .bento-icon.total { background: #f0f9ff; color: #0ea5e9; }
+
+        .bento-label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-light);
+            margin-bottom: 6px;
+        }
+
+        .bento-value {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            font-size: 2.1rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+
+        .bento-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        /* VISUAL PROGRESS WIDGET */
+        .progress-widget {
+            background: white;
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 40px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .progress-header h3 {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+
+        .visual-bar-container {
+            height: 36px;
+            background: #f1f5f9;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            display: flex;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .visual-bar-segment {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            padding-left: 16px;
+            color: white;
+            font-size: 0.8rem;
+            font-weight: 700;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .visual-bar-segment.prod { background: var(--gradient-primary); }
+        .visual-bar-segment.test { background: var(--gradient-success); }
+        .visual-bar-segment.support { background: var(--gradient-warning); }
+
+        .visual-legend {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            border-top: 1px solid #f1f5f9;
+            padding-top: 24px;
+        }
+
+        .legend-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .legend-indicator {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            margin-top: 3px;
+        }
+
+        .legend-indicator.prod { background: var(--gradient-primary); }
+        .legend-indicator.test { background: var(--gradient-success); }
+        .legend-indicator.support { background: var(--gradient-warning); }
+
+        .legend-title {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 2px;
+        }
+
+        .legend-desc {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            line-height: 1.4;
+        }
+
+        /* TABLES */
+        .section-headline {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 48px;
+        }
+
+        .section-headline span {
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .card-table-wrapper {
+            background: white;
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            margin-bottom: 40px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            background-color: #fafbfc;
+            color: var(--text-light);
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 18px 24px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        td {
+            padding: 16px 24px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.9rem;
+            color: var(--text-main);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr.grand-total {
+            background-color: #f8fafc;
+            font-weight: 700;
+        }
+
+        tr.grand-total td {
+            color: #4f46e5;
+            font-size: 0.95rem;
+        }
+
+        .badge-type {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+        .badge-type.prod { background-color: #eef2ff; color: #4f46e5; }
+        .badge-type.test { background-color: #ecfdf5; color: #10b981; }
+        .badge-type.support { background-color: #fffbeb; color: #f59e0b; }
+
+        /* ADVANCED BLOCKER TIMELINE / CARDS */
+        .timeline-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 48px;
+        }
+
+        .timeline-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            box-shadow: var(--shadow-md);
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 32px;
+            position: relative;
+            transition: var(--transition);
+        }
+
+        .timeline-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .card-left-column {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .card-number-badge {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-number-badge span {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+        }
+
+        .card-title {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--text-main);
+            line-height: 1.2;
+        }
+
+        .card-status-pill {
+            align-self: flex-start;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-danger { background: var(--danger-light); color: var(--danger); }
+        .status-warning { background: var(--warning-light); color: var(--warning); }
+        .status-info { background: var(--info-light); color: var(--gradient-info); }
+        .status-success { background: var(--success-light); color: var(--success); }
+
+        .card-right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .desc-box h5 {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 6px;
+        }
+
+        .desc-box p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .action-box {
+            background: #f8fafc;
+            border-radius: var(--radius-md);
+            padding: 20px;
+            border-left: 4px solid #4f46e5;
+        }
+
+        .action-box.danger { border-left-color: var(--danger); }
+        .action-box.warning { border-left-color: var(--warning); }
+        .action-box.info { border-left-color: #a855f7; }
+        .action-box.success { border-left-color: var(--success); }
+
+        .action-box h5 {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 4px;
+        }
+
+        .action-box p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* GATING GRAPHICS */
+        .gating-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .gate-widget {
+            background: white;
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .gate-widget-title {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .gate-widget-desc {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            line-height: 1.4;
+        }
+
+        .gate-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .gate-pill-item {
+            background: #f8fafc;
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #f1f5f9;
+        }
+
+        .gate-pill-item.active {
+            border-left: 3px solid var(--success);
+        }
+
+        .gate-pill-item.todo {
+            border-left: 3px solid var(--warning);
+            color: var(--text-light);
+        }
+
+        /* RESPONSIVE LAYOUT */
+        @media (max-width: 1200px) {
+            .bento-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .timeline-card {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            .gating-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 992px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                position: relative;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--glass-border);
+                padding: 30px 24px;
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 30px 24px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .bento-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- LEFT PANEL / SIDEBAR -->
+    <div class="sidebar">
+        <div>
+            <div class="sidebar-brand">
+                <div class="sidebar-logo">B</div>
+                <div class="brand-text">Bella Platform</div>
+            </div>
+            
+            <ul class="sidebar-menu">
+                <li><a href="#stats" class="menu-link active">📊 Thống kê đường code</a></li>
+                <li><a href="#progress-section" class="menu-link">📈 Tỷ trọng theo hạng mục</a></li>
+                <li><a href="#tests" class="menu-link">🧪 Bản đồ kiểm thử</a></li>
+                <li><a href="#gating" class="menu-link">🛡️ Cổng kiểm soát</a></li>
+                <li><a href="#pipeline" class="menu-link">⚙️ Phân tầng &amp; Sanity Pipeline</a></li>
+                <li><a href="#blockers" class="menu-link">📈 Trạng thái &amp; Blockers</a></li>
+            </ul>
+        </div>
+        
+        <div class="sidebar-card">
+            <h4><span style="color: #4f46e5;">●</span> Due Diligence Sẵn Sàng</h4>
+            <p>Toàn bộ số liệu và phân nhóm cấu trúc đã được xác minh động trực tiếp trên repository thực tế tại 26/08/2026.</p>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD CONTENT -->
+    <div class="main-content">
+        <!-- HEADER -->
+        <div class="dashboard-header">
+            <div class="header-left">
+                <h2>Báo Cáo Tiến Độ Kiến Trúc Hệ Thống</h2>
+                <p>Khảo sát hiện trạng codebase, định vị ranh giới cấu phần và đóng băng Kernel.</p>
+                <div class="header-badge-list">
+                    <span class="badge-pill active">Ngày báo cáo: 26/08/2026</span>
+                    <span class="badge-pill">✓ Automated Verification Verified</span>
+                    <span class="badge-pill">Architectural Sandbox</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- BENTO GRID METRICS -->
+        <div id="stats" class="bento-grid">
+            <div class="bento-card">
+                <div class="bento-icon prod">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+                </div>
+                <div>
+                    <div class="bento-label">Production Executable</div>
+                    <div class="bento-value">870,452</div>
+                    <div class="bento-desc">Dòng code thực thi (LOC) thuộc lõi &amp; OS (2,384 files)</div>
+                </div>
+            </div>
+            <div class="bento-card">
+                <div class="bento-icon test">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+                </div>
+                <div>
+                    <div class="bento-label">Test Code Size</div>
+                    <div class="bento-value">410,102</div>
+                    <div class="bento-desc">LOC phục vụ kiểm soát chất lượng &amp; an toàn (647 files)</div>
+                </div>
+            </div>
+            <div class="bento-card">
+                <div class="bento-icon support">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                </div>
+                <div>
+                    <div class="bento-label">Support / Configs</div>
+                    <div class="bento-value">1,383,101</div>
+                    <div class="bento-desc">LOC cấu hình JSON, Yaml, SQL &amp; Markdown (3,670 files)</div>
+                </div>
+            </div>
+            <div class="bento-card">
+                <div class="bento-icon total">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                </div>
+                <div>
+                    <div class="bento-label">Total Repository</div>
+                    <div class="bento-value">2,663,655</div>
+                    <div class="bento-desc">Tổng dòng code bao gồm mọi tài nguyên dự án (6,701 files)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MESH RADIAL PROPORTION WIDGET -->
+        <div class="progress-widget">
+            <div class="progress-header">
+                <h3>Cấu trúc phân phối mã nguồn (LOC Proportions)</h3>
+                <span class="badge-pill">Tổng số 6,701 files</span>
+            </div>
+            
+            <div class="visual-bar-container">
+                <div class="visual-bar-segment prod" style="width: 32.7%;">32.7% Executable</div>
+                <div class="visual-bar-segment test" style="width: 15.4%;">15.4% Test</div>
+                <div class="visual-bar-segment support" style="width: 51.9%;">51.9% Support</div>
+            </div>
+
+            <div class="visual-legend">
+                <div class="legend-card">
+                    <div class="legend-indicator prod"></div>
+                    <div>
+                        <div class="legend-title">Production Executable</div>
+                        <div class="legend-desc">Mã nguồn chạy thực tế phục vụ trực tiếp tính năng nền tảng (Platform Core, Industry OS và Product Verticals).</div>
+                    </div>
+                </div>
+                <div class="legend-card">
+                    <div class="legend-indicator test"></div>
+                    <div>
+                        <div class="legend-title">Test &amp; Verification</div>
+                        <div class="legend-desc">Các bộ kiểm thử Jest, Vitest, Playwright, K6 bảo vệ tính toàn vẹn của nghiệp vụ và ngăn ngừa hồi quy.</div>
+                    </div>
+                </div>
+                <div class="legend-card">
+                    <div class="legend-indicator support"></div>
+                    <div>
+                        <div class="legend-title">Supporting Resources</div>
+                        <div class="legend-desc">SQL migrations nâng cấp cơ sở dữ liệu, scripts build, tài liệu đặc tả thiết kế hệ thống và tệp tin cấu hình.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LOC BREAKDOWN TABLE -->
+        <div class="section-headline">
+            Mã nguồn <span>Phân rã chi tiết (LOC Breakdown)</span>
+        </div>
+        <div class="card-table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Hạng mục thành phần</th>
+                        <th>Số lượng file</th>
+                        <th>Đường Code (LOC)</th>
+                        <th>Phân loại chỉ số</th>
+                        <th>Vai trò kiến trúc</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Platform Core</strong></td>
+                        <td>198</td>
+                        <td>30,548</td>
+                        <td><span class="badge-type prod">Production</span></td>
+                        <td>Nhân lõi hệ thống (Bootstrap, Security, Policy, RLS...)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Healthcare OS (Kernel)</strong></td>
+                        <td>173</td>
+                        <td>29,646</td>
+                        <td><span class="badge-type prod">Production</span></td>
+                        <td>Nhân Y tế (SOAP Clinical Encounters, Prescription, CDS...)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Logistics OS (Kernel)</strong></td>
+                        <td>55</td>
+                        <td>21,309</td>
+                        <td><span class="badge-type prod">Production</span></td>
+                        <td>Nhân Logistics E7.1-E7.3 (Freight, Cargo Movements...)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Education OS (Kernel)</strong></td>
+                        <td>44</td>
+                        <td>6,482</td>
+                        <td><span class="badge-type prod">Production</span></td>
+                        <td>Nhân lõi Giáo dục (Student Profile, Assessments...)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Finance OS (Kernel)</strong></td>
+                        <td>22</td>
+                        <td>4,103</td>
+                        <td><span class="badge-type prod">Production</span></td>
+                        <td>Nhân Tài chính F1-F5 (Double-entry Ledger, Cash Account...)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Real Estate OS (Kernel)</strong></td>
+                        <td>12</td>
+                        <td>676</td>
+                        <td><span class="badge-type prod">Production</span></td>
+                        <td>Nhân quản lý giao dịch Bất động sản (Domain, Repositories...)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Spa Kernel (Baseline)</strong></td>
+                        <td>36</td>
+                        <td>6,412</td>
+                        <td><span class="badge-type prod">Production</span></td>
+                        <td>Nhân quản lý đặt dịch vụ, KTV, hoa hồng (Phase 3 wave 3)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Product Verticals (Sản phẩm dọc)</strong></td>
+                        <td>39</td>
+                        <td>2,857</td>
+                        <td><span class="badge-type prod">Production</span></td>
+                        <td>Dental (406 LOC), Ed (558), Hospital (870), Land (274), Med (749)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>App / Frontend Code</strong></td>
+                        <td>1,569</td>
+                        <td>526,540</td>
+                        <td><span class="badge-type prod">Production</span></td>
+                        <td>Hệ thống Web Client (Next.js components, pages, hooks...)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Mobile Application</strong></td>
+                        <td>224</td>
+                        <td>241,308</td>
+                        <td><span class="badge-type prod">Production</span></td>
+                        <td>Ứng dụng di động trên thiết bị (React Native/Expo)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Packages Shared</strong></td>
+                        <td>12</td>
+                        <td>571</td>
+                        <td><span class="badge-type prod">Production</span></td>
+                        <td>Thư viện dùng chung trong Monorepo</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Tests &amp; Test Suites</strong></td>
+                        <td>647</td>
+                        <td>410,102</td>
+                        <td><span class="badge-type test">Test Code</span></td>
+                        <td>Mã nguồn phục vụ việc kiểm thử hệ thống</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Database &amp; SQL Migrations</strong></td>
+                        <td>670</td>
+                        <td>100,276</td>
+                        <td><span class="badge-type support">Support</span></td>
+                        <td>Supabase DB schema migrations, Triggers, RLS, RPCs</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Scripts</strong></td>
+                        <td>448</td>
+                        <td>91,123</td>
+                        <td><span class="badge-type support">Support</span></td>
+                        <td>Scripts hỗ trợ build, deploy, verify tự động</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Other Configs / Docs</strong></td>
+                        <td>2,552</td>
+                        <td>1,191,702</td>
+                        <td><span class="badge-type support">Support</span></td>
+                        <td>Tài liệu đặc tả (Markdown) và cấu hình dự án</td>
+                    </tr>
+                    <tr class="grand-total">
+                        <td>TỔNG CỘNG HỆ THỐNG</td>
+                        <td>6,701</td>
+                        <td>2,663,655</td>
+                        <td>-</td>
+                        <td>Kho lưu trữ mã nguồn Bella Spa ERP</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- SECTION: PROGRESS BAR BREAKDOWN -->
+        <div id="progress-section" class="section-headline" style="margin-top: 48px;">
+            Phân bổ <span>Tỷ trọng theo Hạng mục (LOC & Files %)</span>
+        </div>
+
+        <div class="card-table-wrapper" style="padding: 32px; overflow: visible;">
+            <!-- Tab switcher -->
+            <div style="display: flex; gap: 8px; margin-bottom: 28px;">
+                <button id="btn-loc" onclick="switchView('loc')"
+                    style="padding: 8px 20px; border-radius: 8px; border: none; background: linear-gradient(135deg,#6366f1,#8b5cf6); color:white; font-weight:700; cursor:pointer; font-size:0.85rem; transition:all .2s;">
+                    📊 Theo LOC
+                </button>
+                <button id="btn-files" onclick="switchView('files')"
+                    style="padding: 8px 20px; border-radius: 8px; border: 1.5px solid #e2e8f0; background: white; color: #64748b; font-weight:600; cursor:pointer; font-size:0.85rem; transition:all .2s;">
+                    📁 Theo Số file
+                </button>
+            </div>
+
+            <!-- Progress bars container -->
+            <div id="progress-bars" style="display:flex; flex-direction:column; gap: 14px;"></div>
+
+            <!-- Summary row -->
+            <div style="margin-top: 28px; padding-top: 20px; border-top: 1px solid #f1f5f9; display:flex; gap:32px; flex-wrap:wrap;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <div style="width:12px;height:12px;border-radius:3px;background:linear-gradient(135deg,#6366f1,#8b5cf6);"></div>
+                    <span style="font-size:0.82rem;font-weight:600;color:#475569;">Production — 32.7% LOC</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <div style="width:12px;height:12px;border-radius:3px;background:linear-gradient(135deg,#10b981,#34d399);"></div>
+                    <span style="font-size:0.82rem;font-weight:600;color:#475569;">Test — 15.4% LOC</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <div style="width:12px;height:12px;border-radius:3px;background:linear-gradient(135deg,#f59e0b,#fbbf24);"></div>
+                    <span style="font-size:0.82rem;font-weight:600;color:#475569;">Support — 51.9% LOC</span>
+                </div>
+            </div>
+        </div>
+
+        <script>
+        const components = [
+            { name: 'App / Frontend Code',          files: 1569, loc: 526540, group: 'prod',    desc: 'Next.js components, pages, hooks, services' },
+            { name: 'Mobile Application',            files: 224,  loc: 241308, group: 'prod',    desc: 'React Native / Expo' },
+            { name: 'Platform Core',                 files: 198,  loc: 30548,  group: 'prod',    desc: 'Bootstrap, IAM, Security, Policy Engine' },
+            { name: 'Healthcare OS (Kernel)',         files: 173,  loc: 29646,  group: 'prod',    desc: 'H1-H12, Clinical, Encounter, CDS Engines' },
+            { name: 'Logistics OS (Kernel)',          files: 55,   loc: 21309,  group: 'prod',    desc: 'E7.1-E7.3, Freight, Route, Shipment' },
+            { name: 'Spa Kernel (Baseline)',          files: 36,   loc: 6412,   group: 'prod',    desc: 'Đặt lịch, KTV, hoa hồng' },
+            { name: 'Education OS (Kernel)',          files: 44,   loc: 6482,   group: 'prod',    desc: 'Assessment, Enrollment, Student' },
+            { name: 'Finance OS (Kernel)',            files: 22,   loc: 4103,   group: 'prod',    desc: 'F1-F5, Ledger, Cash, AR, AP Engines' },
+            { name: 'Product Verticals',             files: 39,   loc: 2857,   group: 'prod',    desc: 'Dental, Medical, Land, Hospital, Education' },
+            { name: 'Real Estate OS (Kernel)',        files: 12,   loc: 676,    group: 'prod',    desc: 'Domain, Repositories, Contracts' },
+            { name: 'Packages Shared',               files: 12,   loc: 571,    group: 'prod',    desc: 'Thư viện dùng chung Monorepo' },
+            { name: 'Tests & Test Suites',           files: 647,  loc: 410102, group: 'test',    desc: 'Jest, Vitest, Playwright, K6' },
+            { name: 'Other Configs / Docs',          files: 2552, loc: 1191702,group: 'support', desc: 'JSON, YAML, Markdown, HTML' },
+            { name: 'Database & SQL Migrations',     files: 670,  loc: 100276, group: 'support', desc: 'Supabase Migrations, Triggers, RLS, RPCs' },
+            { name: 'Scripts',                       files: 448,  loc: 91123,  group: 'support', desc: 'Build, CI/CD, migration scripts' },
+        ];
+
+        const TOTAL_FILES = 6701;
+        const TOTAL_LOC   = 2663655;
+
+        const BAR_COLORS = {
+            prod:    { bg: 'linear-gradient(90deg,#6366f1,#8b5cf6)', badge: '#eef2ff', text: '#4f46e5', label: 'Production' },
+            test:    { bg: 'linear-gradient(90deg,#10b981,#34d399)', badge: '#ecfdf5', text: '#059669', label: 'Test' },
+            support: { bg: 'linear-gradient(90deg,#f59e0b,#fbbf24)', badge: '#fffbeb', text: '#d97706', label: 'Support' },
+        };
+
+        let currentView = 'loc';
+
+        function fmt(n) { return n.toLocaleString('vi-VN'); }
+
+        function renderBars(view) {
+            const sorted = [...components].sort((a, b) =>
+                view === 'loc' ? b.loc - a.loc : b.files - a.files
+            );
+            const container = document.getElementById('progress-bars');
+            container.innerHTML = '';
+
+            sorted.forEach((c, i) => {
+                const pct = view === 'loc'
+                    ? ((c.loc   / TOTAL_LOC)   * 100).toFixed(2)
+                    : ((c.files / TOTAL_FILES) * 100).toFixed(2);
+                const col = BAR_COLORS[c.group];
+                const raw = view === 'loc' ? c.loc : c.files;
+                const unit = view === 'loc' ? 'LOC' : 'files';
+                const displayPct = parseFloat(pct);
+                // clamp bar width: show at least 0.4% visually so it's always visible
+                const barWidth = Math.max(displayPct, 0.4);
+
+                container.innerHTML += `
+                <div style="display:flex; align-items:center; gap:16px; animation: fadeIn 0.3s ease ${i*0.04}s both;">
+                    <div style="width:220px; flex-shrink:0;">
+                        <div style="font-size:0.83rem;font-weight:700;color:#1e293b;line-height:1.3;">${c.name}</div>
+                        <div style="font-size:0.75rem;color:#94a3b8;margin-top:2px;">${c.desc}</div>
+                    </div>
+                    <div style="flex:1; position:relative;">
+                        <div style="height:28px; background:#f1f5f9; border-radius:8px; overflow:hidden; position:relative;">
+                            <div style="height:100%; width:${barWidth}%; background:${col.bg}; border-radius:8px;
+                                        display:flex; align-items:center; padding-left:10px;
+                                        transition: width 0.7s cubic-bezier(.4,0,.2,1);
+                                        position:relative; min-width:2px;">
+                                ${displayPct >= 3 ? `<span style="color:white;font-size:0.78rem;font-weight:700;white-space:nowrap;">${pct}%</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div style="width:130px; flex-shrink:0; text-align:right;">
+                        <span style="font-family:'Be Vietnam Pro',sans-serif; font-size:0.85rem; font-weight:800; color:#1e293b;">${fmt(raw)}</span>
+                        <span style="font-size:0.75rem; color:#94a3b8; margin-left:4px;">${unit}</span>
+                    </div>
+                    <div style="width:70px; flex-shrink:0; text-align:right;">
+                        <span style="font-size:0.82rem;font-weight:700;
+                            background:${col.badge};color:${col.text};
+                            padding:3px 9px;border-radius:6px;">${pct}%</span>
+                    </div>
+                </div>`;
+            });
+        }
+
+        function switchView(view) {
+            currentView = view;
+            renderBars(view);
+            const btnLoc   = document.getElementById('btn-loc');
+            const btnFiles = document.getElementById('btn-files');
+            if (view === 'loc') {
+                btnLoc.style.cssText   = 'padding:8px 20px;border-radius:8px;border:none;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;font-weight:700;cursor:pointer;font-size:0.85rem;transition:all .2s;';
+                btnFiles.style.cssText = 'padding:8px 20px;border-radius:8px;border:1.5px solid #e2e8f0;background:white;color:#64748b;font-weight:600;cursor:pointer;font-size:0.85rem;transition:all .2s;';
+            } else {
+                btnFiles.style.cssText = 'padding:8px 20px;border-radius:8px;border:none;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;font-weight:700;cursor:pointer;font-size:0.85rem;transition:all .2s;';
+                btnLoc.style.cssText   = 'padding:8px 20px;border-radius:8px;border:1.5px solid #e2e8f0;background:white;color:#64748b;font-weight:600;cursor:pointer;font-size:0.85rem;transition:all .2s;';
+            }
+        }
+
+        // Init on page load
+        document.addEventListener('DOMContentLoaded', function() { renderBars('loc'); });
+        </script>
+
+        <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-12px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+        </style>
+
+        <!-- SECTION 2: TEST CASES -->
+        <div id="tests" class="section-headline">
+            Chất lượng <span>Bản đồ kiểm thử (6,098 Test Cases)</span>
+        </div>
+        <div class="card-table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Phân vùng / Phân hệ</th>
+                        <th>Số file test</th>
+                        <th>Tổng số Test Cases</th>
+                        <th>Đặc trưng và Phương pháp kiểm thử</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Healthcare OS Tests</strong></td>
+                        <td>53</td>
+                        <td>521</td>
+                        <td>Kiểm thử tích hợp các động cơ H1-H12 (SOAP, Prescriptions...)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Logistics OS Tests</strong></td>
+                        <td>19</td>
+                        <td>572</td>
+                        <td>Kiểm thử tích hợp Sealed Kernel E7 (547/547 PASS)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Finance OS Tests</strong></td>
+                        <td>13</td>
+                        <td>176</td>
+                        <td>Unit/Integration kiểm tra Ledger, Cash, AP/AR và Invariant</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Education OS Tests</strong></td>
+                        <td>12</td>
+                        <td>223</td>
+                        <td>Unit/Integration kiểm tra Assessment, Student, Course</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Real Estate OS Tests</strong></td>
+                        <td>1</td>
+                        <td>5</td>
+                        <td>Kiểm thử tích hợp cho Real Estate Kernel</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Platform Core Tests</strong></td>
+                        <td>20</td>
+                        <td>128</td>
+                        <td>Kiểm thử tương hợp và bất biến đa nhiệm platform core</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Product Verticals Tests</strong></td>
+                        <td>14</td>
+                        <td>95</td>
+                        <td>Kiểm chứng tuân thủ RLS &amp; Hiến pháp (Dental 11, Hospital 17...)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>End-to-End Tests (Playwright)</strong></td>
+                        <td>23</td>
+                        <td>89</td>
+                        <td>Kiểm thử E2E giao diện người dùng và cô lập Multi-tenant</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Load &amp; Performance (k6)</strong></td>
+                        <td>35</td>
+                        <td>1</td>
+                        <td>Giả lập kịch bản stress test tích hợp tải trọng cao</td>
+                    </tr>
+                    <tr>
+                        <td><strong>App / Business Logic Specific</strong></td>
+                        <td>342</td>
+                        <td>3,629</td>
+                        <td>Kịch bản test quy tắc nghiệp vụ (__tests__, lib, services, modules...)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Runtime &amp; System Tests</strong></td>
+                        <td>46</td>
+                        <td>659</td>
+                        <td>Kiểm thử môi trường chạy thực tế (tests) và tích hợp cũ (archive)</td>
+                    </tr>
+                    <tr class="grand-total">
+                        <td>TỔNG CỘNG BÀI KIỂM THỬ</td>
+                        <td>578</td>
+                        <td>6,098</td>
+                        <td>Mức độ bao phủ an toàn kiểm thử thực thi (trong 647 file vật lý)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- SECTION 3: ARCHITECTURAL GATES -->
+        <div id="gating" class="section-headline">
+            Hàng rào <span>Cổng kiểm soát bảo vệ nhân (Gating)</span>
+        </div>
+        <div class="gating-grid">
+            <div class="gate-widget">
+                <div class="gate-widget-title">
+                    <span>G5 Destructive Change Gate</span>
+                    <span class="badge-pill" style="color: #10b981; background: #ecfdf5; border-color: #a7f3d0;">✓ Active</span>
+                </div>
+                <p class="gate-widget-desc">Ngăn chặn các sửa đổi cấu trúc bảng trực tiếp của nhân đã đóng băng từ sản phẩm dọc.</p>
+                <div class="gate-stack">
+                    <div class="gate-pill-item active"><span>Xác định vai trò (Actor Role Verification)</span> <span>GREEN</span></div>
+                    <div class="gate-pill-item active"><span>Khóa cấu trúc nhân (DDL Freeze Check)</span> <span>GREEN</span></div>
+                    <div class="gate-pill-item active"><span>Hợp đồng giao tiếp (Contract Versioning)</span> <span>GREEN</span></div>
+                </div>
+            </div>
+
+            <div class="gate-widget">
+                <div class="gate-widget-title">
+                    <span>Logistics 5-Layer Perimeter</span>
+                    <span class="badge-pill" style="color: #f59e0b; background: #fffbeb; border-color: #fef3c7;">⚠️ Partial</span>
+                </div>
+                <p class="gate-widget-desc">Kiểm soát biên kiến trúc và tính bất biến cho Logistics OS. Hai chốt chặn Husky và CI chưa hoàn thiện.</p>
+                <div class="gate-stack">
+                    <div class="gate-pill-item active"><span>L1/L2: IDE &amp; Static Checkers</span> <span>GREEN</span></div>
+                    <div class="gate-pill-item todo"><span>L3: Local Husky pre-commit hook</span> <span>TODO</span></div>
+                    <div class="gate-pill-item todo"><span>L4: GitHub Actions PR Gate</span> <span>TODO</span></div>
+                </div>
+            </div>
+
+            <div class="gate-widget">
+                <div class="gate-widget-title">
+                    <span>Healthcare 11 Verification Gates</span>
+                    <span class="badge-pill" style="color: #10b981; background: #ecfdf5; border-color: #a7f3d0;">✓ Active</span>
+                </div>
+                <p class="gate-widget-desc">Các cổng xác minh độc lập áp dụng bắt buộc đối với sản phẩm dọc Y tế (như Bella Dental).</p>
+                <div class="gate-stack">
+                    <div class="gate-pill-item active"><span>G0-G4: Isolation &amp; Migration Safety</span> <span>BLOCK PR</span></div>
+                    <div class="gate-pill-item active"><span>G5-G8: Clinical &amp; Event Governance</span> <span>WARN / BLOCK</span></div>
+                    <div class="gate-pill-item active"><span>G9-G10: Audit &amp; Kernel Regression</span> <span>BLOCK PR</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION: TESTING PIPELINE LAYERS -->
+        <div id="pipeline" class="section-headline">
+            Chất lượng <span>Phân tầng kiểm thử &amp; Sanity Pipeline</span>
+        </div>
+        <div class="card-table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tầng kiểm thử</th>
+                        <th>Công cụ sử dụng</th>
+                        <th>Mục tiêu kiểm chứng</th>
+                        <th>Lệnh thực thi (NPM Script)</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>L1: Static Linting</strong></td>
+                        <td><code>ESLint</code></td>
+                        <td>Phát hiện lỗi cú pháp tĩnh, chuẩn hóa conventions và chất lượng viết mã nguồn.</td>
+                        <td><code>npm run lint</code> / <code>lint:strict</code></td>
+                        <td><span class="badge-pill" style="color: #10b981; background: #ecfdf5; border-color: #a7f3d0; padding: 4px 10px;">✓ Active</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>L2: Compilation Safety</strong></td>
+                        <td><code>TypeScript Compiler (TSC)</code></td>
+                        <td>Xác thực chặt chẽ kiểu dữ liệu (type safety) toàn monorepo trước khi đóng gói.</td>
+                        <td><code>npm run build</code></td>
+                        <td><span class="badge-pill" style="color: #10b981; background: #ecfdf5; border-color: #a7f3d0; padding: 4px 10px;">✓ Active</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>L3: Unit Testing</strong></td>
+                        <td><code>Jest</code> / <code>Vitest (3a)</code></td>
+                        <td>Kiểm thử cô lập logic nghiệp vụ thuần túy, helpers, và validators.</td>
+                        <td><code>npm run test:unit</code> / <code>test:runtime:3a</code></td>
+                        <td><span class="badge-pill" style="color: #10b981; background: #ecfdf5; border-color: #a7f3d0; padding: 4px 10px;">✓ Active</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>L4: Integration Testing</strong></td>
+                        <td><code>Jest</code> / <code>Vitest (3b)</code></td>
+                        <td>Kiểm thử liên phân hệ giữa các OS (Healthcare, Logistics, Finance) với Mock Database.</td>
+                        <td><code>npm run test:integration</code> / <code>test:runtime:3b</code></td>
+                        <td><span class="badge-pill" style="color: #10b981; background: #ecfdf5; border-color: #a7f3d0; padding: 4px 10px;">✓ Active</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>L5: Smoke Testing / Sanity</strong></td>
+                        <td>Node.js scripts / Playwright</td>
+                        <td>Kiểm tra nhanh kết nối cơ sở dữ liệu, quyền RPC, happy paths sau deploy.</td>
+                        <td><code>npm run health:check</code> / <code>db:rpc-smoke:check</code></td>
+                        <td><span class="badge-pill" style="color: #10b981; background: #ecfdf5; border-color: #a7f3d0; padding: 4px 10px;">✓ Active</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>L6: End-to-End (E2E) Testing</strong></td>
+                        <td><code>Playwright</code></td>
+                        <td>Kiểm thử toàn trình trải nghiệm người dùng thực và kiểm chứng cô lập Tenant Isolation.</td>
+                        <td><code>npm run e2e</code> / <code>e2e:tenant-isolation</code></td>
+                        <td><span class="badge-pill" style="color: #10b981; background: #ecfdf5; border-color: #a7f3d0; padding: 4px 10px;">✓ Active</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>L7: Performance &amp; Load</strong></td>
+                        <td><code>K6</code></td>
+                        <td>Giả lập tải trọng cao (stress test, load test) đo lường độ trễ và giới hạn chịu tải API.</td>
+                        <td><code>npm run load:smoke</code></td>
+                        <td><span class="badge-pill" style="color: #10b981; background: #ecfdf5; border-color: #a7f3d0; padding: 4px 10px;">✓ Active</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- SECTION 4: DETAILED TIMELINE BLOCKERS -->
+        <div id="blockers" class="section-headline">
+            Phân loại <span>Trạng thái &amp; Blockers thực tế</span>
+        </div>
+        <div class="timeline-container">
+            <!-- 1. Education OS -->
+            <div class="timeline-card">
+                <div class="card-left-column">
+                    <div class="card-number-badge"><span>1</span> Implementation</div>
+                    <div class="card-title">Education OS</div>
+                    <div class="card-status-pill status-warning">🟡 Incomplete</div>
+                </div>
+                <div class="card-right-column">
+                    <div class="desc-box">
+                        <h5>Mô tả trạng thái:</h5>
+                        <p>Các phân hệ Giáo dục (Student, Course, Enrollment, Assessment) đang được phát triển tích cực mã nguồn để hoàn thiện các tính năng cốt lõi. Chưa đạt mốc đóng băng (Freeze).</p>
+                    </div>
+                    <div class="action-box warning">
+                        <h5>Hướng giải quyết:</h5>
+                        <p>Tiếp tục triển khai mã nguồn theo đúng các nguyên tắc trong Hiến pháp giáo dục (Education Constitution) trước khi đưa vào kiểm thử conformance.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Healthcare OS (H7/H12) -->
+            <div class="timeline-card">
+                <div class="card-left-column">
+                    <div class="card-number-badge"><span>2</span> Verification</div>
+                    <div class="card-title">Healthcare OS (H7 / H12)</div>
+                    <div class="card-status-pill status-info">⚠️ Verification Debt</div>
+                </div>
+                <div class="card-right-column">
+                    <div class="desc-box">
+                        <h5>Mô tả trạng thái:</h5>
+                        <p>Nhân Healthcare đạt regression <strong>GREEN (52/52 suites pass)</strong>. Tuy nhiên, hai module Imaging (H7) và Scheduling (H12) vẫn còn nợ kiểm chứng (Verification Debt) do phạm vi test phủ chưa được đối soát tự động hoàn chỉnh.</p>
+                    </div>
+                    <div class="action-box info">
+                        <h5>Hướng giải quyết:</h5>
+                        <p>Lập kế hoạch rà soát code và bổ sung các kịch bản test tích hợp tự động cụ thể cho động cơ H7 và H12 nhằm xóa bỏ hoàn toàn verification debt.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Logistics OS (L3/L4) -->
+            <div class="timeline-card">
+                <div class="card-left-column">
+                    <div class="card-number-badge"><span>3</span> Enforcement</div>
+                    <div class="card-title">Logistics OS (Layer 3 / 4)</div>
+                    <div class="card-status-pill status-warning">⚠️ Perimeter Open</div>
+                </div>
+                <div class="card-right-column">
+                    <div class="desc-box">
+                        <h5>Mô tả trạng thái:</h5>
+                        <p>Mã nguồn Logistics đã được niêm phong (Sealed) và chạy <strong>547/547 PASS</strong>. Tuy nhiên, chu vi kiểm soát biên (enforcement perimeter) chưa khép kín do thiếu Git pre-commit hook (L3) và PR CI gate (L4).</p>
+                    </div>
+                    <div class="action-box warning">
+                        <h5>Hướng giải quyết:</h5>
+                        <p>Triển khai Husky hook trên git local của lập trình viên và kích hoạt cấu hình GitHub Actions gate ngăn chặn việc sửa đổi nhân trái phép.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Finance OS (F5.6) -->
+            <div class="timeline-card">
+                <div class="card-left-column">
+                    <div class="card-number-badge"><span>4</span> Semantic Decision</div>
+                    <div class="card-title">Finance OS (F5.6)</div>
+                    <div class="card-status-pill status-danger">🔴 Blocked by Spec</div>
+                </div>
+                <div class="card-right-column">
+                    <div class="desc-box">
+                        <h5>Mô tả trạng thái:</h5>
+                        <p>Các lõi F1-F4 và đối chiếu AP/AR F5.0-F5.5 đã đóng băng. F5.6 (Cash + Prepayment) đang <strong>chủ động khóa (BLOCKED)</strong> chờ quyết định ngữ nghĩa từ Kiến trúc sư trưởng. Đây là thiết kế bảo vệ chủ động, không phải lỗi kỹ thuật.</p>
+                    </div>
+                    <div class="action-box danger">
+                        <h5>Hướng giải quyết:</h5>
+                        <p>Duy trì trạng thái BLOCKED của F5.6 cho tới khi Kiến trúc sư trưởng cung cấp đặc tả ngữ nghĩa (bản đồ tài khoản GL, công thức đối chiếu cash...). Tính đúng đắn ngữ nghĩa được ưu tiên hơn tiến độ.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Bella Dental Phase 2 -->
+            <div class="timeline-card">
+                <div class="card-left-column">
+                    <div class="card-number-badge"><span>5</span> Human Approval</div>
+                    <div class="card-title">Bella Dental Phase 2</div>
+                    <div class="card-status-pill status-info">⏸️ Pending Signoff</div>
+                </div>
+                <div class="card-right-column">
+                    <div class="desc-box">
+                        <h5>Mô tả trạng thái:</h5>
+                        <p>Bella Dental đã hoàn thành 100% Phase 1 (Kiến trúc &amp; Phân tích RLS, Database). Trạng thái hiện tại: <strong>Architecture Ready → Implementation Authorization Pending</strong>. Đang khóa để chờ phê duyệt.</p>
+                    </div>
+                    <div class="action-box info">
+                        <h5>Hướng giải quyết:</h5>
+                        <p>Kiến trúc sư trưởng (Human Architect) tiến hành rà soát 5 văn bản đặc tả thiết kế của Dental Phase 1 để ký duyệt, cấp quyền mở khóa chuyển tiếp sang Phase 2 (Contracts Implementation).</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. Spa Kernel -->
+            <div class="timeline-card">
+                <div class="card-left-column">
+                    <div class="card-number-badge"><span>6</span> Architecture Ready</div>
+                    <div class="card-title">Spa Kernel</div>
+                    <div class="card-status-pill status-success">🔒 Frozen Baseline</div>
+                </div>
+                <div class="card-right-column">
+                    <div class="desc-box">
+                        <h5>Mô tả trạng thái:</h5>
+                        <p>Phân hệ Spa (quản lý đặt lịch, KTV, hoa hồng, thẻ liệu trình) đã hoàn chỉnh và đóng băng thành công từ Q2 2026. Code sạch, hoạt động ổn định và có thể tái sử dụng cao.</p>
+                    </div>
+                    <div class="action-box success">
+                        <h5>Hướng giải quyết:</h5>
+                        <p>Duy trì trạng thái đóng băng ổn định. Chỉ mở rộng phát triển khi xuất hiện yêu cầu nghiệp vụ thực tế từ các sản phẩm dọc mới có tính tái sử dụng.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. Bella Hospital -->
+            <div class="timeline-card">
+                <div class="card-left-column">
+                    <div class="card-number-badge"><span>7</span> Baseline Complete</div>
+                    <div class="card-title">Bella Hospital</div>
+                    <div class="card-status-pill status-success">🟢 Implemented</div>
+                </div>
+                <div class="card-right-column">
+                    <div class="desc-box">
+                        <h5>Mô tả trạng thái:</h5>
+                        <p>Sản phẩm dọc Bella Hospital và các cầu nối Healthcare Integration đã được triển khai hoàn chỉnh, tuân thủ đúng Hiến pháp Y tế (Healthcare Vertical Coding Constitution).</p>
+                    </div>
+                    <div class="action-box success">
+                        <h5>Hướng giải quyết:</h5>
+                        <p>Sẵn sàng đưa vào chạy thử nghiệm thực tế (Pilot Run) theo kế hoạch đã ban hành tại tài liệu <a href="file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/docs/architecture/HOSPITAL_PILOT_PLAN.md">HOSPITAL_PILOT_PLAN.md</a>.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

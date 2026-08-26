@@ -69,18 +69,26 @@ async function executeT1() {
   console.log('Contract: v1.0.0 (37ae4544)');
   console.log('Test Harness: v1.0.0 (e535ad0c)\n');
 
-  const executorUrl = process.env.DATABASE_EXECUTOR_URL;
+  // Use same SSL config as DirectPostgreSQLAdapter (R1 security)
+  // Strip sslmode from connection string to avoid conflict with explicit ssl config
+  let executorUrl = process.env.DATABASE_EXECUTOR_URL;
   if (!executorUrl) {
     throw new Error('DATABASE_EXECUTOR_URL not set');
   }
+  if (executorUrl.includes('?sslmode=') || executorUrl.includes('&sslmode=')) {
+    executorUrl = executorUrl.replace(/[?&]sslmode=[^&]+/, '');
+  }
 
-  // Use existing CA cert configuration
   const sslConfig: any = {
     rejectUnauthorized: true,
   };
   if (process.env.DATABASE_CA_CERT) {
-    const fs = await import('fs');
-    sslConfig.ca = fs.readFileSync(process.env.DATABASE_CA_CERT, 'utf8');
+    try {
+      const fs = await import('fs');
+      sslConfig.ca = fs.readFileSync(process.env.DATABASE_CA_CERT, 'utf8');
+    } catch (error) {
+      throw new Error(`Cannot read DATABASE_CA_CERT: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   const pool = new Pool({

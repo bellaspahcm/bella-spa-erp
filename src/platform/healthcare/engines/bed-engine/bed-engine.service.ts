@@ -222,7 +222,11 @@ export class BedEngineService implements BedEngineContract {
 
   async queryBeds(request: BedQueryRequest): Promise<EngineResponse<SharedBed[]>> {
     try {
-      const beds = await this.repository.findAllInWard(request.tenantId, request.wardId);
+      // If wardId not specified, query all beds for the tenant
+      const beds = request.wardId
+        ? await this.repository.findAllInWard(request.tenantId, request.wardId)
+        : await this.repository.findAll(request.tenantId);
+
       let filtered = beds;
 
       if (request.status) {
@@ -278,15 +282,19 @@ export class BedEngineService implements BedEngineContract {
     const snap = typeof bed.toSnapshot === 'function' ? bed.toSnapshot() : bed;
     return {
       id: snap.id,
-      tenant_id: snap.tenantId,
-      ward_id: snap.wardId,
-      bed_code: snap.bedCode,
-      bed_type: snap.bedType,
-      status: snap.status,
-      daily_rate: snap.dailyRate,
-      current_patient_id: snap.occupancy?.patientPartyId,
-      current_admission_id: snap.occupancy?.admissionId,
-      updated_at: snap.updatedAt,
-    } as SharedBed;
+      tenantId: snap.tenantId,
+      bedNumber: snap.bedCode,
+      wardId: snap.wardId,
+      roomNumber: undefined,
+      bedType: snap.bedType as SharedBed['bedType'],
+      status: snap.status as SharedBed['status'],
+      features: [],
+      assignedPatientId: snap.occupancy?.patientPartyId,
+      assignedAdmissionId: snap.occupancy?.admissionId,
+      assignedAt: snap.occupancy?.assignedAt,
+      metadata: { dailyRate: snap.dailyRate },
+      createdAt: snap.createdAt,
+      updatedAt: snap.updatedAt,
+    };
   }
 }

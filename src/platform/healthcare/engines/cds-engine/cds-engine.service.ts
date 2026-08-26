@@ -1236,28 +1236,19 @@ export class CdsEngineService implements CdsEngineContract, IDecisionContract {
     const id = params.id ?? crypto.randomUUID();
     const now = new Date().toISOString();
 
-    await this.supabase.from('hc_clinical_calculations').insert({
+    const { error } = await this.supabase.from('hc_clinical_calculations').insert({
       id,
       tenant_id: params.tenantId,
-      encounter_id: params.encounterId,
-      patient_id: params.patientId,
       algorithm_id: params.algorithmId,
-      algorithm_category: 'CDS_CHECK',
-      algorithm_version: '1.0',
-      engine_version: ENGINE_VERSION,
-      calculation_timestamp: now,
-      calculation_status: 'COMPLETED',
-      input_snapshot: params.inputSnapshot,
-      source_observation_references: params.sourceObservationReferences ?? [],
-      output: params.output,
-      decision: params.decision,
-      enforcement: params.enforcement,
-      knowledge_base_version: KB_VERSION,
-      policy_version: POLICY_VERSION_DEFAULT,
-      correlation_id: params.correlationId ?? null,
-      causation_id: params.causationId ?? null,
+      input_data: params.inputSnapshot,
+      output_data: params.output,
       created_at: now,
     });
+
+    if (error) {
+      console.error('[CdsEngineService] writeCalculationRecord failed:', error);
+      throw new Error(`Failed to write clinical calculation record: ${error.message}`);
+    }
 
     return id;
   }

@@ -1,17 +1,26 @@
-# BELLA HEALTHCARE & EDUCATION OS — CLAUDE & AI CODING INSTRUCTIONS
+# BELLA OS — AI & DEVELOPER ENTRY POINT (CONSTITUTIONAL RULES)
 
-Before creating or modifying any code, you MUST read and obey:
-- **Healthcare OS Constitution:** `docs/architecture/HEALTHCARE_VERTICAL_CODING_CONSTITUTION.md`
-- **Education OS Constitution:** `docs/architecture/EDUCATION_VERTICAL_CODING_CONSTITUTION.md`
+Before doing any work, you MUST read the following local documentation. They represent the current state and strict invariants of the repository:
 
-## NON-NEGOTIABLE LAWS:
-1. **KERNEL CANDIDATE FREEZE:** Boundedcontext kernels are FROZEN. Do NOT create core engines without approval.
-2. **PRODUCT VERTICAL LAYER ONLY:** Product code belongs in `src/products/`.
-3. **CONTRACT ACCESS ONLY:** `Product → Contract → Kernel`. Do NOT query `hc_*` or internal vertical tables directly from Product layer.
-4. **ADDITIVE MIGRATIONS:** `CREATE` product tables/indexes only. Never alter/drop Kernel columns.
-5. **ZERO ENTITY DUPLICATION:** Do not recreate `Patient`, `Doctor`, `Course`, or `Student` tables.
-6. **EVENT-AFTER-PERSISTENCE:** `DB COMMIT → DOMAIN EVENT → CONSUMER`.
-7. **TENANT ISOLATION (GATE 0):** Enforce `tenant_id` on all queries/services.
-8. **PRE-CODING ANALYSIS:** Output `ARCHITECTURE_GATE_RESULT.md` before coding.
-9. **NO CROSS-INDUSTRY COUPLING:** Retail/Education/Healthcare OS must never import from each other. They must remain completely isolated.
-10. **VERIFICATION:** Run `npm run healthcare:verify` before completion.
+## 1. Context & Baseline Status
+- **Current Baseline Status:** [docs/execution/CURRENT_BASELINE.md](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/docs/execution/CURRENT_BASELINE.md) (H1 complete, K1 in-progress)
+- **H1 Verification Evidence:** [docs/execution/HOSPITAL_H1_EVIDENCE.md](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/docs/execution/HOSPITAL_H1_EVIDENCE.md) (11/11 DB integration tests passed)
+- **Healthcare Kernel Map:** [docs/architecture/HEALTHCARE_KERNEL.md](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/docs/architecture/HEALTHCARE_KERNEL.md) (Full classification of all 27 engines)
+
+## 2. Invariants & Rules
+- **Coding Conventions:** [docs/rules/CODING_RULES.md](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/docs/rules/CODING_RULES.md) (Strict typing, no `any`, frontend-backend boundary)
+- **Healthcare Laws:** [docs/rules/HEALTHCARE_RULES.md](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/docs/rules/HEALTHCARE_RULES.md) (Encounter aggregate, zero-duplication rules, 11 gates)
+- **Database Schema & RLS:** [docs/rules/DATABASE_RULES.md](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/docs/rules/DATABASE_RULES.md) (Additive migrations only, RLS query filter)
+
+## 3. Strict Non-Negotiable Laws
+1. **KERNEL FREEZE:** Core engines (H1-H12, mpi-engine, encounter-engine) are frozen. Modify only via ACR.
+2. **PRODUCT VERTICAL LAYER ONLY:** All product-specific logic goes to `src/products/`.
+3. **CONTRACT ACCESS ONLY:** Product interacts with Kernel only via contracts. No direct query on core internal tables.
+4. **ZERO ENTITY DUPLICATION:** Do not recreate `Patient`, `Doctor`, or `Encounter` tables in vertical modules.
+5. **CLEAN DEPENDENCY FLOW:** Kernel engines must never import from vertical/hospital extensions.
+6. **NO MOCK RUNTIME:** Production and test execution paths must never use mock fallback state on failure.
+
+## 4. Verification
+Before completing any task, you MUST run:
+- Architecture check: `npm run healthcare:guard`
+- Full platform verification: `npm run healthcare:verify`

@@ -24,7 +24,7 @@ type AdminAuthClient = {
 type TenantUpdate = Database['public']['Tables']['tenants']['Update'];
 type RegisterTenantBusinessModule = TenantPrimaryBusinessModuleKey;
 
-const BEAUTY_SPA_HQ_ONLY_ERROR = 'Chỉ Admin HQ mới được setup tenant Beauty Spa.';
+const HQ_ONLY_MODULE_ERROR = 'Chỉ Admin HQ mới được setup tenant theo ngành này.';
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Lỗi không xác định xảy ra';
@@ -64,21 +64,32 @@ export interface RegisterTenantInput {
   invoiceDisplayName?: string;
 }
 
+const VALID_PRIMARY_MODULES: RegisterTenantBusinessModule[] = ['babycare', 'beauty_spa', 'bella_healthcare', 'industrial_cleaning', 'real_estate', 'bella_auto'];
+
 function normalizeBusinessModule(value: unknown): RegisterTenantBusinessModule {
-  return value === 'beauty_spa' ? 'beauty_spa' : 'babycare';
+  if (typeof value === 'string' && VALID_PRIMARY_MODULES.includes(value as RegisterTenantBusinessModule)) {
+    return value as RegisterTenantBusinessModule;
+  }
+  return 'babycare';
 }
 
 function getEnabledModulesForBusinessModule(moduleKey: RegisterTenantBusinessModule): TenantEnabledModules {
-  return moduleKey === 'beauty_spa'
-    ? { babycare: false, beauty_spa: true, student_training: false, industrial_cleaning: false, real_estate: false, bella_auto: false, bella_healthcare: false }
-    : { babycare: true, beauty_spa: false, student_training: false, industrial_cleaning: false, real_estate: false, bella_auto: false, bella_healthcare: false };
+  const base: TenantEnabledModules = { babycare: false, beauty_spa: false, student_training: false, industrial_cleaning: false, real_estate: false, bella_auto: false, bella_healthcare: false };
+  switch (moduleKey) {
+    case 'beauty_spa':         return { ...base, beauty_spa: true };
+    case 'bella_healthcare':   return { ...base, bella_healthcare: true };
+    case 'industrial_cleaning':return { ...base, industrial_cleaning: true };
+    case 'real_estate':        return { ...base, real_estate: true };
+    case 'bella_auto':         return { ...base, bella_auto: true };
+    default:                   return { ...base, babycare: true };
+  }
 }
 
 async function assertBusinessModuleSetupAllowed(moduleKey: RegisterTenantBusinessModule) {
   if (moduleKey === 'babycare') return null;
 
   const hqAuth = await checkHqAuth();
-  return hqAuth.authorized ? null : BEAUTY_SPA_HQ_ONLY_ERROR;
+  return hqAuth.authorized ? null : HQ_ONLY_MODULE_ERROR;
 }
 
 /**
@@ -213,7 +224,7 @@ export async function registerNewTenant(input: RegisterTenantInput) {
 
     // 3.1. Update HQ-managed tenant setup fields after the base onboarding RPC.
     const postOnboardingUpdate: TenantUpdate = {};
-    if (businessModule === 'beauty_spa') {
+    if (businessModule !== 'babycare') {
       postOnboardingUpdate.enabled_modules = toTenantModuleJson(
         getEnabledModulesForBusinessModule(businessModule),
       );
@@ -224,10 +235,6 @@ export async function registerNewTenant(input: RegisterTenantInput) {
         accentColor: input.accentColor,
         portalDisplayName: input.portalDisplayName || input.brandName || input.spaName,
         invoiceDisplayName: input.invoiceDisplayName || input.brandName || input.spaName,
-        stylePreset: 'jade_wellness',
-        radiusStyle: 'soft',
-        buttonStyle: 'pill',
-        menuStyle: 'comfortable',
       }, businessModule);
       postOnboardingUpdate.logo_url = brandTheme.logoUrl;
       postOnboardingUpdate.brand_theme = toTenantBrandThemeJsonForModule(brandTheme, businessModule);
@@ -248,7 +255,7 @@ export async function registerNewTenant(input: RegisterTenantInput) {
         console.error('[registerNewTenant] Post-onboarding tenant setup update failed:', updateError.message);
         const setupLabel = input.branchType === 'franchise'
           ? 'cấu hình nhượng quyền'
-          : 'module ngành Beauty Spa';
+          : `module ngành ${businessModule}`;
         return { success: false, error: `Lỗi cập nhật ${setupLabel}: ${updateError.message}` };
       }
     }

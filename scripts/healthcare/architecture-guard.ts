@@ -146,12 +146,154 @@ function checkStrictTyping(dirPath: string) {
   }
 }
 
+const KERNEL_ENGINES = new Set([
+  'encounter-engine',
+  'mpi-engine',
+  'temporal-engine',
+  'rule-engine',
+  'cds-engine',
+  'audit-compliance-engine',
+  'scheduling-engine',
+  'order-engine'
+]);
+
+const HOSPITAL_ENGINES = [
+  'admission-engine',
+  'bed-engine',
+  'emergency-engine',
+  'icu-engine',
+  'laboratory-engine',
+  'pharmacy-engine',
+  'blood-bank-engine',
+  'surgical-engine',
+  'or-engine',
+  'or-readiness-engine',
+  'anesthesia-engine',
+  'pacu-engine',
+  'cssd-engine',
+  'billing-engine',
+  'imaging-engine',
+  'insurance-engine',
+  'queue-engine'
+];
+
+function checkDependencyFlow() {
+  const enginesDir = path.join(process.cwd(), 'src', 'platform', 'healthcare', 'engines');
+  const coreDir = path.join(process.cwd(), 'src', 'platform', 'core');
+
+  // Rule 1: Platform Core -> Kernel/verticals ❌
+  if (fs.existsSync(coreDir)) {
+    scanCoreDirectoryForPlatformViolations(coreDir);
+  }
+
+  if (fs.existsSync(enginesDir)) {
+    const entries = fs.readdirSync(enginesDir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        const enginePath = path.join(enginesDir, entry.name);
+        if (KERNEL_ENGINES.has(entry.name)) {
+          // Rule 2: Kernel -> Hospital Extension ❌, Kernel -> Product ❌
+          scanKernelDirectoryForViolations(enginePath, entry.name);
+        } else if (HOSPITAL_ENGINES.includes(entry.name)) {
+          // Rule 3: Hospital -> Product ❌
+          scanHospitalDirectoryForViolations(enginePath, entry.name);
+        }
+      }
+    }
+  }
+}
+
+function scanCoreDirectoryForPlatformViolations(dirPath: string) {
+  const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dirPath, entry.name);
+    if (entry.isDirectory()) {
+      scanCoreDirectoryForPlatformViolations(fullPath);
+    } else if (entry.isFile() && (entry.name.endsWith('.ts') || entry.name.endsWith('.tsx'))) {
+      const content = fs.readFileSync(fullPath, 'utf8');
+      const lines = content.split('\n');
+      lines.forEach((line, idx) => {
+        if (line.trim().startsWith('import ') && line.includes('from ')) {
+          if (line.includes('/platform/healthcare') || line.includes('/platform/education') || line.includes('/platform/logistics') || line.includes('/platform/real-estate')) {
+            reportViolation(
+              'PLATFORM_CORE_DEPENDENCY_VIOLATION (K1)',
+              `Platform Core file violates architecture boundaries by importing from vertical/kernel modules: "${line.trim()}"`,
+              fullPath
+            );
+          }
+        }
+      });
+    }
+  }
+}
+
+function scanKernelDirectoryForViolations(dirPath: string, engineName: string) {
+  const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dirPath, entry.name);
+    if (entry.isDirectory()) {
+      scanKernelDirectoryForViolations(fullPath, engineName);
+    } else if (entry.isFile() && (entry.name.endsWith('.ts') || entry.name.endsWith('.tsx'))) {
+      const content = fs.readFileSync(fullPath, 'utf8');
+      const lines = content.split('\n');
+      lines.forEach((line, idx) => {
+        if (line.trim().startsWith('import ') && line.includes('from ')) {
+          // Kernel -> Hospital Extension ❌
+          for (const hospitalEngine of HOSPITAL_ENGINES) {
+            if (line.includes(`/${hospitalEngine}`) || line.includes(`/${hospitalEngine}/`)) {
+              reportViolation(
+                'DEPENDENCY_DIRECTION_VIOLATION (K1)',
+                `Kernel engine "${engineName}" violates dependency rules by importing from Hospital-specific engine "${hospitalEngine}". Kernel must not depend on Hospital Extension.`,
+                fullPath
+              );
+            }
+          }
+          // Kernel -> Product/Verticals ❌
+          if (line.includes('/products/') || line.includes('/healthcare/verticals/')) {
+            reportViolation(
+              'DEPENDENCY_DIRECTION_VIOLATION (K1)',
+              `Kernel engine "${engineName}" violates dependency rules by importing from Product/Vertical layer: "${line.trim()}"`,
+              fullPath
+            );
+          }
+        }
+      });
+    }
+  }
+}
+
+function scanHospitalDirectoryForViolations(dirPath: string, engineName: string) {
+  const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dirPath, entry.name);
+    if (entry.isDirectory()) {
+      scanHospitalDirectoryForViolations(fullPath, engineName);
+    } else if (entry.isFile() && (entry.name.endsWith('.ts') || entry.name.endsWith('.tsx'))) {
+      const content = fs.readFileSync(fullPath, 'utf8');
+      const lines = content.split('\n');
+      lines.forEach((line, idx) => {
+        if (line.trim().startsWith('import ') && line.includes('from ')) {
+          // Hospital -> Product/Verticals ❌
+          if (line.includes('/products/') || line.includes('/healthcare/verticals/')) {
+            reportViolation(
+              'DEPENDENCY_DIRECTION_VIOLATION (K1)',
+              `Hospital extension engine "${engineName}" violates dependency rules by importing from Product/Vertical layer: "${line.trim()}"`,
+              fullPath
+            );
+          }
+        }
+      });
+    }
+  }
+}
+
 function runArchitectureGuard() {
   console.log('\n\x1b[36m===============================================================\x1b[0m');
   console.log('\x1b[36m   BELLA HEALTHCARE OS — AUTOMATED MACHINE ARCHITECTURE GUARD   \x1b[0m');
   console.log('\x1b[36m===============================================================\x1b[0m\n');
 
   checkKernelFreeze();
+  checkDependencyFlow();
 
   const productsDir = path.join(process.cwd(), 'src', 'products');
   const verticalsDir = path.join(process.cwd(), 'src', 'platform', 'healthcare', 'verticals');

@@ -13,8 +13,11 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   NursingEngineContract,
   RecordVitalsRequest,
+  MARAdministrationEntry,
 } from '../../contracts/nursing-engine.contract';
 import type { EngineResponse, VitalSigns, NursingNote, EngineHealthStatus } from '../../shared-kernel/types';
+import type { MARItemSummary } from './contracts/mar-reader.interface';
+import { SupabaseMARReader } from './repositories/supabase-mar-reader';
 import { eventBus } from '@/platform/host/event-bus';
 
 export class NursingEngineService implements NursingEngineContract {
@@ -22,34 +25,35 @@ export class NursingEngineService implements NursingEngineContract {
   readonly engineVersion = '1.0.0';
   readonly contractVersion = '1.0.0';
 
-  constructor(private readonly supabase: SupabaseClient) {}
+  private readonly marReader: SupabaseMARReader;
+
+  constructor(private readonly supabase: SupabaseClient) {
+    this.marReader = new SupabaseMARReader(supabase);
+  }
 
   async recordVitalSigns(request: RecordVitalsRequest): Promise<EngineResponse<VitalSigns>> {
     try {
       const now = new Date().toISOString();
 
+      // Map RecordVitalsRequest fields → hc_nursing_vital_signs schema
       const vitalSignsRecord = {
         id: crypto.randomUUID(),
         tenant_id: request.tenantId,
         encounter_id: request.encounterId,
         patient_id: request.patientId,
-        recorded_by: request.recordedBy,
-        recorded_date_time: now,
-        temperature: request.temperature,
-        blood_pressure: request.bloodPressure,
-        heart_rate: request.heartRate,
-        respiratory_rate: request.respiratoryRate,
-        oxygen_saturation: request.oxygenSaturation,
-        weight: request.weight,
-        height: request.height,
-        pain_score: request.painScore,
-        consciousness_level: request.consciousnessLevel,
-        notes: request.notes,
-        created_at: now,
+        nurse_practitioner_id: request.recordedBy,
+        temperature: request.temperature?.value ?? null,
+        heart_rate: request.heartRate?.value ?? null,
+        systolic_bp: request.bloodPressure?.systolic ?? null,
+        diastolic_bp: request.bloodPressure?.diastolic ?? null,
+        spo2: request.oxygenSaturation?.value ?? null,
+        respiratory_rate: request.respiratoryRate?.value ?? null,
+        notes: request.notes ?? null,
+        recorded_at: now,
       };
 
       const { data, error } = await this.supabase
-        .from('hc_vital_signs')
+        .from('hc_nursing_vital_signs')
         .insert(vitalSignsRecord)
         .select()
         .single();
@@ -59,7 +63,7 @@ export class NursingEngineService implements NursingEngineContract {
           success: false,
           error: {
             code: 'RECORD_FAILED',
-            message: 'Failed to record vital signs',
+            message: error?.message || 'Failed to record vital signs',
             details: { error },
             timestamp: now,
           },
@@ -78,13 +82,12 @@ export class NursingEngineService implements NursingEngineContract {
           encounterId: request.encounterId,
           recordedBy: request.recordedBy,
           recordedAt: now,
-          temperature: request.temperature,
-          bloodPressureSystolic: request.bloodPressure ? parseInt(request.bloodPressure.split('/')[0]) : undefined,
-          bloodPressureDiastolic: request.bloodPressure ? parseInt(request.bloodPressure.split('/')[1]) : undefined,
-          heartRate: request.heartRate,
-          respiratoryRate: request.respiratoryRate,
-          oxygenSaturation: request.oxygenSaturation,
-          painScore: request.painScore,
+          temperature: request.temperature?.value,
+          heartRate: request.heartRate?.value,
+          systolicBp: request.bloodPressure?.systolic,
+          diastolicBp: request.bloodPressure?.diastolic,
+          spo2: request.oxygenSaturation?.value,
+          respiratoryRate: request.respiratoryRate?.value,
         },
         userId: request.recordedBy,
       });
@@ -93,7 +96,7 @@ export class NursingEngineService implements NursingEngineContract {
 
       return {
         success: true,
-        data: data as VitalSigns,
+        data: data as unknown as VitalSigns,
       };
     } catch (error) {
       return {
@@ -107,14 +110,14 @@ export class NursingEngineService implements NursingEngineContract {
     }
   }
 
-  async getVitalSigns(tenantId: string, encounterId: string, limit?: number): Promise<EngineResponse<VitalSigns[]>> {
+  async getVitalSigns(tenantId: string, admissionId: string, limit?: number): Promise<EngineResponse<VitalSigns[]>> {
     try {
+      // Query by inpatient_admission_id — matches hc_nursing_vital_signs schema
       let query = this.supabase
-        .from('hc_vital_signs')
+        .from('hc_nursing_vital_signs')
         .select('*')
-        .eq('tenant_id', tenantId)
-        .eq('encounter_id', encounterId)
-        .order('recorded_date_time', { ascending: false });
+        .eq('inpatient_admission_id', admissionId)
+        .order('recorded_at', { ascending: false });
 
       if (limit) {
         query = query.limit(limit);
@@ -127,7 +130,7 @@ export class NursingEngineService implements NursingEngineContract {
           success: false,
           error: {
             code: 'QUERY_ERROR',
-            message: 'Failed to get vital signs',
+            message: error.message,
             details: { error },
             timestamp: new Date().toISOString(),
           },
@@ -136,7 +139,7 @@ export class NursingEngineService implements NursingEngineContract {
 
       return {
         success: true,
-        data: (data || []) as VitalSigns[],
+        data: (data || []) as unknown as VitalSigns[],
       };
     } catch (error) {
       return {
@@ -205,6 +208,92 @@ export class NursingEngineService implements NursingEngineContract {
         success: false,
         error: {
           code: 'CREATE_ERROR',
+          message: error instanceof Error ? error.message : 'Unknown error',
+          timestamp: new Date().toISOString(),
+        },
+      };
+    }
+  }
+
+  // ── H1.4 MAR ────────────────────────────────────────────────────────────────
+
+  async getMARByAdmission(tenantId: string, admissionId: string): Promise<EngineResponse<MARItemSummary[]>> {
+    try {
+      const records = await this.marReader.getMARRecordsByAdmission(tenantId, admissionId);
+      return { success: true, data: records };
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: 'MAR_READ_ERROR',
+          message: error instanceof Error ? error.message : 'Unknown error',
+          timestamp: new Date().toISOString(),
+        },
+      };
+    }
+  }
+
+  async recordAdministration(entry: MARAdministrationEntry): Promise<EngineResponse<MARItemSummary>> {
+    try {
+      const now = new Date().toISOString();
+      const record = {
+        id: crypto.randomUUID(),
+        tenant_id: entry.tenantId,
+        inpatient_admission_id: entry.admissionId,
+        encounter_id: entry.encounterId,
+        patient_id: entry.patientId,
+        // prescription_item_id has no FK — use provided or generate placeholder UUID
+        prescription_item_id: entry.prescriptionItemId ?? crypto.randomUUID(),
+        drug_name: entry.drugName,
+        dosage: entry.dosage,
+        route: entry.route,
+        scheduled_time: entry.scheduledTime,
+        administered_time: now,
+        administered_by_nurse_id: entry.administeredBy,
+        status: 'administered',
+        notes: entry.notes ?? null,
+        created_at: now,
+      };
+
+      const { data, error } = await this.supabase
+        .from('hc_medication_administration_records')
+        .insert(record)
+        .select()
+        .single();
+
+      if (error || !data) {
+        return {
+          success: false,
+          error: {
+            code: 'MAR_WRITE_ERROR',
+            message: error?.message || 'Failed to record administration',
+            timestamp: now,
+          },
+        };
+      }
+
+      const summary: MARItemSummary = {
+        id: String(data.id),
+        tenantId: String(data.tenant_id),
+        encounterId: String(data.encounter_id ?? ''),
+        admissionId: String(data.inpatient_admission_id ?? ''),
+        prescriptionItemId: String(data.prescription_item_id),
+        drugName: String(data.drug_name),
+        dosage: String(data.dosage),
+        route: String(data.route),
+        scheduledTime: String(data.scheduled_time),
+        administeredTime: data.administered_time ? String(data.administered_time) : undefined,
+        administeredByNurseId: data.administered_by_nurse_id ? String(data.administered_by_nurse_id) : undefined,
+        status: 'administered',
+        notes: data.notes ? String(data.notes) : undefined,
+      };
+
+      return { success: true, data: summary };
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: 'MAR_WRITE_ERROR',
           message: error instanceof Error ? error.message : 'Unknown error',
           timestamp: new Date().toISOString(),
         },

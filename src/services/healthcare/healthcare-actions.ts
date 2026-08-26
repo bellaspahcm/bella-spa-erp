@@ -1,6 +1,13 @@
 'use server';
 
 import { Database, Json } from '@/types/database.types';
+import { EncounterEngineService } from '@/platform/healthcare/engines/encounter-engine/encounter-engine.service';
+import { SupabaseEncounterRepository } from '@/platform/healthcare/engines/encounter-engine/infrastructure/supabase-encounter.repository';
+import { NursingEngineService } from '@/platform/healthcare/engines/nursing-engine/nursing-engine.service';
+import { OrderEngineService } from '@/platform/healthcare/engines/order-engine/order-engine.service';
+import { CdsEngineService } from '@/platform/healthcare/engines/cds-engine/cds-engine.service';
+import { eventBus } from '@/platform/host/event-bus';
+import crypto from 'crypto';
 
 interface SoapNotesType {
   subjective?: string;
@@ -323,7 +330,7 @@ export async function startEncounterAction(input: {
     // Determine encounter_class based on care setting
     // ambulatory = outpatient clinic (Medical module)
     // inpatient  = hospital admission (Hospital module)
-    const encounterClass = input.careSetting === 'inpatient' ? 'inpatient' : 'walk_in';
+    const encounterClass = input.careSetting === 'inpatient' ? 'IMP' : 'AMB';
 
     // Insert Encounter Record
     const { data: encounter, error: encError } = await supabase
@@ -398,6 +405,62 @@ export async function startEncounterAction(input: {
 /**
  * 3. Cập nhật Ghi chú SOAP, Sinh hiệu & Chẩn đoán ICD10
  */
+function strictParseVitals(text: string) {
+  if (!text) return null;
+
+  // Strict regex matches
+  const tempMatch = text.match(/Temp:\s*(\d+\.?\d*)/);
+  const hrMatch = text.match(/HR:\s*(\d+)/);
+  const bpMatch = text.match(/BP:\s*(\d+)\/(\d+)/);
+  const spo2Match = text.match(/SpO2:\s*(\d+)/);
+  const rrMatch = text.match(/RR:\s*(\d+)/);
+
+  if (!tempMatch && !hrMatch && !bpMatch && !spo2Match && !rrMatch) {
+    return null; // No valid structured parameters matched
+  }
+
+  const result: any = {};
+  if (tempMatch) result.temperature = { value: parseFloat(tempMatch[1]), unit: 'C' };
+  if (hrMatch) result.heartRate = { value: parseInt(hrMatch[1], 10), unit: 'bpm' };
+  if (bpMatch) {
+    result.bloodPressure = {
+      systolic: parseInt(bpMatch[1], 10),
+      diastolic: parseInt(bpMatch[2], 10),
+    };
+  }
+  if (spo2Match) result.oxygenSaturation = { value: parseInt(spo2Match[1], 10), unit: '%' };
+  if (rrMatch) result.respiratoryRate = { value: parseInt(rrMatch[1], 10), unit: 'cpm' };
+
+  return result;
+}
+
+function strictParseDiagnosis(text: string) {
+  if (!text) return null;
+  
+  // Format 1: [J06.9] Viêm họng
+  const bracketMatch = text.match(/^\[([A-Z][0-9][0-9A-Z\.]*)\]\s*(.*)/);
+  if (bracketMatch) {
+    return { code: bracketMatch[1].trim(), display: bracketMatch[2].trim() };
+  }
+
+  // Format 2: J06.9 - Viêm họng
+  const dashMatch = text.match(/^([A-Z][0-9][0-9A-Z\.]*)\s*-\s*(.*)/);
+  if (dashMatch) {
+    return { code: dashMatch[1].trim(), display: dashMatch[2].trim() };
+  }
+
+  // Format 3: J06.9 Viêm họng
+  const rawCodeMatch = text.match(/^([A-Z][0-9][0-9A-Z\.]*)\s+(.*)/);
+  if (rawCodeMatch) {
+    return { code: rawCodeMatch[1].trim(), display: rawCodeMatch[2].trim() };
+  }
+
+  return null;
+}
+
+/**
+ * 3. Cập nhật Ghi chú SOAP, Sinh hiệu & Chẩn đoán ICD10
+ */
 export async function updateEncounterSOAPAction(input: {
   encounterId: string;
   soap: {
@@ -414,6 +477,90 @@ export async function updateEncounterSOAPAction(input: {
     const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
+    // 1. Get current encounter info (needed for nursing / diagnosis calls)
+    const { data: enc, error: encError } = await supabase
+      .from('hc_encounters')
+      .select('patient_party_id, doctor_party_id')
+      .eq('id', input.encounterId)
+      .eq('tenant_id', tenantId)
+      .single();
+
+    if (encError || !enc) {
+      return { success: false, error: encError?.message || 'Không tìm thấy lượt khám' };
+    }
+
+    // 2. Parse and record vitals structured via NursingEngineService
+    let structuredVitals: any = null;
+    if (input.vitals && Object.keys(input.vitals).length > 0) {
+      structuredVitals = {};
+      const v = input.vitals;
+      if (v.temp) structuredVitals.temperature = { value: Number(v.temp), unit: 'C' };
+      if (v.hr) structuredVitals.heartRate = { value: Number(v.hr), unit: 'bpm' };
+      if (v.bp && typeof v.bp === 'string') {
+        const bpParts = v.bp.split('/');
+        if (bpParts.length === 2) {
+          structuredVitals.bloodPressure = {
+            systolic: parseInt(bpParts[0], 10),
+            diastolic: parseInt(bpParts[1], 10),
+          };
+        }
+      } else if (v.systolic && v.diastolic) {
+        structuredVitals.bloodPressure = {
+          systolic: Number(v.systolic),
+          diastolic: Number(v.diastolic),
+        };
+      }
+      if (v.spo2) structuredVitals.oxygenSaturation = { value: Number(v.spo2), unit: '%' };
+      if (v.rr) structuredVitals.respiratoryRate = { value: Number(v.rr), unit: 'cpm' };
+    } else {
+      structuredVitals = strictParseVitals(input.soap.objective || '');
+    }
+
+    if (structuredVitals) {
+      const nursingEngine = new NursingEngineService(supabase);
+      const vitalsRes = await nursingEngine.recordVitalSigns({
+        encounterId: input.encounterId,
+        tenantId: tenantId,
+        patientId: enc.patient_party_id,
+        recordedBy: enc.doctor_party_id || '00000000-0000-0000-0000-000000000000',
+        temperature: structuredVitals.temperature,
+        heartRate: structuredVitals.heartRate,
+        bloodPressure: structuredVitals.bloodPressure,
+        oxygenSaturation: structuredVitals.oxygenSaturation,
+        respiratoryRate: structuredVitals.respiratoryRate,
+        notes: 'EMR Outpatient SOAP Objective Vitals Record',
+      });
+      if (!vitalsRes.success) {
+        console.error('Error recording vital signs via engine:', vitalsRes.error);
+      }
+    }
+
+    // 3. Parse and record diagnosis structured via EncounterEngineService
+    let structuredDiag: any = null;
+    if (input.diagnoses && input.diagnoses.length > 0) {
+      structuredDiag = input.diagnoses[0];
+    } else {
+      structuredDiag = strictParseDiagnosis(input.soap.assessment || '');
+    }
+
+    if (structuredDiag) {
+      const repo = new SupabaseEncounterRepository(supabase);
+      const encounterEngine = new EncounterEngineService(repo, eventBus);
+      const diagRes = await encounterEngine.addDiagnosis({
+        tenantId: tenantId,
+        encounterId: input.encounterId,
+        code: structuredDiag.code,
+        system: 'ICD-10',
+        display: structuredDiag.display,
+        isPrimary: true,
+        userId: enc.doctor_party_id || '00000000-0000-0000-0000-000000000000',
+      });
+      if (!diagRes.success) {
+        console.error('Error recording diagnosis via engine:', diagRes.error);
+      }
+    }
+
+    // 4. Update legacy EMR notes & metadata columns for UI compatibility
     const soapPayload = {
       subjective: input.soap.subjective || '',
       objective: input.soap.objective || '',
@@ -471,22 +618,31 @@ export async function completeEncounterAction(encounterId: string): Promise<{ su
       };
     }
 
-    // Close Encounter
-    const { data: encounter, error: updateError } = await supabase
+    // Retrieve doctor party ID
+    const { data: currentEnc, error: getErr } = await supabase
       .from('hc_encounters')
-      .update({
-        status: 'completed',
-        finished_at: new Date().toISOString(),
-        completed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
+      .select('doctor_party_id, patient_party_id')
       .eq('id', encounterId)
       .eq('tenant_id', tenantId)
-      .select()
       .single();
 
-    if (updateError || !encounter) {
-      return { success: false, error: updateError?.message || 'Lỗi hoàn tất lượt khám' };
+    if (getErr || !currentEnc) {
+      return { success: false, error: getErr?.message || 'Không tìm thấy lượt khám để hoàn tất' };
+    }
+
+    // Close Encounter via EncounterEngineService
+    const repo = new SupabaseEncounterRepository(supabase);
+    const encounterEngine = new EncounterEngineService(repo, eventBus);
+
+    const completeRes = await encounterEngine.updateStatus({
+      encounterId,
+      tenantId,
+      status: 'finished',
+      userId: currentEnc.doctor_party_id || '00000000-0000-0000-0000-000000000000',
+    });
+
+    if (!completeRes.success) {
+      return { success: false, error: completeRes.error || 'Lỗi hoàn tất lượt khám' };
     }
 
     // Update queue status
@@ -502,9 +658,9 @@ export async function completeEncounterAction(encounterId: string): Promise<{ su
       tenantId,
       'clinical',
       {
-        encounterId: encounter.id,
-        patientId: encounter.patient_id,
-        completedAt: encounter.completed_at
+        encounterId: encounterId,
+        patientId: currentEnc.patient_party_id,
+        completedAt: new Date().toISOString()
       }
     );
 
@@ -661,15 +817,13 @@ export async function createPatientRecordAction(input: {
  * Kept as a const to avoid magic strings throughout the codebase.
  */
 const AMBULATORY_ENCOUNTER_CLASSES = [
-  'walk_in',
-  'scheduled',
-  'emergency',
-  'telemedicine',
-  'follow_up',
-  'homecare',
+  'AMB',
+  'EMER',
+  'VR',
+  'HH',
 ] as const;
 
-const INPATIENT_ENCOUNTER_CLASS = 'inpatient' as const;
+const INPATIENT_ENCOUNTER_CLASS = 'IMP' as const;
 
 export async function getAllEncountersAction(
   dateFilter?: string,
@@ -851,7 +1005,7 @@ export async function getAllEncountersAction(
 /**
  * 9. Cập nhật trạng thái lượt khám trong Database
  */
-export async function updateEncounterStatusAction(encounterId: string, newStatus: EncounterStatus): Promise<{ success: boolean; error?: string }> {
+export async function updateEncounterStatusAction(encounterId: string, newStatus: string): Promise<{ success: boolean; error?: string }> {
   try {
     const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
@@ -1057,7 +1211,7 @@ export async function seedDefaultHealthcareDataAction(options?: { force?: boolea
             care_journey_id: journeyId,
             patient_party_id: partyId,
             doctor_party_id: defaultDoctorId,
-            encounter_class: 'walk_in',
+            encounter_class: 'AMB',
             status: enc.status,
             chief_complaint: enc.complaint,
             notes: JSON.stringify({
@@ -1286,7 +1440,7 @@ export async function createQueueTicketAction(input: {
         care_journey_id: careJourneyId,
         patient_party_id: party.id,
         doctor_party_id: doctorId,
-        encounter_class: 'walk_in',
+        encounter_class: 'AMB',
         status: 'planned',
         chief_complaint: 'Đón tiếp hàng đợi',
       })
@@ -1432,32 +1586,75 @@ export async function createEMREncounterAction(input: {
       .eq('tenant_id', tenantId)
       .limit(1)
       .maybeSingle();
-    const careJourneyId = journey ? journey.id : '99999999-9999-9999-9999-999999999999';
 
-    const encounterClass = input.careSetting === 'inpatient' ? 'inpatient' : 'walk_in';
+    if (!journey) {
+      return {
+        success: false,
+        error: 'Không tìm thấy Hành trình chăm sóc hợp lệ cho cơ sở y tế này. Vui lòng thiết lập hành trình trước.',
+      };
+    }
 
-    // 4. Insert Encounter Record
-    const { error: encError } = await supabase
+    const encounterClass = input.careSetting === 'inpatient' ? 'IMP' : 'AMB';
+
+    // 4. Canonical encounter creation and check-in transitions
+    const repo = new SupabaseEncounterRepository(supabase);
+    const encounterEngine = new EncounterEngineService(repo, eventBus);
+
+    const createRes = await encounterEngine.createEncounter({
+      tenantId: tenantId,
+      patientId: party.id,
+      chiefComplaint: input.chiefComplaint,
+      userId: doctor?.id || '00000000-0000-0000-0000-000000000000',
+      encounterClass,
+    });
+
+    if (!createRes.success || !createRes.encounter) {
+      return { success: false, error: createRes.error || 'Lỗi tạo lượt khám' };
+    }
+
+    const encounterId = createRes.encounter.id;
+
+    // Transition 1: Arrive status
+    const arriveRes = await encounterEngine.updateStatus({
+      encounterId,
+      tenantId,
+      status: 'arrived',
+      userId: doctor?.id || '00000000-0000-0000-0000-000000000000',
+    });
+    if (!arriveRes.success) {
+      return { success: false, error: arriveRes.error || 'Lỗi chuyển trạng thái đến phòng khám' };
+    }
+
+    // Transition 2: Start status (in-progress)
+    const startRes = await encounterEngine.updateStatus({
+      encounterId,
+      tenantId,
+      status: 'in-progress',
+      userId: doctor?.id || '00000000-0000-0000-0000-000000000000',
+    });
+    if (!startRes.success) {
+      return { success: false, error: startRes.error || 'Lỗi bắt đầu phiên khám' };
+    }
+
+    // 5. Initialize notes structure for UI SOAP components compatibility
+    const { error: notesError } = await supabase
       .from('hc_encounters')
-      .insert({
-        tenant_id: tenantId,
-        care_journey_id: careJourneyId,
-        patient_party_id: party.id,
-        doctor_party_id: doctor ? doctor.id : null,
-        encounter_class: encounterClass,
-        status: 'in_consultation',
-        chief_complaint: input.chiefComplaint,
-        notes: JSON.stringify({
-          subjective: input.subjective || '',
-          objective: '',
-          assessment: input.assessment || '',
-          plan: '',
-        }),
-      });
+      .update({
+        notes: (input.subjective || '') + '\n' + (input.assessment || ''),
+        metadata: {
+          soap: {
+            subjective: input.subjective || '',
+            objective: '',
+            assessment: input.assessment || '',
+            plan: '',
+          },
+          consultation_type: 'clinic_outpatient',
+        },
+      })
+      .eq('id', encounterId);
 
-    if (encError) {
-      console.error('Error creating EMR encounter:', encError);
-      return { success: false, error: encError.message };
+    if (notesError) {
+      console.error('Error updating initial EMR notes:', notesError);
     }
 
     return { success: true };
@@ -1587,7 +1784,7 @@ export async function createLabOrderAction(input: {
           tenant_id: tenantId,
           patient_party_id: party?.id,
           care_journey_id: '99999999-9999-9999-9999-999999999999',
-          encounter_class: 'walk_in',
+          encounter_class: 'AMB',
           status: 'planned',
           chief_complaint: 'Chỉ định cận lâm sàng',
         })
@@ -2003,7 +2200,7 @@ export async function createImagingOrderAction(input: {
           tenant_id: tenantId,
           patient_party_id: party?.id,
           care_journey_id: '99999999-9999-9999-9999-999999999999',
-          encounter_class: 'walk_in',
+          encounter_class: 'AMB',
           status: 'planned',
           chief_complaint: 'Chỉ định CĐHA',
         })
@@ -2344,9 +2541,6 @@ export async function createPrescriptionAction(input: {
   dosageInstruction: string;
 }): Promise<{ success: boolean; error?: string }> {
   try {
-    if (input.drugId.startsWith('demo-drug-')) {
-      return { success: true };
-    }
     const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
@@ -2371,30 +2565,42 @@ export async function createPrescriptionAction(input: {
       party = newParty;
     }
 
-    // 2. Find or create encounter
+    if (!party) {
+      return { success: false, error: 'Không tìm thấy hoặc không thể tạo thông tin bệnh nhân.' };
+    }
+
+    // 2. Find active encounter (no ghost fallback)
     let { data: encounter } = await supabase
       .from('hc_encounters')
-      .select('id')
+      .select('id, doctor_party_id')
       .eq('tenant_id', tenantId)
-      .eq('patient_party_id', party?.id)
+      .eq('patient_party_id', party.id)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
 
     if (!encounter) {
-      const { data: newEnc } = await supabase
-        .from('hc_encounters')
-        .insert({
-          tenant_id: tenantId,
-          patient_party_id: party?.id,
-          care_journey_id: '99999999-9999-9999-9999-999999999999',
-          encounter_class: 'walk_in',
-          status: 'planned',
-          chief_complaint: 'Kê đơn thuốc',
-        })
-        .select()
-        .single();
-      encounter = newEnc;
+      return {
+        success: false,
+        error: 'Không tìm thấy lượt khám hoạt động của bệnh nhân. Vui lòng bắt đầu lượt khám trước.',
+      };
+    }
+
+    // Resolve a valid doctor_party_id (the encounter may not have one set if created without explicit doctor)
+    let resolvedDoctorId = encounter.doctor_party_id;
+    if (!resolvedDoctorId) {
+      const { data: anyDoctor } = await supabase
+        .from('party_parties')
+        .select('id')
+        .eq('tenant_id', tenantId)
+        .eq('party_type', 'person')
+        .limit(1)
+        .maybeSingle();
+      resolvedDoctorId = anyDoctor?.id ?? null;
+    }
+
+    if (!resolvedDoctorId) {
+      return { success: false, error: 'Không tìm thấy bác sĩ hợp lệ. Vui lòng thiết lập nhân sự trước.' };
     }
 
     // 3. Find drug profile & inventory item to update stock
@@ -2406,26 +2612,68 @@ export async function createPrescriptionAction(input: {
 
     if (!drugProfile) throw new Error('Không tìm thấy thuốc trong danh mục');
 
-    const invItem = drugProfile.inventory_items;
-    if (invItem.stock_qty < input.qty) {
-      throw new Error(`Tồn kho không đủ! Thuốc chỉ còn ${invItem.stock_qty} ${invItem.unit}.`);
+    const invItem = Array.isArray(drugProfile.inventory_items)
+      ? drugProfile.inventory_items[0]
+      : drugProfile.inventory_items;
+
+    if (!invItem) {
+      throw new Error('Không tìm thấy thông tin kho hàng của thuốc.');
+    }
+
+    const currentStock = Number(invItem.stock_level ?? 0);
+    if (currentStock < input.qty) {
+      throw new Error(`Tồn kho không đủ! Thuốc chỉ còn ${currentStock} ${invItem.unit || 'Viên'}.`);
     }
 
     // 4. Update stock in inventory_items
     const { error: stockErr } = await supabase
       .from('inventory_items')
-      .update({ stock_qty: invItem.stock_qty - input.qty })
+      .update({ stock_level: currentStock - input.qty })
       .eq('id', invItem.id);
 
     if (stockErr) throw stockErr;
 
-    // 5. Insert prescription
+    // 5. Call OrderEngineService to create clinical order (CDSS evaluation boundary)
+    const cds = new CdsEngineService(supabase);
+    const orderEngine = new OrderEngineService(supabase, cds);
+
+    const orderRes = await orderEngine.createOrder({
+      requestId: crypto.randomUUID(),
+      tenantId: tenantId,
+      encounterId: encounter.id,
+      patientId: party.id,
+      orderType: 'MEDICATION',
+      priority: 'ROUTINE',
+      orderedBy: encounter.doctor_party_id || '00000000-0000-0000-0000-000000000000',
+      orderDetails: {
+        drugCode: drugProfile.drug_code,
+        drugName: invItem.name,
+        qty: input.qty,
+        dosageInstruction: input.dosageInstruction,
+      },
+    });
+
+    if (!orderRes.success) {
+      return { success: false, error: orderRes.error?.message || 'Y lệnh bị từ chối bởi hệ thống CDSS.' };
+    }
+
+    if (orderRes.data?.cdsCheckStatus === 'BLOCKED') {
+      return { success: false, error: '🚨 CẢNH BÁO CDSS: Đơn thuốc bị chặn do tương tác thuốc hoặc dị ứng nguy hại!' };
+    }
+
+    const orderId = orderRes.data!.order.id;
+    const alerts = orderRes.data?.cdsAlerts || [];
+    const alertStrings = alerts.map((a: any) => `${a.type === 'ALLERGY' ? '🚨 DỊ ỨNG' : '⚠️ TƯƠNG TÁC'}: ${a.message}`);
+
+    // 6. Insert prescription child record linking via clinical_order_id (NOT NULL FK)
     const { error: rxErr } = await supabase
       .from('hc_prescriptions')
       .insert({
         tenant_id: tenantId,
-        encounter_id: encounter?.id,
-        patient_party_id: party?.id,
+        encounter_id: encounter.id,
+        patient_party_id: party.id,
+        doctor_party_id: resolvedDoctorId,
+        clinical_order_id: orderId,
         drugs: [
           {
             drugId: input.drugId,
@@ -2434,13 +2682,15 @@ export async function createPrescriptionAction(input: {
             dosageInstruction: input.dosageInstruction,
           }
         ],
+        notes: JSON.stringify(alertStrings),
       });
 
     if (rxErr) throw rxErr;
 
     return { success: true };
-  } catch (err: unknown) {
-    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi lưu đơn thuốc' };
+  } catch (err: any) {
+    console.error('CRITICAL ERROR IN createPrescriptionAction:', err);
+    return { success: false, error: err?.message || String(err) };
   }
 }
 
@@ -3202,10 +3452,9 @@ export async function createDrugAction(input: {
         tenant_id: tenantId,
         name: input.drugName,
         sku: input.drugCode,
-        stock_qty: input.stockQty,
+        stock_level: input.stockQty,
         unit: input.unit,
-        status: 'active',
-      } as any)
+      })
       .select()
       .single();
 
@@ -3272,7 +3521,20 @@ export async function getPrescriptionsAction(): Promise<{ success: boolean; data
     const mapped = (data || []).map((rx): PrescriptionViewModel => {
       const drugsList = rx.drugs || [];
       const drug = drugsList[0] || {};
-      const alerts = rx.notes ? JSON.parse(rx.notes) : [];
+      
+      let alerts: string[] = [];
+      if (rx.notes) {
+        if (rx.notes.startsWith('[') || rx.notes.startsWith('{')) {
+          try {
+            alerts = JSON.parse(rx.notes);
+          } catch (_) {
+            alerts = [rx.notes];
+          }
+        } else {
+          alerts = [rx.notes];
+        }
+      }
+
       return {
         id: rx.id,
         ticketNumber: `STT-${rx.encounter_id ? rx.encounter_id.substring(0, 4).toUpperCase() : '101'}`,
@@ -3304,15 +3566,49 @@ export async function approvePrescriptionAction(id: string): Promise<{ success: 
     const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
-    const { error } = await supabase
+    // 1. Fetch prescription to retrieve linked clinical_order_id
+    const { data: rx, error: rxErr } = await supabase
       .from('hc_prescriptions')
-      .update({ status: 'completed' })
+      .select('clinical_order_id')
       .eq('id', id)
-      .eq('tenant_id', tenantId);
+      .eq('tenant_id', tenantId)
+      .single();
 
-    if (error) {
-      console.error('Error approving prescription:', error);
-      return { success: false, error: error.message };
+    if (rxErr || !rx) {
+      console.error('Error fetching prescription for approval:', rxErr);
+      return { success: false, error: rxErr?.message || 'Không tìm thấy đơn thuốc tương ứng' };
+    }
+
+    // 2. Call OrderEngineService to approve the canonical order (Order state transition FIRST)
+    const cds = new CdsEngineService(supabase);
+    const orderEngine = new OrderEngineService(supabase, cds);
+
+    const approveRes = await orderEngine.approveOrder({
+      tenantId: tenantId,
+      orderId: rx.clinical_order_id,
+      approvedBy: '00000000-0000-0000-0000-000000000000',
+      requestId: crypto.randomUUID(),
+    });
+
+    if (!approveRes.success) {
+      const errMsg = typeof approveRes.error === 'object'
+        ? (approveRes.error as any).message || JSON.stringify(approveRes.error)
+        : approveRes.error || 'Lỗi duyệt y lệnh chính';
+      return { success: false, error: errMsg };
+    }
+
+    // 3. Sync the child prescription status to 'completed'
+    const { data: rxUpdated, error: updateErr } = await supabase
+      .from('hc_prescriptions')
+      .update({ status: 'completed', updated_by: '00000000-0000-0000-0000-000000000000' })
+      .eq('id', id)
+      .eq('tenant_id', tenantId)
+      .select('id, status')
+      .single();
+
+    if (updateErr || !rxUpdated) {
+      console.error('[approvePrescriptionAction] Error updating prescription status:', { id, tenantId, updateErr });
+      return { success: false, error: updateErr?.message || 'Prescription update returned no row (ID or tenant mismatch?)' };
     }
 
     return { success: true };

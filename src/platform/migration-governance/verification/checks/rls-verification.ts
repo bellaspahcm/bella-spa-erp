@@ -131,26 +131,41 @@ export async function verifyRLS(
 /**
  * Verify tenant isolation enforced in RLS policies
  * 
- * Check that all policies contain tenant_id = current_tenant_id() clause.
+ * Check that all policies contain tenant_id = <tenant_function>() clause.
  * 
- * Phase 1: Simple string matching (heuristic acceptable for security check).
+ * Accepted patterns (production variants):
+ * - tenant_id = current_tenant_id() — Contract canonical
+ * - tenant_id = (current_setting('app.current_tenant_id', true))::uuid — Education Kernel
+ * - tenant_id = ((auth.jwt() ->> 'tenant_id'))::uuid — Healthcare Kernel migration
+ * - tenant_id = get_auth_tenant_id() — Healthcare Kernel canonical
+ * 
+ * Phase 1: Regex pattern matching (heuristic acceptable for security check).
  * Phase 2: Could use SQL parser for more robust validation.
  */
 function verifyTenantIsolation(
   tableName: string,
   policies: Array<{ name: string; command: string; using?: string; check?: string }>
 ): VerificationCheck {
-  const tenantIsolationPattern = /tenant_id\s*=\s*current_tenant_id\(\)/i;
+  // Accept multiple tenant isolation patterns (production variants)
+  const tenantIsolationPatterns = [
+    /tenant_id\s*=\s*current_tenant_id\(\)/i,                                    // Contract canonical
+    /tenant_id\s*=\s*\(?current_setting\('app\.current_tenant_id'/i,            // Education Kernel
+    /tenant_id\s*=\s*\(+auth\.jwt\(\)\s*->>\s*'tenant_id'/i,                    // Healthcare migration
+    /tenant_id\s*=\s*get_auth_tenant_id\(\)/i,                                   // Healthcare canonical
+  ];
 
   for (const policy of policies) {
     const clause = policy.using || policy.check || '';
 
-    if (!tenantIsolationPattern.test(clause)) {
+    // Check if ANY pattern matches
+    const hasTenantIsolation = tenantIsolationPatterns.some(pattern => pattern.test(clause));
+
+    if (!hasTenantIsolation) {
       return {
         check_id: `tenant-isolation-${tableName}`,
         check_type: 'RLS_VERIFICATION',
         check_name: `${tableName}.tenant_isolation`,
-        expected: 'All policies enforce tenant_id = current_tenant_id()',
+        expected: 'All policies enforce tenant_id = <tenant_function>()',
         actual: `Policy '${policy.name}' (${policy.command}) does not enforce tenant isolation`,
         result: 'FAIL',
         severity: 'CRITICAL',
@@ -164,10 +179,11 @@ function verifyTenantIsolation(
     check_id: `tenant-isolation-${tableName}`,
     check_type: 'RLS_VERIFICATION',
     check_name: `${tableName}.tenant_isolation`,
-    expected: 'All policies enforce tenant_id = current_tenant_id()',
-    actual: 'All policies enforce tenant_id = current_tenant_id()',
+    expected: 'All policies enforce tenant_id = <tenant_function>()',
+    actual: 'All policies enforce tenant_id = <tenant_function>()',
     result: 'PASS',
     severity: 'CRITICAL',
     message: `Tenant isolation enforced on ${tableName}`,
   };
 }
+

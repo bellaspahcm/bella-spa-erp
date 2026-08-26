@@ -1,4 +1,7 @@
-import { supabase } from '@/lib/supabase';
+import { getSupabase } from '@/lib/supabase-client';
+import { getHealthcareService } from '@/platform/healthcare/service-locator';
+import { AuditComplianceService } from '@/platform/healthcare/engines/audit-compliance-engine/audit-compliance.service';
+import { HospitalAdmissionProductService } from '../products/bella-hospital/services/hospital-admission.service';
 import type {
   Ward,
   Bed,
@@ -9,6 +12,7 @@ import type {
   SecurityBreakGlassLog,
   ICD10Diagnosis,
 } from '@/types/healthcare';
+import type { AdmissionEngineContract } from '@/platform/healthcare/engines/admission-engine/contracts/admission-engine.contract';
 
 // Input Interfaces with Strict Typing (NO 'any')
 export interface CreateAdmissionInput {
@@ -48,390 +52,211 @@ export interface ActivateBreakGlassInput {
   ipAddress?: string;
 }
 
-// Mock In-Memory Data Store for Dev Mode Fallback when DB tables are pending
-const MOCK_WARDS: Ward[] = [
-  {
-    id: 'ward-001',
-    tenant_id: 'bella_healthcare',
-    building_id: 'bldg-01',
-    code: 'ICU',
-    name: 'Khoa Hồi Sức Tích Cực (ICU)',
-    department_head_practitioner_id: 'doc-001',
-  },
-  {
-    id: 'ward-002',
-    tenant_id: 'bella_healthcare',
-    building_id: 'bldg-01',
-    code: 'INTERNAL',
-    name: 'Khoa Nội Tổng Hợp',
-    department_head_practitioner_id: 'doc-002',
-  },
-  {
-    id: 'ward-003',
-    tenant_id: 'bella_healthcare',
-    building_id: 'bldg-01',
-    code: 'SURGERY',
-    name: 'Khoa Ngoại Phẫu Thuật',
-    department_head_practitioner_id: 'doc-003',
-  },
-];
-
-const MOCK_BEDS: Bed[] = [
-  {
-    id: 'bed-101',
-    tenant_id: 'bella_healthcare',
-    room_id: 'room-101',
-    ward_id: 'ward-001',
-    bed_code: 'ICU-BED-01',
-    bed_type: 'icu',
-    status: 'occupied',
-    daily_rate: 1500000,
-    current_admission_id: 'adm-001',
-    current_patient_id: 'pat-001',
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 'bed-102',
-    tenant_id: 'bella_healthcare',
-    room_id: 'room-101',
-    ward_id: 'ward-001',
-    bed_code: 'ICU-BED-02',
-    bed_type: 'icu',
-    status: 'available',
-    daily_rate: 1500000,
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 'bed-201',
-    tenant_id: 'bella_healthcare',
-    room_id: 'room-201',
-    ward_id: 'ward-002',
-    bed_code: 'INT-BED-01',
-    bed_type: 'standard',
-    status: 'occupied',
-    daily_rate: 500000,
-    current_admission_id: 'adm-002',
-    current_patient_id: 'pat-002',
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 'bed-202',
-    tenant_id: 'bella_healthcare',
-    room_id: 'room-201',
-    ward_id: 'ward-002',
-    bed_code: 'INT-BED-02',
-    bed_type: 'standard',
-    status: 'cleaning',
-    daily_rate: 500000,
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 'bed-203',
-    tenant_id: 'bella_healthcare',
-    room_id: 'room-202',
-    ward_id: 'ward-002',
-    bed_code: 'INT-BED-03',
-    bed_type: 'vip',
-    status: 'available',
-    daily_rate: 1200000,
-    updated_at: new Date().toISOString(),
-  },
-];
-
-const MOCK_ADMISSIONS: InpatientAdmission[] = [
-  {
-    id: 'adm-001',
-    tenant_id: 'bella_healthcare',
-    encounter_id: 'enc-001',
-    patient_id: 'pat-001',
-    bed_id: 'bed-101',
-    ward_id: 'ward-001',
-    admitting_doctor_id: 'doc-001',
-    attending_doctor_id: 'doc-001',
-    admission_diagnosis: [
-      { icd10_code: 'I50.9', icd10_name_vi: 'Suy tim, không đặc hiệu', is_primary: true },
-    ],
-    status: 'admitted',
-    admitted_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-    created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 'adm-002',
-    tenant_id: 'bella_healthcare',
-    encounter_id: 'enc-002',
-    patient_id: 'pat-002',
-    bed_id: 'bed-201',
-    ward_id: 'ward-002',
-    admitting_doctor_id: 'doc-002',
-    attending_doctor_id: 'doc-002',
-    admission_diagnosis: [
-      { icd10_code: 'J18.9', icd10_name_vi: 'Viêm phổi, không đặc hiệu', is_primary: true },
-    ],
-    status: 'admitted',
-    admitted_at: new Date(Date.now() - 86400000).toISOString(),
-    created_at: new Date(Date.now() - 86400000).toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
-
-const MOCK_BREAK_GLASS_LOGS: SecurityBreakGlassLog[] = [];
-
 /**
  * Bed Engine Service — Hospital Facility & Bed Allocation Engine
+ * Reads directly from hc_wards / hc_beds via Supabase (RLS enforced).
+ * DB error → throw. Empty result → return [].
  */
 export class BedEngineService {
   static async getHospitalWards(tenantId: string): Promise<Ward[]> {
-    try {
-      const { data, error } = await supabase
-        .from('hc_wards')
-        .select('*')
-        .eq('tenant_id', tenantId);
+    const sb = getSupabase();
+    const { data, error } = await sb
+      .from('hc_wards')
+      .select('*')
+      .eq('tenant_id', tenantId);
 
-      if (error || !data || data.length === 0) {
-        return MOCK_WARDS.filter((w) => w.tenant_id === tenantId || tenantId === 'bella_healthcare');
-      }
-      return data as Ward[];
-    } catch {
-      return MOCK_WARDS;
-    }
+    if (error) throw new Error(`Failed to fetch wards: ${error.message}`);
+    return (data ?? []) as Ward[];
   }
 
   static async getHospitalBeds(tenantId: string, wardId?: string): Promise<Bed[]> {
-    try {
-      let query = supabase.from('hc_beds').select('*').eq('tenant_id', tenantId);
-      if (wardId) {
-        query = query.eq('ward_id', wardId);
-      }
-      const { data, error } = await query;
-      if (error || !data || data.length === 0) {
-        if (wardId) {
-          return MOCK_BEDS.filter((b) => b.ward_id === wardId);
-        }
-        return MOCK_BEDS;
-      }
-      return data as Bed[];
-    } catch {
-      return MOCK_BEDS;
+    const sb = getSupabase();
+    let query = sb.from('hc_beds').select('*').eq('tenant_id', tenantId);
+    if (wardId) {
+      query = query.eq('ward_id', wardId);
     }
+    const { data, error } = await query;
+    if (error) throw new Error(`Failed to fetch beds: ${error.message}`);
+    return (data ?? []) as Bed[];
   }
 
   static async updateBedStatus(bedId: string, status: BedStatus): Promise<Bed> {
-    try {
-      const { data, error } = await supabase
-        .from('hc_beds')
-        .update({ status, updated_at: new Date().toISOString() })
-        .eq('id', bedId)
-        .select()
-        .single();
+    const sb = getSupabase();
+    const { data, error } = await sb
+      .from('hc_beds')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', bedId)
+      .select()
+      .single();
 
-      if (error || !data) {
-        const bed = MOCK_BEDS.find((b) => b.id === bedId);
-        if (bed) {
-          bed.status = status;
-          bed.updated_at = new Date().toISOString();
-          return bed;
-        }
-        throw new Error('Bed not found');
-      }
-      return data as Bed;
-    } catch {
-      const bed = MOCK_BEDS.find((b) => b.id === bedId);
-      if (bed) {
-        bed.status = status;
-        return bed;
-      }
-      throw new Error('Bed update failed');
-    }
+    if (error || !data) throw new Error(`Failed to update bed ${bedId}: ${error?.message ?? 'no data'}`);
+    return data as Bed;
   }
 }
 
-import { HospitalAdmissionProductService } from '../products/bella-hospital/services/hospital-admission.service';
-
 /**
- * Inpatient Admission Service — Admission, Discharge & MAR Engine
- * Delegated to Bella Hospital Product Service & Verified Kernel Contracts
+ * Inpatient Admission Service — Admission & Discharge
+ * Delegates to HospitalAdmissionProductService via Healthcare Kernel contract.
+ * DB error → throw. No mock fallback.
  */
 export class InpatientAdmissionService {
-  private static productAdmissionService: HospitalAdmissionProductService | null = null;
+  private static productService: HospitalAdmissionProductService | null = null;
 
   private static getProductService(): HospitalAdmissionProductService {
-    if (!this.productAdmissionService) {
-      // Mock contracts wrapping verified services in dev fallback
-      const mockAdmissionContract: any = {
-        admitInpatient: async (dto: any) => ({ admissionId: `adm-${Date.now()}`, status: 'admitted', ...dto }),
-        transferBed: async (dto: any) => ({ admissionId: dto.admissionId, status: 'transferred', ...dto }),
-        dischargeInpatient: async (dto: any) => ({ admissionId: dto.admissionId, status: 'discharged', ...dto })
-      };
-      const mockTemporalContract: any = {
-        recordTemporalEvent: async (input: any) => ({ id: `temp-${Date.now()}`, sequenceNumber: 1, ...input })
-      };
-      const mockAuditContract: any = {
-        recordAuditEntry: async (input: any) => ({
-          id: `aud-${Date.now()}`,
-          sha256Fingerprint: 'SHA256:HOSPITAL_DISCHARGE_EVIDENCE_FINGERPRINT'
-        })
-      };
-      this.productAdmissionService = new HospitalAdmissionProductService(
-        mockAdmissionContract,
-        mockTemporalContract,
-        mockAuditContract
+    if (!this.productService) {
+      const sb = getSupabase();
+      const admissionContract = getHealthcareService<AdmissionEngineContract>(
+        'admission-engine',
+        sb
+      );
+      const auditContract = new AuditComplianceService(sb);
+      this.productService = new HospitalAdmissionProductService(
+        admissionContract,
+        auditContract
       );
     }
-    return this.productAdmissionService;
+    return this.productService;
   }
 
   static async getInpatientAdmissions(tenantId: string): Promise<InpatientAdmission[]> {
-    return MOCK_ADMISSIONS.filter((a) => a.tenant_id === tenantId || tenantId === 'bella_healthcare');
+    const sb = getSupabase();
+    const { data, error } = await sb
+      .from('hc_inpatient_admissions')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .order('admitted_at', { ascending: false });
+
+    if (error) throw new Error(`Failed to fetch admissions: ${error.message}`);
+    return (data ?? []) as unknown as InpatientAdmission[];
   }
 
   static async createInpatientAdmission(input: CreateAdmissionInput): Promise<InpatientAdmission> {
-    await this.getProductService().admitInpatient({
+    const result = await this.getProductService().admitInpatient({
       tenantId: input.tenantId,
       encounterId: input.encounterId,
-      patientId: input.patientId,
+      patientPartyId: input.patientId,
+      wardId: input.wardId,
       bedId: input.bedId,
-      admittingPhysicianId: input.admittingDoctorId
+      admittingDoctorId: input.admittingDoctorId,
+      attendingDoctorId: input.attendingDoctorId,
+      admissionDiagnosis: input.admissionDiagnosis.map((d) => ({
+        icd10Code: d.icd10_code,
+        icd10NameVi: d.icd10_name_vi,
+        isPrimary: d.is_primary,
+      })),
     });
 
-    const newAdmission: InpatientAdmission = {
-      id: `adm-${Date.now()}`,
-      tenant_id: input.tenantId,
-      encounter_id: input.encounterId,
-      patient_id: input.patientId,
-      bed_id: input.bedId,
-      ward_id: input.wardId,
-      admitting_doctor_id: input.admittingDoctorId,
-      attending_doctor_id: input.attendingDoctorId,
-      admission_diagnosis: input.admissionDiagnosis,
-      status: 'admitted',
-      admitted_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+    // Fetch the persisted record to return canonical InpatientAdmission shape
+    const sb = getSupabase();
+    const { data, error } = await sb
+      .from('hc_inpatient_admissions')
+      .select('*')
+      .eq('id', result.id)
+      .single();
 
-    MOCK_ADMISSIONS.unshift(newAdmission);
-    await BedEngineService.updateBedStatus(input.bedId, 'occupied');
-    return newAdmission;
+    if (error || !data) throw new Error(`Admission created but fetch failed: ${error?.message ?? 'no data'}`);
+    return data as unknown as InpatientAdmission;
   }
 
   static async dischargePatient(admissionId: string, dischargeSummary: string): Promise<InpatientAdmission> {
-    const admission = MOCK_ADMISSIONS.find((a) => a.id === admissionId);
-    if (!admission) throw new Error('Admission record not found');
+    const sb = getSupabase();
 
-    // Delegate discharge execution + H11 Evidence Fingerprint to Product Service
+    // Fetch existing admission for context
+    const { data: existing, error: fetchErr } = await sb
+      .from('hc_inpatient_admissions')
+      .select('*')
+      .eq('id', admissionId)
+      .single();
+
+    if (fetchErr || !existing) {
+      throw new Error(`Admission record not found: ${fetchErr?.message ?? admissionId}`);
+    }
+
     await this.getProductService().dischargeInpatient({
       admissionId,
-      tenantId: admission.tenant_id,
-      encounterId: admission.encounter_id,
-      dischargingPhysicianId: admission.attending_doctor_id,
+      tenantId: existing.tenant_id,
+      encounterId: existing.encounter_id,
+      patientId: existing.patient_id,
+      dischargingPhysicianId: existing.attending_doctor_id,
       dischargeDisposition: 'HOME',
       dischargeSummary,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
-    admission.status = 'discharged';
-    admission.discharged_at = new Date().toISOString();
-    admission.discharge_summary = dischargeSummary;
-    admission.updated_at = new Date().toISOString();
+    // Fetch updated record
+    const { data, error } = await sb
+      .from('hc_inpatient_admissions')
+      .select('*')
+      .eq('id', admissionId)
+      .single();
 
-    await BedEngineService.updateBedStatus(admission.bed_id, 'cleaning');
-    return admission;
+    if (error || !data) throw new Error(`Discharge succeeded but fetch failed: ${error?.message ?? 'no data'}`);
+    return data as unknown as InpatientAdmission;
   }
 }
 
 /**
  * Break-Glass Emergency Security Access Service
+ * DB error → throw.
  */
 export class BreakGlassSecurityService {
   static async activateBreakGlassAccess(input: ActivateBreakGlassInput): Promise<SecurityBreakGlassLog> {
-    const log: SecurityBreakGlassLog = {
-      id: `bg-${Date.now()}`,
+    const sb = getSupabase();
+    const log = {
       tenant_id: input.tenantId,
       user_id: input.userId,
       user_email: input.userEmail,
       user_name: input.userName,
       patient_id: input.patientId,
-      encounter_id: input.encounterId,
+      encounter_id: input.encounterId ?? null,
       reason: input.reason,
-      ip_address: input.ipAddress || '127.0.0.1',
+      ip_address: input.ipAddress ?? null,
       activated_at: new Date().toISOString(),
     };
 
-    MOCK_BREAK_GLASS_LOGS.unshift(log);
+    const { data, error } = await sb
+      .from('hc_security_break_glass_logs')
+      .insert(log)
+      .select()
+      .single();
 
-    try {
-      await supabase
-        .from('hc_security_break_glass_logs')
-        .insert(log);
-    } catch {
-      // Dev mode fallback
-    }
-
-    return log;
+    if (error || !data) throw new Error(`Failed to activate break glass: ${error?.message ?? 'no data'}`);
+    return data as SecurityBreakGlassLog;
   }
 
   static async getBreakGlassLogs(tenantId: string): Promise<SecurityBreakGlassLog[]> {
-    try {
-      const { data, error } = await supabase
-        .from('hc_security_break_glass_logs')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .order('activated_at', { ascending: false });
+    const sb = getSupabase();
+    const { data, error } = await sb
+      .from('hc_security_break_glass_logs')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .order('activated_at', { ascending: false });
 
-      if (!error && data && data.length > 0) {
-        return data as SecurityBreakGlassLog[];
-      }
-    } catch {
-      // Fallback
-    }
-    return MOCK_BREAK_GLASS_LOGS;
+    if (error) throw new Error(`Failed to fetch break glass logs: ${error.message}`);
+    return (data ?? []) as SecurityBreakGlassLog[];
   }
 }
 
 /**
  * Nursing Vital Signs Service
+ * DB error → throw.
  */
-const MOCK_VITAL_SIGNS: NursingVitalSigns[] = [
-  {
-    id: 'vital-001',
-    tenant_id: 'bella_healthcare',
-    inpatient_admission_id: 'adm-001',
-    encounter_id: 'enc-001',
-    patient_id: 'pat-001',
-    nurse_practitioner_id: 'nurse-001',
-    temperature: 37.2,
-    heart_rate: 78,
-    systolic_bp: 120,
-    diastolic_bp: 80,
-    spo2: 98,
-    respiratory_rate: 16,
-    notes: 'Bệnh nhân ổn định',
-    recorded_at: new Date(Date.now() - 3600000).toISOString(),
-  },
-];
-
 export class NursingVitalsService {
   static async getVitalSignsByAdmission(admissionId: string): Promise<NursingVitalSigns[]> {
-    try {
-      const { data, error } = await supabase
-        .from('hc_nursing_vital_signs')
-        .select('*')
-        .eq('inpatient_admission_id', admissionId)
-        .order('recorded_at', { ascending: false });
+    const sb = getSupabase();
+    const { data, error } = await sb
+      .from('hc_nursing_vital_signs')
+      .select('*')
+      .eq('inpatient_admission_id', admissionId)
+      .order('recorded_at', { ascending: false });
 
-      if (!error && data && data.length > 0) {
-        return data as NursingVitalSigns[];
-      }
-    } catch {
-      // Fallback
-    }
-    return MOCK_VITAL_SIGNS.filter((v) => v.inpatient_admission_id === admissionId);
+    if (error) throw new Error(`Failed to fetch vital signs: ${error.message}`);
+    return (data ?? []) as NursingVitalSigns[];
   }
 
   static async recordVitalSigns(input: RecordVitalsInput): Promise<NursingVitalSigns> {
-    const newVital: NursingVitalSigns = {
-      id: `vital-${Date.now()}`,
+    const sb = getSupabase();
+    const record = {
       tenant_id: input.tenantId,
       inpatient_admission_id: input.inpatientAdmissionId,
       encounter_id: input.encounterId,
@@ -442,33 +267,25 @@ export class NursingVitalsService {
       systolic_bp: input.systolicBp,
       diastolic_bp: input.diastolicBp,
       spo2: input.spo2,
-      respiratory_rate: input.respiratoryRate,
-      notes: input.notes,
+      respiratory_rate: input.respiratoryRate ?? null,
+      notes: input.notes ?? null,
       recorded_at: new Date().toISOString(),
     };
 
-    MOCK_VITAL_SIGNS.unshift(newVital);
+    const { data, error } = await sb
+      .from('hc_nursing_vital_signs')
+      .insert(record)
+      .select()
+      .single();
 
-    try {
-      const { data, error } = await supabase
-        .from('hc_nursing_vital_signs')
-        .insert(newVital)
-        .select()
-        .single();
-
-      if (!error && data) {
-        return data as NursingVitalSigns;
-      }
-    } catch {
-      // Dev fallback
-    }
-
-    return newVital;
+    if (error || !data) throw new Error(`Failed to record vital signs: ${error?.message ?? 'no data'}`);
+    return data as NursingVitalSigns;
   }
 }
 
 /**
  * MAR (Medication Administration Record) Service
+ * DB error → throw.
  */
 export interface CreateMARInput {
   tenantId: string;
@@ -486,55 +303,22 @@ export interface AdministerMARInput {
   notes?: string;
 }
 
-const MOCK_MAR_RECORDS: MedicationAdministrationRecord[] = [
-  {
-    id: 'mar-001',
-    tenant_id: 'bella_healthcare',
-    inpatient_admission_id: 'adm-001',
-    prescription_item_id: 'rx-item-001',
-    drug_name: 'Amoxicillin 500mg',
-    dosage: '1 viên',
-    route: 'Uống sau ăn',
-    scheduled_time: new Date(Date.now() + 3600000).toISOString(),
-    status: 'scheduled',
-  },
-  {
-    id: 'mar-002',
-    tenant_id: 'bella_healthcare',
-    inpatient_admission_id: 'adm-001',
-    prescription_item_id: 'rx-item-002',
-    drug_name: 'Paracetamol 500mg',
-    dosage: '1 viên',
-    route: 'Uống khi sốt',
-    scheduled_time: new Date(Date.now() - 1800000).toISOString(),
-    administered_time: new Date(Date.now() - 1500000).toISOString(),
-    administered_by_nurse_id: 'nurse-001',
-    status: 'administered',
-    notes: 'Bệnh nhân sốt 38.5°C',
-  },
-];
-
 export class MARService {
   static async getMARByAdmission(admissionId: string): Promise<MedicationAdministrationRecord[]> {
-    try {
-      const { data, error } = await supabase
-        .from('hc_medication_administration_records')
-        .select('*')
-        .eq('inpatient_admission_id', admissionId)
-        .order('scheduled_time', { ascending: true });
+    const sb = getSupabase();
+    const { data, error } = await sb
+      .from('hc_medication_administration_records')
+      .select('*')
+      .eq('inpatient_admission_id', admissionId)
+      .order('scheduled_time', { ascending: true });
 
-      if (!error && data && data.length > 0) {
-        return data as MedicationAdministrationRecord[];
-      }
-    } catch {
-      // Fallback
-    }
-    return MOCK_MAR_RECORDS.filter((m) => m.inpatient_admission_id === admissionId);
+    if (error) throw new Error(`Failed to fetch MAR: ${error.message}`);
+    return (data ?? []) as MedicationAdministrationRecord[];
   }
 
   static async createMAR(input: CreateMARInput): Promise<MedicationAdministrationRecord> {
-    const newMAR: MedicationAdministrationRecord = {
-      id: `mar-${Date.now()}`,
+    const sb = getSupabase();
+    const record = {
       tenant_id: input.tenantId,
       inpatient_admission_id: input.inpatientAdmissionId,
       prescription_item_id: input.prescriptionItemId,
@@ -545,54 +329,31 @@ export class MARService {
       status: 'scheduled',
     };
 
-    MOCK_MAR_RECORDS.unshift(newMAR);
+    const { data, error } = await sb
+      .from('hc_medication_administration_records')
+      .insert(record)
+      .select()
+      .single();
 
-    try {
-      const { data, error } = await supabase
-        .from('hc_medication_administration_records')
-        .insert(newMAR)
-        .select()
-        .single();
-
-      if (!error && data) {
-        return data as MedicationAdministrationRecord;
-      }
-    } catch {
-      // Dev fallback
-    }
-
-    return newMAR;
+    if (error || !data) throw new Error(`Failed to create MAR: ${error?.message ?? 'no data'}`);
+    return data as MedicationAdministrationRecord;
   }
 
   static async administerMAR(input: AdministerMARInput): Promise<MedicationAdministrationRecord> {
-    const marIndex = MOCK_MAR_RECORDS.findIndex((m) => m.id === input.marId);
-    if (marIndex === -1) throw new Error('MAR record not found');
+    const sb = getSupabase();
+    const { data, error } = await sb
+      .from('hc_medication_administration_records')
+      .update({
+        status: 'administered',
+        administered_time: new Date().toISOString(),
+        administered_by_nurse_id: input.administeredByNurseId,
+        notes: input.notes ?? null,
+      })
+      .eq('id', input.marId)
+      .select()
+      .single();
 
-    MOCK_MAR_RECORDS[marIndex].status = 'administered';
-    MOCK_MAR_RECORDS[marIndex].administered_time = new Date().toISOString();
-    MOCK_MAR_RECORDS[marIndex].administered_by_nurse_id = input.administeredByNurseId;
-    MOCK_MAR_RECORDS[marIndex].notes = input.notes;
-
-    try {
-      const { data, error } = await supabase
-        .from('hc_medication_administration_records')
-        .update({
-          status: 'administered',
-          administered_time: MOCK_MAR_RECORDS[marIndex].administered_time,
-          administered_by_nurse_id: input.administeredByNurseId,
-          notes: input.notes,
-        })
-        .eq('id', input.marId)
-        .select()
-        .single();
-
-      if (!error && data) {
-        return data as MedicationAdministrationRecord;
-      }
-    } catch {
-      // Dev fallback
-    }
-
-    return MOCK_MAR_RECORDS[marIndex];
+    if (error || !data) throw new Error(`Failed to administer MAR ${input.marId}: ${error?.message ?? 'no data'}`);
+    return data as MedicationAdministrationRecord;
   }
 }

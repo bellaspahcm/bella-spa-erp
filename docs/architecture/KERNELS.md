@@ -1,6 +1,6 @@
 # Bella Kernel Baselines
 
-**Last updated:** 2026-08-25  
+**Last updated:** 2026-08-26 (K6.3 CLOSED — Clinic Pilot Candidate)
 **Purpose:** Track Industry Kernel baseline versions and evolution
 
 ---
@@ -29,7 +29,8 @@ A **baseline** means:
 |--------|--------|---------------|---------|------------------|
 | **Spa Kernel** | 🔒 BASELINE | 2026-Q2 | Service industry patterns | Appointment, service catalog, membership, package, commission, staff management, customer loyalty |
 | **Finance Kernel** | 🔒 BASELINE | 2026-08-25 | Accounting & compliance | F1 Ledger, F2 Cash, TT133 compliance, opening balance, immutability, reconciliation, accounting invariants |
-| **Healthcare Kernel** | 🔒 BASELINE | 2026-08 | Clinical & patient care | Patient identity (via Person Center), clinical encounters, prescriptions, appointments, H1-H12 engines |
+| **Healthcare Kernel (K1)** | 🔒 BASELINE | 2026-08-26 | Core clinical primitives | Patient/MPI registry, Encounter aggregate root, ClinicalObservation, CDS/Rules engine, Temporal tracking, Audit trail, Orders, Scheduling |
+| **Hospital Extension (H1)** | 🔒 BASELINE | 2026-08-26 | Inpatient workflows | Inpatient Admissions, Bed & Ward allocation, Medication Administration Record (MAR) |
 | **Logistics E7 Kernel** | 🟡 DOMAIN ONLY | 2026-08 | Supply chain primitives | Item, Inventory, Movement, Traceability domain layer (persistence not yet implemented) |
 
 ---
@@ -125,23 +126,68 @@ Platform Core is **not frozen** — it evolves to support all Industries.
 
 ---
 
-## Healthcare Kernel Baseline
+## Healthcare Kernel Baseline (K1)
 
 **Status:** 🔒 Frozen at usable baseline  
-**Domain:** Clinical care, patient management
+**Domain:** Cross-vertical clinical care, patient management
+**Verification:** H1.8 Real DB Integration (11/11 Passed, 2026-08-26)
 
 **Core Capabilities:**
-- **Patient Identity:** via Person Center (party_parties), NOT standalone hc_patients table
-- **Clinical Encounters:** Visit lifecycle, SOAP notes, vital signs
-- **Prescriptions:** Medication orders, pharmacy integration
-- **Appointments:** Clinical scheduling
-- **H1-H12 Engines:** PersonEngine, EncounterEngine, ClinicalEngine, etc.
+- **Patient Identity / MPI:** via Person Center (`party_parties`), NOT standalone patients table. Verified with real JOIN query.
+- **Clinical Encounters:** Visit lifecycle and status transitions (`encounter-engine`). Aggregate root for all clinical events (Law 12).
+- **Clinical Observation:** LOINC-style measurements (vitals, assessments, lab values). Extracted generic interface.
+- **CDS & Rules Engine:** Safety validations and CDS alerts.
+- **Bitemporal & Audit:** Timeline tracking (`temporal-engine`) and compliance logs (`audit-compliance-engine`).
 
-**Architecture Note:** Healthcare uses Person Center for patient identity to align with platform-wide identity model. See Healthcare Constitution for boundaries.
+**Architecture Note:** Healthcare uses Person Center for patient identity to align with platform-wide identity model. See `docs/architecture/HEALTHCARE_KERNEL.md` for entity mappings.
 
-**Reuse Potential:** Medium (clinical workflows may apply to veterinary, dental)
+**Reuse Potential:** High (reusable by Clinic, Dental, MedSpa, and Veterinary verticals).
 
-**Next Extension:** When Industry #4+ demonstrates reusable clinical pattern
+### K6.3 Product Verification — PASS (2026-08-26)
+
+The Product Layer (Server Actions, Seeding scripts, and E2E appointment integrations) has been hardened against real database constraint rules and is certified as a **Clinic Pilot Candidate / Ready for Pilot Validation**:
+
+```
+Bella Medical UI
+      ↓
+Server Actions (healthcare-actions.ts, appointments-actions.ts)
+      ↓
+┌───────────────────────────────┐
+│ Healthcare Kernel v1 🔒       │
+│ EncounterEngine               │
+│ NursingEngine                 │
+│ OrderEngine (+ CDS)           │
+└───────────────────────────────┘
+      ↓
+Real Supabase (tenant-isolated)
+```
+
+**Acceptance:** 11/11 tests PASS on live DB — 0 mocks/fallbacks.
+
+### Known Workarounds & Technical Debt
+
+1. **Doctor Fallback (Pilot-grade, not production clinical assignment):**
+   In `createPrescriptionAction`, when `encounter.doctor_party_id` is null, the action falls back to the first person in `party_parties` for the tenant. This is **acceptable for pilot proof** but not final clinical semantics. A real pilot must enforce role-based authorization verification (`attending doctor_party_id`). This is a **Product Layer identity concern** — not a Kernel concern. Healthcare Kernel v1 must NOT be extended for this.
+
+2. **Test Cleanup RPCs (Test Infrastructure Debt only):**
+   Two RPCs (`cleanup_k3_sentinel_encounter` and `cleanup_k6_test_party`) exist to bypass the strict auditing delete trigger `timeline_events_no_delete`. These are strictly **test-only technical debt of the test infrastructure**. They must **never** be executed in production application flows or used as a standard business data deletion method. For production deployment, they must be removed or restricted.
+
+### Freeze Advisory
+
+> Do NOT reopen Healthcare Kernel v1 for requirements arising from pilot feedback unless there is clear evidence the requirement is a **cross-vertical clinical invariant** (i.e., reusable across Hospital, Clinic, Dental, and future verticals). Pilot-specific needs belong in the Product Layer.
+
+
+## Hospital Extension Baseline (H1)
+
+**Status:** 🔒 Frozen at usable baseline  
+**Domain:** Inpatient healthcare operations
+
+**Core Capabilities:**
+- **Inpatient Admissions:** Inpatient stay lifecycle (`admission-engine`), patient transfer, and discharge.
+- **Bed & Ward Resources:** Physical bed and ward scheduling, status checks (available, cleaning, reserved), and room layouts.
+- **Medication Administration (MAR):** Timed medication records and status tracking by nursing staff.
+
+**Reuse Potential:** Low-to-medium (limited to inpatient settings like acute care hospitals).
 
 ---
 

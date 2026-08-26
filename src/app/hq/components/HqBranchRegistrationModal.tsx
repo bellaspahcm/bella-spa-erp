@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Building2, Mail, MapPin, Palette, Phone, RefreshCw, ShieldCheck, Sparkles, User, X } from 'lucide-react';
+import { Building2, Mail, MapPin, Palette, Phone, RefreshCw, ShieldCheck, User, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 
 export type HqBranchRegistrationInput = {
@@ -13,7 +13,7 @@ export type HqBranchRegistrationInput = {
   adminEmail: string;
   adminPassword: string;
   branchType: 'owned' | 'franchise';
-  businessModule: 'babycare' | 'beauty_spa';
+  businessModule: 'babycare' | 'beauty_spa' | 'bella_healthcare' | 'industrial_cleaning' | 'real_estate' | 'bella_auto';
   brandName: string;
   logoUrl: string;
   primaryColor: string;
@@ -46,6 +46,25 @@ const emptyForm: HqBranchRegistrationInput = {
   portalDisplayName: '',
   invoiceDisplayName: '',
 };
+
+type BusinessModuleOption = {
+  value: HqBranchRegistrationInput['businessModule'];
+  label: string;
+  icon: string;
+  defaultPrimary: string;
+  defaultAccent: string;
+};
+
+const BUSINESS_MODULE_OPTIONS: BusinessModuleOption[] = [
+  { value: 'babycare',           label: 'Mother & Baby',        icon: '👶', defaultPrimary: '#A91555', defaultAccent: '#F8A5C2' },
+  { value: 'beauty_spa',         label: 'Beauty Spa',           icon: '💫', defaultPrimary: '#074E44', defaultAccent: '#C8A97A' },
+  { value: 'bella_healthcare',   label: 'Healthcare / Phòng khám', icon: '🏥', defaultPrimary: '#0891b2', defaultAccent: '#06b6d4' },
+  { value: 'industrial_cleaning',label: 'Vệ sinh Công nghiệp',   icon: '🧹', defaultPrimary: '#1E40AF', defaultAccent: '#3B82F6' },
+  { value: 'real_estate',        label: 'Bất động sản',         icon: '🏗️', defaultPrimary: '#1E3A8A', defaultAccent: '#D97706' },
+  { value: 'bella_auto',         label: 'Ô tô / Garage',           icon: '🚗', defaultPrimary: '#1E40AF', defaultAccent: '#3B82F6' },
+];
+
+const HAS_BRAND_SECTION: HqBranchRegistrationInput['businessModule'][] = ['beauty_spa', 'bella_healthcare'];
 
 export function HqBranchRegistrationModal({
   open,
@@ -124,44 +143,42 @@ export function HqBranchRegistrationModal({
 
           <div className="space-y-2">
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Ngành kinh doanh *</span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <button
-                type="button"
-                onClick={() => updateField('businessModule', 'babycare')}
-                className={`rounded-2xl border px-4 py-3 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
-                  form.businessModule === 'babycare'
-                    ? 'border-primary bg-primary/5 text-primary'
-                    : 'border-slate-200 text-slate-500 hover:bg-slate-50'
-                }`}
-              >
-                <Building2 size={15} />
-                Mother & Baby
-              </button>
-              <button
-                type="button"
-                onClick={() => updateField('businessModule', 'beauty_spa')}
-                className={`rounded-2xl border px-4 py-3 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
-                  form.businessModule === 'beauty_spa'
-                    ? 'border-primary bg-primary/5 text-primary'
-                    : 'border-slate-200 text-slate-500 hover:bg-slate-50'
-                }`}
-              >
-                <Sparkles size={15} />
-                Beauty Spa
-              </button>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {BUSINESS_MODULE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => {
+                    updateField('businessModule', opt.value);
+                    // apply default brand colours when switching to brand-enabled modules
+                    if (HAS_BRAND_SECTION.includes(opt.value)) {
+                      updateField('primaryColor', opt.defaultPrimary);
+                      updateField('accentColor', opt.defaultAccent);
+                    }
+                  }}
+                  className={`rounded-2xl border px-3 py-3 text-xs font-black uppercase tracking-wider flex flex-col items-center justify-center gap-1.5 transition-all ${
+                    form.businessModule === opt.value
+                      ? 'border-primary bg-primary/5 text-primary'
+                      : 'border-slate-200 text-slate-500 hover:bg-slate-50'
+                  }`}
+                >
+                  <span className="text-xl">{opt.icon}</span>
+                  <span className="text-center leading-tight">{opt.label}</span>
+                </button>
+              ))}
             </div>
           </div>
 
-          {form.businessModule === 'beauty_spa' && (
+          {HAS_BRAND_SECTION.includes(form.businessModule) && (
             <div className="space-y-4 rounded-[2rem] border border-emerald-100 bg-emerald-50/50 p-4">
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
                   <Palette size={16} />
                 </div>
                 <div>
-                  <p className="text-xs font-black uppercase tracking-widest text-emerald-800">Nhận diện Beauty Spa</p>
+                  <p className="text-xs font-black uppercase tracking-widest text-emerald-800">Nhận diện thương hiệu</p>
                   <p className="mt-1 text-xs font-bold leading-relaxed text-emerald-700/80">
-                    Chỉ áp dụng cho tenant Beauty Spa này. Bella ERP gốc và tenant Mother & Baby không bị đổi giao diện.
+                    Chỉ áp dụng cho tenant này. Các tenant khác không bị ảnh hưởng.
                   </p>
                 </div>
               </div>
@@ -173,7 +190,7 @@ export function HqBranchRegistrationModal({
                     value={form.brandName}
                     onChange={(event) => updateField('brandName', event.target.value)}
                     className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-emerald-500"
-                    placeholder="VD: Jade Wellness Spa"
+                    placeholder={form.businessModule === 'bella_healthcare' ? 'VD: Bella Dental Clinic' : 'VD: Jade Wellness Spa'}
                   />
                 </label>
 
