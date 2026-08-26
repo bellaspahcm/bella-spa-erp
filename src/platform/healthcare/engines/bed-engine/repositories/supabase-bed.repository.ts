@@ -23,6 +23,7 @@ export interface IBedRepository {
   save(bed: Bed): Promise<Bed>;
   findById(tenantId: string, id: string): Promise<Bed | null>;
   findAvailableBed(tenantId: string, wardId: string, preferredBedId?: string): Promise<Bed | null>;
+  findAll(tenantId: string): Promise<Bed[]>;
   findAllInWard(tenantId: string, wardId: string): Promise<Bed[]>;
 }
 
@@ -111,6 +112,17 @@ export class SupabaseBedRepository implements IBedRepository {
 
     if (error || !data) return null;
     return this.mapToEntity(data);
+  }
+
+  async findAll(tenantId: string): Promise<Bed[]> {
+    const { data, error } = await this.supabase
+      .from('hc_beds')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .order('bed_code', { ascending: true });
+
+    if (error || !data) return [];
+    return data.map((row) => this.mapToEntity(row));
   }
 
   async findAllInWard(tenantId: string, wardId: string): Promise<Bed[]> {

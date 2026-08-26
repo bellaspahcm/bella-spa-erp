@@ -28,7 +28,7 @@ import {
   Check
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { getAllPatientProfilesAction, createPatientRecordAction } from '@/services/healthcare/healthcare-actions';
+import { getAllPatientProfilesAction, createPatientRecordAction, type PatientViewModel } from '@/services/healthcare/healthcare-actions';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 const GENDER_OPTIONS = [
@@ -229,6 +229,8 @@ export default function PatientsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [patients, setPatients] = useState<PatientRecordItem[]>([]);
+  // K6 P2: Separate DB error from empty state — never silently swap to mock
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Action Modals State
   const [bookingModalPatient, setBookingModalPatient] = useState<PatientRecordItem | null>(null);
@@ -244,6 +246,7 @@ export default function PatientsPage() {
   const loadPatients = async () => {
     try {
       setIsLoading(true);
+      setLoadError(null);
       const res = await getAllPatientProfilesAction();
       if (res.success && res.data && res.data.length > 0) {
         // Enhance with dynamic Enterprise Master Patient Index (MPI) metadata
@@ -254,8 +257,7 @@ export default function PatientsPage() {
           'bg-gradient-to-br from-amber-500 to-orange-700',
         ];
 
-        // Type parameter explicitly mapped to eliminate any
-        const enhanced: PatientRecordItem[] = res.data.map((p: Record<string, unknown>, idx: number) => ({
+        const enhanced: PatientRecordItem[] = (res.data as any[]).map((p, idx: number) => ({
           id: String(p.id ?? ''),
           recordNumber: String(p.recordNumber ?? ''),
           name: String(p.name ?? ''),
@@ -280,12 +282,16 @@ export default function PatientsPage() {
         }));
         setPatients(enhanced);
       } else {
-        // Fallback on empty or failure
-        setPatients(MOCK_MPI_PATIENTS);
+        // K6 P2: DB returned empty — show empty state, NOT mock data
+        // An empty list is valid data; mock would hide that from the user
+        setPatients([]);
       }
     } catch (err: unknown) {
-      // Graceful fallback to mock data to bypass RLS errors without blanking screen
-      setPatients(MOCK_MPI_PATIENTS);
+      // K6 P2: DB error — show error state, NEVER silently swap to mock
+      // Mock in the error path would make the system appear healthy when it is not
+      const message = err instanceof Error ? err.message : 'Lỗi kết nối hệ thống';
+      setLoadError(`Không thể tải danh sách bệnh nhân: ${message}`);
+      setPatients([]);
     } finally {
       setIsLoading(false);
     }
@@ -329,10 +335,8 @@ export default function PatientsPage() {
 
     try {
       const res = await createPatientRecordAction({
-        recordNumber: newPatient.recordNumber,
         name: newPatient.name,
         gender: newPatient.gender,
-        age: Number(newPatient.age),
         phone: newPatient.phone,
         bloodType: newPatient.bloodType,
         allergies: allergiesArr,
@@ -477,8 +481,49 @@ export default function PatientsPage() {
         />
       </div>
 
+      {/* K6 P2: DB Error State — shown only when server action throws, never when DB is empty */}
+      {loadError && (
+        <div className="rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 p-6 flex items-start gap-4">
+          <div className="p-2.5 rounded-xl bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-400 shrink-0">
+            <AlertCircle className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="font-bold text-rose-800 dark:text-rose-300 text-sm">Lỗi Tải Dữ Liệu</p>
+            <p className="text-rose-700 dark:text-rose-400 text-xs mt-1">{loadError}</p>
+            <button
+              onClick={loadPatients}
+              className="mt-3 px-4 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all"
+            >
+              Thử lại
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Patient Cards Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* K6 P2: Empty State — only shown when DB is healthy but has no records */}
+        {!loadError && !isLoading && filteredPatients.length === 0 && (
+          <div className="lg:col-span-2 rounded-3xl bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 p-12 flex flex-col items-center justify-center text-center gap-4">
+            <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400">
+              <UserCheck className="w-8 h-8" />
+            </div>
+            <div>
+              <p className="font-black text-slate-700 dark:text-slate-300">Chưa có hồ sơ bệnh nhân</p>
+              <p className="text-slate-500 dark:text-slate-500 text-xs mt-1">
+                {searchTerm ? 'Không tìm thấy bệnh nhân phù hợp với từ khóa tìm kiếm.' : 'Nhấn "+ Tạo Hồ Sơ Bệnh Nhân MPI Mới" để đăng ký bệnh nhân đầu tiên.'}
+              </p>
+            </div>
+            {!searchTerm && (
+              <button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-lg shadow-emerald-600/20 flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+              >
+                <Plus className="w-4 h-4" /> Tạo Hồ Sơ Đầu Tiên
+              </button>
+            )}
+          </div>
+        )}
         {filteredPatients.map((p) => (
           <div
             key={p.id}

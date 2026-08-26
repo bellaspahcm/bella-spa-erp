@@ -114,25 +114,62 @@ H4 — ENTERPRISE + INTELLIGENCE + AI WORKFORCE
 
 ---
 
-## 🏛️ 5. H1 & H1.1 Ratified As Architecture Baseline v1
+## 🏛️ 5. Historical Execution & Baseline Consolidation
 
- Milestone **H1 (Inpatient Vertical Slice)** và **H1.1 (Architecture Hardening & CI Gate)** chính thức được đóng băng và nghiệm thu thành **Architecture Baseline v1** của Bella Healthcare OS.
+Since the initial version of this roadmap, the engineering and product verification phases have been executed and baseline locked:
 
-Con số chuẩn hóa chính thức của bộ **Guardian Test Suite**: **383 Executable Test Cases** (trên 27 Test Suites, 100% PASS).
+*   **H1 & H1.1 (Inpatient Baseline v1):** Ratified with 383 regression tests passing under strict Architecture Guard constraints.
+*   **K1 - K5 (Healthcare & Vertical Reuse):** Proven cross-vertical reuse across **Inpatient Hospital (K2)**, **Outpatient Clinic (K3)**, and **Dental Clinic (K5)**. The Healthcare Kernel v1 has been frozen and protected by automated CI blockages.
+*   **K6.1 - K6.3 (Product Layer Hardening):** Certified as **Clinic Pilot Candidate / Ready for Pilot Validation** with 11/11 E2E tests running without mock fallbacks on a real database.
 
-### Lộ Trình Giai Đoạn H2 — Emergency Vertical Slice
+---
 
-Giai đoạn H2 áp dụng chiến lược **Vertical Slice Tối Thiểu**, tập trung vào luồng Cấp cứu Time-Critical và phân luồng độ ưu tiên:
+## 🚀 6. Milestone K7: Pilot Readiness / Real Clinic Validation
+
+Following the verification of **K6.3**, the roadmap shifts from **engineering and architectural proof** to **operational and customer proof**. 
+
+We strictly enforce:
+1.  **No New Kernel Abstractions:** No additional backend engines or frameworks will be built without real pilot feedback.
+2.  **Strict Vertical Focus:** We prioritize making the **Medical Clinic** product slice work flawlessly before replicating patterns to Hospital or Dental workflows.
 
 ```text
-Emergency Arrival ──→ Triage (Acuity & Priority) ──→ Emergency Encounter ──→ Clinical Assessment
-                                                                                  │
-Admission / Transfer / Discharge ◄── Disposition Decision ◄── Order / Medication / Intervention ◄─┘
+K6.3 Complete (E2E Works on live DB)
+                │
+                ▼
+K7: Pilot Readiness / Clinic Validation
+  ├── 1. Real User Workflows (Login -> Complete Encounter)
+  ├── 2. Real-world Authorization (RBAC: Doctor, Nurse, Admin, etc.)
+  ├── 3. Operational UX (Friction-less data entry & error explanation)
+  ├── 4. Auditability (Full compliance log on orders and vital records)
+  └── 5. Feedback Loop (Observe users -> Fast Product-layer iterations)
 ```
 
-**Capability Reuse Gate (Cơ chế chống nhân bản Vertical Duplicate)**:
-- H2 BẮT BUỘC tái sử dụng các Engine Kernel đã được chứng minh tại H1 (`Encounter Engine`, `Admission Engine`, `Pharmacy Kernel`, `Order Engine`, `Bed Engine`).
-- **TỰ ĐỘNG CHẶN (BLOCK)** nếu phát hiện việc tạo trùng lặp capability (ví dụ: `emergency-medication-engine` hay `emergency-bed-engine`). Emergency CHỈ sở hữu domain đặc thù của mình (`Triage`, `Acuity`, `Disposition`, `EmergencyBay`).
+### K7 Core Focus Areas
 
-Tham chiếu tài liệu chi tiết: **[HEALTHCARE_OS_EXECUTABLE_ARCHITECTURE_REFERENCE.md](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/docs/architecture/HEALTHCARE_OS_EXECUTABLE_ARCHITECTURE_REFERENCE.md)**.
+#### 1. Real User Workflow
+Rather than relying on automated integration suites, real healthcare professionals (physicians, nurses, receptionists, pharmacists) must be able to perform the complete outpatient journey:
+*   Secure Login -> Find or Register Patient -> Book/Check-in -> Vital Signs recording -> SOAP note & Diagnosis input -> Prescription via CDSS validation -> Clinical Order Approval -> Complete Encounter.
 
+#### 2. Real-World Authorization (RBAC)
+Tenant-level isolation has been proven. K7 must wire fine-grained roles to enforce what clinical functions are permitted:
+*   **Doctor:** Write SOAP, diagnose, prescribe, approve medications.
+*   **Nurse:** Record vitals, manage appointments.
+*   **Receptionist:** Register patient, book appointments, check-in.
+*   **Pharmacist:** Dispense approved prescriptions.
+*   **Admin:** Manage tenant resources.
+
+#### 3. Operational UX
+UX efficiency directly impacts clinical efficacy. K7 will measure and minimize usability friction:
+*   Minimize total clicks for checking in and completing an encounter.
+*   Prevent repetitive data entries (e.g., auto-filling known patient data).
+*   Implement user-friendly, descriptive UI alerts when database constraint/CDSS validation errors occur (replace generic raw Postgres messages with clinical explanations).
+
+#### 4. Auditability
+Maintain strict clinical accountability across the entire journey. Ensure the audit engine tracks:
+*   Which user created/modified/approved a prescription or clinical order.
+*   Bitemporal correctness of observation timestamps vs entry timestamps.
+
+#### 5. Pilot Feedback Loop
+The success of K7 is measured by user-reported friction and clinical speed.
+*   **Feedback Ingestion:** Capture usability blocks directly from clinic staff.
+*   **Rapid Product-Layer Iteration:** Resolve UI/Server Action friction points without touching or risk-reopening the frozen Healthcare Kernel.

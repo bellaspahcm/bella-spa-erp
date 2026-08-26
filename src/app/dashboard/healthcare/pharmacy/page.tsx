@@ -277,7 +277,7 @@ export default function PharmacyPage() {
               tenant_id: tenantId,
               patient_party_id: patientId,
               care_journey_id: '99999999-9999-9999-9999-999999999999',
-              encounter_class: 'walk_in',
+              encounter_class: 'AMB',
               status: 'finished',
               chief_complaint: 'Khám bệnh',
             })
@@ -292,7 +292,7 @@ export default function PharmacyPage() {
       const hoangEnc = await getOrCreateEncounter(hoangId!);
       const maiEnc = await getOrCreateEncounter(maiId!);
 
-      const getOrCreateDrug = async (name: string, code: string) => {
+      const getOrCreateDrug = async (name: string, code: string, activeIngredient: string) => {
         let { data: drug } = await supabase
           .from('hc_drug_profiles')
           .select('id')
@@ -305,7 +305,7 @@ export default function PharmacyPage() {
               tenant_id: tenantId,
               sku: code,
               name: name,
-              stock_qty: 100,
+              stock_level: 100,
               unit: 'Viên',
             })
             .select()
@@ -317,6 +317,7 @@ export default function PharmacyPage() {
               tenant_id: tenantId,
               inventory_item_id: inv?.id,
               drug_code: code,
+              active_ingredient: activeIngredient,
             })
             .select()
             .single();
@@ -325,9 +326,9 @@ export default function PharmacyPage() {
         return drug?.id;
       };
 
-      const augmentinId = await getOrCreateDrug('Augmentin 625mg', 'AUG-625');
-      const morphinId = await getOrCreateDrug('Morphin Sulfat 10mg/ml', 'MORPH-10');
-      const paracetamolId = await getOrCreateDrug('Paracetamol Kabi 500mg', 'PARA-500');
+      const augmentinId = await getOrCreateDrug('Augmentin 625mg', 'AUG-625', 'Amoxicillin + Clavulanic Acid');
+      const morphinId = await getOrCreateDrug('Morphin Sulfat 10mg/ml', 'MORPH-10', 'Morphine');
+      const paracetamolId = await getOrCreateDrug('Paracetamol Kabi 500mg', 'PARA-500', 'Paracetamol');
 
       await supabase.from('hc_prescriptions').insert([
         {

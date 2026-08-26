@@ -38,7 +38,7 @@ export interface WorkspaceManifest {
   };
   readonly workflow: string;
   readonly theme: string;
-  readonly navigation: string[];
+  readonly navigation?: string[];
   readonly shortcuts: Record<string, string>;
   readonly aiAgents: string[];
 }

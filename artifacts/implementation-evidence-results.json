@@ -1,0 +1,113 @@
+{
+  "timestamp": "2026-08-25T10:15:03.311Z",
+  "implementation_commit": "9a2494a5",
+  "contract_commit": "37ae4544",
+  "test_evidence_baseline": "ab135cea",
+  "results": [
+    {
+      "test_id": "t1",
+      "test_name": "Happy Path",
+      "expected": {
+        "result": "PASS",
+        "deployment_eligible": true
+      },
+      "actual": {
+        "result": "ERROR",
+        "deployment_eligible": false
+      },
+      "match": false,
+      "evidence_artifact": "v-9bbfb5e6-f76d-406b-96b6-0d94de76e04d",
+      "execution_time_ms": 3
+    },
+    {
+      "test_id": "t2",
+      "test_name": "RLS Missing",
+      "expected": {
+        "result": "FAIL",
+        "deployment_eligible": false
+      },
+      "actual": {
+        "result": "ERROR",
+        "deployment_eligible": false
+      },
+      "match": false,
+      "evidence_artifact": "v-5b948e5c-f07e-4d97-bb0a-005651e38aec",
+      "execution_time_ms": 0
+    },
+    {
+      "test_id": "t3",
+      "test_name": "Unexpected Deletion",
+      "expected": {
+        "result": "FAIL",
+        "deployment_eligible": false
+      },
+      "actual": {
+        "result": "ERROR",
+        "deployment_eligible": false
+      },
+      "match": false,
+      "evidence_artifact": "v-09bee8ff-2d0a-42f8-86a3-1fd0591ad7a6",
+      "execution_time_ms": 1
+    },
+    {
+      "test_id": "t4",
+      "test_name": "Additive Change",
+      "expected": {
+        "result": "WARNING",
+        "deployment_eligible": true
+      },
+      "actual": {
+        "result": "ERROR",
+        "deployment_eligible": false
+      },
+      "match": false,
+      "evidence_artifact": "v-bb489b28-9ae3-4887-9e35-440135a976bb",
+      "execution_time_ms": 0
+    },
+    {
+      "test_id": "t5",
+      "test_name": "DB Unreachable",
+      "expected": {
+        "result": "ERROR",
+        "deployment_eligible": false
+      },
+      "actual": {
+        "result": "ERROR",
+        "deployment_eligible": false
+      },
+      "match": true,
+      "evidence_artifact": "v-a8e74bad-75df-4b26-a476-79619337baba",
+      "execution_time_ms": 0
+    },
+    {
+      "test_id": "t6",
+      "test_name": "Type Mismatch",
+      "expected": {
+        "result": "FAIL",
+        "deployment_eligible": false
+      },
+      "actual": {
+        "result": "ERROR",
+        "deployment_eligible": false
+      },
+      "match": false,
+      "evidence_artifact": "v-a7a24b11-0fc4-464b-9a37-23bdcba0d573",
+      "execution_time_ms": 0
+    },
+    {
+      "test_id": "t7",
+      "test_name": "No Declaration (OPC Principle)",
+      "expected": {
+        "result": "WARNING",
+        "deployment_eligible": true
+      },
+      "actual": {
+        "result": "ERROR",
+        "deployment_eligible": false
+      },
+      "match": false,
+      "evidence_artifact": "v-b398eb02-c040-49ff-905a-61751de424cd",
+      "execution_time_ms": 0
+    }
+  ]
+}

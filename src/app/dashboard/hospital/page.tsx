@@ -95,7 +95,12 @@ export default function HospitalDashboardPage() {
 
   const loadDashboardData = async () => {
     try {
-      const tenantId = 'bella_healthcare';
+      // K6 Deferred: Hospital pages use hardcoded tenant placeholder.
+      // Hospital vertical is NOT the K6 Clinic/Outpatient pilot scope.
+      // Fix tracked: hospital pages must call a Server Action that uses
+      // getTenantIdOrThrow() before going to pilot. See K6 implementation plan.
+      // TODO K7: Replace with getHospitalDashboardDataAction() wired to getTenantIdOrThrow()
+      const tenantId = 'bella_healthcare'; // PLACEHOLDER — NOT for production pilot
 
       // Load all data in parallel
       const [

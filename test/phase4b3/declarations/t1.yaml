@@ -1,0 +1,11 @@
+verification:
+  tables:
+    test_hc_appointments:
+      columns:
+        appointment_id: uuid
+        patient_id: uuid
+        tenant_id: uuid
+        status: text
+        created_at: timestamptz
+      primary_key: [appointment_id]
+      rls: required

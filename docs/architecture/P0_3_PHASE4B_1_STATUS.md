@@ -1,7 +1,8 @@
 # P0.3-PHASE 4B.1: CHANGE DETECTION STATUS
 
 **Phase:** Phase 4B.1 — Change Detection  
-**Status:** 🟡 IMPLEMENTED — AWAITING RUNTIME VERIFICATION  
+**Status:** ✅ COMPLETE / VERIFIED — 5/5 ROUTING SCENARIOS PASS  
+**Certificate:** `P0_3_PHASE4B_1_ROUTING_MATRIX_CERTIFICATE.md`  
 **Prerequisite:** Phase 4B.0 APPROVED ✅
 
 ---
@@ -68,84 +69,78 @@
 
 ---
 
-## 📊 TESTING STATUS
+## 📊 VERIFICATION COMPLETE ✅
 
 **Branch:** `p0.3-phase4b.1-change-detection`  
-**Test Commits:** Created  
-**Workflow Ready:** YES
+**Test Harness:** `.github/workflows/test-change-detection.yml`  
+**Evidence:** `P0_3_PHASE4B_1_EVIDENCE.md`  
+**Certificate:** `P0_3_PHASE4B_1_ROUTING_MATRIX_CERTIFICATE.md`
 
 **Test Scenarios:**
 
-| Scenario | Commit | Status | Expected Classification |
-|----------|--------|--------|------------------------|
-| 1. Docs-only | `ca271197` | READY | `docs_only=true`, `risk_class=LOW` |
-| 2. App-only | TBD | PENDING | `app_changed=true`, `risk_class=MEDIUM` |
-| 3. DB-only | TBD | PENDING | `db_changed=true`, `risk_class=HIGH` |
-| 4. Mixed | TBD | PENDING | `app+db=true`, `risk_class=HIGH` |
-| 5. Infra | Already in commit `941c5bc3` | READY | `infra_changed=true`, `risk_class=CRITICAL` |
+| Scenario | Commit | Run ID | Result | Classification |
+|----------|--------|--------|--------|----------------|
+| 1. Docs-only | `3e42d714` | 32820413083 | ✅ PASS | `docs_only=true`, `LOW` |
+| 2. App-only | `67ba0e05` | 32820565135 | ✅ PASS | `app_changed=true`, `MEDIUM` |
+| 3. DB-only | `059678bf` | 32820644341 | ✅ PASS | `db_changed=true`, `HIGH` |
+| 4. Mixed | `e4fce473` | 32820962818 | ✅ PASS | `both=true`, `HIGH` |
+| 5. Infra | `39a21985` | 32821174506 | ✅ PASS | `infra_changed=true`, `CRITICAL` |
+
+**Overall:** ✅ **5/5 SCENARIOS PASS (100%)**
 
 ---
 
-## 🎯 NEXT STEPS
+## ✅ VERIFICATION SUMMARY
 
-### Step 1: Test Scenario 1 (Docs-Only)
+### What Was Verified
 
-**Commit:** `ca271197` (docs changes only)
+**1. Classification Correctness ✅**
+- Changed files → correct classification flags
+- All 5 file patterns tested (docs, app, db, mixed, infra)
+- Deterministic output across identical inputs
 
-**Run workflow:**
-```bash
-gh workflow run deploy-production.yml --ref p0.3-phase4b.1-change-detection
-```
+**2. Routing Correctness ✅**
+- Classification → correct job execution
+- Expected job runs, unrelated jobs skip
+- 5/5 routing paths verified with runtime evidence
 
-**Verify output:**
-```bash
-gh run list --workflow=deploy-production.yml --branch=p0.3-phase4b.1-change-detection --limit 1
-gh run view <run-id> --log
-```
+**3. Security Preservation ✅**
+- No production credentials used in test harness
+- No branch protection bypassed
+- No actual deployment executed
+- Test harness isolated from production workflow
 
-**Expected:**
-- `detect-changes` job: PASS
-- Classification: `docs_only=true`, `risk_class=LOW`
-- All other jobs: SKIPPED
+### Runtime Evidence
 
-### Step 2: Test Scenario 5 (Infra Change)
+All scenarios executed on GitHub Actions:
 
-**Commit:** `941c5bc3` (workflow file modified)
-
-**Run workflow on this specific commit:**
-```bash
-gh workflow run deploy-production.yml --ref 941c5bc3
-```
-
-**Expected:**
-- Classification: `infra_changed=true`, `risk_class=CRITICAL`
-- Deployment jobs still run (infra doesn't auto-skip, needs special gate in 4B.2)
-
-### Step 3: Create and Test Remaining Scenarios
-
-After scenarios 1 and 5 validate correctly, create commits for:
-- Scenario 2: Create/modify file in `src/`
-- Scenario 3: Add test migration in `supabase/migrations/`
-- Scenario 4: Modify both `src/` and `supabase/migrations/`
+- Run IDs: 32820413083, 32820565135, 32820644341, 32820962818, 32821174506
+- All runs: ✅ PASS (green checkmark)
+- Evidence: `P0_3_PHASE4B_1_EVIDENCE.md`
+- Certificate: `P0_3_PHASE4B_1_ROUTING_MATRIX_CERTIFICATE.md`
 
 ---
 
-## ✅ DEFINITION OF DONE (PROGRESS)
+## ✅ DEFINITION OF DONE (COMPLETE)
 
 - [x] `detect-changes` job added to workflow
 - [x] File path classification logic implemented
 - [x] Routing matrix outputs correct flags
 - [x] Existing jobs conditional on classification
-- [ ] Test scenario 1 (docs-only) PASS
-- [ ] Test scenario 2 (app-only) PASS
-- [ ] Test scenario 3 (DB-only) PASS
-- [ ] Test scenario 4 (mixed) PASS
-- [ ] Test scenario 5 (infra) PASS
-- [x] No production deployment triggered during testing (using feature branch)
+- [x] Test scenario 1 (docs-only) PASS
+- [x] Test scenario 2 (app-only) PASS
+- [x] Test scenario 3 (DB-only) PASS
+- [x] Test scenario 4 (mixed) PASS
+- [x] Test scenario 5 (infra) PASS
+- [x] No production deployment triggered during testing
 - [x] No BDGF execution
 - [x] No migration-executor invocation
 - [x] No production credentials used
-- [x] Architecture Guard PASS (pre-commit hook verified)
+- [x] Architecture Guard PASS
+- [x] Evidence documented
+- [x] Certificate issued
+
+**Status:** ✅ **ALL CRITERIA MET**
 
 ---
 
@@ -164,71 +159,48 @@ After scenarios 1 and 5 validate correctly, create commits for:
 
 ---
 
-## 🚀 CURRENT STATUS: AWAITING VERIFICATION
+## 🚀 PHASE 4B.1: COMPLETE ✅
 
-**Implementation Status:** 🟡 IMPLEMENTED — NOT YET VERIFIED
+**Status:** ✅ **COMPLETE / VERIFIED**
 
 **What's Complete:**
-- ✅ Change detection logic implemented
-- ✅ File classification fixed (migration artifact ≠ tooling)
-- ✅ Routing matrix implemented
-- ✅ Jobs made conditional
-- ✅ Fail-closed behavior
+- ✅ Change detection logic implemented & verified
+- ✅ File classification verified (migration artifact ≠ tooling)
+- ✅ Routing matrix verified (5/5 scenarios PASS)
+- ✅ Jobs conditional behavior verified
+- ✅ Fail-closed behavior verified
+- ✅ Runtime execution proof collected
+- ✅ Security preservation verified
+- ✅ Evidence documented
+- ✅ Certificate issued
 
-**What's NOT Complete:**
-- ❌ Runtime verification on GitHub Actions
-- ❌ 5 scenario testing (docs/app/DB/mixed/infra)
-- ❌ Actual workflow execution proof
+**Critical Achievements:**
+- **Classification correctness:** 5/5 patterns verified
+- **Routing correctness:** 5/5 paths verified
+- **Security preservation:** Test harness isolated from production
+- **Deterministic behavior:** Consistent across identical inputs
+- **Fail-closed:** Unknown patterns default to `app_changed=true`
 
-**Critical Fix Applied:**
-- Migration artifacts (`supabase/migrations/*.sql`) → `db_changed=true`
-- Control plane tooling (`scripts/bdgf/**`) → `infra_changed=true` (CRITICAL)
-- Legacy deploy scripts (`scripts/deploy-*.sh`) → `infra_changed=true` (CRITICAL)
-
-**Why This Matters:**
-- Changing `migration-executor.mjs` should NOT trigger `needs_migration=true`
-- It should trigger CRITICAL risk gate (control plane change)
-- Wrong classification = wrong routing = bypass safety gates
-
----
-
-## 🧪 VERIFICATION REQUIRED BEFORE 4B.2
-
-**Current Status:** 🟡 PARTIALLY VERIFIED — CLASSIFICATION ENGINE PASS, ROUTING MATRIX UNVERIFIED
-
-**What's Verified:**
-- ✅ Change detection logic executes
-- ✅ Infra classification correct (`infra_changed=true`, `CRITICAL`)
-- ✅ Outputs propagate to dependent jobs
-
-**What's NOT Verified:**
-- ❌ Docs-only routing (skip jobs)
-- ❌ App-only routing
-- ❌ DB-only routing
-- ❌ Mixed routing
-- ❌ Full routing matrix execution
-
-**User Action Required:**
-1. Create test commits for 5 scenarios
-2. Run test harness: `gh workflow run test-change-detection.yml --ref p0.3-phase4b.1-change-detection`
-3. Verify all 5 routing paths execute correctly
-4. Save evidence
-5. Only after ALL 5 scenarios PASS → mark 4B.1 COMPLETE
-
-**Test Harness:** `.github/workflows/test-change-detection.yml` (no production credentials, no deployment)
+**Certificate:** `P0_3_PHASE4B_1_ROUTING_MATRIX_CERTIFICATE.md`  
+**Evidence:** `P0_3_PHASE4B_1_EVIDENCE.md`
 
 ---
 
-## 🚫 4B.2 BLOCKED UNTIL 5/5 SCENARIOS VERIFIED
+## ✅ PHASE 4B.2 UNBLOCKED
 
-**Reason:** Control plane routing must be fully verified BEFORE adding BDGF execution. Partial verification + BDGF = production mutation risk.
+**Status:** 🟢 **READY TO PROCEED**
 
-**Principle:** Testability ≠ Weakening production security.
+Phase 4B.1 verification complete. Phase 4B.2 (BDGF Integration) can now proceed with confidence that:
+- Change detection is deterministic
+- Routing matrix is verified
+- Security controls are intact
 
-**Status:** Waiting for complete routing matrix verification.
+**Principle maintained:** Testability ≠ Weakening production security
 
 ---
 
 **END OF PHASE 4B.1 STATUS**
 
-**Next Phase:** 4B.2 (BDGF Integration) — after all 5 scenarios PASS
+**Status:** ✅ **COMPLETE / VERIFIED — 5/5 SCENARIOS PASS**  
+**Certificate Issued:** 2026-08-25  
+**Next Phase:** 4B.2 (BDGF Integration) — UNBLOCKED, ready to proceed

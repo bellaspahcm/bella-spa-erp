@@ -449,69 +449,41 @@ export default function HospitalAdmissionsPage() {
       setBeds(bedsData);
       setWards(wardsData);
 
-      // Construct extended fields from database or match with mock details
-      const extendedAdms: ExtendedInpatientAdmission[] = admData.map((dbAdm) => {
-        const mockMatch = MOCK_INPATIENT_DATA.find((m) => m.patient_id === dbAdm.patient_id);
-        return {
-          ...dbAdm,
-          patient_name: mockMatch?.patient_name || (dbAdm.patient_id === 'pat-001' ? 'Nguyễn Văn Hoàng' : dbAdm.patient_id === 'pat-002' ? 'Phạm Thị Mai' : `Bệnh nhân ${dbAdm.patient_id.slice(-4)}`),
-          age: mockMatch?.age || 45,
-          gender: mockMatch?.gender || 'Nam',
-          clinical_state: mockMatch?.clinical_state || 'treating',
-          total_orders: mockMatch?.total_orders || 6,
-          pending_orders: mockMatch?.pending_orders || 0,
-          mar_percentage: mockMatch?.mar_percentage || 100,
-          mar_administered: mockMatch?.mar_administered || 6,
-          mar_scheduled: mockMatch?.mar_scheduled || 6,
-          mar_pending: mockMatch?.mar_pending || 0,
-          mar_missed: mockMatch?.mar_missed || 0,
-          pending_cls: mockMatch?.pending_cls || 0,
-          alerts_count: mockMatch?.alerts_count || 0,
-          alert_details: mockMatch?.alert_details || [],
-          vitals: mockMatch?.vitals || { temp: 37.0, hr: 80, systolic_bp: 120, diastolic_bp: 80, spo2: 98 },
-          allergies: mockMatch?.allergies || [],
-          last_activity: mockMatch?.last_activity || { time: '16:04', text: 'Đợt tiếp nhận nội trú được ghi nhận' },
-          attending_doctor_name: mockMatch?.attending_doctor_name || 'BS. CKII Nguyễn Văn Minh',
-        };
-      });
+      // Map DB records to ExtendedInpatientAdmission
+      // Extended fields (patient_name, vitals, etc.) not yet in DB — derive from available DB data
+      const extendedAdms: ExtendedInpatientAdmission[] = admData.map((dbAdm) => ({
+        ...dbAdm,
+        patient_name: `Bệnh nhân ${dbAdm.patient_id.slice(-6)}`,
+        age: 0,
+        gender: 'Nam' as const,
+        clinical_state: 'treating' as const,
+        total_orders: 0,
+        pending_orders: 0,
+        mar_percentage: 0,
+        mar_administered: 0,
+        mar_scheduled: 0,
+        mar_pending: 0,
+        mar_missed: 0,
+        pending_cls: 0,
+        alerts_count: 0,
+        alert_details: [],
+        vitals: { temp: 0, hr: 0, systolic_bp: 0, diastolic_bp: 0, spo2: 0 },
+        allergies: [],
+        last_activity: { time: new Date(dbAdm.admitted_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }), text: 'Tiếp nhận nội trú' },
+        attending_doctor_name: dbAdm.attending_doctor_id,
+      }));
 
-      // Ensure we always have mock data populated for demo purposes if DB lacks records
-      if (extendedAdms.length === 0) {
-        setAdmissions(MOCK_INPATIENT_DATA);
-      } else {
-        // Merge db records and mock data to show robust clinical list
-        const merged = [...extendedAdms];
-        MOCK_INPATIENT_DATA.forEach((m) => {
-          if (!merged.some((x) => x.id === m.id)) {
-            merged.push(m);
-          }
-        });
-        setAdmissions(merged);
-      }
+      setAdmissions(extendedAdms);
 
       const availableBed = bedsData.find((b) => b.status === 'available');
       if (availableBed) {
         setSelectedBedId(availableBed.id);
       }
     } catch (err: unknown) {
-      // Fallback on error (like RLS or DB connection issue) to keep demonstration operational
-      setAdmissions(MOCK_INPATIENT_DATA);
-      // Construct basic mock beds/wards
-      setBeds([
-        { id: 'bed-001', tenant_id: 'bella_healthcare', ward_id: 'ward-001', bed_code: 'ICU-BED-01', bed_type: 'icu', status: 'occupied', daily_rate: 1500000, updated_at: '' },
-        { id: 'bed-002', tenant_id: 'bella_healthcare', ward_id: 'ward-002', bed_code: 'INT-BED-01', bed_type: 'regular', status: 'occupied', daily_rate: 500000, updated_at: '' },
-        { id: 'bed-003', tenant_id: 'bella_healthcare', ward_id: 'ward-001', bed_code: 'ICU-BED-02', bed_type: 'icu', status: 'occupied', daily_rate: 1500000, updated_at: '' },
-        { id: 'bed-004', tenant_id: 'bella_healthcare', ward_id: 'ward-003', bed_code: 'PED-BED-01', bed_type: 'regular', status: 'occupied', daily_rate: 600000, updated_at: '' },
-        { id: 'bed-005', tenant_id: 'bella_healthcare', ward_id: 'ward-001', bed_code: 'ICU-BED-03', bed_type: 'icu', status: 'occupied', daily_rate: 1500000, updated_at: '' },
-        { id: 'bed-006', tenant_id: 'bella_healthcare', ward_id: 'ward-001', bed_code: 'ICU-BED-04', bed_type: 'icu', status: 'available', daily_rate: 1500000, updated_at: '' },
-        { id: 'bed-007', tenant_id: 'bella_healthcare', ward_id: 'ward-002', bed_code: 'INT-BED-02', bed_type: 'regular', status: 'available', daily_rate: 500000, updated_at: '' },
-      ]);
-      setWards([
-        { id: 'ward-001', tenant_id: 'bella_healthcare', name: 'Khoa Hồi Sức Tích Cực (ICU)', description: 'Chăm sóc đặc biệt', created_at: '', updated_at: '' },
-        { id: 'ward-002', tenant_id: 'bella_healthcare', name: 'Khoa Nội Tổng Hợp', description: 'Điều trị nội khoa', created_at: '', updated_at: '' },
-        { id: 'ward-003', tenant_id: 'bella_healthcare', name: 'Khoa Nhi', description: 'Chăm sóc trẻ em', created_at: '', updated_at: '' },
-      ]);
-      setSelectedBedId('bed-006');
+      const msg = err instanceof Error ? err.message : 'Lỗi tải dữ liệu';
+      console.error('[H1.1 Admissions] loadData error:', msg);
+      // Do NOT fallback to mock — surface real error so we can fix it
+      alert(`Không tải được dữ liệu: ${msg}`);
     } finally {
       setLoading(false);
     }
@@ -545,15 +517,15 @@ export default function HospitalAdmissionsPage() {
       // Construct extended object for state
       const extendedNew: ExtendedInpatientAdmission = {
         ...created,
-        patient_name: patientId === 'pat-006' ? 'Cao Minh Tú' : `Bệnh nhân ${patientId}`,
-        age: 39,
+        patient_name: `Bệnh nhân ${patientId}`,
+        age: 0,
         gender: 'Nam',
         clinical_state: 'treating',
-        total_orders: 3,
+        total_orders: 0,
         pending_orders: 0,
-        mar_percentage: 100,
-        mar_administered: 3,
-        mar_scheduled: 3,
+        mar_percentage: 0,
+        mar_administered: 0,
+        mar_scheduled: 0,
         mar_pending: 0,
         mar_missed: 0,
         pending_cls: 0,
@@ -568,47 +540,9 @@ export default function HospitalAdmissionsPage() {
       setShowAddModal(false);
       await loadData();
     } catch (err: unknown) {
-      // In case DB failed, insert locally to allow visual demo
-      const localNew: ExtendedInpatientAdmission = {
-        id: `adm-${Date.now()}`,
-        tenant_id: 'bella_healthcare',
-        encounter_id: encounterId || `enc-${Date.now()}`,
-        patient_id: patientId || `pat-${Date.now()}`,
-        patient_name: patientId === 'pat-006' ? 'Cao Minh Tú' : `Bệnh nhân ${patientId}`,
-        age: 39,
-        gender: 'Nam',
-        bed_id: selectedBedId,
-        ward_id: selectedWardId,
-        admitting_doctor_id: 'doc-001',
-        attending_doctor_id: 'doc-001',
-        admission_diagnosis: [
-          {
-            icd10_code: icd10Code || 'I10',
-            icd10_name_vi: icd10Name || 'Tăng huyết áp vô căn',
-            is_primary: true,
-          },
-        ],
-        status: 'admitted',
-        clinical_state: 'treating',
-        total_orders: 3,
-        pending_orders: 0,
-        mar_percentage: 100,
-        mar_administered: 3,
-        mar_scheduled: 3,
-        mar_pending: 0,
-        mar_missed: 0,
-        pending_cls: 0,
-        alerts_count: 0,
-        vitals: { temp: 36.6, hr: 76, systolic_bp: 120, diastolic_bp: 80, spo2: 98 },
-        allergies: [],
-        last_activity: { time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }), text: 'Tiếp nhận nhập viện (Demo Local)' },
-        attending_doctor_name: doctorName,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      setAdmissions((prev) => [localNew, ...prev]);
-      setShowAddModal(false);
+      const msg = err instanceof Error ? err.message : 'Lỗi tạo admission';
+      console.error('[H1.1 Admissions] createAdmission error:', msg);
+      alert(`Không tạo được bệnh án: ${msg}`);
     }
   };
 
@@ -633,22 +567,9 @@ export default function HospitalAdmissionsPage() {
       resetDischargeFlow();
       await loadData();
     } catch (err: unknown) {
-      // Offline fallback
-      setAdmissions((prev) =>
-        prev.map((a) =>
-          a.id === selectedDischargeAdmission.id
-            ? {
-                ...a,
-                status: 'discharged',
-                clinical_state: 'treating',
-                discharged_at: new Date().toISOString(),
-                discharge_summary: dischargeSummary || 'Bệnh nhân ổn định, đáp ứng điều trị nội trú tốt (Demo Local).'
-              }
-            : a
-        )
-      );
-      setSelectedDischargeAdmission(null);
-      resetDischargeFlow();
+      const msg = err instanceof Error ? err.message : 'Lỗi xuất viện';
+      console.error('[H1.1 Admissions] dischargePatient error:', msg);
+      alert(`Không thực hiện được xuất viện: ${msg}`);
     }
   };
 

@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-08-25T08:32:57.814Z",
+  "approval_id": "test-t6-approval-1787646777536",
+  "migration_file": "supabase/migrations/20260825083257_t6_provenance_test.sql",
+  "mock_behavior": "success",
+  "environment": "test",
+  "database_url_present": true,
+  "gate_key_present": true
+}
