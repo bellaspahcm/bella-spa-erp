@@ -38,8 +38,6 @@ const KNOWN_EXEMPTIONS: Record<string, string[]> = {
   'or-engine': ['domain', 'contracts', 'events', 'repositories'],
   'or-readiness-engine': ['domain', 'contracts', 'events', 'repositories'],
   'pacu-engine': ['domain', 'contracts', 'events', 'repositories'],
-  'scheduling-engine': ['domain', 'contracts', 'events', 'repositories'],
-  'queue-engine': ['domain', 'contracts', 'events', 'repositories'],
   'temporal-engine': ['contracts', 'repositories'],
   'rule-engine': ['contracts', 'repositories', 'events'],
   'audit-compliance-engine': ['contracts', 'repositories', 'events'],

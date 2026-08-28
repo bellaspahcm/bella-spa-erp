@@ -37,33 +37,33 @@ The table below maps all 27 healthcare engines, classifying them into **Healthca
 
 | Engine | Directory | Type | Status | Key Capabilities / Description |
 | :--- | :--- | :--- | :--- | :--- |
-| **mpi-engine** | `mpi-engine/` | 🟢 Kernel | Contract — Implementation Pending | Master Patient Index. Integrates with Platform Person Center. |
+| **mpi-engine** | `mpi-engine/` | 🟢 Kernel | Placeholder (Contract Only) | Master Patient Index. Integrates with Platform Person Center. |
 | **encounter-engine** | `encounter-engine/` | 🟢 Kernel | Proven Kernel | Visit aggregate root. Essential for all clinical flows. |
-| **cds-engine** | `cds-engine/` | 🟢 Kernel | Capability Proven / Candidate | Clinical Decision Support (safety checks). |
-| **rule-engine** | `rule-engine/` | 🟢 Kernel | Active | Core business and medical rules validation. |
-| **temporal-engine** | `temporal-engine/` | 🟢 Kernel | Active | Bitemporal tracking & historical state queries. |
-| **audit-compliance-engine**| `audit-compliance-engine/` | 🟢 Kernel | Active | Audit logs & evidence package generation. |
-| **scheduling-engine** | `scheduling-engine/` | 🟢 Kernel | Candidate | Universal appointments & schedules. |
+| **cds-engine** | `cds-engine/` | 🟢 Kernel | Proven Kernel | Clinical Decision Support (safety checks). |
+| **rule-engine** | `rule-engine/` | 🟢 Kernel | Active (Unexposed) | Core business and medical rules validation. |
+| **temporal-engine** | `temporal-engine/` | 🟢 Kernel | Active (Unexposed) | Bitemporal tracking & historical state queries. |
+| **audit-compliance-engine**| `audit-compliance-engine/` | 🟢 Kernel | Active (Unexposed) | Audit logs & evidence package generation. |
+| **scheduling-engine** | `scheduling-engine/` | 🟢 Kernel | Placeholder (ADR-017 Pending) | Universal appointments & schedules. |
 | **order-engine** | `order-engine/` | 🟢 Kernel | Proven Kernel | Clinical orders (Labs, Imaging, Meds). |
 | **nursing-engine** | `nursing-engine/` | ⚡ Split | Active | **ClinicalObservation** is Kernel. **MAR** is Hospital Extension. |
 | **admission-engine** | `admission-engine/` | 🔵 Hospital | Active | Inpatient admissions & discharge workflows. |
 | **bed-engine** | `bed-engine/` | 🔵 Hospital | Active | Bed & Ward allocation and status management. |
-| **emergency-engine** | `emergency-engine/` | 🔵 Hospital | Active | Emergency Department triage & tracking. |
-| **icu-engine** | `icu-engine/` | 🔵 Hospital | Active | Intensive Care Unit flows. |
+| **emergency-engine** | `emergency-engine/` | 🔵 Hospital | Active (Unexposed) | Emergency Department triage & tracking. |
+| **icu-engine** | `icu-engine/` | 🔵 Hospital | Active (Unexposed) | Intensive Care Unit flows. |
 | **surgical-engine** | `surgical-engine/` | 🔵 Hospital | Active | OR scheduling, checklists & workflows. |
 | **or-engine** | `or-engine/` | 🔵 Hospital | Active | Operating Room lifecycle management. |
-| **or-readiness-engine** | `or-readiness-engine/` | 🔵 Hospital | Active | Pre-operative verification & prep. |
+| **or-readiness-engine** | `or-readiness-engine/` | 🔵 Hospital | Active (Unexposed) | Pre-operative verification & prep. |
 | **anesthesia-engine** | `anesthesia-engine/` | 🔵 Hospital | Active | Anesthetic plan & records tracking. |
-| **pacu-engine** | `pacu-engine/` | 🔵 Hospital | Active | Post-Anesthesia Care Unit monitoring. |
-| **cssd-engine** | `cssd-engine/` | 🔵 Hospital | Active | Central Sterile Services Department tracking. |
+| **pacu-engine** | `pacu-engine/` | 🔵 Hospital | Active (Unexposed) | Post-Anesthesia Care Unit monitoring. |
+| **cssd-engine** | `cssd-engine/` | 🔵 Hospital | Active (Unexposed) | Central Sterile Services Department tracking. |
 | **laboratory-engine** | `laboratory-engine/` | 🔵 Hospital | Active | Laboratory Information System (LIS) integration. |
 | **pharmacy-engine** | `pharmacy-engine/` | 🔵 Hospital | Active | Inpatient/Outpatient pharmacy dispensing workflows. |
-| **blood-bank-engine** | `blood-bank-engine/` | 🔵 Hospital | Active | Blood products request, inventory, & cross-matching. |
-| **billing-engine** | `billing-engine/` | 🔵 Hospital | Stub | Hospital-specific insurance & billing projections. |
-| **imaging-engine** | `imaging-engine/` | 🔵 Hospital | Stub | Radiology Information System (RIS) & PACS integration. |
-| **insurance-engine** | `insurance-engine/` | 🔵 Hospital | Stub | BHYT & Private insurance integration. |
-| **queue-engine** | `queue-engine/` | 🔵 Hospital | Stub | Clinic / Ward queue queue management. |
-| **clinical-engine** | `clinical-engine/` | ⚪ Deprecated | Stub | Superseded by encounter-engine. |
+| **blood-bank-engine** | `blood-bank-engine/` | 🔵 Hospital | Active (Unexposed) | Blood products request, inventory, & cross-matching (H7). |
+| **billing-engine** | `billing-engine/` | 🔵 Hospital | Placeholder | Hospital-specific insurance & billing projections. |
+| **imaging-engine** | `imaging-engine/` | 🔵 Hospital | Placeholder (ADR-016 Pending) | Radiology Information System (RIS) & PACS integration. |
+| **insurance-engine** | `insurance-engine/` | 🔵 Hospital | Placeholder | BHYT & Private insurance integration. |
+| **queue-engine** | `queue-engine/` | 🔵 Hospital | Placeholder | Clinic / Ward queue queue management. |
+| **clinical-engine** | `clinical-engine/` | ⚪ Deprecated | Placeholder | Superseded by encounter-engine. |
 
 ---
 

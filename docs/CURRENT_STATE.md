@@ -45,62 +45,48 @@ Runtime                                ✅ IMPLEMENTED
 ## 🏥 HEALTHCARE OS
 
 ```
-HEALTHCARE OS KERNEL — H1–H12
+HEALTHCARE OS KERNEL — VERIFIED STATE
 ────────────────────────────────────────────────────────────
-Status:        🔒 FROZEN (Kernel Candidate Freeze)
+Status:        🔒 PARTIAL FREEZE (11 Active Exposed Engines; 9 Unexposed Implemented Engines)
 Constitution:  docs/architecture/HEALTHCARE_VERTICAL_CODING_CONSTITUTION.md
-Test Suite:    52/52 Suites (17 integration test files verified)
-Last Verified: 2026-08-17 (H1.2 PROVEN FROZEN)
+Test Suite:    500/504 PASS (17 integration test files verified)
+Last Verified: 2026-08-27 (Revision after Git Forensic Investigation)
 Compliance:    20 Laws mandatory
 ```
 
-### Healthcare Engines (Kernel H1–H12)
+### Healthcare Engine Inventory (Taxonomy Map)
 
-| Engine | Code Path | Freeze Status | Tests |
-|---|---|---|---|
-| MPI Engine (H1 — Person/Identity) | `engines/mpi-engine/` | 🔒 FROZEN | ✅ H1.2 14/14 PASS |
-| Encounter Engine (H2) | `engines/encounter-engine/` | 🔒 FROZEN | ✅ |
-| Clinical Engine (H3) | `engines/clinical-engine/` | 🔒 FROZEN | ✅ |
-| Order Engine (H4) | `engines/order-engine/` | 🔒 FROZEN | ✅ |
-| Pharmacy Engine (H5) | `engines/pharmacy-engine/` | 🔒 FROZEN | ✅ |
-| Laboratory Engine (H6) | `engines/laboratory-engine/` | 🔒 FROZEN | ✅ |
-| Imaging Engine (H7) | `engines/imaging-engine/` | 🔒 FROZEN | ⚠️ unverified |
-| CDS Engine (H8) | `engines/cds-engine/` | 🔒 FROZEN | ✅ |
-| Temporal Engine (H9) | `engines/temporal-engine/` | 🔒 FROZEN | ✅ |
-| Rule Engine (H10) | `engines/rule-engine/` | 🔒 FROZEN | ✅ |
-| Audit Compliance (H11) | `engines/audit-compliance-engine/` | 🔒 FROZEN | ✅ |
-| Scheduling Engine (H12) | `engines/scheduling-engine/` | 🔒 FROZEN | ⚠️ unverified |
+Xem chi tiết tại [`docs/architecture/HEALTHCARE_CANONICAL_CAPABILITY_MAP.md`](architecture/HEALTHCARE_CANONICAL_CAPABILITY_MAP.md)
 
-> All engines under: `src/platform/healthcare/engines/`
-
-### Healthcare — Additional Engines (Extended)
-
-> Healthcare platform có 27 engine directories, gồm cả specialty engines:
-
-| Engine | Path | Status |
+| Category | Engines | Description |
 |---|---|---|
-| Admission Engine | `engines/admission-engine/` | ✅ |
-| Anesthesia Engine | `engines/anesthesia-engine/` | ✅ |
-| Bed Engine | `engines/bed-engine/` | ✅ |
-| Billing Engine | `engines/billing-engine/` | ✅ |
-| Blood Bank Engine | `engines/blood-bank-engine/` | ✅ |
-| CSSD Engine | `engines/cssd-engine/` | ✅ |
-| Emergency Engine | `engines/emergency-engine/` | ✅ |
-| ICU Engine | `engines/icu-engine/` | ✅ |
-| Insurance Engine | `engines/insurance-engine/` | ✅ |
-| Nursing Engine | `engines/nursing-engine/` | ✅ |
-| OR Engine | `engines/or-engine/` | ✅ |
-| OR Readiness Engine | `engines/or-readiness-engine/` | ✅ |
-| PACU Engine | `engines/pacu-engine/` | ✅ |
-| Queue Engine | `engines/queue-engine/` | ✅ |
-| Surgical Engine | `engines/surgical-engine/` | ✅ |
+| **1. Active Exposed Engines** | `admission`, `encounter`, `bed`, `cds`, `nursing`, `order`, `pharmacy`, `laboratory`, `or`, `surgical`, `anesthesia` | Đã đăng ký trong Service Locator, hoạt động hoàn chỉnh. |
+| **2. Implemented but Unexposed** | `blood-bank` (H7), `icu`, `emergency`, `cssd`, `pacu`, `or-readiness`, `rule` (H10), `temporal` (H9), `audit-compliance` (H11) | Có source code và test đầy đủ, chạy isolated nhưng chưa được register trong Service Locator. |
+| **3. Placeholder / Pending** | `imaging`, `scheduling`, `billing`, `clinical`, `insurance`, `queue` (mpi: contract only) | Thư mục rỗng hoặc comment placeholder, chưa được code ở Kernel layer. |
+
+### Healthcare — Key Milestones & Certification Gates (Layer 4 Index)
+
+| H-ID | Canonical Meaning | Type | Status |
+|---|---|---|---|
+| **H1** | Patient Identity & Encounter Foundation | Kernel Engine | 🔒 Baseline |
+| **H2** | Inpatient Clinical Workflow (Nursing + Bed) | Kernel Engine | 🔒 Baseline |
+| **H3** | ICU & Critical Care Module | Kernel Engine | 🔒 Baseline |
+| **H4** | Pharmacy & Medication Safety | Kernel Engine | 🔒 Baseline |
+| **H5** | Laboratory Information System (LIS) | Kernel Engine | 🔒 Baseline |
+| **H6** | Clinical Order Management | Kernel Engine | 🔒 Baseline |
+| **H7** | Blood Bank & Transfusion Safety | Kernel Engine | 🔒 Baseline |
+| **H8** | Clinical Decision Support (CDS) | Kernel Engine | 🔒 Baseline |
+| **H9** | Temporal & Clinical History (Bitemporal) | Kernel Engine | 🔒 Baseline |
+| **H10** | Clinical Governance & Rule Engine | Kernel Engine | 🔒 Baseline |
+| **H11** | Clinical Audit & Compliance (Anti-False-Compliance) | Kernel Engine | 🔒 Baseline |
+| **H12** | Platform Hardening & Certification Gate | Milestone/Gate | ✅ Passed |
 
 ### Healthcare — Test Evidence
 
 | Test File | Coverage | Status |
 |---|---|---|
 | `audit-compliance.integration.test.ts` | H11 | ✅ |
-| `blood-bank-engine.integration.test.ts` | Blood Bank | ✅ |
+| `blood-bank-engine.integration.test.ts` | Blood Bank (H7) | ✅ |
 | `cds-engine.integration.test.ts` | H8 CDS | ✅ |
 | `cross-engine-integration.test.ts` | Cross-engine | ✅ |
 | `emergency-3-scenarios.integration.test.ts` | Emergency | ✅ |
@@ -115,18 +101,21 @@ Compliance:    20 Laws mandatory
 | `rule-engine.integration.test.ts` | H10 Rule | ✅ |
 | `temporal-engine.integration.test.ts` | H9 Temporal | ✅ |
 
-### Healthcare — Known Gaps / Drift
+### Healthcare — Architecture Decisions & Gaps
 
 ```
-⚠️ UNVERIFIED: imaging-engine, scheduling-engine — test coverage not confirmed
-⚠️ H1.2: Frozen 2026-08-17. H1.3 Performance Optimization is UNLOCKED for planning.
+⚠️ ADR PENDING: ADR-016 (Imaging capability) & ADR-017 (Scheduling capability)
+   → Quyết định giữ ở Product layer hay nâng cấp lên Kernel. Hiện tại hoạt động ở Product/service layer.
+⚠️ UNWIRED: ICU, Emergency, Blood Bank có implementation thật nhưng unexposed qua Service Locator.
 ```
 
 ### Healthcare — Governance Links
 
-- Constitution: [`docs/architecture/HEALTHCARE_VERTICAL_CODING_CONSTITUTION.md`](docs/architecture/HEALTHCARE_VERTICAL_CODING_CONSTITUTION.md)
-- H1.2 Freeze: [`docs/architecture/H1_2_PROVEN_FROZEN.md`](docs/architecture/H1_2_PROVEN_FROZEN.md)
-- Architecture Review: [`docs/architecture/H1_2_ARCHITECTURE_REVIEW.md`](docs/architecture/H1_2_ARCHITECTURE_REVIEW.md)
+- Canonical Map: [`docs/architecture/HEALTHCARE_CANONICAL_CAPABILITY_MAP.md`](architecture/HEALTHCARE_CANONICAL_CAPABILITY_MAP.md)
+- Constitution: [`docs/architecture/BELLA_ARCHITECTURE_CONSTITUTION.md`](BELLA_ARCHITECTURE_CONSTITUTION.md)
+- Imaging ADR: [`docs/05-adr/ADR-016-h7-imaging-kernel-vs-product.md`](05-adr/ADR-016-h7-imaging-kernel-vs-product.md)
+- Scheduling ADR: [`docs/05-adr/ADR-017-h12-scheduling-kernel-vs-platform-vs-product.md`](05-adr/ADR-017-h12-scheduling-kernel-vs-platform-vs-product.md)
+- Verification Report: [`reports/HEALTHCARE_KERNEL_VERIFICATION_REPORT_2026_08_27.md`](../reports/HEALTHCARE_KERNEL_VERIFICATION_REPORT_2026_08_27.md)
 
 ---
 
@@ -430,14 +419,15 @@ Routine: CURRENT_STATE.md update ✅ ACTIVE
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  BELLA PLATFORM — ARCHITECTURE STATUS (2026-08-23 21:30 ICT)     │
+│  BELLA PLATFORM — ARCHITECTURE STATUS (2026-08-27 14:09 ICT)     │
 ├──────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  Platform Core     ✅ OPERATIONAL                                │
 │                                                                  │
-│  Healthcare OS     🔒 FROZEN      52/52 Suites GREEN             │
-│                    H1–H12 all engines present                    │
-│                    ⚠️ imaging + scheduling coverage unverified   │
+│  Healthcare OS     🔒 PARTIAL FREEZE  500/504 PASS                   │
+│                    11 Exposed Active Engines                         │
+│                    9 Implemented but Unexposed internal engines      │
+│                    ⚠️ Imaging / Scheduling ADR Pending (ADR-016/017)  │
 │                                                                  │
 │  Healthcare Verticals                                            │
 │    → Bella Dental  🔒 PHASE 1 COMPLETE (5/5 docs, 2365+ lines)  │
@@ -466,7 +456,7 @@ Routine: CURRENT_STATE.md update ✅ ACTIVE
 │  🟡 REVIEW:   Dental Phase 1 — Human Architect approval gate    │
 │  ⚠️ TODO:     Logistics Layer 3 (git hook) implementation       │
 │  ⚠️ TODO:     Logistics Layer 4 (CI gate) implementation        │
-│  ⚠️ VERIFY:   Healthcare imaging-engine, scheduling-engine test  │
+│  ⚠️ ADR:      Healthcare ADR-016 / ADR-017 Sign-off             │
 │                                                                  │
 └──────────────────────────────────────────────────────────────────┘
 ```
@@ -479,8 +469,8 @@ Routine: CURRENT_STATE.md update ✅ ACTIVE
 |---|---|---|---|---|---|
 | DRIFT-001 | Logistics — Layer 3 | Git pre-commit hook active | TODO (not implemented) | Medium | Platform Team |
 | DRIFT-002 | Logistics — Layer 4 | CI architecture gate active | TODO (not implemented) | Medium | Platform Team |
-| DRIFT-003 | Healthcare — Imaging | Coverage confirmed | Unverified | Low | HC Team |
-| DRIFT-004 | Healthcare — Scheduling | Coverage confirmed | Unverified | Low | HC Team |
+| DRIFT-003 | Healthcare — Imaging | Active exposed Kernel engine | ADR Pending (Product layer only) | Low | HC Team |
+| DRIFT-004 | Healthcare — Scheduling | Active exposed Kernel engine | ADR Pending (Product layer only) | Low | HC Team |
 | DRIFT-005 | Finance F5 | 36/36 gates verified | 16/36 verified (44.4%) | Medium | Finance Team |
 
 > ⚠️ Drift register là **tự khai báo** — cần được verify định kỳ với codebase thực tế.
@@ -491,8 +481,8 @@ Routine: CURRENT_STATE.md update ✅ ACTIVE
 
 ```
 src/platform/
-├── healthcare/        ← H1–H12 Kernel (FROZEN)
-│   ├── engines/       ← 27 engine directories
+├── healthcare/        ← Healthcare OS (PARTIAL FREEZE)
+│   ├── engines/       ← ~20 implemented + 7 placeholders
 │   └── __tests__/     ← 17 integration test files
 ├── finance/           ← F1–F5 Finance OS
 │   ├── engines/       ← ledger-engine/, cash-engine/
