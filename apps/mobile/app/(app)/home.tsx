@@ -36,12 +36,38 @@ export default function HomeScreen() {
   const auth = useAuth();
   const tenant = useTenant();
 
-  if (auth.status !== 'authenticated') {
+  const user = auth.status === 'authenticated' ? auth.user : null;
+  const tenantId = tenant.status === 'loaded' ? tenant.tenant.id : null;
+  const tenantName = tenant.status === 'loaded' ? tenant.tenant.name : '';
+  const isStale = tenant.status === 'loaded' && tenant.stale;
+
+  const {
+    sessions,
+    isLoading: sessionsLoading,
+    error: sessionsError,
+    refresh,
+  } = useTodaySessions({
+    tenantId,
+    userId: user?.id ?? '',
+    role: user?.role ?? '',
+  });
+
+  const {
+    kpi,
+    isLoading: statsLoading,
+    error: statsError,
+  } = useDashboardStats({
+    tenantId,
+    userId: user?.id ?? '',
+    role: user?.role ?? '',
+  });
+
+  const isKtv = isTechnicianRole(user?.role ?? '');
+
+  if (auth.status !== 'authenticated' || !user) {
     router.replace('/');
     return null;
   }
-
-  const { user } = auth;
 
   // ── Tenant Error ────────────────────────────────────────────────────
   if (tenant.status === 'error') {
@@ -54,34 +80,6 @@ export default function HomeScreen() {
       />
     );
   }
-
-  const tenantId = tenant.status === 'loaded' ? tenant.tenant.id : null;
-  const tenantName = tenant.status === 'loaded' ? tenant.tenant.name : '';
-  const isStale = tenant.status === 'loaded' && tenant.stale;
-
-  const {
-    sessions,
-    isLoading: sessionsLoading,
-    error: sessionsError,
-    refresh,
-  } = useTodaySessions({
-    tenantId,
-    userId: user.id,
-    role: user.role,
-  });
-
-  const {
-    kpi,
-    isLoading: statsLoading,
-    error: statsError,
-    retry: retryStats,
-  } = useDashboardStats({
-    tenantId,
-    userId: user.id,
-    role: user.role,
-  });
-
-  const isKtv = isTechnicianRole(user.role);
 
   return (
     <ScrollView

@@ -123,10 +123,10 @@ export class BIReportService {
     // ── 3. Derive sales KPIs from product statuses ─────────────────────────────
     const totalBookings = prodList.filter(p => p.status === 'booked').length;
     const totalDeposits = prodList.filter(p => p.status === 'deposited').length;
-    const totalContracts = prodList.filter(p => ['contract_signed', 'handover'].includes(p.status)).length;
+    const totalContracts = prodList.filter(p => ['contracted', 'handed_over'].includes(p.status)).length;
     const totalCancelations = prodList.filter(p => p.status === 'cancelled').length;
     const totalRevenue = prodList
-      .filter(p => ['contract_signed', 'handover'].includes(p.status))
+      .filter(p => ['contracted', 'handed_over'].includes(p.status))
       .reduce((s, p) => s + Number(p.unit_price || 0), 0);
 
     // Lead funnel: placeholder zeros until rm_leads view migration

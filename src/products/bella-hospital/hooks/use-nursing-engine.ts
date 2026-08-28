@@ -13,10 +13,8 @@
 import { useState, useMemo } from 'react';
 import { getHealthcareService } from '@/platform/healthcare';
 import { createClient } from '@/lib/supabase-client';
-import type { NursingEngineContract, MARAdministrationEntry } from '@/platform/healthcare/contracts/nursing-engine.contract';
-import type { RecordVitalsRequest } from '@/platform/healthcare/contracts/nursing-engine.contract';
+import type { NursingEngineContract, MARAdministrationEntry, RecordVitalsRequest, MARItemSummary } from '@/platform/healthcare/contracts/nursing-engine.contract';
 import type { EngineResponse, VitalSigns } from '@/platform/healthcare/shared-kernel/types';
-import type { MARItemSummary } from '@/platform/healthcare/engines/nursing-engine/contracts/mar-reader.interface';
 
 export function useNursingEngine() {
   const [loading, setLoading] = useState(false);

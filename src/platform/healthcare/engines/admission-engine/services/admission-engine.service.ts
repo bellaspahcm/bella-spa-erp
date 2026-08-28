@@ -25,6 +25,8 @@ import { IAdmissionRepository } from '../repositories/supabase-admission.reposit
 import { ADMISSION_EVENT_TYPES } from '../events/admission.events';
 import { eventBus } from '@/platform/host/event-bus';
 
+import { randomUUID } from 'crypto';
+
 export class AdmissionEngineService implements AdmissionEngineContract {
   readonly engineName = 'admission-engine';
   readonly engineVersion = '1.0.0';
@@ -66,7 +68,7 @@ export class AdmissionEngineService implements AdmissionEngineContract {
       }
 
       // 3. Create Aggregate Root
-      const admissionId = `adm-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+      const admissionId = randomUUID();
 
       const admission = InpatientAdmission.create({
         id: admissionId,

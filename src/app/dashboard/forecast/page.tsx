@@ -7,6 +7,7 @@ import dynamic from 'next/dynamic';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { 
   useRevenueForecast, 
