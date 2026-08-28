@@ -443,6 +443,52 @@ export class ReceiptService {
         };
       }
 
+      // P1.1: R3 Location Hierarchy Validation
+      // Validate each target bin has complete hierarchy and is active
+      const binIds = lineItems
+        .map(item => item.target_bin_id)
+        .filter((id): id is string => id !== null && id !== undefined);
+
+      if (binIds.length > 0) {
+        const { data: binsData, error: binsError } = await this.supabase
+          .from('logistics_warehouse_bins')
+          .select('*')
+          .in('id', binIds)
+          .eq('tenant_id', this.tenantId);
+
+        if (binsError) {
+          return {
+            success: false,
+            error: {
+              code: 'DATABASE_ERROR',
+              message: `Failed to validate bins: ${binsError.message}`,
+            },
+          };
+        }
+
+        const binMap = new Map((binsData || []).map(b => [b.id, b]));
+
+        // Validate each line item's target bin using R3 validation
+        for (let i = 0; i < lineItems.length; i++) {
+          const item = lineItems[i];
+          if (!item.target_bin_id) continue;
+
+          const bin = binMap.get(item.target_bin_id);
+          const binValidation = validatePutawayLocation(bin || null, i);
+
+          if (!binValidation.valid) {
+            return {
+              success: false,
+              error: {
+                code: 'VALIDATION_FAILED',
+                message: 'Bin validation failed for putaway',
+                details: binValidation.errors,
+              },
+            };
+          }
+        }
+      }
+
       // AC6.1: State transition
       const now = new Date();
       const { data: updatedReceipt, error: updateError } = await this.supabase
