@@ -63,3 +63,5 @@
 ## Recommendation
 
 Do not open another Finance module yet. The next implementation should be selected from TT99 / TT133 must-have gaps, starting with the accounting policy decision that has the highest production impact for Bella's first target market.
+
+Policy gate record: `docs/architecture/TT99_TT133_ACCOUNTING_POLICY_DECISION_RECORD_2026_08_29.md`.
