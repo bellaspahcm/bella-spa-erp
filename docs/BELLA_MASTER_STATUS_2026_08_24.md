@@ -445,7 +445,7 @@ Finance / Healthcare / Real Estate / Auto / Education / Logistics / ...
 
 ### Việc tiếp theo duy nhất hiện tại: E5.1
 
-> **Không deploy F2. Không chạy db push thật. Không register migration history bằng suy đoán. Không tiếp tục F5.6.**
+> **Không code Prepayment. Không tạo `F4_PREPAYMENT_GL_MAP:v1` khi chưa có accounting authority. Không đọc trực tiếp `finance_vendor_prepayments` từ F5.6. F5.6 Cash checkpoint đã đóng và đã push.**
 
 E5.1 phải trả lời đúng một câu:
 
