@@ -1,8 +1,8 @@
 /**
- * SERVICE_REVENUE Accounting Configuration E2E
+ * Accounting Configuration E2E
  *
- * Proves one Finance OS runtime can post the same business semantic to
- * different tenant-selected revenue accounts.
+ * Proves one Finance OS runtime can post the same business semantics to
+ * different tenant-selected revenue and revenue-deduction accounts.
  */
 
 jest.mock('server-only', () => ({}), { virtual: true });
@@ -26,11 +26,12 @@ type JournalLineWithAccount = {
   } | null;
 };
 
-describe('SERVICE_REVENUE Accounting Configuration E2E', () => {
+describe('Accounting Configuration E2E', () => {
   let supabase: ReturnType<typeof createSupabaseClient<Database>>;
   const runId = Date.now().toString(36).toUpperCase();
   let tenantAId: string;
   let tenantBId: string;
+  let tenantCId: string;
 
   beforeAll(async () => {
     const { url, adminKey } = requireSupabaseAdminEnv();
@@ -38,16 +39,21 @@ describe('SERVICE_REVENUE Accounting Configuration E2E', () => {
 
     tenantAId = await createTenant(`FIN-REV-E2E-5113-${runId}`);
     tenantBId = await createTenant(`FIN-REV-E2E-5111-${runId}`);
+    tenantCId = await createTenant(`FIN-REV-E2E-FALLBACK-${runId}`);
 
-    await seedTenantAccounts(tenantAId, '5113');
-    await seedTenantAccounts(tenantBId, '5111');
-    await createServiceRevenueMapping(tenantAId, '5113');
-    await createServiceRevenueMapping(tenantBId, '5111');
+    await seedTenantAccounts(tenantAId, ['5113', '521']);
+    await seedTenantAccounts(tenantBId, ['5111', '5113']);
+    await seedTenantAccounts(tenantCId, ['4111']);
+    await createSemanticMapping(tenantAId, 'SERVICE_REVENUE', '5113');
+    await createSemanticMapping(tenantBId, 'SERVICE_REVENUE', '5111');
+    await createSemanticMapping(tenantAId, 'REVENUE_DEDUCTION', '521');
+    await createSemanticMapping(tenantBId, 'REVENUE_DEDUCTION', '5113');
   });
 
   afterAll(async () => {
     await cleanupTenant(tenantAId);
     await cleanupTenant(tenantBId);
+    await cleanupTenant(tenantCId);
   });
 
   async function createTenant(name: string): Promise<string> {
@@ -60,7 +66,7 @@ describe('SERVICE_REVENUE Accounting Configuration E2E', () => {
     return data.id;
   }
 
-  async function seedTenantAccounts(tenantId: string, revenueCode: string): Promise<void> {
+  async function seedTenantAccounts(tenantId: string, revenueCodes: string[]): Promise<void> {
     const accountingAccounts = [
       {
         tenant_id: tenantId,
@@ -71,23 +77,28 @@ describe('SERVICE_REVENUE Accounting Configuration E2E', () => {
       },
       {
         tenant_id: tenantId,
-        account_code: revenueCode,
-        account_name: `Service Revenue ${revenueCode}`,
+        account_code: '1111',
+        account_name: 'Cash',
+        account_type: 'ASSET',
+        is_active: true,
+      },
+      ...revenueCodes.map(accountCode => ({
+        tenant_id: tenantId,
+        account_code: accountCode,
+        account_name: `Revenue ${accountCode}`,
         account_type: 'REVENUE',
         is_active: true,
-      },
+      })),
     ];
-    const financeAccounts = [
-      {
-        tenant_id: tenantId,
-        code: revenueCode,
-        name: `Service Revenue ${revenueCode}`,
-        type: 'REVENUE',
-        normal_balance: 'CREDIT',
-        currency: 'VND',
-        is_active: true,
-      },
-    ];
+    const financeAccounts = revenueCodes.map(accountCode => ({
+      tenant_id: tenantId,
+      code: accountCode,
+      name: `Revenue ${accountCode}`,
+      type: 'REVENUE',
+      normal_balance: 'CREDIT',
+      currency: 'VND',
+      is_active: true,
+    }));
 
     const { error: accountingError } = await supabase
       .from('accounting_accounts')
@@ -100,12 +111,12 @@ describe('SERVICE_REVENUE Accounting Configuration E2E', () => {
     if (financeError) throw financeError;
   }
 
-  async function createServiceRevenueMapping(tenantId: string, accountCode: string): Promise<void> {
+  async function createSemanticMapping(tenantId: string, semanticKey: string, accountCode: string): Promise<void> {
     const { error } = await supabase
       .from('finance_control_account_mappings')
       .insert({
         tenant_id: tenantId,
-        control_type: 'SERVICE_REVENUE',
+        control_type: semanticKey,
         account_code: accountCode,
         effective_from: '2026-01-01',
         effective_to: null,
@@ -156,15 +167,47 @@ describe('SERVICE_REVENUE Accounting Configuration E2E', () => {
     };
   }
 
-  async function postRevenueEventAndReadLines(
-    tenantId: string,
-    suffix: string,
-  ): Promise<JournalLineWithAccount[]> {
+  function createRefundEvent(tenantId: string, suffix: string): FinanceEventEnvelope {
+    return {
+      event_id: `fin-refund-e2e-${runId}-${suffix}`,
+      event_type: 'PATIENT_REFUND_ISSUED',
+      idempotency_key: `fin-refund-e2e-${runId}-${suffix}`,
+      occurred_at: '2026-06-30T11:00:00.000Z',
+      created_at: '2026-06-30T11:00:01.000Z',
+      tenant_id: tenantId,
+      source_system: 'HOSPITAL_OS',
+      source_version: '1.0.0',
+      correlation_id: `fin-refund-e2e-${runId}-${suffix}`,
+      amount: '25000',
+      currency: 'VND',
+      business_context: {
+        patient: {
+          patient_id: `patient-refund-${suffix}`,
+          patient_type: 'OUTPATIENT',
+        },
+        service: {
+          service_id: `service-refund-${suffix}`,
+          service_type: 'CONSULTATION',
+        },
+      },
+      business_references: [
+        {
+          entity_type: 'service',
+          entity_id: `service-refund-${suffix}`,
+        },
+      ],
+      metadata: {
+        refund_reason: 'E2E refund mapping test',
+      },
+    };
+  }
+
+  async function postEventAndReadLines(event: FinanceEventEnvelope): Promise<JournalLineWithAccount[]> {
     const handler = createFinanceEventHandler({
       supabase,
       useInMemoryIdempotency: true,
     });
-    const result = await handler.handle(createRevenueEvent(tenantId, suffix));
+    const result = await handler.handle(event);
 
     expect(result.status).toBe('CREATED');
     expect(result.transaction_id).toBeTruthy();
@@ -179,8 +222,8 @@ describe('SERVICE_REVENUE Accounting Configuration E2E', () => {
   }
 
   it('posts the same SERVICE_REVENUE semantic to each tenant selected GL account', async () => {
-    const tenantALines = await postRevenueEventAndReadLines(tenantAId, 'tenant-a');
-    const tenantBLines = await postRevenueEventAndReadLines(tenantBId, 'tenant-b');
+    const tenantALines = await postEventAndReadLines(createRevenueEvent(tenantAId, 'tenant-a'));
+    const tenantBLines = await postEventAndReadLines(createRevenueEvent(tenantBId, 'tenant-b'));
 
     const tenantARevenue = tenantALines.find(
       line => line.accounting_accounts?.account_code === '5113'
@@ -193,5 +236,25 @@ describe('SERVICE_REVENUE Accounting Configuration E2E', () => {
     expect(Number(tenantBRevenue?.credit_amount)).toBe(125000);
     expect(tenantALines.some(line => line.accounting_accounts?.account_code === '4111')).toBe(false);
     expect(tenantBLines.some(line => line.accounting_accounts?.account_code === '4111')).toBe(false);
+  });
+
+  it('posts the same REVENUE_DEDUCTION refund semantic to each tenant selected GL account', async () => {
+    const tenantALines = await postEventAndReadLines(createRefundEvent(tenantAId, 'tenant-a'));
+    const tenantBLines = await postEventAndReadLines(createRefundEvent(tenantBId, 'tenant-b'));
+    const tenantCLines = await postEventAndReadLines(createRefundEvent(tenantCId, 'tenant-c'));
+
+    const tenantADeduction = tenantALines.find(
+      line => line.accounting_accounts?.account_code === '521'
+    );
+    const tenantBDeduction = tenantBLines.find(
+      line => line.accounting_accounts?.account_code === '5113'
+    );
+    const tenantCFallback = tenantCLines.find(
+      line => line.accounting_accounts?.account_code === '4111'
+    );
+
+    expect(Number(tenantADeduction?.debit_amount)).toBe(25000);
+    expect(Number(tenantBDeduction?.debit_amount)).toBe(25000);
+    expect(Number(tenantCFallback?.debit_amount)).toBe(25000);
   });
 });

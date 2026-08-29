@@ -35,6 +35,12 @@ const revenueIntent: AccountingIntent = {
   description: 'Recognize service revenue',
 };
 
+const revenueDeductionIntent: AccountingIntent = {
+  intent_type: 'REVERSE_REVENUE',
+  debit_amount: '100000',
+  description: 'Refund service revenue',
+};
+
 describe('DefaultCOAResolver accounting configuration pilot', () => {
   it('resolves SERVICE_REVENUE from tenant mapping instead of hardcoded default', async () => {
     const calls: RpcCall[] = [];
@@ -107,5 +113,26 @@ describe('DefaultCOAResolver accounting configuration pilot', () => {
     const mappings = await resolver.resolve('tenant-unconfigured', [revenueIntent], createPolicyContext('2026-06-30'));
 
     expect(mappings[0].account_code).toBe('4111');
+  });
+
+  it('resolves REVENUE_DEDUCTION from tenant mapping for refund revenue reversal', async () => {
+    const supabase = {
+      rpc: jest.fn(async () => ({
+        data: [{ gl_account_code: '521' }],
+        error: null,
+      })),
+    };
+    const resolver = new DefaultCOAResolver(supabase as never);
+
+    const mappings = await resolver.resolve('tenant-a', [revenueDeductionIntent], createPolicyContext('2026-06-30'));
+
+    expect(mappings[0].account_code).toBe('521');
+    expect(supabase.rpc).toHaveBeenCalledWith(
+      'finance_get_accounting_semantic_gl_map_as_of',
+      expect.objectContaining({
+        p_semantic_key: 'REVENUE_DEDUCTION',
+        p_as_of: '2026-06-30',
+      })
+    );
   });
 });
