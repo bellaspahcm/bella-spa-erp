@@ -28,6 +28,7 @@ describe('finance_save_accounting_semantic_gl_mapping', () => {
   let supabase: ReturnType<typeof createSupabaseClient<Database>>;
   const runId = Date.now().toString(36).toUpperCase();
   let tenantId: string;
+  let otherTenantId: string;
 
   beforeAll(async () => {
     const { url, adminKey } = requireSupabaseAdminEnv();
@@ -41,8 +42,17 @@ describe('finance_save_accounting_semantic_gl_mapping', () => {
     if (error || !data) throw error ?? new Error('Tenant creation failed');
     tenantId = data.id;
 
+    const { data: otherTenant, error: otherTenantError } = await supabase
+      .from('tenants')
+      .insert({ name: `FIN-SEM-CONFIG-OTHER-${runId}`, status: 'active' })
+      .select('id')
+      .single();
+    if (otherTenantError || !otherTenant) throw otherTenantError ?? new Error('Other tenant creation failed');
+    otherTenantId = otherTenant.id;
+
     await createFinanceAccount('5112');
     await createFinanceAccount('5111');
+    await createFinanceAccount('5999', otherTenantId);
   });
 
   afterAll(async () => {
@@ -50,13 +60,16 @@ describe('finance_save_accounting_semantic_gl_mapping', () => {
     try { await supabase.from('finance_control_account_mappings').delete().eq('tenant_id', tenantId); } catch {}
     try { await supabase.from('finance_accounts' as unknown as 'tenants').delete().eq('tenant_id' as unknown as 'id', tenantId); } catch {}
     try { await supabase.from('tenants').delete().eq('id', tenantId); } catch {}
+    try { await supabase.from('finance_control_account_mappings').delete().eq('tenant_id', otherTenantId); } catch {}
+    try { await supabase.from('finance_accounts' as unknown as 'tenants').delete().eq('tenant_id' as unknown as 'id', otherTenantId); } catch {}
+    try { await supabase.from('tenants').delete().eq('id', otherTenantId); } catch {}
   });
 
-  async function createFinanceAccount(code: string): Promise<void> {
+  async function createFinanceAccount(code: string, targetTenantId = tenantId): Promise<void> {
     const { error } = await supabase
       .from('finance_accounts' as unknown as 'tenants')
       .insert({
-        tenant_id: tenantId,
+        tenant_id: targetTenantId,
         code,
         name: `Revenue ${code}`,
         type: 'REVENUE',
@@ -113,5 +126,46 @@ describe('finance_save_accounting_semantic_gl_mapping', () => {
 
     expect(result.error).not.toBeNull();
     expect(result.error!.message).toContain('ACCOUNTING_SEMANTIC_CONFIG_INVALID_ACCOUNT');
+  });
+
+  it('rejects account codes that only exist in another tenant', async () => {
+    const beforeRows = await readMap('2027-06-30');
+    const result = await saveMapping('5999', '2028-01-01');
+    const afterRows = await readMap('2027-06-30');
+
+    expect(result.error).not.toBeNull();
+    expect(result.error!.message).toContain('ACCOUNTING_SEMANTIC_CONFIG_INVALID_ACCOUNT');
+    expect(afterRows).toEqual(beforeRows);
+  });
+
+  it('rejects inserts before an existing future schedule without mutating history', async () => {
+    const before2026 = await readMap('2026-06-30');
+    const before2027 = await readMap('2027-06-30');
+
+    const result = await saveMapping('5112', '2026-06-01');
+
+    const after2026 = await readMap('2026-06-30');
+    const after2027 = await readMap('2027-06-30');
+
+    expect(result.error).not.toBeNull();
+    expect(result.error!.message).toContain('ACCOUNTING_SEMANTIC_CONFIG_FUTURE_MAPPING_EXISTS');
+    expect(after2026).toEqual(before2026);
+    expect(after2027).toEqual(before2027);
+  });
+
+  it('rejects direct overlapping mapping writes for the same tenant and semantic', async () => {
+    const { error } = await supabase
+      .from('finance_control_account_mappings')
+      .insert({
+        tenant_id: tenantId,
+        control_type: 'GOODS_REVENUE',
+        account_code: '5112',
+        effective_from: '2026-12-01',
+        effective_to: '2027-12-31',
+        authority_version: 'TENANT_CONFIG:UI:v1',
+      } as never);
+
+    expect(error).not.toBeNull();
+    expect(error!.message).toContain('ACCOUNTING_SEMANTIC_MAPPING_OVERLAP');
   });
 });
