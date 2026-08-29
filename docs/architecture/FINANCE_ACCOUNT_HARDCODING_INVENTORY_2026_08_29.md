@@ -33,6 +33,8 @@ Tests contain many account-code fixtures. Those are not production debt unless t
 | Healthcare COA resolver defaults | `4111`, `1311`, `1521`, `3311`, `6211`, `1412` | `src/platform/finance/resolvers/coa-resolver.service.ts` | 🔴 Must be configurable before production use | Resolver already documents future tenant COA lookup. Replace defaults with tenant mapping before using as production Finance posting source. |
 | Dashboard report display lines | Labels include `131`, `331`, `3387`; mock/sample rows include `5113`, `6421` | `src/app/dashboard/accounting/reports/page.tsx` | 🟡 Report dependency | Reports must resolve configured semantic groups instead of assuming fixed account codes before production compliance claim. |
 
+Pilot cutover audit: `docs/architecture/FINANCE_SERVICE_REVENUE_CUTOVER_AUDIT_2026_08_29.md`.
+
 ## Production-Critical First Slice
 
 Do not convert every mapping at once. The minimum next slice should cover the semantics already flagged by Completion Review:
