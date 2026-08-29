@@ -59,6 +59,9 @@ export class DefaultIntentGenerator implements IntentGenerator {
       case 'PATIENT_SERVICE_REVENUE':
       case 'INSURANCE_SERVICE_REVENUE':
         return this.generateRevenueRecognitionIntents(envelope);
+
+      case 'PRODUCT_SALE_REVENUE':
+        return this.generateGoodsRevenueRecognitionIntents(envelope);
       
       // ========== Cash Receipt ==========
       case 'CASH_RECEIPT':
@@ -116,6 +119,27 @@ export class DefaultIntentGenerator implements IntentGenerator {
         intent_type: 'RECOGNIZE_REVENUE',
         credit_amount: envelope.amount,
         description: `Recognize revenue: ${envelope.business_context.service?.service_type || 'service'}`,
+      },
+    ];
+  }
+
+  /**
+   * Goods Revenue Recognition Intents
+   *
+   * Dr. AR
+   * Cr. Goods revenue
+   */
+  private generateGoodsRevenueRecognitionIntents(envelope: FinanceEventEnvelope): AccountingIntent[] {
+    return [
+      {
+        intent_type: 'RECOGNIZE_RECEIVABLE',
+        debit_amount: envelope.amount,
+        description: 'Recognize receivable: goods sale',
+      },
+      {
+        intent_type: 'RECOGNIZE_GOODS_REVENUE',
+        credit_amount: envelope.amount,
+        description: 'Recognize goods revenue',
       },
     ];
   }

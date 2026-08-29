@@ -1,29 +1,26 @@
-# BELLA HEALTHCARE & EDUCATION OS — CURSOR RULES & AI FIREWALL
+# BELLA OS — AI & DEVELOPER ENTRY POINT (CONSTITUTIONAL RULES)
 
-# READ CONSTITUTIONS BEFORE ANY HEALTHCARE OR EDUCATION CODING:
-# Healthcare Path: docs/architecture/HEALTHCARE_VERTICAL_CODING_CONSTITUTION.md
-# Education Path: docs/architecture/EDUCATION_VERTICAL_CODING_CONSTITUTION.md
+Before doing any work, you MUST read the following local documentation. They represent the current state and strict invariants of the repository:
 
-## 1. SHARED CORE LAWS
-- Common Core (`src/platform/core/` and generic platform engines) must remain domain-agnostic. No references to Patient, Encounter, Course, Student, GPA, etc.
+## 1. Context & Baseline Status
+- **Current Baseline Status:** docs/execution/CURRENT_BASELINE.md (H1 complete, K1 in-progress)
+- **H1 Verification Evidence:** docs/execution/HOSPITAL_H1_EVIDENCE.md (11/11 DB integration tests passed)
+- **Healthcare Kernel Map:** docs/architecture/HEALTHCARE_KERNEL.md (Full classification of all 27 engines)
 
-## 2. HEALTHCARE OS LAWS
-- KERNEL H1-H12 IS FROZEN. NEVER CREATE H13 OR NEW KERNEL ENGINES.
-- PRODUCT LOGIC LIVES ONLY IN src/products/ OR src/platform/healthcare/verticals/.
-- PRODUCT CONSUMES KERNEL ONLY VIA PUBLIC CONTRACTS. NO DIRECT QUERY ON hc_* KERNEL TABLES.
-- MIGRATIONS MUST BE ADDITIVE ONLY. NO ALTER/DROP ON KERNEL TABLES.
-- NO DUPLICATE KERNEL ENTITIES (Patient, Doctor, Encounter).
-- NO 'any' TYPES ALLOWED.
-- RUN 'npm run healthcare:verify' BEFORE SUBMITTING.
+## 2. Invariants & Rules
+- **Coding Conventions:** docs/rules/CODING_RULES.md (Strict typing, no `any`, frontend-backend boundary)
+- **Healthcare Laws:** docs/rules/HEALTHCARE_RULES.md (Encounter aggregate, zero-duplication rules, 11 gates)
+- **Database Schema & RLS:** docs/rules/DATABASE_RULES.md (Additive migrations only, RLS query filter)
 
-## 3. EDUCATION OS LAWS
-- EDUCATION OS KERNEL IS FROZEN. NO CODES/MIGRATIONS CAN BE MUTATED WITHOUT ARCHITECTURE APPROVAL.
-- PRODUCT LOGIC LIVES ONLY IN src/products/ OR src/platform/education/.
-- EDUCATION PRODUCT CONSUMES EDUCATION KERNEL ONLY VIA CONTRACTS.
-- NO DUPLICATE KERNEL ENTITIES (Course, Enrollment, Student Role).
-- NO 'any' TYPES ALLOWED.
+## 3. Strict Non-Negotiable Laws
+1. **KERNEL FREEZE:** Core engines (H1-H12, mpi-engine, encounter-engine) are frozen. Modify only via ACR.
+2. **PRODUCT VERTICAL LAYER ONLY:** All product-specific logic goes to `src/products/`.
+3. **CONTRACT ACCESS ONLY:** Product interacts with Kernel only via contracts. No direct query on core internal tables.
+4. **ZERO ENTITY DUPLICATION:** Do not recreate `Patient`, `Doctor`, or `Encounter` tables in vertical modules.
+5. **CLEAN DEPENDENCY FLOW:** Kernel engines must never import from vertical/hospital extensions.
+6. **NO MOCK RUNTIME:** Production and test execution paths must never use mock fallback state on failure.
 
-## 4. NO CROSS-INDUSTRY COUPLING
-- Education OS is strictly prohibited from importing or depending on Healthcare OS code or tables.
-- Healthcare OS is strictly prohibited from importing or depending on Education OS code or tables.
-- Cross-industry dependencies are blocked. Both systems must interact only with Shared Platform Core and platform public contracts.
+## 4. Verification
+Before completing any task, you MUST run:
+- Architecture check: npm run healthcare:guard
+- Full platform verification: npm run healthcare:verify

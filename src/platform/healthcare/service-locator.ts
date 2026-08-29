@@ -44,20 +44,21 @@ import type { BedEngineContract } from './contracts/bed-engine.contract';
 import type { CdsEngineContract } from './contracts/cds-engine.contract';
 import type { NursingEngineContract } from './contracts/nursing-engine.contract';
 import type { OrderEngineContract } from './contracts/order-engine.contract';
-import type { AdmissionEngineContract } from './contracts/admission-engine.contract';
+import type { AdmissionEngineContract } from './engines/admission-engine/contracts/admission-engine.contract';
 import type { PharmacyEngineContract } from './contracts/pharmacy-engine.contract';
-import type { EncounterEngineContract } from './contracts/encounter-engine.contract';
-import type { ClinicalEngineContract } from './contracts/clinical-engine.contract';
-import type { BillingEngineContract } from './contracts/billing-engine.contract';
-import type { InsuranceEngineContract } from './contracts/insurance-engine.contract';
-import type { SchedulingEngineContract } from './contracts/scheduling-engine.contract';
-import type { QueueEngineContract } from './contracts/queue-engine.contract';
-import type { LaboratoryEngineContract } from './contracts/laboratory-engine.contract';
-import type { ImagingEngineContract } from './contracts/imaging-engine.contract';
+import type { IEncounterEngine as EncounterEngineContract } from './engines/encounter-engine/encounter-engine.interface';
+import type { ILaboratoryEngine as LaboratoryEngineContract } from './contracts/laboratory-engine.contract';
 import type { OREngineContract } from './contracts/or-engine.contract';
 import type { SurgicalEngineContract } from './contracts/surgical-engine.contract';
 import type { AnesthesiaEngineContract } from './contracts/anesthesia-engine.contract';
-import type { MPIEngineContract } from './contracts/mpi-engine.contract';
+// NOTE: The following contracts do not yet exist — add imports when contracts are created:
+// import type { ClinicalEngineContract } from './contracts/clinical-engine.contract';
+// import type { BillingEngineContract } from './contracts/billing-engine.contract';
+// import type { InsuranceEngineContract } from './contracts/insurance-engine.contract';
+// import type { SchedulingEngineContract } from './contracts/scheduling-engine.contract';
+// import type { QueueEngineContract } from './contracts/queue-engine.contract';
+// import type { ImagingEngineContract } from './contracts/imaging-engine.contract';
+// import type { MPIEngineContract } from './contracts/mpi-engine.contract';
 
 /**
  * Healthcare Service Map
@@ -66,34 +67,27 @@ import type { MPIEngineContract } from './contracts/mpi-engine.contract';
  * Add new engines here as they are created.
  */
 export type HealthcareServiceMap = {
-  // Core Clinical Engines (H1-H12 from original Kernel)
+  // Core Clinical Engines — contracts exist
   'admission-engine': AdmissionEngineContract;
   'bed-engine': BedEngineContract;
-  'billing-engine': BillingEngineContract;
   'cds-engine': CdsEngineContract;
-  'clinical-engine': ClinicalEngineContract;
   'encounter-engine': EncounterEngineContract;
-  'insurance-engine': InsuranceEngineContract;
   'nursing-engine': NursingEngineContract;
   'order-engine': OrderEngineContract;
   'pharmacy-engine': PharmacyEngineContract;
-  'mpi-engine': MPIEngineContract;
-  
-  // Additional Clinical Engines (H13+)
   'laboratory-engine': LaboratoryEngineContract;
-  'imaging-engine': ImagingEngineContract;
-  'scheduling-engine': SchedulingEngineContract;
-  'queue-engine': QueueEngineContract;
   'or-engine': OREngineContract;
   'surgical-engine': SurgicalEngineContract;
   'anesthesia-engine': AnesthesiaEngineContract;
-  
-  // Add new engines here as needed
-  // 'cssd-engine': CssdEngineContract;
-  // 'emergency-engine': EmergencyEngineContract;
-  // 'icu-engine': IcuEngineContract;
-  // 'pacu-engine': PacuEngineContract;
-  // ... etc
+
+  // Placeholder — contracts not yet created (uncomment when ready):
+  // 'billing-engine': BillingEngineContract;
+  // 'clinical-engine': ClinicalEngineContract;
+  // 'insurance-engine': InsuranceEngineContract;
+  // 'scheduling-engine': SchedulingEngineContract;
+  // 'queue-engine': QueueEngineContract;
+  // 'imaging-engine': ImagingEngineContract;
+  // 'mpi-engine': MPIEngineContract;
 };
 
 /**
@@ -154,13 +148,16 @@ export function getHealthcareService<T extends HealthcareServiceMap[ServiceKey]>
 
   switch (serviceName) {
     case 'admission-engine': {
-      const { AdmissionEngineService } = require('./engines/admission-engine');
-      serviceInstance = new AdmissionEngineService(supabase);
+      const { AdmissionEngineService, SupabaseAdmissionRepository } = require('./engines/admission-engine');
+      const repository = new SupabaseAdmissionRepository(supabase);
+      serviceInstance = new AdmissionEngineService(repository);
       break;
     }
     case 'bed-engine': {
       const { BedEngineService } = require('./engines/bed-engine');
-      serviceInstance = new BedEngineService(supabase);
+      const { SupabaseBedRepository } = require('./engines/bed-engine/repositories/supabase-bed.repository');
+      const bedRepository = new SupabaseBedRepository(supabase);
+      serviceInstance = new BedEngineService(bedRepository);
       break;
     }
     // case 'billing-engine': {

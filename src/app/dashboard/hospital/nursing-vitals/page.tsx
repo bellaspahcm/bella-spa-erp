@@ -314,7 +314,7 @@ export default function NursingVitalsPage() {
   const [selectedAdmissionId, setSelectedAdmissionId] = useState<string>('');
   const [vitals, setVitals] = useState<NursingVitalSigns[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [alerts, setAlerts] = useState<ClinicalAlert[]>(MOCK_ALERTS);
+  const [alerts, setAlerts] = useState<ClinicalAlert[]>([]);
   const [trendWindow, setTrendWindow] = useState<TrendWindow>('24h');
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [temperature, setTemperature] = useState<string>('37.0');
@@ -344,14 +344,20 @@ export default function NursingVitalsPage() {
 
   async function loadVitals(id: string) {
     try {
-      const result = await getVitalSigns('bella_healthcare', id);
-      if (result.success && result.data && result.data.length > 0) {
-        // VitalSigns[] từ engine — cast sang NursingVitalSigns[] cho local state
+      // Pass admissionId — service queries by inpatient_admission_id
+      const result = await getVitalSigns('', id);
+      if (result.success && result.data) {
         setVitals(result.data as unknown as NursingVitalSigns[]);
       } else {
-        setVitals(MOCK_VITALS);
+        // Surface DB error — do NOT fallback to mock
+        console.error('[H1.3 Vitals] getVitalSigns failed:', result.error?.message);
+        setVitals([]);
       }
-    } catch { setVitals(MOCK_VITALS); }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Lỗi tải sinh hiệu';
+      console.error('[H1.3 Vitals] loadVitals error:', msg);
+      setVitals([]);
+    }
   }
 
   const handleRecordVitals = async (e: React.FormEvent) => {
@@ -359,20 +365,13 @@ export default function NursingVitalsPage() {
     if (!selectedAdmissionId) return;
     const admission = admissions.find((a) => a.id === selectedAdmissionId);
     if (!admission) return;
-    const optimistic: NursingVitalSigns = {
-      id: `vs-${Date.now()}`, tenant_id: 'bella_healthcare',
-      inpatient_admission_id: admission.id, encounter_id: admission.encounter_id,
-      patient_id: admission.patient_id, nurse_practitioner_id: 'nurse-001',
-      temperature: parseFloat(temperature), heart_rate: parseInt(heartRate, 10),
-      systolic_bp: parseInt(systolicBp, 10), diastolic_bp: parseInt(diastolicBp, 10),
-      spo2: parseInt(spo2, 10),
-      respiratory_rate: respiratoryRate ? parseInt(respiratoryRate, 10) : undefined,
-      notes: notes || undefined, recorded_at: new Date().toISOString(),
-    };
+
     try {
       const result = await recordVitalSigns({
-        tenantId: 'bella_healthcare', encounterId: admission.encounter_id,
-        patientId: admission.patient_id, recordedBy: 'nurse-001',
+        tenantId: 'c1e19d70-36ab-4a5f-a36c-92f7e7f6e05d',
+        encounterId: admission.encounter_id,
+        patientId: admission.patient_id,
+        recordedBy: 'a0000000-0000-0000-0000-000000000001', // placeholder nurse UUID
         temperature: { value: parseFloat(temperature), unit: '°C' },
         heartRate: { value: parseInt(heartRate, 10), unit: 'bpm' },
         bloodPressure: { systolic: parseInt(systolicBp, 10), diastolic: parseInt(diastolicBp, 10) },
@@ -380,19 +379,33 @@ export default function NursingVitalsPage() {
         respiratoryRate: respiratoryRate ? { value: parseInt(respiratoryRate, 10), unit: '/min' } : undefined,
         notes: notes || undefined,
       });
-      if (result.success) { setVitals((p) => [optimistic, ...p]); }
-      else { setVitals((p) => [optimistic, ...p]); } // optimistic fallback
-    } catch { setVitals((p) => [optimistic, ...p]); }
-    const vitalAlerts = getVitalStatus(optimistic);
-    if (vitalAlerts.length > 0) {
-      const newAlert: ClinicalAlert = {
-        id: `alert-${Date.now()}`, vitalId: optimistic.id,
-        severity: vitalAlerts.length >= 3 ? 'critical' : vitalAlerts.length >= 2 ? 'high' : 'medium',
-        messages: vitalAlerts.map((a) => a.msg),
-        recordedAt: optimistic.recorded_at, nurseId: 'nurse-001',
-        status: 'open', news2Score: calcNEWS2(optimistic),
-      };
-      setAlerts((p) => [newAlert, ...p]);
+      if (result.success) {
+        // Reload from DB — not optimistic patch
+        await loadVitals(selectedAdmissionId);
+        // Generate alert from recorded values for NEWS2 display
+        const recorded = result.data as unknown as NursingVitalSigns;
+        if (recorded) {
+          const vitalAlerts = getVitalStatus(recorded);
+          if (vitalAlerts.length > 0) {
+            const newAlert: ClinicalAlert = {
+              id: `alert-${Date.now()}`, vitalId: recorded.id,
+              severity: vitalAlerts.length >= 3 ? 'critical' : vitalAlerts.length >= 2 ? 'high' : 'medium',
+              messages: vitalAlerts.map((a) => a.msg),
+              recordedAt: recorded.recorded_at, nurseId: 'nurse-001',
+              status: 'open', news2Score: calcNEWS2(recorded),
+            };
+            setAlerts((p) => [newAlert, ...p]);
+          }
+        }
+      } else {
+        // Surface real error — do NOT optimistic patch
+        console.error('[H1.3 Vitals] recordVitalSigns failed:', result.error?.message);
+        alert(`Lỗi ghi sinh hiệu: ${result.error?.message || 'Lỗi không xác định'}`);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Lỗi không xác định';
+      console.error('[H1.3 Vitals] handleRecordVitals error:', msg);
+      alert(`Lỗi ghi sinh hiệu: ${msg}`);
     }
     setShowAddModal(false);
     setTemperature('37.0'); setHeartRate('75'); setSystolicBp('120');
@@ -419,8 +432,17 @@ export default function NursingVitalsPage() {
   const selectedBed  = selectedAdmission ? beds.find((b) => b.id === selectedAdmission.bed_id) : null;
   const selectedWard = selectedAdmission ? wards.find((w) => w.id === selectedAdmission.ward_id) : null;
 
-  const overallStatus = MOCK_PATIENT_INFO.overallStatus;
-  const overallCfg    = OVERALL_STATUS[overallStatus];
+  // overallStatus: derive from latest vital values (NEWS2 not in type — compute simple alert level)
+  const overallStatus = latestVital
+    ? (latestVital.spo2 < 92 || latestVital.heart_rate > 120 || latestVital.temperature > 39)
+        ? 'critical'
+      : (latestVital.spo2 < 95 || latestVital.heart_rate > 100 || latestVital.temperature > 38)
+        ? 'high'
+      : (latestVital.heart_rate > 90 || latestVital.temperature > 37.5)
+        ? 'medium'
+      : 'stable'
+    : 'stable';
+  const overallCfg = OVERALL_STATUS[overallStatus as keyof typeof OVERALL_STATUS] ?? OVERALL_STATUS['stable'];
 
   return (
     <div className="p-5 max-w-[1440px] mx-auto space-y-6">
@@ -500,11 +522,11 @@ export default function NursingVitalsPage() {
             {/* Identity */}
             <div className="flex items-center gap-3 bg-slate-50/50 p-3 rounded-xl border border-slate-100">
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-600 to-blue-700 flex items-center justify-center text-white font-black text-lg shadow">
-                {selectedAdmission ? MOCK_PATIENT_INFO.name.charAt(0) : '—'}
+                {selectedAdmission ? (selectedAdmission.patient_id ?? 'P').charAt(0).toUpperCase() : '—'}
               </div>
               <div>
-                <div className="font-extrabold text-slate-900 text-base leading-tight">{selectedAdmission ? MOCK_PATIENT_INFO.name : '—'}</div>
-                <div className="text-xs font-bold text-slate-700 mt-1">{MOCK_PATIENT_INFO.gender} · {MOCK_PATIENT_INFO.age} tuổi · MRN: <span className="font-mono">{MOCK_PATIENT_INFO.mrn}</span></div>
+                <div className="font-extrabold text-slate-900 text-base leading-tight">{selectedAdmission ? `Patient: ${selectedAdmission.patient_id}` : '—'}</div>
+                <div className="text-xs font-bold text-slate-700 mt-1">MRN: <span className="font-mono">{selectedAdmission?.patient_id ?? '—'}</span></div>
               </div>
             </div>
 
@@ -512,29 +534,37 @@ export default function NursingVitalsPage() {
             <div className="flex flex-wrap gap-2.5 items-center">
               <span className="flex items-center gap-1.5 text-xs font-bold text-cyan-800 bg-cyan-50 border border-cyan-200 px-3.5 py-2 rounded-full shadow-sm">
                 <BedIcon className="w-3.5 h-3.5 text-cyan-600" />
-                {selectedBed?.bed_code ?? MOCK_PATIENT_INFO.bed}
+                {selectedBed?.bed_code ?? '—'}
               </span>
               <span className="flex items-center gap-1.5 text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 px-3.5 py-2 rounded-full shadow-sm">
                 <Building2 className="w-3.5 h-3.5 text-slate-600" />
-                {selectedWard?.name ?? MOCK_PATIENT_INFO.ward}
+                {selectedWard?.name ?? '—'}
               </span>
               <span className="flex items-center gap-1.5 text-xs font-bold text-indigo-850 bg-indigo-50 border border-indigo-200 px-3.5 py-2 rounded-full shadow-sm">
                 <Calendar className="w-3.5 h-3.5 text-indigo-500" />
-                Ngày điều trị {MOCK_PATIENT_INFO.admitDay}
+                {selectedAdmission?.admitted_at
+                  ? `Nhập viện: ${new Date(selectedAdmission.admitted_at).toLocaleDateString('vi-VN')}`
+                  : 'Ngày điều trị —'}
               </span>
               <span className={`flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-full border shadow-sm ${overallCfg.bg} ${overallCfg.color} ${overallCfg.border}`}>
                 <Activity className="w-3.5 h-3.5" />
                 {overallCfg.label}
               </span>
-              <span className="flex items-center gap-1.5 text-xs font-bold text-rose-900 bg-rose-50 border border-rose-250 px-3.5 py-2 rounded-full shadow-sm">
-                ⚠ Dị ứng: {MOCK_PATIENT_INFO.allergies}
-              </span>
+              {selectedAdmission && (
+                <span className="flex items-center gap-1.5 text-xs font-bold text-rose-900 bg-rose-50 border border-rose-250 px-3.5 py-2 rounded-full shadow-sm">
+                  ⚠ Dị ứng: (theo hồ sơ bệnh nhân)
+                </span>
+              )}
             </div>
 
             {/* Diagnosis */}
             <div className="w-full text-xs text-slate-800 border-t border-slate-100 pt-3 mt-1 leading-relaxed">
               <strong className="text-slate-900 uppercase tracking-wide text-[11px] font-extrabold mr-1.5">Chẩn đoán chính:</strong> 
-              <span className="font-semibold text-slate-800 bg-slate-50 px-2.5 py-1 rounded border border-slate-200/50">{MOCK_PATIENT_INFO.diagnosis}</span>
+              <span className="font-semibold text-slate-800 bg-slate-50 px-2.5 py-1 rounded border border-slate-200/50">
+                {selectedAdmission
+                  ? (selectedAdmission.admission_diagnosis?.[0]?.icd10_name_vi ?? 'Chưa có chẩn đoán')
+                  : '—'}
+              </span>
             </div>
           </div>
         </div>

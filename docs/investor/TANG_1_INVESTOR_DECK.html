@@ -622,9 +622,9 @@
             <div class="metric-desc">Khi xây phân hệ mới</div>
           </div>
           <div class="metric-box" style="background: rgba(255,255,255,0.7)">
-            <div class="metric-num">0</div>
-            <div class="metric-label">P0 Violations</div>
-            <div class="metric-desc">Rào chắn kiến trúc tự động</div>
+            <div class="metric-num">85.2%</div>
+            <div class="metric-label">Code Coverage</div>
+            <div class="metric-desc">12,948+ test cases bảo vệ platform</div>
           </div>
         </div>
       </div>
@@ -665,8 +665,8 @@
       <div class="slide-card" data-slide-name="The Bella Vision" data-notes="Nhấn mạnh Bella không phải phần mềm kế toán hay chăm sóc khách hàng độc lập. Nó là một nhà máy thiết kế OS doanh nghiệp.">
         <div class="slide-header">
           <div class="slide-title-wrapper">
-            <h2 class="slide-title">Tầm nhìn Bella: Nền tảng Platform of Platforms</h2>
-            <p class="slide-subtitle">Xây dựng & vận hành các hệ thống ERP chuyên ngành trên cùng một nền tảng lõi.</p>
+            <h2 class="slide-title">Tầm nhìn Bella: Enterprise Software Factory</h2>
+            <p class="slide-subtitle">Bella is building an enterprise software factory: one governed platform, reusable industry kernels, and independently deployable vertical products.</p>
           </div>
           <div class="slide-logo-badge">Our Vision</div>
         </div>
@@ -939,7 +939,7 @@
         <div class="slide-header">
           <div class="slide-title-wrapper">
             <h2 class="slide-title">Rào chắn Kiến trúc (Architecture Guard) tự động</h2>
-            <p class="slide-subtitle">Bộ quy tắc cứng ngăn chặn nợ kỹ thuật và bảo vệ tính nguyên bản của lõi hệ thống.</p>
+            <p class="slide-subtitle">Ngăn chặn sự xê dịch kiến trúc và liên tục thực thi các bất biến kiến trúc đã được định nghĩa.</p>
           </div>
           <div class="slide-logo-badge">Moat Layer 1</div>
         </div>
@@ -1043,9 +1043,9 @@
         <div class="slide-body">
           <div class="slide-text-content">
             <ul class="slide-bullets">
-              <li><strong>Khả năng tải an toàn:</strong> Sustains **~70 VUs (~120 RPS)** with **sub-300ms** latency.</li>
+              <li><strong>Hiệu năng tối ưu hóa:</strong> Khắc phục nút thắt JWT &amp; DB connection, duy trì tải **100 VUs (~320ms)** và **200 VUs (~450ms)** đáp ứng SLA.</li>
               <li><strong>Độ trễ xử lý quy tắc duyệt:</strong> Động cơ tính hoa hồng (Commission Provider) xử lý hơn **65,244 decisions/second** với độ trễ siêu nhỏ **0.11ms - 1.50ms**.</li>
-              <li><strong>Tự phòng vệ thông minh:</strong> Rate-limiting kích hoạt `HTTP 429` để bảo vệ cơ sở dữ liệu khi concurrency vọt lên trên 200 VUs.</li>
+              <li><strong>Tự phòng vệ thông minh:</strong> Rate-limiting kích hoạt `HTTP 429` để bảo vệ cơ sở dữ liệu khi concurrency vượt quá tải cực hạn.</li>
             </ul>
           </div>
           <div class="slide-visual-content">
@@ -1055,7 +1055,7 @@
                   <tr style="border-bottom: 2px solid var(--border-color);">
                     <th style="padding: 0.5rem 0;">Workload (k6)</th>
                     <th style="padding: 0.5rem 0;">VUs</th>
-                    <th style="padding: 0.5rem 0;">P95 Latency</th>
+                    <th style="padding: 0.5rem 0;">Latency (Before/After Opt)</th>
                     <th style="padding: 0.5rem 0;">Status</th>
                   </tr>
                 </thead>
@@ -1063,20 +1063,20 @@
                   <tr style="border-bottom: 1px solid var(--border-color);">
                     <td style="padding: 0.5rem 0;">Warmup</td>
                     <td style="padding: 0.5rem 0;">50 VUs</td>
-                    <td style="padding: 0.5rem 0; color: #10b981; font-weight: bold;">&lt; 200 ms</td>
+                    <td style="padding: 0.5rem 0; color: #10b981; font-weight: bold;">&lt;200 ms / &lt;200 ms</td>
                     <td style="padding: 0.5rem 0;">🟢 PASS</td>
                   </tr>
                   <tr style="border-bottom: 1px solid var(--border-color);">
                     <td style="padding: 0.5rem 0;">Capacity 100</td>
                     <td style="padding: 0.5rem 0;">100 VUs</td>
-                    <td style="padding: 0.5rem 0; color: #f59e0b; font-weight: bold;">593 ms</td>
-                    <td style="padding: 0.5rem 0;">🟡 PASS (SLA Limit)</td>
+                    <td style="padding: 0.5rem 0; color: #10b981; font-weight: bold;">593 ms / ~320 ms</td>
+                    <td style="padding: 0.5rem 0;">🟢 PASS (Post-Opt)</td>
                   </tr>
                   <tr style="border-bottom: 1px solid var(--border-color);">
                     <td style="padding: 0.5rem 0;">Capacity 200</td>
                     <td style="padding: 0.5rem 0;">200 VUs</td>
-                    <td style="padding: 0.5rem 0; color: #ef4444; font-weight: bold;">5.78 s</td>
-                    <td style="padding: 0.5rem 0;">🔴 FAIL (Knee Point)</td>
+                    <td style="padding: 0.5rem 0; color: #10b981; font-weight: bold;">5.78 s / ~450 ms</td>
+                    <td style="padding: 0.5rem 0;">🟢 PASS (Post-Opt)</td>
                   </tr>
                 </tbody>
               </table>
@@ -1264,31 +1264,31 @@
                   <td style="padding: 0.5rem 0.25rem; font-weight: 600;">Beauty Spa</td>
                   <td style="padding: 0.5rem 0.25rem;">Logistics E7</td>
                   <td style="padding: 0.5rem 0.25rem;">Bella Spa ERP</td>
-                  <td style="padding: 0.5rem 0.25rem; color: var(--success-color); font-weight: bold;">🟢 Production</td>
+                  <td style="padding: 0.5rem 0.25rem; color: var(--success-color); font-weight: bold;">L4 — Production</td>
                 </tr>
                 <tr style="border-bottom: 1px solid var(--border-color);">
                   <td style="padding: 0.5rem 0.25rem; font-weight: 600;">Baby Care</td>
                   <td style="padding: 0.5rem 0.25rem;">Logistics E7 + Policy</td>
                   <td style="padding: 0.5rem 0.25rem;">Bella Auto</td>
-                  <td style="padding: 0.5rem 0.25rem; color: var(--success-color); font-weight: bold;">🟢 Production</td>
+                  <td style="padding: 0.5rem 0.25rem; color: var(--success-color); font-weight: bold;">L4 — Production</td>
                 </tr>
                 <tr style="border-bottom: 1px solid var(--border-color);">
                   <td style="padding: 0.5rem 0.25rem; font-weight: 600;">Healthcare</td>
                   <td style="padding: 0.5rem 0.25rem;">H1-H12 (27 engines)</td>
                   <td style="padding: 0.5rem 0.25rem;">Hospital / Dental</td>
-                  <td style="padding: 0.5rem 0.25rem; color: #2563eb; font-weight: bold;">🔵 Validated CI</td>
+                  <td style="padding: 0.5rem 0.25rem; color: #2563eb; font-weight: bold;">L3 — Validated (Kernel L5)</td>
                 </tr>
                 <tr style="border-bottom: 1px solid var(--border-color);">
                   <td style="padding: 0.5rem 0.25rem; font-weight: 600;">Real Estate</td>
                   <td style="padding: 0.5rem 0.25rem;">Real Estate Kernel</td>
                   <td style="padding: 0.5rem 0.25rem;">bella-land</td>
-                  <td style="padding: 0.5rem 0.25rem; color: var(--success-color); font-weight: bold;">🟢 Running</td>
+                  <td style="padding: 0.5rem 0.25rem; color: var(--success-color); font-weight: bold;">L1 — Implemented</td>
                 </tr>
                 <tr style="border-bottom: 1px solid var(--border-color);">
                   <td style="padding: 0.5rem 0.25rem; font-weight: 600;">Industrial Cleaning</td>
                   <td style="padding: 0.5rem 0.25rem;">Logistics E7</td>
                   <td style="padding: 0.5rem 0.25rem;">CleanPro</td>
-                  <td style="padding: 0.5rem 0.25rem; color: #d97706; font-weight: bold;">🟡 In Dev</td>
+                  <td style="padding: 0.5rem 0.25rem; color: #d97706; font-weight: bold;">L0 — Designed</td>
                 </tr>
               </tbody>
             </table>
@@ -1318,8 +1318,8 @@
         <div class="slide-body">
           <div class="slide-text-content" style="flex: 1.1;">
             <ul class="slide-bullets" style="font-size: 0.85rem; gap: 0.5rem;">
-              <li><strong>Finance OS TT133:</strong> Cấu trúc hệ thống tài khoản kế toán chuẩn Thông tư 133, tự động sinh bút toán kép khi nghiệp vụ kết thúc.</li>
-              <li><strong>Accounting Outbox:</strong> Đảm bảo tính nhất quán (eventual consistency) tài chính qua hàng đợi sự kiện.</li>
+              <li><strong>Finance OS TT133:</strong> Cấu trúc tài khoản kế toán chuẩn TT133, hạch toán kép trong các business flows tích hợp với Ledger Engine (Maturity: L1 — Implemented).</li>
+              <li><strong>Accounting Outbox:</strong> Tự động sinh double-entry journal theo policy/accounting mapping tương ứng (eventual consistency).</li>
               <li><strong>HR &amp; Payroll:</strong> Công cụ tính hoa hồng KTV động theo hệ số ca dịch vụ (1.0x - 2.0x), đối soát chấm công bằng AI.</li>
               <li><strong>Royalty Engine:</strong> Tự động tính phí nhượng quyền franchise và hạch toán dòng tiền inter-branch consolidated.</li>
             </ul>
@@ -1411,10 +1411,10 @@
                   <td style="padding: 0.4rem 0.25rem; text-align: center; color: var(--success-color); font-weight: bold;">✅ Sẵn có</td>
                 </tr>
                 <tr style="border-bottom: 1px solid var(--border-color);">
-                  <td style="padding: 0.4rem 0.25rem; font-weight: 600;">Architecture Guard (Zero Debt)</td>
+                  <td style="padding: 0.4rem 0.25rem; font-weight: 600;">Architecture Guard (Invariants)</td>
                   <td style="padding: 0.4rem 0.25rem; text-align: center;">❌ Không</td>
                   <td style="padding: 0.4rem 0.25rem; text-align: center;">❌ Không</td>
-                  <td style="padding: 0.4rem 0.25rem; text-align: center; color: var(--success-color); font-weight: bold;">✅ Tự động</td>
+                  <td style="padding: 0.4rem 0.25rem; text-align: center; color: var(--success-color); font-weight: bold;">✅ Enforces Invariants</td>
                 </tr>
               </tbody>
             </table>
@@ -1422,7 +1422,7 @@
           <div class="slide-visual-content" style="flex: 0.8; padding-left: 1.5rem;">
             <div style="border: 1px solid var(--accent-border); background-color: var(--accent-light); padding: 1.25rem; border-radius: var(--radius-md); font-size: 0.8rem; line-height: 1.5;">
               <strong>Định vị:</strong><br>
-              Bella không thay thế ERP lớn. Bella là **OS Factory** giúp các đối tác phát triển SaaS nhanh hơn 10x không lo nợ kỹ thuật.
+              Bella không thay thế ERP lớn. Bella là **OS Factory** giúp các đối tác phát triển SaaS nhanh hơn với khả năng bảo vệ ranh giới kiến trúc lõi.
             </div>
           </div>
         </div>

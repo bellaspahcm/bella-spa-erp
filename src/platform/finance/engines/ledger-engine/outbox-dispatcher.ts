@@ -14,7 +14,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database.types';
+import type { Database, Json } from '@/types/database.types';
 import { eventBus } from '@/platform/host/event-bus';
 import type { EventType } from '@/platform/host/event-bus/types';
 
@@ -35,7 +35,7 @@ interface OutboxRow {
   id: string;
   tenant_id: string;
   event_type: string;
-  payload: string;
+  payload: Json;
   status: 'PENDING' | 'DISPATCHED' | 'FAILED';
   retry_count: number;
   error?: string | null;
@@ -82,7 +82,7 @@ export class OutboxDispatcher {
 
     for (const row of outboxRows) {
       try {
-        // 2. Parse the payload from JSON string
+        // 2. Parse the payload from JSONB or legacy JSON string
         const parsed = this.parsePayload(row.payload);
 
         // 3. Publish to host Event Bus
@@ -154,11 +154,11 @@ export class OutboxDispatcher {
   }
 
   /**
-   * Parses the raw JSON payload string into a typed FinanceOutboxPayload.
+   * Parses the raw JSON payload into a typed FinanceOutboxPayload.
    * Throws if parsing fails or required fields are missing.
    */
-  private parsePayload(payloadStr: string): FinanceOutboxPayload {
-    const raw: unknown = JSON.parse(payloadStr);
+  private parsePayload(payload: Json): FinanceOutboxPayload {
+    const raw: unknown = typeof payload === 'string' ? JSON.parse(payload) : payload;
 
     if (typeof raw !== 'object' || raw === null) {
       throw new Error('OUTBOX_INVALID_PAYLOAD: payload must be a JSON object');

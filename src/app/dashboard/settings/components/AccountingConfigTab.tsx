@@ -4,20 +4,30 @@ import React, { useEffect, useState } from "react";
 import {
   AlertTriangle,
   BookOpen,
+  CalendarDays,
   CheckCircle2,
   ClipboardCheck,
   RefreshCw,
+  Save,
+  SlidersHorizontal,
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
+  getAccountingSemanticConfig,
   getAccountingMode,
   getLegacyLedgerSyncPreview,
   getProfessionalModeReadinessGate,
+  saveAccountingSemanticMapping,
   syncLegacyToLedger,
   updateAccountingMode,
 } from "@/services/accounting-actions";
-import type { LegacyLedgerSyncPreview, ProfessionalModeReadinessGate } from "@/core/services/accounting/types";
+import type {
+  AccountingSemanticConfigSnapshot,
+  AccountingSemanticKey,
+  LegacyLedgerSyncPreview,
+  ProfessionalModeReadinessGate,
+} from "@/services/accounting-actions";
 import { getAccountingErrorMessage as getErrorMessage } from "@/lib/accounting-error-message";
 
 type AccountingMode = "SIMPLE" | "PROFESSIONAL";
@@ -29,6 +39,11 @@ const EMPTY_SYNC_PREVIEW: LegacyLedgerSyncPreview = {
   revenue_amount: 0,
   expense_amount: 0,
   salary_amount: 0,
+};
+const EMPTY_SEMANTIC_CONFIG: AccountingSemanticConfigSnapshot = {
+  semantics: [],
+  accountOptions: [],
+  mappings: [],
 };
 
 function formatCurrency(value: number) {
@@ -43,19 +58,41 @@ export default function AccountingConfigTab() {
   const [mode, setMode] = useState<AccountingMode>("SIMPLE");
   const [readinessGate, setReadinessGate] = useState<ProfessionalModeReadinessGate | null>(null);
   const [syncPreview, setSyncPreview] = useState<LegacyLedgerSyncPreview>(EMPTY_SYNC_PREVIEW);
+  const [semanticConfig, setSemanticConfig] = useState<AccountingSemanticConfigSnapshot>(EMPTY_SEMANTIC_CONFIG);
+  const [draftMappings, setDraftMappings] = useState<Record<AccountingSemanticKey, { account_code: string; effective_from: string }>>({
+    SERVICE_REVENUE: { account_code: "", effective_from: "2026-01-01" },
+    REVENUE_DEDUCTION: { account_code: "", effective_from: "2026-01-01" },
+    GOODS_REVENUE: { account_code: "", effective_from: "2026-01-01" },
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [savingSemantic, setSavingSemantic] = useState<AccountingSemanticKey | null>(null);
 
   async function refreshConfig() {
-    const [currentMode, gate, preview] = await Promise.all([
+    const [currentMode, gate, preview, semanticSnapshot] = await Promise.all([
       getAccountingMode(),
       getProfessionalModeReadinessGate(),
       getLegacyLedgerSyncPreview(),
+      getAccountingSemanticConfig(),
     ]);
     setMode(currentMode);
     setReadinessGate(gate);
     setSyncPreview(preview);
+    setSemanticConfig(semanticSnapshot);
+    setDraftMappings((current) => {
+      const next = { ...current };
+      for (const definition of semanticSnapshot.semantics) {
+        const activeMapping = semanticSnapshot.mappings.find(
+          (mapping) => mapping.semantic_key === definition.key && mapping.effective_to === null
+        ) ?? semanticSnapshot.mappings.find((mapping) => mapping.semantic_key === definition.key);
+        next[definition.key] = {
+          account_code: activeMapping?.account_code ?? current[definition.key]?.account_code ?? "",
+          effective_from: activeMapping?.effective_from ?? current[definition.key]?.effective_from ?? new Date().toISOString().slice(0, 10),
+        };
+      }
+      return next;
+    });
   }
 
   useEffect(() => {
@@ -118,6 +155,49 @@ export default function AccountingConfigTab() {
     }
   };
 
+  const handleSemanticDraftChange = (
+    semanticKey: AccountingSemanticKey,
+    field: "account_code" | "effective_from",
+    value: string
+  ) => {
+    setDraftMappings((current) => ({
+      ...current,
+      [semanticKey]: {
+        ...current[semanticKey],
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleSaveSemanticMapping = async (semanticKey: AccountingSemanticKey) => {
+    const draft = draftMappings[semanticKey];
+    if (!draft.account_code) {
+      toast.warning("Chọn tài khoản từ COA trước khi lưu.");
+      return;
+    }
+
+    setSavingSemantic(semanticKey);
+    try {
+      const result = await saveAccountingSemanticMapping({
+        semantic_key: semanticKey,
+        account_code: draft.account_code,
+        effective_from: draft.effective_from,
+      });
+
+      if (!result.success) {
+        toast.warning(result.error);
+        return;
+      }
+
+      toast.success("Đã lưu ánh xạ kế toán.");
+      await refreshConfig();
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Không lưu được ánh xạ kế toán."));
+    } finally {
+      setSavingSemantic(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="py-20 text-center">
@@ -143,6 +223,106 @@ export default function AccountingConfigTab() {
           </p>
         </div>
       </div>
+
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-600">
+              <SlidersHorizontal className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-slate-950 dark:text-white">Cấu hình ánh xạ nghiệp vụ</h3>
+              <p className="text-sm font-semibold text-muted-foreground">
+                Chọn tài khoản từ COA của doanh nghiệp cho các semantic kế toán đã được chứng minh.
+              </p>
+            </div>
+          </div>
+          <a
+            href="/dashboard/accounting/chart-of-accounts"
+            className="text-sm font-black text-primary hover:underline"
+          >
+            Mở COA
+          </a>
+        </div>
+
+        {semanticConfig.accountOptions.length === 0 ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">
+            Chưa có tài khoản GL active trong COA Finance runtime. Hãy tạo tài khoản trước khi cấu hình mapping.
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
+            <div className="grid grid-cols-12 gap-3 bg-slate-50 px-4 py-3 text-[11px] font-black uppercase tracking-wider text-slate-500 dark:bg-slate-800/70">
+              <div className="col-span-12 md:col-span-4">Nghiệp vụ</div>
+              <div className="col-span-12 md:col-span-4">Tài khoản</div>
+              <div className="col-span-8 md:col-span-2">Hiệu lực</div>
+              <div className="col-span-4 md:col-span-2 text-right">Lưu</div>
+            </div>
+
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+              {semanticConfig.semantics.map((semantic) => {
+                const draft = draftMappings[semantic.key];
+                const activeMapping = semanticConfig.mappings.find(
+                  (mapping) => mapping.semantic_key === semantic.key && mapping.effective_to === null
+                );
+                const isSavingThis = savingSemantic === semantic.key;
+
+                return (
+                  <div key={semantic.key} className="grid grid-cols-12 gap-3 px-4 py-4">
+                    <div className="col-span-12 md:col-span-4">
+                      <p className="font-black text-slate-950 dark:text-white">{semantic.label}</p>
+                      <p className="mt-1 text-xs font-semibold text-slate-500">{semantic.description}</p>
+                      {activeMapping && (
+                        <p className="mt-2 text-[11px] font-black text-emerald-700">
+                          Đang dùng {activeMapping.account_code} từ {activeMapping.effective_from}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="col-span-12 md:col-span-4">
+                      <select
+                        value={draft.account_code}
+                        onChange={(event) => handleSemanticDraftChange(semantic.key, "account_code", event.target.value)}
+                        className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                      >
+                        <option value="">Chọn tài khoản</option>
+                        {semanticConfig.accountOptions.map((account) => (
+                          <option key={`${semantic.key}-${account.code}`} value={account.code}>
+                            {account.code} - {account.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="col-span-8 md:col-span-2">
+                      <div className="relative">
+                        <CalendarDays className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                        <input
+                          type="date"
+                          value={draft.effective_from}
+                          onChange={(event) => handleSemanticDraftChange(semantic.key, "effective_from", event.target.value)}
+                          className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-sm font-bold text-slate-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="col-span-4 md:col-span-2 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => handleSaveSemanticMapping(semantic.key)}
+                        disabled={isSavingThis || !draft.account_code}
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+                        title={`Lưu ${semantic.label}`}
+                      >
+                        <Save className={`h-4 w-4 ${isSavingThis ? "animate-pulse" : ""}`} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </section>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div

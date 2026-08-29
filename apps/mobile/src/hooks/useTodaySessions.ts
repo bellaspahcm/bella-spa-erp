@@ -98,6 +98,7 @@ export function useTodaySessions(params: {
 
   // Initial load
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void load();
   }, [load]);
 

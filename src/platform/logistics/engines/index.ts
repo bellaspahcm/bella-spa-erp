@@ -9,3 +9,4 @@
 export * from './shipment-engine';
 export * from './route-engine';
 export * from './freight-audit-engine'; // E3: Freight Audit & Payment
+export * from './warehouse-engine'; // E6: Warehouse Management

@@ -43,6 +43,21 @@ export {
   getAccounts, createAccount, updateAccount,
 } from '../core/services/accounting/coa';
 
+export type {
+  AccountingSemanticAccountOption,
+  AccountingSemanticConfigSnapshot,
+  AccountingSemanticDefinition,
+  AccountingSemanticKey,
+  AccountingSemanticMapping,
+  SaveAccountingSemanticMappingInput,
+  SaveAccountingSemanticMappingResult,
+} from '../core/services/accounting/semantic-config.types';
+
+export {
+  getAccountingSemanticConfig,
+  saveAccountingSemanticMapping,
+} from '../core/services/accounting/semantic-config';
+
 export {
   assertLegacyFinanceWriteAllowed,
   getAccountingMode, getLegacyLedgerSyncPreview, getProfessionalModeReadinessGate, updateAccountingMode, syncLegacyToLedger,

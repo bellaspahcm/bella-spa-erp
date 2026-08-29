@@ -9,6 +9,22 @@
 
 import type { EngineContract, EngineResponse, VitalSigns, NursingNote } from '../shared-kernel/types';
 import type { ContractMetadata } from '../../host/contract-registry/types';
+import type { MARItemSummary } from '../engines/nursing-engine/contracts/mar-reader.interface';
+export type { MARItemSummary } from '../engines/nursing-engine/contracts/mar-reader.interface';
+
+export interface MARAdministrationEntry {
+  tenantId: string;
+  admissionId: string;
+  encounterId: string;
+  patientId: string;
+  prescriptionItemId?: string; // optional — no FK to hc_prescriptions
+  drugName: string;
+  dosage: string;
+  route: string;
+  scheduledTime: string; // ISO
+  administeredBy: string;
+  notes?: string;
+}
 
 export interface RecordVitalsRequest {
   tenantId: string;
@@ -31,6 +47,9 @@ export interface NursingEngineContract extends EngineContract {
   recordVitalSigns(request: RecordVitalsRequest): Promise<EngineResponse<VitalSigns>>;
   getVitalSigns(tenantId: string, encounterId: string, limit?: number): Promise<EngineResponse<VitalSigns[]>>;
   createNursingNote(request: { tenantId: string; encounterId: string; patientId: string; noteType: string; content: string; recordedBy: string }): Promise<EngineResponse<NursingNote>>;
+  // H1.4 MAR — read/write hc_medication_administration_records
+  getMARByAdmission(tenantId: string, admissionId: string): Promise<EngineResponse<MARItemSummary[]>>;
+  recordAdministration(entry: MARAdministrationEntry): Promise<EngineResponse<MARItemSummary>>;
 }
 
 export const NURSING_ENGINE_CONTRACT: ContractMetadata = {

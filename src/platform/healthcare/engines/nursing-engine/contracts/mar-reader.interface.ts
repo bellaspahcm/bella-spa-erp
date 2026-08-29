@@ -19,7 +19,7 @@ export interface MARItemSummary {
   scheduledTime: string;
   administeredTime?: string;
   administeredByNurseId?: string;
-  status: 'scheduled' | 'administered' | 'missed' | 'refused' | 'cancelled';
+  status: 'scheduled' | 'administered' | 'missed' | 'refused' | 'cancelled' | 'held';
   notes?: string;
 }
 

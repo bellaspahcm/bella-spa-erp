@@ -62,6 +62,7 @@ export class DefaultPolicyContextResolver implements PolicyContextResolver {
         expense_recognition: 'upon_consumption',
         inventory_valuation: 'FIFO',
         currency: 'VND',
+        accounting_effective_date: occurredAt.slice(0, 10),
       },
     };
     

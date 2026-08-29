@@ -23,9 +23,12 @@ import {
   UserPlus
 } from 'lucide-react';
 import { useBedEngine } from '@/products/bella-hospital/hooks/use-bed-engine';
-import { BreakGlassSecurityService } from '@/services/healthcare-hospital-services';
+import { BedEngineService, BreakGlassSecurityService } from '@/services/healthcare-hospital-services';
 import { createClient } from '@/lib/supabase-client';
+import type { BedStatus } from '@/types/healthcare';
+
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+
 
 const WARD_OPTIONS = [
   { value: 'all', label: 'Tất cả khoa' },
@@ -459,7 +462,7 @@ export default function InpatientBedCommandCenter() {
   const { queryBeds, allocateBed, releaseBed, loading: engineLoading } = useBedEngine();
 
   // State Management
-  const [beds, setBeds] = useState<BedCardData[]>(MOCK_BEDS_DATA);
+  const [beds, setBeds] = useState<BedCardData[]>([]);
   const [queue, setQueue] = useState<QueueItem[]>(INITIAL_QUEUE_DATA);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedWard, setSelectedWard] = useState<string>('all');
@@ -482,62 +485,59 @@ export default function InpatientBedCommandCenter() {
   const [breakGlassReason, setBreakGlassReason] = useState<string>('');
   const [breakGlassSuccess, setBreakGlassSuccess] = useState<string>('');
 
-  // Fetch real data from supabase if available, merge with Mock data to guarantee rich aesthetics
+  // Fetch real data from DB — no mock fallback
   const loadHospitalBeds = async () => {
     setRefreshing(true);
     try {
       const result = await queryBeds({ tenantId: 'c1e19d70-36ab-4a5f-a36c-92f7e7f6e05d' });
-      if (result.success && result.data && result.data.length > 0) {
-        // Map database records into extended UI model
-        const mappedData: BedCardData[] = result.data.map((dbBed) => {
-          // Find matching mock item for patient context preservation
-          const mockMatch = MOCK_BEDS_DATA.find((m) => m.code === dbBed.bed_code);
-          
-          let stateMapped: BedStateExtended = dbBed.status as BedStateExtended;
-          if (dbBed.status === 'out_of_service') stateMapped = 'blocked';
-
-          return {
-            id: dbBed.id,
-            code: dbBed.bed_code,
-            wardId: dbBed.ward_id,
-            wardName: dbBed.ward_id === 'w-icu' ? 'Khoa Hồi Sức Tích Cực (ICU)' : dbBed.ward_id === 'w-internal' ? 'Khoa Nội Tổng Hợp' : 'Khoa Ngoại Khoa',
-            roomId: dbBed.room_id,
-            roomName: dbBed.room_id.replace('r-', 'Phòng ').toUpperCase(),
-            bedType: dbBed.bed_type as BedCardData['bedType'],
-            state: stateMapped,
-            dailyRate: dbBed.daily_rate,
-            patient: dbBed.current_patient_id ? (mockMatch?.patient || {
-              id: dbBed.current_patient_id,
-              name: 'Bệnh nhân nội trú',
-              age: 45,
-              gender: 'Nam',
-              diagnosis: 'Chẩn đoán xác định từ EMR',
-              doctorName: 'BS. Trực lâm sàng',
-              daysAdmitted: 2,
-              alertCount: 0,
-              orderCount: 1,
-            }) : undefined,
-            constraints: mockMatch?.constraints || {
-              icuCompatible: dbBed.bed_type === 'icu',
-              hasVentilator: dbBed.bed_type === 'icu',
-              hasMonitor: true,
-              isolationCapable: dbBed.bed_type === 'isolation',
-              pediatricSuitable: false,
-            },
-            lastUpdated: 'Vừa đồng bộ',
-          };
-        });
-
-        // Merge mapped data with any mock data items not present in the DB
-        const dbCodes = new Set(mappedData.map(d => d.code));
-        const nonDbMocks = MOCK_BEDS_DATA.filter(m => !dbCodes.has(m.code));
-        setBeds([...mappedData, ...nonDbMocks]);
-      } else {
-        setBeds(MOCK_BEDS_DATA);
+      if (!result.success || !result.data) {
+        console.error('[H1.2 Beds] queryBeds failed:', result.error?.message);
+        return;
       }
+      // Map DB records to UI model — no mock blending
+      const mappedData: BedCardData[] = result.data.map((dbBed) => {
+        // Shared-kernel BedStatus uses 'out-of-service' (hyphen) → map to UI 'blocked'
+        let stateMapped: BedStateExtended = dbBed.status as BedStateExtended;
+        if (dbBed.status === 'out-of-service') {
+          stateMapped = 'blocked';
+        }
+
+        return {
+          id: dbBed.id,
+          code: dbBed.bedNumber,
+          wardId: dbBed.wardId,
+          wardName: dbBed.wardId,
+          roomId: dbBed.roomNumber || dbBed.wardId,
+          roomName: dbBed.roomNumber || dbBed.wardId,
+          bedType: (dbBed.bedType as BedCardData['bedType']) || 'standard',
+          state: stateMapped,
+          dailyRate: (dbBed.metadata?.dailyRate as number) || 0,
+          patient: dbBed.assignedPatientId ? {
+            id: dbBed.assignedPatientId,
+            name: `Bệnh nhân ${dbBed.assignedPatientId.slice(-6)}`,
+            age: 0,
+            gender: 'Nam' as const,
+            diagnosis: 'Đang điều trị nội trú',
+            doctorName: 'BS. Điều trị',
+            daysAdmitted: 0,
+            alertCount: 0,
+            orderCount: 0,
+          } : undefined,
+          constraints: {
+            icuCompatible: dbBed.bedType === 'icu',
+            hasVentilator: dbBed.bedType === 'icu',
+            hasMonitor: dbBed.features?.includes('monitoring') ?? true,
+            isolationCapable: dbBed.bedType === 'isolation',
+            pediatricSuitable: dbBed.bedType === 'pediatric',
+          },
+          lastUpdated: 'Vừa đồng bộ từ DB',
+        };
+      });
+      setBeds(mappedData);
     } catch (error) {
-      console.error('[CommandCenter] Database fetch failed, falling back to mock dataset:', error);
-      setBeds(MOCK_BEDS_DATA);
+      const msg = error instanceof Error ? error.message : 'Lỗi tải dữ liệu giường';
+      console.error('[H1.2 Beds] loadHospitalBeds error:', msg);
+      // Do NOT fallback to mock — surface real error
     } finally {
       setRefreshing(false);
     }
@@ -599,8 +599,8 @@ export default function InpatientBedCommandCenter() {
         admissionId: `ADM-${Date.now()}`, // Generate temporary admission ID
         patientId,
         wardId: allocationTarget.wardId,
-        bedType: allocationTarget.bedType,
-        userId: 'system', // Add current user ID if available
+        bedType: allocationTarget.bedType as import('@/platform/healthcare/shared-kernel/types').BedType,
+        requestedBy: 'system',
       });
 
       if (result.success) {
@@ -645,30 +645,20 @@ export default function InpatientBedCommandCenter() {
   };
 
   // Change Bed Status (for cleaning, maintenance, release, etc.)
+  // H1.7: routes through BedEngineService.updateBedStatus() — canonical service path
   const handleStatusUpdate = async (bedId: string, newState: BedStateExtended) => {
     try {
       const dbStatus = newState === 'blocked' ? 'out_of_service' : newState;
-      
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('hc_beds')
-        .update({ status: dbStatus, updated_at: new Date().toISOString() })
-        .eq('id', bedId);
-
-      if (error) {
-        // Fallback status change on mock array if DB update fails or table is empty
-        setBeds((prev) =>
-          prev.map((b) => (b.id === bedId ? { ...b, state: newState, patient: newState === 'available' ? undefined : b.patient } : b))
-        );
-        toast.success(`Cập nhật trạng thái giường thành: ${newState} (Local Cache)`);
-      } else {
-        toast.success(`🎉 Đã cập nhật trạng thái giường thành: ${newState}`);
-        void loadHospitalBeds();
-      }
-    } catch {
-      toast.error('Lỗi khi cập nhật trạng thái giường');
+      await BedEngineService.updateBedStatus(bedId, dbStatus as BedStatus);
+      toast.success(`🎉 Đã cập nhật trạng thái giường thành: ${newState}`);
+      void loadHospitalBeds();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Lỗi không xác định';
+      toast.error(`Lỗi khi cập nhật trạng thái giường: ${msg}`);
+      console.error('[H1.2 Beds] handleStatusUpdate error:', msg);
     }
   };
+
 
   // Break-Glass 3 Steps Authentication Logic
   const handleBreakGlassSubmit = async (e: React.FormEvent) => {
