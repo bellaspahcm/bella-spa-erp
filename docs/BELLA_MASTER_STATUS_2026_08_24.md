@@ -157,6 +157,8 @@ finance_cash_opening_balance_as_of          EXISTS
 **Known data-quality note:** Official test/pre-production DB contains 17 legacy/orphan `finance_vendor_prepayments` facts without matching POSTED F1 transaction authority. The new position contract does not backfill or infer currency for those rows; it raises `F4_PREPAYMENT_POSITION_CURRENCY_AUTHORITY_MISSING` for affected tenant/as-of scopes. New facts are guarded by `trg_finance_vendor_prepayment_currency_guard`.
 
 **Completion Review:** See `docs/architecture/FINANCE_OS_COMPLETION_REVIEW_2026_08_29.md` for the post-F5.6 capability checklist and TT99/production-candidate gap triage.
+
+**Roadmap:** See `docs/architecture/FINANCE_OS_ROADMAP_FROM_2026_08_29.md`. Next action is Accounting Configuration Foundation: inventory hardcoded Finance account usage and classify configurable/default/invariant mappings before code changes.
 ---
 
 ## 5. Option B — SUPERSEDED
