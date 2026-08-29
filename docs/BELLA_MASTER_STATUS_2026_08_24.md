@@ -1,5 +1,6 @@
 # BELLA — MASTER TECHNOLOGY STATUS
 **Corrected Reality Snapshot — 24/08/2026**  
+**Latest checkpoint amendment:** 29/08/2026 — Finance M1 frozen; F5.6 Cash complete/verified/pushed; F5.6 Prepayment gated pending semantic authority.
 **Baseline:** Audit codebase + remote DB thực hiện 24/08/2026
 
 ---
@@ -118,18 +119,36 @@ finance_cash_opening_balance_as_of          EXISTS
 |---|---|
 | F1 Ledger | 🟢 |
 | F2 Cash Domain | 🟢 |
-| F2 Temporal Contract | 🟢 Runtime deployed |
-| F2 Migration Provenance | 🟠 Reconciliation required |
+| F2 Temporal Contract | 🟢 M1 verified / frozen |
+| F2 Migration Provenance | 🟢 M1 checkpoint applied + verified |
 | F3 AR | 🟢 |
 | F4 AP | 🟢 Foundation |
 | F5 Reconciliation | 🟢 Architecture + test foundation |
-| F5.6 Cash + Prepayment | 🟡 Blocked pending F2 provenance closure |
+| F5.6 Cash | 🟢 Complete / verified / pushed (`e5833b96`) |
+| F5.6 Prepayment | 🟡 Blocked / semantic authority required |
 | TT99/2025 architecture | 🟢 Sound |
-| Accounting semantics | 🟢 Strong |
+| Accounting semantics | 🟢 Strong overall; Prepayment GL mapping not yet approved |
 | Migration governance | 🟠 Current bottleneck |
 
-> **Quan trọng:** F5.6 không được đánh dấu "đã hoàn thành" chỉ vì F2 runtime tồn tại. F5.6 vẫn cần closure của các contract/provenance gates đã đặt ra.
+> **Quan trọng:** F5.6 Cash đã đóng checkpoint riêng. F5.6 tổng thể chưa hoàn tất vì Prepayment đang bị gate bởi semantic/account-mapping authority; không được tự chọn `331P` hoặc `242` từ legacy fallback.
 
+
+### Amendment — 29/08/2026 Finance Checkpoint
+
+| Area | Status |
+|---|---|
+| M1 — F1/F2 Foundation | 🟢 FROZEN |
+| F1 Outbox Dispatcher | 🟢 FIXED / VERIFIED |
+| F2 Cash Temporal Foundation | 🟢 PASSED / VERIFIED |
+| F2_BANK_ACCOUNT_GL_MAP:v1 | 🟢 VERIFIED |
+| F5.6 Cash | 🟢 COMPLETE / VERIFIED / PUSHED |
+| F5.6 Prepayment | 🟡 BLOCKED / SEMANTIC AUTHORITY REQUIRED |
+| Regression Boundary | 🟢 GREEN |
+| Architecture Guard | 🟢 PASS |
+
+**Evidence:** F5.6 Cash 7/7 PASS; F2 map 4/4 PASS; F1 ledger/concurrency 27/27 PASS; F2 Cash runtime 40/40 PASS; F5 AP baseline 8 PASS / 5 SKIPPED; F5.5 AR 8/8 PASS. Commit pushed: `e5833b9681f116dba1dddd9ea0eb885a6a6011c7`.
+
+**Prepayment decision:** Code remains stopped. `F4_PREPAYMENT:v1` is a fact stream contract, not sufficient authority for `PREPAYMENT_GL_BALANCE`. No direct F4 table access, no new migration, and no assumption that `331P` or `242` is the official semantic target until Human Architect/accounting policy approval exists.
 ---
 
 ## 5. Option B — SUPERSEDED
@@ -403,11 +422,11 @@ Finance / Healthcare / Real Estate / Auto / Education / Logistics / ...
 | E2 Migration State Investigation | 🟢 COMPLETE |
 | E3 Migration/DDL Forensics | 🟢 COMPLETE |
 | E4 F2 DDL Provenance | 🟢 CASE A CONFIRMED |
-| F2 Runtime Contract | 🟢 DEPLOYED |
-| F2 Data Population | 🟢 301/301 |
+| F2 Runtime Contract | 🟢 M1 VERIFIED / FROZEN |
+| F2 Data Population | 🟢 330/330 effective_date verified |
 | F2 RPCs | 🟢 EXIST |
 | Option B | 🔴 SUPERSEDED |
-| F2 040000–070000 provenance | 🟠 OPEN |
+| F2 M1 additive migration checkpoint | 🟢 APPLIED / VERIFIED |
 | E5.2 Local Name/File Verification | 🟢 COMPLETE |
 | E5.1 Remote Name Verification | 🟠 PENDING |
 | db push --dry-run | 🔴 BLOCKED — correctly |
@@ -420,6 +439,8 @@ Finance / Healthcare / Real Estate / Auto / Education / Logistics / ...
 | Healthcare Kernel | 🟢 VERIFIED |
 | Multi-vertical foundation | 🟡 ESTABLISHED |
 | Core Freeze | 🟡 NOT COMPLETE |
+| F5.6 Cash checkpoint | 🟢 COMPLETE / PUSHED |
+| F5.6 Prepayment semantic gate | 🟡 REQUIRED |
 | AI Operating Layer | 🟡 IN BUILD |
 
 ### Việc tiếp theo duy nhất hiện tại: E5.1
@@ -508,11 +529,13 @@ Trong đó **Customers + Production Evidence** sẽ là phần cuối cùng bi�
 ║ Runtime Governance                   🟢 DEPLOYED             ║
 ║ Security / RLS                       🟢 STRONG               ║
 ║ Test Infrastructure                  🟢 LARGE                ║
-║ F2 Runtime Contract                  🟢 DEPLOYED             ║
-║ F2 Migration Provenance              🟠 RECONCILING          ║
+║ F2 Runtime Contract                  🟢 M1 FROZEN            ║
+║ F2 M1 Provenance                     🟢 VERIFIED             ║
 ║ Cleanup RPC                          🟡 PENDING DEPLOY       ║
 ║ Migration Governance                 🟠 ACTIVE HARDENING     ║
 ║ Verification Integrity               🟠 FIXING               ║
+║ F5.6 Cash                            🟢 VERIFIED / PUSHED    ║
+║ F5.6 Prepayment                      🟡 SEMANTIC GATED       ║
 ║ Core Freeze                          🟡 NOT COMPLETE         ║
 ║ AI Operating Layer                   🟡 IN BUILD             ║
 ║ Multi-industry Foundation            🟡 ESTABLISHED          ║
@@ -556,7 +579,7 @@ Bella đang bị giới hạn bởi:
 
 > **BELLA — Enterprise Foundation Consolidation & Governance Hardening**
 >
-> Bella đã hình thành Platform Core, nhiều Industry Foundations, Healthcare/Finance/Logistics kernels, domain engines, security model và governance runtime. Finance F2 temporal runtime đã tồn tại trên production database; vấn đề còn lại là chứng minh và reconcile provenance của migration history, không phải xây lại F2. Architecture Guard, BDGF và Runtime Governance đã operational. Giai đoạn hiện tại tập trung vào forensic reconciliation, verification correctness và core freeze. Sau khi đóng các governance gates, Bella chuyển sang AI Operating Layer → AI Workforce → Verticalization → Commercial Scale.
+> Bella đã hình thành Platform Core, nhiều Industry Foundations, Healthcare/Finance/Logistics kernels, domain engines, security model và governance runtime. Finance M1/F2 temporal foundation đã được verified/frozen, và F5.6 Cash đã complete/verified/pushed qua contract boundary. F5.6 Prepayment đang dừng đúng chỗ tại semantic authority gate, không phải thiếu code. Architecture Guard, BDGF và Runtime Governance đã operational. Giai đoạn hiện tại tập trung vào forensic reconciliation, verification correctness và core freeze. Sau khi đóng các governance gates, Bella chuyển sang AI Operating Layer → AI Workforce → Verticalization → Commercial Scale.
 
 ### Kết luận
 
