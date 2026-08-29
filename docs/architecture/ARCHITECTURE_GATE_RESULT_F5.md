@@ -50,7 +50,7 @@ F5 may only reach `MATCHED` state by triggering a new reconciliation run after t
 | **AP_GL_BALANCE Control** | Reconstruct AP outstanding from `f4_ap_facts` → compare vs F1 GL account 331 balance. ✅ IMPLEMENTED (F5.1–F5.3) |
 | **AR_GL_BALANCE Control** | Reconstruct AR outstanding from `finance_receivable_ledger` → compare vs F1 GL account 131 balance. ✅ IMPLEMENTED / VERIFIED (F5.5) |
 | **CASH_GL_BALANCE Control** | Reconstruct cash position through `F2_CASH:v1`, `F2_OPENING:v1`, and `F2_BANK_ACCOUNT_GL_MAP:v1` → compare vs F1 GL cash account balances. ✅ IMPLEMENTED / VERIFIED (F5.6 Cash) |
-| **PREPAYMENT_GL_BALANCE Control** | GL mapping verified via `F4_PREPAYMENT_GL_MAP:v1`; aggregate tenant/currency position verified via `F4_PREPAYMENT_POSITION:v1`; runner remains gated. 🟡 CONTRACTS VERIFIED / RUNNER NOT IMPLEMENTED |
+| **PREPAYMENT_GL_BALANCE Control** | GL mapping verified via `F4_PREPAYMENT_GL_MAP:v1`; aggregate tenant/currency position verified via `F4_PREPAYMENT_POSITION:v1`; runner compares position against configured GL and writes append-only evidence. ✅ VERIFIED |
 | **FX Determinism Control** | Verify functional-currency translation chain without mutating ledger evidence. ❌ F5.7 |
 | **Control Cases & Investigation** | Lifecycle management for VARIANCE/QUARANTINED cases (OPEN → UNDER_REVIEW → RESOLVED). ✅ IMPLEMENTED |
 | **Projection Cache Health** | Control B: subledger cache vs reconstructed position. CACHE_DRIFT never escalated to VARIANCE. ✅ IMPLEMENTED |
@@ -180,7 +180,7 @@ No existing F1–F4 table is modified. No existing index or constraint is change
 | `finance_bank_account_gl_map()` | FUNCTION (F2 ext.) | F5.6 Cash — ✅ VERIFIED |
 | `f5_run_reconciliation()` (CASH_GL_BALANCE overload) | FUNCTION | F5.6 Cash — ✅ VERIFIED |
 | `finance_get_prepayment_gl_map_as_of()` | FUNCTION (F4 ext.) | F5.6 Prepayment map — ✅ VERIFIED |
-| `f5_run_reconciliation()` (PREPAYMENT_GL_BALANCE overload) | FUNCTION | F5.6 Prepayment runner — 🟡 GATED |
+| `f5_run_reconciliation()` (PREPAYMENT_GL_BALANCE overload) | FUNCTION | F5.6 Prepayment runner — ✅ VERIFIED |
 | `f5_run_fx_determinism_check()` | FUNCTION | F5.7 |
 | `f5_schedule_continuous_runs()` (pg_cron config) | CRON JOB | F5.8 |
 
@@ -219,6 +219,6 @@ Drawn directly from F5.0 Constitution v1.2-Final. All gates must pass before F5 
 | **F5.6-A** | CASH_GL_BALANCE control domain | Cash gates + regression boundary | ✅ COMPLETE / VERIFIED / PUSHED |
 | **F5.6-B1** | F4_PREPAYMENT_GL_MAP:v1 | Tenant-configured effective-dated control mapping + overlap guard | ✅ VERIFIED |
 | **F5.6-B2** | F4_PREPAYMENT_POSITION:v1 | Aggregate tenant/currency/as-of position using F1 functional currency authority | ✅ VERIFIED |
-| **F5.6-B3** | PREPAYMENT_GL_BALANCE control domain | Consume F4 position + GL map contracts; compare against F1 GL | 🟡 NOT IMPLEMENTED |
+| **F5.6-B3** | PREPAYMENT_GL_BALANCE control domain | Consume F4 position + GL map contracts; compare against F1 GL | ✅ VERIFIED |
 | **F5.7** | FX Determinism control | FX-specific checks | ❌ PLANNED |
 | **F5.8** | Continuous Control scheduler (pg_cron / worker) | Ops readiness | ❌ PLANNED |

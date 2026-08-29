@@ -1,6 +1,6 @@
 # BELLA — MASTER TECHNOLOGY STATUS
 **Corrected Reality Snapshot — 24/08/2026**  
-**Latest checkpoint amendment:** 29/08/2026 — Finance M1 frozen; F5.6 Cash complete/verified/pushed; F5.6 Prepayment mapping contract verified; Prepayment runner/position remains gated.
+**Latest checkpoint amendment:** 29/08/2026 — Finance M1 frozen; F5.6 Cash complete/verified/pushed; F5.6 Prepayment contracts verified; Prepayment runner implemented/verified.
 **Baseline:** Audit codebase + remote DB thực hiện 24/08/2026
 
 ---
@@ -127,12 +127,12 @@ finance_cash_opening_balance_as_of          EXISTS
 | F5.6 Cash | 🟢 Complete / verified / pushed (`e5833b96`) |
 | F5.6 Prepayment mapping | 🟢 Configurable tenant GL map verified (`F4_PREPAYMENT_GL_MAP:v1`) |
 | F5.6 Prepayment position | 🟢 `F4_PREPAYMENT_POSITION:v1` verified |
-| F5.6 Prepayment runner | 🔴 `PREPAYMENT_GL_BALANCE` not started |
+| F5.6 Prepayment runner | 🟢 `PREPAYMENT_GL_BALANCE` verified |
 | TT99/2025 architecture | 🟢 Sound |
 | Accounting semantics | 🟢 Strong overall; Prepayment GL mapping not yet approved |
 | Migration governance | 🟠 Current bottleneck |
 
-> **Quan trọng:** F5.6 Cash đã đóng checkpoint riêng. F5.6 tổng thể chưa hoàn tất vì Prepayment runner/position còn gated; `PREPAYMENT_CONTROL` hiện là tenant-configured mapping, không được fallback sang `331P` hoặc `242` từ legacy artifacts.
+> **Quan trọng:** F5.6 Cash và Prepayment đều đã có runtime evidence qua contract boundary; `PREPAYMENT_CONTROL` hiện là tenant-configured mapping, không được fallback sang `331P` hoặc `242` từ legacy artifacts.
 
 
 ### Amendment — 29/08/2026 Finance Checkpoint
@@ -146,13 +146,13 @@ finance_cash_opening_balance_as_of          EXISTS
 | F5.6 Cash | 🟢 COMPLETE / VERIFIED / PUSHED |
 | F5.6 Prepayment mapping | 🟢 CONFIGURABLE / VERIFIED |
 | F5.6 Prepayment position | 🟢 F4_PREPAYMENT_POSITION:v1 VERIFIED |
-| F5.6 Prepayment runner | 🔴 NOT IMPLEMENTED |
+| F5.6 Prepayment runner | 🟢 PREPAYMENT_GL_BALANCE VERIFIED |
 | Regression Boundary | 🟢 GREEN |
 | Architecture Guard | 🟢 PASS |
 
-**Evidence:** F5.6 Cash 7/7 PASS; F2 map 4/4 PASS; F4 Prepayment GL map 6/6 PASS; F4 Prepayment Position 6/6 PASS; F1 ledger/concurrency 27/27 PASS; F2 Cash runtime 40/40 PASS; F5 AP baseline 8 PASS / 5 SKIPPED; F5.5 AR 8/8 PASS. Cash commit pushed: `e5833b9681f116dba1dddd9ea0eb885a6a6011c7`.
+**Evidence:** F5.6 Cash + Prepayment suite 10/10 PASS; F4 Prepayment GL map 6/6 PASS; F4 Prepayment Position 6/6 PASS; F5.6/F4/F5.5 boundary regression 30/30 PASS; F1 ledger/concurrency 27/27 PASS; F2 Cash runtime 40/40 PASS; F5 AP baseline 8 PASS / 5 SKIPPED; F5.5 AR 8/8 PASS. Cash commit pushed: `e5833b9681f116dba1dddd9ea0eb885a6a6011c7`; Position commit pushed: `1f8a84c4`.
 
-**Prepayment decision:** `PREPAYMENT_CONTROL` is tenant-configured and effective-dated via `finance_control_account_mappings`; Bella does not hardcode `331P`, `242`, or any platform-wide account code. `F4_PREPAYMENT_GL_MAP:v1` is verified as a read-only map contract, with overlap guard enforcing deterministic effective-date ranges. `F4_PREPAYMENT_POSITION:v1` is verified as an aggregate tenant/currency/as-of position contract using F1 `functional_currency` as currency authority. `PREPAYMENT_GL_BALANCE` runner is still not implemented; no direct F4 table access is allowed.
+**Prepayment decision:** `PREPAYMENT_CONTROL` is tenant-configured and effective-dated via `finance_control_account_mappings`; Bella does not hardcode `331P`, `242`, or any platform-wide account code. `F4_PREPAYMENT_GL_MAP:v1` is verified as a read-only map contract, with overlap guard enforcing deterministic effective-date ranges. `F4_PREPAYMENT_POSITION:v1` is verified as an aggregate tenant/currency/as-of position contract using F1 `functional_currency` as currency authority. `PREPAYMENT_GL_BALANCE` runner now consumes those contracts and writes append-only F5 evidence; no direct F4 table access is allowed.
 
 **Known data-quality note:** Official test/pre-production DB contains 17 legacy/orphan `finance_vendor_prepayments` facts without matching POSTED F1 transaction authority. The new position contract does not backfill or infer currency for those rows; it raises `F4_PREPAYMENT_POSITION_CURRENCY_AUTHORITY_MISSING` for affected tenant/as-of scopes. New facts are guarded by `trg_finance_vendor_prepayment_currency_guard`.
 ---
@@ -448,12 +448,12 @@ Finance / Healthcare / Real Estate / Auto / Education / Logistics / ...
 | F5.6 Cash checkpoint | 🟢 COMPLETE / PUSHED |
 | F5.6 Prepayment GL map contract | 🟢 VERIFIED |
 | F5.6 Prepayment position contract | 🟢 VERIFIED |
-| F5.6 Prepayment runner | 🔴 REQUIRED |
+| F5.6 Prepayment runner | 🟢 VERIFIED |
 | AI Operating Layer | 🟡 IN BUILD |
 
 ### Việc tiếp theo duy nhất hiện tại: E5.1
 
-> **Không implement Prepayment runner trước khi dùng contract position sạch. Không đọc trực tiếp `finance_vendor_prepayments` từ F5.6. Không fallback sang `331P`/`242`; thiếu tenant config thì báo configuration-required. F5.6 Cash checkpoint đã đóng và đã push.**
+> **F5.6 Prepayment runner chỉ dùng contract position + GL map. Không đọc trực tiếp `finance_vendor_prepayments` từ F5.6. Không fallback sang `331P`/`242`; thiếu tenant config thì ghi QUARANTINED/configuration-required. F5.6 Cash checkpoint đã đóng và đã push.**
 
 E5.1 phải trả lời đúng một câu:
 
@@ -544,7 +544,7 @@ Trong đó **Customers + Production Evidence** sẽ là phần cuối cùng bi�
 ║ Verification Integrity               🟠 FIXING               ║
 ║ F5.6 Cash                            🟢 VERIFIED / PUSHED    ║
 ║ F5.6 Prepayment map                  🟢 VERIFIED             ║
-║ F5.6 Prepayment runner               🟡 GATED                ║
+║ F5.6 Prepayment runner               🟢 VERIFIED             ║
 ║ Core Freeze                          🟡 NOT COMPLETE         ║
 ║ AI Operating Layer                   🟡 IN BUILD             ║
 ║ Multi-industry Foundation            🟡 ESTABLISHED          ║
@@ -588,7 +588,7 @@ Bella đang bị giới hạn bởi:
 
 > **BELLA — Enterprise Foundation Consolidation & Governance Hardening**
 >
-> Bella đã hình thành Platform Core, nhiều Industry Foundations, Healthcare/Finance/Logistics kernels, domain engines, security model và governance runtime. Finance M1/F2 temporal foundation đã được verified/frozen, và F5.6 Cash đã complete/verified/pushed qua contract boundary. F5.6 Prepayment đã có tenant-configurable GL map contract verified; runner/position vẫn dừng đúng chỗ tại contract boundary, không phải thiếu code đơn thuần. Architecture Guard, BDGF và Runtime Governance đã operational. Giai đoạn hiện tại tập trung vào forensic reconciliation, verification correctness và core freeze. Sau khi đóng các governance gates, Bella chuyển sang AI Operating Layer → AI Workforce → Verticalization → Commercial Scale.
+> Bella đã hình thành Platform Core, nhiều Industry Foundations, Healthcare/Finance/Logistics kernels, domain engines, security model và governance runtime. Finance M1/F2 temporal foundation đã được verified/frozen, F5.6 Cash đã complete/verified/pushed qua contract boundary, và F5.6 Prepayment đã có GL map + position contracts + runner verified. Architecture Guard, BDGF và Runtime Governance đã operational. Giai đoạn hiện tại tập trung vào forensic reconciliation, verification correctness và core freeze. Sau khi đóng các governance gates, Bella chuyển sang AI Operating Layer → AI Workforce → Verticalization → Commercial Scale.
 
 ### Kết luận
 

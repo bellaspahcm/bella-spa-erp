@@ -245,7 +245,7 @@ F5 Full Freeze:   ⏳ When 36/36 gates verified
 | **F5.5** AR_GL_BALANCE | SQL functions | `f5-ar-reconciliation.test.ts` (8 PASS) | 🔒 FROZEN |
 | **F5.6-A** Cash GL Balance | e5833b96 | f5-cash-reconciliation.test.ts (7 PASS) | 🟢 COMPLETE / VERIFIED / PUSHED |
 | **F5.6-B1** Prepayment GL Map | `20260824073000` + `20260824074000` | `finance-f4-prepayment-gl-map-contract.test.ts` (6 PASS) | 🟢 CONFIGURABLE / VERIFIED |
-| **F5.6-B2** Prepayment Position + GL Balance | — | — | 🟡 BLOCKED / NOT IMPLEMENTED |
+| **F5.6-B2** Prepayment Position + GL Balance | F4 position + GL map contracts | 30/30 boundary PASS | 🟢 VERIFIED |
 
 ### Finance — Test Evidence (F5)
 
@@ -270,7 +270,7 @@ Constitutional:   16/36 gates verified (44.4%)
 
 ### Finance — F5.6 Status / Prepayment Gate
 
-> **Status:** 🟡 PARTIAL — Position contract verified; runner not started
+> **Status:** 🟢 VERIFIED — Position contract and runner implemented through approved contracts
 
 Current verified contracts:
 1. F2 Cash Contract Specification (`finance_cash_facts_as_of()`)
@@ -279,10 +279,10 @@ Current verified contracts:
 4. F4 Prepayment Position (`finance_prepayment_position_as_of()` / `F4_PREPAYMENT_POSITION:v1`)
 5. Temporal Semantics (temporal column cho F2 cash movements)
 
-Remaining gate:
+Runtime boundary:
 
-- `PREPAYMENT_GL_BALANCE` runner chưa implement.
-- F5.6 runner phải consume `F4_PREPAYMENT_POSITION:v1` + `F4_PREPAYMENT_GL_MAP:v1`; không đọc trực tiếp `finance_vendor_prepayments`.
+- `PREPAYMENT_GL_BALANCE` runner consumes `F4_PREPAYMENT_POSITION:v1` + `F4_PREPAYMENT_GL_MAP:v1`; không đọc trực tiếp `finance_vendor_prepayments`.
+- Missing `PREPAYMENT_CONTROL` config produces `QUARANTINED` evidence, with no fallback to `331P`/`242`.
 - Official test/pre-production DB còn 17 legacy/orphan prepayment facts thiếu POSTED F1 transaction authority; position contract sẽ raise `F4_PREPAYMENT_POSITION_CURRENCY_AUTHORITY_MISSING` cho affected tenant/as-of thay vì infer currency.
 
 > Ref: [`docs/architecture/F5_CHECKPOINT_2026_08_23.md`](docs/architecture/F5_CHECKPOINT_2026_08_23.md)  
@@ -462,7 +462,7 @@ Routine: CURRENT_STATE.md update ✅ ACTIVE
 ├──────────────────────────────────────────────────────────────────┤
 │  ACTIONS REQUIRED                                                │
 │                                                                  │
-│  🟡 GATED:    F5.6 Prepayment runner — position contract needed │
+│  🟢 VERIFIED: F5.6 Prepayment runner via approved contracts     │
 │  🟡 REVIEW:   Dental Phase 1 — Human Architect approval gate    │
 │  ⚠️ TODO:     Logistics Layer 3 (git hook) implementation       │
 │  ⚠️ TODO:     Logistics Layer 4 (CI gate) implementation        │
