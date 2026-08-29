@@ -67,3 +67,5 @@
 Do not open another Finance module yet. The next implementation should start with Accounting Configuration Foundation: inventory hardcoded account usage, then extend tenant mapping only where production-critical.
 
 Policy/configuration gate record: `docs/architecture/TT99_TT133_ACCOUNTING_POLICY_DECISION_RECORD_2026_08_29.md`.
+
+Hardcoded-account inventory: `docs/architecture/FINANCE_ACCOUNT_HARDCODING_INVENTORY_2026_08_29.md`.

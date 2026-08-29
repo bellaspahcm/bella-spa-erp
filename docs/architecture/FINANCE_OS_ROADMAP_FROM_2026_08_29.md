@@ -20,6 +20,8 @@ Posting + Reporting + Reconciliation
 
 Audit hardcoded account usage in Finance OS and classify each usage:
 
+Inventory record: `docs/architecture/FINANCE_ACCOUNT_HARDCODING_INVENTORY_2026_08_29.md`.
+
 | Class | Meaning |
 |---|---|
 | 🔴 Must be configurable | Tenant accounting policy decides the GL account. |
