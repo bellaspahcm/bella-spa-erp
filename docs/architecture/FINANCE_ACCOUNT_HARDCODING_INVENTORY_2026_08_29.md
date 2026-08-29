@@ -35,6 +35,8 @@ Tests contain many account-code fixtures. Those are not production debt unless t
 
 Pilot cutover audit: `docs/architecture/FINANCE_SERVICE_REVENUE_CUTOVER_AUDIT_2026_08_29.md`.
 
+Phase 2 Slice 1 audit: `docs/architecture/FINANCE_REVENUE_DEDUCTION_REFUND_AUDIT_2026_08_29.md`.
+
 ## Production-Critical First Slice
 
 Do not convert every mapping at once. The minimum next slice should cover the semantics already flagged by Completion Review:

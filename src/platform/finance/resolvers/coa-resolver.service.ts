@@ -28,6 +28,11 @@ type SemanticGlMapRow = {
   gl_account_code: string;
 };
 
+const INTENT_TO_ACCOUNTING_SEMANTIC: Partial<Record<string, string>> = {
+  RECOGNIZE_REVENUE: 'SERVICE_REVENUE',
+  REVERSE_REVENUE: 'REVENUE_DEDUCTION',
+};
+
 /**
  * Default COA Resolver
  * 
@@ -203,7 +208,8 @@ export class DefaultCOAResolver implements COAResolver {
     intentType: string,
     policyContext: PolicyContext
   ): Promise<{ account_code: string; account_name: string } | null> {
-    if (!this.supabase || intentType !== 'RECOGNIZE_REVENUE') {
+    const semanticKey = INTENT_TO_ACCOUNTING_SEMANTIC[intentType];
+    if (!this.supabase || !semanticKey) {
       return null;
     }
 
@@ -216,7 +222,7 @@ export class DefaultCOAResolver implements COAResolver {
       'finance_get_accounting_semantic_gl_map_as_of' as never,
       {
         p_tenant_id: tenantId,
-        p_semantic_key: 'SERVICE_REVENUE',
+        p_semantic_key: semanticKey,
         p_as_of: asOf,
         p_contract_version: 'FINANCE_ACCOUNTING_SEMANTIC_GL_MAP:v1',
       } as never
@@ -224,7 +230,7 @@ export class DefaultCOAResolver implements COAResolver {
 
     if (error) {
       throw new COAResolutionError(
-        `Failed to resolve tenant SERVICE_REVENUE mapping: ${error.message}`,
+        `Failed to resolve tenant ${semanticKey} mapping: ${error.message}`,
         tenantId,
         intentType
       );
@@ -238,7 +244,9 @@ export class DefaultCOAResolver implements COAResolver {
 
     return {
       account_code: row.gl_account_code,
-      account_name: 'Service Revenue',
+      account_name: semanticKey === 'SERVICE_REVENUE'
+        ? 'Service Revenue'
+        : 'Revenue Deduction',
     };
   }
 }

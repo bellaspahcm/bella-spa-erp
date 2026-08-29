@@ -59,6 +59,15 @@ Candidate semantics to inventory first:
 
 Implement only production-critical mappings from the inventory. Apply changes through the full semantic chain:
 
+Phase 2 Slice 1 checkpoint:
+
+- `REVENUE_DEDUCTION` reuses `FINANCE_ACCOUNTING_SEMANTIC_GL_MAP:v1`.
+- Runtime `REVERSE_REVENUE` can consume tenant-configured `REVENUE_DEDUCTION`.
+- E2E refund posting verified: tenant A posts refund debit to `521`, tenant B posts refund debit to `5113`, and unconfigured tenant stays on the legacy compatibility fallback.
+- Legacy template/sync/report cutover is not included in this slice.
+- Evidence: `finance-accounting-semantic-gl-map-contract.test.ts` + `coa-resolver-accounting-configuration.test.ts` + `finance-service-revenue-accounting-configuration-e2e.test.ts` = 14/14 PASS.
+- Audit record: `docs/architecture/FINANCE_REVENUE_DEDUCTION_REFUND_AUDIT_2026_08_29.md`.
+
 ```text
 Accounting Configuration
         ↓

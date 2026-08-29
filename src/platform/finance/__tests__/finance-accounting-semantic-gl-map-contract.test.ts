@@ -1,8 +1,9 @@
 /**
  * FINANCE_ACCOUNTING_SEMANTIC_GL_MAP:v1 Contract Tests
  *
- * Verifies tenant-configured, effective-dated SERVICE_REVENUE mapping.
- * Bella does not hardcode 5111, 5113, or any universal revenue account code.
+ * Verifies tenant-configured, effective-dated SERVICE_REVENUE and
+ * REVENUE_DEDUCTION mappings.
+ * Bella does not hardcode 5111, 5113, 521, or any universal revenue account code.
  */
 
 jest.mock('server-only', () => ({}), { virtual: true });
@@ -35,6 +36,7 @@ describe('FINANCE_ACCOUNTING_SEMANTIC_GL_MAP:v1 Contract', () => {
   let tenantDId: string;
   let account5113Id: string;
   let account5111Id: string;
+  let account521Id: string;
 
   beforeAll(async () => {
     const { url, adminKey } = requireSupabaseAdminEnv();
@@ -47,6 +49,8 @@ describe('FINANCE_ACCOUNTING_SEMANTIC_GL_MAP:v1 Contract', () => {
 
     account5113Id = await createAccount(tenantAId, '5113');
     account5111Id = await createAccount(tenantBId, '5111');
+    account521Id = await createAccount(tenantAId, '521');
+    await createAccount(tenantBId, '5113');
     await createAccount(tenantCId, '5113');
     await createAccount(tenantCId, '5111');
     await createAccount(tenantDId, '5113');
@@ -55,6 +59,8 @@ describe('FINANCE_ACCOUNTING_SEMANTIC_GL_MAP:v1 Contract', () => {
     await createMapping(tenantBId, '5111', '2026-01-01', null);
     await createMapping(tenantCId, '5113', '2026-01-01', '2026-12-31');
     await createMapping(tenantCId, '5111', '2027-01-01', null);
+    await createMapping(tenantAId, '521', '2026-01-01', null, 'REVENUE_DEDUCTION');
+    await createMapping(tenantBId, '5113', '2026-01-01', null, 'REVENUE_DEDUCTION');
   });
 
   afterAll(async () => {
@@ -97,12 +103,13 @@ describe('FINANCE_ACCOUNTING_SEMANTIC_GL_MAP:v1 Contract', () => {
     accountCode: string,
     effectiveFrom: string,
     effectiveTo: string | null,
+    semanticKey = 'SERVICE_REVENUE',
   ): Promise<void> {
     const { error } = await supabase
       .from('finance_control_account_mappings')
       .insert({
         tenant_id: tenantId,
-        control_type: 'SERVICE_REVENUE',
+        control_type: semanticKey,
         account_code: accountCode,
         effective_from: effectiveFrom,
         effective_to: effectiveTo,
@@ -166,6 +173,21 @@ describe('FINANCE_ACCOUNTING_SEMANTIC_GL_MAP:v1 Contract', () => {
     const rows = await readMap(tenantDId, '2026-06-30');
 
     expect(rows).toHaveLength(0);
+  });
+
+  it('returns tenant-configured REVENUE_DEDUCTION mapping without making 521 a platform default', async () => {
+    const tenantARows = await readMap(tenantAId, '2026-06-30', 'REVENUE_DEDUCTION');
+    const tenantBRows = await readMap(tenantBId, '2026-06-30', 'REVENUE_DEDUCTION');
+
+    expect(tenantARows).toHaveLength(1);
+    expect(tenantARows[0]).toMatchObject({
+      tenant_id: tenantAId,
+      semantic_key: 'REVENUE_DEDUCTION',
+      gl_account_id: account521Id,
+      gl_account_code: '521',
+    });
+    expect(tenantBRows).toHaveLength(1);
+    expect(tenantBRows[0].gl_account_code).toBe('5113');
   });
 
   it('rejects overlapping SERVICE_REVENUE effective ranges for the same tenant', async () => {
