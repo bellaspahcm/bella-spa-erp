@@ -115,6 +115,8 @@ describe('F5.6 CASH_GL_BALANCE', () => {
   async function cleanupTenant(tenantId: string): Promise<void> {
     try { await supabase.from('f5_control_cases').delete().eq('tenant_id', tenantId); } catch (e) {}
     try { await supabase.from('f5_control_results').delete().eq('tenant_id', tenantId); } catch (e) {}
+    try { await supabase.from('finance_vendor_prepayments' as unknown as 'tenants').delete().eq('tenant_id' as unknown as 'id', tenantId); } catch (e) {}
+    try { await supabase.from('finance_control_account_mappings').delete().eq('tenant_id', tenantId); } catch (e) {}
     try { await supabase.from('finance_cash_opening_balances' as unknown as 'tenants').delete().eq('tenant_id' as unknown as 'id', tenantId); } catch (e) {}
     try { await supabase.from('finance_cash_movements').delete().eq('tenant_id', tenantId); } catch (e) {}
     try { await supabase.from('finance_cash_positions').delete().eq('tenant_id', tenantId); } catch (e) {}
@@ -283,20 +285,187 @@ describe('F5.6 CASH_GL_BALANCE', () => {
     }
   });
 
-  it('keeps Prepayment gated pending semantic/account mapping authority', async () => {
+  async function createPrepaymentControlAccount(tenantId: string, accountCode: string) {
+    const { error } = await supabase
+      .from('finance_accounts' as unknown as 'tenants')
+      .insert({
+        tenant_id: tenantId,
+        code: accountCode,
+        name: `Prepayment Control ${accountCode}`,
+        type: 'ASSET',
+        normal_balance: 'DEBIT',
+        currency: 'VND',
+        is_active: true,
+      });
+    if (error) throw error;
+  }
+
+  async function createPrepaymentControlMapping(tenantId: string, accountCode: string) {
+    const { error } = await supabase
+      .from('finance_control_account_mappings')
+      .insert({
+        tenant_id: tenantId,
+        control_type: 'PREPAYMENT_CONTROL',
+        account_code: accountCode,
+        effective_from: '2026-01-01',
+        effective_to: null,
+        authority_version: 'TENANT_CONFIG:v1',
+      } as never);
+    if (error) throw error;
+  }
+
+  async function postPrepaymentGl(
+    tenantId: string,
+    accountCode: string,
+    amountMinor: string,
+    postedAt: string,
+    direction: 'INCREASE' | 'DECREASE' = 'INCREASE',
+  ): Promise<string> {
+    const controlDebit = direction === 'INCREASE' ? amountMinor : '0';
+    const controlCredit = direction === 'INCREASE' ? '0' : amountMinor;
+    const offsetDebit = direction === 'INCREASE' ? '0' : amountMinor;
+    const offsetCredit = direction === 'INCREASE' ? amountMinor : '0';
+
+    const post = await ledgerService.postTransaction({
+      tenant_id: tenantId,
+      idempotency_key: `f56-prepay-${runId}-${crypto.randomUUID()}`,
+      source_type: 'F5_6_PREPAYMENT_TEST',
+      source_id: crypto.randomUUID(),
+      transaction_type: 'ACCRUAL',
+      posted_at: new Date(postedAt),
+      transaction_currency: 'VND',
+      functional_currency: 'VND',
+      description: 'F5.6 prepayment reconciliation fixture',
+      reference_type: 'f5_6_prepayment_test',
+      reference_id: crypto.randomUUID(),
+      lines: [
+        { account_code: accountCode, debit_amount_minor: controlDebit, credit_amount_minor: controlCredit, memo: 'prepayment control' },
+        { account_code: '5111', debit_amount_minor: offsetDebit, credit_amount_minor: offsetCredit, memo: 'offset' },
+      ],
+    });
+    if (!post.success || !post.data) throw new Error(post.error?.message ?? 'Prepayment GL post failed');
+    return post.data.id;
+  }
+
+  async function insertPrepaymentFact(
+    tenantId: string,
+    f1TransactionId: string,
+    factType: 'PREPAYMENT_RECORDED' | 'PREPAYMENT_APPLIED' | 'PREPAYMENT_REFUNDED',
+    amountMinor: number,
+    createdAt: string,
+  ) {
+    const { error } = await supabase
+      .from('finance_vendor_prepayments' as unknown as 'tenants')
+      .insert({
+        tenant_id: tenantId,
+        vendor_id: crypto.randomUUID(),
+        fact_type: factType,
+        amount_minor: amountMinor,
+        posting_attempt_id: crypto.randomUUID(),
+        f1_transaction_id: f1TransactionId,
+        source_type: 'F5_6_PREPAYMENT_TEST',
+        source_id: crypto.randomUUID(),
+        created_at: createdAt,
+      } as never);
+    if (error) throw error;
+  }
+
+  async function runPrepaymentReconciliation(tenantId: string, basisId = crypto.randomUUID()) {
+    const { data, error } = await supabase.rpc('f5_run_reconciliation', {
+      p_tenant_id: tenantId,
+      p_domain: 'PREPAYMENT',
+      p_control_type: 'PREPAYMENT_GL_BALANCE',
+      p_basis_id: basisId,
+      p_basis_version: 'PREPAYMENT_GL_BALANCE:v1',
+      p_reconciliation_as_of: '2026-08-20T00:00:00Z',
+    });
+    if (error) throw error;
+    return data as { run_id: string; is_duplicate: boolean; total_checked: number; matched: number; variances: number; quarantined: number };
+  }
+
+  it('returns zero checked rows for PREPAYMENT_GL_BALANCE when no prepayment position exists', async () => {
     const fx = await createTenantFixture('1112', 0);
     try {
-      const { error } = await supabase.rpc('f5_run_reconciliation', {
-        p_tenant_id: fx.tenantId,
-        p_domain: 'PREPAYMENT',
-        p_control_type: 'PREPAYMENT_GL_BALANCE',
-        p_basis_id: crypto.randomUUID(),
-        p_basis_version: 'PREPAYMENT_GL_BALANCE:v1',
-        p_reconciliation_as_of: '2026-08-20T00:00:00Z',
-      });
+      await createPrepaymentControlAccount(fx.tenantId, '331P-ZERO');
+      await createPrepaymentControlMapping(fx.tenantId, '331P-ZERO');
 
-      expect(error).not.toBeNull();
-      expect(error!.message).toContain('F5_CONTROL_TYPE_NOT_YET_IMPLEMENTED');
+      const report = await runPrepaymentReconciliation(fx.tenantId);
+
+      expect(report.total_checked).toBe(0);
+      expect(report.matched).toBe(0);
+      expect(report.variances).toBe(0);
+      expect(report.quarantined).toBe(0);
+    } finally {
+      await cleanupTenant(fx.tenantId);
+    }
+  });
+
+  it('matches PREPAYMENT_GL_BALANCE when F4 position equals configured GL balance', async () => {
+    const fx = await createTenantFixture('1116', 0);
+    try {
+      await createPrepaymentControlAccount(fx.tenantId, '331P-MATCH');
+      await createPrepaymentControlMapping(fx.tenantId, '331P-MATCH');
+      const txId = await postPrepaymentGl(fx.tenantId, '331P-MATCH', '1000000', '2026-08-10T00:00:00Z');
+      await insertPrepaymentFact(fx.tenantId, txId, 'PREPAYMENT_RECORDED', 1000000, '2026-08-10T00:00:00Z');
+
+      const report = await runPrepaymentReconciliation(fx.tenantId);
+
+      expect(report.total_checked).toBe(1);
+      expect(report.matched).toBe(1);
+      expect(report.variances).toBe(0);
+      expect(report.quarantined).toBe(0);
+    } finally {
+      await cleanupTenant(fx.tenantId);
+    }
+  });
+
+  it('opens a variance case when F4 prepayment position differs from configured GL balance', async () => {
+    const fx = await createTenantFixture('1117', 0);
+    try {
+      await createPrepaymentControlAccount(fx.tenantId, '331P-VAR');
+      await createPrepaymentControlMapping(fx.tenantId, '331P-VAR');
+      const txId = await postPrepaymentGl(fx.tenantId, '331P-VAR', '900000', '2026-08-10T00:00:00Z');
+      await insertPrepaymentFact(fx.tenantId, txId, 'PREPAYMENT_RECORDED', 1000000, '2026-08-10T00:00:00Z');
+
+      const report = await runPrepaymentReconciliation(fx.tenantId);
+      const { data: results } = await supabase
+        .from('f5_control_results')
+        .select('expected_amount, actual_amount, variance_amount, financial_result')
+        .eq('tenant_id', fx.tenantId)
+        .eq('control_type', 'PREPAYMENT_GL_BALANCE');
+
+      expect(report.total_checked).toBe(1);
+      expect(report.variances).toBe(1);
+      expect(results).toHaveLength(1);
+      expect(Number(results![0].expected_amount)).toBe(1000000);
+      expect(Number(results![0].actual_amount)).toBe(900000);
+      expect(Number(results![0].variance_amount)).toBe(-100000);
+      expect(results![0].financial_result).toBe('VARIANCE');
+    } finally {
+      await cleanupTenant(fx.tenantId);
+    }
+  });
+
+  it('quarantines PREPAYMENT_GL_BALANCE when PREPAYMENT_CONTROL is not configured', async () => {
+    const fx = await createTenantFixture('1118', 0);
+    try {
+      await createPrepaymentControlAccount(fx.tenantId, '331P-NOCONFIG');
+      const txId = await postPrepaymentGl(fx.tenantId, '331P-NOCONFIG', '1000000', '2026-08-10T00:00:00Z');
+      await insertPrepaymentFact(fx.tenantId, txId, 'PREPAYMENT_RECORDED', 1000000, '2026-08-10T00:00:00Z');
+
+      const report = await runPrepaymentReconciliation(fx.tenantId);
+      const { data: results } = await supabase
+        .from('f5_control_results')
+        .select('financial_result, actual_amount, source_snapshot')
+        .eq('tenant_id', fx.tenantId)
+        .eq('control_type', 'PREPAYMENT_GL_BALANCE');
+
+      expect(report.total_checked).toBe(1);
+      expect(report.quarantined).toBe(1);
+      expect(results).toHaveLength(1);
+      expect(results![0].financial_result).toBe('QUARANTINED');
+      expect(results![0].actual_amount).toBeNull();
+      expect((results![0].source_snapshot as { gl_account_code: string | null }).gl_account_code).toBeNull();
     } finally {
       await cleanupTenant(fx.tenantId);
     }
