@@ -223,7 +223,8 @@ F3 AR:            ✅ FROZEN
 F4 AP:            ✅ FROZEN
 F5.0–F5.5:        ✅ FROZEN (16/36 gates verified — 44.4%)
 F5.6 Cash:        🟢 COMPLETE / VERIFIED / PUSHED
-F5.6 Prepayment:  🟡 BLOCKED — semantic authority required
+F5.6 PP Map:      🟢 CONFIGURABLE / VERIFIED
+F5.6 PP Runner:   🟡 BLOCKED — position contract required
 F5.7–F5.8:        ⏳ LOCKED (dependency chain)
 F5 Full Freeze:   ⏳ When 36/36 gates verified
 ```
@@ -243,7 +244,8 @@ F5 Full Freeze:   ⏳ When 36/36 gates verified
 | **F5.4** AP Hardening | SQL functions | adversarial tests | 🔒 FROZEN |
 | **F5.5** AR_GL_BALANCE | SQL functions | `f5-ar-reconciliation.test.ts` (8 PASS) | 🔒 FROZEN |
 | **F5.6-A** Cash GL Balance | e5833b96 | f5-cash-reconciliation.test.ts (7 PASS) | 🟢 COMPLETE / VERIFIED / PUSHED |
-| **F5.6-B** Prepayment GL Balance | — | — | 🟡 BLOCKED / SEMANTIC AUTHORITY REQUIRED |
+| **F5.6-B1** Prepayment GL Map | `20260824073000` + `20260824074000` | `finance-f4-prepayment-gl-map-contract.test.ts` (6 PASS) | 🟢 CONFIGURABLE / VERIFIED |
+| **F5.6-B2** Prepayment Position + GL Balance | — | — | 🟡 BLOCKED / NOT IMPLEMENTED |
 
 ### Finance — Test Evidence (F5)
 
@@ -273,7 +275,7 @@ Constitutional:   16/36 gates verified (44.4%)
 Human Architect cần cung cấp:
 1. F2 Cash Contract Specification (`finance_cash_facts_as_of()`)
 2. F4 Prepayment Contract Specification (`finance_prepayment_facts_as_of()`)
-3. GL Account Mapping (Cash: acc 111?, Prepayment: acc 331PP/234/132?)
+3. GL Account Mapping (Cash via F2 map; Prepayment via tenant-configured control account)
 4. Reconstruction Formulas (inflow/outflow semantics)
 5. Temporal Semantics (temporal column cho F2 cash movements)
 
@@ -454,7 +456,7 @@ Routine: CURRENT_STATE.md update ✅ ACTIVE
 ├──────────────────────────────────────────────────────────────────┤
 │  ACTIONS REQUIRED                                                │
 │                                                                  │
-│  🟡 GATED:    F5.6 Prepayment — semantic authority required     │
+│  🟡 GATED:    F5.6 Prepayment runner — position contract needed │
 │  🟡 REVIEW:   Dental Phase 1 — Human Architect approval gate    │
 │  ⚠️ TODO:     Logistics Layer 3 (git hook) implementation       │
 │  ⚠️ TODO:     Logistics Layer 4 (CI gate) implementation        │
