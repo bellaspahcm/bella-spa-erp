@@ -83,7 +83,8 @@ Accounting Configuration UI MVP checkpoint:
 - Account selection is constrained to active tenant Finance GL accounts; free-text account entry is not exposed.
 - Saves go through `finance_save_accounting_semantic_gl_mapping`, an atomic DB write contract that validates tenant account ownership and preserves effective dating.
 - The UI does not add approval workflow, bulk migration, additional semantics, or an accounting rules engine.
-- Evidence: `accounting-semantic-config-ui.test.ts` + `finance-accounting-semantic-config-write-contract.test.ts` + accounting semantic regression = 22/22 PASS; file-scoped ESLint PASS; Architecture Guard PASS.
+- Hardening evidence covers role-gated server actions, tenant-scoped reads/writes, cross-tenant account rejection, invalid account rejection, effective-dated history, direct overlap rejection, and rollback/no-mutation on failed saves.
+- Evidence: `accounting-semantic-config-ui.test.ts` + `accounting-semantic-config-actions.test.ts` + `finance-accounting-semantic-config-write-contract.test.ts` + accounting semantic regression = 28/28 PASS; file-scoped ESLint PASS; Architecture Guard PASS.
 
 ```text
 Accounting Configuration
