@@ -68,6 +68,15 @@ Phase 2 Slice 1 checkpoint:
 - Evidence: `finance-accounting-semantic-gl-map-contract.test.ts` + `coa-resolver-accounting-configuration.test.ts` + `finance-service-revenue-accounting-configuration-e2e.test.ts` = 14/14 PASS.
 - Audit record: `docs/architecture/FINANCE_REVENUE_DEDUCTION_REFUND_AUDIT_2026_08_29.md`.
 
+Phase 2 Slice 2 checkpoint:
+
+- `GOODS_REVENUE` reuses `FINANCE_ACCOUNTING_SEMANTIC_GL_MAP:v1`.
+- Runtime `PRODUCT_SALE_COMPLETED` resolves to `PRODUCT_SALE_REVENUE`, then `RECOGNIZE_GOODS_REVENUE`.
+- `DefaultCOAResolver` can consume tenant-configured `GOODS_REVENUE`.
+- E2E product sale posting verified: tenant A posts goods revenue credit to `5112`, tenant B posts goods revenue credit to `5111`, and unconfigured tenant stays on the legacy compatibility fallback.
+- Inventory, COGS, legacy template/sync/report cutover, and Accounting Configuration UI are not included in this slice.
+- Evidence: `finance-accounting-semantic-gl-map-contract.test.ts` + `coa-resolver-accounting-configuration.test.ts` + `finance-service-revenue-accounting-configuration-e2e.test.ts` = 19/19 PASS.
+
 ```text
 Accounting Configuration
         ↓

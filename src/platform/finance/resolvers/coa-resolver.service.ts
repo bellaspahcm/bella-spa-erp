@@ -31,6 +31,7 @@ type SemanticGlMapRow = {
 const INTENT_TO_ACCOUNTING_SEMANTIC: Partial<Record<string, string>> = {
   RECOGNIZE_REVENUE: 'SERVICE_REVENUE',
   REVERSE_REVENUE: 'REVENUE_DEDUCTION',
+  RECOGNIZE_GOODS_REVENUE: 'GOODS_REVENUE',
 };
 
 /**
@@ -75,6 +76,10 @@ export class DefaultCOAResolver implements COAResolver {
     'REVERSE_REVENUE': {
       account_code: '4111',
       account_name: 'Service Revenue - Patient (reversal)',
+    },
+    'RECOGNIZE_GOODS_REVENUE': {
+      account_code: '4111',
+      account_name: 'Goods Revenue (legacy compatibility)',
     },
     
     // ========== Receivables ==========
@@ -244,10 +249,21 @@ export class DefaultCOAResolver implements COAResolver {
 
     return {
       account_code: row.gl_account_code,
-      account_name: semanticKey === 'SERVICE_REVENUE'
-        ? 'Service Revenue'
-        : 'Revenue Deduction',
+      account_name: this.getSemanticAccountName(semanticKey),
     };
+  }
+
+  private getSemanticAccountName(semanticKey: string): string {
+    switch (semanticKey) {
+      case 'SERVICE_REVENUE':
+        return 'Service Revenue';
+      case 'REVENUE_DEDUCTION':
+        return 'Revenue Deduction';
+      case 'GOODS_REVENUE':
+        return 'Goods Revenue';
+      default:
+        return 'Configured Accounting Semantic';
+    }
   }
 }
 

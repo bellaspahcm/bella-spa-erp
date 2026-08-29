@@ -1,9 +1,9 @@
 /**
  * FINANCE_ACCOUNTING_SEMANTIC_GL_MAP:v1 Contract Tests
  *
- * Verifies tenant-configured, effective-dated SERVICE_REVENUE and
- * REVENUE_DEDUCTION mappings.
- * Bella does not hardcode 5111, 5113, 521, or any universal revenue account code.
+ * Verifies tenant-configured, effective-dated SERVICE_REVENUE,
+ * REVENUE_DEDUCTION, and GOODS_REVENUE mappings.
+ * Bella does not hardcode 5111, 5112, 5113, 521, or any universal revenue account code.
  */
 
 jest.mock('server-only', () => ({}), { virtual: true });
@@ -37,6 +37,7 @@ describe('FINANCE_ACCOUNTING_SEMANTIC_GL_MAP:v1 Contract', () => {
   let account5113Id: string;
   let account5111Id: string;
   let account521Id: string;
+  let account5112Id: string;
 
   beforeAll(async () => {
     const { url, adminKey } = requireSupabaseAdminEnv();
@@ -50,9 +51,12 @@ describe('FINANCE_ACCOUNTING_SEMANTIC_GL_MAP:v1 Contract', () => {
     account5113Id = await createAccount(tenantAId, '5113');
     account5111Id = await createAccount(tenantBId, '5111');
     account521Id = await createAccount(tenantAId, '521');
+    account5112Id = await createAccount(tenantAId, '5112');
     await createAccount(tenantBId, '5113');
+    await createAccount(tenantBId, '5112');
     await createAccount(tenantCId, '5113');
     await createAccount(tenantCId, '5111');
+    await createAccount(tenantCId, '5112');
     await createAccount(tenantDId, '5113');
 
     await createMapping(tenantAId, '5113', '2026-01-01', null);
@@ -61,6 +65,10 @@ describe('FINANCE_ACCOUNTING_SEMANTIC_GL_MAP:v1 Contract', () => {
     await createMapping(tenantCId, '5111', '2027-01-01', null);
     await createMapping(tenantAId, '521', '2026-01-01', null, 'REVENUE_DEDUCTION');
     await createMapping(tenantBId, '5113', '2026-01-01', null, 'REVENUE_DEDUCTION');
+    await createMapping(tenantAId, '5112', '2026-01-01', null, 'GOODS_REVENUE');
+    await createMapping(tenantBId, '5111', '2026-01-01', null, 'GOODS_REVENUE');
+    await createMapping(tenantCId, '5112', '2026-01-01', '2026-12-31', 'GOODS_REVENUE');
+    await createMapping(tenantCId, '5111', '2027-01-01', null, 'GOODS_REVENUE');
   });
 
   afterAll(async () => {
@@ -190,6 +198,37 @@ describe('FINANCE_ACCOUNTING_SEMANTIC_GL_MAP:v1 Contract', () => {
     expect(tenantBRows[0].gl_account_code).toBe('5113');
   });
 
+  it('returns tenant-configured GOODS_REVENUE mappings without making 5112 a platform default', async () => {
+    const tenantARows = await readMap(tenantAId, '2026-06-30', 'GOODS_REVENUE');
+    const tenantBRows = await readMap(tenantBId, '2026-06-30', 'GOODS_REVENUE');
+
+    expect(tenantARows).toHaveLength(1);
+    expect(tenantARows[0]).toMatchObject({
+      tenant_id: tenantAId,
+      semantic_key: 'GOODS_REVENUE',
+      gl_account_id: account5112Id,
+      gl_account_code: '5112',
+    });
+    expect(tenantBRows).toHaveLength(1);
+    expect(tenantBRows[0].gl_account_code).toBe('5111');
+  });
+
+  it('resolves GOODS_REVENUE historical mappings deterministically by as_of date', async () => {
+    const rows2026 = await readMap(tenantCId, '2026-06-30', 'GOODS_REVENUE');
+    const rows2027 = await readMap(tenantCId, '2027-06-30', 'GOODS_REVENUE');
+
+    expect(rows2026).toHaveLength(1);
+    expect(rows2026[0].gl_account_code).toBe('5112');
+    expect(rows2027).toHaveLength(1);
+    expect(rows2027[0].gl_account_code).toBe('5111');
+  });
+
+  it('does not fallback to a hardcoded account when GOODS_REVENUE is unconfigured at contract layer', async () => {
+    const rows = await readMap(tenantDId, '2026-06-30', 'GOODS_REVENUE');
+
+    expect(rows).toHaveLength(0);
+  });
+
   it('rejects overlapping SERVICE_REVENUE effective ranges for the same tenant', async () => {
     const { error } = await supabase
       .from('finance_control_account_mappings')
@@ -209,7 +248,7 @@ describe('FINANCE_ACCOUNTING_SEMANTIC_GL_MAP:v1 Contract', () => {
   it('rejects unsupported semantics during the v1 pilot', async () => {
     const { error } = await supabase.rpc('finance_get_accounting_semantic_gl_map_as_of' as never, {
       p_tenant_id: tenantAId,
-      p_semantic_key: 'GOODS_REVENUE',
+      p_semantic_key: 'OTHER_REVENUE',
       p_as_of: '2026-06-30',
       p_contract_version: 'FINANCE_ACCOUNTING_SEMANTIC_GL_MAP:v1',
     } as never);

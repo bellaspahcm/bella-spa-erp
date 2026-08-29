@@ -113,12 +113,12 @@ export class DefaultSemanticResolver implements SemanticResolver {
     //   description: 'Beauty service revenue',
     // },
     
-    // ========== Future: Retail OS ==========
-    // 'PRODUCT_SALE_COMPLETED': {
-    //   canonical_semantic: 'PRODUCT_SALE_REVENUE',
-    //   semantic_category: 'REVENUE',
-    //   description: 'Product sale revenue',
-    // },
+    // ========== Retail/Product Revenue ==========
+    'PRODUCT_SALE_COMPLETED': {
+      canonical_semantic: 'PRODUCT_SALE_REVENUE',
+      semantic_category: 'REVENUE',
+      description: 'Product/goods sale revenue',
+    },
   };
   
   /**
