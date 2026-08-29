@@ -445,7 +445,7 @@ Routine: CURRENT_STATE.md update ✅ ACTIVE
 │                                                                  │
 │  Finance OS        🟡 IN PROGRESS                               │
 │                    F1–F4 + F5.0–F5.5 ✅ FROZEN                  │
-│                    F5.6 Cash 🟢 DONE; Prepayment 🟡 GATED        │
+│                    F5.6 Cash 🟢 DONE; Prepayment 🟢 DONE         │
 │                    F5.7–F5.8 ⏳ LOCKED                          │
 │                                                                  │
 │  Logistics OS      🔒 SEALED      547/547 tests                  │
