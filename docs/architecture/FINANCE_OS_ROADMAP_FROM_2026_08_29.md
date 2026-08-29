@@ -77,6 +77,14 @@ Phase 2 Slice 2 checkpoint:
 - Inventory, COGS, legacy template/sync/report cutover, and Accounting Configuration UI are not included in this slice.
 - Evidence: `finance-accounting-semantic-gl-map-contract.test.ts` + `coa-resolver-accounting-configuration.test.ts` + `finance-service-revenue-accounting-configuration-e2e.test.ts` = 19/19 PASS.
 
+Accounting Configuration UI MVP checkpoint:
+
+- Settings tab now exposes the three proven semantic mappings: `SERVICE_REVENUE`, `REVENUE_DEDUCTION`, and `GOODS_REVENUE`.
+- Account selection is constrained to active tenant Finance GL accounts; free-text account entry is not exposed.
+- Saves go through `finance_save_accounting_semantic_gl_mapping`, an atomic DB write contract that validates tenant account ownership and preserves effective dating.
+- The UI does not add approval workflow, bulk migration, additional semantics, or an accounting rules engine.
+- Evidence: `accounting-semantic-config-ui.test.ts` + `finance-accounting-semantic-config-write-contract.test.ts` + accounting semantic regression = 22/22 PASS; file-scoped ESLint PASS; Architecture Guard PASS.
+
 ```text
 Accounting Configuration
         ↓
