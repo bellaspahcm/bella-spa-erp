@@ -19,7 +19,8 @@
 | F5.5 AR Reconciliation | 🟢 Done | AR regression verified. |
 | F5.6 Cash Reconciliation | 🟢 Done | Cash + GL comparison via F2 contracts. |
 | F5.6 Prepayment Reconciliation | 🟢 Done | Position + GL map + F1 GL comparison; zero/match/variance/config quarantine covered. |
-| TT99 / TT133 Compliance | 🟡 Partial | Mapping and workflow policy gaps remain; see below. |
+| Accounting Configuration Foundation | 🟡 Partial | `PREPAYMENT_CONTROL` is tenant-configured; broader hardcoded account inventory is next. |
+| TT99 / TT133 Compliance | 🟡 Partial | Mapping and workflow policy gaps remain; solve through tenant-configurable semantics, not Bella-wide account codes. |
 | Production Hardening | 🟡 Partial | Needs focused validation after TT99 gap decisions. |
 | Full Finance E2E Scenario | 🔴 Missing | No single business journey proves AP + prepayment + payment + cash + GL + reconciliation end to end. |
 
@@ -27,21 +28,22 @@
 
 | Gap | Status | Classification | Next Action |
 |---|---:|---|---|
-| Refund/revenue deduction account policy (`521` vs debit-side `511`) | 🟡 Partial | Must-have before TT133 production claim | Confirm Bella accounting policy, then update event template, runtime posting, legacy sync, and reports consistently. |
-| Service revenue account (`5111` vs TT133 service revenue `5113`) | 🟡 Partial | Must-have before TT133 production claim | Decide whether `5111` is Bella custom COA policy or migrate service revenue to `5113`. |
-| Prepaid customer package policy (`131` vs `3387`) | 🟡 Partial | Must-have before production compliance claim | Define when customer money is advance receivable/customer advance vs unearned revenue across accounting periods. |
+| Refund/revenue deduction account policy (`521` vs debit-side `511`) | 🟡 Partial | Must-have before TT133 production claim | Define `REVENUE_DEDUCTION` semantic key and tenant-configurable mapping, then update event template, runtime posting, legacy sync, and reports consistently. |
+| Service revenue account (`5111` vs TT133 service revenue `5113`) | 🟡 Partial | Must-have before TT133 production claim | Define `SERVICE_REVENUE` semantic key and tenant-configurable mapping instead of choosing a Bella-wide account code. |
+| Prepaid customer package policy (`131` vs `3387`) | 🟡 Partial | Must-have before production compliance claim | Split semantics such as `CUSTOMER_ADVANCE`, `UNEARNED_REVENUE`, and `AR_OFFSET`; tenant/accounting policy maps each to COA. |
 | Legacy sync posts confirmed revenue directly to `5111` | 🟡 Partial | Must-have if legacy sync remains active | Either disable/retire for production or align with runtime accounting policy. |
 | Salary payment without matched salary accrual | 🟡 Partial | Must-have for payroll production scope | Enforce salary payment requires existing accrual or creates accrual atomically. |
 | Commission accrual double-count risk | 🟡 Partial | Must-have for payroll production scope | Define one source of truth between session-level commission accrual and monthly salary accrual. |
-| Expense salary account inconsistency (`642` vs `6421`) | 🟡 Partial | Must-have for TT133 clean COA | Normalize runtime/template/legacy mapping or document tenant-specific policy. |
+| Expense salary account inconsistency (`642` vs `6421`) | 🟡 Partial | Must-have for TT133 clean COA | Define `SALARY_EXPENSE` semantic key and tenant-configurable mapping. |
 | F1 `document_date` provenance for non-provable historical rows | 🟡 Partial | Production hardening / auditability | Keep non-provable rows out of temporal claims; add forward-only source document date capture for new postings. |
 | 17 legacy/orphan prepayment facts in official test/pre-production DB | 🟡 Partial | Data-quality defect, not runner regression | Quarantine/cleanup policy needed before broad production validation; current contract correctly refuses to infer currency. |
 
 ## Minimum Production Candidate Path
 
-1. **TT99 / TT133 policy decisions**
-   - Resolve the must-have mapping/workflow decisions above.
-   - Avoid global account hardcoding where tenant policy belongs in configuration.
+1. **Accounting configuration foundation**
+   - Inventory all hardcoded Finance account codes.
+   - Classify each as configurable, default-with-override, or true system invariant.
+   - Implement only production-critical mappings first.
 
 2. **Single Finance E2E scenario**
    - Run one real journey: purchase/AP → prepayment → application/payment → cash movement → F1 GL → F5 reconciliation.
@@ -62,6 +64,6 @@
 
 ## Recommendation
 
-Do not open another Finance module yet. The next implementation should be selected from TT99 / TT133 must-have gaps, starting with the accounting policy decision that has the highest production impact for Bella's first target market.
+Do not open another Finance module yet. The next implementation should start with Accounting Configuration Foundation: inventory hardcoded account usage, then extend tenant mapping only where production-critical.
 
-Policy gate record: `docs/architecture/TT99_TT133_ACCOUNTING_POLICY_DECISION_RECORD_2026_08_29.md`.
+Policy/configuration gate record: `docs/architecture/TT99_TT133_ACCOUNTING_POLICY_DECISION_RECORD_2026_08_29.md`.

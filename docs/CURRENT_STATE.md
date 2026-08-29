@@ -287,6 +287,7 @@ Runtime boundary:
 
 > Ref: [`docs/architecture/F5_CHECKPOINT_2026_08_23.md`](docs/architecture/F5_CHECKPOINT_2026_08_23.md)  
 > Checklist: [`docs/architecture/F5_6_CASH_PREPAYMENT_CHECKLIST.md`](docs/architecture/F5_6_CASH_PREPAYMENT_CHECKLIST.md)
+> Roadmap: [`docs/architecture/FINANCE_OS_ROADMAP_FROM_2026_08_29.md`](docs/architecture/FINANCE_OS_ROADMAP_FROM_2026_08_29.md)
 
 ### Finance — Governance Links
 
