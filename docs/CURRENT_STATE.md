@@ -270,14 +270,20 @@ Constitutional:   16/36 gates verified (44.4%)
 
 ### Finance — F5.6 Status / Prepayment Gate
 
-> **Status:** 🔴 BLOCKED — Human Architect action required
+> **Status:** 🟡 PARTIAL — Position contract verified; runner not started
 
-Human Architect cần cung cấp:
+Current verified contracts:
 1. F2 Cash Contract Specification (`finance_cash_facts_as_of()`)
 2. F4 Prepayment Contract Specification (`finance_prepayment_facts_as_of()`)
-3. GL Account Mapping (Cash via F2 map; Prepayment via tenant-configured control account)
-4. Reconstruction Formulas (inflow/outflow semantics)
+3. GL Account Mapping (Cash via F2 map; Prepayment via tenant-configured `F4_PREPAYMENT_GL_MAP:v1`)
+4. F4 Prepayment Position (`finance_prepayment_position_as_of()` / `F4_PREPAYMENT_POSITION:v1`)
 5. Temporal Semantics (temporal column cho F2 cash movements)
+
+Remaining gate:
+
+- `PREPAYMENT_GL_BALANCE` runner chưa implement.
+- F5.6 runner phải consume `F4_PREPAYMENT_POSITION:v1` + `F4_PREPAYMENT_GL_MAP:v1`; không đọc trực tiếp `finance_vendor_prepayments`.
+- Official test/pre-production DB còn 17 legacy/orphan prepayment facts thiếu POSTED F1 transaction authority; position contract sẽ raise `F4_PREPAYMENT_POSITION_CURRENCY_AUTHORITY_MISSING` cho affected tenant/as-of thay vì infer currency.
 
 > Ref: [`docs/architecture/F5_CHECKPOINT_2026_08_23.md`](docs/architecture/F5_CHECKPOINT_2026_08_23.md)  
 > Checklist: [`docs/architecture/F5_6_CASH_PREPAYMENT_CHECKLIST.md`](docs/architecture/F5_6_CASH_PREPAYMENT_CHECKLIST.md)
