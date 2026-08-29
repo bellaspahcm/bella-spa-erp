@@ -155,6 +155,8 @@ finance_cash_opening_balance_as_of          EXISTS
 **Prepayment decision:** `PREPAYMENT_CONTROL` is tenant-configured and effective-dated via `finance_control_account_mappings`; Bella does not hardcode `331P`, `242`, or any platform-wide account code. `F4_PREPAYMENT_GL_MAP:v1` is verified as a read-only map contract, with overlap guard enforcing deterministic effective-date ranges. `F4_PREPAYMENT_POSITION:v1` is verified as an aggregate tenant/currency/as-of position contract using F1 `functional_currency` as currency authority. `PREPAYMENT_GL_BALANCE` runner now consumes those contracts and writes append-only F5 evidence; no direct F4 table access is allowed.
 
 **Known data-quality note:** Official test/pre-production DB contains 17 legacy/orphan `finance_vendor_prepayments` facts without matching POSTED F1 transaction authority. The new position contract does not backfill or infer currency for those rows; it raises `F4_PREPAYMENT_POSITION_CURRENCY_AUTHORITY_MISSING` for affected tenant/as-of scopes. New facts are guarded by `trg_finance_vendor_prepayment_currency_guard`.
+
+**Completion Review:** See `docs/architecture/FINANCE_OS_COMPLETION_REVIEW_2026_08_29.md` for the post-F5.6 capability checklist and TT99/production-candidate gap triage.
 ---
 
 ## 5. Option B — SUPERSEDED
