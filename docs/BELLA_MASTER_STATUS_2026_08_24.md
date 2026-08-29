@@ -126,7 +126,8 @@ finance_cash_opening_balance_as_of          EXISTS
 | F5 Reconciliation | 🟢 Architecture + test foundation |
 | F5.6 Cash | 🟢 Complete / verified / pushed (`e5833b96`) |
 | F5.6 Prepayment mapping | 🟢 Configurable tenant GL map verified (`F4_PREPAYMENT_GL_MAP:v1`) |
-| F5.6 Prepayment runner/position | 🟡 Blocked / position contract + reconciliation implementation pending |
+| F5.6 Prepayment position | 🟢 `F4_PREPAYMENT_POSITION:v1` verified |
+| F5.6 Prepayment runner | 🔴 `PREPAYMENT_GL_BALANCE` not started |
 | TT99/2025 architecture | 🟢 Sound |
 | Accounting semantics | 🟢 Strong overall; Prepayment GL mapping not yet approved |
 | Migration governance | 🟠 Current bottleneck |
@@ -144,13 +145,16 @@ finance_cash_opening_balance_as_of          EXISTS
 | F2_BANK_ACCOUNT_GL_MAP:v1 | 🟢 VERIFIED |
 | F5.6 Cash | 🟢 COMPLETE / VERIFIED / PUSHED |
 | F5.6 Prepayment mapping | 🟢 CONFIGURABLE / VERIFIED |
-| F5.6 Prepayment runner/position | 🟡 BLOCKED / NOT IMPLEMENTED |
+| F5.6 Prepayment position | 🟢 F4_PREPAYMENT_POSITION:v1 VERIFIED |
+| F5.6 Prepayment runner | 🔴 NOT IMPLEMENTED |
 | Regression Boundary | 🟢 GREEN |
 | Architecture Guard | 🟢 PASS |
 
-**Evidence:** F5.6 Cash 7/7 PASS; F2 map 4/4 PASS; F4 Prepayment GL map 6/6 PASS; F1 ledger/concurrency 27/27 PASS; F2 Cash runtime 40/40 PASS; F5 AP baseline 8 PASS / 5 SKIPPED; F5.5 AR 8/8 PASS. Commit pushed: `e5833b9681f116dba1dddd9ea0eb885a6a6011c7`.
+**Evidence:** F5.6 Cash 7/7 PASS; F2 map 4/4 PASS; F4 Prepayment GL map 6/6 PASS; F4 Prepayment Position 6/6 PASS; F1 ledger/concurrency 27/27 PASS; F2 Cash runtime 40/40 PASS; F5 AP baseline 8 PASS / 5 SKIPPED; F5.5 AR 8/8 PASS. Cash commit pushed: `e5833b9681f116dba1dddd9ea0eb885a6a6011c7`.
 
-**Prepayment decision:** `PREPAYMENT_CONTROL` is tenant-configured and effective-dated via `finance_control_account_mappings`; Bella does not hardcode `331P`, `242`, or any platform-wide account code. `F4_PREPAYMENT_GL_MAP:v1` is verified as a read-only map contract, with overlap guard enforcing deterministic effective-date ranges. `PREPAYMENT_GL_BALANCE` runner and clean position contract are still not implemented; no direct F4 table access is allowed.
+**Prepayment decision:** `PREPAYMENT_CONTROL` is tenant-configured and effective-dated via `finance_control_account_mappings`; Bella does not hardcode `331P`, `242`, or any platform-wide account code. `F4_PREPAYMENT_GL_MAP:v1` is verified as a read-only map contract, with overlap guard enforcing deterministic effective-date ranges. `F4_PREPAYMENT_POSITION:v1` is verified as an aggregate tenant/currency/as-of position contract using F1 `functional_currency` as currency authority. `PREPAYMENT_GL_BALANCE` runner is still not implemented; no direct F4 table access is allowed.
+
+**Known data-quality note:** Official test/pre-production DB contains 17 legacy/orphan `finance_vendor_prepayments` facts without matching POSTED F1 transaction authority. The new position contract does not backfill or infer currency for those rows; it raises `F4_PREPAYMENT_POSITION_CURRENCY_AUTHORITY_MISSING` for affected tenant/as-of scopes. New facts are guarded by `trg_finance_vendor_prepayment_currency_guard`.
 ---
 
 ## 5. Option B — SUPERSEDED
@@ -443,12 +447,13 @@ Finance / Healthcare / Real Estate / Auto / Education / Logistics / ...
 | Core Freeze | 🟡 NOT COMPLETE |
 | F5.6 Cash checkpoint | 🟢 COMPLETE / PUSHED |
 | F5.6 Prepayment GL map contract | 🟢 VERIFIED |
-| F5.6 Prepayment position/runner | 🟡 REQUIRED |
+| F5.6 Prepayment position contract | 🟢 VERIFIED |
+| F5.6 Prepayment runner | 🔴 REQUIRED |
 | AI Operating Layer | 🟡 IN BUILD |
 
 ### Việc tiếp theo duy nhất hiện tại: E5.1
 
-> **Không implement Prepayment runner/position trước khi có contract position sạch. Không đọc trực tiếp `finance_vendor_prepayments` từ F5.6. Không fallback sang `331P`/`242`; thiếu tenant config thì báo configuration-required. F5.6 Cash checkpoint đã đóng và đã push.**
+> **Không implement Prepayment runner trước khi dùng contract position sạch. Không đọc trực tiếp `finance_vendor_prepayments` từ F5.6. Không fallback sang `331P`/`242`; thiếu tenant config thì báo configuration-required. F5.6 Cash checkpoint đã đóng và đã push.**
 
 E5.1 phải trả lời đúng một câu:
 
