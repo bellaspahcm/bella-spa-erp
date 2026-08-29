@@ -37,6 +37,8 @@ Pilot cutover audit: `docs/architecture/FINANCE_SERVICE_REVENUE_CUTOVER_AUDIT_20
 
 Phase 2 Slice 1 audit: `docs/architecture/FINANCE_REVENUE_DEDUCTION_REFUND_AUDIT_2026_08_29.md`.
 
+Phase 2 Slice 2 checkpoint: `GOODS_REVENUE` now uses the same tenant-configured semantic map contract and runtime resolver path. The slice proves tenant A `5112`, tenant B `5111`, effective-dated contract reads, and unconfigured legacy compatibility fallback. It does not include inventory, COGS, template/sync/report cutover, or UI.
+
 ## Production-Critical First Slice
 
 Do not convert every mapping at once. The minimum next slice should cover the semantics already flagged by Completion Review:

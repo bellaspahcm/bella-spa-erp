@@ -41,6 +41,12 @@ const revenueDeductionIntent: AccountingIntent = {
   description: 'Refund service revenue',
 };
 
+const goodsRevenueIntent: AccountingIntent = {
+  intent_type: 'RECOGNIZE_GOODS_REVENUE',
+  credit_amount: '100000',
+  description: 'Recognize goods revenue',
+};
+
 describe('DefaultCOAResolver accounting configuration pilot', () => {
   it('resolves SERVICE_REVENUE from tenant mapping instead of hardcoded default', async () => {
     const calls: RpcCall[] = [];
@@ -131,6 +137,27 @@ describe('DefaultCOAResolver accounting configuration pilot', () => {
       'finance_get_accounting_semantic_gl_map_as_of',
       expect.objectContaining({
         p_semantic_key: 'REVENUE_DEDUCTION',
+        p_as_of: '2026-06-30',
+      })
+    );
+  });
+
+  it('resolves GOODS_REVENUE from tenant mapping for product sale revenue', async () => {
+    const supabase = {
+      rpc: jest.fn(async () => ({
+        data: [{ gl_account_code: '5112' }],
+        error: null,
+      })),
+    };
+    const resolver = new DefaultCOAResolver(supabase as never);
+
+    const mappings = await resolver.resolve('tenant-a', [goodsRevenueIntent], createPolicyContext('2026-06-30'));
+
+    expect(mappings[0].account_code).toBe('5112');
+    expect(supabase.rpc).toHaveBeenCalledWith(
+      'finance_get_accounting_semantic_gl_map_as_of',
+      expect.objectContaining({
+        p_semantic_key: 'GOODS_REVENUE',
         p_as_of: '2026-06-30',
       })
     );
