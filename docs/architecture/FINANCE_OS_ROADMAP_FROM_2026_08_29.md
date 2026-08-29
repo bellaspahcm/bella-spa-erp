@@ -22,6 +22,16 @@ Audit hardcoded account usage in Finance OS and classify each usage:
 
 Inventory record: `docs/architecture/FINANCE_ACCOUNT_HARDCODING_INVENTORY_2026_08_29.md`.
 
+Pilot checkpoint:
+
+- `SERVICE_REVENUE` has an additive read-only mapping contract: `FINANCE_ACCOUNTING_SEMANTIC_GL_MAP:v1`.
+- Contract is effective-dated and tenant-scoped.
+- Runtime COA resolution can consume the contract for `RECOGNIZE_REVENUE`.
+- E2E runtime posting verified: the same `PATIENT_SERVICE_COMPLETED` event path posts tenant A revenue to `5113` and tenant B revenue to `5111`.
+- Unconfigured tenants remain on the legacy default path during the pilot; removing that fallback requires a separate production cutover decision.
+- Evidence: `finance-accounting-semantic-gl-map-contract.test.ts` + `coa-resolver-accounting-configuration.test.ts` + `finance-service-revenue-accounting-configuration-e2e.test.ts` = 11/11 PASS.
+- Cutover audit: `docs/architecture/FINANCE_SERVICE_REVENUE_CUTOVER_AUDIT_2026_08_29.md`.
+
 | Class | Meaning |
 |---|---|
 | 🔴 Must be configurable | Tenant accounting policy decides the GL account. |

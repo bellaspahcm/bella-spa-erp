@@ -20,7 +20,13 @@
  * @see docs/architecture/F5_6_C3_TENANT_COA_BOUNDARY.md
  */
 
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
 import type { COAResolver, AccountingIntent, AccountMapping, PolicyContext } from '../finance-event-handler';
+
+type SemanticGlMapRow = {
+  gl_account_code: string;
+};
 
 /**
  * Default COA Resolver
@@ -39,6 +45,8 @@ import type { COAResolver, AccountingIntent, AccountMapping, PolicyContext } fro
  * - RECOGNIZE_PAYABLE → 3311 (AP - Supplier)
  */
 export class DefaultCOAResolver implements COAResolver {
+  constructor(private readonly supabase?: SupabaseClient<Database>) {}
+
   /**
    * Default account mappings (regime-neutral)
    * 
@@ -136,7 +144,12 @@ export class DefaultCOAResolver implements COAResolver {
     const mappings: AccountMapping[] = [];
     
     for (const intent of intents) {
-      const mapping = this.defaultMappings[intent.intent_type];
+      const tenantMapping = await this.loadTenantSemanticMapping(
+        tenantId,
+        intent.intent_type,
+        policyContext
+      );
+      const mapping = tenantMapping ?? this.defaultMappings[intent.intent_type];
       
       if (!mapping) {
         throw new COAResolutionError(
@@ -183,6 +196,50 @@ export class DefaultCOAResolver implements COAResolver {
   ): Promise<{ account_code: string; account_name: string } | null> {
     // TODO: Implement database lookup
     return null;
+  }
+
+  private async loadTenantSemanticMapping(
+    tenantId: string,
+    intentType: string,
+    policyContext: PolicyContext
+  ): Promise<{ account_code: string; account_name: string } | null> {
+    if (!this.supabase || intentType !== 'RECOGNIZE_REVENUE') {
+      return null;
+    }
+
+    const accountingEffectiveDate = policyContext.recognition_rules.accounting_effective_date;
+    const asOf = typeof accountingEffectiveDate === 'string'
+      ? accountingEffectiveDate
+      : new Date().toISOString().slice(0, 10);
+
+    const { data, error } = await this.supabase.rpc(
+      'finance_get_accounting_semantic_gl_map_as_of' as never,
+      {
+        p_tenant_id: tenantId,
+        p_semantic_key: 'SERVICE_REVENUE',
+        p_as_of: asOf,
+        p_contract_version: 'FINANCE_ACCOUNTING_SEMANTIC_GL_MAP:v1',
+      } as never
+    );
+
+    if (error) {
+      throw new COAResolutionError(
+        `Failed to resolve tenant SERVICE_REVENUE mapping: ${error.message}`,
+        tenantId,
+        intentType
+      );
+    }
+
+    const rows = data as SemanticGlMapRow[] | null;
+    const row = rows?.[0];
+    if (!row) {
+      return null;
+    }
+
+    return {
+      account_code: row.gl_account_code,
+      account_name: 'Service Revenue',
+    };
   }
 }
 

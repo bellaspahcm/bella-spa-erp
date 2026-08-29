@@ -54,7 +54,7 @@ export function createFinanceEventHandler(
   const semanticResolver = new DefaultSemanticResolver();
   const intentGenerator = new DefaultIntentGenerator();
   const policyContextResolver = new DefaultPolicyContextResolver();
-  const coaResolver = new DefaultCOAResolver();
+  const coaResolver = new DefaultCOAResolver(config.supabase);
   const kernelClient = new DefaultFinanceKernelClient(config.supabase);
   
   // Idempotency store (in-memory for testing, database for production)
@@ -85,7 +85,7 @@ export function createFinanceEventHandlerForTesting(
   const semanticResolver = new DefaultSemanticResolver();
   const intentGenerator = new DefaultIntentGenerator();
   const policyContextResolver = new DefaultPolicyContextResolver();
-  const coaResolver = new DefaultCOAResolver();
+  const coaResolver = new DefaultCOAResolver(supabase);
   const kernelClient = new DefaultFinanceKernelClient(supabase);
   const idempotencyStore = new DatabaseIdempotencyStore(supabase); // Database-backed for production correctness
   
