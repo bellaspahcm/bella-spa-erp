@@ -48,9 +48,9 @@ F5 may only reach `MATCHED` state by triggering a new reconciliation run after t
 | Capability | Description |
 |---|---|
 | **AP_GL_BALANCE Control** | Reconstruct AP outstanding from `f4_ap_facts` → compare vs F1 GL account 331 balance. ✅ IMPLEMENTED (F5.1–F5.3) |
-| **AR_GL_BALANCE Control** | Reconstruct AR outstanding from `finance_receivable_ledger` → compare vs F1 GL account 131 balance. ❌ F5.5 |
-| **CASH_GL_BALANCE Control** | Reconstruct cash position from `finance_cash_movements` → compare vs F1 GL cash account balances. ❌ F5.6 |
-| **PREPAYMENT_GL_BALANCE Control** | Reconstruct prepayment net from AP prepayment facts → compare vs F1 GL prepayment clearing account. ❌ F5.6 |
+| **AR_GL_BALANCE Control** | Reconstruct AR outstanding from `finance_receivable_ledger` → compare vs F1 GL account 131 balance. ✅ IMPLEMENTED / VERIFIED (F5.5) |
+| **CASH_GL_BALANCE Control** | Reconstruct cash position through `F2_CASH:v1`, `F2_OPENING:v1`, and `F2_BANK_ACCOUNT_GL_MAP:v1` → compare vs F1 GL cash account balances. ✅ IMPLEMENTED / VERIFIED (F5.6 Cash) |
+| **PREPAYMENT_GL_BALANCE Control** | Requires approved Prepayment semantic authority and GL mapping contract before implementation. 🟡 SEMANTIC GATED / NOT IMPLEMENTED |
 | **FX Determinism Control** | Verify functional-currency translation chain without mutating ledger evidence. ❌ F5.7 |
 | **Control Cases & Investigation** | Lifecycle management for VARIANCE/QUARANTINED cases (OPEN → UNDER_REVIEW → RESOLVED). ✅ IMPLEMENTED |
 | **Projection Cache Health** | Control B: subledger cache vs reconstructed position. CACHE_DRIFT never escalated to VARIANCE. ✅ IMPLEMENTED |
@@ -121,7 +121,7 @@ f5_run_reconciliation(AP_GL_BALANCE, vendor_bill_id, as_of)
     └─ INSERT f5_control_results (immutable)
          └─ if VARIANCE/QUARANTINED → INSERT f5_control_cases (OPEN/CRITICAL)
 
-F5 Control: AR_GL_BALANCE (PLANNED — F5.5)
+F5 Control: AR_GL_BALANCE (IMPLEMENTED / VERIFIED — F5.5)
 ──────────────────────────────────────────────────────────────────
 f5_run_reconciliation(AR_GL_BALANCE, invoice_id, as_of)
     ├─ finance_ar_facts_as_of(tenant_id, invoice_id, as_of)       → F3 read contract
@@ -129,10 +129,12 @@ f5_run_reconciliation(AR_GL_BALANCE, invoice_id, as_of)
     ├─ classify → MATCHED | VARIANCE | QUARANTINED
     └─ INSERT f5_control_results
 
-F5 Control: CASH_GL_BALANCE (PLANNED — F5.6)
+F5 Control: CASH_GL_BALANCE (IMPLEMENTED / VERIFIED — F5.6 Cash)
 ──────────────────────────────────────────────────────────────────
 f5_run_reconciliation(CASH_GL_BALANCE, account_id, as_of)
-    ├─ finance_get_cash_movements_as_of(tenant_id, account_id, as_of) → F2 read contract
+    ├─ finance_get_cash_movements_as_of(tenant_id, as_of)             → F2_CASH:v1 read contract
+    ├─ finance_cash_opening_balance_as_of(tenant_id, bank_account_id, as_of) → F2_OPENING:v1 read contract
+    ├─ finance_bank_account_gl_map(tenant_id, bank_account_id)         → F2_BANK_ACCOUNT_GL_MAP:v1 read contract
     ├─ finance_journal_entries_as_of(tenant_id, source_id, as_of)     → F1 read contract
     ├─ classify → MATCHED | VARIANCE | QUARANTINED
     └─ INSERT f5_control_results
@@ -173,9 +175,11 @@ No existing F1–F4 table is modified. No existing index or constraint is change
 | `finance_ar_facts_as_of()` | FUNCTION (F3 ext.) | F5.5 |
 | `f5_reconstruct_ar_position()` | FUNCTION | F5.5 |
 | `f5_run_reconciliation()` (AR_GL_BALANCE overload) | FUNCTION | F5.5 |
-| `finance_get_cash_movements_as_of()` | FUNCTION (F2 ext.) | F5.6 |
-| `f5_run_reconciliation()` (CASH_GL_BALANCE overload) | FUNCTION | F5.6 |
-| `f5_run_reconciliation()` (PREPAYMENT_GL_BALANCE overload) | FUNCTION | F5.6 |
+| `finance_get_cash_movements_as_of()` | FUNCTION (F2 ext.) | F5.6 Cash — ✅ VERIFIED |
+| `finance_cash_opening_balance_as_of()` | FUNCTION (F2 ext.) | F5.6 Cash — ✅ VERIFIED |
+| `finance_bank_account_gl_map()` | FUNCTION (F2 ext.) | F5.6 Cash — ✅ VERIFIED |
+| `f5_run_reconciliation()` (CASH_GL_BALANCE overload) | FUNCTION | F5.6 Cash — ✅ VERIFIED |
+| `f5_run_reconciliation()` (PREPAYMENT_GL_BALANCE overload) | FUNCTION | F5.6 Prepayment — 🟡 SEMANTIC GATED |
 | `f5_run_fx_determinism_check()` | FUNCTION | F5.7 |
 | `f5_schedule_continuous_runs()` (pg_cron config) | CRON JOB | F5.8 |
 
@@ -210,8 +214,9 @@ Drawn directly from F5.0 Constitution v1.2-Final. All gates must pass before F5 
 | **F5.2** | AP_GL_BALANCE run engine, bidirectional trace | G2, G3 | ✅ COMPLETE |
 | **F5.3** | Variance engine, immutability, idempotency hardening | G5, G6 | ✅ COMPLETE |
 | **F5.4** | Run identity hardening, fault injection, full AP coverage | All G1–G8 re-verify | ❌ NEXT |
-| **F5.5** | AR_GL_BALANCE control domain | All G1–G8 for AR | ❌ PLANNED |
-| **F5.6** | CASH + PREPAYMENT_GL_BALANCE control domains | All G1–G8 for Cash/PP | ❌ PLANNED |
+| **F5.5** | AR_GL_BALANCE control domain | All G1–G8 for AR | ✅ VERIFIED |
+| **F5.6-A** | CASH_GL_BALANCE control domain | Cash gates + regression boundary | ✅ COMPLETE / VERIFIED / PUSHED |
+| **F5.6-B** | PREPAYMENT_GL_BALANCE control domain | Semantic authority + F4 contract gate | 🟡 BLOCKED / NOT IMPLEMENTED |
 | **F5.7** | FX Determinism control | FX-specific checks | ❌ PLANNED |
 | **F5.8** | Continuous Control scheduler (pg_cron / worker) | Ops readiness | ❌ PLANNED |
 

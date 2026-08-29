@@ -222,7 +222,8 @@ F2 Cash:          ✅ FROZEN
 F3 AR:            ✅ FROZEN
 F4 AP:            ✅ FROZEN
 F5.0–F5.5:        ✅ FROZEN (16/36 gates verified — 44.4%)
-F5.6 Cash+Prep:   🔴 BLOCKED — awaiting Human Architect semantic spec
+F5.6 Cash:        🟢 COMPLETE / VERIFIED / PUSHED
+F5.6 Prepayment:  🟡 BLOCKED — semantic authority required
 F5.7–F5.8:        ⏳ LOCKED (dependency chain)
 F5 Full Freeze:   ⏳ When 36/36 gates verified
 ```
@@ -241,7 +242,8 @@ F5 Full Freeze:   ⏳ When 36/36 gates verified
 | **F5.3** Variance Engine | SQL functions | included in F5.1 suite | 🔒 FROZEN |
 | **F5.4** AP Hardening | SQL functions | adversarial tests | 🔒 FROZEN |
 | **F5.5** AR_GL_BALANCE | SQL functions | `f5-ar-reconciliation.test.ts` (8 PASS) | 🔒 FROZEN |
-| **F5.6** Cash+Prepayment | — | — | 🔴 BLOCKED |
+| **F5.6-A** Cash GL Balance | e5833b96 | f5-cash-reconciliation.test.ts (7 PASS) | 🟢 COMPLETE / VERIFIED / PUSHED |
+| **F5.6-B** Prepayment GL Balance | — | — | 🟡 BLOCKED / SEMANTIC AUTHORITY REQUIRED |
 
 ### Finance — Test Evidence (F5)
 
@@ -264,7 +266,7 @@ Constitutional:   16/36 gates verified (44.4%)
 20260823010000_f5_ar_reconciliation_fix.sql
 ```
 
-### Finance — F5.6 Blocker (Action Required)
+### Finance — F5.6 Status / Prepayment Gate
 
 > **Status:** 🔴 BLOCKED — Human Architect action required
 
@@ -435,7 +437,7 @@ Routine: CURRENT_STATE.md update ✅ ACTIVE
 │                                                                  │
 │  Finance OS        🟡 IN PROGRESS                               │
 │                    F1–F4 + F5.0–F5.5 ✅ FROZEN                  │
-│                    F5.6 🔴 BLOCKED (semantic spec needed)        │
+│                    F5.6 Cash 🟢 DONE; Prepayment 🟡 GATED        │
 │                    F5.7–F5.8 ⏳ LOCKED                          │
 │                                                                  │
 │  Logistics OS      🔒 SEALED      547/547 tests                  │
@@ -452,7 +454,7 @@ Routine: CURRENT_STATE.md update ✅ ACTIVE
 ├──────────────────────────────────────────────────────────────────┤
 │  ACTIONS REQUIRED                                                │
 │                                                                  │
-│  🔴 BLOCKED:  F5.6 — Human Architect provides semantic spec     │
+│  🟡 GATED:    F5.6 Prepayment — semantic authority required     │
 │  🟡 REVIEW:   Dental Phase 1 — Human Architect approval gate    │
 │  ⚠️ TODO:     Logistics Layer 3 (git hook) implementation       │
 │  ⚠️ TODO:     Logistics Layer 4 (CI gate) implementation        │
