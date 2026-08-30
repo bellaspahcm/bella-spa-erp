@@ -236,6 +236,36 @@ Remaining finding:
 
 - Notification alerts are no longer the same level of fan-out problem, but they are still non-critical shell work. The next UX decision is whether full operational alerts should load on mount or wait until the user opens the notification panel.
 
+## Optimization Checkpoint: Post-Commit UI Refresh
+
+Change:
+
+- `handleUpdatePlan()` now shows success and closes the detail modal immediately after the critical server mutation succeeds.
+- `handleCreateScheduleSubmit()` now shows success and closes the create modal immediately after `createSessionLog()` succeeds.
+- Post-success refetches still run, but they no longer block the user-facing success/close path.
+- Refresh failures are surfaced as a follow-up toast instead of hiding the successful commit.
+- No server mutation, babycare data, booking semantics, session semantics, audit behavior, or database cleanup behavior was changed.
+
+Verification:
+
+```bash
+npx eslint src/app/dashboard/bookings/hooks/useBookingsPageActions.ts src/core/services/analytics/dashboard-actions.ts src/components/common/AdminNotificationBell.tsx
+npx playwright test e2e/tests/14-beauty-resource-booking-smoke.spec.ts --reporter=list
+```
+
+Result:
+
+- Scoped lint: **PASS**.
+- Beauty resource booking smoke: **1/1 PASS**.
+- Measured test body after post-commit UI refresh patch: **21.6s**.
+- Playwright run after post-commit UI refresh patch: **42.6s** total.
+- Critical `updateSessionLog()` server action remained around **267ms** in the measured run.
+
+Interpretation:
+
+- This patch aligns the bookings UI with the event-driven UX rule: once critical business state has been saved, the user should not wait for non-critical refresh fan-out before continuing.
+- This does not prove all appointment flows are fast yet. It removes one known UX wait source from the measured edit/assign path and keeps the remaining refresh work observable.
+
 ## Data Quality / E2E Finding
 
 The first resource-booking E2E cleanup did not delete `timeline_events` before deleting the temporary tenant. The measured test therefore failed after the UI operation with:

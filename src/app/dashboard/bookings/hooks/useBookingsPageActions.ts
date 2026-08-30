@@ -349,9 +349,14 @@ export function useBookingsPageActions({
         toast.error('Lỗi: ' + result.error);
       } else {
         toast.success(isDateChanged ? 'Đã dời lịch và cập nhật thành công!' : 'Đã cập nhật tiến độ và kế hoạch thành công!');
-        await fetchSessions();
-        await fetchAllBookings({ force: true });
         closeDetailModal();
+        void Promise.all([
+          fetchSessions(),
+          fetchAllBookings({ force: true }),
+        ]).catch((refreshError) => {
+          console.error('Post-update booking refresh failed:', refreshError);
+          toast.error('Đã lưu, nhưng làm mới dữ liệu chưa thành công. Vui lòng tải lại trang.');
+        });
       }
     } catch (error) {
       console.error('Update failed:', error);
@@ -440,8 +445,11 @@ export function useBookingsPageActions({
         toast.error(result.error);
       } else {
         toast.success('Đã tạo lịch hẹn mới thành công!');
-        await fetchSessions();
         closeCreateModal();
+        void fetchSessions().catch((refreshError) => {
+          console.error('Post-create schedule refresh failed:', refreshError);
+          toast.error('Đã tạo lịch, nhưng làm mới lịch chưa thành công. Vui lòng tải lại trang.');
+        });
       }
     } catch (err: unknown) {
       console.error('Error creating schedule:', err);
