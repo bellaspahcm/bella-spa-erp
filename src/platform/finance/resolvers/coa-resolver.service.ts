@@ -159,6 +159,14 @@ export class DefaultCOAResolver implements COAResolver {
         intent.intent_type,
         policyContext
       );
+      if (!tenantMapping && this.requiresConfiguredSemanticMapping(intent.intent_type, policyContext)) {
+        throw new COAResolutionError(
+          `CONFIGURATION_REQUIRED: Missing tenant accounting mapping for ${INTENT_TO_ACCOUNTING_SEMANTIC[intent.intent_type]}`,
+          tenantId,
+          intent.intent_type
+        );
+      }
+
       const mapping = tenantMapping ?? this.defaultMappings[intent.intent_type];
       
       if (!mapping) {
@@ -185,6 +193,16 @@ export class DefaultCOAResolver implements COAResolver {
     });
     
     return mappings;
+  }
+
+  private requiresConfiguredSemanticMapping(
+    intentType: string,
+    policyContext: PolicyContext
+  ): boolean {
+    return Boolean(
+      INTENT_TO_ACCOUNTING_SEMANTIC[intentType] &&
+      policyContext.accounting_mapping_policy === 'CONFIGURATION_REQUIRED'
+    );
   }
   
   /**

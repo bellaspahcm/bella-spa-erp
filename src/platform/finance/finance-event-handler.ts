@@ -247,6 +247,7 @@ export interface PolicyContext {
   version: string; // e.g., "v1.0"
   regime: string; // e.g., "TT133"
   recognition_rules: Record<string, unknown>;
+  accounting_mapping_policy?: 'LEGACY_COMPATIBILITY' | 'CONFIGURATION_REQUIRED';
 }
 
 /**

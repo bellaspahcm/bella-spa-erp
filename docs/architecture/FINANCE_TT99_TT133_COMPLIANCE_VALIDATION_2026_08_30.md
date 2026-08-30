@@ -25,6 +25,7 @@ Production Candidate           NOT YET
 | Document-date provenance | Integration test verifies LedgerService -> RPC -> `finance_transactions.document_date` -> outbox v1/v2 | PASS |
 | Accounting semantic mapping | `SERVICE_REVENUE`, `REVENUE_DEDUCTION`, `GOODS_REVENUE` through tenant COA mapping | PASS |
 | Accounting configuration hardening | permissions, tenant isolation, effective dating, atomic save | PASS |
+| Missing-mapping onboarding policy | strict resolver mode returns `CONFIGURATION_REQUIRED`; legacy fallback remains compatibility-only | PASS |
 | Finance lifecycle E2E | Business operation -> accounting config -> F1/F2/F4 -> reconciliation | PASS |
 | Full repository type-check | compiler graph still does not finish in the current time budget | NOT VERIFIED |
 
@@ -89,7 +90,9 @@ Accounting account codes are tenant policy,
 not Bella financial semantics.
 ```
 
-Status: **Backend contract, runtime resolver, E2E, and MVP UI are proven for the current semantic set**.
+New production onboarding can require explicit semantic-to-GL configuration. In that mode, a tenant missing `SERVICE_REVENUE`, `REVENUE_DEDUCTION`, or `GOODS_REVENUE` mapping receives `CONFIGURATION_REQUIRED` instead of silently using the legacy fallback. Legacy fallback remains available only as a cutover compatibility path for existing tenants.
+
+Status: **Backend contract, runtime resolver, E2E, MVP UI, and missing-mapping onboarding policy are proven for the current semantic set**.
 
 ### 5. Reconciliation
 
@@ -119,7 +122,7 @@ Status: **Validated for implemented reconciliation controls only**.
 | Salary accounting policy | `6421` exists in current TT133-style path, but not yet tenant-configurable semantic | Candidate next production-critical semantic |
 | COGS / materials policy | Existing runtime has `632` / COGS-like paths, not yet in semantic mapping UI | Candidate after salary or when product/inventory production requires it |
 | Customer advance vs unearned revenue | Current runtime uses `3387` for package/unearned revenue and supports receivable split | Needs tenant-policy validation before broader production claim |
-| Legacy compatibility fallback | Resolver keeps compatibility fallback for unconfigured legacy tenants | Accept during migration; new production onboarding should require explicit config |
+| Legacy compatibility fallback | Resolver keeps compatibility fallback for unconfigured legacy tenants, but strict onboarding mode returns `CONFIGURATION_REQUIRED` | Accept during migration; use explicit-config mode for new production onboarding |
 | Full repository type-check | Not verified | Separate TypeScript compiler graph optimization task |
 
 ## TT99 / TT133 Interpretation Boundary
@@ -149,9 +152,8 @@ No new Finance module should be opened. The next compliance work should be selec
 
 1. Validate whether `SALARY_EXPENSE` must become tenant-configurable before production.
 2. Validate whether `COGS` / materials expense must become tenant-configurable before production.
-3. Define the production policy for new tenant onboarding: missing accounting mappings should produce `CONFIGURATION_REQUIRED`, while legacy tenants may keep compatibility fallback during migration.
-4. Decide whether `PERIOD_INTEGRITY`, orphan GL detection, FX/source-currency integrity, and duplicate-effect taxonomy are required for the first production candidate.
-5. Keep full repository type-check as a separate technical gate; do not solve it by excluding more production code.
+3. Decide whether `PERIOD_INTEGRITY`, orphan GL detection, FX/source-currency integrity, and duplicate-effect taxonomy are required for the first production candidate.
+4. Keep full repository type-check as a separate technical gate; do not solve it by excluding more production code.
 
 ## Checkpoint Statement
 

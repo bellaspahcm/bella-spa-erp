@@ -29,6 +29,13 @@ function createPolicyContext(effectiveDate: string): PolicyContext {
   };
 }
 
+function createStrictPolicyContext(effectiveDate: string): PolicyContext {
+  return {
+    ...createPolicyContext(effectiveDate),
+    accounting_mapping_policy: 'CONFIGURATION_REQUIRED',
+  };
+}
+
 const revenueIntent: AccountingIntent = {
   intent_type: 'RECOGNIZE_REVENUE',
   credit_amount: '100000',
@@ -120,6 +127,27 @@ describe('DefaultCOAResolver accounting configuration pilot', () => {
 
     expect(mappings[0].account_code).toBe('4111');
   });
+
+  it.each([
+    ['SERVICE_REVENUE', revenueIntent],
+    ['REVENUE_DEDUCTION', revenueDeductionIntent],
+    ['GOODS_REVENUE', goodsRevenueIntent],
+  ])(
+    'requires tenant configuration for %s when onboarding strict mapping policy is enabled',
+    async (semanticKey, intent) => {
+      const supabase = {
+        rpc: jest.fn(async () => ({
+          data: [],
+          error: null,
+        })),
+      };
+      const resolver = new DefaultCOAResolver(supabase as never);
+
+      await expect(
+        resolver.resolve('tenant-new', [intent], createStrictPolicyContext('2026-06-30'))
+      ).rejects.toThrow(`CONFIGURATION_REQUIRED: Missing tenant accounting mapping for ${semanticKey}`);
+    }
+  );
 
   it('resolves REVENUE_DEDUCTION from tenant mapping for refund revenue reversal', async () => {
     const supabase = {
