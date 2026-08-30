@@ -203,6 +203,39 @@ Remaining finding:
 
 - A single `getImportantAlerts()` call is still heavy at roughly `720-747ms` in the post-patch smoke run. If appointment UX still feels slow after fan-out reduction, the next optimization should target the server-side query composition inside `getImportantAlerts()` or lazy-load full operational alerts only when the notification panel is opened.
 
+## Optimization Checkpoint: Alert Query Composition
+
+Change:
+
+- `getImportantAlerts()` now resolves independent read sources in parallel after tenant/current-user resolution:
+  - completed sessions
+  - overdue sessions
+  - near-end bookings
+  - pending leave requests
+  - app notifications
+- Alert construction and final timestamp sorting remain unchanged.
+- No appointment, booking, session, customer, babycare, or database mutation behavior was changed.
+
+Verification:
+
+```bash
+npx eslint src/core/services/analytics/dashboard-actions.ts src/components/common/AdminNotificationBell.tsx
+npx playwright test e2e/tests/14-beauty-resource-booking-smoke.spec.ts --reporter=list
+```
+
+Result:
+
+- Scoped lint: **PASS**.
+- Beauty resource booking smoke: **1/1 PASS**.
+- Measured test body after query composition patch: **20.5s**.
+- Playwright run after query composition patch: **42.9s** total.
+- `getImportantAlerts()` on `/dashboard/bookings`: roughly **548-550ms** in the post-patch smoke run.
+- `getImportantAlerts()` on `/dashboard`: roughly **646ms** in the post-patch smoke run.
+
+Remaining finding:
+
+- Notification alerts are no longer the same level of fan-out problem, but they are still non-critical shell work. The next UX decision is whether full operational alerts should load on mount or wait until the user opens the notification panel.
+
 ## Data Quality / E2E Finding
 
 The first resource-booking E2E cleanup did not delete `timeline_events` before deleting the temporary tenant. The measured test therefore failed after the UI operation with:

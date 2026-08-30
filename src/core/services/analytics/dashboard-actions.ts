@@ -709,7 +709,6 @@ export async function getImportantAlerts(): Promise<DashboardAlert[]> {
 
     const alerts: DashboardAlert[] = [];
 
-    // 1. Fetch completed sessions (KTV checkout) - sorted by date then end_time DESC with nulls last
     const completedQ = supabase.from('session_logs')
       .select(`
         id, 
@@ -735,7 +734,59 @@ export async function getImportantAlerts(): Promise<DashboardAlert[]> {
       .order('completed_date', { ascending: false })
       .order('end_time', { ascending: false, nullsFirst: false })
       .limit(30);
-    const { data: completedSessions, error: completedSessionsError } = await completedQ;
+
+    const overdueQ = supabase.from('session_logs')
+      .select(`
+        id, 
+        assigned_date, 
+        booking_id,
+        bookings(
+          package_name,
+          customer_id,
+          customers!bookings_customer_id_fkey(
+            name_mother
+          )
+        )
+      `)
+      .eq('tenant_id', tenantId)
+      .lt('assigned_date', today)
+      .not('status', 'eq', 'completed')
+      .limit(20);
+
+    const bookingQ = supabase.from('bookings')
+      .select('id, package_name, completed_sessions, total_sessions, customers!bookings_customer_id_fkey(name_mother)')
+      .eq('status', 'in_progress')
+      .eq('tenant_id', tenantId)
+      .limit(20);
+
+    const pendingLeavesQ = currentUser?.role === 'admin'
+      ? getPendingLeaveRequests() as Promise<unknown>
+      : Promise.resolve([]);
+
+    const appNotificationsQ = currentUser?.role === 'admin' || currentUser?.role === 'admin_staff'
+      ? supabase.from('app_notifications')
+        .select('*')
+        .eq('is_read', false)
+        .eq('tenant_id', tenantId)
+        .order('created_at', { ascending: false })
+        .limit(20)
+      : Promise.resolve({ data: [], error: null });
+
+    const [
+      { data: completedSessions, error: completedSessionsError },
+      { data: overdue, error: overdueError },
+      { data: nearEnd, error: nearEndError },
+      pendingLeavesResult,
+      { data: appNotifs, error: appNotifsError },
+    ] = await Promise.all([
+      completedQ,
+      overdueQ,
+      bookingQ,
+      pendingLeavesQ,
+      appNotificationsQ,
+    ]);
+
+    // 1. Fetch completed sessions (KTV checkout) - sorted by date then end_time DESC with nulls last
     if (completedSessionsError) {
       throw new Error(`Failed to fetch completed session alerts: ${completedSessionsError.message}`);
     }
@@ -816,24 +867,6 @@ export async function getImportantAlerts(): Promise<DashboardAlert[]> {
     }
 
     // 2. Overdue sessions (past date, not completed)
-    const overdueQ = supabase.from('session_logs')
-      .select(`
-        id, 
-        assigned_date, 
-        booking_id,
-        bookings(
-          package_name,
-          customer_id,
-          customers!bookings_customer_id_fkey(
-            name_mother
-          )
-        )
-      `)
-      .eq('tenant_id', tenantId)
-      .lt('assigned_date', today)
-      .not('status', 'eq', 'completed')
-      .limit(20);
-    const { data: overdue, error: overdueError } = await overdueQ;
     if (overdueError) {
       throw new Error(`Failed to fetch overdue session alerts: ${overdueError.message}`);
     }
@@ -854,12 +887,6 @@ export async function getImportantAlerts(): Promise<DashboardAlert[]> {
     }
 
     // 3. Bookings nearing completion (< 3 sessions left)
-    const bookingQ = supabase.from('bookings')
-      .select('id, package_name, completed_sessions, total_sessions, customers!bookings_customer_id_fkey(name_mother)')
-      .eq('status', 'in_progress')
-      .eq('tenant_id', tenantId)
-      .limit(20);
-    const { data: nearEnd, error: nearEndError } = await bookingQ;
     if (nearEndError) {
       throw new Error(`Failed to fetch near-end booking alerts: ${nearEndError.message}`);
     }
@@ -882,74 +909,54 @@ export async function getImportantAlerts(): Promise<DashboardAlert[]> {
     }
 
     // 4. Pending Leave Requests
-    try {
-      // Only admins should see pending leave alerts in their dashboard
-      if (currentUser?.role === 'admin') {
-        const pendingLeaves = (await getPendingLeaveRequests() as unknown as PendingLeaveRequest[]) || [];
-        for (const leave of pendingLeaves) {
-          alerts.push({
-            type: 'warning',
-            icon: 'alert',
-            title: 'Xin nghỉ phép chờ duyệt',
-            message: `KTV ${leave.users?.full_name || 'Không rõ'} xin nghỉ ngày ${new Date(leave.leave_date).toLocaleDateString('vi-VN')} (${leave.leave_type === 'full' ? 'Cả ngày' : leave.leave_type === 'morning' ? 'Ca sáng' : 'Ca chiều'})`,
-            severity: 'warning',
-            link: `/dashboard/sessions`, // Leads to approval UI
-            timestamp: new Date(leave.created_at).getTime()
-          });
-        }
-      }
-    } catch (err: unknown) {
-      throw err instanceof Error ? err : new Error('Failed to fetch pending leave alerts');
+    // Only admins should see pending leave alerts in their dashboard
+    const pendingLeaves = (pendingLeavesResult as unknown as PendingLeaveRequest[]) || [];
+    for (const leave of pendingLeaves) {
+      alerts.push({
+        type: 'warning',
+        icon: 'alert',
+        title: 'Xin nghỉ phép chờ duyệt',
+        message: `KTV ${leave.users?.full_name || 'Không rõ'} xin nghỉ ngày ${new Date(leave.leave_date).toLocaleDateString('vi-VN')} (${leave.leave_type === 'full' ? 'Cả ngày' : leave.leave_type === 'morning' ? 'Ca sáng' : 'Ca chiều'})`,
+        severity: 'warning',
+        link: `/dashboard/sessions`, // Leads to approval UI
+        timestamp: new Date(leave.created_at).getTime()
+      });
     }
 
     // 5. App Notifications (e.g. online bookings)
-    try {
-      if (currentUser?.role === 'admin' || currentUser?.role === 'admin_staff') {
-        const notifQ = supabase.from('app_notifications')
-          .select('*')
-          .eq('is_read', false)
-          .eq('tenant_id', tenantId)
-          .order('created_at', { ascending: false })
-          .limit(20);
-        
-        const { data: appNotifs, error: appNotifsError } = await notifQ;
-        if (appNotifsError) {
-          throw new Error(`Failed to fetch app notification alerts: ${appNotifsError.message}`);
-        }
-        const appNotifsData = (appNotifs as unknown as AppNotificationDBRow[]) || [];
-        
-        for (const notif of appNotifsData) {
-          let link = '/dashboard';
-          if (notif.data?.href) {
-            link = notif.data.href;
-          } else if (notif.type === 'new_booking' && notif.data?.customer_id) {
-            link = `/dashboard/customers/${notif.data.customer_id}`;
-          }
-          
-          let finalTimestamp = Date.now();
-          if (notif.created_at) {
-            try {
-              finalTimestamp = parsePostgresTimestamp(notif.created_at).getTime();
-            } catch {
-              // fallback
-            }
-          }
-
-          alerts.push({
-            id: notif.id,
-            isAppNotification: true,
-            type: 'info',
-            icon: 'bell',
-            title: notif.title,
-            message: notif.message,
-            severity: 'info',
-            link: link,
-            timestamp: finalTimestamp
-          });
+    if (appNotifsError) {
+      throw new Error(`Failed to fetch app notification alerts: ${appNotifsError.message}`);
+    }
+    const appNotifsData = (appNotifs as unknown as AppNotificationDBRow[]) || [];
+    
+    for (const notif of appNotifsData) {
+      let link = '/dashboard';
+      if (notif.data?.href) {
+        link = notif.data.href;
+      } else if (notif.type === 'new_booking' && notif.data?.customer_id) {
+        link = `/dashboard/customers/${notif.data.customer_id}`;
+      }
+      
+      let finalTimestamp = Date.now();
+      if (notif.created_at) {
+        try {
+          finalTimestamp = parsePostgresTimestamp(notif.created_at).getTime();
+        } catch {
+          // fallback
         }
       }
-    } catch (err: unknown) {
-      throw err instanceof Error ? err : new Error('Failed to fetch app notification alerts');
+
+      alerts.push({
+        id: notif.id,
+        isAppNotification: true,
+        type: 'info',
+        icon: 'bell',
+        title: notif.title,
+        message: notif.message,
+        severity: 'info',
+        link: link,
+        timestamp: finalTimestamp
+      });
     }
 
     // Sort by timestamp descending so newer alerts/completed sessions are at the top
