@@ -156,6 +156,26 @@ The most likely common bottleneck is not a single slow insert/update. It is the 
 
 This needs a second measurement pass before product code optimization.
 
+## Confirmed Static Finding: Global Notification Alerts
+
+`AdminNotificationBell` is mounted from the shared dashboard sidebar/header, not only from the dashboard home page. On `/dashboard/bookings`, each bell instance calls `getImportantAlerts()` on mount and subscribes to realtime changes for:
+
+- `session_logs`
+- `bookings`
+- `app_notifications`
+
+On non-home dashboard pages, the sidebar currently includes a mobile-header notification bell and a lower sidebar notification bell. CSS visibility does not prevent React from mounting the component, so desktop bookings usage can still create more than one alert fetch/subscription path.
+
+Relevant files:
+
+- `src/components/common/AdminNotificationBell.tsx`
+- `src/components/layout/sidebar.tsx`
+- `src/core/services/analytics/dashboard-actions.ts`
+
+This matches the measured pattern where `getImportantAlerts()` repeatedly takes `712-1,019ms` while appointment mutation actions themselves are closer to `239-267ms`.
+
+This is not yet a completed root-cause proof for all four appointment flows, but it is a strong common-bottleneck candidate because the notification bell is shared shell behavior.
+
 ## Data Quality / E2E Finding
 
 The first resource-booking E2E cleanup did not delete `timeline_events` before deleting the temporary tenant. The measured test therefore failed after the UI operation with:
@@ -190,8 +210,9 @@ Only after those four timings are captured should the team choose the first code
 
 ## Candidate Fixes To Evaluate After Measurement
 
+- Ensure the dashboard shell mounts only one effective notification-alert fetch/subscription path per page, or deduplicate the fetch with a shared short-lived client cache.
 - Split narrow KTV assignment away from the full `updateBooking()` path if measurement confirms it pays the heavy edit cost.
 - Batch reschedule validation/update into one RPC or one bulk update if future-session loops dominate latency.
 - Reduce post-mutation refresh fan-out; refresh the affected calendar range and booking detail instead of broad dashboard paths where safe.
 - Move non-critical notifications and cache invalidation fully out of the blocking response path.
-- Review why `getImportantAlerts()` is called repeatedly on `/dashboard/bookings` and takes 761-1,019ms.
+- Review whether `getImportantAlerts()` should load full operational alerts on every bookings page mount, or only when the notification panel is opened.
