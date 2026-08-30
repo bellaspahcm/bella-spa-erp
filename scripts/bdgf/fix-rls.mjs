@@ -1,7 +1,10 @@
 ﻿import pkg from 'pg';
 const { Client } = pkg;
 
-const url = "postgresql://postgres:<REDACTED_PASSWORD>@db.lvnvkpyxtuilhrabtlwv.supabase.co:5432/postgres";
+const url = process.env.SUPABASE_DB_URL || process.env.DATABASE_EXECUTOR_URL;
+if (!url) {
+  throw new Error('SUPABASE_DB_URL or DATABASE_EXECUTOR_URL is required');
+}
 const c = new Client({connectionString: url});
 await c.connect();
 

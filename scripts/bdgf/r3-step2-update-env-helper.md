@@ -6,7 +6,7 @@
 
 **Current DATABASE_URL:**
 ```
-postgresql://postgres:<REDACTED_PASSWORD>@db.lvnvkpyxtuilhrabtlwv.supabase.co:5432/postgres
+postgresql://postgres:<REDACTED>@db.lvnvkpyxtuilhrabtlwv.supabase.co:5432/postgres
 ```
 
 **Connection details:**
