@@ -26,6 +26,14 @@ import type { DomainEvent } from '@/platform/host/event-bus/types';
 
 jest.setTimeout(45000);
 
+const parsePostedV2Payload = (payload: unknown): FinanceTransactionPostedV2Payload => {
+  if (typeof payload === 'string') {
+    return JSON.parse(payload) as FinanceTransactionPostedV2Payload;
+  }
+
+  return payload as FinanceTransactionPostedV2Payload;
+};
+
 describe('F2.2 Cash Projection Worker Integration Tests', () => {
   let supabase: ReturnType<typeof createSupabaseClient<Database>>;
   let ledgerService: LedgerEngineService;
@@ -377,7 +385,7 @@ describe('F2.2 Cash Projection Worker Integration Tests', () => {
 
     expect(events).toHaveLength(1);
     const replayedEvent = events![0];
-    const payload = JSON.parse(replayedEvent.payload);
+    const payload = parsePostedV2Payload(replayedEvent.payload);
 
     // Get position balance before replay
     const { data: posBefore } = await supabase
@@ -395,7 +403,7 @@ describe('F2.2 Cash Projection Worker Integration Tests', () => {
       tenantId: testTenantId,
       aggregateId: payload.transaction_id,
       aggregateType: 'finance_transactions',
-      payload: payload as FinanceTransactionPostedV2Payload,
+      payload,
       occurredAt: new Date().toISOString()
     };
 
