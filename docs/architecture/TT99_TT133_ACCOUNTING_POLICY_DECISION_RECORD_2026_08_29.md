@@ -1,8 +1,10 @@
 # TT99 / TT133 Accounting Configuration Decision Record — 2026-08-29
 
-> Status: Draft / Awaiting Human Accounting Approval
+> Status: Approved direction / partially implemented for the first production-critical semantic set
 >
 > Scope: Define the tenant-configurable accounting semantic mappings Bella needs before changing runtime posting, event templates, legacy sync, or reports. This record does not implement code and does not create a new Finance module.
+>
+> Validation checkpoint: `docs/architecture/FINANCE_TT99_TT133_COMPLIANCE_VALIDATION_2026_08_30.md`
 
 ## Architecture Decision
 
@@ -79,4 +81,19 @@ Regression
 
 ## Approval Result
 
-Pending.
+Approved direction: Bella standardizes business/accounting semantics and lets each tenant map those semantics to its own Chart of Accounts with effective dating.
+
+Implemented/proven semantic set as of 2026-08-30:
+
+- `SERVICE_REVENUE`
+- `REVENUE_DEDUCTION`
+- `GOODS_REVENUE`
+- `PREPAYMENT_CONTROL`
+
+Still pending production compliance decisions:
+
+- `SALARY_EXPENSE`
+- `COGS`
+- `CUSTOMER_ADVANCE` / `UNEARNED_REVENUE` policy boundary
+- production onboarding behavior for missing mappings
+- whether `PERIOD_INTEGRITY`, orphan GL detection, FX/source-currency integrity, and duplicate-effect taxonomy are required for the first production candidate
