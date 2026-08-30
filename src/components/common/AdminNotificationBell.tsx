@@ -21,6 +21,53 @@ type AdminNotificationBellProps = {
   className?: string;
 };
 
+const ALERTS_CACHE_TTL_MS = 15_000;
+
+let alertsCache:
+  | {
+      data: DashboardAlert[];
+      fetchedAt: number;
+      promise: Promise<DashboardAlert[]> | null;
+    }
+  | null = null;
+
+async function fetchSharedAlerts(options: { force?: boolean } = {}) {
+  const now = Date.now();
+  if (alertsCache?.promise) return alertsCache.promise;
+
+  if (
+    !options.force
+    && alertsCache
+    && now - alertsCache.fetchedAt < ALERTS_CACHE_TTL_MS
+  ) {
+    return alertsCache.data;
+  }
+
+  const promise = getImportantAlerts()
+    .then((data) => {
+      alertsCache = {
+        data: data || [],
+        fetchedAt: Date.now(),
+        promise: null,
+      };
+      return alertsCache.data;
+    })
+    .catch((error) => {
+      if (alertsCache?.promise === promise) {
+        alertsCache.promise = null;
+      }
+      throw error;
+    });
+
+  alertsCache = {
+    data: alertsCache?.data || [],
+    fetchedAt: alertsCache?.fetchedAt || 0,
+    promise,
+  };
+
+  return promise;
+}
+
 // Unique identifier helper for alerts (dynamic & static)
 const getAlertKey = (alert: DashboardAlert) => {
   if (alert.isAppNotification && alert.id) return alert.id;
@@ -50,9 +97,9 @@ export default function AdminNotificationBell({ position = 'bottom', className }
 
   const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchAlerts = useCallback(async () => {
+  const fetchAlerts = useCallback(async (options: { force?: boolean } = {}) => {
     try {
-      const data = await getImportantAlerts();
+      const data = await fetchSharedAlerts(options);
       setAlerts(data || []);
     } catch (error) {
       console.error('Error fetching dashboard alerts in bell component:', error);
@@ -65,7 +112,7 @@ export default function AdminNotificationBell({ position = 'bottom', className }
     }
     refreshTimerRef.current = setTimeout(() => {
       refreshTimerRef.current = null;
-      void fetchAlerts();
+      void fetchAlerts({ force: true });
     }, 500);
   }, [fetchAlerts]);
 
@@ -83,19 +130,20 @@ export default function AdminNotificationBell({ position = 'bottom', className }
   }, []);
 
   useEffect(() => {
-    setIsMounted(true);
-    
-    // Load dismissed alerts from localStorage
-    try {
-      const saved = localStorage.getItem('bella_dismissed_alerts');
-      if (saved) {
-        setDismissedKeys(JSON.parse(saved));
+    const mountedTimer = window.setTimeout(() => {
+      try {
+        const saved = localStorage.getItem('bella_dismissed_alerts');
+        if (saved) {
+          setDismissedKeys(JSON.parse(saved));
+        }
+      } catch (e) {
+        console.error('Failed to parse dismissed alerts keys:', e);
       }
-    } catch (e) {
-      console.error('Failed to parse dismissed alerts keys:', e);
-    }
-
-    void fetchAlerts();
+      setIsMounted(true);
+    }, 0);
+    const initialFetchTimer = window.setTimeout(() => {
+      void fetchAlerts();
+    }, 0);
 
     // Setup realtime subscription
     const supabase = createClient();
@@ -113,6 +161,8 @@ export default function AdminNotificationBell({ position = 'bottom', className }
       .subscribe();
 
     return () => {
+      clearTimeout(mountedTimer);
+      clearTimeout(initialFetchTimer);
       if (refreshTimerRef.current) {
         clearTimeout(refreshTimerRef.current);
       }
@@ -144,7 +194,7 @@ export default function AdminNotificationBell({ position = 'bottom', className }
       const result = await markAllNotificationsAsRead();
       if (result.success) {
         toast.success('Đã đánh dấu tất cả là đã đọc');
-        void fetchAlerts();
+        void fetchAlerts({ force: true });
       } else {
         toast.error(result.error || 'Có lỗi xảy ra');
       }
@@ -414,12 +464,11 @@ function AllNotificationsModal({
   }, [tenantModuleKey]);
 
   React.useEffect(() => {
-    if (isOpen) {
-      const t = setTimeout(() => setVisible(true), 10);
-      return () => clearTimeout(t);
-    } else {
-      setVisible(false);
-    }
+    const visibleTimer = window.setTimeout(() => {
+      setVisible(isOpen);
+    }, isOpen ? 10 : 0);
+
+    return () => clearTimeout(visibleTimer);
   }, [isOpen]);
 
   if (!isOpen) return null;

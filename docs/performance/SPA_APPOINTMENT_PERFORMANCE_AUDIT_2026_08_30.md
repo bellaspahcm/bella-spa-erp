@@ -2,7 +2,7 @@
 
 > Status: Initial measurement checkpoint
 >
-> Scope: Audit user-perceived latency for Spa appointment/calendar operations. No product runtime code was changed in this checkpoint.
+> Scope: Audit user-perceived latency for Spa appointment/calendar operations. One narrow runtime optimization has been applied to reduce duplicate notification-alert fetch fan-out.
 
 ## Executive Result
 
@@ -175,6 +175,33 @@ Relevant files:
 This matches the measured pattern where `getImportantAlerts()` repeatedly takes `712-1,019ms` while appointment mutation actions themselves are closer to `239-267ms`.
 
 This is not yet a completed root-cause proof for all four appointment flows, but it is a strong common-bottleneck candidate because the notification bell is shared shell behavior.
+
+## Optimization Checkpoint: Notification Fetch Deduplication
+
+Change:
+
+- Added a short-lived shared in-flight/cache layer inside `AdminNotificationBell`.
+- Initial duplicate bell mounts now share the same `getImportantAlerts()` request.
+- Realtime events and mark-read actions still force refresh, but concurrent force refreshes reuse an in-flight request instead of spawning duplicate server actions.
+
+Verification:
+
+```bash
+npx eslint src/components/common/AdminNotificationBell.tsx
+npx playwright test e2e/tests/14-beauty-resource-booking-smoke.spec.ts --reporter=list
+```
+
+Result:
+
+- Scoped lint: **PASS**.
+- Beauty resource booking smoke: **1/1 PASS**.
+- Measured test body after patch: **20.2s**.
+- Playwright run after patch: **41.8s** total.
+- On `/dashboard/bookings`, initial alert fetch fan-out dropped from repeated groups of four `getImportantAlerts()` server-action calls to one visible call per page load/refresh window in the measured run.
+
+Remaining finding:
+
+- A single `getImportantAlerts()` call is still heavy at roughly `720-747ms` in the post-patch smoke run. If appointment UX still feels slow after fan-out reduction, the next optimization should target the server-side query composition inside `getImportantAlerts()` or lazy-load full operational alerts only when the notification panel is opened.
 
 ## Data Quality / E2E Finding
 
