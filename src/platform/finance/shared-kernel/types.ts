@@ -97,6 +97,7 @@ export interface FinancialTransaction {
   description: string;
   reference_type: string;
   reference_id: string;
+  document_date: string | null;
   reversal_of?: string | null;
   lines: FinancialTransactionLine[];
 }

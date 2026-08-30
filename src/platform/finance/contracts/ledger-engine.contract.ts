@@ -40,6 +40,7 @@ export interface PostTransactionRequest {
   description: string;
   reference_type: string;
   reference_id: string;
+  document_date?: string; // YYYY-MM-DD
   lines: Array<{
     account_code: string; // lookup via code per tenant
     debit_amount_minor: string;

@@ -90,6 +90,7 @@ export class LedgerEngineService implements ILedgerEngine {
       description: req.description,
       reference_type: req.reference_type,
       reference_id: req.reference_id,
+      document_date: req.document_date,
       lines: normalizedLines
     };
 
@@ -215,7 +216,8 @@ export class LedgerEngineService implements ILedgerEngine {
         p_description: req.description,
         p_reference_type: req.reference_type,
         p_reference_id: req.reference_id,
-        p_lines: preparedLines
+        p_lines: preparedLines,
+        p_document_date: req.document_date || null
       });
 
       if (error) {
@@ -634,6 +636,7 @@ export class LedgerEngineService implements ILedgerEngine {
       description: String(row.description),
       reference_type: String(row.reference_type),
       reference_id: String(row.reference_id),
+      document_date: row.document_date ? String(row.document_date) : null,
       reversal_of: row.reversal_of ? String(row.reversal_of) : null,
       lines
     };

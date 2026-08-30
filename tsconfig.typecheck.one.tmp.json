@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "pretty": false,
+    "incremental": false,
+    "noEmit": true
+  },
+  "exclude": [
+    "node_modules",
+    "**/__tests__",
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ],
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/app/api/intelligence/**/*.ts",
+    "src/app/api/intelligence/**/*.tsx"
+  ]
+}
