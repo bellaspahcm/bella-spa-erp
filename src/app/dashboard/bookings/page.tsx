@@ -81,6 +81,7 @@ function BookingsContent() {
     handleCreateScheduleSubmit,
   } = useBookingsPageActions({
     modalData,
+    allBookings,
     createTimeRange,
     fetchSessions,
     fetchAllBookings,

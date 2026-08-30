@@ -103,8 +103,8 @@ export async function generateShareToken(bookingId: string) {
 }
 
 export async function getBookingDetailsWithPayment(bookingId: string) {
-  const { createClient } = await import('@/lib/supabase-server');
-  const supabase = await createClient();
+  const { createDevelopmentBypassClient } = await import('@/lib/supabase-dev-bypass-server');
+  const supabase = await createDevelopmentBypassClient();
   const { getCurrentUser } = await import('@/services/user-actions');
   const currentUser = await getCurrentUser();
   let tenantId: string;

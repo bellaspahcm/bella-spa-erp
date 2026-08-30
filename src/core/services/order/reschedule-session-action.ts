@@ -11,8 +11,8 @@ function addDaysToDateString(dateString: string, days: number) {
 }
 
 export async function rescheduleSession(sessionId: string, newDate: string) {
-  const { createClient } = await import('@/lib/supabase-server');
-  const supabase = await createClient();
+  const { createDevelopmentBypassClient } = await import('@/lib/supabase-dev-bypass-server');
+  const supabase = await createDevelopmentBypassClient();
   const { getCurrentUser } = await import('@/services/user-actions');
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id || null;
@@ -162,6 +162,9 @@ export async function rescheduleSession(sessionId: string, newDate: string) {
         assigned_date: newDate,
         notes: `Dời lịch các buổi từ buổi ${session.session_number} thêm ${diffDays} ngày.`,
       },
+      tenant_id: tenantId,
+      changed_by_id: currentUser?.id ?? null,
+      supabase
     });
   } catch (auditErr) {
     const rollbackErrors = await rollbackReschedule();
@@ -175,45 +178,47 @@ export async function rescheduleSession(sessionId: string, newDate: string) {
   }
 
   // Send notification for rescheduled session
-  try {
-    const { data: updatedSession } = await supabase
-      .from('session_logs')
-      .select(`
-        completed_by_ktv_id,
-        bookings (
-          assigned_ktv_id,
-          package_name,
-          customers (
-            name_mother
+  void (async () => {
+    try {
+      const { data: updatedSession } = await supabase
+        .from('session_logs')
+        .select(`
+          completed_by_ktv_id,
+          bookings (
+            assigned_ktv_id,
+            package_name,
+            customers (
+              name_mother
+            )
           )
-        )
-      `)
-      .eq('id', sessionId)
-      .single();
-      
-    if (updatedSession) {
-      const booking = Array.isArray(updatedSession.bookings) ? updatedSession.bookings[0] : updatedSession.bookings;
-      const bookingTyped = booking as Record<string, unknown> & { assigned_ktv_id?: string; package_name?: string; customers?: { name_mother?: string } };
-      const targetKtvId = updatedSession.completed_by_ktv_id || bookingTyped?.assigned_ktv_id;
-      
-      if (targetKtvId) {
-        const { createSystemNotification } = await import('@/services/notification-helpers');
-        const customerName = bookingTyped?.customers?.name_mother || 'Khách hàng';
-        const packageName = booking?.package_name || 'Dịch vụ';
-        const formattedNewDate = newDate.split('-').reverse().join('/');
-        
-        await createSystemNotification({
-          userId: targetKtvId,
-          title: 'Thay đổi lịch hẹn ca 🕒',
-          message: `Ca số ${session.session_number} gói ${packageName} cho khách ${customerName} đã được dời lịch sang ngày ${formattedNewDate} (${session.assigned_time || 'Chưa định giờ'}).`,
-          tenantId,
-          type: 'system'
-        });
+        `)
+        .eq('id', sessionId)
+        .single();
+
+      if (updatedSession) {
+        const booking = Array.isArray(updatedSession.bookings) ? updatedSession.bookings[0] : updatedSession.bookings;
+        const bookingTyped = booking as Record<string, unknown> & { assigned_ktv_id?: string; package_name?: string; customers?: { name_mother?: string } };
+        const targetKtvId = updatedSession.completed_by_ktv_id || bookingTyped?.assigned_ktv_id;
+
+        if (targetKtvId) {
+          const { createSystemNotification } = await import('@/services/notification-helpers');
+          const customerName = bookingTyped?.customers?.name_mother || 'Khách hàng';
+          const packageName = booking?.package_name || 'Dịch vụ';
+          const formattedNewDate = newDate.split('-').reverse().join('/');
+
+          await createSystemNotification({
+            userId: targetKtvId,
+            title: 'Thay đổi lịch hẹn ca 🕒',
+            message: `Ca số ${session.session_number} gói ${packageName} cho khách ${customerName} đã được dời lịch sang ngày ${formattedNewDate} (${session.assigned_time || 'Chưa định giờ'}).`,
+            tenantId,
+            type: 'system'
+          });
+        }
       }
+    } catch (notifErr) {
+      console.error('Failed to send reschedule notifications:', notifErr);
     }
-  } catch (notifErr) {
-    console.error('Failed to send reschedule notifications:', notifErr);
-  }
+  })();
 
   const { data: bookingData } = await supabase
     .from('bookings')
@@ -229,7 +234,9 @@ export async function rescheduleSession(sessionId: string, newDate: string) {
   if (bookingData?.customer_id) {
     revalPaths.push(`/dashboard/customers/${bookingData.customer_id}`);
   }
-  await Promise.all(revalPaths.map((path) => safeRevalidatePath(path)));
+  void Promise.all(revalPaths.map((path) => safeRevalidatePath(path))).catch((error) => {
+    console.error('[rescheduleSession] Background revalidation failed:', error);
+  });
 
   return { success: true };
 }

@@ -17,6 +17,7 @@ export type BookingOption = {
     name?: string | null;
   } | null;
   package_name?: string | null;
+  assigned_ktv_id?: string | null;
 };
 
 type TimeRange = {
@@ -63,10 +64,11 @@ export function BookingCreateScheduleModal({
     : activeBookingResources.length > 0;
 
   useEffect(() => {
-    if (!isOpen) {
-      setSelectedResourceId('');
+    if (!isOpen && selectedResourceId) {
+      const resetTimer = window.setTimeout(() => setSelectedResourceId(''), 0);
+      return () => window.clearTimeout(resetTimer);
     }
-  }, [isOpen]);
+  }, [isOpen, selectedResourceId]);
 
   return (
     <AnimatePresence>

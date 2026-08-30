@@ -1,6 +1,6 @@
 'use client';
 
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { calculateBookingPaymentState } from '@/lib/business-rules/payment';
@@ -17,7 +17,9 @@ import { getBookingDetailsWithPayment, updateBooking } from '@/core/services/ord
 import { checkBookingConflicts } from '@/services/decision-actions/booking-decisions';
 
 import type { BookingModalData } from '../components/BookingDayDetailModal';
+import type { BookingOption } from '../components/BookingCreateScheduleModal';
 import type { BookingThermalInvoiceData } from '../components/BookingThermalInvoicePrint';
+import type { UpdateSessionLogInput } from '@/core/services/order/update-session-log-helpers';
 
 type TenantBankInfo = {
   qr_bank_code?: string | null;
@@ -42,6 +44,7 @@ type TimeRange = {
 
 type UseBookingsPageActionsArgs = {
   modalData: BookingModalData | null;
+  allBookings: BookingOption[];
   createTimeRange: TimeRange;
   fetchSessions: () => Promise<void>;
   fetchAllBookings: (options?: { force?: boolean }) => Promise<void>;
@@ -49,8 +52,11 @@ type UseBookingsPageActionsArgs = {
   closeCreateModal: () => void;
 };
 
+const BACKGROUND_REFRESH_DELAY_MS = 250;
+
 export function useBookingsPageActions({
   modalData,
+  allBookings,
   createTimeRange,
   fetchSessions,
   fetchAllBookings,
@@ -70,6 +76,25 @@ export function useBookingsPageActions({
   const [isPrintingInvoice, setIsPrintingInvoice] = useState(false);
   const [printingSessionLogId, setPrintingSessionLogId] = useState<string | null>(null);
   const [reprintRequest, setReprintRequest] = useState<BookingModalData | null>(null);
+  const backgroundRefreshTimerRef = useRef<number | null>(null);
+
+  const scheduleBackgroundRefresh = (
+    refresh: () => Promise<void>,
+    logMessage: string,
+    userMessage: string
+  ) => {
+    if (backgroundRefreshTimerRef.current !== null) {
+      window.clearTimeout(backgroundRefreshTimerRef.current);
+    }
+
+    backgroundRefreshTimerRef.current = window.setTimeout(() => {
+      backgroundRefreshTimerRef.current = null;
+      void refresh().catch((refreshError) => {
+        console.error(logMessage, refreshError);
+        toast.error(userMessage);
+      });
+    }, BACKGROUND_REFRESH_DELAY_MS);
+  };
 
   const buildPaymentSnapshot = async (bookingId: string) => {
     const result = await getBookingDetailsWithPayment(bookingId);
@@ -284,41 +309,47 @@ export function useBookingsPageActions({
     try {
       const newDateString = modalData.dateString;
       const isDateChanged = Boolean(newDateString && newDateString !== modalData.originalDateString);
+      const isTimeChanged = modalData.time !== modalData.originalTime;
+      const isResourceChanged = (modalData.bookingResourceId || null) !== (modalData.originalBookingResourceId || null);
+      const isKtvChanged = (modalData.ktvId || null) !== (modalData.originalKtvId || null);
+      const requiresConflictCheck = isDateChanged || isTimeChanged || isResourceChanged || isKtvChanged;
 
       // Check for booking conflicts using Decision Engine
-      const conflictCheck = await checkBookingConflicts({
-        bookingId: modalData.bookingId,
-        ktvId: modalData.ktvId || null,
-        bookingResourceId: modalData.bookingResourceId || null,
-        assignedDate: modalData.dateString || getLocalDateString(modalData.date),
-        assignedTime: modalData.time || '09:00',
-        durationMinutes: 90, // Resolved dynamically inside the action
-      });
+      if (requiresConflictCheck) {
+        const conflictCheck = await checkBookingConflicts({
+          bookingId: modalData.bookingId,
+          ktvId: modalData.ktvId || null,
+          bookingResourceId: modalData.bookingResourceId || null,
+          assignedDate: modalData.dateString || getLocalDateString(modalData.date),
+          assignedTime: modalData.time || '09:00',
+          durationMinutes: 90, // Resolved dynamically inside the action
+        });
 
-      // Handle conflict check result
-      if (conflictCheck.decision === 'REJECT') {
-        toast.error(conflictCheck.message || 'Không thể cập nhật lịch hẹn do xung đột');
-        if (conflictCheck.context?.conflicts && Array.isArray(conflictCheck.context.conflicts)) {
-          const conflicts = conflictCheck.context.conflicts as Array<{
-            type: string;
-            time: string;
-            customer?: string;
-            room?: string;
-          }>;
-          conflicts.forEach((conflict) => {
-            if (conflict.type === 'ktv_double_booking') {
-              toast.error(`⚠️ KTV đã có lịch lúc ${conflict.time} với khách ${conflict.customer}`);
-            } else if (conflict.type === 'room_double_booking') {
-              toast.error(`⚠️ Phòng ${conflict.room} đã có lịch lúc ${conflict.time}`);
-            }
-          });
+        // Handle conflict check result
+        if (conflictCheck.decision === 'REJECT') {
+          toast.error(conflictCheck.message || 'Không thể cập nhật lịch hẹn do xung đột');
+          if (conflictCheck.context?.conflicts && Array.isArray(conflictCheck.context.conflicts)) {
+            const conflicts = conflictCheck.context.conflicts as Array<{
+              type: string;
+              time: string;
+              customer?: string;
+              room?: string;
+            }>;
+            conflicts.forEach((conflict) => {
+              if (conflict.type === 'ktv_double_booking') {
+                toast.error(`⚠️ KTV đã có lịch lúc ${conflict.time} với khách ${conflict.customer}`);
+              } else if (conflict.type === 'room_double_booking') {
+                toast.error(`⚠️ Phòng ${conflict.room} đã có lịch lúc ${conflict.time}`);
+              }
+            });
+          }
+          setIsUpdating(false);
+          return; // Block update
         }
-        setIsUpdating(false);
-        return; // Block update
-      }
 
-      if (conflictCheck.decision === 'APPROVE_WITH_WARNING') {
-        toast.warning(conflictCheck.message || 'Cảnh báo: Vượt quá số ca khuyến nghị');
+        if (conflictCheck.decision === 'APPROVE_WITH_WARNING') {
+          toast.warning(conflictCheck.message || 'Cảnh báo: Vượt quá số ca khuyến nghị');
+        }
       }
 
       if (newDateString && isDateChanged && modalData.status === 'scheduled') {
@@ -330,33 +361,60 @@ export function useBookingsPageActions({
         }
       }
 
-      if ((modalData.ktvId || null) !== (modalData.originalKtvId || null)) {
-        const updateResult = await updateBooking(modalData.bookingId, { assigned_ktv_id: modalData.ktvId || null });
+      if (isKtvChanged) {
+        const updateResult = await updateBooking(
+          modalData.bookingId,
+          { assigned_ktv_id: modalData.ktvId || null },
+          { conflictAlreadyChecked: true }
+        );
         if (updateResult.error) {
           throw new Error(updateResult.error);
         }
       }
 
-      const result = await updateSessionLog(modalData.id, {
+      const sessionPayload = {
         assigned_date: modalData.dateString || getLocalDateString(modalData.date),
         assigned_time: modalData.time,
         booking_resource_id: modalData.bookingResourceId || null,
         notes: modalData.contractDetail,
         status: modalData.status,
-      });
+      };
+      const sessionDateAlreadyRescheduled = Boolean(newDateString && isDateChanged && modalData.status === 'scheduled');
+      const sessionUpdatePayload: UpdateSessionLogInput = {};
+      if (!sessionDateAlreadyRescheduled && sessionPayload.assigned_date !== modalData.originalDateString) {
+        sessionUpdatePayload.assigned_date = sessionPayload.assigned_date;
+      }
+      if (sessionPayload.assigned_time !== modalData.originalTime) {
+        sessionUpdatePayload.assigned_time = sessionPayload.assigned_time;
+      }
+      if (sessionPayload.booking_resource_id !== (modalData.originalBookingResourceId || null)) {
+        sessionUpdatePayload.booking_resource_id = sessionPayload.booking_resource_id;
+      }
+      if (sessionPayload.notes !== modalData.originalContractDetail) {
+        sessionUpdatePayload.notes = sessionPayload.notes;
+      }
+      if (sessionPayload.status !== modalData.originalStatus) {
+        sessionUpdatePayload.status = sessionPayload.status;
+      }
+      const shouldUpdateSessionLog = Object.keys(sessionUpdatePayload).length > 0;
+
+      const result = shouldUpdateSessionLog
+        ? await updateSessionLog(modalData.id, sessionUpdatePayload)
+        : { data: [] };
 
       if (result.error) {
         toast.error('Lỗi: ' + result.error);
       } else {
         toast.success(isDateChanged ? 'Đã dời lịch và cập nhật thành công!' : 'Đã cập nhật tiến độ và kế hoạch thành công!');
         closeDetailModal();
-        void Promise.all([
-          fetchSessions(),
-          fetchAllBookings({ force: true }),
-        ]).catch((refreshError) => {
-          console.error('Post-update booking refresh failed:', refreshError);
-          toast.error('Đã lưu, nhưng làm mới dữ liệu chưa thành công. Vui lòng tải lại trang.');
-        });
+        scheduleBackgroundRefresh(
+          () => Promise.all([
+            fetchSessions(),
+            fetchAllBookings({ force: true }),
+          ]).then(() => undefined),
+          'Post-update booking refresh failed:',
+          'Đã lưu, nhưng làm mới dữ liệu chưa thành công. Vui lòng tải lại trang.'
+        );
       }
     } catch (error) {
       console.error('Update failed:', error);
@@ -385,15 +443,17 @@ export function useBookingsPageActions({
         return;
       }
 
-      // Fetch booking data to get assigned KTV
-      const bookingResult = await getBookingDetailsWithPayment(bookingId);
-      if (bookingResult.error || !bookingResult.data) {
-        toast.error('Không thể tải thông tin booking: ' + (bookingResult.error || 'Lỗi không xác định'));
-        return;
+      const selectedBooking = allBookings.find((booking) => booking.id === bookingId);
+      let assignedKtvId = selectedBooking?.assigned_ktv_id || null;
+      if (!selectedBooking) {
+        // Fallback for stale client lists or deep-linked flows where the booking list has not loaded yet.
+        const bookingResult = await getBookingDetailsWithPayment(bookingId);
+        if (bookingResult.error || !bookingResult.data) {
+          toast.error('Không thể tải thông tin booking: ' + (bookingResult.error || 'Lỗi không xác định'));
+          return;
+        }
+        assignedKtvId = bookingResult.data.assigned_ktv_id || null;
       }
-
-      const booking = bookingResult.data;
-      const assignedKtvId = booking.assigned_ktv_id || null;
 
       // Check for booking conflicts using Decision Engine
       const conflictCheck = await checkBookingConflicts({
@@ -446,10 +506,11 @@ export function useBookingsPageActions({
       } else {
         toast.success('Đã tạo lịch hẹn mới thành công!');
         closeCreateModal();
-        void fetchSessions().catch((refreshError) => {
-          console.error('Post-create schedule refresh failed:', refreshError);
-          toast.error('Đã tạo lịch, nhưng làm mới lịch chưa thành công. Vui lòng tải lại trang.');
-        });
+        scheduleBackgroundRefresh(
+          fetchSessions,
+          'Post-create schedule refresh failed:',
+          'Đã tạo lịch, nhưng làm mới lịch chưa thành công. Vui lòng tải lại trang.'
+        );
       }
     } catch (err: unknown) {
       console.error('Error creating schedule:', err);

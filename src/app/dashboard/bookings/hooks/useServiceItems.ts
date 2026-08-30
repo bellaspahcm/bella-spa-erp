@@ -12,12 +12,22 @@ import { queryBookingServiceItemsWithKTV } from '@/lib/supabase-commission-queri
 import { createClient } from '@/lib/supabase-client';
 import type { ServiceItemData } from '@/components/bookings/ServiceItemsTable';
 
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
 export function useServiceItems() {
   const [serviceItems, setServiceItems] = useState<ServiceItemData[]>([]);
   const [isLoadingServiceItems, setIsLoadingServiceItems] = useState(false);
   const [serviceItemsError, setServiceItemsError] = useState<string | null>(null);
 
   const fetchServiceItems = useCallback(async (bookingId: string, tenantId: string) => {
+    if (!isUuid(tenantId)) {
+      setServiceItems([]);
+      setServiceItemsError(null);
+      return;
+    }
+
     setIsLoadingServiceItems(true);
     setServiceItemsError(null);
 

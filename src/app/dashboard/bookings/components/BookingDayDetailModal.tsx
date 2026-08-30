@@ -64,13 +64,16 @@ export type BookingModalData = {
   totalSessions?: number;
   status?: string;
   contractDetail?: string;
+  originalContractDetail?: string;
   bookingId: string;
   time?: string;
+  originalTime?: string;
   originalStatus?: string;
   originalDateString?: string;
   contractId?: string;
   sessionCount?: string;
   bookingResourceId?: string | null;
+  originalBookingResourceId?: string | null;
   bookingResourceName?: string | null;
   bookingResourceType?: string | null;
   packageRequiresResource?: boolean | null;

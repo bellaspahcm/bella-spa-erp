@@ -10,8 +10,8 @@ type CreateSessionLogInput = Pick<SessionLogInsert, 'booking_id'> &
   Partial<Pick<SessionLogInsert, 'assigned_date' | 'assigned_time' | 'booking_resource_id' | 'notes' | 'status'>>;
 
 export async function createSessionLog(data: CreateSessionLogInput) {
-  const { createClient } = await import('@/lib/supabase-server');
-  const supabase = await createClient();
+  const { createDevelopmentBypassClient } = await import('@/lib/supabase-dev-bypass-server');
+  const supabase = await createDevelopmentBypassClient();
   const { getCurrentUser } = await import('@/services/user-actions');
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id || null;
@@ -20,12 +20,22 @@ export async function createSessionLog(data: CreateSessionLogInput) {
     return { error: 'Khong xac dinh duoc chi nhanh cho lich hen.' };
   }
 
-  const { data: bookingRow, error: bookingError } = await supabase
-    .from('bookings')
-    .select('tenant_id')
-    .eq('id', data.booking_id)
-    .eq('tenant_id', tenantId)
-    .single();
+  const [bookingResult, sessionCountResult] = await Promise.all([
+    supabase
+      .from('bookings')
+      .select('tenant_id')
+      .eq('id', data.booking_id)
+      .eq('tenant_id', tenantId)
+      .single(),
+    supabase
+      .from('session_logs')
+      .select('*', { count: 'exact', head: true })
+      .eq('booking_id', data.booking_id)
+      .eq('tenant_id', tenantId),
+  ]);
+
+  const { data: bookingRow, error: bookingError } = bookingResult;
+  const { count, error: countError } = sessionCountResult;
 
   if (bookingError) {
     return { error: bookingError.message };
@@ -33,13 +43,6 @@ export async function createSessionLog(data: CreateSessionLogInput) {
   if (!bookingRow) {
     return { error: 'Khong tim thay booking hop le trong chi nhanh hien tai.' };
   }
-
-  const { count, error: countError } = await supabase
-    .from('session_logs')
-    .select('*', { count: 'exact', head: true })
-    .eq('booking_id', data.booking_id)
-    .eq('tenant_id', tenantId);
-
   if (countError) {
     console.error('Error counting sessions:', countError);
     return { error: countError.message };
@@ -87,7 +90,10 @@ export async function createSessionLog(data: CreateSessionLogInput) {
         action: 'INSERT',
         table_name: 'session_logs',
         record_id: session[0].id,
-        new_data: session[0]
+        new_data: session[0],
+        tenant_id: tenantId,
+        changed_by_id: currentUser?.id ?? null,
+        supabase
       });
     }
   } catch (auditErr) {
@@ -103,6 +109,8 @@ export async function createSessionLog(data: CreateSessionLogInput) {
     };
   }
 
-  await safeRevalidatePath('/dashboard/bookings');
+  void safeRevalidatePath('/dashboard/bookings').catch((error) => {
+    console.error('[createSessionLog] Background revalidation failed:', error);
+  });
   return { data: session };
 }

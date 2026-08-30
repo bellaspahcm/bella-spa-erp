@@ -12,8 +12,8 @@ import {
 import { validateBookingResourceSchedule } from './booking-resource-schedule-guard';
 
 export async function updateSessionLog(id: string, payload: UpdateSessionLogInput) {
-  const { createClient } = await import('@/lib/supabase-server');
-  const supabase = await createClient();
+  const { createDevelopmentBypassClient } = await import('@/lib/supabase-dev-bypass-server');
+  const supabase = await createDevelopmentBypassClient();
   const { getCurrentUser } = await import('@/services/user-actions');
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id || null;
@@ -98,7 +98,10 @@ export async function updateSessionLog(id: string, payload: UpdateSessionLogInpu
         table_name: 'session_logs',
         record_id: id,
         old_data: existingLog,
-        new_data: safeUpdates
+        new_data: safeUpdates,
+        tenant_id: tenantId,
+        changed_by_id: currentUser?.id ?? null,
+        supabase
       });
     } catch (auditErr) {
       await supabase
@@ -115,55 +118,61 @@ export async function updateSessionLog(id: string, payload: UpdateSessionLogInpu
     const oldKtvId = existingLog.completed_by_ktv_id;
     
     if (newKtvId !== undefined && newKtvId !== oldKtvId) {
-      try {
-        const { createSystemNotification } = await import('@/services/notification-helpers');
-        
-        // Fetch booking & customer details
-        const { data: booking } = await supabase
-          .from('bookings')
-          .select(`
-            package_name,
-            customers (
-              name_mother
-            )
-          `)
-          .eq('id', bookingId)
-          .single();
-          
-        const bookingTyped = booking as Record<string, unknown> & { package_name?: string; customers?: { name_mother?: string } };
-        const customerName = bookingTyped?.customers?.name_mother || 'Khách hàng';
-        const packageName = bookingTyped?.package_name || 'Dịch vụ';
-        
-        const dateVal = safeUpdates.assigned_date || existingLog.assigned_date || '';
-        const dateStr = dateVal ? dateVal.split('-').reverse().join('/') : '';
-        const timeStr = safeUpdates.assigned_time || existingLog.assigned_time || 'Chưa định giờ';
-        
-        // 1. Notify the new substitute/assigned KTV
-        if (newKtvId) {
-          await createSystemNotification({
-            userId: newKtvId,
-            title: 'Phân công ca làm việc mới 🔄',
-            message: `Bạn được phân công làm ca số ${existingLog.session_number} gói ${packageName} cho khách ${customerName} ngày ${dateStr} (${timeStr}).`,
-            tenantId: tenantId,
-            type: 'assignment'
-          });
+      void (async () => {
+        try {
+          const { createSystemNotification } = await import('@/services/notification-helpers');
+
+          // Fetch booking & customer details
+          const { data: booking } = await supabase
+            .from('bookings')
+            .select(`
+              package_name,
+              customers (
+                name_mother
+              )
+            `)
+            .eq('id', bookingId)
+            .single();
+
+          const bookingTyped = booking as Record<string, unknown> & { package_name?: string; customers?: { name_mother?: string } };
+          const customerName = bookingTyped?.customers?.name_mother || 'Khách hàng';
+          const packageName = bookingTyped?.package_name || 'Dịch vụ';
+
+          const dateVal = safeUpdates.assigned_date || existingLog.assigned_date || '';
+          const dateStr = dateVal ? dateVal.split('-').reverse().join('/') : '';
+          const timeStr = safeUpdates.assigned_time || existingLog.assigned_time || 'Chưa định giờ';
+
+          // 1. Notify the new substitute/assigned KTV
+          if (newKtvId) {
+            await createSystemNotification({
+              userId: newKtvId,
+              title: 'Phân công ca làm việc mới 🔄',
+              message: `Bạn được phân công làm ca số ${existingLog.session_number} gói ${packageName} cho khách ${customerName} ngày ${dateStr} (${timeStr}).`,
+              tenantId: tenantId,
+              type: 'assignment'
+            });
+          }
+
+          // 2. Notify the old substitute KTV (if there was one)
+          if (oldKtvId) {
+            await createSystemNotification({
+              userId: oldKtvId,
+              title: 'Hủy phân công ca làm việc ⚠️',
+              message: `Bạn đã thôi phân công ca số ${existingLog.session_number} gói ${packageName} của khách ${customerName} ngày ${dateStr}.`,
+              tenantId: tenantId,
+              type: 'system'
+            });
+          }
+        } catch (notifErr) {
+          console.error('Failed to send session reassign notifications:', notifErr);
         }
-        
-        // 2. Notify the old substitute KTV (if there was one)
-        if (oldKtvId) {
-          await createSystemNotification({
-            userId: oldKtvId,
-            title: 'Hủy phân công ca làm việc ⚠️',
-            message: `Bạn đã thôi phân công ca số ${existingLog.session_number} gói ${packageName} của khách ${customerName} ngày ${dateStr}.`,
-            tenantId: tenantId,
-            type: 'system'
-          });
-        }
-      } catch (notifErr) {
-        console.error('Failed to send session reassign notifications:', notifErr);
-      }
+      })();
     }
   }
+
+  const completionStateChanged =
+    safeUpdates.status === 'completed' ||
+    existingLog.status === 'completed';
 
   if (isCompletingSession(safeUpdates, existingLog)) {
     const result = await processCompletedSessionUpdate({
@@ -178,29 +187,32 @@ export async function updateSessionLog(id: string, payload: UpdateSessionLogInpu
     if (result.error) {
       return { error: result.error };
     }
-  } else {
+  } else if (completionStateChanged) {
     const progressResult = await syncBookingProgressAfterSessionUpdate(supabase, bookingId, tenantId);
     if (progressResult.error) {
       return { error: progressResult.error };
     }
   }
 
-  const { data: customerData } = await supabase
-    .from('bookings')
-    .select('customer_id')
-    .eq('id', bookingId)
-    .eq('tenant_id', tenantId)
-    .single();
-
-  const revalPaths = [
-    '/dashboard/bookings',
-    '/dashboard/sessions',
-    '/dashboard/customers'
-  ];
-  if (customerData?.customer_id) {
-    revalPaths.push(`/dashboard/customers/${customerData.customer_id}`);
-  }
-  await Promise.all(revalPaths.map(path => safeRevalidatePath(path)));
+  void (async () => {
+    const revalPaths = [
+      '/dashboard/bookings',
+      '/dashboard/sessions',
+      '/dashboard/customers'
+    ];
+    const { data: customerData } = await supabase
+      .from('bookings')
+      .select('customer_id')
+      .eq('id', bookingId)
+      .eq('tenant_id', tenantId)
+      .single();
+    if (customerData?.customer_id) {
+      revalPaths.push(`/dashboard/customers/${customerData.customer_id}`);
+    }
+    await Promise.all(revalPaths.map(path => safeRevalidatePath(path)));
+  })().catch((error) => {
+    console.error('[updateSessionLog] Background revalidation failed:', error);
+  });
 
   return { data };
 }

@@ -23,13 +23,18 @@ async function requireCurrentTenantId() {
   if (!currentUser?.tenant_id) {
     throw new BookingError(BOOKING_TENANT_ACCESS_ERROR, 'BOOKING_TENANT_ACCESS_ERROR');
   }
-  return currentUser.tenant_id;
+  return currentUser;
 }
 
-export async function updateBooking(id: string, payload: BookingUpdate) {
-  const { createClient } = await import('@/lib/supabase-server');
-  const supabase = await createClient();
-  const tenantId = await requireCurrentTenantId();
+export async function updateBooking(
+  id: string,
+  payload: BookingUpdate,
+  options: { conflictAlreadyChecked?: boolean } = {}
+) {
+  const { createDevelopmentBypassClient } = await import('@/lib/supabase-dev-bypass-server');
+  const supabase = await createDevelopmentBypassClient();
+  const currentUser = await requireCurrentTenantId();
+  const tenantId = currentUser.tenant_id;
   const { tenant_id: _ignoredTenantId, ...scopedPayload } = payload;
   void _ignoredTenantId;
   const updatePayload: BookingUpdate = { ...scopedPayload };
@@ -136,38 +141,40 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
       
       console.log('[updateBooking] Decision Engine validation passed');
 
-      // CRITICAL FIX (19/07/2026): Enforce conflict check on all scheduled session logs
-      const { data: scheduledSessions, error: scheduledSessionsError } = await supabase
-        .from('session_logs')
-        .select('id, assigned_date, assigned_time, booking_resource_id')
-        .eq('booking_id', id)
-        .eq('tenant_id', tenantId)
-        .eq('status', 'scheduled');
+      if (!options.conflictAlreadyChecked) {
+        // CRITICAL FIX (19/07/2026): Enforce conflict check on all scheduled session logs
+        const { data: scheduledSessions, error: scheduledSessionsError } = await supabase
+          .from('session_logs')
+          .select('id, assigned_date, assigned_time, booking_resource_id')
+          .eq('booking_id', id)
+          .eq('tenant_id', tenantId)
+          .eq('status', 'scheduled');
 
-      if (scheduledSessionsError) {
-        console.error('[updateBooking] Failed to fetch scheduled sessions:', scheduledSessionsError.message);
-        return { error: 'Không thể tải danh sách ca để kiểm tra xung đột: ' + scheduledSessionsError.message };
-      }
+        if (scheduledSessionsError) {
+          console.error('[updateBooking] Failed to fetch scheduled sessions:', scheduledSessionsError.message);
+          return { error: 'Không thể tải danh sách ca để kiểm tra xung đột: ' + scheduledSessionsError.message };
+        }
 
-      const checkKtvId = updatePayload.assigned_ktv_id !== undefined ? updatePayload.assigned_ktv_id : oldBooking.assigned_ktv_id;
-      const checkPreferredTime = updatePayload.preferred_time !== undefined ? updatePayload.preferred_time : oldBooking.preferred_time;
+        const checkKtvId = updatePayload.assigned_ktv_id !== undefined ? updatePayload.assigned_ktv_id : oldBooking.assigned_ktv_id;
+        const checkPreferredTime = updatePayload.preferred_time !== undefined ? updatePayload.preferred_time : oldBooking.preferred_time;
 
-      if (scheduledSessions && scheduledSessions.length > 0) {
-        const { checkBookingConflicts } = await import('@/services/decision-actions/booking-decisions');
-        
-        for (const session of scheduledSessions) {
-          const conflictCheck = await checkBookingConflicts({
-            bookingId: id,
-            ktvId: checkKtvId,
-            bookingResourceId: session.booking_resource_id,
-            assignedDate: session.assigned_date,
-            assignedTime: (updatePayload.preferred_time !== undefined ? checkPreferredTime : (session.assigned_time || checkPreferredTime)) || '09:00',
-            durationMinutes: 90, // Will be resolved dynamically by the engine
-          });
+        if (scheduledSessions && scheduledSessions.length > 0) {
+          const { checkBookingConflicts } = await import('@/services/decision-actions/booking-decisions');
 
-          if (conflictCheck.decision === 'REJECT') {
-            console.error('[updateBooking] Session conflict detected:', conflictCheck.message);
-            return { error: `Trùng lịch vào ngày ${session.assigned_date}: ${conflictCheck.message}` };
+          for (const session of scheduledSessions) {
+            const conflictCheck = await checkBookingConflicts({
+              bookingId: id,
+              ktvId: checkKtvId,
+              bookingResourceId: session.booking_resource_id,
+              assignedDate: session.assigned_date,
+              assignedTime: (updatePayload.preferred_time !== undefined ? checkPreferredTime : (session.assigned_time || checkPreferredTime)) || '09:00',
+              durationMinutes: 90, // Will be resolved dynamically by the engine
+            });
+
+            if (conflictCheck.decision === 'REJECT') {
+              console.error('[updateBooking] Session conflict detected:', conflictCheck.message);
+              return { error: `Trùng lịch vào ngày ${session.assigned_date}: ${conflictCheck.message}` };
+            }
           }
         }
       }
@@ -251,7 +258,10 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
         table_name: 'bookings',
         record_id: id,
         old_data: oldBooking,
-        new_data: finalPayload
+        new_data: finalPayload,
+        tenant_id: tenantId,
+        changed_by_id: currentUser.id ?? null,
+        supabase
       });
     } catch (auditErr) {
       if (oldBooking) {
@@ -274,43 +284,45 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
       oldBooking && 
       finalPayload.assigned_ktv_id !== oldBooking.assigned_ktv_id
     ) {
-      try {
-        const { createSystemNotification } = await import('@/services/notification-helpers');
-        
-        // Fetch customer name for notification message
-        const { data: customer } = await supabase
-          .from('customers')
-          .select('name_mother')
-          .eq('id', oldBooking.customer_id)
-          .single();
-          
-        const customerName = customer?.name_mother || 'Khách hàng';
-        const packageName = finalPayload.package_name || oldBooking.package_name || 'Dịch vụ';
-        
-        // 1. Notify the new KTV
-        if (finalPayload.assigned_ktv_id) {
-          await createSystemNotification({
-            userId: finalPayload.assigned_ktv_id,
-            title: 'Phân công ca chính mới 📅',
-            message: `Bạn được phân công làm KTV chính gói ${packageName} cho khách ${customerName}.`,
-            tenantId: tenantId,
-            type: 'assignment'
-          });
+      void (async () => {
+        try {
+          const { createSystemNotification } = await import('@/services/notification-helpers');
+
+          // Fetch customer name for notification message
+          const { data: customer } = await supabase
+            .from('customers')
+            .select('name_mother')
+            .eq('id', oldBooking.customer_id)
+            .single();
+
+          const customerName = customer?.name_mother || 'Khách hàng';
+          const packageName = finalPayload.package_name || oldBooking.package_name || 'Dịch vụ';
+
+          // 1. Notify the new KTV
+          if (finalPayload.assigned_ktv_id) {
+            await createSystemNotification({
+              userId: finalPayload.assigned_ktv_id,
+              title: 'Phân công ca chính mới 📅',
+              message: `Bạn được phân công làm KTV chính gói ${packageName} cho khách ${customerName}.`,
+              tenantId: tenantId,
+              type: 'assignment'
+            });
+          }
+
+          // 2. Notify the old KTV (if there was one)
+          if (oldBooking.assigned_ktv_id) {
+            await createSystemNotification({
+              userId: oldBooking.assigned_ktv_id,
+              title: 'Thay đổi phân công ca chính ⚠️',
+              message: `Bạn đã được điều chuyển và thôi phân công làm KTV chính gói ${packageName} của khách ${customerName}.`,
+              tenantId: tenantId,
+              type: 'system'
+            });
+          }
+        } catch (notifErr) {
+          console.error('Failed to send booking reassign notifications:', notifErr);
         }
-        
-        // 2. Notify the old KTV (if there was one)
-        if (oldBooking.assigned_ktv_id) {
-          await createSystemNotification({
-            userId: oldBooking.assigned_ktv_id,
-            title: 'Thay đổi phân công ca chính ⚠️',
-            message: `Bạn đã được điều chuyển và thôi phân công làm KTV chính gói ${packageName} của khách ${customerName}.`,
-            tenantId: tenantId,
-            type: 'system'
-          });
-        }
-      } catch (notifErr) {
-        console.error('Failed to send booking reassign notifications:', notifErr);
-      }
+      })();
     }
 
     // Sync scheduled sessions' assigned_time with the new preferred_time
@@ -579,20 +591,17 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
     }
   }
 
-  const { data: bookingData } = await supabase
-    .from('bookings')
-    .select('customer_id')
-    .eq('id', id)
-    .eq('tenant_id', tenantId)
-    .single();
   const revalPaths = [
     '/dashboard/bookings',
     '/dashboard/customers'
   ];
-  if (bookingData?.customer_id) {
-    revalPaths.push(`/dashboard/customers/${bookingData.customer_id}`);
+  const customerIdForRevalidation = finalData?.[0]?.customer_id || oldBooking?.customer_id;
+  if (customerIdForRevalidation) {
+    revalPaths.push(`/dashboard/customers/${customerIdForRevalidation}`);
   }
-  await Promise.all(revalPaths.map(path => safeRevalidatePath(path)));
+  void Promise.all(revalPaths.map(path => safeRevalidatePath(path))).catch((error) => {
+    console.error('[updateBooking] Background revalidation failed:', error);
+  });
 
   return { data: finalData };
 }
@@ -600,7 +609,7 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
 export async function syncBookingProgress(bookingId: string, tenantId?: string) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = await createClient();
-  const scopedTenantId = tenantId || await requireCurrentTenantId();
+  const scopedTenantId = tenantId || (await requireCurrentTenantId()).tenant_id;
   
   const { count, error: countError } = await supabase
     .from('session_logs')

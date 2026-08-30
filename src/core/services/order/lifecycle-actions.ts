@@ -22,8 +22,12 @@ import {
 
 export type { OnlineBookingFormData } from './online-booking-types';
 
-export async function updateBooking(id: string, payload: Parameters<typeof updateBookingAction>[1]) {
-  return updateBookingAction(id, payload);
+export async function updateBooking(
+  id: string,
+  payload: Parameters<typeof updateBookingAction>[1],
+  options?: Parameters<typeof updateBookingAction>[2]
+) {
+  return updateBookingAction(id, payload, options);
 }
 
 export async function syncBookingProgress(bookingId: string) {

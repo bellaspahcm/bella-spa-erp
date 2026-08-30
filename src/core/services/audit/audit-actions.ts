@@ -16,6 +16,7 @@ type HqAuditLogRow = AuditLogRow & {
 type BranchAuditLogRow = AuditLogRow & {
   users?: Pick<UserNameProjection, 'full_name'> | null;
 };
+type AuditSupabaseClient = Awaited<ReturnType<typeof createDevelopmentBypassClient>>;
 
 export async function getHqAuditLogs(filters: HqAuditLogFilters = {}): Promise<HqAuditLogRecord[]> {
   const authResult = await checkHqAuth();
@@ -168,17 +169,26 @@ export async function recordAuditLog(payload: {
   record_id: string;
   old_data?: Json;
   new_data?: Json;
+  tenant_id?: string | null;
+  changed_by_id?: string | null;
+  supabase?: AuditSupabaseClient;
 }) {
-  const supabase = await createDevelopmentBypassClient();
-  const currentUser = await getCurrentUser();
-  const tenantId = currentUser?.tenant_id;
+  const supabase = payload.supabase ?? await createDevelopmentBypassClient();
+  let tenantId = payload.tenant_id ?? null;
+  let changedById = payload.changed_by_id ?? null;
+
+  if (!tenantId || payload.changed_by_id === undefined) {
+    const currentUser = await getCurrentUser();
+    tenantId = tenantId ?? currentUser?.tenant_id ?? null;
+    changedById = payload.changed_by_id === undefined ? currentUser?.id ?? null : changedById;
+  }
 
   if (!tenantId) {
     throw new Error('[recordAuditLog] Missing tenantId for current user');
   }
 
   const auditPayload: Database['public']['Tables']['audit_logs']['Insert'] = {
-    changed_by_id: currentUser?.id,
+    changed_by_id: changedById,
     action: payload.action,
     table_name: payload.table_name,
     record_id: payload.record_id,
