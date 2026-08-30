@@ -1,6 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 
+const PARTNER_APPLICATION_STATUSES = [
+  'approved',
+  'rejected',
+  'provisioned',
+  'activated',
+  'draft',
+  'pending_verification',
+  'pending_review',
+  'need_more_info',
+] as const;
+
+type PartnerApplicationStatus = typeof PARTNER_APPLICATION_STATUSES[number];
+
+function isPartnerApplicationStatus(value: string): value is PartnerApplicationStatus {
+  return (PARTNER_APPLICATION_STATUSES as readonly string[]).includes(value);
+}
+
 /**
  * GET /api/admin/partner-applications
  * 
@@ -54,7 +71,7 @@ export async function GET(request: NextRequest) {
 
     // Filter by status
     const status = searchParams.get('status');
-    if (status && status !== 'all') {
+    if (status && status !== 'all' && isPartnerApplicationStatus(status)) {
       query = query.eq('status', status);
     }
 

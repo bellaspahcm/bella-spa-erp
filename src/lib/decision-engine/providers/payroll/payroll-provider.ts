@@ -25,6 +25,7 @@
 import { RuleReasoner } from '../../RuleReasoner';
 import type { Policy, Knowledge } from '../../types';
 import { allPayrollRules } from './rules';
+import type { RuleCondition } from '../../types/rule';
 import type {
   PayrollDecisionInput,
   PayrollDecisionOutput,
@@ -35,6 +36,63 @@ import type {
   GateEvaluationResult,
 } from './types';
 import type { Rule, Condition } from '../../types';
+
+interface BonusTier {
+  min: number;
+  max: number;
+  bonus: number;
+}
+
+interface RateTier {
+  min: number;
+  max: number;
+  rate: number;
+}
+
+type ReasonerComparisonOperator = Extract<Condition, { type: 'comparison' }>['operator'];
+
+function numberParam(params: Record<string, unknown>, key: string, fallback: number): number {
+  const value = params[key];
+  return typeof value === 'number' ? value : fallback;
+}
+
+function recordParam(params: Record<string, unknown>, key: string, fallback: Record<string, number>): Record<string, number> {
+  const value = params[key];
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return fallback;
+  }
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .filter((entry): entry is [string, number] => typeof entry[1] === 'number')
+  );
+}
+
+function bonusTierParam(params: Record<string, unknown>, key: string, fallback: BonusTier[]): BonusTier[] {
+  const value = params[key];
+  if (!Array.isArray(value)) return fallback;
+  const tiers = value.filter((tier): tier is BonusTier => {
+    if (!tier || typeof tier !== 'object') return false;
+    const candidate = tier as Record<string, unknown>;
+    return typeof candidate.min === 'number'
+      && typeof candidate.max === 'number'
+      && typeof candidate.bonus === 'number';
+  });
+  return tiers.length > 0 ? tiers : fallback;
+}
+
+function rateTierParam(params: Record<string, unknown>, key: string, fallback: RateTier[]): RateTier[] {
+  const value = params[key];
+  if (!Array.isArray(value)) return fallback;
+  const tiers = value.filter((tier): tier is RateTier => {
+    if (!tier || typeof tier !== 'object') return false;
+    const candidate = tier as Record<string, unknown>;
+    return typeof candidate.min === 'number'
+      && typeof candidate.max === 'number'
+      && typeof candidate.rate === 'number';
+  });
+  return tiers.length > 0 ? tiers : fallback;
+}
 
 /**
  * Payroll Provider
@@ -153,10 +211,10 @@ export class PayrollProvider {
     const netAdjustment = totalBonuses - totalDeductions;
 
     const matchedRules: string[] = [];
-    if (kpiBonus.eligible) matchedRules.push(...(kpiBonus.metadata?.matchedRules || []));
-    if (attendanceDeduction.eligible) matchedRules.push(...(attendanceDeduction.metadata?.matchedRules || []));
-    if (ratingBonus.eligible) matchedRules.push(...(ratingBonus.metadata?.matchedRules || []));
-    if (sessionCommission.eligible) matchedRules.push(...(sessionCommission.metadata?.matchedRules || []));
+    if (kpiBonus.eligible) matchedRules.push(...this.getMatchedRules(kpiBonus.metadata?.matchedRules));
+    if (attendanceDeduction.eligible) matchedRules.push(...this.getMatchedRules(attendanceDeduction.metadata?.matchedRules));
+    if (ratingBonus.eligible) matchedRules.push(...this.getMatchedRules(ratingBonus.metadata?.matchedRules));
+    if (sessionCommission.eligible) matchedRules.push(...this.getMatchedRules(sessionCommission.metadata?.matchedRules));
 
     // 7. Calculate execution time
     const endTime = performance.now();
@@ -406,7 +464,7 @@ export class PayrollProvider {
    * @private
    */
   private evaluateCommissionGate(input: PayrollDecisionInput): GateEvaluationResult {
-    const minSessions = input.config?.commission?.params?.minSessions || 0;
+    const minSessions = numberParam(input.config?.commission?.params ?? {}, 'minSessions', 0);
 
     if (minSessions > 0 && input.sessions.count < minSessions) {
       return {
@@ -435,15 +493,15 @@ export class PayrollProvider {
   ): number {
     switch (strategy) {
       case 'threshold': {
-        const target = params.target || 30;
-        const bonus = params.bonus || 1000000;
+        const target = numberParam(params, 'target', 30);
+        const bonus = numberParam(params, 'bonus', 1000000);
         return sessions >= target ? bonus : 0;
       }
 
       case 'linear': {
-        const baseline = params.baseline || 20;
-        const bonusPerUnit = params.bonusPerUnit || 50000;
-        const maxBonus = params.maxBonus || 2000000;
+        const baseline = numberParam(params, 'baseline', 20);
+        const bonusPerUnit = numberParam(params, 'bonusPerUnit', 50000);
+        const maxBonus = numberParam(params, 'maxBonus', 2000000);
         
         if (sessions <= baseline) return 0;
         
@@ -455,15 +513,13 @@ export class PayrollProvider {
       }
 
       case 'tier': {
-        const tiers = params.tiers || [
+        const tiers = bonusTierParam(params, 'tiers', [
           { min: 0, max: 20, bonus: 0 },
           { min: 21, max: 30, bonus: 500000 },
           { min: 31, max: 999, bonus: 1500000 },
-        ];
+        ]);
         
-        const matchedTier = tiers.find(
-          (t: Record<string, unknown>) => sessions >= t.min && sessions <= t.max
-        );
+        const matchedTier = tiers.find((t) => sessions >= t.min && sessions <= t.max);
         
         return matchedTier ? matchedTier.bonus : 0;
       }
@@ -483,8 +539,8 @@ export class PayrollProvider {
     strategy: string,
     params: Record<string, unknown>
   ): number {
-    const latePenalty = params.latePenalty || 50000;
-    const absentPenalty = params.absentPenalty || 200000;
+    const latePenalty = numberParam(params, 'latePenalty', 50000);
+    const absentPenalty = numberParam(params, 'absentPenalty', 200000);
 
     switch (strategy) {
       case 'late_deduction':
@@ -512,15 +568,15 @@ export class PayrollProvider {
   ): number {
     switch (strategy) {
       case 'threshold': {
-        const minRating = params.minRating || 4.5;
-        const bonus = params.bonus || 50000;
+        const minRating = numberParam(params, 'minRating', 4.5);
+        const bonus = numberParam(params, 'bonus', 50000);
         return avgRating >= minRating ? bonus : 0;
       }
 
       case 'linear': {
-        const baseline = params.baseline || 4.0;
-        const bonusPerPoint = params.bonusPerPoint || 100000;
-        const maxBonus = params.maxBonus || 300000;
+        const baseline = numberParam(params, 'baseline', 4.0);
+        const bonusPerPoint = numberParam(params, 'bonusPerPoint', 100000);
+        const maxBonus = numberParam(params, 'maxBonus', 300000);
         
         if (avgRating <= baseline) return 0;
         
@@ -532,15 +588,13 @@ export class PayrollProvider {
       }
 
       case 'tier': {
-        const tiers = params.tiers || [
+        const tiers = bonusTierParam(params, 'tiers', [
           { min: 0, max: 4.4, bonus: 0 },
           { min: 4.5, max: 4.7, bonus: 50000 },
           { min: 4.8, max: 5.0, bonus: 150000 },
-        ];
+        ]);
         
-        const matchedTier = tiers.find(
-          (t: Record<string, unknown>) => avgRating >= t.min && avgRating <= t.max
-        );
+        const matchedTier = tiers.find((t) => avgRating >= t.min && avgRating <= t.max);
         
         return matchedTier ? matchedTier.bonus : 0;
       }
@@ -563,36 +617,34 @@ export class PayrollProvider {
   ): number {
     switch (strategy) {
       case 'fixed': {
-        const rate = params.rate || 120000;
+        const rate = numberParam(params, 'rate', 120000);
         return sessions * rate;
       }
 
       case 'tier': {
-        const tiers = params.tiers || [
+        const tiers = rateTierParam(params, 'tiers', [
           { min: 0, max: 10, rate: 100000 },
           { min: 11, max: 20, rate: 120000 },
           { min: 21, max: 999, rate: 150000 },
-        ];
+        ]);
         
-        const matchedTier = tiers.find(
-          (t: Record<string, unknown>) => sessions >= t.min && sessions <= t.max
-        );
+        const matchedTier = tiers.find((t) => sessions >= t.min && sessions <= t.max);
         
         return matchedTier ? sessions * matchedTier.rate : 0;
       }
 
       case 'percentage': {
-        const percentage = params.percentage || 15;
+        const percentage = numberParam(params, 'percentage', 15);
         return Math.round((revenue * percentage) / 100);
       }
 
       case 'service': {
-        const serviceRates = params.serviceRates || {
+        const serviceRates = recordParam(params, 'serviceRates', {
           Massage: 150000,
           Facial: 100000,
           Manicure: 80000,
-        };
-        const defaultRate = params.defaultRate || 120000;
+        });
+        const defaultRate = numberParam(params, 'defaultRate', 120000);
         
         let total = 0;
         for (const [serviceType, count] of Object.entries(serviceTypes)) {
@@ -632,7 +684,7 @@ export class PayrollProvider {
       'rating.enabled': input.config?.rating?.enabled,
       'commission.strategy': input.config?.commission?.strategy,
       'commission.enabled': input.config?.commission?.enabled,
-      'commission.minSessions': input.config?.commission?.params?.minSessions,
+      'commission.minSessions': numberParam(input.config?.commission?.params ?? {}, 'minSessions', 0),
       ...input.metadata,
     };
   }
@@ -652,6 +704,10 @@ export class PayrollProvider {
       reason,
       metadata: {},
     };
+  }
+
+  private getMatchedRules(value: unknown): string[] {
+    return Array.isArray(value) ? value.filter((rule): rule is string => typeof rule === 'string') : [];
   }
 
   /**
@@ -760,7 +816,11 @@ export class PayrollProvider {
    * Convert Platform Rule condition to RuleReasoner condition
    * @private
    */
-  private convertConditionToReasoner(condition: Condition): Condition {
+  private convertConditionToReasoner(condition: RuleCondition): Condition {
+    if (typeof condition === 'function') {
+      throw new Error('Function-based payroll rule conditions cannot be converted to RuleReasoner conditions');
+    }
+
     if (condition.type === 'simple') {
       return {
         type: 'comparison',
@@ -774,7 +834,7 @@ export class PayrollProvider {
       return {
         type: 'operator',
         operator: 'and',
-        conditions: condition.conditions.map((c: Record<string, unknown>) =>
+        conditions: condition.conditions.map((c) =>
           this.convertConditionToReasoner(c)
         ),
       };
@@ -784,7 +844,7 @@ export class PayrollProvider {
       return {
         type: 'operator',
         operator: 'or',
-        conditions: condition.conditions.map((c: Record<string, unknown>) =>
+        conditions: condition.conditions.map((c) =>
           this.convertConditionToReasoner(c)
         ),
       };
@@ -797,8 +857,8 @@ export class PayrollProvider {
    * Map Platform operator to RuleReasoner operator
    * @private
    */
-  private mapOperator(operator: string): string {
-    const operatorMap: Record<string, string> = {
+  private mapOperator(operator: string): ReasonerComparisonOperator {
+    const operatorMap: Record<string, ReasonerComparisonOperator> = {
       equals: '===',
       notEquals: '!==',
       greaterThan: '>',

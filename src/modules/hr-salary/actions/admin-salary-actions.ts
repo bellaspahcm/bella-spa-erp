@@ -550,7 +550,11 @@ export async function publishAllSalaryRecords() {
 
   let targets: Array<{ id: string }> = [];
   if (moduleKey === 'real_estate') {
-    const { data: hrSummary, error: hrError } = await (supabase as unknown).rpc(
+    const hrRpc = supabase.rpc as unknown as (
+      functionName: 'get_hr_employee_summary',
+      params: Record<string, unknown>
+    ) => Promise<{ data: Array<{ employee_id?: string; id?: string }> | null; error: { message: string } | null }>;
+    const { data: hrSummary, error: hrError } = await hrRpc(
       'get_hr_employee_summary',
       { p_tenant_id: tenantId, p_status: 'active' }
     );
@@ -560,7 +564,10 @@ export async function publishAllSalaryRecords() {
         error: `Không thể tải danh sách nhân viên: ${hrError.message}`,
       }]);
     }
-    targets = (hrSummary || []).map((row: Record<string, unknown>) => ({ id: row.person_id }));
+    targets = (hrSummary || [])
+      .map((row) => row.employee_id || row.id)
+      .filter((id): id is string => typeof id === 'string')
+      .map((id) => ({ id }));
   } else {
     const { data: ktvs, error: ktvError } = await supabase
       .from('users')

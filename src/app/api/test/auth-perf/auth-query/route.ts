@@ -14,7 +14,7 @@ export async function GET() {
     const currentUser = await getCurrentUser();
     const t_auth_ms = performance.now() - t_auth_start;
 
-    if (!currentUser) {
+    if (!currentUser?.tenant_id) {
       const t_handler_ms = performance.now() - t_handler_start;
       return NextResponse.json(
         { error: 'Unauthorized' },

@@ -16,7 +16,7 @@ export interface ApprovalInstance {
   currentLevel: number;
   requestedAt: string;
   ageHours: number;
-  entityData?: unknown;
+  entityData?: Record<string, unknown>;
 }
 
 export interface ApprovalDashboardProps {
@@ -211,17 +211,17 @@ export function ApprovalDashboard({
                     </p>
                     {approval.entityData && (
                       <>
-                        {approval.entityData.customer && (
+                        {typeof approval.entityData.customer === 'string' && (
                           <p>
                             <strong>Khách hàng:</strong> {approval.entityData.customer}
                           </p>
                         )}
-                        {approval.entityData.vehicle && (
+                        {typeof approval.entityData.vehicle === 'string' && (
                           <p>
                             <strong>Xe:</strong> {approval.entityData.vehicle}
                           </p>
                         )}
-                        {approval.entityData.total && (
+                        {typeof approval.entityData.total === 'number' && (
                           <p>
                             <strong>Giá trị:</strong>{' '}
                             {approval.entityData.total.toLocaleString('vi-VN')} VND

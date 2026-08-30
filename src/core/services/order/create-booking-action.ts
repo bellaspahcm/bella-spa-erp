@@ -29,6 +29,19 @@ type BookingValidationDetails = z.inferFlattenedErrors<typeof bookingSchema>['fi
 type CreateBookingResult =
   | { error: string; details?: BookingValidationDetails; data?: undefined }
   | { data: BookingRow; error?: undefined; details?: undefined };
+type CommissionDefaultConfig = {
+  type: 'fixed' | 'percentage';
+  value: number;
+};
+
+function isCommissionDefaultConfig(value: unknown): value is CommissionDefaultConfig {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return false;
+  }
+  const candidate = value as Record<string, unknown>;
+  return (candidate.type === 'fixed' || candidate.type === 'percentage')
+    && typeof candidate.value === 'number';
+}
 
 /**
  * Creates a new booking with customer, payment, and session initialization.
@@ -290,7 +303,14 @@ export async function createBooking(formData: CreateBookingInput): Promise<Creat
     const { createBookingServiceItems } = await import('./create-booking-service-items-helper');
     
     // Extract commission defaults from tenant context settings
-    const commissionDefaults = tenantContext.context.settings?.commission_config?.service_commission_default;
+    const commissionConfig = tenantContext.context.settings?.commission_config;
+    const rawCommissionDefaults =
+      commissionConfig && typeof commissionConfig === 'object' && !Array.isArray(commissionConfig)
+        ? (commissionConfig as Record<string, unknown>).service_commission_default
+        : undefined;
+    const commissionDefaults = isCommissionDefaultConfig(rawCommissionDefaults)
+      ? rawCommissionDefaults
+      : undefined;
     
     const serviceItemsResult = await createBookingServiceItems({
       supabase,

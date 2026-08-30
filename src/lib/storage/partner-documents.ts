@@ -72,6 +72,32 @@ export interface DocumentMetadata {
   uploadedBy?: string;
 }
 
+type PartnerDocumentRpc = (
+  functionName: 'add_partner_document' | 'remove_partner_document',
+  params: Record<string, unknown>
+) => Promise<{ error: { message: string } | null }>;
+
+function isAllowedFileType(value: string): value is typeof ALLOWED_FILE_TYPES[number] {
+  return (ALLOWED_FILE_TYPES as readonly string[]).includes(value);
+}
+
+function isAllowedExtension(value: string): value is typeof ALLOWED_EXTENSIONS[number] {
+  return (ALLOWED_EXTENSIONS as readonly string[]).includes(value);
+}
+
+function isDocumentMetadata(value: unknown): value is DocumentMetadata {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return false;
+  }
+  const doc = value as Record<string, unknown>;
+  return typeof doc.applicationId === 'string'
+    && typeof doc.category === 'string'
+    && typeof doc.originalName === 'string'
+    && typeof doc.fileSize === 'number'
+    && typeof doc.mimeType === 'string'
+    && typeof doc.uploadedAt === 'string';
+}
+
 /**
  * Validate file before upload
  */
@@ -85,7 +111,7 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
   }
   
   // Check file type
-  if (!ALLOWED_FILE_TYPES.includes(file.type as unknown)) {
+  if (!isAllowedFileType(file.type)) {
     return {
       valid: false,
       error: `Loại file không hợp lệ. Chỉ chấp nhận: ${ALLOWED_EXTENSIONS.join(', ')}`,
@@ -94,7 +120,7 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
   
   // Check file name extension
   const ext = file.name.toLowerCase().match(/\.\w+$/)?.[0];
-  if (!ext || !ALLOWED_EXTENSIONS.includes(ext as unknown)) {
+  if (!ext || !isAllowedExtension(ext)) {
     return {
       valid: false,
       error: `Phần mở rộng file không hợp lệ`,
@@ -178,7 +204,8 @@ export async function uploadDocument(
       .getPublicUrl(filePath);
     
     // Update application with document reference
-    const { error: dbError } = await (supabase.rpc as unknown)('add_partner_document', {
+    const partnerDocumentRpc = supabase.rpc as unknown as PartnerDocumentRpc;
+    const { error: dbError } = await partnerDocumentRpc('add_partner_document', {
       p_application_id: applicationId,
       p_file_path: filePath,
       p_file_url: urlData.publicUrl,
@@ -238,7 +265,8 @@ export async function deleteDocument(
     }
     
     // Remove from application documents array
-    const { error: dbError } = await (supabase.rpc as unknown)('remove_partner_document', {
+    const partnerDocumentRpc = supabase.rpc as unknown as PartnerDocumentRpc;
+    const { error: dbError } = await partnerDocumentRpc('remove_partner_document', {
       p_application_id: applicationId,
       p_file_path: filePath,
     });
@@ -311,9 +339,11 @@ export async function listDocuments(
       return { documents: [], error: error.message };
     }
     
-    const documents = application?.documents || [];
+    const documents = Array.isArray(application?.documents)
+      ? (application.documents as unknown[]).filter(isDocumentMetadata)
+      : [];
     
-    return { documents: documents as unknown };
+    return { documents };
     
   } catch (error) {
     console.error('[listDocuments] Exception:', error);

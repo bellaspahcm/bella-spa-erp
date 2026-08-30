@@ -41,7 +41,16 @@ export async function GET(
     // Generate signed URLs for each document
     const documentsWithUrls = await Promise.all(
       (documents as DocumentRow[]).map(async (doc) => {
-        const { url, error: urlError } = await getSignedDocumentUrl(doc.metadata?.filePath || doc.filePath);
+        const filePath = doc.metadata?.filePath || doc.filePath;
+        if (!filePath) {
+          return {
+            ...doc,
+            signedUrl: null,
+            signedUrlError: 'Missing document file path',
+          };
+        }
+
+        const { url, error: urlError } = await getSignedDocumentUrl(filePath);
         
         return {
           ...doc,

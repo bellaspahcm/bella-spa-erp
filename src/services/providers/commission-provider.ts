@@ -217,7 +217,7 @@ export class CommissionProvider implements PayrollProvider<SalaryComponent> {
     const { tenantId, sessions, overrides } = context;
 
     // Check if override amount provided
-    if (options?.applyOverrides && overrides?.sessionCommission !== undefined) {
+    if (options?.applyOverrides && typeof overrides?.sessionCommission === 'number') {
       return createSalaryComponent('session-commission', {
         eligible: true,
         amount: overrides.sessionCommission,

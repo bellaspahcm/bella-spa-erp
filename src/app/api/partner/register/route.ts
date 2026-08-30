@@ -225,7 +225,7 @@ export async function POST(request: NextRequest) {
               recaptcha_score: recaptchaResult.score,
               ip_address: ip,
             },
-          })
+          } as never)
           .eq('id', existingApp.id)
           .select()
           .single();
@@ -302,7 +302,7 @@ export async function POST(request: NextRequest) {
           ip_address: ip,
           flagged_for_review: spamCheck.shouldReview,
         },
-      })
+      } as never)
       .select()
       .single();
     

@@ -165,7 +165,7 @@ export class KPIProvider implements PayrollProvider<SalaryComponent> {
     const { tenantId, sessions, sales, overrides } = context;
 
     // Check if override amount provided
-    if (options?.applyOverrides && overrides?.kpiBonus !== undefined) {
+    if (options?.applyOverrides && typeof overrides?.kpiBonus === 'number') {
       return createSalaryComponent('kpi-bonus', {
         eligible: true,
         amount: overrides.kpiBonus,

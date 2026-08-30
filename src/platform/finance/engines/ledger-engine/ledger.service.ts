@@ -261,7 +261,7 @@ export class LedgerEngineService implements ILedgerEngine {
         p_transaction_id: req.transaction_id,
         p_idempotency_key: req.idempotency_key,
         p_reason: req.reason,
-        p_reversal_date: req.reversal_date ? req.reversal_date.toISOString() : null
+        p_reversal_date: req.reversal_date?.toISOString()
       });
 
       if (error) {
@@ -667,4 +667,3 @@ export class LedgerEngineService implements ILedgerEngine {
     };
   }
 }
-

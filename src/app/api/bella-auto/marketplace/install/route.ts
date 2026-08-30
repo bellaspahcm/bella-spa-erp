@@ -82,18 +82,17 @@ export async function POST(request: NextRequest) {
       })
       .eq('id', installation.id);
 
-    // Increment install count
-    await supabase.rpc('increment', {
-      table_name: 'auto_capabilities',
-      row_id: capabilityId,
-      column_name: 'install_count',
-    }).catch(() => {
-      // Fallback: manual increment
-      supabase
-        .from('auto_capabilities')
-        .update({ install_count: supabase.sql`install_count + 1` })
-        .eq('id', capabilityId);
-    });
+    // Increment install count without relying on an untyped helper RPC.
+    const { data: capability } = await supabase
+      .from('auto_capabilities')
+      .select('install_count')
+      .eq('id', capabilityId)
+      .single();
+
+    await supabase
+      .from('auto_capabilities')
+      .update({ install_count: Number(capability?.install_count ?? 0) + 1 })
+      .eq('id', capabilityId);
 
     return NextResponse.json({
       installation: { ...installation, status: 'active' },

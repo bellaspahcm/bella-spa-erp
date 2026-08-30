@@ -171,7 +171,7 @@ export function wireVitalsToAIAlerts(): () => void {
           : 'warning';
 
         const { data, error } = await supabase
-          .from('ai_alerts')
+          .from('ai_alerts' as unknown as 'tenants')
           .insert({
             tenant_id: event.tenantId,
             patient_id: event.payload.patientId,
@@ -182,15 +182,15 @@ export function wireVitalsToAIAlerts(): () => void {
             message: `${criticalFindings.length} critical vital sign(s) detected: ${alertMessage}`,
             source: 'NursingEngine',
             metadata: {
-              vitalsId: event.payload.vitalsId,
+              vitalsId: event.payload.vitalSignsId,
               findings: criticalFindings,
-              recordedBy: event.payload.recordedBy,
+              recordedBy: event.payload.practitionerId,
               recordedAt: event.payload.recordedAt,
               eventId: event.eventId,
-            },
+            } as unknown as import('@/types/database.types').Json,
             status: 'active',
             requires_action: highestSeverity === 'critical',
-          })
+          } as never)
           .select()
           .single();
 
@@ -199,7 +199,7 @@ export function wireVitalsToAIAlerts(): () => void {
           return;
         }
 
-        console.log(`[Wiring] AI alert created (${highestSeverity}):`, data.id);
+        console.log(`[Wiring] AI alert created (${highestSeverity}):`, (data as { id: string }).id);
 
         // TODO: Publish CriticalAlertCreated event to notify nursing staff
       } catch (error) {

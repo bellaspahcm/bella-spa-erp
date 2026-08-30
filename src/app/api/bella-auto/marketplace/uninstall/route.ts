@@ -58,10 +58,16 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Decrement install count
+    // Decrement install count without relying on raw SQL through the typed client.
+    const { data: capability } = await supabase
+      .from('auto_capabilities')
+      .select('install_count')
+      .eq('id', installation.capability_id)
+      .single();
+
     await supabase
       .from('auto_capabilities')
-      .update({ install_count: supabase.sql`GREATEST(install_count - 1, 0)` })
+      .update({ install_count: Math.max(Number(capability?.install_count ?? 0) - 1, 0) })
       .eq('id', installation.capability_id);
 
     return NextResponse.json({

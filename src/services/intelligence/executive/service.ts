@@ -17,7 +17,7 @@
  * - EXPENSE_RECORDED → Invalidates executive:*
  */
 
-import type { IntelligenceService, DateRange, IntelligenceResponse } from '../shared/types';
+import type { IntelligenceService, DateRange, IntelligenceResponse, TimePeriod } from '../shared/types';
 import { IntelligenceError, QueryError } from '../shared/types';
 import { getCache } from '../cache';
 import { buildCacheKey, parseDateRange, formatDate } from '../shared/helpers';
@@ -58,10 +58,10 @@ export class ExecutiveIntelligenceService implements IntelligenceService {
    */
   async getMonthlyRevenueSummary(
     tenantId: string,
-    dateRange: DateRange | string
+    dateRange: DateRange | TimePeriod
   ): Promise<IntelligenceResponse<MonthlyRevenueSummary>> {
     const startTime = Date.now();
-    const parsedRange = parseDateRange(dateRange as unknown);
+    const parsedRange = parseDateRange(dateRange);
 
     try {
       // Build cache key
@@ -125,10 +125,10 @@ export class ExecutiveIntelligenceService implements IntelligenceService {
    */
   async getOperationalEfficiency(
     tenantId: string,
-    dateRange: DateRange | string
+    dateRange: DateRange | TimePeriod
   ): Promise<IntelligenceResponse<OperationalEfficiency>> {
     const startTime = Date.now();
-    const parsedRange = parseDateRange(dateRange as unknown);
+    const parsedRange = parseDateRange(dateRange);
 
     try {
       const cacheKey = buildCacheKey(
@@ -188,10 +188,10 @@ export class ExecutiveIntelligenceService implements IntelligenceService {
    */
   async getCustomerMetrics(
     tenantId: string,
-    dateRange: DateRange | string
+    dateRange: DateRange | TimePeriod
   ): Promise<IntelligenceResponse<CustomerMetrics>> {
     const startTime = Date.now();
-    const parsedRange = parseDateRange(dateRange as unknown);
+    const parsedRange = parseDateRange(dateRange);
 
     try {
       const cacheKey = buildCacheKey(
@@ -251,10 +251,10 @@ export class ExecutiveIntelligenceService implements IntelligenceService {
    */
   async getFinancialHealth(
     tenantId: string,
-    dateRange: DateRange | string
+    dateRange: DateRange | TimePeriod
   ): Promise<IntelligenceResponse<FinancialHealth>> {
     const startTime = Date.now();
-    const parsedRange = parseDateRange(dateRange as unknown);
+    const parsedRange = parseDateRange(dateRange);
 
     try {
       const cacheKey = buildCacheKey(
@@ -314,10 +314,10 @@ export class ExecutiveIntelligenceService implements IntelligenceService {
    */
   async getGrowthIndicators(
     tenantId: string,
-    dateRange: DateRange | string
+    dateRange: DateRange | TimePeriod
   ): Promise<IntelligenceResponse<GrowthIndicators>> {
     const startTime = Date.now();
-    const parsedRange = parseDateRange(dateRange as unknown);
+    const parsedRange = parseDateRange(dateRange);
 
     try {
       const cacheKey = buildCacheKey(

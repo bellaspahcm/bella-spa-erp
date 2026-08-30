@@ -125,8 +125,7 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
 
       // Validate with Decision Engine (includes break time buffer check)
       const validationResult = await invokeAdapterValidation(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        updatedBookingData as unknown, // Type assertion since we're mapping fields
+        updatedBookingData as unknown as Database['public']['Tables']['bookings']['Insert'],
         tenantContext.context
       );
 
@@ -385,9 +384,7 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
               }
             }
 
-            // Build update payload dynamically
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const logUpdatePayload: Record<string, unknown> = {};
+            const logUpdatePayload: Database['public']['Tables']['session_logs']['Update'] = {};
             if (assignedDate !== session.assigned_date) {
               logUpdatePayload.assigned_date = assignedDate;
             }
@@ -437,8 +434,7 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
               newCompletedDate = null;
             }
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const logUpdatePayload: Record<string, unknown> = {};
+            const logUpdatePayload: Database['public']['Tables']['session_logs']['Update'] = {};
             if (newStatus !== session.status) {
               logUpdatePayload.status = newStatus;
             }

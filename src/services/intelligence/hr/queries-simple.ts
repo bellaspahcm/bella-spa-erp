@@ -144,12 +144,12 @@ export async function getAttendanceReport(tenantId: string, month?: string) {
       .gte('date', startDate)
       .lt('date', endDate) as {
         data: Array<{ ktv_id: string; date: string; status: string; checkin_time: string | null }> | null;
-        error: unknown;
+        error: { message: string } | null;
       };
 
     if (error) {
       console.error('[HR Intelligence] Attendance query error:', error);
-      throw new QueryError(`Failed to fetch attendance report: ${error.message}`, error);
+      throw new QueryError(`Failed to fetch attendance report: ${error.message}`, new Error(error.message));
     }
 
     if (!attendance || attendance.length === 0) {
@@ -318,12 +318,12 @@ export async function getEmployeePerformance(tenantId: string, month?: string) {
       .eq('tenant_id', tenantId)
       .eq('month_year', formattedMonth) as {
         data: Array<{ ktv_id: string; customer_satisfaction: number | null; bonus_amount: number | null }> | null;
-        error: unknown;
+        error: { message: string } | null;
       };
 
     if (kpiError) {
       console.error('[HR Intelligence] KPI query error:', kpiError);
-      throw new QueryError(`Failed to fetch employee performance: ${kpiError.message}`, kpiError);
+      throw new QueryError(`Failed to fetch employee performance: ${kpiError.message}`, new Error(kpiError.message));
     }
 
     if (!kpiRecords || kpiRecords.length === 0) {

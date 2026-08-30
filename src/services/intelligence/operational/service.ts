@@ -77,7 +77,7 @@ export class OperationalIntelligenceService implements IntelligenceService {
     dateRange: DateRange | TimePeriod
   ): Promise<IntelligenceResponse<KTVPerformanceSimple[]>> {
     const startTime = Date.now();
-    const parsedRange = parseDateRange(dateRange as unknown);
+    const parsedRange = parseDateRange(dateRange);
 
     try {
       // Build cache key
@@ -156,7 +156,7 @@ export class OperationalIntelligenceService implements IntelligenceService {
     limit: number = 10
   ): Promise<IntelligenceResponse<KTVLeaderboardSimple[]>> {
     const startTime = Date.now();
-    const parsedRange = parseDateRange(dateRange as unknown);
+    const parsedRange = parseDateRange(dateRange);
 
     try {
       const cacheKey = buildCacheKey(
@@ -342,7 +342,7 @@ export class OperationalIntelligenceService implements IntelligenceService {
     dateRange: DateRange | TimePeriod
   ): Promise<IntelligenceResponse<SessionAnalytics[]>> {
     const startTime = Date.now();
-    const parsedRange = parseDateRange(dateRange as unknown);
+    const parsedRange = parseDateRange(dateRange);
 
     try {
       const cacheKey = buildCacheKey(
@@ -401,7 +401,7 @@ export class OperationalIntelligenceService implements IntelligenceService {
     dateRange: DateRange | TimePeriod
   ): Promise<IntelligenceResponse<CapacityUtilization[]>> {
     const startTime = Date.now();
-    const parsedRange = parseDateRange(dateRange as unknown);
+    const parsedRange = parseDateRange(dateRange);
 
     try {
       const cacheKey = buildCacheKey(

@@ -301,20 +301,19 @@ async function collaborativePackageRecommendations(
   const segment = context.customerSegment || 'Unknown';
   
   // Get popular packages in segment
-  // Note: RPC not in generated types yet, using type cast
-  const { data: popularPackages } = await supabase.rpc('get_popular_packages_by_segment' as never, {
+  const { data: popularPackages } = await (supabase as any).rpc('get_popular_packages_by_segment', {
     p_tenant_id: tenantId,
     p_segment: segment,
     p_limit: 20,
-  });
+  }) as { data: PopularPackageRow[] | null, error: any };
   
-  if (!popularPackages || (popularPackages as unknown[]).length === 0) {
+  if (!popularPackages || popularPackages.length === 0) {
     // Fallback to content-based
     return [];
   }
   
   const popularityMap = new Map<string, { purchaseCount: number; rank: number }>(
-    (popularPackages as unknown as PopularPackageRow[]).map((p, index: number) => [
+    popularPackages.map((p, index: number) => [
       p.package_id,
       { purchaseCount: p.purchase_count, rank: index },
     ])
@@ -325,7 +324,7 @@ async function collaborativePackageRecommendations(
     if (!popularity) continue;
     
     // Score based on popularity rank
-    const score = 1 - (popularity.rank / (popularPackages as unknown[]).length) * 0.5;
+    const score = 1 - (popularity.rank / popularPackages.length) * 0.5;
     const confidence = Math.min(1.0, popularity.purchaseCount / 20);
     
     const fitScore: FitScore = {
@@ -463,16 +462,16 @@ async function enrichPackageDetails(
   pkg: PackageRow
 ): Promise<EnrichedPackage> {
   // Get package services
-  const { data: packageServices } = await supabase
-    .from('package_services' as never)
+  const { data: packageServices } = await (supabase as any)
+    .from('package_services')
     .select(`
       service_id,
       quantity,
       services (name, price)
     `)
-    .eq('package_id', pkg.id);
+    .eq('package_id', pkg.id) as { data: PackageServiceRow[] | null, error: any };
   
-  const services = ((packageServices as unknown as PackageServiceRow[]) || []).map(ps => ({
+  const services = (packageServices || []).map(ps => ({
     serviceId: ps.service_id,
     serviceName: ps.services?.name || 'Unknown',
     quantity: ps.quantity,
@@ -486,21 +485,21 @@ async function enrichPackageDetails(
     : 0;
   
   // Get ratings
-  const { data: ratings } = await supabase
-    .from('bookings' as never)
+  const { data: ratings } = await (supabase as any)
+    .from('bookings')
     .select(`
       sessions!inner (
         reviews (overall_rating)
       )
     `)
     .eq('tenant_id', tenantId)
-    .eq('package_id', pkg.id);
+    .eq('package_id', pkg.id) as { data: BookingRow[] | null, error: any };
   
   let totalRating = 0;
   let totalReviews = 0;
   
   if (ratings) {
-    for (const booking of ratings as unknown as BookingRow[]) {
+    for (const booking of ratings) {
       if (booking.sessions && booking.sessions.reviews) {
         for (const review of booking.sessions.reviews) {
           totalRating += review.overall_rating;
@@ -589,12 +588,12 @@ async function fetchCustomerContext(
   customerId: string
 ): Promise<RecommendationContext> {
   // Note: View not in generated types yet, using type cast
-  const { data: segment } = await supabase
-    .from('mv_customer_segments' as never)
+  const { data: segment } = await (supabase as any)
+    .from('mv_customer_segments')
     .select('*')
     .eq('tenant_id', tenantId)
     .eq('customer_id', customerId)
-    .single();
+    .single() as { data: any, error: any };
   
   if (!segment) {
     return {};
@@ -622,13 +621,13 @@ async function fetchFavoriteServices(
   customerId: string
 ): Promise<Set<string>> {
   // Note: View not in generated types yet, using type cast
-  const { data: interactions } = await supabase
-    .from('mv_customer_item_interactions' as never)
+  const { data: interactions } = await (supabase as any)
+    .from('mv_customer_item_interactions')
     .select('item_id')
     .eq('tenant_id', tenantId)
     .eq('customer_id', customerId)
     .eq('item_type', 'service')
-    .eq('is_top_interaction', true);
+    .eq('is_top_interaction', true) as { data: any[] | null, error: any };
   
   if (!interactions) {
     return new Set();

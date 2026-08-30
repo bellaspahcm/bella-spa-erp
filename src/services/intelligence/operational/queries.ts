@@ -268,13 +268,13 @@ export async function getKtvPerformance(
     const range = parseDateRange(dateRange);
     
     // Query materialized view (use rpc or type-safe approach)
-    const { data, error } = await supabase
-      .from('mv_ktv_performance_summary' as unknown)
+    const { data, error } = await (supabase as any)
+      .from('mv_ktv_performance_summary')
       .select('*')
       .eq('ktv_id', ktvId)
       .gte('month', formatDate(range.startDate))
       .lte('month', formatDate(range.endDate))
-      .order('month', { ascending: false });
+      .order('month', { ascending: false }) as { data: MvKtvPerformanceSummary[] | null, error: any };
     
     if (error) {
       throw new QueryError(
@@ -353,14 +353,14 @@ export async function getKtvLeaderboard(
       : 'avg_rating';
     
     // Query materialized view (type-cast needed for MV support)
-    const { data, error } = await supabase
-      .from('mv_ktv_performance_summary' as unknown)
+    const { data, error } = await (supabase as any)
+      .from('mv_ktv_performance_summary')
       .select('*')
       .eq('tenant_id', tenantId)
       .gte('month', formatDate(range.startDate))
       .lte('month', formatDate(range.endDate))
       .order(sortColumn, { ascending: false })
-      .limit(limit);
+      .limit(limit) as { data: MvKtvPerformanceSummary[] | null, error: any };
     
     if (error) {
       throw new QueryError(
@@ -445,8 +445,8 @@ export async function getInventoryStatus(
     const supabase = await createServiceRoleClient();
     
     // Build query (type-cast needed for MV support)
-    let query = supabase
-      .from('mv_inventory_status' as unknown)
+    let query = (supabase as any)
+      .from('mv_inventory_status')
       .select('*')
       .eq('tenant_id', tenantId);
     
@@ -458,7 +458,7 @@ export async function getInventoryStatus(
     // Sort by stock status priority (out_of_stock first)
     query = query.order('stock_status', { ascending: true });
     
-    const { data, error } = await query;
+    const { data, error } = await query as { data: MvInventoryStatus[] | null, error: any };
     
     if (error) {
       throw new QueryError(
@@ -524,11 +524,11 @@ export async function getInventoryForecast(
     const supabase = await createServiceRoleClient();
     
     // Query materialized view for product (type-cast needed for MV support)
-    const { data, error } = await supabase
-      .from('mv_inventory_status' as unknown)
+    const { data, error } = await (supabase as any)
+      .from('mv_inventory_status')
       .select('*')
       .eq('product_id', productId)
-      .single();
+      .single() as { data: MvInventoryStatus | null, error: any };
     
     if (error) {
       throw new QueryError(
@@ -606,13 +606,13 @@ export async function getSessionAnalytics(
     const range = parseDateRange(dateRange);
     
     // Query materialized view (type-cast needed for MV support)
-    const { data, error } = await supabase
-      .from('mv_session_analytics' as unknown)
+    const { data, error } = await (supabase as any)
+      .from('mv_session_analytics')
       .select('*')
       .eq('tenant_id', tenantId)
       .gte('date', formatDate(range.startDate))
       .lte('date', formatDate(range.endDate))
-      .order('date', { ascending: false });
+      .order('date', { ascending: false }) as { data: MvSessionAnalytics[] | null, error: any };
     
     if (error) {
       throw new QueryError(
@@ -686,13 +686,13 @@ export async function getCapacityUtilization(
     const range = parseDateRange(dateRange);
     
     // Query session analytics for capacity metrics (type-cast needed for MV support)
-    const { data: sessionData, error: sessionError } = await supabase
-      .from('mv_session_analytics' as unknown)
+    const { data: sessionData, error: sessionError } = await (supabase as any)
+      .from('mv_session_analytics')
       .select('*')
       .eq('tenant_id', tenantId)
       .gte('date', formatDate(range.startDate))
       .lte('date', formatDate(range.endDate))
-      .order('date', { ascending: false });
+      .order('date', { ascending: false }) as { data: MvSessionAnalytics[] | null, error: any };
     
     if (sessionError) {
       throw new QueryError(

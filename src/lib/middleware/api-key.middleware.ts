@@ -70,6 +70,23 @@ type APIKeySupabaseClient = {
     functionName: 'validate_api_partner',
     params: { p_api_key: string }
   ): Promise<APIKeyQueryResult<PartnerValidationResult[]>>;
+  rpc(
+    functionName: 'log_api_request',
+    params: {
+      p_partner_id: string;
+      p_tenant_id: string;
+      p_method: HTTPMethod;
+      p_endpoint: string;
+      p_status_code: number;
+      p_response_time_ms: number;
+      p_is_error: boolean;
+      p_error_code: string | null;
+      p_error_message: string | null;
+      p_ip_address: string | null;
+      p_user_agent: string | null;
+      p_request_id: string | null;
+    }
+  ): Promise<APIKeyQueryResult<unknown>>;
   from(table: 'api_request_logs'): {
     insert(payload: CreateAPIRequestLogInput): Promise<APIKeyQueryResult<unknown>>;
   };
@@ -257,9 +274,10 @@ function isValidIP(ip: string): boolean {
  */
 export async function logAPIRequest(logData: CreateAPIRequestLogInput): Promise<void> {
   const supabase = getAdminSupabaseClient();
+  const apiClient = asAPIKeySupabaseClient(supabase);
 
   // Primary: Use SECURITY DEFINER RPC log_api_request for safe INET handling and RLS bypass
-  const { error: rpcError } = await (supabase.rpc as unknown)('log_api_request', {
+  const { error: rpcError } = await apiClient.rpc('log_api_request', {
     p_partner_id: logData.partner_id,
     p_tenant_id: logData.tenant_id,
     p_method: logData.method,
@@ -285,7 +303,7 @@ export async function logAPIRequest(logData: CreateAPIRequestLogInput): Promise<
       delete payload.ip_address;
     }
 
-    const { error: insertError } = await supabase
+    const { error: insertError } = await apiClient
       .from('api_request_logs')
       .insert(payload);
 

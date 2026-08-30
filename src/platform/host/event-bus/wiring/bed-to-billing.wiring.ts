@@ -25,7 +25,7 @@ export function wireBedToBilling(): () => void {
 
         // Create billing charge for room occupancy
         const { data, error } = await supabase
-          .from('billing_charges')
+          .from('billing_charges' as unknown as 'tenants')
           .insert({
             tenant_id: event.tenantId,
             encounter_id: event.payload.encounterId,
@@ -46,7 +46,7 @@ export function wireBedToBilling(): () => void {
               admissionId: event.payload.admissionId,
               eventId: event.eventId,
             },
-          })
+          } as never)
           .select()
           .single();
 
@@ -56,7 +56,7 @@ export function wireBedToBilling(): () => void {
           return;
         }
 
-        console.log('[Wiring] Room charge created successfully:', data.id);
+          console.log('[Wiring] Room charge created successfully:', (data as { id: string }).id);
 
         // TODO: Publish BillingChargeCreated event
       } catch (error) {

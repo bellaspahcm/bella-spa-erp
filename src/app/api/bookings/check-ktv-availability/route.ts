@@ -93,7 +93,7 @@ export async function invalidateAvailabilityCache(params: {
   const promises: Promise<void>[] = [];
   for (const dur of durations) {
     const keyWithoutExclude = buildAvailabilityCacheKey({ ...params, duration: dur, excludeBookingId: null });
-    promises.push(deleteCache(keyWithoutExclude));
+    promises.push(deleteCache(keyWithoutExclude).then(() => undefined));
   }
   
   await Promise.all(promises).catch(err => 

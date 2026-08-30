@@ -358,7 +358,7 @@ export class ForecastService {
         throw error;
       }
       
-      return (data || []) as ForecastAccuracySummary[];
+      return (data || []) as unknown as ForecastAccuracySummary[];
     } catch (viewError) {
       // mv_forecast_accuracy view not yet created — return empty array gracefully
       console.warn('[ForecastService] mv_forecast_accuracy not available:', viewError);
@@ -384,7 +384,7 @@ export class ForecastService {
       throw new Error(`Failed to compare models: ${error.message}`);
     }
     
-    return (data || []) as ModelComparisonResult[];
+    return (data || []) as unknown as ModelComparisonResult[];
   }
   
   // ==========================================================================

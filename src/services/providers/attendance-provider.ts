@@ -102,7 +102,7 @@ export class AttendanceProvider implements PayrollProvider<SalaryComponent> {
     const { tenantId, attendance, overrides } = context;
 
     // Check if override amount provided
-    if (options?.applyOverrides && overrides?.attendanceDeduction !== undefined) {
+    if (options?.applyOverrides && typeof overrides?.attendanceDeduction === 'number') {
       return createSalaryComponent('attendance-deduction', {
         eligible: true,
         amount: overrides.attendanceDeduction,

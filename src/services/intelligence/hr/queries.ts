@@ -530,9 +530,9 @@ export async function getRetentionAnalysis(
   const rows = data as unknown as Record<string, unknown>[];
   
   // Aggregate retention metrics
-  const totalHeadcount = rows.reduce((sum, row) => sum + (row.current_headcount || 0), 0);
-  const totalTerminations = rows.reduce((sum, row) => sum + (row.terminations || 0), 0);
-  const avgTenure = rows.reduce((sum, row) => sum + (row.avg_tenure_months || 0), 0) / rows.length;
+  const totalHeadcount = rows.reduce((sum, row) => sum + Number(row.current_headcount || 0), 0);
+  const totalTerminations = rows.reduce((sum, row) => sum + Number(row.terminations || 0), 0);
+  const avgTenure = rows.reduce((sum, row) => sum + Number(row.avg_tenure_months || 0), 0) / rows.length;
   
   // Fetch active users to compute tenure distribution
   const { data: usersData } = await supabase
@@ -613,7 +613,7 @@ export async function getRetentionAnalysis(
 
   return {
     tenantId,
-    month: rows[0].month,
+    month: typeof rows[0]?.month === 'string' ? rows[0].month : '',
     attritionRatePct: totalHeadcount > 0 ? (totalTerminations / totalHeadcount) * 100 : 0,
     highRiskEmployees,
     mediumRiskEmployees,
@@ -674,34 +674,41 @@ export async function getProductivityTrends(
   const rows = data as unknown as Record<string, unknown>[];
   
   // Group by month and aggregate
-  const monthlyData = rows.reduce((acc, row) => {
-    const month = row.month as string;
-    if (!acc[month]) {
-      acc[month] = {
-        totalSessions: 0,
-        totalRevenue: 0,
-        employeeCount: 0,
-        totalWorkingDays: 0,
-      };
-    }
-    acc[month].totalSessions += row.total_sessions_completed || 0;
-    acc[month].totalRevenue += row.total_revenue_contributed || 0;
-    acc[month].employeeCount += 1;
-    acc[month].totalWorkingDays += row.working_days || 0;
+  type MonthlyProductivityMetrics = {
+    totalSessions: number;
+    totalRevenue: number;
+    employeeCount: number;
+    totalWorkingDays: number;
+  };
+
+  const monthlyData = rows.reduce<Record<string, MonthlyProductivityMetrics>>((acc, row) => {
+    const month = typeof row.month === 'string' ? row.month : 'unknown';
+    const existing = acc[month] ?? {
+      totalSessions: 0,
+      totalRevenue: 0,
+      employeeCount: 0,
+      totalWorkingDays: 0,
+    };
+    acc[month] = {
+      totalSessions: existing.totalSessions + Number(row.total_sessions_completed || 0),
+      totalRevenue: existing.totalRevenue + Number(row.total_revenue_contributed || 0),
+      employeeCount: existing.employeeCount + 1,
+      totalWorkingDays: existing.totalWorkingDays + Number(row.working_days || 0),
+    };
     return acc;
-  }, {} as Record<string, { totalSessions: number; totalRevenue: number; employeeCount: number; totalWorkingDays: number }>);
+  }, {});
   
   // Convert to ProductivityTrends array with MoM calculations
   const sortedMonths = Object.keys(monthlyData).sort();
   
   return sortedMonths.map((month, idx) => {
-    const metrics = monthlyData[month];
+    const metrics = monthlyData[month]!;
     let sessionsGrowthPct = 0;
     let revenueGrowthPct = 0;
     
     if (idx > 0) {
       const prevMonth = sortedMonths[idx - 1];
-      const prevMetrics = monthlyData[prevMonth];
+      const prevMetrics = monthlyData[prevMonth]!;
       if (prevMetrics.totalSessions > 0) {
         sessionsGrowthPct = ((metrics.totalSessions - prevMetrics.totalSessions) / prevMetrics.totalSessions) * 100;
       }

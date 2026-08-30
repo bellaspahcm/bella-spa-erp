@@ -101,7 +101,7 @@ export async function POST(
         info_requested_by: user.id,
         updated_at: new Date().toISOString(),
         updated_by: user.id,
-      })
+      } as never)
       .eq('id', params.id)
       .select()
       .single();
@@ -126,7 +126,7 @@ export async function POST(
         old_status: application.status,
         new_status: 'need_more_info' as const,
         metadata: { message, fields },
-      });
+      } as never);
 
     if (logError) {
       console.error('Failed to log info request:', logError);

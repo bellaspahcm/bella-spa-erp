@@ -103,7 +103,7 @@ async function logJobResult(result: JobResult): Promise<void> {
 
     // Check if cron_job_logs table exists
     const { error } = await supabase
-      .from('cron_job_logs' as unknown)
+      .from('cron_job_logs' as unknown as 'tenants')
       .insert({
         job_name: 'sync-external-ads',
         status: result.success ? 'success' : 'failed',
@@ -118,7 +118,7 @@ async function logJobResult(result: JobResult): Promise<void> {
           results: result.results,
           errors: result.errors,
         },
-      });
+      } as never);
 
     if (error) {
       // Table might not exist yet, just log to console

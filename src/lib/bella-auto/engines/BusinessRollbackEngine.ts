@@ -34,6 +34,14 @@ export interface RollbackResult {
   error_message?: string;
 }
 
+interface AutoTransactionStepRow {
+  id: string;
+  action_type: 'INSERT' | 'UPDATE' | string;
+  target_table: string;
+  target_record_id: string;
+  before_snapshot?: Record<string, unknown> | null;
+}
+
 export class BusinessRollbackEngine {
   private supabaseClient?: SupabaseClient;
 
@@ -62,11 +70,11 @@ export class BusinessRollbackEngine {
       }
 
       // 2. Perform compensating action for each step
-      for (const step of steps) {
+      for (const step of steps as unknown as AutoTransactionStepRow[]) {
         // If action_type is INSERT, compensating action is to DELETE the record
         if (step.action_type === 'INSERT') {
           const { error } = await client
-            .from(step.target_table)
+            .from(step.target_table as unknown as 'tenants')
             .delete()
             .eq('id', step.target_record_id);
           if (error) throw error;
@@ -74,8 +82,8 @@ export class BusinessRollbackEngine {
         // If action_type is UPDATE, compensating action is to RESTORE before_snapshot
         else if (step.action_type === 'UPDATE' && step.before_snapshot) {
           const { error } = await client
-            .from(step.target_table)
-            .update(step.before_snapshot)
+            .from(step.target_table as unknown as 'tenants')
+            .update(step.before_snapshot as never)
             .eq('id', step.target_record_id);
           if (error) throw error;
         }
@@ -83,7 +91,7 @@ export class BusinessRollbackEngine {
         // Update step status to rolled_back
         await client
           .from('auto_transaction_steps')
-          .update({ status: 'rolled_back', rolled_back_at: new Date().toISOString() })
+          .update({ status: 'rolled_back', rolled_back_at: new Date().toISOString() } as never)
           .eq('id', step.id);
       }
 
@@ -183,7 +191,7 @@ export class BusinessRollbackEngine {
         try {
           if (step.operation === 'delete') {
             const { error } = await supabase
-              .from(step.table_name)
+              .from(step.table_name as unknown as 'tenants')
               .delete()
               .eq('id', step.record_id)
               .eq('tenant_id', transaction.tenant_id);
@@ -191,8 +199,8 @@ export class BusinessRollbackEngine {
             if (error) throw error;
           } else if (step.operation === 'update' && step.restore_data) {
             const { error } = await supabase
-              .from(step.table_name)
-              .update(step.restore_data)
+              .from(step.table_name as unknown as 'tenants')
+              .update(step.restore_data as never)
               .eq('id', step.record_id)
               .eq('tenant_id', transaction.tenant_id);
 

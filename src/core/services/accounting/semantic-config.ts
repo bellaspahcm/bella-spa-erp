@@ -35,11 +35,11 @@ export async function getAccountingSemanticConfig(): Promise<AccountingSemanticC
 
   const [accountsResult, mappingsResult] = await Promise.all([
     supabase
-      .from('finance_accounts' as unknown as 'tenants')
+      .from('finance_accounts' as never)
       .select('code, name, type')
-      .eq('tenant_id' as unknown as 'id', user.tenant_id)
-      .eq('is_active' as unknown as 'name', true)
-      .order('code' as unknown as 'name', { ascending: true }),
+      .eq('tenant_id' as never, user.tenant_id)
+      .eq('is_active' as never, true)
+      .order('code' as never, { ascending: true }),
     supabase
       .from('finance_control_account_mappings')
       .select('id, control_type, account_code, effective_from, effective_to, authority_version')

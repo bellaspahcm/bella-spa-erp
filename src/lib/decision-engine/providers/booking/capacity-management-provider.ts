@@ -23,7 +23,8 @@
  */
 
 import { RuleReasoner } from '../../RuleReasoner';
-import type { Policy, Knowledge } from '../../types';
+import type { Policy, Knowledge, Condition } from '../../types';
+import type { RuleCondition } from '../../types/rule';
 import { capacityRules } from './rules/capacity-rules';
 import type {
   CapacityCheckInput,
@@ -31,7 +32,10 @@ import type {
   CapacityKnowledge,
   CapacityEvaluationOptions,
   CapacitySnapshot,
+  CapacityConflict,
 } from './types';
+
+type ReasonerComparisonOperator = Extract<Condition, { type: 'comparison' }>['operator'];
 
 /**
  * Capacity Management Provider
@@ -74,7 +78,6 @@ export class CapacityManagementProvider {
               : rule.action.type === 'reject' ? 'REJECT' : 
                 rule.action.type === 'modify' ? 'ESCALATE' : 'APPROVE',
             reason: rule.name,
-            metadata: typeof rule.action === 'function' ? undefined : rule.action.data,
           },
         })),
     };
@@ -660,32 +663,35 @@ export class CapacityManagementProvider {
    * Convert Platform Rule condition to RuleReasoner condition
    * @private
    */
-  private convertConditionToReasoner(condition: Record<string, unknown> | null | unknown): Record<string, unknown> | null | unknown {
-    const cond = condition as Record<string, unknown>;
-    if (cond.type === 'simple') {
+  private convertConditionToReasoner(condition: RuleCondition): Condition {
+    if (typeof condition === 'function') {
+      throw new Error('Function-based capacity rule conditions cannot be converted to RuleReasoner conditions');
+    }
+
+    if (condition.type === 'simple') {
       return {
         type: 'comparison',
-        field: cond.field,
-        operator: this.mapOperator(cond.operator as string),
-        value: cond.value,
+        field: condition.field,
+        operator: this.mapOperator(condition.operator),
+        value: condition.value,
       };
     }
 
-    if (cond.type === 'all') {
+    if (condition.type === 'all') {
       return {
         type: 'operator',
         operator: 'and',
-        conditions: (cond.conditions as Array<Record<string, unknown>>).map((c: Record<string, unknown>) =>
+        conditions: condition.conditions.map((c) =>
           this.convertConditionToReasoner(c)
         ),
       };
     }
 
-    if (cond.type === 'any') {
+    if (condition.type === 'any') {
       return {
         type: 'operator',
         operator: 'or',
-        conditions: (cond.conditions as Array<Record<string, unknown>>).map((c: Record<string, unknown>) =>
+        conditions: condition.conditions.map((c) =>
           this.convertConditionToReasoner(c)
         ),
       };
@@ -698,8 +704,8 @@ export class CapacityManagementProvider {
    * Map Platform operator to RuleReasoner operator
    * @private
    */
-  private mapOperator(operator: string): string {
-    const operatorMap: Record<string, string> = {
+  private mapOperator(operator: string): ReasonerComparisonOperator {
+    const operatorMap: Record<string, ReasonerComparisonOperator> = {
       equals: '===',
       notEquals: '!==',
       greaterThan: '>',

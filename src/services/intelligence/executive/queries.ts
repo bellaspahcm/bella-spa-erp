@@ -638,7 +638,7 @@ export async function getGrowthIndicators(
 
     const prevMonthRevenueByType: Record<string, number> = {};
     (prevMonthRevenues || []).forEach(r => {
-      const type = (r as unknown).revenue_type || 'other';
+      const type = (r as { revenue_type?: string | null }).revenue_type || 'other';
       prevMonthRevenueByType[type] = (prevMonthRevenueByType[type] || 0) + Number(r.amount || 0);
     });
 

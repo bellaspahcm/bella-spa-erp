@@ -85,7 +85,7 @@ async function fetchCustomerDetails(customerId: string): Promise<{
       .single();
 
     const metadataObj = customer.metadata as Record<string, unknown> | null;
-    const email = metadataObj?.email || null;
+    const email = typeof metadataObj?.email === 'string' ? metadataObj.email : null;
 
     return {
       name: customer.name_mother || 'Khách hàng',

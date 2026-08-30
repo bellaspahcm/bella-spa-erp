@@ -21,7 +21,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database.types';
+import type { Database, Json } from '@/types/database.types';
 import type { FinanceKernelClient, PostingInstruction, FinanceTransaction } from '../finance-event-handler';
 
 /**
@@ -95,12 +95,12 @@ export class DefaultFinanceKernelClient implements FinanceKernelClient {
         tenant_id: instruction.tenant_id,
         canonical_semantic: instruction.metadata?.canonical_semantic || 'UNKNOWN',
         semantic_category: instruction.metadata?.semantic_category || 'UNKNOWN',
-        accounting_intents: instruction.metadata?.accounting_intents || [],
+        accounting_intents: (instruction.metadata?.accounting_intents || []) as unknown as Json,
         policy_version: instruction.metadata?.policy_version || 'v1.0',
         policy_regime: instruction.metadata?.policy_regime || 'DEFAULT',
         coa_version: instruction.metadata?.coa_version || 'v1.0',
-        posting_context: instruction.business_context || {},
-        account_mappings: instruction.metadata?.account_mappings || [],
+        posting_context: (instruction.business_context || {}) as Json,
+        account_mappings: (instruction.metadata?.account_mappings || []) as unknown as Json,
         source_system: instruction.source_system,
         source_version: instruction.metadata?.source_version || '1.0.0',
         transaction_date: instruction.transaction_date,

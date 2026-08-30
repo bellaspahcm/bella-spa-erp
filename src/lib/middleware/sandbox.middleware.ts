@@ -17,7 +17,7 @@ import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { APIPartner } from '@/types/api-gateway';
 import type { PartnerContext, RequestWithPartner } from './api-key.middleware';
-import { APIError } from '@/types/api-gateway';
+import { APIError, type HTTPMethod } from '@/types/api-gateway';
 
 /**
  * Environment type
@@ -313,7 +313,7 @@ export function withSandbox(
         await logAPIRequest({
           partner_id: partner.partner_id,
           tenant_id: partner.tenant_id,
-          method: req.method as unknown,
+          method: req.method as HTTPMethod,
           endpoint: req.nextUrl.pathname,
           status_code: response.status,
           response_time_ms: Date.now() - startTime,

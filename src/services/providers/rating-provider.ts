@@ -134,7 +134,7 @@ export class RatingProvider implements PayrollProvider<SalaryComponent> {
     const { tenantId, sessions, overrides } = context;
 
     // Check if override amount provided
-    if (options?.applyOverrides && overrides?.ratingBonus !== undefined) {
+    if (options?.applyOverrides && typeof overrides?.ratingBonus === 'number') {
       return createSalaryComponent('rating-bonus', {
         eligible: true,
         amount: overrides.ratingBonus,

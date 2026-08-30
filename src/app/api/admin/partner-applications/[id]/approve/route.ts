@@ -103,7 +103,7 @@ export async function POST(
         approval_notes: notes || null,
         updated_at: new Date().toISOString(),
         updated_by: user.id,
-      })
+      } as never)
       .eq('id', params.id)
       .select()
       .single();
@@ -128,7 +128,7 @@ export async function POST(
         old_status: application.status,
         new_status: 'approved' as const,
         metadata: { notes, provisioning_config },
-      });
+      } as never);
 
     if (logError) {
       console.error('Failed to log approval:', logError);

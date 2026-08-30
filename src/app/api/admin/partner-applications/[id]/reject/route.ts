@@ -99,7 +99,7 @@ export async function POST(
         rejection_category: category || 'other',
         updated_at: new Date().toISOString(),
         updated_by: user.id,
-      })
+      } as never)
       .eq('id', params.id)
       .select()
       .single();
@@ -124,7 +124,7 @@ export async function POST(
         old_status: application.status,
         new_status: 'rejected' as const,
         metadata: { reason, category },
-      });
+      } as never);
 
     if (logError) {
       console.error('Failed to log rejection:', logError);
