@@ -40,6 +40,45 @@ async function requireRow<T>(label: string, query: QueryResult<T>): Promise<T> {
   return data;
 }
 
+function assertUuid(value: string): string {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)) {
+    throw new Error(`Invalid UUID for test cleanup: ${value}`);
+  }
+  return value;
+}
+
+async function cleanupBeautyTenant(client: ReturnType<typeof admin>, tenantId: string) {
+  const safeTenantId = assertUuid(tenantId);
+  const { error } = await client.rpc("exec_sql" as never, {
+    sql_query: `
+      DO $$
+      BEGIN
+        ALTER TABLE public.timeline_events DISABLE RULE timeline_events_no_delete;
+        DELETE FROM public.timeline_events WHERE tenant_id = '${safeTenantId}';
+        DELETE FROM public.session_reviews WHERE tenant_id = '${safeTenantId}';
+        DELETE FROM public.invoice_print_logs WHERE tenant_id = '${safeTenantId}';
+        DELETE FROM public.inventory_logs WHERE tenant_id = '${safeTenantId}';
+        DELETE FROM public.session_logs WHERE tenant_id = '${safeTenantId}';
+        DELETE FROM public.bookings WHERE tenant_id = '${safeTenantId}';
+        DELETE FROM public.customers WHERE tenant_id = '${safeTenantId}';
+        DELETE FROM public.booking_resources WHERE tenant_id = '${safeTenantId}';
+        DELETE FROM public.packages WHERE tenant_id = '${safeTenantId}';
+        DELETE FROM public.users WHERE tenant_id = '${safeTenantId}';
+        DELETE FROM public.timeline_events WHERE tenant_id = '${safeTenantId}';
+        DELETE FROM public.tenants WHERE id = '${safeTenantId}';
+        ALTER TABLE public.timeline_events ENABLE RULE timeline_events_no_delete;
+      EXCEPTION WHEN OTHERS THEN
+        ALTER TABLE public.timeline_events ENABLE RULE timeline_events_no_delete;
+        RAISE;
+      END $$;
+    `,
+  } as never);
+
+  if (error) {
+    throw new Error(`Beauty tenant cleanup failed: ${error.message}`);
+  }
+}
+
 async function openMockUserPage(browser: Browser, email: string): Promise<Page> {
   const context = await browser.newContext({
     baseURL: getE2eBaseUrl(),
@@ -91,6 +130,11 @@ test.describe("Beauty Spa resource booking smoke", () => {
     let testError: unknown = null;
 
     async function cleanup() {
+      if (ids.tenantId) {
+        await cleanupBeautyTenant(client, ids.tenantId);
+        return;
+      }
+
       const cleanupSteps: Array<[string, QueryResult<unknown>]> = [
         ids.sessionLogIds.length
           ? ["session logs", client.from("session_logs").delete().in("id", ids.sessionLogIds)]

@@ -33,11 +33,17 @@ Environment:
 - E2E mock-user flow with Supabase service-role seed data.
 - Cold start was present, so `/` compile latency is excluded from product latency conclusions.
 
-Result:
+Initial result:
 
 - The UI journey reached `/dashboard/bookings`, opened the booking detail, attempted resource assignment, and waited for the server-action POST.
 - The test failed during cleanup, not during the measured UI operation.
 - Cleanup failure: temporary E2E tenant could not be deleted because `timeline_events_tenant_id_fkey` retained side-effect rows.
+
+Follow-up result after E2E cleanup hardening:
+
+- `e2e/tests/14-beauty-resource-booking-smoke.spec.ts`: **1/1 PASS**.
+- Runtime: **25.6s** test body, **48.0s** total Playwright run.
+- Cleanup now removes immutable `timeline_events` for the temporary tenant through the test-only SQL executor before deleting the tenant.
 
 ## Observed Latency
 
@@ -45,17 +51,17 @@ Result:
 |---|---:|---|
 | Root cold compile | 10.1s | Excluded from product latency; dev cold start |
 | Dashboard warm navigation | 619ms | includes proxy 303ms, application 187ms |
-| Bookings page warm navigation | 196-236ms | GET `/dashboard/bookings` |
-| Tenant context API | 396-482ms | GET `/api/tenant/context` |
-| Tenant settings read | 181-352ms | server action |
-| Current user read | 180-197ms | server action |
-| Calendar sessions read | 277-405ms | `getCalendarSessions()` |
-| Booking list read | 251-259ms | `getBookings()` |
-| Users read | 257-313ms | `getUsers()` |
-| Booking resources read | 267-280ms | `getBookingResources()` |
-| Important alerts read | 761-1,019ms | `getImportantAlerts()` |
-| Conflict check before save | 7ms action time | `checkBookingConflicts()` returned early in mock-auth path |
-| Session update mutation | 267ms action time | `updateSessionLog(...)` |
+| Bookings page warm navigation | 135-236ms | GET `/dashboard/bookings` |
+| Tenant context API | 262-482ms | GET `/api/tenant/context` |
+| Tenant settings read | 156-352ms | server action |
+| Current user read | 165-197ms | server action |
+| Calendar sessions read | 251-405ms | `getCalendarSessions()` |
+| Booking list read | 243-265ms | `getBookings()` |
+| Users read | 236-313ms | `getUsers()` |
+| Booking resources read | 240-280ms | `getBookingResources()` |
+| Important alerts read | 712-1,019ms | `getImportantAlerts()` |
+| Conflict check before save | 7-13ms action time | `checkBookingConflicts()` returned early in mock-auth path |
+| Session update mutation | 239-267ms action time | `updateSessionLog(...)` |
 
 ## Static Flow Findings
 
@@ -152,13 +158,13 @@ This needs a second measurement pass before product code optimization.
 
 ## Data Quality / E2E Finding
 
-The resource-booking E2E cleanup does not delete `timeline_events` before deleting the temporary tenant. The measured test therefore failed after the UI operation with:
+The first resource-booking E2E cleanup did not delete `timeline_events` before deleting the temporary tenant. The measured test therefore failed after the UI operation with:
 
 ```text
 referential integrity query on "tenants" from constraint "timeline_events_tenant_id_fkey" on "timeline_events" gave unexpected result
 ```
 
-This should be treated as an E2E cleanup hardening issue, not as evidence that the appointment UI operation failed.
+This was treated as an E2E cleanup hardening issue, not as evidence that the appointment UI operation failed. The spec cleanup now deletes the temporary tenant's immutable `timeline_events` via the test-only SQL executor before deleting the tenant, and the follow-up run passed.
 
 ## Recommended Next Measurement
 
@@ -189,4 +195,3 @@ Only after those four timings are captured should the team choose the first code
 - Reduce post-mutation refresh fan-out; refresh the affected calendar range and booking detail instead of broad dashboard paths where safe.
 - Move non-critical notifications and cache invalidation fully out of the blocking response path.
 - Review why `getImportantAlerts()` is called repeatedly on `/dashboard/bookings` and takes 761-1,019ms.
-
