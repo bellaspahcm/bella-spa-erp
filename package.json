@@ -25,6 +25,7 @@
     "db:migration:check": "node scripts/check-supabase-migrations.cjs",
     "db:migration:zero-downtime": "node scripts/check-zero-downtime-migrations.cjs",
     "finance:hardening:data-integrity": "node scripts/finance-production-hardening-data-integrity.cjs",
+    "finance:hardening:tenant-isolation": "node scripts/finance-production-hardening-tenant-isolation.cjs",
     "demo:beauty": "node scripts/beauty-demo-tenant.cjs",
     "demo:auto": "node scripts/auto-demo-tenant.cjs",
     "cron:accounting:smoke": "node scripts/check-accounting-worker-cron-smoke.cjs",
