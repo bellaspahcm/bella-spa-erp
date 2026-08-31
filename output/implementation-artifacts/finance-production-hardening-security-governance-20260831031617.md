@@ -1,0 +1,2462 @@
+# Finance Production Hardening Security Governance WARN Audit
+
+Generated at: 2026-08-31T03:16:17.051Z
+Environment host: lvnvkpyxtuilhrabtlwv.supabase.co
+
+## Summary
+
+- Total groups: 4
+- PASS: 0
+- WARN: 4
+- FAIL: 0
+- Green: true
+
+## Classification
+
+### SG-001 - WARN
+
+Topic: HQ-admin RLS bypass
+Classification: governance_exception
+Production blocker: false
+Decision: Intentional only for authenticated sessions with null tenant context. This remains closed as governance exception pending a formal HQ/admin authorization policy; no tenant data leakage found by tenant-isolation checks.
+Evidence rows: 13
+
+Evidence sample:
+
+```json
+[
+  {
+    "tablename": "f5_control_cases",
+    "policyname": "f5_control_cases_tenant_isolation",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "qual": "((get_auth_tenant_id() IS NULL) OR (tenant_id = get_auth_tenant_id()))",
+    "with_check": null
+  },
+  {
+    "tablename": "f5_control_results",
+    "policyname": "f5_control_results_tenant_isolation",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "qual": "((get_auth_tenant_id() IS NULL) OR (tenant_id = get_auth_tenant_id()))",
+    "with_check": null
+  },
+  {
+    "tablename": "finance_accounting_periods",
+    "policyname": "Tenant isolation for finance_accounting_periods",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "((get_auth_tenant_id() IS NULL) OR (tenant_id = get_auth_tenant_id()))",
+    "with_check": "((get_auth_tenant_id() IS NULL) OR (tenant_id = get_auth_tenant_id()))"
+  },
+  {
+    "tablename": "finance_accounts",
+    "policyname": "Tenant isolation for finance_accounts",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "((get_auth_tenant_id() IS NULL) OR (tenant_id = get_auth_tenant_id()))",
+    "with_check": "((get_auth_tenant_id() IS NULL) OR (tenant_id = get_auth_tenant_id()))"
+  },
+  {
+    "tablename": "finance_cash_movements",
+    "policyname": "Tenant isolation for finance_cash_movements",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "((get_auth_tenant_id() IS NULL) OR (tenant_id = get_auth_tenant_id()))",
+    "with_check": "((get_auth_tenant_id() IS NULL) OR (tenant_id = get_auth_tenant_id()))"
+  },
+  {
+    "tablename": "finance_invoices",
+    "policyname": "Tenant isolation for finance_invoices",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "qual": "((get_auth_tenant_id() IS NULL) OR (tenant_id = get_auth_tenant_id()))",
+    "with_check": null
+  },
+  {
+    "tablename": "finance_payable_allocations",
+    "policyname": "Tenant isolation for finance_payable_allocations",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "((get_auth_tenant_id() IS NULL) OR (tenant_id = get_auth_tenant_id()))",
+    "with_check": "((get_auth_tenant_id() IS NULL) OR (tenant_id = get_auth_tenant_id()))"
+  },
+  {
+    "tablename": "finance_payable_ledger",
+    "policyname": "Tenant isolation for finance_payable_ledger",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "((get_auth_tenant_id() IS NULL) OR (tenant_id = get_auth_tenant_id()))",
+    "with_check": "((get_auth_tenant_id() IS NULL) OR (tenant_id = get_auth_tenant_id()))"
+  },
+  {
+    "tablename": "finance_receivable_allocations",
+    "policyname": "Tenant isolation for finance_receivable_allocations",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "qual": "((get_auth_tenant_id() IS NULL) OR (tenant_id = get_auth_tenant_id()))",
+    "with_check": null
+  },
+  {
+    "tablename": "finance_transaction_lines",
+    "policyname": "Tenant isolation for finance_transaction_lines",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "((get_auth_tenant_id() IS NULL) OR (tenant_id = get_auth_tenant_id()))",
+    "with_check": "((get_auth_tenant_id() IS NULL) OR (tenant_id = get_auth_tenant_id()))"
+  },
+  {
+    "tablename": "finance_transactions",
+    "policyname": "Tenant isolation for finance_transactions",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "((get_auth_tenant_id() IS NULL) OR (tenant_id = get_auth_tenant_id()))",
+    "with_check": "((get_auth_tenant_id() IS NULL) OR (tenant_id = get_auth_tenant_id()))"
+  },
+  {
+    "tablename": "finance_vendor_bills",
+    "policyname": "Tenant isolation for finance_vendor_bills",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "((get_auth_tenant_id() IS NULL) OR (tenant_id = get_auth_tenant_id()))",
+    "with_check": "((get_auth_tenant_id() IS NULL) OR (tenant_id = get_auth_tenant_id()))"
+  },
+  {
+    "tablename": "finance_vendor_prepayments",
+    "policyname": "Tenant isolation for finance_vendor_prepayments",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "((get_auth_tenant_id() IS NULL) OR (tenant_id = get_auth_tenant_id()))",
+    "with_check": "((get_auth_tenant_id() IS NULL) OR (tenant_id = get_auth_tenant_id()))"
+  }
+]
+```
+
+### SG-002 - WARN
+
+Topic: SECURITY DEFINER RPC grants
+Classification: governance_exception
+Production blocker: false
+Decision: Broad EXECUTE grants are classified as governance exceptions because inspected finance mutators include service-role guards and tenant-scoped parameters; helper/read RPCs are controlled exceptions. Keep this under API-route governance before production.
+Evidence rows: 20
+
+Evidence sample:
+
+```json
+[
+  {
+    "function_signature": "finance_add_invoice_line(uuid,uuid,uuid,text,numeric,bigint,numeric,character varying)",
+    "granted_role": "authenticated",
+    "has_role_guard": true,
+    "has_tenant_guard": true,
+    "classification": "controlled_exception",
+    "production_blocker": false,
+    "rationale": "Read/validation helper or reconstruction RPC with tenant-scoped input; broad EXECUTE requires API-route governance but no direct cross-tenant data issue found in this audit."
+  },
+  {
+    "function_signature": "finance_allocate_payment(uuid,uuid,uuid,bigint,numeric,character varying,timestamp with time zone)",
+    "granted_role": "authenticated",
+    "has_role_guard": true,
+    "has_tenant_guard": true,
+    "classification": "governance_exception",
+    "production_blocker": false,
+    "rationale": "Callable by authenticated but function body contains service-role/postgres guard and tenant-scoped parameters. Runtime privilege is centralized behind service execution."
+  },
+  {
+    "function_signature": "finance_apply_prepayment(uuid,uuid,uuid,bigint,uuid)",
+    "granted_role": "authenticated",
+    "has_role_guard": true,
+    "has_tenant_guard": true,
+    "classification": "governance_exception",
+    "production_blocker": false,
+    "rationale": "Callable by authenticated but function body contains service-role/postgres guard and tenant-scoped parameters. Runtime privilege is centralized behind service execution."
+  },
+  {
+    "function_signature": "finance_approve_vendor_bill(uuid,uuid,uuid,uuid)",
+    "granted_role": "authenticated",
+    "has_role_guard": true,
+    "has_tenant_guard": true,
+    "classification": "governance_exception",
+    "production_blocker": false,
+    "rationale": "Callable by authenticated but function body contains service-role/postgres guard and tenant-scoped parameters. Runtime privilege is centralized behind service execution."
+  },
+  {
+    "function_signature": "finance_calculate_payable_position(uuid,uuid,uuid)",
+    "granted_role": "authenticated",
+    "has_role_guard": false,
+    "has_tenant_guard": true,
+    "classification": "controlled_exception",
+    "production_blocker": false,
+    "rationale": "Read/validation helper or reconstruction RPC with tenant-scoped input; broad EXECUTE requires API-route governance but no direct cross-tenant data issue found in this audit."
+  },
+  {
+    "function_signature": "finance_create_draft_invoice(uuid,uuid,character varying,character varying,date,date)",
+    "granted_role": "authenticated",
+    "has_role_guard": true,
+    "has_tenant_guard": true,
+    "classification": "controlled_exception",
+    "production_blocker": false,
+    "rationale": "Read/validation helper or reconstruction RPC with tenant-scoped input; broad EXECUTE requires API-route governance but no direct cross-tenant data issue found in this audit."
+  },
+  {
+    "function_signature": "finance_disburse_payment(uuid,uuid,uuid,bigint,bigint,numeric,character varying,timestamp with time zone,uuid)",
+    "granted_role": "authenticated",
+    "has_role_guard": true,
+    "has_tenant_guard": true,
+    "classification": "governance_exception",
+    "production_blocker": false,
+    "rationale": "Callable by authenticated but function body contains service-role/postgres guard and tenant-scoped parameters. Runtime privilege is centralized behind service execution."
+  },
+  {
+    "function_signature": "finance_finalize_invoice(uuid,uuid,character varying,character varying,jsonb)",
+    "granted_role": "authenticated",
+    "has_role_guard": true,
+    "has_tenant_guard": true,
+    "classification": "governance_exception",
+    "production_blocker": false,
+    "rationale": "Callable by authenticated but function body contains service-role/postgres guard and tenant-scoped parameters. Runtime privilege is centralized behind service execution."
+  },
+  {
+    "function_signature": "finance_get_account_code_by_id(uuid,uuid,character varying)",
+    "granted_role": "authenticated",
+    "has_role_guard": false,
+    "has_tenant_guard": true,
+    "classification": "controlled_exception",
+    "production_blocker": false,
+    "rationale": "Read/validation helper or reconstruction RPC with tenant-scoped input; broad EXECUTE requires API-route governance but no direct cross-tenant data issue found in this audit."
+  },
+  {
+    "function_signature": "finance_get_cash_movement(uuid,uuid)",
+    "granted_role": "authenticated",
+    "has_role_guard": false,
+    "has_tenant_guard": true,
+    "classification": "controlled_exception",
+    "production_blocker": false,
+    "rationale": "Read/validation helper or reconstruction RPC with tenant-scoped input; broad EXECUTE requires API-route governance but no direct cross-tenant data issue found in this audit."
+  },
+  {
+    "function_signature": "finance_rebuild_payable_position(uuid,uuid)",
+    "granted_role": "authenticated",
+    "has_role_guard": true,
+    "has_tenant_guard": true,
+    "classification": "controlled_exception",
+    "production_blocker": false,
+    "rationale": "Read/validation helper or reconstruction RPC with tenant-scoped input; broad EXECUTE requires API-route governance but no direct cross-tenant data issue found in this audit."
+  },
+  {
+    "function_signature": "finance_reconstruct_receivable_position(uuid,uuid)",
+    "granted_role": "authenticated",
+    "has_role_guard": true,
+    "has_tenant_guard": true,
+    "classification": "controlled_exception",
+    "production_blocker": false,
+    "rationale": "Read/validation helper or reconstruction RPC with tenant-scoped input; broad EXECUTE requires API-route governance but no direct cross-tenant data issue found in this audit."
+  },
+  {
+    "function_signature": "finance_record_prepayment(uuid,uuid,bigint,uuid,uuid,character varying,character varying)",
+    "granted_role": "authenticated",
+    "has_role_guard": true,
+    "has_tenant_guard": true,
+    "classification": "governance_exception",
+    "production_blocker": false,
+    "rationale": "Callable by authenticated but function body contains service-role/postgres guard and tenant-scoped parameters. Runtime privilege is centralized behind service execution."
+  },
+  {
+    "function_signature": "finance_resolve_prepayment_posting_accounts(uuid,character varying,timestamp with time zone)",
+    "granted_role": "authenticated",
+    "has_role_guard": false,
+    "has_tenant_guard": true,
+    "classification": "controlled_exception",
+    "production_blocker": false,
+    "rationale": "Read/validation helper or reconstruction RPC with tenant-scoped input; broad EXECUTE requires API-route governance but no direct cross-tenant data issue found in this audit."
+  },
+  {
+    "function_signature": "finance_reverse_allocation(uuid,uuid)",
+    "granted_role": "authenticated",
+    "has_role_guard": true,
+    "has_tenant_guard": true,
+    "classification": "governance_exception",
+    "production_blocker": false,
+    "rationale": "Callable by authenticated but function body contains service-role/postgres guard and tenant-scoped parameters. Runtime privilege is centralized behind service execution."
+  },
+  {
+    "function_signature": "finance_reverse_disbursement(uuid,uuid,uuid)",
+    "granted_role": "authenticated",
+    "has_role_guard": true,
+    "has_tenant_guard": true,
+    "classification": "controlled_exception",
+    "production_blocker": false,
+    "rationale": "Read/validation helper or reconstruction RPC with tenant-scoped input; broad EXECUTE requires API-route governance but no direct cross-tenant data issue found in this audit."
+  },
+  {
+    "function_signature": "finance_validate_account_code(uuid,character varying,character varying)",
+    "granted_role": "authenticated",
+    "has_role_guard": false,
+    "has_tenant_guard": true,
+    "classification": "controlled_exception",
+    "production_blocker": false,
+    "rationale": "Read/validation helper or reconstruction RPC with tenant-scoped input; broad EXECUTE requires API-route governance but no direct cross-tenant data issue found in this audit."
+  },
+  {
+    "function_signature": "finance_validate_account_id(uuid,uuid,character varying)",
+    "granted_role": "authenticated",
+    "has_role_guard": false,
+    "has_tenant_guard": true,
+    "classification": "controlled_exception",
+    "production_blocker": false,
+    "rationale": "Read/validation helper or reconstruction RPC with tenant-scoped input; broad EXECUTE requires API-route governance but no direct cross-tenant data issue found in this audit."
+  },
+  {
+    "function_signature": "finance_validate_period_for_date(uuid,timestamp with time zone)",
+    "granted_role": "authenticated",
+    "has_role_guard": false,
+    "has_tenant_guard": true,
+    "classification": "controlled_exception",
+    "production_blocker": false,
+    "rationale": "Read/validation helper or reconstruction RPC with tenant-scoped input; broad EXECUTE requires API-route governance but no direct cross-tenant data issue found in this audit."
+  },
+  {
+    "function_signature": "finance_void_invoice(uuid,uuid)",
+    "granted_role": "authenticated",
+    "has_role_guard": true,
+    "has_tenant_guard": true,
+    "classification": "governance_exception",
+    "production_blocker": false,
+    "rationale": "Callable by authenticated but function body contains service-role/postgres guard and tenant-scoped parameters. Runtime privilege is centralized behind service execution."
+  }
+]
+```
+
+### SG-003 - WARN
+
+Topic: Retained proof/test/demo tenants
+Classification: controlled_exception
+Production blocker: false
+Decision: Active finance-bearing test/demo tenants exist without retained-evidence metadata. They are classified as controlled exceptions, not leakage, because Finance tenant isolation checks pass; do not delete immutable evidence. Next governance action is targeted suspend/tag by owner.
+Evidence rows: 200
+
+Evidence sample:
+
+```json
+[
+  {
+    "id": "b54aa248-06c8-428f-b327-1a2cafd25c2c",
+    "name": "Test Tenant Finance F1.3",
+    "status": "active",
+    "finance_row_count": 56,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "de6b89b2-5731-43da-9055-6567cf80c50b",
+    "name": "F3-ALLOC-MSUZWBCC",
+    "status": "active",
+    "finance_row_count": 46,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "62b7df8d-7931-415a-9789-c595b2665618",
+    "name": "F3-ALLOC-MSUZYW4V",
+    "status": "active",
+    "finance_row_count": 46,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "83424bf0-81da-48cd-bd55-db1155dc1cb0",
+    "name": "F3-ALLOC-MSV2P5LZ",
+    "status": "active",
+    "finance_row_count": 46,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "b4160e2f-e896-417a-a649-ed1594f2b83d",
+    "name": "F3-ALLOC-MSVEUOAI",
+    "status": "active",
+    "finance_row_count": 46,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "3fba4688-b74b-4d61-9ca7-f7f559928cfb",
+    "name": "F3-ALLOC-MT4HI2AB",
+    "status": "active",
+    "finance_row_count": 46,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "01ac7691-48c8-46c6-998e-7816e28f31d0",
+    "name": "F3-ALLOC-MTF9QDMA",
+    "status": "active",
+    "finance_row_count": 46,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "c24f226a-e4fb-4058-b979-98cda6a2d72a",
+    "name": "F3-ALLOC-MTFBE4AG",
+    "status": "active",
+    "finance_row_count": 46,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "8d43c35a-4e20-4745-a8b5-c9c82895c590",
+    "name": "F3-ALLOC-MTFD01AP",
+    "status": "active",
+    "finance_row_count": 46,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "65bc410a-8e0d-43f3-b374-a8772630270e",
+    "name": "F2-CONC-MSUZWX52",
+    "status": "active",
+    "finance_row_count": 44,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "dd484410-04e0-4953-9b1a-4e7dd2324890",
+    "name": "F2-CONC-MSV004LA",
+    "status": "active",
+    "finance_row_count": 44,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "d3b5d739-fe38-4aa4-934c-a9c20955bf1e",
+    "name": "F2-CONC-MSV2Q7YI",
+    "status": "active",
+    "finance_row_count": 44,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "a3567879-cc45-4ef6-a4d5-44d2087a0e87",
+    "name": "F2-CONC-MSVEUOBQ",
+    "status": "active",
+    "finance_row_count": 44,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "d41198f6-df50-4f1f-81e7-c81c2293c308",
+    "name": "F2-CONC-MT4HHWQA",
+    "status": "active",
+    "finance_row_count": 44,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "d6ae8159-5961-45a1-990c-061dc21fe094",
+    "name": "F2-CONC-MTDMXG3I",
+    "status": "active",
+    "finance_row_count": 44,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "6d4cc796-5f79-48ab-beaa-e2356b3b49e4",
+    "name": "F2-CONC-MTDNGDGK",
+    "status": "active",
+    "finance_row_count": 44,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "85fa8b76-df1b-4aaf-8ae3-1e2d6430a0cf",
+    "name": "F2-CONC-MTDWDVKB",
+    "status": "active",
+    "finance_row_count": 44,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "6a6a7780-be62-46b0-aa0a-ccbd8ba1fccb",
+    "name": "F2-CONC-MTDWU66E",
+    "status": "active",
+    "finance_row_count": 44,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "641e278f-1448-4a85-9228-01edccb078a2",
+    "name": "F2-CONC-MTF9SGQH",
+    "status": "active",
+    "finance_row_count": 44,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "2c10157f-7625-4af0-8b15-44c4333bd1ca",
+    "name": "F2-CONC-MTFBF0G6",
+    "status": "active",
+    "finance_row_count": 44,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "96d39c77-ecd0-43ad-9cc1-caeef4ceddf3",
+    "name": "F2-CONC-MTFD19QF",
+    "status": "active",
+    "finance_row_count": 44,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "14ba17e5-e54e-4b50-8fec-a8da7d4150f6",
+    "name": "Integration Test Tenant",
+    "status": "active",
+    "finance_row_count": 28,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "74f2605d-5d8c-4dcb-af2e-128c6ba03946",
+    "name": "F1-Concurrency-MSV0167X",
+    "status": "active",
+    "finance_row_count": 24,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "9f84caa9-ac2d-4b9a-b318-008dc61b2e8b",
+    "name": "F1-Concurrency-MSV2R5T7",
+    "status": "active",
+    "finance_row_count": 24,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "a8306074-2d25-4aff-a7fc-12fbdfa89b10",
+    "name": "F1-Concurrency-MT4HIB7N",
+    "status": "active",
+    "finance_row_count": 24,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "8917c0f2-266a-4334-a310-60b649465e92",
+    "name": "F1-Concurrency-MTDMZA0W",
+    "status": "active",
+    "finance_row_count": 24,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "f929383c-9893-4e57-8bf2-51c5b0e853d4",
+    "name": "F1-Concurrency-MTDNGEA3",
+    "status": "active",
+    "finance_row_count": 24,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "2548fa38-e8b7-4161-aa49-9adf3a5743fb",
+    "name": "F1-Concurrency-MTDWE3MH",
+    "status": "active",
+    "finance_row_count": 24,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "ddf86cfa-5b8d-4d50-83af-7d2ade05c7ed",
+    "name": "F1-Concurrency-MTFBHGWQ",
+    "status": "active",
+    "finance_row_count": 24,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "4918a808-636a-45bd-8690-2f64eab57cd4",
+    "name": "F1-Concurrency-MSUZXU99",
+    "status": "active",
+    "finance_row_count": 23,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "98255e0c-b982-42ab-923d-145c8c4aa2b0",
+    "name": "F1-Concurrency-MTDMYTMP",
+    "status": "active",
+    "finance_row_count": 23,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "6fec0530-1dc2-4cd9-a78b-e41df922f554",
+    "name": "F1-Concurrency-MTDWSTM4",
+    "status": "active",
+    "finance_row_count": 23,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "a3858f58-ed16-4e1e-8e77-6cf0f99b0026",
+    "name": "F1-Concurrency-MTF9UBYT",
+    "status": "active",
+    "finance_row_count": 23,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "4e87c05b-6e25-491f-a555-17269f818c70",
+    "name": "F1-Concurrency-MTFD2R9W",
+    "status": "active",
+    "finance_row_count": 23,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "c027078e-13d6-4d56-a54e-c83e9b6ae4d6",
+    "name": "F2-CONC-MT6XXYD7",
+    "status": "active",
+    "finance_row_count": 22,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "5eb84dd2-fd42-4fe7-af44-a60fc9c8fb83",
+    "name": "F2-WRK-A-MSUZVNKT",
+    "status": "active",
+    "finance_row_count": 16,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "0d181c9b-0160-41bc-a08f-f2047441854a",
+    "name": "F2-WRK-A-MSUZYBA6",
+    "status": "active",
+    "finance_row_count": 15,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "3d660af5-18d5-4f14-8e11-b456ca411532",
+    "name": "F2-WRK-A-MSUZZGYF",
+    "status": "active",
+    "finance_row_count": 15,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "3402890e-b91f-4bc6-abd1-babd31b363dd",
+    "name": "F2-WRK-A-MSV2PJLK",
+    "status": "active",
+    "finance_row_count": 15,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "685a8f72-5965-4abd-a4df-6867c04c96a3",
+    "name": "F2-WRK-A-MSVEUOAN",
+    "status": "active",
+    "finance_row_count": 15,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "e3821b6b-1f8f-479b-b208-35813f5d7c84",
+    "name": "F2-WRK-A-MTF9PK9V",
+    "status": "active",
+    "finance_row_count": 15,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "d06f39ac-16d9-4426-9d9f-264d1c207f56",
+    "name": "F2-WRK-A-MTFAYRR3",
+    "status": "active",
+    "finance_row_count": 15,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "118ab987-54e4-4437-b23d-3b1fdaf9aacd",
+    "name": "F2-WRK-A-MTFBD91A",
+    "status": "active",
+    "finance_row_count": 15,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "15dbb3be-56f9-40e3-a687-c51154c52ad2",
+    "name": "F2-WRK-A-MTFCZMLZ",
+    "status": "active",
+    "finance_row_count": 15,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "854b753b-a55b-41be-86e1-9e2d22a4219a",
+    "name": "F1-VerifyA-MSUZXGW1",
+    "status": "active",
+    "finance_row_count": 13,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "8cdf3446-0783-406d-8d6e-b2cbd2982cd3",
+    "name": "F1-VerifyA-MSV00CQX",
+    "status": "active",
+    "finance_row_count": 13,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "0c0618d5-58d5-4ae4-8e69-2c0a827ac528",
+    "name": "F1-VerifyA-MSV2QNG3",
+    "status": "active",
+    "finance_row_count": 13,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "dcf009a5-dc2a-4039-b2ac-405c7db9a441",
+    "name": "F1-VerifyA-MSVEUOAH",
+    "status": "active",
+    "finance_row_count": 13,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "57c2f7a0-a075-4c4a-ad06-f72fca2f5a53",
+    "name": "F1-VerifyA-MT4HHRVE",
+    "status": "active",
+    "finance_row_count": 13,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "bae531e4-b83d-4617-b9ad-54c3610fb6cb",
+    "name": "F1-VerifyA-MTDMYNGS",
+    "status": "active",
+    "finance_row_count": 13,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "65ffdf80-ad49-4425-9839-3ac30cc4740f",
+    "name": "F1-VerifyA-MTDNFVKF",
+    "status": "active",
+    "finance_row_count": 13,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "43037ea5-5003-417d-bc62-3bdf200b9e09",
+    "name": "F1-VerifyA-MTDWDXEQ",
+    "status": "active",
+    "finance_row_count": 13,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "d6fae4fe-be4e-488e-a125-fec9bb54ec92",
+    "name": "F1-VerifyA-MTDWSMDO",
+    "status": "active",
+    "finance_row_count": 13,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "f5661007-21f8-4276-8361-0b40d0f5f4c3",
+    "name": "F1-VerifyA-MTF9T561",
+    "status": "active",
+    "finance_row_count": 13,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "6c72e707-25fe-4f27-a1ec-ff716ff377ce",
+    "name": "F1-VerifyA-MTFBEVBN",
+    "status": "active",
+    "finance_row_count": 13,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "14d2f682-71f5-44fe-991e-237826067c41",
+    "name": "F1-VerifyA-MTFD1HAY",
+    "status": "active",
+    "finance_row_count": 13,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "abe55903-2af1-46b3-b3d4-61c87276d940",
+    "name": "F4-PROOF-MSV1X72S",
+    "status": "active",
+    "finance_row_count": 13,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "6511c814-a119-42d1-a089-5f41c004473e",
+    "name": "F4-PROOF-MSV2OPHG",
+    "status": "active",
+    "finance_row_count": 13,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "97d1349b-9075-4418-8696-6212f82a4137",
+    "name": "F4-PROOF-MSV2PYJF",
+    "status": "active",
+    "finance_row_count": 13,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "ad901081-7116-4092-afe0-78268310315c",
+    "name": "F4-PROOF-MSV4AUH0",
+    "status": "active",
+    "finance_row_count": 13,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "6c7d9ae6-eacf-4f87-9af2-a37b284e5f30",
+    "name": "F4-PROOF-MSVEUOAF",
+    "status": "active",
+    "finance_row_count": 13,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "00e15ca5-1a95-4751-b4a7-39b85e28131b",
+    "name": "F4-PROOF-MT4HHRK3",
+    "status": "active",
+    "finance_row_count": 13,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "f4b20324-8eeb-4048-8b88-bcd70ba7ab64",
+    "name": "F4-PROOF-MTF9QS0U",
+    "status": "active",
+    "finance_row_count": 13,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "e875f55f-f486-4b80-a6d7-3a0c45a295af",
+    "name": "F4-PROOF-MTFBFO3E",
+    "status": "active",
+    "finance_row_count": 13,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "294e973a-7e1d-4dbc-99c5-0f801a90461a",
+    "name": "F4-PROOF-MTFD0N0W",
+    "status": "active",
+    "finance_row_count": 13,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "afb04b3c-16a7-41e6-b115-7ff61d375556",
+    "name": "F1-Concurrency-MSVEUYU2",
+    "status": "active",
+    "finance_row_count": 12,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "84d439ce-d8ab-47b7-a211-ae6065e3aed0",
+    "name": "F4-PROOF-MSV1UZRV",
+    "status": "active",
+    "finance_row_count": 11,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "7d9c2206-f775-4ebc-8a75-66d147edeedb",
+    "name": "F2-WRK-A-MT4HHRR7",
+    "status": "active",
+    "finance_row_count": 10,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "df556ebf-542b-46de-9267-7b3a896da8bd",
+    "name": "F2-RLS-A-MSUZXR39",
+    "status": "active",
+    "finance_row_count": 9,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "4ed441ca-f096-4df3-8e4e-d3ac0deb6293",
+    "name": "F2-RLS-A-MSV00ZPB",
+    "status": "active",
+    "finance_row_count": 9,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "b7413781-32a5-450a-a06f-67f4671ee92c",
+    "name": "F2-RLS-A-MSV2RJTG",
+    "status": "active",
+    "finance_row_count": 9,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "f24fb896-ace9-48af-94d8-1009b975bddf",
+    "name": "F2-RLS-A-MSVEUO9L",
+    "status": "active",
+    "finance_row_count": 9,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "02dc5876-e626-4496-a457-6715940bc967",
+    "name": "F2-RLS-A-MT4HHS00",
+    "status": "active",
+    "finance_row_count": 9,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "bb0fd5b7-0432-48c8-9538-c7d5decd979e",
+    "name": "F2-RLS-A-MTF9RZ8O",
+    "status": "active",
+    "finance_row_count": 9,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "1b4d8b9c-758b-4720-adc5-2f833273de58",
+    "name": "F2-RLS-A-MTFBH6QS",
+    "status": "active",
+    "finance_row_count": 9,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "ff1c37bb-7103-404e-b1ed-66f9b7b54a86",
+    "name": "F2-RLS-A-MTFD2GMQ",
+    "status": "active",
+    "finance_row_count": 9,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "08700791-13d0-46e0-893b-abf75b864cb6",
+    "name": "F4-PP-POS-A-MTE96I0L",
+    "status": "active",
+    "finance_row_count": 9,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "3b54a209-f24b-43e8-b70a-24b47871c4bf",
+    "name": "F4-PP-POS-A-MTE97BQA",
+    "status": "active",
+    "finance_row_count": 9,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "7f8ed0bf-b87f-4060-b66c-1249d16cb072",
+    "name": "F4-PP-POS-A-MTE9A2IO",
+    "status": "active",
+    "finance_row_count": 9,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "817a8783-0795-483e-84fa-eca2282ca6bf",
+    "name": "F4-PP-POS-A-MTEBEYZ8",
+    "status": "active",
+    "finance_row_count": 9,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "2fcf44c7-391d-4992-a80e-108bafdbf368",
+    "name": "F4-PP-POS-A-MTF9RQR3",
+    "status": "active",
+    "finance_row_count": 9,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "ace1aa49-22cf-422b-bba7-86b5a4360b31",
+    "name": "F4-PP-POS-A-MTFBFWM5",
+    "status": "active",
+    "finance_row_count": 9,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "24a84603-b67b-458b-ab0e-175f6a6f342c",
+    "name": "F4-PP-POS-A-MTFD0EHQ",
+    "status": "active",
+    "finance_row_count": 9,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "816b3b5c-5b2f-4747-9a74-4d86540b88c3",
+    "name": "F3-LIFECYCLE-MSUZXM7A",
+    "status": "active",
+    "finance_row_count": 8,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "801b417e-d240-4c54-a4c9-d6fac3c30566",
+    "name": "F3-LIFECYCLE-MSV00I9I",
+    "status": "active",
+    "finance_row_count": 8,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "83ad8a3e-d495-4be2-bf4b-fce59254cf19",
+    "name": "F3-LIFECYCLE-MSV2R16Z",
+    "status": "active",
+    "finance_row_count": 8,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "350e92eb-fc2d-4f2a-ba23-77a252eb94b6",
+    "name": "F3-LIFECYCLE-MSVEUOAL",
+    "status": "active",
+    "finance_row_count": 8,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "66d82a84-4d33-43e9-9285-527fa6d656fc",
+    "name": "F3-LIFECYCLE-MT4HHT1A",
+    "status": "active",
+    "finance_row_count": 8,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "9a1f84a1-a0e4-46b9-a238-be80aea5b291",
+    "name": "F3-LIFECYCLE-MTF9RIIY",
+    "status": "active",
+    "finance_row_count": 8,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "87616a20-2e49-4294-b622-4a7f4a54fd53",
+    "name": "F3-LIFECYCLE-MTFBGTI9",
+    "status": "active",
+    "finance_row_count": 8,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "69f60489-97e3-4b8c-95fc-32f5f01cdc47",
+    "name": "F3-LIFECYCLE-MTFD1TCF",
+    "status": "active",
+    "finance_row_count": 8,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "e94b7fcf-d319-4d8f-aa67-e2b01874ce37",
+    "name": "F2-REC-A-MSUZX81T",
+    "status": "active",
+    "finance_row_count": 5,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "048f6dca-2021-4cb6-b0bc-ad0e71ccfe5e",
+    "name": "F2-REC-A-MSUZZXJI",
+    "status": "active",
+    "finance_row_count": 5,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "2b0f5d82-b954-4fff-9a6a-5f87e1b49f9b",
+    "name": "F2-REC-A-MSV2QFCG",
+    "status": "active",
+    "finance_row_count": 5,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "876df421-34b4-4fe9-8332-a3801f6c0f5e",
+    "name": "F2-REC-A-MSVEUOAK",
+    "status": "active",
+    "finance_row_count": 5,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "3f68ce29-08ba-4e50-998c-97256071d665",
+    "name": "F2-REC-A-MT4HHTNJ",
+    "status": "active",
+    "finance_row_count": 5,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "e19b15bf-fef5-4915-b117-0d5846c904b3",
+    "name": "F2-REC-A-MTDMXPKR",
+    "status": "active",
+    "finance_row_count": 5,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "267576b8-3c42-4009-9981-998a804fbd62",
+    "name": "F2-REC-A-MTDNGM2W",
+    "status": "active",
+    "finance_row_count": 5,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "d851e100-a053-4336-b719-e3a427b00d10",
+    "name": "F2-REC-A-MTDWE327",
+    "status": "active",
+    "finance_row_count": 5,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "98d34915-80b5-47bc-aa76-a492b66580c5",
+    "name": "F2-REC-A-MTDWTXB4",
+    "status": "active",
+    "finance_row_count": 5,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "04b79677-adac-4b28-8a3f-fbe221f1f416",
+    "name": "F2-REC-A-MTF9SS7T",
+    "status": "active",
+    "finance_row_count": 5,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "97daa042-c372-4dea-9af9-79cf389b640f",
+    "name": "F2-REC-A-MTFBENVH",
+    "status": "active",
+    "finance_row_count": 5,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "79e1e278-5a4b-4e89-bde4-fb38a29db098",
+    "name": "F2-REC-A-MTFD12QZ",
+    "status": "active",
+    "finance_row_count": 5,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "6de0f994-ece4-4dca-831b-04f679089195",
+    "name": "F3-PROOF-MSUZX42L",
+    "status": "active",
+    "finance_row_count": 5,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "80c7fbfb-23fa-4936-9905-c98a00f16cf1",
+    "name": "F3-PROOF-MSV00S0C",
+    "status": "active",
+    "finance_row_count": 5,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "6dac849d-6238-43c9-8e50-01382ec81746",
+    "name": "F3-PROOF-MSV2RCW4",
+    "status": "active",
+    "finance_row_count": 5,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "964db226-f482-478c-9c0d-7773c4a0366b",
+    "name": "F3-PROOF-MSVEUOBU",
+    "status": "active",
+    "finance_row_count": 5,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "5b31af87-b3c9-429d-93fe-d3296f5edbc1",
+    "name": "F3-PROOF-MT4HHV6R",
+    "status": "active",
+    "finance_row_count": 5,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "de7e37ee-96d9-4632-80c3-099d114356d7",
+    "name": "F3-PROOF-MTF9RMWM",
+    "status": "active",
+    "finance_row_count": 5,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "61790e94-f634-4650-8f97-a443d50f11af",
+    "name": "F3-PROOF-MTFBGY4H",
+    "status": "active",
+    "finance_row_count": 5,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "384c90cc-09d1-44e7-9737-895215c000f6",
+    "name": "F3-PROOF-MTFD25FD",
+    "status": "active",
+    "finance_row_count": 5,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "7b6538b4-8a41-412a-8683-dd9c94281f82",
+    "name": "FIN-OS-E2E-MTELDTSU",
+    "status": "active",
+    "finance_row_count": 5,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "af7b6714-1d9b-49b6-86ff-266cea562040",
+    "name": "FIN-OS-E2E-MTELFLVV",
+    "status": "active",
+    "finance_row_count": 5,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "23424a85-5407-456c-8b29-cffcea1ae4bf",
+    "name": "FIN-OS-E2E-MTF97J9B",
+    "status": "active",
+    "finance_row_count": 5,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "ef820706-c7aa-49de-a5a3-0b94d92bb733",
+    "name": "FIN-OS-E2E-MTF9TX2G",
+    "status": "active",
+    "finance_row_count": 5,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "6e16de2e-48bf-4c71-90f9-49156665583a",
+    "name": "FIN-OS-E2E-MTFBHAFB",
+    "status": "active",
+    "finance_row_count": 5,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "b1cfe9ab-c658-4f05-a923-4b0e0e693120",
+    "name": "FIN-OS-E2E-MTFD2BE0",
+    "status": "active",
+    "finance_row_count": 5,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "43c75688-cedc-44f6-8b7c-1c415a474e61",
+    "name": "F2-RPT-A-MSUZW35S",
+    "status": "active",
+    "finance_row_count": 3,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "b913977c-a873-46a0-9ab7-a0123ff11e73",
+    "name": "F2-RPT-A-MSV00N4E",
+    "status": "active",
+    "finance_row_count": 3,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "196b0197-36d7-4b60-bc6d-452676c7acec",
+    "name": "F2-RPT-A-MSV2QTE5",
+    "status": "active",
+    "finance_row_count": 3,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "3f7686bc-83bf-45da-9abe-17787a2cd422",
+    "name": "F2-RPT-A-MSVEUO8E",
+    "status": "active",
+    "finance_row_count": 3,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "71bac2f3-1f18-4898-a62b-fdaa7fc06232",
+    "name": "F2-RPT-A-MT4HIFAS",
+    "status": "active",
+    "finance_row_count": 3,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "2d5b3fc6-0cda-4e62-ae8d-31a0896d0010",
+    "name": "F2-RPT-A-MTDMXWKF",
+    "status": "active",
+    "finance_row_count": 3,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "8c613102-3c8b-4d3a-97c5-1f9d12d6544b",
+    "name": "F2-RPT-A-MTDNGTNH",
+    "status": "active",
+    "finance_row_count": 3,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "2c3c5fd5-f761-4411-9c14-1c07bf1b6610",
+    "name": "F2-RPT-A-MTDWEDIT",
+    "status": "active",
+    "finance_row_count": 3,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "d1fe7933-0166-4ed9-bc13-aaa6d1caff05",
+    "name": "F2-RPT-A-MTDWUFO1",
+    "status": "active",
+    "finance_row_count": 3,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "bae190c3-55eb-40f0-b737-5e2a64ad732e",
+    "name": "F2-RPT-A-MTF9TH8F",
+    "status": "active",
+    "finance_row_count": 3,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "8f240212-e7eb-4fd7-a1f2-5027f002020c",
+    "name": "F2-RPT-A-MTFBGA51",
+    "status": "active",
+    "finance_row_count": 3,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "0b4848cf-cb95-446f-90cd-669a4afe3474",
+    "name": "F2-RPT-A-MTFD1O6S",
+    "status": "active",
+    "finance_row_count": 3,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "26b71c19-eebb-4498-bd91-b6f50a204128",
+    "name": "F5-6-CASH-1111-MTDWDAHW-2de16293-fe54-4b2e-b260-55fbae2b3789",
+    "status": "active",
+    "finance_row_count": 3,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "466d4043-1b54-490d-81de-989902606573",
+    "name": "F5-6-CASH-1111-MTDWROHH-ea694183-962f-4bb2-8651-4859bdaecad7",
+    "status": "active",
+    "finance_row_count": 3,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "769f202f-85bd-40ec-a6bf-a4b3217b0ae9",
+    "name": "F5-6-CASH-1111-MTDYD47M-cb7ac219-8fb9-49a7-8eb8-d218de2c33d1",
+    "status": "active",
+    "finance_row_count": 3,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "67d6cff6-7583-4225-9297-f64108ca3b99",
+    "name": "F5-6-CASH-1111-MTE4FYFG-5d4ced4b-8d4c-4c3b-86ac-f55303c94b4b",
+    "status": "active",
+    "finance_row_count": 3,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "abcd1aca-6ebd-47a1-ae14-72038bc965a7",
+    "name": "F5-6-CASH-1111-MTE4KAY8-9305c5ff-70fd-4998-bcc5-898dcc4600da",
+    "status": "active",
+    "finance_row_count": 3,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "922f67e1-5b13-481b-8fd7-150d53591da0",
+    "name": "F5-6-CASH-1111-MTE970P4-a4a984c4-719a-4e28-bfe4-854415b7ccbf",
+    "status": "active",
+    "finance_row_count": 3,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "b6fd61a5-34ab-4bb1-9c37-56d2f672b593",
+    "name": "F5-6-CASH-1111-MTE99PD9-331116f7-4228-4ae6-b04a-d7b6f4ca881e",
+    "status": "active",
+    "finance_row_count": 3,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "f9685dd5-0975-4418-a52d-f638c47d17c7",
+    "name": "F5-6-CASH-1111-MTEBDMBF-03dbd1cb-c370-46b1-8212-08cc8b90b4f4",
+    "status": "active",
+    "finance_row_count": 3,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "e5eab9a3-5faf-4bce-99d4-8f091984076a",
+    "name": "F5-6-CASH-1111-MTEBEDUS-b298d32b-4a16-4ec9-9144-8700e6164b27",
+    "status": "active",
+    "finance_row_count": 3,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "343c40a2-4653-4362-bb1f-6717ebf894aa",
+    "name": "F5-6-CASH-1111-MTELE7CV-d75d0f19-c584-4040-9243-024dcd07a90b",
+    "status": "active",
+    "finance_row_count": 3,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "6923f3a6-23c2-430d-a362-cd7ff95e318b",
+    "name": "F5-6-CASH-1111-MTF9R0IQ-7420e50c-2942-4c0d-ab3d-5e1ac40c4a20",
+    "status": "active",
+    "finance_row_count": 3,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "e5ece10c-b805-46e2-ad03-813586d8e410",
+    "name": "F5-6-CASH-1111-MTFBDMYT-2613f821-f292-4f07-addb-0b82e235cb38",
+    "status": "active",
+    "finance_row_count": 3,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "aeb52c57-5429-46b8-b4d2-21f52a6d0e9c",
+    "name": "F2-REC-B-MSUZX81T",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "832ab6a0-e585-4784-924e-ba6c8a752fc2",
+    "name": "F2-REC-B-MSUZZXJI",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "052a7262-8b6f-4e25-9686-9178028a0f49",
+    "name": "F2-REC-B-MSV2QFCG",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "377f7d00-db1c-46eb-bfcb-08d208207e19",
+    "name": "F2-REC-B-MSVEUOAK",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "5f8f16a6-835c-4e6b-8ba5-90d37ab72113",
+    "name": "F2-REC-B-MT4HHTNJ",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "0a016cf9-641a-44b7-a969-7414982ed3b3",
+    "name": "F2-REC-B-MTDMXPKR",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "cfd47feb-a258-4b9b-9fc9-a0896099d4c3",
+    "name": "F2-REC-B-MTDNGM2W",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "f3acd8b6-2489-4361-a563-6f5152560dac",
+    "name": "F2-REC-B-MTDWE327",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "4501583d-812b-4ba5-8830-a1d7186b5b3d",
+    "name": "F2-REC-B-MTDWTXB4",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "ce986220-17d3-42b8-b895-b77f45bbb943",
+    "name": "F2-REC-B-MTF9SS7T",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "a60c84b2-afa9-435d-bb54-df95ae522638",
+    "name": "F2-REC-B-MTFBENVH",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "f51b4618-1a32-4fb0-8e0b-2a60dd239f2a",
+    "name": "F2-REC-B-MTFD12QZ",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "ec149b7c-0772-4af3-9b09-ee6068e39f24",
+    "name": "F4-PROOF-MSV1TON0",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "4c1f0415-d4bd-48c6-9795-090477665230",
+    "name": "F5-6-CASH-1113-MTDWROHH-9a8ca721-1e5f-4088-8323-02490e0b30ae",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "1346f94c-2e4f-423a-ad5f-38bc301c4e4e",
+    "name": "F5-6-CASH-1113-MTDYD47M-2006d749-035d-4d93-be90-2cd794d11858",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "08e5efc2-58e9-4022-905a-291d8c4d9f4f",
+    "name": "F5-6-CASH-1113-MTE4FYFG-2ad43b92-7353-4404-94a4-3e3b1cd9f53f",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "736e3d9a-f43a-4d50-87f0-d7fbe8dca06f",
+    "name": "F5-6-CASH-1113-MTE4KAY8-5f400cf8-8c08-46e9-9d70-96bd37624fb1",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "3817b55e-db2d-4d23-af7c-8f1ef98dfc34",
+    "name": "F5-6-CASH-1113-MTE970P4-e792b0af-8fd8-4c75-ae52-182287b411ec",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "5005fa7b-e983-4641-af11-351a8edf9efd",
+    "name": "F5-6-CASH-1113-MTE99PD9-62dc87af-efab-4a98-9921-ba8c80f7363d",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "cdf6a1a0-83df-4f41-a329-47abb04b5627",
+    "name": "F5-6-CASH-1113-MTEBDMBF-23ceb053-826b-44f6-a722-671ed366a2e4",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "01f68e1a-75e7-4bab-923a-48e08873f17d",
+    "name": "F5-6-CASH-1113-MTEBEDUS-14a0823e-e085-4146-906f-dea3c7525c3b",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "a75bb9d0-c598-46cf-9448-f6c08d0ac07a",
+    "name": "F5-6-CASH-1113-MTELE7CV-fe2c733b-7ccd-4b92-82cd-900b3a6a9976",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "d13f1cf2-567a-447c-8794-4f453d5ef14f",
+    "name": "F5-6-CASH-1113-MTF9R0IQ-657ca1c3-dafb-46f9-afea-4644758c7869",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "835bee09-cce8-4d04-af0b-071949cd4de5",
+    "name": "F5-6-CASH-1113-MTFBDMYT-b1c0859a-429c-485a-a99e-bae1080065d9",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "c725b3cd-651f-411a-96d4-2d50ad1aad5c",
+    "name": "F5-6-CASH-1116-MTEBDMBF-6b308f82-e986-48c4-ba42-a4e664a71292",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "1f9a50dc-aaa3-4a0b-93f6-70d2aeca369a",
+    "name": "F5-6-CASH-1116-MTEBEDUS-56e8110f-584e-4856-984e-40c1ba7fe000",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "00c1ee99-314f-4a77-b25e-61e0c8ef47df",
+    "name": "F5-6-CASH-1116-MTELE7CV-accf337e-8358-420b-b6f0-9463b5ddff1b",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "b3b94cbf-7062-4ea7-a236-e004ef54463e",
+    "name": "F5-6-CASH-1116-MTF9R0IQ-6d62720b-c664-4e17-9b1f-cebc6aef54a3",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "4fbae194-7d49-4dd5-b6c7-e7aa7eb4f7a7",
+    "name": "F5-6-CASH-1116-MTFBDMYT-608ef97b-6d64-454d-b071-3a6dbfad51d0",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "e599490c-eedd-41d6-b4dc-bd00a70016d7",
+    "name": "F5-6-CASH-1117-MTEBDMBF-d2df22cb-414f-4929-adfa-c99670f05389",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "adb8123b-e3a5-4a8a-8de9-cc2bb6f8a201",
+    "name": "F5-6-CASH-1117-MTEBEDUS-21719895-ed2f-4c67-8310-7f0c8d9681f8",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "25ac693e-40e3-461e-8d64-f84faa5ddd78",
+    "name": "F5-6-CASH-1117-MTELE7CV-f0b8c1b8-e9d0-4d01-ac40-755795300e23",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "bb399cee-e303-410f-8378-917b249f3405",
+    "name": "F5-6-CASH-1117-MTF9R0IQ-786f61a2-d91c-4450-bda4-5933b0641c56",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "c9e7d97c-ac1a-41f9-8fbd-77fbc2368133",
+    "name": "F5-6-CASH-1117-MTFBDMYT-a522e093-7b4d-4406-bf6c-323eaea2c1aa",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "40a0ec9d-66e1-4407-9929-a717d2f756c3",
+    "name": "F5-6-CASH-1118-MTEBDMBF-3bcf2e22-6d77-4204-b14d-5e71ca6dc8ae",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "043d7064-3ee3-4a30-9ae3-420ec7a0d1da",
+    "name": "F5-6-CASH-1118-MTEBEDUS-dba24382-d2cd-478b-8144-ff383939d1ac",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "a520468d-17c4-4ba0-9803-157ddc76c7a5",
+    "name": "F5-6-CASH-1118-MTELE7CV-2b52b272-b3be-4ae5-a91b-7ff20e108589",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "534ce606-9cf9-47d7-b709-669dceb81c13",
+    "name": "F5-6-CASH-1118-MTF9R0IQ-d6708b55-65b1-4cc3-a55b-9576888a5551",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "2bd710b4-129e-4009-bd54-ba1dcb5fa2d9",
+    "name": "F5-6-CASH-1118-MTFBDMYT-49258410-f750-4001-8cd8-8bc8a2d5b523",
+    "status": "active",
+    "finance_row_count": 2,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "bcb67c71-706c-4f98-bc71-ee7eb7f4cbc0",
+    "name": "F2-RLS-B-MSUZXR39",
+    "status": "active",
+    "finance_row_count": 1,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "80b25f09-c9d5-442a-a89c-0a318ec2b23d",
+    "name": "F2-RLS-B-MSV00ZPB",
+    "status": "active",
+    "finance_row_count": 1,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "08fd0dc4-62a4-4756-b01d-82d0f5e7f544",
+    "name": "F2-RLS-B-MSV2RJTG",
+    "status": "active",
+    "finance_row_count": 1,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "fbb02b5f-8551-4b5f-9f25-069464a546d7",
+    "name": "F2-RLS-B-MSVEUO9L",
+    "status": "active",
+    "finance_row_count": 1,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "ce14d31b-5f25-4a1b-bc6d-241a84da072a",
+    "name": "F2-RLS-B-MT4HHS00",
+    "status": "active",
+    "finance_row_count": 1,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "b8cf6150-b3cc-4049-af7c-1100eaec04f3",
+    "name": "F2-RLS-B-MTF9RZ8O",
+    "status": "active",
+    "finance_row_count": 1,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "9ea66213-ec37-48b1-9049-cd9618422151",
+    "name": "F2-RLS-B-MTFBH6QS",
+    "status": "active",
+    "finance_row_count": 1,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "e3020ff2-dfed-45ad-a980-827dfdc80f6a",
+    "name": "F2-RLS-B-MTFD2GMQ",
+    "status": "active",
+    "finance_row_count": 1,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "53734025-2231-4f07-bcf4-5e4d11e9474e",
+    "name": "F4-PP-POS-B-MTE96I0L",
+    "status": "active",
+    "finance_row_count": 1,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "884b45d3-eabb-4ea1-b3f2-e983e6994928",
+    "name": "F4-PP-POS-B-MTE97BQA",
+    "status": "active",
+    "finance_row_count": 1,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "e67a34e8-d370-44c5-a4d8-2a7ddc6b76b6",
+    "name": "F4-PP-POS-B-MTE9A2IO",
+    "status": "active",
+    "finance_row_count": 1,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "67ce5a58-e589-47d4-adec-6e470e805d37",
+    "name": "F4-PP-POS-B-MTEBEYZ8",
+    "status": "active",
+    "finance_row_count": 1,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "39f7a583-f1e4-4ada-af69-443f17b4c490",
+    "name": "F4-PP-POS-B-MTF9RQR3",
+    "status": "active",
+    "finance_row_count": 1,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "1eeee978-91f9-4864-9d34-07f597f3be8a",
+    "name": "F4-PP-POS-B-MTFBFWM5",
+    "status": "active",
+    "finance_row_count": 1,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "8af5873b-fd89-4c6f-9ee6-de233bbd5c33",
+    "name": "F4-PP-POS-B-MTFD0EHQ",
+    "status": "active",
+    "finance_row_count": 1,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "a0934dcc-bc1a-47ba-a1d5-1590e2942140",
+    "name": "F5-6-CASH-1114-MTDWROHH-97cd0119-f329-42cb-8924-1719c501db4b",
+    "status": "active",
+    "finance_row_count": 1,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "149dea1a-77e9-4017-8475-ae708da449e8",
+    "name": "F5-6-CASH-1114-MTDYD47M-00d8594b-d511-45ea-907d-4f08ded2fa70",
+    "status": "active",
+    "finance_row_count": 1,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "f1f24460-f607-4fcb-87b1-7787a4a41721",
+    "name": "F5-6-CASH-1114-MTE4FYFG-a13beab4-30f2-4d89-bfce-41b6ff7d4e67",
+    "status": "active",
+    "finance_row_count": 1,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "5618dcf1-84c2-4a98-bede-ef40b70dc579",
+    "name": "F5-6-CASH-1114-MTE4KAY8-7a6fd0e7-1539-47af-ac33-38b9655efd0a",
+    "status": "active",
+    "finance_row_count": 1,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  },
+  {
+    "id": "58bc3e35-2045-497b-81ab-c2e354c7d812",
+    "name": "F5-6-CASH-1114-MTE970P4-2194a263-74be-4549-b425-69e23efd8aaf",
+    "status": "active",
+    "finance_row_count": 1,
+    "metadata": {},
+    "retained_evidence_tagged": false
+  }
+]
+```
+
+### SG-004 - WARN
+
+Topic: Historical mappings of deleted tenants
+Classification: historical_evidence
+Production blocker: false
+Decision: Unresolved mappings belong to tenant IDs with no tenant row in the current environment sample. They cannot be resolved by tenant-scoped runtime policy for an active tenant; retain as historical/data-lifecycle evidence unless a migration provenance decision authorizes cleanup.
+Evidence rows: 63
+
+Evidence sample:
+
+```json
+[
+  {
+    "tenant_id": "fef076ef-0233-4013-bedd-2f1c32380291",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "038c2206-bffe-4f79-9a3d-570bd08a1452",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "0f6e89ee-5f77-4e33-bfaa-f974dcfe62b0",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 1
+  },
+  {
+    "tenant_id": "10613ae3-c923-46ba-9445-f47af353ccfc",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "4af1983e-0d92-44d5-831f-51a0886a2f9e",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "4bebfbd0-4112-41f5-90c3-7a58c99d39ca",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "4f7ee4cb-3ee9-4252-869c-baae51aa0fba",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "51e52db3-ef5c-4f24-8ecf-731ff9159c51",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "60b323f6-9b02-4b00-afb9-56dea19569a1",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "60c981b3-0ec6-4abe-9094-893500993728",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "62f0b09b-587a-453b-bc58-42d0280f0cdc",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "64fb008e-853f-4cde-9c26-75a1f1300a9a",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "67882572-1491-41de-bc20-f27f7c576182",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "698dd400-408a-4e31-9258-ebe44e3861c2",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 1
+  },
+  {
+    "tenant_id": "7b5729ad-b725-488a-9278-8b916804220c",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 1
+  },
+  {
+    "tenant_id": "85285ae4-3bd8-459f-846e-de5346bc73cd",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "9b510b42-fcdc-4318-954a-a610aff8da03",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "a16c2bf7-3d35-45c2-a4cf-6457a830b8b2",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 1
+  },
+  {
+    "tenant_id": "af09d618-25aa-40ce-abe4-e691c6507550",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "b6d5e9ae-1504-439e-864a-716b1ca13699",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 1
+  },
+  {
+    "tenant_id": "c2e692a9-4215-4fc0-b35e-bb4011bf4d2d",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "c4056a1f-1ab8-400f-9a9a-5431598cda2d",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "d7a76f49-e90c-4918-a4e7-ca675cd471a1",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 1
+  },
+  {
+    "tenant_id": "db6a900a-eb73-4ead-87fb-2a4c80c3a925",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "e50e3be6-5763-4966-89fe-a94eea88c468",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 1
+  },
+  {
+    "tenant_id": "e770a8b1-d6d8-43a2-a576-b77c394f02f9",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 1
+  },
+  {
+    "tenant_id": "ef362101-54e9-408f-ae06-79e6d9803571",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 1
+  },
+  {
+    "tenant_id": "f0652160-828e-4562-995e-e72cce717e6c",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "f597058d-c5d3-41a2-825f-8ebf107af7ae",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "fb0dbbcc-52a8-4214-a0dc-2873599ab41f",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "1390f4fe-6b9c-48e1-b877-bf512d1fa0e5",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "14a5809f-9690-45a8-828d-608f2cb85e36",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "1de94773-2f55-46a3-8d29-08fd7fb3c70a",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "272fd1a7-bee6-4518-9e49-632462361548",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 1
+  },
+  {
+    "tenant_id": "381aa0c5-c48c-42ce-9ec7-226580c50413",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "39ca66f4-cbf5-470f-85cb-a6f77ba71f35",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "437c44b1-81aa-4b9e-9a55-91f0128bc612",
+    "name": null,
+    "status": null,
+    "control_type": "AR_CONTROL",
+    "account_code": "131",
+    "mappings_for_tenant": 1
+  },
+  {
+    "tenant_id": "10613ae3-c923-46ba-9445-f47af353ccfc",
+    "name": null,
+    "status": null,
+    "control_type": "PREPAYMENT_CONTROL",
+    "account_code": "242",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "1390f4fe-6b9c-48e1-b877-bf512d1fa0e5",
+    "name": null,
+    "status": null,
+    "control_type": "PREPAYMENT_CONTROL",
+    "account_code": "242",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "db6a900a-eb73-4ead-87fb-2a4c80c3a925",
+    "name": null,
+    "status": null,
+    "control_type": "PREPAYMENT_CONTROL",
+    "account_code": "242",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "64fb008e-853f-4cde-9c26-75a1f1300a9a",
+    "name": null,
+    "status": null,
+    "control_type": "PREPAYMENT_CONTROL",
+    "account_code": "242",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "14a5809f-9690-45a8-828d-608f2cb85e36",
+    "name": null,
+    "status": null,
+    "control_type": "PREPAYMENT_CONTROL",
+    "account_code": "242",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "1de94773-2f55-46a3-8d29-08fd7fb3c70a",
+    "name": null,
+    "status": null,
+    "control_type": "PREPAYMENT_CONTROL",
+    "account_code": "242",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "fef076ef-0233-4013-bedd-2f1c32380291",
+    "name": null,
+    "status": null,
+    "control_type": "PREPAYMENT_CONTROL",
+    "account_code": "242",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "67882572-1491-41de-bc20-f27f7c576182",
+    "name": null,
+    "status": null,
+    "control_type": "PREPAYMENT_CONTROL",
+    "account_code": "242",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "c2e692a9-4215-4fc0-b35e-bb4011bf4d2d",
+    "name": null,
+    "status": null,
+    "control_type": "PREPAYMENT_CONTROL",
+    "account_code": "242",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "381aa0c5-c48c-42ce-9ec7-226580c50413",
+    "name": null,
+    "status": null,
+    "control_type": "PREPAYMENT_CONTROL",
+    "account_code": "242",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "39ca66f4-cbf5-470f-85cb-a6f77ba71f35",
+    "name": null,
+    "status": null,
+    "control_type": "PREPAYMENT_CONTROL",
+    "account_code": "242",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "f597058d-c5d3-41a2-825f-8ebf107af7ae",
+    "name": null,
+    "status": null,
+    "control_type": "PREPAYMENT_CONTROL",
+    "account_code": "242",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "c4056a1f-1ab8-400f-9a9a-5431598cda2d",
+    "name": null,
+    "status": null,
+    "control_type": "PREPAYMENT_CONTROL",
+    "account_code": "242",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "85285ae4-3bd8-459f-846e-de5346bc73cd",
+    "name": null,
+    "status": null,
+    "control_type": "PREPAYMENT_CONTROL",
+    "account_code": "242",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "4af1983e-0d92-44d5-831f-51a0886a2f9e",
+    "name": null,
+    "status": null,
+    "control_type": "PREPAYMENT_CONTROL",
+    "account_code": "242",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "fb0dbbcc-52a8-4214-a0dc-2873599ab41f",
+    "name": null,
+    "status": null,
+    "control_type": "PREPAYMENT_CONTROL",
+    "account_code": "242",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "4bebfbd0-4112-41f5-90c3-7a58c99d39ca",
+    "name": null,
+    "status": null,
+    "control_type": "PREPAYMENT_CONTROL",
+    "account_code": "242",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "4f7ee4cb-3ee9-4252-869c-baae51aa0fba",
+    "name": null,
+    "status": null,
+    "control_type": "PREPAYMENT_CONTROL",
+    "account_code": "242",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "9b510b42-fcdc-4318-954a-a610aff8da03",
+    "name": null,
+    "status": null,
+    "control_type": "PREPAYMENT_CONTROL",
+    "account_code": "242",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "51e52db3-ef5c-4f24-8ecf-731ff9159c51",
+    "name": null,
+    "status": null,
+    "control_type": "PREPAYMENT_CONTROL",
+    "account_code": "242",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "038c2206-bffe-4f79-9a3d-570bd08a1452",
+    "name": null,
+    "status": null,
+    "control_type": "PREPAYMENT_CONTROL",
+    "account_code": "242",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "60b323f6-9b02-4b00-afb9-56dea19569a1",
+    "name": null,
+    "status": null,
+    "control_type": "PREPAYMENT_CONTROL",
+    "account_code": "242",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "f0652160-828e-4562-995e-e72cce717e6c",
+    "name": null,
+    "status": null,
+    "control_type": "PREPAYMENT_CONTROL",
+    "account_code": "242",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "af09d618-25aa-40ce-abe4-e691c6507550",
+    "name": null,
+    "status": null,
+    "control_type": "PREPAYMENT_CONTROL",
+    "account_code": "242",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "60c981b3-0ec6-4abe-9094-893500993728",
+    "name": null,
+    "status": null,
+    "control_type": "PREPAYMENT_CONTROL",
+    "account_code": "242",
+    "mappings_for_tenant": 2
+  },
+  {
+    "tenant_id": "62f0b09b-587a-453b-bc58-42d0280f0cdc",
+    "name": null,
+    "status": null,
+    "control_type": "PREPAYMENT_CONTROL",
+    "account_code": "242",
+    "mappings_for_tenant": 2
+  }
+]
+```
