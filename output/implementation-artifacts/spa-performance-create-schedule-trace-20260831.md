@@ -25,6 +25,9 @@ The business rule behavior remains unchanged when conflict detection responds no
 
 ## Verification
 
+- `npm run spa:verify:create-schedule-timeout` PASS
+  - fast conflict result stayed `REJECT`
+  - slow conflict timed out and returned fail-open `APPROVE`
 - `npm run build` PASS
 - `npx eslint src/app/dashboard/bookings/hooks/useBookingsPageActions.ts` did not validate the file because the current ESLint config ignores that direct file invocation.
 - `npm test -- tenant-isolation-source-guards.test.ts --runInBand` did not run because the current Jest config did not match the test path in this worktree.

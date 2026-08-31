@@ -18,6 +18,7 @@ import { checkBookingConflicts } from '@/services/decision-actions/booking-decis
 
 import type { BookingModalData } from '../components/BookingDayDetailModal';
 import type { BookingThermalInvoiceData } from '../components/BookingThermalInvoicePrint';
+import { withCreateScheduleConflictTimeout } from '../utils/createScheduleDecisionTimeout';
 
 type TenantBankInfo = {
   qr_bank_code?: string | null;
@@ -49,10 +50,6 @@ type UseBookingsPageActionsArgs = {
   closeCreateModal: () => void;
 };
 
-type BookingConflictDecision = Awaited<ReturnType<typeof checkBookingConflicts>>;
-
-const CREATE_SCHEDULE_CONFLICT_TIMEOUT_MS = 1200;
-
 function nowMs() {
   return typeof performance !== 'undefined' ? performance.now() : Date.now();
 }
@@ -64,32 +61,6 @@ async function timeCreateScheduleStep<T>(label: string, operation: () => Promise
   } finally {
     const durationMs = Math.round(nowMs() - startedAt);
     console.info(`[CreateSchedule] ${label} completed in ${durationMs}ms`);
-  }
-}
-
-async function checkBookingConflictsWithTimeout(
-  input: Parameters<typeof checkBookingConflicts>[0],
-): Promise<BookingConflictDecision> {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
-  try {
-    return await Promise.race([
-      checkBookingConflicts(input),
-      new Promise<BookingConflictDecision>((resolve) => {
-        timeoutId = setTimeout(() => {
-          resolve({
-            decision: 'APPROVE',
-            message: 'Booking approved (conflict check timeout fail-open)',
-            context: {
-              timeoutMs: CREATE_SCHEDULE_CONFLICT_TIMEOUT_MS,
-              operation: 'checkBookingConflicts',
-            },
-          });
-        }, CREATE_SCHEDULE_CONFLICT_TIMEOUT_MS);
-      }),
-    ]);
-  } finally {
-    if (timeoutId) clearTimeout(timeoutId);
   }
 }
 
@@ -440,14 +411,16 @@ export function useBookingsPageActions({
       // Check for booking conflicts using Decision Engine
       const conflictCheck = await timeCreateScheduleStep(
         'checkBookingConflicts',
-        () => checkBookingConflictsWithTimeout({
-          bookingId,
-          ktvId: assignedKtvId,
-          bookingResourceId: typeof bookingResourceId === 'string' && bookingResourceId ? bookingResourceId : null,
-          assignedDate: typeof date === 'string' ? date : null,
-          assignedTime: createTimeRange.start,
-          durationMinutes: 90, // Default duration, TODO: get from package
-        }),
+        () => withCreateScheduleConflictTimeout(() =>
+          checkBookingConflicts({
+            bookingId,
+            ktvId: assignedKtvId,
+            bookingResourceId: typeof bookingResourceId === 'string' && bookingResourceId ? bookingResourceId : null,
+            assignedDate: typeof date === 'string' ? date : null,
+            assignedTime: createTimeRange.start,
+            durationMinutes: 90, // Default duration, TODO: get from package
+          })
+        ),
       );
 
       // Handle conflict check result

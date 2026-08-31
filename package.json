@@ -28,6 +28,7 @@
     "finance:hardening:tenant-isolation": "node scripts/finance-production-hardening-tenant-isolation.cjs",
     "finance:hardening:e2e": "node scripts/finance-production-hardening-e2e.cjs",
     "finance:hardening:security-governance": "node scripts/finance-production-hardening-security-governance.cjs",
+    "spa:verify:create-schedule-timeout": "node scripts/verify-create-schedule-timeout.cjs",
     "demo:beauty": "node scripts/beauty-demo-tenant.cjs",
     "demo:auto": "node scripts/auto-demo-tenant.cjs",
     "cron:accounting:smoke": "node scripts/check-accounting-worker-cron-smoke.cjs",
