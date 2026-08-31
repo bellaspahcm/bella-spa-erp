@@ -1,0 +1,207 @@
+{
+  "generated_at": "2026-08-31T02:42:08.269Z",
+  "environment_host": "lvnvkpyxtuilhrabtlwv.supabase.co",
+  "retained_evidence_tenant_id": "2fc7812b-6263-49ca-b7d5-bfe3dcea91eb",
+  "summary": {
+    "total": 11,
+    "pass": 11,
+    "warn": 0,
+    "fail": 0,
+    "skipped": 0,
+    "is_green": true
+  },
+  "context": {
+    "stamp": "20260831024205",
+    "tenantId": "2fc7812b-6263-49ca-b7d5-bfe3dcea91eb",
+    "vendorId": "52df21f1-1737-4073-be4f-01efe1688910",
+    "actorId": "5ee512a6-d039-4da0-af12-9eef01cff2fb",
+    "bankAccountId": "34fca867-fb2a-4b78-a6bb-e17f03492aa7",
+    "bankFinanceAccountId": "030763f9-b8fe-4d93-956e-41d6710464a6",
+    "billId": "7a27252f-8142-4d89-b020-85f7791c763a",
+    "prepaymentFactId": "3129cc2e-e0bb-4816-b92f-d1d7b918cb9c",
+    "prepaymentRecordTxId": "e8a4af90-0fb5-4aba-b9cb-793935da0d0f",
+    "billApprovalTxId": "d44d5bc9-094a-43b1-b16a-66370881ed9d",
+    "prepaymentApplyTxId": "513808ca-3e86-4c04-9b67-924b7023a8c1",
+    "cashOutflowF1TxId": "2344ff82-6b1f-440a-b7a6-894828de45ff",
+    "cashMovementId": "eb31ffb8-0716-42c8-b82e-848d8256161f",
+    "disbursementAllocationId": "e3f24004-fc37-40f2-9749-83bad571bb2b",
+    "disbursementTxId": "ec5abefc-c7c1-4dc6-9ac5-5598e6357f22",
+    "disbursementReversalTxId": "bd0faf09-a849-41ce-979e-1548f2421032"
+  },
+  "steps": [
+    {
+      "id": "E2E-001",
+      "status": "PASS",
+      "description": "Preflight confirms active production E2E RPC signatures.",
+      "started_at": "2026-08-31T02:42:06.212Z",
+      "completed_at": "2026-08-31T02:42:06.642Z",
+      "evidence": {
+        "signatures": {
+          "finance_post_transaction": [
+            "p_tenant_id uuid, p_idempotency_key character varying, p_request_hash character varying, p_source_type character varying, p_source_id character varying, p_transaction_type character varying, p_posted_at timestamp with time zone, p_transaction_currency character varying, p_functional_currency character varying, p_exchange_rate_rate numeric, p_exchange_rate_source character varying, p_exchange_rate_target character varying, p_exchange_rate_effective timestamp with time zone, p_description text, p_reference_type character varying, p_reference_id character varying, p_lines jsonb, p_document_date date",
+            "p_tenant_id uuid, p_transaction_type character varying, p_posted_at timestamp with time zone, p_description text, p_idempotency_key character varying, p_legacy_lines jsonb"
+          ],
+          "finance_reverse_transaction": [
+            "p_tenant_id uuid, p_transaction_id uuid, p_idempotency_key character varying",
+            "p_tenant_id uuid, p_transaction_id uuid, p_idempotency_key character varying, p_reason text, p_reversal_date timestamp with time zone"
+          ],
+          "finance_approve_vendor_bill": [
+            "p_tenant_id uuid, p_bill_id uuid, p_approved_by uuid, p_posting_attempt_id uuid"
+          ],
+          "finance_disburse_payment": [
+            "p_tenant_id uuid, p_bill_id uuid, p_cash_outflow_id uuid, p_allocated_amount_minor bigint, p_cash_amount_minor bigint, p_exchange_rate numeric, p_rate_source character varying, p_rate_timestamp timestamp with time zone, p_posting_attempt_id uuid"
+          ],
+          "finance_record_prepayment": [
+            "p_tenant_id uuid, p_vendor_id uuid, p_amount_minor bigint, p_bank_finance_account_id uuid, p_posting_attempt_id uuid, p_source_type character varying, p_source_id character varying"
+          ],
+          "finance_apply_prepayment": [
+            "p_tenant_id uuid, p_bill_id uuid, p_prepayment_fact_id uuid, p_amount_minor bigint, p_posting_attempt_id uuid"
+          ],
+          "f5_run_reconciliation": [
+            "p_tenant_id uuid, p_domain text, p_control_type text, p_basis_id uuid, p_basis_version text, p_reconciliation_as_of timestamp with time zone"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E2E-002",
+      "status": "PASS",
+      "description": "Seed an isolated retained-evidence tenant and finance fixture.",
+      "started_at": "2026-08-31T02:42:06.642Z",
+      "completed_at": "2026-08-31T02:42:07.483Z",
+      "evidence": {
+        "tenantId": "2fc7812b-6263-49ca-b7d5-bfe3dcea91eb",
+        "vendorId": "52df21f1-1737-4073-be4f-01efe1688910",
+        "actorId": "5ee512a6-d039-4da0-af12-9eef01cff2fb",
+        "bankAccountId": "34fca867-fb2a-4b78-a6bb-e17f03492aa7",
+        "bankFinanceAccountId": "030763f9-b8fe-4d93-956e-41d6710464a6",
+        "billId": "7a27252f-8142-4d89-b020-85f7791c763a"
+      }
+    },
+    {
+      "id": "E2E-003",
+      "status": "PASS",
+      "description": "Record vendor prepayment through F4 policy-resolution RPC.",
+      "started_at": "2026-08-31T02:42:07.483Z",
+      "completed_at": "2026-08-31T02:42:07.667Z",
+      "evidence": {
+        "success": true,
+        "is_duplicate": false,
+        "transaction_id": "e8a4af90-0fb5-4aba-b9cb-793935da0d0f",
+        "prepayment_fact_id": "3129cc2e-e0bb-4816-b92f-d1d7b918cb9c"
+      }
+    },
+    {
+      "id": "E2E-004",
+      "status": "PASS",
+      "description": "Approve AP vendor bill through F4 AP lifecycle RPC.",
+      "started_at": "2026-08-31T02:42:07.667Z",
+      "completed_at": "2026-08-31T02:42:07.754Z",
+      "evidence": {
+        "status": "APPROVED",
+        "bill_id": "7a27252f-8142-4d89-b020-85f7791c763a",
+        "success": true,
+        "is_duplicate": false,
+        "transaction_id": "d44d5bc9-094a-43b1-b16a-66370881ed9d"
+      }
+    },
+    {
+      "id": "E2E-005",
+      "status": "PASS",
+      "description": "Apply prepayment to approved AP bill through F4 lifecycle RPC.",
+      "started_at": "2026-08-31T02:42:07.754Z",
+      "completed_at": "2026-08-31T02:42:07.833Z",
+      "evidence": {
+        "success": true,
+        "is_duplicate": false,
+        "transaction_id": "513808ca-3e86-4c04-9b67-924b7023a8c1",
+        "prepayment_fact_id": "ffa9692b-4e7d-4e4f-88ea-00547912d348"
+      }
+    },
+    {
+      "id": "E2E-006",
+      "status": "PASS",
+      "description": "Create F1 cash outflow transaction for AP disbursement setup.",
+      "started_at": "2026-08-31T02:42:07.833Z",
+      "completed_at": "2026-08-31T02:42:07.914Z",
+      "evidence": {
+        "status": "POSTED",
+        "success": true,
+        "is_duplicate": false,
+        "transaction_id": "2344ff82-6b1f-440a-b7a6-894828de45ff"
+      }
+    },
+    {
+      "id": "E2E-007",
+      "status": "PASS",
+      "description": "Project the F1 cash leg into F2 cash movement.",
+      "started_at": "2026-08-31T02:42:07.914Z",
+      "completed_at": "2026-08-31T02:42:08.010Z",
+      "evidence": {
+        "success": true,
+        "movement_id": "eb31ffb8-0716-42c8-b82e-848d8256161f",
+        "is_duplicate": false
+      }
+    },
+    {
+      "id": "E2E-008",
+      "status": "PASS",
+      "description": "Disburse AP payment by allocating F2 cash outflow to vendor bill.",
+      "started_at": "2026-08-31T02:42:08.010Z",
+      "completed_at": "2026-08-31T02:42:08.088Z",
+      "evidence": {
+        "success": true,
+        "is_duplicate": false,
+        "allocation_id": "e3f24004-fc37-40f2-9749-83bad571bb2b",
+        "transaction_id": "ec5abefc-c7c1-4dc6-9ac5-5598e6357f22"
+      }
+    },
+    {
+      "id": "E2E-009",
+      "status": "PASS",
+      "description": "Reverse AP disbursement through append-only F4 reversal RPC.",
+      "started_at": "2026-08-31T02:42:08.088Z",
+      "completed_at": "2026-08-31T02:42:08.152Z",
+      "evidence": {
+        "success": true,
+        "is_duplicate": false,
+        "transaction_id": "bd0faf09-a849-41ce-979e-1548f2421032",
+        "reversal_allocation_id": "abf617a0-4506-4c77-8526-a0e557622d02"
+      }
+    },
+    {
+      "id": "E2E-010",
+      "status": "PASS",
+      "description": "Run F5.6 prepayment reconciliation for the E2E tenant.",
+      "started_at": "2026-08-31T02:42:08.152Z",
+      "completed_at": "2026-08-31T02:42:08.216Z",
+      "evidence": {
+        "status": "PASS",
+        "result": {
+          "as_of": "2026-08-31T02:42:09.651185+00:00",
+          "run_id": "19587384-0f52-4e6c-9ee4-480850adfa40",
+          "matched": 1,
+          "variances": 0,
+          "quarantined": 0,
+          "control_type": "PREPAYMENT_GL_BALANCE",
+          "is_duplicate": false,
+          "basis_version": "F4_PREPAYMENT_GL_MAP:v1",
+          "total_checked": 1
+        }
+      }
+    },
+    {
+      "id": "E2E-011",
+      "status": "PASS",
+      "description": "Verify E2E tenant remains isolated in generated financial evidence.",
+      "started_at": "2026-08-31T02:42:08.216Z",
+      "completed_at": "2026-08-31T02:42:08.269Z",
+      "evidence": {
+        "status": "PASS",
+        "same_tenant_transactions": 12,
+        "orphan_transactions": 0,
+        "cross_tenant_lines": 0
+      }
+    }
+  ]
+}
