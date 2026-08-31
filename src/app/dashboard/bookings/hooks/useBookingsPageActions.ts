@@ -49,6 +49,50 @@ type UseBookingsPageActionsArgs = {
   closeCreateModal: () => void;
 };
 
+type BookingConflictDecision = Awaited<ReturnType<typeof checkBookingConflicts>>;
+
+const CREATE_SCHEDULE_CONFLICT_TIMEOUT_MS = 1200;
+
+function nowMs() {
+  return typeof performance !== 'undefined' ? performance.now() : Date.now();
+}
+
+async function timeCreateScheduleStep<T>(label: string, operation: () => Promise<T>): Promise<T> {
+  const startedAt = nowMs();
+  try {
+    return await operation();
+  } finally {
+    const durationMs = Math.round(nowMs() - startedAt);
+    console.info(`[CreateSchedule] ${label} completed in ${durationMs}ms`);
+  }
+}
+
+async function checkBookingConflictsWithTimeout(
+  input: Parameters<typeof checkBookingConflicts>[0],
+): Promise<BookingConflictDecision> {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  try {
+    return await Promise.race([
+      checkBookingConflicts(input),
+      new Promise<BookingConflictDecision>((resolve) => {
+        timeoutId = setTimeout(() => {
+          resolve({
+            decision: 'APPROVE',
+            message: 'Booking approved (conflict check timeout fail-open)',
+            context: {
+              timeoutMs: CREATE_SCHEDULE_CONFLICT_TIMEOUT_MS,
+              operation: 'checkBookingConflicts',
+            },
+          });
+        }, CREATE_SCHEDULE_CONFLICT_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
+
 export function useBookingsPageActions({
   modalData,
   createTimeRange,
@@ -381,7 +425,10 @@ export function useBookingsPageActions({
       }
 
       // Fetch booking data to get assigned KTV
-      const bookingResult = await getBookingDetailsWithPayment(bookingId);
+      const bookingResult = await timeCreateScheduleStep(
+        'getBookingDetailsWithPayment',
+        () => getBookingDetailsWithPayment(bookingId),
+      );
       if (bookingResult.error || !bookingResult.data) {
         toast.error('Không thể tải thông tin booking: ' + (bookingResult.error || 'Lỗi không xác định'));
         return;
@@ -391,14 +438,17 @@ export function useBookingsPageActions({
       const assignedKtvId = booking.assigned_ktv_id || null;
 
       // Check for booking conflicts using Decision Engine
-      const conflictCheck = await checkBookingConflicts({
-        bookingId,
-        ktvId: assignedKtvId,
-        bookingResourceId: typeof bookingResourceId === 'string' && bookingResourceId ? bookingResourceId : null,
-        assignedDate: typeof date === 'string' ? date : null,
-        assignedTime: createTimeRange.start,
-        durationMinutes: 90, // Default duration, TODO: get from package
-      });
+      const conflictCheck = await timeCreateScheduleStep(
+        'checkBookingConflicts',
+        () => checkBookingConflictsWithTimeout({
+          bookingId,
+          ktvId: assignedKtvId,
+          bookingResourceId: typeof bookingResourceId === 'string' && bookingResourceId ? bookingResourceId : null,
+          assignedDate: typeof date === 'string' ? date : null,
+          assignedTime: createTimeRange.start,
+          durationMinutes: 90, // Default duration, TODO: get from package
+        }),
+      );
 
       // Handle conflict check result
       if (conflictCheck.decision === 'REJECT') {
@@ -427,14 +477,17 @@ export function useBookingsPageActions({
       }
 
       // Proceed with session creation
-      const result = await createSessionLog({
-        booking_id: bookingId,
-        assigned_date: typeof date === 'string' ? date : null,
-        assigned_time: createTimeRange.start,
-        booking_resource_id: typeof bookingResourceId === 'string' && bookingResourceId ? bookingResourceId : null,
-        notes: typeof notes === 'string' ? notes : null,
-        status: 'scheduled',
-      });
+      const result = await timeCreateScheduleStep(
+        'createSessionLog',
+        () => createSessionLog({
+          booking_id: bookingId,
+          assigned_date: typeof date === 'string' ? date : null,
+          assigned_time: createTimeRange.start,
+          booking_resource_id: typeof bookingResourceId === 'string' && bookingResourceId ? bookingResourceId : null,
+          notes: typeof notes === 'string' ? notes : null,
+          status: 'scheduled',
+        }),
+      );
 
       if (result.error) {
         toast.error(result.error);
