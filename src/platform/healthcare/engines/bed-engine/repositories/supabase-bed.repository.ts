@@ -10,7 +10,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { Bed, BedOccupancy, BedStateProps, BedType } from '../domain/bed.entity';
+import { Bed, BedOccupancy, BedStateProps, BedType, BedStatus } from '../domain/bed.entity';
 
 export class BedOccupancyConflictError extends Error {
   constructor(bedId: string, bedCode: string) {

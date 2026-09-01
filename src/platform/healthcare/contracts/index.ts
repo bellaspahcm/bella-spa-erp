@@ -20,7 +20,7 @@ export * from './icu-engine.contract';
 export * from './emergency-engine.contract';
 export * from './blood-bank-engine.contract';
 export * from './cds-engine.contract';
-export * from './order-engine.contract';
+export { ORDER_ENGINE_CONTRACT } from './order-engine.contract';
 export * from './sterilization.contract';
 export * from './temporal-engine.contract';
 export * from './rule-governance.contract';
@@ -56,4 +56,3 @@ export const HEALTHCARE_ENGINE_CONTRACTS = [
   CDS_ENGINE_CONTRACT,
   ORDER_ENGINE_CONTRACT,
 ];
-

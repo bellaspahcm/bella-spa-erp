@@ -129,7 +129,7 @@ export class SupabaseBloodBankRepository implements IBloodBankRepository {
         encounter_id: encounterId,
         blood_unit_id: bloodUnitId,
         crossmatch_id: crossmatchId,
-        verification_data: data as Record<string, unknown>,
+        verification_data: data as unknown as Record<string, unknown>,
         verified_by_clinician_a: verifiedByA,
         verified_by_clinician_b: verifiedByB,
       })

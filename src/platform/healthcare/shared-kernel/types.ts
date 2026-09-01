@@ -173,7 +173,7 @@ export interface ClinicalOrder {
   encounterId: string; // Law 1: Always reference Encounter
   patientId: string;
   orderType: OrderType;
-  status: OrderStatus;
+  status: GenericOrderStatus;
   orderedBy: string; // Practitioner ID
   orderedDateTime: string;
   priority: OrderPriority;
@@ -190,7 +190,7 @@ export type OrderType =
   | 'medication' 
   | 'diet';
 
-export type OrderStatus = 
+export type GenericOrderStatus =
   | 'draft' 
   | 'requested' 
   | 'received' 
