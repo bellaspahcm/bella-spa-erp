@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '@/lib/supabase';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { ResourceRef, UniversalExecutionContext } from './types';
 import { resourceDBService } from './resource-db-service';
 
@@ -40,7 +41,7 @@ export class NotificationCapability {
         }
       };
 
-      const { error } = await supabase.from('app_notifications').insert(dbPayload);
+      const { error } = await (supabase as SupabaseClient).from('app_notifications').insert(dbPayload);
 
       if (error) {
         if (context?.services?.logger) {
