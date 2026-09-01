@@ -1,0 +1,360 @@
+# Healthcare Architecture Guard
+
+**Created:** 2026-09-01  
+**Source:** P1 Healthcare Investigation Lessons  
+**Purpose:** Automated enforcement of architectural invariants to prevent recurrence of P1 issues  
+
+---
+
+## Overview
+
+Healthcare Architecture Guard is an automated verification tool that enforces architectural rules derived from real P1 investigation findings. It prevents the recurrence of circular dependencies, barrel export issues, and reverse dependencies that caused compiler hangs.
+
+**Philosophy:** Convert forensic lessons into automated invariants.
+
+---
+
+## Rules Enforced
+
+### Rule 1: EVENTS_NO_DOMAIN_IMPORT
+
+**Source:** P1 Healthcare circular dependency #1  
+**Finding:** `events → domain` import creates architectural defect  
+
+**Rule:**
+```
+Event files MUST NOT import from domain layer
+Events should depend only on contracts
+```
+
+**Violation Example:**
+```typescript
+// ❌ VIOLATION
+import type { ClinicalOrder } from '../domain/clinical-order.entity';
+
+// ✅ CORRECT
+import type { 
+  MedicationOrderDetails, 
+  LabOrderDetails 
+} from '../../../contracts/order-engine.contract';
+```
+
+**Rationale:** Events are public contracts. Domain entities are internal. Events depending on domain creates wrong-direction dependency.
+
+---
+
+### Rule 2: BARREL_NO_PARENT_CONTRACT_REEXPORT
+
+**Source:** P1 Healthcare circular dependency #2 (compiler hang root cause)  
+**Finding:** Barrel export re-exporting parent contracts creates circular module resolution  
+
+**Rule:**
+```
+Engine index.ts barrel exports MUST NOT re-export parent contracts
+Pattern: engine/index.ts → ../../contracts → engine/contracts (CYCLE)
+```
+
+**Violation Example:**
+```typescript
+// order-engine/index.ts
+// ❌ VIOLATION
+export {
+  ORDER_ENGINE_CONTRACT,
+  type OrderEngineContract,
+} from '../../contracts/order-engine.contract';
+```
+
+**Correct Pattern:**
+```typescript
+// order-engine/index.ts
+// ✅ CORRECT
+export { ClinicalOrderService } from './services/clinical-order.service';
+export { OrderEngineService } from './order-engine.service';
+
+// Consumers import contracts directly:
+import { ORDER_ENGINE_CONTRACT } from '@/platform/healthcare/contracts/order-engine.contract';
+```
+
+**Rationale:** When TypeScript processes `order-engine/**/*.ts` glob including `index.ts`, the barrel re-export creates circular module resolution that hangs compiler.
+
+**Evidence:** Differential isolation showed all files PASS individually, but TIMEOUT with index.ts barrel re-export present.
+
+---
+
+### Rule 3: CONTRACT_NO_ENGINE_IMPORT
+
+**Source:** Contract boundary principle  
+**Finding:** Contracts define interface, engines implement (not reverse)  
+
+**Rule:**
+```
+Contract files MUST NOT import from engine directories
+Contracts should be dependency-free or depend only on shared types
+```
+
+**Violation Example:**
+```typescript
+// contracts/laboratory-engine.contract.ts
+// ❌ VIOLATION
+import type { LabOrder } from '../engines/laboratory-engine/domain/lab-order';
+```
+
+**Correct Pattern:**
+```typescript
+// contracts/laboratory-engine.contract.ts
+// ✅ CORRECT - define types directly in contract
+export interface LabOrder {
+  orderId: string;
+  // ...
+}
+
+// OR import from shared kernel
+import type { SharedLabOrder } from '../shared-kernel/types';
+```
+
+**Rationale:** Contracts are interface definitions. Engines implement contracts. Reverse dependency (contract → engine) violates separation of interface from implementation.
+
+---
+
+### Rule 4: NO_IMPORT_CYCLES
+
+**Source:** P1 Healthcare investigation (general principle)  
+**Finding:** Import cycles create compiler complexity and potential hangs  
+
+**Rule:**
+```
+No circular import dependencies allowed
+A → B → C → A is forbidden
+```
+
+**Detection:** Simple static analysis walks import graph and detects cycles.
+
+**Rationale:** Import cycles increase compiler complexity, can cause hangs, and indicate architectural boundary violations.
+
+---
+
+### Rule 5: ENGINE_CONTRACT_ISOLATION
+
+**Source:** Architecture principle (related to P1 patterns)  
+**Finding:** Engine-specific contracts importing parent contracts suggests consolidation opportunity  
+
+**Rule:**
+```
+Engine-specific contracts importing parent contracts should be reviewed
+May indicate need for contract consolidation
+```
+
+**Severity:** WARNING (not ERROR)
+
+**Example:**
+```typescript
+// engines/order-engine/contracts/host-event-bus-bridge.ts
+// ⚠️ WARNING
+import type { OrderEvent } from '../../../contracts/order-engine.contract';
+```
+
+**Rationale:** If engine-specific contract depends on parent contract, consider consolidating into parent contract or re-evaluating boundary.
+
+---
+
+## Usage
+
+### Run Manually
+
+```bash
+npm run healthcare:guard
+```
+
+### Run in Pre-Commit Hook
+
+Add to `.kiro/hooks/pre-commit.json`:
+
+```json
+{
+  "version": "v1",
+  "hooks": [{
+    "name": "Healthcare Architecture Guard",
+    "trigger": "PreToolUse",
+    "matcher": "git.*commit",
+    "action": {
+      "type": "command",
+      "command": "npm run healthcare:guard"
+    }
+  }]
+}
+```
+
+### Run in CI
+
+```yaml
+# .github/workflows/architecture-guard.yml
+- name: Healthcare Architecture Guard
+  run: npm run healthcare:guard
+```
+
+---
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| 0 | All checks passed ✅ |
+| 1 | Architecture violations found ❌ |
+
+---
+
+## Output Format
+
+```
+Running Healthcare Architecture Guard...
+
+  ⏳ Events domain dependency...
+  ⏳ Barrel contract re-exports...
+  ⏳ Contract engine reverse dependency...
+  ⏳ Import cycles...
+  ⏳ Engine contract isolation...
+
+✅ 5 checks completed
+
+╔════════════════════════════════════════════════════════════════╗
+║         ❌ HEALTHCARE ARCHITECTURE VIOLATIONS FOUND ❌        ║
+╚════════════════════════════════════════════════════════════════╝
+
+🔴 ERRORS: 2
+
+1. [EVENTS_NO_DOMAIN_IMPORT]
+   File: src/platform/healthcare/engines/order-engine/events/order-event-factory.ts:9
+   Event files must not import from domain layer
+   Evidence: import type { ClinicalOrder } from '../domain/
+
+2. [BARREL_NO_PARENT_CONTRACT_REEXPORT]
+   File: src/platform/healthcare/engines/order-engine/index.ts:25
+   Engine barrel exports must not re-export parent contracts
+   Evidence: export type { OrderEngineContract } from '../../contracts/
+
+══════════════════════════════════════════════════════════════
+
+❌ Architecture Guard FAILED
+   2 error(s) must be fixed
+```
+
+---
+
+## Known Violations (2026-09-01)
+
+Current Healthcare codebase has 5 pre-existing violations:
+
+| Rule | File | Status |
+|------|------|--------|
+| EVENTS_NO_DOMAIN_IMPORT | order-event-factory.ts | To fix |
+| BARREL_NO_PARENT_CONTRACT_REEXPORT | cds-engine/index.ts | To fix |
+| BARREL_NO_PARENT_CONTRACT_REEXPORT | laboratory-engine/index.ts | To fix |
+| CONTRACT_NO_ENGINE_IMPORT | laboratory-engine.contract.ts | To fix |
+| CONTRACT_NO_ENGINE_IMPORT | nursing-engine.contract.ts | To fix |
+
+**Note:** order-engine barrel export was already fixed in P1 remediation. Other engines have same pattern and should be fixed.
+
+---
+
+## Extension Points
+
+### Adding New Rules
+
+1. Add check function following pattern:
+   ```typescript
+   function checkNewRule(): Violation[] {
+     const violations: Violation[] = [];
+     // Check logic
+     return violations;
+   }
+   ```
+
+2. Add to checks array in `main()`:
+   ```typescript
+   { name: 'New rule', fn: checkNewRule }
+   ```
+
+3. Update this documentation
+
+### Rule Naming Convention
+
+- Rule ID: UPPERCASE_SNAKE_CASE
+- Descriptive name based on what's forbidden or required
+- Examples: `EVENTS_NO_DOMAIN_IMPORT`, `BARREL_NO_PARENT_CONTRACT_REEXPORT`
+
+---
+
+## Maintenance
+
+### When to Update Guard
+
+- After P1 investigation reveals new architectural defect pattern
+- When new Healthcare kernel boundaries are established
+- When new engines are added with specific isolation requirements
+
+### When NOT to Update Guard
+
+- For one-off violations (handle via code review)
+- For patterns that haven't caused real issues
+- For overly specific file-level rules (keep rules general)
+
+---
+
+## Integration with Existing Guards
+
+Healthcare Architecture Guard complements existing guards:
+
+| Guard | Scope | Purpose |
+|-------|-------|---------|
+| **Architecture Guard** | General (E7 Logistics Kernel) | Frozen boundary enforcement |
+| **Healthcare Architecture Guard** | Healthcare-specific | Dependency pattern enforcement |
+| **TypeScript Compiler** | Full project | Type correctness |
+| **Architecture Tests** | Runtime boundaries | Contract enforcement |
+
+**Relationship:** Healthcare guard is specialized enforcement based on P1 lessons. Does not replace general Architecture Guard.
+
+---
+
+## Philosophy
+
+**Principle:** Once a defect pattern is identified through forensic investigation, encode it as an automated invariant to prevent recurrence.
+
+**NOT:** Create rules speculatively before issues occur.
+
+**Bella Governance:** Lean but effective. Each rule traces to real investigation finding with documented evidence.
+
+---
+
+## Evidence Trace
+
+All rules in this guard trace to documented P1 investigations:
+
+- `EVENTS_NO_DOMAIN_IMPORT` ← P1_HEALTHCARE_PROVENANCE_COMPLETE.md
+- `BARREL_NO_PARENT_CONTRACT_REEXPORT` ← P1_COMPILER_PHASE_C4_FINDINGS.md
+- `CONTRACT_NO_ENGINE_IMPORT` ← Healthcare architecture principles
+- `NO_IMPORT_CYCLES` ← P1_COMPILER_PHASE_C3_FINDINGS.md
+- `ENGINE_CONTRACT_ISOLATION` ← Pattern observed during investigation
+
+**No rule without evidence.**
+
+---
+
+## Future Enhancements
+
+Possible additions based on future investigations:
+
+- Type complexity metrics (if pathological types identified)
+- Scoped compiler timeout detection (if systematic pattern emerges)
+- Contract completeness checks (deferred from P1)
+- Domain invariant enforcement (if violations discovered)
+
+**Trigger:** Real issue → Investigation → Pattern identified → Rule added
+
+**Not:** "This might be useful" → Rule added speculatively
+
+---
+
+**Document Status:** ACTIVE  
+**Last Updated:** 2026-09-01  
+**Maintainer:** Architecture team  
+**Review Trigger:** After each P1 Healthcare investigation

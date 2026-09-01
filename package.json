@@ -47,7 +47,7 @@
     "test:booking-engine": "jest src/__tests__/booking-engine/ --runInBand",
     "test:intelligence": "jest src/services/intelligence/__tests__/ --coverage --collectCoverageFrom='src/services/intelligence/**/*.ts' --collectCoverageFrom='!src/services/intelligence/**/*.test.ts'",
     "test:coverage": "jest --coverage",
-    "healthcare:guard": "npx tsx scripts/healthcare/architecture-guard.ts",
+    "healthcare:guard": "npx tsx scripts/healthcare/healthcare-architecture-guard.ts",
     "healthcare:architecture": "jest src/platform/healthcare/__tests__/engine-architecture-compliance.test.ts src/products/bella-medical/__tests__/bella-medical-architecture.test.ts --runInBand",
     "healthcare:conformance": "jest src/products/bella-medical/__tests__/bella-medical-conformance.integration.test.ts --runInBand",
     "healthcare:test": "jest src/platform/healthcare/ --runInBand",
@@ -198,6 +198,7 @@
     "jest-environment-jsdom": "^30.4.1",
     "jsonwebtoken": "^9.0.3",
     "lint-staged": "^17.3.0",
+    "madge": "^8.0.0",
     "marked": "^18.0.5",
     "md-to-pdf": "^5.2.5",
     "metro": "^0.80.12",
@@ -214,6 +215,7 @@
     "sharp": "^0.35.0",
     "@hono/node-server": "^2.0.5",
     "brace-expansion": "^1.1.16",
-    "ws": "^8.20.1"
+    "ws": "^8.20.1",
+    "nanoid": "^3.3.18"
   }
 }
