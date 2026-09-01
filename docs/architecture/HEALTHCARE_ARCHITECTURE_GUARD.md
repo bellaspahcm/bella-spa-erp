@@ -19,7 +19,8 @@ Healthcare Architecture Guard is an automated verification tool that enforces ar
 ### Rule 1: EVENTS_NO_DOMAIN_IMPORT
 
 **Source:** P1 Healthcare circular dependency #1  
-**Finding:** `events → domain` import creates architectural defect  
+**Finding:** `events → domain` import was architectural defect in circular dependency chain  
+**Experiment result:** Removing this dependency alone did NOT resolve compiler hang  
 
 **Rule:**
 ```
@@ -39,7 +40,9 @@ import type {
 } from '../../../contracts/order-engine.contract';
 ```
 
-**Rationale:** Events are public contracts. Domain entities are internal. Events depending on domain creates wrong-direction dependency.
+**Rationale:** Event definitions should not depend on internal domain entities across this engine boundary. This was part of circular dependency chain but not sufficient cause of compiler hang.
+
+**Classification:** Architectural defect (proven), NOT compiler hang root cause (experiment rejected)
 
 ---
 
@@ -47,6 +50,7 @@ import type {
 
 **Source:** P1 Healthcare circular dependency #2 (compiler hang root cause)  
 **Finding:** Barrel export re-exporting parent contracts creates circular module resolution  
+**Experiment result:** Removing this pattern RESOLVED compiler hang (controlled experiment confirmed)  
 
 **Rule:**
 ```
@@ -75,9 +79,11 @@ export { OrderEngineService } from './order-engine.service';
 import { ORDER_ENGINE_CONTRACT } from '@/platform/healthcare/contracts/order-engine.contract';
 ```
 
-**Rationale:** When TypeScript processes `order-engine/**/*.ts` glob including `index.ts`, the barrel re-export creates circular module resolution that hangs compiler.
+**Rationale:** Prevents a dependency pattern that was experimentally demonstrated to cause the Healthcare compiler hang. When TypeScript processes `order-engine/**/*.ts` glob including `index.ts`, the barrel re-export creates circular module resolution that hangs compiler.
 
-**Evidence:** Differential isolation showed all files PASS individually, but TIMEOUT with index.ts barrel re-export present.
+**Evidence:** Differential isolation showed all files PASS individually, but TIMEOUT with index.ts barrel re-export present. Removing re-export resolved hang.
+
+**Classification:** Compiler hang root cause (experimentally proven via controlled remediation)
 
 ---
 
@@ -85,6 +91,7 @@ import { ORDER_ENGINE_CONTRACT } from '@/platform/healthcare/contracts/order-eng
 
 **Source:** Contract boundary principle  
 **Finding:** Contracts define interface, engines implement (not reverse)  
+**Evidence:** Architectural principle, not directly tied to compiler hang  
 
 **Rule:**
 ```
@@ -114,12 +121,15 @@ import type { SharedLabOrder } from '../shared-kernel/types';
 
 **Rationale:** Contracts are interface definitions. Engines implement contracts. Reverse dependency (contract → engine) violates separation of interface from implementation.
 
+**Classification:** Architectural boundary violation (principle-based), NOT proven compiler hang cause
+
 ---
 
 ### Rule 4: NO_IMPORT_CYCLES
 
 **Source:** P1 Healthcare investigation (general principle)  
-**Finding:** Import cycles create compiler complexity and potential hangs  
+**Finding:** Import cycles increase compiler complexity  
+**Evidence:** Cycles were present in hang case, but not all cycles cause hangs  
 
 **Rule:**
 ```
@@ -129,7 +139,9 @@ A → B → C → A is forbidden
 
 **Detection:** Simple static analysis walks import graph and detects cycles.
 
-**Rationale:** Import cycles increase compiler complexity, can cause hangs, and indicate architectural boundary violations.
+**Rationale:** Import cycles increase compiler complexity and can contribute to hangs in combination with other factors. This is generic architectural invariant.
+
+**Classification:** Architectural best practice (general), NOT proven sufficient cause of any specific compiler hang
 
 ---
 
@@ -240,19 +252,80 @@ Running Healthcare Architecture Guard...
 
 ---
 
-## Known Violations (2026-09-01)
+## Rule Evidence Classification
+
+| Rule | Evidence Level | Classification |
+|------|---------------|----------------|
+| BARREL_NO_PARENT_CONTRACT_REEXPORT | ✅ **PROVEN via controlled experiment** | Compiler hang root cause (Healthcare order-engine case) |
+| EVENTS_NO_DOMAIN_IMPORT | ✅ **PROVEN architectural defect**, ❌ NOT sufficient for hang | Architectural violation, not hang cause |
+| CONTRACT_NO_ENGINE_IMPORT | ⚠️ Principle-based | Architectural boundary, not proven hang-related |
+| NO_IMPORT_CYCLES | ⚠️ General best practice | Generic invariant, not specific hang cause |
+| ENGINE_CONTRACT_ISOLATION | ℹ️ Pattern observation | Warning only, review trigger |
+
+**Key Distinction:**
+
+```
+PROVEN compiler hang cause (via experiment):
+  → BARREL_NO_PARENT_CONTRACT_REEXPORT only
+
+Architectural defects (not proven hang cause):
+  → EVENTS_NO_DOMAIN_IMPORT
+  → CONTRACT_NO_ENGINE_IMPORT
+
+General best practices:
+  → NO_IMPORT_CYCLES
+  → ENGINE_CONTRACT_ISOLATION
+```
+
+**Governance:** Do NOT claim all violations cause compiler hangs. Only barrel re-export pattern experimentally proven.
+
+---
+
+## Guard Status
+
+### Current State (2026-09-01)
+
+```
+Guard implementation:        ✅ VERIFIED
+Guard rules:                 ✅ ACTIVE
+Evidence backing:            ✅ DOCUMENTED
+Existing violations:         🔴 5 FOUND
+Gate cleanliness:            ❌ NOT CLEAN YET
+Production gate status:      ⏸️ NOT ENABLED (violations present)
+```
+
+### Known Violations
 
 Current Healthcare codebase has 5 pre-existing violations:
 
-| Rule | File | Status |
-|------|------|--------|
-| EVENTS_NO_DOMAIN_IMPORT | order-event-factory.ts | To fix |
-| BARREL_NO_PARENT_CONTRACT_REEXPORT | cds-engine/index.ts | To fix |
-| BARREL_NO_PARENT_CONTRACT_REEXPORT | laboratory-engine/index.ts | To fix |
-| CONTRACT_NO_ENGINE_IMPORT | laboratory-engine.contract.ts | To fix |
-| CONTRACT_NO_ENGINE_IMPORT | nursing-engine.contract.ts | To fix |
+| Rule | File | Classification | Remediation Priority |
+|------|------|----------------|---------------------|
+| EVENTS_NO_DOMAIN_IMPORT | order-event-factory.ts | Architectural defect | Medium |
+| BARREL_NO_PARENT_CONTRACT_REEXPORT | cds-engine/index.ts | Compiler hang pattern | HIGH |
+| BARREL_NO_PARENT_CONTRACT_REEXPORT | laboratory-engine/index.ts | Compiler hang pattern | HIGH |
+| CONTRACT_NO_ENGINE_IMPORT | laboratory-engine.contract.ts | Boundary violation | Medium |
+| CONTRACT_NO_ENGINE_IMPORT | nursing-engine.contract.ts | Boundary violation | Medium |
 
-**Note:** order-engine barrel export was already fixed in P1 remediation. Other engines have same pattern and should be fixed.
+**Note:** 
+- order-engine barrel export already fixed in P1 remediation
+- Other engines have same barrel re-export pattern (HIGH priority - proven hang cause)
+- Contract violations are architectural (not proven hang cause)
+
+### Path to Production Gate
+
+```
+Current: Guard exists, violations present → NOT blocking commits
+         ↓
+Step 1: Fix HIGH priority violations (barrel re-exports)
+         ↓
+Step 2: Evaluate MEDIUM priority violations
+         ↓
+Step 3: Clean gate (0 violations)
+         ↓
+Future: Enable as pre-commit gate
+```
+
+**Do NOT enable as blocking gate until violations resolved.**
 
 ---
 
@@ -317,11 +390,29 @@ Healthcare Architecture Guard complements existing guards:
 
 ## Philosophy
 
-**Principle:** Once a defect pattern is identified through forensic investigation, encode it as an automated invariant to prevent recurrence.
+**Core Principle:** Convert forensic lessons into automated invariants.
 
-**NOT:** Create rules speculatively before issues occur.
+**Evidence Standard:** No rule without evidence.
 
-**Bella Governance:** Lean but effective. Each rule traces to real investigation finding with documented evidence.
+```
+Finding → Controlled Experiment → Confirmed Invariant → Automated Guard
+```
+
+**NOT:**
+```
+"Có vẻ nguy hiểm" → Add rule (speculative)
+```
+
+**Classification Discipline:**
+
+Guard must distinguish:
+- ✅ **Experimentally proven causes** (barrel re-export → compiler hang)
+- ✅ **Architectural defects** (events → domain, but NOT hang cause)
+- ⚠️ **Best practices** (import cycles, boundary principles)
+
+**Do NOT conflate**: Architectural violation ≠ Compiler hang cause
+
+**Bella Governance:** Architecture Guard evolves from repository of frozen boundaries to repository of evidence-backed technical lessons.
 
 ---
 
