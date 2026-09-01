@@ -64,12 +64,12 @@ export function mapRepairOrderForBoard(dbOrder: DbRepairOrder) {
     licensePlate,
     status: dbOrder.status || 'new',
     openedAt: dbOrder.opened_at,
-    priority: dbOrder.priority || 'normal',
-    estimatedCompletionDate: dbOrder.estimated_completion_date,
-    actualCompletionDate: dbOrder.actual_completion_date,
-    totalEstimate: dbOrder.total_estimate ? Number(dbOrder.total_estimate) : 0,
-    totalActual: dbOrder.total_actual ? Number(dbOrder.total_actual) : 0,
-    assignedTechnicianId: dbOrder.assigned_technician_id,
+    priority: (dbOrder as any).priority || 'normal',
+    estimatedCompletionDate: (dbOrder as any).estimated_completion_date,
+    actualCompletionDate: (dbOrder as any).actual_completion_date,
+    totalEstimate: (dbOrder as any).total_estimate ? Number((dbOrder as any).total_estimate) : 0,
+    totalActual: (dbOrder as any).total_actual ? Number((dbOrder as any).total_actual) : 0,
+    assignedTechnicianId: (dbOrder as any).assigned_technician_id,
     serviceAdvisorId: dbOrder.service_advisor_id,
   };
 }

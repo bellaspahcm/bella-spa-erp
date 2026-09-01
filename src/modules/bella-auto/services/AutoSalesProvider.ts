@@ -96,7 +96,8 @@ export const AutoSalesProvider = {
       } catch (allocErr: unknown) {
         // Rollback booking nếu phân bổ xe thất bại để đảm bảo tính nhất quán dữ liệu
         await supabase.from('auto_bookings').delete().eq('id', booking.id);
-        throw new Error(`AutoSalesProvider.createBooking: Lỗi phân bổ số VIN. ${allocErr.message}`);
+        const errorMsg = allocErr instanceof Error ? allocErr.message : String(allocErr);
+        throw new Error(`AutoSalesProvider.createBooking: Lỗi phân bổ số VIN. ${errorMsg}`);
       }
     }
 
@@ -132,7 +133,8 @@ export const AutoSalesProvider = {
         metadata:        { bookingId: booking.id },
       });
     } catch (jErr: unknown) {
-      console.warn(`[AutoSalesProvider] Không thể cập nhật hành trình khách hàng: ${jErr.message}`);
+      const errorMsg = jErr instanceof Error ? jErr.message : String(jErr);
+      console.warn(`[AutoSalesProvider] Không thể cập nhật hành trình khách hàng: ${errorMsg}`);
     }
 
     return {
@@ -147,8 +149,8 @@ export const AutoSalesProvider = {
       totalPrice:    Number(booking.total_price),
       depositAmount: Number(booking.deposit_amount),
       depositPaid:   Number(booking.deposit_paid),
-      paymentStatus: booking.payment_status as unknown,
-      status:        booking.status as unknown,
+      paymentStatus: booking.payment_status as 'unpaid' | 'partially_paid' | 'fully_paid' | 'refunded',
+      status:        booking.status as 'pending' | 'confirmed' | 'completed' | 'cancelled',
       createdAt:     booking.created_at,
     };
   },

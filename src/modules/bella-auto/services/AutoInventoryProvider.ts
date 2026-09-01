@@ -153,10 +153,38 @@ export const AutoInventoryProvider = {
       );
     }
 
-    const { data, error } = await query;
+    type VehicleRow = {
+      id: string;
+      vin: string;
+      chassis_number: string | null;
+      engine_number: string | null;
+      color_exterior: string;
+      color_interior: string | null;
+      model_year: number;
+      list_price: number;
+      cost_price: number;
+      status: string;
+      location_note: string | null;
+      expected_arrival_date: string | null;
+      actual_arrival_date: string | null;
+      variant_id: string;
+      created_at: string;
+      updated_at: string;
+      auto_variants: {
+        name: string;
+        auto_models: {
+          name: string;
+          auto_brands: {
+            name: string;
+          };
+        };
+      };
+    };
+
+    const { data, error } = await query.returns<VehicleRow[]>();
     if (error) throw new Error(`AutoInventoryProvider.listVehicles: ${error.message}`);
 
-    return (data ?? []).map((row: Record<string, unknown>) => ({
+    return (data ?? []).map((row) => ({
       id:                  row.id,
       vin:                 row.vin,
       chassisNumber:       row.chassis_number,
@@ -166,7 +194,7 @@ export const AutoInventoryProvider = {
       modelYear:           row.model_year,
       listPrice:           Number(row.list_price),
       costPrice:           Number(row.cost_price),
-      status:              row.status,
+      status:              row.status as VehicleStatus,
       locationNote:        row.location_note,
       expectedArrivalDate: row.expected_arrival_date,
       actualArrivalDate:   row.actual_arrival_date,

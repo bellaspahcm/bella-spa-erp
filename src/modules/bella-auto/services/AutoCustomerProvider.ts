@@ -58,6 +58,30 @@ export const AutoCustomerProvider = {
     }
 
     // 2. Đọc danh sách xe sở hữu
+    type VehicleOwnerRow = {
+      id: string;
+      ownership_type: string;
+      license_plate: string | null;
+      registration_date: string | null;
+      is_active: boolean;
+      transferred_at: string | null;
+      auto_vehicles: {
+        id: string;
+        vin: string;
+        color_exterior: string;
+        model_year: number;
+        auto_variants: {
+          name: string;
+          auto_models: {
+            name: string;
+            auto_brands: {
+              name: string;
+            };
+          };
+        };
+      };
+    };
+
     const { data: ownersData, error: ownersErr } = await supabase
       .from('auto_vehicle_owners')
       .select(`
@@ -74,7 +98,8 @@ export const AutoCustomerProvider = {
         )
       `)
       .eq('tenant_id', tenantId)
-      .eq('customer_id', customerId);
+      .eq('customer_id', customerId)
+      .returns<VehicleOwnerRow[]>();
 
     if (ownersErr) {
       throw new Error(`AutoCustomerProvider.getOwnedVehicles: ${ownersErr.message}`);
@@ -91,7 +116,7 @@ export const AutoCustomerProvider = {
       metadata:           profileData.metadata,
     } : null;
 
-    const ownedVehicles: OwnedVehicle[] = (ownersData ?? []).map((row: Record<string, unknown>) => ({
+    const ownedVehicles: OwnedVehicle[] = (ownersData ?? []).map((row) => ({
       ownerRecordId:    row.id,
       vehicleId:        row.auto_vehicles.id,
       vin:              row.auto_vehicles.vin,
@@ -235,6 +260,12 @@ export const AutoCustomerProvider = {
     if (countErr) return;
 
     // 2. Tính tổng tiền chi (ví dụ lấy từ list_price các xe sở hữu)
+    type PriceRow = {
+      auto_vehicles: {
+        list_price: number;
+      };
+    };
+
     const { data: priceData, error: priceErr } = await supabase
       .from('auto_vehicle_owners')
       .select(`
@@ -242,11 +273,12 @@ export const AutoCustomerProvider = {
       `)
       .eq('tenant_id', tenantId)
       .eq('customer_id', customerId)
-      .eq('is_active', true);
+      .eq('is_active', true)
+      .returns<PriceRow[]>();
 
     if (priceErr) return;
 
-    const totalValueSpent = (priceData ?? []).reduce((acc: number, row: Record<string, unknown>) => {
+    const totalValueSpent = (priceData ?? []).reduce((acc: number, row) => {
       return acc + (Number(row.auto_vehicles?.list_price) || 0);
     }, 0);
 
