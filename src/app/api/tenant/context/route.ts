@@ -5,6 +5,7 @@ import { createServerClient as createSupabaseServerClient } from '@supabase/ssr'
 import { createClient as createSupabaseJsClient } from '@supabase/supabase-js';
 import { getSupabaseAdminUrl, getSupabaseAdminKey } from '@/lib/supabase-admin-env';
 import type { TenantContext } from '@/core/types/tenant';
+import { isModuleId, type ModuleId } from '@/core/types/module';
 import type { Database } from '@/types/database.types';
 
 /**
@@ -48,26 +49,26 @@ type TenantRow = Database['public']['Tables']['tenants']['Row'];
 
 /**
  * API route to fetch tenant configuration for the authenticated user.
- * 
+ *
  * @remarks
  * This route extracts the tenant ID from the authenticated user's session,
  * queries the database for tenant configuration, and returns a properly
  * typed TenantContext object.
- * 
+ *
  * **Authentication**: Requires valid Supabase session. Returns 401 if not authenticated.
- * 
+ *
  * **Authorization**: Users can only access their own tenant's configuration.
  * The tenant_id comes from the authenticated user's profile.
- * 
+ *
  * **Caching**: Consider adding HTTP caching headers in production for performance.
  * Tenant configuration rarely changes during a user session.
- * 
+ *
  * **Error Handling**:
  * - 401: User not authenticated
  * - 403: User has no tenant assigned
  * - 404: Tenant not found in database
  * - 500: Database query error
- * 
+ *
  * @param request - Next.js request object
  * @returns JSON response with TenantContext or error
  */
@@ -183,18 +184,18 @@ export async function GET(_request: NextRequest) {
       console.error('[GET /api/tenant/context] Failed to fetch user profile:', userError);
       console.error('[GET /api/tenant/context] User ID:', user.id);
       console.error('[GET /api/tenant/context] Error details:', JSON.stringify(userError));
-      
+
       // If user record not found (PGRST116), provide more helpful error
       if (userError.code === 'PGRST116') {
         return NextResponse.json(
-          { 
+          {
             error: 'User profile not found. Please contact administrator to set up your account.',
             details: 'Your account exists in auth system but not linked to a tenant yet.'
           },
           { status: 403 }
         );
       }
-      
+
       return NextResponse.json(
         { error: 'Failed to fetch user profile', details: userError.message },
         { status: 500 }
@@ -260,31 +261,31 @@ export async function GET(_request: NextRequest) {
 
 /**
  * Transform database tenant row to TenantContext contract type.
- * 
+ *
  * @remarks
  * This function maps the database schema to the TenantContext interface
  * defined in Phase 2. It handles type conversions and provides defaults
  * for missing fields.
- * 
+ *
  * **Field Mappings**:
  * - `id` → `tenantId`
  * - `name` → `tenantName`
  * - `enabled_modules` → `enabledModules` (with default ['spa'])
  * - `subscription_tier` → `subscriptionPlan` (with default 'basic')
  * - Database JSON fields → `featureFlags` and `settings`
- * 
+ *
  * **Defaults**:
  * - If `enabled_modules` is null/empty, defaults to `['spa']`
  * - If `subscription_plan` is null, defaults to `'basic'`
  * - Feature flags and settings default to empty objects if not set
- * 
+ *
  * @param tenant - Tenant row from database
  * @returns TenantContext object
  */
 function transformTenantRowToContext(tenant: TenantRow): TenantContext {
   // Extract enabled modules from database (stored as JSONB object like {beauty_spa: true, babycare: false})
   let enabledModules: string[] = ['spa']; // Default fallback
-  
+
   if (tenant.enabled_modules) {
     if (Array.isArray(tenant.enabled_modules)) {
       // Already an array of strings - need to filter out non-strings
@@ -295,7 +296,7 @@ function transformTenantRowToContext(tenant: TenantRow): TenantContext {
       enabledModules = Object.entries(tenant.enabled_modules)
         .filter(([_key, value]) => value === true)
         .map(([key, _value]) => key);
-      
+
       // If no modules enabled, fallback to spa
       if (enabledModules.length === 0) {
         enabledModules = ['spa'];
@@ -312,7 +313,7 @@ function transformTenantRowToContext(tenant: TenantRow): TenantContext {
   // Extract feature flags from database
   // Feature flags may be stored in a JSON column or derived from tenant settings
   const featureFlags: Record<string, boolean> = {};
-  
+
   // Parse feature flags from tenant configuration if available
   if (tenant.role_permissions && typeof tenant.role_permissions === 'object') {
     const rolePermissions = tenant.role_permissions as Record<string, unknown>;
@@ -366,10 +367,19 @@ function transformTenantRowToContext(tenant: TenantRow): TenantContext {
   }
 
   // Construct and return TenantContext
+  // CRITICAL FIX (2026-09-01): Validate module strings are valid ModuleIds before casting
+  // Database JSONB can contain invalid module strings that don't match the ModuleId discriminant
+  const validatedModules = enabledModules.filter(isModuleId) as readonly ModuleId[];
+
+  // If no valid modules after filtering, fallback to safe default
+  const finalModules: readonly ModuleId[] = validatedModules.length > 0
+    ? validatedModules
+    : ['spa'];
+
   const context: TenantContext = {
     tenantId: tenant.id,
     tenantName: tenant.name || 'Unnamed Tenant',
-    enabledModules: enabledModules as TenantContext['enabledModules'],
+    enabledModules: finalModules,
     subscriptionPlan,
     featureFlags,
     settings,

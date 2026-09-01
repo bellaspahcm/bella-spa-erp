@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState, ReactNode } from 'react';
-import type { TenantContext } from '@/core/types/tenant';
+import type { TenantContext, SubscriptionPlan } from '@/core/types/tenant';
+import { isModuleId, type ModuleId } from '@/core/types/module';
 import { TenantContextContext } from '@/core/hooks/useTenantContext';
 
 /**
@@ -15,22 +16,87 @@ const TENANT_LOAD_ERROR_MESSAGE = 'Không thể tải cấu hình chi nhánh. Vu
 const TENANT_LOADING_MESSAGE = 'Đang tải cấu hình chi nhánh...';
 
 /**
+ * Validate and normalize tenant context received from API.
+ *
+ * @remarks
+ * Network JSON cannot be trusted to match TypeScript types.
+ * This function validates the response structure at the network boundary
+ * and normalizes it to the canonical TenantContext contract.
+ *
+ * **Validation Rules:**
+ * - Required fields must be present and correct type
+ * - enabledModules must be validated against ModuleId discriminant
+ * - Invalid modules are filtered out
+ * - Safe defaults provided for missing/invalid data
+ *
+ * @param raw - Unknown data from network response
+ * @returns Validated TenantContext or null if invalid
+ */
+function validateAndNormalizeTenantContext(raw: unknown): TenantContext | null {
+  if (!raw || typeof raw !== 'object') return null;
+
+  const ctx = raw as Record<string, unknown>;
+
+  // Validate required fields
+  if (typeof ctx.tenantId !== 'string' || !ctx.tenantId) return null;
+  if (typeof ctx.tenantName !== 'string' || !ctx.tenantName) return null;
+
+  // Validate and normalize enabledModules
+  let modules: ModuleId[] = [];
+  if (Array.isArray(ctx.enabledModules)) {
+    // Filter to only valid ModuleId values using canonical type guard
+    modules = ctx.enabledModules.filter(isModuleId);
+  }
+
+  // If no valid modules after filtering, use safe default
+  if (modules.length === 0) {
+    modules = ['babycare'];
+  }
+
+  // Validate subscription plan or use default
+  const validPlans: SubscriptionPlan[] = ['free', 'basic', 'professional', 'enterprise'];
+  const plan: SubscriptionPlan =
+    (typeof ctx.subscriptionPlan === 'string' && validPlans.includes(ctx.subscriptionPlan as SubscriptionPlan))
+      ? (ctx.subscriptionPlan as SubscriptionPlan)
+      : 'basic';
+
+  // Validate featureFlags is an object
+  const flags = (ctx.featureFlags && typeof ctx.featureFlags === 'object' && !Array.isArray(ctx.featureFlags))
+    ? ctx.featureFlags as Record<string, boolean>
+    : {};
+
+  // Validate settings is an object
+  const settings = (ctx.settings && typeof ctx.settings === 'object' && !Array.isArray(ctx.settings))
+    ? ctx.settings as Record<string, unknown>
+    : {};
+
+  return {
+    tenantId: ctx.tenantId,
+    tenantName: ctx.tenantName,
+    enabledModules: modules as readonly ModuleId[],
+    subscriptionPlan: plan,
+    featureFlags: flags,
+    settings: settings,
+  };
+}
+
+/**
  * Provider component that loads tenant configuration and makes it available
  * to all child components via useTenantContext() hook.
- * 
+ *
  * @remarks
  * This provider should wrap the entire application in the root layout.
  * It fetches tenant configuration from the `/api/tenant/context` endpoint
  * on mount and handles loading and error states.
- * 
+ *
  * **Loading State**: Displays a loading message while fetching tenant data.
- * 
+ *
  * **Error State**: Displays an error message if tenant fetch fails.
  * Users cannot proceed without valid tenant context.
- * 
+ *
  * **Success State**: Once loaded, tenant context is available to all
  * child components via useTenantContext() hook.
- * 
+ *
  * @example
  * ```tsx
  * // In app/layout.tsx
@@ -46,12 +112,12 @@ const TENANT_LOADING_MESSAGE = 'Đang tải cấu hình chi nhánh...';
  *   );
  * }
  * ```
- * 
+ *
  * @param props - Component props
  * @param props.children - Child components that will have access to tenant context
  */
 function getDevFallbackContext(): TenantContext {
-  let moduleKey = 'bella_healthcare';
+  let moduleKey: ModuleId = 'bella_healthcare';
   let name = 'Bella Medical Clinic (Dev)';
 
   if (typeof window !== 'undefined') {
@@ -109,7 +175,7 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
             setLoading(false);
             return;
           }
-          
+
           // Production: redirect to login
           window.location.href = '/login';
           return;
@@ -130,15 +196,19 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
         }
 
         const data = await response.json();
-        
-        if (!data || typeof data !== 'object') {
+
+        // CRITICAL FIX (2026-09-01): Validate API response at network boundary
+        // Cannot trust network JSON matches TypeScript types - must validate at runtime
+        const validated = validateAndNormalizeTenantContext(data);
+
+        if (!validated) {
           throw new Error('Invalid tenant context response format');
         }
 
-        setContext(data as TenantContext);
+        setContext(validated);
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : String(err);
-        
+
         if (process.env.NODE_ENV === 'development') {
           setContext(getDevFallbackContext());
         } else {
@@ -156,40 +226,13 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!context) return;
 
-    const enabledModules = context.enabledModules;
-    let moduleKey: string = 'baby_care'; // Default fallback
+    // CRITICAL FIX (2026-09-01): Simplified theme detection
+    // enabledModules is now validated as readonly ModuleId[] by validateAndNormalizeTenantContext
+    // No need for defensive object handling - trust the validated contract
 
-    let modulesArray: string[] = [];
-    
-    if (Array.isArray(enabledModules)) {
-      modulesArray = enabledModules;
-    } else if (typeof enabledModules === 'object' && enabledModules !== null) {
-      const hasNumericKeys = Object.keys(enabledModules).some(key => /^\d+$/.test(key));
-      
-      if (hasNumericKeys) {
-        modulesArray = Object.values(enabledModules).filter((v): v is string => typeof v === 'string');
-      } else {
-        const modules = enabledModules as unknown;
-        
-        if (modules.real_estate === true) {
-          moduleKey = 'real_estate';
-        } else if (modules.industrial_cleaning === true) {
-          moduleKey = 'industrial_cleaning';
-        } else if (modules.beauty_spa === true) {
-          moduleKey = 'beauty_spa';
-        } else if (modules.bella_auto === true) {
-          moduleKey = 'bella_auto';
-        } else if (modules.bella_healthcare === true) {
-          moduleKey = 'bella_healthcare';
-        } else if (modules.babycare === true || modules.spa === true) {
-          moduleKey = 'baby_care';
-        }
-        
-        document.documentElement.dataset.tenantModule = moduleKey;
-        return;
-      }
-    }
-    
+    let moduleKey: ModuleId = 'babycare'; // Default fallback
+
+    // Determine module from URL path first
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
       if (path.startsWith('/dashboard/hospital')) {
@@ -200,19 +243,24 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
         moduleKey = 'real_estate';
       } else if (path.startsWith('/dashboard/bella-auto')) {
         moduleKey = 'bella_auto';
-      } else if (modulesArray.length > 0) {
-        if (modulesArray.includes('bella_healthcare')) {
+      } else if (context.enabledModules.length > 0) {
+        // Use first enabled module as theme if no path match
+        // Priority order: healthcare > real_estate > auto > spa > others
+        if (context.enabledModules.includes('bella_healthcare')) {
           moduleKey = 'bella_healthcare';
-        } else if (modulesArray.includes('real_estate')) {
+        } else if (context.enabledModules.includes('real_estate')) {
           moduleKey = 'real_estate';
-        } else if (modulesArray.includes('industrial_cleaning')) {
-          moduleKey = 'industrial_cleaning';
-        } else if (modulesArray.includes('beauty_spa')) {
-          moduleKey = 'beauty_spa';
-        } else if (modulesArray.includes('bella_auto')) {
+        } else if (context.enabledModules.includes('bella_auto')) {
           moduleKey = 'bella_auto';
-        } else if (modulesArray.includes('babycare') || modulesArray.includes('spa')) {
-          moduleKey = 'baby_care';
+        } else if (context.enabledModules.includes('industrial_cleaning')) {
+          moduleKey = 'industrial_cleaning';
+        } else if (context.enabledModules.includes('beauty_spa')) {
+          moduleKey = 'beauty_spa';
+        } else if (context.enabledModules.includes('babycare') || context.enabledModules.includes('spa')) {
+          moduleKey = 'babycare';
+        } else {
+          // Use first enabled module
+          moduleKey = context.enabledModules[0];
         }
       }
     }
@@ -225,14 +273,14 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
     const themeMeta = document.querySelector('meta[name="theme-color"]');
     if (themeMeta) {
       const themeColors: Record<string, string> = {
-        baby_care: '#FDF2F8',
+        babycare: '#FDF2F8',
         beauty_spa: '#F0FDF4',
         industrial_cleaning: '#F8FAFC',
         real_estate: '#FFFBEB',
         bella_auto: '#F0F9FF',
         bella_healthcare: '#ECFEFF',
       };
-      themeMeta.setAttribute('content', themeColors[moduleKey] || themeColors.baby_care);
+      themeMeta.setAttribute('content', themeColors[moduleKey] || themeColors.babycare);
     }
   }, [context]);
 
@@ -253,17 +301,17 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center max-w-md p-6 bg-red-50 border border-red-200 rounded-lg">
-          <svg 
-            className="w-12 h-12 text-red-500 mx-auto mb-4" 
-            fill="none" 
-            stroke="currentColor" 
+          <svg
+            className="w-12 h-12 text-red-500 mx-auto mb-4"
+            fill="none"
+            stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2} 
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
           <h2 className="text-lg font-semibold text-red-800 mb-2">
