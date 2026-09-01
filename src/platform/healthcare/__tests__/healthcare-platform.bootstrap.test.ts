@@ -6,8 +6,8 @@ import {
   createClinicalOrderService,
   getClinicalOrderService,
   ClinicalOrderService,
-  ORDER_ENGINE_CONTRACT,
 } from '../engines/order-engine';
+import { ORDER_ENGINE_CONTRACT } from '../contracts/order-engine.contract';
 import {
   getEncounterEngine,
   EncounterEngineContract,

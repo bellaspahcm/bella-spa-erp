@@ -5,7 +5,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { getEncounterEngine, resetEncounterEngine, type IEncounterEngine } from '../engines/encounter-engine';
-import { getClinicalOrderService, resetClinicalOrderService, ClinicalOrderService, ClinicalOrder } from '../engines/order-engine';
+import { getClinicalOrderService, resetClinicalOrderService, ClinicalOrderService } from '../engines/order-engine';
+import type { ClinicalOrder } from '../contracts/order-engine.contract';
 import { eventBus } from '@/platform/host/event-bus/event-bus.service';
 import type { DomainEvent } from '@/platform/host/event-bus/types';
 import { HealthcareTestFixtures, type HealthcareTestFixture } from './fixtures/healthcare-test-fixtures';

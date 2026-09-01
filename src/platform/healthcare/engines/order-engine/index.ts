@@ -24,25 +24,12 @@ export {
 // ===========================
 // Contract Definitions
 // ===========================
-export {
-  ORDER_ENGINE_CONTRACT,
-  type OrderEngineContract,
-} from '../../contracts/order-engine.contract';
-export type {
-  ClinicalOrder,
-  OrderType,
-  OrderStatus,
-  OrderPriority,
-  CdsCheckStatus,
-  MedicationOrderDetails,
-  LabOrderDetails,
-  ImagingOrderDetails,
-  GenericOrderDetails,
-  CdsOverrideRecord,
-  CreateOrderRequest,
-  ApproveOrderRequest,
-  DiscontinueOrderRequest,
-  OverrideCdsWarningRequest,
-  GetActiveOrdersRequest,
-  CreateOrderResult,
-} from '../../contracts/order-engine.contract';
+// NOTE: Contract re-exports removed to break circular module resolution
+// Consumers should import directly from:
+//   src/platform/healthcare/contracts/order-engine.contract
+//
+// Previous circular dependency:
+//   order-engine/index.ts → ../../contracts → order-engine/contracts/ (CYCLE)
+//
+// This re-export pattern caused TypeScript compiler hang when processing
+// order-engine/**/*.ts glob due to circular module resolution.
