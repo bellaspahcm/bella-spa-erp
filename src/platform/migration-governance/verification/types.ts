@@ -101,7 +101,7 @@ export interface ActualState {
         enabled: boolean;
         policies: Array<{
           name: string;
-          command: 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE';
+          command: 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE' | 'ALL';
           using?: string;
           check?: string;
         }>;
