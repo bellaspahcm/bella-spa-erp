@@ -1,4 +1,4 @@
-import { DomainEvent, PatientInfo, ChairInfo, TimelineStep } from './domain-models';
+import { DomainEvent, PatientInfo, ChairInfo } from './domain-models';
 
 // --- PATIENT READ MODEL REPOSITORY ---
 export class PatientReadRepository {

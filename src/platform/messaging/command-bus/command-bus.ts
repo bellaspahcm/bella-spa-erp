@@ -27,7 +27,7 @@ export class CommandBus {
     if (this.handlers.has(commandName)) {
       throw new Error(`[CommandBus] Duplicate handler registered for command: "${commandName}"`);
     }
-    this.handlers.set(commandName, handler);
+    this.handlers.set(commandName, handler as CommandHandler<Command, unknown>);
 
     return () => {
       this.handlers.delete(commandName);
@@ -43,7 +43,7 @@ export class CommandBus {
     }
 
     try {
-      return await handler(command);
+      return await handler(command) as TResult;
     } catch (err: unknown) {
       console.error(`[CommandBus Error] Failed executing command %s:`, command.name, err);
       throw err;

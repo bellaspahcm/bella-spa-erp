@@ -27,7 +27,7 @@ export class QueryBus {
     if (this.handlers.has(queryName)) {
       throw new Error(`[QueryBus] Duplicate handler registered for query: "${queryName}"`);
     }
-    this.handlers.set(queryName, handler);
+    this.handlers.set(queryName, handler as QueryHandler<Query, unknown>);
 
     return () => {
       this.handlers.delete(queryName);
@@ -43,7 +43,7 @@ export class QueryBus {
     }
 
     try {
-      return await handler(query);
+      return await handler(query) as TResult;
     } catch (err: unknown) {
       console.error(`[QueryBus Error] Failed executing query %s:`, query.name, err);
       throw err;

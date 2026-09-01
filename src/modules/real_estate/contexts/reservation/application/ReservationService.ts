@@ -45,7 +45,12 @@ export class ReservationService {
       throw error; // Rule #1: Zero Silent Database Failures
     }
 
-    const res = data as Record<string, unknown>;
+    const res = data as {
+      success?: boolean;
+      error?: string;
+      reservation_id?: string;
+      expires_at?: string;
+    };
     if (!res.success) {
       return {
         success: false,

@@ -4,12 +4,32 @@
  */
 
 import { supabase as typedSupabase } from '@/lib/supabase';
-const supabase = typedSupabase as unknown;
 import {
   ResourceRef,
   ResourceSnapshot,
   UniversalExecutionContext,
 } from './types';
+
+type ResourceQuery = {
+  upsert(payload: Record<string, unknown>, options?: { onConflict?: string }): Promise<{ error: { message: string } | null }>;
+  insert(payload: Record<string, unknown>): ResourceQuery & Promise<{ error: { message: string } | null }>;
+  select(columns?: string): ResourceQuery;
+  single(): Promise<{ data: { id: string } | null; error: { message: string } | null }>;
+};
+
+type ResourceSupabaseClient = {
+  from(table: string): ResourceQuery;
+};
+
+function getSupabase(): ResourceSupabaseClient {
+  const client = typedSupabase as ResourceSupabaseClient | null;
+
+  if (!client) {
+    throw new Error('Supabase service client is not available in this runtime');
+  }
+
+  return client;
+}
 
 export class ResourceDBService {
   /**
@@ -36,7 +56,7 @@ export class ResourceDBService {
         updated_at: snapshot.updatedAt || new Date().toISOString(),
       };
 
-      const { error } = await supabase
+      const { error } = await getSupabase()
         .from('resource_snapshots')
         .upsert(payload, { onConflict: 'tenant_id,resource_type,resource_id' });
 
@@ -77,7 +97,7 @@ export class ResourceDBService {
         status,
       };
 
-      const { data, error } = await supabase
+      const { data, error } = await getSupabase()
         .from('resource_assignments')
         .insert(payload)
         .select('id')
@@ -113,7 +133,7 @@ export class ResourceDBService {
         rotated_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase.from('resource_rotations').insert(payload);
+      const { error } = await getSupabase().from('resource_rotations').insert(payload);
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (err: unknown) {
@@ -148,7 +168,7 @@ export class ResourceDBService {
         created_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase.from('resource_audit_logs').insert(eventPayload);
+      const { error } = await getSupabase().from('resource_audit_logs').insert(eventPayload);
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (err: unknown) {

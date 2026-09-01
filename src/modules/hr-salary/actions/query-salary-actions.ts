@@ -112,6 +112,14 @@ interface MatrixKtvUser {
   resignation_date: string | null;
 }
 
+interface HrEmployeeSummaryRow {
+  person_id: string;
+  display_name: string | null;
+  base_salary?: number | string | null;
+  hire_date?: string | null;
+  position_title?: string | null;
+}
+
 /**
  * Fetches comprehensive salary data for all KTVs in the current tenant.
  * 
@@ -231,7 +239,7 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
 
     let rawKtvs: KtvUserData[] = [];
     if (moduleKey === 'real_estate') {
-      const { data: hrSummary, error: hrError } = await (supabase as unknown).rpc(
+      const { data: hrSummary, error: hrError } = await supabase.rpc(
         'get_hr_employee_summary',
         { p_tenant_id: tenantId, p_status: 'active' }
       );
@@ -239,12 +247,12 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
         throw new Error(`[getSalaryData] get_hr_employee_summary failed: ${hrError.message}`);
       }
       
-      const hrSummaryMapped: KtvUserData[] = (hrSummary || []).map((row: Record<string, unknown>) => ({
+      const hrSummaryMapped: KtvUserData[] = ((hrSummary || []) as HrEmployeeSummaryRow[]).map((row) => ({
         id: row.person_id,
         full_name: row.display_name,
         role: 'ktv',
         base_salary: row.base_salary ? Number(row.base_salary) : 6000000,
-        hire_date: row.hire_date,
+        hire_date: row.hire_date ?? null,
         resignation_date: null,
         status: 'active',
         position_tier: (row.position_title?.toLowerCase().includes('lead') || row.position_title?.toLowerCase().includes('trưởng phòng')
@@ -646,7 +654,7 @@ export async function getKtvSessionMatrix(): Promise<KtvSessionMatrix> {
 
     let rawKtvs: MatrixKtvUser[] = [];
     if (moduleKey === 'real_estate') {
-      const { data: hrSummary, error: hrError } = await (supabase as unknown).rpc(
+      const { data: hrSummary, error: hrError } = await supabase.rpc(
         'get_hr_employee_summary',
         { p_tenant_id: tenantId, p_status: 'active' }
       );
@@ -654,14 +662,14 @@ export async function getKtvSessionMatrix(): Promise<KtvSessionMatrix> {
         throw new Error(`getKtvSessionMatrix get_hr_employee_summary failed: ${hrError.message}`);
       }
       
-      const hrSummaryMapped = (hrSummary || []).map((row: Record<string, unknown>) => ({
+      const hrSummaryMapped: MatrixKtvUser[] = ((hrSummary || []) as HrEmployeeSummaryRow[]).map((row) => ({
         id: row.person_id,
         full_name: row.display_name,
         resignation_date: null
       }));
 
       if (currentUser?.role?.toLowerCase() === 'ktv') {
-        rawKtvs = hrSummaryMapped.filter((ktv: Record<string, unknown>) => ktv.id === currentUser.id);
+        rawKtvs = hrSummaryMapped.filter((ktv) => ktv.id === currentUser.id);
       } else {
         rawKtvs = hrSummaryMapped;
       }

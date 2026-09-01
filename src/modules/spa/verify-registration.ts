@@ -82,7 +82,7 @@ function verify() {
     for (const method of requiredMethods) {
       // Runtime method checking requires 'as any' cast since method names are dynamic strings
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (typeof (adapter2 as unknown)[method] !== 'function') {
+      if (typeof (adapter2 as unknown as Record<string, unknown>)[method] !== 'function') {
         throw new Error(`Method ${method} is not a function`);
       }
       console.log(`  ✓ ${method}()`);

@@ -274,7 +274,7 @@ export class SpaModuleAdapter implements ModuleAdapter {
         .eq('id', context.tenantId)
         .single();
       
-      const capacityConfig = (tenantData?.metadata as unknown)?.capacity_config as Record<string, unknown> | null;
+      const capacityConfig = (tenantData?.metadata as { capacity_config?: Record<string, unknown> } | null)?.capacity_config ?? null;
       
       // Get booking date from scheduledStartTime (YYYY-MM-DD format)
       const scheduledDate = order.scheduledStartTime; // Already in YYYY-MM-DD

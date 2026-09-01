@@ -1,5 +1,36 @@
 import { supabase as typedSupabase } from '@/lib/supabase';
-const supabase = typedSupabase as unknown;
+type MetadataRow = {
+  id: string;
+  tenant_id: string;
+  config_key: string;
+  config_values: Record<string, unknown>;
+  version: number;
+  updated_at: string;
+  updated_by: string | null;
+  correlation_id: string | null;
+};
+
+type MetadataQuery = {
+  select(columns?: string): MetadataQuery;
+  eq(column: string, value: unknown): MetadataQuery;
+  order(column: string, options?: { ascending?: boolean }): MetadataQuery;
+  limit(count: number): MetadataQuery;
+  maybeSingle(): Promise<{ data: MetadataRow | null; error: { message: string } | null }>;
+  insert(payload: Record<string, unknown>): MetadataQuery & Promise<{ error: { message: string } | null }>;
+  single(): Promise<{ data: MetadataRow; error: { message: string } | null }>;
+};
+
+type MetadataSupabaseClient = {
+  from(table: string): MetadataQuery;
+};
+
+function getSupabase(): MetadataSupabaseClient {
+  const client = typedSupabase as MetadataSupabaseClient | null;
+  if (!client) {
+    throw new Error('Supabase service client is not available in this runtime');
+  }
+  return client;
+}
 
 export interface MetadataConfig {
   readonly id?: string;
@@ -28,7 +59,7 @@ export class MetadataEngine {
    * Fetch the latest version of a metadata config by key for a tenant
    */
   public async getLatest(tenantId: string, configKey: string): Promise<MetadataConfig | null> {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('metadata_configs')
       .select('*')
       .eq('tenant_id', tenantId)
@@ -51,8 +82,8 @@ export class MetadataEngine {
       configValues: data.config_values,
       version: data.version,
       updatedAt: new Date(data.updated_at),
-      updatedBy: data.updated_by,
-      correlationId: data.correlation_id,
+      updatedBy: data.updated_by ?? undefined,
+      correlationId: data.correlation_id ?? undefined,
     };
   }
 
@@ -64,7 +95,7 @@ export class MetadataEngine {
     configKey: string,
     version: number
   ): Promise<MetadataConfig | null> {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('metadata_configs')
       .select('*')
       .eq('tenant_id', tenantId)
@@ -86,8 +117,8 @@ export class MetadataEngine {
       configValues: data.config_values,
       version: data.version,
       updatedAt: new Date(data.updated_at),
-      updatedBy: data.updated_by,
-      correlationId: data.correlation_id,
+      updatedBy: data.updated_by ?? undefined,
+      correlationId: data.correlation_id ?? undefined,
     };
   }
 
@@ -116,7 +147,7 @@ export class MetadataEngine {
       updated_at: new Date().toISOString(),
     };
 
-    const { data: configData, error: configError } = await supabase
+    const { data: configData, error: configError } = await getSupabase()
       .from('metadata_configs')
       .insert(configPayload)
       .select('*')
@@ -139,7 +170,7 @@ export class MetadataEngine {
       changed_at: configData.updated_at,
     };
 
-    const { error: historyError } = await supabase
+    const { error: historyError } = await getSupabase()
       .from('metadata_config_history')
       .insert(historyPayload);
 
@@ -155,8 +186,8 @@ export class MetadataEngine {
       configValues: configData.config_values,
       version: configData.version,
       updatedAt: new Date(configData.updated_at),
-      updatedBy: configData.updated_by,
-      correlationId: configData.correlation_id,
+      updatedBy: configData.updated_by ?? undefined,
+      correlationId: configData.correlation_id ?? undefined,
     };
   }
 }

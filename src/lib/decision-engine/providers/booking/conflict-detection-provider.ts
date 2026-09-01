@@ -309,23 +309,23 @@ export class ConflictDetectionProvider {
   /**
    * Find customer conflicting booking
    */
-  private findCustomerConflictingBooking(input: ConflictDetectionInput): { id: string; date: string; startTime: string; endTime: string; status: string } | undefined {
+  private findCustomerConflictingBooking(input: ConflictDetectionInput): { id: string; date: string; startTime: string; endTime: string; status: string } {
     const { requestedStartTime, requestedEndTime } = input.booking;
     return input.existingBookings.customerBookings?.find((b) =>
       this.hasTimeOverlap(requestedStartTime, requestedEndTime, b.startTime, b.endTime)
-    );
+    ) ?? this.requestedSlotFallback(input);
   }
 
   /**
    * Find room conflicting booking
    */
-  private findRoomConflictingBooking(input: ConflictDetectionInput): { id: string; date: string; startTime: string; endTime: string; status: string } | undefined {
+  private findRoomConflictingBooking(input: ConflictDetectionInput): { id: string; date: string; startTime: string; endTime: string; status: string } {
     const { roomId, requestedStartTime, requestedEndTime } = input.booking;
     const found = input.existingBookings.roomBookings?.find((b) =>
       b.roomId === roomId &&
       this.hasTimeOverlap(requestedStartTime, requestedEndTime, b.startTime, b.endTime)
     );
-    if (!found) return undefined;
+    if (!found) return this.requestedSlotFallback(input);
     return {
       id: found.id,
       date: found.date,
@@ -338,13 +338,13 @@ export class ConflictDetectionProvider {
   /**
    * Find equipment conflicting booking
    */
-  private findEquipmentConflictingBooking(input: ConflictDetectionInput): { id: string; date: string; startTime: string; endTime: string; status: string } | undefined {
+  private findEquipmentConflictingBooking(input: ConflictDetectionInput): { id: string; date: string; startTime: string; endTime: string; status: string } {
     const { equipmentIds, requestedStartTime, requestedEndTime } = input.booking;
     const found = input.existingBookings.equipmentBookings?.find((b) =>
       equipmentIds?.includes(b.equipmentId) &&
       this.hasTimeOverlap(requestedStartTime, requestedEndTime, b.startTime, b.endTime)
     );
-    if (!found) return undefined;
+    if (!found) return this.requestedSlotFallback(input);
     return {
       id: found.id,
       date: found.date,
@@ -357,15 +357,25 @@ export class ConflictDetectionProvider {
   /**
    * Find package conflicting session
    */
-  private findPackageConflictingSession(input: ConflictDetectionInput): { id: string; date: string; startTime: string; endTime: string; status: string } | undefined {
+  private findPackageConflictingSession(input: ConflictDetectionInput): { id: string; date: string; startTime: string; endTime: string; status: string } {
     const session = input.existingBookings.packageSessions?.[0];
-    if (!session) return undefined;
+    if (!session) return this.requestedSlotFallback(input);
     return {
       id: session.id,
       date: session.date,
       startTime: '00:00',
       endTime: '23:59',
       status: session.status,
+    };
+  }
+
+  private requestedSlotFallback(input: ConflictDetectionInput): { id: string; date: string; startTime: string; endTime: string; status: string } {
+    return {
+      id: `requested-${input.booking.customerId}-${input.booking.requestedDate}-${input.booking.requestedStartTime}`,
+      date: input.booking.requestedDate,
+      startTime: input.booking.requestedStartTime,
+      endTime: input.booking.requestedEndTime,
+      status: 'requested',
     };
   }
 
