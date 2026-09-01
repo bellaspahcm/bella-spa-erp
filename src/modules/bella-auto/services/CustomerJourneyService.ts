@@ -87,6 +87,13 @@ export const CustomerJourneyService = {
     const { tenantId, customerId, toStageCode, changedByUserId, reason, metadata } = input;
 
     // 1. Lấy thông tin hành trình hiện tại của khách hàng
+    type JourneyWithStage = {
+      id: string;
+      entered_stage_at: string;
+      current_stage_id: string;
+      auto_journey_stages: { code: string; name: string } | null;
+    };
+
     const { data: journey, error: fetchErr } = await supabase
       .from('auto_customer_journeys')
       .select(`
@@ -97,13 +104,14 @@ export const CustomerJourneyService = {
       `)
       .eq('tenant_id', tenantId)
       .eq('customer_id', customerId)
-      .single();
+      .single()
+      .returns<JourneyWithStage>();
 
     if (fetchErr || !journey) {
       throw new Error(`CustomerJourneyService.transitionStage: Khách hàng chưa được khởi tạo hành trình.`);
     }
 
-    const currentStage = (journey.auto_journey_stages as unknown);
+    const currentStage = journey.auto_journey_stages;
     const fromStageCode = currentStage?.code;
     const fromStageId = journey.current_stage_id;
 

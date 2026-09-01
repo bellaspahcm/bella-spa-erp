@@ -202,14 +202,16 @@ export class CSISurveyService {
 
     // Get journey to find sales consultant
     let salesConsultantId: string | null = null;
+    // Note: assigned_to field doesn't exist in auto_customer_journeys schema
+    // TODO: Implement sales consultant tracking if needed
     if (survey.journey_id) {
-      const { data: journey } = await supabase
-        .from('auto_customer_journeys')
-        .select('assigned_to')
-        .eq('id', survey.journey_id)
-        .single();
-      
-      salesConsultantId = journey?.assigned_to || null;
+      // const { data: journey } = await supabase
+      //   .from('auto_customer_journeys')
+      //   .select('assigned_to')
+      //   .eq('id', survey.journey_id)
+      //   .single();
+      // salesConsultantId = journey?.assigned_to || null;
+      salesConsultantId = null;
     }
 
     // Create CSI score record
@@ -442,13 +444,20 @@ export class CSISurveyService {
   }>> {
     const supabase = getPrimaryClient();
 
+    type ScoreWithEmployee = {
+      sales_consultant_id: string | null;
+      overall_csi: number | null;
+      employees: { name: string } | null;
+    };
+
     const { data: scores, error } = await supabase
       .from('auto_csi_scores')
       .select('sales_consultant_id, overall_csi, employees(name)')
       .eq('tenant_id', tenantId)
       .gte('recorded_at', startDate.toISOString())
       .lte('recorded_at', endDate.toISOString())
-      .not('sales_consultant_id', 'is', null);
+      .not('sales_consultant_id', 'is', null)
+      .returns<ScoreWithEmployee[]>();
 
     if (error) {
       throw new Error(`Failed to get CSI by consultant: ${error.message}`);
@@ -472,7 +481,7 @@ export class CSISurveyService {
         consultantMap.set(score.sales_consultant_id, {
           sum: score.overall_csi || 0,
           count: 1,
-          name: (score.employees as unknown)?.name || 'Unknown',
+          name: score.employees?.name || 'Unknown',
         });
       }
     }
