@@ -48,7 +48,7 @@ export class MobileNotificationService {
       title: params.title,
       message: params.message,
       action_type: params.actionType,
-      action_data: params.actionData as unknown,
+      action_data: params.actionData as Database['public']['Tables']['auto_mobile_notifications']['Row']['action_data'],
       priority: params.priority || 'normal',
       expires_at: params.expiresAt,
       status: 'pending',
