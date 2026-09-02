@@ -237,13 +237,13 @@ export class LoanApplicationService {
       throw new Error('Loan application not found');
     }
     
-    const currentChecklist = (current.documents_checklist || {}) as DocumentChecklistItem;
+    const currentChecklist = (current.documents_checklist || {}) as unknown as DocumentChecklistItem;
     const updatedChecklist = { ...currentChecklist, ...checklist };
     
     const { data, error } = await supabase
       .from('auto_loan_applications')
       .update({
-        documents_checklist: updatedChecklist as LoanApplicationUpdate['documents_checklist'],
+        documents_checklist: updatedChecklist as Database['public']['Tables']['auto_loan_applications']['Row']['documents_checklist'],
         updated_by: updatedBy,
       })
       .eq('id', loanId)
@@ -272,7 +272,7 @@ export class LoanApplicationService {
       'employment_certificate',
     ];
     
-    return required.every(field => checklist[field] === true);
+    return required.every(field => (checklist as any)[field] === true);
   }
   
   /**
@@ -340,7 +340,7 @@ export class LoanApplicationService {
       throw new Error('Loan application not found');
     }
     
-    if (!this.isDocumentChecklistComplete(loan.documents_checklist)) {
+    if (!this.isDocumentChecklistComplete(loan.documents_checklist as unknown as Partial<DocumentChecklistItem>)) {
       throw new Error('Cannot submit: Required documents are incomplete');
     }
     
