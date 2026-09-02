@@ -42,6 +42,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/database.types';
 
+type Json = Database['public']['Tables']['auto_business_transactions']['Row']['metadata'];
 type BusinessTransactionType = Database['public']['Enums']['auto_business_transaction_type'];
 type BusinessTransactionStatus = Database['public']['Enums']['auto_business_transaction_status'];
 type TransactionStepStatus = Database['public']['Enums']['auto_transaction_step_status'];
@@ -52,18 +53,18 @@ interface StartTransactionParams {
   entityType: string;
   entityId: string;
   createdBy?: string;
-  metadata?: Record<string, unknown>;
+  metadata?: Json;
 }
 
 interface ExecuteStepParams {
   action: string;
   entityType: string;
   entityId: string;
-  snapshotBefore?: Record<string, unknown>;
-  snapshotAfter?: Record<string, unknown>;
+  snapshotBefore?: Json;
+  snapshotAfter?: Json;
   compensatingAction: string;
-  compensatingParams: Record<string, unknown>;
-  metadata?: Record<string, unknown>;
+  compensatingParams: Json;
+  metadata?: Json;
 }
 
 interface BusinessTransaction {
@@ -85,10 +86,10 @@ interface TransactionStep {
   status: TransactionStepStatus;
   entityType: string;
   entityId: string;
-  snapshotBefore?: Record<string, unknown>;
-  snapshotAfter?: Record<string, unknown>;
+  snapshotBefore?: Json;
+  snapshotAfter?: Json;
   compensatingAction: string;
-  compensatingParams: Record<string, unknown>;
+  compensatingParams: Json;
   executedAt?: string;
   rolledBackAt?: string;
   errorMessage?: string;
@@ -192,8 +193,8 @@ export class BusinessRollbackEngine {
       entityId: data.entity_id,
       snapshotBefore: data.snapshot_before || undefined,
       snapshotAfter: data.snapshot_after || undefined,
-      compensatingAction: data.compensating_action,
-      compensatingParams: data.compensating_params,
+      compensatingAction: data.compensating_action || '',
+      compensatingParams: data.compensating_params || {},
       executedAt: data.executed_at || undefined,
     };
   }
@@ -325,15 +326,15 @@ export class BusinessRollbackEngine {
         break;
       
       case 'cancel_notification':
-        await this.cancelNotification(entity_id || '', compensating_params as Record<string, unknown>);
+        await this.cancelNotification(entity_id || '', compensating_params as Json);
         break;
       
       case 'remove_ai_event':
-        await this.removeAIEvent(entity_id || '', compensating_params as Record<string, unknown>);
+        await this.removeAIEvent(entity_id || '', compensating_params as Json);
         break;
       
       case 'revert_commission':
-        await this.revertCommission(entity_id || '', compensating_params as Record<string, unknown>);
+        await this.revertCommission(entity_id || '', compensating_params as Json);
         break;
       
       case 'restore_inventory':
@@ -355,7 +356,7 @@ export class BusinessRollbackEngine {
   ): Promise<void> {
     const { error } = await this.supabase
       .from('auto_vehicles')
-      .update({ status: params.status })
+      .update({ status: params.status as any })
       .eq('id', vehicleId)
       .eq('tenant_id', this.tenantId);
 
@@ -377,7 +378,7 @@ export class BusinessRollbackEngine {
   ): Promise<void> {
     const { error } = await this.supabase
       .from('auto_customer_journeys')
-      .update({ current_stage_code: params.previous_stage })
+      .update({ current_stage_id: params.previous_stage })
       .eq('id', journeyId)
       .eq('tenant_id', this.tenantId);
 
@@ -386,7 +387,7 @@ export class BusinessRollbackEngine {
 
   private async cancelNotification(
     notificationId: string,
-    params: Record<string, unknown>
+    params: Json
   ): Promise<void> {
     // Mark notification as cancelled
     console.log('TODO: Implement notification cancellation', { notificationId, params });
@@ -394,7 +395,7 @@ export class BusinessRollbackEngine {
 
   private async removeAIEvent(
     eventId: string,
-    params: Record<string, unknown>
+    params: Json
   ): Promise<void> {
     // Remove AI event from insights
     console.log('TODO: Implement AI event removal', { eventId, params });
@@ -402,7 +403,7 @@ export class BusinessRollbackEngine {
 
   private async revertCommission(
     commissionId: string,
-    params: Record<string, unknown>
+    params: Json
   ): Promise<void> {
     // Reverse commission calculation
     console.log('TODO: Implement commission reversal', { commissionId, params });
