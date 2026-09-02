@@ -55,6 +55,8 @@
     "arch:guard": "npx tsx scripts/architecture/architecture-guard.ts",
     "arch:guard:verbose": "npx tsx scripts/architecture/architecture-guard.ts --verbose",
     "arch:guard:hashes": "npx tsx scripts/architecture/architecture-guard.ts --check-hashes",
+    "governance:typecheck": "npx tsx scripts/governance/scoped-typecheck.ts",
+    "governance:typecheck:verbose": "npx tsx scripts/governance/scoped-typecheck.ts --verbose",
     "logistics:verify": "npm run arch:guard && npm test -- src/platform/logistics/domain",
     "worker:finance-outbox": "npx tsx src/platform/integration-hub/finance-outbox-worker.cli.ts",
     "test:n1": "npx tsx scripts/test-n1-failure-isolation.ts",
