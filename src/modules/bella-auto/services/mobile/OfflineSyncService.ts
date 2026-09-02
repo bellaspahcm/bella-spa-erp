@@ -65,7 +65,7 @@ export class OfflineSyncService {
       session_id: params.sessionId,
       action_type: params.actionType,
       entity_type: params.entityType,
-      action_data: params.actionData as unknown,
+      action_data: params.actionData as Database['public']['Tables']['auto_offline_actions']['Row']['action_data'],
       priority: params.priority || 5,
       status: 'pending',
       sync_attempts: 0,
@@ -91,7 +91,7 @@ export class OfflineSyncService {
     tenantId: string,
     userId: string,
     limit: number = 50
-  ): Promise<OfflineAction[]> {
+  ) {
     const supabase = getPrimaryClient();
     
     const { data, error } = await supabase
@@ -114,12 +114,20 @@ export class OfflineSyncService {
   static async markSyncing(actionId: string, tenantId: string): Promise<OfflineAction> {
     const supabase = getPrimaryClient();
     
+    // First get current sync_attempts
+    const { data: current } = await supabase
+      .from('auto_offline_actions')
+      .select('sync_attempts')
+      .eq('id', actionId)
+      .eq('tenant_id', tenantId)
+      .single();
+    
     const { data, error } = await supabase
       .from('auto_offline_actions')
       .update({
         status: 'syncing',
         last_sync_attempt_at: new Date().toISOString(),
-        sync_attempts: supabase.rpc('increment', { column_name: 'sync_attempts' }) as unknown,
+        sync_attempts: (current?.sync_attempts || 0) + 1,
       })
       .eq('id', actionId)
       .eq('tenant_id', tenantId)
@@ -329,7 +337,7 @@ export class OfflineSyncService {
       stats.byActionType[action.action_type] = (stats.byActionType[action.action_type] || 0) + 1;
       
       // Average attempts
-      totalAttempts += action.sync_attempts;
+      totalAttempts += action.sync_attempts ?? 0;
     });
     
     stats.averageAttempts = data.length > 0 ? totalAttempts / data.length : 0;
