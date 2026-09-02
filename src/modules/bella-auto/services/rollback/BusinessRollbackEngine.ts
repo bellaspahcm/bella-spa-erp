@@ -413,11 +413,25 @@ export class BusinessRollbackEngine {
     inventoryId: string,
     params: { quantity: number }
   ): Promise<void> {
-    // Restore inventory quantity
-    const { error } = await this.supabase.rpc('increment_inventory', {
-      p_inventory_id: inventoryId,
-      p_quantity: params.quantity,
-    });
+    // Restore inventory quantity - read and increment pattern (no RPC available)
+    const { data: current } = await this.supabase
+      .from('auto_parts_inventory')
+      .select('quantity_available')
+      .eq('id', inventoryId)
+      .eq('tenant_id', this.tenantId)
+      .single();
+    
+    if (!current) {
+      throw new Error('Inventory not found');
+    }
+
+    const { error } = await this.supabase
+      .from('auto_parts_inventory')
+      .update({ 
+        quantity_available: (current.quantity_available || 0) + params.quantity 
+      })
+      .eq('id', inventoryId)
+      .eq('tenant_id', this.tenantId);
 
     if (error) throw new Error(`Failed to restore inventory: ${error.message}`);
   }
