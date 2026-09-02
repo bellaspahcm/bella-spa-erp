@@ -56,7 +56,7 @@ describe('Shipment Engine - Diagnostic', () => {
                     };
                     return { data: row, error: null };
                   },
-                },
+                }
               },
             };
           },
