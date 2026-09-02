@@ -1,0 +1,1586 @@
+{
+  "version": "1.0.0",
+  "capturedAt": "2026-09-02T22:25:11.015Z",
+  "gitCommit": "b19aba78f5317e4936683dc291f1ff7a6e81624a",
+  "scopes": [
+    {
+      "scope": "accounting",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 3898
+    },
+    {
+      "scope": "activity-stream",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 2308
+    },
+    {
+      "scope": "ai-orchestrator",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 2382
+    },
+    {
+      "scope": "asset",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 2260
+    },
+    {
+      "scope": "capability",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 3204
+    },
+    {
+      "scope": "composition",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 2427
+    },
+    {
+      "scope": "config-center",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 2346
+    },
+    {
+      "scope": "context",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 2385
+    },
+    {
+      "scope": "core",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 2960
+    },
+    {
+      "scope": "deployment",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 2576
+    },
+    {
+      "scope": "document-engine",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 2349
+    },
+    {
+      "scope": "education",
+      "status": "FAIL",
+      "diagnostics": [
+        {
+          "file": "src/platform/education/assessment/assessment.repository.ts",
+          "line": 337,
+          "column": 7,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/attendance/attendance.repository.ts",
+          "line": 60,
+          "column": 7,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/attendance/attendance.repository.ts",
+          "line": 92,
+          "column": 7,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/contracts/assessment.contract.impl.ts",
+          "line": 26,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/contracts/assessment.contract.impl.ts",
+          "line": 37,
+          "column": 55,
+          "code": "TS2345",
+          "messagePattern": "Argument of type ${TYPE} is not assignable to parameter of type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/contracts/assessment.contract.impl.ts",
+          "line": 47,
+          "column": 83,
+          "code": "TS2345",
+          "messagePattern": "Argument of type ${TYPE} is not assignable to parameter of type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/contracts/course.contract.impl.ts",
+          "line": 23,
+          "column": 15,
+          "code": "TS2367",
+          "messagePattern": "This comparison appears to be unintentional because the types ${TYPE} and ${TYPE} have no overlap."
+        },
+        {
+          "file": "src/platform/education/contracts/course.contract.impl.ts",
+          "line": 39,
+          "column": 15,
+          "code": "TS2367",
+          "messagePattern": "This comparison appears to be unintentional because the types ${TYPE} and ${TYPE} have no overlap."
+        },
+        {
+          "file": "src/platform/education/contracts/course.contract.impl.ts",
+          "line": 55,
+          "column": 15,
+          "code": "TS2367",
+          "messagePattern": "This comparison appears to be unintentional because the types ${TYPE} and ${TYPE} have no overlap."
+        },
+        {
+          "file": "src/platform/education/contracts/enrollment.contract.impl.ts",
+          "line": 10,
+          "column": 56,
+          "code": "TS2345",
+          "messagePattern": "Argument of type ${TYPE} is not assignable to parameter of type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/contracts/enrollment.contract.impl.ts",
+          "line": 12,
+          "column": 60,
+          "code": "TS2345",
+          "messagePattern": "Argument of type ${TYPE} is not assignable to parameter of type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/contracts/enrollment.contract.impl.ts",
+          "line": 28,
+          "column": 7,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/contracts/enrollment.contract.impl.ts",
+          "line": 40,
+          "column": 7,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/contracts/enrollment.contract.impl.ts",
+          "line": 47,
+          "column": 56,
+          "code": "TS2345",
+          "messagePattern": "Argument of type ${TYPE} is not assignable to parameter of type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/course/course.repository.ts",
+          "line": 231,
+          "column": 7,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/course/course.repository.ts",
+          "line": 232,
+          "column": 7,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/course/course.repository.ts",
+          "line": 233,
+          "column": 7,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/course/course.repository.ts",
+          "line": 234,
+          "column": 7,
+          "code": "TS2740",
+          "messagePattern": "Type ${TYPE} is missing the following properties from type ${TYPE}: length, pop, push, concat, and ${NUM} more."
+        },
+        {
+          "file": "src/platform/education/course/course.repository.ts",
+          "line": 235,
+          "column": 7,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/course/course.repository.ts",
+          "line": 236,
+          "column": 7,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/course/course.repository.ts",
+          "line": 237,
+          "column": 7,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/education-engine.service.ts",
+          "line": 80,
+          "column": 11,
+          "code": "TS2367",
+          "messagePattern": "This comparison appears to be unintentional because the types ${TYPE} and ${TYPE} have no overlap."
+        },
+        {
+          "file": "src/platform/education/education-engine.service.ts",
+          "line": 211,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/education-engine.service.ts",
+          "line": 219,
+          "column": 37,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/education-engine.service.ts",
+          "line": 228,
+          "column": 19,
+          "code": "TS18047",
+          "messagePattern": "${TYPE} is possibly ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/education-engine.service.ts",
+          "line": 229,
+          "column": 22,
+          "code": "TS18047",
+          "messagePattern": "${TYPE} is possibly ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/education-engine.service.ts",
+          "line": 231,
+          "column": 21,
+          "code": "TS18047",
+          "messagePattern": "${TYPE} is possibly ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/education-engine.service.ts",
+          "line": 233,
+          "column": 25,
+          "code": "TS18047",
+          "messagePattern": "${TYPE} is possibly ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/education-engine.service.ts",
+          "line": 234,
+          "column": 27,
+          "code": "TS18047",
+          "messagePattern": "${TYPE} is possibly ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/education-engine.service.ts",
+          "line": 235,
+          "column": 21,
+          "code": "TS18047",
+          "messagePattern": "${TYPE} is possibly ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/education-engine.service.ts",
+          "line": 236,
+          "column": 19,
+          "code": "TS18047",
+          "messagePattern": "${TYPE} is possibly ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/education-engine.service.ts",
+          "line": 247,
+          "column": 13,
+          "code": "TS18047",
+          "messagePattern": "${TYPE} is possibly ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/education-engine.service.ts",
+          "line": 248,
+          "column": 19,
+          "code": "TS18047",
+          "messagePattern": "${TYPE} is possibly ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/education-engine.service.ts",
+          "line": 249,
+          "column": 25,
+          "code": "TS18047",
+          "messagePattern": "${TYPE} is possibly ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/education-engine.service.ts",
+          "line": 250,
+          "column": 19,
+          "code": "TS18047",
+          "messagePattern": "${TYPE} is possibly ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/education-engine.service.ts",
+          "line": 251,
+          "column": 17,
+          "code": "TS18047",
+          "messagePattern": "${TYPE} is possibly ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/education-engine.service.ts",
+          "line": 252,
+          "column": 21,
+          "code": "TS18047",
+          "messagePattern": "${TYPE} is possibly ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/enrollment/enrollment.repository.ts",
+          "line": 37,
+          "column": 71,
+          "code": "TS2345",
+          "messagePattern": "Argument of type ${TYPE} is not assignable to parameter of type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/enrollment/enrollment.repository.ts",
+          "line": 127,
+          "column": 15,
+          "code": "TS2345",
+          "messagePattern": "Argument of type ${TYPE} is not assignable to parameter of type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/index.ts",
+          "line": 15,
+          "column": 1,
+          "code": "TS2308",
+          "messagePattern": "Module ${TYPE} has already exported a member named ${TYPE}. Consider explicitly re-exporting to resolve the ambiguity."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 37,
+          "column": 15,
+          "code": "TS2345",
+          "messagePattern": "Argument of type ${TYPE} is not assignable to parameter of type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 59,
+          "column": 16,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 60,
+          "column": 22,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 61,
+          "column": 24,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 62,
+          "column": 19,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 63,
+          "column": 20,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 64,
+          "column": 25,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 65,
+          "column": 31,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 66,
+          "column": 37,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 67,
+          "column": 32,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 68,
+          "column": 32,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 87,
+          "column": 15,
+          "code": "TS2345",
+          "messagePattern": "Argument of type ${TYPE} is not assignable to parameter of type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 109,
+          "column": 16,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 110,
+          "column": 22,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 111,
+          "column": 28,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 112,
+          "column": 22,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 113,
+          "column": 20,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 114,
+          "column": 23,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 115,
+          "column": 33,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 116,
+          "column": 32,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 117,
+          "column": 32,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 141,
+          "column": 16,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 142,
+          "column": 22,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 143,
+          "column": 28,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 144,
+          "column": 22,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 145,
+          "column": 20,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 146,
+          "column": 23,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 147,
+          "column": 33,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 148,
+          "column": 32,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 149,
+          "column": 32,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 171,
+          "column": 15,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 172,
+          "column": 73,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 175,
+          "column": 15,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 176,
+          "column": 88,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 197,
+          "column": 16,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 198,
+          "column": 22,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 199,
+          "column": 24,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 200,
+          "column": 19,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 201,
+          "column": 20,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 202,
+          "column": 25,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 203,
+          "column": 31,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 204,
+          "column": 37,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 205,
+          "column": 32,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 206,
+          "column": 32,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 225,
+          "column": 33,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 269,
+          "column": 78,
+          "code": "TS2345",
+          "messagePattern": "Argument of type ${TYPE} is not assignable to parameter of type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 283,
+          "column": 25,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/repositories/supabase-education.repository.ts",
+          "line": 284,
+          "column": 26,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/student/student.repository.ts",
+          "line": 52,
+          "column": 15,
+          "code": "TS2345",
+          "messagePattern": "Argument of type ${TYPE} is not assignable to parameter of type ${TYPE}."
+        },
+        {
+          "file": "src/platform/education/student/student.repository.ts",
+          "line": 203,
+          "column": 15,
+          "code": "TS2345",
+          "messagePattern": "Argument of type ${TYPE} is not assignable to parameter of type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/person/person.repository.ts",
+          "line": 44,
+          "column": 7,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/person/person.repository.ts",
+          "line": 81,
+          "column": 7,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/person/person.repository.ts",
+          "line": 262,
+          "column": 21,
+          "code": "TS2352",
+          "messagePattern": "Conversion of type ${TYPE} to type ${TYPE} may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to ${TYPE} first."
+        },
+        {
+          "file": "src/platform/host/person/person.repository.ts",
+          "line": 263,
+          "column": 18,
+          "code": "TS2352",
+          "messagePattern": "Conversion of type ${TYPE} to type ${TYPE} may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to ${TYPE} first."
+        },
+        {
+          "file": "src/platform/host/person/person.repository.ts",
+          "line": 264,
+          "column": 19,
+          "code": "TS2352",
+          "messagePattern": "Conversion of type ${TYPE} to type ${TYPE} may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to ${TYPE} first."
+        },
+        {
+          "file": "src/platform/host/rule-engine/rule-engine.service.ts",
+          "line": 161,
+          "column": 70,
+          "code": "TS2345",
+          "messagePattern": "Argument of type ${TYPE} is not assignable to parameter of type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rule-engine/rule-engine.service.ts",
+          "line": 162,
+          "column": 71,
+          "code": "TS2345",
+          "messagePattern": "Argument of type ${TYPE} is not assignable to parameter of type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rule-engine/rule-engine.service.ts",
+          "line": 194,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rule-engine/rule-engine.service.ts",
+          "line": 198,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rule-engine/rule-engine.service.ts",
+          "line": 287,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rule-engine/rule-engine.service.ts",
+          "line": 450,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rule-engine/rule-engine.service.ts",
+          "line": 454,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        }
+      ],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 5393
+    },
+    {
+      "scope": "events",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 2346
+    },
+    {
+      "scope": "extensions",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 2427
+    },
+    {
+      "scope": "finance",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 4220
+    },
+    {
+      "scope": "healthcare",
+      "status": "FAIL",
+      "diagnostics": [
+        {
+          "file": "src/platform/healthcare/finance-integration/example-usage.ts",
+          "line": 22,
+          "column": 10,
+          "code": "TS2554",
+          "messagePattern": "Expected ${NUM} arguments, but got ${NUM}."
+        },
+        {
+          "file": "src/platform/healthcare/finance-integration/example-usage.ts",
+          "line": 268,
+          "column": 49,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/healthcare/finance-integration/example-usage.ts",
+          "line": 283,
+          "column": 52,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/healthcare/finance-integration/example-usage.ts",
+          "line": 294,
+          "column": 49,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/healthcare/finance-integration/example-usage.ts",
+          "line": 326,
+          "column": 36,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/healthcare/finance-integration/example-usage.ts",
+          "line": 327,
+          "column": 41,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/healthcare/finance-integration/example-usage.ts",
+          "line": 332,
+          "column": 36,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/healthcare/finance-integration/example-usage.ts",
+          "line": 333,
+          "column": 41,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/healthcare/finance-integration/example-usage.ts",
+          "line": 338,
+          "column": 36,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/healthcare/finance-integration/example-usage.ts",
+          "line": 339,
+          "column": 41,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/healthcare/finance-integration/example-usage.ts",
+          "line": 342,
+          "column": 66,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/healthcare/finance-integration/example-usage.ts",
+          "line": 342,
+          "column": 93,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/healthcare/finance-integration/example-usage.ts",
+          "line": 342,
+          "column": 119,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/healthcare/finance-integration/example-usage.ts",
+          "line": 342,
+          "column": 146,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/healthcare/finance-integration/example-usage.ts",
+          "line": 343,
+          "column": 75,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        },
+        {
+          "file": "src/platform/healthcare/finance-integration/example-usage.ts",
+          "line": 343,
+          "column": 107,
+          "code": "TS2339",
+          "messagePattern": "Property ${TYPE} does not exist on type ${TYPE}."
+        }
+      ],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 6426
+    },
+    {
+      "scope": "host",
+      "status": "FAIL",
+      "diagnostics": [
+        {
+          "file": "src/platform/host/analytics-engine/analytics-engine.contract.ts",
+          "line": 6,
+          "column": 10,
+          "code": "TS2305",
+          "messagePattern": "Module ${TYPE} has no exported member ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/analytics-engine/analytics-engine.service.ts",
+          "line": 128,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/feature-flags/types.ts",
+          "line": 173,
+          "column": 3,
+          "code": "TS2484",
+          "messagePattern": "Export declaration conflicts with exported declaration of ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/feature-flags/types.ts",
+          "line": 174,
+          "column": 3,
+          "code": "TS2484",
+          "messagePattern": "Export declaration conflicts with exported declaration of ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/feature-flags/types.ts",
+          "line": 175,
+          "column": 3,
+          "code": "TS2484",
+          "messagePattern": "Export declaration conflicts with exported declaration of ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/feature-flags/types.ts",
+          "line": 176,
+          "column": 3,
+          "code": "TS2484",
+          "messagePattern": "Export declaration conflicts with exported declaration of ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/feature-flags/types.ts",
+          "line": 177,
+          "column": 3,
+          "code": "TS2484",
+          "messagePattern": "Export declaration conflicts with exported declaration of ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/feature-flags/types.ts",
+          "line": 178,
+          "column": 3,
+          "code": "TS2484",
+          "messagePattern": "Export declaration conflicts with exported declaration of ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/feature-flags/types.ts",
+          "line": 179,
+          "column": 3,
+          "code": "TS2484",
+          "messagePattern": "Export declaration conflicts with exported declaration of ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/feature-flags/types.ts",
+          "line": 180,
+          "column": 3,
+          "code": "TS2484",
+          "messagePattern": "Export declaration conflicts with exported declaration of ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/feature-flags/types.ts",
+          "line": 181,
+          "column": 3,
+          "code": "TS2484",
+          "messagePattern": "Export declaration conflicts with exported declaration of ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/feature-flags/types.ts",
+          "line": 182,
+          "column": 3,
+          "code": "TS2484",
+          "messagePattern": "Export declaration conflicts with exported declaration of ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/feature-flags/types.ts",
+          "line": 183,
+          "column": 3,
+          "code": "TS2484",
+          "messagePattern": "Export declaration conflicts with exported declaration of ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/feature-flags/types.ts",
+          "line": 184,
+          "column": 3,
+          "code": "TS2484",
+          "messagePattern": "Export declaration conflicts with exported declaration of ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/index.ts",
+          "line": 27,
+          "column": 15,
+          "code": "TS2307",
+          "messagePattern": "Cannot find module ${TYPE} or its corresponding type declarations."
+        },
+        {
+          "file": "src/platform/host/index.ts",
+          "line": 28,
+          "column": 15,
+          "code": "TS2307",
+          "messagePattern": "Cannot find module ${TYPE} or its corresponding type declarations."
+        },
+        {
+          "file": "src/platform/host/index.ts",
+          "line": 29,
+          "column": 15,
+          "code": "TS2307",
+          "messagePattern": "Cannot find module ${TYPE} or its corresponding type declarations."
+        },
+        {
+          "file": "src/platform/host/index.ts",
+          "line": 31,
+          "column": 15,
+          "code": "TS2307",
+          "messagePattern": "Cannot find module ${TYPE} or its corresponding type declarations."
+        },
+        {
+          "file": "src/platform/host/index.ts",
+          "line": 32,
+          "column": 15,
+          "code": "TS2307",
+          "messagePattern": "Cannot find module ${TYPE} or its corresponding type declarations."
+        },
+        {
+          "file": "src/platform/host/index.ts",
+          "line": 33,
+          "column": 15,
+          "code": "TS2307",
+          "messagePattern": "Cannot find module ${TYPE} or its corresponding type declarations."
+        },
+        {
+          "file": "src/platform/host/person/person.repository.ts",
+          "line": 44,
+          "column": 7,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/person/person.repository.ts",
+          "line": 81,
+          "column": 7,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/person/person.repository.ts",
+          "line": 262,
+          "column": 21,
+          "code": "TS2352",
+          "messagePattern": "Conversion of type ${TYPE} to type ${TYPE} may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to ${TYPE} first."
+        },
+        {
+          "file": "src/platform/host/person/person.repository.ts",
+          "line": 263,
+          "column": 18,
+          "code": "TS2352",
+          "messagePattern": "Conversion of type ${TYPE} to type ${TYPE} may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to ${TYPE} first."
+        },
+        {
+          "file": "src/platform/host/person/person.repository.ts",
+          "line": 264,
+          "column": 19,
+          "code": "TS2352",
+          "messagePattern": "Conversion of type ${TYPE} to type ${TYPE} may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to ${TYPE} first."
+        },
+        {
+          "file": "src/platform/host/person/person.service.ts",
+          "line": 123,
+          "column": 33,
+          "code": "TS7009",
+          "messagePattern": "${TYPE} expression, whose target lacks a construct signature, implicitly has an ${TYPE} type."
+        },
+        {
+          "file": "src/platform/host/rollback-engine/rollback-engine.contract.ts",
+          "line": 6,
+          "column": 10,
+          "code": "TS2305",
+          "messagePattern": "Module ${TYPE} has no exported member ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rollback-engine/rollback-engine.service.ts",
+          "line": 126,
+          "column": 17,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rollback-engine/rollback-engine.service.ts",
+          "line": 145,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rollback-engine/rollback-engine.service.ts",
+          "line": 156,
+          "column": 13,
+          "code": "TS2769",
+          "messagePattern": "No overload matches this call."
+        },
+        {
+          "file": "src/platform/host/rollback-engine/rollback-engine.service.ts",
+          "line": 158,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rollback-engine/rollback-engine.service.ts",
+          "line": 159,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rollback-engine/rollback-engine.service.ts",
+          "line": 160,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rollback-engine/rollback-engine.service.ts",
+          "line": 162,
+          "column": 11,
+          "code": "TS2345",
+          "messagePattern": "Argument of type ${TYPE} is not assignable to parameter of type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rollback-engine/rollback-engine.service.ts",
+          "line": 163,
+          "column": 11,
+          "code": "TS2345",
+          "messagePattern": "Argument of type ${TYPE} is not assignable to parameter of type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rollback-engine/rollback-engine.service.ts",
+          "line": 182,
+          "column": 13,
+          "code": "TS2769",
+          "messagePattern": "No overload matches this call."
+        },
+        {
+          "file": "src/platform/host/rollback-engine/rollback-engine.service.ts",
+          "line": 184,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rollback-engine/rollback-engine.service.ts",
+          "line": 185,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rollback-engine/rollback-engine.service.ts",
+          "line": 186,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rollback-engine/rollback-engine.service.ts",
+          "line": 187,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rollback-engine/rollback-engine.service.ts",
+          "line": 188,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rollback-engine/rollback-engine.service.ts",
+          "line": 189,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rollback-engine/rollback-engine.service.ts",
+          "line": 190,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rollback-engine/rollback-engine.service.ts",
+          "line": 196,
+          "column": 42,
+          "code": "TS2345",
+          "messagePattern": "Argument of type ${TYPE} is not assignable to parameter of type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rollback-engine/rollback-engine.service.ts",
+          "line": 285,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rollback-engine/rollback-engine.service.ts",
+          "line": 286,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rollback-engine/rollback-engine.service.ts",
+          "line": 288,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rollback-engine/rollback-engine.service.ts",
+          "line": 291,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rule-engine/rule-engine.contract.ts",
+          "line": 10,
+          "column": 10,
+          "code": "TS2305",
+          "messagePattern": "Module ${TYPE} has no exported member ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rule-engine/rule-engine.service.ts",
+          "line": 161,
+          "column": 70,
+          "code": "TS2345",
+          "messagePattern": "Argument of type ${TYPE} is not assignable to parameter of type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rule-engine/rule-engine.service.ts",
+          "line": 162,
+          "column": 71,
+          "code": "TS2345",
+          "messagePattern": "Argument of type ${TYPE} is not assignable to parameter of type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rule-engine/rule-engine.service.ts",
+          "line": 194,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rule-engine/rule-engine.service.ts",
+          "line": 198,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rule-engine/rule-engine.service.ts",
+          "line": 287,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rule-engine/rule-engine.service.ts",
+          "line": 450,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/rule-engine/rule-engine.service.ts",
+          "line": 454,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/temporal-engine/temporal-engine.contract.ts",
+          "line": 6,
+          "column": 10,
+          "code": "TS2305",
+          "messagePattern": "Module ${TYPE} has no exported member ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/temporal-engine/temporal-engine.service.ts",
+          "line": 101,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/host/temporal-engine/temporal-engine.service.ts",
+          "line": 111,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        }
+      ],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 6303
+    },
+    {
+      "scope": "iam-matrix",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 2399
+    },
+    {
+      "scope": "integration-hub",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 6367
+    },
+    {
+      "scope": "integration-runtime",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 3328
+    },
+    {
+      "scope": "journey",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 2293
+    },
+    {
+      "scope": "knowledge",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 2338
+    },
+    {
+      "scope": "kpi-engine",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 2301
+    },
+    {
+      "scope": "lead-engine",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 2298
+    },
+    {
+      "scope": "logistics",
+      "status": "HOTSPOT",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 30000
+    },
+    {
+      "scope": "messaging",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 2252
+    },
+    {
+      "scope": "metadata-engine",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 3030
+    },
+    {
+      "scope": "migration-governance",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 2986
+    },
+    {
+      "scope": "notification-hub",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 2307
+    },
+    {
+      "scope": "party",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 3408
+    },
+    {
+      "scope": "policy-engine",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 3250
+    },
+    {
+      "scope": "projection-engine",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 3360
+    },
+    {
+      "scope": "real-estate",
+      "status": "FAIL",
+      "diagnostics": [
+        {
+          "file": "src/platform/real-estate/engines/reservation.service.ts",
+          "line": 55,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/real-estate/engines/reservation.service.ts",
+          "line": 93,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        },
+        {
+          "file": "src/platform/real-estate/repositories/property-unit.repository.ts",
+          "line": 52,
+          "column": 9,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        }
+      ],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 4412
+    },
+    {
+      "scope": "registry",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 3127
+    },
+    {
+      "scope": "resource-engine",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 3005
+    },
+    {
+      "scope": "runtime",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 3178
+    },
+    {
+      "scope": "scheduler-registry",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 3162
+    },
+    {
+      "scope": "sdk",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 3016
+    },
+    {
+      "scope": "search-engine",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 3047
+    },
+    {
+      "scope": "security",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 3323
+    },
+    {
+      "scope": "specification",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 2973
+    },
+    {
+      "scope": "state-machine",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 2974
+    },
+    {
+      "scope": "template-engine",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 2996
+    },
+    {
+      "scope": "timeline",
+      "status": "PASS",
+      "diagnostics": [],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 2875
+    }
+  ],
+  "summary": {
+    "pass": 39,
+    "fail": 4,
+    "hotspot": 1,
+    "total": 44,
+    "totalDiagnostics": 180
+  }
+}

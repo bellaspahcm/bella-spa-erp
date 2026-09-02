@@ -458,6 +458,295 @@ Gate B does NOT:
 
 ---
 
+---
+
+## Phase 1: Regression Protection Mode
+
+**Date Implemented:** 2026-09-03  
+**Status:** ✅ VERIFIED — Diagnostic fingerprinting operational
+
+### Purpose
+
+Enable **baseline-aware enforcement** during remediation phase:
+- Allow pre-existing FAIL scopes (39 PASS / 4 FAIL / 1 HOTSPOT baseline)
+- BLOCK new regressions (new diagnostics in any scope)
+- ALLOW improvements (resolved diagnostics)
+- Prevent "trading" old errors for new ones
+
+### Why Fingerprinting is Required
+
+**Problem with count-based comparison:**
+```
+Education: 102 → 103 diagnostics
+→ Naive: BLOCK (count increased)
+```
+
+**Cannot distinguish:**
+- 1 new error (regression)
+- 5 resolved + 6 new (net +1, but regression exists)
+
+**Solution: Diagnostic fingerprinting**
+```typescript
+interface DiagnosticFingerprint {
+  file: string;           // src/platform/education/service.ts
+  line: number;           // 55
+  column: number;         // 9
+  code: string;           // TS2322
+  messagePattern: string; // Type ${TYPE} is not assignable to type ${TYPE}
+}
+```
+
+**Identity-based comparison:**
+```
+Baseline fingerprints: Set(102 unique diagnostics)
+Current fingerprints:  Set(100 unique diagnostics)
+
+New:      2 diagnostics (not in baseline)
+Resolved: 4 diagnostics (in baseline, not in current)
+
+Verdict: BLOCK (new regressions detected)
+Reason:  "2 new diagnostic(s) introduced"
+```
+
+### Implementation
+
+**Files:**
+- `scripts/governance/baseline-schema.ts` (366 lines) — Types, fingerprint utilities, verdict logic
+- `scripts/governance/capture-baseline.ts` (244 lines) — Baseline capture with validation
+- `scripts/governance/check-regression.ts` (319 lines) — Regression detection engine
+- `scripts/governance/test-regression-protection.ts` (280 lines) — 12 verdict scenarios
+
+**Commands:**
+```bash
+# Capture current state as baseline
+npm run governance:baseline
+
+# Check for regressions against baseline
+npm run governance:check-regression
+npm run governance:check-regression:verbose
+
+# Test verdict logic
+npx tsx scripts/governance/test-regression-protection.ts
+```
+
+**Exit Codes (check-regression):**
+- `0` = ALLOW (no regressions)
+- `1` = BLOCK (new regressions detected)
+- `2` = Error (baseline missing/invalid)
+
+### Baseline Manifest
+
+**Structure:**
+```json
+{
+  "version": "1.0.0",
+  "capturedAt": "2026-09-02T22:25:11.015Z",
+  "gitCommit": "b19aba78f5317e4936683dc291f1ff7a6e81624a",
+  "scopes": [
+    {
+      "scope": "education",
+      "status": "FAIL",
+      "diagnostics": [
+        {
+          "file": "src/platform/education/assessment/assessment.repository.ts",
+          "line": 337,
+          "column": 7,
+          "code": "TS2322",
+          "messagePattern": "Type ${TYPE} is not assignable to type ${TYPE}."
+        }
+        // ... 101 more fingerprints
+      ],
+      "capturedAt": "2026-09-02T22:25:11.015Z",
+      "duration": 12450
+    }
+    // ... 43 more scopes
+  ],
+  "summary": {
+    "pass": 39,
+    "fail": 4,
+    "hotspot": 1,
+    "total": 44,
+    "totalDiagnostics": 180
+  }
+}
+```
+
+**Current Baseline (2026-09-03):**
+- **39 PASS** — finance, core, accounting, etc.
+- **4 FAIL** — education (102), healthcare (16), host (59), real-estate (3)
+- **1 HOTSPOT** — logistics (>30s timeout)
+- **Total diagnostics:** 180 fingerprints
+
+### Verdict Logic (11 Rules)
+
+Verified via 12 test scenarios (100% pass rate):
+
+| Baseline | Current | New | Resolved | Verdict | Reason |
+|----------|---------|-----|----------|---------|--------|
+| PASS | PASS | 0 | 0 | ALLOW | No change |
+| PASS | FAIL | N | 0 | BLOCK | New regression |
+| PASS | HOTSPOT | 0 | 0 | BLOCK | Degradation |
+| FAIL | PASS | 0 | N | ALLOW | Improvement |
+| FAIL | FAIL | N | 0 | BLOCK | New diagnostics |
+| FAIL | FAIL | 0 | N | ALLOW | Improvement |
+| FAIL | FAIL | 0 | 0 | ALLOW | Baseline preserved |
+| FAIL | HOTSPOT | 0 | 0 | BLOCK | Degradation |
+| HOTSPOT | PASS | 0 | 0 | ALLOW | Improvement |
+| HOTSPOT | FAIL | N | 0 | BLOCK | Need review |
+| HOTSPOT | HOTSPOT | 0 | 0 | ALLOW | Baseline preserved |
+| FAIL | FAIL | 3 | 5 | BLOCK | Trade: ANY new = BLOCK |
+
+**Critical Rule #12 (Trade Scenario):**
+```
+Education baseline: 102 diagnostics
+Developer fixes:    5 diagnostics
+Developer adds:     3 new diagnostics
+Net count:          100 (improvement by count)
+
+Verdict: BLOCK
+Reason:  "3 new diagnostic(s) introduced"
+
+Principle: Cannot game the gate by trading old errors for new ones.
+```
+
+### Message Normalization
+
+**Goal:** Make fingerprints resilient to minor message variations
+
+**Transformations:**
+```typescript
+// Replace quoted strings with placeholder
+"Type 'string' is not assignable to type 'number'"
+→ "Type ${TYPE} is not assignable to type ${TYPE}"
+
+// Replace numbers with placeholder
+"Expected 2 arguments, but got 1"
+→ "Expected ${NUM} arguments, but got ${NUM}"
+
+// Normalize whitespace
+"Type  'X'   is   not  assignable"
+→ "Type ${TYPE} is not assignable"
+```
+
+**Value:** Same error at different lines/columns = different fingerprints, but same error with slightly different type names = same fingerprint pattern.
+
+### Verification Evidence
+
+**Baseline Capture:**
+```
+✅ 44 scopes verified
+✅ 39 PASS (no diagnostics)
+✅ 4 FAIL (180 diagnostics with fingerprints)
+✅ 1 HOTSPOT (logistics timeout)
+✅ Git commit tracked (b19aba78)
+✅ Baseline validation passed
+```
+
+**Regression Check (no changes):**
+```
+✅ ALLOW (44/44 scopes)
+✅ 39 PASS maintained
+✅ 4 FAIL baseline preserved
+✅ 1 HOTSPOT baseline preserved
+✅ Exit code 0
+```
+
+**Verdict Logic Tests:**
+```
+✅ 12/12 scenarios PASSED
+✅ PASS→FAIL = BLOCK
+✅ FAIL→FAIL+new = BLOCK
+✅ FAIL→FAIL+resolved = ALLOW
+✅ Trade scenario = BLOCK
+✅ All transitions tested
+```
+
+### Usage During Remediation
+
+**Workflow:**
+```bash
+# 1. Capture baseline (one time)
+npm run governance:baseline
+git add baseline.json
+git commit -m "governance: capture Phase 1 baseline"
+
+# 2. During development
+# ... make changes to fix education/healthcare/host/real-estate/logistics ...
+
+# 3. Check for regressions
+npm run governance:check-regression
+
+# If ALLOW (exit 0):
+#   → Safe to commit
+#   → No new regressions introduced
+#   → Baseline preserved or improved
+
+# If BLOCK (exit 1):
+#   → Review new diagnostics
+#   → Fix regressions OR
+#   → Update baseline if intentional: npm run governance:baseline
+```
+
+**CI Integration (future):**
+```yaml
+# .github/workflows/regression-check.yml
+- name: Check TypeScript Regressions
+  run: npm run governance:check-regression
+  # Exit 0 = allow merge
+  # Exit 1 = block PR
+```
+
+### Phase Transition
+
+**Current Phase:** Regression Protection
+- Baseline exists (baseline.json)
+- FAIL scopes allowed (pre-existing)
+- NEW regressions blocked
+
+**Phase 2 Target:** Enforced Mode
+- **Trigger:** 44 PASS / 0 FAIL / 0 HOTSPOT achieved
+- **Action:** Remove baseline.json, enable strict enforcement
+- **Behavior:** ANY non-PASS scope → BLOCK (no exceptions)
+
+**Phase 3 Target:** Multi-Gate Pipeline
+- **Trigger:** Phase 2 stable for N weeks
+- **Action:** Add Gates C, D + master orchestrator
+- **Behavior:** Comprehensive governance (architecture + type + semantic + provenance)
+
+### Governance Mode Taxonomy
+
+| Mode | Baseline | Behavior | Use Case |
+|------|----------|----------|----------|
+| **Verification** | None | Measure only | Discovery, status assessment |
+| **Regression Protection** | Required | Allow baseline, block new | Remediation phase (NOW) |
+| **Enforced** | Not needed | Block all violations | Post-remediation (Platform GREEN) |
+
+**Critical Distinction:**
+```
+Audit Log Example (Regression Protection):
+  Scope: education
+  Status: FAIL
+  Diagnostics: 102 (baseline)
+  New diagnostics: 0
+  Verdict: ALLOW
+  Reason: "Baseline preserved: no new regressions"
+
+vs.
+
+Audit Log Example (Enforced):
+  Scope: education
+  Status: FAIL
+  Diagnostics: 3
+  Verdict: BLOCK
+  Reason: "Platform GREEN invariant violated"
+```
+
+**ALLOW (baseline exception) ≠ PASS**
+
+Both are valid governance outcomes, context determines interpretation.
+
+---
+
 ### Gate C & D Status
 
 **Gate C (Semantic Regression):**
@@ -474,27 +763,42 @@ Gate B does NOT:
 
 ## Conclusion
 
-**Gate B: IMPLEMENTED and VERIFIED**
+**Gate B: VERIFIED and OPERATIONAL**
+**Phase 1 Regression Protection: VERIFIED and READY**
 
-**Evidence:**
-- ✅ Known PASS scopes classified correctly
-- ✅ Known FAIL scope (Real-Estate) classified correctly with 3 diagnostics
-- ✅ HOTSPOT semantics preserved (timeout ≠ FAIL)
-- ✅ 45 Platform scopes discovered and reconciled
+**Gate B Evidence:**
+- ✅ 44 Platform scopes verified independently
+- ✅ PASS/FAIL/HOTSPOT classification proven
+- ✅ Known states (core PASS, real-estate FAIL 3) verified
 - ✅ 100% reuse of existing tsconfigs
-- ✅ Minimal implementation (268 lines)
+- ✅ Minimal implementation (376 lines)
 
-**Governance Principle Automated:**
-> "Type-check Platform units independently to isolate compiler errors."
+**Phase 1 Evidence:**
+- ✅ Diagnostic fingerprinting implemented (file+line+column+code+pattern)
+- ✅ Baseline captured (39 PASS / 4 FAIL / 1 HOTSPOT)
+- ✅ Regression detection verified (12/12 verdict scenarios)
+- ✅ Trade scenario detection (resolved+new = BLOCK if ANY new)
+- ✅ Exit codes verified (0=ALLOW, 1=BLOCK, 2=ERROR)
 
-**Next Phase:**
-- Commit Gate B implementation separately
-- Document in this file
-- Verify Architecture Guard PASS
-- NO changes to Real-Estate, Education, or HOTSPOT units
-- NO attempt to make Platform globally GREEN
+**Governance Principles Automated:**
+1. "Type-check Platform units independently to isolate compiler errors" (Gate B)
+2. "Block new regressions while allowing baseline remediation" (Phase 1)
 
-**Gate B Status:** ✅ VERIFIED — Ready for commit
+**Current State:**
+- **Gate B Mode:** Verification (proven operational)
+- **Phase 1 Mode:** Regression Protection (ready to enable)
+- **Platform TypeScript:** NOT GREEN (39/44 PASS, honest measurement)
+
+**Next Steps:**
+1. Commit baseline.json + Phase 1 implementation
+2. Enable regression protection (use check-regression in workflow)
+3. Remediate: Logistics (HOTSPOT) → Education (102) → Healthcare (16) → Host (59) → Real-Estate (3)
+4. Achieve Platform GREEN (44 PASS / 0 FAIL / 0 HOTSPOT)
+5. Transition to Phase 2 Enforced mode
+6. Build Gates C, D after Phase 2 proven stable
+
+**Gate B Status:** ✅ VERIFIED / 🔒 FROZEN  
+**Phase 1 Status:** ✅ VERIFIED — Ready for production use
 
 ---
 
