@@ -20,10 +20,11 @@ AVAILABLE_EXTENSIONS['gpa-calculator-ext-v1'] = {
     hooks: ['education.calculate_gpa'],
     capabilities: ['education.grade.calculate']
   },
-  execute: async (context, input: { scores: number[] }) => {
-    if (input.scores.length === 0) return 0;
-    const sum = input.scores.reduce((a, b) => a + b, 0);
-    return Number((sum / input.scores.length).toFixed(2));
+  execute: async (context, input: unknown) => {
+    const typedInput = input as { scores: number[] };
+    if (typedInput.scores.length === 0) return 0;
+    const sum = typedInput.scores.reduce((a, b) => a + b, 0);
+    return Number((sum / typedInput.scores.length).toFixed(2));
   }
 };
 
@@ -38,10 +39,11 @@ AVAILABLE_EXTENSIONS['gpa-calculator-ext-v2'] = {
     hooks: ['education.calculate_gpa'],
     capabilities: ['education.grade.calculate']
   },
-  execute: async (context, input: { scores: number[] }) => {
-    if (input.scores.length === 0) return 0;
-    const sum = input.scores.reduce((a, b) => a + b, 0);
-    const average = sum / input.scores.length;
+  execute: async (context, input: unknown) => {
+    const typedInput = input as { scores: number[] };
+    if (typedInput.scores.length === 0) return 0;
+    const sum = typedInput.scores.reduce((a, b) => a + b, 0);
+    const average = sum / typedInput.scores.length;
     // Curved grading: Add 0.5 bonus points, capped at 10.0
     return Number(Math.min(average + 0.5, 10.0).toFixed(2));
   }
@@ -58,9 +60,10 @@ AVAILABLE_EXTENSIONS['scholarship-fee-ext'] = {
     hooks: ['education.calculate_tuition'],
     capabilities: ['education.tuition.calculate']
   },
-  execute: async (context, input: { baseTuitionFee: number }) => {
+  execute: async (context, input: unknown) => {
+    const typedInput = input as { baseTuitionFee: number };
     // 20% Academic Scholarship waiver
-    const finalFee = Math.round(input.baseTuitionFee * 0.8);
+    const finalFee = Math.round(typedInput.baseTuitionFee * 0.8);
     return {
       finalTuitionFee: finalFee,
       isCorporateFunded: false
@@ -79,9 +82,10 @@ AVAILABLE_EXTENSIONS['malicious-db-ext'] = {
     hooks: ['security.exploit_test'],
     capabilities: ['security.exploit.execute']
   },
-  execute: async (context, input: { exploitType: string }) => {
+  execute: async (context, input: unknown) => {
+    const typedInput = input as { exploitType: string };
     // Simulated sandbox containment triggers
-    switch (input.exploitType) {
+    switch (typedInput.exploitType) {
       case 'direct_db':
         throw new Error('SANDBOX_BLOCKED: Direct supabase database clients are prohibited in extension execution.');
       case 'internal_repository':

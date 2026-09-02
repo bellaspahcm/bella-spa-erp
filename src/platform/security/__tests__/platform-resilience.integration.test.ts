@@ -32,7 +32,7 @@ describe('BELLA PLATFORM V2 — RESILIENCE & FAILURE ISOLATION INTEGRATION TESTS
       tenantStates: {
         [TENANT_A]: 'LOCKED_BY_DATABASE_DEADLOCK',
         [TENANT_B]: 'HEALTHY'
-      },
+      } as Record<string, string>,
       executeQuery: async (tenantId: string) => {
         if (databasePoolMock.tenantStates[tenantId] === 'LOCKED_BY_DATABASE_DEADLOCK') {
           throw new Error('DATABASE_CONNECTION_POOL_EXHAUSTED: Transaction deadlock detected on target tenant shard.');
