@@ -173,7 +173,7 @@ export class ServiceAppointmentService {
       .update({
         status: 'in_progress',
         work_started_at: new Date().toISOString(),
-        assigned_technicians: technicianIds as unknown,
+        assigned_technicians: technicianIds as Database['public']['Tables']['auto_service_appointments']['Row']['assigned_technicians'],
       })
       .eq('id', appointmentId)
       .eq('tenant_id', tenantId)
@@ -545,7 +545,7 @@ export class ServiceAppointmentService {
     }
 
     // TODO: Integrate with SMS/Email service
-    console.log(`[Service] Sending reminder to ${(appointment.customers as unknown)?.name}`);
+    console.log(`[Service] Sending reminder to ${(appointment as any).customers?.name}`);
 
     // Mark reminder as sent
     await supabase
