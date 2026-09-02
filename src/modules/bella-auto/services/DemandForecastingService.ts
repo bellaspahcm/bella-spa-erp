@@ -91,7 +91,7 @@ export class DemandForecastingService {
       model_name: params.modelName || 'demand-forecast-v1',
       model_version: params.modelVersion,
       model_accuracy: params.modelAccuracy,
-      features_used: params.featuresUsed as unknown,
+      features_used: params.featuresUsed as Database['public']['Tables']['auto_demand_forecasts']['Row']['features_used'],
       status: 'active',
       created_by: params.createdBy,
     };
