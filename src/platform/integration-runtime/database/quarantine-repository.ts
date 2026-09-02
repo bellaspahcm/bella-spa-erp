@@ -170,7 +170,7 @@ export class QuarantineRepository {
       .single();
     
     if (error || !data) {
-      throw new Error(`Failed to mark reviewed: ${error.message}`);
+      throw new Error(`Failed to mark reviewed: ${error?.message || 'Unknown error'}`);
     }
     
     return this.mapToRecord(data);

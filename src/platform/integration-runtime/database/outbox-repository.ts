@@ -46,7 +46,7 @@ export class OutboxRepository {
       last_attempt_at: null,
       next_retry_at: null,
       last_error: null,
-      published_at: null,
+      published_at: undefined,
     };
     
     const { data, error } = await this.supabase

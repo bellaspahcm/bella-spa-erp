@@ -287,6 +287,7 @@ export interface ErrorContext {
   timestamp: Date;
   stack?: string;
   additionalContext?: Record<string, unknown>;
+  [key: string]: unknown; // Allow additional properties for compatibility with Record<string, unknown>
 }
 
 /**

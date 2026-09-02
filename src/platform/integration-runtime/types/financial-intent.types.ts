@@ -18,6 +18,7 @@
  */
 
 import { z } from 'zod';
+import { ValidationError } from './runtime-errors.types';
 
 /**
  * Financial Intent Type
@@ -116,7 +117,7 @@ export const FinancialIntentSchema = z.object({
   effectiveDate: z.date(),
   source: z.string().min(1),
   correlationId: z.string().min(1),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
   policyReference: z.string().optional(),
 }).strict();  // ✅ STRICT: Reject unknown fields
 
@@ -137,21 +138,10 @@ export function validateNoProhibitedFields(intent: unknown): void {
       throw new ValidationError(
         `Prohibited field '${field}' detected (Finance Protection violation). ` +
         `Financial Intent must NOT contain accounting authority fields. ` +
-        `Finance OS determines accounting treatment.`
+        `Finance OS determines accounting treatment.`,
+        { field, intent }
       );
     }
-  }
-}
-
-/**
- * Validation Error
- * 
- * Thrown when Financial Intent validation fails
- */
-export class ValidationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'ValidationError';
   }
 }
 

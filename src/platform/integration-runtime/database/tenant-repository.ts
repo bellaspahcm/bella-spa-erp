@@ -64,7 +64,7 @@ export class TenantRepository {
       throw new TenantIsolationError(
         tenantId,
         `Tenant not found: ${tenantId}`,
-        buildErrorContext(undefined, error, { tenantId })
+        buildErrorContext(undefined, error || undefined, { tenantId })
       );
     }
     
@@ -90,7 +90,7 @@ export class TenantRepository {
       throw new TenantIsolationError(
         tenantId,
         `Active tenant not found: ${tenantId}`,
-        buildErrorContext(undefined, error, { tenantId })
+        buildErrorContext(undefined, error || undefined, { tenantId })
       );
     }
     
@@ -138,7 +138,7 @@ export class TenantRepository {
       throw new TenantIsolationError(
         tenantId,
         `Failed to update tenant: ${tenantId}`,
-        buildErrorContext(undefined, error, { tenantId, updates })
+        buildErrorContext(undefined, error || undefined, { tenantId, updates })
       );
     }
     

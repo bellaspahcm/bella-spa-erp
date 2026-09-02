@@ -65,11 +65,11 @@ export class IntentValidator {
     // Step 3: Schema validation (Zod strict mode)
     const parseResult = FinancialIntentSchema.safeParse(intent);
     if (!parseResult.success) {
-      const errors = parseResult.error?.errors || [];
+      const errors = parseResult.error?.issues || [];
       
       // Build error message (include field names from path or message)
-      const errorMessages = errors.map(e => {
-        const path = e.path.length > 0 ? e.path.join('.') : '';
+      const errorMessages = errors.map((e) => {
+        const path = e.path.length > 0 ? e.path.map(String).join('.') : '';
         // For strict mode, Zod includes field name in message
         const message = e.message || 'Validation failed';
         return path ? `${path}: ${message}` : message;
