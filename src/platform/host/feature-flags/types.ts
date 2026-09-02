@@ -166,20 +166,5 @@ export interface ABTestVariant {
 }
 
 // ============================================================================
-// Exports
+// Note: Types already exported inline above, no need for re-export block
 // ============================================================================
-
-export type {
-  FeatureFlag,
-  RolloutStrategy,
-  FeatureFlagContext,
-  FeatureFlagEvaluationResult,
-  EvaluationReason,
-  FeatureFlagQueryFilter,
-  FeatureFlagUpdateRequest,
-  FeatureFlagCreatedEvent,
-  FeatureFlagUpdatedEvent,
-  FeatureFlagEvaluatedEvent,
-  ABTestConfig,
-  ABTestVariant,
-};
