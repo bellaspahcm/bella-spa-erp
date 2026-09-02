@@ -280,23 +280,32 @@ export class FinancialReportingService {
       commissionPending: 0,
     };
     
-    // Get vehicle sales commission from auto_sales
+    // Get vehicle sales commission from auto_bookings (completed bookings = sales)
+    // Note: salesperson_commission field doesn't exist in schema
+    // TODO: Add commission tracking to auto_bookings or separate commission table
     let salesQuery = supabase
-      .from('auto_sales')
-      .select('salesperson_commission')
+      .from('auto_bookings')
+      .select('id, total_price, metadata')
       .eq('tenant_id', tenantId)
       .eq('status', 'completed');
     
     if (dateRange) {
       salesQuery = salesQuery
-        .gte('sale_date', dateRange.start)
-        .lte('sale_date', dateRange.end);
+        .gte('created_at', dateRange.start)
+        .lte('created_at', dateRange.end);
     }
     
-    const { data: salesData } = await salesQuery;
+    type BookingRow = {
+      id: string;
+      total_price: number | null;
+      metadata: any;
+    };
     
-    (salesData || []).forEach((sale: SalePriceRow) => {
-      const commission = Number(sale.salesperson_commission) || 0;
+    const { data: salesData } = await salesQuery.returns<BookingRow[]>();
+    
+    (salesData || []).forEach((booking) => {
+      // Try to extract commission from metadata as fallback
+      const commission = Number(booking.metadata?.salesperson_commission) || 0;
       breakdown.vehicleSalesCommission += commission;
     });
     
