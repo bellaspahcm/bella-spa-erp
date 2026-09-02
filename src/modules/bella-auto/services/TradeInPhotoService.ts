@@ -87,7 +87,7 @@ export class TradeInPhotoService {
       height_px: data.heightPx,
       description: data.description,
       notes: data.notes,
-      damage_markers: data.damageMarkers as unknown,
+      damage_markers: data.damageMarkers as Database['public']['Tables']['auto_trade_in_photos']['Row']['damage_markers'],
       display_order: data.displayOrder || 0,
       is_primary: data.isPrimary || false,
       uploaded_by: data.uploadedBy,
@@ -203,10 +203,12 @@ export class TradeInPhotoService {
   ): Promise<TradeInPhoto> {
     const supabase = getPrimaryClient();
 
-    const updateData: Record<string, unknown> = {};
+    const updateData: Partial<TradeInPhotoInsert> = {};
     if (metadata.description !== undefined) updateData.description = metadata.description;
     if (metadata.notes !== undefined) updateData.notes = metadata.notes;
-    if (metadata.damageMarkers !== undefined) updateData.damage_markers = metadata.damageMarkers;
+    if (metadata.damageMarkers !== undefined) {
+      updateData.damage_markers = metadata.damageMarkers as Database['public']['Tables']['auto_trade_in_photos']['Row']['damage_markers'];
+    }
     if (metadata.displayOrder !== undefined) updateData.display_order = metadata.displayOrder;
 
     const { data: photo, error } = await supabase
