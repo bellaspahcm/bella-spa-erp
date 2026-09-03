@@ -237,3 +237,142 @@ This **IS:**
 **Success metric:** Each Industry OS faster than the previous one
 
 **Core belief:** Bella becomes a Platform not by perfecting Kernels first, but by proving Kernels accelerate real Industry OS development.
+
+
+---
+
+## 📊 Governance & Platform Status (as of 2026-09-03)
+
+### Governance Checkpoint — CLOSED
+
+**Phase 1 Regression Protection + Known Pattern Rule:** ACTIVE / FIELD-TESTED
+
+**Status:** Engineering mode active. No further governance expansion until proven need.
+
+**Components:**
+- ✅ Gate B: VERIFIED / FROZEN (44 scopes, diagnostic fingerprinting)
+- ✅ Regression Protection: FIELD-TESTED (commits `6ee30569`, `6e5926ac`)
+- ✅ Known Pattern Rule: ACTIVE (3 patterns documented)
+- ✅ Architecture Guard: ENFORCED (frozen Kernels protected)
+- ✅ AI Coding Contract: v1.1 (canonical)
+
+### Platform TypeScript Status
+
+```
+40 PASS / 3 FAIL / 1 HOTSPOT
+
+✅ RESOLVED:
+  - Real-Estate: 3→0 (vocabulary alignment, commit 6e5926ac)
+
+❌ BASELINE:
+  - Host: 47 diagnostics
+  - Healthcare: 16 diagnostics (example code)
+  - Education: 102 diagnostics
+
+🔥 HOTSPOT:
+  - Logistics: >30s timeout
+```
+
+### Known Patterns (Strict Boundaries)
+
+Patterns are "known" ONLY when documented with evidence:
+
+1. **Duplicate export blocks** → mechanical removal (Host `6ee30569`)
+2. **Vocabulary/schema mismatch** → DB enum canonical with migration evidence (Real-Estate `6e5926ac`)
+3. **Import path errors** → clear module boundaries (multiple fixes)
+
+### Engineering Workflow — Proven
+
+```text
+Diagnostic Detected
+    ↓
+Pattern Classification
+    ├─ Known Pattern
+    │   ├─ Evidence documented? YES
+    │   ├─ Ownership clear? YES
+    │   ├─ Semantics unambiguous? YES
+    │   └→ Minimal Fix → Mandatory Gates → Commit
+    │
+    └─ New/Ambiguous Pattern
+        └→ STOP → Investigate → Document → Fix → Gates → Commit
+
+Mandatory Gates (NEVER bypassed):
+  1. TypeScript Check (Gate B)
+  2. Regression Protection
+  3. Architecture Guard
+  4. Relevant Tests
+```
+
+### Core Principle
+
+> **Governance không để làm chậm AI.**
+>
+> **Governance để giúp AI:**
+> - Phát hiện sớm (gates)
+> - Sửa nhanh khi đã biết (known patterns)
+> - Dừng ngay khi gặp điều chưa biết (STOP conditions)
+
+### Success Metrics
+
+**NOT:** Eliminate all diagnostics immediately  
+**BUT:**
+- Fix real errors without regressions
+- Decrease time for known pattern processing
+- Properly document new patterns when discovered
+- Maintain all safety gates
+
+### Commands Reference
+
+```bash
+# Gate B — TypeScript compliance (44 scopes)
+npm run governance:typecheck
+
+# Regression check (exit 0 = ALLOW, 1 = BLOCK)
+npm run governance:check-regression
+
+# Architecture Guard
+npm run arch:guard
+
+# Capture baseline (when needed)
+npm run governance:baseline
+```
+
+### Documentation
+
+**Must-read for AI agents (in order):**
+1. [AI_CODING_CONTRACT.md](AI_CODING_CONTRACT.md) — Canonical coding rules, Known Pattern workflow
+2. [AGENTS.md](AGENTS.md) — This file, Bella architecture principles
+3. [CLAUDE.md](CLAUDE.md) — AI entry point with domain documentation
+
+**Governance evidence:**
+- [Known Pattern Rule Adoption](docs/architecture/KNOWN_PATTERN_RULE_ADOPTION.md)
+- [Phase 1 Closure](docs/architecture/PHASE1_REGRESSION_PROTECTION_CLOSURE.md)
+- [Governance Regression Policy](docs/architecture/GOVERNANCE_REGRESSION_GATE_POLICY.md)
+
+### Field Test Evidence
+
+| Commit | Scope | Pattern | Result | Duration |
+|--------|-------|---------|--------|----------|
+| `6ee30569` | Host | Duplicate exports | 59→47 diagnostics | Initial investigation |
+| `6e5926ac` | Real-Estate | Vocabulary/schema | 3→0 diagnostics | ~30 min (known pattern) |
+
+**Key learning:** Known Pattern workflow proven to reduce remediation time while maintaining safety.
+
+### Next Engineering Target
+
+**Host Platform:** 47 baseline diagnostics
+
+**Approach:**
+- Classify each diagnostic
+- Known pattern → fix quickly
+- New pattern → investigate and document
+- All fixes must pass mandatory gates
+
+**No further governance work until concrete operational gap discovered.**
+
+---
+
+**Governance Status:** 🔒 CLOSED  
+**Engineering Status:** ✅ ACTIVE  
+**Last Updated:** 2026-09-03  
+**Next Review:** After Host remediation OR discovery of operational governance gap
