@@ -1,26 +1,121 @@
-# BELLA OS — AI & DEVELOPER ENTRY POINT (CONSTITUTIONAL RULES)
+# BELLA OS — AI & DEVELOPER ENTRY POINT
 
-Before doing any work, you MUST read the following local documentation. They represent the current state and strict invariants of the repository:
+## 🎯 MANDATORY READING (IN ORDER)
 
-## 1. Context & Baseline Status
+**BEFORE ANY WORK, READ THESE FILES:**
+
+### 1. AI Coding Contract (READ THIS FIRST)
+- **File:** [AI_CODING_CONTRACT.md](AI_CODING_CONTRACT.md)
+- **Status:** v1.1, CANONICAL
+- **Purpose:** Repository-wide coding rules, Known Pattern workflow, governance gates, STOP conditions
+- **Non-negotiable:** Evidence before infrastructure, no semantic guessing, mandatory gates
+
+### 2. Architecture Principles
+- **File:** [AGENTS.md](AGENTS.md)
+- **Purpose:** Bella development principles (Kernel-first, reuse before rebuild, minimal complexity)
+
+### 3. Domain Documentation
+- **File:** [CLAUDE.md](CLAUDE.md)
+- **Purpose:** Healthcare domain context, system architecture, invariants
+
+---
+
+## 📊 Current Status (2026-09-03)
+
+**Platform:** 40 PASS / 3 FAIL / 1 HOTSPOT
+
+**Governance:** Phase 1 Regression Protection + Known Pattern Rule ACTIVE
+
+**Known Patterns:**
+- Duplicate export blocks → mechanical removal
+- Vocabulary/schema mismatch → DB enum canonical (with evidence)
+- Import path errors → clear module boundaries
+
+---
+
+## 🛡️ Frozen Boundaries
+
+**Healthcare Kernel (H1-H12):** 🔒 FROZEN
+- Constitution: docs/architecture/HEALTHCARE_ARCHITECTURE_GUARD.md
+- Modification requires Architecture Change Request (ACR)
+
+**Education Kernel:** 🔒 FROZEN (Constitution compliance required)
+
+**Logistics E7 Kernel:** 🔒 SEALED (Production evidence required)
+
+---
+
+## 📋 Governance Rules
+
+### Workflow
+```
+Diagnostic → Classify Pattern → Known? → Minimal Fix → Gates → Commit
+                                    ↓ New
+                                  STOP → Investigate → Document
+```
+
+### Mandatory Gates (NEVER bypassed)
+1. TypeScript Check: `npm run governance:typecheck`
+2. Regression Protection: `npm run governance:check-regression`
+3. Architecture Guard: `npm run arch:guard`
+4. Relevant Tests
+
+### STOP Conditions
+- Root cause unclear
+- Canonical ownership ambiguous
+- Schema/contract semantics uncertain
+- Cross-Kernel boundaries affected
+- Frozen code modification without ACR
+- Semantic guessing required
+- New regression detected
+
+---
+
+## 🔍 Context & Baseline Status
 - **Current Baseline Status:** docs/execution/CURRENT_BASELINE.md (H1 complete, K1 in-progress)
 - **H1 Verification Evidence:** docs/execution/HOSPITAL_H1_EVIDENCE.md (11/11 DB integration tests passed)
 - **Healthcare Kernel Map:** docs/architecture/HEALTHCARE_KERNEL.md (Full classification of all 27 engines)
 
-## 2. Invariants & Rules
+## 📖 Invariants & Rules
 - **Coding Conventions:** docs/rules/CODING_RULES.md (Strict typing, no `any`, frontend-backend boundary)
 - **Healthcare Laws:** docs/rules/HEALTHCARE_RULES.md (Encounter aggregate, zero-duplication rules, 11 gates)
 - **Database Schema & RLS:** docs/rules/DATABASE_RULES.md (Additive migrations only, RLS query filter)
 
-## 3. Strict Non-Negotiable Laws
-1. **KERNEL FREEZE:** Core engines (H1-H12, mpi-engine, encounter-engine) are frozen. Modify only via ACR.
-2. **PRODUCT VERTICAL LAYER ONLY:** All product-specific logic goes to `src/products/`.
-3. **CONTRACT ACCESS ONLY:** Product interacts with Kernel only via contracts. No direct query on core internal tables.
-4. **ZERO ENTITY DUPLICATION:** Do not recreate `Patient`, `Doctor`, or `Encounter` tables in vertical modules.
-5. **CLEAN DEPENDENCY FLOW:** Kernel engines must never import from vertical/hospital extensions.
-6. **NO MOCK RUNTIME:** Production and test execution paths must never use mock fallback state on failure.
+## 🚫 Strict Non-Negotiable Laws
 
-## 4. Verification
+1. **READ AI_CODING_CONTRACT.md FIRST** — All governance, workflow, and safety rules
+2. **KERNEL FREEZE:** Core engines (H1-H12, mpi-engine, encounter-engine) are frozen. Modify only via ACR.
+3. **PRODUCT VERTICAL LAYER ONLY:** All product-specific logic goes to `src/products/`.
+4. **CONTRACT ACCESS ONLY:** Product interacts with Kernel only via contracts. No direct query on core internal tables.
+5. **ZERO ENTITY DUPLICATION:** Do not recreate `Patient`, `Doctor`, or `Encounter` tables in vertical modules.
+6. **CLEAN DEPENDENCY FLOW:** Kernel engines must never import from vertical/hospital extensions.
+7. **NO MOCK RUNTIME:** Production and test execution paths must never use mock fallback state on failure.
+8. **NO SEMANTIC GUESSING:** Never guess enum mappings, schema ownership, or contract semantics. STOP and gather evidence.
+9. **MANDATORY GATES:** Every code change must pass TypeCheck → Regression → Architecture → Tests before commit.
+10. **KNOWN PATTERN RULE:** Known patterns get minimal fix without re-investigation. New patterns require STOP and documentation.
+
+## ✅ Verification
+
 Before completing any task, you MUST run:
-- Architecture check: npm run healthcare:guard
-- Full platform verification: npm run healthcare:verify
+- **Governance typecheck:** `npm run governance:typecheck`
+- **Regression protection:** `npm run governance:check-regression`
+- **Architecture guard:** `npm run arch:guard` or `npm run healthcare:guard`
+- **Platform verification:** `npm run healthcare:verify`
+
+**All gates must PASS before commit.**
+
+---
+
+## 📚 Full Governance Documentation
+
+- [AI Coding Contract](AI_CODING_CONTRACT.md) — Canonical coding rules
+- [Known Pattern Rule](docs/architecture/KNOWN_PATTERN_RULE_ADOPTION.md) — Pattern classification and workflow
+- [Governance Policy](docs/architecture/GOVERNANCE_REGRESSION_GATE_POLICY.md) — Regression gate protocol
+- [Phase 1 Closure](docs/architecture/PHASE1_REGRESSION_PROTECTION_CLOSURE.md) — Field test evidence
+- [Governance Index](.kiro/governance-index.md) — Complete governance map
+
+---
+
+**Last Updated:** 2026-09-03  
+**Governance Status:** CLOSED (no expansion until proven need)  
+**Engineering Status:** ACTIVE
