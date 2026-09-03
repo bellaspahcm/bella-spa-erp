@@ -1,0 +1,60 @@
+src/platform/integration-runtime/database/idempotency-repository.ts(79,11): error TS2345: Argument of type 'ErrorContext' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'ErrorContext'.
+src/platform/integration-runtime/database/outbox-repository.ts(49,7): error TS2322: Type 'null' is not assignable to type 'Date | undefined'.
+src/platform/integration-runtime/database/quarantine-repository.ts(173,51): error TS18047: 'error' is possibly 'null'.
+src/platform/integration-runtime/database/tenant-repository.ts(67,9): error TS2345: Argument of type 'ErrorContext' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'ErrorContext'.
+src/platform/integration-runtime/database/tenant-repository.ts(67,38): error TS2345: Argument of type 'PostgrestError | null' is not assignable to parameter of type 'Error | undefined'.
+  Type 'null' is not assignable to type 'Error | undefined'.
+src/platform/integration-runtime/database/tenant-repository.ts(93,9): error TS2345: Argument of type 'ErrorContext' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'ErrorContext'.
+src/platform/integration-runtime/database/tenant-repository.ts(93,38): error TS2345: Argument of type 'PostgrestError | null' is not assignable to parameter of type 'Error | undefined'.
+  Type 'null' is not assignable to type 'Error | undefined'.
+src/platform/integration-runtime/database/tenant-repository.ts(141,9): error TS2345: Argument of type 'ErrorContext' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'ErrorContext'.
+src/platform/integration-runtime/database/tenant-repository.ts(141,38): error TS2345: Argument of type 'PostgrestError | null' is not assignable to parameter of type 'Error | undefined'.
+  Type 'null' is not assignable to type 'Error | undefined'.
+src/platform/integration-runtime/idempotency/idempotency-key.ts(53,7): error TS2345: Argument of type 'ErrorContext' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'ErrorContext'.
+src/platform/integration-runtime/idempotency/idempotency-key.ts(59,7): error TS2345: Argument of type 'ErrorContext' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'ErrorContext'.
+src/platform/integration-runtime/idempotency/idempotency-key.ts(65,7): error TS2345: Argument of type 'ErrorContext' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'ErrorContext'.
+src/platform/integration-runtime/idempotency/idempotency-key.ts(90,7): error TS2345: Argument of type 'ErrorContext' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'ErrorContext'.
+src/platform/integration-runtime/idempotency/idempotency-key.ts(97,7): error TS2345: Argument of type 'ErrorContext' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'ErrorContext'.
+src/platform/integration-runtime/idempotency/idempotency-key.ts(104,7): error TS2345: Argument of type 'ErrorContext' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'ErrorContext'.
+src/platform/integration-runtime/idempotency/idempotency-manager.ts(97,9): error TS2345: Argument of type 'ErrorContext' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'ErrorContext'.
+src/platform/integration-runtime/types/financial-intent.types.ts(119,15): error TS2554: Expected 2-3 arguments, but got 1.
+src/platform/integration-runtime/types/index.ts(9,1): error TS2308: Module './financial-intent.types' has already exported a member named 'ValidationError'. Consider explicitly re-exporting to resolve the ambiguity.
+src/platform/integration-runtime/validation/intent-validator.ts(58,9): error TS2345: Argument of type 'ErrorContext' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'ErrorContext'.
+src/platform/integration-runtime/validation/intent-validator.ts(68,41): error TS2339: Property 'errors' does not exist on type 'ZodError<{ intentType: string; tenantId: string; entityId: string; entityType: string; amount: number; currency: string; effectiveDate: Date; source: string; correlationId: string; metadata?: Record<...> | undefined; policyReference?: string | undefined; }>'.
+src/platform/integration-runtime/validation/intent-validator.ts(71,40): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/platform/integration-runtime/validation/intent-validator.ts(84,9): error TS2345: Argument of type 'ErrorContext' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'ErrorContext'.
+src/platform/integration-runtime/validation/intent-validator.ts(128,11): error TS2345: Argument of type 'ErrorContext' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'ErrorContext'.
+src/platform/integration-runtime/validation/intent-validator.ts(167,9): error TS2345: Argument of type 'ErrorContext' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'ErrorContext'.
+src/platform/integration-runtime/validation/intent-validator.ts(186,9): error TS2345: Argument of type 'ErrorContext' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'ErrorContext'.
+src/platform/integration-runtime/validation/intent-validator.ts(200,9): error TS2345: Argument of type 'ErrorContext' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'ErrorContext'.
+src/platform/integration-runtime/validation/intent-validator.ts(207,9): error TS2345: Argument of type 'ErrorContext' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'ErrorContext'.
+src/platform/integration-runtime/validation/intent-validator.ts(221,9): error TS2345: Argument of type 'ErrorContext' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'ErrorContext'.
+src/platform/integration-runtime/validation/intent-validator.ts(229,9): error TS2345: Argument of type 'ErrorContext' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'ErrorContext'.
+src/platform/integration-runtime/validation/tenant-validator.ts(45,9): error TS2345: Argument of type 'ErrorContext' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'ErrorContext'.
+src/platform/integration-runtime/validation/tenant-validator.ts(55,9): error TS2345: Argument of type 'ErrorContext' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'ErrorContext'.
+src/platform/integration-runtime/validation/tenant-validator.ts(63,9): error TS2345: Argument of type 'ErrorContext' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'ErrorContext'.
+src/platform/integration-runtime/validation/tenant-validator.ts(87,9): error TS2345: Argument of type 'ErrorContext' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'ErrorContext'.

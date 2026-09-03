@@ -82,14 +82,14 @@ PostgREST (API Gateway)
         ↓
 PostgREST Schema Cache ← COUPLING POINT
         ↓
-RPC Functions (supabase/migrations/20260825120000_phase4b3_verification_rpc.sql)
+RPC Functions (supabase/migrations/20260826154323_phase4b3_verification_rpc.sql)
         ↓
 PostgreSQL
 ```
 
 **Implementation added:**
 1. 7 custom RPC functions (query_*)
-2. Migration file: `20260825120000_phase4b3_verification_rpc.sql`
+2. Migration file: `20260826154323_phase4b3_verification_rpc.sql`
 3. Dependency on PostgREST schema cache
 4. Dependency on Supabase HTTP API transport
 
@@ -287,7 +287,7 @@ export function createDatabaseAdapter(
 ```
 
 **Step 3: Remove Supabase RPC Migration**
-- Archive `supabase/migrations/20260825120000_phase4b3_verification_rpc.sql`
+- Archive `supabase/migrations/20260826154323_phase4b3_verification_rpc.sql`
 - Document in ADR why RPC functions were removed
 
 **Step 4: Re-run T1-T7 Tests**
@@ -407,7 +407,7 @@ This is an **implementation detail change**, not a contract semantic change.
 
 - Contract v1.0.0: `docs/architecture/P0_3_PHASE4B_3_CONTRACT.md` (commit 37ae4544) 🔒 FROZEN
 - Implementation: commit 9a2494a5
-- RPC Migration: `supabase/migrations/20260825120000_phase4b3_verification_rpc.sql`
+- RPC Migration: `supabase/migrations/20260826154323_phase4b3_verification_rpc.sql`
 - Test Evidence Baseline: commit ab135cea
 - Decisions: `docs/architecture/P0_3_PHASE4B_3_DECISIONS.md` (commit 2c64341f) 🔒 FROZEN
 

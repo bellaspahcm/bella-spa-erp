@@ -1,5 +1,5 @@
 -- =========================================================================
--- Migration: 20260826080000_fix_hc_enterprise_registries_rls
+-- Migration: 20260826154332_fix_hc_enterprise_registries_rls
 -- Purpose:   Replace open USING (true) policy on hc_enterprise_registries
 --            with correct read-global / write-platform-only policies.
 -- =========================================================================

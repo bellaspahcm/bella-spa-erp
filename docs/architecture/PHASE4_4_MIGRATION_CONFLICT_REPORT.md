@@ -28,14 +28,14 @@ Found local migration files to be inserted before the last migration on remote d
 6. `20260819050004_runtime_migration_e3_post_05c_verification.sql`
 7. `20260820110000_database_role_separation_v2.sql`
 8. `20260820140000_enable_rls_block_service_key.sql`
-9. `20260820_r4_3_gate_tokens.sql`
-10. `20260820_r4_4_monitoring_audit.sql`
-11. `20260820_r4_approval_contract.sql`
+9. `20260820151000_r4_3_gate_tokens.sql`
+10. `20260820152000_r4_4_monitoring_audit.sql`
+11. `20260820150000_r4_approval_contract.sql`
 12. `20260821115404_logistics_schema.sql`
-13. `20260821_create_accessorial_rates_table.sql`
-14. `20260821_create_carrier_rates_table.sql`
-15. `20260821_create_discrepancies_table.sql`
-16. `20260821_create_freight_audit_tables.sql`
+13. `20260821122000_create_accessorial_rates_table.sql`
+14. `20260821121000_create_carrier_rates_table.sql`
+15. `20260821123000_create_discrepancies_table.sql`
+16. `20260821120000_create_freight_audit_tables.sql`
 
 **Target Migration (Blocked):**
 - `20260824000000_finance_test_cleanup_rpc.sql`

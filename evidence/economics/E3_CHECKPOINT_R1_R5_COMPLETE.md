@@ -211,10 +211,10 @@ Platform value = not just "fast first vertical" but **"decreasing cost to expand
 - `src/platform/logistics/engines/freight-audit-engine.ts` (R1-R5 implementations)
 
 ### Migrations
-- `migrations/logistics/20260821_create_freight_audit_tables.sql` (R1)
-- `migrations/logistics/20260821_create_carrier_rates_table.sql` (R2)
-- `migrations/logistics/20260821_create_accessorial_rates_table.sql` (R3)
-- `migrations/logistics/20260821_create_discrepancies_table.sql` (R5)
+- `migrations/logistics/20260821120000_create_freight_audit_tables.sql` (R1)
+- `migrations/logistics/20260821121000_create_carrier_rates_table.sql` (R2)
+- `migrations/logistics/20260821122000_create_accessorial_rates_table.sql` (R3)
+- `migrations/logistics/20260821123000_create_discrepancies_table.sql` (R5)
 
 ### Evidence Documents
 - `evidence/economics/E3_WORK_LOG.md` (live tracking)

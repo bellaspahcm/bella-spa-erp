@@ -1,0 +1,166 @@
+src/platform/education/assessment/assessment.repository.ts(337,7): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/platform/education/attendance/attendance.repository.ts(60,7): error TS2322: Type 'Record<string, unknown> | undefined' is not assignable to type 'Json | undefined'.
+  Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+    Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 35 more.
+src/platform/education/attendance/attendance.repository.ts(92,7): error TS2322: Type 'Record<string, unknown> | undefined' is not assignable to type 'Json | undefined'.
+  Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+    Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 35 more.
+src/platform/education/contracts/assessment.contract.impl.ts(26,9): error TS2322: Type '"quiz" | "midterm" | "final" | "homework"' is not assignable to type 'AssessmentType'.
+  Type '"midterm"' is not assignable to type 'AssessmentType'.
+src/platform/education/contracts/assessment.contract.impl.ts(37,55): error TS2345: Argument of type '{ tenantId: string; assessmentId: string; studentId: string; }' is not assignable to parameter of type 'CreateAssessmentResultDTO'.
+  Property 'createdBy' is missing in type '{ tenantId: string; assessmentId: string; studentId: string; }' but required in type 'CreateAssessmentResultDTO'.
+src/platform/education/contracts/assessment.contract.impl.ts(47,83): error TS2345: Argument of type '{ score: number; feedback: string; gradedBy: string; }' is not assignable to parameter of type 'GradeAssessmentResultDTO'.
+  Property 'grade' is missing in type '{ score: number; feedback: string; gradedBy: string; }' but required in type 'GradeAssessmentResultDTO'.
+src/platform/education/contracts/course.contract.impl.ts(23,15): error TS2367: This comparison appears to be unintentional because the types 'CourseStatus' and '"inactive"' have no overlap.
+src/platform/education/contracts/course.contract.impl.ts(39,15): error TS2367: This comparison appears to be unintentional because the types 'CourseStatus' and '"inactive"' have no overlap.
+src/platform/education/contracts/course.contract.impl.ts(55,15): error TS2367: This comparison appears to be unintentional because the types 'CourseStatus' and '"inactive"' have no overlap.
+src/platform/education/contracts/enrollment.contract.impl.ts(10,56): error TS2345: Argument of type 'SupabaseClient<Database, "public", "public", { Tables: { _prisma_migrations: { Row: { applied_steps_count: number; checksum: string; finished_at: string | null; id: string; logs: string | null; migration_name: string; rolled_back_at: string | null; started_at: string; }; Insert: { ...; }; Update: { ...; }; Relations...' is not assignable to parameter of type 'SupabaseClient<Record<string, unknown>, "public", "public", never, { PostgrestVersion: "12"; }>'.
+  Type '{ PostgrestVersion: "14.5"; }' is not assignable to type '{ PostgrestVersion: "12"; }'.
+    Types of property 'PostgrestVersion' are incompatible.
+      Type '"14.5"' is not assignable to type '"12"'.
+src/platform/education/contracts/enrollment.contract.impl.ts(12,60): error TS2345: Argument of type 'EventBusService' is not assignable to parameter of type 'EventBusPort'.
+  Property 'clear' is missing in type 'EventBusService' but required in type 'EventBusPort'.
+src/platform/education/contracts/enrollment.contract.impl.ts(28,7): error TS2322: Type 'unknown' is not assignable to type 'OverrideRequest | undefined'.
+src/platform/education/contracts/enrollment.contract.impl.ts(40,7): error TS2322: Type 'string' is not assignable to type '"active" | "pending" | "completed" | "cancelled"'.
+src/platform/education/contracts/enrollment.contract.impl.ts(47,56): error TS2345: Argument of type 'SupabaseClient<Database, "public", "public", { Tables: { _prisma_migrations: { Row: { applied_steps_count: number; checksum: string; finished_at: string | null; id: string; logs: string | null; migration_name: string; rolled_back_at: string | null; started_at: string; }; Insert: { ...; }; Update: { ...; }; Relations...' is not assignable to parameter of type 'SupabaseClient<Record<string, unknown>, "public", "public", never, { PostgrestVersion: "12"; }>'.
+  Type '{ PostgrestVersion: "14.5"; }' is not assignable to type '{ PostgrestVersion: "12"; }'.
+    Types of property 'PostgrestVersion' are incompatible.
+      Type '"14.5"' is not assignable to type '"12"'.
+src/platform/education/course/course.repository.ts(231,7): error TS2322: Type '{}' is not assignable to type 'number'.
+src/platform/education/course/course.repository.ts(232,7): error TS2322: Type '{} | undefined' is not assignable to type 'number | undefined'.
+  Type '{}' is not assignable to type 'number'.
+src/platform/education/course/course.repository.ts(233,7): error TS2322: Type '{} | undefined' is not assignable to type 'number | undefined'.
+  Type '{}' is not assignable to type 'number'.
+src/platform/education/course/course.repository.ts(234,7): error TS2740: Type '{}' is missing the following properties from type 'string[]': length, pop, push, concat, and 35 more.
+src/platform/education/course/course.repository.ts(235,7): error TS2322: Type '{} | undefined' is not assignable to type 'string | undefined'.
+  Type '{}' is not assignable to type 'string'.
+src/platform/education/course/course.repository.ts(236,7): error TS2322: Type '{} | undefined' is not assignable to type 'string | undefined'.
+  Type '{}' is not assignable to type 'string'.
+src/platform/education/course/course.repository.ts(237,7): error TS2322: Type '{} | undefined' is not assignable to type 'CourseLevel | undefined'.
+  Type '{}' is not assignable to type 'CourseLevel | undefined'.
+src/platform/education/education-engine.service.ts(80,11): error TS2367: This comparison appears to be unintentional because the types '{ value: string | number; }' and 'string' have no overlap.
+src/platform/education/education-engine.service.ts(211,9): error TS2322: Type 'string' is not assignable to type 'EnrollmentStatus | undefined'.
+src/platform/education/education-engine.service.ts(219,37): error TS2322: Type 'string' is not assignable to type 'EnrollmentStatus'.
+src/platform/education/education-engine.service.ts(228,19): error TS18047: 'enrollment' is possibly 'null'.
+src/platform/education/education-engine.service.ts(229,22): error TS18047: 'enrollment' is possibly 'null'.
+src/platform/education/education-engine.service.ts(231,21): error TS18047: 'enrollment' is possibly 'null'.
+src/platform/education/education-engine.service.ts(233,25): error TS18047: 'enrollment' is possibly 'null'.
+src/platform/education/education-engine.service.ts(234,27): error TS18047: 'enrollment' is possibly 'null'.
+src/platform/education/education-engine.service.ts(235,21): error TS18047: 'enrollment' is possibly 'null'.
+src/platform/education/education-engine.service.ts(236,19): error TS18047: 'enrollment' is possibly 'null'.
+src/platform/education/education-engine.service.ts(247,13): error TS18047: 'enrollment' is possibly 'null'.
+src/platform/education/education-engine.service.ts(248,19): error TS18047: 'enrollment' is possibly 'null'.
+src/platform/education/education-engine.service.ts(249,25): error TS18047: 'enrollment' is possibly 'null'.
+src/platform/education/education-engine.service.ts(250,19): error TS18047: 'enrollment' is possibly 'null'.
+src/platform/education/education-engine.service.ts(251,17): error TS18047: 'enrollment' is possibly 'null'.
+src/platform/education/education-engine.service.ts(252,21): error TS18047: 'enrollment' is possibly 'null'.
+src/platform/education/enrollment/enrollment.repository.ts(37,71): error TS2345: Argument of type 'EnrollmentsTableInsert' is not assignable to parameter of type 'RejectExcessProperties<{ attendance_percentage?: number | null | undefined; completion_date?: string | null | undefined; course_id: string; created_at?: string | undefined; created_by?: string | null | undefined; ... 11 more ...; updated_by?: string | ... 1 more ... | undefined; }, { ...; }> | RejectExcessProperties...'.
+  Type 'EnrollmentsTableInsert' is not assignable to type 'RejectExcessProperties<{ attendance_percentage?: number | null | undefined; completion_date?: string | null | undefined; course_id: string; created_at?: string | undefined; created_by?: string | null | undefined; ... 11 more ...; updated_by?: string | ... 1 more ... | undefined; }, { ...; }>'.
+    Type 'EnrollmentsTableInsert' is not assignable to type '{ attendance_percentage?: number | null | undefined; completion_date?: string | null | undefined; course_id: string; created_at?: string | undefined; created_by?: string | null | undefined; ... 11 more ...; updated_by?: string | ... 1 more ... | undefined; }'.
+      Types of property 'metadata' are incompatible.
+        Type 'Record<string, unknown> | null | undefined' is not assignable to type 'Json | undefined'.
+          Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+            Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 35 more.
+src/platform/education/enrollment/enrollment.repository.ts(127,15): error TS2345: Argument of type 'EnrollmentsTableUpdate' is not assignable to parameter of type 'RejectExcessProperties<{ attendance_percentage?: number | null | undefined; completion_date?: string | null | undefined; course_id?: string | undefined; created_at?: string | undefined; created_by?: string | null | undefined; ... 11 more ...; updated_by?: string | ... 1 more ... | undefined; }, { ...; }>'.
+  Type 'EnrollmentsTableUpdate' is not assignable to type '{ attendance_percentage?: number | null | undefined; completion_date?: string | null | undefined; course_id?: string | undefined; created_at?: string | undefined; created_by?: string | null | undefined; ... 11 more ...; updated_by?: string | ... 1 more ... | undefined; }'.
+    Types of property 'metadata' are incompatible.
+      Type 'Record<string, unknown> | null | undefined' is not assignable to type 'Json | undefined'.
+        Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+          Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 35 more.
+src/platform/education/index.ts(15,1): error TS2308: Module './education-engine.service' has already exported a member named 'EnrollStudentInput'. Consider explicitly re-exporting to resolve the ambiguity.
+src/platform/education/repositories/supabase-education.repository.ts(37,15): error TS2345: Argument of type '{ id: string; tenant_id: string; course_code: string; title: string; status: CourseStatus; max_students: number | null; current_enrollment: number; prerequisite_course_codes: string[]; created_at: string; updated_at: string; }' is not assignable to parameter of type 'never[]'.
+  Type '{ id: string; tenant_id: string; course_code: string; title: string; status: CourseStatus; max_students: number | null; current_enrollment: number; prerequisite_course_codes: string[]; created_at: string; updated_at: string; }' is missing the following properties from type 'never[]': length, pop, push, concat, and 35 more.
+src/platform/education/repositories/supabase-education.repository.ts(59,16): error TS2339: Property 'id' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(60,22): error TS2339: Property 'tenant_id' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(61,24): error TS2339: Property 'course_code' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(62,19): error TS2339: Property 'title' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(63,20): error TS2339: Property 'status' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(64,25): error TS2339: Property 'max_students' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(65,31): error TS2339: Property 'current_enrollment' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(66,37): error TS2339: Property 'prerequisite_course_codes' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(67,32): error TS2339: Property 'created_at' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(68,32): error TS2339: Property 'updated_at' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(87,15): error TS2345: Argument of type '{ id: string; tenant_id: string; student_party_id: string; course_id: string; status: EnrollmentStatus; request_id: string; enrolled_at: string; created_at: string; updated_at: string; }' is not assignable to parameter of type 'never[]'.
+  Type '{ id: string; tenant_id: string; student_party_id: string; course_id: string; status: EnrollmentStatus; request_id: string; enrolled_at: string; created_at: string; updated_at: string; }' is missing the following properties from type 'never[]': length, pop, push, concat, and 35 more.
+src/platform/education/repositories/supabase-education.repository.ts(109,16): error TS2339: Property 'id' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(110,22): error TS2339: Property 'tenant_id' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(111,28): error TS2339: Property 'student_party_id' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(112,22): error TS2339: Property 'course_id' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(113,20): error TS2339: Property 'status' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(114,23): error TS2339: Property 'request_id' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(115,33): error TS2339: Property 'enrolled_at' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(116,32): error TS2339: Property 'created_at' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(117,32): error TS2339: Property 'updated_at' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(141,16): error TS2339: Property 'id' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(142,22): error TS2339: Property 'tenant_id' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(143,28): error TS2339: Property 'student_party_id' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(144,22): error TS2339: Property 'course_id' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(145,20): error TS2339: Property 'status' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(146,23): error TS2339: Property 'request_id' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(147,33): error TS2339: Property 'enrolled_at' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(148,32): error TS2339: Property 'created_at' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(149,32): error TS2339: Property 'updated_at' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(171,15): error TS2339: Property 'tenant_id' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(172,73): error TS2339: Property 'tenant_id' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(175,15): error TS2339: Property 'party_type' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(176,88): error TS2339: Property 'party_type' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(197,16): error TS2339: Property 'id' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(198,22): error TS2339: Property 'tenant_id' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(199,24): error TS2339: Property 'course_code' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(200,19): error TS2339: Property 'title' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(201,20): error TS2339: Property 'status' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(202,25): error TS2339: Property 'max_students' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(203,31): error TS2339: Property 'current_enrollment' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(204,37): error TS2339: Property 'prerequisite_course_codes' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(205,32): error TS2339: Property 'created_at' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(206,32): error TS2339: Property 'updated_at' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(225,33): error TS2339: Property 'student_id' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(269,78): error TS2345: Argument of type '{ p_tenant_id: string; p_student_party_id: string; p_course_id: string; p_enrollment_id: string; p_enrolled_at: string; p_request_id: string; }' is not assignable to parameter of type 'undefined'.
+src/platform/education/repositories/supabase-education.repository.ts(283,25): error TS2339: Property 'is_duplicate' does not exist on type 'never'.
+src/platform/education/repositories/supabase-education.repository.ts(284,26): error TS2339: Property 'enrollment_id' does not exist on type 'never'.
+src/platform/education/student/student.repository.ts(52,15): error TS2345: Argument of type 'StudentsTableInsert' is not assignable to parameter of type 'RejectExcessProperties<{ academic_status: string; actual_graduation_date?: string | null | undefined; created_at?: string | undefined; created_by?: string | null | undefined; current_level?: string | null | undefined; ... 15 more ...; updated_by?: string | ... 1 more ... | undefined; }, { ...; }> | RejectExcessPrope...'.
+  Type 'StudentsTableInsert' is not assignable to type 'RejectExcessProperties<{ academic_status: string; actual_graduation_date?: string | null | undefined; created_at?: string | undefined; created_by?: string | null | undefined; current_level?: string | null | undefined; ... 15 more ...; updated_by?: string | ... 1 more ... | undefined; }, { ...; }>'.
+    Type 'StudentsTableInsert' is not assignable to type '{ academic_status: string; actual_graduation_date?: string | null | undefined; created_at?: string | undefined; created_by?: string | null | undefined; current_level?: string | null | undefined; ... 15 more ...; updated_by?: string | ... 1 more ... | undefined; }'.
+      Types of property 'metadata' are incompatible.
+        Type 'Record<string, unknown> | null | undefined' is not assignable to type 'Json | undefined'.
+          Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+            Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 35 more.
+src/platform/education/student/student.repository.ts(203,15): error TS2345: Argument of type 'StudentsTableUpdate' is not assignable to parameter of type 'RejectExcessProperties<{ academic_status?: string | undefined; actual_graduation_date?: string | null | undefined; created_at?: string | undefined; created_by?: string | null | undefined; current_level?: string | ... 1 more ... | undefined; ... 15 more ...; updated_by?: string | ... 1 more ... | undefined; }, { ...;...'.
+  Type 'StudentsTableUpdate' is not assignable to type '{ academic_status?: string | undefined; actual_graduation_date?: string | null | undefined; created_at?: string | undefined; created_by?: string | null | undefined; current_level?: string | ... 1 more ... | undefined; ... 15 more ...; updated_by?: string | ... 1 more ... | undefined; }'.
+    Types of property 'metadata' are incompatible.
+      Type 'Record<string, unknown> | null | undefined' is not assignable to type 'Json | undefined'.
+        Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+          Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 35 more.
+src/platform/host/person/person.repository.ts(44,7): error TS2322: Type 'Record<string, unknown> | null' is not assignable to type 'Json | undefined'.
+  Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+    Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 35 more.
+src/platform/host/person/person.repository.ts(81,7): error TS2322: Type 'Record<string, unknown> | null' is not assignable to type 'Json | undefined'.
+  Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+    Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 35 more.
+src/platform/host/person/person.repository.ts(262,21): error TS2352: Conversion of type 'string | number | boolean | { [key: string]: Json | undefined; } | Json[] | null' to type 'PersonIdentifier[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'Json[]' is not comparable to type 'PersonIdentifier[]'.
+    Type 'Json' is not comparable to type 'PersonIdentifier'.
+      Type 'Json[]' is missing the following properties from type 'PersonIdentifier': type, value
+src/platform/host/person/person.repository.ts(263,18): error TS2352: Conversion of type 'string | number | boolean | { [key: string]: Json | undefined; } | Json[] | null' to type 'PersonContact[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'Json[]' is not comparable to type 'PersonContact[]'.
+    Type 'Json' is not comparable to type 'PersonContact'.
+      Type 'Json[]' is missing the following properties from type 'PersonContact': type, value
+src/platform/host/person/person.repository.ts(264,19): error TS2352: Conversion of type 'string | number | boolean | { [key: string]: Json | undefined; } | Json[] | null' to type 'PersonAddress[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'Json[]' is not comparable to type 'PersonAddress[]'.
+    Type 'Json' is not comparable to type 'PersonAddress'.
+      Type 'Json[]' is missing the following properties from type 'PersonAddress': use, line1, city, country
+src/platform/host/rule-engine/rule-engine.service.ts(161,70): error TS2345: Argument of type 'string | number' is not assignable to parameter of type 'never'.
+  Type 'string' is not assignable to type 'never'.
+src/platform/host/rule-engine/rule-engine.service.ts(162,71): error TS2345: Argument of type 'string | number' is not assignable to parameter of type 'never'.
+  Type 'string' is not assignable to type 'never'.
+src/platform/host/rule-engine/rule-engine.service.ts(194,9): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 35 more.
+src/platform/host/rule-engine/rule-engine.service.ts(198,9): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 35 more.
+src/platform/host/rule-engine/rule-engine.service.ts(287,9): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 35 more.
+src/platform/host/rule-engine/rule-engine.service.ts(450,9): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 35 more.
+src/platform/host/rule-engine/rule-engine.service.ts(454,9): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 35 more.

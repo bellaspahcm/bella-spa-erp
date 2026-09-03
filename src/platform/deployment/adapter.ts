@@ -313,7 +313,7 @@ export class BellaDeploymentEngine {
     
     try {
       const recorder = new ProvenanceRecorder(db);
-      const preflight = []; // Would be passed from preflight phase
+      const preflight: PreflightResult[] = []; // Would be passed from preflight phase
       const verification = await this.verify(migration);
       return await recorder.record(migration, result, preflight, verification);
     } finally {

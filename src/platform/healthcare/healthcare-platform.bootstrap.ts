@@ -38,7 +38,7 @@ export async function bootstrapHealthcarePlatform(
     // ===========================
     // Register Pharmacy Engine
     // ===========================
-    await registerPharmacyEngine(contractRegistry);
+    await registerPharmacyEngine(registry);
 
     console.log('[HealthcarePlatform] Bootstrap complete ✅');
   } catch (error) {
@@ -63,3 +63,4 @@ export async function shutdownHealthcarePlatform(): Promise<void> {
     throw error;
   }
 }
+

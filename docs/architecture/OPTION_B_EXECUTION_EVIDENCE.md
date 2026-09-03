@@ -23,7 +23,7 @@
 20260824040000_f2_cash_effective_date.sql
 20260824050000_f2_fix_cash_contract.sql
 20260824060000_f2_opening_balance_contract.sql
-20260824070000_f2_opening_balance_provenance.sql
+20260824070500_f2_opening_balance_provenance.sql
 ```
 
 **Result:** ✅ F2 sequence moved to versions 040000-070000
@@ -68,7 +68,7 @@ git status --short
 ?? supabase/migrations/20260824040000_f2_cash_effective_date.sql
 ?? supabase/migrations/20260824050000_f2_fix_cash_contract.sql
 ?? supabase/migrations/20260824060000_f2_opening_balance_contract.sql
-?? supabase/migrations/20260824070000_f2_opening_balance_provenance.sql
+?? supabase/migrations/20260824070500_f2_opening_balance_provenance.sql
 ```
 
 **Analysis:**
@@ -90,7 +90,7 @@ Get-ChildItem .\supabase\migrations\20260824* | Sort-Object Name
 20260824040000_f2_cash_effective_date.sql
 20260824050000_f2_fix_cash_contract.sql
 20260824060000_f2_opening_balance_contract.sql
-20260824070000_f2_opening_balance_provenance.sql
+20260824070500_f2_opening_balance_provenance.sql
 ```
 
 **Verification:** ✅ PASS

@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/supabase';
+import type { Database, Json } from '@/types/database.types';
 import {
   Prescription,
   MAREntry,
@@ -50,7 +50,7 @@ export class SupabasePharmacyRepository implements IPharmacyRepository {
       doctor_party_id: prescription.doctorPartyId,
       clinical_order_id: prescription.clinicalOrderId,
       // Map to JSON-serializable array structure
-      drugs: prescription.drugs as unknown as Record<string, unknown>[],
+      drugs: prescription.drugs as unknown as Json,
       diagnosis: prescription.diagnosis ?? null,
       notes: `METADATA:${JSON.stringify(notesPayload)}`,
       status: prescription.status.toLowerCase(),

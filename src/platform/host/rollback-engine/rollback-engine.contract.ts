@@ -3,9 +3,9 @@
  * Registers in Platform Contract Registry (Law 8)
  */
 
-import { ContractDefinition } from '@/platform/host/contract-registry/contract-registry.service';
+import type { EngineContractDefinition } from '@/platform/host/contract-registry/types';
 
-export const ROLLBACK_ENGINE_CONTRACT: ContractDefinition = {
+export const ROLLBACK_ENGINE_CONTRACT: EngineContractDefinition = {
   id: 'platform.rollback-engine',
   name: 'Platform Compensating Transaction Engine',
   version: '1.0.0',

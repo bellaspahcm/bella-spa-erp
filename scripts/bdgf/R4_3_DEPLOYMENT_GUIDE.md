@@ -1,8 +1,8 @@
 # R4.3 — Schema Deployment Guide
 
-**Status:** 🟡 PENDING DEPLOYMENT  
-**Migration:** `supabase/migrations/20260820_r4_3_gate_tokens.sql`  
-**Verification:** `scripts/bdgf/r4-3-schema-verify.mjs`  
+**Status:** 🟡 PENDING DEPLOYMENT
+**Migration:** `supabase/migrations/20260820151000_r4_3_gate_tokens.sql`
+**Verification:** `scripts/bdgf/r4-3-schema-verify.mjs`
 
 ---
 
@@ -22,7 +22,7 @@ Before deploying R4.3 schema:
 
 ### 1. Review Migration
 
-**File:** `supabase/migrations/20260820_r4_3_gate_tokens.sql`
+**File:** `supabase/migrations/20260820151000_r4_3_gate_tokens.sql`
 
 **Creates:**
 - `bella_gate_tokens` table (gate authorization tokens)
@@ -45,7 +45,7 @@ Before deploying R4.3 schema:
 **Steps:**
 1. Open Supabase Dashboard
 2. Navigate to SQL Editor
-3. Copy content from `supabase/migrations/20260820_r4_3_gate_tokens.sql`
+3. Copy content from `supabase/migrations/20260820151000_r4_3_gate_tokens.sql`
 4. Execute SQL
 5. Verify success message: `✅ R4.3 schema migration complete`
 
@@ -62,8 +62,8 @@ In Supabase Dashboard SQL Editor:
 
 ```sql
 -- Check tables exist
-SELECT table_name 
-FROM information_schema.tables 
+SELECT table_name
+FROM information_schema.tables
 WHERE table_name IN ('bella_gate_tokens', 'bella_execution_audit')
 ORDER BY table_name;
 ```
@@ -78,8 +78,8 @@ bella_gate_tokens
 
 ```sql
 -- Check bella_developer has NO access to gate tokens
-SELECT grantee, privilege_type 
-FROM information_schema.role_table_grants 
+SELECT grantee, privilege_type
+FROM information_schema.role_table_grants
 WHERE table_name = 'bella_gate_tokens'
 ORDER BY grantee, privilege_type;
 ```
@@ -262,16 +262,16 @@ DROP TRIGGER IF EXISTS prevent_delete_execution_audit ON bella_execution_audit;
 DROP FUNCTION IF EXISTS prevent_audit_modification();
 
 -- Revert approval table changes
-ALTER TABLE bella_migration_approval 
+ALTER TABLE bella_migration_approval
   DROP COLUMN IF EXISTS execution_started_at,
   DROP COLUMN IF EXISTS execution_completed_at,
   DROP COLUMN IF EXISTS execution_error;
 
 -- Revert status constraint
-ALTER TABLE bella_migration_approval 
+ALTER TABLE bella_migration_approval
   DROP CONSTRAINT IF EXISTS status_valid;
 
-ALTER TABLE bella_migration_approval 
+ALTER TABLE bella_migration_approval
   ADD CONSTRAINT status_valid CHECK (
     status IN ('requested', 'approved', 'revoked', 'used', 'expired', 'rejected')
   );
@@ -310,6 +310,6 @@ After successful verification (17/17 tests PASS), create:
 
 ---
 
-**Status:** 🟡 PENDING DEPLOYMENT  
-**Next:** Deploy to DEV → Verify → Document → Proceed to Step 2  
+**Status:** 🟡 PENDING DEPLOYMENT
+**Next:** Deploy to DEV → Verify → Document → Proceed to Step 2
 **Blocker:** None (ready to deploy)

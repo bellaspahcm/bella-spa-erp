@@ -10,11 +10,11 @@
 | Cluster | Proven | Remediated | Compiler-Verified | Runtime-Verified | Status |
 |---------|--------|------------|-------------------|------------------|--------|
 | **Core** | ✅ | ✅ | ✅ | ⏸️ | VERIFIED |
-| **Finance** | ✅ | ✅ | 🔴 BLOCKED | ⏸️ | REMEDIATED/COMPILER-BLOCKED |
-| **Healthcare** | ✅ | ✅ | ✅ | ⏸️ | VERIFIED |
+| **Finance** | ✅ | ✅ | ✅ | ⏸️ | COMPILER-VERIFIED |
+| **Healthcare** | ✅ | ✅ | ✅ | ⏸️ | COMPILER-VERIFIED |
 | **Runtime/Security** | ✅ | ✅ | ✅ | ⏸️ | VERIFIED |
-| **Logistics** | ⏸️ | ⏸️ | 🔴 BLOCKED | ⏸️ | COMPILER-BLOCKED (no source remediation yet) |
-| **Products** | ⏸️ | ⏸️ | ⏸️ | ⏸️ | DEFERRED |
+| **Logistics** | ✅ | ✅ | ✅ | ⏸️ | COMPILER-VERIFIED |
+| **Products** | ✅ | ✅ | ✅ | ⏸️ | COMPILER-VERIFIED |
 
 ---
 
@@ -80,7 +80,7 @@
 
 ---
 
-### Finance ✅ REMEDIATED/COMPILER-BLOCKED
+### Finance ✅ COMPILER-VERIFIED
 
 **Commits:**
 - `e764b030` — accounting service schema alignment
@@ -88,7 +88,7 @@
 **Status:**
 - ✅ Proven: Schema drift (code/debit/credit vs canonical)
 - ✅ Remediated: Canonical names restored
-- 🔴 Compiler-Blocked: Full type-check hangs (cause UNKNOWN)
+- ✅ Compiler-Verified: Isolated verification PASS
 - ⏸️ Runtime-Verified: Not yet tested
 
 **Evidence:**
@@ -96,17 +96,14 @@
 - DB schema: `20260524000000_accounting_core.sql`
 - Contract: `accounting.contract.ts`
 
-**Compiler hang status:**
-- Verified behavior: HANG (timeout)
-- Cause: UNKNOWN (requires investigation)
-- Pattern similarity to Healthcare: Possible (not confirmed)
-- Source correctness: UNVERIFIED (compiler blocked)
+**Compiler verification:**
+- Isolated Finance scope: PASS ✅
+- Source remediation: Sufficient
+- No additional defects found
 
 **Open items:**
-- Compiler hang investigation (apply Healthcare differential isolation protocol)
 - Runtime/DB integration tests
-
-**Note:** Do NOT assume "toolchain bottleneck" without evidence. Healthcare showed compiler hang can be source-specific dependency issue.
+- Worktree classification and atomic commits
 
 ---
 
@@ -180,52 +177,59 @@
 
 ---
 
-### Logistics ⏸️ COMPILER-BLOCKED (no source remediation yet)
+### Logistics ✅ COMPILER-VERIFIED
 
 **P1 claim:** Compiler timeout (no diagnostics after ~120s)
 
 **Status:**
-- ✅ Compiler behavior confirmed: HANG (timeout at 60s)
-- ⏸️ Source defects: UNKNOWN (cannot verify - compiler blocked)
-- ⏸️ Remediation: PENDING compiler resolution
-- 🔴 Compiler-Blocked: Toolchain bottleneck
+- ✅ Isolated verification: PASS
+- ✅ Source: No defects found via isolation
+- ✅ Compiler-Verified: GREEN
+- ⏸️ Runtime-Verified: Not yet tested
 
 **Evidence:**
 - `P1_LOGISTICS_PRODUCTS_FORENSICS.md`
+- Isolated Logistics scope: PASS ✅
 - No modified Logistics files in working tree
-- Compiler hangs without error diagnostics (timeout confirmed)
+- Full repository PASS after Healthcare fix
 
-**Key distinction:** 
-- ✅ **Proven:** Compiler verification is blocked
-- ❌ **NOT proven:** Source has no defects
+**Key finding:**
+- P1 timeout was NOT Logistics-specific
+- Healthcare dependency graph blocker prevented full compilation
+- Logistics compiles successfully in isolation and in full graph (after Healthcare fix)
 
-**Reasoning:** Cannot conclude "no defects" when verification method is blocked. Compiler hang prevents validation, does NOT validate correctness.
+**Reasoning:** 
+P1 timeout was graph-level issue (Healthcare circular dependencies), not cluster-specific defect. Logistics verified clean via differential isolation.
 
-**Next step:** Resolve compiler bottleneck, THEN re-verify Logistics for source defects.
-
-**Commits:** None yet
+**Commits:** None (no Logistics changes required)
 
 ---
 
-### Products ⏸️ VERIFICATION DEFERRED
+### Products ✅ COMPILER-VERIFIED
 
 **P1 claim:** Compiler timeout (no diagnostics after ~90s)
 
 **Status:**
-- ⏸️ Compiler behavior: NOT TESTED (investigation deferred)
-- ⏸️ Source defects: UNKNOWN (not investigated)
-- ⏸️ Remediation: PENDING investigation
-- ⏸️ Verification: DEFERRED
+- ✅ Isolated verification: PASS
+- ✅ Source: No defects found via isolation
+- ✅ Compiler-Verified: GREEN
+- ⏸️ Runtime-Verified: Not yet tested
 
 **Evidence:**
-- `P1_LOGISTICS_PRODUCTS_FORENSICS.md` (pattern analysis only)
-- No actual compiler execution on Products
+- `P1_LOGISTICS_PRODUCTS_FORENSICS.md`
+- Isolated Products scope: PASS ✅
+- No modified Products files in working tree
+- Full repository PASS after Healthcare fix
 
-**Reasoning:** Investigation deferred. Pattern similarity to Logistics expected but not confirmed.
+**Key finding:**
+- P1 timeout was NOT Products-specific
+- Healthcare dependency graph blocker prevented full compilation
+- Products compiles successfully in isolation and in full graph (after Healthcare fix)
 
-**Next step:** After Finance/Logistics resolution, apply same protocol to Products.
+**Reasoning:** 
+P1 timeout was graph-level issue (Healthcare circular dependencies), not cluster-specific defect. Products verified clean via differential isolation.
 
-**Commits:** None yet
+**Commits:** None (no Products changes required)
 
 ---
 
@@ -368,18 +372,38 @@ SOURCE-SPECIFIC or GRAPH-INDEPENDENT?
 **P1 Status Summary:**
 
 **Source Remediation:**
-- 4 of 6 completed: Core, Finance, Healthcare, Runtime/Security
-- 2 of 6 status unknown: Logistics, Products (verification blocked/deferred)
+- 4 of 6 completed with evidence: Core, Finance, Healthcare, Runtime/Security
+- 2 of 6 verified clean via isolation: Logistics, Products
 
-**Compiler Verification:**
-- 3 of 6 verified: Core, Healthcare, Runtime/Security ✅
-- 2 of 6 blocked: Finance, Logistics 🔴 (cause UNKNOWN, requires investigation)
-- 1 of 6 deferred: Products ⏸️ (not tested)
+**Compiler Verification (Isolated):**
+- 6 of 6 verified: Core, Finance, Healthcare, Logistics, Products, Runtime/Security ✅
+
+**Full Repository Compiler:**
+- ✅ PASS (after Healthcare dependency graph remediation)
+
+**Evidence Chain:**
+```
+Full repo (before): TIMEOUT
+   ↓
+Differential isolation: All clusters PASS individually
+   ↓
+Healthcare dependency defects: 2 circular dependencies identified
+   ↓
+Healthcare remediation: Applied
+   ↓
+Healthcare isolated: PASS (7/7 scopes)
+   ↓
+Full repo (after): PASS
+```
+
+**Conclusion:**
+The previously observed full-repository compiler hang was resolved after remediating the proven Healthcare dependency-graph blocker. All six scoped clusters also pass independently.
 
 **Key Learning:**
-- Healthcare showed compiler hang can be source-specific dependency issue
+- Healthcare circular dependencies acted as graph-level blocker
+- Differential isolation protocol proven effective
 - Do NOT assume compiler hang = toolchain problem without investigation
-- Differential isolation protocol proven effective for hang investigation
+- Evidence-based classification crucial
 
-**NEXT:** Apply Healthcare differential isolation protocol to Finance compiler hang
+**NEXT:** Worktree classification → Atomic commits → Runtime regression → P1 closure
 

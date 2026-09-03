@@ -23,10 +23,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 // Migration files in order
 const migrations = [
-  '../../migrations/logistics/20260821_create_freight_audit_tables.sql',
-  '../../migrations/logistics/20260821_create_carrier_rates_table.sql',
-  '../../migrations/logistics/20260821_create_accessorial_rates_table.sql',
-  '../../migrations/logistics/20260821_create_discrepancies_table.sql',
+  '../../migrations/logistics/20260821120000_create_freight_audit_tables.sql',
+  '../../migrations/logistics/20260821121000_create_carrier_rates_table.sql',
+  '../../migrations/logistics/20260821122000_create_accessorial_rates_table.sql',
+  '../../migrations/logistics/20260821123000_create_discrepancies_table.sql',
 ];
 
 async function applyMigration(filePath, index) {

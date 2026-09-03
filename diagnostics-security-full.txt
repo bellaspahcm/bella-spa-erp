@@ -1,0 +1,20 @@
+src/platform/extensions/engines/test-extensions.ts(23,3): error TS2322: Type '(context: ExtensionExecutionContext, input: { scores: number[]; }) => Promise<number>' is not assignable to type '(context: ExtensionExecutionContext, input: unknown) => Promise<unknown>'.
+  Types of parameters 'input' and 'input' are incompatible.
+    Type 'unknown' is not assignable to type '{ scores: number[]; }'.
+src/platform/extensions/engines/test-extensions.ts(41,3): error TS2322: Type '(context: ExtensionExecutionContext, input: { scores: number[]; }) => Promise<number>' is not assignable to type '(context: ExtensionExecutionContext, input: unknown) => Promise<unknown>'.
+  Types of parameters 'input' and 'input' are incompatible.
+    Type 'unknown' is not assignable to type '{ scores: number[]; }'.
+src/platform/extensions/engines/test-extensions.ts(61,3): error TS2322: Type '(context: ExtensionExecutionContext, input: { baseTuitionFee: number; }) => Promise<{ finalTuitionFee: number; isCorporateFunded: boolean; }>' is not assignable to type '(context: ExtensionExecutionContext, input: unknown) => Promise<unknown>'.
+  Types of parameters 'input' and 'input' are incompatible.
+    Type 'unknown' is not assignable to type '{ baseTuitionFee: number; }'.
+src/platform/extensions/engines/test-extensions.ts(82,3): error TS2322: Type '(context: ExtensionExecutionContext, input: { exploitType: string; }) => Promise<{ success: boolean; }>' is not assignable to type '(context: ExtensionExecutionContext, input: unknown) => Promise<unknown>'.
+  Types of parameters 'input' and 'input' are incompatible.
+    Type 'unknown' is not assignable to type '{ exploitType: string; }'.
+src/platform/security/__tests__/8a-exploit-extensions/leak-detector-ext.ts(23,3): error TS2322: Type '(context: ExtensionExecutionContext, input: { exploitType: string; payload?: string | undefined; }) => Promise<{ success: boolean; }>' is not assignable to type '(context: ExtensionExecutionContext, input: unknown) => Promise<unknown>'.
+  Types of parameters 'input' and 'input' are incompatible.
+    Type 'unknown' is not assignable to type '{ exploitType: string; payload?: string | undefined; }'.
+src/platform/security/__tests__/8a-exploit-extensions/privilege-escalation-ext.ts(23,3): error TS2322: Type '(context: ExtensionExecutionContext, input: { exploitType: string; }) => Promise<{ success: boolean; }>' is not assignable to type '(context: ExtensionExecutionContext, input: unknown) => Promise<unknown>'.
+  Types of parameters 'input' and 'input' are incompatible.
+    Type 'unknown' is not assignable to type '{ exploitType: string; }'.
+src/platform/security/__tests__/platform-resilience.integration.test.ts(37,13): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ "tenant-resilience-a": string; "tenant-resilience-b": string; }'.
+  No index signature with a parameter of type 'string' was found on type '{ "tenant-resilience-a": string; "tenant-resilience-b": string; }'.

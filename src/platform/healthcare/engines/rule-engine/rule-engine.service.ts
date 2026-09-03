@@ -24,7 +24,7 @@ import type {
   RuleSeverity
 } from '../../contracts/rule-governance.contract';
 import type { EngineResponse } from '../../shared-kernel/types';
-import { GovernedRuleEntity } from './domain/governed-rule.entity';
+import { GovernedRuleEntity, type GovernedRuleParams } from './domain/governed-rule.entity';
 import { RuleDslEvaluator } from './domain/rule-dsl-evaluator';
 import { eventBus } from '@/platform/host/event-bus';
 
@@ -100,8 +100,6 @@ export class RuleEngineService implements IRuleGovernanceContract {
       // Event-After-Persistence
       await eventBus.publish({
         eventType: 'hos.rule.draft_created.v1',
-        eventId: crypto.randomUUID(),
-        timestamp: new Date().toISOString(),
         tenantId: record.tenantId,
         aggregateId: record.id,
         aggregateType: 'GovernedRule',
@@ -295,8 +293,6 @@ export class RuleEngineService implements IRuleGovernanceContract {
       // Event-After-Persistence
       await eventBus.publish({
         eventType: 'hos.rule.activated.v1',
-        eventId: crypto.randomUUID(),
-        timestamp: new Date().toISOString(),
         tenantId: record.tenantId,
         aggregateId: record.id,
         aggregateType: 'GovernedRule',
@@ -512,3 +508,4 @@ export class RuleEngineService implements IRuleGovernanceContract {
     });
   }
 }
+

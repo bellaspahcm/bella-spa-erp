@@ -31,7 +31,7 @@ async function deployMigration() {
     console.log('✅ Connected to database\n');
     
     // Read migration file
-    const migrationPath = path.join(__dirname, '..', '..', 'supabase', 'migrations', '20260820_r4_4_monitoring_audit.sql');
+    const migrationPath = path.join(__dirname, '..', '..', 'supabase', 'migrations', '20260820152000_r4_4_monitoring_audit.sql');
     const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
     
     console.log('📋 Executing migration...\n');

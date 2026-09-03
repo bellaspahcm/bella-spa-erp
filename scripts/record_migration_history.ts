@@ -74,17 +74,17 @@ const migrationsToRecord = [
     statements: ['ALTER TABLE ENABLE ROW LEVEL SECURITY', 'CREATE POLICY']
   },
   {
-    version: '20260820_r4_3_gate_tokens',
+    version: '20260820151000_r4_3_gate_tokens',
     name: 'r4_3_gate_tokens',
     statements: ['CREATE FUNCTION prevent_audit_modification', 'CREATE TABLE bella_gate_tokens', 'CREATE TABLE bella_execution_audit', 'ALTER TABLE bella_migration_approval ADD COLUMN execution_started_at']
   },
   {
-    version: '20260820_r4_4_monitoring_audit',
+    version: '20260820152000_r4_4_monitoring_audit',
     name: 'r4_4_monitoring_audit',
     statements: ['CREATE FUNCTION update_incidents_updated_at', 'CREATE TABLE bella_security_incidents', 'CREATE TABLE bella_recovery_actions']
   },
   {
-    version: '20260820_r4_approval_contract',
+    version: '20260820150000_r4_approval_contract',
     name: 'r4_approval_contract',
     statements: ['CREATE TABLE bella_migration_approval']
   },
@@ -94,22 +94,22 @@ const migrationsToRecord = [
     statements: ['CREATE TABLE inventory_items', 'CREATE TABLE movements', 'CREATE TABLE routes', 'CREATE TABLE vehicles', 'CREATE TABLE drivers', 'CREATE TABLE warehouses']
   },
   {
-    version: '20260821_create_accessorial_rates_table',
+    version: '20260821122000_create_accessorial_rates_table',
     name: 'create_accessorial_rates_table',
     statements: ['CREATE TABLE accessorial_rates']
   },
   {
-    version: '20260821_create_carrier_rates_table',
+    version: '20260821121000_create_carrier_rates_table',
     name: 'create_carrier_rates_table',
     statements: ['CREATE TABLE carrier_rates']
   },
   {
-    version: '20260821_create_discrepancies_table',
+    version: '20260821123000_create_discrepancies_table',
     name: 'create_discrepancies_table',
     statements: ['CREATE TABLE discrepancies']
   },
   {
-    version: '20260821_create_freight_audit_tables',
+    version: '20260821120000_create_freight_audit_tables',
     name: 'create_freight_audit_tables',
     statements: ['CREATE TABLE freight_audits', 'CREATE TABLE freight_audit_items']
   }

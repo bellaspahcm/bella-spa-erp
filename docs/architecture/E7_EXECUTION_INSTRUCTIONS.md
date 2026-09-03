@@ -131,7 +131,7 @@ After executing SQL audit, create comparison table:
 
 | Local Version | Local Format | Remote Version | Remote Name | Classification | Match |
 |---------------|--------------|----------------|-------------|----------------|-------|
-| `20260820_r4_3_gate` | LEGACY_8DIGIT | `20260820_r4_3_gate_tokens` | `r4_3_gate_tokens` | CLASS_A | ✅ |
+| `20260820_r4_3_gate` | LEGACY_8DIGIT | `20260820151000_r4_3_gate_tokens` | `r4_3_gate_tokens` | CLASS_A | ✅ |
 | `20260820_r4_4_monitoring` | LEGACY_8DIGIT | ... | ... | CLASS_A | ✅ |
 | ... | ... | ... | ... | ... | ... |
 

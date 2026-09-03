@@ -76,7 +76,7 @@ Created direct database test: `scripts/e3/test-r1-create-invoice.mjs`
    - Engine implementation exists: `src/platform/logistics/engines/freight-audit-engine.ts`
    - Contract defined: `src/platform/logistics/contracts/freight-audit.contract.ts`
    - Types defined: `src/platform/logistics/shared-kernel/types/freight-audit.types.ts`
-   - Migration created: `migrations/logistics/20260821_create_freight_audit_tables.sql`
+   - Migration created: `migrations/logistics/20260821120000_create_freight_audit_tables.sql`
    - Tables: `log_freight_invoices`, `log_invoice_line_items`
    - RLS policies defined
    - Unique constraints defined

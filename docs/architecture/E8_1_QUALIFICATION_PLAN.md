@@ -38,7 +38,7 @@ Verify:
 
 **Test Case B: Legacy format (rejected)**
 ```
-Input:  20260820_r4_3_gate_tokens.sql
+Input:  20260820151000_r4_3_gate_tokens.sql
 Expect: G1 FAIL
 Reason: Non-canonical format
 Action: STOP (no deployment)

@@ -8,7 +8,6 @@ import { EngineResponse } from '../shared-kernel/types';
 
 export type EmergencyVisitRow = Database['public']['Tables']['hc_emergency_visits']['Row'];
 export type TriageAssessmentRow = Database['public']['Tables']['hc_triage_assessments']['Row'];
-export type ClinicalCalculationRow = Database['public']['Tables']['hc_clinical_calculations']['Row'];
 
 export interface RegisterEmergencyVisitRequest {
   requestId: string;

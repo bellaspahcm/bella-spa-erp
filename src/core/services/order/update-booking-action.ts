@@ -35,6 +35,9 @@ export async function updateBooking(
   const supabase = await createDevelopmentBypassClient();
   const currentUser = await requireCurrentTenantId();
   const tenantId = currentUser.tenant_id;
+  if (!tenantId) {
+    throw new BookingError(BOOKING_TENANT_ACCESS_ERROR, 'BOOKING_TENANT_ACCESS_ERROR');
+  }
   const { tenant_id: _ignoredTenantId, ...scopedPayload } = payload;
   void _ignoredTenantId;
   const updatePayload: BookingUpdate = { ...scopedPayload };
@@ -609,7 +612,15 @@ export async function updateBooking(
 export async function syncBookingProgress(bookingId: string, tenantId?: string) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = await createClient();
-  const scopedTenantId = tenantId || (await requireCurrentTenantId()).tenant_id;
+  let scopedTenantId = tenantId;
+  if (!scopedTenantId) {
+    const currentUser = await requireCurrentTenantId();
+    const currentTenantId = currentUser.tenant_id;
+    if (!currentTenantId) {
+      throw new BookingError(BOOKING_TENANT_ACCESS_ERROR, 'BOOKING_TENANT_ACCESS_ERROR');
+    }
+    scopedTenantId = currentTenantId;
+  }
   
   const { count, error: countError } = await supabase
     .from('session_logs')

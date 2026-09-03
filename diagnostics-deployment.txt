@@ -1,0 +1,2 @@
+src/platform/deployment/adapter.ts(316,13): error TS7034: Variable 'preflight' implicitly has type 'any[]' in some locations where its type cannot be determined.
+src/platform/deployment/adapter.ts(318,55): error TS7005: Variable 'preflight' implicitly has an 'any[]' type.

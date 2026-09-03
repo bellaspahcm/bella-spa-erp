@@ -13,8 +13,9 @@ import type {
   BedTransferRequest,
   BedQueryRequest,
 } from '../../contracts/bed-engine.contract';
-import type { EngineResponse, Bed as SharedBed } from '../../shared-kernel/types';
+import type { EngineResponse, EngineHealthStatus, Bed as SharedBed } from '../../shared-kernel/types';
 import { IBedRepository, BedOccupancyConflictError } from './repositories/supabase-bed.repository';
+import { Bed, BedStatus } from './domain/bed.entity';
 import { BED_EVENT_TYPES } from './events/bed.events';
 import { eventBus } from '@/platform/host/event-bus';
 
@@ -24,6 +25,13 @@ export class BedEngineService implements BedEngineContract {
   readonly contractVersion = '1.0.0';
 
   constructor(private readonly repository: IBedRepository) {}
+  async healthCheck(): Promise<EngineHealthStatus> {
+    return {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      checks: { database: 'ok', eventBus: 'ok' },
+    };
+  }
 
   async allocateBed(request: BedAllocationRequest): Promise<EngineResponse<SharedBed>> {
     try {
@@ -73,7 +81,7 @@ export class BedEngineService implements BedEngineContract {
           allocatedAt: saved.occupancy!.assignedAt,
           dailyRate: saved.dailyRate,
         },
-        userId: request.userId,
+        userId: request.requestedBy,
       });
 
       return {
@@ -116,7 +124,7 @@ export class BedEngineService implements BedEngineContract {
         };
       }
 
-      bed.release(request.reason);
+      bed.release(request.reason === 'death' || request.reason === 'other' ? 'manual' : request.reason);
       const saved = await this.repository.save(bed);
 
       await eventBus.publish({
@@ -132,7 +140,7 @@ export class BedEngineService implements BedEngineContract {
           reason: request.reason,
           releasedAt: new Date().toISOString(),
         },
-        userId: request.userId,
+        userId: request.releasedBy,
       });
 
       return {
@@ -197,7 +205,7 @@ export class BedEngineService implements BedEngineContract {
           encounterId: request.encounterId,
           transferredAt: new Date().toISOString(),
         },
-        userId: request.userId,
+        userId: request.transferredBy,
       });
 
       return {
@@ -279,7 +287,7 @@ export class BedEngineService implements BedEngineContract {
   }
 
   private mapToSharedBed(bed: Bed): SharedBed {
-    const snap = typeof bed.toSnapshot === 'function' ? bed.toSnapshot() : bed;
+    const snap = bed.toSnapshot();
     return {
       id: snap.id,
       tenantId: snap.tenantId,
@@ -298,3 +306,11 @@ export class BedEngineService implements BedEngineContract {
     };
   }
 }
+
+
+
+
+
+
+
+

@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Bella Healthcare Platform — Extend Nursing Vital Signs Schema for Outpatient
--- Migration: 20260826090000_extend_nursing_vital_signs_outpatient.sql
+-- Migration: 20260826154338_extend_nursing_vital_signs_outpatient.sql
 -- ============================================================================
 
 -- Alter public.hc_nursing_vital_signs to support outpatient (nullable admission)

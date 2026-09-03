@@ -1,0 +1,26 @@
+{
+  "extends": "./tsconfig.json",
+  "exclude": [
+    "node_modules",
+    "mcp-server",
+    "apps",
+    "packages",
+    ".next",
+    "out",
+    "build",
+    "archive-old-decision-engine",
+    "e2e",
+    "scratch",
+    "**/archive",
+    "temp*.ts",
+    "scripts",
+    "tests",
+    "src/__tests__",
+    "**/__tests__",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "src/modules/bella-auto/services/**/*"
+  ]
+}

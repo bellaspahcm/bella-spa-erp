@@ -1,0 +1,3 @@
+src/platform/integration-hub/finance-outbox-worker-test.ts(14,10): error TS2305: Module '"./finance-outbox-worker"' has no exported member 'FinanceOutboxWorker'.
+src/platform/integration-hub/finance-outbox-worker.cli.ts(27,10): error TS2305: Module '"./finance-outbox-worker"' has no exported member 'FinanceOutboxWorker'.
+src/platform/integration-hub/finance-outbox-worker.cli.ts(79,23): error TS7006: Parameter 'error' implicitly has an 'any' type.

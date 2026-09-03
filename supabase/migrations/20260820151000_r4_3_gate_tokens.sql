@@ -3,7 +3,7 @@
 -- ============================================================================
 -- Purpose: Store and enforce single-use gate tokens for migration execution
 -- Contract: docs/architecture/R4_3_EXECUTION_CONTRACT_SPECIFICATION.md v1.0.0
--- Depends On: 20260820_r4_approval_contract.sql
+-- Depends On: 20260820150000_r4_approval_contract.sql
 -- ============================================================================
 
 -- Gate Token Table

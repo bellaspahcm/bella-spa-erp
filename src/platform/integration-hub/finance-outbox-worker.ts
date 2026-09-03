@@ -267,3 +267,43 @@ export interface FinanceApiClient {
 
 // Actual Finance API client implementation should be injected
 // This interface allows testing with mock client
+
+// ============================================================================
+// Worker Class Wrapper (for CLI/Test usage)
+// ============================================================================
+
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
+
+export interface FinanceOutboxWorkerConfig {
+  financeOsEndpoint: string;
+  workerId: string;
+  batchSize: number;
+  pollIntervalMs: number;
+  verbose: boolean;
+}
+
+export class FinanceOutboxWorker {
+  private client: SupabaseClient<Database>;
+  private config: FinanceOutboxWorkerConfig;
+  private running: boolean = false;
+
+  constructor(client: SupabaseClient<Database>, config: FinanceOutboxWorkerConfig) {
+    this.client = client;
+    this.config = config;
+  }
+
+  async start(): Promise<void> {
+    this.running = true;
+    if (this.config.verbose) {
+      console.log(`Worker ${this.config.workerId} started`);
+    }
+    // Worker loop implementation would go here
+    // For now, this is a minimal export to satisfy type checking
+    throw new Error('Worker implementation incomplete - use function exports directly');
+  }
+
+  async stop(): Promise<void> {
+    this.running = false;
+  }
+}

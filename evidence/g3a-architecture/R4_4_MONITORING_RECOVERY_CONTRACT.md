@@ -683,7 +683,7 @@ Production Stable
 **Implementation:**
 - `scripts/bdgf/r4-4-monitoring.mjs` - Detection + alerting
 - `scripts/bdgf/r4-4-recovery.mjs` - Recovery procedures
-- `supabase/migrations/20260820_r4_4_monitoring_audit.sql` - Audit schema
+- `supabase/migrations/20260820152000_r4_4_monitoring_audit.sql` - Audit schema
 
 **Tests:**
 - `scripts/bdgf/r4-4-adversarial-monitoring-test.mjs` - 8 adversarial tests

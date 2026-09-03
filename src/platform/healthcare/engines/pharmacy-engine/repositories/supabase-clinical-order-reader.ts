@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database.types';
 import type { IClinicalOrderReader, ClinicalOrderSnapshot } from '../contracts/clinical-order-reader.interface';
 
 type OrderRow = Database['public']['Tables']['hc_clinical_orders']['Row'];

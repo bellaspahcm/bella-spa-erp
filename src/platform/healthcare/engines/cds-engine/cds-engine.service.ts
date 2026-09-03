@@ -226,7 +226,7 @@ export class CdsEngineService implements CdsEngineContract, IDecisionContract {
           matchingAllergy.reaction_type === 'ANAPHYLAXIS' ||
           matchingAllergy.severity === 'LIFE_THREATENING';
         const enforcement = isAnaphylaxis ? 'ABSOLUTE_BLOCK' : 'BLOCK';
-        const severity = isAnaphylaxis ? 'CRITICAL' : 'HIGH';
+        const severity = isAnaphylaxis ? 'CRITICAL' : 'WARNING';
         alerts.push({
           alertId: crypto.randomUUID(),
           alertType: 'ALLERGY',
@@ -1271,3 +1271,4 @@ export class CdsEngineService implements CdsEngineContract, IDecisionContract {
     };
   }
 }
+

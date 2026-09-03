@@ -1,20 +1,65 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { spawnSync } = require('node:child_process');
 const { readdirSync } = require('node:fs');
 const { join } = require('node:path');
 
 const MIGRATION_FILE_PATTERN = /^(\d{14})_.+\.sql$/;
+const SQL_FILE_PATTERN = /\.sql$/;
+
+function listLocalMigrationFiles(migrationsDir = join(process.cwd(), 'supabase', 'migrations')) {
+  return readdirSync(migrationsDir)
+    .filter((name) => SQL_FILE_PATTERN.test(name))
+    .sort();
+}
 
 function listLocalMigrationVersions(migrationsDir = join(process.cwd(), 'supabase', 'migrations')) {
-  return readdirSync(migrationsDir)
+  return listLocalMigrationFiles(migrationsDir)
     .map((name) => name.match(MIGRATION_FILE_PATTERN)?.[1] || null)
     .filter(Boolean)
     .sort();
 }
 
+function findInvalidMigrationFilenames(filenames) {
+  return filenames
+    .filter((name) => !MIGRATION_FILE_PATTERN.test(name))
+    .sort();
+}
+
+function findDuplicateMigrationVersions(versions) {
+  const counts = new Map();
+  for (const version of versions) {
+    counts.set(version, (counts.get(version) || 0) + 1);
+  }
+
+  return [...counts.entries()]
+    .filter(([, count]) => count > 1)
+    .map(([version]) => version)
+    .sort();
+}
+
 function parseSupabaseMigrationList(output) {
+  const text = String(output || '').trim();
+  if (!text) return [];
+
+  const jsonStart = text.indexOf('{');
+  if (jsonStart >= 0) {
+    try {
+      const jsonEnd = text.lastIndexOf('}');
+      const parsed = JSON.parse(text.slice(jsonStart, jsonEnd + 1));
+      if (Array.isArray(parsed.migrations)) {
+        return parsed.migrations.map((row) => ({
+          local: row.local || null,
+          remote: row.remote || null,
+        }));
+      }
+    } catch {
+      // Fall back to the legacy pipe-table parser below.
+    }
+  }
+
   const rows = [];
 
-  for (const line of String(output || '').split(/\r?\n/)) {
+  for (const line of text.split(/\r?\n/)) {
     const columns = line.split('|').map((column) => column.trim());
     if (columns.length < 2) continue;
 
@@ -99,9 +144,28 @@ function main() {
     return;
   }
 
-  const localVersions = listLocalMigrationVersions();
-  if (localVersions.length === 0) {
+  const localFiles = listLocalMigrationFiles();
+  if (localFiles.length === 0) {
     console.error('No local Supabase migrations found.');
+    process.exit(1);
+  }
+
+  const invalidLocalFilenames = findInvalidMigrationFilenames(localFiles);
+  if (invalidLocalFilenames.length > 0) {
+    console.error('Local Supabase migrations use invalid filenames. Expected YYYYMMDDHHMMSS_name.sql:');
+    for (const filename of invalidLocalFilenames) {
+      console.error(`- ${filename}`);
+    }
+    process.exit(1);
+  }
+
+  const localVersions = listLocalMigrationVersions();
+  const duplicateLocalVersions = findDuplicateMigrationVersions(localVersions);
+  if (duplicateLocalVersions.length > 0) {
+    console.error('Local Supabase migrations contain duplicate versions:');
+    for (const version of duplicateLocalVersions) {
+      console.error(`- ${version}`);
+    }
     process.exit(1);
   }
 
@@ -133,7 +197,7 @@ function main() {
   }
 
   if (!state.isSynced) {
-    console.error('Run `npx supabase db push --linked --yes` or apply the missing migrations before deploy.');
+    console.error('Reconcile local filenames/versions, remote migration history, and remote schema reality before applying or repairing migrations.');
     process.exit(1);
   }
 
@@ -146,6 +210,9 @@ if (require.main === module) {
 
 module.exports = {
   analyzeMigrationState,
+  findDuplicateMigrationVersions,
+  findInvalidMigrationFilenames,
+  listLocalMigrationFiles,
   listLocalMigrationVersions,
   parseSupabaseMigrationList,
 };

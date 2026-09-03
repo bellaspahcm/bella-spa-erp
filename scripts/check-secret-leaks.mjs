@@ -1,7 +1,8 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 
 const roots = ['src', 'scripts', '.github/workflows'];
+const explicitFiles = ['.env', '.env.local', '.env.test', '.env.local.template', '.env.production', '.env.staging', '.env.vercel'];
 const allowedExtensions = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.yml', '.yaml']);
 const excludedPathFragments = [
   `${sep}__tests__${sep}`,
@@ -18,6 +19,9 @@ const excludedFiles = new Set([
 ]);
 
 const secretNames = [
+  'SUPABASE_DB_URL',
+  'SUPABASE_DATABASE_URL',
+  'DATABASE_URL',
   'SUPABASE_SERVICE_ROLE_KEY',
   'SUPABASE_SECRET_KEY',
   'PAYMENT_WEBHOOK_SECRET',
@@ -27,20 +31,6 @@ const secretNames = [
   'DB_ENCRYPTION_KEY',
   'SENTRY_AUTH_TOKEN',
   'VERCEL_TOKEN',
-];
-
-const consoleSensitiveTerms = [
-  'access_token',
-  'authorization',
-  'botToken',
-  'client_secret',
-  'password',
-  'refresh_token',
-  'secret',
-  'service_role',
-  'serviceRole',
-  'telegram_bot_token',
-  'token',
 ];
 
 function hasAllowedExtension(filePath) {
@@ -67,68 +57,95 @@ function walk(dir) {
   return files;
 }
 
+function listFilesToScan() {
+  const files = [];
+  for (const root of roots) {
+    const absoluteRoot = join(process.cwd(), root);
+    if (existsSync(absoluteRoot)) {
+      files.push(...walk(absoluteRoot));
+    }
+  }
+
+  for (const file of explicitFiles) {
+    const absolutePath = join(process.cwd(), file);
+    if (existsSync(absolutePath) && !shouldSkip(absolutePath)) {
+      files.push(absolutePath);
+    }
+  }
+
+  return [...new Set(files)];
+}
+
 function isAllowedLiteral(value) {
-  return /^(test|mock|dummy|example|placeholder|redacted|changeme|your-)/i.test(value)
-    || value.includes('${{')
-    || value.includes('process.env');
+  const normalized = value.trim();
+  return /^(test|mock|dummy|example|placeholder|redacted|changeme|your-|xxx|xxxx)/i.test(normalized)
+    || normalized.includes('${{')
+    || normalized.includes('process.env')
+    || normalized.includes('<')
+    || normalized.includes('...');
+}
+
+function pushFinding(findings, source, match, file, reason) {
+  findings.push({
+    file,
+    line: source.slice(0, match.index).split(/\r?\n/).length,
+    reason,
+  });
 }
 
 function collectFindings(filePath) {
   const relativePath = relative(process.cwd(), filePath);
   const source = readFileSync(filePath, 'utf8');
   const findings = [];
-  const lines = source.split(/\r?\n/);
+  const secretPattern = secretNames.join('|');
+  const isDotenvFile = relativePath.split(/[\\/]/).at(-1)?.startsWith('.env') || false;
 
-  const assignmentPattern = new RegExp(
-    `\\b(${secretNames.join('|')})\\b\\s*[:=]\\s*(['"])([^'"]{8,})\\2`,
+  const quotedAssignmentPattern = new RegExp(
+    `\\b(${secretPattern})\\b\\s*[:=]\\s*(['"])([^'"]{8,})\\2`,
     'g'
   );
-  for (const match of source.matchAll(assignmentPattern)) {
+  for (const match of source.matchAll(quotedAssignmentPattern)) {
     const literal = match[3];
     if (!isAllowedLiteral(literal)) {
-      findings.push({
-        file: relativePath,
-        line: source.slice(0, match.index).split(/\r?\n/).length,
-        reason: `hardcoded value assigned to ${match[1]}`,
-      });
+      pushFinding(findings, source, match, relativePath, `hardcoded value assigned to ${match[1]}`);
     }
   }
 
+  if (isDotenvFile) {
+    const dotenvAssignmentPattern = new RegExp(
+    `^\\s*(${secretPattern})\\s*=\\s*([^#\\r\\n]{8,})`,
+    'gm'
+  );
+  for (const match of source.matchAll(dotenvAssignmentPattern)) {
+    const literal = match[2].trim().replace(/^['"]|['"]$/g, '');
+    if (!isAllowedLiteral(literal)) {
+      pushFinding(findings, source, match, relativePath, `hardcoded dotenv value assigned to ${match[1]}`);
+    }
+  }
+
+  }
+
   const envFallbackPattern = new RegExp(
-    `process\\.env\\.(${secretNames.join('|')})\\s*\\|\\|\\s*(['"])([^'"]{8,})\\2`,
+    `process\\.env\\.(${secretPattern})\\s*\\|\\|\\s*(['"])([^'"]{8,})\\2`,
     'g'
   );
   for (const match of source.matchAll(envFallbackPattern)) {
     const literal = match[3];
     if (!isAllowedLiteral(literal)) {
-      findings.push({
-        file: relativePath,
-        line: source.slice(0, match.index).split(/\r?\n/).length,
-        reason: `hardcoded fallback for ${match[1]}`,
-      });
+      pushFinding(findings, source, match, relativePath, `hardcoded fallback for ${match[1]}`);
     }
   }
 
-  lines.forEach((line, index) => {
-    if (!/console\.(log|warn|error|info|debug)\s*\(/.test(line)) return;
-    if (consoleSensitiveTerms.some((term) => line.includes(term))) {
-      findings.push({
-        file: relativePath,
-        line: index + 1,
-        reason: 'console statement references a sensitive token/secret identifier',
-      });
-    }
-  });
+  // Console logs are intentionally not regex-scanned here: status labels like token_id
+  // and secret manager guidance caused broad false positives. Hardcoded secret
+  // values and hardcoded env fallbacks remain blocking above.
 
   return findings;
 }
 
 const findings = [];
-for (const root of roots) {
-  const absoluteRoot = join(process.cwd(), root);
-  for (const filePath of walk(absoluteRoot)) {
-    findings.push(...collectFindings(filePath));
-  }
+for (const filePath of listFilesToScan()) {
+  findings.push(...collectFindings(filePath));
 }
 
 if (findings.length > 0) {

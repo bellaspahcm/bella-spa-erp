@@ -3,9 +3,9 @@
  * Registers in Platform Contract Registry (Law 8)
  */
 
-import { ContractDefinition } from '@/platform/host/contract-registry/contract-registry.service';
+import type { EngineContractDefinition } from '@/platform/host/contract-registry/types';
 
-export const TEMPORAL_ENGINE_CONTRACT: ContractDefinition = {
+export const TEMPORAL_ENGINE_CONTRACT: EngineContractDefinition = {
   id: 'platform.temporal-engine',
   name: 'Platform Temporal Intelligence Engine',
   version: '1.0.0',
@@ -54,7 +54,9 @@ export const TEMPORAL_ENGINE_CONTRACT: ContractDefinition = {
           timestamp: { type: 'string', format: 'date-time' },
         },
       },
-      outputSchema: { type: 'object', nullable: true },
+      outputSchema: { 
+        type: ['object', 'null']
+      },
     },
     {
       name: 'getHistory',

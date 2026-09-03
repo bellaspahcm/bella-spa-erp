@@ -270,7 +270,7 @@ private async connectToDatabase(databaseUrl: string, environment: string): Promi
 - **Reason:** Replaced by DirectPostgreSQLAdapter
 
 ### 2. Supabase RPC Migration
-- **File:** `supabase/migrations/20260825120000_phase4b3_verification_rpc.sql`
+- **File:** `supabase/migrations/20260826154323_phase4b3_verification_rpc.sql`
 - **Action:** ARCHIVE (move to `supabase/migrations/_archived/`)
 - **Reason:** RPC functions no longer needed with direct adapter
 

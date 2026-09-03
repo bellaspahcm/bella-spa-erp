@@ -74,12 +74,55 @@ Temporary diagnostic tsconfigs were used only to classify the failure surface. T
 
 Full type-check is now classified as FAIL / NOT GREEN, not merely unverified.
 
-**UPDATE 2026-09-01 (Partial Remediation):**
+**UPDATE 2026-09-01 (Remediation Progress):**
 
-Core layer type errors have been forensically remediated:
+### ✅ Core — REMEDIATION CLOSED
+- Commit: `a6103b85` (code), `d40e0749` (evidence)
 - ✅ API route ModuleId validation added
 - ✅ Provider network boundary validation added
+- ✅ Scoped type-check PASS (Core only)
+- ✅ Architecture Guard PASS
 - ⏸️ Booking action nullable IDs deferred (pending schema evidence)
+
+### 🟢 Finance — REMEDIATION CLOSED
+- Commit: `e764b030` 
+- Status: Schema alignment complete, **compiler verification BLOCKED (timeout)**
+- ✅ Schema consistency VERIFIED (manual evidence)
+- ✅ Architecture Guard PASS
+- ✅ Forensic diff PASS
+- ✅ Isolated commit (1 file, no Healthcare/migrations/scripts pulled in)
+- 🟡 F1 scoped type-check: MANUAL VERIFICATION only (compiler hangs)
+
+**Provenance finding:** P1 report accurate for HEAD; fix existed in working tree (unstaged from previous session).
+
+**Changes:**
+- `code` → `account_code`
+- `name` → `account_name`
+- `type` → `account_type`
+- `debit`/`credit` → `debit_amount`/`credit_amount`
+- Removed `tenant_id` from `journal_lines` insert (not in schema)
+
+**Evidence:**
+- DB schema: `supabase/migrations/20260524000000_accounting_core.sql`
+- Contract: `src/platform/accounting/contracts/accounting.contract.ts`
+- Provenance: `docs/architecture/P1_FINANCE_PROVENANCE_RESOLUTION.md`
+
+**Caveat:** Full compiler type-check still times out on Finance scope. Remediation based on:
+- Manual schema/contract verification
+- Canonical DB migration evidence
+- Forensic diff review
+- Runtime payload verification
+
+### 🔴 Healthcare — INVESTIGATION REQUIRED
+- Multiple export conflicts
+- Missing imports
+- Event envelope drift
+- CSSD syntax error (HEAD corruption vs working tree TBD)
+- Requires HEAD vs working-tree provenance investigation before remediation
+
+### ⏸️ Logistics/Products — BLOCKED
+- Compiler timeout/hotspot (no diagnostics after 90-120 seconds)
+- Deferred pending Healthcare closure
 
 Full type-check still BLOCKED by unrelated syntax error:
 ```
@@ -87,7 +130,9 @@ src/platform/healthcare/engines/cssd-engine/cssd-engine.service.ts(768,1):
 error TS1010: '*/' expected.
 ```
 
-See detailed analysis: `P1_TYPE_CHECK_PARTIAL_REMEDIATION_2026_09_01.md`
+See detailed analysis: 
+- Core: `P1_TASK_1_CORE_CLOSURE.md`
+- Finance: `P1_FINANCE_PROVENANCE_RESOLUTION.md`
 
 ---
 

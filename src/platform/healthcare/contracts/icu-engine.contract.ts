@@ -10,7 +10,6 @@ export type IcuBedRow = Database['public']['Tables']['hc_icu_beds']['Row'];
 export type IcuObservationRow = Database['public']['Tables']['hc_icu_observations']['Row'];
 export type VentilatorRecordRow = Database['public']['Tables']['hc_ventilator_records']['Row'];
 export type VentilatorPolicyRow = Database['public']['Tables']['hc_ventilator_safety_policies']['Row'];
-export type ClinicalCalculationRow = Database['public']['Tables']['hc_clinical_calculations']['Row'];
 
 export interface IcuBedAllocationRequest {
   requestId: string;

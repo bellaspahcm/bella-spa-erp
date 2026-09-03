@@ -217,7 +217,7 @@ export class LedgerEngineService implements ILedgerEngine {
         p_reference_type: req.reference_type,
         p_reference_id: req.reference_id,
         p_lines: preparedLines,
-        p_document_date: req.document_date || null
+        p_document_date: req.document_date || undefined
       });
 
       if (error) {

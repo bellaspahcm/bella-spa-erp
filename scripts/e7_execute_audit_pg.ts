@@ -1,6 +1,6 @@
 /**
  * E7: Execute Canonical Identity Audit via PostgreSQL Client
- * 
+ *
  * Purpose: Execute all 6 E7 queries and capture results
  * Method: Direct PostgreSQL connection
  * Status: READ-ONLY (no modifications)
@@ -41,32 +41,32 @@ async function e7Audit() {
     console.log('═══════════════════════════════════════════════════════════════\n');
 
     const e71Data = await executeQuery('E7.1', `
-      SELECT 
+      SELECT
         version,
         name,
         array_length(statements, 1) as statement_count,
         LEFT(statements[1], 100) as first_statement_preview,
-        CASE 
+        CASE
           WHEN version ~ '^\\d{8}_' THEN 'LEGACY_8DIGIT'
           WHEN version ~ '^\\d{14}$' THEN 'STANDARD_14DIGIT'
           ELSE 'OTHER'
         END as version_format
       FROM supabase_migrations.schema_migrations
-      WHERE 
-        version LIKE '20260820%' 
+      WHERE
+        version LIKE '20260820%'
         OR version LIKE '20260821%'
       ORDER BY version
     `);
 
     console.log(`Total rows: ${e71Data.length}`);
     console.log('Expected: 16 rows\n');
-    
+
     const legacy = e71Data.filter(m => /^\d{8}_/.test(m.version));
     const standard = e71Data.filter(m => /^\d{14}$/.test(m.version));
-    
+
     console.log(`LEGACY_8DIGIT:     ${legacy.length} (expected: 7)`);
     console.log(`STANDARD_14DIGIT:  ${standard.length} (expected: 9)\n`);
-    
+
     console.table(e71Data.map(m => ({
       version: m.version,
       name: m.name?.substring(0, 30),
@@ -82,9 +82,9 @@ async function e7Audit() {
     const e72Data = await executeQuery('E7.2', `
       WITH local_migrations AS (
         SELECT unnest(ARRAY[
-          '20260820_r4_3_gate_tokens',
-          '20260820_r4_4_monitoring_audit', 
-          '20260820_r4_approval_contract',
+          '20260820151000_r4_3_gate_tokens',
+          '20260820152000_r4_4_monitoring_audit',
+          '20260820150000_r4_approval_contract',
           '20260820000000',
           '20260820010000',
           '20260820100000',
@@ -92,22 +92,22 @@ async function e7Audit() {
           '20260820120000',
           '20260820130000',
           '20260820140000',
-          '20260821_create_accessorial_rates_table',
-          '20260821_create_carrier_rates_table',
-          '20260821_create_discrepancies_table',
-          '20260821_create_freight_audit_tables',
+          '20260821122000_create_accessorial_rates_table',
+          '20260821121000_create_carrier_rates_table',
+          '20260821123000_create_discrepancies_table',
+          '20260821120000_create_freight_audit_tables',
           '20260821000000',
           '20260821115404'
         ]) as local_version
       ),
       remote_migrations AS (
-        SELECT 
+        SELECT
           version as remote_version,
           name as remote_name
         FROM supabase_migrations.schema_migrations
         WHERE version LIKE '20260820%' OR version LIKE '20260821%'
       )
-      SELECT 
+      SELECT
         l.local_version,
         r.remote_version,
         r.remote_name,
@@ -130,7 +130,7 @@ async function e7Audit() {
     const exactMatch = e72Data.filter(c => c.classification === 'CLASS_A_EXACT_MATCH').length;
     const localOnly = e72Data.filter(c => c.classification === 'CLASS_D_LOCAL_ONLY').length;
     const divergence = e72Data.filter(c => c.classification === 'CLASS_B_DIVERGENCE').length;
-    
+
     console.log(`\n${exactMatch === 16 ? '✅' : '❌'} CLASS_A_EXACT_MATCH: ${exactMatch} (expected: 16)`);
     console.log(`${localOnly === 0 ? '✅' : '❌'} CLASS_D_LOCAL_ONLY:  ${localOnly} (expected: 0)`);
     console.log(`${divergence === 0 ? '✅' : '❌'} CLASS_B_DIVERGENCE:  ${divergence} (expected: 0)`);
@@ -141,10 +141,10 @@ async function e7Audit() {
     console.log('═══════════════════════════════════════════════════════════════\n');
 
     const e73Data = await executeQuery('E7.3', `
-      SELECT 
-        CASE 
+      SELECT
+        CASE
           WHEN EXISTS (
-            SELECT 1 FROM supabase_migrations.schema_migrations 
+            SELECT 1 FROM supabase_migrations.schema_migrations
             WHERE version = '20260824000000'
           ) THEN 'OCCUPIED'
           ELSE 'FREE'
@@ -167,16 +167,16 @@ async function e7Audit() {
     console.log('═══════════════════════════════════════════════════════════════\n');
 
     const e74Data = await executeQuery('E7.4', `
-      SELECT 
+      SELECT
         version as remote_version,
         name as remote_name,
         'CLASS_C_REMOTE_ONLY' as classification
       FROM supabase_migrations.schema_migrations
       WHERE (version LIKE '20260820%' OR version LIKE '20260821%')
         AND version NOT IN (
-          '20260820_r4_3_gate_tokens',
-          '20260820_r4_4_monitoring_audit',
-          '20260820_r4_approval_contract',
+          '20260820151000_r4_3_gate_tokens',
+          '20260820152000_r4_4_monitoring_audit',
+          '20260820150000_r4_approval_contract',
           '20260820000000',
           '20260820010000',
           '20260820100000',
@@ -184,10 +184,10 @@ async function e7Audit() {
           '20260820120000',
           '20260820130000',
           '20260820140000',
-          '20260821_create_accessorial_rates_table',
-          '20260821_create_carrier_rates_table',
-          '20260821_create_discrepancies_table',
-          '20260821_create_freight_audit_tables',
+          '20260821122000_create_accessorial_rates_table',
+          '20260821121000_create_carrier_rates_table',
+          '20260821123000_create_discrepancies_table',
+          '20260821120000_create_freight_audit_tables',
           '20260821000000',
           '20260821115404'
         )
@@ -195,7 +195,7 @@ async function e7Audit() {
     `);
 
     console.log(`Remote-only migrations: ${e74Data.length} (expected: 0)\n`);
-    
+
     if (e74Data.length > 0) {
       console.log('❌ CLASS_C_REMOTE_ONLY detected:');
       console.table(e74Data);
@@ -209,23 +209,23 @@ async function e7Audit() {
     console.log('═══════════════════════════════════════════════════════════════\n');
 
     const e75Data = await executeQuery('E7.5', `
-      SELECT 
+      SELECT
         version,
         name,
-        CASE 
+        CASE
           WHEN version ~ '^\\d{8}_' THEN 'LEGACY_8DIGIT'
           WHEN version ~ '^\\d{14}$' THEN 'STANDARD_14DIGIT'
           ELSE 'OTHER'
         END as format,
         CASE
           WHEN version IN (
-            '20260820_r4_3_gate_tokens',
-            '20260820_r4_4_monitoring_audit',
-            '20260820_r4_approval_contract',
-            '20260821_create_accessorial_rates_table',
-            '20260821_create_carrier_rates_table',
-            '20260821_create_discrepancies_table',
-            '20260821_create_freight_audit_tables'
+            '20260820151000_r4_3_gate_tokens',
+            '20260820152000_r4_4_monitoring_audit',
+            '20260820150000_r4_approval_contract',
+            '20260821122000_create_accessorial_rates_table',
+            '20260821121000_create_carrier_rates_table',
+            '20260821123000_create_discrepancies_table',
+            '20260821120000_create_freight_audit_tables'
           ) THEN 'CLASS_A_LEGACY_EXACT_MATCH'
           WHEN version IN (
             '20260820000000',
@@ -262,8 +262,8 @@ async function e7Audit() {
 
     const e76Data = await executeQuery('E7.6', `
       WITH classification_summary AS (
-        SELECT 
-          CASE 
+        SELECT
+          CASE
             WHEN version ~ '^\\d{8}_' THEN 'LEGACY_8DIGIT'
             WHEN version ~ '^\\d{14}$' THEN 'STANDARD_14DIGIT'
             ELSE 'OTHER'
@@ -273,7 +273,7 @@ async function e7Audit() {
         WHERE version LIKE '20260820%' OR version LIKE '20260821%'
         GROUP BY format
       )
-      SELECT 
+      SELECT
         format,
         count,
         CASE

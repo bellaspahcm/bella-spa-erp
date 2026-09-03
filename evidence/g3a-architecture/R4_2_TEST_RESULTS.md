@@ -164,7 +164,7 @@ dev:        ['admin', 'dba', 'tech_lead']
 
 ## Files Verified
 
-- **Migration:** `supabase/migrations/20260820_r4_approval_contract.sql`
+- **Migration:** `supabase/migrations/20260820150000_r4_approval_contract.sql`
 - **Verification Logic:** `scripts/bdgf/r4-verify-approval.mjs`
 - **Test Suite:** `scripts/bdgf/r4-test-approval-gate.mjs`
 - **R3 Regression:** `scripts/bdgf/r3-simple-test.mjs`

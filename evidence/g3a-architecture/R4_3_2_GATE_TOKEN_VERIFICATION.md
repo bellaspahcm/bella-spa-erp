@@ -157,7 +157,7 @@ function signPayload(payload, signingKey) {
 
 ## DATABASE ENFORCEMENT
 
-### Schema: `supabase/migrations/20260820_r4_3_gate_tokens.sql`
+### Schema: `supabase/migrations/20260820151000_r4_3_gate_tokens.sql`
 
 **Constraints Verified:**
 
@@ -315,7 +315,7 @@ Every token operation logs:
 **Files:**
 - Implementation: `scripts/bdgf/gate-token.mjs`
 - Tests: `scripts/bdgf/r4-3-2-gate-token-test.mjs`
-- Schema: `supabase/migrations/20260820_r4_3_gate_tokens.sql`
+- Schema: `supabase/migrations/20260820151000_r4_3_gate_tokens.sql`
 
 **Regression Command:**
 ```bash
@@ -387,7 +387,7 @@ R4.3.2 ✅ → R4.3.3 Execution Wrapper → R4.3.4 Bypass Tests → R4.3 COMPLET
 **Evidence Location:**
 - This document: `evidence/g3a-architecture/R4_3_2_GATE_TOKEN_VERIFICATION.md`
 - Test output: Captured in test run above
-- Schema: `supabase/migrations/20260820_r4_3_gate_tokens.sql`
+- Schema: `supabase/migrations/20260820151000_r4_3_gate_tokens.sql`
 - Implementation: `scripts/bdgf/gate-token.mjs`
 
 ---

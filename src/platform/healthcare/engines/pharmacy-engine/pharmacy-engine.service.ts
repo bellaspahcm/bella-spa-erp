@@ -32,6 +32,8 @@ import {
   type MedicationSafetyDefinition,
 } from './domain/screening-policies';
 
+type PrescriptionRow = Database['public']['Tables']['hc_prescriptions']['Row'];
+
 export const SAFETY_DEFINITIONS: Record<string, MedicationSafetyDefinition> = {
   'PARACETAMOL': {
     medicationCode: 'PARACETAMOL',

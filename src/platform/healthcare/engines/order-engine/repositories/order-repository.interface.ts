@@ -112,7 +112,7 @@ export interface IOrderRepository {
    * @throws IdempotencyConflictError if requestId already exists for tenant
    * @throws Error if database constraint violated (e.g., invalid encounterId, patient mismatch)
    */
-  create(order: ClinicalOrder): Promise<ClinicalOrder>;
+  create(order: ClinicalOrder, requestId?: string): Promise<ClinicalOrder>;
 
   /**
    * Find order by ID

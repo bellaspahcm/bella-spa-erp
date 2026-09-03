@@ -46,17 +46,17 @@ Remote migration versions not found in local migrations directory.
 From `migration list` output, these appear in Remote column but NOT in Local:
 
 #### Group A: 20260820 migrations (3 versions shown with blank Local)
-1. **20260820_r4_3_gate_tokens** — File exists locally: ✅ `20260820_r4_3_gate_tokens.sql`
-2. **20260820_r4_4_monitoring_audit** — File exists locally: ✅ `20260820_r4_4_monitoring_audit.sql`
-3. **20260820_r4_approval_contract** — File exists locally: ✅ `20260820_r4_approval_contract.sql`
+1. **20260820151000_r4_3_gate_tokens** — File exists locally: ✅ `20260820151000_r4_3_gate_tokens.sql`
+2. **20260820152000_r4_4_monitoring_audit** — File exists locally: ✅ `20260820152000_r4_4_monitoring_audit.sql`
+3. **20260820150000_r4_approval_contract** — File exists locally: ✅ `20260820150000_r4_approval_contract.sql`
 
 **Note:** Migration list shows these with abbreviated version `20260820` in both columns, but **files exist locally**.
 
 #### Group B: 20260821 migrations (4 versions shown with blank Local)
-1. **20260821_create_accessorial_rates_table** — File exists locally: ✅
-2. **20260821_create_carrier_rates_table** — File exists locally: ✅
-3. **20260821_create_discrepancies_table** — File exists locally: ✅
-4. **20260821_create_freight_audit_tables** — File exists locally: ✅
+1. **20260821122000_create_accessorial_rates_table** — File exists locally: ✅
+2. **20260821121000_create_carrier_rates_table** — File exists locally: ✅
+3. **20260821123000_create_discrepancies_table** — File exists locally: ✅
+4. **20260821120000_create_freight_audit_tables** — File exists locally: ✅
 
 **Note:** Migration list shows abbreviated version `20260821`, but **files exist locally**.
 
@@ -178,13 +178,13 @@ FROM supabase_migrations.schema_migrations
 WHERE version IN (
   '20260819040000',
   '20260820110000',
-  '20260820_r4_3_gate_tokens',
-  '20260820_r4_4_monitoring_audit',
-  '20260820_r4_approval_contract',
-  '20260821_create_accessorial_rates_table',
-  '20260821_create_carrier_rates_table',
-  '20260821_create_discrepancies_table',
-  '20260821_create_freight_audit_tables'
+  '20260820151000_r4_3_gate_tokens',
+  '20260820152000_r4_4_monitoring_audit',
+  '20260820150000_r4_approval_contract',
+  '20260821122000_create_accessorial_rates_table',
+  '20260821121000_create_carrier_rates_table',
+  '20260821123000_create_discrepancies_table',
+  '20260821120000_create_freight_audit_tables'
 )
 ORDER BY version;
 ```

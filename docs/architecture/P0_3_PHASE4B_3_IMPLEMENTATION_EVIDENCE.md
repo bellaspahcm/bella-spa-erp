@@ -29,7 +29,7 @@
 
 ### **Database Setup:**
 - **Test Database:** Supabase local instance (or dedicated test project)
-- **RPC Functions:** `20260825120000_phase4b3_verification_rpc.sql` deployed
+- **RPC Functions:** `20260826154323_phase4b3_verification_rpc.sql` deployed
 - **Test Fixtures:** Isolated test schema (not production)
 
 ### **Test Execution:**
@@ -621,7 +621,7 @@ deployment:
 
 ## 🚀 NEXT STEPS
 
-1. **Deploy RPC Functions:** Apply `20260825120000_phase4b3_verification_rpc.sql`
+1. **Deploy RPC Functions:** Apply `20260826154323_phase4b3_verification_rpc.sql`
 2. **Create Test Fixtures:** Setup T1-T7 database states
 3. **Execute Tests:** Run actual implementation against fixtures
 4. **Record Outcomes:** Document actual results for each test

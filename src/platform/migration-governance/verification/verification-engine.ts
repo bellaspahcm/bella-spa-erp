@@ -235,7 +235,7 @@ export class VerificationEngine {
           enabled: rlsStatus.enabled,
           policies: rlsPolicies.map(p => ({
             name: p.name,
-            command: p.command as 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE',
+            command: p.command as 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE' | 'ALL',
             using: p.using,
             check: p.check,
           })),

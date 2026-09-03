@@ -13,7 +13,7 @@
 ```
 Remote migration versions not found in local migrations directory.
 Make sure your local git repo is up-to-date. If the error persists, try repairing the migration history table:
-supabase migration repair --status reverted 20260820_r4_3_gate_tokens ...
+supabase migration repair --status reverted 20260820151000_r4_3_gate_tokens ...
 ```
 
 **Issue:** Despite Step 1 recording 16 migration histories, CLI still detects remote-only migrations.
@@ -23,9 +23,9 @@ supabase migration repair --status reverted 20260820_r4_3_gate_tokens ...
 ## **CLI Complaint List (16 versions)**
 
 ```
-20260820_r4_3_gate_tokens
-20260820_r4_4_monitoring_audit
-20260820_r4_approval_contract
+20260820151000_r4_3_gate_tokens
+20260820152000_r4_4_monitoring_audit
+20260820150000_r4_approval_contract
 20260820000000
 20260820010000
 20260820100000
@@ -33,10 +33,10 @@ supabase migration repair --status reverted 20260820_r4_3_gate_tokens ...
 20260820120000
 20260820130000
 20260820140000
-20260821_create_accessorial_rates_table
-20260821_create_carrier_rates_table
-20260821_create_discrepancies_table
-20260821_create_freight_audit_tables
+20260821122000_create_accessorial_rates_table
+20260821121000_create_carrier_rates_table
+20260821123000_create_discrepancies_table
+20260821120000_create_freight_audit_tables
 20260821000000
 20260821115404
 ```
@@ -50,9 +50,9 @@ supabase migration repair --status reverted 20260820_r4_3_gate_tokens ...
 **Result:** 16 files found
 
 ```
-20260820_r4_3_gate_tokens.sql
-20260820_r4_4_monitoring_audit.sql
-20260820_r4_approval_contract.sql
+20260820151000_r4_3_gate_tokens.sql
+20260820152000_r4_4_monitoring_audit.sql
+20260820150000_r4_approval_contract.sql
 20260820000000_f5_fx_integrity.sql
 20260820010000_f5_prepayment_reconciliation.sql
 20260820100000_migration_governance_approvals.sql
@@ -60,10 +60,10 @@ supabase migration repair --status reverted 20260820_r4_3_gate_tokens ...
 20260820120000_fix_executor_privileges.sql
 20260820130000_grant_executor_rls_bypass.sql
 20260820140000_enable_rls_block_service_key.sql
-20260821_create_accessorial_rates_table.sql
-20260821_create_carrier_rates_table.sql
-20260821_create_discrepancies_table.sql
-20260821_create_freight_audit_tables.sql
+20260821122000_create_accessorial_rates_table.sql
+20260821121000_create_carrier_rates_table.sql
+20260821123000_create_discrepancies_table.sql
+20260821120000_create_freight_audit_tables.sql
 20260821000000_fix_healthcare_rls_tenant_isolation.sql
 20260821115404_logistics_schema.sql
 ```
@@ -81,8 +81,8 @@ supabase migration repair --status reverted 20260820_r4_3_gate_tokens ...
 
 ### **Convention A: Abbreviated Version (underscore suffix)**
 ```
-Version: 20260820_r4_3_gate_tokens
-File:    20260820_r4_3_gate_tokens.sql
+Version: 20260820151000_r4_3_gate_tokens
+File:    20260820151000_r4_3_gate_tokens.sql
 ```
 
 ### **Convention B: Full Timestamp**
@@ -137,9 +137,9 @@ SELECT
   applied_at
 FROM supabase_migrations.schema_migrations
 WHERE version IN (
-  '20260820_r4_3_gate_tokens',
-  '20260820_r4_4_monitoring_audit',
-  '20260820_r4_approval_contract',
+  '20260820151000_r4_3_gate_tokens',
+  '20260820152000_r4_4_monitoring_audit',
+  '20260820150000_r4_approval_contract',
   '20260820000000',
   '20260820010000',
   '20260820100000',
@@ -147,10 +147,10 @@ WHERE version IN (
   '20260820120000',
   '20260820130000',
   '20260820140000',
-  '20260821_create_accessorial_rates_table',
-  '20260821_create_carrier_rates_table',
-  '20260821_create_discrepancies_table',
-  '20260821_create_freight_audit_tables',
+  '20260821122000_create_accessorial_rates_table',
+  '20260821121000_create_carrier_rates_table',
+  '20260821123000_create_discrepancies_table',
+  '20260821120000_create_freight_audit_tables',
   '20260821000000',
   '20260821115404'
 )
@@ -195,8 +195,8 @@ Local:  20260820110000_database_role_separation.sql
 
 **Example:**
 ```
-Remote: version=20260820_r4_3_gate_tokens, name=r4_3_gate_tokens
-Local:  20260820_r4_3_gate_tokens.sql
+Remote: version=20260820151000_r4_3_gate_tokens, name=r4_3_gate_tokens
+Local:  20260820151000_r4_3_gate_tokens.sql
 ```
 
 **Conclusion:** CLI may not support abbreviated version format in local filename

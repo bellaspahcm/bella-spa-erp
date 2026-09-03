@@ -155,7 +155,7 @@ Core security verified (4/4 PASS):
 - `scripts/bdgf/r4-verify-approval.mjs` - 8 invariant verification
 
 **Schema:**
-- `supabase/migrations/20260820_r4_3_gate_tokens.sql`
+- `supabase/migrations/20260820151000_r4_3_gate_tokens.sql`
 
 **Evidence:**
 - `evidence/g3a-architecture/R3_BASELINE_LOCKED.md`

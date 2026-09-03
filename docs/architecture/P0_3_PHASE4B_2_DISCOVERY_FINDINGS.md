@@ -31,7 +31,7 @@ Understand approval authority, migration identity, and BDGF integration boundari
 
 ### 1. Approval Schema (bella_migration_approval)
 
-**Location:** `supabase/migrations/20260820_r4_approval_contract.sql`
+**Location:** `supabase/migrations/20260820150000_r4_approval_contract.sql`
 
 **Table Structure:**
 ```sql
@@ -490,7 +490,7 @@ migration-executor.mjs
 
 **Approval Contract:**
 - `docs/architecture/R4_APPROVAL_CONTRACT_SPECIFICATION.md` v1.0.0 (FROZEN)
-- `supabase/migrations/20260820_r4_approval_contract.sql`
+- `supabase/migrations/20260820150000_r4_approval_contract.sql`
 
 **BDGF Implementation:**
 - `scripts/bdgf/execute-migration-wrapper.mjs` — Entry point

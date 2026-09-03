@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/platform/**/*.ts",
+    "src/platform/**/*.tsx",
+    "src/modules/bella-healthcare/**/*.ts",
+    "src/modules/bella-healthcare/**/*.tsx",
+    "src/types/**/*.ts"
+  ]
+}

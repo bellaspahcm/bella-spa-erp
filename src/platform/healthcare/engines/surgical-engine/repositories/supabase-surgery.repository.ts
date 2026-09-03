@@ -10,9 +10,15 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
 import { BaseSupabaseRepositoryPrimitive } from '../../../../core/repository/base-supabase-repository.primitive';
 import { SurgicalCase, SurgicalCaseStatus } from '../domain/surgical-case.entity';
 import { ISurgeryRepository } from './surgery-repository.interface';
+
+type SurgicalCaseRow = Database['public']['Tables']['hc_surgical_cases']['Row'];
+type SurgicalCaseInsert = Database['public']['Tables']['hc_surgical_cases']['Insert'];
+type SurgicalSafetyChecklistRow = Database['public']['Tables']['hc_surgical_safety_checklists']['Row'];
+type SurgicalSafetyChecklistInsert = Database['public']['Tables']['hc_surgical_safety_checklists']['Insert'];
 
 export class SurgicalResourceConflictError extends Error {
   constructor(message: string) {
@@ -22,7 +28,7 @@ export class SurgicalResourceConflictError extends Error {
 }
 
 export class SupabaseSurgeryRepository extends BaseSupabaseRepositoryPrimitive implements ISurgeryRepository {
-  constructor(private readonly supabase: SupabaseClient<Record<string, unknown>>) {
+  constructor(private readonly supabase: SupabaseClient<Database>) {
     super();
   }
 
@@ -39,7 +45,7 @@ export class SupabaseSurgeryRepository extends BaseSupabaseRepositoryPrimitive i
       dbStatus = snap.status.toLowerCase();
     }
 
-    const dbRow = {
+    const dbRow: SurgicalCaseInsert = {
       id: snap.id,
       tenant_id: snap.tenantId,
       encounter_id: snap.encounterId,
@@ -57,7 +63,7 @@ export class SupabaseSurgeryRepository extends BaseSupabaseRepositoryPrimitive i
       updated_at: new Date().toISOString(),
     };
 
-    let persistedRow: Record<string, unknown>;
+    let persistedRow: SurgicalCaseRow;
 
     const { data: existing } = await this.supabase
       .from('hc_surgical_cases')
@@ -114,7 +120,7 @@ export class SupabaseSurgeryRepository extends BaseSupabaseRepositoryPrimitive i
 
 
 
-    const checklistRow = {
+    const checklistRow: SurgicalSafetyChecklistInsert = {
       tenant_id: snap.tenantId,
       surgical_case_id: snap.id,
       signin_completed: snap.signinCompleted,
@@ -146,10 +152,24 @@ export class SupabaseSurgeryRepository extends BaseSupabaseRepositoryPrimitive i
         });
     }
 
-    return this.mapToEntity(persistedRow, {
-      ...checklistRow,
+    const checklistEntityRow: SurgicalSafetyChecklistRow = {
       id: existingChecklist?.id || `chk-${snap.id}`,
-    });
+      tenant_id: checklistRow.tenant_id,
+      surgical_case_id: checklistRow.surgical_case_id,
+      created_at: existingChecklist?.created_at || new Date().toISOString(),
+      signin_completed: checklistRow.signin_completed ?? false,
+      signin_completed_at: checklistRow.signin_completed_at ?? null,
+      signin_completed_by: checklistRow.signin_completed_by ?? null,
+      timeout_completed: checklistRow.timeout_completed ?? false,
+      timeout_completed_at: checklistRow.timeout_completed_at ?? null,
+      timeout_completed_by: checklistRow.timeout_completed_by ?? null,
+      signout_completed: checklistRow.signout_completed ?? false,
+      signout_completed_at: checklistRow.signout_completed_at ?? null,
+      signout_completed_by: checklistRow.signout_completed_by ?? null,
+      updated_at: checklistRow.updated_at ?? new Date().toISOString(),
+    };
+
+    return this.mapToEntity(persistedRow, checklistEntityRow);
   }
 
   public async findById(tenantId: string, id: string): Promise<SurgicalCase | null> {
@@ -225,9 +245,10 @@ export class SupabaseSurgeryRepository extends BaseSupabaseRepositoryPrimitive i
     return { orOverlaps, surgeonOverlaps };
   }
 
-  private handleError(error: Record<string, unknown>): never {
-    const code = String(error.code || '');
-    const message = String(error.message || '');
+  private handleError(error: unknown): never {
+    const normalized = error as { code?: string; message?: string };
+    const code = String(normalized.code || '');
+    const message = String(normalized.message || '');
 
     if (code === '23P01') {
       if (message.includes('exclude_or_overlap')) {
@@ -242,7 +263,7 @@ export class SupabaseSurgeryRepository extends BaseSupabaseRepositoryPrimitive i
     throw this.mapDatabaseError(error, 'Surgical repository error');
   }
 
-  private mapToEntity(caseRow: Record<string, unknown>, checklistRow?: Record<string, unknown>): SurgicalCase {
+  private mapToEntity(caseRow: SurgicalCaseRow, checklistRow?: SurgicalSafetyChecklistRow): SurgicalCase {
     const dbStatus = String(caseRow.status || '');
     let status: SurgicalCaseStatus = 'SCHEDULED';
 

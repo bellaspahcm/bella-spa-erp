@@ -23,9 +23,9 @@ interface LocalMigration {
 const MIGRATIONS_DIR = path.join(process.cwd(), 'supabase', 'migrations');
 
 const AFFECTED_VERSIONS = [
-  '20260820_r4_3_gate_tokens',
-  '20260820_r4_4_monitoring_audit',
-  '20260820_r4_approval_contract',
+  '20260820151000_r4_3_gate_tokens',
+  '20260820152000_r4_4_monitoring_audit',
+  '20260820150000_r4_approval_contract',
   '20260820000000',
   '20260820010000',
   '20260820100000',
@@ -33,10 +33,10 @@ const AFFECTED_VERSIONS = [
   '20260820120000',
   '20260820130000',
   '20260820140000',
-  '20260821_create_accessorial_rates_table',
-  '20260821_create_carrier_rates_table',
-  '20260821_create_discrepancies_table',
-  '20260821_create_freight_audit_tables',
+  '20260821122000_create_accessorial_rates_table',
+  '20260821121000_create_carrier_rates_table',
+  '20260821123000_create_discrepancies_table',
+  '20260821120000_create_freight_audit_tables',
   '20260821000000',
   '20260821115404',
 ];

@@ -7,7 +7,7 @@
  * @module platform/healthcare/engines/mpi-engine/contracts/mpi.contract
  */
 
-import { EngineContract } from '../../../contracts';
+import type { EngineContract } from '../../../shared-kernel/types';
 
 export interface IMPIContract extends EngineContract {
   /**
@@ -38,3 +38,4 @@ export interface PatientSummary {
   gender?: 'male' | 'female' | 'other' | 'unknown';
   nationalId?: string;    // National ID/CCCD
 }
+

@@ -1,0 +1,6 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "noEmit": true, "skipLibCheck": true },
+  "include": ["src/modules/bella-auto/**/*.ts"],
+  "exclude": ["**/*.spec.ts", "src/types/database.types.ts"]
+}

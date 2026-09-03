@@ -1,0 +1,16 @@
+src/platform/healthcare/finance-integration/example-usage.ts(22,10): error TS2554: Expected 2 arguments, but got 1.
+src/platform/healthcare/finance-integration/example-usage.ts(268,49): error TS2339: Property 'transaction_id' does not exist on type 'FinanceOutboxWriteResult'.
+src/platform/healthcare/finance-integration/example-usage.ts(283,52): error TS2339: Property 'transaction_id' does not exist on type 'FinanceOutboxWriteResult'.
+src/platform/healthcare/finance-integration/example-usage.ts(294,49): error TS2339: Property 'transaction_id' does not exist on type 'FinanceOutboxWriteResult'.
+src/platform/healthcare/finance-integration/example-usage.ts(326,36): error TS2339: Property 'status' does not exist on type 'FinanceOutboxWriteResult'.
+src/platform/healthcare/finance-integration/example-usage.ts(327,41): error TS2339: Property 'transaction_id' does not exist on type 'FinanceOutboxWriteResult'.
+src/platform/healthcare/finance-integration/example-usage.ts(332,36): error TS2339: Property 'status' does not exist on type 'FinanceOutboxWriteResult'.
+src/platform/healthcare/finance-integration/example-usage.ts(333,41): error TS2339: Property 'transaction_id' does not exist on type 'FinanceOutboxWriteResult'.
+src/platform/healthcare/finance-integration/example-usage.ts(338,36): error TS2339: Property 'status' does not exist on type 'FinanceOutboxWriteResult'.
+src/platform/healthcare/finance-integration/example-usage.ts(339,41): error TS2339: Property 'transaction_id' does not exist on type 'FinanceOutboxWriteResult'.
+src/platform/healthcare/finance-integration/example-usage.ts(342,66): error TS2339: Property 'transaction_id' does not exist on type 'FinanceOutboxWriteResult'.
+src/platform/healthcare/finance-integration/example-usage.ts(342,93): error TS2339: Property 'transaction_id' does not exist on type 'FinanceOutboxWriteResult'.
+src/platform/healthcare/finance-integration/example-usage.ts(342,119): error TS2339: Property 'transaction_id' does not exist on type 'FinanceOutboxWriteResult'.
+src/platform/healthcare/finance-integration/example-usage.ts(342,146): error TS2339: Property 'transaction_id' does not exist on type 'FinanceOutboxWriteResult'.
+src/platform/healthcare/finance-integration/example-usage.ts(343,75): error TS2339: Property 'status' does not exist on type 'FinanceOutboxWriteResult'.
+src/platform/healthcare/finance-integration/example-usage.ts(343,107): error TS2339: Property 'status' does not exist on type 'FinanceOutboxWriteResult'.

@@ -12,9 +12,9 @@
 
 | version | name |
 |---------|------|
-| 20260820_r4_3_gate_tokens | r4_3_gate_tokens |
-| 20260820_r4_4_monitoring_audit | r4_4_monitoring_audit |
-| 20260820_r4_approval_contract | r4_approval_contract |
+| 20260820151000_r4_3_gate_tokens | r4_3_gate_tokens |
+| 20260820152000_r4_4_monitoring_audit | r4_4_monitoring_audit |
+| 20260820150000_r4_approval_contract | r4_approval_contract |
 | 20260820000000 | f5_fx_integrity |
 | 20260820010000 | f5_prepayment_reconciliation |
 | 20260820100000 | migration_governance_approvals |
@@ -29,10 +29,10 @@
 | 20260820120000 | fix_executor_privileges |
 | 20260820130000 | grant_executor_rls_bypass |
 | 20260820140000 | enable_rls_block_service_key |
-| 20260821_create_accessorial_rates_table | create_accessorial_rates_table |
-| 20260821_create_carrier_rates_table | create_carrier_rates_table |
-| 20260821_create_discrepancies_table | create_discrepancies_table |
-| 20260821_create_freight_audit_tables | create_freight_audit_tables |
+| 20260821122000_create_accessorial_rates_table | create_accessorial_rates_table |
+| 20260821121000_create_carrier_rates_table | create_carrier_rates_table |
+| 20260821123000_create_discrepancies_table | create_discrepancies_table |
+| 20260821120000_create_freight_audit_tables | create_freight_audit_tables |
 | 20260821000000 | fix_healthcare_rls_tenant_isolation |
 | 20260821115404 | logistics_schema |
 
@@ -41,9 +41,9 @@
 ## Local Files (from E5.2):
 
 ```
-20260820_r4_3_gate_tokens.sql
-20260820_r4_4_monitoring_audit.sql
-20260820_r4_approval_contract.sql
+20260820151000_r4_3_gate_tokens.sql
+20260820152000_r4_4_monitoring_audit.sql
+20260820150000_r4_approval_contract.sql
 20260820000000_f5_fx_integrity.sql
 20260820010000_f5_prepayment_reconciliation.sql
 20260820100000_migration_governance_approvals.sql
@@ -51,10 +51,10 @@
 20260820120000_fix_executor_privileges.sql
 20260820130000_grant_executor_rls_bypass.sql
 20260820140000_enable_rls_block_service_key.sql
-20260821_create_accessorial_rates_table.sql
-20260821_create_carrier_rates_table.sql
-20260821_create_discrepancies_table.sql
-20260821_create_freight_audit_tables.sql
+20260821122000_create_accessorial_rates_table.sql
+20260821121000_create_carrier_rates_table.sql
+20260821123000_create_discrepancies_table.sql
+20260821120000_create_freight_audit_tables.sql
 20260821000000_fix_healthcare_rls_tenant_isolation.sql
 20260821115404_logistics_schema.sql
 ```
@@ -65,9 +65,9 @@
 
 | # | Local Filename | Local Version | Local Name | Remote Version | Remote Name | Match | Classification |
 |---|----------------|---------------|------------|----------------|-------------|-------|----------------|
-| 1 | `20260820_r4_3_gate_tokens.sql` | 20260820_r4_3_gate_tokens | r4_3_gate_tokens | 20260820_r4_3_gate_tokens | r4_3_gate_tokens | ✅ | **CASE A** |
-| 2 | `20260820_r4_4_monitoring_audit.sql` | 20260820_r4_4_monitoring_audit | r4_4_monitoring_audit | 20260820_r4_4_monitoring_audit | r4_4_monitoring_audit | ✅ | **CASE A** |
-| 3 | `20260820_r4_approval_contract.sql` | 20260820_r4_approval_contract | r4_approval_contract | 20260820_r4_approval_contract | r4_approval_contract | ✅ | **CASE A** |
+| 1 | `20260820151000_r4_3_gate_tokens.sql` | 20260820151000_r4_3_gate_tokens | r4_3_gate_tokens | 20260820151000_r4_3_gate_tokens | r4_3_gate_tokens | ✅ | **CASE A** |
+| 2 | `20260820152000_r4_4_monitoring_audit.sql` | 20260820152000_r4_4_monitoring_audit | r4_4_monitoring_audit | 20260820152000_r4_4_monitoring_audit | r4_4_monitoring_audit | ✅ | **CASE A** |
+| 3 | `20260820150000_r4_approval_contract.sql` | 20260820150000_r4_approval_contract | r4_approval_contract | 20260820150000_r4_approval_contract | r4_approval_contract | ✅ | **CASE A** |
 | 4 | `20260820000000_f5_fx_integrity.sql` | 20260820000000 | f5_fx_integrity | 20260820000000 | f5_fx_integrity | ✅ | **CASE A** |
 | 5 | `20260820010000_f5_prepayment_reconciliation.sql` | 20260820010000 | f5_prepayment_reconciliation | 20260820010000 | f5_prepayment_reconciliation | ✅ | **CASE A** |
 | 6 | `20260820100000_migration_governance_approvals.sql` | 20260820100000 | migration_governance_approvals | 20260820100000 | migration_governance_approvals | ✅ | **CASE A** |
@@ -75,10 +75,10 @@
 | 8 | `20260820120000_fix_executor_privileges.sql` | 20260820120000 | fix_executor_privileges | 20260820120000 | fix_executor_privileges | ✅ | **CASE A** |
 | 9 | `20260820130000_grant_executor_rls_bypass.sql` | 20260820130000 | grant_executor_rls_bypass | 20260820130000 | grant_executor_rls_bypass | ✅ | **CASE A** |
 | 10 | `20260820140000_enable_rls_block_service_key.sql` | 20260820140000 | enable_rls_block_service_key | 20260820140000 | enable_rls_block_service_key | ✅ | **CASE A** |
-| 11 | `20260821_create_accessorial_rates_table.sql` | 20260821_create_accessorial_rates_table | create_accessorial_rates_table | 20260821_create_accessorial_rates_table | create_accessorial_rates_table | ✅ | **CASE A** |
-| 12 | `20260821_create_carrier_rates_table.sql` | 20260821_create_carrier_rates_table | create_carrier_rates_table | 20260821_create_carrier_rates_table | create_carrier_rates_table | ✅ | **CASE A** |
-| 13 | `20260821_create_discrepancies_table.sql` | 20260821_create_discrepancies_table | create_discrepancies_table | 20260821_create_discrepancies_table | create_discrepancies_table | ✅ | **CASE A** |
-| 14 | `20260821_create_freight_audit_tables.sql` | 20260821_create_freight_audit_tables | create_freight_audit_tables | 20260821_create_freight_audit_tables | create_freight_audit_tables | ✅ | **CASE A** |
+| 11 | `20260821122000_create_accessorial_rates_table.sql` | 20260821122000_create_accessorial_rates_table | create_accessorial_rates_table | 20260821122000_create_accessorial_rates_table | create_accessorial_rates_table | ✅ | **CASE A** |
+| 12 | `20260821121000_create_carrier_rates_table.sql` | 20260821121000_create_carrier_rates_table | create_carrier_rates_table | 20260821121000_create_carrier_rates_table | create_carrier_rates_table | ✅ | **CASE A** |
+| 13 | `20260821123000_create_discrepancies_table.sql` | 20260821123000_create_discrepancies_table | create_discrepancies_table | 20260821123000_create_discrepancies_table | create_discrepancies_table | ✅ | **CASE A** |
+| 14 | `20260821120000_create_freight_audit_tables.sql` | 20260821120000_create_freight_audit_tables | create_freight_audit_tables | 20260821120000_create_freight_audit_tables | create_freight_audit_tables | ✅ | **CASE A** |
 | 15 | `20260821000000_fix_healthcare_rls_tenant_isolation.sql` | 20260821000000 | fix_healthcare_rls_tenant_isolation | 20260821000000 | fix_healthcare_rls_tenant_isolation | ✅ | **CASE A** |
 | 16 | `20260821115404_logistics_schema.sql` | 20260821115404 | logistics_schema | 20260821115404 | logistics_schema | ✅ | **CASE A** |
 
@@ -152,7 +152,7 @@ Then retry `db push --dry-run`.
 
 If Options 1-2 fail, use CLI suggestion:
 ```bash
-supabase migration repair --status applied 20260820_r4_3_gate_tokens ...
+supabase migration repair --status applied 20260820151000_r4_3_gate_tokens ...
 ```
 
 **But only if:**

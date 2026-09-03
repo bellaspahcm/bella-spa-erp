@@ -1,0 +1,84 @@
+src/platform/host/analytics-engine/analytics-engine.contract.ts(6,10): error TS2305: Module '"@/platform/host/contract-registry/contract-registry.service"' has no exported member 'ContractDefinition'.
+src/platform/host/analytics-engine/analytics-engine.service.ts(128,9): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 35 more.
+src/platform/host/index.ts(27,15): error TS2307: Cannot find module './iam' or its corresponding type declarations.
+src/platform/host/index.ts(28,15): error TS2307: Cannot find module './notification' or its corresponding type declarations.
+src/platform/host/index.ts(29,15): error TS2307: Cannot find module './workflow' or its corresponding type declarations.
+src/platform/host/index.ts(31,15): error TS2307: Cannot find module './ai-runtime' or its corresponding type declarations.
+src/platform/host/index.ts(32,15): error TS2307: Cannot find module './metadata' or its corresponding type declarations.
+src/platform/host/index.ts(33,15): error TS2307: Cannot find module './integration' or its corresponding type declarations.
+src/platform/host/person/person.repository.ts(44,7): error TS2322: Type 'Record<string, unknown> | null' is not assignable to type 'Json | undefined'.
+  Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+    Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 35 more.
+src/platform/host/person/person.repository.ts(81,7): error TS2322: Type 'Record<string, unknown> | null' is not assignable to type 'Json | undefined'.
+  Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+    Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 35 more.
+src/platform/host/person/person.repository.ts(262,21): error TS2352: Conversion of type 'string | number | boolean | { [key: string]: Json | undefined; } | Json[] | null' to type 'PersonIdentifier[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'Json[]' is not comparable to type 'PersonIdentifier[]'.
+    Type 'Json' is not comparable to type 'PersonIdentifier'.
+      Type 'Json[]' is missing the following properties from type 'PersonIdentifier': type, value
+src/platform/host/person/person.repository.ts(263,18): error TS2352: Conversion of type 'string | number | boolean | { [key: string]: Json | undefined; } | Json[] | null' to type 'PersonContact[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'Json[]' is not comparable to type 'PersonContact[]'.
+    Type 'Json' is not comparable to type 'PersonContact'.
+      Type 'Json[]' is missing the following properties from type 'PersonContact': type, value
+src/platform/host/person/person.repository.ts(264,19): error TS2352: Conversion of type 'string | number | boolean | { [key: string]: Json | undefined; } | Json[] | null' to type 'PersonAddress[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'Json[]' is not comparable to type 'PersonAddress[]'.
+    Type 'Json' is not comparable to type 'PersonAddress'.
+      Type 'Json[]' is missing the following properties from type 'PersonAddress': use, line1, city, country
+src/platform/host/person/person.service.ts(123,33): error TS7009: 'new' expression, whose target lacks a construct signature, implicitly has an 'any' type.
+src/platform/host/rollback-engine/rollback-engine.contract.ts(6,10): error TS2305: Module '"@/platform/host/contract-registry/contract-registry.service"' has no exported member 'ContractDefinition'.
+src/platform/host/rollback-engine/rollback-engine.service.ts(126,17): error TS2322: Type 'string' is not assignable to type '"in_transit" | "warehouse" | "showroom" | "allocated" | "delivered" | "returned" | "scrapped" | undefined'.
+src/platform/host/rollback-engine/rollback-engine.service.ts(145,9): error TS2322: Type 'string' is not assignable to type 'never'.
+src/platform/host/rollback-engine/rollback-engine.service.ts(156,13): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "feature_flags" | "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | ... 357 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"hc_bed_allocations"' is not assignable to parameter of type '"feature_flags" | "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | ... 357 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"hc_bed_allocations"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/platform/host/rollback-engine/rollback-engine.service.ts(158,9): error TS2322: Type 'string' is not assignable to type 'never'.
+src/platform/host/rollback-engine/rollback-engine.service.ts(159,9): error TS2322: Type 'string' is not assignable to type 'never'.
+src/platform/host/rollback-engine/rollback-engine.service.ts(160,9): error TS2322: Type 'string' is not assignable to type 'never'.
+src/platform/host/rollback-engine/rollback-engine.service.ts(162,11): error TS2345: Argument of type '"id"' is not assignable to parameter of type 'never'.
+src/platform/host/rollback-engine/rollback-engine.service.ts(163,11): error TS2345: Argument of type '"tenant_id"' is not assignable to parameter of type 'never'.
+src/platform/host/rollback-engine/rollback-engine.service.ts(182,13): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "feature_flags" | "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | ... 357 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"commission"' is not assignable to parameter of type '"feature_flags" | "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | ... 357 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"commission"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/platform/host/rollback-engine/rollback-engine.service.ts(184,9): error TS2322: Type 'string' is not assignable to type 'never'.
+src/platform/host/rollback-engine/rollback-engine.service.ts(185,9): error TS2322: Type 'string' is not assignable to type 'never'.
+src/platform/host/rollback-engine/rollback-engine.service.ts(186,9): error TS2322: Type 'string' is not assignable to type 'never'.
+src/platform/host/rollback-engine/rollback-engine.service.ts(187,9): error TS2322: Type 'number' is not assignable to type 'never'.
+src/platform/host/rollback-engine/rollback-engine.service.ts(188,9): error TS2322: Type 'string' is not assignable to type 'never'.
+src/platform/host/rollback-engine/rollback-engine.service.ts(189,9): error TS2322: Type 'string' is not assignable to type 'never'.
+src/platform/host/rollback-engine/rollback-engine.service.ts(190,9): error TS2322: Type 'string' is not assignable to type 'never'.
+src/platform/host/rollback-engine/rollback-engine.service.ts(196,42): error TS2345: Argument of type '"increment_inventory"' is not assignable to parameter of type '"acc_balance_at" | "accounting_missing_required_fields" | "add_partner_document" | "apply_rating_bonus" | "auto_confirm_stale_salary_records" | "backfill_accounting_metadata" | ... 187 more ... | "validate_api_partner"'.
+src/platform/host/rollback-engine/rollback-engine.service.ts(285,9): error TS2322: Type 'Record<string, unknown> | null' is not assignable to type 'Json | undefined'.
+  Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+    Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 35 more.
+src/platform/host/rollback-engine/rollback-engine.service.ts(286,9): error TS2322: Type 'Record<string, unknown> | null' is not assignable to type 'Json | undefined'.
+  Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+    Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 35 more.
+src/platform/host/rollback-engine/rollback-engine.service.ts(288,9): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 35 more.
+src/platform/host/rollback-engine/rollback-engine.service.ts(291,9): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 35 more.
+src/platform/host/rule-engine/rule-engine.contract.ts(10,10): error TS2305: Module '"@/platform/host/contract-registry/contract-registry.service"' has no exported member 'ContractDefinition'.
+src/platform/host/rule-engine/rule-engine.service.ts(161,70): error TS2345: Argument of type 'string | number' is not assignable to parameter of type 'never'.
+  Type 'string' is not assignable to type 'never'.
+src/platform/host/rule-engine/rule-engine.service.ts(162,71): error TS2345: Argument of type 'string | number' is not assignable to parameter of type 'never'.
+  Type 'string' is not assignable to type 'never'.
+src/platform/host/rule-engine/rule-engine.service.ts(194,9): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 35 more.
+src/platform/host/rule-engine/rule-engine.service.ts(198,9): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 35 more.
+src/platform/host/rule-engine/rule-engine.service.ts(287,9): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 35 more.
+src/platform/host/rule-engine/rule-engine.service.ts(450,9): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 35 more.
+src/platform/host/rule-engine/rule-engine.service.ts(454,9): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 35 more.
+src/platform/host/temporal-engine/temporal-engine.contract.ts(6,10): error TS2305: Module '"@/platform/host/contract-registry/contract-registry.service"' has no exported member 'ContractDefinition'.
+src/platform/host/temporal-engine/temporal-engine.service.ts(101,9): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'Json'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 35 more.
+src/platform/host/temporal-engine/temporal-engine.service.ts(111,9): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 35 more.

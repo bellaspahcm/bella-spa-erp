@@ -89,8 +89,6 @@ export class TemporalEngineService implements ITemporalContract {
       // Event-After-Persistence: Publish temporal recorded event strictly after DB commit
       await eventBus.publish({
         eventType: 'hos.temporal.event_recorded.v1',
-        eventId: crypto.randomUUID(),
-        timestamp: new Date().toISOString(),
         tenantId: record.tenantId,
         aggregateId: record.id,
         aggregateType: 'TemporalEvent',
@@ -309,3 +307,5 @@ export class TemporalEngineService implements ITemporalContract {
     };
   }
 }
+
+

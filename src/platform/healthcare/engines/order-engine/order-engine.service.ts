@@ -776,7 +776,7 @@ export class OrderEngineService implements OrderEngineContract {
     return data ? ({ _idempotentDuplicate: true } as unknown as T) : null;
   }
 
-  private async storeIdempotency<T extends Record<string, unknown>>(
+  private async storeIdempotency<T>(
     tenantId: string,
     requestId: string,
     _result: T

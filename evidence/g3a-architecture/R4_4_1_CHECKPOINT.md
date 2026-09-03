@@ -166,7 +166,7 @@ BDGF MVP COMPLETE
 ## FILES CREATED
 
 **Schema:**
-- `supabase/migrations/20260820_r4_4_monitoring_audit.sql` ✅
+- `supabase/migrations/20260820152000_r4_4_monitoring_audit.sql` ✅
 
 **Implementation:**
 - `scripts/bdgf/r4-4-monitoring.mjs` ✅

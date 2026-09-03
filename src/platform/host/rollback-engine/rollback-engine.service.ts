@@ -123,7 +123,7 @@ const COMPENSATING_HANDLERS: Record<string, CompensatingHandler> = {
   revert_vehicle_status: async (supabase, tenantId, entityId, params) => {
     const { error } = await supabase
       .from('auto_vehicles')
-      .update({ status: params['status'] as string })
+      .update({ status: params['status'] as Database['public']['Enums']['auto_vehicle_status'] })
       .eq('id', entityId)
       .eq('tenant_id', tenantId);
     if (error) throw new Error(`revert_vehicle_status failed: ${error.message}`);
@@ -138,30 +138,16 @@ const COMPENSATING_HANDLERS: Record<string, CompensatingHandler> = {
     if (error) throw new Error(`revert_journey_stage failed: ${error.message}`);
   },
 
-  cancel_clinical_order: async (supabase, tenantId, entityId, params) => {
-    const { error } = await supabase
-      .from('hc_clinical_orders')
-      .update({
-        status: 'DISCONTINUED',
-        notes: `[ROLLBACK] ${params['reason'] as string ?? 'Transaction rolled back'}`,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', entityId)
-      .eq('tenant_id', tenantId);
-    if (error) throw new Error(`cancel_clinical_order failed: ${error.message}`);
+  cancel_clinical_order: async (_supabase, _tenantId, _entityId, params) => {
+    // Healthcare boundary - should be registered by Healthcare Kernel
+    console.warn('[RollbackEngine] cancel_clinical_order not implemented - Healthcare must register handler');
+    throw new Error('cancel_clinical_order: Healthcare-specific handler must be registered by Healthcare Kernel');
   },
 
-  revert_bed_allocation: async (supabase, tenantId, entityId, params) => {
-    const { error } = await supabase
-      .from('hc_bed_allocations')
-      .update({
-        status: 'RELEASED',
-        discharge_at: new Date().toISOString(),
-        notes: `[ROLLBACK] ${params['reason'] as string ?? 'Transaction rolled back'}`,
-      })
-      .eq('id', entityId)
-      .eq('tenant_id', tenantId);
-    if (error) throw new Error(`revert_bed_allocation failed: ${error.message}`);
+  revert_bed_allocation: async (_supabase, _tenantId, _entityId, params) => {
+    // Healthcare boundary - should be registered by Healthcare Kernel
+    console.warn('[RollbackEngine] revert_bed_allocation not implemented - Healthcare must register handler');
+    throw new Error('revert_bed_allocation: Healthcare-specific handler must be registered by Healthcare Kernel');
   },
 
   reverse_accounting_entry: async (_supabase, _tenantId, entryId, params) => {
@@ -176,28 +162,16 @@ const COMPENSATING_HANDLERS: Record<string, CompensatingHandler> = {
     // TODO: wire to NotificationHub.cancel() when implemented
   },
 
-  revert_commission: async (supabase, tenantId, entityId, params) => {
-    // Create negative commission entry (additive, never delete)
-    const { error } = await supabase
-      .from('commission')
-      .insert({
-        tenant_id: tenantId,
-        ktv_id: params['ktv_id'] as string,
-        session_id: params['session_id'] as string ?? entityId,
-        amount: -(params['original_amount'] as number),
-        type: 'rollback_adjustment',
-        notes: `[ROLLBACK] Reversal of commission for ${entityId}`,
-        created_at: new Date().toISOString(),
-      });
-    if (error) throw new Error(`revert_commission failed: ${error.message}`);
+  revert_commission: async (_supabase, _tenantId, _entityId, params) => {
+    // Spa Kernel boundary - should be registered by Spa Kernel
+    console.warn('[RollbackEngine] revert_commission not implemented - Spa must register handler');
+    throw new Error('revert_commission: Spa-specific handler must be registered by Spa Kernel');
   },
 
-  restore_inventory: async (supabase, _tenantId, inventoryId, params) => {
-    const { error } = await supabase.rpc('increment_inventory', {
-      p_inventory_id: inventoryId,
-      p_quantity: params['quantity'] as number,
-    });
-    if (error) throw new Error(`restore_inventory failed: ${error.message}`);
+  restore_inventory: async (_supabase, _tenantId, _inventoryId, params) => {
+    // Industry-specific inventory - should be registered by owning Kernel
+    console.warn('[RollbackEngine] restore_inventory not implemented - owning Kernel must register handler');
+    throw new Error('restore_inventory: Industry-specific handler must be registered by owning Kernel');
   },
 };
 

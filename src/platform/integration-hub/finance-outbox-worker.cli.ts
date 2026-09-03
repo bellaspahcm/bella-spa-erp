@@ -76,7 +76,7 @@ console.log('🚀 Starting Finance Outbox Worker');
 console.log(`   Finance OS: ${FINANCE_OS_URL}`);
 console.log(`   Worker ID: worker-${process.pid}`);
 
-worker.start().catch((error) => {
+worker.start().catch((error: unknown) => {
   console.error('❌ Worker crashed:', error);
   process.exit(1);
 });

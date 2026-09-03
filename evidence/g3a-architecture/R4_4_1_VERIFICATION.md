@@ -56,7 +56,7 @@ Incident Trail (if error)
 
 ### Schema
 ```
-supabase/migrations/20260820_r4_4_monitoring_audit.sql
+supabase/migrations/20260820152000_r4_4_monitoring_audit.sql
 ├─ bella_security_incidents (PK: incident_id)
 │  ├─ incident_type (8 types)
 │  ├─ severity (CRITICAL | WARNING | ERROR)

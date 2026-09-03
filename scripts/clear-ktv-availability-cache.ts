@@ -19,7 +19,7 @@ import { createClient } from '@supabase/supabase-js';
 import Redis from 'ioredis';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_SERVICE_KEY = process.env["SUPABASE_SERVICE_ROLE_KEY"];
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 
 async function clearKtvAvailabilityCache() {
@@ -27,7 +27,7 @@ async function clearKtvAvailabilityCache() {
   
   console.log('ENV check:');
   console.log('  NEXT_PUBLIC_SUPABASE_URL:', SUPABASE_URL ? '✓' : '✗');
-  console.log('  SUPABASE_SERVICE_ROLE_KEY:', SUPABASE_SERVICE_KEY ? '✓' : '✗');
+  console.log("  Supabase service credential configured:", SUPABASE_SERVICE_KEY ? "yes" : "no");
   console.log('  REDIS_URL:', REDIS_URL);
   console.log('');
 

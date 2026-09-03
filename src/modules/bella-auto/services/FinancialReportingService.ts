@@ -126,6 +126,19 @@ interface FinancialMetrics {
   averageProfitPerVehicle: number;
 }
 
+interface MonthlySummary {
+  period: {
+    year: number;
+    month: number;
+    startDate: string;
+    endDate: string;
+  };
+  metrics: FinancialMetrics;
+  revenueBreakdown: RevenueBreakdown;
+  commission: CommissionBreakdown;
+  serviceRevenue: ServiceRevenue;
+}
+
 export class FinancialReportingService {
   /**
    * Calculate profit margin for individual vehicle sales
@@ -584,7 +597,11 @@ export class FinancialReportingService {
   /**
    * Generate monthly financial summary
    */
-  static async getMonthlySummary(tenantId: string, year: number, month: number) {
+  static async getMonthlySummary(
+    tenantId: string,
+    year: number,
+    month: number
+  ): Promise<MonthlySummary> {
     const startDate = new Date(year, month - 1, 1).toISOString().split('T')[0];
     const endDate = new Date(year, month, 0).toISOString().split('T')[0];
     

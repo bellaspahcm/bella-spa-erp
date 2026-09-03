@@ -26,7 +26,7 @@ import {
   IdempotencyConflictError,
 } from './order-repository.interface';
 import { ClinicalOrder } from '../domain/clinical-order.entity';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database.types';
 
 type OrderRow = Database['public']['Tables']['hc_clinical_orders']['Row'];
 type OrderInsert = Database['public']['Tables']['hc_clinical_orders']['Insert'];

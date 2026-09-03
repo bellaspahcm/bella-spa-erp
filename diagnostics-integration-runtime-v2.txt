@@ -1,0 +1,12 @@
+src/platform/integration-runtime/database/outbox-repository.ts(49,7): error TS2322: Type 'null' is not assignable to type 'Date | undefined'.
+src/platform/integration-runtime/database/quarantine-repository.ts(173,51): error TS18047: 'error' is possibly 'null'.
+src/platform/integration-runtime/database/tenant-repository.ts(67,38): error TS2345: Argument of type 'PostgrestError | null' is not assignable to parameter of type 'Error | undefined'.
+  Type 'null' is not assignable to type 'Error | undefined'.
+src/platform/integration-runtime/database/tenant-repository.ts(93,38): error TS2345: Argument of type 'PostgrestError | null' is not assignable to parameter of type 'Error | undefined'.
+  Type 'null' is not assignable to type 'Error | undefined'.
+src/platform/integration-runtime/database/tenant-repository.ts(141,38): error TS2345: Argument of type 'PostgrestError | null' is not assignable to parameter of type 'Error | undefined'.
+  Type 'null' is not assignable to type 'Error | undefined'.
+src/platform/integration-runtime/types/financial-intent.types.ts(119,15): error TS2554: Expected 2-3 arguments, but got 1.
+src/platform/integration-runtime/types/index.ts(9,1): error TS2308: Module './financial-intent.types' has already exported a member named 'ValidationError'. Consider explicitly re-exporting to resolve the ambiguity.
+src/platform/integration-runtime/validation/intent-validator.ts(68,41): error TS2339: Property 'errors' does not exist on type 'ZodError<{ intentType: string; tenantId: string; entityId: string; entityType: string; amount: number; currency: string; effectiveDate: Date; source: string; correlationId: string; metadata?: Record<...> | undefined; policyReference?: string | undefined; }>'.
+src/platform/integration-runtime/validation/intent-validator.ts(71,40): error TS7006: Parameter 'e' implicitly has an 'any' type.

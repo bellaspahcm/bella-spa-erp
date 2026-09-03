@@ -45,6 +45,44 @@ export type ContractStatus =
   | 'retired';
 
 // ============================================================================
+// Engine Contract Definition (Lightweight Capability Declaration)
+// ============================================================================
+
+/**
+ * Lightweight contract definition for platform engines
+ * 
+ * Used by Host Platform engines (temporal, rollback, rule, analytics) to declare
+ * their capabilities without full registry metadata overhead.
+ * 
+ * Distinct from ContractMetadata:
+ * - EngineContractDefinition = capability declaration (what methods engine provides)
+ * - ContractMetadata = registry metadata (formal API contract registration)
+ */
+export interface EngineContractDefinition {
+  id: string; // Unique engine identifier (e.g., 'platform.temporal-engine')
+  name: string; // Human-readable name
+  version: string; // Semantic version
+  description: string; // Engine purpose and capabilities
+  provider: string; // Owning module (e.g., 'platform.host')
+  consumers?: string[]; // Known consumers (for documentation)
+  methods: EngineMethodDefinition[]; // Available methods/operations
+  events?: string[]; // Events published by this engine
+  featureFlag?: string; // Feature flag controlling engine availability
+  status: ContractStatus;
+  createdAt: string; // ISO 8601 datetime
+}
+
+/**
+ * Method definition for engine capability
+ */
+export interface EngineMethodDefinition {
+  name: string; // Method name (e.g., 'captureSnapshot', 'rollback')
+  description: string; // What this method does
+  inputSchema: JSONSchema; // Input parameters schema
+  outputSchema: JSONSchema; // Return value schema
+}
+
+// ============================================================================
 // Endpoint Definitions (API Contracts)
 // ============================================================================
 

@@ -29,16 +29,16 @@ VALUES
   ('20260819050004', 'runtime_migration_e3_post_05c_verification', ARRAY['CREATE OR REPLACE FUNCTION']::text[]),
   ('20260820110000', 'database_role_separation_v2', ARRAY['CREATE TABLE', 'CREATE ROLE']::text[]),
   ('20260820140000', 'enable_rls_block_service_key', ARRAY['ALTER TABLE', 'CREATE POLICY']::text[]),
-  ('20260820_r4_3_gate_tokens', 'r4_3_gate_tokens', ARRAY['CREATE OR REPLACE FUNCTION', 'CREATE TABLE', 'ALTER TABLE']::text[]),
-  ('20260820_r4_4_monitoring_audit', 'r4_4_monitoring_audit', ARRAY['CREATE OR REPLACE FUNCTION', 'CREATE TABLE']::text[]),
-  ('20260820_r4_approval_contract', 'r4_approval_contract', ARRAY['CREATE TABLE']::text[]),
+  ('20260820151000_r4_3_gate_tokens', 'r4_3_gate_tokens', ARRAY['CREATE OR REPLACE FUNCTION', 'CREATE TABLE', 'ALTER TABLE']::text[]),
+  ('20260820152000_r4_4_monitoring_audit', 'r4_4_monitoring_audit', ARRAY['CREATE OR REPLACE FUNCTION', 'CREATE TABLE']::text[]),
+  ('20260820150000_r4_approval_contract', 'r4_approval_contract', ARRAY['CREATE TABLE']::text[]),
   
   -- Logistics Migrations (5)
   ('20260821115404', 'logistics_schema', ARRAY['CREATE TABLE']::text[]),
-  ('20260821_create_accessorial_rates_table', 'create_accessorial_rates_table', ARRAY['CREATE TABLE']::text[]),
-  ('20260821_create_carrier_rates_table', 'create_carrier_rates_table', ARRAY['CREATE TABLE']::text[]),
-  ('20260821_create_discrepancies_table', 'create_discrepancies_table', ARRAY['CREATE TABLE']::text[]),
-  ('20260821_create_freight_audit_tables', 'create_freight_audit_tables', ARRAY['CREATE TABLE']::text[])
+  ('20260821122000_create_accessorial_rates_table', 'create_accessorial_rates_table', ARRAY['CREATE TABLE']::text[]),
+  ('20260821121000_create_carrier_rates_table', 'create_carrier_rates_table', ARRAY['CREATE TABLE']::text[]),
+  ('20260821123000_create_discrepancies_table', 'create_discrepancies_table', ARRAY['CREATE TABLE']::text[]),
+  ('20260821120000_create_freight_audit_tables', 'create_freight_audit_tables', ARRAY['CREATE TABLE']::text[])
 ON CONFLICT (version) DO NOTHING;
 
 -- Verify insertion
@@ -56,14 +56,14 @@ WHERE version IN (
   '20260819050004',
   '20260820110000',
   '20260820140000',
-  '20260820_r4_3_gate_tokens',
-  '20260820_r4_4_monitoring_audit',
-  '20260820_r4_approval_contract',
+  '20260820151000_r4_3_gate_tokens',
+  '20260820152000_r4_4_monitoring_audit',
+  '20260820150000_r4_approval_contract',
   '20260821115404',
-  '20260821_create_accessorial_rates_table',
-  '20260821_create_carrier_rates_table',
-  '20260821_create_discrepancies_table',
-  '20260821_create_freight_audit_tables'
+  '20260821122000_create_accessorial_rates_table',
+  '20260821121000_create_carrier_rates_table',
+  '20260821123000_create_discrepancies_table',
+  '20260821120000_create_freight_audit_tables'
 )
 ORDER BY version;
 

@@ -1,0 +1,2 @@
+src/platform/finance/engines/ledger-engine/ledger.service.ts(220,9): error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.

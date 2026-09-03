@@ -32,7 +32,7 @@ import type {
   LabOrderDetails,
   ImagingOrderDetails,
   GenericOrderDetails,
-} from '../../contracts/order-engine.contract';
+} from '../../../contracts/order-engine.contract';
 
 // ============================================================================
 // Domain Errors
@@ -519,3 +519,4 @@ export class ClinicalOrder {
     };
   }
 }
+

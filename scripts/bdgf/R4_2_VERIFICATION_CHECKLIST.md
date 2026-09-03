@@ -45,7 +45,7 @@
 npx supabase db push
 
 # Option B: Supabase Dashboard SQL Editor
-# Copy/paste supabase/migrations/20260820_r4_approval_contract.sql
+# Copy/paste supabase/migrations/20260820150000_r4_approval_contract.sql
 # Execute in dev project
 ```
 

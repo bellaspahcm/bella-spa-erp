@@ -12,7 +12,7 @@
  * @module platform/healthcare/contracts/bed-engine
  */
 
-import type { EngineContract, EngineResponse, Bed, BedType, BedStatus } from '../shared-kernel/types';
+import type { EngineContract, EngineResponse, EngineHealthStatus, Bed, BedType, BedStatus } from '../shared-kernel/types';
 import type { ContractMetadata } from '../../host/contract-registry/types';
 
 // ============================================================================
@@ -109,6 +109,8 @@ export interface BedEngineContract extends EngineContract {
    * @returns Array of matching beds
    */
   queryBeds(request: BedQueryRequest): Promise<EngineResponse<Bed[]>>;
+
+  healthCheck(): Promise<EngineHealthStatus>;
 
   /**
    * Get bed details by ID
@@ -409,3 +411,6 @@ export const BED_ENGINE_CONTRACT: ContractMetadata = {
   registeredAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };
+
+
+

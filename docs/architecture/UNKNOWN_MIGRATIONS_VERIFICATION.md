@@ -143,7 +143,7 @@
 
 ---
 
-### 20260820_r4_3_gate_tokens.sql
+### 20260820151000_r4_3_gate_tokens.sql
 
 **Classification:** B  
 **Confidence:** HIGH  
@@ -161,7 +161,7 @@
 
 ---
 
-### 20260820_r4_4_monitoring_audit.sql
+### 20260820152000_r4_4_monitoring_audit.sql
 
 **Classification:** B  
 **Confidence:** HIGH  
@@ -178,7 +178,7 @@
 
 ---
 
-### 20260820_r4_approval_contract.sql
+### 20260820150000_r4_approval_contract.sql
 
 **Classification:** B  
 **Confidence:** HIGH  
@@ -229,15 +229,15 @@
    - INSERT into schema_migrations only
    - DDL already applied (0 artifacts verified)
 
-1. `20260820_r4_3_gate_tokens.sql`
+1. `20260820151000_r4_3_gate_tokens.sql`
    - INSERT into schema_migrations only
    - DDL already applied (4 artifacts verified)
 
-1. `20260820_r4_4_monitoring_audit.sql`
+1. `20260820152000_r4_4_monitoring_audit.sql`
    - INSERT into schema_migrations only
    - DDL already applied (3 artifacts verified)
 
-1. `20260820_r4_approval_contract.sql`
+1. `20260820150000_r4_approval_contract.sql`
    - INSERT into schema_migrations only
    - DDL already applied (1 artifacts verified)
 

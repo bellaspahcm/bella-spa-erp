@@ -287,9 +287,9 @@ Bella không chỉ là ERP + Healthcare + Finance. Audit xác nhận foundation 
 20260820120000_fix_executor_privileges.sql
 20260820130000_grant_executor_rls_bypass.sql
 20260820140000_enable_rls_block_service_key.sql
-20260820_r4_approval_contract.sql
-20260820_r4_3_gate_tokens.sql
-20260820_r4_4_monitoring_audit.sql
+20260820150000_r4_approval_contract.sql
+20260820151000_r4_3_gate_tokens.sql
+20260820152000_r4_4_monitoring_audit.sql
 ```
 
 **Runtime Governance Layer = 🟢 DEPLOYED**

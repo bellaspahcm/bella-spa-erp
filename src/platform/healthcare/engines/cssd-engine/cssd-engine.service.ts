@@ -685,9 +685,26 @@ export class CssdEngineService implements CssdEngineContract {
         };
       }
 
-      const report: TraceabilityReport[] = (data || []).map((row: Record<string, unknown>) => {
-        const eq = row.hc_equipment;
-        const cyc = row.hc_cssd_cycles;
+      type TraceabilityRow = {
+        equipment_id: string;
+        used_at: string;
+        returned_at: string | null;
+        hc_equipment?: Array<{
+          name?: string | null;
+          serial_number?: string | null;
+        }> | null;
+        hc_cssd_cycles?: Array<{
+          id?: string | null;
+          cycle_number?: string | null;
+          started_at?: string | null;
+          completed_at?: string | null;
+          indicator_result?: 'pass' | 'fail' | 'pending' | null;
+        }> | null;
+      };
+
+      const report: TraceabilityReport[] = (data || []).map((row: TraceabilityRow) => {
+        const eq = row.hc_equipment?.[0];
+        const cyc = row.hc_cssd_cycles?.[0];
         return {
           equipmentId: row.equipment_id,
           equipmentName: eq?.name || '',

@@ -35,7 +35,7 @@ Hypothesis:          NOT EVALUATED
 **Files Created:**
 1. `freight-audit.contract.ts` — 180 LOC (Category B)
 2. `freight-audit.types.ts` — 140 LOC (Category B)
-3. `20260821_create_freight_audit_tables.sql` — 120 LOC (Category C)
+3. `20260821120000_create_freight_audit_tables.sql` — 120 LOC (Category C)
 4. `freight-audit-engine.ts` — 680 LOC (B: 640, A: 40)
 5. Exports updated
 
@@ -76,7 +76,7 @@ Subtotal (R1):   1.55 days + TBD testing
 **Status:** Schema + types + contract done, rate matching algorithm pending
 
 **Files Modified/Created:**
-1. ✅ `20260821_create_carrier_rates_table.sql` — 85 LOC (Category C)
+1. ✅ `20260821121000_create_carrier_rates_table.sql` — 85 LOC (Category C)
 2. ✅ `freight-audit.types.ts` — +55 LOC (CarrierRate, RateValidationResult) (Category B)
 3. ✅ `freight-audit.contract.ts` — +40 LOC (ValidateRateRequest/Result, validateRate method) (Category B)
 4. 🔄 `freight-audit-engine.ts` — validateRate implementation PENDING (Category D expected)

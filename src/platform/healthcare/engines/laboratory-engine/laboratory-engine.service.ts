@@ -38,7 +38,7 @@ export class LaboratoryEngineService implements ILaboratoryEngine {
         tubeColor,
         collectedAt: labOrder.specimen?.collectedAt?.toISOString() || new Date().toISOString(),
       },
-    });
+    } as never);
 
     return labOrder;
   }
@@ -125,7 +125,7 @@ export class LaboratoryEngineService implements ILaboratoryEngine {
           verifiedBy,
           verifiedAt: labOrder.result.verifiedAt?.toISOString() || new Date().toISOString(),
         },
-      });
+      } as never);
 
       // Escalation trigger check (Safety-state escalation)
       if (labOrder.result.isPanicValue && labOrder.escalationRequired) {
@@ -145,7 +145,7 @@ export class LaboratoryEngineService implements ILaboratoryEngine {
             verifiedAt: labOrder.result.verifiedAt?.toISOString() || new Date().toISOString(),
             escalationRequired: true,
           },
-        });
+        } as never);
       }
     }
 

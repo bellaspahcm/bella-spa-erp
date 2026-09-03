@@ -4,7 +4,7 @@
  * @module platform/healthcare/engines/admission-engine/contracts
  */
 
-import type { EngineResponse } from '../../shared-kernel/types';
+import type { EngineResponse } from '../../../shared-kernel/types';
 import type { AdmissionStatus } from '../domain/inpatient-admission.entity';
 
 export interface CreateAdmissionRequest {

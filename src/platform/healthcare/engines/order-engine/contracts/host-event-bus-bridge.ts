@@ -20,10 +20,9 @@ export class HostEventBusBridge implements EventBus {
           hostEventType = 'hos.order.discontinued.v1';
           break;
         default:
-          // Fallback or throw if unrecognized
           return {
             success: false,
-            error: `Unsupported event type: ${event.eventType}`,
+            error: 'Unsupported order event type',
           };
       }
 
@@ -34,13 +33,10 @@ export class HostEventBusBridge implements EventBus {
         aggregateId: event.aggregateId,
         aggregateType: event.aggregateType,
         payload: event.payload,
-        correlationId: event.correlationId,
-        causationId: event.causationId,
       });
 
       return {
         success: true,
-        eventId: event.eventId,
       };
     } catch (error) {
       return {
@@ -53,4 +49,11 @@ export class HostEventBusBridge implements EventBus {
   async publishBatch(events: OrderEvent[]): Promise<EventPublishResult[]> {
     return Promise.all(events.map(event => this.publish(event)));
   }
+
+  subscribe(eventType: string, handler: (event: OrderEvent) => Promise<void>): void {
+    this.eventBusService.subscribe(eventType as never, handler as never);
+  }
 }
+
+
+

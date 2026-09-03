@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": [
+    "src/platform/**/*.ts",
+    "src/platform/**/*.tsx",
+    "src/modules/bella-healthcare/**/*.ts",
+    "src/modules/bella-healthcare/**/*.tsx",
+    "src/modules/bella-auto/**/*.ts",
+    "src/modules/bella-auto/**/*.tsx",
+    "src/types/database.types.ts"
+  ],
+  "exclude": ["node_modules"]
+}

@@ -7,9 +7,9 @@
  *   ❌ Clinical safety rules (drug interactions, allergy blocks) belong in ClinicalSafetyEngine (Phase C).
  */
 
-import { ContractDefinition } from '@/platform/host/contract-registry/contract-registry.service';
+import type { EngineContractDefinition } from '@/platform/host/contract-registry/types';
 
-export const RULE_ENGINE_CONTRACT: ContractDefinition = {
+export const RULE_ENGINE_CONTRACT: EngineContractDefinition = {
   id: 'platform.rule-engine',
   name: 'Platform Governed Business Rule Engine',
   version: '1.0.0',

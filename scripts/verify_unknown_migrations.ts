@@ -49,9 +49,9 @@ const unknownMigrations = [
   '20260819050004_runtime_migration_e3_post_05c_verification.sql',
   '20260820110000_database_role_separation_v2.sql',
   '20260820140000_enable_rls_block_service_key.sql',
-  '20260820_r4_3_gate_tokens.sql',
-  '20260820_r4_4_monitoring_audit.sql',
-  '20260820_r4_approval_contract.sql'
+  '20260820151000_r4_3_gate_tokens.sql',
+  '20260820152000_r4_4_monitoring_audit.sql',
+  '20260820150000_r4_approval_contract.sql'
 ];
 
 async function extractArtifacts(content: string): Promise<{

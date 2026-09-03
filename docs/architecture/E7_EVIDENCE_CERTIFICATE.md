@@ -57,13 +57,13 @@ Remote DB Truth
 
 | Version | Name | Format | Identity Status | Remote Exists |
 |---------|------|--------|-----------------|---------------|
-| `20260820_r4_3_gate_tokens` | r4_3_gate_tokens | LEGACY_8DIGIT | CLASS_A_LEGACY_EXACT_MATCH | ✅ |
-| `20260820_r4_4_monitoring_audit` | r4_4_monitoring_audit | LEGACY_8DIGIT | CLASS_A_LEGACY_EXACT_MATCH | ✅ |
-| `20260820_r4_approval_contract` | r4_approval_contract | LEGACY_8DIGIT | CLASS_A_LEGACY_EXACT_MATCH | ✅ |
-| `20260821_create_accessorial_rates_table` | create_accessorial_rates_table | LEGACY_8DIGIT | CLASS_A_LEGACY_EXACT_MATCH | ✅ |
-| `20260821_create_carrier_rates_table` | create_carrier_rates_table | LEGACY_8DIGIT | CLASS_A_LEGACY_EXACT_MATCH | ✅ |
-| `20260821_create_discrepancies_table` | create_discrepancies_table | LEGACY_8DIGIT | CLASS_A_LEGACY_EXACT_MATCH | ✅ |
-| `20260821_create_freight_audit_tables` | create_freight_audit_tables | LEGACY_8DIGIT | CLASS_A_LEGACY_EXACT_MATCH | ✅ |
+| `20260820151000_r4_3_gate_tokens` | r4_3_gate_tokens | LEGACY_8DIGIT | CLASS_A_LEGACY_EXACT_MATCH | ✅ |
+| `20260820152000_r4_4_monitoring_audit` | r4_4_monitoring_audit | LEGACY_8DIGIT | CLASS_A_LEGACY_EXACT_MATCH | ✅ |
+| `20260820150000_r4_approval_contract` | r4_approval_contract | LEGACY_8DIGIT | CLASS_A_LEGACY_EXACT_MATCH | ✅ |
+| `20260821122000_create_accessorial_rates_table` | create_accessorial_rates_table | LEGACY_8DIGIT | CLASS_A_LEGACY_EXACT_MATCH | ✅ |
+| `20260821121000_create_carrier_rates_table` | create_carrier_rates_table | LEGACY_8DIGIT | CLASS_A_LEGACY_EXACT_MATCH | ✅ |
+| `20260821123000_create_discrepancies_table` | create_discrepancies_table | LEGACY_8DIGIT | CLASS_A_LEGACY_EXACT_MATCH | ✅ |
+| `20260821120000_create_freight_audit_tables` | create_freight_audit_tables | LEGACY_8DIGIT | CLASS_A_LEGACY_EXACT_MATCH | ✅ |
 
 **Total:** 7 legacy migrations ✅
 
@@ -130,7 +130,7 @@ Remote DB Truth
 2. `20260824040000_f2_cash_effective_date.sql` ← F2 temporal contract
 3. `20260824050000_f2_fix_cash_contract.sql` ← F2 fixes
 4. `20260824060000_f2_opening_balance_contract.sql` ← Opening balance
-5. `20260824070000_f2_opening_balance_provenance.sql` ← Provenance
+5. `20260824070500_f2_opening_balance_provenance.sql` ← Provenance
 
 **Blocker status:**
 - ❌ CLI `db push` blocked by legacy migration reconciliation

@@ -164,7 +164,7 @@ risk_class: MEDIUM         ✅ CORRECT
 
 ### Changed Files
 ```
-supabase/migrations/20260825120000_test_scenario3_db_only.sql
+supabase/migrations/archive/20260825110000_test_scenario3_db_only.sql.ARCHIVED
 ```
 
 ### Expected Classification
@@ -226,7 +226,7 @@ risk_class: HIGH           ✅ CORRECT
 ### Changed Files
 ```
 src/test-scenarios/scenario4-mixed.tsx
-supabase/migrations/20260825120001_test_scenario4_mixed.sql
+supabase/migrations/archive/20260825120001_test_scenario4_mixed.sql.ARCHIVED
 ```
 
 ### Expected Classification

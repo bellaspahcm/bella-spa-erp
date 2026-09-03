@@ -13,12 +13,12 @@
  * @module platform/healthcare/engines/icu-engine
  */
 
-import type { EngineResponse } from '../shared-kernel/types';
+import type { EngineResponse } from '../../shared-kernel/types';
 import { IcuStay } from './domain/icu-stay.entity';
 import { VentilatorSession, VentilatorSafetyViolationError } from './domain/ventilator-session.entity';
 import { SofaScoringStrategy } from './domain/scoring/sofa-scoring.strategy';
 import { ApacheIIScoringStrategy } from './domain/scoring/apache-ii-scoring.strategy';
-import type { IScoringStrategy } from './domain/scoring/scoring-strategy.interface';
+import type { IScoringStrategy, ScoringResult } from './domain/scoring/scoring-strategy.interface';
 import type { IIcuStayRepository } from './repositories/icu-stay.repository';
 import type { ICriticalObservationContract } from './contracts/critical-observation.contract';
 import type {
@@ -416,3 +416,4 @@ export class IcuEngineService implements IIcuEngineService {
     };
   }
 }
+

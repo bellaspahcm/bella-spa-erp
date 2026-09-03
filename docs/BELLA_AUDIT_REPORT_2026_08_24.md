@@ -65,7 +65,7 @@ Column này **đã tồn tại** trên remote → lệnh này sẽ **FAIL với 
 | `20260824040000_f2_cash_effective_date.sql` | ❌ **SẼ FAIL** — ADD COLUMN đã tồn tại |
 | `20260824050000_f2_fix_cash_contract.sql` | ⚠️ DROP + CREATE OR REPLACE — cần kiểm tra |
 | `20260824060000_f2_opening_balance_contract.sql` | ⚠️ Cần kiểm tra |
-| `20260824070000_f2_opening_balance_provenance.sql` | ⚠️ Cần kiểm tra |
+| `20260824070500_f2_opening_balance_provenance.sql` | ⚠️ Cần kiểm tra |
 
 ---
 
@@ -148,9 +148,9 @@ Column này **đã tồn tại** trên remote → lệnh này sẽ **FAIL với 
 20260820120000_fix_executor_privileges.sql
 20260820130000_grant_executor_rls_bypass.sql
 20260820140000_enable_rls_block_service_key.sql
-20260820_r4_approval_contract.sql
-20260820_r4_3_gate_tokens.sql
-20260820_r4_4_monitoring_audit.sql
+20260820150000_r4_approval_contract.sql
+20260820151000_r4_3_gate_tokens.sql
+20260820152000_r4_4_monitoring_audit.sql
 ```
 → Đây là R4 Runtime Governance layer với role separation, execution gates, monitoring — đã deployed, chưa được đề cập trong snapshot.
 

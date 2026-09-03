@@ -1,8 +1,8 @@
 # R4.3.1 — Schema Deployment VERIFIED
 
-**Date:** 2026-08-20  
-**Status:** 🟢 VERIFIED  
-**Tests:** 17/17 PASSED  
+**Date:** 2026-08-20
+**Status:** 🟢 VERIFIED
+**Tests:** 17/17 PASSED
 
 ---
 
@@ -10,9 +10,9 @@
 
 R4.3 database schema has been deployed and verified with **17 negative/positive tests**.
 
-**Migration:** `supabase/migrations/20260820_r4_3_gate_tokens.sql`  
-**Verification Script:** `scripts/bdgf/r4-3-schema-verify.mjs`  
-**Environment:** Development (Supabase project: bmnbqbcdbuklhopfbopv)  
+**Migration:** `supabase/migrations/20260820151000_r4_3_gate_tokens.sql`
+**Verification Script:** `scripts/bdgf/r4-3-schema-verify.mjs`
+**Environment:** Development (Supabase project: bmnbqbcdbuklhopfbopv)
 
 ---
 
@@ -93,7 +93,7 @@ TEST SUMMARY: 17 total tests
 
 **Enforcement:** PostgreSQL BEFORE triggers with RAISE EXCEPTION
 
-**Evidence:** 
+**Evidence:**
 - UPDATE attempt: `bella_execution_audit is append-only. UPDATE and DELETE are forbidden.`
 - DELETE attempt: Same error message
 - Trigger error code: `P0001` (raise_exception)
@@ -108,7 +108,7 @@ TEST SUMMARY: 17 total tests
 - ✅ Atomic consume (UPDATE WHERE status='issued') → Succeeds, returns 1 row
 - ❌ Replay consume (same token) → Returns 0 rows (status no longer 'issued')
 
-**Enforcement:** 
+**Enforcement:**
 - UNIQUE constraint on `nonce` column
 - Atomic UPDATE with WHERE clause checking status
 
@@ -200,7 +200,7 @@ bella_migration_executor (DATABASE_EXECUTOR_URL)
 ## Files Deployed
 
 ### Migration
-- `supabase/migrations/20260820_r4_3_gate_tokens.sql`
+- `supabase/migrations/20260820151000_r4_3_gate_tokens.sql`
   - bella_gate_tokens table
   - bella_execution_audit table
   - Extended approval states
@@ -249,14 +249,14 @@ With schema verified (17/17 tests PASS), proceed to:
 
 ## Definition of Done (R4.3.1)
 
-✅ Migration deployed  
-✅ 17/17 tests PASSED  
-✅ bella_developer access blocked (4/4 operations)  
-✅ Executor cannot self-approve (constraint enforced)  
-✅ Audit immutability enforced (trigger blocks UPDATE/DELETE)  
-✅ Single-use atomic (nonce UNIQUE + status check)  
-✅ R3 regression PASSED (baseline not reopened)  
-✅ Evidence documented (this file)  
+✅ Migration deployed
+✅ 17/17 tests PASSED
+✅ bella_developer access blocked (4/4 operations)
+✅ Executor cannot self-approve (constraint enforced)
+✅ Audit immutability enforced (trigger blocks UPDATE/DELETE)
+✅ Single-use atomic (nonce UNIQUE + status check)
+✅ R3 regression PASSED (baseline not reopened)
+✅ Evidence documented (this file)
 
 **R4.3.1 Status:** 🟢 **COMPLETE**
 
@@ -264,7 +264,7 @@ With schema verified (17/17 tests PASS), proceed to:
 
 ---
 
-**Timestamp:** 2026-08-20 13:15:00 UTC  
-**Environment:** Development  
-**Verified By:** Automated test script (17 tests)  
+**Timestamp:** 2026-08-20 13:15:00 UTC
+**Environment:** Development
+**Verified By:** Automated test script (17 tests)
 **Exit Code:** 0 (SUCCESS, cleanup error expected)

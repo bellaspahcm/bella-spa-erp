@@ -28,14 +28,14 @@
 | 20260819050004_runtime_migration_e3_post_05c_verification.sql | ✅ | ❌ | UNKNOWN | UNKNOWN | Manual investigation required |
 | 20260820110000_database_role_separation_v2.sql | ✅ | ❌ | UNKNOWN | UNKNOWN | Manual investigation required |
 | 20260820140000_enable_rls_block_service_key.sql | ✅ | ❌ | UNKNOWN | UNKNOWN | Manual investigation required |
-| 20260820_r4_3_gate_tokens.sql | ✅ | ❌ | UNKNOWN | UNKNOWN | Manual investigation required |
-| 20260820_r4_4_monitoring_audit.sql | ✅ | ❌ | UNKNOWN | UNKNOWN | Manual investigation required |
-| 20260820_r4_approval_contract.sql | ✅ | ❌ | UNKNOWN | UNKNOWN | Manual investigation required |
+| 20260820151000_r4_3_gate_tokens.sql | ✅ | ❌ | UNKNOWN | UNKNOWN | Manual investigation required |
+| 20260820152000_r4_4_monitoring_audit.sql | ✅ | ❌ | UNKNOWN | UNKNOWN | Manual investigation required |
+| 20260820150000_r4_approval_contract.sql | ✅ | ❌ | UNKNOWN | UNKNOWN | Manual investigation required |
 | 20260821115404_logistics_schema.sql | ✅ | ❌ | YES | B | Record history only (DDL exists, history missing) |
-| 20260821_create_accessorial_rates_table.sql | ✅ | ❌ | YES | B | Record history only (DDL exists, history missing) |
-| 20260821_create_carrier_rates_table.sql | ✅ | ❌ | YES | B | Record history only (DDL exists, history missing) |
-| 20260821_create_discrepancies_table.sql | ✅ | ❌ | YES | B | Record history only (DDL exists, history missing) |
-| 20260821_create_freight_audit_tables.sql | ✅ | ❌ | YES | B | Record history only (DDL exists, history missing) |
+| 20260821122000_create_accessorial_rates_table.sql | ✅ | ❌ | YES | B | Record history only (DDL exists, history missing) |
+| 20260821121000_create_carrier_rates_table.sql | ✅ | ❌ | YES | B | Record history only (DDL exists, history missing) |
+| 20260821123000_create_discrepancies_table.sql | ✅ | ❌ | YES | B | Record history only (DDL exists, history missing) |
+| 20260821120000_create_freight_audit_tables.sql | ✅ | ❌ | YES | B | Record history only (DDL exists, history missing) |
 
 ---
 
@@ -47,19 +47,19 @@
   - Action: INSERT into schema_migrations only
   - DDL already applied
 
-- `20260821_create_accessorial_rates_table.sql`
+- `20260821122000_create_accessorial_rates_table.sql`
   - Action: INSERT into schema_migrations only
   - DDL already applied
 
-- `20260821_create_carrier_rates_table.sql`
+- `20260821121000_create_carrier_rates_table.sql`
   - Action: INSERT into schema_migrations only
   - DDL already applied
 
-- `20260821_create_discrepancies_table.sql`
+- `20260821123000_create_discrepancies_table.sql`
   - Action: INSERT into schema_migrations only
   - DDL already applied
 
-- `20260821_create_freight_audit_tables.sql`
+- `20260821120000_create_freight_audit_tables.sql`
   - Action: INSERT into schema_migrations only
   - DDL already applied
 
@@ -97,15 +97,15 @@
   - Notes: Requires manual schema inspection (no specific check implemented)
   - Action: Requires specific schema verification
 
-- `20260820_r4_3_gate_tokens.sql`
+- `20260820151000_r4_3_gate_tokens.sql`
   - Notes: Requires manual schema inspection (no specific check implemented)
   - Action: Requires specific schema verification
 
-- `20260820_r4_4_monitoring_audit.sql`
+- `20260820152000_r4_4_monitoring_audit.sql`
   - Notes: Requires manual schema inspection (no specific check implemented)
   - Action: Requires specific schema verification
 
-- `20260820_r4_approval_contract.sql`
+- `20260820150000_r4_approval_contract.sql`
   - Notes: Cannot verify remotely (requires specific table/function check)
   - Action: Requires specific schema verification
 

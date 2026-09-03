@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "noEmit": true, "skipLibCheck": false },
+  "include": [
+    "src/platform/**/*.ts",
+    "src/modules/**/*.ts",
+    "src/types/database.types.ts"
+  ],
+  "exclude": ["**/*.spec.ts", "**/*.test.ts"]
+}

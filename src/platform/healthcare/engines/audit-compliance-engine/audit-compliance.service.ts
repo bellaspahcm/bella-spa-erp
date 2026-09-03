@@ -140,8 +140,6 @@ export class AuditComplianceService implements IClinicalAuditContract {
       // Event-After-Persistence
       await eventBus.publish({
         eventType: 'hos.audit.recorded.v1',
-        eventId: crypto.randomUUID(),
-        timestamp: new Date().toISOString(),
         tenantId: input.tenantId,
         aggregateId: auditId,
         aggregateType: 'ClinicalAuditLedger',
@@ -339,8 +337,6 @@ export class AuditComplianceService implements IClinicalAuditContract {
       // Event-After-Persistence
       await eventBus.publish({
         eventType: 'hos.evidence.issued.v1',
-        eventId: crypto.randomUUID(),
-        timestamp: new Date().toISOString(),
         tenantId,
         aggregateId: pkgId,
         aggregateType: 'ClinicalEvidencePackage',
@@ -573,3 +569,5 @@ export class AuditComplianceService implements IClinicalAuditContract {
     };
   }
 }
+
+

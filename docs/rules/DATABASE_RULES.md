@@ -47,4 +47,4 @@ For global tables containing static data (such as ICD codes, drug lists, registr
 *   RLS must be enabled.
 *   `SELECT` is open to all authenticated users (`USING (true)`).
 *   Write actions (INSERT/UPDATE/DELETE) are restricted to the `service_role` or platform roles only.
-*   Refer to `supabase/migrations/20260826080000_fix_hc_enterprise_registries_rls.sql` for implementation reference.
+*   Refer to `supabase/migrations/20260826154332_fix_hc_enterprise_registries_rls.sql` for implementation reference.

@@ -5,19 +5,19 @@
 
 -- E7.1: ENUMERATE EXACT REMOTE IDENTITIES (16 affected migrations)
 
-SELECT 
+SELECT
   version,
   name,
   array_length(statements, 1) as statement_count,
   LEFT(statements[1], 100) as first_statement_preview,
-  CASE 
+  CASE
     WHEN version ~ '^\d{8}_' THEN 'LEGACY_8DIGIT'
     WHEN version ~ '^\d{14}$' THEN 'STANDARD_14DIGIT'
     ELSE 'OTHER'
   END as version_format
 FROM supabase_migrations.schema_migrations
-WHERE 
-  version LIKE '20260820%' 
+WHERE
+  version LIKE '20260820%'
   OR version LIKE '20260821%'
 ORDER BY version;
 
@@ -36,9 +36,9 @@ ORDER BY version;
 WITH local_migrations AS (
   -- These will be manually verified against filesystem
   SELECT unnest(ARRAY[
-    '20260820_r4_3_gate_tokens',
-    '20260820_r4_4_monitoring_audit', 
-    '20260820_r4_approval_contract',
+    '20260820151000_r4_3_gate_tokens',
+    '20260820152000_r4_4_monitoring_audit',
+    '20260820150000_r4_approval_contract',
     '20260820000000',
     '20260820010000',
     '20260820100000',
@@ -46,22 +46,22 @@ WITH local_migrations AS (
     '20260820120000',
     '20260820130000',
     '20260820140000',
-    '20260821_create_accessorial_rates_table',
-    '20260821_create_carrier_rates_table',
-    '20260821_create_discrepancies_table',
-    '20260821_create_freight_audit_tables',
+    '20260821122000_create_accessorial_rates_table',
+    '20260821121000_create_carrier_rates_table',
+    '20260821123000_create_discrepancies_table',
+    '20260821120000_create_freight_audit_tables',
     '20260821000000',
     '20260821115404'
   ]) as local_version
 ),
 remote_migrations AS (
-  SELECT 
+  SELECT
     version as remote_version,
     name as remote_name
   FROM supabase_migrations.schema_migrations
   WHERE version LIKE '20260820%' OR version LIKE '20260821%'
 )
-SELECT 
+SELECT
   l.local_version,
   r.remote_version,
   r.remote_name,
@@ -81,10 +81,10 @@ ORDER BY l.local_version;
 
 -- E7.3: VERIFY 20260824000000 IS FREE ON REMOTE
 
-SELECT 
-  CASE 
+SELECT
+  CASE
     WHEN EXISTS (
-      SELECT 1 FROM supabase_migrations.schema_migrations 
+      SELECT 1 FROM supabase_migrations.schema_migrations
       WHERE version = '20260824000000'
     ) THEN 'OCCUPIED'
     ELSE 'FREE'
@@ -95,16 +95,16 @@ SELECT
 
 -- E7.4: DETECT REMOTE-ONLY MIGRATIONS (Class C)
 
-SELECT 
+SELECT
   version as remote_version,
   name as remote_name,
   'CLASS_C_REMOTE_ONLY' as classification
 FROM supabase_migrations.schema_migrations
 WHERE (version LIKE '20260820%' OR version LIKE '20260821%')
   AND version NOT IN (
-    '20260820_r4_3_gate_tokens',
-    '20260820_r4_4_monitoring_audit',
-    '20260820_r4_approval_contract',
+    '20260820151000_r4_3_gate_tokens',
+    '20260820152000_r4_4_monitoring_audit',
+    '20260820150000_r4_approval_contract',
     '20260820000000',
     '20260820010000',
     '20260820100000',
@@ -112,10 +112,10 @@ WHERE (version LIKE '20260820%' OR version LIKE '20260821%')
     '20260820120000',
     '20260820130000',
     '20260820140000',
-    '20260821_create_accessorial_rates_table',
-    '20260821_create_carrier_rates_table',
-    '20260821_create_discrepancies_table',
-    '20260821_create_freight_audit_tables',
+    '20260821122000_create_accessorial_rates_table',
+    '20260821121000_create_carrier_rates_table',
+    '20260821123000_create_discrepancies_table',
+    '20260821120000_create_freight_audit_tables',
     '20260821000000',
     '20260821115404'
   )
@@ -125,23 +125,23 @@ ORDER BY version;
 
 -- E7.5: FULL IDENTITY MATRIX (16 migrations)
 
-SELECT 
+SELECT
   version,
   name,
-  CASE 
+  CASE
     WHEN version ~ '^\d{8}_' THEN 'LEGACY_8DIGIT'
     WHEN version ~ '^\d{14}$' THEN 'STANDARD_14DIGIT'
     ELSE 'OTHER'
   END as format,
   CASE
     WHEN version IN (
-      '20260820_r4_3_gate_tokens',
-      '20260820_r4_4_monitoring_audit',
-      '20260820_r4_approval_contract',
-      '20260821_create_accessorial_rates_table',
-      '20260821_create_carrier_rates_table',
-      '20260821_create_discrepancies_table',
-      '20260821_create_freight_audit_tables'
+      '20260820151000_r4_3_gate_tokens',
+      '20260820152000_r4_4_monitoring_audit',
+      '20260820150000_r4_approval_contract',
+      '20260821122000_create_accessorial_rates_table',
+      '20260821121000_create_carrier_rates_table',
+      '20260821123000_create_discrepancies_table',
+      '20260821120000_create_freight_audit_tables'
     ) THEN 'CLASS_A_LEGACY_EXACT_MATCH'
     WHEN version IN (
       '20260820000000',
@@ -163,8 +163,8 @@ ORDER BY version;
 -- E7.6: SUMMARY REPORT
 
 WITH classification_summary AS (
-  SELECT 
-    CASE 
+  SELECT
+    CASE
       WHEN version ~ '^\d{8}_' THEN 'LEGACY_8DIGIT'
       WHEN version ~ '^\d{14}$' THEN 'STANDARD_14DIGIT'
       ELSE 'OTHER'
@@ -174,7 +174,7 @@ WITH classification_summary AS (
   WHERE version LIKE '20260820%' OR version LIKE '20260821%'
   GROUP BY format
 )
-SELECT 
+SELECT
   format,
   count,
   CASE

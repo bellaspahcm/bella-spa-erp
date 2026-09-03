@@ -8,7 +8,7 @@
  * 3. Audit table is truly append-only (UPDATE/DELETE blocked)
  * 4. Single-use token enforcement is atomic
  * 
- * Run AFTER deploying: supabase/migrations/20260820_r4_3_gate_tokens.sql
+ * Run AFTER deploying: supabase/migrations/20260820151000_r4_3_gate_tokens.sql
  * 
  * Expected: All tests PASS before proceeding to Step 2 (Gate Token Module)
  */
