@@ -8,13 +8,14 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
 import { BaseSupabaseRepositoryPrimitive } from '../../core/repository';
 import { Course } from '../domain/course.entity';
 import { Enrollment } from '../domain/enrollment.entity';
 import { IEducationRepository } from './education-repository.interface';
 
 export class SupabaseEducationRepository extends BaseSupabaseRepositoryPrimitive implements IEducationRepository {
-  constructor(private readonly supabase: SupabaseClient<Record<string, unknown>>) {
+  constructor(private readonly supabase: SupabaseClient<Database>) {
     super();
   }
 

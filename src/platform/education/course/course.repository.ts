@@ -17,9 +17,9 @@ import { createClient } from '@/lib/supabase-server';
 import type { Database } from '@/types/database.types';
 import { Course, CourseFilters } from '../shared-kernel/course-types';
 
-type CoursesTableRow = Database['public']['Tables']['courses']['Row'];
-type CoursesTableInsert = Database['public']['Tables']['courses']['Insert'];
-type CoursesTableUpdate = Database['public']['Tables']['courses']['Update'];
+type CoursesTableRow = Database['public']['Tables']['edu_courses']['Row'];
+type CoursesTableInsert = Database['public']['Tables']['edu_courses']['Insert'];
+type CoursesTableUpdate = Database['public']['Tables']['edu_courses']['Update'];
 
 export class CourseRepository {
   /**
@@ -52,7 +52,7 @@ export class CourseRepository {
     };
 
     const { data, error } = await supabase
-      .from('courses')
+      .from('edu_courses')
       .insert(row)
       .select()
       .single();
@@ -75,7 +75,7 @@ export class CourseRepository {
     const supabase = await createClient();
 
     const { data, error } = await supabase
-      .from('courses')
+      .from('edu_courses')
       .select('*')
       .eq('course_id', courseId)
       .eq('tenant_id', tenantId)
@@ -96,7 +96,7 @@ export class CourseRepository {
     const supabase = await createClient();
 
     const { data, error } = await supabase
-      .from('courses')
+      .from('edu_courses')
       .select('*')
       .eq('course_code', courseCode.toUpperCase())
       .eq('tenant_id', tenantId)
@@ -117,7 +117,7 @@ export class CourseRepository {
     const supabase = await createClient();
 
     let query = supabase
-      .from('courses')
+      .from('edu_courses')
       .select('*')
       .eq('tenant_id', filters.tenantId);
 
@@ -179,7 +179,7 @@ export class CourseRepository {
     };
 
     const { data, error } = await supabase
-      .from('courses')
+      .from('edu_courses')
       .update(row)
       .eq('course_id', course.courseId)
       .eq('tenant_id', course.tenantId) // Tenant isolation
@@ -204,7 +204,7 @@ export class CourseRepository {
     const supabase = await createClient();
 
     const { error } = await supabase
-      .from('courses')
+      .from('edu_courses')
       .update({ status: 'archived', updated_at: new Date().toISOString() })
       .eq('course_id', courseId)
       .eq('tenant_id', tenantId);
