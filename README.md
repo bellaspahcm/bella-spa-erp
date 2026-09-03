@@ -2,7 +2,7 @@
 
 Chào mừng bạn đến với **Bella Spa ERP** — giải pháp quản trị doanh nghiệp (ERP) toàn diện được thiết kế riêng cho mô hình chuỗi Spa chăm sóc mẹ và bé cao cấp. Hệ thống được xây dựng trên các công nghệ hiện đại nhất, chú trọng vào tính chính xác tài chính, tự động hóa kho vận, quản lý nhân sự hiệu quả và tích hợp Trợ lý điều hành AI COO.
 
-> **Latest Update (2026-09-03):** Phase 1 Regression Protection complete and field-tested. Platform status: 39 PASS / 4 FAIL / 1 HOTSPOT. See [Governance Status](#-governance--platform-status) below.
+> **Latest Update (2026-09-03):** Known Pattern Rule adopted. Real-Estate resolved (3→0). Platform status: 40 PASS / 3 FAIL / 1 HOTSPOT. See [Governance Status](#-governance--platform-status) below.
 
 ---
 
@@ -101,22 +101,31 @@ npx playwright test
 
 ## 📊 Governance & Platform Status
 
-### Phase 1 Regression Protection (COMPLETE)
+### Phase 1 Regression Protection + Known Pattern Rule (ACTIVE)
 
-**Status:** CLOSED / FIELD-TESTED / PROVEN (2026-09-03)
+**Status:** FIELD-TESTED / PROVEN (2026-09-03)
 
 **Evidence:**
 - Gate B: VERIFIED / FROZEN (44 unit scopes, diagnostic fingerprinting)
-- Regression Protection: IMPLEMENTED + FIELD-TESTED (commit `6ee30569`)
-- Real field test: Host feature-flags/types.ts (59→47 diagnostics, 12 resolved, 0 new)
-- AI Coding Contract: Repository-embedded, tool-agnostic ([AI_CODING_CONTRACT.md](AI_CODING_CONTRACT.md))
+- Regression Protection: FIELD-TESTED (commits `6ee30569`, `6e5926ac`)
+- Known Pattern Rule: ACTIVE (vocabulary/schema, duplicate exports, import paths)
+- Field tests: Host (59→47), Real-Estate (3→0, vocabulary alignment)
+- AI Coding Contract: v1.1 ([AI_CODING_CONTRACT.md](AI_CODING_CONTRACT.md))
 
 **Platform TypeScript Status:**
 ```
-✅ PASS: 39 scopes
-❌ FAIL: 4 scopes (education: 102, host: 47, healthcare: 16 example, real-estate: 3 BLOCKED)
+✅ PASS: 40 scopes
+❌ FAIL: 3 scopes (education: 102, host: 47, healthcare: 16 example)
 🔥 HOTSPOT: 1 scope (logistics: >30s timeout)
+
+RESOLVED:
+✅ Real-Estate: 3→0 diagnostics (vocabulary/schema alignment, commit 6e5926ac)
 ```
+
+**Known Patterns (as of 2026-09-03):**
+- ✅ Duplicate export blocks → mechanical removal
+- ✅ Vocabulary/schema mismatch → DB enum canonical
+- ✅ Import path errors → clear module boundaries
 
 **Governance Commands:**
 ```bash
@@ -131,11 +140,14 @@ npm run arch:guard
 ```
 
 **Documentation:**
+- [AI Coding Contract v1.1](AI_CODING_CONTRACT.md) — Known Pattern Rule + governance workflow
+- [Known Pattern Rule Adoption](docs/architecture/KNOWN_PATTERN_RULE_ADOPTION.md) — Field test evidence
 - [Phase 1 Closure](docs/architecture/PHASE1_REGRESSION_PROTECTION_CLOSURE.md)
 - [Governance Policy](docs/architecture/GOVERNANCE_REGRESSION_GATE_POLICY.md)
-- [Real-Estate Investigation](docs/architecture/REAL_ESTATE_OWNERSHIP_INVESTIGATION.md) (BLOCKED on ownership)
 
-**Principle:** Evidence before infrastructure. Proven mechanism sufficient. No expansion until concrete need demonstrated.
+**Principle:** Investigate once per pattern → document → reuse. Stop when new ambiguity appears.
+
+**Governance Status:** 🔒 CLOSED (no expansion until proven need)
 
 ---
 
