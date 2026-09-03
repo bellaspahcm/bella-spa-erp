@@ -259,18 +259,16 @@ This **IS:**
 ### Platform TypeScript Status
 
 ```
-40 PASS / 3 FAIL / 1 HOTSPOT
+43 PASS / 0 FAIL / 1 HOTSPOT
 
 ✅ RESOLVED:
   - Real-Estate: 3→0 (vocabulary alignment, commit 6e5926ac)
-
-❌ BASELINE:
-  - Host: 47 diagnostics
-  - Healthcare: 16 diagnostics (example code)
-  - Education: 102 diagnostics
+  - Host: 47→0 (ContractDefinition + boundary violations, commit 8c91b7c1)
+  - Healthcare: 16→0 (example-only file removed, commit 53b270c6)
+  - Education: 102→0 (RESET - deleted broken repos, commit dd0afa2e)
 
 🔥 HOTSPOT:
-  - Logistics: >30s timeout
+  - Logistics: >180s compilation timeout (infrastructure issue)
 ```
 
 ### Known Patterns (Strict Boundaries)
@@ -280,6 +278,7 @@ Patterns are "known" ONLY when documented with evidence:
 1. **Duplicate export blocks** → mechanical removal (Host `6ee30569`)
 2. **Vocabulary/schema mismatch** → DB enum canonical with migration evidence (Real-Estate `6e5926ac`)
 3. **Import path errors** → clear module boundaries (multiple fixes)
+4. **Schema/code fundamental mismatch** → RESET decision for test products without production data (Education `dd0afa2e`)
 
 ### Engineering Workflow — Proven
 
@@ -355,18 +354,26 @@ npm run governance:baseline
 |--------|-------|---------|--------|----------|
 | `6ee30569` | Host | Duplicate exports | 59→47 diagnostics | Initial investigation |
 | `6e5926ac` | Real-Estate | Vocabulary/schema | 3→0 diagnostics | ~30 min (known pattern) |
+| `8c91b7c1` | Host | ContractDefinition + boundaries | 47→0 diagnostics | Architecture-preserving fix |
+| `53b270c6` | Healthcare | Example-only file | 16→0 diagnostics | Scope verification |
+| `dd0afa2e` | Education | Schema mismatch | 102→0 diagnostics | RESET decision (test product) |
 
 **Key learning:** Known Pattern workflow proven to reduce remediation time while maintaining safety.
 
 ### Next Engineering Target
 
-**Host Platform:** 47 baseline diagnostics
+**Logistics HOTSPOT:** >180s compilation timeout
+
+**Status:**
+- Platform GREEN achieved: 43 PASS / 0 FAIL / 1 HOTSPOT
+- All FAIL scopes resolved (Host, Healthcare, Real-Estate, Education)
+- Logistics requires separate compiler infrastructure investigation
 
 **Approach:**
-- Classify each diagnostic
-- Known pattern → fix quickly
-- New pattern → investigate and document
-- All fixes must pass mandatory gates
+- Do NOT increase timeout indefinitely
+- Investigate root cause: module graph complexity, type resolution bottleneck
+- Consider scope decomposition if architecture permits
+- Logistics remediation deferred until compiler issue resolved
 
 **No further governance work until concrete operational gap discovered.**
 
