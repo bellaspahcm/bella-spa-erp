@@ -24,24 +24,18 @@ export class PropertyInventoryService implements IPropertyInventoryContract {
     if (!tenantId) throw new Error('TENANT_ISOLATION_VIOLATION: tenantId is required');
     if (!projectId) throw new Error('PROJECT_BOUNDARY_VIOLATION: projectId is required');
 
-    const units = await this.repository.findByProject(this.supabase, tenantId, projectId);
-    return units.map(unit => {
-      const props = unit.toProps();
-      return {
-        id: props.id,
-        tenant_id: props.tenantId,
-        project_id: props.projectId,
-        product_code: props.productCode,
-        product_type: props.productType,
-        unit_code: props.unitCode,
-        area: props.area,
-        unit_price: props.unitPrice,
-        status: props.status,
-        owner_name: props.ownerName,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        deleted_at: null
-      };
-    });
+    // Query database directly to return complete Row types
+    const { data, error } = await this.supabase
+      .from('real_estate_products')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .eq('project_id', projectId)
+      .order('product_code', { ascending: true });
+
+    if (error) {
+      throw new Error(`DATABASE_ERROR: Failed to fetch products for project: ${error.message}`);
+    }
+
+    return data || [];
   }
 }

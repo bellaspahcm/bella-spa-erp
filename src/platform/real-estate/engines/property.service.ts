@@ -45,10 +45,10 @@ export class PropertyService implements IPropertyContract {
         tenant_id: params.tenantId,
         product_id: params.productId,
         customer_id: params.customerId,
-        contract_no: contractNo,
+        contract_number: contractNo,
         contract_price: params.contractPrice,
         state: 'DRAFT',
-        installments: params.installments as unknown as Database['public']['Tables']['real_estate_contracts']['Insert']['installments']
+        installments: params.installments as unknown as Database['public']['Tables']['re_contracts']['Insert']['installments']
       })
       .select('*')
       .single();
@@ -82,9 +82,9 @@ export class PropertyService implements IPropertyContract {
     const unit = await this.repository.findById(this.supabase, tenantId, contract.product_id);
     if (!unit) throw new Error('Associated product unit not found');
 
-    // 3. Perform FSM transition check inside Domain aggregate root: HELD/DEPOSITED -> CONTRACTED
-    // (If the unit is currently held/booked or deposited, transition it to contracted)
-    if (unit.status === 'held' || unit.status === 'booked') {
+    // 3. Perform FSM transition check inside Domain aggregate root: BOOKED/DEPOSITED -> CONTRACTED
+    // (If the unit is currently booked or deposited, transition it to contracted)
+    if (unit.status === 'booked') {
       unit.depositPaid();
     }
     unit.signContract();
@@ -110,7 +110,7 @@ export class PropertyService implements IPropertyContract {
     // Debit Account 131 (Accounts Receivable) / Credit Account 5111 (Property Sales Revenue)
     const ledgerResult = await this.accountingContract.postJournalEntry({
       tenantId,
-      description: `Ghi nhận doanh thu ký Hợp đồng Mua bán số ${contract.contract_no}`,
+      description: `Ghi nhận doanh thu ký Hợp đồng Mua bán số ${contract.contract_number}`,
       referenceType: 'contract',
       referenceId: contractId,
       lines: [

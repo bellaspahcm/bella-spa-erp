@@ -34,7 +34,7 @@ export class PropertyUnitRepository {
       projectId: data.project_id,
       productCode: data.product_code || '',
       productType: (data.product_type as 'apartment' | 'townhouse' | 'shophouse' | 'villa') || 'apartment',
-      unitCode: data.unit_code || '',
+      unitCode: data.product_code || '', // Use product_code as unitCode (schema has no unit_code field)
       area: Number(data.area || 0),
       unitPrice: Number(data.unit_price || 0),
       status: (data.status as PropertyUnitStatus) || 'available',
@@ -70,7 +70,7 @@ export class PropertyUnitRepository {
       .select('*')
       .eq('project_id', projectId)
       .eq('tenant_id', tenantId)
-      .order('unit_code', { ascending: true });
+      .order('product_code', { ascending: true }); // Order by product_code (schema has no unit_code field)
 
     if (error) {
       throw new Error(`DATABASE_ERROR: Failed to fetch products for project: ${error.message}`);
@@ -82,7 +82,7 @@ export class PropertyUnitRepository {
       projectId: item.project_id,
       productCode: item.product_code || '',
       productType: (item.product_type as 'apartment' | 'townhouse' | 'shophouse' | 'villa') || 'apartment',
-      unitCode: item.unit_code || '',
+      unitCode: item.product_code || '', // Use product_code (schema has no unit_code field)
       area: Number(item.area || 0),
       unitPrice: Number(item.unit_price || 0),
       status: (item.status as PropertyUnitStatus) || 'available',

@@ -3,14 +3,18 @@
  *
  * Enforces state machine invariants for property status transitions.
  *
- * State Machine transitions:
- * - AVAILABLE -> HELD (or booked) -> DEPOSITED -> CONTRACTED -> COMPLETED
- * - HELD -> AVAILABLE (expired)
+ * State Machine transitions (aligned with Product Module):
+ * - AVAILABLE -> BOOKED -> DEPOSITED -> CONTRACTED -> PAID -> HANDED_OVER
+ * - BOOKED -> AVAILABLE (expired)
+ * - Various states -> CANCELLED
+ *
+ * Note: Vocabulary aligned with Product Module (src/modules/real_estate/)
+ * to ensure consistency with real_estate_products DB schema.
  *
  * @module platform/real-estate/domain/property-unit.entity
  */
 
-export type PropertyUnitStatus = 'available' | 'held' | 'booked' | 'deposited' | 'contracted' | 'completed';
+export type PropertyUnitStatus = 'available' | 'booked' | 'deposited' | 'contracted' | 'paid' | 'handed_over' | 'cancelled';
 
 export interface PropertyUnitProps {
   id: string;
@@ -52,19 +56,19 @@ export class PropertyUnit {
   }
 
   /**
-   * Transition: AVAILABLE -> HELD (placed on hold/reservation)
+   * Transition: AVAILABLE -> BOOKED (placed on hold/reservation)
    */
   reserve(customerId: string): void {
     this.assertStatus(['available']);
-    this.props.status = 'held';
+    this.props.status = 'booked';
     this.props.ownerName = customerId;
   }
 
   /**
-   * Transition: HELD -> AVAILABLE (released / expired hold)
+   * Transition: BOOKED -> AVAILABLE (released / expired hold)
    */
   release(): void {
-    this.assertStatus(['held', 'booked']);
+    this.assertStatus(['booked']);
     this.props.status = 'available';
     this.props.ownerName = null;
   }
@@ -73,7 +77,7 @@ export class PropertyUnit {
    * Transition: HELD -> DEPOSITED (deposit amount successfully paid)
    */
   depositPaid(): void {
-    this.assertStatus(['held', 'booked']);
+    this.assertStatus(['booked']);
     this.props.status = 'deposited';
   }
 
@@ -86,11 +90,19 @@ export class PropertyUnit {
   }
 
   /**
-   * Transition: CONTRACTED -> COMPLETED (handover and final payment done)
+   * Transition: CONTRACTED -> PAID (payment completed)
+   */
+  markPaid(): void {
+    this.assertStatus(['contracted']);
+    this.props.status = 'paid';
+  }
+
+  /**
+   * Transition: PAID -> HANDED_OVER (handover and final completion)
    */
   complete(): void {
-    this.assertStatus(['contracted']);
-    this.props.status = 'completed';
+    this.assertStatus(['paid']);
+    this.props.status = 'handed_over';
   }
 
   toProps(): PropertyUnitProps {

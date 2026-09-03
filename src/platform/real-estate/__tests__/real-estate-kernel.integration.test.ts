@@ -189,9 +189,9 @@ describe('Real Estate Kernel & Accounting Kernel — Integration Tests', () => {
       // Cannot sign contract if not deposited/held
       expect(() => unit.signContract()).toThrow('INVALID_STATE_TRANSITION');
 
-      // Valid flow: reserve -> depositPaid -> signContract -> complete
+      // Valid flow: reserve -> depositPaid -> signContract -> markPaid -> complete
       unit.reserve('cust-1');
-      expect(unit.status).toBe('held');
+      expect(unit.status).toBe('booked');
       expect(unit.ownerName).toBe('cust-1');
 
       unit.depositPaid();
@@ -200,8 +200,11 @@ describe('Real Estate Kernel & Accounting Kernel — Integration Tests', () => {
       unit.signContract();
       expect(unit.status).toBe('contracted');
 
+      unit.markPaid();
+      expect(unit.status).toBe('paid');
+
       unit.complete();
-      expect(unit.status).toBe('completed');
+      expect(unit.status).toBe('handed_over');
     });
   });
 
@@ -218,13 +221,13 @@ describe('Real Estate Kernel & Accounting Kernel — Integration Tests', () => {
 
       expect(res.success).toBe(true);
       expect(res.reservationId).toBeDefined();
-      expect(mockProductsDb[0].status).toBe('held');
+      expect(mockProductsDb[0].status).toBe('booked');
       expect(mockProductsDb[0].owner_name).toBe('cust-1');
       expect(mockReservationsDb.length).toBe(1);
     });
 
     test('Should release active hold successfully', async () => {
-      mockProductsDb[0].status = 'held';
+      mockProductsDb[0].status = 'booked';
       mockProductsDb[0].owner_name = 'cust-1';
       // Seed a reservation in mock DB
       mockReservationsDb.push({
@@ -233,8 +236,7 @@ describe('Real Estate Kernel & Accounting Kernel — Integration Tests', () => {
         product_id: 'prod-101',
         user_id: 'agent-1',
         customer_id: 'cust-1',
-        duration_minutes: 30,
-        status: 'pending_deposit',
+        status: 'active',
         expires_at: new Date().toISOString()
       });
 
@@ -244,13 +246,13 @@ describe('Real Estate Kernel & Accounting Kernel — Integration Tests', () => {
       expect(mockProductsDb[0].status).toBe('available');
       expect(mockProductsDb[0].owner_name).toBeNull();
       expect(mockReservationsDb.length).toBe(1); // the updated reservation
-      expect(mockReservationsDb[0].status).toBe('cancelled'); // verify state changes to cancelled
+      expect(mockReservationsDb[0].status).toBe('released'); // verify state changes to released
     });
   });
 
   describe('Property Contract & Ledger Posting Integration', () => {
     test('Should sign contract, update inventory status, and post balanced journal entries', async () => {
-      mockProductsDb[0].status = 'held';
+      mockProductsDb[0].status = 'booked';
       mockProductsDb[0].owner_name = 'cust-1';
 
       const accountingService = new AccountingService(mockSupabase);
