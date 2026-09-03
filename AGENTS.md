@@ -364,29 +364,45 @@ npm run governance:baseline
 
 **Logistics HOTSPOT:** >180s compilation timeout (DEFERRED)
 
+**Classification:** TEST PRODUCT / PLATFORM EXPANSION PROOF (NO real customers)
+
 **Status:**
 - Platform GREEN achieved: 43 PASS / 0 FAIL / 1 HOTSPOT
 - All FAIL scopes resolved (Host, Healthcare, Real-Estate, Education)
 - Logistics DEFERRED (compiler infrastructure issue, NOT code defect)
 
-**Why DEFER (not RESET like Education):**
+**Product Tier Classification:**
+
+```
+Production (Real Customers) → PROTECT AGGRESSIVELY
+Test — High Architectural Value → PRESERVE ASSETS, can REFACTOR/RESET if evidence warrants
+Test — Low Value → RESET FAST
+```
+
+**Why DEFER Logistics (not RESET like Education):**
 
 | Factor | Education (RESET) | Logistics (DEFER) |
 |--------|-------------------|-------------------|
-| Code volume | ~100 lines | ~30K LOC |
-| Schema | 2 simple tables | 6 tables + full RLS |
-| Domain logic | Minimal | Rich (Item, Inventory, Movement, Traceability) |
-| Diagnostics | 102 (schema mismatch) | 0 (compiler timeout) |
-| Production | Test product | Claims "Production" status |
-| Issue | Code defects | Compiler infrastructure |
+| **Product Tier** | Test — Low Value | **Test — HIGH Architectural Value** |
+| **Customers** | ❌ None | ❌ None |
+| **Code** | ~100 lines | ~30K LOC |
+| **Schema** | 2 tables | 6 tables + RLS |
+| **Domain** | Minimal | Rich (5+ domains) |
+| **Issue** | 102 diagnostics (code defect) | 0 diagnostics (compiler timeout) |
+| **Decision** | RESET (cheap to rebuild) | DEFER (preserve OS expansion proof) |
+
+**Key Insight:**
+- Both are test products with NO customers
+- Education: Low architectural value → RESET fast
+- Logistics: High architectural value (OS proof) → Preserve assets, defer investigation
+- **However:** Logistics can still be RESET if future investigation proves code has no value
 
 **Logistics Investigation (when prioritized):**
-- Compiler profiling (--extendedDiagnostics)
-- Module graph analysis
-- Type resolution bottleneck identification
-- Potential scope decomposition (if architecture permits)
+- Phase 1: Evidence gathering (compiler profiling, code quality assessment)
+- Phase 2: Classify as FIX / REFACTOR / TARGETED RESET / FULL RESET
+- Phase 3: Execute based on evidence (safe because no customers)
 - Do NOT increase timeout indefinitely
-- Do NOT use tsconfig exclusions, skipLibCheck, or workarounds
+- Do NOT use workarounds (skipLibCheck, exclusions)
 
 **No further governance work until concrete operational gap discovered.**
 
