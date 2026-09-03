@@ -1,0 +1,85 @@
+{
+  "runId": "e10-education-1788455574410",
+  "timestamp": "2026-09-03T17:12:54.410Z",
+  "industry": "education",
+  "mode": "controlled-fixture",
+  "autonomy": {
+    "humanDecisions": 0,
+    "autoDecisions": 4,
+    "decisionLog": [
+      {
+        "step": "evidence-collection",
+        "decision": "auto",
+        "actor": "E9.1 Collector",
+        "result": "Scanning education repository",
+        "timestamp": "2026-09-03T17:12:54.411Z"
+      },
+      {
+        "step": "scope-derivation",
+        "decision": "auto",
+        "actor": "E9 Decision Engine",
+        "result": "Applying canonical rules",
+        "timestamp": "2026-09-03T17:12:54.728Z"
+      },
+      {
+        "step": "build-verification",
+        "decision": "auto",
+        "actor": "Pipeline",
+        "result": "Running existing implementation checks",
+        "timestamp": "2026-09-03T17:12:54.729Z"
+      },
+      {
+        "step": "test-execution",
+        "decision": "auto",
+        "actor": "Pipeline",
+        "result": "Running education domain tests",
+        "timestamp": "2026-09-03T17:12:54.729Z"
+      }
+    ]
+  },
+  "pipeline": {
+    "duration": 3.295,
+    "steps": [
+      {
+        "name": "Collect Evidence",
+        "duration": 0.317,
+        "status": "pass"
+      },
+      {
+        "name": "Derive Scope",
+        "duration": 0.001,
+        "status": "pass"
+      },
+      {
+        "name": "Verify Build",
+        "duration": 0,
+        "status": "pass"
+      },
+      {
+        "name": "Run Tests",
+        "duration": 2.976,
+        "status": "fail",
+        "error": "No tests passed for education"
+      }
+    ]
+  },
+  "failureBoundaries": {
+    "tested": [],
+    "respected": true,
+    "violations": []
+  },
+  "outcome": {
+    "status": "fail",
+    "scopeDecisions": {
+      "Assessment": "CONFORM",
+      "Attendance": "CONFORM",
+      "Course": "CONFORM",
+      "Enrollment": "CONFORM"
+    },
+    "entitiesConform": 4,
+    "entitiesReconstructed": 0,
+    "entitiesDeferred": 0,
+    "entitiesBlocked": 0,
+    "evidenceCompleteness": 1
+  }
+}

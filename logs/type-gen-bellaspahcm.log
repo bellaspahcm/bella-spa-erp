@@ -1,0 +1,100 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
+  logistics: {
+    Tables: {
+      inventory: {
+        Row: {
+          created_at: string
+          expiry_date: string | null
+          id: string
+          item_id: string
+          location_id: string
+          location_type: string
+          lot_number: string | null
+          quantity_available: number | null
+          quantity_on_hand: number
+          quantity_reserved: number
+          serial_number: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          item_id: string
+          location_id: string
+          location_type: string
+          lot_number?: string | null
+          quantity_available?: number | null
+          quantity_on_hand?: number
+          quantity_reserved?: number
+          serial_number?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          item_id?: string
+          location_id?: string
+          location_type?: string
+          lot_number?: string | null
+          quantity_available?: number | null
+          quantity_on_hand?: number
+          quantity_reserved?: number
+          serial_number?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_item_fk"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_location_fk"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_movements: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null

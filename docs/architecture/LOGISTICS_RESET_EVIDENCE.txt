@@ -1,0 +1,59 @@
+=== LOGISTICS CONTROLLED RESET EVIDENCE ===
+Date: 2026-09-03 16:40:14
+Status: PRE-RESET
+
+=== FILES TO BE DELETED (44 candidates) ===
+src\platform\logistics\contracts\events.contract.ts
+src\platform\logistics\contracts\freight-audit.contract.ts
+src\platform\logistics\contracts\index.ts
+src\platform\logistics\contracts\inventory.contract.ts
+src\platform\logistics\contracts\item.contract.ts
+src\platform\logistics\contracts\route-management.contract.ts
+src\platform\logistics\contracts\shipment-management.contract.ts
+src\platform\logistics\contracts\traceability.contract.ts
+src\platform\logistics\contracts\warehouse.contract.ts
+src\platform\logistics\domain\rules\compliance.evaluation.ts
+src\platform\logistics\domain\rules\expiry.rule.ts
+src\platform\logistics\domain\rules\index.ts
+src\platform\logistics\domain\rules\quantity.rule.ts
+src\platform\logistics\domain\rules\traceability.operations.ts
+src\platform\logistics\domain\rules\traceability.rule.ts
+src\platform\logistics\domain\index.ts
+src\platform\logistics\domain\inventory-operations.domain.ts
+src\platform\logistics\domain\inventory.domain.ts
+src\platform\logistics\domain\inventory.types.ts
+src\platform\logistics\domain\item.domain.ts
+src\platform\logistics\domain\item.types.ts
+src\platform\logistics\domain\location.domain.ts
+src\platform\logistics\domain\location.types.ts
+src\platform\logistics\domain\movement.domain.ts
+src\platform\logistics\domain\movement.types.ts
+src\platform\logistics\domain\traceability.domain.ts
+src\platform\logistics\domain\traceability.types.ts
+src\platform\logistics\domain\uom.domain.ts
+src\platform\logistics\domain\uom.types.ts
+src\platform\logistics\engines\freight-audit-engine.ts
+src\platform\logistics\engines\index.ts
+src\platform\logistics\engines\route-engine.ts
+src\platform\logistics\engines\shipment-engine.ts
+src\platform\logistics\engines\warehouse-engine.ts
+src\platform\logistics\extensions\geo-utils.ts
+src\platform\logistics\repositories\index.ts
+src\platform\logistics\repositories\inventory.repository.interface.ts
+src\platform\logistics\repositories\inventory.repository.ts
+src\platform\logistics\repositories\item.repository.interface.ts
+src\platform\logistics\repositories\item.repository.ts
+src\platform\logistics\repositories\location.repository.interface.ts
+src\platform\logistics\repositories\movement.repository.interface.ts
+src\platform\logistics\repositories\movement.repository.ts
+src\platform\logistics\repositories\traceability.repository.interface.ts
+src\platform\logistics\repositories\uom.repository.interface.ts
+src\platform\logistics\shared-kernel\types\freight-audit.types.ts
+src\platform\logistics\shared-kernel\types\warehouse.types.ts
+src\platform\logistics\shared-kernel\index.ts
+src\platform\logistics\shared-kernel\types.ts
+src\platform\logistics\warehouse\receipt.service.ts
+src\platform\logistics\warehouse\receipt.validation.ts
+src\platform\logistics\index.ts
+
+=== FILES TO BE PRESERVED (19 canonical evidence) ===

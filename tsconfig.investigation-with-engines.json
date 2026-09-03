@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "skipLibCheck": false
+  },
+  "include": [
+    "src/platform/logistics/repositories/**/*.ts",
+    "src/platform/logistics/engines/**/*.ts",
+    "src/types/database.types.ts"
+  ],
+  "exclude": ["node_modules", "**/__tests__"]
+}

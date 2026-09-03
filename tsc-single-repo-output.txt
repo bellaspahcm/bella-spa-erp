@@ -1,0 +1,113 @@
+src/platform/logistics/repositories/inventory.repository.ts(18,36): error TS2339: Property 'logistics' does not exist on type 'Database'.
+src/platform/logistics/repositories/inventory.repository.ts(19,42): error TS2339: Property 'logistics' does not exist on type 'Database'.
+src/platform/logistics/repositories/inventory.repository.ts(20,42): error TS2339: Property 'logistics' does not exist on type 'Database'.
+src/platform/logistics/repositories/inventory.repository.ts(30,86): error TS2589: Type instantiation is excessively deep and possibly infinite.
+src/platform/logistics/repositories/inventory.repository.ts(31,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/platform/logistics/repositories/inventory.repository.ts(33,13): error TS2345: Argument of type '"tenant_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(34,13): error TS2345: Argument of type '"id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(63,19): error TS2589: Type instantiation is excessively deep and possibly infinite.
+src/platform/logistics/repositories/inventory.repository.ts(64,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/platform/logistics/repositories/inventory.repository.ts(66,13): error TS2345: Argument of type '"tenant_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(67,13): error TS2345: Argument of type '"item_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(68,13): error TS2345: Argument of type '"location_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(74,26): error TS2345: Argument of type '"lot_number"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(80,26): error TS2345: Argument of type '"serial_number"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(105,19): error TS2589: Type instantiation is excessively deep and possibly infinite.
+src/platform/logistics/repositories/inventory.repository.ts(106,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/platform/logistics/repositories/inventory.repository.ts(108,13): error TS2345: Argument of type '"tenant_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(112,26): error TS2345: Argument of type '"item_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(116,26): error TS2345: Argument of type '"location_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(120,26): error TS2345: Argument of type '"location_type"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(124,26): error TS2345: Argument of type '"lot_number"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(128,26): error TS2345: Argument of type '"serial_number"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(132,26): error TS2345: Argument of type '"status"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(146,13): error TS2322: Type 'PostgrestSingleResponse<ResultOne[]>' is not assignable to type '{ data: any[]; error: any; }'.
+  Type 'PostgrestResponseFailure' is not assignable to type '{ data: any[]; error: any; }'.
+    Types of property 'data' are incompatible.
+      Type 'null' is not assignable to type 'any[]'.
+src/platform/logistics/repositories/inventory.repository.ts(165,13): error TS2322: Type 'PostgrestSingleResponse<ResultOne[]>' is not assignable to type '{ data: any[]; error: any; }'.
+  Type 'PostgrestResponseFailure' is not assignable to type '{ data: any[]; error: any; }'.
+    Types of property 'data' are incompatible.
+      Type 'null' is not assignable to type 'any[]'.
+src/platform/logistics/repositories/inventory.repository.ts(165,81): error TS2589: Type instantiation is excessively deep and possibly infinite.
+src/platform/logistics/repositories/inventory.repository.ts(166,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/platform/logistics/repositories/inventory.repository.ts(168,13): error TS2345: Argument of type '"tenant_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(169,13): error TS2345: Argument of type '"item_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(233,13): error TS2322: Type 'PostgrestSingleResponse<ResultOne[]>' is not assignable to type '{ data: any[]; error: any; }'.
+  Type 'PostgrestResponseFailure' is not assignable to type '{ data: any[]; error: any; }'.
+    Types of property 'data' are incompatible.
+      Type 'null' is not assignable to type 'any[]'.
+src/platform/logistics/repositories/inventory.repository.ts(233,81): error TS2589: Type instantiation is excessively deep and possibly infinite.
+src/platform/logistics/repositories/inventory.repository.ts(234,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/platform/logistics/repositories/inventory.repository.ts(236,13): error TS2345: Argument of type '"tenant_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(237,13): error TS2345: Argument of type '"location_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(298,58): error TS2551: Property 'tenantId' does not exist on type 'Inventory'. Did you mean 'tenant_id'?
+src/platform/logistics/repositories/inventory.repository.ts(298,68): error TS2345: Argument of type 'InventoryId' is not assignable to parameter of type 'string'.
+src/platform/logistics/repositories/inventory.repository.ts(308,81): error TS2589: Type instantiation is excessively deep and possibly infinite.
+src/platform/logistics/repositories/inventory.repository.ts(309,17): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/platform/logistics/repositories/inventory.repository.ts(311,15): error TS2345: Argument of type '"tenant_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(311,38): error TS2551: Property 'tenantId' does not exist on type 'Inventory'. Did you mean 'tenant_id'?
+src/platform/logistics/repositories/inventory.repository.ts(312,15): error TS2345: Argument of type '"id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(324,81): error TS2589: Type instantiation is excessively deep and possibly infinite.
+src/platform/logistics/repositories/inventory.repository.ts(325,17): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/platform/logistics/repositories/inventory.repository.ts(381,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/platform/logistics/repositories/inventory.repository.ts(383,13): error TS2345: Argument of type '"tenant_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(384,13): error TS2345: Argument of type '"id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(402,76): error TS2589: Type instantiation is excessively deep and possibly infinite.
+src/platform/logistics/repositories/inventory.repository.ts(403,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/platform/logistics/repositories/inventory.repository.ts(405,13): error TS2345: Argument of type '"tenant_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(406,13): error TS2345: Argument of type '"item_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(426,7): error TS2561: Object literal may only specify known properties, but 'tenantId' does not exist in type 'Inventory'. Did you mean to write 'tenant_id'?
+src/platform/logistics/repositories/inventory.repository.ts(452,28): error TS2551: Property 'tenantId' does not exist on type 'Inventory'. Did you mean 'tenant_id'?
+src/platform/logistics/repositories/inventory.repository.ts(453,26): error TS2551: Property 'itemId' does not exist on type 'Inventory'. Did you mean 'item_id'?
+src/platform/logistics/repositories/inventory.repository.ts(454,30): error TS2551: Property 'locationId' does not exist on type 'Inventory'. Did you mean 'location_id'?
+src/platform/logistics/repositories/inventory.repository.ts(455,32): error TS2551: Property 'locationType' does not exist on type 'Inventory'. Did you mean 'location_type'?
+src/platform/logistics/repositories/inventory.repository.ts(457,35): error TS2551: Property 'quantityOnHand' does not exist on type 'Inventory'. Did you mean 'quantity_on_hand'?
+src/platform/logistics/repositories/inventory.repository.ts(458,36): error TS2551: Property 'quantityReserved' does not exist on type 'Inventory'. Did you mean 'quantity_reserved'?
+src/platform/logistics/repositories/inventory.repository.ts(459,37): error TS2551: Property 'quantityAvailable' does not exist on type 'Inventory'. Did you mean 'quantity_available'?
+src/platform/logistics/repositories/inventory.repository.ts(461,29): error TS2551: Property 'lotNumber' does not exist on type 'Inventory'. Did you mean 'lot_number'?
+src/platform/logistics/repositories/inventory.repository.ts(462,32): error TS2551: Property 'serialNumber' does not exist on type 'Inventory'. Did you mean 'serial_number'?
+src/platform/logistics/repositories/inventory.repository.ts(463,30): error TS2551: Property 'expiryDate' does not exist on type 'Inventory'. Did you mean 'expiry_date'?
+src/platform/logistics/repositories/inventory.repository.ts(467,29): error TS2551: Property 'createdAt' does not exist on type 'Inventory'. Did you mean 'created_at'?
+src/platform/logistics/repositories/inventory.repository.ts(468,29): error TS2551: Property 'updatedAt' does not exist on type 'Inventory'. Did you mean 'updated_at'?
+src/platform/logistics/repositories/inventory.repository.ts(477,35): error TS2551: Property 'quantityOnHand' does not exist on type 'Inventory'. Did you mean 'quantity_on_hand'?
+src/platform/logistics/repositories/inventory.repository.ts(478,36): error TS2551: Property 'quantityReserved' does not exist on type 'Inventory'. Did you mean 'quantity_reserved'?
+src/platform/logistics/repositories/inventory.repository.ts(479,37): error TS2551: Property 'quantityAvailable' does not exist on type 'Inventory'. Did you mean 'quantity_available'?
+src/platform/logistics/repositories/inventory.repository.ts(481,30): error TS2551: Property 'expiryDate' does not exist on type 'Inventory'. Did you mean 'expiry_date'?
+src/platform/logistics/repositories/inventory.repository.ts(485,29): error TS2551: Property 'updatedAt' does not exist on type 'Inventory'. Did you mean 'updated_at'?

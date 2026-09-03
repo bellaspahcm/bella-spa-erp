@@ -55,6 +55,7 @@
     "arch:guard": "npx tsx scripts/architecture/architecture-guard.ts",
     "arch:guard:verbose": "npx tsx scripts/architecture/architecture-guard.ts --verbose",
     "arch:guard:hashes": "npx tsx scripts/architecture/architecture-guard.ts --check-hashes",
+    "arch:guard:controlled-rebuild": "npx tsx scripts/architecture/architecture-guard.ts --mode=controlled-rebuild",
     "governance:typecheck": "npx tsx scripts/governance/scoped-typecheck.ts",
     "governance:typecheck:verbose": "npx tsx scripts/governance/scoped-typecheck.ts --verbose",
     "governance:baseline": "npx tsx scripts/governance/capture-baseline.ts",

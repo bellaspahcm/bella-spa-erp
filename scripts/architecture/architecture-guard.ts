@@ -9,12 +9,18 @@
  *   npm run arch:guard
  *   npm run arch:guard -- --verbose
  *   npm run arch:guard -- --check-hashes
+ *   npm run arch:guard -- --mode=controlled-rebuild --scope=logistics/domain
+ * 
+ * Modes:
+ *   default: Enforce frozen boundaries and dependency rules
+ *   controlled-rebuild: Additional scope-based path enforcement for controlled resets
  * 
  * Exit codes:
  *   0 = All checks passed
  *   1 = Frozen boundary violation detected
  *   2 = Dependency boundary violation detected
  *   3 = Hash verification failed
+ *   4 = Controlled rebuild scope violation detected
  */
 
 import * as fs from 'fs';
@@ -56,10 +62,17 @@ interface ManifestV1 {
 interface ViolationReport {
   layer: string;
   artifact: string;
-  violationType: 'MODIFICATION' | 'HASH_MISMATCH' | 'FORBIDDEN_IMPORT' | 'MISSING_FILE';
+  violationType: 'MODIFICATION' | 'HASH_MISMATCH' | 'FORBIDDEN_IMPORT' | 'MISSING_FILE' | 'SCOPE_VIOLATION';
   expected?: string;
   actual?: string;
   details: string;
+}
+
+interface ControlledRebuildConfig {
+  enabled: boolean;
+  scope: string;
+  allowedPaths: string[];
+  blockedPaths: string[];
 }
 
 // ============================================================================
@@ -175,6 +188,79 @@ const FROZEN_LAYERS: FrozenLayer[] = [
     ],
   },
 ];
+
+// ============================================================================
+// CONTROLLED REBUILD CONFIGURATION
+// ============================================================================
+
+function getControlledRebuildConfig(scope: string): ControlledRebuildConfig {
+  // Define allowed paths based on scope
+  const scopeConfigs: Record<string, { allowed: string[]; blocked: string[] }> = {
+    'logistics/domain': {
+      allowed: [
+        'src/platform/logistics/domain/*.ts',
+        'src/platform/logistics/domain/**/*.ts',
+        'src/platform/logistics/domain/*.test.ts',
+        'src/platform/logistics/domain/**/*.test.ts',
+        'src/platform/logistics/domain/__tests__/**/*.ts',
+      ],
+      blocked: [
+        'supabase/migrations/**/*',
+        'src/shared/database.types.ts',
+        'src/platform/logistics/repositories/**/*',
+        'src/platform/logistics/services/**/*',
+        'src/platform/logistics/api/**/*',
+        'src/platform/core/**/*',
+        'src/platform/healthcare/**/*',
+        'src/platform/real-estate/**/*',
+        'src/platform/education/**/*',
+        'src/platform/finance/**/*',
+        'src/platform/spa/**/*',
+      ],
+    },
+  };
+
+  const config = scopeConfigs[scope];
+  if (!config) {
+    throw new Error(`Unknown controlled rebuild scope: ${scope}`);
+  }
+
+  return {
+    enabled: true,
+    scope,
+    allowedPaths: config.allowed,
+    blockedPaths: config.blocked,
+  };
+}
+
+function isPathInScope(filePath: string, patterns: string[]): boolean {
+  const normalizedPath = filePath.replace(/\\/g, '/');
+  
+  return patterns.some(pattern => {
+    // Handle exact matches first
+    if (pattern === normalizedPath) {
+      return true;
+    }
+    
+    // Convert glob pattern to regex
+    let regexPattern = pattern
+      .replace(/[.+^${}()|[\]\\]/g, '\\$&') // Escape special regex chars except * and ?
+      .replace(/\*\*/g, '___GLOBSTAR___') // Temporarily replace **
+      .replace(/\*/g, '[^/]*') // * matches anything except /
+      .replace(/___GLOBSTAR___/g, '.*'); // ** matches anything including /
+    
+    // Ensure pattern matches from start to end
+    if (!regexPattern.startsWith('^')) {
+      regexPattern = '^' + regexPattern;
+    }
+    if (!regexPattern.endsWith('$')) {
+      regexPattern = regexPattern + '$';
+    }
+    
+    const regex = new RegExp(regexPattern);
+    return regex.test(normalizedPath);
+  });
+}
 
 // ============================================================================
 // UTILITIES
@@ -320,6 +406,82 @@ function checkDependencyBoundaries(verbose: boolean): ViolationReport[] {
 }
 
 // ============================================================================
+// CONTROLLED REBUILD CHECKS
+// ============================================================================
+
+function checkControlledRebuildScope(config: ControlledRebuildConfig, verbose: boolean): ViolationReport[] {
+  const violations: ViolationReport[] = [];
+
+  // Get all TypeScript files that have been modified or created
+  // For now, we'll check all files in the workspace against the rules
+  const changedFiles = getRecentlyModifiedFiles();
+
+  for (const filePath of changedFiles) {
+    const normalizedPath = filePath.replace(/\\/g, '/');
+
+    // Check if file is in blocked paths
+    if (isPathInScope(normalizedPath, config.blockedPaths)) {
+      violations.push({
+        layer: 'CONTROLLED_REBUILD',
+        artifact: filePath,
+        violationType: 'SCOPE_VIOLATION',
+        details: `File modification blocked in controlled-rebuild mode: ${filePath}. This path is protected during ${config.scope} rebuild.`,
+      });
+      continue;
+    }
+
+    // Check if file is in allowed paths
+    if (!isPathInScope(normalizedPath, config.allowedPaths)) {
+      violations.push({
+        layer: 'CONTROLLED_REBUILD',
+        artifact: filePath,
+        violationType: 'SCOPE_VIOLATION',
+        details: `File outside declared scope: ${filePath}. Controlled rebuild scope is: ${config.scope}`,
+      });
+    } else if (verbose) {
+      console.log(`  ✅ ${filePath} (within scope)`);
+    }
+  }
+
+  return violations;
+}
+
+function getRecentlyModifiedFiles(): string[] {
+  // Check git status for recently modified/added files
+  // This is a simplified version - in practice would use git diff
+  const { execSync } = require('child_process');
+  
+  try {
+    // Get staged and unstaged changes
+    const output = execSync('git status --porcelain', { 
+      cwd: WORKSPACE_ROOT,
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'ignore']
+    });
+
+    const files: string[] = [];
+    const lines = output.split('\n').filter(line => line.trim());
+
+    for (const line of lines) {
+      // Parse git status output: XY filename
+      const match = line.match(/^.{3}(.+)$/);
+      if (match) {
+        const file = match[1].trim();
+        // Only check TypeScript/migration files
+        if (file.endsWith('.ts') || file.endsWith('.tsx') || file.endsWith('.sql')) {
+          files.push(file);
+        }
+      }
+    }
+
+    return files;
+  } catch (error) {
+    // If git command fails, return empty array (no violations)
+    return [];
+  }
+}
+
+// ============================================================================
 // REPORTING
 // ============================================================================
 
@@ -374,11 +536,50 @@ function main(): void {
   const args = process.argv.slice(2);
   const verbose = args.includes('--verbose') || args.includes('-v');
   const checkHashes = args.includes('--check-hashes') || args.includes('--hashes');
+  
+  // Parse mode and scope
+  const modeArg = args.find(arg => arg.startsWith('--mode='));
+  const scopeArg = args.find(arg => arg.startsWith('--scope='));
+  
+  const mode = modeArg ? modeArg.split('=')[1] : 'default';
+  const scope = scopeArg ? scopeArg.split('=')[1] : '';
 
-  console.log('🔒 BELLA ARCHITECTURE GUARD');
-  console.log('   Enforcing frozen boundaries for E7.1, E7.2, E7.3\n');
+  let controlledRebuildConfig: ControlledRebuildConfig | null = null;
+
+  if (mode === 'controlled-rebuild') {
+    if (!scope) {
+      console.error('❌ ERROR: --scope required when using --mode=controlled-rebuild');
+      console.error('   Example: --mode=controlled-rebuild --scope=logistics/domain');
+      process.exit(1);
+    }
+    
+    try {
+      controlledRebuildConfig = getControlledRebuildConfig(scope);
+      console.log(`🔒 BELLA ARCHITECTURE GUARD — CONTROLLED REBUILD MODE`);
+      console.log(`   Scope: ${scope}`);
+      console.log(`   Enforcing scope boundaries + frozen layers\n`);
+    } catch (error) {
+      console.error(`❌ ERROR: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  } else {
+    console.log('🔒 BELLA ARCHITECTURE GUARD');
+    console.log('   Enforcing frozen boundaries for E7.1, E7.2, E7.3\n');
+  }
 
   const allViolations: ViolationReport[] = [];
+
+  // Controlled rebuild scope check (runs first if enabled)
+  if (controlledRebuildConfig) {
+    console.log('🎯 Check 0: Controlled rebuild scope enforcement...');
+    const scopeViolations = checkControlledRebuildScope(controlledRebuildConfig, verbose);
+    allViolations.push(...scopeViolations);
+    if (scopeViolations.length === 0) {
+      console.log('   ✅ All changes within declared scope\n');
+    } else {
+      console.log(`   ❌ ${scopeViolations.length} scope violations\n`);
+    }
+  }
 
   // Check 1: Frozen files exist
   console.log('📋 Check 1: Frozen file integrity...');
@@ -417,10 +618,13 @@ function main(): void {
 
   // Exit code
   if (allViolations.length > 0) {
+    const hasScopeViolations = allViolations.some((v) => v.violationType === 'SCOPE_VIOLATION');
     const hasForbiddenImports = allViolations.some((v) => v.violationType === 'FORBIDDEN_IMPORT');
     const hasHashMismatches = allViolations.some((v) => v.violationType === 'HASH_MISMATCH');
     
-    if (hasHashMismatches) {
+    if (hasScopeViolations) {
+      process.exit(4);
+    } else if (hasHashMismatches) {
       process.exit(3);
     } else if (hasForbiddenImports) {
       process.exit(2);

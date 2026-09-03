@@ -1,0 +1,24 @@
+{
+  "passed": 2,
+  "failed": 1,
+  "tests": [
+    {
+      "name": "BLOCK Decision Handling",
+      "status": "pass",
+      "expectedStop": "scope",
+      "passed": false
+    },
+    {
+      "name": "Test Failure Detection",
+      "status": "fail",
+      "expectedStop": "test",
+      "passed": true
+    },
+    {
+      "name": "Typecheck Error Detection",
+      "status": "fail",
+      "expectedStop": "typecheck",
+      "passed": true
+    }
+  ]
+}

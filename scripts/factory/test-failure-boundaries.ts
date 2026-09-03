@@ -42,64 +42,66 @@ function verifyStateUnchanged(originalState: string, testName: string) {
 // ============================================================================
 
 const failureBoundaryTests: FailureBoundaryTest[] = [
-  // Test 1: Missing entity (evidence fails)
-  {
-    name: 'Missing Entity Evidence',
-    description: 'Inject fake entity without migration',
-    inject: () => {
-      // This test doesn't inject - just verifies Student is DEFERRED (no evidence)
-      console.log('   Student has no migration (expected behavior)');
-    },
-    cleanup: () => {
-      // No cleanup needed
-    },
-    expectedFailureStep: 'none', // This should PASS but with DEFER
-  },
-  
-  // Test 2: Build error (syntax error in domain)
-  {
-    name: 'Build Error Detection',
-    description: 'Inject syntax error in domain entity',
-    inject: () => {
-      if (!existsSync(TEST_TEMP_DIR)) {
-        mkdirSync(TEST_TEMP_DIR, { recursive: true });
-      }
-      const testFile = `${TEST_TEMP_DIR}/broken-entity.ts`;
-      writeFileSync(testFile, 'export class Broken { invalid syntax }');
-    },
-    cleanup: () => {
-      const testFile = `${TEST_TEMP_DIR}/broken-entity.ts`;
-      if (existsSync(testFile)) {
-        unlinkSync(testFile);
-      }
-    },
-    expectedFailureStep: 'typecheck', // Should fail at typecheck
-  },
-  
-  // Test 3: Test failure
+  // Test 1: Test failure  
   {
     name: 'Test Failure Detection',
-    description: 'Inject failing test',
+    description: 'Failing test → pipeline stops at test step',
     inject: () => {
-      if (!existsSync(TEST_TEMP_DIR)) {
-        mkdirSync(TEST_TEMP_DIR, { recursive: true });
-      }
-      const testFile = `${TEST_TEMP_DIR}/failing.test.ts`;
+      const testDir = `src/platform/education/domain/__tests__`;
+      const testFile = `${testDir}/z-failure-boundary.test.ts`;
       writeFileSync(testFile, `
-        describe('Failure Boundary Test', () => {
-          it('should fail', () => {
-            expect(true).toBe(false);
-          });
-        });
-      `);
+describe('Failure Boundary Test', () => {
+  it('should fail deliberately', () => {
+    expect(true).toBe(false);
+  });
+});
+`);
     },
     cleanup: () => {
-      const testFile = `${TEST_TEMP_DIR}/failing.test.ts`;
+      const testFile = `src/platform/education/domain/__tests__/z-failure-boundary.test.ts`;
       if (existsSync(testFile)) {
         unlinkSync(testFile);
       }
     },
-    expectedFailureStep: 'test', // Should fail at test execution
+    expectedFailureStep: 'test',
+  },
+  
+  // Test 2: Typecheck error
+  {
+    name: 'Typecheck Error Detection',
+    description: 'Type error → pipeline stops at typecheck',
+    inject: () => {
+      const domainFile = `src/platform/education/domain/z-broken.entity.ts`;
+      writeFileSync(domainFile, `
+// Deliberate type error for failure boundary test
+export class BrokenEntity {
+  constructor(public id: number) {}
+  
+  // Type error
+  brokenMethod() {
+    return this.nonExistentProperty;
+  }
+}
+`);
+    },
+    cleanup: () => {
+      const domainFile = `src/platform/education/domain/z-broken.entity.ts`;
+      if (existsSync(domainFile)) {
+        unlinkSync(domainFile);
+      }
+    },
+    expectedFailureStep: 'typecheck',
+  },
+  
+  // Test 3: Pipeline completes with correct evidence
+  {
+    name: 'Baseline Success Path',
+    description: 'Clean evidence → pipeline completes successfully',
+    inject: () => {
+      console.log('   No injection - baseline run');
+    },
+    cleanup: () => {},
+    expectedFailureStep: 'none',
   },
 ];
 
@@ -138,21 +140,36 @@ async function runFailureBoundaryTests() {
       const pipeline = new FactoryPipeline(config);
       const metrics = await pipeline.execute(config);
       
-      // Verify it stopped
+      // Verify it stopped correctly
       if (test.expectedFailureStep === 'none') {
+        // Baseline success test
         if (metrics.outcome.status === 'pass') {
-          console.log(`✅ ${test.name}: Pipeline passed as expected`);
+          console.log(`✅ ${test.name}: Pipeline completed successfully`);
           results.passed++;
         } else {
-          console.log(`❌ ${test.name}: Expected PASS, got ${metrics.outcome.status}`);
+          console.log(`❌ ${test.name}: Expected PASS, got ${metrics.outcome.status.toUpperCase()}`);
           results.failed++;
         }
       } else {
-        if (metrics.outcome.status === 'fail') {
-          console.log(`✅ ${test.name}: Pipeline stopped correctly`);
-          results.passed++;
+        // Failure test
+        const expectedStatus = test.expectedFailureStep === 'scope' ? 'blocked' : 'fail';
+        
+        if (metrics.outcome.status === expectedStatus) {
+          console.log(`✅ ${test.name}: Pipeline stopped with ${expectedStatus.toUpperCase()}`);
+          
+          // Verify later gates were NOT executed
+          const failedStepIndex = metrics.pipeline.steps.findIndex(s => s.status === 'fail' || s.status === 'blocked');
+          const allStepsAfterFailed = metrics.pipeline.steps.slice(failedStepIndex + 1);
+          
+          if (allStepsAfterFailed.length === 0 || allStepsAfterFailed.every(s => s.status === 'skip')) {
+            console.log(`✅ ${test.name}: Later gates not executed (correct)`);
+            results.passed++;
+          } else {
+            console.log(`❌ ${test.name}: Later gates executed after failure!`);
+            results.failed++;
+          }
         } else {
-          console.log(`❌ ${test.name}: Expected FAIL, got ${metrics.outcome.status}`);
+          console.log(`❌ ${test.name}: Expected ${expectedStatus.toUpperCase()}, got ${metrics.outcome.status.toUpperCase()}`);
           results.failed++;
         }
       }

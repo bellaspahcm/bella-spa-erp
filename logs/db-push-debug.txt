@@ -1,0 +1,17 @@
+NotFound: FileSystem.readFile (C:\Users\DELL\.supabase\profile)
+Using access token from env var...
+Supabase CLI 2.115.0
+Using profile: supabase (supabase.co)
+Using access token from env var...
+Initialising login role...
+2026/09/03 17:08:38 HTTP POST: https://api.supabase.com/v1/projects/bmnbqbcdbuklhopfbopv/cli/login-role
+Connecting to remote database...
+Remote migration versions not found in local migrations directory.
+
+Make sure your local git repo is up-to-date. If the error persists, try repairing the migration history table:
+supabase migration repair --status reverted 20260713080545 20260713083242 20260714032120 20260714032905 20260731065630 20260810161119 20260810161130 20260813031545
+
+And update local migrations to match remote database:
+supabase db pull
+
+

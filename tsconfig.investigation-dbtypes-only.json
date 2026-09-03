@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.platform-logistics.json",
+  "include": [
+    "src/types/database.types.ts"
+  ],
+  "exclude": ["node_modules"]
+}

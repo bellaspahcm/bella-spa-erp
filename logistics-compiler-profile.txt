@@ -1,0 +1,615 @@
+src/platform/logistics/contracts/freight-audit.contract.ts(11,52): error TS2307: Cannot find module '@/core/types/engine' or its corresponding type declarations.
+src/platform/logistics/contracts/index.ts(22,1): error TS2308: Module './inventory.contract' has already exported a member named 'ItemId'. Consider explicitly re-exporting to resolve the ambiguity.
+src/platform/logistics/contracts/warehouse.contract.ts(11,52): error TS2307: Cannot find module '@/core/types/engine' or its corresponding type declarations.
+src/platform/logistics/domain/index.ts(43,3): error TS2305: Module '"./item.types"' has no exported member 'Inventory'.
+src/platform/logistics/domain/index.ts(44,3): error TS2305: Module '"./item.types"' has no exported member 'CreateInventoryProps'.
+src/platform/logistics/domain/index.ts(45,3): error TS2305: Module '"./item.types"' has no exported member 'UpdateInventoryQuantityProps'.
+src/platform/logistics/domain/index.ts(46,3): error TS2305: Module '"./item.types"' has no exported member 'ReserveInventoryProps'.
+src/platform/logistics/domain/index.ts(47,3): error TS2305: Module '"./item.types"' has no exported member 'ReleaseReservationProps'.
+src/platform/logistics/domain/index.ts(48,3): error TS2305: Module '"./item.types"' has no exported member 'InventoryStatus'.
+src/platform/logistics/domain/index.ts(51,3): error TS2305: Module '"./item.types"' has no exported member 'InventoryMovement'.
+src/platform/logistics/domain/index.ts(52,3): error TS2305: Module '"./item.types"' has no exported member 'CreateMovementProps'.
+src/platform/logistics/domain/index.ts(53,3): error TS2305: Module '"./item.types"' has no exported member 'MovementType'.
+src/platform/logistics/domain/index.ts(54,3): error TS2305: Module '"./item.types"' has no exported member 'MovementDirection'.
+src/platform/logistics/domain/index.ts(55,3): error TS2305: Module '"./item.types"' has no exported member 'MovementStatus'.
+src/platform/logistics/domain/index.ts(58,3): error TS2305: Module '"./item.types"' has no exported member 'Traceability'.
+src/platform/logistics/domain/index.ts(59,3): error TS2305: Module '"./item.types"' has no exported member 'CreateTraceabilityProps'.
+src/platform/logistics/domain/index.ts(60,3): error TS2305: Module '"./item.types"' has no exported member 'AddCustodyEventProps'.
+src/platform/logistics/domain/index.ts(61,3): error TS2305: Module '"./item.types"' has no exported member 'CustodyEvent'.
+src/platform/logistics/domain/index.ts(62,3): error TS2305: Module '"./item.types"' has no exported member 'RecallStatus'.
+src/platform/logistics/domain/index.ts(63,3): error TS2305: Module '"./item.types"' has no exported member 'ComplianceStatus'.
+src/platform/logistics/domain/index.ts(66,3): error TS2305: Module '"./item.types"' has no exported member 'Location'.
+src/platform/logistics/domain/index.ts(67,3): error TS2305: Module '"./item.types"' has no exported member 'CreateLocationProps'.
+src/platform/logistics/domain/index.ts(68,3): error TS2305: Module '"./item.types"' has no exported member 'UpdateLocationProps'.
+src/platform/logistics/domain/index.ts(69,3): error TS2305: Module '"./item.types"' has no exported member 'LocationType'.
+src/platform/logistics/domain/index.ts(70,3): error TS2305: Module '"./item.types"' has no exported member 'LocationStatus'.
+src/platform/logistics/domain/index.ts(74,3): error TS2724: '"./item.types"' has no exported member named 'CreateUOMProps'. Did you mean 'CreateItemProps'?
+src/platform/logistics/domain/index.ts(75,3): error TS2724: '"./item.types"' has no exported member named 'UpdateUOMProps'. Did you mean 'UpdateItemProps'?
+src/platform/logistics/domain/index.ts(76,3): error TS2305: Module '"./item.types"' has no exported member 'UOMCategory'.
+src/platform/logistics/domain/index.ts(77,3): error TS2305: Module '"./item.types"' has no exported member 'UOMStatus'.
+src/platform/logistics/domain/inventory-operations.domain.ts(27,26): error TS2305: Module '"./inventory.types"' has no exported member 'Movement'.
+src/platform/logistics/domain/inventory-operations.domain.ts(76,7): error TS2353: Object literal may only specify known properties, and 'movementNumber' does not exist in type 'CreateMovementProps'.
+src/platform/logistics/domain/inventory-operations.domain.ts(77,27): error TS2551: Property 'tenantId' does not exist on type 'Inventory'. Did you mean 'tenant_id'?
+src/platform/logistics/domain/inventory-operations.domain.ts(78,25): error TS2551: Property 'itemId' does not exist on type 'Inventory'. Did you mean 'item_id'?
+src/platform/logistics/domain/inventory-operations.domain.ts(79,33): error TS2551: Property 'locationId' does not exist on type 'Inventory'. Did you mean 'location_id'?
+src/platform/logistics/domain/inventory-operations.domain.ts(82,32): error TS2339: Property 'uomId' does not exist on type 'Inventory'.
+src/platform/logistics/domain/inventory-operations.domain.ts(123,65): error TS2554: Expected 1 arguments, but got 2.
+src/platform/logistics/domain/inventory-operations.domain.ts(142,7): error TS2353: Object literal may only specify known properties, and 'movementNumber' does not exist in type 'CreateMovementProps'.
+src/platform/logistics/domain/inventory-operations.domain.ts(143,27): error TS2551: Property 'tenantId' does not exist on type 'Inventory'. Did you mean 'tenant_id'?
+src/platform/logistics/domain/inventory-operations.domain.ts(144,25): error TS2551: Property 'itemId' does not exist on type 'Inventory'. Did you mean 'item_id'?
+src/platform/logistics/domain/inventory-operations.domain.ts(145,33): error TS2551: Property 'locationId' does not exist on type 'Inventory'. Did you mean 'location_id'?
+src/platform/logistics/domain/inventory-operations.domain.ts(147,27): error TS2551: Property 'quantityReserved' does not exist on type 'Inventory'. Did you mean 'quantity_reserved'?
+src/platform/logistics/domain/inventory-operations.domain.ts(148,32): error TS2339: Property 'uomId' does not exist on type 'Inventory'.
+src/platform/logistics/domain/inventory-operations.domain.ts(189,86): error TS2345: Argument of type '{ reason: string; cancelledBy: string; }' is not assignable to parameter of type 'string'.
+src/platform/logistics/domain/inventory-operations.domain.ts(208,7): error TS2353: Object literal may only specify known properties, and 'movementNumber' does not exist in type 'CreateMovementProps'.
+src/platform/logistics/domain/inventory-operations.domain.ts(209,27): error TS2551: Property 'tenantId' does not exist on type 'Inventory'. Did you mean 'tenant_id'?
+src/platform/logistics/domain/inventory-operations.domain.ts(210,25): error TS2551: Property 'itemId' does not exist on type 'Inventory'. Did you mean 'item_id'?
+src/platform/logistics/domain/inventory-operations.domain.ts(212,31): error TS2551: Property 'locationId' does not exist on type 'Inventory'. Did you mean 'location_id'?
+src/platform/logistics/domain/inventory-operations.domain.ts(214,32): error TS2339: Property 'uomId' does not exist on type 'Inventory'.
+src/platform/logistics/domain/inventory.domain.ts(37,15): error TS2551: Property 'quantityOnHand' does not exist on type 'CreateInventoryProps'. Did you mean 'quantity_on_hand'?
+src/platform/logistics/domain/inventory.domain.ts(44,36): error TS2339: Property 'quantityReserved' does not exist on type 'CreateInventoryProps'.
+src/platform/logistics/domain/inventory.domain.ts(53,34): error TS2551: Property 'quantityOnHand' does not exist on type 'CreateInventoryProps'. Did you mean 'quantity_on_hand'?
+src/platform/logistics/domain/inventory.domain.ts(61,15): error TS2551: Property 'serialNumber' does not exist on type 'CreateInventoryProps'. Did you mean 'serial_number'?
+src/platform/logistics/domain/inventory.domain.ts(61,38): error TS2551: Property 'lotNumber' does not exist on type 'CreateInventoryProps'. Did you mean 'lot_number'?
+src/platform/logistics/domain/inventory.domain.ts(71,17): error TS2339: Property 'id' does not exist on type 'CreateInventoryProps'.
+src/platform/logistics/domain/inventory.domain.ts(72,7): error TS2561: Object literal may only specify known properties, but 'tenantId' does not exist in type 'Inventory'. Did you mean to write 'tenant_id'?
+src/platform/logistics/domain/inventory.domain.ts(72,23): error TS2551: Property 'tenantId' does not exist on type 'CreateInventoryProps'. Did you mean 'tenant_id'?
+src/platform/logistics/domain/inventory.domain.ts(73,21): error TS2551: Property 'itemId' does not exist on type 'CreateInventoryProps'. Did you mean 'item_id'?
+src/platform/logistics/domain/inventory.domain.ts(74,25): error TS2551: Property 'locationId' does not exist on type 'CreateInventoryProps'. Did you mean 'location_id'?
+src/platform/logistics/domain/inventory.domain.ts(75,27): error TS2551: Property 'locationType' does not exist on type 'CreateInventoryProps'. Did you mean 'location_type'?
+src/platform/logistics/domain/inventory.domain.ts(77,29): error TS2551: Property 'quantityOnHand' does not exist on type 'CreateInventoryProps'. Did you mean 'quantity_on_hand'?
+src/platform/logistics/domain/inventory.domain.ts(79,32): error TS2551: Property 'quantityOnHand' does not exist on type 'CreateInventoryProps'. Did you mean 'quantity_on_hand'?
+src/platform/logistics/domain/inventory.domain.ts(81,24): error TS2551: Property 'lotNumber' does not exist on type 'CreateInventoryProps'. Did you mean 'lot_number'?
+src/platform/logistics/domain/inventory.domain.ts(82,27): error TS2551: Property 'serialNumber' does not exist on type 'CreateInventoryProps'. Did you mean 'serial_number'?
+src/platform/logistics/domain/inventory.domain.ts(83,25): error TS2551: Property 'expiryDate' does not exist on type 'CreateInventoryProps'. Did you mean 'expiry_date'?
+src/platform/logistics/domain/inventory.domain.ts(103,37): error TS2339: Property 'quantityOnHand' does not exist on type 'UpdateInventoryQuantityProps'.
+src/platform/logistics/domain/inventory.domain.ts(104,39): error TS2339: Property 'quantityReserved' does not exist on type 'UpdateInventoryQuantityProps'.
+src/platform/logistics/domain/inventory.domain.ts(105,15): error TS2339: Property 'quantityReserved' does not exist on type 'UpdateInventoryQuantityProps'.
+src/platform/logistics/domain/inventory.domain.ts(106,19): error TS2551: Property 'quantityReserved' does not exist on type 'Inventory'. Did you mean 'quantity_reserved'?
+src/platform/logistics/domain/inventory.domain.ts(132,7): error TS2561: Object literal may only specify known properties, but 'quantityOnHand' does not exist in type 'Inventory'. Did you mean to write 'quantity_on_hand'?
+src/platform/logistics/domain/inventory.domain.ts(160,43): error TS2551: Property 'quantityReserved' does not exist on type 'Inventory'. Did you mean 'quantity_reserved'?
+src/platform/logistics/domain/inventory.domain.ts(162,41): error TS2551: Property 'quantityOnHand' does not exist on type 'Inventory'. Did you mean 'quantity_on_hand'?
+src/platform/logistics/domain/inventory.domain.ts(164,86): error TS2551: Property 'quantityAvailable' does not exist on type 'Inventory'. Did you mean 'quantity_available'?
+src/platform/logistics/domain/inventory.domain.ts(171,7): error TS2561: Object literal may only specify known properties, but 'quantityReserved' does not exist in type 'Inventory'. Did you mean to write 'quantity_reserved'?
+src/platform/logistics/domain/inventory.domain.ts(172,36): error TS2551: Property 'quantityOnHand' does not exist on type 'Inventory'. Did you mean 'quantity_on_hand'?
+src/platform/logistics/domain/inventory.domain.ts(173,49): error TS2551: Property 'quantityOnHand' does not exist on type 'Inventory'. Did you mean 'quantity_on_hand'?
+src/platform/logistics/domain/inventory.domain.ts(200,43): error TS2551: Property 'quantityReserved' does not exist on type 'Inventory'. Did you mean 'quantity_reserved'?
+src/platform/logistics/domain/inventory.domain.ts(202,41): error TS2551: Property 'quantityOnHand' does not exist on type 'Inventory'. Did you mean 'quantity_on_hand'?
+src/platform/logistics/domain/inventory.domain.ts(204,86): error TS2551: Property 'quantityAvailable' does not exist on type 'Inventory'. Did you mean 'quantity_available'?
+src/platform/logistics/domain/inventory.domain.ts(211,7): error TS2561: Object literal may only specify known properties, but 'quantityReserved' does not exist in type 'Inventory'. Did you mean to write 'quantity_reserved'?
+src/platform/logistics/domain/inventory.domain.ts(212,36): error TS2551: Property 'quantityOnHand' does not exist on type 'Inventory'. Did you mean 'quantity_on_hand'?
+src/platform/logistics/domain/inventory.domain.ts(213,49): error TS2551: Property 'quantityOnHand' does not exist on type 'Inventory'. Did you mean 'quantity_on_hand'?
+src/platform/logistics/domain/inventory.domain.ts(277,30): error TS2551: Property 'quantityAvailable' does not exist on type 'Inventory'. Did you mean 'quantity_available'?
+src/platform/logistics/domain/inventory.domain.ts(279,80): error TS2551: Property 'quantityAvailable' does not exist on type 'Inventory'. Did you mean 'quantity_available'?
+src/platform/logistics/domain/inventory.domain.ts(285,43): error TS2551: Property 'quantityReserved' does not exist on type 'Inventory'. Did you mean 'quantity_reserved'?
+src/platform/logistics/domain/inventory.domain.ts(286,44): error TS2551: Property 'quantityOnHand' does not exist on type 'Inventory'. Did you mean 'quantity_on_hand'?
+src/platform/logistics/domain/inventory.domain.ts(304,7): error TS2561: Object literal may only specify known properties, but 'quantityReserved' does not exist in type 'Inventory'. Did you mean to write 'quantity_reserved'?
+src/platform/logistics/domain/inventory.domain.ts(337,19): error TS2551: Property 'quantityReserved' does not exist on type 'Inventory'. Did you mean 'quantity_reserved'?
+src/platform/logistics/domain/inventory.domain.ts(356,7): error TS2561: Object literal may only specify known properties, but 'updatedAt' does not exist in type 'Inventory'. Did you mean to write 'updated_at'?
+src/platform/logistics/domain/inventory.domain.ts(391,30): error TS2551: Property 'quantityReserved' does not exist on type 'Inventory'. Did you mean 'quantity_reserved'?
+src/platform/logistics/domain/inventory.domain.ts(393,60): error TS2551: Property 'quantityReserved' does not exist on type 'Inventory'. Did you mean 'quantity_reserved'?
+src/platform/logistics/domain/inventory.domain.ts(407,43): error TS2551: Property 'quantityReserved' does not exist on type 'Inventory'. Did you mean 'quantity_reserved'?
+src/platform/logistics/domain/inventory.domain.ts(408,44): error TS2551: Property 'quantityOnHand' does not exist on type 'Inventory'. Did you mean 'quantity_on_hand'?
+src/platform/logistics/domain/inventory.domain.ts(428,7): error TS2561: Object literal may only specify known properties, but 'quantityReserved' does not exist in type 'Inventory'. Did you mean to write 'quantity_reserved'?
+src/platform/logistics/domain/inventory.domain.ts(461,19): error TS2551: Property 'quantityReserved' does not exist on type 'Inventory'. Did you mean 'quantity_reserved'?
+src/platform/logistics/domain/inventory.domain.ts(463,51): error TS2551: Property 'quantityReserved' does not exist on type 'Inventory'. Did you mean 'quantity_reserved'?
+src/platform/logistics/domain/inventory.domain.ts(480,7): error TS2561: Object literal may only specify known properties, but 'quantityAvailable' does not exist in type 'Inventory'. Did you mean to write 'quantity_available'?
+src/platform/logistics/domain/inventory.domain.ts(536,36): error TS2551: Property 'quantityReserved' does not exist on type 'Inventory'. Did you mean 'quantity_reserved'?
+src/platform/logistics/domain/inventory.domain.ts(538,61): error TS2551: Property 'quantityReserved' does not exist on type 'Inventory'. Did you mean 'quantity_reserved'?
+src/platform/logistics/domain/inventory.domain.ts(543,43): error TS2551: Property 'quantityReserved' does not exist on type 'Inventory'. Did you mean 'quantity_reserved'?
+src/platform/logistics/domain/inventory.domain.ts(547,7): error TS2561: Object literal may only specify known properties, but 'quantityReserved' does not exist in type 'Inventory'. Did you mean to write 'quantity_reserved'?
+src/platform/logistics/domain/inventory.domain.ts(548,36): error TS2551: Property 'quantityOnHand' does not exist on type 'Inventory'. Did you mean 'quantity_on_hand'?
+src/platform/logistics/domain/inventory.domain.ts(589,75): error TS2551: Property 'quantityReserved' does not exist on type 'Inventory'. Did you mean 'quantity_reserved'?
+src/platform/logistics/domain/inventory.domain.ts(591,56): error TS2551: Property 'quantityReserved' does not exist on type 'Inventory'. Did you mean 'quantity_reserved'?
+src/platform/logistics/domain/inventory.domain.ts(599,7): error TS2561: Object literal may only specify known properties, but 'updatedAt' does not exist in type 'Inventory'. Did you mean to write 'updated_at'?
+src/platform/logistics/domain/inventory.domain.ts(611,17): error TS2551: Property 'quantityAvailable' does not exist on type 'Inventory'. Did you mean 'quantity_available'?
+src/platform/logistics/domain/inventory.domain.ts(626,20): error TS2551: Property 'expiryDate' does not exist on type 'Inventory'. Did you mean 'expiry_date'?
+src/platform/logistics/domain/inventory.domain.ts(628,43): error TS2551: Property 'expiryDate' does not exist on type 'Inventory'. Did you mean 'expiry_date'?
+src/platform/logistics/domain/inventory.domain.ts(636,20): error TS2551: Property 'expiryDate' does not exist on type 'Inventory'. Did you mean 'expiry_date'?
+src/platform/logistics/domain/inventory.domain.ts(638,43): error TS2551: Property 'expiryDate' does not exist on type 'Inventory'. Did you mean 'expiry_date'?
+src/platform/logistics/domain/inventory.domain.ts(663,19): error TS2551: Property 'quantityOnHand' does not exist on type 'Inventory'. Did you mean 'quantity_on_hand'?
+src/platform/logistics/domain/inventory.domain.ts(664,23): error TS2551: Property 'quantityReserved' does not exist on type 'Inventory'. Did you mean 'quantity_reserved'?
+src/platform/logistics/domain/inventory.domain.ts(664,52): error TS2551: Property 'quantityOnHand' does not exist on type 'Inventory'. Did you mean 'quantity_on_hand'?
+src/platform/logistics/domain/item.domain.ts(38,16): error TS2551: Property 'skuCode' does not exist on type 'CreateItemProps'. Did you mean 'sku_code'?
+src/platform/logistics/domain/item.domain.ts(38,33): error TS2551: Property 'skuCode' does not exist on type 'CreateItemProps'. Did you mean 'sku_code'?
+src/platform/logistics/domain/item.domain.ts(46,16): error TS2551: Property 'baseUom' does not exist on type 'CreateItemProps'. Did you mean 'base_uom'?
+src/platform/logistics/domain/item.domain.ts(51,15): error TS2551: Property 'serialTracked' does not exist on type 'CreateItemProps'. Did you mean 'serial_tracked'?
+src/platform/logistics/domain/item.domain.ts(51,39): error TS2551: Property 'lotTracked' does not exist on type 'CreateItemProps'. Did you mean 'lot_tracked'?
+src/platform/logistics/domain/item.domain.ts(59,15): error TS2551: Property 'weightKg' does not exist on type 'CreateItemProps'. Did you mean 'weight_kg'?
+src/platform/logistics/domain/item.domain.ts(59,47): error TS2551: Property 'weightKg' does not exist on type 'CreateItemProps'. Did you mean 'weight_kg'?
+src/platform/logistics/domain/item.domain.ts(64,15): error TS2551: Property 'dimensionsJson' does not exist on type 'CreateItemProps'. Did you mean 'dimensions'?
+src/platform/logistics/domain/item.domain.ts(65,55): error TS2551: Property 'dimensionsJson' does not exist on type 'CreateItemProps'. Did you mean 'dimensions'?
+src/platform/logistics/domain/item.domain.ts(72,15): error TS2551: Property 'standardCost' does not exist on type 'CreateItemProps'. Did you mean 'standard_cost'?
+src/platform/logistics/domain/item.domain.ts(72,51): error TS2551: Property 'standardCost' does not exist on type 'CreateItemProps'. Did you mean 'standard_cost'?
+src/platform/logistics/domain/item.domain.ts(87,17): error TS2339: Property 'id' does not exist on type 'CreateItemProps'.
+src/platform/logistics/domain/item.domain.ts(88,23): error TS2551: Property 'tenantId' does not exist on type 'CreateItemProps'. Did you mean 'tenant_id'?
+src/platform/logistics/domain/item.domain.ts(89,22): error TS2551: Property 'skuCode' does not exist on type 'CreateItemProps'. Did you mean 'sku_code'?
+src/platform/logistics/domain/item.domain.ts(91,7): error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+src/platform/logistics/domain/item.domain.ts(94,7): error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+src/platform/logistics/domain/item.domain.ts(96,22): error TS2551: Property 'baseUom' does not exist on type 'CreateItemProps'. Did you mean 'base_uom'?
+src/platform/logistics/domain/item.domain.ts(97,23): error TS2551: Property 'weightKg' does not exist on type 'CreateItemProps'. Did you mean 'weight_kg'?
+src/platform/logistics/domain/item.domain.ts(97,54): error TS2551: Property 'weightKg' does not exist on type 'CreateItemProps'. Did you mean 'weight_kg'?
+src/platform/logistics/domain/item.domain.ts(98,29): error TS2551: Property 'dimensionsJson' does not exist on type 'CreateItemProps'. Did you mean 'dimensions'?
+src/platform/logistics/domain/item.domain.ts(100,27): error TS2551: Property 'standardCost' does not exist on type 'CreateItemProps'. Did you mean 'standard_cost'?
+src/platform/logistics/domain/item.domain.ts(100,62): error TS2551: Property 'standardCost' does not exist on type 'CreateItemProps'. Did you mean 'standard_cost'?
+src/platform/logistics/domain/item.domain.ts(103,25): error TS2551: Property 'lotTracked' does not exist on type 'CreateItemProps'. Did you mean 'lot_tracked'?
+src/platform/logistics/domain/item.domain.ts(104,28): error TS2551: Property 'serialTracked' does not exist on type 'CreateItemProps'. Did you mean 'serial_tracked'?
+src/platform/logistics/domain/item.domain.ts(105,28): error TS2551: Property 'expiryTracked' does not exist on type 'CreateItemProps'. Did you mean 'expiry_tracked'?
+src/platform/logistics/domain/item.domain.ts(107,21): error TS2339: Property 'status' does not exist on type 'CreateItemProps'.
+src/platform/logistics/domain/item.domain.ts(111,24): error TS2551: Property 'createdBy' does not exist on type 'CreateItemProps'. Did you mean 'created_by'?
+src/platform/logistics/domain/item.domain.ts(112,24): error TS2339: Property 'updatedBy' does not exist on type 'CreateItemProps'.
+src/platform/logistics/domain/item.domain.ts(133,35): error TS2551: Property 'lotTracked' does not exist on type 'UpdateItemProps'. Did you mean 'lot_tracked'?
+src/platform/logistics/domain/item.domain.ts(134,17): error TS2551: Property 'lotTracked' does not exist on type 'UpdateItemProps'. Did you mean 'lot_tracked'?
+src/platform/logistics/domain/item.domain.ts(135,22): error TS2551: Property 'lotTracked' does not exist on type 'Item'. Did you mean 'lot_tracked'?
+src/platform/logistics/domain/item.domain.ts(136,38): error TS2551: Property 'serialTracked' does not exist on type 'UpdateItemProps'. Did you mean 'serial_tracked'?
+src/platform/logistics/domain/item.domain.ts(137,17): error TS2551: Property 'serialTracked' does not exist on type 'UpdateItemProps'. Did you mean 'serial_tracked'?
+src/platform/logistics/domain/item.domain.ts(138,22): error TS2551: Property 'serialTracked' does not exist on type 'Item'. Did you mean 'serial_tracked'?
+src/platform/logistics/domain/item.domain.ts(148,17): error TS2551: Property 'weightKg' does not exist on type 'UpdateItemProps'. Did you mean 'weight_kg'?
+src/platform/logistics/domain/item.domain.ts(148,51): error TS2551: Property 'weightKg' does not exist on type 'UpdateItemProps'. Did you mean 'weight_kg'?
+src/platform/logistics/domain/item.domain.ts(153,17): error TS2551: Property 'dimensionsJson' does not exist on type 'UpdateItemProps'. Did you mean 'dimensions'?
+src/platform/logistics/domain/item.domain.ts(154,57): error TS2551: Property 'dimensionsJson' does not exist on type 'UpdateItemProps'. Did you mean 'dimensions'?
+src/platform/logistics/domain/item.domain.ts(161,17): error TS2551: Property 'standardCost' does not exist on type 'UpdateItemProps'. Did you mean 'standard_cost'?
+src/platform/logistics/domain/item.domain.ts(161,55): error TS2551: Property 'standardCost' does not exist on type 'UpdateItemProps'. Did you mean 'standard_cost'?
+src/platform/logistics/domain/item.domain.ts(177,7): error TS2322: Type 'string | null | undefined' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+src/platform/logistics/domain/item.domain.ts(180,7): error TS2322: Type 'string | null | undefined' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+src/platform/logistics/domain/item.domain.ts(233,17): error TS2551: Property 'lotTracked' does not exist on type 'Item'. Did you mean 'lot_tracked'?
+src/platform/logistics/domain/item.domain.ts(233,36): error TS2551: Property 'serialTracked' does not exist on type 'Item'. Did you mean 'serial_tracked'?
+src/platform/logistics/domain/item.domain.ts(233,58): error TS2551: Property 'expiryTracked' does not exist on type 'Item'. Did you mean 'expiry_tracked'?
+src/platform/logistics/domain/item.domain.ts(240,17): error TS2551: Property 'serialTracked' does not exist on type 'Item'. Did you mean 'serial_tracked'?
+src/platform/logistics/domain/item.domain.ts(247,17): error TS2551: Property 'expiryTracked' does not exist on type 'Item'. Did you mean 'expiry_tracked'?
+src/platform/logistics/domain/item.domain.ts(279,15): error TS2551: Property 'dimensionsJson' does not exist on type 'Item'. Did you mean 'dimensions'?
+src/platform/logistics/domain/item.domain.ts(281,44): error TS2551: Property 'dimensionsJson' does not exist on type 'Item'. Did you mean 'dimensions'?
+src/platform/logistics/domain/location.domain.ts(20,3): error TS2724: '"./location.types"' has no exported member named 'UpdateLocationProps'. Did you mean 'CreateLocationProps'?
+src/platform/logistics/domain/location.domain.ts(21,3): error TS2724: '"./location.types"' has no exported member named 'LocationType'. Did you mean 'Location'?
+src/platform/logistics/domain/location.domain.ts(22,3): error TS2305: Module '"./location.types"' has no exported member 'LocationStatus'.
+src/platform/logistics/domain/location.domain.ts(37,16): error TS2551: Property 'locationCode' does not exist on type 'CreateLocationProps'. Did you mean 'location_code'?
+src/platform/logistics/domain/location.domain.ts(37,38): error TS2551: Property 'locationCode' does not exist on type 'CreateLocationProps'. Did you mean 'location_code'?
+src/platform/logistics/domain/location.domain.ts(44,16): error TS2551: Property 'locationName' does not exist on type 'CreateLocationProps'. Did you mean 'location_name'?
+src/platform/logistics/domain/location.domain.ts(44,38): error TS2551: Property 'locationName' does not exist on type 'CreateLocationProps'. Did you mean 'location_name'?
+src/platform/logistics/domain/location.domain.ts(51,16): error TS2551: Property 'locationType' does not exist on type 'CreateLocationProps'. Did you mean 'location_type'?
+src/platform/logistics/domain/location.domain.ts(59,15): error TS2339: Property 'addressJson' does not exist on type 'CreateLocationProps'.
+src/platform/logistics/domain/location.domain.ts(60,56): error TS2339: Property 'addressJson' does not exist on type 'CreateLocationProps'.
+src/platform/logistics/domain/location.domain.ts(69,17): error TS2339: Property 'id' does not exist on type 'CreateLocationProps'.
+src/platform/logistics/domain/location.domain.ts(70,7): error TS2561: Object literal may only specify known properties, but 'tenantId' does not exist in type 'Location'. Did you mean to write 'tenant_id'?
+src/platform/logistics/domain/location.domain.ts(70,23): error TS2551: Property 'tenantId' does not exist on type 'CreateLocationProps'. Did you mean 'tenant_id'?
+src/platform/logistics/domain/location.domain.ts(71,27): error TS2551: Property 'locationCode' does not exist on type 'CreateLocationProps'. Did you mean 'location_code'?
+src/platform/logistics/domain/location.domain.ts(72,27): error TS2551: Property 'locationName' does not exist on type 'CreateLocationProps'. Did you mean 'location_name'?
+src/platform/logistics/domain/location.domain.ts(73,27): error TS2551: Property 'locationType' does not exist on type 'CreateLocationProps'. Did you mean 'location_type'?
+src/platform/logistics/domain/location.domain.ts(75,31): error TS2551: Property 'parentLocationId' does not exist on type 'CreateLocationProps'. Did you mean 'parent_location_id'?
+src/platform/logistics/domain/location.domain.ts(77,26): error TS2339: Property 'addressJson' does not exist on type 'CreateLocationProps'.
+src/platform/logistics/domain/location.domain.ts(79,21): error TS2339: Property 'status' does not exist on type 'CreateLocationProps'.
+src/platform/logistics/domain/location.domain.ts(128,70): error TS2551: Property 'locationName' does not exist on type 'Location'. Did you mean 'location_name'?
+src/platform/logistics/domain/location.domain.ts(254,21): error TS2551: Property 'parentLocationId' does not exist on type 'Location'. Did you mean 'parent_location_id'?
+src/platform/logistics/domain/location.domain.ts(265,19): error TS2339: Property 'addressJson' does not exist on type 'Location'.
+src/platform/logistics/domain/location.domain.ts(268,30): error TS2339: Property 'addressJson' does not exist on type 'Location'.
+src/platform/logistics/domain/location.domain.ts(336,7): error TS2561: Object literal may only specify known properties, but 'updatedAt' does not exist in type 'Location'. Did you mean to write 'updated_at'?
+src/platform/logistics/domain/location.domain.ts(388,7): error TS2561: Object literal may only specify known properties, but 'updatedAt' does not exist in type 'Location'. Did you mean to write 'updated_at'?
+src/platform/logistics/domain/location.domain.ts(440,7): error TS2561: Object literal may only specify known properties, but 'updatedAt' does not exist in type 'Location'. Did you mean to write 'updated_at'?
+src/platform/logistics/domain/movement.domain.ts(22,3): error TS2459: Module '"./movement.types"' declares 'LocationType' locally, but it is not exported.
+src/platform/logistics/domain/movement.domain.ts(39,16): error TS2339: Property 'movementNumber' does not exist on type 'CreateMovementProps'.
+src/platform/logistics/domain/movement.domain.ts(39,40): error TS2339: Property 'movementNumber' does not exist on type 'CreateMovementProps'.
+src/platform/logistics/domain/movement.domain.ts(56,13): error TS2551: Property 'movementType' does not exist on type 'CreateMovementProps'. Did you mean 'movement_type'?
+src/platform/logistics/domain/movement.domain.ts(58,13): error TS2551: Property 'fromLocationId' does not exist on type 'CreateMovementProps'. Did you mean 'from_location_id'?
+src/platform/logistics/domain/movement.domain.ts(59,13): error TS2551: Property 'toLocationId' does not exist on type 'CreateMovementProps'. Did you mean 'to_location_id'?
+src/platform/logistics/domain/movement.domain.ts(66,15): error TS2551: Property 'unitCost' does not exist on type 'CreateMovementProps'. Did you mean 'unit_cost'?
+src/platform/logistics/domain/movement.domain.ts(66,47): error TS2551: Property 'unitCost' does not exist on type 'CreateMovementProps'. Did you mean 'unit_cost'?
+src/platform/logistics/domain/movement.domain.ts(74,15): error TS2551: Property 'totalCost' does not exist on type 'CreateMovementProps'. Did you mean 'total_cost'?
+src/platform/logistics/domain/movement.domain.ts(74,48): error TS2551: Property 'totalCost' does not exist on type 'CreateMovementProps'. Did you mean 'total_cost'?
+src/platform/logistics/domain/movement.domain.ts(90,15): error TS2551: Property 'serialNumber' does not exist on type 'CreateMovementProps'. Did you mean 'serial_number'?
+src/platform/logistics/domain/movement.domain.ts(90,38): error TS2551: Property 'lotNumber' does not exist on type 'CreateMovementProps'. Did you mean 'lot_number'?
+src/platform/logistics/domain/movement.domain.ts(100,17): error TS2339: Property 'id' does not exist on type 'CreateMovementProps'.
+src/platform/logistics/domain/movement.domain.ts(101,29): error TS2339: Property 'movementNumber' does not exist on type 'CreateMovementProps'.
+src/platform/logistics/domain/movement.domain.ts(102,23): error TS2551: Property 'tenantId' does not exist on type 'CreateMovementProps'. Did you mean 'tenant_id'?
+src/platform/logistics/domain/movement.domain.ts(104,27): error TS2551: Property 'movementDate' does not exist on type 'CreateMovementProps'. Did you mean 'movement_date'?
+src/platform/logistics/domain/movement.domain.ts(106,24): error TS2551: Property 'createdBy' does not exist on type 'CreateMovementProps'. Did you mean 'created_by'?
+src/platform/logistics/domain/movement.domain.ts(108,27): error TS2551: Property 'movementType' does not exist on type 'CreateMovementProps'. Did you mean 'movement_type'?
+src/platform/logistics/domain/movement.domain.ts(111,21): error TS2551: Property 'itemId' does not exist on type 'CreateMovementProps'. Did you mean 'item_id'?
+src/platform/logistics/domain/movement.domain.ts(113,29): error TS2551: Property 'fromLocationId' does not exist on type 'CreateMovementProps'. Did you mean 'from_location_id'?
+src/platform/logistics/domain/movement.domain.ts(114,31): error TS2551: Property 'fromLocationType' does not exist on type 'CreateMovementProps'. Did you mean 'from_location_type'?
+src/platform/logistics/domain/movement.domain.ts(115,27): error TS2551: Property 'toLocationId' does not exist on type 'CreateMovementProps'. Did you mean 'to_location_id'?
+src/platform/logistics/domain/movement.domain.ts(116,29): error TS2551: Property 'toLocationType' does not exist on type 'CreateMovementProps'. Did you mean 'to_location_type'?
+src/platform/logistics/domain/movement.domain.ts(119,28): error TS2551: Property 'unitOfMeasure' does not exist on type 'CreateMovementProps'. Did you mean 'unit_of_measure'?
+src/platform/logistics/domain/movement.domain.ts(121,24): error TS2551: Property 'lotNumber' does not exist on type 'CreateMovementProps'. Did you mean 'lot_number'?
+src/platform/logistics/domain/movement.domain.ts(122,27): error TS2551: Property 'serialNumber' does not exist on type 'CreateMovementProps'. Did you mean 'serial_number'?
+src/platform/logistics/domain/movement.domain.ts(123,25): error TS2551: Property 'expiryDate' does not exist on type 'CreateMovementProps'. Did you mean 'expiry_date'?
+src/platform/logistics/domain/movement.domain.ts(125,23): error TS2551: Property 'unitCost' does not exist on type 'CreateMovementProps'. Did you mean 'unit_cost'?
+src/platform/logistics/domain/movement.domain.ts(125,54): error TS2551: Property 'unitCost' does not exist on type 'CreateMovementProps'. Did you mean 'unit_cost'?
+src/platform/logistics/domain/movement.domain.ts(126,24): error TS2551: Property 'totalCost' does not exist on type 'CreateMovementProps'. Did you mean 'total_cost'?
+src/platform/logistics/domain/movement.domain.ts(126,56): error TS2551: Property 'totalCost' does not exist on type 'CreateMovementProps'. Did you mean 'total_cost'?
+src/platform/logistics/domain/movement.domain.ts(127,7): error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+src/platform/logistics/domain/movement.domain.ts(129,33): error TS2551: Property 'sourceDocumentType' does not exist on type 'CreateMovementProps'. Did you mean 'source_document'?
+src/platform/logistics/domain/movement.domain.ts(130,31): error TS2551: Property 'sourceDocumentId' does not exist on type 'CreateMovementProps'. Did you mean 'source_document'?
+src/platform/logistics/domain/movement.domain.ts(131,35): error TS2551: Property 'sourceDocumentNumber' does not exist on type 'CreateMovementProps'. Did you mean 'source_document'?
+src/platform/logistics/domain/movement.domain.ts(132,31): error TS2339: Property 'sourceLineItemId' does not exist on type 'CreateMovementProps'.
+src/platform/logistics/domain/movement.domain.ts(134,7): error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+src/platform/logistics/domain/movement.domain.ts(135,7): error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+src/platform/logistics/domain/movement.domain.ts(137,22): error TS2551: Property 'batchId' does not exist on type 'CreateMovementProps'. Did you mean 'batch_id'?
+src/platform/logistics/domain/movement.domain.ts(142,21): error TS2339: Property 'status' does not exist on type 'CreateMovementProps'.
+src/platform/logistics/domain/movement.domain.ts(143,26): error TS2339: Property 'status' does not exist on type 'CreateMovementProps'.
+src/platform/logistics/domain/movement.domain.ts(260,7): error TS2561: Object literal may only specify known properties, but 'approvedBy' does not exist in type 'InventoryMovement'. Did you mean to write 'approved_by'?
+src/platform/logistics/domain/movement.domain.ts(298,7): error TS2561: Object literal may only specify known properties, but 'cancelledAt' does not exist in type 'InventoryMovement'. Did you mean to write 'cancelled_at'?
+src/platform/logistics/domain/movement.domain.ts(358,18): error TS2551: Property 'unitCost' does not exist on type 'InventoryMovement'. Did you mean 'unit_cost'?
+src/platform/logistics/domain/movement.domain.ts(359,21): error TS2551: Property 'unitCost' does not exist on type 'InventoryMovement'. Did you mean 'unit_cost'?
+src/platform/logistics/domain/movement.domain.ts(376,50): error TS2551: Property 'lotNumber' does not exist on type 'InventoryMovement'. Did you mean 'lot_number'?
+src/platform/logistics/domain/movement.domain.ts(383,53): error TS2551: Property 'serialNumber' does not exist on type 'InventoryMovement'. Did you mean 'serial_number'?
+src/platform/logistics/domain/movement.domain.ts(390,53): error TS2551: Property 'expiryDate' does not exist on type 'InventoryMovement'. Did you mean 'expiry_date'?
+src/platform/logistics/domain/movement.domain.ts(409,16): error TS2551: Property 'movementType' does not exist on type 'InventoryMovement'. Did you mean 'movement_type'?
+src/platform/logistics/domain/movement.domain.ts(410,40): error TS2551: Property 'unitOfMeasure' does not exist on type 'InventoryMovement'. Did you mean 'unit_of_measure'?
+src/platform/logistics/domain/movement.domain.ts(414,32): error TS2551: Property 'toLocationType' does not exist on type 'InventoryMovement'. Did you mean 'to_location_type'?
+src/platform/logistics/domain/movement.domain.ts(416,32): error TS2551: Property 'fromLocationType' does not exist on type 'InventoryMovement'. Did you mean 'from_location_type'?
+src/platform/logistics/domain/movement.domain.ts(419,21): error TS2551: Property 'fromLocationType' does not exist on type 'InventoryMovement'. Did you mean 'from_location_type'?
+src/platform/logistics/domain/movement.domain.ts(419,66): error TS2551: Property 'toLocationType' does not exist on type 'InventoryMovement'. Did you mean 'to_location_type'?
+src/platform/logistics/domain/movement.domain.ts(423,18): error TS2551: Property 'lotNumber' does not exist on type 'InventoryMovement'. Did you mean 'lot_number'?
+src/platform/logistics/domain/movement.domain.ts(424,35): error TS2551: Property 'lotNumber' does not exist on type 'InventoryMovement'. Did you mean 'lot_number'?
+src/platform/logistics/domain/movement.domain.ts(427,18): error TS2551: Property 'serialNumber' does not exist on type 'InventoryMovement'. Did you mean 'serial_number'?
+src/platform/logistics/domain/movement.domain.ts(428,35): error TS2551: Property 'serialNumber' does not exist on type 'InventoryMovement'. Did you mean 'serial_number'?
+src/platform/logistics/domain/rules/traceability.operations.ts(23,3): error TS2305: Module '"../movement.types"' has no exported member 'CustodyEvent'.
+src/platform/logistics/domain/rules/traceability.rule.ts(10,15): error TS2724: '"../traceability.types"' has no exported member named 'Traceability'. Did you mean 'TraceabilityId'?
+src/platform/logistics/domain/rules/traceability.rule.ts(39,22): error TS2551: Property 'skuCode' does not exist on type 'Item'. Did you mean 'sku_code'?
+src/platform/logistics/domain/rules/traceability.rule.ts(40,25): error TS2551: Property 'lotTracked' does not exist on type 'Item'. Did you mean 'lot_tracked'?
+src/platform/logistics/domain/rules/traceability.rule.ts(45,15): error TS2551: Property 'lotTracked' does not exist on type 'Item'. Did you mean 'lot_tracked'?
+src/platform/logistics/domain/rules/traceability.rule.ts(64,60): error TS2551: Property 'skuCode' does not exist on type 'Item'. Did you mean 'sku_code'?
+src/platform/logistics/domain/rules/traceability.rule.ts(111,22): error TS2551: Property 'skuCode' does not exist on type 'Item'. Did you mean 'sku_code'?
+src/platform/logistics/domain/rules/traceability.rule.ts(112,28): error TS2551: Property 'serialTracked' does not exist on type 'Item'. Did you mean 'serial_tracked'?
+src/platform/logistics/domain/rules/traceability.rule.ts(117,15): error TS2551: Property 'serialTracked' does not exist on type 'Item'. Did you mean 'serial_tracked'?
+src/platform/logistics/domain/rules/traceability.rule.ts(136,66): error TS2551: Property 'skuCode' does not exist on type 'Item'. Did you mean 'sku_code'?
+src/platform/logistics/domain/rules/traceability.rule.ts(181,58): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/platform/logistics/domain/traceability.domain.ts(16,3): error TS2724: '"./traceability.types"' has no exported member named 'Traceability'. Did you mean 'TraceabilityId'?
+src/platform/logistics/domain/traceability.domain.ts(19,3): error TS2305: Module '"./traceability.types"' has no exported member 'AddCustodyEventProps'.
+src/platform/logistics/domain/traceability.domain.ts(35,16): error TS2551: Property 'lotNumber' does not exist on type 'CreateTraceabilityProps'. Did you mean 'lot_number'?
+src/platform/logistics/domain/traceability.domain.ts(35,36): error TS2551: Property 'serialNumber' does not exist on type 'CreateTraceabilityProps'. Did you mean 'serial_number'?
+src/platform/logistics/domain/traceability.domain.ts(43,16): error TS2551: Property 'receivedDate' does not exist on type 'CreateTraceabilityProps'. Did you mean 'received_date'?
+src/platform/logistics/domain/traceability.domain.ts(51,15): error TS2551: Property 'expiryDate' does not exist on type 'CreateTraceabilityProps'. Did you mean 'expiry_date'?
+src/platform/logistics/domain/traceability.domain.ts(51,35): error TS2551: Property 'manufacturedDate' does not exist on type 'CreateTraceabilityProps'. Did you mean 'manufactured_date'?
+src/platform/logistics/domain/traceability.domain.ts(52,37): error TS2551: Property 'expiryDate' does not exist on type 'CreateTraceabilityProps'. Did you mean 'expiry_date'?
+src/platform/logistics/domain/traceability.domain.ts(53,43): error TS2551: Property 'manufacturedDate' does not exist on type 'CreateTraceabilityProps'. Did you mean 'manufactured_date'?
+src/platform/logistics/domain/traceability.domain.ts(66,17): error TS2339: Property 'id' does not exist on type 'CreateTraceabilityProps'.
+src/platform/logistics/domain/traceability.domain.ts(67,23): error TS2551: Property 'tenantId' does not exist on type 'CreateTraceabilityProps'. Did you mean 'tenant_id'?
+src/platform/logistics/domain/traceability.domain.ts(68,21): error TS2551: Property 'itemId' does not exist on type 'CreateTraceabilityProps'. Did you mean 'item_id'?
+src/platform/logistics/domain/traceability.domain.ts(70,24): error TS2551: Property 'lotNumber' does not exist on type 'CreateTraceabilityProps'. Did you mean 'lot_number'?
+src/platform/logistics/domain/traceability.domain.ts(71,27): error TS2551: Property 'serialNumber' does not exist on type 'CreateTraceabilityProps'. Did you mean 'serial_number'?
+src/platform/logistics/domain/traceability.domain.ts(73,31): error TS2551: Property 'manufacturedDate' does not exist on type 'CreateTraceabilityProps'. Did you mean 'manufactured_date'?
+src/platform/logistics/domain/traceability.domain.ts(74,25): error TS2551: Property 'expiryDate' does not exist on type 'CreateTraceabilityProps'. Did you mean 'expiry_date'?
+src/platform/logistics/domain/traceability.domain.ts(75,27): error TS2551: Property 'receivedDate' does not exist on type 'CreateTraceabilityProps'. Did you mean 'received_date'?
+src/platform/logistics/domain/traceability.domain.ts(77,25): error TS2551: Property 'supplierId' does not exist on type 'CreateTraceabilityProps'. Did you mean 'supplier'?
+src/platform/logistics/domain/traceability.domain.ts(78,27): error TS2551: Property 'supplierName' does not exist on type 'CreateTraceabilityProps'. Did you mean 'supplier'?
+src/platform/logistics/domain/traceability.domain.ts(79,32): error TS2339: Property 'supplierLotNumber' does not exist on type 'CreateTraceabilityProps'.
+src/platform/logistics/domain/traceability.domain.ts(81,28): error TS2339: Property 'custodyEvents' does not exist on type 'CreateTraceabilityProps'.
+src/platform/logistics/domain/traceability.domain.ts(83,31): error TS2339: Property 'complianceStatus' does not exist on type 'CreateTraceabilityProps'.
+src/platform/logistics/domain/traceability.domain.ts(84,27): error TS2339: Property 'recallStatus' does not exist on type 'CreateTraceabilityProps'.
+src/platform/logistics/domain/traceability.domain.ts(121,7): error TS2561: Object literal may only specify known properties, but 'locationId' does not exist in type 'CustodyEvent'. Did you mean to write 'location_id'?
+src/platform/logistics/domain/traceability.domain.ts(291,43): error TS7006: Parameter 'event' implicitly has an 'any' type.
+src/platform/logistics/domain/uom.domain.ts(18,3): error TS2305: Module '"./uom.types"' has no exported member 'UnitOfMeasure'.
+src/platform/logistics/domain/uom.domain.ts(19,3): error TS2305: Module '"./uom.types"' has no exported member 'CreateUOMProps'.
+src/platform/logistics/domain/uom.domain.ts(20,3): error TS2305: Module '"./uom.types"' has no exported member 'UpdateUOMProps'.
+src/platform/logistics/domain/uom.domain.ts(22,3): error TS2305: Module '"./uom.types"' has no exported member 'UOMStatus'.
+src/platform/logistics/engines/freight-audit-engine.ts(67,8): error TS2307: Cannot find module '@/core/types/engine' or its corresponding type declarations.
+src/platform/logistics/engines/freight-audit-engine.ts(350,9): error TS2353: Object literal may only specify known properties, and 'type' does not exist in type '{ eventType: EventType; eventVersion?: string | undefined; tenantId: string; aggregateId: string; aggregateType: string; payload: unknown; userId?: string | undefined; correlationId?: string | undefined; causationId?: string | undefined; }'.
+src/platform/logistics/engines/freight-audit-engine.ts(1556,9): error TS2353: Object literal may only specify known properties, and 'type' does not exist in type '{ eventType: EventType; eventVersion?: string | undefined; tenantId: string; aggregateId: string; aggregateType: string; payload: unknown; userId?: string | undefined; correlationId?: string | undefined; causationId?: string | undefined; }'.
+src/platform/logistics/engines/freight-audit-engine.ts(1722,9): error TS2353: Object literal may only specify known properties, and 'type' does not exist in type '{ eventType: EventType; eventVersion?: string | undefined; tenantId: string; aggregateId: string; aggregateType: string; payload: unknown; userId?: string | undefined; correlationId?: string | undefined; causationId?: string | undefined; }'.
+src/platform/logistics/engines/freight-audit-engine.ts(1853,9): error TS2353: Object literal may only specify known properties, and 'type' does not exist in type '{ eventType: EventType; eventVersion?: string | undefined; tenantId: string; aggregateId: string; aggregateType: string; payload: unknown; userId?: string | undefined; correlationId?: string | undefined; causationId?: string | undefined; }'.
+src/platform/logistics/engines/freight-audit-engine.ts(1979,9): error TS2353: Object literal may only specify known properties, and 'type' does not exist in type '{ eventType: EventType; eventVersion?: string | undefined; tenantId: string; aggregateId: string; aggregateType: string; payload: unknown; userId?: string | undefined; correlationId?: string | undefined; causationId?: string | undefined; }'.
+src/platform/logistics/engines/freight-audit-engine.ts(2106,9): error TS2353: Object literal may only specify known properties, and 'type' does not exist in type '{ eventType: EventType; eventVersion?: string | undefined; tenantId: string; aggregateId: string; aggregateType: string; payload: unknown; userId?: string | undefined; correlationId?: string | undefined; causationId?: string | undefined; }'.
+src/platform/logistics/engines/freight-audit-engine.ts(2220,9): error TS2353: Object literal may only specify known properties, and 'type' does not exist in type '{ eventType: EventType; eventVersion?: string | undefined; tenantId: string; aggregateId: string; aggregateType: string; payload: unknown; userId?: string | undefined; correlationId?: string | undefined; causationId?: string | undefined; }'.
+src/platform/logistics/engines/freight-audit-engine.ts(2476,5): error TS2741: Property 'reason_code' is missing in type '{ discrepancy_id: string; tenant_id: string; invoice_id: string; line_item_id: string; expected_amount: number; actual_amount: number; variance: number; variance_percentage: number; reason: string; ... 9 more ...; updated_at: Date | undefined; }' but required in type 'Discrepancy'.
+src/platform/logistics/engines/route-engine.ts(1212,11): error TS2322: Type '{ sequence: number; location: { type: string; address: unknown; coordinates?: unknown; }; type: "origin" | "pickup" | "delivery" | "hub" | "destination"; plannedArrival: string; actualArrival: string | undefined; shipmentIds: never[]; action: "pickup" | ... 1 more ... | "stopover"; completed: boolean; notes: string ...' is not assignable to type 'Waypoint[]'.
+  Type '{ sequence: number; location: { type: string; address: unknown; coordinates?: unknown; }; type: "origin" | "pickup" | "delivery" | "hub" | "destination"; plannedArrival: string; ... 4 more ...; notes: string | undefined; }' is not assignable to type 'Waypoint'.
+    The types of 'location.type' are incompatible between these types.
+      Type 'string' is not assignable to type 'LocationType'.
+src/platform/logistics/engines/shipment-engine.ts(1212,15): error TS2352: Conversion of type 'Record<string, unknown>' to type 'Location' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Location': type, address
+src/platform/logistics/engines/shipment-engine.ts(1213,20): error TS2352: Conversion of type 'Record<string, unknown>' to type 'Location' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Location': type, address
+src/platform/logistics/engines/shipment-engine.ts(1220,14): error TS2352: Conversion of type 'Record<string, unknown>[]' to type 'ShipmentItem[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'Record<string, unknown>' is missing the following properties from type 'ShipmentItem': id, description, quantity, hazardous, and 2 more.
+src/platform/logistics/engines/shipment-engine.ts(1221,20): error TS2352: Conversion of type 'Record<string, unknown> | null' to type 'Weight | undefined' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Weight': value, unit
+src/platform/logistics/engines/shipment-engine.ts(1222,20): error TS2352: Conversion of type 'Record<string, unknown> | null' to type 'Volume | undefined' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Volume': value, unit
+src/platform/logistics/engines/shipment-engine.ts(1239,17): error TS2352: Conversion of type 'Record<string, unknown> | null' to type 'Location | undefined' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Location': type, address
+src/platform/logistics/engines/warehouse-engine.ts(79,60): error TS2345: Argument of type 'CreateReceiptRequest' is not assignable to parameter of type 'CreateReceiptInput'.
+  Types of property 'line_items' are incompatible.
+    Type 'import("D:/Antigravity/Projects/BELLA SPA ERP/src/platform/logistics/contracts/warehouse.contract").ReceiptLineItemInput[]' is not assignable to type 'import("D:/Antigravity/Projects/BELLA SPA ERP/src/platform/logistics/shared-kernel/types/warehouse.types").ReceiptLineItemInput[]'.
+      Type 'import("D:/Antigravity/Projects/BELLA SPA ERP/src/platform/logistics/contracts/warehouse.contract").ReceiptLineItemInput' is not assignable to type 'import("D:/Antigravity/Projects/BELLA SPA ERP/src/platform/logistics/shared-kernel/types/warehouse.types").ReceiptLineItemInput'.
+        Types of property 'uom' are incompatible.
+          Type 'string' is not assignable to type 'UnitOfMeasure'.
+src/platform/logistics/engines/warehouse-engine.ts(86,9): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/platform/logistics/engines/warehouse-engine.ts(90,10): error TS7006: Parameter 'sum' implicitly has an 'any' type.
+src/platform/logistics/engines/warehouse-engine.ts(90,15): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/platform/logistics/engines/warehouse-engine.ts(108,9): error TS2353: Object literal may only specify known properties, and 'eventId' does not exist in type '{ eventType: EventType; eventVersion?: string | undefined; tenantId: string; aggregateId: string; aggregateType: string; payload: ReceiptCreatedPayload; userId?: string | undefined; correlationId?: string | undefined; causationId?: string | undefined; }'.
+src/platform/logistics/engines/warehouse-engine.ts(189,11): error TS2741: Property 'timestamp' is missing in type '{ code: string; message: string; }' but required in type 'EngineError'.
+src/platform/logistics/engines/warehouse-engine.ts(216,11): error TS2741: Property 'timestamp' is missing in type '{ code: string; message: string; }' but required in type 'EngineError'.
+src/platform/logistics/engines/warehouse-engine.ts(241,11): error TS2741: Property 'timestamp' is missing in type '{ code: string; message: string; }' but required in type 'EngineError'.
+src/platform/logistics/engines/warehouse-engine.ts(309,9): error TS2741: Property 'timestamp' is missing in type '{ code: string; message: any; }' but required in type 'EngineError'.
+src/platform/logistics/engines/warehouse-engine.ts(328,11): error TS2741: Property 'timestamp' is missing in type '{ code: string; message: string; }' but required in type 'EngineError'.
+src/platform/logistics/engines/warehouse-engine.ts(363,11): error TS2741: Property 'timestamp' is missing in type '{ code: string; message: string; }' but required in type 'EngineError'.
+src/platform/logistics/engines/warehouse-engine.ts(388,11): error TS2741: Property 'timestamp' is missing in type '{ code: string; message: string; }' but required in type 'EngineError'.
+src/platform/logistics/engines/warehouse-engine.ts(446,9): error TS2741: Property 'timestamp' is missing in type '{ code: string; message: any; }' but required in type 'EngineError'.
+src/platform/logistics/engines/warehouse-engine.ts(465,11): error TS2741: Property 'timestamp' is missing in type '{ code: string; message: string; }' but required in type 'EngineError'.
+src/platform/logistics/engines/warehouse-engine.ts(492,11): error TS2741: Property 'timestamp' is missing in type '{ code: string; message: string; }' but required in type 'EngineError'.
+src/platform/logistics/engines/warehouse-engine.ts(545,9): error TS2741: Property 'timestamp' is missing in type '{ code: string; message: any; }' but required in type 'EngineError'.
+src/platform/logistics/engines/warehouse-engine.ts(586,9): error TS2353: Object literal may only specify known properties, and 'eventId' does not exist in type '{ eventType: EventType; eventVersion?: string | undefined; tenantId: string; aggregateId: string; aggregateType: string; payload: ReceiptSubmittedForPutawayPayload; userId?: string | undefined; correlationId?: string | undefined; causationId?: string | undefined; }'.
+src/platform/logistics/engines/warehouse-engine.ts(622,54): error TS7006: Parameter 'm' implicitly has an 'any' type.
+src/platform/logistics/engines/warehouse-engine.ts(632,9): error TS2353: Object literal may only specify known properties, and 'eventId' does not exist in type '{ eventType: EventType; eventVersion?: string | undefined; tenantId: string; aggregateId: string; aggregateType: string; payload: ReceiptCompletedPayload; userId?: string | undefined; correlationId?: string | undefined; causationId?: string | undefined; }'.
+src/platform/logistics/engines/warehouse-engine.ts(675,9): error TS2353: Object literal may only specify known properties, and 'eventId' does not exist in type '{ eventType: EventType; eventVersion?: string | undefined; tenantId: string; aggregateId: string; aggregateType: string; payload: ReceiptHeldPayload; userId?: string | undefined; correlationId?: string | undefined; causationId?: string | undefined; }'.
+src/platform/logistics/engines/warehouse-engine.ts(716,9): error TS2353: Object literal may only specify known properties, and 'eventId' does not exist in type '{ eventType: EventType; eventVersion?: string | undefined; tenantId: string; aggregateId: string; aggregateType: string; payload: ReceiptHoldReleasedPayload; userId?: string | undefined; correlationId?: string | undefined; causationId?: string | undefined; }'.
+src/platform/logistics/index.ts(17,1): error TS2308: Module './shared-kernel' has already exported a member named 'Dimensions'. Consider explicitly re-exporting to resolve the ambiguity.
+src/platform/logistics/index.ts(17,1): error TS2308: Module './shared-kernel' has already exported a member named 'EventMetadata'. Consider explicitly re-exporting to resolve the ambiguity.
+src/platform/logistics/index.ts(17,1): error TS2308: Module './shared-kernel' has already exported a member named 'Weight'. Consider explicitly re-exporting to resolve the ambiguity.
+src/platform/logistics/repositories/inventory.repository.ts(18,36): error TS2339: Property 'logistics' does not exist on type 'Database'.
+src/platform/logistics/repositories/inventory.repository.ts(19,42): error TS2339: Property 'logistics' does not exist on type 'Database'.
+src/platform/logistics/repositories/inventory.repository.ts(20,42): error TS2339: Property 'logistics' does not exist on type 'Database'.
+src/platform/logistics/repositories/inventory.repository.ts(30,37): error TS2589: Type instantiation is excessively deep and possibly infinite.
+src/platform/logistics/repositories/inventory.repository.ts(31,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/platform/logistics/repositories/inventory.repository.ts(33,13): error TS2345: Argument of type '"tenant_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(34,13): error TS2345: Argument of type '"id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(63,19): error TS2589: Type instantiation is excessively deep and possibly infinite.
+src/platform/logistics/repositories/inventory.repository.ts(64,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/platform/logistics/repositories/inventory.repository.ts(66,13): error TS2345: Argument of type '"tenant_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(67,13): error TS2345: Argument of type '"item_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(68,13): error TS2345: Argument of type '"location_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(74,26): error TS2345: Argument of type '"lot_number"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(80,26): error TS2345: Argument of type '"serial_number"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(105,19): error TS2589: Type instantiation is excessively deep and possibly infinite.
+src/platform/logistics/repositories/inventory.repository.ts(106,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/platform/logistics/repositories/inventory.repository.ts(108,13): error TS2345: Argument of type '"tenant_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(112,26): error TS2345: Argument of type '"item_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(116,26): error TS2345: Argument of type '"location_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(120,26): error TS2345: Argument of type '"location_type"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(124,26): error TS2345: Argument of type '"lot_number"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(128,26): error TS2345: Argument of type '"serial_number"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(132,26): error TS2345: Argument of type '"status"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(165,37): error TS2589: Type instantiation is excessively deep and possibly infinite.
+src/platform/logistics/repositories/inventory.repository.ts(166,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/platform/logistics/repositories/inventory.repository.ts(168,13): error TS2345: Argument of type '"tenant_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(169,13): error TS2345: Argument of type '"item_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(191,28): error TS2339: Property 'quantity_on_hand' does not exist on type 'ResultOne'.
+src/platform/logistics/repositories/inventory.repository.ts(192,30): error TS2339: Property 'quantity_reserved' does not exist on type 'ResultOne'.
+src/platform/logistics/repositories/inventory.repository.ts(194,25): error TS2339: Property 'location_id' does not exist on type 'ResultOne'.
+src/platform/logistics/repositories/inventory.repository.ts(198,42): error TS2339: Property 'quantity_on_hand' does not exist on type 'ResultOne'.
+src/platform/logistics/repositories/inventory.repository.ts(199,44): error TS2339: Property 'quantity_reserved' does not exist on type 'ResultOne'.
+src/platform/logistics/repositories/inventory.repository.ts(200,45): error TS2339: Property 'quantity_available' does not exist on type 'ResultOne'.
+src/platform/logistics/repositories/inventory.repository.ts(203,29): error TS2339: Property 'location_id' does not exist on type 'ResultOne'.
+src/platform/logistics/repositories/inventory.repository.ts(204,31): error TS2339: Property 'location_type' does not exist on type 'ResultOne'.
+src/platform/logistics/repositories/inventory.repository.ts(205,33): error TS2339: Property 'quantity_on_hand' does not exist on type 'ResultOne'.
+src/platform/logistics/repositories/inventory.repository.ts(206,35): error TS2339: Property 'quantity_reserved' does not exist on type 'ResultOne'.
+src/platform/logistics/repositories/inventory.repository.ts(207,36): error TS2339: Property 'quantity_available' does not exist on type 'ResultOne'.
+src/platform/logistics/repositories/inventory.repository.ts(233,37): error TS2589: Type instantiation is excessively deep and possibly infinite.
+src/platform/logistics/repositories/inventory.repository.ts(234,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/platform/logistics/repositories/inventory.repository.ts(236,13): error TS2345: Argument of type '"tenant_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(237,13): error TS2345: Argument of type '"location_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(250,42): error TS2339: Property 'item_id' does not exist on type 'ResultOne'.
+src/platform/logistics/repositories/inventory.repository.ts(254,27): error TS2339: Property 'item_id' does not exist on type 'ResultOne'.
+src/platform/logistics/repositories/inventory.repository.ts(298,58): error TS2551: Property 'tenantId' does not exist on type 'Inventory'. Did you mean 'tenant_id'?
+src/platform/logistics/repositories/inventory.repository.ts(298,68): error TS2345: Argument of type 'InventoryId' is not assignable to parameter of type 'string'.
+src/platform/logistics/repositories/inventory.repository.ts(308,39): error TS2589: Type instantiation is excessively deep and possibly infinite.
+src/platform/logistics/repositories/inventory.repository.ts(309,17): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/platform/logistics/repositories/inventory.repository.ts(311,15): error TS2345: Argument of type '"tenant_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(311,38): error TS2551: Property 'tenantId' does not exist on type 'Inventory'. Did you mean 'tenant_id'?
+src/platform/logistics/repositories/inventory.repository.ts(312,15): error TS2345: Argument of type '"id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(324,39): error TS2589: Type instantiation is excessively deep and possibly infinite.
+src/platform/logistics/repositories/inventory.repository.ts(325,17): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/platform/logistics/repositories/inventory.repository.ts(381,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/platform/logistics/repositories/inventory.repository.ts(383,13): error TS2345: Argument of type '"tenant_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(384,13): error TS2345: Argument of type '"id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(402,38): error TS2589: Type instantiation is excessively deep and possibly infinite.
+src/platform/logistics/repositories/inventory.repository.ts(403,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"inventory"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/platform/logistics/repositories/inventory.repository.ts(405,13): error TS2345: Argument of type '"tenant_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(406,13): error TS2345: Argument of type '"item_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/inventory.repository.ts(426,7): error TS2561: Object literal may only specify known properties, but 'tenantId' does not exist in type 'Inventory'. Did you mean to write 'tenant_id'?
+src/platform/logistics/repositories/inventory.repository.ts(452,28): error TS2551: Property 'tenantId' does not exist on type 'Inventory'. Did you mean 'tenant_id'?
+src/platform/logistics/repositories/inventory.repository.ts(453,26): error TS2551: Property 'itemId' does not exist on type 'Inventory'. Did you mean 'item_id'?
+src/platform/logistics/repositories/inventory.repository.ts(454,30): error TS2551: Property 'locationId' does not exist on type 'Inventory'. Did you mean 'location_id'?
+src/platform/logistics/repositories/inventory.repository.ts(455,32): error TS2551: Property 'locationType' does not exist on type 'Inventory'. Did you mean 'location_type'?
+src/platform/logistics/repositories/inventory.repository.ts(457,35): error TS2551: Property 'quantityOnHand' does not exist on type 'Inventory'. Did you mean 'quantity_on_hand'?
+src/platform/logistics/repositories/inventory.repository.ts(458,36): error TS2551: Property 'quantityReserved' does not exist on type 'Inventory'. Did you mean 'quantity_reserved'?
+src/platform/logistics/repositories/inventory.repository.ts(459,37): error TS2551: Property 'quantityAvailable' does not exist on type 'Inventory'. Did you mean 'quantity_available'?
+src/platform/logistics/repositories/inventory.repository.ts(461,29): error TS2551: Property 'lotNumber' does not exist on type 'Inventory'. Did you mean 'lot_number'?
+src/platform/logistics/repositories/inventory.repository.ts(462,32): error TS2551: Property 'serialNumber' does not exist on type 'Inventory'. Did you mean 'serial_number'?
+src/platform/logistics/repositories/inventory.repository.ts(463,30): error TS2551: Property 'expiryDate' does not exist on type 'Inventory'. Did you mean 'expiry_date'?
+src/platform/logistics/repositories/inventory.repository.ts(467,29): error TS2551: Property 'createdAt' does not exist on type 'Inventory'. Did you mean 'created_at'?
+src/platform/logistics/repositories/inventory.repository.ts(468,29): error TS2551: Property 'updatedAt' does not exist on type 'Inventory'. Did you mean 'updated_at'?
+src/platform/logistics/repositories/inventory.repository.ts(477,35): error TS2551: Property 'quantityOnHand' does not exist on type 'Inventory'. Did you mean 'quantity_on_hand'?
+src/platform/logistics/repositories/inventory.repository.ts(478,36): error TS2551: Property 'quantityReserved' does not exist on type 'Inventory'. Did you mean 'quantity_reserved'?
+src/platform/logistics/repositories/inventory.repository.ts(479,37): error TS2551: Property 'quantityAvailable' does not exist on type 'Inventory'. Did you mean 'quantity_available'?
+src/platform/logistics/repositories/inventory.repository.ts(481,30): error TS2551: Property 'expiryDate' does not exist on type 'Inventory'. Did you mean 'expiry_date'?
+src/platform/logistics/repositories/inventory.repository.ts(485,29): error TS2551: Property 'updatedAt' does not exist on type 'Inventory'. Did you mean 'updated_at'?
+src/platform/logistics/repositories/item.repository.ts(14,31): error TS2339: Property 'logistics' does not exist on type 'Database'.
+src/platform/logistics/repositories/item.repository.ts(15,37): error TS2339: Property 'logistics' does not exist on type 'Database'.
+src/platform/logistics/repositories/item.repository.ts(16,37): error TS2339: Property 'logistics' does not exist on type 'Database'.
+src/platform/logistics/repositories/item.repository.ts(26,37): error TS2589: Type instantiation is excessively deep and possibly infinite.
+src/platform/logistics/repositories/item.repository.ts(27,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"items"' is not assignable to parameter of type '"accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"items"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/platform/logistics/repositories/item.repository.ts(29,13): error TS2345: Argument of type '"tenant_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/item.repository.ts(30,13): error TS2345: Argument of type '"id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/item.repository.ts(53,37): error TS2589: Type instantiation is excessively deep and possibly infinite.
+src/platform/logistics/repositories/item.repository.ts(54,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"items"' is not assignable to parameter of type '"accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"items"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/platform/logistics/repositories/item.repository.ts(56,13): error TS2345: Argument of type '"tenant_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/item.repository.ts(57,13): error TS2345: Argument of type '"sku_code"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/item.repository.ts(80,19): error TS2589: Type instantiation is excessively deep and possibly infinite.
+src/platform/logistics/repositories/item.repository.ts(81,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"items"' is not assignable to parameter of type '"accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"items"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/platform/logistics/repositories/item.repository.ts(83,13): error TS2345: Argument of type '"tenant_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/item.repository.ts(87,26): error TS2345: Argument of type '"status"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/item.repository.ts(91,26): error TS2345: Argument of type '"type"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/item.repository.ts(95,26): error TS2345: Argument of type '"category"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/item.repository.ts(99,26): error TS2345: Argument of type '"lot_tracked"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/item.repository.ts(103,26): error TS2345: Argument of type '"serial_tracked"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/item.repository.ts(133,53): error TS2551: Property 'tenantId' does not exist on type 'Item'. Did you mean 'tenant_id'?
+src/platform/logistics/repositories/item.repository.ts(133,63): error TS2345: Argument of type 'ItemId' is not assignable to parameter of type 'string'.
+src/platform/logistics/repositories/item.repository.ts(143,39): error TS2589: Type instantiation is excessively deep and possibly infinite.
+src/platform/logistics/repositories/item.repository.ts(144,17): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"items"' is not assignable to parameter of type '"accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"items"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/platform/logistics/repositories/item.repository.ts(146,15): error TS2345: Argument of type '"tenant_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/item.repository.ts(146,33): error TS2551: Property 'tenantId' does not exist on type 'Item'. Did you mean 'tenant_id'?
+src/platform/logistics/repositories/item.repository.ts(147,15): error TS2345: Argument of type '"id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/item.repository.ts(159,39): error TS2589: Type instantiation is excessively deep and possibly infinite.
+src/platform/logistics/repositories/item.repository.ts(160,17): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"items"' is not assignable to parameter of type '"accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"items"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/platform/logistics/repositories/item.repository.ts(169,43): error TS2551: Property 'skuCode' does not exist on type 'Item'. Did you mean 'sku_code'?
+src/platform/logistics/repositories/item.repository.ts(191,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"items"' is not assignable to parameter of type '"accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"items"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/platform/logistics/repositories/item.repository.ts(192,19): error TS2322: Type 'string' is not assignable to type 'never'.
+src/platform/logistics/repositories/item.repository.ts(192,43): error TS2322: Type 'string' is not assignable to type 'never'.
+src/platform/logistics/repositories/item.repository.ts(193,13): error TS2345: Argument of type '"tenant_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/item.repository.ts(194,13): error TS2345: Argument of type '"id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/item.repository.ts(216,19): error TS2589: Type instantiation is excessively deep and possibly infinite.
+src/platform/logistics/repositories/item.repository.ts(217,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"items"' is not assignable to parameter of type '"accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 356 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"items"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/platform/logistics/repositories/item.repository.ts(219,13): error TS2345: Argument of type '"tenant_id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/item.repository.ts(220,13): error TS2345: Argument of type '"sku_code"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/item.repository.ts(223,27): error TS2345: Argument of type '"id"' is not assignable to parameter of type 'never'.
+src/platform/logistics/repositories/item.repository.ts(250,7): error TS2322: Type '"GOODS" | "SERVICE" | "VIRTUAL" | "ASSET"' is not assignable to type 'ItemType'.
+  Type '"ASSET"' is not assignable to type 'ItemType'.
+src/platform/logistics/repositories/item.repository.ts(279,23): error TS2551: Property 'tenantId' does not exist on type 'Item'. Did you mean 'tenant_id'?
+src/platform/logistics/repositories/item.repository.ts(280,22): error TS2551: Property 'skuCode' does not exist on type 'Item'. Did you mean 'sku_code'?
+src/platform/logistics/repositories/item.repository.ts(287,22): error TS2551: Property 'baseUom' does not exist on type 'Item'. Did you mean 'base_uom'?
+src/platform/logistics/repositories/item.repository.ts(288,23): error TS2551: Property 'weightKg' does not exist on type 'Item'. Did you mean 'weight_kg'?
+src/platform/logistics/repositories/item.repository.ts(289,29): error TS2551: Property 'dimensionsJson' does not exist on type 'Item'. Did you mean 'dimensions'?
+src/platform/logistics/repositories/item.repository.ts(291,27): error TS2551: Property 'standardCost' does not exist on type 'Item'. Did you mean 'standard_cost'?
+src/platform/logistics/repositories/item.repository.ts(294,25): error TS2551: Property 'lotTracked' does not exist on type 'Item'. Did you mean 'lot_tracked'?
+src/platform/logistics/repositories/item.repository.ts(295,28): error TS2551: Property 'serialTracked' does not exist on type 'Item'. Did you mean 'serial_tracked'?
+src/platform/logistics/repositories/item.repository.ts(296,28): error TS2551: Property 'expiryTracked' does not exist on type 'Item'. Did you mean 'expiry_tracked'?
+src/platform/logistics/repositories/item.repository.ts(300,24): error TS2551: Property 'createdAt' does not exist on type 'Item'. Did you mean 'created_at'?
+src/platform/logistics/repositories/item.repository.ts(301,24): error TS2551: Property 'updatedAt' does not exist on type 'Item'. Did you mean 'updated_at'?
+src/platform/logistics/repositories/item.repository.ts(302,24): error TS2551: Property 'createdBy' does not exist on type 'Item'. Did you mean 'created_by'?
+src/platform/logistics/repositories/item.repository.ts(303,24): error TS2551: Property 'updatedBy' does not exist on type 'Item'. Did you mean 'updated_by'?
+src/platform/logistics/repositories/item.repository.ts(318,22): error TS2551: Property 'baseUom' does not exist on type 'Item'. Did you mean 'base_uom'?
+src/platform/logistics/repositories/item.repository.ts(319,23): error TS2551: Property 'weightKg' does not exist on type 'Item'. Did you mean 'weight_kg'?
+src/platform/logistics/repositories/item.repository.ts(320,29): error TS2551: Property 'dimensionsJson' does not exist on type 'Item'. Did you mean 'dimensions'?
+src/platform/logistics/repositories/item.repository.ts(322,27): error TS2551: Property 'standardCost' does not exist on type 'Item'. Did you mean 'standard_cost'?
+src/platform/logistics/repositories/item.repository.ts(325,25): error TS2551: Property 'lotTracked' does not exist on type 'Item'. Did you mean 'lot_tracked'?
+src/platform/logistics/repositories/item.repository.ts(326,28): error TS2551: Property 'serialTracked' does not exist on type 'Item'. Did you mean 'serial_tracked'?
+src/platform/logistics/repositories/item.repository.ts(327,28): error TS2551: Property 'expiryTracked' does not exist on type 'Item'. Did you mean 'expiry_tracked'?
+src/platform/logistics/repositories/item.repository.ts(331,24): error TS2551: Property 'updatedAt' does not exist on type 'Item'. Did you mean 'updated_at'?
+src/platform/logistics/repositories/item.repository.ts(332,24): error TS2551: Property 'updatedBy' does not exist on type 'Item'. Did you mean 'updated_by'?
+src/platform/logistics/repositories/movement.repository.ts(258,7): error TS2561: Object literal may only specify known properties, but 'movementNumber' does not exist in type 'InventoryMovement'. Did you mean to write 'movement_number'?
+src/platform/logistics/repositories/movement.repository.ts(314,33): error TS2551: Property 'movementNumber' does not exist on type 'InventoryMovement'. Did you mean 'movement_number'?
+src/platform/logistics/repositories/movement.repository.ts(315,27): error TS2551: Property 'tenantId' does not exist on type 'InventoryMovement'. Did you mean 'tenant_id'?
+src/platform/logistics/repositories/movement.repository.ts(317,31): error TS2551: Property 'movementDate' does not exist on type 'InventoryMovement'. Did you mean 'movement_date'?
+src/platform/logistics/repositories/movement.repository.ts(318,28): error TS2551: Property 'createdAt' does not exist on type 'InventoryMovement'. Did you mean 'created_at'?
+src/platform/logistics/repositories/movement.repository.ts(319,28): error TS2551: Property 'createdBy' does not exist on type 'InventoryMovement'. Did you mean 'created_by'?
+src/platform/logistics/repositories/movement.repository.ts(321,31): error TS2551: Property 'movementType' does not exist on type 'InventoryMovement'. Did you mean 'movement_type'?
+src/platform/logistics/repositories/movement.repository.ts(324,25): error TS2551: Property 'itemId' does not exist on type 'InventoryMovement'. Did you mean 'item_id'?
+src/platform/logistics/repositories/movement.repository.ts(326,34): error TS2551: Property 'fromLocationId' does not exist on type 'InventoryMovement'. Did you mean 'from_location_id'?
+src/platform/logistics/repositories/movement.repository.ts(327,36): error TS2551: Property 'fromLocationType' does not exist on type 'InventoryMovement'. Did you mean 'from_location_type'?
+src/platform/logistics/repositories/movement.repository.ts(328,32): error TS2551: Property 'toLocationId' does not exist on type 'InventoryMovement'. Did you mean 'to_location_id'?
+src/platform/logistics/repositories/movement.repository.ts(329,34): error TS2551: Property 'toLocationType' does not exist on type 'InventoryMovement'. Did you mean 'to_location_type'?
+src/platform/logistics/repositories/movement.repository.ts(332,33): error TS2551: Property 'unitOfMeasure' does not exist on type 'InventoryMovement'. Did you mean 'unit_of_measure'?
+src/platform/logistics/repositories/movement.repository.ts(334,28): error TS2551: Property 'lotNumber' does not exist on type 'InventoryMovement'. Did you mean 'lot_number'?
+src/platform/logistics/repositories/movement.repository.ts(335,31): error TS2551: Property 'serialNumber' does not exist on type 'InventoryMovement'. Did you mean 'serial_number'?
+src/platform/logistics/repositories/movement.repository.ts(336,29): error TS2551: Property 'expiryDate' does not exist on type 'InventoryMovement'. Did you mean 'expiry_date'?
+src/platform/logistics/repositories/movement.repository.ts(338,27): error TS2551: Property 'unitCost' does not exist on type 'InventoryMovement'. Did you mean 'unit_cost'?
+src/platform/logistics/repositories/movement.repository.ts(339,28): error TS2551: Property 'totalCost' does not exist on type 'InventoryMovement'. Did you mean 'total_cost'?
+src/platform/logistics/repositories/movement.repository.ts(342,38): error TS2551: Property 'sourceDocumentType' does not exist on type 'InventoryMovement'. Did you mean 'source_document'?
+src/platform/logistics/repositories/movement.repository.ts(343,36): error TS2551: Property 'sourceDocumentId' does not exist on type 'InventoryMovement'. Did you mean 'source_document'?
+src/platform/logistics/repositories/movement.repository.ts(344,40): error TS2551: Property 'sourceDocumentNumber' does not exist on type 'InventoryMovement'. Did you mean 'source_document'?
+src/platform/logistics/repositories/movement.repository.ts(345,37): error TS2339: Property 'sourceLineItemId' does not exist on type 'InventoryMovement'.
+src/platform/logistics/repositories/movement.repository.ts(350,26): error TS2551: Property 'batchId' does not exist on type 'InventoryMovement'. Did you mean 'batch_id'?
+src/platform/logistics/repositories/movement.repository.ts(352,29): error TS2551: Property 'approvedBy' does not exist on type 'InventoryMovement'. Did you mean 'approved_by'?
+src/platform/logistics/repositories/movement.repository.ts(353,29): error TS2551: Property 'approvedAt' does not exist on type 'InventoryMovement'. Did you mean 'approved_at'?
+src/platform/logistics/repositories/movement.repository.ts(356,30): error TS2551: Property 'completedAt' does not exist on type 'InventoryMovement'. Did you mean 'completed_at'?
+src/platform/logistics/repositories/movement.repository.ts(357,30): error TS2551: Property 'cancelledAt' does not exist on type 'InventoryMovement'. Did you mean 'cancelled_at'?
+src/platform/logistics/repositories/movement.repository.ts(358,37): error TS2551: Property 'cancellationReason' does not exist on type 'InventoryMovement'. Did you mean 'cancellation_reason'?
+src/platform/logistics/repositories/traceability.repository.interface.ts(10,15): error TS2724: '"../domain/traceability.types"' has no exported member named 'Traceability'. Did you mean 'TraceabilityId'?
+src/platform/logistics/repositories/uom.repository.interface.ts(10,15): error TS2305: Module '"../domain/uom.types"' has no exported member 'UnitOfMeasure'.
+src/platform/logistics/warehouse/receipt.service.ts(11,32): error TS2307: Cannot find module '@/core/types/engine' or its corresponding type declarations.
+src/platform/logistics/warehouse/receipt.service.ts(210,13): error TS2451: Cannot redeclare block-scoped variable 'skuMap'.
+src/platform/logistics/warehouse/receipt.service.ts(302,13): error TS2451: Cannot redeclare block-scoped variable 'skuMap'.
+src/platform/logistics/warehouse/receipt.service.ts(477,33): error TS2304: Cannot find name 'validatePutawayLocation'.
+src/platform/logistics/warehouse/receipt.service.ts(1132,12): error TS2304: Cannot find name 'ListReceiptsInput'.
+src/platform/logistics/warehouse/receipt.service.ts(1133,29): error TS2552: Cannot find name 'ListReceiptsResult'. Did you mean 'HoldReceiptResult'?
+src/platform/logistics/warehouse/receipt.service.ts(1227,24): error TS2304: Cannot find name 'ReceiptSummary'.
+Files:                          625
+Lines of Library:             53142
+Lines of Definitions:        133635
+Lines of TypeScript:          54038
+Lines of JavaScript:              0
+Lines of JSON:                    0
+Lines of Other:                   0
+Identifiers:                 227051
+Symbols:                     247980
+Types:                        54618
+Instantiations:            70264112
+Memory used:                529987K
+Assignability cache size:     20560
+Identity cache size:            391
+Subtype cache size:             296
+Strict subtype cache size:      138
+I/O Read time:                0.13s
+Parse time:                   0.64s
+ResolveModule time:           0.13s
+ResolveTypeReference time:    0.02s
+ResolveLibrary time:          0.02s
+Program time:                 1.04s
+Bind time:                    0.29s
+Check time:                 325.72s
+printTime time:               0.00s
+Emit time:                    0.00s
+Total time:                 327.06s

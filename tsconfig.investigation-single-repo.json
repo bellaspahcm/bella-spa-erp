@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.platform-logistics.json",
+  "include": [
+    "src/platform/logistics/repositories/inventory.repository.ts",
+    "src/platform/logistics/repositories/inventory.repository.interface.ts",
+    "src/platform/logistics/domain/inventory.types.ts",
+    "src/platform/logistics/domain/core/result.ts",
+    "src/platform/core/types/**/*.ts",
+    "src/types/database.types.ts"
+  ],
+  "exclude": ["node_modules"]
+}

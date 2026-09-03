@@ -20,7 +20,54 @@ This document defines the rules that ANY AI coding agent must follow when workin
 
 ## Before Any Code Change
 
-### 1. Inventory First, Code Later
+### 1. Verify Canonical Surface (G0.5 Principle)
+
+**Before implementing new capability, schema/contract changes, or cross-layer modifications:**
+
+✅ **VERIFY:**
+1. Schema present in migrations?
+2. Generated types reflect schema?
+3. Contract/Schema/Domain vocabulary aligned?
+4. Dependency direction allowed?
+5. Type ownership clear?
+
+❌ **If ANY check fails: STOP. Report inconsistency. Do NOT guess or implement.**
+
+**Key distinction:**
+> **AI is allowed to investigate when it doesn't know.**  
+> **AI is NOT allowed to implement when it doesn't know.**
+
+**Mandatory triggers for G0.5:**
+- New capability/module/schema
+- Schema or contract changes
+- Cross-layer changes (Contract ↔ Domain ↔ Schema)
+- Type/vocabulary/ownership changes
+- Architectural boundary changes
+
+**Lightweight verification for:**
+- Known-pattern mechanical fixes (import corrections)
+- Small isolated bug fixes within verified canonical surface
+
+**Not required for:**
+- Documentation updates
+- Test additions (no production code)
+- Non-schema configuration
+
+**Example (Logistics UOM):**
+```
+Contract: UnitOfMeasure.PALLET = 'PL'
+Schema:   CHECK (base_uom IN ('PLT', ...))
+Domain:   StandardUOM = 'PLT'
+
+→ VOCABULARY CONFLICT DETECTED
+→ STOP: Cannot implement until reconciled
+```
+
+**See:** `docs/architecture/GOVERNANCE_G05_CANONICAL_TRUTH_GATE.md`
+
+---
+
+### 2. Inventory First, Code Later
 
 ❌ **WRONG:**
 ```
@@ -33,7 +80,7 @@ See error → inventory scope → gather evidence → verify ownership
 → root cause analysis → minimal fix → validate → commit
 ```
 
-### 2. Never Guess Semantics
+### 3. Never Guess Semantics
 
 **STOP if any of these are unclear:**
 - Schema ownership (which is canonical: domain or database?)
@@ -47,7 +94,7 @@ See error → inventory scope → gather evidence → verify ownership
 - **Do NOT implement a guess**
 - Wait for human decision
 
-### 3. Understand Bella Architecture Layers
+### 4. Understand Bella Architecture Layers
 
 ```
 Product (Industry-specific)

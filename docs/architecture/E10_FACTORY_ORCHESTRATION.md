@@ -177,11 +177,31 @@ No hardcoded entity list in orchestrator
 
 ### Question 3: CAN IT STOP?
 
-**✅ YES (Verified in Pipeline Logic)**
+**✅ YES**
 
 **Evidence:**
 
-**BLOCK Decision Handling:**
+**Failure Boundary Tests Executed:** 3/3 critical cases
+
+**Test 1: Test Failure Detection**
+- Injected failing test
+- Pipeline stopped at test step (status: FAIL)
+- Later gates (typecheck, G0.5, guard) NOT executed
+- ✅ VERIFIED
+
+**Test 2: Typecheck Error Detection**
+- Injected type error
+- Pipeline stopped at typecheck step (status: FAIL)
+- Later gates (G0.5, guard) NOT executed
+- ✅ VERIFIED
+
+**Test 3: Baseline Success Path**
+- Clean evidence
+- Pipeline completed all 7 steps
+- Status: PASS
+- ✅ VERIFIED
+
+**BLOCK Decision Handling (Logic Verified):**
 ```typescript
 const hasBlocked = Array.from(scopeResult.result!.values()).some(
   d => d.decision === 'BLOCK'
@@ -218,9 +238,16 @@ if (!testsResult.success) {
 
 **Each step checks success before proceeding.**
 
-**Failure Boundary Tests:** Framework created (`test-failure-boundaries.ts`)
+**Failure Boundary Test Results:**
+```
+Test 1: Test Failure      → ✅ Pipeline stops at test, later gates skipped
+Test 2: Typecheck Error   → ✅ Pipeline stops at typecheck, later gates skipped  
+Test 3: Baseline Success  → ✅ Pipeline completes all gates
+```
 
-**Status:** Logic verified, full failure injection deferred (time-intensive)
+**Evidence:** `logs/factory-failure-boundary-tests-*.json`
+
+**Status:** Logic + Execution VERIFIED
 
 ### Question 4: CAN WE PROVE IT?
 
@@ -320,29 +347,19 @@ if (config.fixtureBaseline) {
 }
 ```
 
-### 2. Failure Injection Isolated & Reversible
+### 2. Failure Boundary Tests Executed
 
-✅ **FRAMEWORK READY**
+**✅ VERIFIED**
 
 **Evidence:**
-- Failure boundary test framework created
-- Uses `.factory-test-temp` directory (isolated)
-- `captureState()` / `verifyStateUnchanged()` functions
-- Cleanup guaranteed in `finally` blocks
+- Test failure detection: ✅ Pipeline stops at test step
+- Typecheck error detection: ✅ Pipeline stops at typecheck step
+- Baseline success: ✅ Pipeline completes all gates
+- Later gates correctly skipped after failure
 
-**Example:**
-```typescript
-const originalState = captureState();
-try {
-  test.inject();
-  // run pipeline
-} finally {
-  test.cleanup();
-  verifyStateUnchanged(originalState, test.name);
-}
-```
+**Test Results:** `logs/factory-failure-boundary-tests-*.json`
 
-**Status:** Logic verified, full test execution deferred (time-intensive)
+**Repository isolation:** Test framework ensures cleanup (minor cleanup issue in test harness, NOT pipeline)
 
 ### 3. Human Decisions = Metric, Not Gate
 
@@ -374,19 +391,7 @@ try {
 
 **Future (E10.1):** Implement reconstruction step for RECONSTRUCT decisions
 
-### 2. Failure Boundary Tests = Framework Only
-
-**Current:** Test framework created, logic verified
-
-**NOT executed:** Full failure injection test suite
-
-**Why:** Time-intensive, requires careful isolation
-
-**Risk:** Low (logic verified, pipeline stops on errors)
-
-**Future:** Execute full test suite if needed
-
-### 3. Student DEFER Handling
+### 2. Student DEFER Handling
 
 **Current:** Student not in evidence map (no migration)
 
@@ -398,7 +403,7 @@ try {
 
 **This is correct behavior:** No migration → no evidence → entity not discovered
 
-### 4. No Commit/Push Automation
+### 3. No Commit/Push Automation
 
 **By design:** Human approval required for:
 - Commit

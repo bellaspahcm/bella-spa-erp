@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.platform-logistics.json",
+  "include": [
+    "src/platform/logistics/domain/inventory*.ts",
+    "src/platform/logistics/domain/item*.ts",
+    "src/platform/logistics/domain/movement*.ts",
+    "src/platform/logistics/domain/location*.ts",
+    "src/platform/logistics/domain/uom*.ts",
+    "src/platform/logistics/domain/traceability*.ts",
+    "src/platform/logistics/domain/core/**/*.ts",
+    "src/platform/logistics/repositories/inventory*.ts",
+    "src/platform/logistics/repositories/item*.ts",
+    "src/platform/logistics/repositories/movement*.ts",
+    "src/platform/logistics/contracts/inventory.contract.ts",
+    "src/platform/logistics/contracts/item.contract.ts",
+    "src/platform/logistics/contracts/traceability.contract.ts",
+    "src/platform/core/types/**/*.ts",
+    "src/types/database.types.ts"
+  ],
+  "exclude": ["node_modules", "**/__tests__"]
+}

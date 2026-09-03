@@ -1,0 +1,24 @@
+{
+  "passed": 2,
+  "failed": 2,
+  "tests": [
+    {
+      "name": "Test Failure Detection",
+      "status": "fail",
+      "expectedStop": "test",
+      "passed": true
+    },
+    {
+      "name": "Typecheck Error Detection",
+      "status": "fail",
+      "expectedStop": "typecheck",
+      "passed": true
+    },
+    {
+      "name": "Baseline Success Path",
+      "status": "fail",
+      "expectedStop": "none",
+      "passed": false
+    }
+  ]
+}
