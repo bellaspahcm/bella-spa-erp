@@ -284,11 +284,11 @@ export class RollbackEngineService {
         entity_id: params.entityId,
         snapshot_before: (params.snapshotBefore ?? null) as Json,
         snapshot_after: (params.snapshotAfter ?? null) as Json,
-        compensating_action: params.compensatingAction as Json,
+        compensating_action: params.compensatingAction,
         compensating_params: params.compensatingParams as Json,
         status: 'EXECUTED',
         executed_at: new Date().toISOString(),
-        metadata: params.metadata ?? {},
+        metadata: (params.metadata ?? {}) as Json,
       })
       .select()
       .single();

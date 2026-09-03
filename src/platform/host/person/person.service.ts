@@ -120,7 +120,7 @@ export class PersonService {
       }
 
       // 2. Create aggregate from existing person
-      const existingAggregate = new PersonAggregate['create']({
+      const existingAggregate = PersonAggregate.create({
         tenantId: existingPerson.tenantId,
         firstName: existingPerson.firstName,
         lastName: existingPerson.lastName,

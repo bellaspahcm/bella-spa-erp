@@ -158,8 +158,8 @@ function evaluateLeaf(
     case 'GTE':      return typeof value === 'number' && typeof target === 'number' && value >= target;
     case 'LT':       return typeof value === 'number' && typeof target === 'number' && value < target;
     case 'LTE':      return typeof value === 'number' && typeof target === 'number' && value <= target;
-    case 'IN':       return Array.isArray(target) && target.includes(value as string | number);
-    case 'NOT_IN':   return Array.isArray(target) && !target.includes(value as string | number);
+    case 'IN':       return Array.isArray(target) && (target as (string | number)[]).includes(value as string | number);
+    case 'NOT_IN':   return Array.isArray(target) && !(target as (string | number)[]).includes(value as string | number);
     case 'CONTAINS': return typeof value === 'string' && typeof target === 'string' && value.includes(target);
     default:         return false;
   }
