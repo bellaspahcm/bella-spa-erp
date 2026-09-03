@@ -149,21 +149,28 @@ export function deriveCanonicalScope(evidence: CanonicalEvidence): ScopeDerivati
 /**
  * Collect canonical evidence for a specific entity from repository state.
  * 
- * This is a stub - implementation will scan actual repository files.
- * 
  * @param entityName Entity to analyze (e.g., 'Course', 'Attendance')
  * @param options Paths to evidence sources
  */
 export async function collectCanonicalEvidence(
   entityName: string,
   options: {
+    industryScope: string;
     migrationsPath?: string;
     generatedTypesPath?: string;
     domainPath?: string;
     testsPath?: string;
-  } = {}
+  }
 ): Promise<CanonicalEvidence> {
-  // TODO: Implement actual file scanning
-  // For now, return placeholder
-  throw new Error('collectCanonicalEvidence not yet implemented - tests drive the rule logic');
+  // Delegate to evidence-collector.ts
+  // This function signature maintained for backward compatibility
+  const { collectEvidence } = await import('./evidence-collector');
+  
+  return collectEvidence(entityName, {
+    industryScope: options.industryScope,
+    migrationsPath: options.migrationsPath,
+    generatedTypesPath: options.generatedTypesPath,
+    domainBasePath: options.domainPath,
+    testBasePath: options.testsPath,
+  });
 }
