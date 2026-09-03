@@ -60,6 +60,7 @@
     "governance:baseline": "npx tsx scripts/governance/capture-baseline.ts",
     "governance:check-regression": "npx tsx scripts/governance/check-regression.ts",
     "governance:check-regression:verbose": "npx tsx scripts/governance/check-regression.ts --verbose",
+    "governance:contract-schema": "npx tsx scripts/governance/contract-schema-conformance.ts",
     "logistics:verify": "npm run arch:guard && npm test -- src/platform/logistics/domain",
     "worker:finance-outbox": "npx tsx src/platform/integration-hub/finance-outbox-worker.cli.ts",
     "test:n1": "npx tsx scripts/test-n1-failure-isolation.ts",

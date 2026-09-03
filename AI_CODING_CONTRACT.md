@@ -288,6 +288,85 @@ Known Pattern: PROCEED WITH MINIMAL FIX
 4. If new semantic conflict appears → STOP immediately
 
 **When pattern is new or ambiguous:**
+
+---
+
+## Contract-Schema Conformance Checkpoint
+
+**When to run:** Before implementing new Product/Industry OS/Kernel capability, or modifying existing contract/schema/state/RPC.
+
+**Command:**
+```bash
+npm run governance:contract-schema <scope> <table-name>
+```
+
+**Example:**
+```bash
+npm run governance:contract-schema real-estate real_estate_products
+```
+
+### Three Verdicts
+
+**✅ PASS** → Continue implementation
+- Contract + Schema + generated types conform
+- No action needed
+
+**❌ FAIL** → Fix or block implementation
+- Objective mismatch detected (missing fields, stale types, enum absent)
+- Fix required before proceeding
+
+**⚠️ REVIEW_REQUIRED** → Architectural decision needed
+- Semantic mismatch detected (vocabulary differs, state lifecycle unclear)
+- AI cannot auto-decide semantic mapping
+- Human decision required on canonical owner
+
+### What This Gate Does
+
+**Answers:**
+> "Do Contract and Schema conform according to current evidence?"
+
+**Does NOT answer:**
+> "Should I fix DB or fix code?"  
+> "How should I map these states?"  
+> "Which is the canonical owner?"
+
+These remain architectural decisions.
+
+### Evidence Priority
+
+**Schema Truth:**
+1. Migration / canonical DB schema
+2. `database.types.ts` (generated from DB, shows current state)
+
+**Contract Truth:**
+3. Canonical public contract + ownership
+
+**Behavioral Evidence:**
+4. Repository/service usage
+5. Tests
+
+**Documentation:**
+6. Docs/ADR (intent explanation, NOT override)
+
+**Critical:** Generated types prove DB *current state*, NOT what it *should be*.
+
+### MVP Scope
+
+Current checks (4):
+- Contract existence / ownership
+- Schema field presence
+- Enum / state vocabulary
+- Generated DB type consistency
+
+**NOT in MVP:** RPC/function signatures, advanced ownership detection, duplicate capability checks
+
+**Status:** Local execution only. No pre-commit/CI enforcement until field evidence proves value.
+
+---
+
+## TypeScript Remediation Rules
+
+**When pattern is new or ambiguous:
 1. STOP coding
 2. Gather evidence
 3. Document findings
