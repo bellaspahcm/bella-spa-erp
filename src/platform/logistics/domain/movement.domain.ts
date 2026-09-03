@@ -1,226 +1,427 @@
 /**
- * Inventory Movement Domain Kernel
+ * Movement Domain
  * 
- * Pure business logic for inventory movements (transactions).
- * Zero dependencies on infrastructure.
+ * E7 Logistics Domain Kernel - Movement Component
+ * Canonical: Database['logistics']['Tables']['inventory_movements']
  * 
- * Responsibilities:
- * - Movement creation with validation
- * - Direction/type compatibility validation
- * - Quantity validation
- * - Immutability enforcement
- * - Movement approval logic
+ * Movement is an immutable fact record of inventory transactions.
+ * It does NOT mutate Inventory state - that's a repository/service concern.
+ * 
+ * 12 Domain Invariants:
+ * 1. Movement number required
+ * 2. Quantity must be positive
+ * 3. Direction must match movement type
+ * 4. INBOUND requires to_location
+ * 5. OUTBOUND requires from_location
+ * 6. NEUTRAL requires both locations
+ * 7. Cannot transfer to same location
+ * 8. Unit cost cannot be negative
+ * 9. Total cost cannot be negative
+ * 10. Currency must be ISO 4217
+ * 11. Serial requires lot
+ * 12. Only PENDING can be approved/cancelled
  */
 
 import { Result } from './core/result';
-import type {
-  InventoryMovement,
-  CreateMovementProps,
-  MovementType,
-  MovementDirection,
-  MovementStatus,
-  LocationType,
-} from './movement.types';
+import type { Database } from '../../../shared/database.types';
+
+// Canonical DB row type
+type MovementRow = Database['logistics']['Tables']['inventory_movements']['Row'];
+
+// Domain types
+export type MovementType =
+  | 'RECEIPT' | 'SHIPMENT' | 'RELOCATION'
+  | 'TRANSFER_IN' | 'TRANSFER_OUT'
+  | 'PRODUCTION_OUTPUT' | 'PRODUCTION_CONSUMPTION'
+  | 'ADJUSTMENT_INCREASE' | 'ADJUSTMENT_DECREASE'
+  | 'ISSUE' | 'RETURN' | 'DAMAGE' | 'STATUS_CHANGE' | 'CYCLE_COUNT';
+
+export type MovementDirection = 'INBOUND' | 'OUTBOUND' | 'NEUTRAL';
+export type MovementStatus = 'PENDING' | 'COMPLETED' | 'CANCELLED';
+export type LocationType = 'WAREHOUSE' | 'STORE' | 'TRANSIT' | 'VENDOR' | 'CUSTOMER';
+
+export interface InventoryMovement {
+  id: string;
+  movementNumber: string;
+  tenantId: string;
+  movementType: MovementType;
+  direction: MovementDirection;
+  itemId: string;
+  quantity: number;
+  unitOfMeasure: string;
+  fromLocationId: string | null;
+  fromLocationType: LocationType | null;
+  toLocationId: string | null;
+  toLocationType: LocationType | null;
+  lotNumber: string | null;
+  serialNumber: string | null;
+  expiryDate: Date | null;
+  unitCost: number | null;
+  totalCost: number | null;
+  currency: string | null;
+  status: MovementStatus;
+  movementDate: Date;
+  reason: string | null;
+  notes: string | null;
+  sourceDocumentType: string | null;
+  sourceDocumentNumber: string | null;
+  sourceDocumentId: string | null;
+  sourceLineItemId: string | null;
+  batchId: string | null;
+  createdBy: string | null;
+  createdAt: Date;
+  approvedBy: string | null;
+  approvedAt: Date | null;
+  completedAt: Date | null;
+  cancellationReason: string | null;
+  cancelledAt: Date | null;
+}
+
+export interface CreateMovementProps {
+  movementNumber: string;
+  tenantId: string;
+  movementType: MovementType;
+  direction: MovementDirection;
+  itemId: string;
+  quantity: number;
+  unitOfMeasure: string;
+  fromLocationId?: string;
+  fromLocationType?: LocationType;
+  toLocationId?: string;
+  toLocationType?: LocationType;
+  lotNumber?: string;
+  serialNumber?: string;
+  expiryDate?: Date;
+  unitCost?: number;
+  totalCost?: number;
+  currency?: string;
+  status?: MovementStatus;
+  movementDate?: Date;
+  reason?: string;
+  notes?: string;
+  sourceDocumentType?: string;
+  sourceDocumentNumber?: string;
+  sourceDocumentId?: string;
+  sourceLineItemId?: string;
+  batchId?: string;
+  createdBy?: string;
+}
+
+export interface ItemTraceabilityRequirements {
+  lotTracked: boolean;
+  serialTracked: boolean;
+  expiryTracked: boolean;
+}
 
 export class MovementDomain {
   /**
-   * Create new inventory movement
-   * 
-   * Invariants:
-   * - Quantity must be positive (direction indicates increase/decrease)
-   * - Direction must match movement type
-   * - INBOUND requires to_location
-   * - OUTBOUND requires from_location
-   * - NEUTRAL requires both locations
-   * - Movement number must be unique (enforced at repository layer)
+   * Create new movement record
+   * Validates all 12 domain invariants
    */
   static create(props: CreateMovementProps): Result<InventoryMovement> {
-    // Movement number required
-    if (!props.movementNumber || props.movementNumber.trim() === '') {
-      return Result.fail(
-        'Movement number is required',
-        'MOVEMENT_NUMBER_REQUIRED'
-      );
+    // Invariant 1: Movement number required
+    const trimmedNumber = props.movementNumber.trim();
+    if (!trimmedNumber) {
+      return Result.fail('Movement number is required', 'MOVEMENT_NUMBER_REQUIRED');
     }
 
-    // Quantity validation
+    // Invariant 2: Quantity must be positive
     if (props.quantity <= 0) {
+      return Result.fail('Movement quantity must be positive', 'MOVEMENT_QUANTITY_MUST_BE_POSITIVE');
+    }
+
+    // Invariant 3: Direction must match movement type
+    const directionValid = this.validateDirectionForType(props.movementType, props.direction);
+    if (!directionValid) {
       return Result.fail(
-        'Movement quantity must be positive',
-        'MOVEMENT_QUANTITY_MUST_BE_POSITIVE'
+        `Movement type ${props.movementType} incompatible with direction ${props.direction}`,
+        'MOVEMENT_DIRECTION_TYPE_MISMATCH'
       );
     }
 
-    // Direction validation
-    const directionResult = this.validateDirection(
-      props.movementType,
-      props.direction,
-      props.fromLocationId,
-      props.toLocationId
-    );
-    if (directionResult.isFailure) {
-      return directionResult as Result<InventoryMovement>;
+    // Invariant 4: INBOUND requires to_location
+    if (props.direction === 'INBOUND' && !props.toLocationId) {
+      return Result.fail('INBOUND movement requires to_location', 'MOVEMENT_INBOUND_REQUIRES_TO_LOCATION');
     }
 
-    // Unit cost validation
+    // Invariant 5: OUTBOUND requires from_location
+    if (props.direction === 'OUTBOUND' && !props.fromLocationId) {
+      return Result.fail('OUTBOUND movement requires from_location', 'MOVEMENT_OUTBOUND_REQUIRES_FROM_LOCATION');
+    }
+
+    // Invariant 6: NEUTRAL requires both locations
+    if (props.direction === 'NEUTRAL') {
+      if (!props.fromLocationId || !props.toLocationId) {
+        return Result.fail(
+          'NEUTRAL movement requires both from_location and to_location',
+          'MOVEMENT_NEUTRAL_REQUIRES_BOTH_LOCATIONS'
+        );
+      }
+
+      // Invariant 7: Cannot transfer to same location
+      if (props.fromLocationId === props.toLocationId) {
+        return Result.fail('Cannot transfer to same location', 'MOVEMENT_SAME_LOCATION_TRANSFER');
+      }
+    }
+
+    // Invariant 8: Unit cost cannot be negative
     if (props.unitCost !== undefined && props.unitCost < 0) {
-      return Result.fail(
-        'Unit cost cannot be negative',
-        'MOVEMENT_UNIT_COST_NEGATIVE'
-      );
+      return Result.fail('Unit cost cannot be negative', 'MOVEMENT_UNIT_COST_NEGATIVE');
     }
 
-    // Total cost validation
+    // Invariant 9: Total cost cannot be negative
     if (props.totalCost !== undefined && props.totalCost < 0) {
-      return Result.fail(
-        'Total cost cannot be negative',
-        'MOVEMENT_TOTAL_COST_NEGATIVE'
-      );
+      return Result.fail('Total cost cannot be negative', 'MOVEMENT_TOTAL_COST_NEGATIVE');
     }
 
-    // Currency validation
-    if (props.currency && !/^[A-Z]{3}$/.test(props.currency)) {
-      return Result.fail(
-        'Currency must be 3-letter ISO 4217 code',
-        'MOVEMENT_CURRENCY_INVALID'
-      );
+    // Invariant 10: Currency must be ISO 4217
+    if (props.currency !== undefined) {
+      const currencyValid = /^[A-Z]{3}$/.test(props.currency);
+      if (!currencyValid) {
+        return Result.fail('Currency must be 3-letter ISO 4217 code', 'MOVEMENT_CURRENCY_INVALID');
+      }
     }
 
-    // Traceability validation
+    // Invariant 11: Serial requires lot
     if (props.serialNumber && !props.lotNumber) {
-      return Result.fail(
-        'Serial number requires lot number',
-        'MOVEMENT_SERIAL_REQUIRES_LOT'
-      );
+      return Result.fail('Serial number requires lot number', 'MOVEMENT_SERIAL_REQUIRES_LOT');
     }
 
     const now = new Date();
-
+    const status = props.status ?? 'COMPLETED';
+    
     const movement: InventoryMovement = {
-      id: props.id || crypto.randomUUID(),
-      movementNumber: props.movementNumber.trim(),
+      id: crypto.randomUUID(),
+      movementNumber: trimmedNumber,
       tenantId: props.tenantId,
-      
-      movementDate: props.movementDate || now,
-      createdAt: now,
-      createdBy: props.createdBy || null,
-      
       movementType: props.movementType,
       direction: props.direction,
-      
       itemId: props.itemId,
-      
-      fromLocationId: props.fromLocationId || null,
-      fromLocationType: props.fromLocationType || null,
-      toLocationId: props.toLocationId || null,
-      toLocationType: props.toLocationType || null,
-      
       quantity: props.quantity,
       unitOfMeasure: props.unitOfMeasure,
-      
-      lotNumber: props.lotNumber || null,
-      serialNumber: props.serialNumber || null,
-      expiryDate: props.expiryDate || null,
-      
-      unitCost: props.unitCost !== undefined ? props.unitCost : null,
-      totalCost: props.totalCost !== undefined ? props.totalCost : null,
-      currency: props.currency || null,
-      
-      sourceDocumentType: props.sourceDocumentType || null,
-      sourceDocumentId: props.sourceDocumentId || null,
-      sourceDocumentNumber: props.sourceDocumentNumber || null,
-      sourceLineItemId: props.sourceLineItemId || null,
-      
-      reason: props.reason || null,
-      notes: props.notes || null,
-      
-      batchId: props.batchId || null,
-      
+      fromLocationId: props.fromLocationId ?? null,
+      fromLocationType: props.fromLocationType ?? null,
+      toLocationId: props.toLocationId ?? null,
+      toLocationType: props.toLocationType ?? null,
+      lotNumber: props.lotNumber ?? null,
+      serialNumber: props.serialNumber ?? null,
+      expiryDate: props.expiryDate ?? null,
+      unitCost: props.unitCost ?? null,
+      totalCost: props.totalCost ?? null,
+      currency: props.currency ?? null,
+      status,
+      movementDate: props.movementDate ?? now,
+      reason: props.reason ?? null,
+      notes: props.notes ?? null,
+      sourceDocumentType: props.sourceDocumentType ?? null,
+      sourceDocumentNumber: props.sourceDocumentNumber ?? null,
+      sourceDocumentId: props.sourceDocumentId ?? null,
+      sourceLineItemId: props.sourceLineItemId ?? null,
+      batchId: props.batchId ?? null,
+      createdBy: props.createdBy ?? null,
+      createdAt: now,
       approvedBy: null,
       approvedAt: null,
-      
-      status: props.status || 'COMPLETED',
-      completedAt: props.status === 'COMPLETED' ? now : null,
-      cancelledAt: null,
+      completedAt: status === 'COMPLETED' ? now : null,
       cancellationReason: null,
+      cancelledAt: null,
     };
 
     return Result.ok(movement);
   }
 
   /**
-   * Validate direction matches movement type and locations
+   * Approve pending movement
+   * Invariant 12: Only PENDING can be approved
    */
-  private static validateDirection(
-    movementType: MovementType,
-    direction: MovementDirection,
-    fromLocationId: string | null | undefined,
-    toLocationId: string | null | undefined
-  ): Result<void> {
-    // Get expected direction for movement type
-    const expectedDirection = this.getExpectedDirection(movementType);
-
-    if (direction !== expectedDirection) {
+  static approve(movement: InventoryMovement, approvedBy: string): Result<InventoryMovement> {
+    if (movement.status !== 'PENDING') {
       return Result.fail(
-        `Movement type ${movementType} requires direction ${expectedDirection}, got ${direction}`,
-        'MOVEMENT_DIRECTION_TYPE_MISMATCH'
+        `Cannot approve movement with status ${movement.status}. Only PENDING movements can be approved`,
+        'MOVEMENT_CANNOT_APPROVE_NON_PENDING'
       );
     }
 
-    // Validate locations based on direction
-    if (direction === 'INBOUND' && !toLocationId) {
-      return Result.fail(
-        'INBOUND movement requires to_location',
-        'MOVEMENT_INBOUND_REQUIRES_TO_LOCATION'
-      );
-    }
+    const now = new Date();
+    const approved: InventoryMovement = {
+      ...movement,
+      status: 'COMPLETED',
+      approvedBy,
+      approvedAt: now,
+      completedAt: now,
+    };
 
-    if (direction === 'OUTBOUND' && !fromLocationId) {
-      return Result.fail(
-        'OUTBOUND movement requires from_location',
-        'MOVEMENT_OUTBOUND_REQUIRES_FROM_LOCATION'
-      );
-    }
-
-    if (direction === 'NEUTRAL' && (!fromLocationId || !toLocationId)) {
-      return Result.fail(
-        'NEUTRAL movement requires both from_location and to_location',
-        'MOVEMENT_NEUTRAL_REQUIRES_BOTH_LOCATIONS'
-      );
-    }
-
-    // Prevent same location transfer
-    if (direction === 'NEUTRAL' && fromLocationId === toLocationId) {
-      return Result.fail(
-        'Cannot transfer to same location',
-        'MOVEMENT_SAME_LOCATION_TRANSFER'
-      );
-    }
-
-    return Result.ok(undefined);
+    return Result.ok(approved);
   }
 
   /**
-   * Get expected direction for movement type
+   * Cancel pending movement
+   * Invariant 12: Only PENDING can be cancelled
    */
-  private static getExpectedDirection(movementType: MovementType): MovementDirection {
+  static cancel(movement: InventoryMovement, reason: string): Result<InventoryMovement> {
+    const trimmedReason = reason.trim();
+    if (!trimmedReason) {
+      return Result.fail('Cancellation reason is required', 'MOVEMENT_CANCELLATION_REASON_REQUIRED');
+    }
+
+    if (movement.status !== 'PENDING') {
+      return Result.fail(
+        `Cannot cancel movement with status ${movement.status}. Only PENDING movements can be cancelled`,
+        'MOVEMENT_CANNOT_CANCEL_NON_PENDING'
+      );
+    }
+
+    const now = new Date();
+    const cancelled: InventoryMovement = {
+      ...movement,
+      status: 'CANCELLED',
+      cancellationReason: trimmedReason,
+      cancelledAt: now,
+    };
+
+    return Result.ok(cancelled);
+  }
+
+  /**
+   * Validate movement traceability against item requirements
+   */
+  static validateTraceability(
+    movement: InventoryMovement,
+    requirements: ItemTraceabilityRequirements
+  ): Result<true> {
+    if (requirements.lotTracked && !movement.lotNumber) {
+      return Result.fail(
+        'Item requires lot tracking, but movement has no lot number',
+        'MOVEMENT_LOT_NUMBER_REQUIRED'
+      );
+    }
+
+    if (requirements.serialTracked && !movement.serialNumber) {
+      return Result.fail(
+        'Item requires serial tracking, but movement has no serial number',
+        'MOVEMENT_SERIAL_NUMBER_REQUIRED'
+      );
+    }
+
+    if (requirements.expiryTracked && !movement.expiryDate) {
+      return Result.fail(
+        'Item requires expiry tracking, but movement has no expiry date',
+        'MOVEMENT_EXPIRY_DATE_REQUIRED'
+      );
+    }
+
+    return Result.ok(true);
+  }
+
+  /**
+   * Calculate total cost from unit cost and quantity
+   */
+  static calculateTotalCost(movement: InventoryMovement): number | null {
+    if (movement.unitCost === null) {
+      return null;
+    }
+    return movement.quantity * movement.unitCost;
+  }
+
+  /**
+   * Status queries
+   */
+  static isCompleted(movement: InventoryMovement): boolean {
+    return movement.status === 'COMPLETED';
+  }
+
+  static isPending(movement: InventoryMovement): boolean {
+    return movement.status === 'PENDING';
+  }
+
+  static isCancelled(movement: InventoryMovement): boolean {
+    return movement.status === 'CANCELLED';
+  }
+
+  /**
+   * Check if movement can be modified (only PENDING)
+   */
+  static canModify(movement: InventoryMovement): boolean {
+    return movement.status === 'PENDING';
+  }
+
+  /**
+   * Direction queries
+   */
+  static increasesInventory(movement: InventoryMovement): boolean {
+    return movement.direction === 'INBOUND';
+  }
+
+  static decreasesInventory(movement: InventoryMovement): boolean {
+    return movement.direction === 'OUTBOUND';
+  }
+
+  static isNeutral(movement: InventoryMovement): boolean {
+    return movement.direction === 'NEUTRAL';
+  }
+
+  /**
+   * Generate human-readable description of movement
+   */
+  static getDescription(movement: InventoryMovement): string {
+    const parts: string[] = [];
+
+    // Movement type
+    parts.push(movement.movementType);
+
+    // Quantity + UOM
+    parts.push(`${movement.quantity} ${movement.unitOfMeasure}`);
+
+    // Direction with locations
+    if (movement.direction === 'INBOUND') {
+      const location = movement.toLocationType ?? 'LOCATION';
+      parts.push(`→ ${location}`);
+    } else if (movement.direction === 'OUTBOUND') {
+      const location = movement.fromLocationType ?? 'LOCATION';
+      parts.push(`← ${location}`);
+    } else if (movement.direction === 'NEUTRAL') {
+      const from = movement.fromLocationType ?? 'LOCATION';
+      const to = movement.toLocationType ?? 'LOCATION';
+      parts.push(`${from} → ${to}`);
+    }
+
+    let description = parts.join(' | ');
+
+    // Add lot/serial if present
+    const tracking: string[] = [];
+    if (movement.lotNumber) {
+      tracking.push(`Lot: ${movement.lotNumber}`);
+    }
+    if (movement.serialNumber) {
+      tracking.push(`S/N: ${movement.serialNumber}`);
+    }
+    if (tracking.length > 0) {
+      description += ` [${tracking.join(', ')}]`;
+    }
+
+    return description;
+  }
+
+  /**
+   * Validate direction matches movement type
+   * Invariant 3 logic
+   */
+  private static validateDirectionForType(type: MovementType, direction: MovementDirection): boolean {
     const inboundTypes: MovementType[] = [
       'RECEIPT',
-      'RETURN_RECEIPT',
       'TRANSFER_IN',
       'PRODUCTION_OUTPUT',
       'ADJUSTMENT_INCREASE',
+      'RETURN',
     ];
 
     const outboundTypes: MovementType[] = [
-      'ISSUE',
       'SHIPMENT',
       'TRANSFER_OUT',
+      'ISSUE',
       'PRODUCTION_CONSUMPTION',
       'ADJUSTMENT_DECREASE',
       'DAMAGE',
-      'OBSOLESCENCE',
-      'THEFT',
     ];
 
     const neutralTypes: MovementType[] = [
@@ -229,205 +430,18 @@ export class MovementDomain {
       'CYCLE_COUNT',
     ];
 
-    if (inboundTypes.includes(movementType)) return 'INBOUND';
-    if (outboundTypes.includes(movementType)) return 'OUTBOUND';
-    if (neutralTypes.includes(movementType)) return 'NEUTRAL';
-
-    // Default (should not happen with proper types)
-    return 'NEUTRAL';
-  }
-
-  /**
-   * Approve movement
-   * 
-   * Only PENDING movements can be approved.
-   */
-  static approve(
-    movement: InventoryMovement,
-    approvedBy: string
-  ): Result<InventoryMovement> {
-    if (movement.status !== 'PENDING') {
-      return Result.fail(
-        `Cannot approve movement with status ${movement.status}`,
-        'MOVEMENT_CANNOT_APPROVE_NON_PENDING'
-      );
+    if (direction === 'INBOUND') {
+      return inboundTypes.includes(type);
     }
 
-    const now = new Date();
-
-    const approved: InventoryMovement = {
-      ...movement,
-      approvedBy,
-      approvedAt: now,
-      status: 'COMPLETED',
-      completedAt: now,
-    };
-
-    return Result.ok(approved);
-  }
-
-  /**
-   * Cancel movement
-   * 
-   * Only PENDING movements can be cancelled.
-   * COMPLETED movements are immutable.
-   */
-  static cancel(
-    movement: InventoryMovement,
-    cancellationReason: string
-  ): Result<InventoryMovement> {
-    if (movement.status !== 'PENDING') {
-      return Result.fail(
-        `Cannot cancel movement with status ${movement.status}`,
-        'MOVEMENT_CANNOT_CANCEL_NON_PENDING'
-      );
+    if (direction === 'OUTBOUND') {
+      return outboundTypes.includes(type);
     }
 
-    if (!cancellationReason || cancellationReason.trim() === '') {
-      return Result.fail(
-        'Cancellation reason is required',
-        'MOVEMENT_CANCELLATION_REASON_REQUIRED'
-      );
+    if (direction === 'NEUTRAL') {
+      return neutralTypes.includes(type);
     }
 
-    const now = new Date();
-
-    const cancelled: InventoryMovement = {
-      ...movement,
-      status: 'CANCELLED',
-      cancelledAt: now,
-      cancellationReason: cancellationReason.trim(),
-    };
-
-    return Result.ok(cancelled);
-  }
-
-  /**
-   * Check if movement is completed
-   */
-  static isCompleted(movement: InventoryMovement): boolean {
-    return movement.status === 'COMPLETED';
-  }
-
-  /**
-   * Check if movement is pending approval
-   */
-  static isPending(movement: InventoryMovement): boolean {
-    return movement.status === 'PENDING';
-  }
-
-  /**
-   * Check if movement is cancelled
-   */
-  static isCancelled(movement: InventoryMovement): boolean {
-    return movement.status === 'CANCELLED';
-  }
-
-  /**
-   * Check if movement can be modified (only PENDING can be modified)
-   */
-  static canModify(movement: InventoryMovement): boolean {
-    return movement.status === 'PENDING';
-  }
-
-  /**
-   * Check if movement increases inventory
-   */
-  static increasesInventory(movement: InventoryMovement): boolean {
-    return movement.direction === 'INBOUND';
-  }
-
-  /**
-   * Check if movement decreases inventory
-   */
-  static decreasesInventory(movement: InventoryMovement): boolean {
-    return movement.direction === 'OUTBOUND';
-  }
-
-  /**
-   * Check if movement is neutral (relocation, no net change)
-   */
-  static isNeutral(movement: InventoryMovement): boolean {
-    return movement.direction === 'NEUTRAL';
-  }
-
-  /**
-   * Calculate total cost if unit cost provided
-   */
-  static calculateTotalCost(movement: InventoryMovement): number | null {
-    if (movement.unitCost === null) return null;
-    return movement.unitCost * movement.quantity;
-  }
-
-  /**
-   * Validate movement against item traceability requirements
-   * 
-   * Note: Item entity not available in pure domain (no dependency).
-   * This is a helper for repository layer validation.
-   */
-  static validateTraceability(
-    movement: InventoryMovement,
-    itemRequirements: {
-      lotTracked: boolean;
-      serialTracked: boolean;
-      expiryTracked: boolean;
-    }
-  ): Result<void> {
-    if (itemRequirements.lotTracked && !movement.lotNumber) {
-      return Result.fail(
-        'Item requires lot tracking, but movement has no lot number',
-        'MOVEMENT_LOT_NUMBER_REQUIRED'
-      );
-    }
-
-    if (itemRequirements.serialTracked && !movement.serialNumber) {
-      return Result.fail(
-        'Item requires serial tracking, but movement has no serial number',
-        'MOVEMENT_SERIAL_NUMBER_REQUIRED'
-      );
-    }
-
-    if (itemRequirements.expiryTracked && !movement.expiryDate) {
-      return Result.fail(
-        'Item requires expiry tracking, but movement has no expiry date',
-        'MOVEMENT_EXPIRY_DATE_REQUIRED'
-      );
-    }
-
-    return Result.ok(undefined);
-  }
-
-  /**
-   * Get human-readable movement description
-   * 
-   * NOTE: Presentation helper.
-   * May move to API/presentation layer if tests show no domain-level need.
-   * Do not treat this as a Logistics OS primitive.
-   */
-  static getDescription(movement: InventoryMovement): string {
-    const parts: string[] = [
-      movement.movementType.replace(/_/g, ' '),
-      `${movement.quantity} ${movement.unitOfMeasure}`,
-    ];
-
-    if (movement.direction === 'INBOUND') {
-      parts.push(`→ ${movement.toLocationType || 'location'}`);
-    } else if (movement.direction === 'OUTBOUND') {
-      parts.push(`← ${movement.fromLocationType || 'location'}`);
-    } else if (movement.direction === 'NEUTRAL') {
-      parts.push(
-        `${movement.fromLocationType || 'location'} → ${movement.toLocationType || 'location'}`
-      );
-    }
-
-    if (movement.lotNumber) {
-      parts.push(`Lot: ${movement.lotNumber}`);
-    }
-
-    if (movement.serialNumber) {
-      parts.push(`S/N: ${movement.serialNumber}`);
-    }
-
-    return parts.join(' | ');
+    return false;
   }
 }

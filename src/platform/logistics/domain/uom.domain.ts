@@ -1,104 +1,98 @@
 /**
- * Unit of Measure (UOM) Domain Kernel
+ * UOM (Unit of Measure) Domain
  * 
- * Pure business logic for UOM management and conversions.
- * Zero dependencies on infrastructure.
- * 
- * Responsibilities:
- * - UOM creation and validation
- * - Conversion factor validation (basic)
- * - Category validation
- * 
- * Note: Complex UOM conversions deferred to future enhancement.
- * E7.1 only implements basic structure.
+ * E7 Logistics Domain Kernel - UOM Component
+ * Canonical: Database['logistics']['Tables']['uom']
  */
 
 import { Result } from './core/result';
-import type {
-  UnitOfMeasure,
-  CreateUOMProps,
-  UpdateUOMProps,
-  UOMCategory,
-  UOMStatus,
-} from './uom.types';
+import type { Database } from '../../../shared/database.types';
+
+// Canonical DB row type
+type UOMRow = Database['logistics']['Tables']['uom']['Row'];
+
+// Domain types
+export type UOMCategory = 'QUANTITY' | 'WEIGHT' | 'VOLUME' | 'LENGTH' | 'TIME';
+export type UOMStatus = 'ACTIVE' | 'INACTIVE';
+
+export interface UnitOfMeasure {
+  id: string;
+  tenantId: string;
+  uomCode: string;
+  uomName: string;
+  category: UOMCategory;
+  decimals: number;
+  conversionFactor: number | null;
+  baseUomCode: string | null;
+  status: UOMStatus;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateUOMProps {
+  tenantId: string;
+  uomCode: string;
+  uomName: string;
+  category: UOMCategory;
+  decimals?: number;
+  conversionFactor?: number;
+  baseUomCode?: string;
+  status?: UOMStatus;
+}
+
+export interface UpdateUOMProps {
+  uomName?: string;
+  decimals?: number;
+  conversionFactor?: number;
+  baseUomCode?: string;
+  status?: UOMStatus;
+}
 
 export class UOMDomain {
   /**
-   * Create new unit of measure
-   * 
-   * Invariants:
-   * - UOM code required and non-empty
-   * - UOM name required
-   * - Category required
-   * - Conversion factor must be positive (if provided)
-   * - Decimals must be 0-6
+   * Create a new UOM
+   * Validates 4 domain invariants
    */
   static create(props: CreateUOMProps): Result<UnitOfMeasure> {
-    // Required fields
-    if (!props.uomCode || props.uomCode.trim() === '') {
-      return Result.fail(
-        'UOM code is required',
-        'UOM_CODE_REQUIRED'
-      );
+    // Invariant #1: UOM code required
+    const trimmedCode = props.uomCode.trim();
+    if (!trimmedCode) {
+      return Result.fail('UOM code is required', 'UOM_CODE_REQUIRED');
     }
 
-    if (!props.uomName || props.uomName.trim() === '') {
-      return Result.fail(
-        'UOM name is required',
-        'UOM_NAME_REQUIRED'
-      );
+    // Invariant #2: UOM name required
+    const trimmedName = props.uomName.trim();
+    if (!trimmedName) {
+      return Result.fail('UOM name is required', 'UOM_NAME_REQUIRED');
     }
 
-    if (!props.category) {
-      return Result.fail(
-        'UOM category is required',
-        'UOM_CATEGORY_REQUIRED'
-      );
-    }
-
-    // Conversion factor validation
+    // Invariant #3: Conversion factor must be positive
     if (props.conversionFactor !== undefined) {
       if (props.conversionFactor <= 0) {
-        return Result.fail(
-          'Conversion factor must be positive',
-          'UOM_CONVERSION_FACTOR_INVALID'
-        );
+        return Result.fail('Conversion factor must be positive', 'UOM_CONVERSION_FACTOR_INVALID');
       }
-
-      // If conversion factor provided, base UOM required
       if (!props.baseUomCode) {
-        return Result.fail(
-          'Base UOM code required when conversion factor provided',
-          'UOM_BASE_UOM_REQUIRED_FOR_CONVERSION'
-        );
+        return Result.fail('Base UOM code required when conversion factor provided', 'UOM_BASE_UOM_REQUIRED_FOR_CONVERSION');
       }
     }
 
-    // Decimals validation
-    const decimals = props.decimals !== undefined ? props.decimals : 2;
+    // Invariant #4: Decimals must be 0-6
+    const decimals = props.decimals ?? 2;
     if (decimals < 0 || decimals > 6) {
-      return Result.fail(
-        'Decimals must be between 0 and 6',
-        'UOM_DECIMALS_OUT_OF_RANGE'
-      );
+      return Result.fail('Decimals must be between 0 and 6', 'UOM_DECIMALS_OUT_OF_RANGE');
     }
 
     const now = new Date();
-
     const uom: UnitOfMeasure = {
-      id: props.id || crypto.randomUUID(),
+      id: crypto.randomUUID(),
       tenantId: props.tenantId,
-      uomCode: props.uomCode.trim().toUpperCase(),
-      uomName: props.uomName.trim(),
+      uomCode: trimmedCode.toUpperCase(),
+      uomName: trimmedName,
       category: props.category,
-      
-      baseUomCode: props.baseUomCode?.trim().toUpperCase() || null,
-      conversionFactor: props.conversionFactor || null,
-      
       decimals,
-      
-      status: props.status || 'ACTIVE',
-      
+      conversionFactor: props.conversionFactor ?? null,
+      baseUomCode: props.baseUomCode ?? null,
+      status: props.status ?? 'ACTIVE',
       createdAt: now,
       updatedAt: now,
     };
@@ -108,51 +102,37 @@ export class UOMDomain {
 
   /**
    * Update existing UOM
-   * 
-   * Cannot change:
-   * - tenantId (immutable)
-   * - uomCode (business key, immutable)
-   * - category (immutable, structural)
-   * - createdAt (audit)
    */
-  static update(
-    existingUOM: UnitOfMeasure,
-    updates: UpdateUOMProps
-  ): Result<UnitOfMeasure> {
-    // Name cannot be empty if provided
-    if (updates.uomName !== undefined && 
-        (!updates.uomName || updates.uomName.trim() === '')) {
-      return Result.fail(
-        'UOM name cannot be empty',
-        'UOM_NAME_REQUIRED'
-      );
+  static update(uom: UnitOfMeasure, props: UpdateUOMProps): Result<UnitOfMeasure> {
+    // Validate UOM name if provided
+    if (props.uomName !== undefined) {
+      const trimmedName = props.uomName.trim();
+      if (!trimmedName) {
+        return Result.fail('UOM name cannot be empty', 'UOM_NAME_REQUIRED');
+      }
     }
 
-    // Conversion factor validation
-    if (updates.conversionFactor !== undefined && updates.conversionFactor <= 0) {
-      return Result.fail(
-        'Conversion factor must be positive',
-        'UOM_CONVERSION_FACTOR_INVALID'
-      );
+    // Validate conversion factor if provided
+    if (props.conversionFactor !== undefined) {
+      if (props.conversionFactor <= 0) {
+        return Result.fail('Conversion factor must be positive', 'UOM_CONVERSION_FACTOR_INVALID');
+      }
     }
 
-    // Decimals validation
-    if (updates.decimals !== undefined) {
-      if (updates.decimals < 0 || updates.decimals > 6) {
-        return Result.fail(
-          'Decimals must be between 0 and 6',
-          'UOM_DECIMALS_OUT_OF_RANGE'
-        );
+    // Validate decimals if provided
+    if (props.decimals !== undefined) {
+      if (props.decimals < 0 || props.decimals > 6) {
+        return Result.fail('Decimals must be between 0 and 6', 'UOM_DECIMALS_OUT_OF_RANGE');
       }
     }
 
     const updated: UnitOfMeasure = {
-      ...existingUOM,
-      ...updates,
-      uomName: updates.uomName?.trim() || existingUOM.uomName,
-      baseUomCode: updates.baseUomCode !== undefined 
-        ? updates.baseUomCode?.trim().toUpperCase() || null 
-        : existingUOM.baseUomCode,
+      ...uom,
+      uomName: props.uomName?.trim() ?? uom.uomName,
+      decimals: props.decimals ?? uom.decimals,
+      conversionFactor: props.conversionFactor ?? uom.conversionFactor,
+      baseUomCode: props.baseUomCode ?? uom.baseUomCode,
+      status: props.status ?? uom.status,
       updatedAt: new Date(),
     };
 
@@ -160,41 +140,30 @@ export class UOMDomain {
   }
 
   /**
-   * Validate UOM status transition
+   * Check if status transition is allowed
    */
-  static canTransitionTo(
-    uom: UnitOfMeasure,
-    newStatus: UOMStatus
-  ): Result<void> {
-    const validTransitions: Record<UOMStatus, UOMStatus[]> = {
-      ACTIVE: ['INACTIVE'],
-      INACTIVE: ['ACTIVE'],
-    };
-
-    const allowed = validTransitions[uom.status] || [];
-
-    if (!allowed.includes(newStatus)) {
+  static canTransitionTo(uom: UnitOfMeasure, targetStatus: UOMStatus): Result<true> {
+    if (uom.status === targetStatus) {
       return Result.fail(
-        `Cannot transition from ${uom.status} to ${newStatus}`,
+        `UOM is already ${targetStatus}`,
         'UOM_INVALID_TRANSITION'
       );
     }
 
-    return Result.ok(undefined);
+    // All transitions between ACTIVE and INACTIVE are allowed
+    return Result.ok(true);
   }
 
   /**
    * Convert quantity from one UOM to another
-   * 
-   * Note: E7.1 basic implementation (same-category only).
-   * Complex cross-category conversions deferred to future.
+   * Requires same category and compatible base UOM
    */
   static convert(
     quantity: number,
     fromUOM: UnitOfMeasure,
     toUOM: UnitOfMeasure
   ): Result<number> {
-    // Same UOM, no conversion needed
+    // Same UOM - no conversion needed
     if (fromUOM.uomCode === toUOM.uomCode) {
       return Result.ok(quantity);
     }
@@ -202,88 +171,40 @@ export class UOMDomain {
     // Must be same category
     if (fromUOM.category !== toUOM.category) {
       return Result.fail(
-        `Cannot convert between different categories (${fromUOM.category} → ${toUOM.category})`,
+        `Cannot convert between different categories: ${fromUOM.category} → ${toUOM.category}`,
         'UOM_CROSS_CATEGORY_CONVERSION_NOT_SUPPORTED'
       );
     }
 
-    const fromIsBase = this.isBaseUOM(fromUOM);
-    const toIsBase = this.isBaseUOM(toUOM);
-
-    // If converting between base and derived UOM
-    if (fromIsBase && !toIsBase) {
-      // Base → Derived: divide by conversion factor
-      if (!toUOM.conversionFactor) {
-        return Result.fail(
-          'Target UOM must have conversion factor defined',
-          'UOM_CONVERSION_FACTOR_MISSING'
-        );
-      }
-      
-      // Verify fromUOM is the base of toUOM
-      if (fromUOM.uomCode !== toUOM.baseUomCode) {
-        return Result.fail(
-          'UOMs are not related (different base UOM)',
-          'UOM_DIFFERENT_BASE_UOM'
-        );
-      }
-
-      const result = quantity / toUOM.conversionFactor;
-      return Result.ok(this.roundToDecimals(result, toUOM.decimals));
-    }
-
-    if (!fromIsBase && toIsBase) {
-      // Derived → Base: multiply by conversion factor
-      if (!fromUOM.conversionFactor) {
-        return Result.fail(
-          'Source UOM must have conversion factor defined',
-          'UOM_CONVERSION_FACTOR_MISSING'
-        );
-      }
-
-      // Verify toUOM is the base of fromUOM
-      if (toUOM.uomCode !== fromUOM.baseUomCode) {
-        return Result.fail(
-          'UOMs are not related (different base UOM)',
-          'UOM_DIFFERENT_BASE_UOM'
-        );
-      }
-
-      const result = quantity * fromUOM.conversionFactor;
-      return Result.ok(this.roundToDecimals(result, toUOM.decimals));
-    }
-
-    // Both are derived UOMs - must have same base
-    if (!fromUOM.conversionFactor || !toUOM.conversionFactor) {
-      return Result.fail(
-        'Both UOMs must have conversion factors defined',
-        'UOM_CONVERSION_FACTOR_MISSING'
-      );
-    }
-
     // Must have same base UOM
-    if (fromUOM.baseUomCode !== toUOM.baseUomCode) {
+    const fromBase = fromUOM.baseUomCode ?? fromUOM.uomCode;
+    const toBase = toUOM.baseUomCode ?? toUOM.uomCode;
+
+    if (fromBase !== toBase) {
       return Result.fail(
-        'UOMs must share same base UOM for conversion',
+        `Cannot convert UOMs with different base UOM: ${fromBase} vs ${toBase}. UOMs must share same base UOM`,
         'UOM_DIFFERENT_BASE_UOM'
       );
     }
 
-    // Convert: from → base → to
-    const quantityInBase = quantity * fromUOM.conversionFactor;
-    const quantityInTarget = quantityInBase / toUOM.conversionFactor;
+    // Get conversion factors (1.0 for base UOMs)
+    const fromFactor = fromUOM.conversionFactor ?? 1.0;
+    const toFactor = toUOM.conversionFactor ?? 1.0;
+
+    // Convert: quantity * fromFactor / toFactor
+    const converted = (quantity * fromFactor) / toFactor;
 
     // Round to target UOM decimals
-    const rounded = this.roundToDecimals(quantityInTarget, toUOM.decimals);
+    const rounded = this.roundToDecimals(converted, toUOM.decimals);
 
     return Result.ok(rounded);
   }
 
   /**
-   * Check if UOM is base UOM (no conversion factor)
+   * Check if UOM is a base UOM (no conversion factor)
    */
   static isBaseUOM(uom: UnitOfMeasure): boolean {
-    return uom.conversionFactor === null || uom.baseUomCode === null;
+    return uom.conversionFactor === null;
   }
 
   /**
@@ -294,42 +215,51 @@ export class UOMDomain {
   }
 
   /**
-   * Validate quantity precision against UOM decimals
+   * Validate that quantity precision doesn't exceed UOM decimals
    */
   static validateQuantityPrecision(
     quantity: number,
     uom: UnitOfMeasure
-  ): Result<void> {
-    const quantityStr = quantity.toString();
-    const decimalPart = quantityStr.split('.')[1];
+  ): Result<true> {
+    const decimalPlaces = this.countDecimals(quantity);
 
-    if (decimalPart && decimalPart.length > uom.decimals) {
+    if (decimalPlaces > uom.decimals) {
       return Result.fail(
-        `Quantity precision (${decimalPart.length} decimals) exceeds UOM precision (${uom.decimals} decimals)`,
+        `Quantity precision (${decimalPlaces}) exceeds UOM decimals (${uom.decimals})`,
         'UOM_QUANTITY_PRECISION_EXCEEDED'
       );
     }
 
-    return Result.ok(undefined);
+    return Result.ok(true);
   }
 
   /**
-   * Round quantity to UOM decimals
+   * Round number to specified decimal places
    */
   static roundToDecimals(value: number, decimals: number): number {
-    const factor = Math.pow(10, decimals);
-    return Math.round(value * factor) / factor;
+    const multiplier = Math.pow(10, decimals);
+    return Math.round(value * multiplier) / multiplier;
   }
 
   /**
-   * Format quantity with UOM code
-   * 
-   * NOTE: Presentation helper.
-   * May move to API/presentation layer if tests show no domain-level need.
-   * Do not treat this as a Logistics OS primitive.
+   * Format quantity with UOM code for display
    */
   static formatQuantity(quantity: number, uom: UnitOfMeasure): string {
     const rounded = this.roundToDecimals(quantity, uom.decimals);
     return `${rounded.toFixed(uom.decimals)} ${uom.uomCode}`;
+  }
+
+  /**
+   * Count decimal places in a number
+   */
+  private static countDecimals(value: number): number {
+    if (Math.floor(value) === value) return 0;
+    
+    const str = value.toString();
+    const decimalIndex = str.indexOf('.');
+    
+    if (decimalIndex === -1) return 0;
+    
+    return str.length - decimalIndex - 1;
   }
 }

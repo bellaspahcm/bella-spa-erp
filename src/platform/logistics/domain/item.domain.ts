@@ -1,142 +1,223 @@
 /**
- * Item Domain Kernel
+ * Item Domain - E7.1 Item/SKU Domain Kernel
  * 
- * Pure business logic for Item/SKU management.
- * Zero dependencies on infrastructure (database, HTTP, Warehouse).
+ * Canonical source: logistics.items table schema
+ * Behavioral specification: item.domain.test.ts
  * 
- * Responsibilities:
- * - SKU creation with validation
- * - Traceability configuration validation
- * - Status transitions
- * - Measurement semantics
+ * Implements 8 E7 invariants:
+ * 1. SKU code required and non-empty
+ * 2. Name required
+ * 3. Serial tracking requires lot tracking
+ * 4. Weight cannot be negative
+ * 5. Standard cost cannot be negative
+ * 6. Currency must be ISO 4217 format
+ * 7. Dimensions must be non-negative
+ * 8. Status transitions validated
  */
 
+import type { Database } from '@/shared/database.types';
 import { Result } from './core/result';
-import type {
-  Item,
-  CreateItemProps,
-  UpdateItemProps,
-  ItemType,
-  ItemStatus,
-  UnitOfMeasure,
-} from './item.types';
 
-export class ItemDomain {
+// ============================================================================
+// TYPES (from canonical DB schema)
+// ============================================================================
+
+type ItemRow = Database['logistics']['Tables']['items']['Row'];
+type ItemInsert = Database['logistics']['Tables']['items']['Insert'];
+
+/**
+ * Item domain entity (maps to logistics.items Row)
+ */
+export interface Item {
+  id: string;
+  tenantId: string;
+  skuCode: string;
+  name: string;
+  description: string | null;
+  type: 'GOODS' | 'SERVICE' | 'KIT' | 'BUNDLE' | 'VIRTUAL';
+  category: string | null;
+  baseUom: string;
+  weightKg: number | null;
+  dimensionsJson: {
+    length?: number;
+    width?: number;
+    height?: number;
+    unit?: string;
+  } | null;
+  standardCost: number | null;
+  currency: string;
+  lotTracked: boolean;
+  serialTracked: boolean;
+  expiryTracked: boolean;
+  status: 'ACTIVE' | 'INACTIVE' | 'DISCONTINUED' | 'PENDING';
+  createdAt: Date;
+  updatedAt: Date;
+  createdBy: string | null;
+  updatedBy: string | null;
+}
+
+/**
+ * Props for creating new Item
+ */
+export interface CreateItemProps {
+  tenantId: string;
+  skuCode: string;
+  name: string;
+  description?: string | null;
+  type?: 'GOODS' | 'SERVICE' | 'KIT' | 'BUNDLE' | 'VIRTUAL';
+  category?: string | null;
+  baseUom?: string;
+  weightKg?: number | null;
+  dimensionsJson?: {
+    length?: number;
+    width?: number;
+    height?: number;
+    unit?: string;
+  } | null;
+  standardCost?: number | null;
+  currency?: string;
+  lotTracked?: boolean;
+  serialTracked?: boolean;
+  expiryTracked?: boolean;
+  status?: 'ACTIVE' | 'INACTIVE' | 'DISCONTINUED' | 'PENDING';
+  createdBy?: string | null;
+}
+
+/**
+ * Props for updating Item
+ */
+export interface UpdateItemProps {
+  name?: string;
+  description?: string | null;
+  type?: 'GOODS' | 'SERVICE' | 'KIT' | 'BUNDLE' | 'VIRTUAL';
+  category?: string | null;
+  baseUom?: string;
+  weightKg?: number | null;
+  dimensionsJson?: {
+    length?: number;
+    width?: number;
+    height?: number;
+    unit?: string;
+  } | null;
+  standardCost?: number | null;
+  currency?: string;
+  lotTracked?: boolean;
+  serialTracked?: boolean;
+  expiryTracked?: boolean;
+  status?: 'ACTIVE' | 'INACTIVE' | 'DISCONTINUED' | 'PENDING';
+  updatedBy?: string | null;
+}
+
+// ============================================================================
+// DOMAIN LOGIC
+// ============================================================================
+
+export const ItemDomain = {
   /**
-   * Create new Item/SKU
-   * 
-   * Invariants:
-   * - SKU code required and non-empty
-   * - Name required
-   * - Base UOM required
-   * - Serial tracking requires lot tracking
-   * - Weights/dimensions must be non-negative
-   * - Standard cost must be non-negative
+   * Create new Item with invariant validation
    */
-  static create(props: CreateItemProps): Result<Item> {
-    // Required fields
-    if (!props.skuCode || props.skuCode.trim() === '') {
+  create(props: CreateItemProps): Result<Item> {
+    // Invariant 1: SKU code required and non-empty
+    const skuCode = props.skuCode?.trim();
+    if (!skuCode) {
       return Result.fail('SKU code is required', 'ITEM_SKU_CODE_REQUIRED');
     }
 
-    if (!props.name || props.name.trim() === '') {
+    // Invariant 2: Name required
+    const name = props.name?.trim();
+    if (!name) {
       return Result.fail('Item name is required', 'ITEM_NAME_REQUIRED');
     }
 
-    if (!props.baseUom) {
-      return Result.fail('Base unit of measure is required', 'ITEM_BASE_UOM_REQUIRED');
-    }
-
-    // Traceability invariant: serial tracking requires lot tracking
-    if (props.serialTracked && !props.lotTracked) {
+    // Invariant 3: Serial tracking requires lot tracking
+    const lotTracked = props.lotTracked ?? false;
+    const serialTracked = props.serialTracked ?? false;
+    if (serialTracked && !lotTracked) {
       return Result.fail(
         'Serial tracking requires lot tracking to be enabled',
         'ITEM_SERIAL_REQUIRES_LOT'
       );
     }
 
-    // Weight validation
-    if (props.weightKg !== undefined && props.weightKg < 0) {
+    // Invariant 4: Weight cannot be negative
+    if (props.weightKg !== undefined && props.weightKg !== null && props.weightKg < 0) {
       return Result.fail('Weight cannot be negative', 'ITEM_WEIGHT_NEGATIVE');
     }
 
-    // Dimensions validation (if provided)
-    if (props.dimensionsJson) {
-      const dimResult = this.validateDimensions(props.dimensionsJson);
-      if (dimResult.isFailure) {
-        return dimResult as Result<Item>;
-      }
-    }
-
-    // Standard cost validation
-    if (props.standardCost !== undefined && props.standardCost < 0) {
+    // Invariant 5: Standard cost cannot be negative
+    if (props.standardCost !== undefined && props.standardCost !== null && props.standardCost < 0) {
       return Result.fail('Standard cost cannot be negative', 'ITEM_COST_NEGATIVE');
     }
 
-    // Currency format validation (ISO 4217)
-    if (props.currency && !/^[A-Z]{3}$/.test(props.currency)) {
+    // Invariant 6: Currency must be ISO 4217 format (3 uppercase letters)
+    const currency = props.currency || 'VND';
+    if (!/^[A-Z]{3}$/.test(currency)) {
       return Result.fail(
         'Currency must be 3-letter ISO 4217 code (e.g., VND, USD)',
         'ITEM_CURRENCY_INVALID'
       );
     }
 
-    const now = new Date();
+    // Invariant 7: Dimensions must be non-negative
+    if (props.dimensionsJson) {
+      const { length, width, height } = props.dimensionsJson;
+      if (length !== undefined && length < 0) {
+        return Result.fail('Length cannot be negative', 'ITEM_DIMENSION_NEGATIVE');
+      }
+      if (width !== undefined && width < 0) {
+        return Result.fail('Width cannot be negative', 'ITEM_DIMENSION_NEGATIVE');
+      }
+      if (height !== undefined && height < 0) {
+        return Result.fail('Height cannot be negative', 'ITEM_DIMENSION_NEGATIVE');
+      }
+    }
 
+    // Invariant 8: Status defaults to ACTIVE
+    const status = props.status || 'ACTIVE';
+
+    // Create Item entity
+    const now = new Date();
     const item: Item = {
-      id: props.id || crypto.randomUUID(),
+      id: crypto.randomUUID(),
       tenantId: props.tenantId,
-      skuCode: props.skuCode.trim(),
-      name: props.name.trim(),
-      description: props.description?.trim() || null,
-      
+      skuCode,
+      name,
+      description: props.description ?? null,
       type: props.type || 'GOODS',
-      category: props.category?.trim() || null,
-      
-      baseUom: props.baseUom,
-      weightKg: props.weightKg !== undefined ? props.weightKg : null,
-      dimensionsJson: props.dimensionsJson || null,
-      
-      standardCost: props.standardCost !== undefined ? props.standardCost : null,
-      currency: props.currency || 'VND',
-      
-      lotTracked: props.lotTracked || false,
-      serialTracked: props.serialTracked || false,
-      expiryTracked: props.expiryTracked || false,
-      
-      status: props.status || 'ACTIVE',
-      
+      category: props.category ?? null,
+      baseUom: props.baseUom || 'EA',
+      weightKg: props.weightKg ?? null,
+      dimensionsJson: props.dimensionsJson ?? null,
+      standardCost: props.standardCost ?? null,
+      currency,
+      lotTracked,
+      serialTracked,
+      expiryTracked: props.expiryTracked ?? false,
+      status,
       createdAt: now,
       updatedAt: now,
-      createdBy: props.createdBy || null,
-      updatedBy: props.updatedBy || null,
+      createdBy: props.createdBy ?? null,
+      updatedBy: null,
     };
 
     return Result.ok(item);
-  }
+  },
 
   /**
-   * Update existing Item
-   * 
-   * Cannot change:
-   * - tenantId (immutable)
-   * - skuCode (business key, immutable)
-   * - createdAt/createdBy (audit)
+   * Update Item with invariant validation
    */
-  static update(existingItem: Item, updates: UpdateItemProps): Result<Item> {
-    // Name cannot be empty if provided
-    if (updates.name !== undefined && (!updates.name || updates.name.trim() === '')) {
-      return Result.fail('Item name cannot be empty', 'ITEM_NAME_REQUIRED');
+  update(item: Item, changes: UpdateItemProps): Result<Item> {
+    // Validate name if changing
+    if (changes.name !== undefined) {
+      const name = changes.name?.trim();
+      if (!name) {
+        return Result.fail('Item name cannot be empty', 'ITEM_NAME_REQUIRED');
+      }
     }
 
-    // Traceability invariant
-    const newLotTracked = updates.lotTracked !== undefined 
-      ? updates.lotTracked 
-      : existingItem.lotTracked;
-    const newSerialTracked = updates.serialTracked !== undefined 
-      ? updates.serialTracked 
-      : existingItem.serialTracked;
-
+    // Validate serial→lot invariant if changing tracking
+    const newLotTracked = changes.lotTracked ?? item.lotTracked;
+    const newSerialTracked = changes.serialTracked ?? item.serialTracked;
     if (newSerialTracked && !newLotTracked) {
       return Result.fail(
         'Serial tracking requires lot tracking to be enabled',
@@ -144,150 +225,101 @@ export class ItemDomain {
       );
     }
 
-    // Weight validation
-    if (updates.weightKg !== undefined && updates.weightKg < 0) {
+    // Validate weight if changing
+    if (changes.weightKg !== undefined && changes.weightKg !== null && changes.weightKg < 0) {
       return Result.fail('Weight cannot be negative', 'ITEM_WEIGHT_NEGATIVE');
     }
 
-    // Dimensions validation
-    if (updates.dimensionsJson) {
-      const dimResult = this.validateDimensions(updates.dimensionsJson);
-      if (dimResult.isFailure) {
-        return dimResult as Result<Item>;
-      }
-    }
-
-    // Standard cost validation
-    if (updates.standardCost !== undefined && updates.standardCost < 0) {
+    // Validate cost if changing
+    if (changes.standardCost !== undefined && changes.standardCost !== null && changes.standardCost < 0) {
       return Result.fail('Standard cost cannot be negative', 'ITEM_COST_NEGATIVE');
     }
 
-    // Currency validation
-    if (updates.currency && !/^[A-Z]{3}$/.test(updates.currency)) {
-      return Result.fail(
-        'Currency must be 3-letter ISO 4217 code',
-        'ITEM_CURRENCY_INVALID'
-      );
+    // Validate currency if changing
+    if (changes.currency !== undefined) {
+      if (!/^[A-Z]{3}$/.test(changes.currency)) {
+        return Result.fail(
+          'Currency must be 3-letter ISO 4217 code',
+          'ITEM_CURRENCY_INVALID'
+        );
+      }
     }
 
-    const updatedItem: Item = {
-      ...existingItem,
-      ...updates,
-      name: updates.name?.trim() || existingItem.name,
-      description: updates.description !== undefined 
-        ? updates.description?.trim() || null 
-        : existingItem.description,
-      category: updates.category !== undefined 
-        ? updates.category?.trim() || null 
-        : existingItem.category,
+    // Validate dimensions if changing
+    if (changes.dimensionsJson) {
+      const { length, width, height } = changes.dimensionsJson;
+      if (length !== undefined && length < 0) {
+        return Result.fail('Length cannot be negative', 'ITEM_DIMENSION_NEGATIVE');
+      }
+      if (width !== undefined && width < 0) {
+        return Result.fail('Width cannot be negative', 'ITEM_DIMENSION_NEGATIVE');
+      }
+      if (height !== undefined && height < 0) {
+        return Result.fail('Height cannot be negative', 'ITEM_DIMENSION_NEGATIVE');
+      }
+    }
+
+    // Apply changes
+    const updated: Item = {
+      ...item,
+      ...changes,
+      name: changes.name?.trim() ?? item.name,
       updatedAt: new Date(),
     };
 
-    return Result.ok(updatedItem);
-  }
+    return Result.ok(updated);
+  },
 
   /**
-   * Validate item can transition to new status
+   * Validate status transition
    */
-  static canTransitionTo(item: Item, newStatus: ItemStatus): Result<void> {
-    const validTransitions: Record<ItemStatus, ItemStatus[]> = {
+  canTransitionTo(
+    item: Item,
+    newStatus: 'ACTIVE' | 'INACTIVE' | 'DISCONTINUED' | 'PENDING'
+  ): Result<boolean> {
+    const { status } = item;
+
+    // Valid transitions
+    const validTransitions: Record<string, string[]> = {
       PENDING: ['ACTIVE', 'INACTIVE'],
       ACTIVE: ['INACTIVE', 'DISCONTINUED'],
-      INACTIVE: ['ACTIVE', 'DISCONTINUED'],
+      INACTIVE: ['ACTIVE'],
       DISCONTINUED: [], // Terminal state
     };
 
-    const allowed = validTransitions[item.status] || [];
-    
+    const allowed = validTransitions[status] || [];
     if (!allowed.includes(newStatus)) {
       return Result.fail(
-        `Cannot transition from ${item.status} to ${newStatus}`,
+        `Cannot transition from ${status} to ${newStatus}`,
         'ITEM_INVALID_TRANSITION'
       );
     }
 
-    return Result.ok(undefined);
-  }
+    return Result.ok(true);
+  },
 
   /**
-   * Check if item can be deactivated
-   * 
-   * Note: Actual inventory check happens at repository layer.
-   * This is domain-level validation only.
+   * Check if item requires lot tracking (lot, serial, or expiry)
    */
-  static canDeactivate(item: Item): Result<void> {
-    if (item.status === 'DISCONTINUED') {
-      return Result.fail(
-        'Cannot deactivate discontinued item',
-        'ITEM_ALREADY_DISCONTINUED'
-      );
-    }
-
-    return Result.ok(undefined);
-  }
-
-  /**
-   * Check if item requires lot tracking
-   */
-  static requiresLotTracking(item: Item): boolean {
+  requiresLotTracking(item: Item): boolean {
     return item.lotTracked || item.serialTracked || item.expiryTracked;
-  }
+  },
 
   /**
-   * Check if item requires serial tracking
+   * Calculate volume from dimensions
    */
-  static requiresSerialTracking(item: Item): boolean {
-    return item.serialTracked;
-  }
-
-  /**
-   * Check if item requires expiry tracking
-   */
-  static requiresExpiryTracking(item: Item): boolean {
-    return item.expiryTracked;
-  }
-
-  /**
-   * Validate dimensions JSON structure
-   */
-  private static validateDimensions(dimensionsJson: Record<string, unknown>): Result<void> {
-    const { length, width, height, unit } = dimensionsJson;
-
-    if (typeof length === 'number' && length < 0) {
-      return Result.fail('Length cannot be negative', 'ITEM_DIMENSION_NEGATIVE');
-    }
-
-    if (typeof width === 'number' && width < 0) {
-      return Result.fail('Width cannot be negative', 'ITEM_DIMENSION_NEGATIVE');
-    }
-
-    if (typeof height === 'number' && height < 0) {
-      return Result.fail('Height cannot be negative', 'ITEM_DIMENSION_NEGATIVE');
-    }
-
-    if (unit && typeof unit !== 'string') {
-      return Result.fail('Dimension unit must be a string', 'ITEM_DIMENSION_UNIT_INVALID');
-    }
-
-    return Result.ok(undefined);
-  }
-
-  /**
-   * Calculate item volume (if dimensions provided)
-   */
-  static calculateVolume(item: Item): number | null {
+  calculateVolume(item: Item): number | null {
     if (!item.dimensionsJson) return null;
 
     const { length, width, height } = item.dimensionsJson;
-    
     if (
-      typeof length === 'number' &&
-      typeof width === 'number' &&
-      typeof height === 'number'
+      length === undefined ||
+      width === undefined ||
+      height === undefined
     ) {
-      return length * width * height;
+      return null;
     }
 
-    return null;
-  }
-}
+    return length * width * height;
+  },
+};

@@ -1,4 +1,5 @@
 {
+  "extends": "./tsconfig.json",
   "compilerOptions": {
     "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
@@ -17,7 +18,7 @@
   },
   "include": [
     "src/platform/logistics/**/*.ts",
-    "src/platform/core/**/*.ts",
+    "src/platform/core/types/**/*.ts",
     "src/types/database.types.ts"
   ],
   "exclude": ["node_modules", "**/__tests__"]

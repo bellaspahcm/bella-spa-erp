@@ -1,37 +1,92 @@
 /**
- * Traceability Domain Kernel
+ * Traceability Domain
  * 
- * Pure business logic for lot/serial tracking, chain of custody.
- * Zero dependencies on infrastructure.
+ * E7 Logistics Domain Kernel - Traceability Component
+ * Canonical: Database['logistics']['Tables']['traceability']
  * 
- * Responsibilities:
- * - Lot/serial creation and validation
- * - Chain of custody management
- * - Recall management
- * - Compliance tracking
+ * Traceability is an immutable audit trail for lot/serial tracking.
+ * Chain of custody is append-only.
+ * 
+ * 6 Domain Invariants:
+ * 1. Must have lot_number OR serial_number
+ * 2. Received date required
+ * 3. Expiry date must be after manufactured date
+ * 4. Chain of custody is append-only
+ * 5. Only NONE status can be recalled
+ * 6. Only RECALLED items can be destroyed
  */
 
 import { Result } from './core/result';
-import type {
-  Traceability,
-  CreateTraceabilityProps,
-  CustodyEvent,
-  AddCustodyEventProps,
-  RecallStatus,
-  ComplianceStatus,
-} from './traceability.types';
+import type { Database } from '../../../shared/database.types';
+
+// Canonical DB row type
+type TraceabilityRow = Database['logistics']['Tables']['traceability']['Row'];
+
+// Domain types
+export type RecallStatus = 'NONE' | 'RECALLED' | 'DESTROYED';
+export type ComplianceStatus = 'COMPLIANT' | 'NON_COMPLIANT' | 'PENDING';
+export type LocationType = 'WAREHOUSE' | 'STORE' | 'TRANSIT' | 'VENDOR' | 'CUSTOMER';
+
+export interface CustodyEvent {
+  timestamp: Date;
+  locationId: string;
+  locationType: LocationType | null;
+  action: string;
+  userId: string | null;
+  notes: string | null;
+}
+
+export interface Traceability {
+  id: string;
+  tenantId: string;
+  itemId: string;
+  lotNumber: string | null;
+  serialNumber: string | null;
+  receivedDate: Date;
+  manufacturedDate: Date | null;
+  expiryDate: Date | null;
+  supplierId: string | null;
+  supplierName: string | null;
+  supplierLotNumber: string | null;
+  recallStatus: RecallStatus;
+  recallDate: Date | null;
+  recallReason: string | null;
+  complianceStatus: ComplianceStatus;
+  custodyEvents: CustodyEvent[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateTraceabilityProps {
+  tenantId: string;
+  itemId: string;
+  lotNumber?: string;
+  serialNumber?: string;
+  receivedDate: Date;
+  manufacturedDate?: Date;
+  expiryDate?: Date;
+  supplierId?: string;
+  supplierName?: string;
+  supplierLotNumber?: string;
+  recallStatus?: RecallStatus;
+  complianceStatus?: ComplianceStatus;
+}
+
+export interface AddCustodyEventProps {
+  locationId: string;
+  locationType?: LocationType;
+  action: string;
+  userId?: string;
+  notes?: string;
+}
 
 export class TraceabilityDomain {
   /**
    * Create new traceability record
-   * 
-   * Invariants:
-   * - Must have lot_number OR serial_number (at least one)
-   * - Expiry date must be after manufactured date
-   * - Received date required
+   * Validates all 6 domain invariants
    */
   static create(props: CreateTraceabilityProps): Result<Traceability> {
-    // At least one identifier required
+    // Invariant 1: Must have lot OR serial
     if (!props.lotNumber && !props.serialNumber) {
       return Result.fail(
         'Either lot number or serial number is required',
@@ -39,20 +94,14 @@ export class TraceabilityDomain {
       );
     }
 
-    // Received date required
+    // Invariant 2: Received date required
     if (!props.receivedDate) {
-      return Result.fail(
-        'Received date is required',
-        'TRACEABILITY_RECEIVED_DATE_REQUIRED'
-      );
+      return Result.fail('Received date is required', 'TRACEABILITY_RECEIVED_DATE_REQUIRED');
     }
 
-    // Date validation: expiry after manufacture
-    if (props.expiryDate && props.manufacturedDate) {
-      const expiry = new Date(props.expiryDate);
-      const manufactured = new Date(props.manufacturedDate);
-
-      if (expiry <= manufactured) {
+    // Invariant 3: Expiry date must be after manufactured date
+    if (props.manufacturedDate && props.expiryDate) {
+      if (props.expiryDate <= props.manufacturedDate) {
         return Result.fail(
           'Expiry date must be after manufactured date',
           'TRACEABILITY_EXPIRY_BEFORE_MANUFACTURE'
@@ -61,30 +110,23 @@ export class TraceabilityDomain {
     }
 
     const now = new Date();
-
     const traceability: Traceability = {
-      id: props.id || crypto.randomUUID(),
+      id: crypto.randomUUID(),
       tenantId: props.tenantId,
       itemId: props.itemId,
-      
-      lotNumber: props.lotNumber || null,
-      serialNumber: props.serialNumber || null,
-      
-      manufacturedDate: props.manufacturedDate || null,
-      expiryDate: props.expiryDate || null,
+      lotNumber: props.lotNumber ?? null,
+      serialNumber: props.serialNumber ?? null,
       receivedDate: props.receivedDate,
-      
-      supplierId: props.supplierId || null,
-      supplierName: props.supplierName || null,
-      supplierLotNumber: props.supplierLotNumber || null,
-      
-      custodyEvents: props.custodyEvents || [],
-      
-      complianceStatus: props.complianceStatus || 'COMPLIANT',
-      recallStatus: props.recallStatus || 'NONE',
-      recallReason: null,
+      manufacturedDate: props.manufacturedDate ?? null,
+      expiryDate: props.expiryDate ?? null,
+      supplierId: props.supplierId ?? null,
+      supplierName: props.supplierName ?? null,
+      supplierLotNumber: props.supplierLotNumber ?? null,
+      recallStatus: props.recallStatus ?? 'NONE',
       recallDate: null,
-      
+      recallReason: null,
+      complianceStatus: props.complianceStatus ?? 'COMPLIANT',
+      custodyEvents: [],
       createdAt: now,
       updatedAt: now,
     };
@@ -93,43 +135,43 @@ export class TraceabilityDomain {
   }
 
   /**
-   * Add custody event to chain of custody
-   * 
-   * Chain of custody is append-only (immutable).
+   * Add custody event to chain
+   * Invariant 4: Chain of custody is append-only
    */
   static addCustodyEvent(
     traceability: Traceability,
     props: AddCustodyEventProps
   ): Result<Traceability> {
-    // Validation
-    if (!props.locationId) {
+    // Validate location ID
+    if (!props.locationId || !props.locationId.trim()) {
       return Result.fail(
         'Location ID is required for custody event',
         'CUSTODY_EVENT_LOCATION_REQUIRED'
       );
     }
 
-    if (!props.action || props.action.trim() === '') {
+    // Validate action
+    const trimmedAction = props.action.trim();
+    if (!trimmedAction) {
       return Result.fail(
         'Action is required for custody event',
         'CUSTODY_EVENT_ACTION_REQUIRED'
       );
     }
 
-    const custodyEvent: CustodyEvent = {
-      timestamp: props.timestamp || new Date(),
-      locationId: props.locationId,
-      locationType: props.locationType || null,
-      action: props.action.trim(),
-      userId: props.userId || null,
+    const event: CustodyEvent = {
+      timestamp: new Date(),
+      locationId: props.locationId.trim(),
+      locationType: props.locationType ?? null,
+      action: trimmedAction,
+      userId: props.userId ?? null,
       notes: props.notes?.trim() || null,
     };
 
-    const updatedEvents = [...traceability.custodyEvents, custodyEvent];
-
+    // Append-only: preserve existing events and add new one
     const updated: Traceability = {
       ...traceability,
-      custodyEvents: updatedEvents,
+      custodyEvents: [...traceability.custodyEvents, event],
       updatedAt: new Date(),
     };
 
@@ -138,13 +180,14 @@ export class TraceabilityDomain {
 
   /**
    * Initiate recall
-   * 
-   * Only NONE or COMPLIANT records can be recalled.
+   * Invariant 5: Only NONE status can be recalled
    */
-  static initiateRecall(
-    traceability: Traceability,
-    recallReason: string
-  ): Result<Traceability> {
+  static initiateRecall(traceability: Traceability, reason: string): Result<Traceability> {
+    const trimmedReason = reason.trim();
+    if (!trimmedReason) {
+      return Result.fail('Recall reason is required', 'TRACEABILITY_RECALL_REASON_REQUIRED');
+    }
+
     if (traceability.recallStatus !== 'NONE') {
       return Result.fail(
         `Cannot recall item already in status ${traceability.recallStatus}`,
@@ -152,20 +195,12 @@ export class TraceabilityDomain {
       );
     }
 
-    if (!recallReason || recallReason.trim() === '') {
-      return Result.fail(
-        'Recall reason is required',
-        'TRACEABILITY_RECALL_REASON_REQUIRED'
-      );
-    }
-
     const now = new Date();
-
     const recalled: Traceability = {
       ...traceability,
       recallStatus: 'RECALLED',
-      recallReason: recallReason.trim(),
       recallDate: now,
+      recallReason: trimmedReason,
       complianceStatus: 'NON_COMPLIANT',
       updatedAt: now,
     };
@@ -174,13 +209,10 @@ export class TraceabilityDomain {
   }
 
   /**
-   * Mark recalled item as destroyed
-   * 
-   * Only RECALLED items can be destroyed.
+   * Mark as destroyed
+   * Invariant 6: Only RECALLED items can be destroyed
    */
-  static markAsDestroyed(
-    traceability: Traceability
-  ): Result<Traceability> {
+  static markAsDestroyed(traceability: Traceability): Result<Traceability> {
     if (traceability.recallStatus !== 'RECALLED') {
       return Result.fail(
         'Only recalled items can be marked as destroyed',
@@ -202,11 +234,11 @@ export class TraceabilityDomain {
    */
   static changeComplianceStatus(
     traceability: Traceability,
-    newStatus: ComplianceStatus,
-    reason?: string
+    status: ComplianceStatus
   ): Result<Traceability> {
-    // Cannot mark as COMPLIANT if recalled/destroyed
-    if (newStatus === 'COMPLIANT' && traceability.recallStatus !== 'NONE') {
+    // Cannot mark recalled/destroyed items as compliant
+    if ((traceability.recallStatus === 'RECALLED' || traceability.recallStatus === 'DESTROYED') 
+        && status === 'COMPLIANT') {
       return Result.fail(
         'Cannot mark recalled/destroyed item as compliant',
         'TRACEABILITY_CANNOT_MARK_RECALLED_COMPLIANT'
@@ -215,7 +247,7 @@ export class TraceabilityDomain {
 
     const updated: Traceability = {
       ...traceability,
-      complianceStatus: newStatus,
+      complianceStatus: status,
       updatedAt: new Date(),
     };
 
@@ -246,59 +278,78 @@ export class TraceabilityDomain {
   /**
    * Check if item has expired
    */
-  static hasExpired(traceability: Traceability, referenceDate: Date = new Date()): boolean {
-    if (!traceability.expiryDate) return false;
-
-    const expiryDate = new Date(traceability.expiryDate);
-    return expiryDate < referenceDate;
+  static hasExpired(traceability: Traceability, asOf: Date = new Date()): boolean {
+    if (!traceability.expiryDate) {
+      return false;
+    }
+    return traceability.expiryDate < asOf;
   }
 
   /**
    * Calculate days until expiry
+   * Returns negative for expired items
    */
-  static daysUntilExpiry(traceability: Traceability, referenceDate: Date = new Date()): number | null {
-    if (!traceability.expiryDate) return null;
+  static daysUntilExpiry(traceability: Traceability, asOf: Date = new Date()): number | null {
+    if (!traceability.expiryDate) {
+      return null;
+    }
 
-    const expiryDate = new Date(traceability.expiryDate);
-    const diffMs = expiryDate.getTime() - referenceDate.getTime();
-    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-
+    const diffMs = traceability.expiryDate.getTime() - asOf.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     return diffDays;
   }
 
   /**
-   * Check if item is near expiry (within threshold days)
+   * Check if item is near expiry
+   * Does not include already expired items
    */
   static isNearExpiry(
     traceability: Traceability,
-    thresholdDays: number = 30,
-    referenceDate: Date = new Date()
+    daysThreshold: number,
+    asOf: Date = new Date()
   ): boolean {
-    const daysUntil = this.daysUntilExpiry(traceability, referenceDate);
-    if (daysUntil === null) return false;
-
-    return daysUntil > 0 && daysUntil <= thresholdDays;
+    const days = this.daysUntilExpiry(traceability, asOf);
+    if (days === null) {
+      return false;
+    }
+    return days > 0 && days <= daysThreshold;
   }
 
   /**
-   * Get chain of custody summary
-   * 
-   * NOTE: Query/read-model helper.
-   * May belong in repository query layer or API/presentation layer.
-   * Consider whether this is a domain primitive or a reporting concern.
+   * Calculate shelf life remaining as percentage
+   * Returns 0-100 or null if dates missing
+   */
+  static getShelfLifeRemaining(traceability: Traceability, asOf: Date = new Date()): number | null {
+    if (!traceability.manufacturedDate || !traceability.expiryDate) {
+      return null;
+    }
+
+    const totalShelfLife = traceability.expiryDate.getTime() - traceability.manufacturedDate.getTime();
+    const elapsed = asOf.getTime() - traceability.manufacturedDate.getTime();
+    const remaining = totalShelfLife - elapsed;
+
+    if (remaining <= 0) {
+      return 0;
+    }
+
+    const percentage = (remaining / totalShelfLife) * 100;
+    return Math.min(100, Math.max(0, percentage));
+  }
+
+  /**
+   * Get custody chain
    */
   static getCustodyChain(traceability: Traceability): string[] {
     return traceability.custodyEvents.map(event => {
-      const parts: string[] = [
-        event.timestamp.toISOString(),
-        event.action,
-        event.locationType || 'location',
-      ];
-
-      if (event.notes) {
-        parts.push(`(${event.notes})`);
+      const parts: string[] = [];
+      parts.push(event.timestamp.toISOString());
+      parts.push(event.action);
+      if (event.locationType) {
+        parts.push(event.locationType);
       }
-
+      if (event.notes) {
+        parts.push(`"${event.notes}"`);
+      }
       return parts.join(' | ');
     });
   }
@@ -314,26 +365,9 @@ export class TraceabilityDomain {
    * Get last custody event
    */
   static getLastCustodyEvent(traceability: Traceability): CustodyEvent | null {
-    if (traceability.custodyEvents.length === 0) return null;
+    if (traceability.custodyEvents.length === 0) {
+      return null;
+    }
     return traceability.custodyEvents[traceability.custodyEvents.length - 1];
-  }
-
-  /**
-   * Calculate shelf life remaining (percentage)
-   */
-  static getShelfLifeRemaining(traceability: Traceability, referenceDate: Date = new Date()): number | null {
-    if (!traceability.manufacturedDate || !traceability.expiryDate) return null;
-
-    const manufactured = new Date(traceability.manufacturedDate).getTime();
-    const expiry = new Date(traceability.expiryDate).getTime();
-    const current = referenceDate.getTime();
-
-    const totalShelfLife = expiry - manufactured;
-    const timeElapsed = current - manufactured;
-
-    if (totalShelfLife <= 0) return 0;
-
-    const remaining = 100 - (timeElapsed / totalShelfLife * 100);
-    return Math.max(0, Math.min(100, remaining));
   }
 }
