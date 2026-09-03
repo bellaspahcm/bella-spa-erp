@@ -1434,6 +1434,58 @@ Urgency: BLOCKING (affects order processing design)
 - ✅ "What can represent F&B, Manufacturing, Healthcare equally?"
 - ✅ "What can E10 consume deterministically?"
 
+**NEW: Empirical Evidence from F&B B0 Baseline (2026-09-04)**
+
+F&B Pre-E11 experiment provided critical empirical evidence for Q0:
+
+**What Failed:**
+1. **Inference vs. Truth confusion** - AI labeled INFERENCE as CANONICAL_BUSINESS_TRUTH
+2. **Business decisions mislabeled** - Autonomous choices labeled as evidence-based truths
+3. **Status lifecycle violated** - Skipped PROPOSAL → APPROVAL transitions
+4. **Technical hallucination** - Invented non-existent abstractions (DatabaseService)
+5. **Governance bypass** - No G0.5, no Architecture Guard
+
+**What Worked:**
+1. **Research capability** - 20 sources, structured evidence collection
+2. **Self-critique** - Found conflicts, assumptions, gaps
+3. **Autonomous reasoning** - Made decisions with documented reasoning
+
+**Key Lesson:**
+> "Good reasoning ≠ Governed truth"
+
+**Q0 Must Now Solve:**
+
+1. **Semantic Distinction (CRITICAL):**
+   ```
+   EVIDENCE           (raw fact from source)
+   INFERENCE          (reasoned conclusion)
+   PROPOSAL           (candidate truth)
+   BUSINESS_DECISION  (preference/choice)
+   CANONICAL_TRUTH    (validated, approved)
+   ```
+   F&B collapsed all into "CANONICAL_BUSINESS_TRUTH" → FAILED
+
+2. **Authority Model (CRITICAL):**
+   - Technical patterns: AI autonomous (when evidence exists)
+   - Common patterns: AI autonomous (high confidence)
+   - Business preferences: Human required
+   - Domain-specific rules: Human required
+
+3. **Two Hallucination Types:**
+   - **Business Hallucination:** Evidence → unsupported inference
+   - **Technical Hallucination:** Truth → invented Bella abstraction
+   
+   Both must be blocked by gates.
+
+4. **Governance Integration:**
+   - Business Truth Gate (pre-E10)
+   - Architecture/Type/Factory Gates (E10)
+   - Cannot bypass either
+
+**See:** `src/platform/f-and-b/AUDIT_REPORT.md` for full failure analysis
+
+**Baseline:** F&B B0 (Pre-E11) preserved as empirical evidence - NOT VERIFIED
+
 **Q0 Investigation must follow E11's own philosophy:**
 
 ```text
@@ -1793,11 +1845,23 @@ Provenance available for all business rules.
 | **E9 — Scope Derivation** | 🔒 CLOSED | 10 tests PASS (c0d2c50b) |
 | **E9.1 — Evidence Collection** | 🔒 CLOSED | 37 tests PASS (3184a297) |
 | **E10 — Factory Orchestration** | 🔒 CLOSED | 109s autonomous, 0 human decisions (9637e94e) |
-| **E11 Requirements** | 🔒 CLOSED | 8 requirement groups, invariants, gate |
-| **Q0 Investigation** | 🟡 READY | Methodology defined, 3-domain test |
+| **E11 Requirements** | 🔒 CLOSED | 8 requirement groups, invariants, gate (fc494f19) |
+| **F&B B0 (Pre-E11 Baseline)** | ❌ NOT VERIFIED | Empirical evidence: Research ✅, Governance ❌, Factory ❌ |
+| **Q0 Investigation** | 🟡 ACTIVE | Methodology defined, 3-domain test, **empirical evidence from F&B B0** |
 | **E11 Design** | 🔒 BLOCKED | Waiting: Q0 closure |
 | **E11 Implementation** | 🔒 BLOCKED | Waiting: Design approval |
 | **Industry #5 Field Test** | 🔒 WAITING | Waiting: E11 MVP |
+
+**F&B B0 Findings (2026-09-04):**
+- Research capability: ✅ GOOD (20 sources, critique, reasoning)
+- Business Truth governance: ❌ FAILED (inference → truth confusion)
+- Technical implementation: ❌ FAILED (cannot compile/run)
+- Factory usage: ❌ FAILED (manual construction, not E10-generated)
+- Architecture conformance: ❌ FAILED (missing Bella layers)
+
+**Value:** F&B B0 = Empirical baseline for Q0 Investigation
+
+**Preserved as-is:** No fixes until E11 complete, then re-run as B1
 
 ---
 
