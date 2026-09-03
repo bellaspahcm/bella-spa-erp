@@ -1312,7 +1312,13 @@ function integrateWithBellaArchitecture(artifacts: GeneratedArtifacts, truths: B
 
 ---
 
-## Validation: Q0 Contract vs B0 Failures (PROOF)
+## Validation: Q0 Contract vs B0 Failures (DESIGN PROOF)
+
+**NOTE:** The following validation functions are **DESIGNED** (not yet implemented). They represent the E11 Design contract that will be implemented in E11 MVP.
+
+This is **design-level proof** that the contract CAN prevent failures, not **runtime proof** that it DOES prevent them.
+
+**Machine verification will occur in E11 Design phase.**
 
 ### Failure #1: INFERENCE → CANONICAL (Status Lifecycle Violated)
 
@@ -1629,7 +1635,9 @@ function validateOutput(buildResult: BuildResult): ValidationResult {
 | #6: Factory bypass | No build authorization | E10 Gate | Invariant 6 | E10 Entry Point | ✅ buildIndustryOS() gate |
 | #7: Verification claims false | Tests don't run | E10 Output | Invariant 7 | E10 Output Validation | ✅ validateOutput() |
 
-**Conclusion:** ✅ ALL 7 B0 failures are PREVENTED by Q0 contract + E10 enforcement.
+**Conclusion:** ✅ ALL 7 B0 failures are **PREVENTABLE** by contract (design-level proof).
+
+**Machine verification required:** E11 Design phase will implement executable validators.
 
 ---
 
@@ -1868,6 +1876,35 @@ BTD versioning provides:
 
 ## Q0 CLOSURE
 
+### Critical Distinction: Derived vs Approved
+
+**Q0 has derived a contract, NOT approved it.**
+
+Per Q0's own **Invariant #2:**
+```
+IF epistemicStatus = INFERENCE:
+  THEN authority.type MUST be 'INFERRED' or 'PROPOSED'
+  AND authority.approvedBy MUST be null or require human approval
+```
+
+**Q0 contract itself is:**
+- epistemicStatus: **INFERENCE** (derived via reasoning from evidence)
+- authority.source: **AI** (this investigation)
+- authority.type: **PROPOSED** (candidate contract)
+- authority.approvedBy: **null** (cannot self-approve)
+- status: **PROPOSED** (not CANONICAL)
+
+**The contract teaches us not to self-approve inferences. The contract itself must follow this rule.**
+
+**Approval Paths:**
+
+1. **Human Approval:** Governance decision to accept contract as CANONICAL
+2. **Machine Verification:** E11 Design implements executable contract → validates against B0 failures → proves prevention works
+
+**Current Status:** Contract is **DERIVED & ACCEPTED AS E11 DESIGN INPUT**, not CANONICAL.
+
+---
+
 ### Evidence Complete
 
 **External Research:** ✅ COMPLETE
@@ -1966,7 +2003,7 @@ interface BusinessTruth {
 - **Output Validation:** Tests run, TypeScript compiles, provenance traceable
 - **Success Criteria:** 8 criteria (see E10 Output Contract section)
 
-**Prevents ALL 7 B0 Failures:** ✅ PROVEN (see Proof Table)
+**Prevents ALL 7 B0 Failures:** 📝 DESIGN PROOF (executable validation in E11 Design)
 
 **Generic Across 3 Domains:** ✅ VALIDATED (F&B, Manufacturing, Healthcare examples)
 
@@ -1979,26 +2016,67 @@ interface BusinessTruth {
 **Q0 Investigation Success =**
 
 1. ✅ Evidence-based (not invented): 48 external sources + Bella evidence + B0 empirical evidence
-2. ✅ Prevents all 7 B0 failures: Proof table complete
+2. 📝 Prevents all 7 B0 failures: Design proof complete (machine verification in E11 Design)
 3. ✅ Generic across industries: F&B, Manufacturing, Healthcare validated
-4. ✅ Machine-consumable by E10: Processing contract defined
+4. 📝 Machine-consumable by E10: Processing contract defined (implementation in E11 Design)
 5. ✅ Rejected alternatives documented: 8 alternatives analyzed
 6. ✅ Evidence contradictions resolved: 5 contradictions addressed
 
-**Conclusion:** ✅ Q0 Contract is **SUFFICIENT** for E11 Design to proceed.
+**Conclusion:** ✅ Q0 Contract is **DERIVED** (evidence-based investigation complete). Ready as **E11 Design input**.
+
+**CRITICAL:** Contract is DERIVED, NOT APPROVED. Per Q0's own invariant: AI cannot self-approve. Contract requires:
+- Human approval (governance decision)
+- OR machine verification (executable validation in E11 Design)
+
+Contract provides foundation for E11 Design, not canonical truth.
+
+**B0 Lesson Applied to Q0 Itself:**
+
+Just as F&B B0 could not self-approve its inferences as CANONICAL, Q0 investigation cannot self-approve its contract as CANONICAL.
+
+**Verification claim must be backed by executable evidence** (B0 Failure #7). Q0 provides design-level proof. E11 Design will provide executable proof.
 
 ---
 
-### Q0 Status: 🟢 READY FOR CLOSURE
+### Q0 Status: 🟢 INVESTIGATION CLOSED — CONTRACT DERIVED
 
-**Recommendation:** Approve Q0 Contract. Proceed to E11 Design.
+**Status Classification:**
 
-**Next Phase:** E11 Design (Discovery → Design) using Q0 Contract as foundation.
+```
+Q0 Investigation              🔒 CLOSED
+Q0 Semantic Contract          🔒 DERIVED (documented, not yet executable)
+Q0 Cross-domain challenge     ✅ COMPLETE
+Q0 B0 failure mapping         ✅ COMPLETE
+Q0 Rejected alternatives      ✅ COMPLETE
+Q0 Contradiction analysis     ✅ COMPLETE
+Q0 E10 contract formalized    ✅ COMPLETE
 
-**Blocker Status:** UNBLOCKED. E11 may proceed.
+Machine Verification          🔴 NOT YET EXECUTED
+  - validateInvariants()      📝 Designed, not implemented
+  - validateAuthority()       📝 Designed, not implemented
+  - buildIndustryOS() gate    📝 Designed, not implemented
+  - validateOutput()          📝 Designed, not implemented
+```
+
+**Important Distinction:**
+
+Q0 contract is **DERIVED** (via rigorous evidence-based investigation), **NOT APPROVED** (AI cannot self-approve).
+
+Contract provides **E11 Design input**, not canonical truth.
+
+**Per Q0's own Invariant #2:** AI-derived artifacts require human approval OR machine verification before becoming CANONICAL.
+
+**Next Phase:** E11 Design will:
+1. Convert Q0 document contract → executable contract (TypeScript types, validators)
+2. Implement Business Truth Gate (executable validation)
+3. Create E11 Intelligence Layer (Research → Synthesis → Critique → Proposal)
+4. Maintain governance boundary (PROPOSAL → APPROVED → CANONICAL requires gate, not AI self-promotion)
+
+**Blocker Status:** E11 Design UNBLOCKED. E11 Implementation BLOCKED until Design complete.
 
 ---
 
-**Document Status:** 🟢 COMPLETE  
+**Document Status:** 🟢 INVESTIGATION COMPLETE  
+**Contract Status:** 📝 DERIVED (not yet executable)  
 **Last Updated:** 2026-09-04  
-**Phase:** Q0 Investigation → CLOSED
+**Phase:** Q0 Investigation → CLOSED → E11 Design READY
