@@ -1,0 +1,121 @@
+{
+  "runId": "e10-education-1788455600999",
+  "timestamp": "2026-09-03T17:13:20.999Z",
+  "industry": "education",
+  "mode": "controlled-fixture",
+  "autonomy": {
+    "humanDecisions": 0,
+    "autoDecisions": 7,
+    "decisionLog": [
+      {
+        "step": "evidence-collection",
+        "decision": "auto",
+        "actor": "E9.1 Collector",
+        "result": "Scanning education repository",
+        "timestamp": "2026-09-03T17:13:21.001Z"
+      },
+      {
+        "step": "scope-derivation",
+        "decision": "auto",
+        "actor": "E9 Decision Engine",
+        "result": "Applying canonical rules",
+        "timestamp": "2026-09-03T17:13:21.313Z"
+      },
+      {
+        "step": "build-verification",
+        "decision": "auto",
+        "actor": "Pipeline",
+        "result": "Running existing implementation checks",
+        "timestamp": "2026-09-03T17:13:21.313Z"
+      },
+      {
+        "step": "test-execution",
+        "decision": "auto",
+        "actor": "Pipeline",
+        "result": "Running education domain tests",
+        "timestamp": "2026-09-03T17:13:21.313Z"
+      },
+      {
+        "step": "typecheck",
+        "decision": "auto",
+        "actor": "Pipeline",
+        "result": "Checking education types",
+        "timestamp": "2026-09-03T17:13:24.335Z"
+      },
+      {
+        "step": "g05",
+        "decision": "auto",
+        "actor": "Pipeline",
+        "result": "Running full platform typecheck",
+        "timestamp": "2026-09-03T17:13:26.347Z"
+      },
+      {
+        "step": "arch-guard",
+        "decision": "auto",
+        "actor": "Pipeline",
+        "result": "Checking frozen boundaries",
+        "timestamp": "2026-09-03T17:15:08.773Z"
+      }
+    ]
+  },
+  "pipeline": {
+    "duration": 109.214,
+    "steps": [
+      {
+        "name": "Collect Evidence",
+        "duration": 0.312,
+        "status": "pass"
+      },
+      {
+        "name": "Derive Scope",
+        "duration": 0.001,
+        "status": "pass"
+      },
+      {
+        "name": "Verify Build",
+        "duration": 0,
+        "status": "pass"
+      },
+      {
+        "name": "Run Tests",
+        "duration": 3.022,
+        "status": "pass"
+      },
+      {
+        "name": "Typecheck",
+        "duration": 2.012,
+        "status": "pass"
+      },
+      {
+        "name": "G0.5 Regression Gate",
+        "duration": 102.426,
+        "status": "pass"
+      },
+      {
+        "name": "Architecture Guard",
+        "duration": 1.44,
+        "status": "pass"
+      }
+    ]
+  },
+  "failureBoundaries": {
+    "tested": [],
+    "respected": true,
+    "violations": []
+  },
+  "outcome": {
+    "status": "pass",
+    "scopeDecisions": {
+      "Assessment": "CONFORM",
+      "Attendance": "CONFORM",
+      "Course": "CONFORM",
+      "Enrollment": "CONFORM"
+    },
+    "entitiesConform": 4,
+    "entitiesReconstructed": 0,
+    "entitiesDeferred": 0,
+    "entitiesBlocked": 0,
+    "evidenceCompleteness": 1,
+    "fixtureMatch": true
+  }
+}
