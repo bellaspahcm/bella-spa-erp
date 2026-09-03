@@ -1,10 +1,11 @@
 # E11 Design — Business Truth Discovery Architecture
 
-**Status:** 🔧 IN DESIGN  
-**Phase:** Architecture Definition  
+**Status:** 🟡 DESIGN CORRECTED — AWAITING APPROVAL  
+**Phase:** Architecture Definition (Corrected)  
 **Input:** Q0 Semantic Contract (DERIVED)  
 **Dependencies:** E11 Requirements, Q0 Investigation  
-**Started:** 2026-09-04
+**Started:** 2026-09-04  
+**Corrected:** 2026-09-04
 
 ---
 
@@ -59,20 +60,22 @@ PROPOSED Business Truth Candidate
     │
     ╳  ← E11 CANNOT CROSS THIS BOUNDARY
     ↓
-Business Truth Gate (INDEPENDENT)
+Business Truth Gate (VALIDATION ONLY)
     ↓
-Validation (provenance, authority, lifecycle, conflicts, decisions)
+Validation → GateResult { validated, authorizationStatus }
     ├─ FAIL → STOP
-    └─ PASS → CANONICAL Business Truth
-              ↓
-              E10 Factory
+    └─ PASS → Authorization Decision
+              ├─ AUTO_APPROVED → AUTHORIZED → CANONICAL
+              └─ REQUIRES_HUMAN → PENDING_APPROVAL → (human decision) → CANONICAL
+                       ↓
+                  E10 Factory
 ```
 
 **E11 CANNOT:**
 - Self-promote PROPOSED → CANONICAL
 - Bypass Business Truth Gate
 - Override gate validation
-- Auto-approve without meeting invariants
+- Grant authorization authority
 
 **E11 CAN:**
 - Research → gather evidence
@@ -82,9 +85,16 @@ Validation (provenance, authority, lifecycle, conflicts, decisions)
 
 **Gate CAN:**
 - Validate invariants
-- Enforce lifecycle
+- Recommend authorization (AUTO_APPROVED | REQUIRES_HUMAN | BLOCKED)
 - Block invalid candidates
-- Require human decisions
+
+**Gate CANNOT:**
+- Grant authority directly (gate recommends, system/human authorizes)
+- Auto-canonicalize (validation ≠ canonicalization)
+
+**System/Human CAN:**
+- Authorize based on gate recommendation
+- Promote AUTHORIZED → CANONICAL
 
 ---
 
@@ -178,10 +188,16 @@ Validation (provenance, authority, lifecycle, conflicts, decisions)
 - Provenance checking
 - Conflict detection
 - Decision classification
-- Output: CANONICAL Business Truth OR STOP
+- Output: **GateResult { validated, authorizationStatus, violations }**
+
+**Authorization Layer:** (NEW - separates validation from authority)
+- Receives: GateResult from gate
+- Decides: AUTO_APPROVED (system authority) vs REQUIRES_HUMAN
+- Grants: Authorization to promote to CANONICAL
+- Output: AUTHORIZED Business Truth OR PENDING_APPROVAL
 
 **E10 Factory:**
-- Consumes CANONICAL Business Truth
+- Consumes CANONICAL Business Truth (post-authorization)
 - Generates Industry OS artifacts
 - (Existing component, no modifications)
 
@@ -442,9 +458,12 @@ class BusinessTruthGate {
   /**
    * Validate Business Truth Document against Q0 invariants.
    * 
-   * @returns ValidationResult (PASS or FAIL with violations)
+   * Returns validation result + authorization recommendation.
+   * Does NOT grant authority (validation ≠ authorization).
+   * 
+   * @returns GateResult with validation + authorization status
    */
-  validate(btd: BusinessTruthDocument): ValidationResult {
+  validate(btd: BusinessTruthDocument): GateResult {
     const violations: GateViolation[] = [];
     
     // Run all invariant validators
@@ -452,16 +471,46 @@ class BusinessTruthGate {
     violations.push(...this.validateInvariant2_AuthorityStatus(btd));
     violations.push(...this.validateInvariant3_ConfidenceNotAuthority(btd));
     violations.push(...this.validateInvariant4_ProvenanceCompleteness(btd));
-    violations.push(...this.validateInvariant5_ArchitectureEvidence(btd));
+    violations.push(...this.validateInvariant5_ImplementationFeasibility(btd));
     violations.push(...this.validateInvariant6_FactoryAuthorization(btd));
     violations.push(...this.validateInvariant7_VerificationTraceability(btd));
     
-    const passed = violations.filter(v => v.severity === 'BLOCKING').length === 0;
+    const blockingViolations = violations.filter(v => v.severity === 'BLOCKING');
+    const validated = blockingViolations.length === 0;
+    
+    // Determine authorization recommendation (NOT authority itself)
+    let authorizationStatus: AuthorizationStatus;
+    let authorizationReason: string;
+    
+    if (!validated) {
+      authorizationStatus = 'BLOCKED';
+      authorizationReason = `${blockingViolations.length} blocking violations`;
+    } else {
+      // Check auto-approval criteria
+      const hasAlternatives = btd.truths.some(t => t.provenance.alternatives.length > 0);
+      const hasConflicts = btd.truths.some(t => t.provenance.conflicts.some(c => !c.resolution));
+      const lowConfidence = btd.truths.some(t => t.confidence.score < 0.95);
+      
+      if (hasAlternatives) {
+        authorizationStatus = 'REQUIRES_HUMAN';
+        authorizationReason = 'Business decisions with alternatives require human approval';
+      } else if (hasConflicts) {
+        authorizationStatus = 'REQUIRES_HUMAN';
+        authorizationReason = 'Unresolved conflicts require human decision';
+      } else if (lowConfidence) {
+        authorizationStatus = 'REQUIRES_HUMAN';
+        authorizationReason = 'Low confidence truths require human review';
+      } else {
+        authorizationStatus = 'AUTO_APPROVED';
+        authorizationReason = 'High confidence, no conflicts, no alternatives';
+      }
+    }
     
     return {
-      passed,
+      validated,
       violations,
-      decision: passed ? 'ALLOW_E10' : 'BLOCK_E10',
+      authorizationStatus,
+      authorizationReason,
       timestamp: new Date()
     };
   }
@@ -662,34 +711,45 @@ class BusinessTruthGate {
   }
   
   // ============================================================================
-  // INVARIANT 5: ARCHITECTURE EVIDENCE REQUIRED
+  // INVARIANT 5: IMPLEMENTATION FEASIBILITY
   // ============================================================================
   
   /**
-   * Prevents: B0 Failure #5 (technical hallucination - invented DatabaseService)
+   * Prevents: B0 Failure #5 (technical hallucination during E10 implementation)
    * 
-   * Rule: Technical implementations require Bella provenance.
+   * Rule: When E10 implements Business Truth, it must use existing Bella patterns
+   *       (not invent abstractions like DatabaseService).
+   * 
+   * NOTE: This validates implementation GUIDANCE, not business truth validity.
+   *       Business Truth is industry-agnostic. Bella evidence is advisory for E10.
    */
-  private validateInvariant5_ArchitectureEvidence(btd: BusinessTruthDocument): GateViolation[] {
+  private validateInvariant5_ImplementationFeasibility(btd: BusinessTruthDocument): GateViolation[] {
     const violations: GateViolation[] = [];
     
     for (const truth of btd.truths) {
-      // Check: Technical content types require architecture evidence
-      if (truth.contentType === 'ENTITY' || truth.contentType === 'PROCESS') {
-        const hasBellaEvidence = truth.provenance.sources.some(
-          s => s.type === 'BELLA_KERNEL' || s.type === 'BELLA_PATTERN'
-        );
-        
-        // If no Bella evidence, flag as warning (may be new pattern)
-        if (!hasBellaEvidence && truth.authority.source === 'AI') {
-          violations.push({
-            invariant: 'Invariant 5: Architecture Evidence',
-            truthId: truth.id,
-            severity: 'WARNING',
-            message: 'No Bella architecture evidence. Verify not inventing abstractions.',
-            evidence: `contentType=${truth.contentType}, sources=${truth.provenance.sources.map(s => s.type).join(',')}, id=${truth.id}`
-          });
-        }
+      // Check: If Bella implementation evidence exists, flag for E10 reuse
+      const bellaEvidence = truth.provenance.sources.filter(
+        s => s.type === 'BELLA_KERNEL' || s.type === 'BELLA_PATTERN'
+      );
+      
+      if (bellaEvidence.length > 0) {
+        // Advisory: E10 should reuse these patterns
+        violations.push({
+          invariant: 'Invariant 5: Implementation Feasibility',
+          truthId: truth.id,
+          severity: 'INFO', // NOT BLOCKING - advisory only
+          message: `Bella patterns available for reuse: ${bellaEvidence.map(e => e.source).join(', ')}`,
+          evidence: `Bella evidence count: ${bellaEvidence.length}`
+        });
+      } else if (truth.authority.source === 'AI' && (truth.contentType === 'ENTITY' || truth.contentType === 'PROCESS')) {
+        // Warning: No Bella pattern found, E10 will generate new
+        violations.push({
+          invariant: 'Invariant 5: Implementation Feasibility',
+          truthId: truth.id,
+          severity: 'WARNING', // NOT BLOCKING - new patterns are valid
+          message: 'No Bella pattern found. E10 will generate new implementation. Verify post-build.',
+          evidence: `contentType=${truth.contentType}, no Bella evidence`
+        });
       }
     }
     
@@ -757,19 +817,139 @@ class BusinessTruthGate {
 // GATE RESULT TYPES
 // ============================================================================
 
-interface ValidationResult {
-  passed: boolean;
+/**
+ * Gate validation result.
+ * 
+ * CRITICAL: Gate validates, does NOT authorize.
+ * Authorization is a separate governed decision.
+ */
+interface GateResult {
+  validated: boolean;              // Invariants passed
   violations: GateViolation[];
-  decision: 'ALLOW_E10' | 'BLOCK_E10';
+  
+  // Authorization recommendation (NOT authority itself)
+  authorizationStatus: AuthorizationStatus;
+  authorizationReason: string;
+  
   timestamp: Date;
 }
+
+type AuthorizationStatus =
+  | 'AUTO_APPROVED'     // High confidence + no conflicts + no alternatives → system can authorize
+  | 'REQUIRES_HUMAN'    // Business decision, conflicts, or low confidence → human must authorize
+  | 'BLOCKED';          // Validation failed → cannot proceed
 
 interface GateViolation {
   invariant: string;
   truthId: string;
-  severity: 'BLOCKING' | 'WARNING';
+  severity: 'BLOCKING' | 'WARNING' | 'INFO';
   message: string;
   evidence: string;
+}
+```
+
+---
+
+## Epistemic-Lifecycle Consistency Validator
+
+### Cross-Field Invariant Enforcement
+
+```typescript
+/**
+ * Validates consistency between epistemicStatus and status (lifecycle).
+ * 
+ * Addresses Design Correction Issue #2:
+ * - epistemicStatus = HOW was truth known (methodology)
+ * - status = WHERE in governance lifecycle (stage)
+ * - Both are independent, but certain combinations are invalid
+ */
+class EpistemicLifecycleValidator {
+  /**
+   * Validate epistemic status + lifecycle status consistency.
+   * 
+   * Returns null if valid, ValidationError if inconsistent.
+   */
+  validate(truth: BusinessTruth): ValidationError | null {
+    const { epistemicStatus, status, authority, provenance } = truth;
+    
+    // Rule 1: INFERENCE + CANONICAL requires approval
+    if (epistemicStatus === 'INFERENCE' && status === 'CANONICAL') {
+      if (!authority.approvedBy) {
+        return {
+          message: 'INFERENCE cannot be CANONICAL without approval',
+          truthId: truth.id,
+          field: 'epistemicStatus + status'
+        };
+      }
+    }
+    
+    // Rule 2: BELIEF + CANONICAL requires alternatives resolution
+    if (epistemicStatus === 'BELIEF' && status === 'CANONICAL') {
+      if (provenance.alternatives.length > 0 && authority.approvedBy !== 'HUMAN') {
+        return {
+          message: 'BELIEF with unresolved alternatives requires HUMAN approval',
+          truthId: truth.id,
+          field: 'epistemicStatus + status + provenance.alternatives'
+        };
+      }
+    }
+    
+    // Rule 3: CANONICAL requires APPROVED authority type
+    if (status === 'CANONICAL') {
+      if (authority.type !== 'APPROVED') {
+        return {
+          message: 'CANONICAL requires APPROVED authority type',
+          truthId: truth.id,
+          field: 'status + authority.type'
+        };
+      }
+    }
+    
+    // Rule 4: KNOWLEDGE can be CANONICAL if from trusted source
+    if (epistemicStatus === 'KNOWLEDGE' && status === 'CANONICAL') {
+      const trustedSource = 
+        authority.source === 'SYSTEM' || // Existing Bella
+        provenance.sources.some(s => s.type === 'INDUSTRY_STANDARD' || s.type === 'REGULATORY');
+      
+      if (!trustedSource && !authority.approvedBy) {
+        return {
+          message: 'KNOWLEDGE without trusted source requires approval',
+          truthId: truth.id,
+          field: 'epistemicStatus + provenance.sources + authority'
+        };
+      }
+    }
+    
+    return null; // Valid
+  }
+  
+  /**
+   * Get human-readable explanation of epistemic vs lifecycle semantics.
+   */
+  explainSemantics(): string {
+    return `
+      epistemicStatus (HOW KNOWN):
+        OBSERVATION: Direct evidence, no reasoning
+        INFERENCE:   Derived via AI reasoning
+        BELIEF:      Uncertain or multiple valid options
+        KNOWLEDGE:   Validated, no reasonable doubt
+      
+      status (GOVERNANCE LIFECYCLE):
+        PROPOSED:    Candidate awaiting critique
+        CRITIQUED:   Self-examination complete
+        APPROVED:    Passed authorization
+        CANONICAL:   Final governed truth
+      
+      Both axes are independent.
+      Invariants define valid combinations.
+    `;
+  }
+}
+
+interface ValidationError {
+  message: string;
+  truthId: string;
+  field: string;
 }
 ```
 
@@ -1402,6 +1582,542 @@ Are unresolved decisions explicit?
 
 ---
 
-**Document Status:** 🔧 DESIGN IN PROGRESS  
-**Last Updated:** 2026-09-04  
-**Phase:** E11 Design → Awaiting Review
+---
+
+## Design Correction Pass — Post-Q0 Review
+
+**Date:** 2026-09-04  
+**Reviewer Feedback:** 4 critical design issues identified  
+**Action:** In-place correction (preserves Git history `aa6293a4`)
+
+---
+
+### Issue 1: Validation ≠ Authority ≠ Canonicalization
+
+**Problem Identified:**
+
+Original design stated:
+```
+Business Truth Gate
+    ├─ FAIL → STOP
+    └─ PASS → CANONICAL Business Truth
+```
+
+This conflates **validation** with **authority granting**.
+
+**Per Q0 teaching:** Validation PASS does not automatically create authority. This would recreate `approvedBy: AI` under a different name (gate auto-canonicalizes).
+
+**Root Cause:**
+
+Design did not distinguish:
+- **Validation:** Checking invariants (gate's job)
+- **Authorization:** Granting approval authority (governance decision)
+- **Canonicalization:** Final state transition (requires authorization)
+
+**Correction:**
+
+**Revised Architecture:**
+
+```text
+E11 Intelligence Layer
+    ↓
+PROPOSED Business Truth Candidates
+    ↓
+    ╔═══════════════════════════════╗
+    ║   BUSINESS TRUTH GATE         ║
+    ║   (VALIDATION ONLY)           ║
+    ║                               ║
+    ║   Validates:                  ║
+    ║   - Provenance complete       ║
+    ║   - Lifecycle valid           ║
+    ║   - Authority consistent      ║
+    ║   - Conflicts resolved        ║
+    ║   - Alternatives documented   ║
+    ╚═══════════════╤═══════════════╝
+                    │
+            ┌───────┴────────┐
+            │                │
+          FAIL             PASS
+            │                │
+          STOP         VALIDATED
+                            │
+                    ┌───────┴────────┐
+                    │                │
+            Auto-Approval      Human Decision
+            Criteria Met       Required
+                    │                │
+              AUTHORIZED        PENDING_APPROVAL
+                    │                │
+                    └────────┬───────┘
+                             ↓
+                      CANONICAL TRUTH
+                             ↓
+                       E10 FACTORY
+```
+
+**Revised Gate Responsibility:**
+
+Gate returns:
+```typescript
+interface GateResult {
+  validated: boolean;           // Invariants passed
+  violations: GateViolation[];
+  
+  // NEW: Separate authorization recommendation
+  authorizationStatus: 'AUTO_APPROVED' | 'REQUIRES_HUMAN' | 'BLOCKED';
+  authorizationReason: string;
+}
+```
+
+**Gate does NOT promote to CANONICAL.**
+
+Gate provides **validation result** + **authorization recommendation**.
+
+**Canonicalization** is a separate governed step:
+- If `authorizationStatus = AUTO_APPROVED` → System promotes to CANONICAL
+- If `authorizationStatus = REQUIRES_HUMAN` → Human decision required
+- If `authorizationStatus = BLOCKED` → Cannot proceed
+
+**Key Distinction:**
+
+```text
+Validation PASS   ≠  Authority granted
+Validation PASS   =   Eligible for authorization
+Authorization     =   Explicit approval (auto or human)
+Canonicalization  =   State transition (APPROVED → CANONICAL)
+```
+
+---
+
+### Issue 2: Epistemic Status ↔ Lifecycle Status Consistency
+
+**Problem Identified:**
+
+Two separate state fields without cross-field invariants:
+```typescript
+epistemicStatus: 'OBSERVATION' | 'INFERENCE' | 'BELIEF' | 'KNOWLEDGE'
+status: 'OBSERVED' | 'SYNTHESIZED' | 'INFERRED' | 'PROPOSED' | ... | 'CANONICAL'
+```
+
+Risk: Contradictory states like `epistemicStatus=INFERENCE + status=CANONICAL` (B0 Failure #1).
+
+**Root Cause:**
+
+Design did not define **when** epistemic status and lifecycle status are independent vs. coupled.
+
+**Correction:**
+
+**Define Clear Semantics:**
+
+**`epistemicStatus`** (HOW the truth was known):
+- Describes **knowledge acquisition method**
+- Independent of governance lifecycle
+- Examples:
+  - `OBSERVATION`: Directly from sources (no reasoning)
+  - `INFERENCE`: Derived via AI reasoning
+  - `BELIEF`: Uncertain or multiple valid options
+  - `KNOWLEDGE`: Validated, no reasonable doubt
+
+**`status`** (WHERE in governance lifecycle):
+- Describes **governance stage**
+- Independent of how truth was discovered
+- Examples:
+  - `PROPOSED`: Candidate awaiting critique
+  - `CRITIQUED`: Self-examination complete
+  - `APPROVED`: Passed authorization
+  - `CANONICAL`: Final governed truth
+
+**Cross-Field Invariants:**
+
+```typescript
+// FORBIDDEN COMBINATIONS
+
+// Cannot skip governance even if KNOWLEDGE
+if (epistemicStatus === 'KNOWLEDGE' && status === 'CANONICAL') {
+  // Only valid if went through PROPOSED → CRITIQUED → APPROVED
+}
+
+// INFERENCE cannot shortcut to CANONICAL
+if (epistemicStatus === 'INFERENCE' && status === 'CANONICAL') {
+  // Must verify: APPROVED authority exists
+  // Must verify: Went through required lifecycle
+}
+
+// BELIEF cannot be CANONICAL without resolution
+if (epistemicStatus === 'BELIEF' && status === 'CANONICAL') {
+  // Must verify: Alternatives resolved
+  // Must verify: Human decision made
+}
+
+// OBSERVATION can be CANONICAL if from trusted source
+if (epistemicStatus === 'OBSERVATION' && status === 'CANONICAL') {
+  // Valid if: source = SYSTEM (existing Bella)
+  // OR: source = INDUSTRY_STANDARD (regulatory)
+  // AND: Went through lifecycle
+}
+```
+
+**Invariant Validator:**
+
+```typescript
+class EpistemicLifecycleValidator {
+  /**
+   * Validate epistemic status + lifecycle status consistency.
+   */
+  validate(truth: BusinessTruth): ValidationError | null {
+    const { epistemicStatus, status, authority, provenance } = truth;
+    
+    // Rule 1: INFERENCE + CANONICAL requires approval
+    if (epistemicStatus === 'INFERENCE' && status === 'CANONICAL') {
+      if (!authority.approvedBy) {
+        return {
+          message: 'INFERENCE cannot be CANONICAL without approval',
+          truthId: truth.id
+        };
+      }
+    }
+    
+    // Rule 2: BELIEF + CANONICAL requires alternatives resolution
+    if (epistemicStatus === 'BELIEF' && status === 'CANONICAL') {
+      if (provenance.alternatives.length > 0 && authority.approvedBy !== 'HUMAN') {
+        return {
+          message: 'BELIEF with alternatives requires HUMAN approval',
+          truthId: truth.id
+        };
+      }
+    }
+    
+    // Rule 3: Any status → CANONICAL requires lifecycle completion
+    if (status === 'CANONICAL') {
+      // Must have been APPROVED first
+      if (authority.type !== 'APPROVED') {
+        return {
+          message: 'CANONICAL requires APPROVED authority type',
+          truthId: truth.id
+        };
+      }
+    }
+    
+    return null; // Valid
+  }
+}
+```
+
+**Key Distinction:**
+
+```text
+epistemicStatus  =  How was this known? (methodology)
+status           =  Where in governance? (lifecycle stage)
+
+Both are independent axes.
+Invariants define valid combinations.
+```
+
+---
+
+### Issue 3: Business Truth Evidence ≠ Bella Implementation Evidence
+
+**Problem Identified:**
+
+Invariant #5 conflates two types of evidence:
+- **Business Truth validity:** Industry patterns, domain knowledge
+- **Bella implementation feasibility:** Existing Bella architecture
+
+Original design:
+```typescript
+// Invariant 5: Architecture Evidence Required
+// Prevents: B0 Failure #5 (technical hallucination)
+// Rule: Technical implementations require Bella provenance.
+```
+
+**Risk:** Forces Bella-specific evidence into industry-agnostic Business Truth, violating Q0's cross-domain requirement.
+
+**Root Cause:**
+
+B0 Failure #5 was **technical hallucination** (invented `DatabaseService`), but the failure occurred **during E10 implementation**, not during Business Truth discovery.
+
+Business Truth should be:
+```
+"An F&B order consists of customer, items, total, status"
+```
+
+NOT:
+```
+"An F&B order is implemented using SupabaseClient in Bella"
+```
+
+**Correction:**
+
+**Separate Evidence Types:**
+
+**Type 1: Business Truth Evidence** (validates business correctness)
+```typescript
+interface BusinessTruthEvidence {
+  type: 'INDUSTRY_STANDARD' | 'EXPERT' | 'REGULATORY' | 'WEB' | 'DOCUMENT';
+  purpose: 'BUSINESS_VALIDATION';
+  validates: 'Domain concepts, business rules, industry patterns';
+}
+```
+
+**Type 2: Implementation Evidence** (validates Bella conformance)
+```typescript
+interface ImplementationEvidence {
+  type: 'BELLA_KERNEL' | 'BELLA_PATTERN';
+  purpose: 'IMPLEMENTATION_FEASIBILITY';
+  validates: 'How to implement in Bella, existing patterns to reuse';
+}
+```
+
+**Revised Invariant #5:**
+
+```typescript
+// ============================================================================
+// INVARIANT 5: IMPLEMENTATION FEASIBILITY (NOT BUSINESS VALIDITY)
+// ============================================================================
+
+/**
+ * Prevents: B0 Failure #5 (technical hallucination during implementation)
+ * 
+ * Rule: When implementing Business Truth in Bella, E10 must use existing
+ *       Bella patterns (not invent abstractions).
+ * 
+ * NOTE: This is E10's responsibility, not Business Truth Gate's responsibility.
+ *       Business Truth validity is independent of Bella implementation.
+ */
+private validateInvariant5_ImplementationFeasibility(btd: BusinessTruthDocument): GateViolation[] {
+  const violations: GateViolation[] = [];
+  
+  for (const truth of btd.truths) {
+    // Check: If Bella implementation evidence exists, flag for E10 reuse
+    const bellaEvidence = truth.provenance.sources.filter(
+      s => s.type === 'BELLA_KERNEL' || s.type === 'BELLA_PATTERN'
+    );
+    
+    if (bellaEvidence.length > 0) {
+      // Advisory: E10 should reuse these patterns
+      violations.push({
+        invariant: 'Invariant 5: Implementation Feasibility',
+        truthId: truth.id,
+        severity: 'INFO', // NOT BLOCKING
+        message: `Bella patterns available for reuse: ${bellaEvidence.map(e => e.source).join(', ')}`,
+        evidence: `Bella evidence count: ${bellaEvidence.length}`
+      });
+    } else if (truth.authority.source === 'AI') {
+      // Warning: No Bella pattern found, E10 will generate new
+      violations.push({
+        invariant: 'Invariant 5: Implementation Feasibility',
+        truthId: truth.id,
+        severity: 'WARNING', // NOT BLOCKING
+        message: 'No Bella pattern found. E10 will generate new implementation. Verify post-build.',
+        evidence: `contentType=${truth.contentType}, no Bella evidence`
+      });
+    }
+  }
+  
+  return violations;
+}
+```
+
+**Key Distinction:**
+
+```text
+Business Truth:
+"What must the system do?" (industry-agnostic)
+Evidence: Industry standards, domain experts, regulations
+
+Implementation Plan:
+"How to build it in Bella?" (Bella-specific)
+Evidence: Bella kernels, Bella patterns, existing code
+
+Gate validates:   Business Truth
+E10 validates:    Implementation conformance to Bella patterns
+```
+
+**Invariant #5 demoted from BLOCKING to WARNING/INFO.**
+
+Business Truth is valid without Bella evidence. Bella evidence is **advisory for E10**, not **required for Business Truth validity**.
+
+---
+
+### Issue 4: Design Claims ≠ Executable Proof
+
+**Problem Identified:**
+
+Current design claims:
+> "All 7 B0 failures prevented by design"
+
+But validators are **designed**, not **implemented** or **tested**.
+
+**Per Q0 correction:** "Documented ≠ Executable"
+
+This is exactly B0 Failure #7: Verification claims without executable evidence.
+
+**Root Cause:**
+
+Design phase conflated:
+- **Design-level prevention** (architecture can prevent)
+- **Executable prevention** (code does prevent)
+- **Verified prevention** (tests prove prevention)
+
+**Correction:**
+
+**Reclassify Prevention Claims:**
+
+**Current Status: DESIGN-LEVEL PREVENTION**
+
+| B0 Failure | Design Mechanism | Status |
+|------------|------------------|--------|
+| #1: INFERENCE → CANONICAL | TruthLifecycle.FORBIDDEN_SHORTCUTS | 📝 DESIGNED (not implemented) |
+| #2: approvedBy: AI invalid | AuthorityModel + GateResult.authorizationStatus | 📝 DESIGNED (not implemented) |
+| #3: Confidence = truth | GateResult separation (validation ≠ authorization) | 📝 DESIGNED (not implemented) |
+| #4: Business decision masked | Provenance.alternatives + authorizationStatus | 📝 DESIGNED (not implemented) |
+| #5: Technical hallucination | Implementation feasibility (E10 responsibility) | 📝 DESIGNED (not implemented) |
+| #6: Factory bypass | Gate as mandatory entry point | 📝 DESIGNED (not implemented) |
+| #7: Verification claims false | E10 output validation (existing Gate B) | ✅ EXISTING (Gate B already enforces) |
+
+**Required for E11 MVP Implementation:**
+
+```text
+DESIGN
+  ↓
+IMPLEMENT
+  - BusinessTruthGate class
+  - TruthLifecycle state machine
+  - AuthorityModel state machine
+  - EpistemicLifecycleValidator
+  - ProvenanceTracker
+  ↓
+EXECUTABLE CONTRACT TESTS
+  - Unit tests for each validator
+  - State machine transition tests
+  - Cross-field invariant tests
+  ↓
+NEGATIVE TESTS (7 B0 Failures)
+  - Test 1: Attempt INFERENCE → CANONICAL (must BLOCK)
+  - Test 2: Attempt AI self-approval of inference (must BLOCK)
+  - Test 3: Attempt confidence-only authorization (must BLOCK)
+  - Test 4: Attempt business decision without alternatives (must BLOCK)
+  - Test 5: E10 invents abstraction (E10 test, not gate test)
+  - Test 6: Attempt E10 bypass (integration test)
+  - Test 7: E10 test claims without execution (existing Gate B)
+  ↓
+E11 MVP VERIFIED
+  - All 7 negative tests PASS (prevent B0 failures)
+  - All validators executable
+  - Gate integration complete
+```
+
+**Explicit Statement:**
+
+**E11 Design provides:**
+- Architecture preventing B0 failures (design-level)
+- TypeScript interfaces defining contract
+- Validator logic specifications
+
+**E11 Design does NOT provide:**
+- Executable code (implementation phase)
+- Test execution results (MVP phase)
+- Verified prevention (post-MVP validation)
+
+**Success criteria for E11 MVP:**
+
+```text
+E11 MVP = Design + Implementation + Executable Negative Tests
+
+NOT:
+E11 Design = Prevention claims
+
+BUT:
+E11 Design = Prevention design
+E11 MVP    = Prevention implementation + verification
+```
+
+---
+
+## Design Correction Summary
+
+**4 Issues Resolved:**
+
+1. ✅ **Validation ≠ Authority ≠ Canonicalization**
+   - Gate provides validation + authorization recommendation
+   - Gate does NOT auto-canonicalize
+   - Canonicalization requires explicit authorization
+
+2. ✅ **Epistemic Status ↔ Lifecycle Status Consistency**
+   - Two independent axes with defined semantics
+   - Cross-field invariants prevent contradictions
+   - EpistemicLifecycleValidator enforces consistency
+
+3. ✅ **Business Truth Evidence ≠ Bella Implementation Evidence**
+   - Business Truth: industry-agnostic (INDUSTRY_STANDARD, EXPERT, REGULATORY)
+   - Implementation Evidence: Bella-specific (BELLA_KERNEL, BELLA_PATTERN)
+   - Invariant #5: WARNING, not BLOCKING (advisory for E10)
+
+4. ✅ **Design Claims ≠ Executable Proof**
+   - Current status: DESIGN-LEVEL prevention
+   - E11 MVP required: Executable implementation + negative tests
+   - Success = 7 B0 negative tests PASS
+
+---
+
+## Updated Architecture Boundary
+
+**Corrected Flow:**
+
+```text
+E11 Intelligence Layer
+    ↓
+PROPOSED Business Truth Candidates
+    ↓
+    ╔═══════════════════════════════╗
+    ║   BUSINESS TRUTH GATE         ║
+    ║   (VALIDATION LAYER)          ║
+    ║                               ║
+    ║   Returns: GateResult {       ║
+    ║     validated: boolean        ║
+    ║     violations: []            ║
+    ║     authorizationStatus       ║
+    ║   }                           ║
+    ╚═══════════════╤═══════════════╝
+                    │
+            ┌───────┴────────┐
+            │                │
+    validated=false    validated=true
+            │                │
+          STOP               │
+                    ┌────────┴────────┐
+                    │                 │
+            AUTO_APPROVED     REQUIRES_HUMAN
+                    │                 │
+              AUTHORIZED        PENDING_APPROVAL
+                    │                 │
+                    └────────┬────────┘
+                             ↓
+                      CANONICAL TRUTH
+                             ↓
+                       E10 FACTORY
+```
+
+**Key Changes:**
+
+- Gate returns **`GateResult`** (not CANONICAL truth)
+- Canonicalization is **separate governed step**
+- Authorization can be **auto** or **human** (based on criteria)
+- Gate **recommends**, does not **grant** authority
+
+---
+
+## Remaining Design Ambiguities
+
+**None identified.**
+
+All 4 reviewer-identified issues have been resolved.
+
+Design is internally consistent and ready for human approval.
+
+---
+
+**Document Status:** 🟡 DESIGN CORRECTED — AWAITING APPROVAL  
+**Correction Date:** 2026-09-04  
+**Corrected By:** AI Agent (per human reviewer feedback)  
+**Next Step:** Human approval → E11 MVP Implementation
