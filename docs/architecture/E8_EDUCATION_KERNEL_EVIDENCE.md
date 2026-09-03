@@ -11,9 +11,10 @@
 
 **Education OS E8.1 Kernel built using proven Factory machinery from E7 Logistics.**
 
-**Scope:** 4 canonical entities derived autonomously from evidence  
+**Scope:** 4 canonical entities (derived autonomously from evidence)  
 **Pattern:** Controlled Reconstruction (not greenfield)  
-**Result:** Domain layer conforms to canonical persistence layer
+**Result:** Domain layer conforms to canonical persistence layer  
+**Tests:** 46/46 PASS (not 66 — error corrected)
 
 ---
 
@@ -56,7 +57,13 @@ E8.1 Scope = 4 entities (DERIVED, not manually chosen)
 | **Attendance** | ✅ Migration 20260813 | ✅ Verified | ✅ tenant_isolation | ❌ Deleted | ✅ 10 tests | **RECONSTRUCT** |
 | **Assessment** | ✅ Migration 20260813 | ✅ Verified | ✅ tenant_isolation | ❌ Deleted | ✅ 20 tests | **RECONSTRUCT** |
 
-**Total:** 66 behavioral tests written + passed before commit
+**Total:** 46 behavioral tests written + passed before commit
+
+**Breakdown:**
+- Course: 9 tests (creation, validation, lifecycle, reconstitution)
+- Enrollment: 7 tests (creation, validation, lifecycle, reconstitution)
+- Attendance: 10 tests (creation, validation, status updates, reconstitution)
+- Assessment: 20 tests (creation, validation, edge cases, reconstitution)
 
 ---
 
@@ -126,7 +133,7 @@ CONSTRAINT uq_edu_enrollments_request_id UNIQUE (tenant_id, request_id)
 - Student identity via Party pattern (Platform Core dependency)
 - Tenant isolation via RLS
 
-**Behavioral Coverage:** 16 tests
+**Behavioral Coverage:** 7 tests
 - Creation with/without explicit requestId
 - Validation (required fields)
 - Lifecycle state machine
@@ -281,9 +288,11 @@ Education scope included in regression baseline.
 ```bash
 npm run arch:guard
 ```
-**Result:** ✅ 0 Education violations
+**Result:** ✅ 0 E8 violations (Education scope clean)
 
-**Note:** 7 E7.2/E7.3 violations detected (expected, deferred layers intentionally not built).
+**Global Status:** 7 violations detected (all E7.2/E7.3 SEALED layers, deferred intentionally)
+
+**Precision:** Architecture Guard enforces frozen boundaries for E7.1/E7.2/E7.3. Education has no frozen boundaries defined yet, therefore 0 violations. E7 deferred violations remain outside E8 scope.
 
 ---
 
