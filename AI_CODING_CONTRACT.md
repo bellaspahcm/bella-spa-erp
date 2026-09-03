@@ -1,6 +1,6 @@
 # Bella AI Coding Contract
 
-**Version:** 1.1  
+**Version:** 1.2  
 **Last Updated:** 2026-09-03  
 **Status:** Active
 
