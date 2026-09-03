@@ -8,7 +8,7 @@
 
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Person, QueryPersonsRequest } from './types';
-import { Database } from '@/types/database.types';
+import { Database, Json } from '@/types/database.types';
 
 type PersonRow = Database['public']['Tables']['persons']['Row'];
 type PersonInsert = Database['public']['Tables']['persons']['Insert'];
@@ -41,7 +41,7 @@ export class PersonRepository {
       photo_url: person.photoUrl || null,
       preferred_language: person.preferredLanguage || null,
       status: person.status,
-      metadata: person.metadata || null,
+      metadata: (person.metadata as Json) || null,
       created_at: person.createdAt,
       updated_at: person.updatedAt,
       created_by: person.createdBy || null,
@@ -78,7 +78,7 @@ export class PersonRepository {
       photo_url: person.photoUrl || null,
       preferred_language: person.preferredLanguage || null,
       status: person.status,
-      metadata: person.metadata || null,
+      metadata: (person.metadata as Json) || null,
       updated_at: person.updatedAt,
       updated_by: person.updatedBy || null,
     };
@@ -259,9 +259,9 @@ export class PersonRepository {
       dateOfBirth: row.date_of_birth,
       gender: row.gender as Person['gender'],
       nationality: row.nationality || undefined,
-      identifiers: (row.identifiers as Person['identifiers']) || [],
-      contacts: (row.contacts as Person['contacts']) || [],
-      addresses: (row.addresses as Person['addresses']) || [],
+      identifiers: (row.identifiers as unknown as Person['identifiers']) || [],
+      contacts: (row.contacts as unknown as Person['contacts']) || [],
+      addresses: (row.addresses as unknown as Person['addresses']) || [],
       photoUrl: row.photo_url || undefined,
       preferredLanguage: row.preferred_language || undefined,
       status: row.status as Person['status'],

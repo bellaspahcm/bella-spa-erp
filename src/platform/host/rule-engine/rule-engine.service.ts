@@ -21,7 +21,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { Database } from '@/types/database.types';
+import { Database, Json } from '@/types/database.types';
 import { eventBus } from '@/platform/host/event-bus';
 import type { DomainEvent } from '@/platform/host/event-bus/types';
 import crypto from 'crypto';
@@ -191,11 +191,11 @@ export class RuleEngineService {
         severity: params.severity ?? 'LOW',
         conditions: params.conditions as unknown as Database['public']['Tables']['platform_business_rules']['Insert']['conditions'],
         action_type: params.actionType ?? 'NOTIFY',
-        action_params: (params.actionParams ?? {}) as Record<string, unknown>,
+        action_params: (params.actionParams ?? {}) as Json,
         effective_from: params.effectiveFrom ?? null,
         effective_to: params.effectiveTo ?? null,
         created_by: params.createdBy ?? null,
-        metadata: (params.metadata ?? {}) as Record<string, unknown>,
+        metadata: (params.metadata ?? {}) as Json,
       })
       .select()
       .single();
@@ -284,7 +284,7 @@ export class RuleEngineService {
       .from('platform_business_rules')
       .update({
         status: 'SUSPENDED',
-        metadata: { suspendReason: reason, suspendedAt: new Date().toISOString() } as Record<string, unknown>,
+        metadata: { suspendReason: reason, suspendedAt: new Date().toISOString() } as Json,
       })
       .eq('id', ruleId)
       .eq('tenant_id', this.tenantId);
@@ -447,11 +447,11 @@ export class RuleEngineService {
         rule_version: rule.version,
         context_type: params.contextType,
         context_id: params.contextId ?? null,
-        input_data: params.inputData as Record<string, unknown>,
+        input_data: params.inputData as Json,
         outcome,
         conditions_met: conditionsMet,
         action_taken: actionTaken ?? null,
-        action_result: actionResult as Record<string, unknown>,
+        action_result: actionResult as Json,
         evaluated_by: params.evaluatedBy ?? null,
         correlation_id: params.correlationId ?? null,
       });

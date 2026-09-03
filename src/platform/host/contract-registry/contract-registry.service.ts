@@ -23,6 +23,7 @@ import type {
   ValidationWarning,
   SchemaDefinition,
   JSONSchema,
+  JSONSchemaType,
   EndpointDefinition,
   EventDefinition,
 } from './types';
@@ -640,10 +641,14 @@ export class ContractRegistryService {
     }
   }
 
-  private getType(value: unknown): string {
+  private getType(value: unknown): JSONSchemaType {
     if (value === null) return 'null';
     if (Array.isArray(value)) return 'array';
-    return typeof value;
+    const type = typeof value;
+    if (type === 'string' || type === 'number' || type === 'boolean' || type === 'object') {
+      return type;
+    }
+    return 'null';
   }
 }
 

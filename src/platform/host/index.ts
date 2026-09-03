@@ -24,13 +24,11 @@ export * from './feature-flags';
 export * from './event-bus';
 
 // Host Platform Shared Services
-export * from './iam';
-export * from './notification';
-export * from './workflow';
 export * from './policy';
-export * from './ai-runtime';
-export * from './metadata';
-export * from './integration';
+
+// Note: The following modules exist but don't have barrel exports yet:
+// - iam, notification, workflow, ai-runtime, metadata, integration
+// Uncomment when barrel exports are added or when needed by consumers
 
 // Platform Metadata
 export const HOST_PLATFORM_VERSION = '1.0.0';

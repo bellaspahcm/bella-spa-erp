@@ -14,7 +14,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { Database } from '@/types/database.types';
+import { Database, Json } from '@/types/database.types';
 import { eventBus } from '@/platform/host/event-bus';
 import type { DomainEvent } from '@/platform/host/event-bus/types';
 import crypto from 'crypto';
@@ -98,7 +98,7 @@ export class TemporalEngineService {
         tenant_id: this.tenantId,
         entity_type: params.entityType,
         entity_id: params.entityId,
-        snapshot_data: params.snapshotData,
+        snapshot_data: params.snapshotData as Json,
         change_type: params.changeType,
         change_summary: params.changeSummary ?? null,
         changed_fields: params.changedFields ? { fields: params.changedFields } : null,
@@ -108,7 +108,7 @@ export class TemporalEngineService {
         correlation_id: params.correlationId ?? null,
         causation_id: params.causationId ?? null,
         transaction_id: params.transactionId ?? null,
-        metadata: params.metadata ?? {},
+        metadata: (params.metadata ?? {}) as Json,
       })
       .select()
       .single();

@@ -15,7 +15,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { Database } from '@/types/database.types';
+import { Database, Json } from '@/types/database.types';
 import { eventBus } from '@/platform/host/event-bus';
 import type { DomainEvent } from '@/platform/host/event-bus/types';
 import crypto from 'crypto';
@@ -125,7 +125,7 @@ export class AnalyticsEngineService {
         source_id: params.sourceId ?? null,
         source_event_type: params.sourceEventType ?? null,
         occurred_at: params.occurredAt ?? new Date().toISOString(),
-        metadata: params.metadata ?? {},
+        metadata: (params.metadata ?? {}) as Json,
       });
 
     if (error) throw new Error(`recordMetric failed: ${error.message}`);

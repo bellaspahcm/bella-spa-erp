@@ -14,7 +14,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { Database } from '@/types/database.types';
+import { Database, Json } from '@/types/database.types';
 import { eventBus } from '@/platform/host/event-bus';
 import type { DomainEvent, EventType } from '@/platform/host/event-bus/types';
 import crypto from 'crypto';
@@ -282,10 +282,10 @@ export class RollbackEngineService {
         action: params.action,
         entity_type: params.entityType,
         entity_id: params.entityId,
-        snapshot_before: params.snapshotBefore ?? null,
-        snapshot_after: params.snapshotAfter ?? null,
-        compensating_action: params.compensatingAction,
-        compensating_params: params.compensatingParams,
+        snapshot_before: (params.snapshotBefore ?? null) as Json,
+        snapshot_after: (params.snapshotAfter ?? null) as Json,
+        compensating_action: params.compensatingAction as Json,
+        compensating_params: params.compensatingParams as Json,
         status: 'EXECUTED',
         executed_at: new Date().toISOString(),
         metadata: params.metadata ?? {},
