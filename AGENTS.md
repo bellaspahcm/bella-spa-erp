@@ -362,20 +362,35 @@ npm run governance:baseline
 
 ### Next Engineering Target
 
-**Logistics HOTSPOT:** >180s compilation timeout
+**Logistics HOTSPOT:** >180s compilation timeout (DEFERRED)
 
 **Status:**
 - Platform GREEN achieved: 43 PASS / 0 FAIL / 1 HOTSPOT
 - All FAIL scopes resolved (Host, Healthcare, Real-Estate, Education)
-- Logistics requires separate compiler infrastructure investigation
+- Logistics DEFERRED (compiler infrastructure issue, NOT code defect)
 
-**Approach:**
+**Why DEFER (not RESET like Education):**
+
+| Factor | Education (RESET) | Logistics (DEFER) |
+|--------|-------------------|-------------------|
+| Code volume | ~100 lines | ~30K LOC |
+| Schema | 2 simple tables | 6 tables + full RLS |
+| Domain logic | Minimal | Rich (Item, Inventory, Movement, Traceability) |
+| Diagnostics | 102 (schema mismatch) | 0 (compiler timeout) |
+| Production | Test product | Claims "Production" status |
+| Issue | Code defects | Compiler infrastructure |
+
+**Logistics Investigation (when prioritized):**
+- Compiler profiling (--extendedDiagnostics)
+- Module graph analysis
+- Type resolution bottleneck identification
+- Potential scope decomposition (if architecture permits)
 - Do NOT increase timeout indefinitely
-- Investigate root cause: module graph complexity, type resolution bottleneck
-- Consider scope decomposition if architecture permits
-- Logistics remediation deferred until compiler issue resolved
+- Do NOT use tsconfig exclusions, skipLibCheck, or workarounds
 
 **No further governance work until concrete operational gap discovered.**
+
+**See:** [LOGISTICS_HOTSPOT_ANALYSIS.md](docs/architecture/LOGISTICS_HOTSPOT_ANALYSIS.md)
 
 ---
 
