@@ -59,11 +59,134 @@ Kernel (Frozen industry DNA)
 Platform Core (Cross-industry foundation)
 ```
 
-**Before implementing:**
-- Q1: Is it mandatory for correctness/security/compliance? → Build it
-- Q2: Will it be reused in other industries? → Consider Kernel
-- Q3: If Kernel, will it make next Industry OS faster? → Otherwise keep in Product
-- Q4: Does this make next Industry OS faster? → If NO, default: don't build
+**Bella Development Strategy:**
+> Build the industry → capture reusable DNA → reuse it immediately → build the next industry faster.
+
+**Classification BEFORE building:**
+
+1. **Platform Core** — cross-industry capability (Tenant, Auth, RLS, Audit)
+2. **Industry Kernel** — reusable industry capability (Finance, Healthcare, Spa patterns)
+3. **Product-specific** — capability unique to one product
+
+**⚠️ CRITICAL RULE:**
+
+> **Do NOT build in Product layer first and plan to extract into Kernel later when reusable nature is already apparent.**
+
+### The 4-Question Filter
+
+Before implementing ANY new capability:
+
+#### Q1: Is it mandatory for correctness/security/compliance?
+- **YES → Build it** (non-negotiable)
+
+#### Q2: Will this capability be reused in other industries?
+- **YES → Consider Kernel**
+- **NO → Keep in Product**
+
+#### Q3: If Kernel, will it actually make the next Industry faster?
+- **NO → Keep in Product** (don't force abstraction)
+
+#### Q4: Does this make the next Industry OS faster?
+- **NO → Default: don't build** (unless mandatory from Q1)
+
+### Reuse Before Rebuild
+
+For every new requirement:
+
+```
+Requirement
+    ↓
+Can Platform Core provide it?
+    ↓
+Can an existing Kernel provide it?
+    ↓
+Can an existing Kernel be extended?
+    ↓
+Only then build new Industry-specific capability.
+```
+
+**Never duplicate** an existing capability without first explaining why reuse is inappropriate.
+
+### Kernel Is an Asset, Not a Goal
+
+**Do NOT create:**
+- Kernel registries
+- Kernel marketplaces
+- Kernel compilers
+- Kernel factories
+- Learning engines
+- Universal industry abstractions
+
+unless real development pain from multiple industries demonstrates necessity.
+
+### Freeze Good-Enough Kernels
+
+A Kernel does not need perfect before next Industry OS starts.
+
+**Once a Kernel has:**
+- Correct business behavior
+- Stable reusable boundaries
+- Sufficient tests/evidence
+- No known critical correctness issue
+
+→ Treat as **reusable baseline**. Extend only when real subsequent Industry requires additional capability.
+
+---
+
+## Bella Development Metrics
+
+### Primary Metric
+
+> **Is the next Industry OS faster to build than the previous one?**
+
+If development is becoming slower, investigate which boundary or Kernel is failing to provide sufficient reuse.
+
+**Do NOT** respond to slower development by automatically adding:
+- ❌ Frameworks
+- ❌ Governance layers
+- ❌ Abstraction ceremonies
+- ❌ Process overhead
+
+### Success Criteria
+
+**WRONG approach:**
+```
+1. Start building Product features
+2. Build more features
+3. Product complete
+4. "Oh, this could be a Kernel"
+5. Extract/refactor
+```
+
+**CORRECT approach:**
+```
+1. Analyze requirements
+2. For each capability:
+   - Can Platform Core provide it? → Use Platform
+   - Can existing Kernel provide it? → Use Kernel
+   - Can existing Kernel be extended? → Extend Kernel
+   - Is it reusable across industries? → New Kernel
+   - Is it industry-specific? → Product
+3. Build in correct layer immediately
+4. Measure: Was this Industry OS faster than previous?
+5. Capture new reusable patterns → Update Kernels
+```
+
+### Every Industry Must Teach Bella Something
+
+After building an Industry OS, identify **only the reusable patterns that have demonstrated value:**
+
+```
+Industry N
+    ↓
+Reusable pattern discovered
+    ↓
+Capture in Kernel
+    ↓
+Industry N+1 reuses it
+```
+
+**Do not create abstractions merely because they might be reusable.**
 
 ---
 
