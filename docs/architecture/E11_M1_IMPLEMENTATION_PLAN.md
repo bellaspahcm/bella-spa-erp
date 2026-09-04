@@ -212,6 +212,24 @@ Architecture Guard        ✅ PASS
 
 ## Critical Invariants (Per Approval)
 
+### Gate Validation Phases
+
+**Phase 1: Structural Validation (M2 Research Phase)**
+
+- **Scope:** PROPOSED Business Truths
+- **Purpose:** Validate structural correctness of research proposals
+- **Validates:** Provenance completeness (Inv 4), Confidence validity (Inv 3), Authority consistency (Inv 2), Implementation feasibility (Inv 5 advisory)
+- **Output:** Structurally valid PROPOSED truths (awaiting authorization)
+
+**Phase 2: E10 Authorization (E10 Consumption Phase)**
+
+- **Scope:** CANONICAL Business Truths
+- **Purpose:** Validate E10 consumption readiness
+- **Validates:** Full Business Truth Gate (all 7 invariants), especially Inv 1 (CANONICAL status) and Inv 6 (Factory authorization)
+- **Output:** Authorized CANONICAL truths ready for E10
+
+**Separation Rationale:** PROPOSED is valid intermediate state. E10 requires CANONICAL.
+
 ### Invariant: Authorization ≠ Validation
 
 ```typescript

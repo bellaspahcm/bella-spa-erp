@@ -28,8 +28,8 @@ M2 Research Engine proven with executable evidence:
 - `types.ts` - ResearchIntent, ResearchResult, EvidenceCollection, SynthesisResult
 
 **Evidence Collection:**
-- `collectors/bella-collector.ts` - Inspects existing Bella kernels
-- `collectors/web-collector.ts` - Web research (placeholder structure)
+- `collectors/bella-collector.ts` - Inspects existing Bella kernels (VERIFIED)
+- `collectors/web-collector.ts` - Web research interface (PLACEHOLDER - not integrated)
 - `collectors/index.ts` - Collector exports
 
 **Synthesis:**
@@ -45,6 +45,8 @@ M2 Research Engine proven with executable evidence:
 - `__tests__/research-cycle.test.ts` - 9 tests covering complete pipeline
 - `__tests__/m1-integration.test.ts` - 7 tests covering M2+M1 integration
 - `__tests__/negative.test.ts` - 5 tests proving governance boundaries
+
+**Note:** WebCollector is a placeholder. Live external web research is not yet integrated. M2 proves research orchestration architecture and Bella-based evidence collection.
 
 ---
 
@@ -318,10 +320,10 @@ M2 produces proposals. M4 will add self-critique layer.
 
 ## M2 What Is Proven
 
-### ✅ AI Can Research
-- Evidence collection works (Bella + web structure)
-- Synthesis aggregates evidence
-- Patterns/conflicts/alternatives detected
+### ✅ AI Can Research (Architecture)
+- Research orchestration works (pipeline executes)
+- Bella kernel inspection works (real filesystem evidence)
+- Evidence synthesis works (patterns/conflicts/alternatives detected)
 
 ### ✅ AI Can Infer
 - Generate entity proposals
@@ -341,6 +343,8 @@ M2 Research → PROPOSED Business Truths
                   ↓
          Awaiting Human Authorization
 ```
+
+**LIMITATION:** Live external web research is not yet integrated (placeholder). M2 proves research orchestration architecture and Bella-based evidence collection capability.
 
 ---
 
