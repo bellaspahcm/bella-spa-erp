@@ -508,11 +508,10 @@ REDUCTION: 24/29 diagnostics eliminated (83%)
 - Line 280: Update payload type mismatch
 - Line 235, 291: Return type assertion (`PreschoolStudent`)
 
-**Root cause of residuals:**
-Product types (`StudentDetail`, `PreschoolStudent`) defined in `src/products/bella-preschool/types.ts` do not align with generated DB types.
-
-**Why these remained:**
-These are independent defects in manually-written Product type definitions, NOT generated-schema drift.
+**Residual diagnostics classification:**
+- Independent/secondary causes SUSPECTED
+- NOT YET ROOT-CAUSE CLASSIFIED
+- Hypothesis: Product-type alignment issues (requires separate investigation)
 
 ---
 
@@ -532,12 +531,12 @@ CAUSE LOCATION:
 GENERATOR boundary (stale type generation)
 
 MECHANISM OBSERVED:
-Missing table definitions
-→ Supabase generic resolution fails at query site
-→ TS2589 recursion (excessive deep instantiation)
-→ `never` type propagation
-→ Overload ambiguity
-→ Cascading downstream failures
+Missing table definitions in generated types
+→ Typed Supabase query resolution fails at query site
+→ TS2589 recursion + `never` propagation + overload cascades
+→ Refreshing canonical generated types removes diagnostic families
+
+(Exact TypeScript compiler internals NOT required for causal attribution)
 
 ATTRIBUTION:
 24/29 diagnostics (83%) eliminated by type regeneration alone
@@ -550,7 +549,7 @@ WITHOUT any consumer code changes
 
 ✅ **Type regeneration causally eliminates 24/29 errors**
 
-✅ **Remaining 5 errors are independent Product-type defects**
+✅ **Remaining 5 diagnostics are independent/secondary causes (NOT YET CLASSIFIED)**
 
 ✅ **Static/runtime schema divergence produces cascading TypeScript failures**
 
