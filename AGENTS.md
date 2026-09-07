@@ -2,7 +2,21 @@
 
 **Purpose:** Decision framework for AI agents and developers building Bella Platform of Platforms.
 
-**Last updated:** 2026-08-25
+**Last updated:** 2026-09-05
+
+---
+
+## ⚠️ MANDATORY READING BEFORE CREATING NEW OS/PRODUCT
+
+**[New OS/Product Creation Policy](docs/architecture/NEW_PRODUCT_CREATION_POLICY.md)** — 5 Mandatory Gates, Decision Rules, Factory Usage
+
+**Read this policy BEFORE starting any new Industry OS or Product development.**
+
+**Key principles:**
+- 5 Mandatory Gates protect invariants (Definition, Architecture, Verification, Evidence, Qualification)
+- Decision Rules guide choices (reuse-first, minimal capability, additive extension)
+- Factory Automation assists (P1/P2 optional, not mandatory)
+- No gate proliferation, no approval for every step
 
 ---
 
@@ -241,13 +255,273 @@ This **IS:**
 
 ---
 
-## 📊 Governance & Platform Status (as of 2026-09-03)
+## 📊 Governance & Platform Status (as of 2026-09-06)
+
+### Factory Test #1 — CLOSED ✅
+
+**Status:** 🔒 **SUCCESS** — Retail OS Core Baseline validated for General Merchandise
+
+**Achievement:**
+- Factory generated 2,023 LOC autonomous (R1+R2 engines + repositories + tests)
+- Human judgment → Factory execution → Evidence validation workflow proven
+- Governance as automated checkpoints (not approval loops) validated
+- Lean Platform principle demonstrated (build → capture → reuse → STOP)
+
+**Key learning:**
+> **Human defines WHAT + WHY, Factory executes HOW, Evidence validates outcome.**
+
+**Governance efficiency:** 1 human decision per 8 agent execution steps
+
+**Status:** Experiment closed, workflow proven, no further Factory tests until next Industry OS
+
+---
+
+### Factory Test #2 — DEFERRED ⏸️
+
+**Status:** ⏸️ **DEFERRED** — No artificial Product #2 without business demand
+
+**Hypothesis preserved (not implemented):**
+> When real Product #2 requires Retail Core, can Factory construct it primarily through R1/R2 reuse?
+
+**Why deferred:**
+- No proven business need for bella-specialty-store (or similar Product #2)
+- Building artificial Product #2 purely for reuse metrics violates "Demand first, supply second"
+- Real Product #2 (when it exists) provides natural experiment without selection bias
+
+**Trigger conditions for reopening:**
+1. Real Product #2 business demand (customer contract, revenue projection, operational need)
+2. Retail OS extension requirement (Fashion/Pharmacy with Variant/Batch need)
+
+**Recommended next:** Different Industry OS (Healthcare/Hospitality/Logistics) — more strategic value than another Retail product
+
+**Documents:**
+- [Factory Test #2 Deferred](docs/architecture/FACTORY_TEST_2_DEFERRED.md) ⏸️
+
+---
+
+### Factory Test #4 — Bella Preschool — CLOSED ✅
+
+**Status:** 🔒 **CLOSED** — Controlled Product Production field-validated
+
+**Achievement:**
+- 4 capabilities field-verified: Student+Guardian (P3.1), Classroom (P3.2), Enrollment (P3.3), Attendance (P3.4)
+- Complete core vertical slice: Student → Guardian → Classroom → Enrollment → Attendance
+- 26/26 isolated E2E scenarios PASS
+- Learning transfer demonstrated across consecutive capabilities
+- Product defects: 2 → 1 → 0 → 0 (decreasing trend)
+
+**Key learning:**
+> **Cross-capability learning transfer field-demonstrated. Test infrastructure (real auth, stable identity, isolated fixtures, failure classification) reused across P3.2/P3.3/P3.4 without rework.**
+
+**Proven patterns:**
+- Real authentication requirement (Supabase JWT, not mock)
+- Stable identity lifecycle (reuse test user across scenarios)
+- Isolated business data (unique prefixes per scenario)
+- Failure classification before remediation
+
+**Candidate patterns (not codified):**
+- !inner join guard (2 occurrences in P3.1/P3.2, need more evidence)
+
+**Status:** Experiment closed, patterns proven, no further capabilities required
+
+**Documents:**
+- [Factory Test #4 Closure](docs/architecture/FACTORY_TEST_4_CLOSURE.md) 🔒
+- [P3.1 Student+Guardian Closure](docs/products/bella-preschool/P3_1_CLOSURE.md) ✅
+- [P3.2 Classroom Closure](docs/products/bella-preschool/P3_2_CLASSROOM_CLOSURE.md) ✅
+- [P3.3 Enrollment Closure](docs/products/bella-preschool/P3_3_ENROLLMENT_CLOSURE.md) ✅
+- [P3.4 Attendance Closure](docs/products/bella-preschool/P3_4_ATTENDANCE_CLOSURE.md) ✅
+
+---
+
+**Status:** 🟡 **BASELINE PROVEN, F-G1 RECONCILIATION REQUIRED**
+
+**Achievement:**
+- AutoMove Product constructed autonomously (~2,300 LOC)
+- 4 runtime defects detected, investigated, remediated autonomously
+- Complete recovery loop demonstrated: Construct → Validate → Detect → Investigate → Fix → Re-validate
+- Final validation: Product tests 32/32 ✅, E2E 16/16 ✅, Architecture Guard ✅, Build ✅
+
+**Key learning:**
+> Factory demonstrated **autonomous recovery capability** — not just code generation, but detect-investigate-fix-revalidate cycle on real runtime failures (FK issues, table privileges, schema mismatches, RLS policy incompatibility).
+
+**F-G1 field observation:**
+- 4 DB/RLS incidents reached E2E validation despite F-G1 preflight passing
+- Classification required: Guard deficiency vs capability gap vs contract ambiguity
+- **Reconciliation checkpoint active** — no F-G1 changes until contract mapping complete
+
+**Status:**
+- Construction phase: ✅ COMPLETE
+- Validation phase: ✅ COMPLETE
+- Learning extraction: ⏸️ IN PROGRESS (F-G1 contract reconciliation)
+
+**Documents:**
+- [AutoMove Construction Complete](docs/products/bella-automove/CONSTRUCTION_COMPLETE.md) ✅
+- [Factory Test #3 Assessment](docs/architecture/FACTORY_TEST_3_ASSESSMENT.md) 🟡
+- [F-G1 Contract Reconciliation](docs/architecture/F-G1_CONTRACT_RECONCILIATION.md) ⏸️ ACTIVE
+
+**Blocked:**
+- ❌ F-G1 implementation changes (until reconciliation complete)
+- ❌ Factory capability expansion (until learning extracted)
+- ❌ Product #4 construction (until Test #3 formally closed)
+
+**Next:** Complete F-G1 contract reconciliation (map AutoMove incidents → contract → classify Gap/Defect/Ambiguity → decide scope)
+
+---
+
+### Retail OS — EXPERIMENT CLOSED 🔒
+
+**Status:** SUCCESS — Core Baseline validated, further work demand-driven only
+
+**See:** [Retail OS Status](#retail-os-status--experiment-closed-) section above
+
+---
 
 ### Governance Checkpoint — CLOSED
 
 **Phase 1 Regression Protection + Known Pattern Rule:** ACTIVE / FIELD-TESTED
 
 **Status:** Engineering mode active. No further governance expansion until proven need.
+
+**⚠️ Industry Discovery Governance — APPROVED FOR IMPLEMENTATION DESIGN**
+
+**Status:** Human decision approved, implementation design checkpoint required before coding
+
+**Decision Record:** [Industry Discovery Governance Decision](docs/governance/INDUSTRY_DISCOVERY_GOVERNANCE_DECISION.md) ✅ Approved 2026-09-06
+
+**Key decisions:**
+- ✅ Industry Discovery Governance = Platform-level reusable capability
+- ✅ Canonical ownership: Reuse existing mechanisms (Architecture Guard, BDGF, Evidence Collector)
+- ✅ New governance only for genuine gaps (discovery lifecycle, reference product limit)
+- ✅ Capability Identity = Option B (DEFER semantic duplication detection)
+- ❌ No quantitative estimates until implementation design complete
+- 🔒 Implementation BLOCKED until Implementation Design checkpoint
+
+**6 Governance Principles Locked:**
+1. No quantitative claims without measurement
+2. No implementation design in reconciliation
+3. No parallel enforcement mechanisms
+4. Capability Identity blocks semantic detection only (not entire framework)
+5. Do not automate judgment
+6. Do not automate unproven patterns ← **NEW**
+
+**Next checkpoint:** Implementation Design (evidence collection + design, NOT coding)
+
+**Reconciliation:** [Governance Reconciliation](docs/architecture/GOVERNANCE_RECONCILIATION.md) 🟡 Conditionally accepted
+
+**⚠️ NEW OS/PRODUCT DEVELOPMENT:**
+
+**MANDATORY:** Read [New Product Creation Policy](docs/architecture/NEW_PRODUCT_CREATION_POLICY.md) before starting any new Industry OS or Product
+
+**5 Mandatory Gates:**
+1. G1: Definition & Boundary
+2. G2: Architecture / Contract Compliance
+3. G3: Verification
+4. G4: Evidence
+5. G5: Human Qualification
+
+**Decision Rules:** Reuse-first, minimal capability, additive extension  
+**Factory Automation:** P1 Schema Generation, P2 Evidence Collection (optional, not mandatory)
+
+### Retail OS Status — EXPERIMENT CLOSED ✅
+
+**Status:** 🔒 **CLOSED** (2026-09-06)
+
+**Outcome:** SUCCESS — Core Baseline validated for General Merchandise
+
+**What was built:**
+- R1 Product Catalog (5 operations, 19/19 tests, FROZEN)
+- R2 Inventory Movement (4 operations, 17/17 tests, FROZEN)
+- bella-retail-store integration (9/9 canonical ops migrated, 19/19 tests)
+
+**Validation evidence:**
+- Tests: 55/55 PASS ✅
+- TypeScript: GREEN ✅
+- Architecture Guard: PASS ✅
+- Production Build: SUCCESS ✅
+- Regressions: ZERO ✅
+- Contract expansions: ZERO ✅
+
+**Final claim:**
+> **Retail OS Core Baseline (R1+R2) validated for General Merchandise. NOT validated for Fashion/Pharmacy/Electronics (Variant/Batch/Serial gaps documented).**
+
+**NOT claimed:**
+- ❌ "Retail OS complete"
+- ❌ "R1/R2 universal for all retail"
+
+**Reopen conditions (demand-driven ONLY):**
+1. Product #2 with proven R1/R2 requirement
+2. Specialized archetype (Fashion/Pharmacy) with business case
+3. Multi-Product orchestration pattern (N ≥ 2)
+
+**Do NOT reopen for:**
+- ❌ "R1/R2 looks incomplete"
+- ❌ "Let's add Variant just in case"
+- ❌ "Build Product #2 to prove reuse"
+
+**Principle locked:** **Demand first, supply second.**
+
+**Documents:**
+- [Retail OS Experiment Closure](docs/architecture/RETAIL_OS_EXPERIMENT_CLOSURE.md) 🔒
+- [Phase 3 Closure](docs/architecture/RETAIL_OS_PHASE3_CLOSURE.md) ✅
+- [Coverage Study](docs/architecture/RETAIL_OS_COVERAGE_STUDY.md) ✅
+
+**Next:** Different Industry OS OR demand-driven Product #2 (when business need proven)
+
+---
+
+### Industry Discovery Governance — INVESTIGATION COMPLETE, FRAMEWORK STOPPED
+
+**Investigation Phase:** ✅ COMPLETE (Sept 6, 2026)
+
+**Key findings:**
+- 2 genuine policy gaps identified (Discovery lifecycle, Reference Product limit)
+- Evidence collection methodology proven
+- Gap analysis process validated
+
+**Framework Development:** 🛑 **STOPPED**
+
+**Decision:** Do not build governance framework before proving pattern repeats
+
+**Rationale:**
+> **Đừng xây Industry Discovery Governance Framework để chứng minh Factory có thể tự động hóa Product Manufacturing. Hãy dùng Retail để chứng minh điều đó trước. Nếu governance pattern thực sự lặp lại, lúc đó mới biến nó thành framework.**
+
+**What we will NOT build (yet):**
+- ❌ Discovery lifecycle engine
+- ❌ Reference Product Guard
+- ❌ Capability Identity Model
+- ❌ Semantic duplicate detector
+- ❌ Governance workflow automation
+- ❌ Product registry
+
+**What to do instead:**
+1. Build 2 Reference Products for Retail OS
+2. Extract Retail OS from Products
+3. Qualify Retail OS
+4. Use Factory to create Product #3
+5. **Measure actual evidence:**
+   - Product #3 speed vs Product #1/2
+   - LOC reduction (reused vs new)
+   - Human decisions required
+   - Factory automation effectiveness
+
+**6th Governance Principle validated:**
+
+> **Do not automate unproven patterns.**
+
+**Status:** Investigation complete → Framework development stopped → Return to Retail OS
+
+**Documents:**
+- [Governance Decision](docs/governance/INDUSTRY_DISCOVERY_GOVERNANCE_DECISION.md) ✅ Preserved
+- [Governance Reconciliation](docs/architecture/GOVERNANCE_RECONCILIATION.md) ✅ Preserved
+- [Implementation Design](docs/governance/INDUSTRY_DISCOVERY_GOVERNANCE_IMPLEMENTATION_DESIGN.md) 🛑 Marked STOPPED
+
+**Next:** Prove Factory leverage with Retail, then revisit governance automation if pattern repeats.
+
+**Manufacturing Phase 3.5:** ✅ COMPLETE (Factory qualified)
+- P1 Schema Generation: ✅ COMPLETE (21/21 tests)
+- P2 Evidence Collection: ✅ COMPLETE (23/23 tests)
+- P3 Kernel Binding: ⏸️ DEFERRED (no proven bottleneck)
+- P4 Test Scaffolding: ⏸️ DEFERRED (no proven bottleneck)
 
 **Components:**
 - ✅ Gate B: VERIFIED / FROZEN (44 scopes, diagnostic fingerprinting)
