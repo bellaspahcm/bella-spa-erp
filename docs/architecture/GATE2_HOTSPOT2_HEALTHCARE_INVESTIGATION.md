@@ -199,7 +199,7 @@ Services layer:         ❌ NOT COVERED
 
 **Impact:**
 - Gate 1 full-program diagnostics included unscoped files
-- 251 diagnostic count OVERSTATED actual governed code issues
+- **Note:** 251 diagnostics = full-repo inventory (partial), NOT directly interpretable as "251 diagnostics in governed scoped coverage" due to coverage model differences
 - Services/** technical debt invisible to governance gates
 
 **Future work:** Services layer governance (post-Gate 2)
