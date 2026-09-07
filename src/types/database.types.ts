@@ -12,470 +12,23 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  logistics: {
+  graphql_public: {
     Tables: {
-      inventory: {
-        Row: {
-          created_at: string
-          expiry_date: string | null
-          id: string
-          item_id: string
-          location_id: string
-          location_type: string
-          lot_number: string | null
-          quantity_available: number | null
-          quantity_on_hand: number
-          quantity_reserved: number
-          serial_number: string | null
-          status: string
-          tenant_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          expiry_date?: string | null
-          id?: string
-          item_id: string
-          location_id: string
-          location_type: string
-          lot_number?: string | null
-          quantity_available?: number | null
-          quantity_on_hand?: number
-          quantity_reserved?: number
-          serial_number?: string | null
-          status?: string
-          tenant_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          expiry_date?: string | null
-          id?: string
-          item_id?: string
-          location_id?: string
-          location_type?: string
-          lot_number?: string | null
-          quantity_available?: number | null
-          quantity_on_hand?: number
-          quantity_reserved?: number
-          serial_number?: string | null
-          status?: string
-          tenant_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "inventory_item_fk"
-            columns: ["item_id"]
-            isOneToOne: false
-            referencedRelation: "items"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inventory_item_id_fkey"
-            columns: ["item_id"]
-            isOneToOne: false
-            referencedRelation: "items"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inventory_location_fk"
-            columns: ["location_id"]
-            isOneToOne: false
-            referencedRelation: "locations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inventory_location_id_fkey"
-            columns: ["location_id"]
-            isOneToOne: false
-            referencedRelation: "locations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      inventory_movements: {
-        Row: {
-          approved_at: string | null
-          approved_by: string | null
-          batch_id: string | null
-          cancellation_reason: string | null
-          cancelled_at: string | null
-          completed_at: string | null
-          created_at: string
-          created_by: string | null
-          currency: string | null
-          direction: string
-          expiry_date: string | null
-          from_location_id: string | null
-          from_location_type: string | null
-          id: string
-          item_id: string
-          lot_number: string | null
-          movement_date: string
-          movement_number: string
-          movement_type: string
-          notes: string | null
-          quantity: number
-          reason: string | null
-          serial_number: string | null
-          source_document_id: string | null
-          source_document_number: string | null
-          source_document_type: string | null
-          source_line_item_id: string | null
-          status: string
-          tenant_id: string
-          to_location_id: string | null
-          to_location_type: string | null
-          total_cost: number | null
-          unit_cost: number | null
-          unit_of_measure: string
-        }
-        Insert: {
-          approved_at?: string | null
-          approved_by?: string | null
-          batch_id?: string | null
-          cancellation_reason?: string | null
-          cancelled_at?: string | null
-          completed_at?: string | null
-          created_at?: string
-          created_by?: string | null
-          currency?: string | null
-          direction: string
-          expiry_date?: string | null
-          from_location_id?: string | null
-          from_location_type?: string | null
-          id?: string
-          item_id: string
-          lot_number?: string | null
-          movement_date?: string
-          movement_number: string
-          movement_type: string
-          notes?: string | null
-          quantity: number
-          reason?: string | null
-          serial_number?: string | null
-          source_document_id?: string | null
-          source_document_number?: string | null
-          source_document_type?: string | null
-          source_line_item_id?: string | null
-          status?: string
-          tenant_id: string
-          to_location_id?: string | null
-          to_location_type?: string | null
-          total_cost?: number | null
-          unit_cost?: number | null
-          unit_of_measure: string
-        }
-        Update: {
-          approved_at?: string | null
-          approved_by?: string | null
-          batch_id?: string | null
-          cancellation_reason?: string | null
-          cancelled_at?: string | null
-          completed_at?: string | null
-          created_at?: string
-          created_by?: string | null
-          currency?: string | null
-          direction?: string
-          expiry_date?: string | null
-          from_location_id?: string | null
-          from_location_type?: string | null
-          id?: string
-          item_id?: string
-          lot_number?: string | null
-          movement_date?: string
-          movement_number?: string
-          movement_type?: string
-          notes?: string | null
-          quantity?: number
-          reason?: string | null
-          serial_number?: string | null
-          source_document_id?: string | null
-          source_document_number?: string | null
-          source_document_type?: string | null
-          source_line_item_id?: string | null
-          status?: string
-          tenant_id?: string
-          to_location_id?: string | null
-          to_location_type?: string | null
-          total_cost?: number | null
-          unit_cost?: number | null
-          unit_of_measure?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "inventory_movements_item_id_fkey"
-            columns: ["item_id"]
-            isOneToOne: false
-            referencedRelation: "items"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "movements_from_location_fk"
-            columns: ["from_location_id"]
-            isOneToOne: false
-            referencedRelation: "locations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "movements_item_fk"
-            columns: ["item_id"]
-            isOneToOne: false
-            referencedRelation: "items"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "movements_to_location_fk"
-            columns: ["to_location_id"]
-            isOneToOne: false
-            referencedRelation: "locations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      items: {
-        Row: {
-          base_uom: string
-          category: string | null
-          created_at: string
-          created_by: string | null
-          currency: string | null
-          description: string | null
-          dimensions_json: Json | null
-          expiry_tracked: boolean
-          id: string
-          lot_tracked: boolean
-          name: string
-          serial_tracked: boolean
-          sku_code: string
-          standard_cost: number | null
-          status: string
-          tenant_id: string
-          type: string
-          updated_at: string
-          updated_by: string | null
-          weight_kg: number | null
-        }
-        Insert: {
-          base_uom?: string
-          category?: string | null
-          created_at?: string
-          created_by?: string | null
-          currency?: string | null
-          description?: string | null
-          dimensions_json?: Json | null
-          expiry_tracked?: boolean
-          id?: string
-          lot_tracked?: boolean
-          name: string
-          serial_tracked?: boolean
-          sku_code: string
-          standard_cost?: number | null
-          status?: string
-          tenant_id: string
-          type?: string
-          updated_at?: string
-          updated_by?: string | null
-          weight_kg?: number | null
-        }
-        Update: {
-          base_uom?: string
-          category?: string | null
-          created_at?: string
-          created_by?: string | null
-          currency?: string | null
-          description?: string | null
-          dimensions_json?: Json | null
-          expiry_tracked?: boolean
-          id?: string
-          lot_tracked?: boolean
-          name?: string
-          serial_tracked?: boolean
-          sku_code?: string
-          standard_cost?: number | null
-          status?: string
-          tenant_id?: string
-          type?: string
-          updated_at?: string
-          updated_by?: string | null
-          weight_kg?: number | null
-        }
-        Relationships: []
-      }
-      locations: {
-        Row: {
-          address_json: Json | null
-          created_at: string
-          id: string
-          location_code: string
-          location_name: string
-          location_type: string
-          parent_location_id: string | null
-          status: string
-          tenant_id: string
-          updated_at: string
-        }
-        Insert: {
-          address_json?: Json | null
-          created_at?: string
-          id?: string
-          location_code: string
-          location_name: string
-          location_type: string
-          parent_location_id?: string | null
-          status?: string
-          tenant_id: string
-          updated_at?: string
-        }
-        Update: {
-          address_json?: Json | null
-          created_at?: string
-          id?: string
-          location_code?: string
-          location_name?: string
-          location_type?: string
-          parent_location_id?: string | null
-          status?: string
-          tenant_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "locations_parent_fk"
-            columns: ["parent_location_id"]
-            isOneToOne: false
-            referencedRelation: "locations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      traceability: {
-        Row: {
-          compliance_status: string
-          created_at: string
-          custody_events: Json
-          expiry_date: string | null
-          id: string
-          item_id: string
-          lot_number: string | null
-          manufactured_date: string | null
-          recall_date: string | null
-          recall_reason: string | null
-          recall_status: string
-          received_date: string
-          serial_number: string | null
-          supplier_id: string | null
-          supplier_lot_number: string | null
-          supplier_name: string | null
-          tenant_id: string
-          updated_at: string
-        }
-        Insert: {
-          compliance_status?: string
-          created_at?: string
-          custody_events?: Json
-          expiry_date?: string | null
-          id?: string
-          item_id: string
-          lot_number?: string | null
-          manufactured_date?: string | null
-          recall_date?: string | null
-          recall_reason?: string | null
-          recall_status?: string
-          received_date: string
-          serial_number?: string | null
-          supplier_id?: string | null
-          supplier_lot_number?: string | null
-          supplier_name?: string | null
-          tenant_id: string
-          updated_at?: string
-        }
-        Update: {
-          compliance_status?: string
-          created_at?: string
-          custody_events?: Json
-          expiry_date?: string | null
-          id?: string
-          item_id?: string
-          lot_number?: string | null
-          manufactured_date?: string | null
-          recall_date?: string | null
-          recall_reason?: string | null
-          recall_status?: string
-          received_date?: string
-          serial_number?: string | null
-          supplier_id?: string | null
-          supplier_lot_number?: string | null
-          supplier_name?: string | null
-          tenant_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "traceability_item_fk"
-            columns: ["item_id"]
-            isOneToOne: false
-            referencedRelation: "items"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "traceability_item_id_fkey"
-            columns: ["item_id"]
-            isOneToOne: false
-            referencedRelation: "items"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      uom: {
-        Row: {
-          base_uom_code: string | null
-          category: string
-          conversion_factor: number | null
-          created_at: string
-          decimals: number | null
-          id: string
-          status: string
-          tenant_id: string
-          uom_code: string
-          uom_name: string
-          updated_at: string
-        }
-        Insert: {
-          base_uom_code?: string | null
-          category: string
-          conversion_factor?: number | null
-          created_at?: string
-          decimals?: number | null
-          id?: string
-          status?: string
-          tenant_id: string
-          uom_code: string
-          uom_name: string
-          updated_at?: string
-        }
-        Update: {
-          base_uom_code?: string | null
-          category?: string
-          conversion_factor?: number | null
-          created_at?: string
-          decimals?: number | null
-          id?: string
-          status?: string
-          tenant_id?: string
-          uom_code?: string
-          uom_name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
@@ -21266,6 +20819,407 @@ export type Database = {
           },
         ]
       }
+      preschool_attendance: {
+        Row: {
+          absence_reason: string | null
+          attendance_date: string
+          check_in_time: string | null
+          check_out_time: string | null
+          checked_in_by_user_id: string | null
+          checked_out_by_user_id: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          picked_up_by_guardian_id: string | null
+          status: string
+          student_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          absence_reason?: string | null
+          attendance_date?: string
+          check_in_time?: string | null
+          check_out_time?: string | null
+          checked_in_by_user_id?: string | null
+          checked_out_by_user_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          picked_up_by_guardian_id?: string | null
+          status?: string
+          student_id: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          absence_reason?: string | null
+          attendance_date?: string
+          check_in_time?: string | null
+          check_out_time?: string | null
+          checked_in_by_user_id?: string | null
+          checked_out_by_user_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          picked_up_by_guardian_id?: string | null
+          status?: string
+          student_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preschool_attendance_checked_in_by_user_id_fkey"
+            columns: ["checked_in_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "mv_ktv_performance_summary"
+            referencedColumns: ["ktv_id"]
+          },
+          {
+            foreignKeyName: "preschool_attendance_checked_in_by_user_id_fkey"
+            columns: ["checked_in_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preschool_attendance_checked_out_by_user_id_fkey"
+            columns: ["checked_out_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "mv_ktv_performance_summary"
+            referencedColumns: ["ktv_id"]
+          },
+          {
+            foreignKeyName: "preschool_attendance_checked_out_by_user_id_fkey"
+            columns: ["checked_out_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preschool_attendance_picked_up_by_guardian_id_fkey"
+            columns: ["picked_up_by_guardian_id"]
+            isOneToOne: false
+            referencedRelation: "preschool_student_guardians"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preschool_attendance_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "preschool_students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preschool_attendance_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "preschool_attendance_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      preschool_classrooms: {
+        Row: {
+          age_group: string | null
+          assistant_teacher_id: string | null
+          capacity: number | null
+          classroom_code: string | null
+          classroom_name: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          is_active: boolean
+          lead_teacher_id: string | null
+          notes: string | null
+          room_location: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          age_group?: string | null
+          assistant_teacher_id?: string | null
+          capacity?: number | null
+          classroom_code?: string | null
+          classroom_name: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          lead_teacher_id?: string | null
+          notes?: string | null
+          room_location?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          age_group?: string | null
+          assistant_teacher_id?: string | null
+          capacity?: number | null
+          classroom_code?: string | null
+          classroom_name?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          lead_teacher_id?: string | null
+          notes?: string | null
+          room_location?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preschool_classrooms_assistant_teacher_id_fkey"
+            columns: ["assistant_teacher_id"]
+            isOneToOne: false
+            referencedRelation: "mv_ktv_performance_summary"
+            referencedColumns: ["ktv_id"]
+          },
+          {
+            foreignKeyName: "preschool_classrooms_assistant_teacher_id_fkey"
+            columns: ["assistant_teacher_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preschool_classrooms_lead_teacher_id_fkey"
+            columns: ["lead_teacher_id"]
+            isOneToOne: false
+            referencedRelation: "mv_ktv_performance_summary"
+            referencedColumns: ["ktv_id"]
+          },
+          {
+            foreignKeyName: "preschool_classrooms_lead_teacher_id_fkey"
+            columns: ["lead_teacher_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preschool_classrooms_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "preschool_classrooms_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      preschool_enrollments: {
+        Row: {
+          classroom_id: string
+          created_at: string
+          end_date: string | null
+          enrollment_date: string
+          id: string
+          status: string
+          student_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          classroom_id: string
+          created_at?: string
+          end_date?: string | null
+          enrollment_date?: string
+          id?: string
+          status?: string
+          student_id: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          classroom_id?: string
+          created_at?: string
+          end_date?: string | null
+          enrollment_date?: string
+          id?: string
+          status?: string
+          student_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preschool_enrollments_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "preschool_classrooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preschool_enrollments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "preschool_students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preschool_enrollments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "preschool_enrollments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      preschool_student_guardians: {
+        Row: {
+          created_at: string
+          guardian_customer_id: string
+          id: string
+          is_authorized_pickup: boolean
+          is_emergency_contact: boolean
+          is_primary_contact: boolean
+          relationship_type: string
+          student_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          guardian_customer_id: string
+          id?: string
+          is_authorized_pickup?: boolean
+          is_emergency_contact?: boolean
+          is_primary_contact?: boolean
+          relationship_type: string
+          student_id: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          guardian_customer_id?: string
+          id?: string
+          is_authorized_pickup?: boolean
+          is_emergency_contact?: boolean
+          is_primary_contact?: boolean
+          relationship_type?: string
+          student_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preschool_student_guardians_guardian_customer_id_fkey"
+            columns: ["guardian_customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preschool_student_guardians_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "preschool_students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preschool_student_guardians_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "preschool_student_guardians_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      preschool_students: {
+        Row: {
+          created_at: string
+          date_of_birth: string
+          deleted_at: string | null
+          enrollment_date: string
+          first_name: string
+          gender: string | null
+          id: string
+          last_name: string
+          notes: string | null
+          photo_url: string | null
+          status: string
+          student_code: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_of_birth: string
+          deleted_at?: string | null
+          enrollment_date?: string
+          first_name: string
+          gender?: string | null
+          id?: string
+          last_name: string
+          notes?: string | null
+          photo_url?: string | null
+          status?: string
+          student_code: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_of_birth?: string
+          deleted_at?: string | null
+          enrollment_date?: string
+          first_name?: string
+          gender?: string | null
+          id?: string
+          last_name?: string
+          notes?: string | null
+          photo_url?: string | null
+          status?: string
+          student_code?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preschool_students_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "preschool_students_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pricing_rules: {
         Row: {
           condition: Json
@@ -23523,6 +23477,506 @@ export type Database = {
           },
           {
             foreignKeyName: "resource_skills_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      retail_customers: {
+        Row: {
+          created_at: string
+          email: string | null
+          first_name: string
+          id: string
+          last_name: string
+          loyalty_points: number | null
+          loyalty_tier: string | null
+          phone: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          first_name: string
+          id?: string
+          last_name: string
+          loyalty_points?: number | null
+          loyalty_tier?: string | null
+          phone?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          first_name?: string
+          id?: string
+          last_name?: string
+          loyalty_points?: number | null
+          loyalty_tier?: string | null
+          phone?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retail_customers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "retail_customers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      retail_inventory_movements: {
+        Row: {
+          batch_id: string | null
+          created_at: string
+          id: string
+          movement_type: string
+          new_stock: number
+          performed_by: string | null
+          previous_stock: number
+          product_id: string
+          quantity_change: number
+          reason: string | null
+          reference_id: string | null
+          reference_type: string | null
+          tenant_id: string
+          variant_id: string | null
+        }
+        Insert: {
+          batch_id?: string | null
+          created_at?: string
+          id?: string
+          movement_type: string
+          new_stock: number
+          performed_by?: string | null
+          previous_stock: number
+          product_id: string
+          quantity_change: number
+          reason?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          tenant_id: string
+          variant_id?: string | null
+        }
+        Update: {
+          batch_id?: string | null
+          created_at?: string
+          id?: string
+          movement_type?: string
+          new_stock?: number
+          performed_by?: string | null
+          previous_stock?: number
+          product_id?: string
+          quantity_change?: number
+          reason?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          tenant_id?: string
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retail_inventory_movements_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "retail_product_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retail_inventory_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "retail_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retail_inventory_movements_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "retail_inventory_movements_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retail_inventory_movements_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "retail_product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      retail_product_batches: {
+        Row: {
+          batch_number: string
+          created_at: string
+          current_stock: number
+          expiry_date: string
+          id: string
+          initial_stock: number | null
+          lot_number: string | null
+          manufactured_date: string | null
+          metadata: Json | null
+          notes: string | null
+          product_id: string
+          received_at: string
+          status: string
+          supplier_id: string | null
+          tenant_id: string
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          batch_number: string
+          created_at?: string
+          current_stock?: number
+          expiry_date: string
+          id?: string
+          initial_stock?: number | null
+          lot_number?: string | null
+          manufactured_date?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          product_id: string
+          received_at?: string
+          status?: string
+          supplier_id?: string | null
+          tenant_id: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          batch_number?: string
+          created_at?: string
+          current_stock?: number
+          expiry_date?: string
+          id?: string
+          initial_stock?: number | null
+          lot_number?: string | null
+          manufactured_date?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          product_id?: string
+          received_at?: string
+          status?: string
+          supplier_id?: string | null
+          tenant_id?: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retail_product_batches_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "retail_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retail_product_batches_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "retail_product_batches_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      retail_product_variants: {
+        Row: {
+          created_at: string
+          current_stock: number
+          id: string
+          product_id: string
+          status: string
+          tenant_id: string
+          updated_at: string
+          variant_attributes: Json
+          variant_sku: string
+        }
+        Insert: {
+          created_at?: string
+          current_stock?: number
+          id?: string
+          product_id: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+          variant_attributes?: Json
+          variant_sku: string
+        }
+        Update: {
+          created_at?: string
+          current_stock?: number
+          id?: string
+          product_id?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          variant_attributes?: Json
+          variant_sku?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retail_product_variants_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "retail_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retail_product_variants_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "retail_product_variants_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      retail_products: {
+        Row: {
+          base_price: number
+          category: string
+          cost_price: number | null
+          created_at: string
+          created_by: string | null
+          current_stock: number | null
+          description: string | null
+          id: string
+          name: string
+          reorder_point: number | null
+          sku: string
+          status: string
+          tenant_id: string
+          track_inventory: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          base_price: number
+          category: string
+          cost_price?: number | null
+          created_at?: string
+          created_by?: string | null
+          current_stock?: number | null
+          description?: string | null
+          id?: string
+          name: string
+          reorder_point?: number | null
+          sku: string
+          status: string
+          tenant_id: string
+          track_inventory?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          base_price?: number
+          category?: string
+          cost_price?: number | null
+          created_at?: string
+          created_by?: string | null
+          current_stock?: number | null
+          description?: string | null
+          id?: string
+          name?: string
+          reorder_point?: number | null
+          sku?: string
+          status?: string
+          tenant_id?: string
+          track_inventory?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retail_products_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "retail_products_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      retail_sale_items: {
+        Row: {
+          created_at: string
+          discount_amount: number
+          id: string
+          line_total: number
+          product_id: string
+          quantity: number
+          sale_id: string
+          tenant_id: string
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          discount_amount?: number
+          id?: string
+          line_total: number
+          product_id: string
+          quantity: number
+          sale_id: string
+          tenant_id: string
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          discount_amount?: number
+          id?: string
+          line_total?: number
+          product_id?: string
+          quantity?: number
+          sale_id?: string
+          tenant_id?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retail_sale_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "retail_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retail_sale_items_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "retail_sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retail_sale_items_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "retail_sale_items_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      retail_sales: {
+        Row: {
+          cashier_id: string | null
+          completed_at: string | null
+          created_at: string
+          customer_id: string | null
+          discount_amount: number
+          id: string
+          payment_method: string
+          payment_status: string
+          sale_date: string
+          sale_number: string
+          status: string
+          subtotal: number
+          tax_amount: number
+          tenant_id: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          cashier_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          customer_id?: string | null
+          discount_amount?: number
+          id?: string
+          payment_method: string
+          payment_status: string
+          sale_date?: string
+          sale_number: string
+          status: string
+          subtotal: number
+          tax_amount?: number
+          tenant_id: string
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          cashier_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          customer_id?: string | null
+          discount_amount?: number
+          id?: string
+          payment_method?: string
+          payment_status?: string
+          sale_date?: string
+          sale_number?: string
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          tenant_id?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retail_sales_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "retail_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retail_sales_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "retail_sales_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -29941,6 +30395,7 @@ export type Database = {
       }
       seed_default_coa: { Args: { p_tenant_id: string }; Returns: number }
       set_session_tenant: { Args: { p_tenant_id: string }; Returns: undefined }
+      set_tenant_context: { Args: { tenant_id: string }; Returns: undefined }
       submit_financial_intent: {
         Args: {
           p_idempotency_key: string
@@ -30316,7 +30771,7 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  logistics: {
+  graphql_public: {
     Enums: {},
   },
   public: {
