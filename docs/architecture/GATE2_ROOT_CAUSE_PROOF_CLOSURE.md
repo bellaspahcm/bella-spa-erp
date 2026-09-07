@@ -62,7 +62,7 @@ Database schema evolves (migration applied)
 - Controlled experiment: Type regeneration eliminated 24/29 diagnostics (83%)
 - **NO consumer code changes required**
 
-**Attribution:** 83% (24/29 diagnostics)
+**Attribution:** 24/29 diagnostics eliminated (82.8%)
 
 **Boundary:** Generator (Supabase type generation)
 
@@ -121,7 +121,7 @@ C2: Consumer uses wrong property names in shared contracts
 - Consumer: `truth.type` → Schema: `truth.contentType`
 - Consumer: `conflict.description` → Schema: `conflict.nature`
 
-**Attribution:** 77% (10/13 diagnostics)
+**Attribution:** 10/13 diagnostics attributed (77%)
 
 **Boundary:** Module boundaries, shared type contracts
 
