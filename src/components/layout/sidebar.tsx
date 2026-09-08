@@ -167,7 +167,8 @@ function isTenantBrandDisplay(value: unknown): value is CachedTenantBrandDisplay
       source.moduleKey === 'industrial_cleaning' ||
       source.moduleKey === 'real_estate' ||
       source.moduleKey === 'bella_auto' ||
-      source.moduleKey === 'bella_healthcare') &&
+      source.moduleKey === 'bella_healthcare' ||
+      source.moduleKey === 'bella_education') &&
     typeof source.primaryColor === 'string' &&
     typeof source.accentColor === 'string' &&
     typeof source.primaryHoverColor === 'string' &&
