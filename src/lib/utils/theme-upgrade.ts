@@ -74,6 +74,12 @@ export function needsThemeUpgrade(
     if (preset === 'bella_rose') return true;
   }
 
+  // Bella Education should use indigo/amber mầm non theme, not pink
+  if (moduleKey === 'bella_education') {
+    if (LEGACY_DEFAULT_PINKS.includes(primary)) return true;
+    if (preset === 'bella_rose') return true;
+  }
+
   // Real Estate should use luxury navy, not pink
   if (moduleKey === 'real_estate') {
     if (LEGACY_DEFAULT_PINKS.includes(primary)) return true;
@@ -166,6 +172,8 @@ export function getUpgradeDescription(moduleKey: TenantModuleKey): string {
       return 'Đã cập nhật màu sắc Beauty Spa (Xanh ngọc/vàng gold)';
     case 'industrial_cleaning':
       return 'Đã cập nhật màu sắc Industrial Cleaning (Xanh dương sạch)';
+    case 'bella_education':
+      return 'Đã cập nhật màu sắc Bella Education (Mầm non sang trọng & hiện đại)';
     case 'real_estate':
       return 'Đã cập nhật màu sắc Real Estate (Navy/vàng gold)';
     default:

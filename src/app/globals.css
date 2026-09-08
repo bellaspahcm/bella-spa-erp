@@ -1231,14 +1231,27 @@ html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-header {
 html[data-tenant-brand-preset="jade_wellness"] .text-\[9\.5px\][class*="text-primary"] {
   color: #e8d4a8 !important;
 }
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item { color: rgba(248, 246, 242, 0.85) !important; }
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:hover { color: #ffffff !important; background: rgba(200, 169, 122, 0.22) !important; }
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:hover svg,
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:hover * { color: #ffffff !important; }
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active {
-  background: linear-gradient(135deg, #074e44 0%, #0c6b5e 100%) !important;
-  border-color: rgba(200, 169, 122, 0.52) !important;
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item { color: rgba(241, 245, 249, 0.95) !important; }
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item svg { color: rgba(226, 232, 240, 0.90) !important; }
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item span { color: #f1f5f9 !important; }
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:hover {
   color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(245, 158, 11, 0.40) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18) !important;
+}
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:hover svg,
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:hover * { color: #f59e0b !important; }
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:hover span { color: #ffffff !important; }
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active {
+  background: #ffffff !important;
+  border-color: rgba(245, 158, 11, 0.50) !important;
+  color: #064e3b !important;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25) !important;
+}
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active svg,
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active span {
+  color: #064e3b !important;
 }
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-profile-card,
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-avatar,
@@ -1493,16 +1506,35 @@ html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item-active {
   color: #ffffff !important;
 }
 
-/* Universal Active Nav Item Child High-Contrast Overrides */
-html[data-tenant-module] .beauty-erp-nav-item-active *,
-html[data-tenant-module] .beauty-erp-nav-item-active svg,
-html[data-tenant-module] .beauty-erp-nav-item-active span,
-html[data-tenant-module] .beauty-erp-nav-item-active p,
-html[data-tenant-brand-preset] .beauty-erp-nav-item-active *,
-html[data-tenant-brand-preset] .beauty-erp-nav-item-active svg,
-html[data-tenant-brand-preset] .beauty-erp-nav-item-active span,
-html[data-tenant-brand-preset] .beauty-erp-nav-item-active p {
+/* Universal Active Nav Item Child High-Contrast Overrides (excluding light-pill presets like jade_wellness) */
+html[data-tenant-module]:not([data-tenant-brand-preset="jade_wellness"]) .beauty-erp-nav-item-active *,
+html[data-tenant-module]:not([data-tenant-brand-preset="jade_wellness"]) .beauty-erp-nav-item-active svg,
+html[data-tenant-module]:not([data-tenant-brand-preset="jade_wellness"]) .beauty-erp-nav-item-active span,
+html[data-tenant-module]:not([data-tenant-brand-preset="jade_wellness"]) .beauty-erp-nav-item-active p,
+html[data-tenant-brand-preset]:not([data-tenant-brand-preset="jade_wellness"]) .beauty-erp-nav-item-active *,
+html[data-tenant-brand-preset]:not([data-tenant-brand-preset="jade_wellness"]) .beauty-erp-nav-item-active svg,
+html[data-tenant-brand-preset]:not([data-tenant-brand-preset="jade_wellness"]) .beauty-erp-nav-item-active span,
+html[data-tenant-brand-preset]:not([data-tenant-brand-preset="jade_wellness"]) .beauty-erp-nav-item-active p {
   color: #ffffff !important;
+}
+
+/* Jade Wellness active item high contrast rule - Dark emerald text on white pill whether hovered or not */
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active,
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active:hover {
+  background: #ffffff !important;
+  border-color: rgba(245, 158, 11, 0.60) !important;
+  color: #064e3b !important;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25) !important;
+}
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active *,
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active svg,
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active span,
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active p,
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active:hover *,
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active:hover svg,
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active:hover span,
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active:hover p {
+  color: #064e3b !important;
 }
 
 /* =========================================================================

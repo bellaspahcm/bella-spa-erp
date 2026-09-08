@@ -144,6 +144,20 @@ export const DEFAULT_HEALTHCARE_TENANT_BRAND_THEME: TenantBrandTheme = {
   fontHeading: 'sans', // Clinic: clean, clinical sans-serif
 };
 
+export const DEFAULT_EDUCATION_TENANT_BRAND_THEME: TenantBrandTheme = {
+  brandName: '',
+  logoUrl: '',
+  primaryColor: '#4F46E5', // Indigo 600 - modern, trusted, educational primary
+  accentColor: '#F59E0B', // Amber 500 - sunny, playful accent for preschool
+  portalDisplayName: '',
+  invoiceDisplayName: '',
+  stylePreset: 'ocean_clean',
+  radiusStyle: 'soft',
+  buttonStyle: 'pill',
+  menuStyle: 'comfortable',
+  fontHeading: 'sans', // Education: modern, readable sans-serif
+};
+
 const HEX_COLOR_PATTERN = /^#[0-9A-Fa-f]{6}$/;
 const TEXT_LIMITS: Record<keyof TenantBrandTheme, number> = {
   brandName: 80,
@@ -267,6 +281,9 @@ export function getDefaultTenantModuleKey(value: unknown, tenantName?: string | 
     if (lower.includes('clinic') || lower.includes('dental') || lower.includes('y tế') || lower.includes('nha khoa') || lower.includes('healthcare')) {
       return 'bella_healthcare';
     }
+    if (lower.includes('school') || lower.includes('mầm non') || lower.includes('trường') || lower.includes('giáo dục') || lower.includes('preschool') || lower.includes('education')) {
+      return 'bella_education';
+    }
     if (lower.includes('auto') || lower.includes('ô tô') || lower.includes('xe')) {
       return 'bella_auto';
     }
@@ -286,6 +303,7 @@ export function getDefaultTenantModuleKey(value: unknown, tenantName?: string | 
 
 export function getDefaultTenantBrandThemeForModule(moduleKey: TenantModuleKey): TenantBrandTheme {
   if (moduleKey === 'bella_healthcare') return DEFAULT_HEALTHCARE_TENANT_BRAND_THEME;
+  if (moduleKey === 'bella_education') return DEFAULT_EDUCATION_TENANT_BRAND_THEME;
   if (moduleKey === 'bella_auto') return DEFAULT_BELLA_AUTO_TENANT_BRAND_THEME;
   if (moduleKey === 'beauty_spa') return DEFAULT_BEAUTY_TENANT_BRAND_THEME;
   if (moduleKey === 'industrial_cleaning') return DEFAULT_CLEANING_TENANT_BRAND_THEME;
@@ -370,6 +388,7 @@ export function resolveTenantBrandIdentity(input: {
 
   const defaultDisplayName = 
     moduleKey === 'bella_healthcare' ? (isDental ? 'Bella Dental Clinic' : 'Bella Medical Clinic') :
+    moduleKey === 'bella_education' ? 'Bella Preschool' :
     moduleKey === 'bella_auto' ? 'Bella Auto' :
     moduleKey === 'beauty_spa' ? 'Beauty Spa' :
     moduleKey === 'industrial_cleaning' ? 'Industrial Cleaning' :
@@ -405,6 +424,7 @@ export function resolveTenantBrandIdentity(input: {
         isHospitalInpatient ? 'General Hospital Management' :
         isDental ? 'Clinical Management' : 'Medical Clinic EMR Platform'
       ) :
+      moduleKey === 'bella_education' ? 'Preschool & Education ERP' :
       moduleKey === 'bella_auto' ? 'Automotive Management' :
       moduleKey === 'beauty_spa' ? 'Beauty Spa ERP' :
       moduleKey === 'industrial_cleaning' ? 'Industrial Cleaning ERP' :
