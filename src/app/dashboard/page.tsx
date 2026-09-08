@@ -336,10 +336,10 @@ export default function DashboardPage() {
       console.log('[Dashboard Redirect] ✅ Redirecting to /dashboard/hospital via hard redirect');
       hasRedirected.current = true;
       window.location.replace('/dashboard/hospital');
-    } else if (tenantModuleKey === 'bella_preschool' && !hasRedirected.current) {
-      console.log('[Dashboard Redirect] ✅ Redirecting to /dashboard/preschool via hard redirect');
+    } else if (tenantModuleKey === 'bella_education' && !hasRedirected.current) {
+      console.log('[Dashboard Redirect] ✅ Redirecting to /dashboard/education via hard redirect');
       hasRedirected.current = true;
-      window.location.replace('/dashboard/preschool');
+      window.location.replace('/dashboard/education');
     }
   }, [tenantModuleKey]);
 
