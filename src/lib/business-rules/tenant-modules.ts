@@ -221,6 +221,7 @@ export function normalizeEnabledModules(value: unknown): TenantEnabledModules {
       real_estate: value.includes('real_estate'),
       bella_auto: value.includes('bella_auto'),
       bella_healthcare: value.includes('bella_healthcare'),
+      bella_education: value.includes('bella_education'),
     };
   }
 
@@ -239,18 +240,13 @@ export function normalizeEnabledModules(value: unknown): TenantEnabledModules {
     real_estate: typeof source.real_estate === 'boolean' ? source.real_estate : false,
     bella_auto: typeof source.bella_auto === 'boolean' ? source.bella_auto : false,
     bella_healthcare: typeof source.bella_healthcare === 'boolean' ? source.bella_healthcare : false,
+    bella_education: typeof source.bella_education === 'boolean' ? source.bella_education : false,
   };
 }
 
 export function normalizeEnabledModulesForSave(value: unknown): TenantEnabledModules {
   const modules = normalizeEnabledModules(value);
-  console.log('[normalizeEnabledModulesForSave] Input:', value);
-  console.log('[normalizeEnabledModulesForSave] Normalized:', modules);
-  if (modules.babycare || modules.beauty_spa || modules.industrial_cleaning || modules.real_estate || modules.bella_auto || modules.bella_healthcare || modules.bella_education) {
-    console.log('[normalizeEnabledModulesForSave] Returning modules as-is');
-    return modules;
-  }
-  console.log('[normalizeEnabledModulesForSave] Fallback to babycare');
+  if (modules.babycare || modules.beauty_spa || modules.industrial_cleaning || modules.real_estate || modules.bella_auto || modules.bella_healthcare || modules.bella_education) return modules;
   return {
     ...modules,
     babycare: true,
@@ -259,8 +255,6 @@ export function normalizeEnabledModulesForSave(value: unknown): TenantEnabledMod
 
 export function getDefaultTenantModuleKey(value: unknown, tenantName?: string | null): TenantPrimaryBusinessModuleKey {
   const modules = normalizeEnabledModulesForSave(value);
-  console.log('[getDefaultTenantModuleKey] modules:', modules);
-  console.log('[getDefaultTenantModuleKey] tenantName:', tenantName);
   if (modules.bella_healthcare) return 'bella_healthcare';
   if (modules.bella_education) return 'bella_education';
   if (modules.bella_auto) return 'bella_auto';
