@@ -1,0 +1,122 @@
+{
+  "runId": "e10-1-automotive-1788561738341",
+  "timestamp": "2026-09-04T22:42:18.341Z",
+  "candidate": "automotive",
+  "phase": "independent-validation",
+  "evidence": {
+    "tablesDiscovered": 61,
+    "typesFound": true,
+    "domainFound": false,
+    "testsFound": false,
+    "completeness": 0.7
+  },
+  "scope": {
+    "decisions": {
+      "Ai_insight": "RECONSTRUCT",
+      "Approval_instance": "RECONSTRUCT",
+      "Approval_workflow": "RECONSTRUCT",
+      "Booking": "RECONSTRUCT",
+      "Bookings_history": "BLOCK",
+      "Brand": "RECONSTRUCT",
+      "Business_rule": "RECONSTRUCT",
+      "Business_transaction": "RECONSTRUCT",
+      "Capability": "RECONSTRUCT",
+      "Capability_config": "RECONSTRUCT",
+      "Capability_dependency": "RECONSTRUCT",
+      "Capability_version": "RECONSTRUCT",
+      "Churn_prediction": "RECONSTRUCT",
+      "Csi_score": "RECONSTRUCT",
+      "Customer_health_score": "RECONSTRUCT",
+      "Customer_journey": "BLOCK",
+      "Customer_journeys_history": "BLOCK",
+      "Customer_lifetime_event": "RECONSTRUCT",
+      "Customer_profile": "RECONSTRUCT",
+      "Demand_forecast": "RECONSTRUCT",
+      "Deposit": "RECONSTRUCT",
+      "Installed_capability": "RECONSTRUCT",
+      "Insurance_policy": "RECONSTRUCT",
+      "Journey_event": "RECONSTRUCT",
+      "Journey_stage": "RECONSTRUCT",
+      "Lead": "RECONSTRUCT",
+      "Loan_application": "RECONSTRUCT",
+      "Lost_analysi": "RECONSTRUCT",
+      "Market_valuation": "RECONSTRUCT",
+      "Mobile_notification": "RECONSTRUCT",
+      "Mobile_session": "RECONSTRUCT",
+      "Model": "RECONSTRUCT",
+      "Next_best_action": "RECONSTRUCT",
+      "Nps_score": "RECONSTRUCT",
+      "Offline_action": "RECONSTRUCT",
+      "Organization_unit": "RECONSTRUCT",
+      "Photo_upload": "RECONSTRUCT",
+      "Repair_order": "RECONSTRUCT",
+      "Repair_order_item": "RECONSTRUCT",
+      "Rollback_audit_log": "RECONSTRUCT",
+      "Rollup_cache": "RECONSTRUCT",
+      "Rollup_config": "RECONSTRUCT",
+      "Rule_execution_log": "RECONSTRUCT",
+      "Rule_template": "RECONSTRUCT",
+      "Service_appointment": "RECONSTRUCT",
+      "Service_history": "RECONSTRUCT",
+      "Service_package": "RECONSTRUCT",
+      "Survey": "BLOCK",
+      "Survey_response": "RECONSTRUCT",
+      "Survey_template": "RECONSTRUCT",
+      "Technician_time_log": "RECONSTRUCT",
+      "Touchpoint": "RECONSTRUCT",
+      "Trade_in_appraisal": "RECONSTRUCT",
+      "Trade_in_photo": "RECONSTRUCT",
+      "Transaction_step": "RECONSTRUCT",
+      "Variant": "RECONSTRUCT",
+      "Vehicle": "RECONSTRUCT",
+      "Vehicle_owner": "RECONSTRUCT",
+      "Vehicle_status_log": "RECONSTRUCT",
+      "Vehicles_history": "BLOCK",
+      "Warranty_claim": "RECONSTRUCT"
+    },
+    "conform": 0,
+    "reconstruct": 56,
+    "defer": 0,
+    "block": 5
+  },
+  "pipeline": {
+    "steps": [
+      {
+        "name": "E9.1 Evidence Collection",
+        "status": "pass",
+        "duration": 9.447
+      },
+      {
+        "name": "E9 Scope Derivation",
+        "status": "pass",
+        "duration": 0.01
+      }
+    ],
+    "totalDuration": 9.46
+  },
+  "autonomy": {
+    "humanDecisions": 0,
+    "autoDecisions": 2,
+    "decisions": [
+      {
+        "step": "evidence-collection",
+        "decision": "auto",
+        "actor": "E9.1 Evidence Collector",
+        "result": "Scanning automotive schema",
+        "timestamp": "2026-09-04T22:42:18.344Z"
+      },
+      {
+        "step": "scope-derivation",
+        "decision": "auto",
+        "actor": "E9 Decision Engine",
+        "result": "Applying canonical rules",
+        "timestamp": "2026-09-04T22:42:27.792Z"
+      }
+    ]
+  },
+  "result": {
+    "status": "blocked",
+    "message": "Governance violation detected",
+    "factoryGaps": []
+  }
+}

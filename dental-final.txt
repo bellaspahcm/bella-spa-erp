@@ -1,0 +1,54 @@
+src/services/healthcare/healthcare-actions.ts(929,11): error TS2322: Type '{ id: string; patientName: string; doctorName: string; status: "in_progress" | "planned" | "arrived" | "finished"; chiefComplaint: string; queueNumber: number; scheduledAt: string; arrivedAt: string; ... 8 more ...; plan: any; }[]' is not assignable to type 'EncounterViewModel[]'.
+  Type '{ id: string; patientName: string; doctorName: string; status: "in_progress" | "planned" | "arrived" | "finished"; chiefComplaint: string; queueNumber: number; scheduledAt: string; arrivedAt: string; ... 8 more ...; plan: any; }' is not assignable to type 'EncounterViewModel'.
+    Types of property 'startedAt' are incompatible.
+      Type 'string | null' is not assignable to type 'string | undefined'.
+        Type 'null' is not assignable to type 'string | undefined'.
+src/services/healthcare/healthcare-actions.ts(971,27): error TS2367: This comparison appears to be unintentional because the types '"in_progress" | "planned" | "arrived" | "finished"' and '"completed"' have no overlap.
+src/services/healthcare/healthcare-actions.ts(1273,33): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(1293,11): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(1324,33): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(1332,11): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(1779,31): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(1789,11): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(1804,17): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(1823,9): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(1841,9): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(1947,30): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(2148,31): error TS2322: Type '({ id: string; ticketNumber: string; patientName: string; modality: string; bodySite: string; dcmStudyUid: string; viewerLink: string; status: string; radiologistReport: undefined; priority: "STAT"; ... 7 more ...; doctorNotifiedTime: undefined; } | { ...; } | { ...; } | { ...; } | { ...; })[]' is not assignable to type 'ImagingOrderViewModel[]'.
+  Type '{ id: string; ticketNumber: string; patientName: string; modality: string; bodySite: string; dcmStudyUid: string; viewerLink: string; status: string; radiologistReport: undefined; priority: "STAT"; ... 7 more ...; doctorNotifiedTime: undefined; } | { ...; } | { ...; } | { ...; } | { ...; }' is not assignable to type 'ImagingOrderViewModel'.
+    Type '{ id: string; ticketNumber: string; patientName: string; modality: string; bodySite: string; dcmStudyUid: string; viewerLink: string; status: string; radiologistReport: undefined; priority: "STAT"; ... 7 more ...; doctorNotifiedTime: undefined; }' is not assignable to type 'ImagingOrderViewModel'.
+      Types of property 'status' are incompatible.
+        Type 'string' is not assignable to type '"pending" | "reported" | "captured"'.
+src/services/healthcare/healthcare-actions.ts(2195,31): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(2205,11): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(2220,17): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(2239,9): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(2827,31): error TS2322: Type '{ id: string; encounterId: string; patientName: string; bhytCode: string; benefitRate: number; totalAmount: number; bhytCovered: number; patientPay: number; status: string; itemsCount: number; }[]' is not assignable to type 'HealthcareInvoiceViewModel[]'.
+  Type '{ id: string; encounterId: string; patientName: string; bhytCode: string; benefitRate: number; totalAmount: number; bhytCovered: number; patientPay: number; status: string; itemsCount: number; }' is not assignable to type 'HealthcareInvoiceViewModel'.
+    Types of property 'status' are incompatible.
+      Type 'string' is not assignable to type '"paid" | "unpaid"'.
+src/services/healthcare/healthcare-actions.ts(3095,57): error TS18047: 'baseSalary' is possibly 'null'.
+src/services/healthcare/healthcare-actions.ts(3095,70): error TS18047: 'commission' is possibly 'null'.
+src/services/healthcare/healthcare-actions.ts(3103,9): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/services/healthcare/healthcare-actions.ts(3104,9): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/services/healthcare/healthcare-actions.ts(3106,9): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/services/healthcare/healthcare-actions.ts(3107,9): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/services/healthcare/pharmacy-actions.ts(164,9): error TS2322: Type 'any' is not assignable to type 'never'.

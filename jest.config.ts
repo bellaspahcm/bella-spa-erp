@@ -18,6 +18,7 @@ const config: Config = {
   testMatch: [
     '<rootDir>/src/**/*.test.[jt]s?(x)',
     '<rootDir>/tests/**/*.test.[jt]s?(x)',
+    '<rootDir>/scripts/governance/__tests__/**/*.test.[jt]s?(x)',
   ],
   // Jest chỉ scan src/. Playwright E2E nằm trong e2e/ — chạy bằng `npm run e2e`.
   testPathIgnorePatterns: [

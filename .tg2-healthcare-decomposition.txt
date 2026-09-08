@@ -1,0 +1,144 @@
+
+╔═══════════════════════════════════════════════════════════════════════════╗
+║          TG-2.2A — HEALTHCARE OWNERSHIP DECOMPOSITION ANALYSIS            ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+CONTEXT:
+  Healthcare is an Industry OS with 3 Products:
+    - Hospital
+    - Medical Clinic
+    - Dental
+  
+  src/services/healthcare/** must be decomposed by Product ownership
+  before creating governed scopes.
+
+PURPOSE:
+  Provide evidence for human architectural decision.
+  This is NOT automated classification.
+
+PRINCIPLE:
+  Do not create unified healthcare-services scope just for coverage.
+  Classify by actual Product/capability ownership.
+
+───────────────────────────────────────────────────────────────────────────
+
+OWNERSHIP ANALYSIS
+
+Total files analyzed: 13
+
+
+HOSPITAL
+────────────────────────────────────────────────────────────────────────────────
+Files: 4
+Confidence: High (2), Medium (2), Low (0)
+
+  ✅ src\services\healthcare\patient-flow-service.ts
+     Reasoning: Matched pattern: \binpatient\b
+  ⚠️ src\services\healthcare\operating-room-service.ts
+     Reasoning: Matched pattern: \bemergency\b
+  ✅ src\services\healthcare\icu-service.ts
+     Reasoning: Matched pattern: \b(icu|intensive.care)\b
+  ⚠️ src\services\healthcare\emergency-service.ts
+     Reasoning: Matched pattern: \bemergency\b
+
+
+MEDICAL CLINIC
+────────────────────────────────────────────────────────────────────────────────
+Files: 1
+Confidence: High (1), Medium (0), Low (0)
+
+  ✅ src\services\healthcare\appointments-actions.ts
+     Reasoning: Matched pattern: \bappointment\b
+
+
+SHARED HEALTHCARE
+────────────────────────────────────────────────────────────────────────────────
+Files: 8
+Confidence: High (8), Medium (0), Low (0)
+
+  ✅ src\services\healthcare\pharmacy-actions.ts
+     Reasoning: Matched pattern: \bpatient\b
+  ✅ src\services\healthcare\lis-ris-actions.ts
+     Reasoning: Matched pattern: \bencounter\b
+  ✅ src\services\healthcare\laboratory-service.ts
+     Reasoning: Matched pattern: \blaboratory\b
+  ✅ src\services\healthcare\healthcare-service.ts
+     Reasoning: Matched pattern: \bpatient\b
+  ✅ src\services\healthcare\healthcare-actions.ts
+     Reasoning: Matched pattern: \bpatient\b
+  ✅ src\services\healthcare\clinical-alerts-service.ts
+     Reasoning: Matched pattern: \border\b
+  ✅ src\services\healthcare\billing-actions.ts
+     Reasoning: Matched pattern: \bpatient\b
+  ✅ src\services\healthcare\bhyt-actions.ts
+     Reasoning: Matched pattern: \bpatient\b
+
+
+───────────────────────────────────────────────────────────────────────────
+
+RECOMMENDED SCOPE ARCHITECTURE
+
+Based on analysis, consider this governed scope structure:
+
+1. Hospital Product Scope
+   Files: 4
+   Coverage: Hospital-owned capabilities (inpatient, ICU, emergency, surgical)
+
+2. Medical Clinic Product Scope  
+   Files: 1
+   Coverage: Clinic-owned capabilities (outpatient, appointments, queue)
+
+3. Dental Product Scope
+   Files: 0
+   Coverage: Dental-owned capabilities (odontogram, dental procedures)
+
+4. Shared Healthcare Scope
+   Files: 8
+   Coverage: Cross-product capabilities (patient identity, billing, pharmacy, lab)
+
+5. Unclassified
+   Files: 0
+   Action: Manual review required
+
+───────────────────────────────────────────────────────────────────────────
+
+NEXT ACTIONS
+
+1. HUMAN REVIEW
+   Review suggested ownership classifications
+   Correct misclassifications based on actual architecture
+   Decide ownership for "Unknown" files
+
+2. ARCHITECTURAL DECISION
+   Confirm scope structure:
+     Option A: 4 separate scopes (Hospital, Medical Clinic, Dental, Shared)
+     Option B: Different grouping based on actual architecture
+     Option C: Hybrid model
+
+3. SCOPE IMPLEMENTATION
+   Create/extend governed tsconfigs per decided ownership
+   DO NOT create single healthcare-services scope
+
+4. COVERAGE VERIFICATION
+   Rerun TG-2 to verify coverage restored
+   Ensure each Product has clear governed boundary
+
+───────────────────────────────────────────────────────────────────────────
+
+IMPORTANT NOTES
+
+⚠️  This classification is SUGGESTIVE, not authoritative
+    Human architectural judgment required for final decisions
+
+⚠️  Files may have MULTIPLE owners (shared dependencies)
+    Document multi-owner rationale clearly
+
+⚠️  "Unknown" files are ARCHITECTURAL ORPHANS
+    Require explicit ownership decision before proceeding
+
+⚠️  Do NOT optimize for coverage percentage
+    Optimize for ownership clarity and architectural correctness
+
+═══════════════════════════════════════════════════════════════════════════
+
+See: docs/architecture/TG2_2A_SERVICES_OWNERSHIP_DECISION.md

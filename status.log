@@ -1,0 +1,6 @@
+Linked Project:
+  Org: xxgazkqqbxgvhgsttpyy
+  Project: bella-spa-erp-e2e (bmnbqbcdbuklhopfbopv)
+WARN: config section [inbucket] is deprecated. Please use [local_smtp] instead.
+failed to inspect container health: Error response from daemon: No such container: supabase_db_BELLA_SPA_ERP
+Try rerunning the command with --debug to troubleshoot the error.

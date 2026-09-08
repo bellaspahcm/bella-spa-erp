@@ -47,9 +47,14 @@ interface EntityNamePatterns {
 /**
  * Derive entity naming patterns from entity name and industry scope
  */
-function deriveEntityPatterns(entityName: string, industryScope: string): EntityNamePatterns {
+function deriveEntityPatterns(
+  entityName: string,
+  industryScope: string,
+  migrationsPath: string,
+  typesPath: string
+): EntityNamePatterns {
   const lowerEntity = entityName.toLowerCase();
-  const scopePrefix = getScopePrefix(industryScope);
+  const scopePrefix = getScopePrefix(industryScope, migrationsPath, typesPath);
   
   // Table name: try both singular and plural patterns
   // Some tables use singular (edu_attendance), some use plural (edu_courses)
@@ -86,9 +91,159 @@ function deriveEntityPatterns(entityName: string, industryScope: string): Entity
 }
 
 /**
- * Get scope prefix for industry (e.g., 'edu', 'hc', 'log')
+ * Discover actual table prefixes from migrations/types
+ * 
+ * Scans for CREATE TABLE statements to identify industry-specific prefixes.
+ * Returns discovered prefix or throws if ambiguous.
+ * 
+ * @param industryScope - Industry name (e.g., 'automotive', 'education')
+ * @param migrationsPath - Path to migration files
+ * @param typesPath - Path to generated types
+ * @returns Discovered prefix (e.g., 'auto', 'edu') or BLOCK
  */
-function getScopePrefix(industryScope: string): string {
+function discoverScopePrefix(
+  industryScope: string,
+  migrationsPath: string,
+  typesPath: string
+): { prefix: string; source: 'migrations' | 'types' | 'hardcoded' | 'unknown' } {
+  // Try migrations first (authoritative)
+  const migrationsPrefix = discoverPrefixFromMigrations(industryScope, migrationsPath);
+  if (migrationsPrefix) {
+    return { prefix: migrationsPrefix, source: 'migrations' };
+  }
+  
+  // Try generated types (canonical contract)
+  const typesPrefix = discoverPrefixFromTypes(industryScope, typesPath);
+  if (typesPrefix) {
+    return { prefix: typesPrefix, source: 'types' };
+  }
+  
+  // Fallback to hardcoded map (legacy support)
+  const hardcodedPrefix = getHardcodedPrefix(industryScope);
+  if (hardcodedPrefix) {
+    return { prefix: hardcodedPrefix, source: 'hardcoded' };
+  }
+  
+  // Cannot determine prefix → BLOCK
+  return { prefix: '', source: 'unknown' };
+}
+
+/**
+ * Scan migrations for industry-specific table prefixes
+ */
+function discoverPrefixFromMigrations(industryScope: string, migrationsPath: string): string | null {
+  if (!existsSync(migrationsPath)) {
+    return null;
+  }
+  
+  const migrationFiles = readdirSync(migrationsPath)
+    .filter(f => f.endsWith('.sql'))
+    .sort();
+  
+  const prefixCandidates = new Set<string>();
+  
+  // Extract table prefixes from CREATE TABLE statements
+  for (const file of migrationFiles) {
+    const content = readFileSync(join(migrationsPath, file), 'utf-8');
+    
+    // Match: CREATE TABLE [IF NOT EXISTS] [schema.]prefix_tablename
+    const tableMatches = content.matchAll(/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:public\.)?([a-z]+)_[a-z_]+/gi);
+    
+    for (const match of tableMatches) {
+      const prefix = match[1].toLowerCase();
+      
+      // Filter out known platform/system prefixes
+      if (!['migration', 'platform', 'api', 'auth', 'storage'].includes(prefix)) {
+        prefixCandidates.add(prefix);
+      }
+    }
+  }
+  
+  // Match industry name to discovered prefixes
+  const industryLower = industryScope.toLowerCase();
+  
+  // Strategy: Try longest match first to avoid prefix collisions
+  // Example: "retail" should match "retail_" not "re_" (real-estate)
+  
+  // 1. Exact full industry scope match (highest priority)
+  //    "retail" → "retail_products" ✅
+  if (prefixCandidates.has(industryLower)) {
+    return industryLower;
+  }
+  
+  // 2. Exact prefix of industry scope
+  //    "education" → "edu_courses" ✅
+  const sortedByLength = Array.from(prefixCandidates).sort((a, b) => b.length - a.length);
+  for (const prefix of sortedByLength) {
+    if (industryLower.startsWith(prefix)) {
+      return prefix;
+    }
+  }
+  
+  // 3. Industry scope is prefix of candidate
+  //    "auto" → "automotive_services" (if no "auto_" tables exist)
+  for (const prefix of sortedByLength) {
+    if (prefix.startsWith(industryLower)) {
+      return prefix;
+    }
+  }
+  
+  // 4. Single candidate (unambiguous)
+  if (prefixCandidates.size === 1) {
+    return Array.from(prefixCandidates)[0];
+  }
+  
+  // 5. No match found
+  return null;
+}
+
+/**
+ * Scan generated types for industry-specific table prefixes
+ */
+function discoverPrefixFromTypes(industryScope: string, typesPath: string): string | null {
+  if (!existsSync(typesPath)) {
+    return null;
+  }
+  
+  const content = readFileSync(typesPath, 'utf-8');
+  const industryLower = industryScope.toLowerCase();
+  const prefixCandidates = new Set<string>();
+  
+  // Extract table names from Database['public'] type structure
+  // Look for patterns like: auto_brands: { Row: ... }
+  const tableMatches = content.matchAll(/\s+([a-z]+)_[a-z_]+\s*:\s*\{/g);
+  
+  for (const match of tableMatches) {
+    const prefix = match[1].toLowerCase();
+    
+    // Filter out system prefixes
+    if (!['migration', 'platform', 'api', 'auth', 'storage'].includes(prefix)) {
+      prefixCandidates.add(prefix);
+    }
+  }
+  
+  // Match industry to prefix
+  for (const prefix of prefixCandidates) {
+    if (industryLower.startsWith(prefix) || prefix === industryLower) {
+      return prefix;
+    }
+  }
+  
+  // Single candidate
+  if (prefixCandidates.size === 1) {
+    return Array.from(prefixCandidates)[0];
+  }
+  
+  return null;
+}
+
+/**
+ * Hardcoded prefix mapping (legacy support)
+ * 
+ * DEPRECATED: Only used as fallback when auto-discovery fails.
+ * New industries should be auto-discovered from canonical evidence.
+ */
+function getHardcodedPrefix(industryScope: string): string | null {
   const prefixMap: Record<string, string> = {
     education: 'edu',
     healthcare: 'hc',
@@ -97,7 +252,41 @@ function getScopePrefix(industryScope: string): string {
     'real-estate': 're',
   };
   
-  return prefixMap[industryScope.toLowerCase()] || industryScope.slice(0, 3).toLowerCase();
+  return prefixMap[industryScope.toLowerCase()] || null;
+}
+
+/**
+ * Get scope prefix for industry (e.g., 'edu', 'hc', 'log', 'auto')
+ * 
+ * AUTO-DISCOVERS prefix from canonical evidence instead of hardcoding.
+ * 
+ * Discovery Order:
+ * 1. Migrations (CREATE TABLE statements) ✅ Authoritative
+ * 2. Generated types (database.types.ts) ✅ Canonical contract
+ * 3. Hardcoded map (legacy industries) ⚠️ Fallback only
+ * 4. UNKNOWN → BLOCK ❌ Do not guess
+ * 
+ * @throws Error if prefix cannot be determined (BLOCK rather than guess wrong)
+ */
+function getScopePrefix(industryScope: string, migrationsPath: string, typesPath: string): string {
+  const discovery = discoverScopePrefix(industryScope, migrationsPath, typesPath);
+  
+  if (discovery.source === 'unknown') {
+    throw new Error(
+      `Cannot determine table prefix for industry '${industryScope}'. ` +
+      `No matching tables found in migrations or types. ` +
+      `Factory BLOCKS rather than guessing wrong prefix.`
+    );
+  }
+  
+  // Log discovery source for transparency
+  if (discovery.source === 'hardcoded') {
+    console.warn(`⚠️  Using hardcoded prefix '${discovery.prefix}' for ${industryScope} (legacy fallback)`);
+  } else {
+    console.log(`✅ Auto-discovered prefix '${discovery.prefix}' for ${industryScope} (source: ${discovery.source})`);
+  }
+  
+  return discovery.prefix;
 }
 
 /**
@@ -319,7 +508,12 @@ export async function collectEvidence(
   } = options;
   
   // Derive naming patterns
-  const patterns = deriveEntityPatterns(entityName, industryScope);
+  const patterns = deriveEntityPatterns(
+    entityName,
+    industryScope,
+    migrationsPath,
+    generatedTypesPath
+  );
   
   // Collect evidence from each source
   const migration = checkMigrationEvidence(patterns, migrationsPath);
@@ -362,7 +556,8 @@ export async function collectIndustryEvidence(
   // Discover entities from migrations (most authoritative source)
   const entities = discoverEntitiesFromMigrations(
     fullOptions.migrationsPath || 'supabase/migrations',
-    industryScope
+    industryScope,
+    fullOptions.generatedTypesPath || 'src/types/database.types.ts'
   );
   
   const evidenceMap = new Map<string, CanonicalEvidence>();
@@ -378,12 +573,16 @@ export async function collectIndustryEvidence(
 /**
  * Discover entity names from migrations
  */
-function discoverEntitiesFromMigrations(migrationsPath: string, industryScope: string): string[] {
+function discoverEntitiesFromMigrations(
+  migrationsPath: string,
+  industryScope: string,
+  typesPath: string
+): string[] {
   if (!existsSync(migrationsPath)) {
     return [];
   }
   
-  const scopePrefix = getScopePrefix(industryScope);
+  const scopePrefix = getScopePrefix(industryScope, migrationsPath, typesPath);
   const entities = new Set<string>();
   
   const migrationFiles = readdirSync(migrationsPath)

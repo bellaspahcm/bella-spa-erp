@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "noEmit": true
+  },
+  "include": [
+    "src/app/**/automove/**/*",
+    "src/app/**/bookings/**/*",
+    "src/app/**/customer*/**/*",
+    "src/app/**/crm/**/*",
+    "src/app/api/**/*",
+    "src/app/**/architecture/**/*",
+    "src/app/**/audit/**/*",
+    "src/app/**/analytics/**/*"
+  ],
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
+  ]
+}

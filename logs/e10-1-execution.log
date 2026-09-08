@@ -1,0 +1,42 @@
+================================================================================
+≡ƒÅ¡ E10.1 AUTOMOTIVE FRESH OS FIELD TEST
+================================================================================
+Run ID: e10-1-automotive-1788560955851
+Candidate: Automotive (auto_*)
+Protocol: Controlled Experiment (No Factory modifications)
+================================================================================
+
+Γû╢∩╕Å  E9.1 Evidence Collection...
+Γ¥î E9.1 Evidence Collection failed: Cannot read properties of undefined (reading 'length')
+
+================================================================================
+≡ƒôè E10.1 AUTOMOTIVE FIELD TEST RESULTS
+================================================================================
+Status: FAIL
+Message: Evidence collection failed
+Duration: 0.04s
+
+Evidence:
+  Tables Discovered: 0
+  Types Found: NO
+  Domain Found: NO
+  Tests Found: NO
+  Completeness: 0.0%
+
+Scope Decisions:
+  CONFORM: 0
+  RECONSTRUCT: 0
+  DEFER: 0
+  BLOCK: 0
+
+Autonomy:
+  Human Decisions: 0
+  Auto Decisions: 1
+
+Factory Gaps Discovered:
+  ΓÜá∩╕Å  E9.1 cannot collect automotive evidence
+================================================================================
+
+≡ƒôä Metrics saved: logs\e10-1-automotive-1788560955851.json
+
+Exit code: 1

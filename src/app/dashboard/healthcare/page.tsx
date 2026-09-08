@@ -127,7 +127,7 @@ export default function HealthcareDashboardPage() {
       const dbPatientsRes = await getAllPatientProfilesAction();
       let finalPatients: PatientInfo[] = [];
       if (dbPatientsRes.success && dbPatientsRes.data) {
-        finalPatients = dbPatientsRes.data;
+        finalPatients = dbPatientsRes.data as PatientInfo[];
       }
 
       const dbEncountersRes = await getAllEncountersAction();
@@ -223,7 +223,7 @@ export default function HealthcareDashboardPage() {
             ? `⚡ Mời BN ${waitingEncounter.patientName} vào ${availableChair.code}`
             : `⚡ Mời BN ${waitingEncounter.patientName} vào Phòng ${availableChair.code}`,
         description: isDental
-          ? `${availableChair.code} (${availableChair.locationZone || 'Khu A'}) đang trống. Gợi ý điều phối ngay cho BN ${waitingEncounter.patientName}.`
+          ? `${availableChair.code} (${(availableChair as any).locationZone || 'Khu A'}) đang trống. Gợi ý điều phối ngay cho BN ${waitingEncounter.patientName}.`
           : `Phòng ${availableChair.code} đang trống. Gợi ý mời BN ${waitingEncounter.patientName} vào phòng khám.`,
         actionLabel: isDental ? `Phân ${availableChair.code} ngay` : `Mở phòng ${availableChair.code} ngay`,
         actionType: isDental ? 'assign_chair' : 'assign_room',

@@ -1,0 +1,26 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "noEmit": true
+  },
+  "include": [
+    "src/app/**/login*/**/*",
+    "src/app/api/cron/**/*",
+    "src/app/api/health/**/*",
+    "src/app/api/metrics/**/*",
+    "src/app/api/gate3/**/*",
+    "src/app/api/**/*",
+    "src/app/**/architecture/**/*",
+    "src/app/**/audit/**/*",
+    "src/app/**/analytics/**/*",
+    "src/app/layout.tsx",
+    "src/app/page.tsx"
+  ],
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
+  ]
+}

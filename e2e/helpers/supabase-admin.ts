@@ -32,8 +32,9 @@ function loadEnvFile(filePath: string): void {
   const text = readFileSync(filePath, "utf8");
   for (const line of text.split(/\r?\n/)) {
     const match = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);
-    if (!match || process.env[match[1]]?.trim()) continue;
+    if (!match) continue;
 
+    const key = match[1];
     const rawValue = match[2].trim();
     const unquotedValue = (
       (rawValue.startsWith('"') && rawValue.endsWith('"')) ||
@@ -42,7 +43,16 @@ function loadEnvFile(filePath: string): void {
       ? rawValue.slice(1, -1)
       : rawValue;
 
-    process.env[match[1]] = unquotedValue;
+    // Skip if env var already exists AND is not a placeholder
+    const existing = process.env[key]?.trim();
+    if (existing && !existing.startsWith('placeholder-')) continue;
+
+    // Skip if new value is a placeholder and we already have a non-placeholder value
+    if (unquotedValue.startsWith('placeholder-') && existing && !existing.startsWith('placeholder-')) {
+      continue;
+    }
+
+    process.env[key] = unquotedValue;
   }
 }
 
@@ -50,7 +60,8 @@ function candidateEnvFiles(): string[] {
   const candidates = [
     process.env.E2E_ENV_FILE,
     join(tmpdir(), "bella-spa-e2e.env"),
-    resolve(process.cwd(), ".env.local"),
+    resolve(process.cwd(), ".env"),        // Load .env FIRST (has real service key)
+    resolve(process.cwd(), ".env.local"),  // Then .env.local (has URL, but placeholder keys)
   ].filter((filePath): filePath is string => Boolean(filePath));
 
   return [...new Set(candidates.map((filePath) => resolve(filePath)))];

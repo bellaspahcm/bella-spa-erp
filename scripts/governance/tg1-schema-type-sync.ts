@@ -27,24 +27,16 @@ async function generateFreshTypes(): Promise<string> {
   console.log('🔄 Generating fresh types from canonical schema...');
   
   try {
-    // Generate types to temporary location
-    const tempFile = path.join(process.cwd(), '.tmp-db-types.ts');
-    
-    // Suppress stderr (warnings about deprecated config, version updates)
-    // Use PowerShell-compatible redirection
+    // Generate types directly to stdout (avoid PowerShell UTF-16 encoding issue)
     const command = process.platform === 'win32'
-      ? `npx supabase gen types typescript --linked 2>$null > "${tempFile}"`
-      : `npx supabase gen types typescript --linked 2>/dev/null > "${tempFile}"`;
+      ? `npx supabase gen types typescript --linked 2>$null`
+      : `npx supabase gen types typescript --linked 2>/dev/null`;
     
-    execSync(command, {
+    const content = execSync(command, {
       encoding: 'utf-8',
-      shell: process.platform === 'win32' ? 'powershell.exe' : undefined
+      shell: process.platform === 'win32' ? 'powershell.exe' : undefined,
+      maxBuffer: 10 * 1024 * 1024 // 10MB buffer for large type files
     });
-    
-    const content = fs.readFileSync(tempFile, 'utf-8');
-    
-    // Clean up temp file
-    fs.unlinkSync(tempFile);
     
     return normalizeTypeContent(content);
   } catch (error) {
@@ -73,20 +65,21 @@ async function readCommittedTypes(): Promise<string> {
  * - Line ending differences (CRLF vs LF)
  * - Trailing whitespace per line
  * - Multiple consecutive blank lines
- * - Final trailing newline (normalize to single \n)
  * 
  * Preserves:
  * - Actual type definitions
  * - Property order
  * - Comments (part of semantic content)
+ * - Final newline state (don't add or remove)
  */
 function normalizeTypeContent(content: string): string {
-  return content
+  const normalized = content
     .replace(/\r\n/g, '\n')           // Normalize line endings to LF
     .replace(/[ \t]+$/gm, '')         // Remove trailing whitespace per line
-    .replace(/\n{3,}/g, '\n\n')       // Normalize multiple blank lines to double
-    .replace(/\n+$/, '\n')            // Normalize final newlines to single
-    .trim() + '\n';                   // Ensure exactly one final newline
+    .replace(/\n{3,}/g, '\n\n');      // Normalize multiple blank lines to double
+  
+  // Return as-is (don't add or remove final newlines)
+  return normalized;
 }
 
 /**

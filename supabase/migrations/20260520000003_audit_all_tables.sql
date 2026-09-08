@@ -76,11 +76,11 @@ CREATE TRIGGER audit_users_changes
     AFTER INSERT OR UPDATE OR DELETE ON public.users
     FOR EACH ROW EXECUTE FUNCTION public.log_audit_event();
 
--- 5. Inventory Items (Quản lý vật tư kho)
-DROP TRIGGER IF EXISTS audit_inventory_items_changes ON public.inventory_items;
-CREATE TRIGGER audit_inventory_items_changes
-    AFTER INSERT OR UPDATE OR DELETE ON public.inventory_items
-    FOR EACH ROW EXECUTE FUNCTION public.log_audit_event();
+-- 5. Inventory Items (Quản lý vật tư kho) -- REMOVED: table never created
+-- DROP TRIGGER IF EXISTS audit_inventory_items_changes ON public.inventory_items;
+-- CREATE TRIGGER audit_inventory_items_changes
+--     AFTER INSERT OR UPDATE OR DELETE ON public.inventory_items
+--     FOR EACH ROW EXECUTE FUNCTION public.log_audit_event();
 
 -- 6. Packages (Danh mục gói liệu trình)
 DROP TRIGGER IF EXISTS audit_packages_changes ON public.packages;

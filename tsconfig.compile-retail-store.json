@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@bella/shared": [
+        "./packages/shared/src"
+      ]
+    }
+  },
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/__tests__/**"
+  ],
+  "include": [
+    "src/app/**/retail-store/**/*.ts",
+    "src/app/**/retail-store/**/*.tsx",
+    "src/products/bella-retail-store/**/*.ts",
+    "src/products/bella-retail-store/**/*.tsx",
+    "src/types/database.types.ts"
+  ]
+}

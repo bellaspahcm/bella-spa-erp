@@ -16,9 +16,9 @@ describe('M3 Critique Engine', () => {
   describe('Test 1: Evidence Sufficiency', () => {
     it('should BLOCK proposal with no evidence', async () => {
       const truth = createTruth({
+        epistemicStatus: 'INFERENCE',
         provenance: {
           sources: [],  // No evidence
-          epistemicStatus: 'INFERENCE',
           reasoning: 'Some reasoning'
         }
       });
@@ -39,11 +39,11 @@ describe('M3 Critique Engine', () => {
 
     it('should PASS proposal with sufficient evidence', async () => {
       const truth = createTruth({
+        epistemicStatus: 'OBSERVATION',
         provenance: {
           sources: [
             { type: 'DOCUMENT', location: 'source1.md', retrievedAt: new Date() }
           ],
-          epistemicStatus: 'OBSERVATION',
           reasoning: 'Direct observation'
         }
       });
@@ -60,11 +60,11 @@ describe('M3 Critique Engine', () => {
   describe('Test 2: Contradiction Detection', () => {
     it('should BLOCK proposal with unresolved contradictions', async () => {
       const truth = createTruth({
+        epistemicStatus: 'OBSERVATION',
         provenance: {
           sources: [
             { type: 'DOCUMENT', location: 'source1.md', retrievedAt: new Date() }
           ],
-          epistemicStatus: 'OBSERVATION',
           conflicts: [
             {
               description: 'Source A says X, Source B says Y',
@@ -90,11 +90,11 @@ describe('M3 Critique Engine', () => {
 
     it('should ADVISE on resolved contradictions', async () => {
       const truth = createTruth({
+        epistemicStatus: 'OBSERVATION',
         provenance: {
           sources: [
             { type: 'DOCUMENT', location: 'source1.md', retrievedAt: new Date() }
           ],
-          epistemicStatus: 'OBSERVATION',
           conflicts: [
             {
               description: 'Conflict resolved',
@@ -122,9 +122,9 @@ describe('M3 Critique Engine', () => {
   describe('Test 3: Unsupported Inference', () => {
     it('should BLOCK inference without evidence', async () => {
       const truth = createTruth({
+        epistemicStatus: 'INFERENCE',
         provenance: {
           sources: [],  // No evidence
-          epistemicStatus: 'INFERENCE',
           reasoning: 'I inferred this'
         }
       });
@@ -144,11 +144,11 @@ describe('M3 Critique Engine', () => {
 
     it('should WARN on inference without reasoning', async () => {
       const truth = createTruth({
+        epistemicStatus: 'INFERENCE',
         provenance: {
           sources: [
             { type: 'DOCUMENT', location: 'source1.md', retrievedAt: new Date() }
           ],
-          epistemicStatus: 'INFERENCE',
           reasoning: ''  // No reasoning
         }
       });
@@ -194,11 +194,11 @@ describe('M3 Critique Engine', () => {
   describe('Test 4: Unresolved Ambiguity', () => {
     it('should BLOCK proposal with unresolved alternatives', async () => {
       const truth = createTruth({
+        epistemicStatus: 'INFERENCE',
         provenance: {
           sources: [
             { type: 'DOCUMENT', location: 'source1.md', retrievedAt: new Date() }
           ],
-          epistemicStatus: 'INFERENCE',
           reasoning: 'Multiple approaches possible',
           alternatives: [
             { approach: 'Approach A', reasoning: 'Reason A' },
@@ -225,11 +225,11 @@ describe('M3 Critique Engine', () => {
 
     it('should WARN on hidden assumptions', async () => {
       const truth = createTruth({
+        epistemicStatus: 'INFERENCE',
         provenance: {
           sources: [
             { type: 'DOCUMENT', location: 'source1.md', retrievedAt: new Date() }
           ],
-          epistemicStatus: 'INFERENCE',
           reasoning: 'Assuming customers want X, we should do Y'
         }
       });
@@ -250,9 +250,9 @@ describe('M3 Critique Engine', () => {
   describe('Test 5: Confidence vs Evidence Quality', () => {
     it('should BLOCK high confidence without evidence', async () => {
       const truth = createTruth({
+        epistemicStatus: 'INFERENCE',
         provenance: {
           sources: [],  // No evidence
-          epistemicStatus: 'INFERENCE',
           reasoning: 'Some reasoning'
         },
         confidence: { score: 0.9, factors: [] }  // High confidence
@@ -274,11 +274,11 @@ describe('M3 Critique Engine', () => {
 
     it('should WARN on very low confidence', async () => {
       const truth = createTruth({
+        epistemicStatus: 'INFERENCE',
         provenance: {
           sources: [
             { type: 'DOCUMENT', location: 'source1.md', retrievedAt: new Date() }
           ],
-          epistemicStatus: 'INFERENCE',
           reasoning: 'Uncertain'
         },
         confidence: { score: 0.2, factors: [] }  // Very low
@@ -301,11 +301,11 @@ describe('M3 Critique Engine', () => {
   describe('Test 6: Provenance Completeness', () => {
     it('should BLOCK missing epistemic status', async () => {
       const truth = createTruth({
+        epistemicStatus: undefined as any,  // Missing
         provenance: {
           sources: [
             { type: 'DOCUMENT', location: 'source1.md', retrievedAt: new Date() }
           ],
-          epistemicStatus: undefined as any,  // Missing
           reasoning: 'Some reasoning'
         }
       });
@@ -354,11 +354,11 @@ describe('M3 Critique Engine', () => {
   describe('Critique Assessment Scoring', () => {
     it('should calculate assessment scores', async () => {
       const truth = createTruth({
+        epistemicStatus: 'OBSERVATION',
         provenance: {
           sources: [
             { type: 'DOCUMENT', location: 'source1.md', retrievedAt: new Date() }
           ],
-          epistemicStatus: 'OBSERVATION',
           reasoning: 'Direct observation'
         }
       });
@@ -381,9 +381,9 @@ describe('M3 Critique Engine', () => {
 
     it('should set low readiness for blocked proposals', async () => {
       const truth = createTruth({
+        epistemicStatus: 'INFERENCE',
         provenance: {
           sources: [],  // No evidence - blocking
-          epistemicStatus: 'INFERENCE',
           reasoning: 'Unsupported'
         }
       });
@@ -416,11 +416,11 @@ describe('M3 Critique Engine', () => {
       });
 
       const truth = createTruth({
+        epistemicStatus: 'OBSERVATION',
         provenance: {
           sources: [
             { type: 'DOCUMENT', location: 'source1.md', retrievedAt: new Date() }
           ],  // Only 1 source
-          epistemicStatus: 'OBSERVATION',
           reasoning: 'Observed'
         }
       });
@@ -455,7 +455,6 @@ function createTruth(overrides: Partial<BusinessTruth> = {}): BusinessTruth {
     },
     provenance: {
       sources: [],
-      epistemicStatus: 'OBSERVATION',
       reasoning: '',
       discoveredAt: new Date()
     },

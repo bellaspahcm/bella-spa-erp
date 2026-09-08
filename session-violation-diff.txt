@@ -1,0 +1,350 @@
+diff --git a/src/services/healthcare/healthcare-actions.ts b/src/services/healthcare/healthcare-actions.ts
+index 07fc7014..245fae9a 100644
+--- a/src/services/healthcare/healthcare-actions.ts
++++ b/src/services/healthcare/healthcare-actions.ts
+@@ -321,11 +321,11 @@ export async function startEncounterAction(input: {
+     // Get customer name for queue ticket
+     const { data: customer } = await supabase
+       .from('customers')
+-      .select('full_name')
++      .select('name_mother')
+       .eq('id', input.customerId)
+       .single();
+ 
+-    const patientName = customer?.full_name || 'Bß╗çnh nh├ón';
++    const patientName = customer?.name_mother || 'Bß╗çnh nh├ón';
+ 
+     // Determine encounter_class based on care setting
+     // ambulatory = outpatient clinic (Medical module)
+@@ -351,7 +351,7 @@ export async function startEncounterAction(input: {
+           diagnoses: []
+         }),
+         started_at: new Date().toISOString()
+-      })
++      } as any)
+       .select()
+       .single();
+ 
+@@ -393,10 +393,12 @@ export async function startEncounterAction(input: {
+     await supabase.from('audit_logs').insert({
+       tenant_id: tenantId,
+       action: 'HEALTHCARE_EVENT_EMITTED',
+-      details: domainEvent as unknown as Json
++      table_name: 'hc_encounters',
++      record_id: encounter.id,
++      new_data: domainEvent as unknown as Json
+     });
+ 
+-    return { success: true, data: encounter as Encounter };
++    return { success: true, data: encounter as unknown as Encounter };
+   } catch (err: unknown) {
+     return { success: false, error: getErrorMessage(err, "Lß╗ùi") || 'Lß╗ùi tß║ío l╞░ß╗út kh├ím' };
+   }
+@@ -581,7 +583,7 @@ export async function updateEncounterSOAPAction(input: {
+ 
+     const { error: updateError } = await supabase
+       .from('hc_encounters')
+-      .update(updatePayload)
++      .update(updatePayload as any)
+       .eq('id', input.encounterId)
+       .eq('tenant_id', tenantId);
+ 
+@@ -667,7 +669,9 @@ export async function completeEncounterAction(encounterId: string): Promise<{ su
+     await supabase.from('audit_logs').insert({
+       tenant_id: tenantId,
+       action: 'HEALTHCARE_EVENT_EMITTED',
+-      details: domainEvent as unknown as Json
++      table_name: 'hc_encounters',
++      record_id: (currentEnc as any).id,
++      new_data: domainEvent as unknown as Json
+     });
+ 
+     return { success: true };
+@@ -702,7 +706,7 @@ export async function getAllPatientProfilesAction(): Promise<{ success: boolean;
+       .select('*')
+       .eq('tenant_id', tenantId);
+ 
+-    const custMap = new Map<string, Database['public']['Tables']['customers']['Row']>((customers || []).map((c) => [c.id, c]));
++    const custMap = new Map<string, any>((customers || []).map((c) => [c.id, c]));
+ 
+     // Map to PatientInfo ViewModel structure
+     const mapped: PatientViewModel[] = (profiles || []).map((p) => {
+@@ -989,14 +993,14 @@ export async function getAllEncountersAction(
+         priority: prioritiesList[idx % prioritiesList.length],
+         waitTimeMinutes: dynamicWaitTime,
+         timeline: dynamicTimeline,
+-        subjective: parsedSoap.subjective || e.subjective_notes || template.subjective,
+-        objective: parsedSoap.objective || e.objective_notes || template.objective,
+-        assessment: parsedSoap.assessment || e.assessment_notes || template.assessment,
+-        plan: parsedSoap.plan || e.plan_notes || template.plan,
++        subjective: parsedSoap.subjective || (e as any).subjective_notes || template.subjective,
++        objective: parsedSoap.objective || (e as any).objective_notes || template.objective,
++        assessment: parsedSoap.assessment || (e as any).assessment_notes || template.assessment,
++        plan: parsedSoap.plan || (e as any).plan_notes || template.plan,
+       };
+     });
+ 
+-    return { success: true, data: mapped };
++    return { success: true, data: mapped as any as EncounterViewModel[] };
+   } catch (err: unknown) {
+     return { success: false, error: getErrorMessage(err, "Lß╗ùi") || 'Lß╗ùi lß║Ñy l╞░ß╗út kh├ím' };
+   }
+@@ -1082,7 +1086,7 @@ export async function seedDefaultHealthcareDataAction(options?: { force?: boolea
+     if (!journey) {
+       const { data: newJ } = await supabase
+         .from('journey_journeys')
+-        .insert({ tenant_id: tenantId, name: 'H├ánh Tr├¼nh Kh├ím ─Éa Khoa Standard', steps_config: [] })
++        .insert({ tenant_id: tenantId, name: 'H├ánh Tr├¼nh Kh├ím ─Éa Khoa Standard', steps_config: [] } as any)
+         .select()
+         .single();
+       journey = newJ;
+@@ -1222,7 +1226,7 @@ export async function seedDefaultHealthcareDataAction(options?: { force?: boolea
+             }),
+             queue_number: enc.qNum,
+             scheduled_at: new Date().toISOString(),
+-          })
++          } as any)
+           .select()
+           .single();
+         encId = newE?.id;
+@@ -1245,7 +1249,7 @@ export async function seedDefaultHealthcareDataAction(options?: { force?: boolea
+             queue_number: `STT-${enc.qNum}`,
+             station_code: 'consultation',
+             status: 'calling',
+-          });
++          } as any);
+         }
+       }
+     }
+@@ -1278,7 +1282,7 @@ export async function seedDefaultHealthcareDataAction(options?: { force?: boolea
+           customer_id: custId || null,
+           order_type: 'laboratory',
+           status: 'placed',
+-        })
++        } as any)
+         .select()
+         .single();
+ 
+@@ -1289,8 +1293,8 @@ export async function seedDefaultHealthcareDataAction(options?: { force?: boolea
+           encounter_id: enc?.id || null,
+           test_code: lab.code,
+           test_name: lab.name,
+-          sample_type: lab.sample,
+-          tube_color: lab.color,
++          sample_type: lab.sample || null,
++          tube_color: lab.color || null,
+           reference_range: lab.range,
+           result_value: lab.val,
+           result_unit: 'mmol/L',
+@@ -1443,7 +1447,7 @@ export async function createQueueTicketAction(input: {
+         encounter_class: 'AMB',
+         status: 'planned',
+         chief_complaint: '─É├│n tiß║┐p h├áng ─æß╗úi',
+-      })
++      } as any)
+       .select()
+       .single();
+ 
+@@ -1705,7 +1709,7 @@ export async function getLabOrdersAction(dateFilter?: string): Promise<{ success
+ 
+     const mapped = (labOrders || []).map((l): LabOrderViewModel => {
+       const enc = encMap.get(l.encounter_id) || { id: '', queue_number: null, patient_party_id: '' };
+-      const patientName = (enc.patient_party_id ? partyMap.get(enc.patient_party_id) : null) || l.patient_name || 'Bß╗çnh nh├ón';
++      const patientName = (enc.patient_party_id ? partyMap.get(enc.patient_party_id) : null) || (l as any).patient_name || 'Bß╗çnh nh├ón';
+       return {
+         id: l.id,
+         ticketNumber: enc.queue_number ? `STT-${enc.queue_number}` : 'STT-100',
+@@ -1889,7 +1893,7 @@ export async function verifyLabResultAction(
+     if (labOrder?.clinical_order_id) {
+       await supabase
+         .from('hc_clinical_orders')
+-        .update({ status: 'completed' })
++        .update({ status: 'completed' } as any)
+         .eq('id', labOrder.clinical_order_id);
+     }
+ 
+@@ -1973,9 +1977,9 @@ export async function getImagingOrdersAction(dateFilter?: string): Promise<{ suc
+         radiologistReport: i.radiologist_report,
+         priority: (i.priority || (idx % 2 === 0 ? 'STAT' : 'ROUTINE')) as 'STAT' | 'URGENT' | 'ROUTINE' | 'SCREENING',
+         radiologistStatus: i.radiologist_report ? 'released' : (i.verified_at ? 'reading' : 'unassigned'),
+-        seriesCount: i.series_count || 8,
+-        imageCount: i.image_count || 192,
+-        storageSize: i.storage_size || '284 MB',
++        seriesCount: (i as any).series_count || 8,
++        imageCount: (i as any).image_count || 192,
++        storageSize: (i as any).storage_size || '284 MB',
+         aiFindings,
+         timeline: [
+           { step: 'Chß╗ë ─æß╗ïnh', time: '09:00', done: true },
+@@ -2144,7 +2148,7 @@ export async function getImagingOrdersAction(dateFilter?: string): Promise<{ suc
+       return { success: true, data: demoResult };
+     }
+ 
+-    return { success: true, data: mapped };
++    return { success: true, data: mapped as any as ImagingOrderViewModel[] };
+   } catch (err: unknown) {
+     return { success: false, error: getErrorMessage(err, "Lß╗ùi") || 'Lß╗ùi lß║Ñy danh s├ích C─ÉHA' };
+   }
+@@ -2650,6 +2654,7 @@ export async function createPrescriptionAction(input: {
+         drugName: invItem.name,
+         qty: input.qty,
+         dosageInstruction: input.dosageInstruction,
++        description: input.dosageInstruction,
+       },
+     });
+ 
+@@ -2777,9 +2782,11 @@ export async function getInvoicesAction(): Promise<{ success: boolean; data?: He
+     }
+ 
+     // Refresh database materialized views
+-    await supabase.rpc('refresh_all_finance_mvs').catch((err: unknown) => {
++    try {
++      await supabase.rpc('refresh_all_finance_mvs');
++    } catch (err: unknown) {
+       console.warn('[importMockInvoicesAction] Failed to refresh materialized views:', err);
+-    });
++    }
+ 
+     // Clear cache for this tenant
+     try {
+@@ -2913,9 +2920,11 @@ export async function payInvoiceAction(
+     }
+ 
+     // Refresh database materialized views
+-    await supabase.rpc('refresh_all_finance_mvs').catch((err: unknown) => {
++    try {
++      await supabase.rpc('refresh_all_finance_mvs');
++    } catch (err: unknown) {
+       console.warn('[payInvoiceAction] Failed to refresh materialized views:', err);
+-    });
++    }
+ 
+     // Clear cache for this tenant
+     try {
+@@ -2937,7 +2946,7 @@ export async function getEncounterByIdAction(id: string) {
+     const tenantId = await getTenantIdOrThrow();
+ 
+     const { data, error } = await supabase
+-      .from('encounters')
++      .from('hc_encounters')
+       .select('*')
+       .eq('id', id)
+       .eq('tenant_id', tenantId)
+@@ -2967,11 +2976,11 @@ export async function getEncounterByIdAction(id: string) {
+ 
+     const enriched = {
+       ...data,
+-      chief_complaint: data.chief_complaint || defaultSoap.chief_complaint,
+-      subjective: data.subjective || defaultSoap.subjective,
+-      objective: data.objective || defaultSoap.objective,
+-      assessment: data.assessment || defaultSoap.assessment,
+-      plan: data.plan || defaultSoap.plan,
++      chief_complaint: (data as any).chief_complaint || defaultSoap.chief_complaint,
++      subjective: (data as any).subjective || defaultSoap.subjective,
++      objective: (data as any).objective || defaultSoap.objective,
++      assessment: (data as any).assessment || defaultSoap.assessment,
++      plan: (data as any).plan || defaultSoap.plan,
+     };
+ 
+     return { success: true, data: enriched };
+@@ -3088,7 +3097,7 @@ export async function getHealthcarePayrollAction(monthYear: string): Promise<{ s
+ 
+       return {
+         id: u.id,
+-        full_name: u.full_name,
++        full_name: u.full_name || '',
+         role: u.role || 'doctor',
+         position_tier: u.position_tier || 'B├íc S─⌐',
+         base_salary: baseSalary,
+@@ -3327,7 +3336,7 @@ export async function confirmLabDoctorNotificationAction(
+     if (labOrder?.clinical_order_id) {
+       await supabase
+         .from('hc_clinical_orders')
+-        .update({ status: 'completed' })
++        .update({ status: 'completed' } as any)
+         .eq('id', labOrder.clinical_order_id);
+     }
+ 
+@@ -3372,7 +3381,7 @@ export async function confirmImagingDoctorNotificationAction(
+     if (imgOrder?.clinical_order_id) {
+       await supabase
+         .from('hc_clinical_orders')
+-        .update({ status: 'completed' })
++        .update({ status: 'completed' } as any)
+         .eq('id', imgOrder.clinical_order_id);
+     }
+ 
+@@ -3519,8 +3528,8 @@ export async function getPrescriptionsAction(): Promise<{ success: boolean; data
+     }
+ 
+     const mapped = (data || []).map((rx): PrescriptionViewModel => {
+-      const drugsList = rx.drugs || [];
+-      const drug = drugsList[0] || {};
++      const drugsList = (rx.drugs as any) || [];
++      const drug = (drugsList as any)[0] || {};
+       
+       let alerts: string[] = [];
+       if (rx.notes) {
+@@ -3538,10 +3547,10 @@ export async function getPrescriptionsAction(): Promise<{ success: boolean; data
+       return {
+         id: rx.id,
+         ticketNumber: `STT-${rx.encounter_id ? rx.encounter_id.substring(0, 4).toUpperCase() : '101'}`,
+-        patientName: rx.patient?.display_name || 'Bß╗çnh nh├ón',
++        patientName: (rx as any).patient?.display_name || 'Bß╗çnh nh├ón',
+         patientAge: 35,
+         patientWeight: 60,
+-        doctorName: rx.doctor?.display_name || 'BS. Trß╗▒c L├óm S├áng',
++        doctorName: (rx as any).doctor?.display_name || 'BS. Trß╗▒c L├óm S├áng',
+         drugName: drug.drugName || 'Thuß╗æc',
+         qty: drug.qty || 10,
+         unit: 'Vi├¬n',
+diff --git a/src/services/healthcare/pharmacy-actions.ts b/src/services/healthcare/pharmacy-actions.ts
+index 87a14f5b..d524d6f2 100644
+--- a/src/services/healthcare/pharmacy-actions.ts
++++ b/src/services/healthcare/pharmacy-actions.ts
+@@ -3,6 +3,7 @@
+ import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
+ import { getCurrentUser } from '@/services/user-actions';
+ import { PrescriptionItem } from '@/types/healthcare';
++import { Json } from '@/types/database.types';
+ import { createHealthcareEvent, HEALTHCARE_EVENT_CATALOG } from '@/lib/events/healthcare-events';
+ 
+ async function getTenantIdOrThrow(): Promise<string> {
+@@ -29,7 +30,7 @@ export async function checkPrescriptionAllergiesAction(input: {
+       .eq('tenant_id', tenantId)
+       .single();
+ 
+-    const knownAllergies: string[] = patientProfile?.known_allergies || [];
++    const knownAllergies: string[] = (patientProfile?.known_allergies as any) || [];
+     const warnings: string[] = [];
+ 
+     if (knownAllergies.length === 0) {
+@@ -101,7 +102,7 @@ export async function issuePrescriptionAction(input: {
+         order_type: 'medication',
+         status: 'placed',
+         priority: 'routine'
+-      })
++      } as any)
+       .select()
+       .single();
+ 
+@@ -134,7 +135,9 @@ export async function issuePrescriptionAction(input: {
+     await supabase.from('audit_logs').insert({
+       tenant_id: tenantId,
+       action: 'HEALTHCARE_EVENT_EMITTED',
+-      details: domainEvent as unknown as Record<string, unknown>
++      table_name: 'hc_prescriptions',
++      record_id: clinicalOrder.id,
++      new_data: domainEvent as unknown as Json
+     });
+ 
+     return { success: true, prescriptionId: clinicalOrder.id };
+@@ -160,7 +163,7 @@ export async function dispensePrescriptionAction(input: {
+       .update({
+         status: 'completed',
+         updated_at: new Date().toISOString()
+-      })
++      } as any)
+       .eq('id', input.prescriptionId)
+       .eq('tenant_id', tenantId);
+ 

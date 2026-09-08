@@ -116,48 +116,22 @@ const FROZEN_LAYERS: FrozenLayer[] = [
       'No external service calls',
     ],
   },
-  {
-    id: 'E7.2',
-    name: 'E7.2 Operational Kernel',
-    status: 'SEALED',
-    artifacts: [
-      { path: 'src/platform/logistics/domain/inventory-operations.domain.ts', type: 'OPERATION_LOGIC', publicAPI: true },
-    ],
-    allowedImports: [
-      'node:',
-      'type-fest',
-      '@types/',
-      'src/platform/logistics/domain/*.types.ts',
-      'src/platform/logistics/domain/*.domain.ts',
-    ],
-    forbiddenImports: [
-      'src/platform/logistics/domain/rules/',
-      'src/products/',
-      'src/workflows/',
-      '/notification/',
-      '/task/',
-    ],
-    invariants: [
-      'Event-after-persistence',
-      'Operations are deterministic',
-      'No workflow execution',
-      'Tenant isolation preserved',
-    ],
-  },
+  // E7.2 Operational Kernel: intentionally deferred (Sept 3, 2026)
+  // Implementation deleted during E7.1 controlled rebuild
+  // Canonical architecture: still planned (see E7_LOGISTICS_OS_CONSTRUCTION_PLAN.md)
+  // Guard entry removed to reflect actual implementation state
+  // E7.3 Rules & Traceability: partially deferred (Sept 3, 2026)
+  // 6 implementation files deleted during E7.1 controlled rebuild
+  // 3 primitive files preserved (rule.types, rule.helpers, rule.composition)
+  // Guard entry updated to reflect only existing primitives
   {
     id: 'E7.3',
-    name: 'E7.3 Rules & Traceability',
+    name: 'E7.3 Rules & Traceability (Primitives Only)',
     status: 'SEALED',
     artifacts: [
       { path: 'src/platform/logistics/domain/rules/rule.types.ts', type: 'TYPE_DEFINITION', publicAPI: true },
       { path: 'src/platform/logistics/domain/rules/rule.helpers.ts', type: 'HELPER', publicAPI: true },
-      { path: 'src/platform/logistics/domain/rules/expiry.rule.ts', type: 'RULE', publicAPI: true },
-      { path: 'src/platform/logistics/domain/rules/quantity.rule.ts', type: 'RULE', publicAPI: true },
-      { path: 'src/platform/logistics/domain/rules/traceability.rule.ts', type: 'RULE', publicAPI: true },
-      { path: 'src/platform/logistics/domain/rules/traceability.operations.ts', type: 'OPERATION_LOGIC', publicAPI: true },
-      { path: 'src/platform/logistics/domain/rules/compliance.evaluation.ts', type: 'EVALUATION_LOGIC', publicAPI: true },
       { path: 'src/platform/logistics/domain/rules/rule.composition.ts', type: 'COMPOSITION_LOGIC', publicAPI: true },
-      { path: 'src/platform/logistics/domain/rules/index.ts', type: 'EXPORT', publicAPI: true },
     ],
     allowedImports: [
       'node:',

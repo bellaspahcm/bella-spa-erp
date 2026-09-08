@@ -1,0 +1,63 @@
+{
+  "runId": "e10-1-automotive-1788561627095",
+  "timestamp": "2026-09-04T22:40:27.095Z",
+  "candidate": "automotive",
+  "phase": "independent-validation",
+  "evidence": {
+    "tablesDiscovered": 61,
+    "typesFound": true,
+    "domainFound": false,
+    "testsFound": false,
+    "completeness": 0.7
+  },
+  "scope": {
+    "decisions": {},
+    "conform": 0,
+    "reconstruct": 0,
+    "defer": 0,
+    "block": 0
+  },
+  "pipeline": {
+    "steps": [
+      {
+        "name": "E9.1 Evidence Collection",
+        "status": "pass",
+        "duration": 6.21
+      },
+      {
+        "name": "E9 Scope Derivation",
+        "status": "fail",
+        "duration": 0.001,
+        "error": "scopeDecisions.entries is not a function or its return value is not iterable"
+      }
+    ],
+    "totalDuration": 6.212
+  },
+  "autonomy": {
+    "humanDecisions": 0,
+    "autoDecisions": 2,
+    "decisions": [
+      {
+        "step": "evidence-collection",
+        "decision": "auto",
+        "actor": "E9.1 Evidence Collector",
+        "result": "Scanning automotive schema",
+        "timestamp": "2026-09-04T22:40:27.096Z"
+      },
+      {
+        "step": "scope-derivation",
+        "decision": "auto",
+        "actor": "E9 Decision Engine",
+        "result": "Applying canonical rules",
+        "timestamp": "2026-09-04T22:40:33.307Z"
+      }
+    ]
+  },
+  "result": {
+    "status": "fail",
+    "message": "Scope derivation failed",
+    "factoryGaps": [
+      "E9 cannot classify automotive entities"
+    ]
+  }
+}

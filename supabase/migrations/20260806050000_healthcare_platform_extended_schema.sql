@@ -93,20 +93,21 @@ CREATE INDEX IF NOT EXISTS idx_hc_imaging_orders_tenant ON public.hc_imaging_ord
 CREATE INDEX IF NOT EXISTS idx_hc_imaging_orders_clinical ON public.hc_imaging_orders(clinical_order_id);
 
 -- 5. DRUG PROFILES (Healthcare Extension for `inventory_items`)
-CREATE TABLE IF NOT EXISTS public.hc_drug_profiles (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
-    inventory_item_id UUID NOT NULL REFERENCES public.inventory_items(id) ON DELETE CASCADE UNIQUE,
-    drug_code TEXT NOT NULL,
-    active_ingredient TEXT NOT NULL,
-    atc_code TEXT,
-    dosage_form TEXT, -- e.g., Viên nén, Dung dịch
-    strength TEXT, -- e.g., 500mg, 10mg/ml
-    route_of_administration TEXT,
-    is_controlled_drug BOOLEAN DEFAULT false,
-    is_cold_storage BOOLEAN DEFAULT false,
-    created_at TIMESTAMPTZ DEFAULT now() NOT NULL
-);
+-- DISABLED: 2026-09-05 - inventory_items table never created
+-- CREATE TABLE IF NOT EXISTS public.hc_drug_profiles (
+--     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+--     tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+--     inventory_item_id UUID NOT NULL REFERENCES public.inventory_items(id) ON DELETE CASCADE UNIQUE,
+--     drug_code TEXT NOT NULL,
+--     active_ingredient TEXT NOT NULL,
+--     atc_code TEXT,
+--     dosage_form TEXT,
+--     strength TEXT,
+--     route_of_administration TEXT,
+--     is_controlled_drug BOOLEAN DEFAULT false,
+--     is_cold_storage BOOLEAN DEFAULT false,
+--     created_at TIMESTAMPTZ DEFAULT now() NOT NULL
+-- );
 
 CREATE INDEX IF NOT EXISTS idx_hc_drug_profiles_tenant ON public.hc_drug_profiles(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_hc_drug_profiles_item ON public.hc_drug_profiles(inventory_item_id);

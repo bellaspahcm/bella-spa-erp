@@ -19,27 +19,29 @@ CREATE TABLE IF NOT EXISTS public.chat_messages (
 -- Enable RLS for chat_messages
 ALTER TABLE public.chat_messages ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view chat messages for their tenant"
-    ON public.chat_messages FOR SELECT
-    USING (tenant_id = (SELECT tenant_id FROM public.profiles WHERE id = auth.uid()));
+-- DISABLED: profiles table does not exist yet (commented out 2026-09-08)
+-- CREATE POLICY "Users can view chat messages for their tenant"
+--     ON public.chat_messages FOR SELECT
+--     USING (tenant_id = (SELECT tenant_id FROM public.profiles WHERE id = auth.uid()));
 
-CREATE POLICY "Users can insert chat messages for their tenant"
-    ON public.chat_messages FOR INSERT
-    WITH CHECK (tenant_id = (SELECT tenant_id FROM public.profiles WHERE id = auth.uid()));
+-- CREATE POLICY "Users can insert chat messages for their tenant"
+--     ON public.chat_messages FOR INSERT
+--     WITH CHECK (tenant_id = (SELECT tenant_id FROM public.profiles WHERE id = auth.uid()));
 
 -- 2. Loại bỏ các giá trị tenant_id mặc định bị gán cứng
-ALTER TABLE public.profiles ALTER COLUMN tenant_id DROP DEFAULT;
-ALTER TABLE public.employees ALTER COLUMN tenant_id DROP DEFAULT;
-ALTER TABLE public.customers ALTER COLUMN tenant_id DROP DEFAULT;
-ALTER TABLE public.projects ALTER COLUMN tenant_id DROP DEFAULT;
-ALTER TABLE public.units ALTER COLUMN tenant_id DROP DEFAULT;
-ALTER TABLE public.bookings ALTER COLUMN tenant_id DROP DEFAULT;
-ALTER TABLE public.sale_contracts ALTER COLUMN tenant_id DROP DEFAULT;
-ALTER TABLE public.expenses ALTER COLUMN tenant_id DROP DEFAULT;
-ALTER TABLE public.users ALTER COLUMN tenant_id DROP DEFAULT;
-ALTER TABLE public.salary_records ALTER COLUMN tenant_id DROP DEFAULT;
-ALTER TABLE public.session_logs ALTER COLUMN tenant_id DROP DEFAULT;
-ALTER TABLE public.revenue ALTER COLUMN tenant_id DROP DEFAULT;
+-- DISABLED: many tables don't exist in current schema (commented out 2026-09-08)
+-- ALTER TABLE public.profiles ALTER COLUMN tenant_id DROP DEFAULT;
+-- ALTER TABLE public.employees ALTER COLUMN tenant_id DROP DEFAULT;
+-- ALTER TABLE public.customers ALTER COLUMN tenant_id DROP DEFAULT;
+-- ALTER TABLE public.projects ALTER COLUMN tenant_id DROP DEFAULT;
+-- ALTER TABLE public.units ALTER COLUMN tenant_id DROP DEFAULT;
+-- ALTER TABLE public.bookings ALTER COLUMN tenant_id DROP DEFAULT;
+-- ALTER TABLE public.sale_contracts ALTER COLUMN tenant_id DROP DEFAULT;
+-- ALTER TABLE public.expenses ALTER COLUMN tenant_id DROP DEFAULT;
+-- ALTER TABLE public.users ALTER COLUMN tenant_id DROP DEFAULT;
+-- ALTER TABLE public.salary_records ALTER COLUMN tenant_id DROP DEFAULT;
+-- ALTER TABLE public.session_logs ALTER COLUMN tenant_id DROP DEFAULT;
+-- ALTER TABLE public.revenue ALTER COLUMN tenant_id DROP DEFAULT;
 
 -- 3. Hàm RPC: get_dashboard_summary
 CREATE OR REPLACE FUNCTION public.get_dashboard_summary(

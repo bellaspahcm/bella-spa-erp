@@ -220,7 +220,7 @@ export default function ClinicalWorkspaceEnginePage() {
   const handleUpdateStatus = async (newStatus: EncounterContext['status']) => {
     if (!encounter) return;
     try {
-      const res = await updateEncounterStatusAction(encounter.id, newStatus as unknown);
+      const res = await updateEncounterStatusAction(encounter.id, newStatus as string);
       if (res.success) {
         toast.success(`Di chuyển trạng thái lượt khám sang: ${newStatus}`);
         loadData();

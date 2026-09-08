@@ -1,0 +1,15 @@
+import * as Sentry from "@sentry/nextjs";
+
+export async function register() {
+  // TEMPORARILY DISABLED for P3.1 debugging - instrumentation causing Turbopack module resolution errors
+  // if (process.env.NEXT_RUNTIME === "nodejs") {
+  //   await import("./sentry.server.config");
+  // }
+
+  // if (process.env.NEXT_RUNTIME === "edge") {
+  //   await import("./sentry.edge.config");
+  // }
+  console.log('[instrumentation] Sentry disabled for debugging');
+}
+
+export const onRequestError = Sentry.captureRequestError;

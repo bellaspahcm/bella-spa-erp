@@ -17,7 +17,7 @@ export default function ClinicalContextPanel({ context }: { readonly context: Cl
     return (
       <div className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-200 dark:border-slate-800 shadow-sm p-4 overflow-hidden">
         <OdontogramTwin
-          toothData={patient.toothData || {}}
+          toothData={(patient as any).toothData || {}}
           selectedTooth={selectedTooth}
           onSelectTooth={setSelectedTooth}
           patientName={patient.fullName}

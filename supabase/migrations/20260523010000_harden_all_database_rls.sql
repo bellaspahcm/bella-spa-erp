@@ -166,20 +166,20 @@ CREATE POLICY "Tenant admin manage packages" ON public.packages
     WITH CHECK (public.get_auth_tenant_id() IS NULL OR (public.is_admin() AND tenant_id = public.get_auth_tenant_id()));
 
 -- =========================================================================
--- 14. INVENTORY_ITEMS
+-- 14. INVENTORY_ITEMS -- REMOVED: table never created
 -- =========================================================================
-DROP POLICY IF EXISTS "Public Select" ON public.inventory_items;
-DROP POLICY IF EXISTS "Authenticated Insert" ON public.inventory_items;
-DROP POLICY IF EXISTS "Tenant isolation for inventory items" ON public.inventory_items;
-DROP POLICY IF EXISTS "Staff can view inventory in tenant" ON public.inventory_items;
-DROP POLICY IF EXISTS "Admins can manage inventory in tenant" ON public.inventory_items;
-DROP POLICY IF EXISTS "tenant_update_inventory_items" ON public.inventory_items;
-DROP POLICY IF EXISTS "tenant_delete_inventory_items" ON public.inventory_items;
+-- DROP POLICY IF EXISTS "Public Select" ON public.inventory_items;
+-- DROP POLICY IF EXISTS "Authenticated Insert" ON public.inventory_items;
+-- DROP POLICY IF EXISTS "Tenant isolation for inventory items" ON public.inventory_items;
+-- DROP POLICY IF EXISTS "Staff can view inventory in tenant" ON public.inventory_items;
+-- DROP POLICY IF EXISTS "Admins can manage inventory in tenant" ON public.inventory_items;
+-- DROP POLICY IF EXISTS "tenant_update_inventory_items" ON public.inventory_items;
+-- DROP POLICY IF EXISTS "tenant_delete_inventory_items" ON public.inventory_items;
 
-CREATE POLICY "Tenant isolation for inventory items" ON public.inventory_items
-    FOR ALL TO authenticated
-    USING (public.get_auth_tenant_id() IS NULL OR tenant_id = public.get_auth_tenant_id())
-    WITH CHECK (public.get_auth_tenant_id() IS NULL OR tenant_id = public.get_auth_tenant_id());
+-- CREATE POLICY "Tenant isolation for inventory items" ON public.inventory_items
+--     FOR ALL TO authenticated
+--     USING (public.get_auth_tenant_id() IS NULL OR tenant_id = public.get_auth_tenant_id())
+--     WITH CHECK (public.get_auth_tenant_id() IS NULL OR tenant_id = public.get_auth_tenant_id());
 
 -- =========================================================================
 -- 15. INVENTORY_LOGS

@@ -1,0 +1,693 @@
+
+> bella-spa-erp@0.1.0 test
+> jest src/platform/logistics/domain/__tests__/ --verbose
+
+  console.log
+    Γùç injected env (0) from .env.test // tip: Γùê encrypted .env [www.dotenvx.com]
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+  console.log
+    [Jest Setup] SUPABASE_SERVICE_ROLE_KEY loaded: true
+
+      at Object.log (jest.setup.ts:13:9)
+
+PASS src/platform/logistics/domain/__tests__/operational-invariants.test.ts
+  E7.2 Operational Invariants (DEFERRED)
+    Invariant #1: Quantity constraints
+      Γ£Ä todo should reject zero quantity reservation
+      Γ£Ä todo should reject negative quantity reservation
+      Γ£Ä todo should reject reservation exceeding available quantity
+      Γ£Ä todo should reject reservation when available is zero
+      Γ£Ä todo should calculate available correctly (onHand - reserved)
+      Γ£Ä todo should allow reservation exactly equal to available
+    Invariant #2: Cancel constraints
+      Γ£Ä todo should reject cancel exceeding reserved quantity
+      Γ£Ä todo should reject cancel when reserved is zero
+      Γ£Ä todo should allow cancel exactly equal to reserved
+    Invariant #3: Status-based preconditions
+      Γ£Ä todo should reject shipOperation on AVAILABLE inventory
+      Γ£Ä todo should reject expireOperation on AVAILABLE inventory
+      Γ£Ä todo should reject cancelOperation on EXPIRED inventory
+    Invariant #4: Context requirements
+      Γ£Ä todo should reject deactivation without reason
+      Γ£Ä todo should reject close without actor
+    Invariant #6: Atomic failure (no partial mutation)
+      Γ£Ä todo should not mutate inventory on quantity validation failure
+      Γ£Ä todo should not mutate inventory on status transition failure
+      Γ£Ä todo should not mutate location on invalid transition
+    Invariant #7: Typed errors for all failure modes
+      Γ£Ä todo should return typed error for quantity violations
+      Γ£Ä todo should return typed error for status violations
+      Γ£Ä todo should return typed error for missing context
+
+  console.log
+    Γùç injected env (0) from .env.test // tip: Γîü auth for agents [www.vestauth.com]
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+  console.log
+    [Jest Setup] SUPABASE_SERVICE_ROLE_KEY loaded: true
+
+      at Object.log (jest.setup.ts:13:9)
+
+PASS src/platform/logistics/domain/__tests__/movement.domain.test.ts
+  MovementDomain
+    create() - Invariant #1: Movement number required
+      ΓêÜ should fail if movement number is missing (4 ms)
+      ΓêÜ should fail if movement number is whitespace only (1 ms)
+      ΓêÜ should trim movement number (2 ms)
+    create() - Invariant #2: Quantity must be positive
+      ΓêÜ should fail if quantity is zero (1 ms)
+      ΓêÜ should fail if quantity is negative
+      ΓêÜ should accept positive quantity
+      ΓêÜ should accept fractional quantity
+    create() - Invariant #3: Direction must match movement type
+      ΓêÜ should succeed for RECEIPT with INBOUND (1 ms)
+      ΓêÜ should fail for RECEIPT with OUTBOUND (1 ms)
+      ΓêÜ should succeed for SHIPMENT with OUTBOUND (1 ms)
+      ΓêÜ should fail for SHIPMENT with INBOUND
+      ΓêÜ should succeed for RELOCATION with NEUTRAL
+      ΓêÜ should fail for RELOCATION with INBOUND (1 ms)
+    create() - Invariant #4: INBOUND requires to_location
+      ΓêÜ should fail if INBOUND has no to_location (1 ms)
+      ΓêÜ should succeed if INBOUND has to_location (1 ms)
+    create() - Invariant #5: OUTBOUND requires from_location
+      ΓêÜ should fail if OUTBOUND has no from_location
+      ΓêÜ should succeed if OUTBOUND has from_location
+    create() - Invariant #6: NEUTRAL requires both locations
+      ΓêÜ should fail if NEUTRAL has no from_location (1 ms)
+      ΓêÜ should fail if NEUTRAL has no to_location (1 ms)
+      ΓêÜ should succeed if NEUTRAL has both locations (1 ms)
+    create() - Invariant #7: Cannot transfer to same location
+      ΓêÜ should fail if NEUTRAL transfers to same location (1 ms)
+      ΓêÜ should succeed if NEUTRAL transfers to different location
+    create() - Invariant #8: Unit cost cannot be negative
+      ΓêÜ should fail if unit cost is negative (1 ms)
+      ΓêÜ should accept zero unit cost (1 ms)
+      ΓêÜ should accept positive unit cost
+      ΓêÜ should accept undefined unit cost (1 ms)
+    create() - Invariant #9: Total cost cannot be negative
+      ΓêÜ should fail if total cost is negative (1 ms)
+      ΓêÜ should accept zero total cost (1 ms)
+      ΓêÜ should accept positive total cost (1 ms)
+    create() - Invariant #10: Currency must be ISO 4217 format
+      ΓêÜ should fail if currency is not 3 letters (1 ms)
+      ΓêÜ should fail if currency is lowercase
+      ΓêÜ should fail if currency contains numbers (1 ms)
+      ΓêÜ should accept valid ISO 4217 currency (1 ms)
+      ΓêÜ should accept other valid currencies (1 ms)
+    create() - Invariant #11: Serial number requires lot number
+      ΓêÜ should fail if serial number without lot number (1 ms)
+      ΓêÜ should succeed if serial number with lot number (1 ms)
+      ΓêÜ should succeed if lot number without serial number (1 ms)
+    create() - Invariant #12: Only PENDING movements can be approved/cancelled
+      ΓêÜ should create movement with PENDING status (1 ms)
+      ΓêÜ should create movement with COMPLETED status by default
+    approve() - Status transitions
+      ΓêÜ should approve PENDING movement (1 ms)
+      ΓêÜ should fail to approve COMPLETED movement (1 ms)
+      ΓêÜ should fail to approve CANCELLED movement (1 ms)
+    cancel() - Status transitions
+      ΓêÜ should cancel PENDING movement with reason (1 ms)
+      ΓêÜ should fail to cancel without reason (1 ms)
+      ΓêÜ should fail to cancel COMPLETED movement (1 ms)
+      ΓêÜ should trim cancellation reason
+    Status query methods
+      ΓêÜ should correctly identify COMPLETED movement (1 ms)
+      ΓêÜ should correctly identify PENDING movement (1 ms)
+      ΓêÜ should correctly identify CANCELLED movement
+    canModify() - Immutability enforcement
+      ΓêÜ should allow modification of PENDING movement
+      ΓêÜ should not allow modification of COMPLETED movement
+      ΓêÜ should not allow modification of CANCELLED movement
+    Direction query methods
+      ΓêÜ should correctly identify INBOUND movement
+      ΓêÜ should correctly identify OUTBOUND movement
+      ΓêÜ should correctly identify NEUTRAL movement (1 ms)
+    calculateTotalCost()
+      ΓêÜ should calculate total cost from unit cost (1 ms)
+      ΓêÜ should return null if unit cost is null
+      ΓêÜ should handle fractional quantities
+    validateTraceability() - Item requirements
+      ΓêÜ should fail if lot tracking required but not provided (1 ms)
+      ΓêÜ should fail if serial tracking required but not provided (1 ms)
+      ΓêÜ should fail if expiry tracking required but not provided (1 ms)
+      ΓêÜ should succeed if all requirements met
+      ΓêÜ should succeed if no tracking required (1 ms)
+    Comprehensive movement type coverage
+      ΓêÜ should create TRANSFER_IN (INBOUND)
+      ΓêÜ should create PRODUCTION_OUTPUT (INBOUND)
+      ΓêÜ should create ADJUSTMENT_INCREASE (INBOUND)
+      ΓêÜ should create ISSUE (OUTBOUND)
+      ΓêÜ should create PRODUCTION_CONSUMPTION (OUTBOUND) (1 ms)
+      ΓêÜ should create ADJUSTMENT_DECREASE (OUTBOUND)
+      ΓêÜ should create DAMAGE (OUTBOUND) (1 ms)
+      ΓêÜ should create STATUS_CHANGE (NEUTRAL)
+      ΓêÜ should create CYCLE_COUNT (NEUTRAL) (1 ms)
+    Edge cases and boundary values
+      ΓêÜ should accept very large quantity (1 ms)
+      ΓêÜ should accept very small fractional quantity
+      ΓêÜ should handle source document references (1 ms)
+      ΓêÜ should handle batch grouping (1 ms)
+      ΓêÜ should set timestamps correctly (1 ms)
+      ΓêÜ should set completedAt for COMPLETED status (1 ms)
+      ΓêÜ should not set completedAt for PENDING status
+    Tenant isolation
+      ΓêÜ should preserve tenant ID in movement
+      ΓêÜ should preserve tenant ID through approve (1 ms)
+      ΓêÜ should preserve tenant ID through cancel
+    getDescription() - Presentation helper
+      ΓêÜ should format INBOUND movement description (1 ms)
+      ΓêÜ should format OUTBOUND movement description (1 ms)
+      ΓêÜ should format NEUTRAL movement description (1 ms)
+      ΓêÜ should include lot and serial in description (1 ms)
+
+  console.log
+    Γùç injected env (0) from .env.test // tip: Γîÿ multiple files { path: ['.env.local', '.env'] }
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+  console.log
+    [Jest Setup] SUPABASE_SERVICE_ROLE_KEY loaded: true
+
+      at Object.log (jest.setup.ts:13:9)
+
+PASS src/platform/logistics/domain/__tests__/traceability.domain.test.ts
+  TraceabilityDomain
+    create() - Invariant #1: Must have lot_number OR serial_number
+      ΓêÜ should fail if neither lot nor serial provided (2 ms)
+      ΓêÜ should succeed with lot number only (1 ms)
+      ΓêÜ should succeed with serial number only (1 ms)
+      ΓêÜ should succeed with both lot and serial
+    create() - Invariant #2: Received date required
+      ΓêÜ should fail if received date is missing
+      ΓêÜ should succeed with received date (2 ms)
+    create() - Invariant #3: Expiry date must be after manufactured date
+      ΓêÜ should fail if expiry date equals manufactured date
+      ΓêÜ should fail if expiry date before manufactured date
+      ΓêÜ should succeed if expiry date after manufactured date (1 ms)
+      ΓêÜ should succeed if only expiry date provided (no manufacture date)
+      ΓêÜ should succeed if only manufacture date provided (no expiry)
+    addCustodyEvent() - Invariant #4: Chain of custody is append-only
+      ΓêÜ should fail if location ID missing (1 ms)
+      ΓêÜ should fail if action missing
+      ΓêÜ should add custody event (1 ms)
+      ΓêÜ should append events (not replace) (1 ms)
+      ΓêÜ should preserve existing events when adding new event (1 ms)
+      ΓêÜ should trim action and notes
+    initiateRecall() - Invariant #5: Only NONE status can be recalled
+      ΓêÜ should fail if recall reason missing (1 ms)
+      ΓêÜ should recall item with NONE status (1 ms)
+      ΓêÜ should fail if already recalled (1 ms)
+      ΓêÜ should trim recall reason (1 ms)
+    markAsDestroyed() - Invariant #6: Only RECALLED items can be destroyed
+      ΓêÜ should fail if item not recalled (1 ms)
+      ΓêÜ should mark recalled item as destroyed
+      ΓêÜ should fail if destroyed item destroyed again
+    changeComplianceStatus()
+      ΓêÜ should change compliance status (1 ms)
+      ΓêÜ should fail to mark recalled item as compliant (1 ms)
+      ΓêÜ should fail to mark destroyed item as compliant
+      ΓêÜ should allow marking recalled item as non-compliant (1 ms)
+    Query methods
+      ΓêÜ should correctly identify recalled status (1 ms)
+      ΓêÜ should correctly identify destroyed status
+      ΓêÜ should correctly identify compliance status
+    Expiry calculations
+      ΓêÜ should detect expired items (1 ms)
+      ΓêÜ should detect non-expired items
+      ΓêÜ should return false if no expiry date (1 ms)
+      ΓêÜ should calculate days until expiry (1 ms)
+      ΓêÜ should return negative days for expired items
+      ΓêÜ should return null if no expiry date (1 ms)
+      ΓêÜ should detect near expiry items (1 ms)
+      ΓêÜ should not mark expired items as near expiry
+    Custody chain helpers
+      ΓêÜ should return empty custody chain for new item (1 ms)
+      ΓêÜ should return custody event count (1 ms)
+      ΓêÜ should get last custody event
+      ΓêÜ should format custody chain (1 ms)
+    Shelf life calculations
+      ΓêÜ should calculate shelf life remaining
+      ΓêÜ should return null if no manufacture date
+      ΓêÜ should return null if no expiry date (1 ms)
+      ΓêÜ should return 0% for expired items
+      ΓêÜ should return 100% at manufacture date (1 ms)
+    Tenant isolation
+      ΓêÜ should preserve tenant ID (1 ms)
+      ΓêÜ should preserve tenant ID through recall
+      ΓêÜ should preserve tenant ID through custody events (1 ms)
+    Supplier information
+      ΓêÜ should store supplier information (1 ms)
+      ΓêÜ should handle missing supplier information (1 ms)
+    Edge cases and boundary values
+      ΓêÜ should handle very long lot numbers
+      ΓêÜ should handle very long serial numbers (1 ms)
+      ΓêÜ should handle dates far in the future
+      ΓêÜ should handle dates in the past (1 ms)
+      ΓêÜ should set timestamps correctly (1 ms)
+      ΓêÜ should update updatedAt on custody event (1 ms)
+
+  console.log
+    Γùç injected env (0) from .env.test // tip: Γîü auth for agents [www.vestauth.com]
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+  console.log
+    [Jest Setup] SUPABASE_SERVICE_ROLE_KEY loaded: true
+
+      at Object.log (jest.setup.ts:13:9)
+
+PASS src/platform/logistics/domain/__tests__/uom.domain.test.ts
+  UOMDomain
+    create() - Invariant #1: UOM code required
+      ΓêÜ should fail if UOM code is missing (1 ms)
+      ΓêÜ should fail if UOM code is whitespace only
+      ΓêÜ should trim and uppercase UOM code
+      ΓêÜ should accept valid UOM code
+    create() - Invariant #2: UOM name required
+      ΓêÜ should fail if UOM name is missing
+      ΓêÜ should fail if UOM name is whitespace only
+      ΓêÜ should trim UOM name (1 ms)
+    create() - Invariant #3: Conversion factor must be positive
+      ΓêÜ should fail if conversion factor is zero
+      ΓêÜ should fail if conversion factor is negative (1 ms)
+      ΓêÜ should fail if conversion factor provided without base UOM
+      ΓêÜ should accept valid conversion factor (1 ms)
+      ΓêÜ should accept fractional conversion factor
+      ΓêÜ should accept UOM without conversion factor (base UOM)
+    create() - Invariant #4: Decimals must be 0-6
+      ΓêÜ should fail if decimals is negative
+      ΓêÜ should fail if decimals is greater than 6
+      ΓêÜ should accept decimals = 0 (1 ms)
+      ΓêÜ should accept decimals = 6
+      ΓêÜ should default decimals to 2 if not provided
+      ΓêÜ should accept decimals in range 0-6 (2 ms)
+    update()
+      ΓêÜ should update UOM name (1 ms)
+      ΓêÜ should fail if UOM name is empty
+      ΓêÜ should update conversion factor (1 ms)
+      ΓêÜ should fail if conversion factor is negative
+      ΓêÜ should fail if conversion factor is zero
+      ΓêÜ should update decimals
+      ΓêÜ should fail if decimals out of range
+      ΓêÜ should preserve immutable fields (1 ms)
+      ΓêÜ should update updatedAt timestamp
+    Status transitions
+      ΓêÜ should allow ACTIVE to INACTIVE transition (1 ms)
+      ΓêÜ should allow INACTIVE to ACTIVE transition
+      ΓêÜ should not allow same status transition
+    convert() - Quantity conversion
+      ΓêÜ should return same quantity if same UOM (1 ms)
+      ΓêÜ should convert from larger to smaller unit
+      ΓêÜ should convert from smaller to larger unit (1 ms)
+      ΓêÜ should convert between non-base units
+      ΓêÜ should fail if UOMs are different categories (1 ms)
+      ΓêÜ should fail if conversion factor missing
+      ΓêÜ should fail if different base UOMs
+      ΓêÜ should round result to target UOM decimals (1 ms)
+      ΓêÜ should handle fractional quantities
+    isBaseUOM()
+      ΓêÜ should identify base UOM (no conversion factor) (1 ms)
+      ΓêÜ should identify non-base UOM
+    isActive()
+      ΓêÜ should identify ACTIVE UOM
+      ΓêÜ should identify INACTIVE UOM (1 ms)
+    validateQuantityPrecision()
+      ΓêÜ should pass if quantity precision matches UOM
+      ΓêÜ should pass if quantity precision less than UOM
+      ΓêÜ should fail if quantity precision exceeds UOM (1 ms)
+      ΓêÜ should pass for integer quantities
+    roundToDecimals()
+      ΓêÜ should round to 0 decimals
+      ΓêÜ should round to 2 decimals (1 ms)
+      ΓêÜ should round to 4 decimals
+      ΓêÜ should handle no rounding needed
+    formatQuantity() - Presentation helper
+      ΓêÜ should format quantity with UOM code (1 ms)
+      ΓêÜ should format with correct decimals
+      ΓêÜ should format with 0 decimals
+    UOM categories
+      ΓêÜ should accept QUANTITY category (1 ms)
+      ΓêÜ should accept WEIGHT category
+      ΓêÜ should accept VOLUME category (1 ms)
+      ΓêÜ should accept LENGTH category
+      ΓêÜ should accept TIME category
+    Tenant isolation
+      ΓêÜ should preserve tenant ID (1 ms)
+      ΓêÜ should preserve tenant ID through update (1 ms)
+    Edge cases and boundary values
+      ΓêÜ should handle very large conversion factors
+      ΓêÜ should handle very small conversion factors (4 ms)
+      ΓêÜ should set timestamps correctly (1 ms)
+      ΓêÜ should handle very long UOM codes
+      ΓêÜ should handle very long UOM names
+
+  console.log
+    Γùç injected env (0) from .env.test // tip: Γîÿ enable debugging { debug: true }
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+  console.log
+    [Jest Setup] SUPABASE_SERVICE_ROLE_KEY loaded: true
+
+      at Object.log (jest.setup.ts:13:9)
+
+PASS src/platform/logistics/domain/__tests__/location.domain.test.ts
+  LocationDomain
+    create() - Invariant #1: Location code required
+      ΓêÜ should fail if location code is missing (1 ms)
+      ΓêÜ should fail if location code is whitespace only (1 ms)
+      ΓêÜ should trim location code
+      ΓêÜ should accept valid location code (1 ms)
+    create() - Invariant #2: Location name required
+      ΓêÜ should fail if location name is missing
+      ΓêÜ should fail if location name is whitespace only
+      ΓêÜ should trim location name
+    create() - Invariant #3: Location type required
+      ΓêÜ should fail if location type is missing
+      ΓêÜ should accept WAREHOUSE type (1 ms)
+      ΓêÜ should accept STORE type
+      ΓêÜ should accept DISTRIBUTION_CENTER type
+      ΓêÜ should accept 3PL type (1 ms)
+    create() - Invariant #4: Cannot be parent of itself
+      ΓêÜ should create location without parent
+      ΓêÜ should create location with valid parent
+      ΓêÜ should allow self-parent in create (validation at update) (1 ms)
+    update() - Invariant #5: Cannot be self-parent
+      ΓêÜ should fail if trying to set self as parent
+      ΓêÜ should succeed with valid parent (1 ms)
+      ΓêÜ should update location name
+      ΓêÜ should fail if location name is empty
+      ΓêÜ should trim updated location name (1 ms)
+      ΓêÜ should preserve immutable fields
+      ΓêÜ should update updatedAt timestamp
+    Address validation
+      ΓêÜ should accept valid address (1 ms)
+      ΓêÜ should accept partial address
+      ΓêÜ should fail if address has unknown keys
+      ΓêÜ should fail if address field is not string
+      ΓêÜ should accept null address values
+      ΓêÜ should accept empty address object
+    Status transitions
+      ΓêÜ should allow ACTIVE to INACTIVE transition
+      ΓêÜ should allow ACTIVE to CLOSED transition (1 ms)
+      ΓêÜ should allow INACTIVE to ACTIVE transition
+      ΓêÜ should allow INACTIVE to CLOSED transition (1 ms)
+      ΓêÜ should not allow CLOSED to any transition (terminal state)
+      ΓêÜ should not allow same status transition
+    canDeactivate()
+      ΓêÜ should allow deactivation of ACTIVE location
+      ΓêÜ should allow deactivation of INACTIVE location
+      ΓêÜ should fail to deactivate CLOSED location
+    validateHierarchy() - Circular hierarchy prevention
+      ΓêÜ should fail if location is its own parent
+      ΓêÜ should fail if proposed parent is a descendant (1 ms)
+      ΓêÜ should succeed if proposed parent is not a descendant
+      ΓêÜ should succeed with no descendants
+    Query methods
+      ΓêÜ should correctly identify ACTIVE status (1 ms)
+      ΓêÜ should correctly identify CLOSED status
+      ΓêÜ should correctly identify location with parent
+      ΓêÜ should correctly identify location without parent
+    getFormattedAddress() - Presentation helper
+      ΓêÜ should format complete address
+      ΓêÜ should format partial address
+      ΓêÜ should return null if no address (1 ms)
+      ΓêÜ should return null if address is empty object
+    Tenant isolation
+      ΓêÜ should preserve tenant ID
+      ΓêÜ should preserve tenant ID through update
+    Boundary verification: Generic location (no Warehouse concepts)
+      ΓêÜ should NOT have Bin-related fields (1 ms)
+      ΓêÜ should NOT have Putaway-related fields
+      ΓêÜ should NOT have Warehouse-specific status values
+      ΓêÜ should support generic location types (not warehouse-specific)
+    Edge cases and boundary values
+      ΓêÜ should handle very long location codes
+      ΓêÜ should handle very long location names (1 ms)
+      ΓêÜ should set timestamps correctly
+      ΓêÜ should handle location with null parent explicitly
+
+  console.log
+    Γùç injected env (0) from .env.test // tip: Γîÿ custom filepath { path: '/custom/path/.env' }
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+  console.log
+    [Jest Setup] SUPABASE_SERVICE_ROLE_KEY loaded: true
+
+      at Object.log (jest.setup.ts:13:9)
+
+PASS src/platform/logistics/domain/__tests__/inventory-coordination.test.ts
+  E7.2 Inventory Coordination (DEFERRED)
+    reserveWithMovement() - Coordination Success
+      Γ£Ä todo should reserve inventory and create outbound movement
+      Γ£Ä todo should fully reserve inventory when quantity equals available
+      Γ£Ä todo should include custom reference in movement
+    Atomic Failure - Inventory Rejection
+      Γ£Ä todo should fail entire operation if quantity exceeds available
+      Γ£Ä todo should fail entire operation if inventory status invalid
+      Γ£Ä todo should fail if quantity is invalid (zero)
+    shipWithMovement() - Coordination Success
+      Γ£Ä todo should ship reserved inventory and create transfer movement
+      Γ£Ä todo should fail if inventory not RESERVED
+    cancelWithMovement() - Coordination Success
+      Γ£Ä todo should cancel reservation and create reversal movement
+      Γ£Ä todo should fail if cancel quantity exceeds reserved
+    Boundary Enforcement
+      Γ£Ä todo should NOT have warehouse-specific operations
+      Γ£Ä todo should NOT have finance-specific operations
+      Γ£Ä todo should only coordinate Inventory + Movement
+      Γ£Ä todo should be pure functions (no infrastructure dependencies)
+      Γ£Ä todo should return typed Result for all failure modes
+
+  console.log
+    Γùç injected env (0) from .env.test // tip: Γùê secrets for agents [www.dotenvx.com]
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+  console.log
+    [Jest Setup] SUPABASE_SERVICE_ROLE_KEY loaded: true
+
+      at Object.log (jest.setup.ts:13:9)
+
+PASS src/platform/logistics/domain/__tests__/inventory-operations.test.ts
+  E7.2 Inventory Operations (DEFERRED)
+    reserveOperation() - AVAILABLE to RESERVED
+      Γ£Ä todo should reserve available inventory
+      Γ£Ä todo should transition to RESERVED when fully reserved
+      Γ£Ä todo should reject reservation of insufficient quantity
+    Invalid operations - NEGATIVE-PATH INTEGRITY
+      Γ£Ä todo should NOT mutate state when reservation fails
+      Γ£Ä todo should reject reservation of EXPIRED inventory
+    shipOperation() - RESERVED to TRANSIT
+      Γ£Ä todo should ship reserved inventory
+      Γ£Ä todo should reject shipping AVAILABLE inventory
+      Γ£Ä todo should NOT mutate state when ship fails
+    cancelOperation() - Release reservation
+      Γ£Ä todo should cancel partial reservation
+      Γ£Ä todo should transition RESERVED to AVAILABLE when all reservations cancelled
+      Γ£Ä todo should reject cancel exceeding reserved quantity
+      Γ£Ä todo should NOT mutate state when cancel fails
+    expireOperation() - QUARANTINE to EXPIRED
+      Γ£Ä todo should expire quarantine inventory
+      Γ£Ä todo should reject expiring AVAILABLE inventory
+      Γ£Ä todo should reject expiring inventory with reserved quantity
+      Γ£Ä todo should NOT mutate state when expire fails
+    Operational Invariants
+      Γ£Ä todo should maintain reserved + available = on_hand
+
+  console.log
+    Γùç injected env (0) from .env.test // tip: Γîÿ override existing { override: true }
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+  console.log
+    [Jest Setup] SUPABASE_SERVICE_ROLE_KEY loaded: true
+
+      at Object.log (jest.setup.ts:13:9)
+
+PASS src/platform/logistics/domain/__tests__/item.domain.test.ts
+  ItemDomain
+    create()
+      Invariant 1: SKU code required and non-empty
+        ΓêÜ succeeds with valid SKU code (1 ms)
+        ΓêÜ fails when SKU code missing
+        ΓêÜ fails when SKU code is whitespace only (1 ms)
+        ΓêÜ trims SKU code whitespace
+      Invariant 2: Name required
+        ΓêÜ succeeds with valid name
+        ΓêÜ fails when name missing
+        ΓêÜ fails when name is whitespace only
+        ΓêÜ trims name whitespace (1 ms)
+      Invariant 3: Serial tracking requires lot tracking
+        ΓêÜ succeeds when both lot and serial tracking enabled (1 ms)
+        ΓêÜ succeeds when only lot tracking enabled
+        ΓêÜ succeeds when neither lot nor serial tracking
+        ΓêÜ fails when serial tracking without lot tracking (1 ms)
+      Invariant 4: Weight cannot be negative
+        ΓêÜ succeeds with positive weight
+        ΓêÜ succeeds with zero weight
+        ΓêÜ succeeds when weight not provided (1 ms)
+        ΓêÜ fails with negative weight
+      Invariant 5: Standard cost cannot be negative
+        ΓêÜ succeeds with positive cost
+        ΓêÜ succeeds with zero cost (1 ms)
+        ΓêÜ succeeds when cost not provided
+        ΓêÜ fails with negative cost
+      Invariant 6: Currency must be ISO 4217 format
+        ΓêÜ succeeds with valid 3-letter currency
+        ΓêÜ succeeds with VND currency
+        ΓêÜ defaults to VND when not provided
+        ΓêÜ fails with non-3-letter currency (1 ms)
+        ΓêÜ fails with lowercase currency
+        ΓêÜ fails with numeric currency
+      Invariant 7: Dimensions must be non-negative
+        ΓêÜ succeeds with valid dimensions
+        ΓêÜ succeeds with zero dimensions (1 ms)
+        ΓêÜ fails with negative length
+        ΓêÜ fails with negative width
+        ΓêÜ fails with negative height
+      Invariant 8: Status transitions validated
+        ΓêÜ defaults to ACTIVE status
+        ΓêÜ allows PENDING status on creation
+    update()
+      ΓêÜ updates name successfully
+      ΓêÜ fails when updating name to empty
+      ΓêÜ enforces serialΓåÆlot invariant on update
+      ΓêÜ validates weight on update
+      ΓêÜ validates cost on update (1 ms)
+      ΓêÜ validates currency on update
+    canTransitionTo()
+      ΓêÜ allows ACTIVE ΓåÆ INACTIVE
+      ΓêÜ allows ACTIVE ΓåÆ DISCONTINUED
+      ΓêÜ rejects ACTIVE ΓåÆ PENDING (1 ms)
+      ΓêÜ rejects transition from DISCONTINUED (terminal state)
+    requiresLotTracking()
+      ΓêÜ returns true when lotTracked enabled
+      ΓêÜ returns true when serialTracked enabled (implies lot) (1 ms)
+      ΓêÜ returns true when expiryTracked enabled
+      ΓêÜ returns false when no tracking enabled
+    calculateVolume()
+      ΓêÜ calculates volume correctly (1 ms)
+      ΓêÜ returns null when dimensions missing
+      ΓêÜ returns null when dimensions incomplete
+
+  console.log
+    Γùç injected env (0) from .env.test // tip: Γùê encrypted .env [www.dotenvx.com]
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+  console.log
+    [Jest Setup] SUPABASE_SERVICE_ROLE_KEY loaded: true
+
+      at Object.log (jest.setup.ts:13:9)
+
+PASS src/platform/logistics/domain/__tests__/inventory.domain.test.ts
+  InventoryDomain
+    create()
+      Invariant 1: Quantity on hand >= 0
+        ΓêÜ succeeds with positive quantity (1 ms)
+        ΓêÜ succeeds with zero quantity (1 ms)
+        ΓêÜ fails with negative quantity (1 ms)
+      Invariant 2: Quantity reserved >= 0
+        ΓêÜ succeeds with positive reserved (1 ms)
+        ΓêÜ succeeds with zero reserved (default)
+        ΓêÜ fails with negative reserved
+      Invariant 3: Quantity reserved <= quantity on hand
+        ΓêÜ succeeds when reserved equals on hand
+        ΓêÜ succeeds when reserved less than on hand
+        ΓêÜ fails when reserved exceeds on hand
+      Invariant 4: Available = on hand - reserved (computed)
+        ΓêÜ calculates available correctly
+        ΓêÜ calculates available as zero when fully reserved
+        ΓêÜ calculates available as on hand when no reservations (1 ms)
+      Invariant 5: Serial number requires lot number
+        ΓêÜ succeeds with both lot and serial
+        ΓêÜ succeeds with only lot number (1 ms)
+        ΓêÜ succeeds with neither lot nor serial
+        ΓêÜ fails with serial number but no lot number (1 ms)
+      Invariant 6: Status transitions validated
+        ΓêÜ defaults to AVAILABLE status
+        ΓêÜ allows QUARANTINE status on creation
+    updateQuantity()
+      ΓêÜ updates quantity on hand correctly
+      ΓêÜ updates both on hand and reserved (1 ms)
+      ΓêÜ fails when new on hand is negative
+      ΓêÜ fails when new reserved exceeds new on hand
+    reserve()
+      ΓêÜ reserves quantity successfully (1 ms)
+      ΓêÜ fully reserves remaining available
+      ΓêÜ fails when reserving more than available
+      ΓêÜ fails when reservation quantity is zero (1 ms)
+      ΓêÜ fails when reservation quantity is negative
+    releaseReservation()
+      ΓêÜ releases reservation successfully (1 ms)
+      ΓêÜ releases all reservations
+      ΓêÜ fails when releasing more than reserved (1 ms)
+      ΓêÜ fails when release quantity is zero
+      ΓêÜ fails when release quantity is negative (1 ms)
+    changeStatus()
+      ΓêÜ transitions AVAILABLE ΓåÆ QUARANTINE
+      ΓêÜ transitions AVAILABLE ΓåÆ DAMAGED (1 ms)
+      ΓêÜ allows AVAILABLE ΓåÆ TRANSIT
+      ΓêÜ rejects invalid transition AVAILABLE ΓåÆ EXPIRED (must go through QUARANTINE) (1 ms)
+      Invariant 7: Cannot mark DAMAGED/EXPIRED with reservations
+        ΓêÜ fails to mark DAMAGED when reservations exist
+        ΓêÜ fails to mark EXPIRED from QUARANTINE when reservations exist (1 ms)
+        ΓêÜ succeeds to mark DAMAGED when no reservations
+    isAvailableForReservation()
+      ΓêÜ returns true when AVAILABLE with quantity
+      ΓêÜ returns false when AVAILABLE but zero quantity
+      ΓêÜ returns false when QUARANTINE (1 ms)
+    hasExpired()
+      ΓêÜ returns true when expiry date has passed
+      ΓêÜ returns false when expiry date is in future
+      ΓêÜ returns false when no expiry date
+
+  console.log
+    Γùç injected env (0) from .env.test // tip: Γùê secrets for agents [www.dotenvx.com]
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+  console.log
+    [Jest Setup] SUPABASE_SERVICE_ROLE_KEY loaded: true
+
+      at Object.log (jest.setup.ts:13:9)
+
+PASS src/platform/logistics/domain/__tests__/location-operations.test.ts
+  E7.2 Location Operations (DEFERRED)
+    deactivateOperation() - ACTIVE to INACTIVE
+      Γ£Ä todo should deactivate ACTIVE location with reason
+      Γ£Ä todo should reject deactivating INACTIVE location
+      Γ£Ä todo should reject deactivating CLOSED location
+      Γ£Ä todo should require reason
+      Γ£Ä todo should require deactivatedBy
+    closeOperation() - ACTIVE/INACTIVE to CLOSED
+      Γ£Ä todo should close ACTIVE location with reason
+      Γ£Ä todo should close INACTIVE location with reason
+      Γ£Ä todo should reject closing already CLOSED location
+      Γ£Ä todo should require reason
+      Γ£Ä todo should require closedBy
+    reactivateOperation() - INACTIVE to ACTIVE
+      Γ£Ä todo should reactivate INACTIVE location with reason
+      Γ£Ä todo should reject reactivating ACTIVE location
+      Γ£Ä todo should reject reactivating CLOSED location
+      Γ£Ä todo should require reason
+      Γ£Ä todo should require reactivatedBy
+    Negative-Path Integrity
+      Γ£Ä todo should not mutate location on deactivation failure
+      Γ£Ä todo should not mutate location on close failure
+      Γ£Ä todo should not mutate location on reactivation failure
+    E7.1 Boundary Protection
+      Γ£Ä todo should not modify E7.1 canTransitionTo() behavior
+      Γ£Ä todo should preserve E7.1 create() contract
+      Γ£Ä todo should use E7.1 canTransitionTo() for validation
+
+Test Suites: 10 passed, 10 total
+Tests:       73 todo, 366 passed, 439 total
+Snapshots:   0 total
+Time:        1.97 s
+Ran all test suites matching src/platform/logistics/domain/__tests__/.

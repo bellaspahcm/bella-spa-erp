@@ -113,11 +113,18 @@ async function loginWithConfiguredCredentials(page: Page, credentials: AdminCred
 }
 
 async function loginWithLocalDevBypass(page: Page): Promise<void> {
+  console.warn('[E2E Auth] Using mock_user_email bypass - NOT production-equivalent');
+  console.warn('[E2E Auth] This bypass does not create real JWT with tenant claims');
+  console.warn('[E2E Auth] RLS policies using auth.jwt() will not work correctly');
+  
   const admin = await getAnyAdminUser();
 
   // Inject mock_user_email cookie directly -- avoids login form + RLS issues.
   // proxy.ts allows /dashboard/:path* when this cookie is present in dev mode.
   // getCurrentUser() reads this cookie as a fallback when no Supabase session exists.
+  //
+  // ⚠️ WARNING: This does NOT create a real Supabase session with JWT claims.
+  // RLS policies that check auth.jwt() -> 'app_metadata' will fail.
   await page.context().addCookies([
       {
         name: "mock_user_email",
@@ -173,13 +180,26 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
       return;
     }
 
-    const admin = await getAnyAdminUser();
+    console.log('[Auth Fixture] Getting admin user from Supabase...');
+    const admin = await Promise.race([
+      getAnyAdminUser(),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('getAnyAdminUser() timeout after 30s')), 30_000)
+      )
+    ]) as Awaited<ReturnType<typeof getAnyAdminUser>>;
     await use(admin.email);
-  }, { scope: "worker" }],
+  }, { scope: "worker", timeout: 45_000 }],
 
   adminStorageStatePath: [async ({ browser }, use, workerInfo) => {
-    await use(await createAdminStorageState(browser, workerInfo));
-  }, { scope: "worker" }],
+    console.log('[Auth Fixture] Creating admin storage state...');
+    const storagePath = await Promise.race([
+      createAdminStorageState(browser, workerInfo),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('createAdminStorageState() timeout after 60s')), 60_000)
+      )
+    ]) as string;
+    await use(storagePath);
+  }, { scope: "worker", timeout: 90_000 }],
 
   storageState: async ({ adminStorageStatePath }, use) => {
     await use(adminStorageStatePath);

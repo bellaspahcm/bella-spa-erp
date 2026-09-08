@@ -1,0 +1,51 @@
+{
+  "runId": "e10-1-automotive-1788561557143",
+  "timestamp": "2026-09-04T22:39:17.143Z",
+  "candidate": "automotive",
+  "phase": "independent-validation",
+  "evidence": {
+    "tablesDiscovered": 0,
+    "typesFound": false,
+    "domainFound": false,
+    "testsFound": false,
+    "completeness": 0
+  },
+  "scope": {
+    "decisions": {},
+    "conform": 0,
+    "reconstruct": 0,
+    "defer": 0,
+    "block": 0
+  },
+  "pipeline": {
+    "steps": [
+      {
+        "name": "E9.1 Evidence Collection",
+        "status": "fail",
+        "duration": 5.391,
+        "error": "Cannot read properties of undefined (reading 'length')"
+      }
+    ],
+    "totalDuration": 5.395
+  },
+  "autonomy": {
+    "humanDecisions": 0,
+    "autoDecisions": 1,
+    "decisions": [
+      {
+        "step": "evidence-collection",
+        "decision": "auto",
+        "actor": "E9.1 Evidence Collector",
+        "result": "Scanning automotive schema",
+        "timestamp": "2026-09-04T22:39:17.145Z"
+      }
+    ]
+  },
+  "result": {
+    "status": "fail",
+    "message": "Evidence collection failed",
+    "factoryGaps": [
+      "E9.1 cannot collect automotive evidence"
+    ]
+  }
+}

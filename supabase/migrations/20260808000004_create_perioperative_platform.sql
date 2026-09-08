@@ -163,21 +163,22 @@ CREATE INDEX IF NOT EXISTS idx_hc_anesthesia_obs_record ON public.hc_anesthesia_
 CREATE INDEX IF NOT EXISTS idx_hc_anesthesia_obs_time ON public.hc_anesthesia_observations(observation_time DESC);
 
 -- 10. ANESTHESIA MEDICATIONS
-CREATE TABLE IF NOT EXISTS public.hc_anesthesia_medications (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
-    anesthesia_record_id UUID NOT NULL REFERENCES public.hc_anesthesia_records(id) ON DELETE CASCADE,
-    inventory_item_id UUID NOT NULL REFERENCES public.inventory_items(id) ON DELETE CASCADE,
-    administered_at TIMESTAMPTZ NOT NULL,
-    dose NUMERIC NOT NULL,
-    unit TEXT NOT NULL,
-    waste NUMERIC NOT NULL DEFAULT 0,
-    verified_by UUID REFERENCES public.users(id) ON DELETE SET NULL,
-    created_at TIMESTAMPTZ DEFAULT now() NOT NULL
-);
+-- DISABLED: 2026-09-05 - requires non-existent inventory_items table
+-- CREATE TABLE IF NOT EXISTS public.hc_anesthesia_medications (
+--     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+--     tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+--     anesthesia_record_id UUID NOT NULL REFERENCES public.hc_anesthesia_records(id) ON DELETE CASCADE,
+--     inventory_item_id UUID NOT NULL REFERENCES public.inventory_items(id) ON DELETE CASCADE,
+--     administered_at TIMESTAMPTZ NOT NULL,
+--     dose NUMERIC NOT NULL,
+--     unit TEXT NOT NULL,
+--     waste NUMERIC NOT NULL DEFAULT 0,
+--     verified_by UUID REFERENCES public.users(id) ON DELETE SET NULL,
+--     created_at TIMESTAMPTZ DEFAULT now() NOT NULL
+-- );
 
-CREATE INDEX IF NOT EXISTS idx_hc_anesthesia_meds_tenant ON public.hc_anesthesia_medications(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_hc_anesthesia_meds_record ON public.hc_anesthesia_medications(anesthesia_record_id);
+-- CREATE INDEX IF NOT EXISTS idx_hc_anesthesia_meds_tenant ON public.hc_anesthesia_medications(tenant_id);
+-- CREATE INDEX IF NOT EXISTS idx_hc_anesthesia_meds_record ON public.hc_anesthesia_medications(anesthesia_record_id);
 
 -- 11. PACU ADMISSIONS (with Discharge Policy Snapshotting)
 CREATE TABLE IF NOT EXISTS public.hc_pacu_admissions (
@@ -215,18 +216,19 @@ CREATE INDEX IF NOT EXISTS idx_hc_specimens_tenant ON public.hc_specimens(tenant
 CREATE INDEX IF NOT EXISTS idx_hc_specimens_case ON public.hc_specimens(surgical_case_id);
 
 -- 13. IMPLANTS (Traceable)
-CREATE TABLE IF NOT EXISTS public.hc_implants (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
-    surgical_case_id UUID NOT NULL REFERENCES public.hc_surgical_cases(id) ON DELETE CASCADE,
-    implant_item_id UUID NOT NULL REFERENCES public.inventory_items(id) ON DELETE CASCADE,
-    serial_number TEXT NOT NULL,
-    implanted_at TIMESTAMPTZ NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT now() NOT NULL
-);
+-- DISABLED: 2026-09-05 - requires non-existent inventory_items table
+-- CREATE TABLE IF NOT EXISTS public.hc_implants (
+--     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+--     tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+--     surgical_case_id UUID NOT NULL REFERENCES public.hc_surgical_cases(id) ON DELETE CASCADE,
+--     implant_item_id UUID NOT NULL REFERENCES public.inventory_items(id) ON DELETE CASCADE,
+--     serial_number TEXT NOT NULL,
+--     implanted_at TIMESTAMPTZ NOT NULL,
+--     created_at TIMESTAMPTZ DEFAULT now() NOT NULL
+-- );
 
-CREATE INDEX IF NOT EXISTS idx_hc_implants_tenant ON public.hc_implants(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_hc_implants_case ON public.hc_implants(surgical_case_id);
+-- CREATE INDEX IF NOT EXISTS idx_hc_implants_tenant ON public.hc_implants(tenant_id);
+-- CREATE INDEX IF NOT EXISTS idx_hc_implants_case ON public.hc_implants(surgical_case_id);
 
 -- 14. EQUIPMENT
 CREATE TABLE IF NOT EXISTS public.hc_equipment (

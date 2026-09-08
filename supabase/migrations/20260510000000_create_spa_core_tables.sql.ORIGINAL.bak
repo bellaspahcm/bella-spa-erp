@@ -1,0 +1,429 @@
+-- =====================================================================================
+-- Migration: Create Bella Spa Core Tables
+-- =====================================================================================
+-- Purpose: Restore canonical CREATE TABLE statements for core Bella Spa operational tables
+--          that were missing from migration history but exist in production schema.
+--
+-- Context: These tables exist in production (confirmed via generated types 2026-08-04)
+--          and are actively used by application code, but CREATE statements were never
+--          recorded in canonical migration history, causing fresh database initialization
+--          to fail.
+--
+-- Tables:
+--   1. packages - Service packages/products (33 columns)
+--   2. inventory_items - Inventory master (12 columns)  
+--   3. inventory_logs - Inventory movement audit (13 columns)
+--
+-- Evidence:
+--   - Generated types: src/types/supabase-generated.ts (lines 8856, 7449, 7509)
+--   - Application usage: 50+ operations across Spa/Healthcare/Babycare
+--   - Migration references: 120+ for packages, 31 for inventory_items, 44 for inventory_logs
+--
+-- Dependencies:
+--   - Requires: tenants table (created earlier or in same transaction)
+--   - Required by: bookings, waitlist, accounting, MVs
+--
+-- Date: 2026-09-05
+-- Type: Schema restoration (NOT new feature)
+-- =====================================================================================
+
+-- Enable UUID extension if not already enabled
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- =====================================================================================
+-- TABLE 1: packages
+-- =====================================================================================
+-- Purpose: Service packages, treatment packages, retail products
+-- Owner: Bella Spa / Shared across products
+-- Usage: Booking, pricing, inventory forecasting, KTV assignment
+-- =====================================================================================
+
+CREATE TABLE IF NOT EXISTS public.packages (
+  -- Primary Key
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  
+  -- Tenant Isolation
+  tenant_id UUID REFERENCES public.tenants(id) ON DELETE CASCADE,
+  
+  -- Package Identity
+  name TEXT NOT NULL,
+  description TEXT,
+  offer TEXT,
+  
+  -- Module & Classification
+  module_key TEXT NOT NULL,  -- 'babycare', 'beauty_spa', etc.
+  service_kind TEXT NOT NULL,  -- 'single_service', 'treatment_package', 'retail_product', 'consultation'
+  service_category TEXT,
+  
+  -- Pricing (bigint for VND integer currency)
+  full_price NUMERIC NOT NULL,
+  price BIGINT,  -- Actual/discounted price (VND integer)
+  price_floor BIGINT,
+  price_cap BIGINT,
+  allowed_franchise_override BOOLEAN,
+  
+  -- Sessions & Duration
+  total_sessions INTEGER NOT NULL DEFAULT 1,
+  session_multiplier NUMERIC,
+  default_duration_minutes INTEGER NOT NULL,
+  duration TEXT,  -- Human-readable duration
+  estimated_duration INTEGER,
+  
+  -- Resources
+  requires_resource BOOLEAN NOT NULL DEFAULT false,
+  default_resource_type TEXT,
+  required_workers INTEGER,
+  
+  -- Service Requirements
+  before_after_required BOOLEAN NOT NULL DEFAULT false,
+  care_note_template TEXT,
+  details TEXT[],
+  
+  -- Template System (HQ -> Branch distribution)
+  is_hq_template BOOLEAN,
+  template_id UUID,  -- Self-reference for template inheritance
+  
+  -- Inventory Integration
+  product_usage JSONB,  -- Maps product_id -> quantity per session
+  
+  -- Commission (bigint for VND integer)
+  ktv_commission BIGINT,
+  
+  -- Status
+  status TEXT,
+  
+  -- Metadata
+  metadata JSONB,
+  
+  -- Timestamps
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Foreign Key: Template Inheritance (self-reference)
+ALTER TABLE public.packages
+  ADD CONSTRAINT packages_template_id_fkey
+  FOREIGN KEY (template_id) REFERENCES public.packages(id)
+  ON DELETE SET NULL;
+
+-- Check Constraints
+ALTER TABLE public.packages
+  ADD CONSTRAINT packages_module_key_check
+  CHECK (module_key IN ('babycare', 'beauty_spa', 'industrial_cleaning', 'student_training'));
+
+ALTER TABLE public.packages
+  ADD CONSTRAINT packages_service_kind_check
+  CHECK (service_kind IN ('single_service', 'treatment_package', 'retail_product', 'consultation'));
+
+ALTER TABLE public.packages
+  ADD CONSTRAINT packages_default_duration_minutes_check
+  CHECK (default_duration_minutes BETWEEN 1 AND 1440);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_packages_tenant_module_kind
+  ON public.packages (tenant_id, module_key, service_kind, status);
+
+CREATE INDEX IF NOT EXISTS idx_packages_template_id
+  ON public.packages(template_id);
+
+CREATE INDEX IF NOT EXISTS idx_packages_is_hq_template
+  ON public.packages(is_hq_template)
+  WHERE is_hq_template = true;
+
+CREATE INDEX IF NOT EXISTS idx_packages_product_usage
+  ON public.packages USING GIN (product_usage)
+  WHERE product_usage IS NOT NULL;
+
+-- Row Level Security
+ALTER TABLE public.packages ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Read packages (tenant isolation + HQ template sharing)
+CREATE POLICY "Tenant read packages" ON public.packages
+  FOR SELECT TO authenticated
+  USING (
+    -- Service role bypasses RLS
+    (current_setting('request.jwt.claims', true)::jsonb->>'role' = 'service_role')
+    OR
+    -- No tenant set (initial setup)
+    (public.get_auth_tenant_id() IS NULL)
+    OR
+    -- Tenant's own packages
+    (tenant_id = public.get_auth_tenant_id())
+    OR
+    -- HQ templates are visible across tenants
+    (is_hq_template = true)
+  );
+
+-- Policy: Manage packages (admin only)
+CREATE POLICY "Tenant admin manage packages" ON public.packages
+  FOR ALL TO authenticated
+  USING (
+    -- Service role bypasses RLS
+    (current_setting('request.jwt.claims', true)::jsonb->>'role' = 'service_role')
+    OR
+    -- No tenant set (initial setup)
+    (public.get_auth_tenant_id() IS NULL)
+    OR
+    -- Tenant admin can manage their packages
+    (public.is_admin() AND tenant_id = public.get_auth_tenant_id())
+  );
+
+-- Comments
+COMMENT ON TABLE public.packages IS 
+  'Core Bella Spa packages table. Service packages, treatment packages, and retail products with pricing, duration, resource requirements, and inventory integration.';
+
+COMMENT ON COLUMN public.packages.price IS
+  'Actual/discounted price in VND (bigint integer, no fractional currency). NULL if using full_price only.';
+
+COMMENT ON COLUMN public.packages.ktv_commission IS
+  'KTV commission amount in VND (bigint integer). Null if not applicable.';
+
+COMMENT ON COLUMN public.packages.module_key IS
+  'Industry module identifier. Canonical values: ''babycare'', ''beauty_spa'', ''industrial_cleaning'', ''student_training''. Note: Production may contain legacy ''baby_care'' (with underscore) - application layer performs translation.';
+
+COMMENT ON COLUMN public.packages.product_usage IS
+  'JSONB mapping of product_id -> quantity consumed per session. Used for inventory forecasting. Example: {"product-uuid-1": 2.5, "product-uuid-2": 1.0}';
+
+COMMENT ON COLUMN public.packages.template_id IS
+  'Self-reference to parent package for HQ->Branch template distribution. NULL for original templates.';
+
+COMMENT ON COLUMN public.packages.is_hq_template IS
+  'Flag for templates created by HQ for distribution to branches. Visible across tenants when true.';
+
+-- =====================================================================================
+-- TABLE 2: inventory_items
+-- =====================================================================================
+-- Purpose: Inventory master - products/supplies catalog
+-- Owner: Bella Spa + Healthcare + Shared
+-- Usage: Stock management, consumption tracking, forecasting
+-- =====================================================================================
+
+CREATE TABLE IF NOT EXISTS public.inventory_items (
+  -- Primary Key
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  
+  -- Tenant Isolation
+  tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+  
+  -- Item Identity
+  name TEXT NOT NULL,
+  sku TEXT,
+  category TEXT,
+  
+  -- Pricing & Units
+  price_per_unit NUMERIC NOT NULL DEFAULT 0,
+  unit TEXT NOT NULL DEFAULT 'unit',
+  
+  -- Stock Levels (numeric allows fractional quantities for measured supplies)
+  stock_level NUMERIC NOT NULL DEFAULT 0,
+  min_stock_level NUMERIC NOT NULL DEFAULT 0,
+  
+  -- Metadata
+  notes TEXT,
+  
+  -- Timestamps
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  -- Constraints
+  CONSTRAINT inventory_items_stock_nonnegative CHECK (stock_level >= 0),
+  CONSTRAINT inventory_items_min_stock_nonnegative CHECK (min_stock_level >= 0),
+  CONSTRAINT inventory_items_price_nonnegative CHECK (price_per_unit >= 0)
+);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_inventory_items_tenant
+  ON public.inventory_items(tenant_id);
+
+CREATE INDEX IF NOT EXISTS idx_inventory_items_sku
+  ON public.inventory_items(tenant_id, sku)
+  WHERE sku IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_inventory_items_category
+  ON public.inventory_items(tenant_id, category)
+  WHERE category IS NOT NULL;
+
+-- Unique constraint on SKU per tenant (if SKU is used)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_inventory_items_tenant_sku_unique
+  ON public.inventory_items(tenant_id, sku)
+  WHERE sku IS NOT NULL AND sku != '';
+
+-- Row Level Security
+ALTER TABLE public.inventory_items ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Tenant isolation for inventory items
+CREATE POLICY "Tenant isolation for inventory items" ON public.inventory_items
+  FOR ALL TO authenticated
+  USING (
+    -- Service role bypasses RLS
+    (current_setting('request.jwt.claims', true)::jsonb->>'role' = 'service_role')
+    OR
+    -- No tenant set (initial setup)
+    (public.get_auth_tenant_id() IS NULL)
+    OR
+    -- Tenant isolation
+    (tenant_id = public.get_auth_tenant_id())
+  );
+
+-- Comments
+COMMENT ON TABLE public.inventory_items IS
+  'Inventory master table. Stores product/supply catalog with stock levels. Used across Bella Spa, Healthcare, and Babycare for inventory management.';
+
+COMMENT ON COLUMN public.inventory_items.stock_level IS
+  'Current stock on hand (numeric allows fractional for measured supplies like ml, kg). Updated by inventory_logs movements. Contract permits fractional quantities though current data may be integer-only.';
+
+COMMENT ON COLUMN public.inventory_items.min_stock_level IS
+  'Reorder point (numeric allows fractional). When stock_level falls below this, reorder alert is triggered.';
+
+COMMENT ON COLUMN public.inventory_items.sku IS
+  'Stock Keeping Unit. Unique identifier per tenant. Optional but recommended for tracking.';
+
+-- =====================================================================================
+-- TABLE 3: inventory_logs
+-- =====================================================================================
+-- Purpose: Inventory movement audit trail + accounting integration
+-- Owner: Bella Spa + Healthcare + Accounting
+-- Usage: Stock movements, consumption tracking, audit, accounting
+-- =====================================================================================
+
+CREATE TABLE IF NOT EXISTS public.inventory_logs (
+  -- Primary Key
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  
+  -- Tenant Isolation
+  tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+  
+  -- Inventory Movement
+  item_id UUID NOT NULL REFERENCES public.inventory_items(id) ON DELETE RESTRICT,
+  change_amount NUMERIC NOT NULL,  -- Positive = stock in, Negative = consumption
+  reason TEXT NOT NULL,
+  notes TEXT,
+  
+  -- Context
+  session_log_id UUID REFERENCES public.session_logs(id) ON DELETE SET NULL,  -- Service consumption
+  created_by UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  -- Accounting Integration
+  business_event_type TEXT,
+  accounting_review_status TEXT NOT NULL DEFAULT 'UNREVIEWED',
+  accounting_template_id UUID,  -- FK to accounting_event_templates (added later)
+  accounting_metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  
+  -- Check Constraints
+  CONSTRAINT inventory_logs_accounting_review_status_check
+    CHECK (accounting_review_status IN ('UNREVIEWED', 'AUTO_POSTED', 'NEEDS_REVIEW', 'APPROVED', 'POSTING_FAILED'))
+);
+
+-- Foreign Key to accounting (will be added by accounting migration)
+-- Note: accounting_event_templates table created in later migration
+-- ALTER TABLE public.inventory_logs
+--   ADD CONSTRAINT inventory_logs_accounting_template_id_fkey
+--   FOREIGN KEY (accounting_template_id) REFERENCES public.accounting_event_templates(id)
+--   ON DELETE SET NULL;
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_inventory_logs_tenant
+  ON public.inventory_logs(tenant_id);
+
+CREATE INDEX IF NOT EXISTS idx_inventory_logs_item
+  ON public.inventory_logs(item_id);
+
+CREATE INDEX IF NOT EXISTS idx_inventory_logs_session
+  ON public.inventory_logs(session_log_id)
+  WHERE session_log_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_inventory_logs_business_event
+  ON public.inventory_logs(tenant_id, business_event_type, accounting_review_status);
+
+CREATE INDEX IF NOT EXISTS idx_inventory_logs_created_at
+  ON public.inventory_logs(tenant_id, created_at DESC);
+
+-- Row Level Security
+ALTER TABLE public.inventory_logs ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Tenant isolation for inventory logs
+CREATE POLICY "Tenant isolation for inventory logs" ON public.inventory_logs
+  FOR ALL TO authenticated
+  USING (
+    -- Service role bypasses RLS
+    (current_setting('request.jwt.claims', true)::jsonb->>'role' = 'service_role')
+    OR
+    -- No tenant set (initial setup)
+    (public.get_auth_tenant_id() IS NULL)
+    OR
+    -- Tenant isolation
+    (tenant_id = public.get_auth_tenant_id())
+  );
+
+-- Comments
+COMMENT ON TABLE public.inventory_logs IS
+  'Inventory movement audit trail. Records all stock changes (purchases, consumption, adjustments) with full accounting integration.';
+
+COMMENT ON COLUMN public.inventory_logs.change_amount IS
+  'Stock change amount. Positive values = stock in (purchases, adjustments up). Negative values = stock out (consumption, adjustments down).';
+
+COMMENT ON COLUMN public.inventory_logs.session_log_id IS
+  'Links to service session when consumption occurs during treatment. NULL for purchases and manual adjustments.';
+
+COMMENT ON COLUMN public.inventory_logs.accounting_metadata IS
+  'JSONB metadata for accounting integration. Populated by accounting backfill jobs.';
+
+COMMENT ON COLUMN public.inventory_logs.accounting_review_status IS
+  'Accounting review status. Valid values: UNREVIEWED (not looked at), AUTO_POSTED (automatically posted), NEEDS_REVIEW (flagged for manual review), APPROVED (manually approved), POSTING_FAILED (posting error). UPPERCASE convention matches Finance Kernel.';
+
+-- =====================================================================================
+-- Triggers
+-- =====================================================================================
+
+-- Audit Trigger: packages
+-- Depends on: log_audit_event() function (created in earlier migration or platform core)
+CREATE TRIGGER audit_packages_changes
+  AFTER INSERT OR UPDATE OR DELETE ON public.packages
+  FOR EACH ROW
+  EXECUTE FUNCTION log_audit_event();
+
+COMMENT ON TRIGGER audit_packages_changes ON public.packages IS
+  'Audit trail for all package changes (INSERT/UPDATE/DELETE). Calls log_audit_event() to record in audit_logs table.';
+
+-- Audit Trigger: inventory_items
+CREATE TRIGGER audit_inventory_items_changes
+  AFTER INSERT OR UPDATE OR DELETE ON public.inventory_items
+  FOR EACH ROW
+  EXECUTE FUNCTION log_audit_event();
+
+COMMENT ON TRIGGER audit_inventory_items_changes ON public.inventory_items IS
+  'Audit trail for all inventory item changes. Required for compliance and security.';
+
+-- Updated_at Trigger: inventory_items
+-- Depends on: update_updated_at_column() function (platform standard trigger function)
+CREATE TRIGGER inventory_items_updated_at
+  BEFORE UPDATE ON public.inventory_items
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+COMMENT ON TRIGGER inventory_items_updated_at ON public.inventory_items IS
+  'Automatic updated_at timestamp management. Sets updated_at = NOW() on every UPDATE.';
+
+-- =====================================================================================
+-- Grants
+-- =====================================================================================
+
+-- Grant access to authenticated users (RLS will enforce tenant isolation)
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.packages TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.inventory_items TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.inventory_logs TO authenticated;
+
+-- Service role gets full access (bypasses RLS)
+GRANT ALL ON public.packages TO service_role;
+GRANT ALL ON public.inventory_items TO service_role;
+GRANT ALL ON public.inventory_logs TO service_role;
+
+-- =====================================================================================
+-- Migration Complete
+-- =====================================================================================
+-- These tables are now part of canonical migration history and will be created
+-- automatically during fresh database initialization.
+--
+-- Next migrations can safely reference these tables.
+-- =====================================================================================

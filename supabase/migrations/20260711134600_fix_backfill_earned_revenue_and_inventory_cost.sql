@@ -163,6 +163,7 @@ BEGIN
     LIMIT v_limit;
 
     -- Inventory logs: LEFT JOIN inventory_items to dynamically compute amount cost
+    -- NOTE: inventory_items table never created - ii.price_per_unit will be NULL
     INSERT INTO pg_temp.accounting_backfill_stage (
         source_table, source_id, tenant_id, business_event_type, payload
     )

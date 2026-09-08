@@ -41,12 +41,12 @@ CREATE POLICY "Tenant view attendance" ON public.attendance
     USING (public.get_auth_tenant_id() IS NULL OR tenant_id = public.get_auth_tenant_id())
     WITH CHECK (public.get_auth_tenant_id() IS NULL OR tenant_id = public.get_auth_tenant_id());
 
--- 6. inventory_items
-DROP POLICY IF EXISTS "Tenant isolation for inventory items" ON public.inventory_items;
-CREATE POLICY "Tenant isolation for inventory items" ON public.inventory_items
-    FOR ALL TO authenticated
-    USING (public.get_auth_tenant_id() IS NULL OR tenant_id = public.get_auth_tenant_id())
-    WITH CHECK (public.get_auth_tenant_id() IS NULL OR tenant_id = public.get_auth_tenant_id());
+-- 6. inventory_items - DISABLED: table never created
+-- DROP POLICY IF EXISTS "Tenant isolation for inventory items" ON public.inventory_items;
+-- CREATE POLICY "Tenant isolation for inventory items" ON public.inventory_items
+--     FOR ALL TO authenticated
+--     USING (public.get_auth_tenant_id() IS NULL OR tenant_id = public.get_auth_tenant_id())
+--     WITH CHECK (public.get_auth_tenant_id() IS NULL OR tenant_id = public.get_auth_tenant_id());
 
 -- 7. inventory_logs
 DROP POLICY IF EXISTS "Tenant isolation for inventory logs" ON public.inventory_logs;

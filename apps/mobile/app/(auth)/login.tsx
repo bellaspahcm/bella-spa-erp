@@ -14,9 +14,10 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '../../src/contexts/AuthContext';
+import type { ValidationResult } from '../../src/lib/shared-utils';
 
 // Inline validators (copied from @bella/shared for mobile-only build)
-function validateEmail(email: string): { ok: boolean; error?: string } {
+function validateEmail(email: string): ValidationResult {
   if (!email) {
     return { ok: false, error: 'Email không được để trống' };
   }
@@ -27,7 +28,7 @@ function validateEmail(email: string): { ok: boolean; error?: string } {
   return { ok: true };
 }
 
-function validatePassword(password: string): { ok: boolean; error?: string } {
+function validatePassword(password: string): ValidationResult {
   if (!password) {
     return { ok: false, error: 'Mật khẩu không được để trống' };
   }

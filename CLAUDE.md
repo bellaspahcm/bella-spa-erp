@@ -4,9 +4,10 @@
 
 1. **Read [AI_CODING_CONTRACT.md](AI_CODING_CONTRACT.md) FIRST** — Canonical repository-wide coding contract, governance workflow, and safety rules
 2. **Read [AGENTS.md](AGENTS.md)** — Bella architecture principles (Kernel-first, reuse before rebuild, minimal complexity)
-3. Read relevant architecture/governance documentation below
-4. Inspect current repository state and applicable gates
-5. Do NOT modify code before ownership/evidence is clear
+3. **⚠️ CREATING NEW OS/PRODUCT? Read [New Product Creation Policy](docs/architecture/NEW_PRODUCT_CREATION_POLICY.md)** — 5 Mandatory Gates, mandatory reading
+4. Read relevant architecture/governance documentation below
+5. Inspect current repository state and applicable gates
+6. Do NOT modify code before ownership/evidence is clear
 
 ---
 
@@ -44,6 +45,34 @@ npm run healthcare:verify
 - **Current Baseline Status:** [docs/execution/CURRENT_BASELINE.md](docs/execution/CURRENT_BASELINE.md) (H1 complete, K1 in-progress)
 - **H1 Verification Evidence:** [docs/execution/HOSPITAL_H1_EVIDENCE.md](docs/execution/HOSPITAL_H1_EVIDENCE.md) (11/11 DB integration tests passed)
 - **Healthcare Kernel Map:** [docs/architecture/HEALTHCARE_KERNEL.md](docs/architecture/HEALTHCARE_KERNEL.md) (Full classification of all 27 engines)
+
+---
+
+## Manufacturing & Factory Capabilities
+
+**Manufacturing Phase 3.5:** ✅ COMPLETE (Factory qualified for controlled Product production)
+- **Closure Document:** [docs/architecture/MANUFACTURING_PHASE_3_5_CLOSURE.md](docs/architecture/MANUFACTURING_PHASE_3_5_CLOSURE.md)
+
+**Factory Capabilities Available:**
+- **P1 Schema Generation:** Deterministic SQL generation with Bella patterns (21/21 tests PASS)
+  - Contract: `.factory/schema-spec-contract.ts`
+  - Generator: `.factory/schema-generator.ts`
+  - 89.5% effort reduction (pilot evidence)
+- **P2 Evidence Collection:** Automated evidence aggregation (23/23 tests PASS)
+  - Contract: `.factory/evidence-contract.ts`
+  - Adapters: `.factory/evidence-adapters.ts`
+  - Collector: `.factory/evidence-collector.ts`
+  - 72.5% effort reduction (pilot evidence)
+
+**Deferred Capabilities:**
+- P3 Kernel Binding (awaiting bottleneck evidence)
+- P4 Test Scaffolding (awaiting bottleneck evidence)
+
+**⚠️ Creating New OS/Product?**
+- **MUST READ:** [New Product Creation Policy](docs/architecture/NEW_PRODUCT_CREATION_POLICY.md)
+- 5 Mandatory Gates (Definition, Architecture, Verification, Evidence, Qualification)
+- Decision Rules (reuse-first, minimal capability, additive extension)
+- Factory usage optional (P1/P2 assist, not mandatory)
 
 ---
 

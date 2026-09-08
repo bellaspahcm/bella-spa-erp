@@ -1,0 +1,100 @@
+src/services/healthcare/healthcare-actions.ts(403,35): error TS2352: Conversion of type '{ arrived_at: string | null; care_journey_id: string | null; chief_complaint: string | null; completed_at: string | null; created_at: string; created_by: string | null; deleted_at: string | null; ... 22 more ...; version: number; }' to type 'Encounter' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ arrived_at: string | null; care_journey_id: string | null; chief_complaint: string | null; completed_at: string | null; created_at: string; created_by: string | null; deleted_at: string | null; ... 22 more ...; version: number; }' is missing the following properties from type 'Encounter': patient_id, customer_id, practitioner_id, facility_id, and 3 more.
+src/services/healthcare/healthcare-actions.ts(586,37): error TS2339: Property 'notes' does not exist on type '{ patient_party_id: string; doctor_party_id: string | null; }'.
+src/services/healthcare/healthcare-actions.ts(586,73): error TS2339: Property 'notes' does not exist on type '{ patient_party_id: string; doctor_party_id: string | null; }'.
+src/services/healthcare/healthcare-actions.ts(586,86): error TS2339: Property 'notes' does not exist on type '{ patient_party_id: string; doctor_party_id: string | null; }'.
+src/services/healthcare/healthcare-actions.ts(595,13): error TS2339: Property 'error' does not exist on type 'PostgrestQueryBuilder<{ PostgrestVersion: "14.5"; }, { Tables: { _prisma_migrations: { Row: { applied_steps_count: number; checksum: string; finished_at: string | null; id: string; logs: string | null; migration_name: string; rolled_back_at: string | null; started_at: string; }; Insert: { ...; }; Update: { ...; }; R...'.
+src/services/healthcare/healthcare-actions.ts(597,1): error TS2304: Cannot find name 'tiß║┐p'.
+src/services/healthcare/healthcare-actions.ts(686,29): error TS2339: Property 'id' does not exist on type '{ doctor_party_id: string | null; patient_party_id: string; }'.
+src/services/healthcare/healthcare-actions.ts(946,11): error TS2322: Type '{ id: string; patientName: string; doctorName: string; status: "in_progress" | "planned" | "arrived" | "finished"; chiefComplaint: string; queueNumber: number; scheduledAt: string; arrivedAt: string; ... 8 more ...; plan: any; }[]' is not assignable to type 'EncounterViewModel[]'.
+  Type '{ id: string; patientName: string; doctorName: string; status: "in_progress" | "planned" | "arrived" | "finished"; chiefComplaint: string; queueNumber: number; scheduledAt: string; arrivedAt: string; ... 8 more ...; plan: any; }' is not assignable to type 'EncounterViewModel'.
+    Types of property 'startedAt' are incompatible.
+      Type 'string | null' is not assignable to type 'string | undefined'.
+        Type 'null' is not assignable to type 'string | undefined'.
+src/services/healthcare/healthcare-actions.ts(988,27): error TS2367: This comparison appears to be unintentional because the types '"in_progress" | "planned" | "arrived" | "finished"' and '"completed"' have no overlap.
+src/services/healthcare/healthcare-actions.ts(1013,48): error TS2339: Property 'subjective_notes' does not exist on type '{ arrived_at: string | null; care_journey_id: string | null; chief_complaint: string | null; completed_at: string | null; created_at: string; created_by: string | null; deleted_at: string | null; ... 22 more ...; version: number; }'.
+src/services/healthcare/healthcare-actions.ts(1014,46): error TS2339: Property 'objective_notes' does not exist on type '{ arrived_at: string | null; care_journey_id: string | null; chief_complaint: string | null; completed_at: string | null; created_at: string; created_by: string | null; deleted_at: string | null; ... 22 more ...; version: number; }'.
+src/services/healthcare/healthcare-actions.ts(1015,48): error TS2339: Property 'assessment_notes' does not exist on type '{ arrived_at: string | null; care_journey_id: string | null; chief_complaint: string | null; completed_at: string | null; created_at: string; created_by: string | null; deleted_at: string | null; ... 22 more ...; version: number; }'.
+src/services/healthcare/healthcare-actions.ts(1016,36): error TS2339: Property 'plan_notes' does not exist on type '{ arrived_at: string | null; care_journey_id: string | null; chief_complaint: string | null; completed_at: string | null; created_at: string; created_by: string | null; deleted_at: string | null; ... 22 more ...; version: number; }'.
+src/services/healthcare/healthcare-actions.ts(1270,38): error TS2304: Cannot find name 'patient'.
+src/services/healthcare/healthcare-actions.ts(1270,67): error TS2304: Cannot find name 'patient'.
+src/services/healthcare/healthcare-actions.ts(1271,59): error TS2345: Argument of type '{ tenant_id: string; encounter_id: string; patient_name: any; status: string; }' is not assignable to parameter of type 'RejectExcessProperties<{ called_at?: string | null | undefined; created_at?: string | undefined; current_station?: string | null | undefined; encounter_id: string; id?: string | undefined; patient_name: string; queue_type?: string | ... 1 more ... | undefined; status?: string | ... 1 more ... | undefined; tenant_id:...'.
+  Type '{ tenant_id: string; encounter_id: string; patient_name: any; status: string; }' is not assignable to type 'RejectExcessProperties<{ called_at?: string | null | undefined; created_at?: string | undefined; current_station?: string | null | undefined; encounter_id: string; id?: string | undefined; patient_name: string; queue_type?: string | ... 1 more ... | undefined; status?: string | ... 1 more ... | undefined; tenant_id:...'.
+    Property 'ticket_number' is missing in type '{ tenant_id: string; encounter_id: string; patient_name: any; status: string; }' but required in type '{ called_at?: string | null | undefined; created_at?: string | undefined; current_station?: string | null | undefined; encounter_id: string; id?: string | undefined; patient_name: string; queue_type?: string | ... 1 more ... | undefined; status?: string | ... 1 more ... | undefined; tenant_id: string; ticket_number:...'.
+src/services/healthcare/healthcare-actions.ts(1297,33): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(1305,11): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(1317,11): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(1348,33): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(1356,11): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(1738,99): error TS2339: Property 'patient_name' does not exist on type '{ clinical_order_id: string; created_at: string; doctor_notified: boolean | null; doctor_notified_time: string | null; encounter_id: string; id: string; is_abnormal: boolean | null; ... 10 more ...; verified_by: string | null; }'.
+src/services/healthcare/healthcare-actions.ts(1805,31): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(1815,11): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(1830,17): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(1849,9): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(1867,9): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(1976,30): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(2009,24): error TS2339: Property 'series_count' does not exist on type '{ body_site: string; clinical_order_id: string | null; created_at: string; dcm_study_uid: string | null; doctor_notified: boolean | null; doctor_notified_time: string | null; encounter_id: string | null; ... 9 more ...; viewer_link: string | null; }'.
+src/services/healthcare/healthcare-actions.ts(2010,23): error TS2339: Property 'image_count' does not exist on type '{ body_site: string; clinical_order_id: string | null; created_at: string; dcm_study_uid: string | null; doctor_notified: boolean | null; doctor_notified_time: string | null; encounter_id: string | null; ... 9 more ...; viewer_link: string | null; }'.
+src/services/healthcare/healthcare-actions.ts(2011,24): error TS2339: Property 'storage_size' does not exist on type '{ body_site: string; clinical_order_id: string | null; created_at: string; dcm_study_uid: string | null; doctor_notified: boolean | null; doctor_notified_time: string | null; encounter_id: string | null; ... 9 more ...; viewer_link: string | null; }'.
+src/services/healthcare/healthcare-actions.ts(2177,31): error TS2322: Type '({ id: string; ticketNumber: string; patientName: string; modality: string; bodySite: string; dcmStudyUid: string; viewerLink: string; status: string; radiologistReport: undefined; priority: "STAT"; ... 7 more ...; doctorNotifiedTime: undefined; } | { ...; } | { ...; } | { ...; } | { ...; })[]' is not assignable to type 'ImagingOrderViewModel[]'.
+  Type '{ id: string; ticketNumber: string; patientName: string; modality: string; bodySite: string; dcmStudyUid: string; viewerLink: string; status: string; radiologistReport: undefined; priority: "STAT"; ... 7 more ...; doctorNotifiedTime: undefined; } | { ...; } | { ...; } | { ...; } | { ...; }' is not assignable to type 'ImagingOrderViewModel'.
+    Type '{ id: string; ticketNumber: string; patientName: string; modality: string; bodySite: string; dcmStudyUid: string; viewerLink: string; status: string; radiologistReport: undefined; priority: "STAT"; ... 7 more ...; doctorNotifiedTime: undefined; }' is not assignable to type 'ImagingOrderViewModel'.
+      Types of property 'status' are incompatible.
+        Type 'string' is not assignable to type '"pending" | "reported" | "captured"'.
+src/services/healthcare/healthcare-actions.ts(2224,31): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(2234,11): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(2249,17): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(2268,9): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(2681,7): error TS2322: Type '{ drugCode: string; drugName: any; qty: number; dosageInstruction: string; }' is not assignable to type 'MedicationOrderDetails | LabOrderDetails | ImagingOrderDetails | GenericOrderDetails'.
+  Property 'description' is missing in type '{ drugCode: string; drugName: any; qty: number; dosageInstruction: string; }' but required in type 'GenericOrderDetails'.
+src/services/healthcare/healthcare-actions.ts(2813,51): error TS2551: Property 'catch' does not exist on type 'PostgrestFilterBuilder<{ PostgrestVersion: "14.5"; }, { Tables: { _prisma_migrations: { Row: { applied_steps_count: number; checksum: string; finished_at: string | null; id: string; logs: string | null; migration_name: string; rolled_back_at: string | null; started_at: string; }; Insert: { ...; }; Update: { ...; }; ...'. Did you mean 'match'?
+src/services/healthcare/healthcare-actions.ts(2853,31): error TS2322: Type '{ id: string; encounterId: string; patientName: string; bhytCode: string; benefitRate: number; totalAmount: number; bhytCovered: number; patientPay: number; status: string; itemsCount: number; }[]' is not assignable to type 'HealthcareInvoiceViewModel[]'.
+  Type '{ id: string; encounterId: string; patientName: string; bhytCode: string; benefitRate: number; totalAmount: number; bhytCovered: number; patientPay: number; status: string; itemsCount: number; }' is not assignable to type 'HealthcareInvoiceViewModel'.
+    Types of property 'status' are incompatible.
+      Type 'string' is not assignable to type '"paid" | "unpaid"'.
+src/services/healthcare/healthcare-actions.ts(2949,51): error TS2551: Property 'catch' does not exist on type 'PostgrestFilterBuilder<{ PostgrestVersion: "14.5"; }, { Tables: { _prisma_migrations: { Row: { applied_steps_count: number; checksum: string; finished_at: string | null; id: string; logs: string | null; migration_name: string; rolled_back_at: string | null; started_at: string; }; Insert: { ...; }; Update: { ...; }; ...'. Did you mean 'match'?
+src/services/healthcare/healthcare-actions.ts(2972,35): error TS2589: Type instantiation is excessively deep and possibly infinite.
+src/services/healthcare/healthcare-actions.ts(2973,13): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(relation: "accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 368 more ... | "workflow_versions"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"encounters"' is not assignable to parameter of type '"accounting_accounts" | "tenants" | "journal_entries" | "accounting_event_templates" | "api_partners" | "arch_decisions" | "assessments" | "students" | "courses" | "party_parties" | ... 368 more ... | "workflow_versions"'.
+  Overload 2 of 2, '(relation: "reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"): PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"encounters"' is not assignable to parameter of type '"reconciliation_health_today" | "api_partner_usage_summary" | "mv_ktv_performance_summary" | "mv_campaign_performance" | "finance_vendor_bill_status" | "mv_inventory_status" | ... 14 more ... | "v_mv_refresh_status"'.
+src/services/healthcare/healthcare-actions.ts(2975,11): error TS2345: Argument of type '"id"' is not assignable to parameter of type 'never'.
+src/services/healthcare/healthcare-actions.ts(2976,11): error TS2345: Argument of type '"tenant_id"' is not assignable to parameter of type 'never'.
+src/services/healthcare/healthcare-actions.ts(3003,29): error TS2339: Property 'chief_complaint' does not exist on type 'NonNullable<ResultOne>'.
+src/services/healthcare/healthcare-actions.ts(3004,24): error TS2339: Property 'subjective' does not exist on type 'NonNullable<ResultOne>'.
+src/services/healthcare/healthcare-actions.ts(3005,23): error TS2339: Property 'objective' does not exist on type 'NonNullable<ResultOne>'.
+src/services/healthcare/healthcare-actions.ts(3006,24): error TS2339: Property 'assessment' does not exist on type 'NonNullable<ResultOne>'.
+src/services/healthcare/healthcare-actions.ts(3007,18): error TS2339: Property 'plan' does not exist on type 'NonNullable<ResultOne>'.
+src/services/healthcare/healthcare-actions.ts(3119,57): error TS18047: 'baseSalary' is possibly 'null'.
+src/services/healthcare/healthcare-actions.ts(3119,70): error TS18047: 'commission' is possibly 'null'.
+src/services/healthcare/healthcare-actions.ts(3127,9): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/services/healthcare/healthcare-actions.ts(3128,9): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/services/healthcare/healthcare-actions.ts(3130,9): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/services/healthcare/healthcare-actions.ts(3131,9): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/services/healthcare/healthcare-actions.ts(3562,20): error TS7053: Element implicitly has an 'any' type because expression of type '0' can't be used to index type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'.
+  Property '0' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'.
+src/services/healthcare/healthcare-actions.ts(3580,34): error TS2339: Property 'display_name' does not exist on type 'SelectQueryError<"Could not embed because more than one relationship was found for 'party_parties' and 'hc_prescriptions' you need to hint the column with party_parties!<columnName> ?">'.
+src/services/healthcare/healthcare-actions.ts(3583,32): error TS2339: Property 'display_name' does not exist on type 'SelectQueryError<"Could not embed because more than one relationship was found for 'party_parties' and 'hc_prescriptions' you need to hint the column with party_parties!<columnName> ?">'.
+src/services/healthcare/pharmacy-actions.ts(33,11): error TS2322: Type 'string | number | true | { [key: string]: Json | undefined; } | Json[]' is not assignable to type 'string[]'.
+  Type 'string' is not assignable to type 'string[]'.
+src/services/healthcare/pharmacy-actions.ts(100,9): error TS2353: Object literal may only specify known properties, and 'ordering_practitioner_id' does not exist in type 'RejectExcessProperties<{ approved_at?: string | null | undefined; approved_by?: string | null | undefined; cds_check_id?: string | null | undefined; cds_check_status?: string | null | undefined; created_at?: string | undefined; ... 16 more ...; version?: number | undefined; }, { ...; }> | RejectExcessProperties<...>[]'.

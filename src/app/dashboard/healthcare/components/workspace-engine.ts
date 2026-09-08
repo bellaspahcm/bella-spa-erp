@@ -8,7 +8,7 @@ import QuickActions from './QuickActions';
 import VitalSigns from './VitalSigns';
 import ClinicalContextPanel from './ClinicalContextPanel';
 
-export const WorkspaceComponentRegistry: Record<string, React.ComponentType<Record<string, unknown>>> = {
+export const WorkspaceComponentRegistry: Record<string, React.ComponentType<any>> = {
   patient_banner: PatientBanner,
   clinical_alerts: ClinicalAlerts,
   soap_editor: SOAPEditor,

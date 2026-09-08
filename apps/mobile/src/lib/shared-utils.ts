@@ -22,18 +22,19 @@ export type UserRole =
 export interface CurrentUser {
   id: string;
   email: string;
-  full_name: string | null;
-  role: UserRole;
+  full_name?: string | null;
+  role: string;
   tenant_id: string | null;
-  phone: string | null;
-  avatar_url: string | null;
+  phone?: string | null;
+  avatar_url?: string | null;
+  isSuspended?: boolean;
 }
 
-export interface AuthState {
-  status: 'loading' | 'loading-profile' | 'authenticated' | 'unauthenticated';
-  user: CurrentUser | null;
-  tenant_id: string | null;
-}
+export type AuthState =
+  | { status: 'loading' }
+  | { status: 'loading-profile' }
+  | { status: 'authenticated'; user: CurrentUser }
+  | { status: 'unauthenticated' };
 
 export type TenantModuleKey =
   | 'bella_spa'
@@ -45,31 +46,31 @@ export type TenantModuleKey =
 
 // ── Role Utilities ────────────────────────────────────────────────────
 
-export function isAdminRole(role: UserRole): boolean {
+export function isAdminRole(role: string | null | undefined): boolean {
   return role === 'admin';
 }
 
-export function isTechnicianRole(role: UserRole): boolean {
+export function isTechnicianRole(role: string | null | undefined): boolean {
   return role === 'ktv' || role === 'technician';
 }
 
-export function isManagerOrAbove(role: UserRole): boolean {
+export function isManagerOrAbove(role: string | null | undefined): boolean {
   return role === 'admin' || role === 'manager';
 }
 
-export function isReceptionistRole(role: UserRole): boolean {
+export function isReceptionistRole(role: string | null | undefined): boolean {
   return role === 'receptionist';
 }
 
-export function isAccountantRole(role: UserRole): boolean {
+export function isAccountantRole(role: string | null | undefined): boolean {
   return role === 'accountant';
 }
 
-export function isWarehouseRole(role: UserRole): boolean {
+export function isWarehouseRole(role: string | null | undefined): boolean {
   return role === 'warehouse';
 }
 
-export function isMarketingRole(role: UserRole): boolean {
+export function isMarketingRole(role: string | null | undefined): boolean {
   return role === 'marketing';
 }
 
@@ -105,7 +106,11 @@ export function formatDateTime(date: Date | string): string {
 
 // ── Validation Utilities ──────────────────────────────────────────────
 
-export function validateEmail(email: string): { ok: boolean; error?: string } {
+export type ValidationResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+export function validateEmail(email: string): ValidationResult {
   if (!email) {
     return { ok: false, error: 'Email không được để trống' };
   }
@@ -116,7 +121,7 @@ export function validateEmail(email: string): { ok: boolean; error?: string } {
   return { ok: true };
 }
 
-export function validatePassword(password: string): { ok: boolean; error?: string } {
+export function validatePassword(password: string): ValidationResult {
   if (!password) {
     return { ok: false, error: 'Mật khẩu không được để trống' };
   }
@@ -126,7 +131,7 @@ export function validatePassword(password: string): { ok: boolean; error?: strin
   return { ok: true };
 }
 
-export function validatePhone(phone: string): { ok: boolean; error?: string } {
+export function validatePhone(phone: string): ValidationResult {
   if (!phone) {
     return { ok: false, error: 'Số điện thoại không được để trống' };
   }

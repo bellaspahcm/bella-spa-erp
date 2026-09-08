@@ -1,0 +1,103 @@
+
+>       hc_encounters: {
+          Row: {
+            arrived_at: string | null
+            care_journey_id: string | null
+            chief_complaint: string | null
+            completed_at: string | null
+            created_at: string
+            created_by: string | null
+            deleted_at: string | null
+            department_id: string | null
+            diagnosis: Json | null
+            doctor_party_id: string | null
+            encounter_class: string
+            encounter_type: string
+            finished_at: string | null
+            id: string
+            location_id: string | null
+            metadata: Json | null
+            notes: string | null
+            parent_encounter_id: string | null
+            patient_party_id: string
+            period_end: string | null
+            period_start: string
+            queue_number: number | null
+            reason_code: Json | null
+            scheduled_at: string | null
+            started_at: string | null
+            status: string
+            tenant_id: string
+            updated_at: string
+            updated_by: string | null
+            version: number
+          }
+          Insert: {
+            arrived_at?: string | null
+            care_journey_id?: string | null
+            chief_complaint?: string | null
+            completed_at?: string | null
+            created_at?: string
+            created_by?: string | null
+            deleted_at?: string | null
+            department_id?: string | null
+            diagnosis?: Json | null
+            doctor_party_id?: string | null
+            encounter_class: string
+            encounter_type: string
+            finished_at?: string | null
+            id?: string
+            location_id?: string | null
+            metadata?: Json | null
+            notes?: string | null
+            parent_encounter_id?: string | null
+            patient_party_id: string
+            period_end?: string | null
+            period_start: string
+            queue_number?: number | null
+            reason_code?: Json | null
+            scheduled_at?: string | null
+            started_at?: string | null
+            status?: string
+            tenant_id: string
+            updated_at?: string
+            updated_by?: string | null
+            version?: number
+          }
+          Update: {
+            arrived_at?: string | null
+            care_journey_id?: string | null
+            chief_complaint?: string | null
+            completed_at?: string | null
+            created_at?: string
+            created_by?: string | null
+            deleted_at?: string | null
+            department_id?: string | null
+            diagnosis?: Json | null
+            doctor_party_id?: string | null
+            encounter_class?: string
+            encounter_type?: string
+            finished_at?: string | null
+            id?: string
+            location_id?: string | null
+            metadata?: Json | null
+            notes?: string | null
+            parent_encounter_id?: string | null
+            patient_party_id?: string
+            period_end?: string | null
+            period_start?: string
+            queue_number?: number | null
+            reason_code?: Json | null
+            scheduled_at?: string | null
+            started_at?: string | null
+            status?: string
+            tenant_id?: string
+            updated_at?: string
+            updated_by?: string | null
+            version?: number
+          }
+          Relationships: [
+            {
+              foreignKeyName: "hc_encounters_doctor_party_id_fkey"
+              columns: ["doctor_party_id"]
+

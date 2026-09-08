@@ -1,0 +1,4 @@
+scope_name,tsconfig,compilation_time_seconds,exit_code,diagnostic_count,files_in_scope,status,notes
+"AutoMove (Product-Isolated)","tsconfig.compile-automove.json",7.22,0,0,"15 (5 routes + 10 product)","✅ CLEAN","Product-only scope, no deps included"
+"Preschool (Product-Isolated)","tsconfig.compile-preschool.json",6.81,0,0,"~20 (routes + product)","✅ CLEAN","Product-only scope, no deps included"
+"Platform Core (Shared Infrastructure)","tsconfig.compile-platform-core.json",7.33,0,0,"~707 (lib + platform + types + shared)","✅ CLEAN","Shared infrastructure baseline"

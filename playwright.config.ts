@@ -121,17 +121,19 @@ export default defineConfig({
   ],
 
   // Auto-start dev server on the same port used by baseURL.
-  webServer: SHOULD_START_DEV_SERVER
-    ? {
-        command: `npm run dev --${DEV_SERVER_BUNDLER_ARGS} --port ${PORT}`,
-        url: BASE_URL,
-        reuseExistingServer: REUSE_EXISTING_SERVER,
-        timeout: 180_000,
-        stdout: "pipe",
-        stderr: "pipe",
-        env: {
-          NODE_ENV: "development", // enables local mock_user_email bypass for E2E
-        },
-      }
-    : undefined,
+  // TEMPORARILY DISABLED for P3.1 debugging (dev server already running manually)
+  webServer: undefined,
+  // webServer: SHOULD_START_DEV_SERVER
+  //   ? {
+  //       command: `npm run dev --${DEV_SERVER_BUNDLER_ARGS} --port ${PORT}`,
+  //       url: BASE_URL,
+  //       reuseExistingServer: REUSE_EXISTING_SERVER,
+  //       timeout: 180_000,
+  //       stdout: "pipe",
+  //       stderr: "pipe",
+  //       env: {
+  //         NODE_ENV: "development", // enables local mock_user_email bypass for E2E
+  //       },
+  //     }
+  //   : undefined,
 });

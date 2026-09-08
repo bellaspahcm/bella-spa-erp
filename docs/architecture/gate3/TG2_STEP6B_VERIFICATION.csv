@@ -1,0 +1,7 @@
+test_id,description,expected,actual,pass,details
+"T1","Clean valid project","PASS or HAS_DIAGNOSTICS","HAS_DIAGNOSTICS",true,"TS6307 configuration issue (documented in STEP 6A)"
+"T2","Intentional TS error","HAS_DIAGNOSTICS","HAS_DIAGNOSTICS",true,"Type error correctly detected"
+"T3","Tiny timeout","TIMEOUT/INDETERMINATE","TIMEOUT",true,"Process killed: undefined, signal: SIGTERM"
+"T4","Nonexistent config","INDETERMINATE/ERROR","ERROR",true,"Error: error TS5058: The specified path does not exist: 'tsconfig.does-not-exist.json'.
+"
+"T6","Determinism","Identical across 4 runs","All returned: HAS_DIAGNOSTICS",true,"HAS_DIAGNOSTICS | HAS_DIAGNOSTICS | HAS_DIAGNOSTICS | HAS_DIAGNOSTICS"

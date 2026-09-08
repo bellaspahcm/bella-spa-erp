@@ -7,7 +7,8 @@ import { toast } from 'sonner';
 import { ProjectHeader } from '@/modules/real_estate/components/ProjectHeader';
 import { InventoryMatrixGrid } from '@/modules/real_estate/components/InventoryMatrixGrid';
 import { fetchProjectsAction } from '@/modules/real_estate/actions/projectActions';
-import { fetchProductsAction, updateProductStatusAction, updateProductDetailsAction } from '@/modules/real_estate/actions/productActions';
+import { fetchPropertyCatalogAction } from '@/products/bella-land/actions/property-catalog.actions';
+import { updateProductStatusAction, updateProductDetailsAction } from '@/modules/real_estate/actions/productActions';
 import { Database } from '@/types/database.types';
 import { useUser } from '@/lib/user-context';
 import { useTenantContext } from '@/core/hooks/useTenantContext';
@@ -97,7 +98,7 @@ export default function RealEstateDashboardPage() {
 
       // 2. Fetch products if project exists
       if (currentProj) {
-        const resProducts = await fetchProductsAction(currentProj.id);
+        const resProducts = await fetchPropertyCatalogAction(currentProj.id);
         if (resProducts.success && resProducts.data) {
           setProducts(Array.isArray(resProducts.data) ? resProducts.data : [resProducts.data]);
         }
@@ -131,7 +132,7 @@ export default function RealEstateDashboardPage() {
 
       // Fetch products
       if (matchedProj) {
-        const resProducts = await fetchProductsAction(matchedProj.id);
+        const resProducts = await fetchPropertyCatalogAction(matchedProj.id);
         if (resProducts.success && resProducts.data) {
           setProducts(Array.isArray(resProducts.data) ? resProducts.data : [resProducts.data]);
         }
@@ -156,7 +157,7 @@ export default function RealEstateDashboardPage() {
 
   const handleSelectProject = async (proj: ProjectRow) => {
     setSelectedProject(proj);
-    const resProducts = await fetchProductsAction(proj.id);
+    const resProducts = await fetchPropertyCatalogAction(proj.id);
     if (resProducts.success && resProducts.data) {
       setProducts(Array.isArray(resProducts.data) ? resProducts.data : [resProducts.data]);
     }
@@ -173,7 +174,7 @@ export default function RealEstateDashboardPage() {
     }
     // Refresh products list
     if (selectedProject) {
-      const resProducts = await fetchProductsAction(selectedProject.id);
+      const resProducts = await fetchPropertyCatalogAction(selectedProject.id);
       if (resProducts.success && resProducts.data) {
         setProducts(Array.isArray(resProducts.data) ? resProducts.data : [resProducts.data]);
       }
@@ -201,7 +202,7 @@ export default function RealEstateDashboardPage() {
     }
     // Then do a full re-fetch to ensure consistency
     if (selectedProject) {
-      const resProducts = await fetchProductsAction(selectedProject.id);
+      const resProducts = await fetchPropertyCatalogAction(selectedProject.id);
       if (resProducts.success && resProducts.data) {
         setProducts(Array.isArray(resProducts.data) ? resProducts.data : [resProducts.data]);
       }

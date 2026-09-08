@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
+import { Slot } from "@radix-ui/react-slot"
 
 import { createPortal } from "react-dom"
 import { cn } from "@/lib/utils"
@@ -12,9 +13,17 @@ function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />
 }
 
-function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
-  return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />
+interface DialogTriggerProps extends DialogPrimitive.Trigger.Props {
+  asChild?: boolean
 }
+
+const DialogTrigger = React.forwardRef<HTMLButtonElement, DialogTriggerProps>(
+  ({ asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : DialogPrimitive.Trigger
+    return <Comp ref={ref as any} data-slot="dialog-trigger" {...(props as any)} />
+  }
+)
+DialogTrigger.displayName = "DialogTrigger"
 
 function DialogPortal({
   children,

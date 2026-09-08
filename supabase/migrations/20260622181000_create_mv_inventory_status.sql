@@ -3,9 +3,15 @@
 -- Refresh: Every 5 minutes via cron job (more frequent due to critical nature)
 -- Created: 2026-06-22
 -- Updated: 2026-07-18 - Rebuilt with correct schema matching MvInventoryStatus TypeScript type
+-- DISABLED: 2026-09-05 - inventory_items table never created, view cannot be built
 
--- Drop existing view if exists
-DROP MATERIALIZED VIEW IF EXISTS mv_inventory_status CASCADE;
+-- DROP MATERIALIZED VIEW IF EXISTS mv_inventory_status CASCADE;
+
+-- CREATE MATERIALIZED VIEW mv_inventory_status AS
+-- ... (entire view commented out - requires non-existent inventory_items table)
+
+-- CREATE UNIQUE INDEX idx_mv_inventory_status_product_id
+--   ON mv_inventory_status (product_id);
 
 -- Create materialized view with full schema matching code expectations
 CREATE MATERIALIZED VIEW mv_inventory_status AS

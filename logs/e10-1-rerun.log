@@ -1,0 +1,113 @@
+================================================================================
+≡ƒÅ¡ E10.1 AUTOMOTIVE FRESH OS FIELD TEST
+================================================================================
+Run ID: e10-1-automotive-1788561627095
+Candidate: Automotive (auto_*)
+Protocol: Controlled Experiment (No Factory modifications)
+================================================================================
+
+Γû╢∩╕Å  E9.1 Evidence Collection...
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+Γ£à Auto-discovered prefix 'auto' for automotive (source: migrations)
+   Tables: 61
+   Entities: Ai_insight, Approval_instance, Approval_workflow, Booking, Bookings_history, Brand, Business_rule, Business_transaction, Capability, Capability_config, Capability_dependency, Capability_version, Churn_prediction, Csi_score, Customer_health_score, Customer_journey, Customer_journeys_history, Customer_lifetime_event, Customer_profile, Demand_forecast, Deposit, Installed_capability, Insurance_policy, Journey_event, Journey_stage, Lead, Loan_application, Lost_analysi, Market_valuation, Mobile_notification, Mobile_session, Model, Next_best_action, Nps_score, Offline_action, Organization_unit, Photo_upload, Repair_order, Repair_order_item, Rollback_audit_log, Rollup_cache, Rollup_config, Rule_execution_log, Rule_template, Service_appointment, Service_history, Service_package, Survey, Survey_response, Survey_template, Technician_time_log, Touchpoint, Trade_in_appraisal, Trade_in_photo, Transaction_step, Variant, Vehicle, Vehicle_owner, Vehicle_status_log, Vehicles_history, Warranty_claim
+   Types: 59 entities
+   Domain: 0 entities
+   Tests: 0 entities
+   Completeness: 70.0%
+Γ£à E9.1 Evidence Collection complete (6.21s)
+
+Γû╢∩╕Å  E9 Scope Derivation...
+Γ¥î E9 Scope Derivation failed: scopeDecisions.entries is not a function or its return value is not iterable
+
+================================================================================
+≡ƒôè E10.1 AUTOMOTIVE FIELD TEST RESULTS
+================================================================================
+Status: FAIL
+Message: Scope derivation failed
+Duration: 6.21s
+
+Evidence:
+  Tables Discovered: 61
+  Types Found: YES
+  Domain Found: NO
+  Tests Found: NO
+  Completeness: 70.0%
+
+Scope Decisions:
+  CONFORM: 0
+  RECONSTRUCT: 0
+  DEFER: 0
+  BLOCK: 0
+
+Autonomy:
+  Human Decisions: 0
+  Auto Decisions: 2
+
+Factory Gaps Discovered:
+  ΓÜá∩╕Å  E9 cannot classify automotive entities
+================================================================================
+
+≡ƒôä Metrics saved: logs\e10-1-automotive-1788561627095.json
+
+Exit code: 1

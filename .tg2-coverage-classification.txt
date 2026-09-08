@@ -1,0 +1,151 @@
+
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                 TG-2.1 COVERAGE CLASSIFICATION INVENTORY                  ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+PURPOSE:
+  Cluster-level analysis of uncovered production source.
+  Identifies architectural ownership gaps requiring governance scope assignment.
+
+PRINCIPLE:
+  Coverage remediation must follow ownership architecture,
+  not merely optimize coverage percentage.
+
+───────────────────────────────────────────────────────────────────────────
+
+CLUSTER-LEVEL COVERAGE
+
+OVERALL: 345/2200 files governed (16%)
+
+CLUSTER                         TOTAL  COVERED    GAP     % GOVERNED?
+────────────────────────────────────────────────────────────────────────────────
+Next.js App Routes                649        0    649    0% ❌
+UI Components                     219        0    219    0% ❌
+Library/Utilities                 213        0    213    0% ❌
+Modules                           175        0    175    0% ❌
+Other src/                        173        0    173    0% ❌
+Services Layer                    161        0    161    0% ❌
+Platform Core                     500      344    156   69% ✅
+Products                           65        0     65    0% ❌
+Type Definitions                   20        1     19    5% ✅
+Workspace Packages                  9        0      9    0% ❌
+Shared Code                         8        0      8    0% ❌
+Test Infrastructure                 8        0      8    0% ❌
+
+───────────────────────────────────────────────────────────────────────────
+
+HIGH-PRIORITY CLUSTERS (largest coverage gaps):
+
+
+Next.js App Routes
+  Total: 649 files
+  Uncovered: 649 files
+  Existing scopes: NONE
+  Sample uncovered:
+    - src/app/(auth)/layout.tsx
+    - src/app/(auth)/login/page-simple.tsx
+    - src/app/(auth)/login/page.backup.tsx
+    - src/app/(auth)/login/page.tsx
+    - src/app/(auth)/signup/page.tsx
+    ... and 644 more
+
+UI Components
+  Total: 219 files
+  Uncovered: 219 files
+  Existing scopes: NONE
+  Sample uncovered:
+    - src/components/ErrorBoundary.tsx
+    - src/components/accounting/ProcessOutboxButton.tsx
+    - src/components/admin/BatchActionsBar.tsx
+    - src/components/admin/partners/APIKeyLifecycleTimeline.tsx
+    - src/components/admin/partners/APIKeyRotationScheduler.tsx
+    ... and 214 more
+
+Library/Utilities
+  Total: 213 files
+  Uncovered: 213 files
+  Existing scopes: NONE
+  Sample uncovered:
+    - src/lib/__mocks__/supabase-server.ts
+    - src/lib/accounting-error-message.ts
+    - src/lib/accounting-outbox-monitoring.ts
+    - src/lib/accounting-outbox.ts
+    - src/lib/accounting-subpages-client-cache.ts
+    ... and 208 more
+
+Modules
+  Total: 175 files
+  Uncovered: 175 files
+  Existing scopes: NONE
+  Sample uncovered:
+    - src/modules/beauty-spa/adapters/BeautySpaModuleAdapter.ts
+    - src/modules/bella-auto/components/workshop/AppointmentDetailModal.tsx
+    - src/modules/bella-auto/components/workshop/RepairOrderBoard.tsx
+    - src/modules/bella-auto/components/workshop/ServiceCalendar.tsx
+    - src/modules/bella-auto/components/workshop/TechnicianDashboard.tsx
+    ... and 170 more
+
+Other src/
+  Total: 173 files
+  Uncovered: 173 files
+  Existing scopes: NONE
+  Sample uncovered:
+    - src/adapters/commission-provider-adapter.ts
+    - src/adapters/payroll-provider-adapter.ts
+    - src/architecture/fitness/dependency-test.ts
+    - src/capabilities/assignment/LeadAssignmentService.ts
+    - src/capabilities/assignment/index.ts
+    ... and 168 more
+
+───────────────────────────────────────────────────────────────────────────
+
+CLASSIFICATION CATEGORIES
+
+Each uncovered file must be classified into ONE of:
+
+A — EXISTING DOMAIN, MISSING GOVERNED SCOPE
+    Production code with clear ownership
+    No canonical typecheck scope exists
+    → Action: CREATE/EXTEND proper governed scope
+
+B — VALID PRODUCTION SHARED LAYER
+    Shared services/utilities/platform code
+    Not owned by single Product/OS
+    → Action: CREATE shared governed scopes per architecture
+
+C — NON-PRODUCTION MISCLASSIFIED
+    Test helpers, fixtures, generated code, dev tooling, archived
+    → Action: Explicit exclusion OR relocate
+    → DO NOT "exclude for clean metrics"
+
+D — ARCHITECTURAL ORPHAN
+    Production-looking code
+    Ownership unclear or architecture unmapped
+    → Action: BLOCK / architectural decision required
+
+───────────────────────────────────────────────────────────────────────────
+
+NEXT ACTIONS
+
+1. Healthcare Services (Field-Validated Gap)
+   src/services/healthcare/** — 161 uncovered files
+   Decision: Determine correct governance scope ownership
+
+2. Services Layer Coverage
+   Determine if Healthcare is isolated or systemic services-layer gap
+
+3. High-Priority Clusters
+   Address top 3 clusters by architectural impact (not just file count)
+
+4. Scope Registry Expansion
+   Create missing governed scopes following ownership architecture
+
+DO NOT:
+  ❌ Add files blindly to nearest scope
+  ❌ Create mega-scope to "eat" all uncovered
+  ❌ Optimize for coverage % over architecture correctness
+
+═══════════════════════════════════════════════════════════════════════════
+
+See: docs/architecture/TG2_PRODUCTION_COVERAGE_INTEGRITY.md
+     docs/architecture/TG2_SCOPE_QUALIFICATION_FINDING.md

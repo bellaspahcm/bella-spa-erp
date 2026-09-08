@@ -58,7 +58,7 @@ describe('M2 + M3 Integration', () => {
 
       // Provenance unchanged
       expect(critiqued.provenance.sources).toEqual(originalProvenance.sources);
-      expect(critiqued.provenance.epistemicStatus).toBe(originalProvenance.epistemicStatus);
+      expect(critiqued.epistemicStatus).toBe(firstTruth.epistemicStatus);
       expect(critiqued.provenance.reasoning).toBe(originalProvenance.reasoning);
     });
 

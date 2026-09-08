@@ -22,13 +22,13 @@ describe('M3 Governance Invariants', () => {
     it('should NEVER produce CANONICAL status (even with perfect assessment)', async () => {
       // Perfect proposal: good evidence, no issues
       const perfectProposal = createTruth({
+        epistemicStatus: 'OBSERVATION',
         provenance: {
           sources: [
             { type: 'DOCUMENT', location: 'source1.md', retrievedAt: new Date() },
             { type: 'DOCUMENT', location: 'source2.md', retrievedAt: new Date() },
             { type: 'DOCUMENT', location: 'source3.md', retrievedAt: new Date() }
           ],
-          epistemicStatus: 'OBSERVATION',
           reasoning: 'Direct observation from multiple sources'
         },
         confidence: { score: 0.95, factors: [] }
@@ -61,12 +61,12 @@ describe('M3 Governance Invariants', () => {
 
     it('should require authorization even with high confidence', async () => {
       const highConfidenceProposal = createTruth({
+        epistemicStatus: 'OBSERVATION',
         provenance: {
           sources: [
             { type: 'DOCUMENT', location: 'source1.md', retrievedAt: new Date() },
             { type: 'DOCUMENT', location: 'source2.md', retrievedAt: new Date() }
           ],
-          epistemicStatus: 'OBSERVATION',
           reasoning: 'Strong evidence'
         },
         confidence: { score: 0.99, factors: [] }  // Very high confidence
@@ -134,12 +134,12 @@ describe('M3 Governance Invariants', () => {
   describe('CRITICAL: Assessment ≠ Approval', () => {
     it('should not equate high assessment with approval', async () => {
       const proposal = createTruth({
+        epistemicStatus: 'OBSERVATION',
         provenance: {
           sources: [
             { type: 'DOCUMENT', location: 'source1.md', retrievedAt: new Date() },
             { type: 'DOCUMENT', location: 'source2.md', retrievedAt: new Date() }
           ],
-          epistemicStatus: 'OBSERVATION',
           reasoning: 'Well-supported'
         },
         confidence: { score: 0.9, factors: [] }
@@ -161,11 +161,11 @@ describe('M3 Governance Invariants', () => {
 
     it('should distinguish "can proceed" from "auto-approved"', async () => {
       const proposal = createTruth({
+        epistemicStatus: 'OBSERVATION',
         provenance: {
           sources: [
             { type: 'DOCUMENT', location: 'source1.md', retrievedAt: new Date() }
           ],
-          epistemicStatus: 'OBSERVATION',
           reasoning: 'Observed'
         }
       });
@@ -216,9 +216,9 @@ describe('M3 Governance Invariants', () => {
 
     it('should flag need for human review on blocking issues', async () => {
       const blockedProposal = createTruth({
+        epistemicStatus: 'INFERENCE',
         provenance: {
           sources: [],  // No evidence
-          epistemicStatus: 'INFERENCE',
           reasoning: 'Unsupported'
         }
       });
@@ -237,12 +237,12 @@ describe('M3 Governance Invariants', () => {
   describe('Valid Proposals Can Pass', () => {
     it('should not block valid well-supported proposals', async () => {
       const validProposal = createTruth({
+        epistemicStatus: 'OBSERVATION',
         provenance: {
           sources: [
             { type: 'DOCUMENT', location: 'source1.md', retrievedAt: new Date() },
             { type: 'DOCUMENT', location: 'source2.md', retrievedAt: new Date() }
           ],
-          epistemicStatus: 'OBSERVATION',
           reasoning: 'Direct observation from multiple sources'
         },
         confidence: { score: 0.85, factors: [] }
@@ -329,7 +329,6 @@ function createTruth(overrides: Partial<BusinessTruth> = {}): BusinessTruth {
       sources: [
         { type: 'DOCUMENT', location: 'source.md', retrievedAt: new Date() }
       ],
-      epistemicStatus: 'OBSERVATION',
       reasoning: 'Test reasoning',
       discoveredAt: new Date()
     },

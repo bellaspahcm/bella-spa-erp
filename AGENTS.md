@@ -2,7 +2,7 @@
 
 **Purpose:** Decision framework for AI agents and developers building Bella Platform of Platforms.
 
-**Last updated:** 2026-09-05
+**Last updated:** 2026-09-07
 
 ---
 
@@ -381,6 +381,36 @@ This **IS:**
 **Phase 1 Regression Protection + Known Pattern Rule:** ACTIVE / FIELD-TESTED
 
 **Status:** Engineering mode active. No further governance expansion until proven need.
+
+**⚠️ TYPE-SYSTEM ROOT-CAUSE & HARDENING — IN PROGRESS**
+
+**Status:** Gate 3 Architectural Hardening active (TG-1 complete, TG-2/3/4 pending)
+
+**Documents:**
+- [Gate 3 Architectural Hardening](docs/architecture/GATE3_ARCHITECTURAL_HARDENING.md) 🟡 IN PROGRESS
+- [Gate 2 Root-Cause Proof](docs/architecture/GATE2_ROOT_CAUSE_PROOF_CLOSURE.md) 🔒 CLOSED
+- [Gate 1 Canonical Diagnosis](docs/architecture/GATE1_CANONICAL_DIAGNOSIS_CLOSURE.md) 🔒 CLOSED
+
+**Type Gates Status:**
+```text
+TG-1 Schema-Type Sync         🔒 COMPLETE (6/6 tests PASS)
+TG-2 Coverage Integrity       ⚪ NOT STARTED
+TG-3 Contract Enforcement     ⚪ NOT STARTED  
+TG-4 Diagnostic Fingerprint   ⚪ NOT STARTED
+```
+
+**TG-1 Evidence:**
+- T1 Healthy PASS: ✅
+- T2 Drift BLOCK: ✅
+- T3 Recovery PASS: ✅
+- T4 Timestamp resistance: ✅
+- T5 Deterministic: ✅
+- Root cause: Windows PowerShell UTF-16 encoding (resolved)
+- [TG-1 Root Cause Resolution](docs/architecture/TG1_ROOT_CAUSE_RESOLUTION.md)
+
+**Next:** TG-2 Coverage Integrity Gate
+
+---
 
 **⚠️ Industry Discovery Governance — APPROVED FOR IMPLEMENTATION DESIGN**
 

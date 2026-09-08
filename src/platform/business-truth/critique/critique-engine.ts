@@ -219,7 +219,7 @@ export class CritiqueEngine {
     const issues: CritiqueIssue[] = [];
 
     // If epistemic status is INFERENCE, check reasoning
-    if (truth.provenance.epistemicStatus === 'INFERENCE') {
+    if (truth.epistemicStatus === 'INFERENCE') {
       const reasoning = truth.provenance.reasoning;
       const evidenceCount = truth.provenance.sources.length;
 
@@ -246,7 +246,7 @@ export class CritiqueEngine {
     }
 
     // If epistemic status is OBSERVATION but confidence is low, might be inference
-    if (truth.provenance.epistemicStatus === 'OBSERVATION' && 
+    if (truth.epistemicStatus === 'OBSERVATION' && 
         truth.confidence.score < 0.8) {
       issues.push({
         type: 'OBSERVATION_INFERENCE_CONFUSION',
@@ -354,7 +354,7 @@ export class CritiqueEngine {
     const issues: CritiqueIssue[] = [];
 
     // Missing epistemic status
-    if (!truth.provenance.epistemicStatus) {
+    if (!truth.epistemicStatus) {
       issues.push({
         type: 'PROVENANCE_INCOMPLETE',
         severity: 'BLOCKING',
@@ -365,7 +365,7 @@ export class CritiqueEngine {
     }
 
     // Missing reasoning for inference
-    if (truth.provenance.epistemicStatus === 'INFERENCE' && 
+    if (truth.epistemicStatus === 'INFERENCE' && 
         !truth.provenance.reasoning) {
       issues.push({
         type: 'PROVENANCE_INCOMPLETE',
@@ -390,7 +390,7 @@ export class CritiqueEngine {
     // High impact areas (entities, core processes)
     const isHighImpact = 
       truth.type === 'ENTITY' ||
-      (truth.type === 'PROCESS' && truth.provenance.epistemicStatus === 'INFERENCE');
+      (truth.type === 'PROCESS' && truth.epistemicStatus === 'INFERENCE');
 
     if (isHighImpact && truth.confidence.score < 0.7) {
       issues.push({

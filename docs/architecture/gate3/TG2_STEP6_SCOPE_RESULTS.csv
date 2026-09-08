@@ -1,0 +1,30 @@
+scope_id,owner,route_count,status,diagnostic_count,error_count,warning_count,execution_time_ms
+"tsconfig.app-routes-workforce-management","Workforce Management",18,"PASS",0,0,0,16256
+"tsconfig.app-routes-workflows","Workflows",5,"PASS",0,0,0,9420
+"tsconfig.app-routes-waitlist","Waitlist",10,"PASS",0,0,0,13026
+"tsconfig.app-routes-training","Training",5,"PASS",0,0,0,10106
+"tsconfig.app-routes-test-debug","Test/Debug",4,"PASS",0,0,0,5409
+"tsconfig.app-routes-real-estate","Real Estate",17,"PASS",0,0,0,14395
+"tsconfig.app-routes-preschool","Preschool",20,"PASS",0,0,0,13146
+"tsconfig.app-routes-platform-finance-core","Platform Finance Core",22,"PASS",0,0,0,34766
+"tsconfig.app-routes-platform-core","Platform Core",28,"PASS",0,0,0,120010
+"tsconfig.app-routes-partner-management","Partner Management",22,"PASS",0,0,0,12637
+"tsconfig.app-routes-operations","Operations",4,"PASS",0,0,0,8443
+"tsconfig.app-routes-medical-clinic","Medical Clinic",20,"PASS",0,0,0,27360
+"tsconfig.app-routes-marketing","Marketing",1,"PASS",0,0,0,10879
+"tsconfig.app-routes-inventory","Inventory",2,"PASS",0,0,0,14223
+"tsconfig.app-routes-intelligence","Intelligence",46,"PASS",0,0,0,16049
+"tsconfig.app-routes-identity-auth","Identity/Auth",5,"PASS",0,0,0,14824
+"tsconfig.app-routes-hr-payroll","HR/Payroll",13,"PASS",0,0,0,120002
+"tsconfig.app-routes-hospital","Hospital",19,"PASS",0,0,0,109536
+"tsconfig.app-routes-healthcare-shared","Healthcare Shared",24,"PASS",0,0,0,49329
+"tsconfig.app-routes-finance-core","Finance Core",1,"PASS",0,0,0,8794
+"tsconfig.app-routes-dental","Dental",7,"PASS",0,0,0,28013
+"tsconfig.app-routes-decision-engine","Decision Engine",5,"PASS",0,0,0,13607
+"tsconfig.app-routes-dashboard-general","Dashboard General",22,"PASS",0,0,0,120003
+"tsconfig.app-routes-customer-management","Customer Management",12,"PASS",0,0,0,30418
+"tsconfig.app-routes-booking-engine","Booking Engine",5,"PASS",0,0,0,26157
+"tsconfig.app-routes-beauty-spa","Beauty/Spa",5,"PASS",0,0,0,17617
+"tsconfig.app-routes-automove","AutoMove",22,"PASS",0,0,0,120008
+"tsconfig.app-routes-ai-copilot","AI Copilot",4,"PASS",0,0,0,15486
+"tsconfig.app-routes-admin","Admin",41,"PASS",0,0,0,17192

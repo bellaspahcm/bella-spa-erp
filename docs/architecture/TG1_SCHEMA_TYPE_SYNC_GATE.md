@@ -1,6 +1,7 @@
 # TG-1 — Schema-Type Synchronization Gate
 
-**Status:** 🟡 IN PROGRESS  
+**Status:** 🔒 **COMPLETE**  
+**Evidence:** [TG-1 Root Cause Resolution](./TG1_ROOT_CAUSE_RESOLUTION.md)  
 **Date:** September 7, 2026  
 **Workstream:** BELLA TYPE-SYSTEM ROOT-CAUSE & HARDENING — Gate 3
 
@@ -398,3 +399,86 @@ WITH STALE DATABASE TYPES ✅
 ```
 
 **Gate 3 progress:** 1/4 gates implemented (TG-1 complete)
+
+
+---
+
+## Validation Evidence
+
+**Full T1-T5 protocol executed successfully:**
+
+### T1 — Healthy Aligned State ✅
+```text
+Precondition: Types freshly generated, committed
+Gate execution: PASS
+Validation: Schema and types synchronized
+```
+
+### T2 — Schema Drift Detection ✅
+```text
+Precondition: Introduced drift (removed 100 lines)
+Gate execution: BLOCK
+Validation: Drift correctly detected, actionable diagnostics provided
+```
+
+### T3 — Regeneration Recovery ✅
+```text
+Precondition: Types regenerated from canonical schema
+Gate execution: PASS
+Validation: Recovery proven, no false persistence of BLOCK
+```
+
+### T4 — Timestamp Independence ✅
+```text
+Precondition: File timestamp changed, content unchanged
+Gate execution: PASS
+Validation: Content-based verification proven (not timestamp-based)
+```
+
+### T5 — Deterministic Generation ✅
+```text
+Precondition: Same canonical schema
+Gate execution: Run 1 PASS, Run 2 PASS
+Validation: Deterministic generation proven (A == B)
+```
+
+---
+
+## Root Cause Resolution
+
+**Issue discovered:** Windows PowerShell UTF-16 encoding created false positives
+
+**Investigation:** [TG-1 Root Cause Resolution](./TG1_ROOT_CAUSE_RESOLUTION.md)
+
+**Fix:** Capture stdout directly instead of file redirection
+
+**Result:** All T1-T5 tests PASS
+
+---
+
+## Status Summary
+
+```text
+TG-1 Schema-Type Synchronization Gate
+──────────────────────────────────────
+
+Implementation            ✅ COMPLETE
+Content comparison        ✅ VALIDATED
+Timestamp independence    ✅ PROVEN
+Negative enforcement      ✅ PROVEN (BLOCK)
+Positive enforcement      ✅ PROVEN (PASS)
+Deterministic generation  ✅ PROVEN
+False-positive resistance ✅ PROVEN
+Factory integration       ✅ WIRED (npm run governance:tg1)
+
+TG-1                      🔒 COMPLETE
+```
+
+**Cleared for Factory eligibility path integration.**
+
+---
+
+**See also:**
+- [Gate 3 Overview](./GATE3_ARCHITECTURAL_HARDENING.md)
+- [TG-1 Root Cause Resolution](./TG1_ROOT_CAUSE_RESOLUTION.md)
+- [Gate 2 Closure](./GATE2_ROOT_CAUSE_PROOF_CLOSURE.md)

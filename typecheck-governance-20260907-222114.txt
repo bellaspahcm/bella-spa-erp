@@ -1,0 +1,85 @@
+
+> bella-spa-erp@0.1.0 governance:typecheck
+> npx tsx scripts/governance/scoped-typecheck.ts
+
+≡ƒöì Discovering Platform scoped configs...
+
+Found 45 Platform unit configs.
+Per-scope timeout: 30000ms
+Matrix timeout: 600000ms
+
+  Progress: 5/45 (15s elapsed)
+  Progress: 10/45 (30s elapsed)
+  Progress: 15/45 (46s elapsed)
+  Progress: 20/45 (69s elapsed)
+  Progress: 25/45 (84s elapsed)
+  Progress: 30/45 (100s elapsed)
+  Progress: 35/45 (114s elapsed)
+  Progress: 40/45 (128s elapsed)
+  Progress: 45/45 (141s elapsed)
+
+ΓòöΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòù
+Γòæ                                                                   Γòæ
+Γòæ             GATE B: Scoped Type Verification                      Γòæ
+Γòæ                                                                   Γòæ
+ΓòÜΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓò¥
+
+Γ£à PASS (45):
+
+   Γ£ô accounting                     3.8s
+   Γ£ô activity-stream                2.6s
+   Γ£ô ai-orchestrator                2.5s
+   Γ£ô asset                          2.6s
+   Γ£ô capability                     3.7s
+   Γ£ô composition                    3.1s
+   Γ£ô config-center                  2.8s
+   Γ£ô context                        2.8s
+   Γ£ô core                           3.4s
+   Γ£ô deployment                     3.0s
+   Γ£ô document-engine                2.8s
+   Γ£ô education                      2.7s
+   Γ£ô events                         2.7s
+   Γ£ô extensions                     2.7s
+   Γ£ô finance                        4.8s
+   Γ£ô healthcare                     7.0s
+   Γ£ô host                           5.1s
+   Γ£ô iam-matrix                     2.8s
+   Γ£ô integration-hub                4.3s
+   Γ£ô integration-runtime            3.5s
+   Γ£ô journey                        2.7s
+   Γ£ô knowledge                      2.8s
+   Γ£ô kpi-engine                     2.8s
+   Γ£ô lead-engine                    2.9s
+   Γ£ô logistics                      4.3s
+   Γ£ô messaging                      2.9s
+   Γ£ô metadata-engine                3.4s
+   Γ£ô migration-governance           3.4s
+   Γ£ô notification-hub               2.7s
+   Γ£ô party                          2.6s
+   Γ£ô policy-engine                  2.6s
+   Γ£ô projection-engine              2.7s
+   Γ£ô real-estate                    3.8s
+   Γ£ô registry                       2.8s
+   Γ£ô resource-engine                2.7s
+   Γ£ô retail                         3.2s
+   Γ£ô runtime                        2.7s
+   Γ£ô scheduler-registry             2.9s
+   Γ£ô sdk                            2.7s
+   Γ£ô search-engine                  2.6s
+   Γ£ô security                       2.7s
+   Γ£ô specification                  2.4s
+   Γ£ô state-machine                  2.7s
+   Γ£ô template-engine                2.5s
+   Γ£ô timeline                       2.6s
+
+ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+
+Summary:
+  PASS:    45
+  FAIL:    0
+  HOTSPOT: 0
+  ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  TOTAL:   45
+
+Γ£à Gate B: PASS
+
