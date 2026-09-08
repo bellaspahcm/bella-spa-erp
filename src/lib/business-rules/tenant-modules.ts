@@ -244,7 +244,13 @@ export function normalizeEnabledModules(value: unknown): TenantEnabledModules {
 
 export function normalizeEnabledModulesForSave(value: unknown): TenantEnabledModules {
   const modules = normalizeEnabledModules(value);
-  if (modules.babycare || modules.beauty_spa || modules.industrial_cleaning || modules.real_estate || modules.bella_auto || modules.bella_healthcare || modules.bella_education) return modules;
+  console.log('[normalizeEnabledModulesForSave] Input:', value);
+  console.log('[normalizeEnabledModulesForSave] Normalized:', modules);
+  if (modules.babycare || modules.beauty_spa || modules.industrial_cleaning || modules.real_estate || modules.bella_auto || modules.bella_healthcare || modules.bella_education) {
+    console.log('[normalizeEnabledModulesForSave] Returning modules as-is');
+    return modules;
+  }
+  console.log('[normalizeEnabledModulesForSave] Fallback to babycare');
   return {
     ...modules,
     babycare: true,
@@ -253,6 +259,8 @@ export function normalizeEnabledModulesForSave(value: unknown): TenantEnabledMod
 
 export function getDefaultTenantModuleKey(value: unknown, tenantName?: string | null): TenantPrimaryBusinessModuleKey {
   const modules = normalizeEnabledModulesForSave(value);
+  console.log('[getDefaultTenantModuleKey] modules:', modules);
+  console.log('[getDefaultTenantModuleKey] tenantName:', tenantName);
   if (modules.bella_healthcare) return 'bella_healthcare';
   if (modules.bella_education) return 'bella_education';
   if (modules.bella_auto) return 'bella_auto';
