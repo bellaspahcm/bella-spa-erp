@@ -254,6 +254,7 @@ export function normalizeEnabledModulesForSave(value: unknown): TenantEnabledMod
 export function getDefaultTenantModuleKey(value: unknown, tenantName?: string | null): TenantPrimaryBusinessModuleKey {
   const modules = normalizeEnabledModulesForSave(value);
   if (modules.bella_healthcare) return 'bella_healthcare';
+  if (modules.bella_preschool) return 'bella_preschool';
   if (modules.bella_auto) return 'bella_auto';
   if (modules.real_estate) return 'real_estate';
   if (modules.industrial_cleaning) return 'industrial_cleaning';
