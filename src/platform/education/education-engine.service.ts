@@ -188,7 +188,7 @@ export class EducationEngineService {
     const isDuplicate = txResult.isDuplicate;
     const finalEnrollmentId = txResult.enrollmentId;
 
-    const enrollment = await this.repository.findEnrollmentById(finalEnrollmentId, input.tenantId);
+    let enrollment = await this.repository.findEnrollmentById(finalEnrollmentId, input.tenantId);
     if (!enrollment) {
       throw new Error(`Failed to load enrollment ${finalEnrollmentId}`);
     }
