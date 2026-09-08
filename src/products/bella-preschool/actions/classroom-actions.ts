@@ -109,7 +109,7 @@ export async function getClassroomAction(
       ...classroom,
       enrolled_students: enrolledStudents,
       enrollment_count: enrolledStudents.length,
-    };
+    } as unknown as ClassroomDetail;
 
     return { success: true, data: classroomDetail };
   } catch (error) {

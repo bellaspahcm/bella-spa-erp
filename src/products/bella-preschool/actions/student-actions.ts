@@ -140,7 +140,7 @@ export async function getStudentAction(
       ...student,
       current_classroom: activeEnrollment?.classroom || undefined,
       guardians: student.guardians || [],
-    };
+    } as StudentDetail;
 
     return { success: true, data: studentDetail };
   } catch (error) {
@@ -220,7 +220,7 @@ export async function createStudentAction(input: {
 
       const { error: guardiansError } = await supabase
         .from('preschool_student_guardians')
-        .insert(guardianRecords);
+        .insert(guardianRecords as any);
 
       if (guardiansError) {
         // Rollback student creation would require transaction
@@ -232,7 +232,7 @@ export async function createStudentAction(input: {
       }
     }
 
-    return { success: true, data: student };
+    return { success: true, data: student as PreschoolStudent };
   } catch (error) {
     return {
       success: false,
@@ -277,7 +277,7 @@ export async function updateStudentAction(
 
     const { data: student, error } = await supabase
       .from('preschool_students')
-      .update(updates)
+      .update(updates as any)
       .eq('id', studentId)
       .eq('tenant_id', user.tenant_id)
       .is('deleted_at', null)
@@ -288,7 +288,7 @@ export async function updateStudentAction(
       return { success: false, error: error.message };
     }
 
-    return { success: true, data: student };
+    return { success: true, data: student as PreschoolStudent };
   } catch (error) {
     return {
       success: false,

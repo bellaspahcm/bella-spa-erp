@@ -110,6 +110,14 @@ export interface StudentDetail extends PreschoolStudent {
 export interface ClassroomDetail extends PreschoolClassroom {
   enrolled_students?: PreschoolStudent[];
   enrollment_count?: number;
+  lead_teacher?: {
+    id: string;
+    full_name: string;
+  };
+  assistant_teacher?: {
+    id: string;
+    full_name: string;
+  };
 }
 
 export interface AttendanceDetail extends PreschoolAttendance {

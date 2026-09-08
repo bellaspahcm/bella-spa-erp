@@ -77,7 +77,7 @@ export async function listEnrollmentsAction(filters?: {
       return { success: false, error: error.message };
     }
 
-    return { success: true, data: enrollments || [] };
+    return { success: true, data: (enrollments || []) as any };
   } catch (error) {
     return {
       success: false,
@@ -146,7 +146,7 @@ export async function getEnrollmentAction(
       return { success: false, error: 'Enrollment not found' };
     }
 
-    return { success: true, data: enrollment };
+    return { success: true, data: enrollment as any };
   } catch (error) {
     return {
       success: false,
@@ -206,7 +206,7 @@ export async function updateEnrollmentStatusAction(
       return { success: false, error: error.message };
     }
 
-    return { success: true, data: enrollment };
+    return { success: true, data: enrollment as any };
   } catch (error) {
     return {
       success: false,

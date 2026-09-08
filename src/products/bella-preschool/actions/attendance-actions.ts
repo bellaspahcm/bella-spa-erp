@@ -49,14 +49,19 @@ export async function listAttendanceAction(filters?: {
 
     if (filters?.classroom_id) {
       // Need to join through enrollments to filter by classroom
-      query = query.in(
-        'student_id',
-        supabase
-          .from('preschool_enrollments')
-          .select('student_id')
-          .eq('classroom_id', filters.classroom_id)
-          .eq('status', 'active')
-      );
+      const { data: enrollments } = await supabase
+        .from('preschool_enrollments')
+        .select('student_id')
+        .eq('classroom_id', filters.classroom_id)
+        .eq('status', 'active');
+      
+      const studentIds = enrollments?.map(e => e.student_id) || [];
+      if (studentIds.length > 0) {
+        query = query.in('student_id', studentIds);
+      } else {
+        // No enrollments, return empty
+        return { success: true, data: [] };
+      }
     }
 
     query = query.order('attendance_date', { ascending: false });
@@ -158,7 +163,7 @@ export async function checkInStudentAction(input: {
       return { success: false, error: error.message };
     }
 
-    return { success: true, data: attendance };
+    return { success: true, data: attendance as PreschoolAttendance };
   } catch (error) {
     return {
       success: false,
@@ -193,7 +198,7 @@ export async function checkOutStudentAction(input: {
     // Find today's attendance record
     const { data: attendance } = await supabase
       .from('preschool_attendance')
-      .select('id, status, check_in_time')
+      .select('id, status, check_in_time, notes')
       .eq('student_id', input.student_id)
       .eq('attendance_date', today)
       .eq('tenant_id', user.tenant_id)
@@ -252,7 +257,7 @@ export async function checkOutStudentAction(input: {
       return { success: false, error: error.message };
     }
 
-    return { success: true, data: updated };
+    return { success: true, data: updated as PreschoolAttendance };
   } catch (error) {
     return {
       success: false,
@@ -294,7 +299,7 @@ export async function getAttendanceStateAction(input: {
       return { success: false, error: error.message };
     }
 
-    return { success: true, data: attendance };
+    return { success: true, data: attendance as PreschoolAttendance };
   } catch (error) {
     return {
       success: false,
@@ -357,7 +362,7 @@ export async function markAbsentAction(input: {
       return { success: false, error: error.message };
     }
 
-    return { success: true, data: attendance };
+    return { success: true, data: attendance as PreschoolAttendance };
   } catch (error) {
     return {
       success: false,
