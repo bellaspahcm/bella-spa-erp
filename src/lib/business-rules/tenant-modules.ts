@@ -244,7 +244,7 @@ export function normalizeEnabledModules(value: unknown): TenantEnabledModules {
 
 export function normalizeEnabledModulesForSave(value: unknown): TenantEnabledModules {
   const modules = normalizeEnabledModules(value);
-  if (modules.babycare || modules.beauty_spa || modules.industrial_cleaning || modules.real_estate || modules.bella_auto || modules.bella_healthcare) return modules;
+  if (modules.babycare || modules.beauty_spa || modules.industrial_cleaning || modules.real_estate || modules.bella_auto || modules.bella_healthcare || modules.bella_education) return modules;
   return {
     ...modules,
     babycare: true,
