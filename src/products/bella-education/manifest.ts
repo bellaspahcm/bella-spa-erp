@@ -7,29 +7,19 @@
  * @module src/products/bella-education/manifest
  */
 
-export interface ProductManifest {
-  id: string;
-  name: string;
-  version: string;
-  themeKey: string;
-  capabilities: string[];
-  workflows: string[];
-  menus: Array<{ id: string; label: string; href: string; icon?: string }>;
-}
+import type { VerticalManifest } from '@/platform/registry/vertical-registry';
 
-export const bellaEducationManifest: ProductManifest = {
-  id: 'bella-education',
+export const bellaEducationManifest: VerticalManifest = {
+  key: 'bella_education',
   name: 'Bella Education OS V1',
   version: '1.0.0',
   themeKey: 'classic-academic-blue',
-  capabilities: [
+  defaultRoute: '/dashboard/education',
+  enabledCapabilities: [
     'course_catalog_query',
     'student_enrollment_command',
     'attendance_checkpoint_command',
     'grade_reporting_command'
-  ],
-  workflows: [
-    'student_academic_lifecycle'
   ],
   menus: [
     { id: 'courses', label: 'Chương Trình Học', href: '/dashboard/education/courses', icon: 'BookOpen' },
