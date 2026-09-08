@@ -12,8 +12,8 @@
  */
 
 import { ITemporalContract } from '../../../platform/healthcare/contracts/temporal-engine.contract';
-import { IAuditComplianceContract, AuditEntryInputDTO } from '../../../platform/healthcare/contracts/audit-compliance.contract';
-import { ICdsContract } from '../../../platform/healthcare/contracts/cds-engine.contract';
+import { IClinicalAuditContract, IRecordAuditInput } from '../../../platform/healthcare/contracts/clinical-audit.contract';
+import { CdsEngineContract } from '../../../platform/healthcare/contracts/cds-engine.contract';
 
 export interface DentalChairReservationDTO {
   reservationId?: string;
@@ -65,8 +65,8 @@ const PRODUCT_CHAIR_RESERVATIONS = new Map<string, DentalChairReservationResultD
 export class DentalChairProductService {
   constructor(
     private readonly temporalContract?: ITemporalContract,
-    private readonly auditContract?: IAuditComplianceContract,
-    private readonly cdsContract?: ICdsContract
+    private readonly auditContract?: IClinicalAuditContract,
+    private readonly cdsContract?: CdsEngineContract
   ) {}
 
   /**
@@ -144,27 +144,31 @@ export class DentalChairProductService {
     let sha256Fingerprint = 'SHA256:DENTAL_PROCEDURE_EVIDENCE_FINGERPRINT_DEFAULT';
 
     if (this.auditContract) {
-      const auditInput: AuditEntryInputDTO = {
+      const auditInput: IRecordAuditInput = {
         tenantId: dto.tenantId,
         encounterId: dto.encounterId,
         patientId: dto.patientId,
-        actorId: dto.practitionerId,
-        actorRole: 'DENTIST',
-        action: 'DENTAL_PROCEDURE_COMPLETE',
-        resourceType: 'DENTAL_PROCEDURE',
-        resourceId: dto.reservationId,
-        reason: dto.clinicalNotes,
-        clinicalDataHash: 'SHA256:' + Buffer.from(`${dto.reservationId}:${dto.procedureCode}`).toString('hex'),
-        decisionSupportSummary: {
-          safetyEvaluationStatus: 'PASSED',
-          absoluteBlockTriggered: false
+        performerId: dto.practitionerId,
+        performerRole: 'DENTIST',
+        actionType: 'DENTAL_PROCEDURE_COMPLETE',
+        metadata: {
+          resourceType: 'DENTAL_PROCEDURE',
+          resourceId: dto.reservationId,
+          reason: dto.clinicalNotes,
+          clinicalDataHash: 'SHA256:' + Buffer.from(`${dto.reservationId}:${dto.procedureCode}`).toString('hex'),
+          decisionSupportSummary: {
+            safetyEvaluationStatus: 'PASSED',
+            absoluteBlockTriggered: false
+          },
         },
-        governedRuleChecksum: 'SHA256:DENTAL_PROCEDURE_RULE_V1.0'
+        h10RuleChecksum: 'SHA256:DENTAL_PROCEDURE_RULE_V1.0'
       };
 
       const auditRecord = await this.auditContract.recordAuditEntry(auditInput);
-      evidencePackageId = auditRecord.id;
-      sha256Fingerprint = auditRecord.sha256Fingerprint;
+      if (auditRecord.data) {
+        evidencePackageId = auditRecord.data.id;
+        sha256Fingerprint = auditRecord.data.id; // Using audit ID as fingerprint for now
+      }
     }
 
     return {
