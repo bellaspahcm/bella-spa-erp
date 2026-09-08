@@ -27,6 +27,12 @@ export class CourseCatalogProductService {
     this.assertCapability('course_catalog_query');
     if (!tenantId) throw new Error('TENANT_ISOLATION_VIOLATION: tenantId is required');
 
-    return this.courseContract.listCourses(tenantId);
+    const result = await this.courseContract.listCourses({ tenantId });
+    
+    if (!result.success || !result.data) {
+      throw new Error(result.error || 'Failed to get courses');
+    }
+
+    return result.data;
   }
 }

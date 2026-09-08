@@ -13,8 +13,9 @@ import { bellaEducationManifest } from '../manifest';
 export interface MarkAttendanceDTO {
   tenantId: string;
   enrollmentId: string;
-  status: 'present' | 'absent' | 'excused';
-  rollCallTime?: string;
+  sessionDate: string;
+  status: 'present' | 'absent' | 'late' | 'excused';
+  notes?: string;
 }
 
 export class AttendanceProductService {
@@ -44,12 +45,19 @@ export class AttendanceProductService {
     if (!dto.tenantId) throw new Error('TENANT_ISOLATION_VIOLATION: tenantId is required');
     if (!dto.enrollmentId) throw new Error('ENROLLMENT_BOUNDARY_VIOLATION: enrollmentId is required');
 
-    return this.attendanceContract.recordAttendance({
+    const result = await this.attendanceContract.recordAttendance({
       tenantId: dto.tenantId,
       enrollmentId: dto.enrollmentId,
+      sessionDate: dto.sessionDate,
       status: dto.status,
-      rollCallTime: dto.rollCallTime
+      notes: dto.notes
     });
+
+    if (!result.success || !result.data) {
+      throw new Error(result.error || 'Failed to record attendance');
+    }
+
+    return result.data;
   }
 
   /**
@@ -60,6 +68,15 @@ export class AttendanceProductService {
     if (!tenantId) throw new Error('TENANT_ISOLATION_VIOLATION: tenantId is required');
     if (!enrollmentId) throw new Error('ENROLLMENT_BOUNDARY_VIOLATION: enrollmentId is required');
 
-    return this.attendanceContract.getAttendanceHistory(tenantId, enrollmentId);
+    const result = await this.attendanceContract.getAttendance({
+      tenantId,
+      enrollmentId
+    });
+
+    if (!result.success || !result.data) {
+      throw new Error(result.error || 'Failed to get attendance history');
+    }
+
+    return result.data;
   }
 }

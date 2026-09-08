@@ -14,10 +14,10 @@ import { bellaEducationManifest } from '../manifest';
 
 export interface EnrollStudentDTO {
   tenantId: string;
-  studentPartyId: string;
+  studentId: string;
   courseId: string;
-  requestId: string;
-  overrideJustification?: string;
+  academicYear: string;
+  term: string;
   tuitionFeeAmount?: number; // Optional fee to post to Ledger
 }
 
@@ -49,17 +49,23 @@ export class EnrollmentProductService {
     this.assertWorkflow('student_academic_lifecycle');
 
     if (!dto.tenantId) throw new Error('TENANT_ISOLATION_VIOLATION: tenantId is required');
-    if (!dto.studentPartyId) throw new Error('STUDENT_BOUNDARY_VIOLATION: studentPartyId is required');
+    if (!dto.studentId) throw new Error('STUDENT_BOUNDARY_VIOLATION: studentId is required');
     if (!dto.courseId) throw new Error('COURSE_BOUNDARY_VIOLATION: courseId is required');
 
     // 1. Perform student enrollment via public contract
-    const enrollment = await this.enrollmentContract.enrollStudent({
+    const result = await this.enrollmentContract.enrollStudent({
       tenantId: dto.tenantId,
-      studentPartyId: dto.studentPartyId,
+      studentId: dto.studentId,
       courseId: dto.courseId,
-      requestId: dto.requestId,
-      overrideJustification: dto.overrideJustification
+      academicYear: dto.academicYear,
+      term: dto.term
     });
+
+    if (!result.success || !result.data) {
+      throw new Error(result.error || 'Failed to enroll student');
+    }
+
+    const enrollment = result.data;
 
     // 2. Post enrollment tuition fees to Ledger if specified
     if (dto.tuitionFeeAmount && dto.tuitionFeeAmount > 0) {

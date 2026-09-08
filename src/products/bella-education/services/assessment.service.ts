@@ -46,7 +46,7 @@ export class AssessmentProductService {
     if (!dto.tenantId) throw new Error('TENANT_ISOLATION_VIOLATION: tenantId is required');
     if (!dto.enrollmentId) throw new Error('ENROLLMENT_BOUNDARY_VIOLATION: enrollmentId is required');
 
-    return this.assessmentContract.recordScore({
+    const result = await this.assessmentContract.recordScore({
       tenantId: dto.tenantId,
       enrollmentId: dto.enrollmentId,
       scoreType: dto.scoreType,
@@ -54,16 +54,31 @@ export class AssessmentProductService {
       weight: dto.weight,
       occurredAt: dto.occurredAt
     });
+
+    if (!result.success || !result.data) {
+      throw new Error(result.error || 'Failed to record score');
+    }
+
+    return result.data;
   }
 
   /**
    * Calculates GPA for student enrollment.
    */
-  async calculateGpa(tenantId: string, enrollmentId: string): Promise<number> {
+  async calculateGpa(tenantId: string, studentId: string): Promise<number> {
     this.assertCapability('grade_reporting_command');
     if (!tenantId) throw new Error('TENANT_ISOLATION_VIOLATION: tenantId is required');
-    if (!enrollmentId) throw new Error('ENROLLMENT_BOUNDARY_VIOLATION: enrollmentId is required');
+    if (!studentId) throw new Error('STUDENT_BOUNDARY_VIOLATION: studentId is required');
 
-    return this.assessmentContract.calculateGpa(tenantId, enrollmentId);
+    const result = await this.assessmentContract.calculateGPA({
+      tenantId,
+      studentId
+    });
+
+    if (!result.success || !result.data) {
+      throw new Error(result.error || 'Failed to calculate GPA');
+    }
+
+    return result.data.gpa;
   }
 }
