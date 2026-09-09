@@ -59,7 +59,7 @@
     "worker:finance-outbox": "npx tsx src/platform/integration-hub/finance-outbox-worker.cli.ts",
     "test:n1": "npx tsx scripts/test-n1-failure-isolation.ts",
     "realestate:architecture": "jest src/products/bella-land/__tests__/bella-land-architecture.test.ts --runInBand",
-    "realestate:conformance": "jest src/products/bella-land/__tests__/bella-land-conformance.integration.test.ts src/platform/real-estate/__tests__/real-estate-kernel.integration.test.ts --runInBand",
+    "realestate:conformance": "jest src/products/bella-land/__tests__/ src/platform/real-estate/__tests__/real-estate-kernel.integration.test.ts --runInBand",
     "realestate:verify": "npm run realestate:architecture && npm run realestate:conformance",
     "education:architecture": "jest src/products/bella-education/__tests__/bella-education-architecture.test.ts --runInBand",
     "education:conformance": "jest src/products/bella-education/__tests__/bella-education-conformance.integration.test.ts src/platform/education/__tests__/ --runInBand",
