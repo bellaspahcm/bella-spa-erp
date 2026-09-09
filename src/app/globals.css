@@ -4110,11 +4110,11 @@ html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_welln
   --secondary-foreground: #ffffff;
   --accent: #d97706; /* Amber Gold - accent color for highlights */
   --accent-foreground: #ffffff;
-  --background: #fffbeb; /* Warm Cream background */
+  --background: #f8fafc; /* Clean Slate-50 unified background */
   --foreground: #0f172a; /* Slate-900 text */
   --card: #ffffff;
   --card-foreground: #0f172a;
-  --muted: #fef3c7; /* Amber-100 */
+  --muted: #f1f5f9; /* Slate-100 */
   --muted-foreground: #334155;
   --border: rgba(217, 119, 6, 0.24); /* Amber border */
   --input: rgba(217, 119, 6, 0.22); /* Amber input border */
@@ -4122,11 +4122,11 @@ html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_welln
 }
 
 html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) body {
-  background-color: #fffbeb;
+  background-color: #f8fafc;
   background-image:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.74) 0%, rgba(255, 251, 235, 0.96) 38%, rgba(254, 243, 199, 0.86) 100%),
-    radial-gradient(ellipse 70% 46% at 8% 0%, rgba(30, 58, 138, 0.08) 0%, transparent 58%),
-    radial-gradient(ellipse 58% 42% at 100% 14%, rgba(217, 119, 6, 0.12) 0%, transparent 55%);
+    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%),
+    radial-gradient(ellipse 70% 46% at 8% 0%, rgba(30, 58, 138, 0.04) 0%, transparent 58%),
+    radial-gradient(ellipse 58% 42% at 100% 14%, rgba(217, 119, 6, 0.05) 0%, transparent 55%);
 }
 
 html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) [class*="bg-pink-"],
