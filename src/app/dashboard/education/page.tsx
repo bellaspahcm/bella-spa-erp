@@ -28,6 +28,7 @@ import {
   MessageSquare,
   ChevronDown,
   Calendar,
+  CalendarCheck,
   Sparkles,
   Users,
   Baby,
