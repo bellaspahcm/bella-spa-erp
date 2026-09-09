@@ -57,7 +57,7 @@ import {
 export default function EducationDashboardPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedAcademicYear, setSelectedAcademicYear] = useState('2024 - 2025');
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState('2026 - 2027');
   const [selectedRevenuePeriod, setSelectedRevenuePeriod] = useState('6 tháng gần nhất');
   const [hoveredRevenueMonth, setHoveredRevenueMonth] = useState<string | null>('Tháng 5');
 
@@ -149,7 +149,7 @@ export default function EducationDashboardPage() {
       value: '96%',
       change: '+3%',
       comparison: 'so với tháng trước',
-      icon: <GraduationCap className="w-5 h-5 text-amber-500" />,
+      icon: <CalendarCheck className="w-5 h-5 text-amber-500" />,
       iconBg: 'bg-amber-100 dark:bg-amber-950/50',
     },
     {
@@ -246,12 +246,12 @@ export default function EducationDashboardPage() {
     { day: 'T6', color: 'bg-purple-400 text-white', dishes: 'Mì trứng, Trứng hấp, Thanh long' },
   ];
 
-  // Announcements Data
+  // Announcements Data (Synchronized to 2026)
   const announcements = [
-    { id: 1, title: 'Thông báo nghỉ lễ 30/4 - 1/5', date: '25/04/2025', iconColor: 'text-amber-500' },
-    { id: 2, title: 'Kế hoạch dã ngoại tháng 5', date: '22/04/2025', iconColor: 'text-sky-500' },
-    { id: 3, title: 'Hội thảo nuôi dạy trẻ tích cực', date: '18/04/2025', iconColor: 'text-rose-500' },
-    { id: 4, title: 'Tuyển sinh năm học 2025 - 2026', date: '10/04/2025', iconColor: 'text-amber-400' },
+    { id: 1, title: 'Thông báo nghỉ lễ Quốc Khánh 2/9', date: '25/08/2026', iconColor: 'text-amber-500' },
+    { id: 2, title: 'Kế hoạch dã ngoại tháng 9', date: '22/08/2026', iconColor: 'text-sky-500' },
+    { id: 3, title: 'Hội thảo nuôi dạy trẻ tích cực', date: '18/08/2026', iconColor: 'text-rose-500' },
+    { id: 4, title: 'Tuyển sinh năm học 2026 - 2027', date: '10/08/2026', iconColor: 'text-amber-400' },
   ];
 
   return (
@@ -577,7 +577,95 @@ export default function EducationDashboardPage() {
         </div>
       </div>
 
-      {/* ── 3. ROW OF 5 KPI SUMMARY CARDS ── */}
+      {/* ── 2.5 LAYER 1 — NOW: OPERATIONAL COMMAND CENTER (Cần xử lý hôm nay) ── */}
+      <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shadow-sm space-y-3.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500"></span>
+            </span>
+            <h2 className="text-sm sm:text-base font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+              <span>Cần xử lý hôm nay</span>
+              <span className="text-[11px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/80 border border-rose-200/60 dark:border-rose-900 px-2.5 py-0.5 rounded-full lowercase">
+                5 mục cần chú ý
+              </span>
+            </h2>
+          </div>
+          <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 hidden sm:inline-block">
+            Lớp 1: Command Center • Cập nhật realtime
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <Link
+            href="/dashboard/education/attendance"
+            className="flex items-center gap-3 p-3.5 rounded-2xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/70 dark:border-amber-900/60 hover:bg-amber-100/90 dark:hover:bg-amber-900/60 transition-all group cursor-pointer shadow-2xs"
+          >
+            <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+              <CalendarCheck className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-black text-amber-950 dark:text-amber-200 truncate">3 trẻ chưa điểm danh</p>
+              <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400 group-hover:underline">Điểm danh ngay →</span>
+            </div>
+          </Link>
+
+          <Link
+            href="/dashboard/education/care"
+            className="flex items-center gap-3 p-3.5 rounded-2xl bg-sky-50/80 dark:bg-sky-950/40 border border-sky-200/70 dark:border-sky-900/60 hover:bg-sky-100/90 dark:hover:bg-sky-900/60 transition-all group cursor-pointer shadow-2xs"
+          >
+            <div className="w-8 h-8 rounded-xl bg-sky-500 text-white flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+              <FileText className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-black text-sky-950 dark:text-sky-200 truncate">2 đơn nghỉ chờ duyệt</p>
+              <span className="text-[11px] font-bold text-sky-700 dark:text-sky-400 group-hover:underline">Duyệt ngay →</span>
+            </div>
+          </Link>
+
+          <Link
+            href="/dashboard/education/finance"
+            className="flex items-center gap-3 p-3.5 rounded-2xl bg-rose-50/80 dark:bg-rose-950/40 border border-rose-200/70 dark:border-rose-900/60 hover:bg-rose-100/90 dark:hover:bg-rose-900/60 transition-all group cursor-pointer shadow-2xs"
+          >
+            <div className="w-8 h-8 rounded-xl bg-rose-500 text-white flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+              <CreditCard className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-black text-rose-950 dark:text-rose-200 truncate">1 học phí quá hạn</p>
+              <span className="text-[11px] font-bold text-rose-700 dark:text-rose-400 group-hover:underline">Gửi nhắc phí →</span>
+            </div>
+          </Link>
+
+          <Link
+            href="/dashboard/education/care"
+            className="flex items-center gap-3 p-3.5 rounded-2xl bg-red-50/80 dark:bg-red-950/40 border border-red-200/70 dark:border-red-900/60 hover:bg-red-100/90 dark:hover:bg-red-900/60 transition-all group cursor-pointer shadow-2xs"
+          >
+            <div className="w-8 h-8 rounded-xl bg-red-500 text-white flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+              <Heart className="w-4 h-4 animate-pulse" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-black text-red-950 dark:text-red-200 truncate">2 sự cố sức khỏe</p>
+              <span className="text-[11px] font-bold text-red-700 dark:text-red-400 group-hover:underline">Theo dõi bé →</span>
+            </div>
+          </Link>
+
+          <Link
+            href="/dashboard/education/communication"
+            className="flex items-center gap-3 p-3.5 rounded-2xl bg-purple-50/80 dark:bg-purple-950/40 border border-purple-200/70 dark:border-purple-900/60 hover:bg-purple-100/90 dark:hover:bg-purple-900/60 transition-all group cursor-pointer shadow-2xs"
+          >
+            <div className="w-8 h-8 rounded-xl bg-purple-500 text-white flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+              <MessageSquare className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-black text-purple-950 dark:text-purple-200 truncate">4 yêu cầu phụ huynh</p>
+              <span className="text-[11px] font-bold text-purple-700 dark:text-purple-400 group-hover:underline">Phản hồi →</span>
+            </div>
+          </Link>
+        </div>
+      </div>
+
+      {/* ── 3. ROW OF 5 KPI SUMMARY CARDS (LAYER 2: HEALTH) ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {kpiStats.map((kpi) => (
           <div 
@@ -586,7 +674,7 @@ export default function EducationDashboardPage() {
           >
             <div className="flex items-start justify-between">
               <div>
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400 block mb-1">
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">
                   {kpi.label}
                 </span>
                 <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
@@ -603,7 +691,7 @@ export default function EducationDashboardPage() {
                 <TrendingUp className="w-3 h-3 mr-0.5 inline" />
                 {kpi.change}
               </span>
-              <span className="text-slate-400 dark:text-slate-500 truncate">
+              <span className="text-slate-600 dark:text-slate-300 font-semibold truncate">
                 {kpi.comparison}
               </span>
             </div>
@@ -625,10 +713,10 @@ export default function EducationDashboardPage() {
               <select
                 value={selectedAcademicYear}
                 onChange={(e) => setSelectedAcademicYear(e.target.value)}
-                className="appearance-none bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 rounded-xl px-3 py-1.5 pr-7 focus:outline-none cursor-pointer"
+                className="appearance-none bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 rounded-xl px-3 py-1.5 pr-7 focus:outline-none cursor-pointer"
               >
-                <option>Năm học 2024 - 2025</option>
-                <option>Năm học 2023 - 2024</option>
+                <option>Năm học 2026 - 2027</option>
+                <option>Năm học 2025 - 2026</option>
               </select>
               <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
@@ -656,7 +744,7 @@ export default function EducationDashboardPage() {
               })}
             </div>
             {/* Class Labels Grid - 100% pixel aligned with bars */}
-            <div className="grid grid-cols-8 gap-2 px-2 text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+            <div className="grid grid-cols-8 gap-2 px-2 text-[11px] font-bold text-slate-700 dark:text-slate-200">
               {classHeadcounts.map((item) => (
                 <span key={item.classId} className="text-center truncate" title={item.name}>
                   {item.name}
@@ -687,7 +775,7 @@ export default function EducationDashboardPage() {
                 <span className="text-lg font-extrabold text-slate-900 dark:text-white leading-none">
                   156
                 </span>
-                <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">
+                <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300">
                   học sinh
                 </span>
               </div>
@@ -702,7 +790,7 @@ export default function EducationDashboardPage() {
                       className="w-2.5 h-2.5 rounded-full shrink-0" 
                       style={{ backgroundColor: item.color }} 
                     />
-                    <span className="text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                    <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-200">
                       {item.label}
                     </span>
                   </div>
@@ -741,12 +829,12 @@ export default function EducationDashboardPage() {
                     <h4 className="font-bold text-slate-900 dark:text-white truncate">
                       {act.name}
                     </h4>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                    <p className="text-[11px] font-medium text-slate-600 dark:text-slate-300 line-clamp-1">
                       {act.action}
                     </p>
                   </div>
                 </div>
-                <span className="text-[10px] font-medium text-slate-400 shrink-0 pt-0.5">
+                <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 shrink-0 pt-0.5">
                   {act.time}
                 </span>
               </div>
