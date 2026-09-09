@@ -802,9 +802,9 @@ export default function EducationDashboardPage() {
                     >
                       {/* Tooltip directly 8px above top of this specific bar */}
                       {isHovered && (
-                        <div className="absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 z-30 bg-slate-900/95 dark:bg-slate-800/95 text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-xl border border-slate-700/80 whitespace-nowrap animate-in fade-in zoom-in-95 duration-150 pointer-events-none flex items-center gap-1.5">
-                          <span className="text-slate-200">{item.month}:</span>
-                          <span className="text-emerald-400 font-extrabold">{item.value} triệu VNĐ</span>
+                        <div className="absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 z-30 bg-[#0B0F19] text-white px-3.5 py-1.5 rounded-full border border-slate-800/80 whitespace-nowrap animate-in fade-in zoom-in-95 duration-150 pointer-events-none text-center flex flex-col items-center justify-center [box-shadow:0_4px_16px_rgba(0,0,0,0.5)]">
+                          <span className="text-xs font-extrabold text-white leading-tight">{item.month}</span>
+                          <span className="text-xs font-black text-emerald-400 leading-tight">{item.value} triệu VNĐ</span>
                         </div>
                       )}
                     </div>
