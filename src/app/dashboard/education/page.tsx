@@ -635,12 +635,12 @@ export default function EducationDashboardPage() {
           </div>
 
           {/* Bar Chart Graphic */}
-          <div className="pt-4 pb-2">
-            <div className="h-44 w-full flex items-end justify-between gap-2 px-2 border-b border-slate-200 dark:border-slate-800">
+          <div className="pt-4 space-y-2">
+            <div className="h-44 w-full grid grid-cols-8 gap-2 px-2 border-b border-slate-200 dark:border-slate-800">
               {classHeadcounts.map((item) => {
                 const heightPercentage = Math.round((item.count / 40) * 100);
                 return (
-                  <div key={item.classId} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end">
+                  <div key={item.classId} className="flex flex-col items-center gap-1 group h-full justify-end">
                     <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 opacity-80 group-hover:opacity-100 transition-opacity">
                       {item.count}
                     </span>
@@ -655,10 +655,10 @@ export default function EducationDashboardPage() {
                 );
               })}
             </div>
-            {/* Class Labels */}
-            <div className="flex items-center justify-between gap-1 pt-2 px-1 text-[10px] font-medium text-slate-500 dark:text-slate-400">
+            {/* Class Labels Grid - 100% pixel aligned with bars */}
+            <div className="grid grid-cols-8 gap-2 px-2 text-[10px] font-semibold text-slate-500 dark:text-slate-400">
               {classHeadcounts.map((item) => (
-                <span key={item.classId} className="flex-1 text-center truncate" title={item.name}>
+                <span key={item.classId} className="text-center truncate" title={item.name}>
                   {item.name}
                 </span>
               ))}
@@ -779,8 +779,9 @@ export default function EducationDashboardPage() {
             </div>
           </div>
 
-          <div className="pt-2">
-            <div className="h-44 w-full flex items-end justify-between gap-3 px-2 border-b border-slate-200 dark:border-slate-800 relative">
+          <div className="pt-2 space-y-2">
+            {/* Bars Grid */}
+            <div className="h-44 w-full grid grid-cols-6 gap-2 px-2 border-b border-slate-200 dark:border-slate-800 relative">
               {monthlyRevenue.map((item) => {
                 const heightPercentage = Math.round((item.value / 400) * 100);
                 const isHovered = hoveredRevenueMonth === item.month;
@@ -789,13 +790,13 @@ export default function EducationDashboardPage() {
                   <div 
                     key={item.month} 
                     onMouseEnter={() => setHoveredRevenueMonth(item.month)}
-                    className="flex-1 flex flex-col items-center gap-1 group h-full justify-end relative cursor-pointer"
+                    className="flex flex-col items-center group h-full justify-end relative cursor-pointer"
                   >
-                    {/* Tooltip on highlighted bar (Tháng 5 in reference) */}
+                    {/* Tooltip on highlighted / hovered bar */}
                     {isHovered && (
-                      <div className="absolute -top-9 z-20 bg-slate-800 text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow-lg whitespace-nowrap animate-fade-in">
-                        {item.month}<br />
-                        <span className="text-emerald-400">{item.value} triệu VNĐ</span>
+                      <div className="absolute -top-11 z-30 bg-slate-900 dark:bg-slate-800 text-white text-[10px] font-bold px-2.5 py-1 rounded-xl shadow-xl border border-slate-700 whitespace-nowrap animate-in fade-in zoom-in-95 duration-150 pointer-events-none text-center">
+                        <span>{item.month}</span>
+                        <span className="block text-emerald-400 font-extrabold">{item.value} triệu VNĐ</span>
                       </div>
                     )}
 
@@ -811,10 +812,10 @@ export default function EducationDashboardPage() {
                 );
               })}
             </div>
-            {/* Month Labels */}
-            <div className="flex items-center justify-between gap-1 pt-2 px-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+            {/* Month Labels Grid - 100% pixel aligned with bars */}
+            <div className="grid grid-cols-6 gap-2 px-2 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
               {monthlyRevenue.map((item) => (
-                <span key={item.month} className="flex-1 text-center">
+                <span key={item.month} className="text-center truncate">
                   {item.month}
                 </span>
               ))}
