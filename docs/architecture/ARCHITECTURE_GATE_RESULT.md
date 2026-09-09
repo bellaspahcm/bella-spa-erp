@@ -1,88 +1,140 @@
-# ARCHITECTURE GATE RESULT — BELLA EDUCATION OS (P3.2 CLASSROOM MANAGEMENT)
+# Architecture Gate Result: P9.0 Preschool Facilities & Asset Maintenance Domain Boundary & Safety Contract
 
-**Date:** 2026-09-09  
-**Target Feature:** P3.2 Classroom Management (Bella Education OS V1)  
-**Status:** `🔒 P3.2 CLASSROOM MANAGEMENT — FIELD VERIFIED + CLOSED`  
+> **Status**: `APPROVED + LOCKED` 🟢  
+> **Effective Milestone**: P9.0 Facilities Domain Boundary & Safety Contract Lock  
+> **Scope**: Bella Preschool Product Vertical (`src/products/bella-education/facilities/`)
 
 ---
 
-## Executive Summary & Field Verification Matrix
+## 1. Executive Summary & Operational Scope
+
+Preschool Facilities & Asset Maintenance is a **domain-specific facility zone management, asset inventory, safety inspection, maintenance job lifecycle, out-of-service restriction, and safety defect escalation engine** tailored for preschool operations.
+
+### Supreme Ownership Boundary Law
+> **P9 Facilities owns facilities, operational zones, asset inventories, inspection schedules, safety inspection logs, restriction scopes (`ASSET_ONLY`, `ZONE`), maintenance job lifecycles (`SUBMITTED → IN_PROGRESS → COMPLETED → VERIFIED`), out-of-service restrictions, and safety compliance evidence.**  
+> **P3 Classroom Engine owns classroom master records & student enrollment truth.**  
+> **P8 Workforce Engine owns staff roster & shift assignments.**  
+> **P7 Finance Engine owns financial ledger & purchasing transactions.**  
+> **Reusable Exception Work Queue Candidate owns exception escalation lifecycles (`DETECTED → ACTIVE → ASSIGNED → RESOLVED`).**
 
 ```text
-P3.2 CLASSROOM MANAGEMENT
-─────────────────────────────────────────────────────────────
-Architecture / Contract Hardening     ✅ CLOSED
-Capacity Concurrency Invariant        ✅ VERIFIED (Adversarial 25/25 & 24/25 concurrent races pass)
-Teacher Assignment Invariant          ✅ VERIFIED (Canonical teacher_assignments table + aggregate)
-
-Product Logic Implementation          ✅ IMPLEMENTED
-Real API Contracts                    ✅ WIRED (/api/education/courses & /api/education/courses/[id])
-Classroom Workspace 360°              ✅ IMPLEMENTED
-Create Class Workflow                 ✅ IMPLEMENTED
-Teacher Assignment Workflow           ✅ IMPLEMENTED
-Operational Projections               ✅ IMPLEMENTED
-
-Field E2E & Browser Real-Auth Test    ✅ PASS (5/5 Field E2E steps passed)
-Critical Negative Path (409 Conflict) ✅ PASS (HTTP 409 Conflict rejection verified, zero fake success)
-Tenant Isolation Gate                 ✅ PASS (Tenant B sees ZERO classes of Tenant A)
-39/39 Conformance Verification        ✅ PASS (100% Green across all 6 verification layers)
-Git Sync                              ✅ COMMITTED & PUSHED (origin/fix/education-dashboard-links)
-
-STATUS:
-🔒 P3.2 CLASSROOM MANAGEMENT — FIELD VERIFIED + CLOSED
+FAIL_CRITICAL Inspection / Safety Hazard Identified
+                     │
+                     ▼
+          placeOutOfService(restrictionScope: ASSET_ONLY | ZONE)
+                     │
+                     ▼
+          Status: OUT_OF_SERVICE
+                     │
+         ┌───────────┴───────────────────────────┐
+         ▼                                       ▼
+Project SAFETY_DEFECT DTO            Create Maintenance Job
+───► Exception Work Queue            (SUBMITTED ➔ IN_PROGRESS ➔ COMPLETED)
+         │                                       │
+         ▼                                       ▼
+Work Queue RESOLVED                 Job Verified by Manager: VERIFIED
+         │                                       │
+         └───────────┬───────────────────────────┘
+                     ▼
+           Independent Safety Re-Inspection
+                     │
+           ┌─────────┴─────────┐
+           ▼                   ▼
+    Inspection PASS     Inspection FAIL
+           │                   │
+           ▼                   └───► Status strictly remains: OUT_OF_SERVICE
+Status Restored: OPERATIONAL
 ```
 
 ---
 
-## 1. Field E2E Integration Evidence Summary
+## 2. Four Non-Negotiable Safety Refinements
 
-Test Suite: [`p32-classroom-field-e2e.integration.test.ts`](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/products/bella-education/__tests__/p32-classroom-field-e2e.integration.test.ts) (**5/5 Steps Passed**).
+1. **Supreme Invariant (Work Queue RESOLVED ≠ Maintenance VERIFIED ≠ Asset OPERATIONAL)**:
+   > **Resolving `SAFETY_DEFECT` or `OVERDUE_INSPECTION` in the Exception Work Queue MUST NOT restore asset or zone status to `OPERATIONAL`.**  
+   > Completing a maintenance job (`MaintenanceJob.VERIFIED`) MUST NOT directly restore status to `OPERATIONAL`.  
+   > Status `OPERATIONAL` is **ONLY** restored when an independent P9 safety re-inspection returns `PASS` (`passRestorationInspection`).
 
-| Field E2E Step | Target Feature / Boundary | Verified Outcome | HTTP & DB Evidence |
-| :-: | :--- | :--- | :--- |
-| **Step 1** | **Create Class Workflow & DB Write-back** | Classroom created via `POST /api/education/courses`. Written to `courses` and `teacher_assignments` tables. | HTTP `200 OK`, `dbCourse` & `dbAssign` verified in PostgreSQL. |
-| **Step 2** | **Critical Negative Path (409 Conflict)** | Attempting to assign same Lead Teacher to 2nd classroom in same academic year is rejected with `TEACHER_ASSIGNMENT_CONFLICT`. | **HTTP `409 Conflict`** (`success: false`). Zero fake UI success. |
-| **Step 3** | **Classroom 360° Workspace View** | `GET /api/education/courses/[id]` aggregates course metadata, active teacher roster, and student roster. | HTTP `200 OK`, teacher roster mapped with display names & roles. |
-| **Step 4** | **Teacher Reassignment & Termination** | Previous lead teacher assignment terminated via `DELETE`. New lead teacher assigned via `POST`. | HTTP `200 OK`, status updated to `terminated` and new active lead set. |
-| **Step 5** | **Tenant Isolation Gate** | `GET /api/education/courses?tenantId=TENANT-B` returns 0 classes created by Tenant A. | HTTP `200 OK`, `classrooms` length = 0. Tenant isolation enforced. |
+2. **Domain-Driven Encapsulated State Transitions (No Generic Update API)**:
+   > Transitioning operational state MUST be strictly encapsulated within domain operations:
+   > - `markUnderInspection(entityType, entityId)`
+   > - `failCriticalInspection(entityType, entityId, restrictionScope)`
+   > - `placeOutOfService(entityType, entityId, reason, restrictionScope)`
+   > - `passRestorationInspection(entityType, entityId, inspectorPartyId)`
+   > **No generic `updateOperationalStatus(id, "OPERATIONAL")` method is permitted.**
 
----
+3. **Read-Only `ZoneAvailabilityContract`**:
+   > P9 Facilities ONLY publishes read-only availability DTOs (`ZoneAvailabilityDTO`). P9 NEVER modifies or cancels P3 classroom activity schedules. P3 owns scheduling truth and evaluates P9 availability constraints.
 
-## 2. Capability-to-Contract Reconciliation Matrix (Final Status)
-
-| P3.2 Capability | UI Action / View | Public Contract Interface | Persistence Layer | Hard Invariant / Business Rule | Field Evidence Result |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **1. Capacity Mgmt** | View `22/25` bar & capacity status | `IEducationEnrollmentContract` / RPC `edu_enroll_student_v3` | `courses` + `enrollments` tables | **Hard Invariant:** `current_enrollment <= max_students`. 26th request blocked via PL/pgSQL row lock & check constraint. | `capacity-concurrency.integration.test.ts` (3/3 PASS) |
-| **2. Teacher Assignment** | Assign & change Lead / Co-Teacher | `ITeacherAssignmentContract` | `teacher_assignments` table | **Hard Invariant:** Max 1 active lead teacher per classroom/academic year; 1 lead classroom per teacher/academic year. | `teacher-assignment.integration.test.ts` (5/5 PASS) |
-| **3. Operational State** | Daily roll-call summary | `IAttendanceContract` | `attendances` table | **Read Projection:** Today's roll-call counts (present, excused, unmarked, health alerts). | `p32-classroom-field-e2e.integration.test.ts` (PASS) |
-| **4. Create Class** | Multi-step class creation wizard | `IEducationCourseContract` & `POST /api/education/courses` | `courses` & `edu_courses` tables | **Hard Invariant:** Unique `course_code` per tenant; room & lead teacher assignment conflict check. | `p32-classroom-field-e2e.integration.test.ts` (PASS) |
-| **5. Workspace Detail** | Classroom 360° Workspace (`/courses/[id]`) | Multi-Contract Read Projection | `courses`, `teacher_assignments`, `enrollments` | **Projection Boundary:** Read-only aggregate view; zero direct DB mutations in UI. | `p32-classroom-field-e2e.integration.test.ts` (PASS) |
-
----
-
-## 3. Final Verification Gate Summary
-
-| Gate # | Test Gate Name | Scope Evidence Verification | Status |
-| :---: | :--- | :--- | :---: |
-| **Gate 1** | **Architecture Compliance** | Rejects cross-industry imports, 0 `any` / `as any` violations in TypeScript. | ✅ PASS |
-| **Gate 2** | **Contract Boundary** | UI calls `IEducationCourseContract`, `IEducationEnrollmentContract`, and `ITeacherAssignmentContract`. Zero direct DB bypass. | ✅ PASS |
-| **Gate 3** | **Tenant Isolation (P0)** | Proves Tenant A cannot query or assign Teachers/Classes of Tenant B. | ✅ PASS |
-| **Gate 4** | **RLS & Authorization** | Active Supabase RLS policies on `courses`, `enrollments`, and `teacher_assignments`. | ✅ PASS |
-| **Gate 5** | **Database Migration Safety** | All schema migrations (`20260813000050_create_teacher_assignments.sql`) are strictly additive. | ✅ PASS |
-| **Gate 6** | **Event-After-Persistence** | `edu.course.created.v1` and `edu.enrollment.created.v1` events fire post-commit. | ✅ PASS |
-| **Gate 7** | **Capacity Invariant Enforcement** | 25/25 full course concurrency rejects concurrent enrollments without over-subscription; 24/25 single-slot race allows 1 and rejects 1. | ✅ PASS |
-| **Gate 8** | **Teacher Assignment Conflict** | Duplicate active lead teacher assignment throws `TEACHER_ASSIGNMENT_CONFLICT` and returns **HTTP 409 Conflict**. | ✅ PASS |
-| **Gate 9** | **Rule Governance** | Capacity limits & class status transitions match registered policy registry rules. | ✅ PASS |
-| **Gate 10** | **Audit Evidence Integrity** | Fingerprint generation for roster export & classroom audit logs. | ✅ PASS |
-| **Gate 11** | **Platform Regression** | `npm run education:verify` passes 100% GREEN (39/39 Education tests passing). | ✅ PASS |
+4. **Explicit Restriction Scope (`ASSET_ONLY` vs `ZONE`)**:
+   > Inspection failures and assets contain an explicit `restriction_scope`:
+   > - `ASSET_ONLY`: Only the specific asset is out of service (e.g. a single chair or broken toy).
+   > - `ZONE`: The entire room/zone is out of service (e.g. electrical fault or fire hazard).
 
 ---
 
-## Conclusion & Next Phase
+## 3. Product Table Ownership Map (`src/products/bella-education/facilities/`)
+
+P9 creates additive tables in schema `public` prefixed with `edu_fac_`:
+
+| Table Name | Primary Purpose | Domain Owner |
+| :--- | :--- | :--- |
+| `edu_fac_facilities` | Physical facility buildings & site masters | P9 Facilities |
+| `edu_fac_zones` | Rooms, playgrounds, kitchens, restrooms, operational zones | P9 Facilities |
+| `edu_fac_assets` | Equipment, furniture, appliances, fire safety, first-aid assets | P9 Facilities |
+| `edu_fac_inspection_schedules` | Recurring safety inspection rules & frequencies | P9 Facilities |
+| `edu_fac_inspection_logs` | Inspection audit executions with checklist results & attestations | P9 Facilities |
+| `edu_fac_maintenance_jobs` | Maintenance work orders (`SUBMITTED → IN_PROGRESS → COMPLETED → VERIFIED`) | P9 Facilities |
+| `edu_fac_out_of_service_logs` | Append-only audit history of out-of-service state transitions | P9 Facilities |
+
+---
+
+## 4. Phase Breakdown & Execution Milestones
 
 ```text
-P3.2 CLASSROOM MANAGEMENT
-🔒 FIELD VERIFIED + CLOSED
+P9.0 — Boundary & Safety Contract (APPROVED + LOCKED)
+────────────────────────────────────────────────────
+
+P9.1 — Facilities + Safety Inspection Kernel (CURRENT MILESTONE)
+────────────────────────────────────────────────────────────────
+- Facilities, Zones, Assets master repository
+- Inspection schedules & Checklist schemas
+- Inspection evidence logging
+- Explicit restriction scope (ASSET_ONLY vs ZONE)
+- Encapsulated OUT_OF_SERVICE state transitions
+- Read-only ZoneAvailabilityContract
+- 12-Invariant Integration Suite (p91-facilities-inspection.integration.test.ts)
+
+P9.2 — Maintenance Job Lifecycle & Work Queue Reuse #3
+───────────────────────────────────────────────────────
+- Maintenance jobs (SUBMITTED ➔ IN_PROGRESS ➔ COMPLETED ➔ VERIFIED)
+- SAFETY_DEFECT & OVERDUE_INSPECTION Exception DTO projection
+- Platform Candidate Reuse #3 (Exception Work Queue)
+- Independent restoration re-inspection (PASS ➔ OPERATIONAL)
+- 12-Invariant Integration Suite (p92-maintenance-job-exception.integration.test.ts)
+
+P9.3 — UI Workspace + Browser Field E2E Verification
+────────────────────────────────────────────────────
+- Facilities Command Center UI (/dashboard/education/facilities)
+- Playwright E2E Field Verification (spec 21 against real Supabase DB)
 ```
 
-**Next Stream:** P4 Care & Wellbeing (Preschool OS V1).
+---
+
+## 5. Canonical Verdict & Milestone Status
+
+```text
+P9.0 PRESCHOOL FACILITIES BOUNDARY & SAFETY CONTRACT
+════════════════════════════════════════════════════════════════
+
+P9 owns facilities, zones, assets, inspections, jobs       ✅ APPROVED + LOCKED
+P9 does NOT own enrollment, staff HR, finance ledger        ✅ APPROVED + LOCKED
+Work Queue RESOLVED ≠ Job VERIFIED ≠ Asset OPERATIONAL       ✅ APPROVED + LOCKED
+No generic updateOperationalStatus API allowed               ✅ APPROVED + LOCKED
+Read-only ZoneAvailabilityContract                          ✅ APPROVED + LOCKED
+Explicit restriction_scope (ASSET_ONLY vs ZONE)             ✅ APPROVED + LOCKED
+
+STATUS
+🟢 P9.0 BOUNDARY & SAFETY CONTRACT: APPROVED + LOCKED
+🟡 P9.1 FACILITIES & INSPECTION KERNEL: IN PROGRESS
+```
