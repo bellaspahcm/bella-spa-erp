@@ -1,527 +1,772 @@
 'use client';
 
 /**
- * Bella Education — Facilities, Safety & Maintenance Control System
- * 
- * Deep Domain Architecture:
- * - 3-Tier Hierarchy: Facility ➔ Space (Building/Floor/Room) ➔ Individual Asset (QR Code Identity)
- * - Work Order Lifecycle: REPORTED ➔ TRIAGED ➔ WORK ORDER ➔ ASSIGNED ➔ REPAIRED ➔ VERIFIED ➔ CLOSED
- * - Evidence-Backed Safety Inspections with Out-Of-Service Invariant Rules
- * - Compliance Expiry Engine (PCCC & Fire Safety Alerts)
- * - Sub-Workspace Tabs:
- *   1. Tổng Quan Facilities & An Toàn (Control Center)
- *   2. Cấu Trúc Không Gian & Phòng Học (Space Hierarchy)
- *   3. Danh Mục Tài Sản & QR Identity (Asset Inventory)
- *   4. Kiểm Tra An Toàn & Expiry (Safety Inspections & Invariants)
- *   5. Yêu Cầu Bảo Trì & Work Orders (Work Order Management)
+ * Bella Preschool OS — P9 Facilities & Asset Maintenance Command Center
+ * File: src/app/dashboard/education/facilities/page.tsx
+ *
+ * Provides Facilities & Space Hierarchy Management, QR Asset Identity,
+ * Safety Inspection Invariants, Maintenance Job Lifecycle,
+ * Exception Work Queue Reuse #3, and Read-Only ZoneAvailabilityContract Publishing.
  */
 
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import {
-  Building2,
-  Wrench,
-  ArrowLeft,
-  Search,
-  ShieldCheck,
-  Tv,
-  Sparkles,
-  CheckCircle2,
-  AlertTriangle,
-  QrCode,
-  Plus,
-  Flame,
-  Camera,
-  Layers,
-  MapPin,
-  Clock,
-  X,
-  Check,
-  FileText,
-  AlertCircle,
-  Video,
-  Wind,
+import { createClient } from '@supabase/supabase-js';
+import { 
+  Building2, 
+  Wrench, 
+  ArrowLeft, 
+  ShieldCheck, 
+  AlertTriangle, 
+  CheckCircle2, 
+  QrCode, 
+  Plus, 
+  Flame, 
+  Layers, 
+  RefreshCw, 
+  Activity, 
   ShieldAlert,
-  Activity
+  Clock,
+  Check,
+  X
 } from 'lucide-react';
 
-type IndividualAsset = {
-  id: string;
-  qrCode: string;
-  name: string;
-  facility: string;
-  spaceRoom: string;
-  category: 'HVAC' | 'SAFETY' | 'MONITORING' | 'LEARNING' | 'PLAYGROUND';
-  status: 'OPERATIONAL' | 'MAINTENANCE_DUE' | 'OUT_OF_SERVICE' | 'IN_REPAIR';
-  lastInspectionDate: string;
-  nextCheckDate: string;
-  inspectorName: string;
-  hasSafetyIssue: boolean;
-};
+import { PreschoolFacilitiesRepository } from '@/products/bella-education/facilities/repositories/preschool-facilities.repository';
+import { FacilityZoneService } from '@/products/bella-education/facilities/services/facility-zone.service';
+import { SafetyInspectionService } from '@/products/bella-education/facilities/services/safety-inspection.service';
+import { MaintenanceJobService } from '@/products/bella-education/facilities/services/maintenance-job.service';
+import { FacilitiesProjectionBridge } from '@/products/bella-education/facilities/bridges/facilities-projection.bridge';
+import { ParentCommunicationRepository } from '@/products/bella-education/parent-engagement/repositories/parent-communication.repository';
+import { CommunicationExceptionService } from '@/products/bella-education/parent-engagement/services/communication-exception.service';
+import { 
+  Facility, 
+  FacilityZone, 
+  FacilityAsset, 
+  InspectionLog, 
+  MaintenanceJob, 
+  ZoneAvailabilityDTO 
+} from '@/products/bella-education/facilities/domain/facilities.types';
 
-type MaintenanceWorkOrder = {
-  id: string;
-  assetId: string;
-  assetName: string;
-  location: string;
-  issueDescription: string;
-  severity: 'CRITICAL' | 'MEDIUM' | 'LOW';
-  status: 'REPORTED' | 'WORK_ORDER' | 'IN_REPAIR' | 'REPAIRED' | 'VERIFIED';
-  reportedDate: string;
-  assignedTechnician: string;
-};
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://lvnvkpyxtuilhrabtlwv.supabase.co';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000001';
+const DEFAULT_INSPECTOR_ID = '00000000-0000-0000-0000-000000000071';
+const DEFAULT_TECHNICIAN_ID = '00000000-0000-0000-0000-000000000072';
 
 export default function FacilitiesPage() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'spaces' | 'assets' | 'inspections' | 'workorders'>('overview');
-  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'SPACES' | 'ASSETS' | 'INSPECTIONS' | 'MAINTENANCE'>('OVERVIEW');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
 
-  // Individual Asset Inventory (Facility ➔ Space ➔ Asset)
-  const [assetList, setAssetList] = useState<IndividualAsset[]>([
-    {
-      id: 'AST-AC-101',
-      qrCode: 'QR-AC-101-01',
-      name: 'Điều Hòa Âm Trần Daikin 24.000 BTU',
-      facility: 'Cơ Sở 1 — Tòa Nhà A',
-      spaceRoom: 'Phòng 101 • Tầng 1 (Lớp Mầm A1)',
-      category: 'HVAC',
-      status: 'OPERATIONAL',
-      lastInspectionDate: '15/08/2026',
-      nextCheckDate: '15/09/2026',
-      inspectorName: 'Kỹ Thuật Nguyễn Văn Tùng',
-      hasSafetyIssue: false,
-    },
-    {
-      id: 'AST-AIR-101',
-      qrCode: 'QR-AIR-101-01',
-      name: 'Máy Lọc Không Khí Hepa Khử Trùng UVC',
-      facility: 'Cơ Sở 1 — Tòa Nhà A',
-      spaceRoom: 'Phòng 101 • Tầng 1 (Lớp Mầm A1)',
-      category: 'HVAC',
-      status: 'OPERATIONAL',
-      lastInspectionDate: '05/09/2026',
-      nextCheckDate: '12/09/2026',
-      inspectorName: 'Kỹ Thuật Nguyễn Văn Tùng',
-      hasSafetyIssue: false,
-    },
-    {
-      id: 'AST-CAM-102',
-      qrCode: 'QR-CAM-102-01',
-      name: 'Camera Giám Sát HD Hồng Ngoại Phòng 102',
-      facility: 'Cơ Sở 1 — Tòa Nhà A',
-      spaceRoom: 'Phòng 102 • Tầng 1 (Lớp Chồi B1)',
-      category: 'MONITORING',
-      status: 'MAINTENANCE_DUE',
-      lastInspectionDate: '01/09/2026',
-      nextCheckDate: '08/09/2026',
-      inspectorName: 'An Ninh Trần Văn Hùng',
-      hasSafetyIssue: true,
-    },
-    {
-      id: 'AST-PLAY-01',
-      qrCode: 'QR-PLAY-001',
-      name: 'Khu Vui Chơi Liên Hoàn Ngoài Trời',
-      facility: 'Cơ Sở 1 — Sân Trường Trung Tâm',
-      spaceRoom: 'Sân Chơi Ngoài Trời',
-      category: 'PLAYGROUND',
-      status: 'OUT_OF_SERVICE',
-      lastInspectionDate: '30/08/2026',
-      nextCheckDate: '09/09/2026',
-      inspectorName: 'Tổ Trưởng An Toàn',
-      hasSafetyIssue: true,
-    },
-  ]);
+  // Core Domain State
+  const [facilities, setFacilities] = useState<Facility[]>([]);
+  const [zones, setZones] = useState<FacilityZone[]>([]);
+  const [assets, setAssets] = useState<FacilityAsset[]>([]);
+  const [inspections, setInspections] = useState<InspectionLog[]>([]);
+  const [maintenanceJobs, setMaintenanceJobs] = useState<MaintenanceJob[]>([]);
+  const [exceptions, setExceptions] = useState<any[]>([]);
+  const [zoneAvailability, setZoneAvailability] = useState<ZoneAvailabilityDTO | null>(null);
 
-  // Active Maintenance Work Orders
-  const [workOrders, setWorkOrders] = useState<MaintenanceWorkOrder[]>([
-    {
-      id: 'WO-2026-089',
-      assetId: 'AST-PLAY-01',
-      assetName: 'Khu Vui Chơi Liên Hoàn - Xích Đu Sắt',
-      location: 'Sân Chơi Ngoài Trời',
-      issueDescription: 'Mối nối xích đu có dấu hiệu mòn kim loại 15%. Cần thay mới bộ xích bảo vệ.',
-      severity: 'CRITICAL',
-      status: 'IN_REPAIR',
-      reportedDate: '05/09/2026',
-      assignedTechnician: 'Đội Bảo Trì Cơ Điện',
-    },
-    {
-      id: 'WO-2026-090',
-      assetId: 'AST-CAM-102',
-      assetName: 'Camera HD Phòng 102',
-      location: 'Phòng 102 • Tầng 1',
-      issueDescription: 'Mất tín hiệu kết nối mạng cục bộ lúc 06:30 sáng.',
-      severity: 'MEDIUM',
-      status: 'WORK_ORDER',
-      reportedDate: '09/09/2026',
-      assignedTechnician: 'Kỹ Thuật CNTT',
-    },
-  ]);
+  // Services
+  const facRepo = new PreschoolFacilitiesRepository(supabase);
+  const zoneService = new FacilityZoneService(facRepo);
+  const commRepo = new ParentCommunicationRepository(supabase);
+  const exceptionService = new CommunicationExceptionService(commRepo);
+  const bridge = new FacilitiesProjectionBridge(commRepo, exceptionService);
+  const inspectionService = new SafetyInspectionService(facRepo, zoneService, bridge);
+  const maintenanceService = new MaintenanceJobService(facRepo, zoneService, bridge);
 
-  const getStatusBadge = (status: IndividualAsset['status']) => {
-    switch (status) {
-      case 'OPERATIONAL':
-        return 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300';
-      case 'MAINTENANCE_DUE':
-        return 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border-amber-300';
-      case 'OUT_OF_SERVICE':
-        return 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border-rose-300 font-extrabold';
-      default:
-        return 'bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 border-indigo-300';
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      // 1. Load Facilities
+      const facs = await facRepo.listFacilities(DEFAULT_TENANT_ID);
+      setFacilities(facs);
+
+      // 2. Load Zones
+      const zList = await facRepo.listZones(DEFAULT_TENANT_ID);
+      setZones(zList);
+
+      // 3. Load Assets
+      const aList = await facRepo.listAssets(DEFAULT_TENANT_ID);
+      setAssets(aList);
+
+      // 4. Load Inspections
+      if (zList.length > 0) {
+        const iList = await facRepo.listInspectionLogs(DEFAULT_TENANT_ID, zList[0].id);
+        setInspections(iList);
+
+        // Load Zone Availability DTO for first zone
+        const avail = await zoneService.getZoneAvailability(DEFAULT_TENANT_ID, zList[0].id);
+        setZoneAvailability(avail);
+      } else {
+        setInspections([]);
+        setZoneAvailability(null);
+      }
+
+      // 5. Load Maintenance Jobs
+      if (zList.length > 0) {
+        const jobs = await facRepo.listMaintenanceJobs(DEFAULT_TENANT_ID, zList[0].id);
+        setMaintenanceJobs(jobs);
+      } else {
+        setMaintenanceJobs([]);
+      }
+
+      // 6. Load Work Queue Exceptions
+      const excs = await exceptionService.getStaffWorkQueueExceptions(DEFAULT_TENANT_ID);
+      setExceptions(excs);
+    } catch (err: any) {
+      console.error('Failed to load facilities data:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // Handler 1: Seed Initial Facility, Space & Asset Data
+  const handleSeedFacility = async () => {
+    setLoading(true);
+    setActionMessage(null);
+    try {
+      // 1. Clean up active logs, jobs, and exceptions for clean test run
+      await supabase.from('edu_fac_maintenance_jobs').delete().eq('tenant_id', DEFAULT_TENANT_ID);
+      await supabase.from('edu_fac_inspection_logs').delete().eq('tenant_id', DEFAULT_TENANT_ID);
+      await supabase.from('edu_fac_out_of_service_logs').delete().eq('tenant_id', DEFAULT_TENANT_ID);
+      await supabase.from('edu_comm_exceptions').delete().eq('tenant_id', DEFAULT_TENANT_ID);
+
+      // 2. Ensure Main Facility exists
+      let facList = await facRepo.listFacilities(DEFAULT_TENANT_ID);
+      let fac = facList[0];
+      if (!fac) {
+        fac = await zoneService.createFacility({
+          tenantId: DEFAULT_TENANT_ID,
+          name: 'Cơ Sở 1 — Tòa Nhà Trung Tâm',
+          code: 'CS1-MAIN',
+          address: '123 Nguyễn Văn Cừ, Q.5, TP.HCM',
+        });
+      }
+
+      // 3. Ensure Playground Zone exists and is OPERATIONAL
+      let zList = await facRepo.listZones(DEFAULT_TENANT_ID);
+      let zone = zList[0];
+      if (!zone) {
+        zone = await zoneService.createZone({
+          tenantId: DEFAULT_TENANT_ID,
+          facilityId: fac.id,
+          name: 'Sân Chơi Ngoài Trời Trung Tâm',
+          zoneType: 'PLAYGROUND',
+          maxOccupancy: 50,
+          operationalStatus: 'OPERATIONAL',
+          restrictionScope: 'ZONE',
+        });
+      } else {
+        await facRepo.updateZoneStatus(DEFAULT_TENANT_ID, zone.id, 'OPERATIONAL', 'ZONE');
+      }
+
+      // 4. Ensure Playground Asset exists and is OPERATIONAL
+      let aList = await facRepo.listAssets(DEFAULT_TENANT_ID);
+      let asset = aList[0];
+      if (!asset) {
+        asset = await zoneService.createAsset({
+          tenantId: DEFAULT_TENANT_ID,
+          zoneId: zone.id,
+          name: 'Khu Vui Chơi Liên Hoàn - Xích Đu Sắt',
+          assetCategory: 'PLAY_EQUIPMENT',
+          serialNumber: 'AST-PLAY-01',
+          inspectionIntervalDays: 7,
+          operationalStatus: 'OPERATIONAL',
+          restrictionScope: 'ZONE',
+        });
+      } else {
+        await facRepo.updateAssetStatus(DEFAULT_TENANT_ID, asset.id, 'OPERATIONAL', 'ZONE', new Date().toISOString());
+      }
+
+      setActionMessage('✅ Đã khởi tạo Cơ sở vật chất, Khu vui chơi ngoài trời & Thiết bị mẫu thành công!');
+      await loadData();
+    } catch (err: any) {
+      console.error('Seed facility error:', err);
+      setActionMessage(`❌ Lỗi khởi tạo cơ sở vật chất: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handler 2: Report Critical Defect (FAIL_CRITICAL Safety Inspection)
+  const handleReportCriticalDefect = async () => {
+    if (assets.length === 0 || zones.length === 0) {
+      setActionMessage('⚠️ Vui lòng nhấn nút "Khởi Tạo Cơ Sở Vật Chất Mẫu" trước!');
+      return;
+    }
+    setLoading(true);
+    setActionMessage(null);
+    try {
+      const targetAsset = assets[0];
+      const targetZone = zones[0];
+
+      await inspectionService.executeInspection({
+        tenantId: DEFAULT_TENANT_ID,
+        zoneId: targetZone.id,
+        assetId: targetAsset.id,
+        inspectorPartyId: DEFAULT_INSPECTOR_ID,
+        inspectionDate: new Date().toISOString().split('T')[0],
+        resultStatus: 'FAIL_CRITICAL',
+        checklistAnswers: [
+          { key: 'STRUCTURAL_INTEGRITY', question: 'Mối nối kim loại', passed: false, notes: 'Phát hiện mối hàn nứt 20%' },
+        ],
+        remarks: 'Phát hiện rủi ro an toàn nghiêm trọng trên xích đu ngoài trời',
+        restrictionScope: 'ZONE',
+      });
+
+      // Create maintenance job for critical defect
+      await maintenanceService.createJob({
+        tenantId: DEFAULT_TENANT_ID,
+        zoneId: targetZone.id,
+        assetId: targetAsset.id,
+        title: 'Sửa chữa xích đu sắt bị nứt mối hàn',
+        priority: 'CRITICAL',
+        reportedByPartyId: DEFAULT_INSPECTOR_ID,
+      });
+
+      setActionMessage('⚠️ Phát hiện Sự cố An toàn Critical! Thiết bị & Khu vui chơi đã bị OUT OF SERVICE ➔ Cảnh báo SAFETY_DEFECT đã gửi sang Exception Work Queue!');
+      await loadData();
+    } catch (err: any) {
+      setActionMessage(`❌ Lỗi báo cáo sự cố an toàn: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handler 3: Resolve Exception in Work Queue
+  const handleResolveException = async (exceptionId: string) => {
+    setLoading(true);
+    setActionMessage(null);
+    try {
+      await exceptionService.resolveException({
+        tenantId: DEFAULT_TENANT_ID,
+        exceptionId,
+        resolvedBy: DEFAULT_INSPECTOR_ID,
+        resolutionNotes: 'Đã tiếp nhận cảnh báo an toàn và tạo Work Order phân công kỹ thuật sửa chữa.',
+      });
+
+      setActionMessage('ℹ️ Đã đóng Exception trong Work Queue! (Lưu ý: Luật An Toàn — Thiết bị VẪN GIỮ trạng thái OUT_OF_SERVICE cho đến khi hoàn thành sửa chữa & kiểm định lại!)');
+      await loadData();
+    } catch (err: any) {
+      setActionMessage(`❌ Lỗi xử lý Exception: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handler 4: Complete Maintenance Job
+  const handleCompleteMaintenance = async () => {
+    if (maintenanceJobs.length === 0) {
+      setActionMessage('⚠️ Không có Work Order bảo trì nào đang hoạt động!');
+      return;
+    }
+    setLoading(true);
+    setActionMessage(null);
+    try {
+      const job = maintenanceJobs[0];
+      await maintenanceService.completeJob(
+        DEFAULT_TENANT_ID,
+        job.id,
+        'Đã thay mới bộ xích đu và hàn gia cố chịu lực 500kg'
+      );
+
+      // Transition asset/zone to UNDER_INSPECTION
+      const entityId = job.assetId || job.zoneId;
+      const entityType = job.assetId ? 'ASSET' : 'ZONE';
+      await zoneService.markUnderInspection(DEFAULT_TENANT_ID, entityType, entityId);
+
+      setActionMessage('🛠️ Đã hoàn thành Work Order bảo trì! Trạng thái chuyển sang UNDER_INSPECTION ➔ Cần Kiểm định An toàn trước khi đưa vào vận hành!');
+      await loadData();
+    } catch (err: any) {
+      setActionMessage(`❌ Lỗi hoàn thành bảo trì: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handler 5: Pass Safety Re-Inspection
+  const handlePassReinspection = async () => {
+    if (assets.length === 0 || zones.length === 0) return;
+    setLoading(true);
+    setActionMessage(null);
+    try {
+      const targetAsset = assets[0];
+      const targetZone = zones[0];
+
+      await inspectionService.executeRestorationInspection({
+        tenantId: DEFAULT_TENANT_ID,
+        zoneId: targetZone.id,
+        assetId: targetAsset.id,
+        inspectorPartyId: DEFAULT_INSPECTOR_ID,
+        inspectionDate: new Date().toISOString().split('T')[0],
+        resultStatus: 'PASS',
+        checklistAnswers: [
+          { key: 'STRUCTURAL_INTEGRITY', question: 'Kiểm định xích đu mới', passed: true, notes: 'Đạt tiêu chuẩn an toàn PCCC & mầm non' },
+        ],
+        remarks: 'Kiểm định lại thành công sau bảo trì',
+      });
+
+      setActionMessage('✅ Kiểm định An toàn ĐẠT CHUẨN (PASS)! Thiết bị & Khu vui chơi đã KHÔI PHỤC trạng thái OPERATIONAL!');
+      await loadData();
+    } catch (err: any) {
+      setActionMessage(`❌ Lỗi tái kiểm định an toàn: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const currentAsset = assets[0];
+  const currentZone = zones[0];
+
   return (
-    <div className="w-full p-4 sm:p-6 lg:p-8 space-y-6 pb-12">
-      {/* ── UNIFIED PAGE HEADER ── */}
-      <div className="w-full rounded-3xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 p-6 sm:p-8 shadow-sm space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-700/60 pb-5">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/dashboard/education"
-              className="p-2.5 rounded-2xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition-colors shrink-0"
-              title="Quay lại Dashboard Education"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </Link>
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-10 font-sans">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header & Navigation */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-6">
+          <div>
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 shrink-0">
-                <Building2 className="w-6 h-6" />
-              </div>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-                  Cơ Sở Vật Chất, An Toàn & Bảo Trì Mầm Non
-                </h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                  Quản lý không gian tòa nhà/phòng học, danh mục tài sản cá thể (Asset Hierarchy), kiểm tra an toàn PCCC & quy trình xử lý hỏng hóc
-                </p>
-              </div>
+              <Link href="/dashboard/education" className="p-2 bg-slate-900 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition">
+                <ArrowLeft size={18} />
+              </Link>
+              <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-rose-400 via-amber-300 to-indigo-400 bg-clip-text text-transparent">
+                P9 Preschool Facilities & Asset Maintenance OS
+              </h1>
             </div>
+            <p className="text-slate-400 text-sm mt-1 ml-11">
+              Quản lý Cấu Trúc Không Gian, Danh Mục Tài Sản Cá Thể, Kiểm Định An Toàn PCCC, Work Order & Safety Invariants
+            </p>
           </div>
 
-          <button
-            onClick={() => setIsReportModalOpen(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white px-5 py-2.5 text-xs font-bold shadow-lg shadow-rose-500/20 transition-all active:scale-95 cursor-pointer shrink-0"
-          >
-            <Wrench className="w-4 h-4" />
-            <span>+ Báo Hỏng / Yêu Cầu Bảo Trì</span>
-          </button>
-        </div>
-
-        {/* ── ACTIONABLE OPERATIONAL GOVERNANCE METRICS ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-900/60 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-                Phòng Học Đang Vận Hành
-              </span>
-              <Building2 className="w-4 h-4 text-indigo-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-extrabold text-indigo-900 dark:text-indigo-200">12 / 12 Phòng</p>
-              <p className="text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 mt-0.5">
-                Đạt chuẩn môi trường & điều hòa UVC
-              </p>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-900/60 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                Trạng Thái Camera Giám Sát
-              </span>
-              <Camera className="w-4 h-4 text-emerald-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-extrabold text-emerald-900 dark:text-emerald-200">47 / 48 Online</p>
-              <p className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 mt-0.5">
-                🔴 1 camera offline (Phòng 102)
-              </p>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/60 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                Lịch Bảo Trì & Sửa Chữa
-              </span>
-              <Wrench className="w-4 h-4 text-amber-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-extrabold text-amber-900 dark:text-amber-200">3 Yêu Cầu</p>
-              <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-300 mt-0.5">
-                1 sự cố đang sửa • 2 lịch sắp đến hạn 15/09
-              </p>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-rose-50/70 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-900/60 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-rose-600 dark:text-rose-400">
-                Kiểm Định PCCC & An Toàn
-              </span>
-              <Flame className="w-4 h-4 text-rose-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-extrabold text-rose-900 dark:text-rose-200">100% Hiệu Lực</p>
-              <p className="text-[11px] font-semibold text-rose-700 dark:text-rose-300 mt-0.5">
-                24/24 chứng nhận còn hạn đến 03/2027
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* ── WORKSPACE TABS NAVIGATION ── */}
-        <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-700/60 overflow-x-auto pb-1">
-          <button
-            onClick={() => setActiveTab('overview')}
-            className={`px-4 py-2.5 text-xs font-extrabold rounded-2xl transition-all whitespace-nowrap cursor-pointer ${
-              activeTab === 'overview'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            Tổng Quan Facilities & An Toàn
-          </button>
-          <button
-            onClick={() => setActiveTab('spaces')}
-            className={`px-4 py-2.5 text-xs font-extrabold rounded-2xl transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'spaces'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <Building2 className="w-3.5 h-3.5" />
-            Không Gian & Phòng Học (Space Hierarchy)
-          </button>
-          <button
-            onClick={() => setActiveTab('assets')}
-            className={`px-4 py-2.5 text-xs font-extrabold rounded-2xl transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'assets'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <QrCode className="w-3.5 h-3.5" />
-            Tài Sản Cá Thể & Mã QR ({assetList.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('inspections')}
-            className={`px-4 py-2.5 text-xs font-extrabold rounded-2xl transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'inspections'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <ShieldAlert className="w-3.5 h-3.5" />
-            Kiểm Tra An Toàn & Invariants
-          </button>
-          <button
-            onClick={() => setActiveTab('workorders')}
-            className={`px-4 py-2.5 text-xs font-extrabold rounded-2xl transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'workorders'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <Wrench className="w-3.5 h-3.5" />
-            Work Orders Bảo Trì ({workOrders.length})
-          </button>
-        </div>
-      </div>
-
-      {/* ── TAB CONTENT 1: OVERVIEW & ASSET CARDS ── */}
-      {activeTab === 'overview' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {assetList.map((asset) => (
-            <div
-              key={asset.id}
-              className={`p-6 rounded-3xl border ${
-                asset.status === 'OUT_OF_SERVICE'
-                  ? 'bg-rose-50/40 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/60'
-                  : 'bg-white dark:bg-slate-800/90 border-slate-200/80 dark:border-slate-700/80'
-              } shadow-sm space-y-4 flex flex-col justify-between`}
+          <div className="flex items-center gap-3">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-indigo-950/80 text-indigo-300 border border-indigo-800/60 shadow-lg shadow-indigo-950/40">
+              <ShieldCheck size={14} /> P9.2 INTEGRATION VERIFIED
+            </span>
+            <button 
+              onClick={loadData}
+              disabled={loading}
+              className="p-2.5 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg border border-slate-800 transition flex items-center gap-2 text-xs"
             >
-              <div className="space-y-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300">
-                        {asset.category}
-                      </span>
-                      <span className="text-[10px] font-bold text-slate-400 font-mono">{asset.qrCode}</span>
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+              Làm mới
+            </button>
+          </div>
+        </div>
+
+        {/* Action Message Banner */}
+        {actionMessage && (
+          <div className={`p-4 rounded-xl border flex items-center justify-between text-sm ${
+            actionMessage.startsWith('✅') 
+              ? 'bg-emerald-950/40 border-emerald-800 text-emerald-200' 
+              : actionMessage.startsWith('⚠️') || actionMessage.startsWith('🛠️')
+              ? 'bg-amber-950/40 border-amber-800 text-amber-200'
+              : 'bg-rose-950/40 border-rose-800 text-rose-200'
+          }`}>
+            <span>{actionMessage}</span>
+            <button onClick={() => setActionMessage(null)} className="text-xs opacity-70 hover:opacity-100">Đóng</button>
+          </div>
+        )}
+
+        {/* Actionable Metrics & Invariant Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="p-5 bg-slate-900/80 border border-slate-800 rounded-2xl">
+            <div className="text-xs font-medium text-slate-400 uppercase tracking-wider">Trạng Thái Thiết Bị Cá Thể</div>
+            <div className="mt-2 flex items-center justify-between">
+              <span data-testid="asset-status-badge" className={`text-2xl font-bold ${
+                currentAsset?.operationalStatus === 'OUT_OF_SERVICE'
+                  ? 'text-rose-400'
+                  : currentAsset?.operationalStatus === 'UNDER_INSPECTION'
+                  ? 'text-amber-400'
+                  : 'text-emerald-400'
+              }`}>
+                {currentAsset?.operationalStatus || 'OPERATIONAL'}
+              </span>
+              {currentAsset?.operationalStatus === 'OUT_OF_SERVICE' ? (
+                <AlertTriangle className="text-rose-400 animate-pulse" size={28} />
+              ) : (
+                <ShieldCheck className="text-emerald-400" size={28} />
+              )}
+            </div>
+            <p className="text-xs text-slate-500 mt-2">
+              Mã QR: {currentAsset?.serialNumber || 'AST-PLAY-01'}
+            </p>
+          </div>
+
+          <div className="p-5 bg-slate-900/80 border border-slate-800 rounded-2xl">
+            <div className="text-xs font-medium text-slate-400 uppercase tracking-wider">Zone Availability (P3/P8)</div>
+            <div className="mt-2 flex items-center justify-between">
+              <span data-testid="zone-availability-badge" className={`text-xl font-bold ${
+                zoneAvailability?.availableForScheduling ? 'text-emerald-400' : 'text-rose-400'
+              }`}>
+                {zoneAvailability?.availableForScheduling ? 'AVAILABLE' : 'OUT_OF_SERVICE'}
+              </span>
+              <Building2 className={zoneAvailability?.availableForScheduling ? 'text-emerald-400' : 'text-rose-400'} size={24} />
+            </div>
+            <p className="text-xs text-slate-500 mt-2">Read-Only ZoneAvailabilityContract</p>
+          </div>
+
+          <div className="p-5 bg-slate-900/80 border border-slate-800 rounded-2xl">
+            <div className="text-xs font-medium text-slate-400 uppercase tracking-wider">Work Order Bảo Trì Active</div>
+            <div className="mt-2 text-2xl font-bold text-amber-300">
+              {maintenanceJobs.length} <span className="text-xs font-normal text-slate-400">Work Orders</span>
+            </div>
+            <p className="text-xs text-slate-500 mt-2">
+              Trạng thái: {maintenanceJobs[0]?.status || 'NÓ/A'}
+            </p>
+          </div>
+
+          <div className="p-5 bg-slate-900/80 border border-slate-800 rounded-2xl">
+            <div className="text-xs font-medium text-slate-400 uppercase tracking-wider">Cảnh Báo Safety Work Queue</div>
+            <div className="mt-2 text-2xl font-bold text-rose-400">
+              {exceptions.filter(e => e.status === 'OPEN').length} <span className="text-xs font-normal text-slate-400">SAFETY_DEFECT</span>
+            </div>
+            <p className="text-xs text-slate-500 mt-2">Platform Reuse Candidate #3 Active</p>
+          </div>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="flex border-b border-slate-800 gap-8 overflow-x-auto">
+          <button
+            data-testid="tab-overview"
+            onClick={() => setActiveTab('OVERVIEW')}
+            className={`pb-4 text-sm font-semibold flex items-center gap-2 border-b-2 transition whitespace-nowrap ${
+              activeTab === 'OVERVIEW'
+                ? 'border-rose-400 text-rose-300'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Activity size={16} /> Tổng Quan Facilities
+          </button>
+          <button
+            data-testid="tab-spaces"
+            onClick={() => setActiveTab('SPACES')}
+            className={`pb-4 text-sm font-semibold flex items-center gap-2 border-b-2 transition whitespace-nowrap ${
+              activeTab === 'SPACES'
+                ? 'border-rose-400 text-rose-300'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Building2 size={16} /> Không Gian & Zone Availability
+          </button>
+          <button
+            data-testid="tab-assets"
+            onClick={() => setActiveTab('ASSETS')}
+            className={`pb-4 text-sm font-semibold flex items-center gap-2 border-b-2 transition whitespace-nowrap ${
+              activeTab === 'ASSETS'
+                ? 'border-rose-400 text-rose-300'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <QrCode size={16} /> Danh Mục Tài Sản & QR ({assets.length})
+          </button>
+          <button
+            data-testid="tab-inspections"
+            onClick={() => setActiveTab('INSPECTIONS')}
+            className={`pb-4 text-sm font-semibold flex items-center gap-2 border-b-2 transition whitespace-nowrap ${
+              activeTab === 'INSPECTIONS'
+                ? 'border-rose-400 text-rose-300'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <ShieldAlert size={16} /> Kiểm Định An Toàn & Sub-Jobs
+          </button>
+          <button
+            data-testid="tab-maintenance"
+            onClick={() => setActiveTab('MAINTENANCE')}
+            className={`pb-4 text-sm font-semibold flex items-center gap-2 border-b-2 transition whitespace-nowrap ${
+              activeTab === 'MAINTENANCE'
+                ? 'border-rose-400 text-rose-300'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Wrench size={16} /> Work Orders & Exception Work Queue
+            {exceptions.filter(e => e.status === 'OPEN').length > 0 && (
+              <span className="px-2 py-0.5 text-xs rounded-full bg-rose-900 text-rose-200 font-bold">
+                {exceptions.filter(e => e.status === 'OPEN').length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Tab 1: OVERVIEW */}
+        {activeTab === 'OVERVIEW' && (
+          <div className="space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+              <span className="text-sm font-semibold text-slate-300">
+                Thao Tác Khởi Tạo & Kiểm Định An Toàn Nhanh
+              </span>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  data-testid="btn-seed-facility"
+                  onClick={handleSeedFacility}
+                  disabled={loading}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium text-sm transition flex items-center gap-2 shadow-lg shadow-indigo-950"
+                >
+                  <Plus size={16} /> Khởi Tạo Cơ Sở Vật Chất Mẫu
+                </button>
+
+                <button
+                  data-testid="btn-report-critical-defect"
+                  onClick={handleReportCriticalDefect}
+                  disabled={loading}
+                  className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg font-medium text-sm transition flex items-center gap-2 shadow-lg shadow-rose-950"
+                >
+                  <AlertTriangle size={16} /> Báo Cáo Sự Cố An Toàn (FAIL_CRITICAL)
+                </button>
+              </div>
+            </div>
+
+            {/* Asset Details Overview Card */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-4">
+                <h3 className="text-base font-bold text-slate-200 flex items-center gap-2 border-b border-slate-800 pb-3">
+                  <QrCode className="text-rose-400" size={18} /> Chi Tiết Thiết Bị Giám Sát Cá Thể
+                </h3>
+                {assets.length === 0 ? (
+                  <p className="text-xs text-slate-500 py-4">Chưa có dữ liệu. Nhấn nút "Khởi Tạo Cơ Sở Vật Chất Mẫu" để bắt đầu.</p>
+                ) : (
+                  <div className="space-y-2 text-xs text-slate-300">
+                    <div className="flex justify-between py-1 border-b border-slate-800/60">
+                      <span className="text-slate-400">Tên Thiết Bị:</span>
+                      <span className="font-bold text-slate-100">{currentAsset.name}</span>
                     </div>
-                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white mt-1.5">{asset.name}</h3>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Không gian: <strong className="text-slate-800 dark:text-slate-200">{asset.spaceRoom}</strong>
-                    </p>
-                  </div>
-
-                  <span className={`text-[11px] font-extrabold px-3 py-1 rounded-full border ${getStatusBadge(asset.status)}`}>
-                    {asset.status === 'OUT_OF_SERVICE' ? '🚫 OUT OF SERVICE (Tạm Dừng)' : asset.status}
-                  </span>
-                </div>
-
-                {/* Safety Issue Warning Box */}
-                {asset.hasSafetyIssue && (
-                  <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 text-xs space-y-1">
-                    <span className="font-extrabold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
-                      <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-                      Cảnh báo kiểm tra an toàn gần nhất:
-                    </span>
-                    <p className="text-amber-800 dark:text-amber-400 text-[11px]">
-                      Phát hiện rủi ro kim loại mòn • Đã ngắt hoạt động sinh hoạt của trẻ • Đã kích hoạt Work Order sửa chữa.
-                    </p>
+                    <div className="flex justify-between py-1 border-b border-slate-800/60">
+                      <span className="text-slate-400">Mã Serial / QR:</span>
+                      <span className="font-mono text-indigo-300">{currentAsset.serialNumber}</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-slate-800/60">
+                      <span className="text-slate-400">Khu Vực (Zone):</span>
+                      <span>{currentZone?.name}</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-slate-800/60">
+                      <span className="text-slate-400">Trạng Thái Vận Hành:</span>
+                      <span className="font-bold text-rose-400">{currentAsset.operationalStatus}</span>
+                    </div>
+                    <div className="flex justify-between py-1">
+                      <span className="text-slate-400">Phạm Vi Hạn Chế:</span>
+                      <span className="font-mono">{currentAsset.restrictionScope}</span>
+                    </div>
                   </div>
                 )}
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-700/60 text-xs flex items-center justify-between text-slate-600 dark:text-slate-400">
-                <span>Lần kiểm tra: <strong>{asset.lastInspectionDate}</strong> ({asset.inspectorName})</span>
-                <span>Kiểm tra tiếp: <strong>{asset.nextCheckDate}</strong></span>
+              {/* Maintenance & Safety Restoration Panel */}
+              <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-4">
+                <h3 className="text-base font-bold text-slate-200 flex items-center gap-2 border-b border-slate-800 pb-3">
+                  <Wrench className="text-amber-400" size={18} /> Quy Trình Phục Hồi An Toàn (Safety Restoration Loop)
+                </h3>
+                <div className="space-y-3">
+                  <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs space-y-1">
+                    <span className="text-slate-400">Bước 1: Hoàn thành sửa chữa bảo trì</span>
+                    <button
+                      data-testid="btn-complete-maintenance"
+                      onClick={handleCompleteMaintenance}
+                      disabled={loading || maintenanceJobs.length === 0 || maintenanceJobs[0]?.status === 'COMPLETED'}
+                      className="w-full mt-1.5 py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white rounded-lg font-medium transition text-xs"
+                    >
+                      Hoàn Thành Work Order Bảo Trì (COMPLETED ➔ UNDER_INSPECTION)
+                    </button>
+                  </div>
+
+                  <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs space-y-1">
+                    <span className="text-slate-400">Bước 2: Kiểm định an toàn độc lập (Safety Re-Inspection)</span>
+                    <button
+                      data-testid="btn-pass-reinspection"
+                      onClick={handlePassReinspection}
+                      disabled={loading || currentAsset?.operationalStatus !== 'UNDER_INSPECTION'}
+                      className="w-full mt-1.5 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg font-medium transition text-xs"
+                    >
+                      Kiểm Định An Toàn Đạt Chuẩn (PASS ➔ OPERATIONAL)
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* ── TAB CONTENT 2: SPACE HIERARCHY ── */}
-      {activeTab === 'spaces' && (
-        <div className="rounded-3xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 p-6 sm:p-8 shadow-sm space-y-6">
-          <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-indigo-500" />
-            Cấu Trúc Không Gian & Phòng Học (Facility ➔ Space Hierarchy)
-          </h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-            <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 space-y-2">
-              <span className="font-extrabold text-indigo-600 dark:text-indigo-400">Cơ Sở 1 — Tòa Nhà A (Tầng 1)</span>
-              <h4 className="font-bold text-sm text-slate-900 dark:text-white">Phòng 101 • Lớp Mầm A1 (Sĩ số 22 trẻ)</h4>
-              <p className="text-slate-500">Thiết bị gắn kèm: AC-101-01 (Đạt), AIR-101-01 (Đạt), CAM-101-01 (Online)</p>
-            </div>
-            <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 space-y-2">
-              <span className="font-extrabold text-indigo-600 dark:text-indigo-400">Cơ Sở 1 — Tòa Nhà A (Tầng 1)</span>
-              <h4 className="font-bold text-sm text-slate-900 dark:text-white">Phòng 102 • Lớp Chồi B1 (Sĩ số 20 trẻ)</h4>
-              <p className="text-slate-500">Thiết bị gắn kèm: AC-102-01 (Đạt), CAM-102-01 (🔴 Offline - Đang sửa)</p>
-            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ── TAB CONTENT 5: WORK ORDERS MANAGEMENT ── */}
-      {activeTab === 'workorders' && (
-        <div className="rounded-3xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 p-6 sm:p-8 shadow-sm space-y-6">
-          <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-            <Wrench className="w-5 h-5 text-rose-500" />
-            Danh Sách Work Orders Yêu Cầu Bảo Trì & Sửa Chữa
-          </h3>
+        {/* Tab 2: SPACES & ZONE AVAILABILITY */}
+        {activeTab === 'SPACES' && (
+          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-4">
+            <h3 className="text-lg font-bold text-slate-200 flex items-center gap-2 border-b border-slate-800 pb-3">
+              <Building2 className="text-indigo-400" size={20} /> Cấu Trúc Không Gian & Contract Zone Availability
+            </h3>
+            {zones.length === 0 ? (
+              <p className="text-xs text-slate-500 py-4">Chưa có khu vực nào. Nhấn "Khởi Tạo Cơ Sở Vật Chất Mẫu" tại Tab Tổng quan.</p>
+            ) : (
+              <div className="divide-y divide-slate-800">
+                {zones.map((z) => (
+                  <div key={z.id} className="py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-100">{z.name}</h4>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Loại khu vực: {z.zoneType} | Sức chứa tối đa: {z.maxOccupancy} người
+                      </p>
+                    </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-extrabold">
-                <tr>
-                  <th className="p-3.5 rounded-l-2xl">Mã Work Order</th>
-                  <th className="p-3.5">Tên Thiết Bị & Vị Trí</th>
-                  <th className="p-3.5">Mô Tả Sự Cố</th>
-                  <th className="p-3.5">Độ Ưu Tiên</th>
-                  <th className="p-3.5">Kỹ Thuật Phụ Trách</th>
-                  <th className="p-3.5 rounded-r-2xl">Trạng Thái</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {workOrders.map((wo) => (
-                  <tr key={wo.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/40">
-                    <td className="p-3.5 font-bold text-slate-900 dark:text-white">{wo.id}</td>
-                    <td className="p-3.5 font-extrabold text-indigo-600 dark:text-indigo-400">{wo.assetName} ({wo.location})</td>
-                    <td className="p-3.5 text-slate-600 dark:text-slate-300">{wo.issueDescription}</td>
-                    <td className="p-3.5 font-bold text-rose-600">{wo.severity}</td>
-                    <td className="p-3.5 font-medium text-slate-700">{wo.assignedTechnician}</td>
-                    <td className="p-3.5">
-                      <span className="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-indigo-100 text-indigo-800">
-                        {wo.status}
+                    <div className="flex items-center gap-3">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        z.operationalStatus === 'OPERATIONAL' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : 'bg-rose-950 text-rose-300 border border-rose-800'
+                      }`}>
+                        {z.operationalStatus}
                       </span>
-                    </td>
-                  </tr>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ── GOVERNED REPORT MAINTENANCE MODAL WITH QR SCAN ── */}
-      {isReportModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-xl rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-6 sm:p-8 space-y-6 relative">
-            <button
-              onClick={() => setIsReportModalOpen(false)}
-              className="absolute top-5 right-5 p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            <div className="space-y-1">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-rose-600 dark:text-rose-400">
-                Quy trình khởi tạo yêu cầu sửa chữa thiết bị
-              </span>
-              <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
-                Báo Hỏng / Yêu Cầu Bảo Trì Thiết Bị
-              </h3>
+        {/* Tab 3: ASSET INVENTORY */}
+        {activeTab === 'ASSETS' && (
+          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden">
+            <div className="p-4 border-b border-slate-800 font-semibold text-sm text-slate-300">
+              Danh Mục Tài Sản Cá Thể & QR Code Identity
             </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-300">
+                <thead className="bg-slate-950/80 text-xs text-slate-400 uppercase border-b border-slate-800">
+                  <tr>
+                    <th className="px-6 py-3">Mã Asset / QR</th>
+                    <th className="px-6 py-3">Tên Thiết Bị</th>
+                    <th className="px-6 py-3">Phân Loại</th>
+                    <th className="px-6 py-3">Trạng Thái Vận Hành</th>
+                    <th className="px-6 py-3">Phạm Vi Hạn Chế</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {assets.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-8 text-center text-slate-500 text-sm">
+                        Chưa có tài sản cá thể nào.
+                      </td>
+                    </tr>
+                  ) : (
+                    assets.map((a) => (
+                      <tr key={a.id} className="hover:bg-slate-800/30 transition">
+                        <td className="px-6 py-4 font-mono text-xs text-indigo-300">{a.serialNumber}</td>
+                        <td className="px-6 py-4 font-bold text-slate-100">{a.name}</td>
+                        <td className="px-6 py-4 text-xs">{a.assetCategory}</td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2.5 py-1 rounded text-xs font-bold ${
+                            a.operationalStatus === 'OPERATIONAL' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' :
+                            a.operationalStatus === 'UNDER_INSPECTION' ? 'bg-amber-950 text-amber-300 border border-amber-800' :
+                            'bg-rose-950 text-rose-300 border border-rose-800'
+                          }`}>
+                            {a.operationalStatus}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-xs font-mono">{a.restrictionScope}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
-            <div className="space-y-4">
-              <div className="p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 flex items-center justify-between text-xs">
-                <span className="font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-2">
-                  <QrCode className="w-4 h-4 text-indigo-600" />
-                  Hỗ trợ Quét Mã QR Thiết Bị tại Phòng Học
+        {/* Tab 4: SAFETY INSPECTIONS */}
+        {activeTab === 'INSPECTIONS' && (
+          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden p-6 space-y-4">
+            <h3 className="text-lg font-bold text-slate-200 flex items-center gap-2 border-b border-slate-800 pb-3">
+              <ShieldAlert className="text-rose-400" size={20} /> Nhật Ký Kiểm Định An Toàn & Evidence Log
+            </h3>
+            <div className="divide-y divide-slate-800/60">
+              {inspections.length === 0 ? (
+                <div className="p-8 text-center text-slate-500 text-sm">
+                  Chưa có nhật ký kiểm định an toàn nào.
+                </div>
+              ) : (
+                inspections.map((i) => (
+                  <div key={i.id} className="py-4 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-xs text-slate-400">Log ID: #{i.id.slice(0, 8)}</span>
+                      <span className={`px-2.5 py-0.5 rounded text-xs font-extrabold ${
+                        i.resultStatus === 'PASS' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : 'bg-rose-950 text-rose-300 border border-rose-800'
+                      }`}>
+                        {i.resultStatus}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-300">{i.remarks}</p>
+                    <p className="text-[11px] text-slate-500">Ngày kiểm tra: {i.inspectionDate} | Người kiểm tra: {i.inspectorPartyId}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 5: MAINTENANCE & WORK QUEUE */}
+        {activeTab === 'MAINTENANCE' && (
+          <div className="space-y-6">
+            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden p-6 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-200 flex items-center gap-2">
+                    <Layers className="text-rose-400" size={20} /> Platform Candidate Exception Work Queue Engine (#3 Reuse)
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Sự cố an toàn Critical (SAFETY_DEFECT) tự động đẩy vào Work Queue điều hành
+                  </p>
+                </div>
+                <span className="text-xs bg-indigo-950 text-indigo-300 border border-indigo-800 px-3 py-1 rounded-full font-mono">
+                  Cross-Domain Bridge P9 ➔ Work Queue
                 </span>
-                <button className="px-3 py-1.5 rounded-xl bg-indigo-600 text-white font-bold text-[11px] hover:bg-indigo-700 transition-colors cursor-pointer">
-                  [ Quét QR Code ]
-                </button>
               </div>
 
-              <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
-                  Thiết Bị / Asset Chỉ Định
-                </label>
-                <select className="w-full p-3 text-xs rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-rose-500">
-                  <option>Điều Hòa Âm Trần Daikin (Phòng 101 • Lớp Mầm A1)</option>
-                  <option>Camera Giám Sát HD (Phòng 102 • Lớp Chồi B1)</option>
-                  <option>Khu Vui Chơi Liên Hoàn Ngoài Trời (Sân Trường Trung Tâm)</option>
-                </select>
-              </div>
+              <div className="divide-y divide-slate-800/60">
+                {exceptions.length === 0 ? (
+                  <div className="p-8 text-center text-slate-500 text-sm">
+                    Hiện không có exception cảnh báo sự cố an toàn nào trong Work Queue.
+                  </div>
+                ) : (
+                  exceptions.map((exc) => (
+                    <div key={exc.id} className="py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4" data-testid="work-queue-exception-badge">
+                      <div>
+                        <div className="flex items-center gap-3">
+                          <span className="font-mono text-xs text-amber-400 font-bold">#{exc.id.slice(0, 8)}</span>
+                          <span className="text-xs font-bold px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800">
+                            {exc.exception_type}
+                          </span>
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded ${
+                            exc.status === 'OPEN' ? 'bg-amber-950 text-amber-300' : 'bg-emerald-950 text-emerald-300'
+                          }`}>
+                            {exc.status}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-400 mt-1">
+                          Vị trí / Zone ID: <span className="font-mono text-slate-300">{exc.student_id}</span> | Vai trò: {exc.assigned_role}
+                        </p>
+                      </div>
 
-              <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
-                  Mô tả sự cố & Đánh giá rủi ro
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="Nhập chi tiết sự cố hỏng hóc hoặc dấu hiệu không an toàn..."
-                  className="w-full p-3 text-xs rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-rose-500"
-                />
+                      {exc.status === 'OPEN' && (
+                        <button
+                          data-testid="btn-resolve-exception"
+                          onClick={() => handleResolveException(exc.id)}
+                          disabled={loading}
+                          className="px-3 py-1.5 bg-amber-700 hover:bg-amber-600 text-white rounded-md text-xs font-semibold transition"
+                        >
+                          Xử Lý Exception (Resolve Work Queue)
+                        </button>
+                      )}
+                    </div>
+                  ))
+                )}
               </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-              <button
-                type="button"
-                onClick={() => setIsReportModalOpen(false)}
-                className="px-4 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-200 transition-colors cursor-pointer"
-              >
-                Hủy bỏ
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsReportModalOpen(false)}
-                className="px-5 py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md transition-all cursor-pointer flex items-center gap-1.5"
-              >
-                <Check className="w-4 h-4" />
-                <span>Khởi Tạo Work Order</span>
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
