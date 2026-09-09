@@ -8,7 +8,7 @@ export type TenantPrimaryBusinessModuleKey = (typeof TENANT_PRIMARY_BUSINESS_MOD
 
 export type TenantEnabledModules = Record<TenantModuleKey, boolean>;
 
-export const TENANT_BRAND_STYLE_PRESETS = ['bella_rose', 'jade_wellness', 'graphite_luxe', 'ocean_clean', 'luxury_navy'] as const;
+export const TENANT_BRAND_STYLE_PRESETS = ['bella_rose', 'jade_wellness', 'graphite_luxe', 'ocean_clean', 'luxury_navy', 'slate_minimal'] as const;
 export const TENANT_BRAND_RADIUS_STYLES = ['soft', 'balanced', 'compact'] as const;
 export const TENANT_BRAND_BUTTON_STYLES = ['pill', 'rounded', 'minimal'] as const;
 export const TENANT_BRAND_MENU_STYLES = ['comfortable', 'compact'] as const;
@@ -58,6 +58,7 @@ export const DEFAULT_ENABLED_MODULES: TenantEnabledModules = {
   real_estate: false,
   bella_auto: false,
   bella_healthcare: false,
+  bella_education: false,
 };
 
 export const DEFAULT_TENANT_BRAND_THEME: TenantBrandTheme = {
@@ -147,13 +148,13 @@ export const DEFAULT_HEALTHCARE_TENANT_BRAND_THEME: TenantBrandTheme = {
 export const DEFAULT_EDUCATION_TENANT_BRAND_THEME: TenantBrandTheme = {
   brandName: '',
   logoUrl: '',
-  primaryColor: '#4F46E5', // Indigo 600 - modern, trusted, educational primary
-  accentColor: '#F59E0B', // Amber 500 - sunny, playful accent for preschool
+  primaryColor: '#334155', // Slate 700 - White & Slate Gray preset primary
+  accentColor: '#64748B', // Slate 500 - Slate accent
   portalDisplayName: '',
   invoiceDisplayName: '',
-  stylePreset: 'ocean_clean',
-  radiusStyle: 'soft',
-  buttonStyle: 'pill',
+  stylePreset: 'slate_minimal',
+  radiusStyle: 'balanced',
+  buttonStyle: 'rounded',
   menuStyle: 'comfortable',
   fontHeading: 'sans', // Education: modern, readable sans-serif
 };
@@ -324,8 +325,11 @@ export function normalizeTenantBrandThemeForModule(
   let rawAccent = cleanColor(source.accentColor, fallback.accentColor);
   let rawStylePreset = cleanChoice(source.stylePreset, TENANT_BRAND_STYLE_PRESETS, fallback.stylePreset);
 
-  // Upgrade legacy default pink brand theme to target module signature colors
-  if (moduleKey !== 'babycare' && (LEGACY_DEFAULT_PINKS.includes(rawPrimary.toUpperCase()) || rawStylePreset === 'bella_rose')) {
+  const hasExplicitPrimary = typeof source.primaryColor === 'string' && source.primaryColor.trim().length > 0;
+  const hasExplicitPreset = typeof source.stylePreset === 'string' && source.stylePreset.trim().length > 0;
+
+  // Upgrade unconfigured legacy default pink brand theme to target module signature colors ONLY if brandTheme was never explicitly set
+  if (!hasExplicitPrimary && !hasExplicitPreset && moduleKey !== 'babycare' && (LEGACY_DEFAULT_PINKS.includes(rawPrimary.toUpperCase()) || rawStylePreset === 'bella_rose')) {
     rawPrimary = fallback.primaryColor;
     rawAccent = fallback.accentColor;
     rawStylePreset = fallback.stylePreset;

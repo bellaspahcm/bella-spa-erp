@@ -36,10 +36,16 @@ export const bellaEducationManifest: VerticalManifest & {
     'student_academic_lifecycle'
   ],
   menus: [
-    { id: 'dashboard', label: 'Tổng Quan Dashboard', href: '/dashboard/education', icon: 'LayoutDashboard' },
-    { id: 'courses', label: 'Chương Trình & Lớp Học', href: '/dashboard/education/courses', icon: 'BookOpen' },
-    { id: 'enrollment', label: 'Bé Nhập Học & Hồ Sơ', href: '/dashboard/education/enrollments', icon: 'UserPlus' },
-    { id: 'attendance', label: 'Điểm Danh & Đưa Đón', href: '/dashboard/education/attendance', icon: 'CalendarCheck' },
-    { id: 'grades', label: 'Đánh Giá & Phát Triển', href: '/dashboard/education/grades', icon: 'GraduationCap' }
+    { id: 'dashboard', label: 'Tổng quan', href: '/dashboard/education', icon: 'LayoutDashboard' },
+    { id: 'children', label: 'Quản lý trẻ', href: '/dashboard/education/enrollments', icon: 'Baby' },
+    { id: 'classes', label: 'Quản lý lớp học', href: '/dashboard/education/courses', icon: 'BookOpen' },
+    { id: 'teachers', label: 'Quản lý giáo viên', href: '/dashboard/education/teachers', icon: 'UserCheck' },
+    { id: 'care', label: 'Chăm sóc & Nuôi dưỡng', href: '/dashboard/education/care', icon: 'Heart' },
+    { id: 'learning', label: 'Học tập & Hoạt động', href: '/dashboard/education/grades', icon: 'GraduationCap' },
+    { id: 'communication', label: 'Truyền thông', href: '/dashboard/education/communication', icon: 'MessageSquare' },
+    { id: 'finance', label: 'Tài chính', href: '/dashboard/education/finance', icon: 'CircleDollarSign' },
+    { id: 'facilities', label: 'Cơ sở vật chất', href: '/dashboard/education/facilities', icon: 'Building2' },
+    { id: 'reports', label: 'Báo cáo thống kê', href: '/dashboard/education/reports', icon: 'BarChart3' },
+    { id: 'settings', label: 'Cài đặt', href: '/dashboard/settings', icon: 'Settings' }
   ]
 };
