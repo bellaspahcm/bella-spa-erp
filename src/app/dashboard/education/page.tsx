@@ -919,7 +919,7 @@ export default function EducationDashboardPage() {
               Thực đơn tuần này
             </h3>
             <Link 
-              href="/dashboard/education/attendance" 
+              href="/dashboard/education/care" 
               className="text-xs font-bold text-sky-600 dark:text-sky-400 hover:underline flex items-center gap-0.5"
             >
               <span>Xem chi tiết</span>
@@ -948,7 +948,7 @@ export default function EducationDashboardPage() {
               Thông báo
             </h3>
             <Link 
-              href="/dashboard/education/courses" 
+              href="/dashboard/education/communication" 
               className="text-xs font-bold text-sky-600 dark:text-sky-400 hover:underline flex items-center gap-0.5"
             >
               <span>Xem tất cả</span>
