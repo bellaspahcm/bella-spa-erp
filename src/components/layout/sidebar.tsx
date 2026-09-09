@@ -405,41 +405,33 @@ const menuItems: SidebarMenuItem[] = [
 
 // ─── Real Estate Module Menu (isolated — only shown for real_estate moduleKey) ───
 const realEstateMenuItems: SidebarMenuItem[] = [
-  { type: 'header', label: 'Tổng quan & AI' },
-  { icon: LayoutDashboard, label: 'Tổng Quan Dự Án',      href: '/dashboard/real-estate' },
-  { icon: Sparkles,        label: 'AI Copilot',           href: '/dashboard/ai-copilot' },
+  { type: 'header', label: 'TỔNG QUAN' },
+  { icon: LayoutDashboard, label: 'Tổng quan',           href: '/dashboard/real-estate' },
+  { icon: Sparkles,        label: 'AI Copilot',          href: '/dashboard/ai-copilot' },
 
-  { type: 'header', label: 'Bất Động Sản' },
-  { icon: FolderKanban,    label: 'Dự Án BĐS',           href: '/dashboard/real-estate/projects' },
-  { icon: Grid,            label: 'Bảng Hàng Căn Hộ',    href: '/dashboard/real-estate/apartments' },
-  { icon: FileText,        label: 'Hợp Đồng & Đặt Cọc',  href: '/dashboard/real-estate/contracts' },
-  { icon: Users,           label: 'Khách Hàng Đầu Tư',   href: '/dashboard/real-estate/customers' },
-  { icon: Target,          label: 'Quản Lý Lead & SLA',   href: '/dashboard/real-estate/leads' },
-  { icon: LifeBuoy,        label: 'Chăm Sóc & Hỗ Trợ',   href: '/dashboard/real-estate/support' },
-  { icon: FileArchive,     label: 'Kho Tài Liệu',         href: '/dashboard/real-estate/documents' },
-  { icon: GitFork,         label: 'Sơ đồ tổ chức',        href: '/dashboard/real-estate/org-chart' },
-  { icon: UserCheck,       label: 'Danh sách nhân sự',    href: '/dashboard/real-estate/people' },
-  { icon: Briefcase,       label: 'HR Directory',         href: '/dashboard/real-estate/hr' },
+  { type: 'header', label: 'KINH DOANH' },
+  { icon: FolderKanban,    label: 'Dự án',               href: '/dashboard/real-estate/projects' },
+  { icon: Grid,            label: 'Bảng hàng căn hộ',    href: '/dashboard/real-estate/apartments' },
+  { icon: Target,          label: 'Lead & SLA',          href: '/dashboard/real-estate/leads' },
+  { icon: Users,           label: 'Khách hàng đầu tư',   href: '/dashboard/real-estate/customers' },
+  { icon: FileText,        label: 'Hợp đồng & Đặt cọc',  href: '/dashboard/real-estate/contracts' },
+  { icon: LifeBuoy,        label: 'Chăm sóc & Hỗ trợ',   href: '/dashboard/real-estate/support' },
 
-  { type: 'header', label: 'Báo Cáo & Quản Trị' },
-  { icon: FileBarChart2,   label: 'Báo Cáo Vertical',     href: '/dashboard/real-estate/reports' },
-  { icon: BarChart3,       label: 'BI Analytics',         href: '/dashboard/real-estate/bi-analytics' },
-  { icon: Search,          label: 'Tìm Kiếm BĐS',         href: '/dashboard/real-estate/global-search' },
-  { icon: ShieldCheck,     label: 'Quản Trị BĐS',         href: '/dashboard/real-estate/admin' },
+  { type: 'header', label: 'VẬN HÀNH' },
+  { icon: FileArchive,     label: 'Kho tài liệu',        href: '/dashboard/real-estate/documents' },
+  { icon: Calendar,        label: 'Lịch làm việc',       href: '/dashboard/real-estate/schedules' },
+  { icon: Megaphone,       label: 'Marketing & Kênh phân phối', href: '/dashboard/real-estate/marketing' },
 
-  { type: 'header', label: 'Đối Tác & Phân Phối' },
-  { icon: Briefcase,       label: 'Partner Portal (BPP)',  href: '/partner/dashboard' },
+  { type: 'header', label: 'TỔ CHỨC' },
+  { icon: GitFork,         label: 'Sơ đồ tổ chức',       href: '/dashboard/real-estate/org-chart' },
+  { icon: UserCheck,       label: 'Quản lý nhân sự',     href: '/dashboard/real-estate/people' },
 
-  { type: 'header', label: 'Tài Chính & Kế Toán' },
-  { icon: Banknote,        label: 'Lương & Hoa Hồng',      href: '/dashboard/salary' },
-  { icon: FileText,        label: 'Nhật Ký Thu Chi',       href: '/dashboard/finance' },
-  { icon: LineChart,       label: 'Dòng Tiền & Dự Báo',   href: '/dashboard/finance/cash-flow' },
-  { icon: DollarSign,      label: 'Đối Soát Công Nợ',     href: '/dashboard/finance/reconciliation' },
-  { icon: Wallet,          label: 'Sổ Cái Kế Toán',       href: '/dashboard/accounting' },
+  { type: 'header', label: 'BÁO CÁO' },
+  { icon: FileBarChart2,   label: 'Báo cáo phân tích',    href: '/dashboard/real-estate/reports' },
+  { icon: BarChart3,       label: 'Dashboard tài chính', href: '/dashboard/real-estate/bi-analytics' },
 
-  { type: 'header', label: 'Hệ Thống' },
-  { icon: HelpCircle,      label: 'Hướng Dẫn Sử Dụng',    href: '/dashboard/guides' },
-  { icon: Settings,        label: 'Cài Đặt Hệ Thống',     href: '/dashboard/settings' },
+  { type: 'header', label: 'CÀI ĐẶT' },
+  { icon: Settings,        label: 'Hệ thống',            href: '/dashboard/settings' },
 ];
 
 // ─── Bella Auto Module Menu (isolated — only shown for bella_auto moduleKey) ───
@@ -956,7 +948,8 @@ export function Sidebar() {
         - Mobile: Slide-out fixed drawer based on `isOpen` state
       */}
       <aside className={cn(
-        "w-80 bg-slate-50/70 dark:bg-[#111318] border-r border-slate-200/60 dark:border-slate-800/60 p-3 flex flex-col h-screen lg:h-screen h-[100dvh] fixed inset-y-0 left-0 z-50 transform lg:translate-x-0 lg:relative lg:inset-auto lg:z-auto transition-transform duration-300 ease-in-out overflow-hidden shrink-0",
+        "bg-slate-50/70 dark:bg-[#111318] border-r border-slate-200/60 dark:border-slate-800/60 p-3 flex flex-col h-screen lg:h-screen h-[100dvh] fixed inset-y-0 left-0 z-50 transform lg:translate-x-0 lg:relative lg:inset-auto lg:z-auto transition-transform duration-300 ease-in-out overflow-hidden shrink-0",
+        isRealEstateShell ? "w-[260px]" : "w-80",
         isBeautySpaShell && "beauty-erp-sidebar",
         isIndustrialCleaningShell && "beauty-erp-sidebar",
         isRealEstateShell && "beauty-erp-sidebar",
