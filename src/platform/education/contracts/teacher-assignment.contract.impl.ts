@@ -2,7 +2,8 @@
  * Education OS — Teacher Assignment Public Contract Implementation
  * 
  * Enforces canonical persistence on teacher_assignments table.
- * Strictly prevents lead teacher conflicts (max 1 active lead teacher per classroom/year).
+ * Strictly prevents lead teacher conflicts (max 1 active lead teacher per classroom/year,
+ * and 1 lead teacher per classroom per academic year).
  * Zero usage of courses.metadata shadow model.
  * 
  * @module platform/education/contracts/teacher-assignment.contract.impl
@@ -57,9 +58,9 @@ export class TeacherAssignmentContractImpl implements ITeacherAssignmentContract
 
     const supabase = await this.getClient();
 
-    // 1. Conflict Check: Max 1 active lead teacher per course & academic year
     if (input.role === 'lead_teacher') {
-      const { data: existingLead, error: leadCheckErr } = await supabase
+      // 1a. Classroom Lead Teacher Check: Max 1 active lead teacher per course & academic year
+      const { data: existingClassLead, error: classLeadErr } = await supabase
         .from('teacher_assignments')
         .select('*')
         .eq('tenant_id', input.tenantId)
@@ -69,16 +70,37 @@ export class TeacherAssignmentContractImpl implements ITeacherAssignmentContract
         .eq('status', 'active')
         .maybeSingle();
 
-      if (leadCheckErr) {
-        throw new Error(`Failed to check existing lead teacher: ${leadCheckErr.message}`);
+      if (classLeadErr) {
+        throw new Error(`Failed to check existing classroom lead teacher: ${classLeadErr.message}`);
       }
 
-      if (existingLead) {
-        // If the same teacher is already lead, return existing
-        if (existingLead.teacher_party_id === input.teacherPartyId) {
-          return this.mapRowToDTO(existingLead as DBTeacherAssignmentRow);
+      if (existingClassLead) {
+        if (existingClassLead.teacher_party_id === input.teacherPartyId) {
+          return this.mapRowToDTO(existingClassLead as DBTeacherAssignmentRow);
         }
         throw new Error('TEACHER_ASSIGNMENT_CONFLICT: Classroom already has an active lead teacher for this academic year');
+      }
+
+      // 1b. Teacher Workload Check: A teacher cannot be Lead Teacher of multiple active classrooms in the same academic year
+      const { data: existingTeacherLead, error: teacherLeadErr } = await supabase
+        .from('teacher_assignments')
+        .select('*')
+        .eq('tenant_id', input.tenantId)
+        .eq('teacher_party_id', input.teacherPartyId)
+        .eq('academic_year', input.academicYear.trim())
+        .eq('role', 'lead_teacher')
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (teacherLeadErr) {
+        throw new Error(`Failed to check teacher active lead workload: ${teacherLeadErr.message}`);
+      }
+
+      if (existingTeacherLead) {
+        if (existingTeacherLead.course_id === input.courseId) {
+          return this.mapRowToDTO(existingTeacherLead as DBTeacherAssignmentRow);
+        }
+        throw new Error('TEACHER_ASSIGNMENT_CONFLICT: Teacher is already assigned as Lead Teacher to another active classroom for this academic year');
       }
     }
 
