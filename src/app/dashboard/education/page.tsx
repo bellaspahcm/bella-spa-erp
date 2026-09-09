@@ -61,13 +61,26 @@ export default function EducationDashboardPage() {
   const [selectedRevenuePeriod, setSelectedRevenuePeriod] = useState('6 tháng gần nhất');
   const [hoveredRevenueMonth, setHoveredRevenueMonth] = useState<string | null>('Tháng 5');
 
-  // Interactive Header Popover States
+  // Interactive Header Popover & Date States
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(3);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   const profileRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
+  const datePickerRef = useRef<HTMLDivElement>(null);
+
+  // Format date into Vietnamese display string (e.g. "Thứ Tư, 9 tháng 9, 2026")
+  const formatVietnameseDate = (date: Date) => {
+    const dayNames = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+    const dayName = dayNames[date.getDay()];
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    const year = date.getFullYear();
+    return `${dayName}, ${day} tháng ${month}, ${year}`;
+  };
 
   // Close popovers on outside click
   useEffect(() => {
@@ -77,6 +90,9 @@ export default function EducationDashboardPage() {
       }
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
         setIsNotificationsOpen(false);
+      }
+      if (datePickerRef.current && !datePickerRef.current.contains(event.target as Node)) {
+        setIsDatePickerOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -466,11 +482,57 @@ export default function EducationDashboardPage() {
         <div className="absolute -bottom-10 left-1/3 w-60 h-60 rounded-full bg-pink-300/20 dark:bg-pink-500/10 blur-2xl pointer-events-none" />
 
         {/* Date picker widget on top right corner */}
-        <div className="absolute top-5 right-5 z-20">
-          <div className="inline-flex items-center gap-2 rounded-2xl bg-white/90 dark:bg-slate-900/90 px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm border border-slate-200/80 dark:border-slate-800 backdrop-blur-sm">
+        <div className="absolute top-5 right-5 z-20" ref={datePickerRef}>
+          <button 
+            type="button"
+            onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
+            className="inline-flex items-center gap-2 rounded-2xl bg-white/90 dark:bg-slate-900/90 px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm border border-slate-200/80 dark:border-slate-800 backdrop-blur-sm hover:bg-white dark:hover:bg-slate-900 transition-all cursor-pointer active:scale-95"
+            title="Bấm để chọn ngày xem lịch học"
+          >
             <Calendar className="w-3.5 h-3.5 text-indigo-500" />
-            <span>Thứ Hai, 26 tháng 5, 2025</span>
-          </div>
+            <span>{formatVietnameseDate(selectedDate)}</span>
+            <ChevronDown className="w-3 h-3 text-slate-400" />
+          </button>
+
+          {/* Interactive Date Picker Dropdown Popover */}
+          {isDatePickerOpen && (
+            <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-3">
+                <span className="text-xs font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-indigo-500" />
+                  Chọn ngày xem lịch học
+                </span>
+                <button 
+                  onClick={() => { setSelectedDate(new Date()); setIsDatePickerOpen(false); }}
+                  className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                >
+                  Hôm nay
+                </button>
+              </div>
+
+              <input
+                type="date"
+                value={selectedDate.toISOString().split('T')[0]}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setSelectedDate(new Date(e.target.value));
+                    setIsDatePickerOpen(false);
+                  }
+                }}
+                className="w-full p-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium cursor-pointer"
+              />
+
+              <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px]">
+                <span className="text-slate-500">Đã chọn: <strong className="text-indigo-600 dark:text-indigo-400 font-bold">{selectedDate.toLocaleDateString('vi-VN')}</strong></span>
+                <button
+                  onClick={() => setIsDatePickerOpen(false)}
+                  className="px-3 py-1 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] transition-colors cursor-pointer shadow-xs"
+                >
+                  Xác nhận
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
