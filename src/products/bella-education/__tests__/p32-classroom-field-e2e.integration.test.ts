@@ -21,7 +21,7 @@ import crypto from 'crypto';
 jest.setTimeout(60000);
 
 describe('BELLA EDUCATION V1 — P3.2 CLASSROOM FIELD E2E INTEGRATION', () => {
-  let supabase: SupabaseClient<Record<string, unknown>>;
+  let supabase: SupabaseClient;
 
   const TENANT_A = '11111111-1111-1111-1111-11111111111a';
   const TENANT_B = '22222222-2222-2222-2222-22222222222b';
@@ -123,8 +123,8 @@ describe('BELLA EDUCATION V1 — P3.2 CLASSROOM FIELD E2E INTEGRATION', () => {
       .eq('course_id', createdCourseId)
       .single();
 
-    expect(dbCourse).toBeDefined();
-    expect(dbCourse.course_name).toBe('Lớp Mầm E2E — Họa Mi');
+    expect(dbCourse).not.toBeNull();
+    expect(dbCourse?.course_name).toBe('Lớp Mầm E2E — Họa Mi');
 
     // Verify DB Persistence in teacher_assignments table
     const { data: dbAssign } = await supabase
@@ -134,10 +134,10 @@ describe('BELLA EDUCATION V1 — P3.2 CLASSROOM FIELD E2E INTEGRATION', () => {
       .eq('tenant_id', TENANT_A)
       .single();
 
-    expect(dbAssign).toBeDefined();
-    expect(dbAssign.teacher_party_id).toBe(teacherParty1);
-    expect(dbAssign.role).toBe('lead_teacher');
-    expect(dbAssign.status).toBe('active');
+    expect(dbAssign).not.toBeNull();
+    expect(dbAssign?.teacher_party_id).toBe(teacherParty1);
+    expect(dbAssign?.role).toBe('lead_teacher');
+    expect(dbAssign?.status).toBe('active');
   });
 
   it('Step 2: Critical Negative Path — attempting to assign same Lead Teacher to 2nd classroom in same academic year returns HTTP 409 Conflict', async () => {
@@ -210,8 +210,8 @@ describe('BELLA EDUCATION V1 — P3.2 CLASSROOM FIELD E2E INTEGRATION', () => {
       .eq('tenant_id', TENANT_A)
       .single();
 
-    expect(dbAssign).toBeDefined();
-    const assignmentId = dbAssign.assignment_id;
+    expect(dbAssign).not.toBeNull();
+    const assignmentId = dbAssign?.assignment_id as string;
 
     // 2. Terminate Teacher 1
     const termReq = new Request(`http://localhost/api/education/courses/${createdCourseId}/teachers?tenantId=${TENANT_A}&assignmentId=${assignmentId}`, {

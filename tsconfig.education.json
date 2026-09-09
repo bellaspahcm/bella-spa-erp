@@ -1,0 +1,26 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "next-env.d.ts",
+    "src/platform/education/**/*.ts",
+    "src/platform/education/**/*.tsx",
+    "src/products/bella-education/**/*.ts",
+    "src/products/bella-education/**/*.tsx",
+    "src/app/dashboard/education/**/*.ts",
+    "src/app/dashboard/education/**/*.tsx",
+    "src/app/api/education/**/*.ts",
+    "src/app/api/education/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    "src/platform/host",
+    "src/platform/healthcare",
+    "src/platform/logistics",
+    "src/services"
+  ]
+}
