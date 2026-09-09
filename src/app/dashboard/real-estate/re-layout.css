@@ -27,7 +27,8 @@
 .re-layout-root {
   background:
     radial-gradient(circle at 10% 20%, rgba(243, 244, 246, 0.8) 0%, rgba(229, 231, 235, 0.3) 90%),
-    linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  min-height: 100vh;
 }
 
 html.dark .re-layout-root {
