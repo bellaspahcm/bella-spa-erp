@@ -792,22 +792,22 @@ export default function EducationDashboardPage() {
                     onMouseEnter={() => setHoveredRevenueMonth(item.month)}
                     className="flex flex-col items-center group h-full justify-end relative cursor-pointer"
                   >
-                    {/* Tooltip on highlighted / hovered bar */}
-                    {isHovered && (
-                      <div className="absolute -top-11 z-30 bg-slate-900 dark:bg-slate-800 text-white text-[10px] font-bold px-2.5 py-1 rounded-xl shadow-xl border border-slate-700 whitespace-nowrap animate-in fade-in zoom-in-95 duration-150 pointer-events-none text-center">
-                        <span>{item.month}</span>
-                        <span className="block text-emerald-400 font-extrabold">{item.value} triệu VNĐ</span>
-                      </div>
-                    )}
-
                     <div 
-                      className={`w-full max-w-[32px] rounded-t-lg transition-all duration-300 ${
+                      className={`w-full max-w-[32px] rounded-t-lg transition-all duration-300 relative ${
                         item.highlighted || isHovered 
                           ? 'bg-emerald-500 shadow-md scale-105' 
                           : 'bg-emerald-400/80 dark:bg-emerald-600/80 hover:bg-emerald-500'
                       }`}
                       style={{ height: `${heightPercentage}%` }}
-                    />
+                    >
+                      {/* Tooltip directly 8px above top of this specific bar */}
+                      {isHovered && (
+                        <div className="absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 z-30 bg-slate-900/95 dark:bg-slate-800/95 text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-xl border border-slate-700/80 whitespace-nowrap animate-in fade-in zoom-in-95 duration-150 pointer-events-none flex items-center gap-1.5">
+                          <span className="text-slate-200">{item.month}:</span>
+                          <span className="text-emerald-400 font-extrabold">{item.value} triệu VNĐ</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })}
