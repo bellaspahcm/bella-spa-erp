@@ -53,6 +53,13 @@ const brandPresetOptions: Array<{
   accentColor: string;
 }> = [
   {
+    value: 'slate_minimal',
+    label: 'White & Slate Gray',
+    description: 'Trắng - Xám hiện đại, tinh tế, đồng bộ hoàn hảo với giao diện viewport.',
+    primaryColor: '#334155',
+    accentColor: '#64748B',
+  },
+  {
     value: 'ocean_clean',
     label: 'Ocean Clean',
     description: 'Xanh dương chuyên nghiệp, tin cậy, phù hợp Dịch vụ vệ sinh.',
