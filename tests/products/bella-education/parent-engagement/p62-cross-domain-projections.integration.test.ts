@@ -20,7 +20,7 @@ import {
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://lvnvkpyxtuilhrabtlwv.supabase.co';
 const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2bnZrcHl4dHVpbGhyYWJ0bHd2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NjgxMzgwMSwiZXhwIjoyMDYyMzg5ODAxfQ.mock-key';
+  'sb_service_role_mock_token_for_integration_tests';
 
 describe('P6.2 Cross-Domain Projection Bridges & Escalation Engine Integration Suite', () => {
   let supabase: SupabaseClient;
