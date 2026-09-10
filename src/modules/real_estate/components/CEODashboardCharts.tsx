@@ -232,40 +232,52 @@ export const CEODashboardCharts: React.FC<CEODashboardChartsProps> = ({
             </div>
 
             {/* Custom Bar & Line Chart Grid */}
-            <div className="relative h-56 pt-6 pb-2 px-2 flex items-end justify-between gap-3 border-b border-slate-100 dark:border-slate-800">
-              {/* Background Grid Lines */}
-              <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20 text-[10px] font-mono text-slate-400">
-                <div className="border-b border-dashed border-slate-300 w-full flex justify-between"><span>200</span></div>
-                <div className="border-b border-dashed border-slate-300 w-full flex justify-between"><span>150</span></div>
-                <div className="border-b border-dashed border-slate-300 w-full flex justify-between"><span>100</span></div>
-                <div className="border-b border-dashed border-slate-300 w-full flex justify-between"><span>50</span></div>
-                <div>0</div>
+            <div className="relative">
+              {/* Plot Area with Y-Axis Grid Lines & 0-Baseline */}
+              <div className="relative h-48 border-b border-slate-200 dark:border-slate-700">
+                {/* Background Grid Lines (200, 150, 100, 50, 0) */}
+                <div className="absolute inset-0 flex flex-col justify-between pointer-events-none text-[10px] font-mono text-slate-400 opacity-60">
+                  <div className="border-b border-dashed border-slate-200 dark:border-slate-800 w-full flex justify-between"><span>200</span></div>
+                  <div className="border-b border-dashed border-slate-200 dark:border-slate-800 w-full flex justify-between"><span>150</span></div>
+                  <div className="border-b border-dashed border-slate-200 dark:border-slate-800 w-full flex justify-between"><span>100</span></div>
+                  <div className="border-b border-dashed border-slate-200 dark:border-slate-800 w-full flex justify-between"><span>50</span></div>
+                  <div className="w-full flex justify-between text-slate-400 font-bold"><span>0</span></div>
+                </div>
+
+                {/* Bars Container (Anchored directly to border-b 0-level line) */}
+                <div className="absolute inset-0 flex items-end justify-between px-2 gap-3 z-10">
+                  {monthlyData.map((d, idx) => {
+                    const revH = (d.rev / maxChartVal) * 100;
+                    const cashH = (d.cash / maxChartVal) * 100;
+
+                    return (
+                      <div key={idx} className="flex-1 flex items-end justify-center gap-1.5 h-full group">
+                        {/* Rev Bar */}
+                        <div
+                          className="w-2/5 bg-blue-600 rounded-t-md transition-all duration-300 group-hover:bg-blue-700 shadow-2xs"
+                          style={{ height: `${revH}%` }}
+                          title={`Doanh thu HĐMB: ${d.rev} Tỷ`}
+                        />
+                        {/* Cash Bar */}
+                        <div
+                          className="w-2/5 bg-emerald-500 rounded-t-md transition-all duration-300 group-hover:bg-emerald-600 shadow-2xs"
+                          style={{ height: `${cashH}%` }}
+                          title={`Thực thu: ${d.cash} Tỷ`}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
-              {monthlyData.map((d, idx) => {
-                const revH = (d.rev / maxChartVal) * 100;
-                const cashH = (d.cash / maxChartVal) * 100;
-
-                return (
-                  <div key={idx} className="relative z-10 flex-1 flex flex-col items-center gap-2 h-full justify-end group">
-                    <div className="w-full flex items-end justify-center gap-1.5 h-full">
-                      {/* Rev Bar */}
-                      <div
-                        className="w-2/5 bg-blue-600 rounded-t-md transition-all duration-300 group-hover:bg-blue-700 shadow-2xs"
-                        style={{ height: `${revH}%` }}
-                        title={`Doanh thu HĐMB: ${d.rev} Tỷ`}
-                      />
-                      {/* Cash Bar */}
-                      <div
-                        className="w-2/5 bg-emerald-500 rounded-t-md transition-all duration-300 group-hover:bg-emerald-600 shadow-2xs"
-                        style={{ height: `${cashH}%` }}
-                        title={`Thực thu: ${d.cash} Tỷ`}
-                      />
-                    </div>
-                    <span className="text-xs font-bold text-slate-600 dark:text-slate-400 mt-1">{d.month}</span>
+              {/* X-Axis Month Labels Row (Below 0 Baseline) */}
+              <div className="flex items-center justify-between px-2 mt-2 z-10">
+                {monthlyData.map((d, idx) => (
+                  <div key={idx} className="flex-1 text-center text-xs font-bold text-slate-700 dark:text-slate-300">
+                    {d.month}
                   </div>
-                );
-              })}
+                ))}
+              </div>
             </div>
 
             {/* Bottom Target Summary Bar */}
