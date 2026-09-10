@@ -131,6 +131,8 @@ export default function RealEstateApartmentsPage() {
   const [search, setSearch] = useState("");
   const [selectedBlock, setSelectedBlock] = useState<string>("all");
   const [selectedFloor, setSelectedFloor] = useState<string>("all");
+  const [selectedType, setSelectedType] = useState<string>("all");
+  const [selectedPriceRange, setSelectedPriceRange] = useState<string>("all");
 
   const [selectedProduct, setSelectedProduct] = useState<ProductRow | null>(null);
 
@@ -379,41 +381,45 @@ export default function RealEstateApartmentsPage() {
       <div className="space-y-3 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl shadow-xs">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           <div className="flex items-center gap-2 flex-wrap">
-            <select
+            <PremiumSelect
               value={selectedBlock}
-              onChange={e => setSelectedBlock(e.target.value)}
-              className="px-3.5 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500"
-            >
-              <option value="all">Tất cả tòa</option>
-              {availableBlocks.map(b => (
-                <option key={b} value={b}>Tòa {b}</option>
-              ))}
-            </select>
+              onChange={(val) => setSelectedBlock(val)}
+              options={[
+                { value: "all", label: "Tất cả tòa" },
+                ...availableBlocks.map((b) => ({ value: b, label: `Tòa ${b}` })),
+              ]}
+            />
 
-            <select
+            <PremiumSelect
               value={selectedFloor}
-              onChange={e => setSelectedFloor(e.target.value)}
-              className="px-3.5 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500"
-            >
-              <option value="all">Tất cả tầng</option>
-              {availableFloors.map(f => (
-                <option key={f} value={f}>Tầng {f}</option>
-              ))}
-            </select>
+              onChange={(val) => setSelectedFloor(val)}
+              options={[
+                { value: "all", label: "Tất cả tầng" },
+                ...availableFloors.map((f) => ({ value: f, label: `Tầng ${f}` })),
+              ]}
+            />
 
-            <select className="px-3.5 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500">
-              <option value="all">Tất cả loại căn</option>
-              <option value="2pn">2 Phòng ngủ</option>
-              <option value="3pn">3 Phòng ngủ</option>
-              <option value="shophouse">Shophouse</option>
-            </select>
+            <PremiumSelect
+              value={selectedType}
+              onChange={(val) => setSelectedType(val)}
+              options={[
+                { value: "all", label: "Tất cả loại căn" },
+                { value: "2pn", label: "2 Phòng ngủ" },
+                { value: "3pn", label: "3 Phòng ngủ" },
+                { value: "shophouse", label: "Shophouse" },
+              ]}
+            />
 
-            <select className="px-3.5 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500">
-              <option value="all">Khoảng giá</option>
-              <option value="3-5">3 - 5 tỷ</option>
-              <option value="5-8">5 - 8 tỷ</option>
-              <option value="8+">&gt; 8 tỷ</option>
-            </select>
+            <PremiumSelect
+              value={selectedPriceRange}
+              onChange={(val) => setSelectedPriceRange(val)}
+              options={[
+                { value: "all", label: "Khoảng giá" },
+                { value: "3-5", label: "3 - 5 tỷ" },
+                { value: "5-8", label: "5 - 8 tỷ" },
+                { value: "8+", label: "> 8 tỷ" },
+              ]}
+            />
 
             <div className="relative min-w-[220px]">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />

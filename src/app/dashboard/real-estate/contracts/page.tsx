@@ -352,6 +352,12 @@ export default function RealEstateContractsPage() {
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [headerProject, setHeaderProject] = useState<string>('elyse');
+  const [filterDate, setFilterDate] = useState<string>('all');
+  const [pageSize, setPageSize] = useState<string>('8');
+  const [modalContractType, setModalContractType] = useState<string>('HĐMB');
+  const [modalProject, setModalProject] = useState<string>('Elyse Island');
+  const [paymentMethod, setPaymentMethod] = useState<string>('transfer');
 
   const selectedContract = useMemo(() => {
     return contracts.find(c => c.id === selectedContractId) || null;
@@ -452,11 +458,16 @@ export default function RealEstateContractsPage() {
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
-          <select className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 shadow-xs focus:outline-none">
-            <option value="elyse">🏢 Elyse Island</option>
-            <option value="sunrise">Sunrise Residence</option>
-            <option value="lumiere">Lumière Bay</option>
-          </select>
+          <PremiumSelect
+            value={headerProject}
+            onChange={setHeaderProject}
+            className="w-44"
+            options={[
+              { value: "elyse", label: "🏢 Elyse Island" },
+              { value: "sunrise", label: "Sunrise Residence" },
+              { value: "lumiere", label: "Lumière Bay" },
+            ]}
+          />
 
           <div className="relative min-w-[240px]">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -611,46 +622,58 @@ export default function RealEstateContractsPage() {
         {/* Secondary Dropdown Row */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2 flex-wrap text-xs font-semibold">
-            <select
+            <PremiumSelect
               value={filterProject}
-              onChange={e => setFilterProject(e.target.value)}
-              className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none"
-            >
-              <option value="all">Dự án: Tất cả</option>
-              <option value="Elyse Island">Elyse Island</option>
-              <option value="Sunrise Residence">Sunrise Residence</option>
-              <option value="Lumière Bay">Lumière Bay</option>
-              <option value="Bella Premium">Bella Premium</option>
-            </select>
+              onChange={setFilterProject}
+              placeholder="Dự án: Tất cả"
+              className="w-44"
+              options={[
+                { value: "all", label: "Dự án: Tất cả" },
+                { value: "Elyse Island", label: "Elyse Island" },
+                { value: "Sunrise Residence", label: "Sunrise Residence" },
+                { value: "Lumière Bay", label: "Lumière Bay" },
+                { value: "Bella Premium", label: "Bella Premium" },
+              ]}
+            />
 
-            <select
+            <PremiumSelect
               value={filterStatus}
-              onChange={e => setFilterStatus(e.target.value)}
-              className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none"
-            >
-              <option value="all">Trạng thái: Tất cả</option>
-              <option value="active">Đang hiệu lực</option>
-              <option value="deposited">Đã đặt cọc</option>
-              <option value="completed">Hoàn tất</option>
-              <option value="warning">Sắp đến hạn</option>
-              <option value="overdue">Quá hạn</option>
-            </select>
+              onChange={setFilterStatus}
+              placeholder="Trạng thái: Tất cả"
+              className="w-44"
+              options={[
+                { value: "all", label: "Trạng thái: Tất cả" },
+                { value: "active", label: "Đang hiệu lực" },
+                { value: "deposited", label: "Đã đặt cọc" },
+                { value: "completed", label: "Hoàn tất" },
+                { value: "warning", label: "Sắp đến hạn" },
+                { value: "overdue", label: "Quá hạn" },
+              ]}
+            />
 
-            <select
+            <PremiumSelect
               value={filterType}
-              onChange={e => setFilterType(e.target.value)}
-              className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none"
-            >
-              <option value="all">Loại: Tất cả</option>
-              <option value="HĐMB">HĐMB</option>
-              <option value="HĐĐC">HĐĐC</option>
-            </select>
+              onChange={setFilterType}
+              placeholder="Loại: Tất cả"
+              className="w-36"
+              options={[
+                { value: "all", label: "Loại: Tất cả" },
+                { value: "HĐMB", label: "HĐMB" },
+                { value: "HĐĐC", label: "HĐĐC" },
+              ]}
+            />
 
-            <select className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none">
-              <option value="all">Ngày ký: Tất cả</option>
-              <option value="today">Hôm nay</option>
-              <option value="this_month">Tháng này</option>
-            </select>
+            <PremiumSelect
+              value={filterDate}
+              onChange={setFilterDate}
+              placeholder="Ngày ký: Tất cả"
+              className="w-40"
+              options={[
+                { value: "all", label: "Ngày ký: Tất cả" },
+                { value: "today", label: "Hôm nay" },
+                { value: "this_month", label: "Tháng này" },
+              ]}
+            />
 
             <button className="p-1.5 rounded-xl text-slate-500 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100">
               <Filter className="w-3.5 h-3.5" />
@@ -847,11 +870,16 @@ export default function RealEstateContractsPage() {
 
             <div className="flex items-center gap-2">
               <span>Hiển thị</span>
-              <select className="px-2.5 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none">
-                <option value="8">8 / trang</option>
-                <option value="20">20 / trang</option>
-                <option value="50">50 / trang</option>
-              </select>
+              <PremiumSelect
+                value={pageSize}
+                onChange={setPageSize}
+                className="w-28"
+                options={[
+                  { value: "8", label: "8 / trang" },
+                  { value: "20", label: "20 / trang" },
+                  { value: "50", label: "50 / trang" },
+                ]}
+              />
             </div>
           </div>
         </div>
@@ -1068,18 +1096,26 @@ export default function RealEstateContractsPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Loại hợp đồng</label>
-                    <select className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none font-bold">
-                      <option value="HĐMB">HĐMB - Hợp đồng mua bán</option>
-                      <option value="HĐĐC">HĐĐC - Hợp đồng đặt cọc</option>
-                    </select>
+                    <PremiumSelect
+                      value={modalContractType}
+                      onChange={setModalContractType}
+                      options={[
+                        { value: "HĐMB", label: "HĐMB - Hợp đồng mua bán" },
+                        { value: "HĐĐC", label: "HĐĐC - Hợp đồng đặt cọc" },
+                      ]}
+                    />
                   </div>
                   <div>
                     <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Dự án</label>
-                    <select className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none font-bold">
-                      <option>Elyse Island</option>
-                      <option>Sunrise Residence</option>
-                      <option>Lumière Bay</option>
-                    </select>
+                    <PremiumSelect
+                      value={modalProject}
+                      onChange={setModalProject}
+                      options={[
+                        { value: "Elyse Island", label: "Elyse Island" },
+                        { value: "Sunrise Residence", label: "Sunrise Residence" },
+                        { value: "Lumière Bay", label: "Lumière Bay" },
+                      ]}
+                    />
                   </div>
                 </div>
 
@@ -1141,11 +1177,15 @@ export default function RealEstateContractsPage() {
 
                 <div>
                   <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Hình thức thanh toán</label>
-                  <select className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none font-bold">
-                    <option>Chuyển khoản ngân hàng (Vietcombank)</option>
-                    <option>Thẻ ngân hàng / POS</option>
-                    <option>Tiền mặt</option>
-                  </select>
+                  <PremiumSelect
+                    value={paymentMethod}
+                    onChange={setPaymentMethod}
+                    options={[
+                      { value: "transfer", label: "Chuyển khoản ngân hàng (Vietcombank)" },
+                      { value: "card", label: "Thẻ ngân hàng / POS" },
+                      { value: "cash", label: "Tiền mặt" },
+                    ]}
+                  />
                 </div>
 
                 <div>

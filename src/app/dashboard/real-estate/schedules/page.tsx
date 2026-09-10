@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { PremiumSelect } from "@/components/ui/PremiumSelect";
 import {
   Calendar, Clock, Users, Plus, Search, Filter,
   ChevronLeft, ChevronRight, X, CheckCircle2,
@@ -169,6 +170,9 @@ export default function SchedulesPage() {
   const [selectedShiftId, setSelectedShiftId] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [shifts, setShifts] = useState<ShiftEntry[]>(ALL_SHIFTS);
+  const [modalStaff, setModalStaff] = useState<string>(STAFF_LIST[0]?.id || '');
+  const [modalShift, setModalShift] = useState<string>('morning');
+  const [modalProject, setModalProject] = useState<string>('The Grand Tower');
 
   const weekDays = useMemo(() => getWeekDays(baseDate), [baseDate]);
 
@@ -383,46 +387,52 @@ export default function SchedulesPage() {
 
           {/* Dropdown Filters */}
           <div className="flex items-center gap-2 flex-wrap shrink-0">
-            <select
+            <PremiumSelect
               value={filterDept}
-              onChange={e => setFilterDept(e.target.value)}
-              className="px-3 py-2 rounded-xl text-xs font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none shadow-2xs"
-            >
-              <option value="all">Phòng ban</option>
-              <option value="Kinh doanh">Kinh doanh</option>
-              <option value="Pháp lý">Pháp lý</option>
-              <option value="CSKH">CSKH</option>
-              <option value="Kỹ thuật">Kỹ thuật</option>
-              <option value="Tài chính">Tài chính</option>
-              <option value="Marketing">Marketing</option>
-              <option value="Dự án">Dự án</option>
-            </select>
+              onChange={setFilterDept}
+              placeholder="Phòng ban"
+              className="w-36"
+              options={[
+                { value: "all", label: "Phòng ban" },
+                { value: "Kinh doanh", label: "Kinh doanh" },
+                { value: "Pháp lý", label: "Pháp lý" },
+                { value: "CSKH", label: "CSKH" },
+                { value: "Kỹ thuật", label: "Kỹ thuật" },
+                { value: "Tài chính", label: "Tài chính" },
+                { value: "Marketing", label: "Marketing" },
+                { value: "Dự án", label: "Dự án" },
+              ]}
+            />
 
-            <select
+            <PremiumSelect
               value={filterShift}
-              onChange={e => setFilterShift(e.target.value)}
-              className="px-3 py-2 rounded-xl text-xs font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none shadow-2xs"
-            >
-              <option value="all">Ca làm việc</option>
-              <option value="morning">Ca sáng</option>
-              <option value="afternoon">Ca chiều</option>
-              <option value="evening">Ca tối</option>
-              <option value="full_day">Cả ngày</option>
-              <option value="off">Nghỉ</option>
-            </select>
+              onChange={setFilterShift}
+              placeholder="Ca làm việc"
+              className="w-36"
+              options={[
+                { value: "all", label: "Ca làm việc" },
+                { value: "morning", label: "Ca sáng" },
+                { value: "afternoon", label: "Ca chiều" },
+                { value: "evening", label: "Ca tối" },
+                { value: "full_day", label: "Cả ngày" },
+                { value: "off", label: "Nghỉ" },
+              ]}
+            />
 
-            <select
+            <PremiumSelect
               value={filterStatus}
-              onChange={e => setFilterStatus(e.target.value)}
-              className="px-3 py-2 rounded-xl text-xs font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none shadow-2xs"
-            >
-              <option value="all">Trạng thái</option>
-              <option value="confirmed">Đã xác nhận</option>
-              <option value="pending">Chờ xác nhận</option>
-              <option value="absent">Vắng mặt</option>
-              <option value="late">Đi muộn</option>
-              <option value="overtime">Tăng ca</option>
-            </select>
+              onChange={setFilterStatus}
+              placeholder="Trạng thái"
+              className="w-36"
+              options={[
+                { value: "all", label: "Trạng thái" },
+                { value: "confirmed", label: "Đã xác nhận" },
+                { value: "pending", label: "Chờ xác nhận" },
+                { value: "absent", label: "Vắng mặt" },
+                { value: "late", label: "Đi muộn" },
+                { value: "overtime", label: "Tăng ca" },
+              ]}
+            />
 
             <button
               onClick={() => { setFilterDept('all'); setFilterShift('all'); setFilterStatus('all'); setSearch(''); toast.success('Đã đặt lại bộ lọc!'); }}
@@ -805,9 +815,11 @@ export default function SchedulesPage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Nhân viên</label>
-                  <select className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 transition">
-                    {STAFF_LIST.map(s => <option key={s.id} value={s.id}>{s.name} – {s.department}</option>)}
-                  </select>
+                  <PremiumSelect
+                    value={modalStaff}
+                    onChange={setModalStaff}
+                    options={STAFF_LIST.map(s => ({ value: s.id, label: `${s.name} – ${s.department}` }))}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Ngày làm việc</label>
@@ -815,22 +827,30 @@ export default function SchedulesPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Ca làm việc</label>
-                  <select className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 transition">
-                    <option value="morning">Ca sáng (07:00–12:00)</option>
-                    <option value="afternoon">Ca chiều (12:00–17:00)</option>
-                    <option value="evening">Ca tối (17:00–22:00)</option>
-                    <option value="full_day">Cả ngày (07:00–17:00)</option>
-                    <option value="off">Nghỉ</option>
-                  </select>
+                  <PremiumSelect
+                    value={modalShift}
+                    onChange={setModalShift}
+                    options={[
+                      { value: "morning", label: "Ca sáng (07:00–12:00)" },
+                      { value: "afternoon", label: "Ca chiều (12:00–17:00)" },
+                      { value: "evening", label: "Ca tối (17:00–22:00)" },
+                      { value: "full_day", label: "Cả ngày (07:00–17:00)" },
+                      { value: "off", label: "Nghỉ" },
+                    ]}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Dự án phân công</label>
-                  <select className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 transition">
-                    <option>The Grand Tower</option>
-                    <option>Riverside Heights</option>
-                    <option>Sunrise Villa</option>
-                    <option>Văn phòng HQ</option>
-                  </select>
+                  <PremiumSelect
+                    value={modalProject}
+                    onChange={setModalProject}
+                    options={[
+                      { value: "The Grand Tower", label: "The Grand Tower" },
+                      { value: "Riverside Heights", label: "Riverside Heights" },
+                      { value: "Sunrise Villa", label: "Sunrise Villa" },
+                      { value: "Văn phòng HQ", label: "Văn phòng HQ" },
+                    ]}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Ghi chú</label>

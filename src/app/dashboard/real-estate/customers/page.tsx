@@ -414,6 +414,10 @@ export default function RealEstateCustomersPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showReassignModal, setShowReassignModal] = useState(false);
   const [newInteractionNote, setNewInteractionNote] = useState('');
+  const [headerProject, setHeaderProject] = useState<string>('all');
+  const [modalProject, setModalProject] = useState<string>('Elyse Island');
+  const [modalReassignSales, setModalReassignSales] = useState<string>('Lê Thị Hoa (PKD 2)');
+  const [pageSize, setPageSize] = useState<string>('8');
 
   const selectedCustomer = useMemo(() => {
     return customers.find(c => c.id === selectedCustomerId) || null;
@@ -503,12 +507,17 @@ export default function RealEstateCustomersPage() {
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
-          <select className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 shadow-xs focus:outline-none">
-            <option value="all">🏢 Tất cả dự án</option>
-            <option value="elyse">Elyse Island</option>
-            <option value="sunrise">Sunrise Residence</option>
-            <option value="lumiere">Lumière Bay</option>
-          </select>
+          <PremiumSelect
+            value={headerProject}
+            onChange={setHeaderProject}
+            className="w-44"
+            options={[
+              { value: "all", label: "🏢 Tất cả dự án" },
+              { value: "elyse", label: "Elyse Island" },
+              { value: "sunrise", label: "Sunrise Residence" },
+              { value: "lumiere", label: "Lumière Bay" },
+            ]}
+          />
 
           <div className="relative min-w-[220px]">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -649,67 +658,77 @@ export default function RealEstateCustomersPage() {
         {/* Secondary Dropdowns Toolbar */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2 flex-wrap text-xs font-semibold">
-            <select
+            <PremiumSelect
               value={filterProject}
-              onChange={e => setFilterProject(e.target.value)}
-              className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none"
-            >
-              <option value="all">Dự án: Tất cả</option>
-              <option value="Elyse Island">Elyse Island</option>
-              <option value="Sunrise Residence">Sunrise Residence</option>
-              <option value="Lumière Bay">Lumière Bay</option>
-              <option value="Bella Premium">Bella Premium</option>
-            </select>
+              onChange={setFilterProject}
+              placeholder="Dự án: Tất cả"
+              className="w-44"
+              options={[
+                { value: "all", label: "Dự án: Tất cả" },
+                { value: "Elyse Island", label: "Elyse Island" },
+                { value: "Sunrise Residence", label: "Sunrise Residence" },
+                { value: "Lumière Bay", label: "Lumière Bay" },
+                { value: "Bella Premium", label: "Bella Premium" },
+              ]}
+            />
 
-            <select
+            <PremiumSelect
               value={filterSource}
-              onChange={e => setFilterSource(e.target.value)}
-              className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none"
-            >
-              <option value="all">Nguồn: Tất cả</option>
-              <option value="facebook">Facebook Ads</option>
-              <option value="zalo">Zalo OA</option>
-              <option value="google">Google Ads</option>
-              <option value="referral">Giới thiệu</option>
-              <option value="tiktok">TikTok Ads</option>
-              <option value="email">Email Marketing</option>
-              <option value="event">Sự kiện</option>
-              <option value="website">Website</option>
-            </select>
+              onChange={setFilterSource}
+              placeholder="Nguồn: Tất cả"
+              className="w-40"
+              options={[
+                { value: "all", label: "Nguồn: Tất cả" },
+                { value: "facebook", label: "Facebook Ads" },
+                { value: "zalo", label: "Zalo OA" },
+                { value: "google", label: "Google Ads" },
+                { value: "referral", label: "Giới thiệu" },
+                { value: "tiktok", label: "TikTok Ads" },
+                { value: "email", label: "Email Marketing" },
+                { value: "event", label: "Sự kiện" },
+                { value: "website", label: "Website" },
+              ]}
+            />
 
-            <select
+            <PremiumSelect
               value={filterDemand}
-              onChange={e => setFilterDemand(e.target.value)}
-              className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none"
-            >
-              <option value="all">Nhu cầu: Tất cả</option>
-              <option value="apartment">Căn hộ</option>
-              <option value="villa">Biệt thự</option>
-              <option value="shophouse">Shophouse</option>
-            </select>
+              onChange={setFilterDemand}
+              placeholder="Nhu cầu: Tất cả"
+              className="w-40"
+              options={[
+                { value: "all", label: "Nhu cầu: Tất cả" },
+                { value: "apartment", label: "Căn hộ" },
+                { value: "villa", label: "Biệt thự" },
+                { value: "shophouse", label: "Shophouse" },
+              ]}
+            />
 
-            <select
+            <PremiumSelect
               value={filterBudget}
-              onChange={e => setFilterBudget(e.target.value)}
-              className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none"
-            >
-              <option value="all">Ngân sách: Tất cả</option>
-              <option value="3-5">3 – 5 tỷ</option>
-              <option value="5-10">5 – 10 tỷ</option>
-              <option value="10-20">10 – 20 tỷ</option>
-            </select>
+              onChange={setFilterBudget}
+              placeholder="Ngân sách: Tất cả"
+              className="w-44"
+              options={[
+                { value: "all", label: "Ngân sách: Tất cả" },
+                { value: "3-5", label: "3 – 5 tỷ" },
+                { value: "5-10", label: "5 – 10 tỷ" },
+                { value: "10-20", label: "10 – 20 tỷ" },
+              ]}
+            />
 
-            <select
+            <PremiumSelect
               value={filterSales}
-              onChange={e => setFilterSales(e.target.value)}
-              className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none"
-            >
-              <option value="all">Sales: Tất cả</option>
-              <option value="Trần Minh Tuấn">Trần Minh Tuấn</option>
-              <option value="Lê Thị Hoa">Lê Thị Hoa</option>
-              <option value="Nguyễn Thị Mai">Nguyễn Thị Mai</option>
-              <option value="Nguyễn Văn An">Nguyễn Văn An</option>
-            </select>
+              onChange={setFilterSales}
+              placeholder="Sales: Tất cả"
+              className="w-44"
+              options={[
+                { value: "all", label: "Sales: Tất cả" },
+                { value: "Trần Minh Tuấn", label: "Trần Minh Tuấn" },
+                { value: "Lê Thị Hoa", label: "Lê Thị Hoa" },
+                { value: "Nguyễn Thị Mai", label: "Nguyễn Thị Mai" },
+                { value: "Nguyễn Văn An", label: "Nguyễn Văn An" },
+              ]}
+            />
 
             <button className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 flex items-center gap-1">
               <SlidersHorizontal className="w-3.5 h-3.5" /> Bộ lọc ▾
@@ -911,11 +930,16 @@ export default function RealEstateCustomersPage() {
 
             <div className="flex items-center gap-2">
               <span>Hiển thị</span>
-              <select className="px-2.5 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none">
-                <option value="8">8 / trang</option>
-                <option value="20">20 / trang</option>
-                <option value="50">50 / trang</option>
-              </select>
+              <PremiumSelect
+                value={pageSize}
+                onChange={setPageSize}
+                className="w-28"
+                options={[
+                  { value: "8", label: "8 / trang" },
+                  { value: "20", label: "20 / trang" },
+                  { value: "50", label: "50 / trang" },
+                ]}
+              />
             </div>
           </div>
         </div>
@@ -1196,12 +1220,16 @@ export default function RealEstateCustomersPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Dự án quan tâm</label>
-                    <select className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none">
-                      <option>Elyse Island</option>
-                      <option>Sunrise Residence</option>
-                      <option>Lumière Bay</option>
-                      <option>Bella Premium</option>
-                    </select>
+                    <PremiumSelect
+                      value={modalProject}
+                      onChange={setModalProject}
+                      options={[
+                        { value: "Elyse Island", label: "Elyse Island" },
+                        { value: "Sunrise Residence", label: "Sunrise Residence" },
+                        { value: "Lumière Bay", label: "Lumière Bay" },
+                        { value: "Bella Premium", label: "Bella Premium" },
+                      ]}
+                    />
                   </div>
                   <div>
                     <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Ngân sách dự kiến</label>
@@ -1242,11 +1270,15 @@ export default function RealEstateCustomersPage() {
                 </div>
                 <div>
                   <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Đến sales phụ trách mới *</label>
-                  <select className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none font-bold">
-                    <option>Lê Thị Hoa (PKD 2)</option>
-                    <option>Nguyễn Thị Mai (PKD 1)</option>
-                    <option>Nguyễn Văn An (PKD 3)</option>
-                  </select>
+                  <PremiumSelect
+                    value={modalReassignSales}
+                    onChange={setModalReassignSales}
+                    options={[
+                      { value: "Lê Thị Hoa (PKD 2)", label: "Lê Thị Hoa (PKD 2)" },
+                      { value: "Nguyễn Thị Mai (PKD 1)", label: "Nguyễn Thị Mai (PKD 1)" },
+                      { value: "Nguyễn Văn An (PKD 3)", label: "Nguyễn Văn An (PKD 3)" },
+                    ]}
+                  />
                 </div>
                 <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                   <button type="button" onClick={() => setShowReassignModal(false)} className="px-4 py-2 font-bold bg-slate-100 text-slate-600 rounded-xl">Hủy</button>

@@ -18,6 +18,7 @@ import {
   TrendingUp, Calendar
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 // ── Interfaces & Types ────────────────────────────────────────────────────────
 
@@ -194,6 +195,7 @@ export function OrgChartPage() {
   });
   const [treeSearch, setTreeSearch] = useState('');
   const [globalSearch, setGlobalSearch] = useState('');
+  const [selectedStatBranch, setSelectedStatBranch] = useState('Chi nhánh Hồ Chí Minh');
 
   // Modals
   const [showAddUnitModal, setShowAddUnitModal] = useState(false);
@@ -876,10 +878,14 @@ export function OrgChartPage() {
             <h3 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
               <BarChart3 className="w-4 h-4 text-blue-600" /> Thống kê nhân sự theo phòng ban
             </h3>
-            <select className="px-2.5 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300">
-              <option>Chi nhánh Hồ Chí Minh</option>
-              <option>Chi nhánh Bình Dương</option>
-            </select>
+            <PremiumSelect
+              value={selectedStatBranch}
+              onChange={(val) => setSelectedStatBranch(val)}
+              options={[
+                { value: "Chi nhánh Hồ Chí Minh", label: "Chi nhánh Hồ Chí Minh" },
+                { value: "Chi nhánh Bình Dương", label: "Chi nhánh Bình Dương" },
+              ]}
+            />
           </div>
 
           {/* Bar Chart Bars */}
@@ -1009,29 +1015,29 @@ export function OrgChartPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-slate-700 dark:text-slate-300 mb-1">Cấp đơn vị</label>
-                    <select
+                    <PremiumSelect
                       value={newUnit.type}
-                      onChange={e => setNewUnit({ ...newUnit, type: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none"
-                    >
-                      <option value="region">Khu vực</option>
-                      <option value="branch">Chi nhánh</option>
-                      <option value="department">Phòng ban</option>
-                      <option value="team">Đội nhóm (Team)</option>
-                    </select>
+                      onChange={(val) => setNewUnit({ ...newUnit, type: val })}
+                      options={[
+                        { value: "region", label: "Khu vực" },
+                        { value: "branch", label: "Chi nhánh" },
+                        { value: "department", label: "Phòng ban" },
+                        { value: "team", label: "Đội nhóm (Team)" },
+                      ]}
+                    />
                   </div>
 
                   <div>
                     <label className="block text-slate-700 dark:text-slate-300 mb-1">Đơn vị trực thuộc</label>
-                    <select
+                    <PremiumSelect
                       value={newUnit.parentUnit}
-                      onChange={e => setNewUnit({ ...newUnit, parentUnit: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none"
-                    >
-                      <option value="Chi nhánh Hồ Chí Minh">Chi nhánh Hồ Chí Minh</option>
-                      <option value="Chi nhánh Bình Dương">Chi nhánh Bình Dương</option>
-                      <option value="Bella Real Estate Group">Bella Real Estate Group</option>
-                    </select>
+                      onChange={(val) => setNewUnit({ ...newUnit, parentUnit: val })}
+                      options={[
+                        { value: "Chi nhánh Hồ Chí Minh", label: "Chi nhánh Hồ Chí Minh" },
+                        { value: "Chi nhánh Bình Dương", label: "Chi nhánh Bình Dương" },
+                        { value: "Bella Real Estate Group", label: "Bella Real Estate Group" },
+                      ]}
+                    />
                   </div>
                 </div>
 

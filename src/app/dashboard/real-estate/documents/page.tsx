@@ -713,68 +713,78 @@ export default function LegalDocumentsOperationsCenterPage() {
 
           {/* 5 Dropdown Filters */}
           <div className="flex items-center gap-2 flex-wrap shrink-0">
-            <select
+            <PremiumSelect
               value={filterType}
-              onChange={e => setFilterType(e.target.value)}
-              className="px-3 py-2 rounded-xl text-xs font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none shadow-2xs"
-            >
-              <option value="all">Loại tài liệu</option>
-              <option value="Hợp đồng mua bán">Hợp đồng mua bán</option>
-              <option value="Biên bản đặt cọc">Biên bản đặt cọc</option>
-              <option value="Phụ lục hợp đồng">Phụ lục hợp đồng</option>
-              <option value="Biên bản bàn giao">Biên bản bàn giao</option>
-              <option value="Giấy chứng nhận">Giấy chứng nhận</option>
-              <option value="Văn bản nghiệm thu">Văn bản nghiệm thu</option>
-              <option value="Hợp đồng dịch vụ">Hợp đồng dịch vụ</option>
-            </select>
+              onChange={setFilterType}
+              placeholder="Loại tài liệu"
+              className="w-44"
+              options={[
+                { value: "all", label: "Loại tài liệu" },
+                { value: "Hợp đồng mua bán", label: "Hợp đồng mua bán" },
+                { value: "Biên bản đặt cọc", label: "Biên bản đặt cọc" },
+                { value: "Phụ lục hợp đồng", label: "Phụ lục hợp đồng" },
+                { value: "Biên bản bàn giao", label: "Biên bản bàn giao" },
+                { value: "Giấy chứng nhận", label: "Giấy chứng nhận" },
+                { value: "Văn bản nghiệm thu", label: "Văn bản nghiệm thu" },
+                { value: "Hợp đồng dịch vụ", label: "Hợp đồng dịch vụ" },
+              ]}
+            />
 
-            <select
+            <PremiumSelect
               value={filterProject}
-              onChange={e => setFilterProject(e.target.value)}
-              className="px-3 py-2 rounded-xl text-xs font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none shadow-2xs"
-            >
-              <option value="all">Dự án</option>
-              <option value="The Grand Tower">The Grand Tower</option>
-              <option value="Riverside Heights">Riverside Heights</option>
-              <option value="Sunrise Villa">Sunrise Villa</option>
-            </select>
+              onChange={setFilterProject}
+              placeholder="Dự án"
+              className="w-40"
+              options={[
+                { value: "all", label: "Dự án" },
+                { value: "The Grand Tower", label: "The Grand Tower" },
+                { value: "Riverside Heights", label: "Riverside Heights" },
+                { value: "Sunrise Villa", label: "Sunrise Villa" },
+              ]}
+            />
 
-            <select
+            <PremiumSelect
               value={filterStatus}
-              onChange={e => setFilterStatus(e.target.value)}
-              className="px-3 py-2 rounded-xl text-xs font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none shadow-2xs"
-            >
-              <option value="all">Trạng thái</option>
-              <option value="signed">Đã ký số</option>
-              <option value="approved">Đã duyệt</option>
-              <option value="pending_approval">Đang duyệt</option>
-              <option value="pending_signature">Chờ ký</option>
-              <option value="draft">Nháp</option>
-              <option value="expiring">Sắp hết hạn</option>
-            </select>
+              onChange={setFilterStatus}
+              placeholder="Trạng thái"
+              className="w-40"
+              options={[
+                { value: "all", label: "Trạng thái" },
+                { value: "signed", label: "Đã ký số" },
+                { value: "approved", label: "Đã duyệt" },
+                { value: "pending_approval", label: "Đang duyệt" },
+                { value: "pending_signature", label: "Chờ ký" },
+                { value: "draft", label: "Nháp" },
+                { value: "expiring", label: "Sắp hết hạn" },
+              ]}
+            />
 
-            <select
+            <PremiumSelect
               value={filterOwner}
-              onChange={e => setFilterOwner(e.target.value)}
-              className="px-3 py-2 rounded-xl text-xs font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none shadow-2xs"
-            >
-              <option value="all">Người phụ trách</option>
-              <option value="Nguyễn Thị B">Nguyễn Thị B</option>
-              <option value="Phạm Minh Đức">Phạm Minh Đức</option>
-              <option value="Nguyễn Văn A">Nguyễn Văn A</option>
-              <option value="Trần Minh Tâm">Trần Minh Tâm</option>
-            </select>
+              onChange={setFilterOwner}
+              placeholder="Người phụ trách"
+              className="w-44"
+              options={[
+                { value: "all", label: "Người phụ trách" },
+                { value: "Nguyễn Thị B", label: "Nguyễn Thị B" },
+                { value: "Phạm Minh Đức", label: "Phạm Minh Đức" },
+                { value: "Nguyễn Văn A", label: "Nguyễn Văn A" },
+                { value: "Trần Minh Tâm", label: "Trần Minh Tâm" },
+              ]}
+            />
 
-            <select
+            <PremiumSelect
               value={filterTime}
-              onChange={e => setFilterTime(e.target.value)}
-              className="px-3 py-2 rounded-xl text-xs font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none shadow-2xs"
-            >
-              <option value="all">Thời gian</option>
-              <option value="month">Tháng này</option>
-              <option value="quarter">Quý này</option>
-              <option value="2026">Năm 2026</option>
-            </select>
+              onChange={setFilterTime}
+              placeholder="Thời gian"
+              className="w-36"
+              options={[
+                { value: "all", label: "Thời gian" },
+                { value: "month", label: "Tháng này" },
+                { value: "quarter", label: "Quý này" },
+                { value: "2026", label: "Năm 2026" },
+              ]}
+            />
 
             <button 
               onClick={() => {
@@ -1095,11 +1105,16 @@ export default function LegalDocumentsOperationsCenterPage() {
                 </button>
               </div>
 
-              <select className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-200">
-                <option value="20">20 / trang</option>
-                <option value="50">50 / trang</option>
-                <option value="100">100 / trang</option>
-              </select>
+              <PremiumSelect
+                value="20"
+                onChange={() => {}}
+                className="w-32"
+                options={[
+                  { value: "20", label: "20 / trang" },
+                  { value: "50", label: "50 / trang" },
+                  { value: "100", label: "100 / trang" },
+                ]}
+              />
             </div>
           </div>
         </div>
@@ -1464,34 +1479,34 @@ export default function LegalDocumentsOperationsCenterPage() {
                     <label className="text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[10px] font-bold">
                       Loại tài liệu
                     </label>
-                    <select
+                    <PremiumSelect
                       value={newDocForm.type}
-                      onChange={e => setNewDocForm(prev => ({ ...prev, type: e.target.value }))}
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none font-bold"
-                    >
-                      <option value="Hợp đồng mua bán">Hợp đồng mua bán</option>
-                      <option value="Biên bản đặt cọc">Biên bản đặt cọc</option>
-                      <option value="Phụ lục hợp đồng">Phụ lục hợp đồng</option>
-                      <option value="Biên bản bàn giao">Biên bản bàn giao</option>
-                      <option value="Giấy chứng nhận">Giấy chứng nhận</option>
-                      <option value="Văn bản nghiệm thu">Văn bản nghiệm thu</option>
-                      <option value="Hợp đồng dịch vụ">Hợp đồng dịch vụ</option>
-                    </select>
+                      onChange={(val) => setNewDocForm(prev => ({ ...prev, type: val }))}
+                      options={[
+                        { value: "Hợp đồng mua bán", label: "Hợp đồng mua bán" },
+                        { value: "Biên bản đặt cọc", label: "Biên bản đặt cọc" },
+                        { value: "Phụ lục hợp đồng", label: "Phụ lục hợp đồng" },
+                        { value: "Biên bản bàn giao", label: "Biên bản bàn giao" },
+                        { value: "Giấy chứng nhận", label: "Giấy chứng nhận" },
+                        { value: "Văn bản nghiệm thu", label: "Văn bản nghiệm thu" },
+                        { value: "Hợp đồng dịch vụ", label: "Hợp đồng dịch vụ" },
+                      ]}
+                    />
                   </div>
 
                   <div className="space-y-1">
                     <label className="text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[10px] font-bold">
                       Dự án
                     </label>
-                    <select
+                    <PremiumSelect
                       value={newDocForm.project}
-                      onChange={e => setNewDocForm(prev => ({ ...prev, project: e.target.value }))}
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none font-bold"
-                    >
-                      <option value="The Grand Tower">The Grand Tower</option>
-                      <option value="Riverside Heights">Riverside Heights</option>
-                      <option value="Sunrise Villa">Sunrise Villa</option>
-                    </select>
+                      onChange={(val) => setNewDocForm(prev => ({ ...prev, project: val }))}
+                      options={[
+                        { value: "The Grand Tower", label: "The Grand Tower" },
+                        { value: "Riverside Heights", label: "Riverside Heights" },
+                        { value: "Sunrise Villa", label: "Sunrise Villa" },
+                      ]}
+                    />
                   </div>
                 </div>
 
@@ -1525,15 +1540,15 @@ export default function LegalDocumentsOperationsCenterPage() {
                   <label className="text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[10px] font-bold">
                     Trạng thái ban đầu
                   </label>
-                  <select
+                  <PremiumSelect
                     value={newDocForm.status}
-                    onChange={e => setNewDocForm(prev => ({ ...prev, status: e.target.value as LegalDocStatus }))}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none font-bold"
-                  >
-                    <option value="draft">Bản nháp</option>
-                    <option value="pending_approval">Trình duyệt ban quản lý</option>
-                    <option value="pending_signature">Chờ khách hàng ký số</option>
-                  </select>
+                    onChange={(val) => setNewDocForm(prev => ({ ...prev, status: val as LegalDocStatus }))}
+                    options={[
+                      { value: "draft", label: "Bản nháp" },
+                      { value: "pending_approval", label: "Trình duyệt ban quản lý" },
+                      { value: "pending_signature", label: "Chờ khách hàng ký số" },
+                    ]}
+                  />
                 </div>
 
                 <div className="space-y-1">

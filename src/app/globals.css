@@ -1231,28 +1231,37 @@ html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-header {
 html[data-tenant-brand-preset="jade_wellness"] .text-\[9\.5px\][class*="text-primary"] {
   color: #e8d4a8 !important;
 }
+/* ── jade_wellness: base nav item — white text on dark emerald sidebar ── */
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item { color: rgba(241, 245, 249, 0.95) !important; }
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item svg { color: rgba(226, 232, 240, 0.90) !important; }
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item span { color: #f1f5f9 !important; }
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:hover {
+
+/* ── jade_wellness: hover state — subtle white glow, span slightly brighter ── */
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover {
+  background: rgba(255, 255, 255, 0.10) !important;
+  border-color: rgba(245, 158, 11, 0.30) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14) !important;
+}
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover svg { color: #fbbf24 !important; }
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover span { color: #ffffff !important; }
+
+/* ── jade_wellness: ACTIVE state — emerald pill (one shade lighter than sidebar) + white text + gold icon ── */
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item.beauty-erp-nav-item-active {
+  background: rgba(6, 95, 70, 0.65) !important;  /* emerald-900 translucent — clearly different from bg */
+  border-color: rgba(217, 164, 65, 0.70) !important;  /* gold #D9A441 */
   color: #ffffff !important;
-  background: rgba(255, 255, 255, 0.12) !important;
-  border-color: rgba(245, 158, 11, 0.40) !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18) !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255,255,255,0.08) !important;
 }
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:hover svg,
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:hover * { color: #f59e0b !important; }
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:hover span { color: #ffffff !important; }
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active {
-  background: #ffffff !important;
-  border-color: rgba(245, 158, 11, 0.50) !important;
-  color: #064e3b !important;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25) !important;
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item.beauty-erp-nav-item-active svg { color: #D9A441 !important; }  /* gold icon */
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item.beauty-erp-nav-item-active span { color: #ffffff !important; }
+
+/* Active+hover: keep same active style (don't change text on hover) */
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item.beauty-erp-nav-item-active:hover {
+  background: rgba(6, 95, 70, 0.80) !important;
+  border-color: rgba(217, 164, 65, 0.90) !important;
 }
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active svg,
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active span {
-  color: #064e3b !important;
-}
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item.beauty-erp-nav-item-active:hover svg { color: #fbbf24 !important; }
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item.beauty-erp-nav-item-active:hover span { color: #ffffff !important; }
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-profile-card,
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-avatar,
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-icon-button {
@@ -1518,13 +1527,13 @@ html[data-tenant-brand-preset]:not([data-tenant-brand-preset="jade_wellness"]) .
   color: #ffffff !important;
 }
 
-/* Jade Wellness active item high contrast rule - Dark emerald text on white pill whether hovered or not */
+/* Jade Wellness active item - Emerald pill + white text + gold icon (matches main active rule above) */
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active,
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active:hover {
-  background: #ffffff !important;
-  border-color: rgba(245, 158, 11, 0.60) !important;
-  color: #064e3b !important;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25) !important;
+  background: rgba(6, 95, 70, 0.65) !important;
+  border-color: rgba(217, 164, 65, 0.70) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255,255,255,0.08) !important;
 }
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active *,
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active svg,
@@ -1534,7 +1543,11 @@ html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active:hover
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active:hover svg,
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active:hover span,
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active:hover p {
-  color: #064e3b !important;
+  color: #ffffff !important;
+}
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active svg,
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active:hover svg {
+  color: #D9A441 !important;  /* gold icon */
 }
 
 /* =========================================================================

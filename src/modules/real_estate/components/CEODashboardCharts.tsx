@@ -25,6 +25,7 @@ import {
   Calendar,
   Filter,
 } from 'lucide-react';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 interface CEODashboardChartsProps {
   totalProductsCount: number;
@@ -46,6 +47,9 @@ export const CEODashboardCharts: React.FC<CEODashboardChartsProps> = ({
   deliveredCount = 25,
 }) => {
   const [selectedFloor, setSelectedFloor] = useState<string>('Tầng 5');
+  const [selectedTrendPeriod, setSelectedTrendPeriod] = useState<string>('6 tháng gần nhất');
+  const [selectedFunnelMonth, setSelectedFunnelMonth] = useState<string>('Tháng 7/2026');
+  const [selectedLeaderboardMonth, setSelectedLeaderboardMonth] = useState<string>('Tháng 7/2026');
 
   // Calculated Absorption Rate
   const totalOccupied = depositedCount + signedCount + paidCount + deliveredCount;
@@ -212,10 +216,14 @@ export const CEODashboardCharts: React.FC<CEODashboardChartsProps> = ({
               </div>
 
               <div className="flex items-center gap-3">
-                <select className="text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 outline-none">
-                  <option>6 tháng gần nhất</option>
-                  <option>Năm 2026</option>
-                </select>
+                <PremiumSelect
+                  value={selectedTrendPeriod}
+                  onChange={(val) => setSelectedTrendPeriod(val)}
+                  options={[
+                    { value: "6 tháng gần nhất", label: "6 tháng gần nhất" },
+                    { value: "Năm 2026", label: "Năm 2026" },
+                  ]}
+                />
 
                 <div className="hidden sm:flex items-center gap-3 text-[11px] font-bold">
                   <span className="flex items-center gap-1 text-blue-600">
@@ -354,10 +362,14 @@ export const CEODashboardCharts: React.FC<CEODashboardChartsProps> = ({
               <Activity className="w-5 h-5 text-blue-600" />
               Phễu chuyển đổi Lead & Bán hàng
             </h3>
-            <select className="text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 outline-none">
-              <option>Tháng 7/2026</option>
-              <option>Tháng 6/2026</option>
-            </select>
+            <PremiumSelect
+              value={selectedFunnelMonth}
+              onChange={(val) => setSelectedFunnelMonth(val)}
+              options={[
+                { value: "Tháng 7/2026", label: "Tháng 7/2026" },
+                { value: "Tháng 6/2026", label: "Tháng 6/2026" },
+              ]}
+            />
           </div>
 
           <div className="space-y-3.5">
@@ -463,9 +475,14 @@ export const CEODashboardCharts: React.FC<CEODashboardChartsProps> = ({
               Bảng xếp hạng Sale
             </h3>
             <div className="flex items-center gap-2">
-              <select className="text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 outline-none">
-                <option>Tháng 7/2026</option>
-              </select>
+              <PremiumSelect
+                value={selectedLeaderboardMonth}
+                onChange={(val) => setSelectedLeaderboardMonth(val)}
+                options={[
+                  { value: "Tháng 7/2026", label: "Tháng 7/2026" },
+                  { value: "Tháng 6/2026", label: "Tháng 6/2026" },
+                ]}
+              />
               <button className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5">
                 Xem tất cả ➔
               </button>
@@ -590,17 +607,17 @@ export const CEODashboardCharts: React.FC<CEODashboardChartsProps> = ({
               <Layers className="w-5 h-5 text-indigo-600" />
               Sơ đồ ma trận căn hộ theo tầng
             </h3>
-            <select
+            <PremiumSelect
               value={selectedFloor}
-              onChange={(e) => setSelectedFloor(e.target.value)}
-              className="text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700 outline-none self-start sm:self-auto"
-            >
-              <option>Tầng 5</option>
-              <option>Tầng 4</option>
-              <option>Tầng 3</option>
-              <option>Tầng 2</option>
-              <option>Tầng 1</option>
-            </select>
+              onChange={(val) => setSelectedFloor(val)}
+              options={[
+                { value: "Tầng 5", label: "Tầng 5" },
+                { value: "Tầng 4", label: "Tầng 4" },
+                { value: "Tầng 3", label: "Tầng 3" },
+                { value: "Tầng 2", label: "Tầng 2" },
+                { value: "Tầng 1", label: "Tầng 1" },
+              ]}
+            />
           </div>
 
           {/* Status Legend Pills */}
