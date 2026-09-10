@@ -363,60 +363,62 @@ export default function CustomerServiceCenterPage() {
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-[1600px] mx-auto font-sans text-slate-900 dark:text-slate-100 pb-12">
       
-      {/* ── 1. HEADER BANNER WITH SKYLINE (Matching Image 2) ── */}
-      <div className="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 md:p-8 text-white shadow-md">
-        {/* Background Image Overlay */}
+      {/* ── 1. HEADER BANNER (Light Theme with High Contrast) ── */}
+      <div className="relative rounded-2xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 p-6 md:p-7 shadow-xs">
+        {/* Subtle Decorative Skyline Overlay */}
         <div 
-          className="absolute inset-0 bg-cover bg-center opacity-35 mix-blend-luminosity"
+          className="absolute inset-0 bg-cover bg-center opacity-[0.07] dark:opacity-20 pointer-events-none mix-blend-multiply dark:mix-blend-luminosity"
           style={{ backgroundImage: `url('https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1600&q=80')` }}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900/90 to-slate-900/40" />
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-50/60 via-slate-50/40 to-amber-50/40 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900 pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-blue-500/20 border border-blue-400/40 flex items-center justify-center text-[10px] font-bold text-blue-300">
+              <div className="w-6 h-6 rounded-full bg-blue-600/10 dark:bg-blue-500/20 border border-blue-600/20 dark:border-blue-400/30 flex items-center justify-center text-[10px] font-black text-blue-600 dark:text-blue-400">
                 CS
               </div>
-              <span className="text-xs uppercase font-bold tracking-widest text-slate-300">CUSTOMER SERVICE CENTER</span>
+              <span className="text-xs uppercase font-extrabold tracking-widest text-slate-500 dark:text-slate-400">CUSTOMER SERVICE CENTER</span>
             </div>
-            <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
+            <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
               Trung tâm Chăm sóc Khách hàng
             </h1>
-            <p className="text-sm text-slate-300 max-w-2xl font-medium">
+            <p className="text-xs md:text-sm text-slate-600 dark:text-slate-300 max-w-2xl font-semibold leading-relaxed">
               Tiếp nhận, xử lý và đồng hành cùng khách hàng trong suốt hành trình sở hữu bất động sản
             </p>
           </div>
 
           {/* Right Header Top Tools & Script Text */}
-          <div className="flex flex-col items-end gap-3">
-            <div className="hidden lg:block text-right font-serif italic text-amber-200/90 text-lg font-normal tracking-wide drop-shadow-sm">
+          <div className="flex flex-col items-start md:items-end gap-3 shrink-0">
+            <div className="hidden lg:block text-right font-serif italic text-amber-600 dark:text-amber-400 text-lg font-bold tracking-wide">
               Happy Residents, Greater Tomorrow
             </div>
             
             <div className="flex items-center gap-3">
               <button 
                 onClick={() => toast.info("Tính năng tìm kiếm nâng cao hệ thống CSKH")}
-                className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/10 transition"
+                className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition shadow-2xs"
+                title="Tìm kiếm nâng cao"
               >
                 <Search className="w-4 h-4" />
               </button>
               <button 
                 onClick={() => toast.info("Có 3 thông báo mới về phiếu phản ánh quá hạn!")}
-                className="relative w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/10 transition"
+                className="relative w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition shadow-2xs"
+                title="Thông báo CSKH"
               >
                 <Bell className="w-4 h-4" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-slate-900" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900" />
               </button>
 
               {/* User Profile Chip */}
-              <div className="flex items-center gap-2.5 bg-white/10 backdrop-blur-md border border-white/15 px-3 py-1.5 rounded-full text-white">
-                <div className="w-7 h-7 rounded-full bg-amber-500/90 text-slate-950 font-bold flex items-center justify-center text-xs">
+              <div className="flex items-center gap-2.5 bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-xl text-slate-800 dark:text-slate-100 shadow-2xs">
+                <div className="w-7 h-7 rounded-lg bg-amber-500 text-slate-950 font-black flex items-center justify-center text-xs shadow-xs">
                   A
                 </div>
                 <div className="text-left text-xs leading-tight">
-                  <div className="font-bold">Nguyễn Văn A</div>
-                  <div className="text-[10px] text-slate-300 font-medium">Quản trị viên</div>
+                  <div className="font-extrabold text-slate-900 dark:text-white">Nguyễn Văn A</div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">Quản trị viên</div>
                 </div>
               </div>
             </div>
