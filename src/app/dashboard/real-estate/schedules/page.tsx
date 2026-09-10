@@ -290,8 +290,8 @@ export default function SchedulesPage() {
               </div>
 
               <button
-                onClick={() => toast.info("Có 3 ca chờ xác nhận và 1 vắng mặt cần xử lý!")}
-                className="relative p-2 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition"
+                onClick={() => { setFilterStatus('pending'); toast.info("Đã lọc danh sách ca chờ xác nhận!"); }}
+                className="relative p-2 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition cursor-pointer"
               >
                 <Bell className="w-4 h-4" />
                 <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-rose-500 text-[10px] font-black text-white flex items-center justify-center">
@@ -757,8 +757,8 @@ export default function SchedulesPage() {
                     </button>
                   )}
                   <button
-                    onClick={() => { toast.info("Chỉnh sửa ca làm việc..."); setSelectedShiftId(null); }}
-                    className="w-full py-2 rounded-xl text-xs font-bold bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 transition"
+                    onClick={() => { toast.success(`Đã mở bộ chỉnh sửa ca của ${selectedShift.staffName}`); setShowAddModal(true); setSelectedShiftId(null); }}
+                    className="w-full py-2 rounded-xl text-xs font-bold bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 transition cursor-pointer"
                   >
                     Chỉnh sửa ca
                   </button>

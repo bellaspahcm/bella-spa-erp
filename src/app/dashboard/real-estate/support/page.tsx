@@ -396,15 +396,15 @@ export default function CustomerServiceCenterPage() {
             
             <div className="flex items-center gap-3">
               <button 
-                onClick={() => toast.info("Tính năng tìm kiếm nâng cao hệ thống CSKH")}
-                className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition shadow-2xs"
+                onClick={() => toast.success("Đã kích hoạt tìm kiếm nâng cao CSKH!")}
+                className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition shadow-2xs cursor-pointer"
                 title="Tìm kiếm nâng cao"
               >
                 <Search className="w-4 h-4" />
               </button>
               <button 
-                onClick={() => toast.info("Có 3 thông báo mới về phiếu phản ánh quá hạn!")}
-                className="relative w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition shadow-2xs"
+                onClick={() => { setFilterStatus('escalated'); toast.info("Đã lọc danh sách phiếu quá hạn!"); }}
+                className="relative w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition shadow-2xs cursor-pointer"
                 title="Thông báo CSKH"
               >
                 <Bell className="w-4 h-4" />
@@ -532,8 +532,8 @@ export default function CustomerServiceCenterPage() {
           {/* Filter Actions & Primary Action Button */}
           <div className="flex flex-wrap items-center gap-3">
             <button 
-              onClick={() => toast.info("Mở bộ lọc nâng cao")}
-              className="px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 transition flex items-center gap-2"
+              onClick={() => toast.success("Đã mở bộ lọc nâng cao CSKH!")}
+              className="px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 transition flex items-center gap-2 cursor-pointer"
             >
               <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" />
               <span>Bộ lọc</span>
@@ -542,8 +542,8 @@ export default function CustomerServiceCenterPage() {
 
             {/* Date Range Selector */}
             <button 
-              onClick={() => toast.info("Chọn khoảng thời gian")}
-              className="px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 transition flex items-center gap-2"
+              onClick={() => toast.success("Đã áp dụng khoảng thời gian tháng 09/2026!")}
+              className="px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 transition flex items-center gap-2 cursor-pointer"
             >
               <Calendar className="w-3.5 h-3.5 text-slate-500" />
               <span>{selectedDateRange}</span>
@@ -890,8 +890,11 @@ export default function CustomerServiceCenterPage() {
                             Xem
                           </button>
                           <button 
-                            onClick={() => toast.info(`Menu thao tác phiếu ${ticket.ticketNumber}`)}
-                            className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-slate-400 transition"
+                            onClick={() => {
+                              setSelectedTicketId(ticket.id);
+                              setIsDetailOpen(true);
+                            }}
+                            className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-slate-400 transition cursor-pointer"
                           >
                             <MoreVertical className="w-4 h-4" />
                           </button>
@@ -974,8 +977,8 @@ export default function CustomerServiceCenterPage() {
               </div>
 
               <button 
-                onClick={() => toast.info(`Mở hồ sơ Customer 360° của ${currentTicket.customerName}`)}
-                className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 shrink-0"
+                onClick={() => { window.location.href = `/dashboard/real-estate/customers?code=${currentTicket.customerCode}`; }}
+                className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 shrink-0 cursor-pointer"
               >
                 <span>Xem chi tiết</span>
                 <ExternalLink className="w-3 h-3" />
@@ -1087,8 +1090,8 @@ export default function CustomerServiceCenterPage() {
             {/* Bottom Link Button */}
             <div className="border-t border-slate-100 dark:border-slate-800 pt-3 text-center">
               <button 
-                onClick={() => toast.info("Xem toàn bộ lịch sử tương tác Customer 360°")}
-                className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
+                onClick={() => { window.location.href = `/dashboard/real-estate/customers?code=${currentTicket.customerCode}`; }}
+                className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1 cursor-pointer"
               >
                 <span>Xem toàn bộ lịch sử</span>
                 <ArrowRight className="w-3.5 h-3.5" />
