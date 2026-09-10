@@ -722,26 +722,26 @@ export default function LeadsManagementPage() {
         
         {/* Left Column (Main Work Queue Table) */}
         <div className={`${selectedLead ? 'lg:col-span-8' : 'lg:col-span-12'} bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xs transition-all`}>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+          <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
+            <table className="w-full text-left text-xs border-collapse min-w-[960px]">
               <thead className="bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800 text-[11px] font-black text-slate-400 uppercase tracking-wider">
                 <tr>
-                  <th className="p-3.5 w-10 text-center">
+                  <th className="p-3.5 w-10 text-center whitespace-nowrap">
                     <input type="checkbox" className="rounded text-blue-600 focus:ring-blue-500" />
                   </th>
-                  <th className="p-3.5">Khách hàng</th>
-                  <th className="p-3.5">Dự án / Nguồn</th>
-                  <th className="p-3.5">Nhu cầu</th>
-                  <th className="p-3.5">Sales phụ trách</th>
-                  <th className="p-3.5">SLA / Việc tiếp theo</th>
-                  <th className="p-3.5">Trạng thái</th>
-                  <th className="p-3.5 text-right">Thao tác</th>
+                  <th className="p-3.5 whitespace-nowrap">Khách hàng</th>
+                  <th className="p-3.5 whitespace-nowrap">Dự án / Nguồn</th>
+                  <th className="p-3.5 whitespace-nowrap">Nhu cầu</th>
+                  <th className="p-3.5 whitespace-nowrap">Sales phụ trách</th>
+                  <th className="p-3.5 whitespace-nowrap">SLA / Việc tiếp theo</th>
+                  <th className="p-3.5 whitespace-nowrap">Trạng thái</th>
+                  <th className="p-3.5 text-right whitespace-nowrap">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                 {filteredLeads.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-12 text-slate-400 font-semibold">
+                    <td colSpan={8} className="text-center py-12 text-slate-400 font-semibold whitespace-nowrap">
                       Không tìm thấy lead nào phù hợp với bộ lọc.
                     </td>
                   </tr>
@@ -763,14 +763,14 @@ export default function LeadsManagementPage() {
                             : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/50'
                         }`}
                       >
-                        <td className="p-3.5 text-center" onClick={e => e.stopPropagation()}>
+                        <td className="p-3.5 text-center whitespace-nowrap" onClick={e => e.stopPropagation()}>
                           <input type="checkbox" className="rounded text-blue-600 focus:ring-blue-500" />
                         </td>
 
                         {/* Customer Info */}
-                        <td className="p-3.5">
-                          <p className="font-extrabold text-slate-900 dark:text-white text-xs">{lead.fullName}</p>
-                          <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
+                        <td className="p-3.5 whitespace-nowrap">
+                          <p className="font-extrabold text-slate-900 dark:text-white text-xs whitespace-nowrap">{lead.fullName}</p>
+                          <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5 whitespace-nowrap">
                             <span>{lead.phone}</span>
                             <button className="text-blue-600 hover:text-blue-700 p-0.5">
                               <Phone className="w-3 h-3" />
@@ -782,84 +782,84 @@ export default function LeadsManagementPage() {
                         </td>
 
                         {/* Project & Source */}
-                        <td className="p-3.5">
-                          <p className="font-bold text-slate-800 dark:text-slate-200">{lead.project}</p>
-                          <p className="text-[10px] text-slate-400 font-semibold">{lead.subZone}</p>
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-600 dark:text-slate-400 mt-1 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                        <td className="p-3.5 whitespace-nowrap">
+                          <p className="font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">{lead.project}</p>
+                          <p className="text-[10px] text-slate-400 font-semibold whitespace-nowrap">{lead.subZone}</p>
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-600 dark:text-slate-400 mt-1 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md whitespace-nowrap">
                             <Globe className="w-2.5 h-2.5 text-blue-500" /> {lead.sourceLabel}
                           </span>
                         </td>
 
                         {/* Demand & Budget */}
-                        <td className="p-3.5">
-                          <p className="font-extrabold text-slate-900 dark:text-white">{lead.budget}</p>
-                          <p className="text-[10px] text-slate-500 font-semibold">{lead.productType}</p>
+                        <td className="p-3.5 whitespace-nowrap">
+                          <p className="font-extrabold text-slate-900 dark:text-white whitespace-nowrap">{lead.budget}</p>
+                          <p className="text-[10px] text-slate-500 font-semibold whitespace-nowrap">{lead.productType}</p>
                         </td>
 
                         {/* Sales Owner */}
-                        <td className="p-3.5">
+                        <td className="p-3.5 whitespace-nowrap">
                           {lead.salesOwnerName ? (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 whitespace-nowrap">
                               <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-extrabold text-[10px] text-slate-700 dark:text-slate-200 shrink-0">
                                 {lead.salesOwnerName.substring(0, 2)}
                               </div>
-                              <div>
-                                <p className="font-bold text-slate-800 dark:text-slate-200 text-xs">{lead.salesOwnerName}</p>
+                              <div className="whitespace-nowrap">
+                                <p className="font-bold text-slate-800 dark:text-slate-200 text-xs whitespace-nowrap">{lead.salesOwnerName}</p>
                                 {!lead.saleAcknowledged && (
-                                  <span className="text-[9px] font-bold text-rose-600 flex items-center gap-0.5">
+                                  <span className="text-[9px] font-bold text-rose-600 flex items-center gap-0.5 whitespace-nowrap">
                                     ● Chưa xác nhận
                                   </span>
                                 )}
                               </div>
                             </div>
                           ) : (
-                            <div className="flex items-center gap-1.5 text-amber-600 font-bold text-xs">
+                            <div className="flex items-center gap-1.5 text-amber-600 font-bold text-xs whitespace-nowrap">
                               <User className="w-3.5 h-3.5" /> Chưa phân bổ
                             </div>
                           )}
                         </td>
 
                         {/* SLA / Next Action */}
-                        <td className="p-3.5">
-                          <div className="flex items-center gap-1.5">
+                        <td className="p-3.5 whitespace-nowrap">
+                          <div className="flex items-center gap-1.5 whitespace-nowrap">
                             {isBreached ? (
-                              <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-black flex items-center gap-1 border border-rose-200">
+                              <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-black flex items-center gap-1 border border-rose-200 whitespace-nowrap">
                                 <Clock className="w-3 h-3" /> {lead.slaTimeText}
                               </span>
                             ) : isWarning ? (
-                              <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold flex items-center gap-1 border border-amber-200">
+                              <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold flex items-center gap-1 border border-amber-200 whitespace-nowrap">
                                 <Clock className="w-3 h-3" /> {lead.slaTimeText}
                               </span>
                             ) : (
-                              <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold flex items-center gap-1">
+                              <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold flex items-center gap-1 whitespace-nowrap">
                                 <Clock className="w-3 h-3 text-slate-400" /> {lead.slaTimeText}
                               </span>
                             )}
                           </div>
-                          <p className="text-[11px] font-semibold text-slate-500 mt-1">{lead.nextAction}</p>
+                          <p className="text-[11px] font-semibold text-slate-500 mt-1 whitespace-nowrap">{lead.nextAction}</p>
                         </td>
 
                         {/* Status Badge */}
-                        <td className="p-3.5">
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border ${lead.statusColor}`}>
+                        <td className="p-3.5 whitespace-nowrap">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border inline-block whitespace-nowrap ${lead.statusColor}`}>
                             {lead.statusLabel}
                           </span>
                         </td>
 
                         {/* Action Buttons */}
-                        <td className="p-3.5 text-right" onClick={e => e.stopPropagation()}>
-                          <div className="flex items-center justify-end gap-1.5">
+                        <td className="p-3.5 text-right whitespace-nowrap" onClick={e => e.stopPropagation()}>
+                          <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
                             {lead.status === 'waiting' ? (
                               <button
                                 onClick={() => handleAcceptAndCall(lead.id)}
-                                className="px-3 py-1.5 bg-blue-900 hover:bg-blue-950 text-white font-extrabold text-[11px] rounded-xl transition-all shadow-2xs flex items-center gap-1"
+                                className="px-3 py-1.5 bg-blue-900 hover:bg-blue-950 text-white font-extrabold text-[11px] rounded-xl transition-all shadow-2xs flex items-center gap-1 whitespace-nowrap"
                               >
                                 <CheckCircle2 className="w-3 h-3" /> Nhận lead
                               </button>
                             ) : (
                               <button
                                 onClick={() => setSelectedLeadId(lead.id)}
-                                className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold text-[11px] rounded-xl transition-all flex items-center gap-1"
+                                className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold text-[11px] rounded-xl transition-all flex items-center gap-1 whitespace-nowrap"
                               >
                                 <Eye className="w-3 h-3 text-slate-500" /> Chăm sóc
                               </button>
