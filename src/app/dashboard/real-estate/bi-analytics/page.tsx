@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { PremiumSelect } from "@/components/ui/PremiumSelect";
+
 // ── Mock Data for BI Analytics Intelligence Layer ─────────────────────────────
 
 interface FunnelStage {
@@ -96,46 +98,46 @@ export default function BIAnalyticsPage() {
 
         {/* Multi-Dimension Slicers Toolbar */}
         <div className="flex items-center gap-2 flex-wrap text-xs font-semibold">
-          <select
+          <PremiumSelect
             value={selectedPeriod}
-            onChange={e => setSelectedPeriod(e.target.value)}
-            className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs font-bold focus:outline-none shadow-2xs"
-          >
-            <option value="Tháng 9/2026">📅 Tháng 9/2026</option>
-            <option value="Tháng 8/2026">Tháng 8/2026</option>
-            <option value="Quý 3/2026">Quý 3/2026</option>
-          </select>
+            onChange={(val) => setSelectedPeriod(val)}
+            options={[
+              { value: "Tháng 9/2026", label: "📅 Tháng 9/2026" },
+              { value: "Tháng 8/2026", label: "Tháng 8/2026" },
+              { value: "Quý 3/2026", label: "Quý 3/2026" },
+            ]}
+          />
 
-          <select
+          <PremiumSelect
             value={selectedProject}
-            onChange={e => setSelectedProject(e.target.value)}
-            className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none shadow-2xs"
-          >
-            <option value="all">Dự án: Tất cả</option>
-            <option value="elyse">Elyse Island</option>
-            <option value="grand">The Grand Tower</option>
-            <option value="riverside">Riverside Heights</option>
-          </select>
+            onChange={(val) => setSelectedProject(val)}
+            options={[
+              { value: "all", label: "Dự án: Tất cả" },
+              { value: "elyse", label: "Elyse Island" },
+              { value: "grand", label: "The Grand Tower" },
+              { value: "riverside", label: "Riverside Heights" },
+            ]}
+          />
 
-          <select
+          <PremiumSelect
             value={selectedBranch}
-            onChange={e => setSelectedBranch(e.target.value)}
-            className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none shadow-2xs"
-          >
-            <option value="hcm">Chi nhánh: HCM</option>
-            <option value="bd">Chi nhánh: Bình Dương</option>
-            <option value="dn">Chi nhánh: Đà Nẵng</option>
-          </select>
+            onChange={(val) => setSelectedBranch(val)}
+            options={[
+              { value: "hcm", label: "Chi nhánh: HCM" },
+              { value: "bd", label: "Chi nhánh: Bình Dương" },
+              { value: "dn", label: "Chi nhánh: Đà Nẵng" },
+            ]}
+          />
 
-          <select
+          <PremiumSelect
             value={selectedTeam}
-            onChange={e => setSelectedTeam(e.target.value)}
-            className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none shadow-2xs"
-          >
-            <option value="team_01">Team: Sales Team 01</option>
-            <option value="team_02">Team: Sales Team 02</option>
-            <option value="broker">Team: Broker Network</option>
-          </select>
+            onChange={(val) => setSelectedTeam(val)}
+            options={[
+              { value: "team_01", label: "Team: Sales Team 01" },
+              { value: "team_02", label: "Team: Sales Team 02" },
+              { value: "broker", label: "Team: Broker Network" },
+            ]}
+          />
 
           <button
             onClick={() => toast.info("Đã làm mới dữ liệu phân tích BI Analytics!")}

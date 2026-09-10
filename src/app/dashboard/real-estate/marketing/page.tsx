@@ -18,6 +18,7 @@ import {
   Target, AlertCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 // ── Types & Interfaces ────────────────────────────────────────────────────────
 
@@ -445,16 +446,17 @@ export default function RealEstateMarketingPage() {
 
         <div className="flex items-center gap-3 flex-wrap">
           {/* Project Selector */}
-          <select
+          <PremiumSelect
             value={filterProject}
-            onChange={e => setFilterProject(e.target.value)}
-            className="py-2 px-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 shadow-2xs focus:outline-none"
-          >
-            <option value="all">Tất cả dự án</option>
-            <option value="Elyse Island">Elyse Island</option>
-            <option value="Sunrise Residence">Sunrise Residence</option>
-            <option value="Lumière Bay">Lumière Bay</option>
-          </select>
+            onChange={setFilterProject}
+            className="w-44"
+            options={[
+              { value: "all", label: "Tất cả dự án" },
+              { value: "Elyse Island", label: "Elyse Island" },
+              { value: "Sunrise Residence", label: "Sunrise Residence" },
+              { value: "Lumière Bay", label: "Lumière Bay" },
+            ]}
+          />
 
           {/* Sync API Button */}
           <button
@@ -622,29 +624,33 @@ export default function RealEstateMarketingPage() {
           {/* Filter Toolbar */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div className="flex items-center gap-2 flex-wrap text-xs">
-              <select
+              <PremiumSelect
                 value={filterChannel}
-                onChange={e => setFilterChannel(e.target.value)}
-                className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 font-semibold focus:outline-none"
-              >
-                <option value="all">Tất cả kênh quảng cáo</option>
-                <option value="facebook">Facebook Ads</option>
-                <option value="zalo">Zalo OA Ads</option>
-                <option value="google">Google Search</option>
-                <option value="tiktok">TikTok Ads</option>
-                <option value="event">Sự kiện VIP</option>
-              </select>
+                onChange={setFilterChannel}
+                placeholder="Tất cả kênh quảng cáo"
+                className="w-48"
+                options={[
+                  { value: "all", label: "Tất cả kênh quảng cáo" },
+                  { value: "facebook", label: "Facebook Ads" },
+                  { value: "zalo", label: "Zalo OA Ads" },
+                  { value: "google", label: "Google Search" },
+                  { value: "tiktok", label: "TikTok Ads" },
+                  { value: "event", label: "Sự kiện VIP" },
+                ]}
+              />
 
-              <select
+              <PremiumSelect
                 value={filterStatus}
-                onChange={e => setFilterStatus(e.target.value)}
-                className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 font-semibold focus:outline-none"
-              >
-                <option value="all">Tất cả trạng thái</option>
-                <option value="active">Đang chạy</option>
-                <option value="paused">Tạm dừng</option>
-                <option value="completed">Đã hoàn thành</option>
-              </select>
+                onChange={setFilterStatus}
+                placeholder="Tất cả trạng thái"
+                className="w-44"
+                options={[
+                  { value: "all", label: "Tất cả trạng thái" },
+                  { value: "active", label: "Đang chạy" },
+                  { value: "paused", label: "Tạm dừng" },
+                  { value: "completed", label: "Đã hoàn thành" },
+                ]}
+              />
 
               <div className="relative min-w-[220px]">
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -905,30 +911,30 @@ export default function RealEstateMarketingPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-slate-700 dark:text-slate-300 mb-1">Dự án áp dụng</label>
-                    <select
+                    <PremiumSelect
                       value={newCamp.project}
-                      onChange={e => setNewCamp({ ...newCamp, project: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none"
-                    >
-                      <option value="Elyse Island">Elyse Island</option>
-                      <option value="Sunrise Residence">Sunrise Residence</option>
-                      <option value="Lumière Bay">Lumière Bay</option>
-                    </select>
+                      onChange={val => setNewCamp({ ...newCamp, project: val })}
+                      options={[
+                        { value: "Elyse Island", label: "Elyse Island" },
+                        { value: "Sunrise Residence", label: "Sunrise Residence" },
+                        { value: "Lumière Bay", label: "Lumière Bay" },
+                      ]}
+                    />
                   </div>
 
                   <div>
                     <label className="block text-slate-700 dark:text-slate-300 mb-1">Kênh truyền thông</label>
-                    <select
+                    <PremiumSelect
                       value={newCamp.channel}
-                      onChange={e => setNewCamp({ ...newCamp, channel: e.target.value as any })}
-                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none"
-                    >
-                      <option value="facebook">Facebook Ads</option>
-                      <option value="zalo">Zalo OA Ads</option>
-                      <option value="google">Google Search</option>
-                      <option value="tiktok">TikTok Ads</option>
-                      <option value="event">Sự kiện VIP</option>
-                    </select>
+                      onChange={val => setNewCamp({ ...newCamp, channel: val as any })}
+                      options={[
+                        { value: "facebook", label: "Facebook Ads" },
+                        { value: "zalo", label: "Zalo OA Ads" },
+                        { value: "google", label: "Google Search" },
+                        { value: "tiktok", label: "TikTok Ads" },
+                        { value: "event", label: "Sự kiện VIP" },
+                      ]}
+                    />
                   </div>
                 </div>
 
@@ -1008,28 +1014,28 @@ export default function RealEstateMarketingPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-slate-700 dark:text-slate-300 mb-1">Cấp đại lý</label>
-                    <select
+                    <PremiumSelect
                       value={newAgency.tier}
-                      onChange={e => setNewAgency({ ...newAgency, tier: e.target.value as any })}
-                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none"
-                    >
-                      <option value="F1_EXCLUSIVE">F1 Độc quyền</option>
-                      <option value="F1_STANDARD">F1 Chính thức</option>
-                      <option value="F2_PARTNER">F2 Liên kết</option>
-                    </select>
+                      onChange={val => setNewAgency({ ...newAgency, tier: val as any })}
+                      options={[
+                        { value: "F1_EXCLUSIVE", label: "F1 Độc quyền" },
+                        { value: "F1_STANDARD", label: "F1 Chính thức" },
+                        { value: "F2_PARTNER", label: "F2 Liên kết" },
+                      ]}
+                    />
                   </div>
 
                   <div>
                     <label className="block text-slate-700 dark:text-slate-300 mb-1">Dự án phụ trách</label>
-                    <select
+                    <PremiumSelect
                       value={newAgency.assignedProject}
-                      onChange={e => setNewAgency({ ...newAgency, assignedProject: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none"
-                    >
-                      <option value="Elyse Island">Elyse Island</option>
-                      <option value="Sunrise Residence">Sunrise Residence</option>
-                      <option value="Lumière Bay">Lumière Bay</option>
-                    </select>
+                      onChange={val => setNewAgency({ ...newAgency, assignedProject: val })}
+                      options={[
+                        { value: "Elyse Island", label: "Elyse Island" },
+                        { value: "Sunrise Residence", label: "Sunrise Residence" },
+                        { value: "Lumière Bay", label: "Lumière Bay" },
+                      ]}
+                    />
                   </div>
                 </div>
 

@@ -936,11 +936,16 @@ export default function CustomerServiceCenterPage() {
                 </button>
               </div>
 
-              <select className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-700 dark:text-slate-200 font-medium focus:outline-none">
-                <option>5/trang</option>
-                <option>10/trang</option>
-                <option>20/trang</option>
-              </select>
+              <PremiumSelect
+                value={supportPageSize}
+                onChange={setSupportPageSize}
+                className="w-28"
+                options={[
+                  { value: "5", label: "5/trang" },
+                  { value: "10", label: "10/trang" },
+                  { value: "20", label: "20/trang" },
+                ]}
+              />
             </div>
           </div>
 

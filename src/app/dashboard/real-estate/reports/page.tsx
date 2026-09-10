@@ -9,6 +9,7 @@ import {
   Search, ShieldCheck, Mail, ArrowUpRight
 } from "lucide-react";
 import { toast } from "sonner";
+import { PremiumSelect } from "@/components/ui/PremiumSelect";
 
 // ── Types & Interfaces ────────────────────────────────────────────────────────
 
@@ -186,29 +187,30 @@ export default function ReportsPage() {
         {/* Global Toolbar */}
         <div className="flex items-center gap-2.5 flex-wrap text-xs font-semibold">
           <div className="relative">
-            <select
+            <PremiumSelect
               value={selectedPeriod}
-              onChange={e => setSelectedPeriod(e.target.value)}
-              className="pl-3 pr-8 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs font-bold appearance-none cursor-pointer focus:outline-none shadow-2xs"
-            >
-              <option value="Tháng 9/2026">📅 Kỳ Tháng 9/2026</option>
-              <option value="Tháng 8/2026">Kỳ Tháng 8/2026</option>
-              <option value="Quý 3/2026">Kỳ Quý 3/2026</option>
-              <option value="Năm 2026">Báo cáo Năm 2026</option>
-            </select>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              onChange={setSelectedPeriod}
+              className="w-48"
+              options={[
+                { value: "Tháng 9/2026", label: "📅 Kỳ Tháng 9/2026" },
+                { value: "Tháng 8/2026", label: "Kỳ Tháng 8/2026" },
+                { value: "Quý 3/2026", label: "Kỳ Quý 3/2026" },
+                { value: "Năm 2026", label: "Báo cáo Năm 2026" },
+              ]}
+            />
           </div>
 
-          <select
+          <PremiumSelect
             value={selectedProject}
-            onChange={e => setSelectedProject(e.target.value)}
-            className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none shadow-2xs"
-          >
-            <option value="all">Toàn bộ dự án</option>
-            <option value="elyse">Elyse Island</option>
-            <option value="grand">The Grand Tower</option>
-            <option value="riverside">Riverside Heights</option>
-          </select>
+            onChange={setSelectedProject}
+            className="w-44"
+            options={[
+              { value: "all", label: "Toàn bộ dự án" },
+              { value: "elyse", label: "Elyse Island" },
+              { value: "grand", label: "The Grand Tower" },
+              { value: "riverside", label: "Riverside Heights" },
+            ]}
+          />
 
           <button
             onClick={() => setShowCreateModal(true)}

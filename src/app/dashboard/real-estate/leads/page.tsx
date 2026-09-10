@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Database } from '@/types/database.types';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 // ── Types & Interfaces ────────────────────────────────────────────────────────
 
@@ -511,18 +512,18 @@ export default function LeadsManagementPage() {
 
         <div className="flex items-center gap-3 flex-wrap">
           {/* Project Selector Dropdown */}
-          <div className="relative">
-            <select
-              value={filterProject}
-              onChange={e => setFilterProject(e.target.value)}
-              className="py-2 px-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 shadow-2xs focus:outline-none"
-            >
-              <option value="all">Tất cả dự án</option>
-              <option value="Elyse Island">Elyse Island</option>
-              <option value="Sunrise Residence">Sunrise Residence</option>
-              <option value="Lumière Bay">Lumière Bay</option>
-            </select>
-          </div>
+          <PremiumSelect
+            value={filterProject}
+            onChange={setFilterProject}
+            placeholder="Tất cả dự án"
+            className="w-44"
+            options={[
+              { value: "all", label: "Tất cả dự án" },
+              { value: "Elyse Island", label: "Elyse Island" },
+              { value: "Sunrise Residence", label: "Sunrise Residence" },
+              { value: "Lumière Bay", label: "Lumière Bay" },
+            ]}
+          />
 
           {/* Quick SLA Config Button */}
           <button
@@ -652,51 +653,57 @@ export default function LeadsManagementPage() {
         {/* Dropdowns & Search Row */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2 flex-wrap text-xs font-semibold">
-            <select
+            <PremiumSelect
               value={filterProject}
-              onChange={e => setFilterProject(e.target.value)}
-              className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none"
-            >
-              <option value="all">Dự án: Tất cả</option>
-              <option value="Elyse Island">Elyse Island</option>
-              <option value="Sunrise Residence">Sunrise Residence</option>
-              <option value="Lumière Bay">Lumière Bay</option>
-            </select>
+              onChange={setFilterProject}
+              placeholder="Dự án: Tất cả"
+              className="w-44"
+              options={[
+                { value: "all", label: "Dự án: Tất cả" },
+                { value: "Elyse Island", label: "Elyse Island" },
+                { value: "Sunrise Residence", label: "Sunrise Residence" },
+                { value: "Lumière Bay", label: "Lumière Bay" },
+              ]}
+            />
 
-            <select
+            <PremiumSelect
               value={filterSource}
-              onChange={e => setFilterSource(e.target.value)}
-              className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none"
-            >
-              <option value="all">Nguồn: Tất cả</option>
-              <option value="facebook">Facebook Ads</option>
-              <option value="zalo">Zalo OA</option>
-              <option value="google">Google Ads</option>
-              <option value="referral">Người giới thiệu</option>
-            </select>
+              onChange={setFilterSource}
+              placeholder="Nguồn: Tất cả"
+              className="w-40"
+              options={[
+                { value: "all", label: "Nguồn: Tất cả" },
+                { value: "facebook", label: "Facebook Ads" },
+                { value: "zalo", label: "Zalo OA" },
+                { value: "google", label: "Google Ads" },
+                { value: "referral", label: "Người giới thiệu" },
+              ]}
+            />
 
-            <select
+            <PremiumSelect
               value={filterStatus}
-              onChange={e => setFilterStatus(e.target.value)}
-              className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none"
-            >
-              <option value="all">Trạng thái: Tất cả</option>
-              <option value="waiting">Chờ nhận</option>
-              <option value="in_progress">Đang chăm sóc</option>
-              <option value="converted">Đã chốt HĐ</option>
-              <option value="unassigned">Chưa có sales</option>
-            </select>
+              onChange={setFilterStatus}
+              placeholder="Trạng thái: Tất cả"
+              className="w-44"
+              options={[
+                { value: "all", label: "Trạng thái: Tất cả" },
+                { value: "waiting", label: "Chờ nhận" },
+                { value: "in_progress", label: "Đang chăm sóc" },
+                { value: "converted", label: "Đã chốt HĐ" },
+                { value: "unassigned", label: "Chưa có sales" },
+              ]}
+            />
 
-            <select
+            <PremiumSelect
               value={filterSales}
-              onChange={e => setFilterSales(e.target.value)}
-              className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none"
-            >
-              <option value="all">Sales: Tất cả</option>
-              {SALES_AGENTS.map(s => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
+              onChange={setFilterSales}
+              placeholder="Sales: Tất cả"
+              className="w-44"
+              options={[
+                { value: "all", label: "Sales: Tất cả" },
+                ...SALES_AGENTS.map(s => ({ value: s.id, label: s.name })),
+              ]}
+            />
 
             <div className="relative min-w-[200px]">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -1097,30 +1104,27 @@ export default function LeadsManagementPage() {
                 </div>
                 <div className="flex justify-between items-center pt-1 border-t border-slate-200/60 dark:border-slate-700">
                   <span className="text-slate-400 font-semibold">Đến sales mới:</span>
-                  <select
+                  <PremiumSelect
                     value={reassignTargetSale}
-                    onChange={e => setReassignTargetSale(e.target.value)}
-                    className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl font-bold text-slate-900 dark:text-white"
-                  >
-                    {SALES_AGENTS.map(s => (
-                      <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
-                    ))}
-                  </select>
+                    onChange={setReassignTargetSale}
+                    className="w-52"
+                    options={SALES_AGENTS.map(s => ({ value: s.id, label: `${s.name} (${s.role})` }))}
+                  />
                 </div>
               </div>
 
               <div>
                 <label className="block text-slate-600 dark:text-slate-400 font-bold mb-1">Lý do chuyển:</label>
-                <select
+                <PremiumSelect
                   value={reassignReason}
-                  onChange={e => setReassignReason(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-800 dark:text-slate-200"
-                >
-                  <option value="Nghỉ phép">Nghỉ phép</option>
-                  <option value="Quá tải SLA">Quá tải SLA</option>
-                  <option value="Yêu cầu từ khách hàng">Yêu cầu từ khách hàng</option>
-                  <option value="Chuyên môn phân khu">Chuyên môn phân khu</option>
-                </select>
+                  onChange={setReassignReason}
+                  options={[
+                    { value: "Nghỉ phép", label: "Nghỉ phép" },
+                    { value: "Quá tải SLA", label: "Quá tải SLA" },
+                    { value: "Yêu cầu từ khách hàng", label: "Yêu cầu từ khách hàng" },
+                    { value: "Chuyên môn phân khu", label: "Chuyên môn phân khu" },
+                  ]}
+                />
               </div>
 
               <div className="flex items-center gap-2 pt-1">
@@ -1201,28 +1205,28 @@ export default function LeadsManagementPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-600 dark:text-slate-400 font-bold mb-1">Dự án quan tâm</label>
-                  <select
+                  <PremiumSelect
                     value={newLead.project}
-                    onChange={e => setNewLead({ ...newLead, project: e.target.value })}
-                    className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold"
-                  >
-                    <option value="Elyse Island">Elyse Island</option>
-                    <option value="Sunrise Residence">Sunrise Residence</option>
-                    <option value="Lumière Bay">Lumière Bay</option>
-                  </select>
+                    onChange={(val) => setNewLead({ ...newLead, project: val })}
+                    options={[
+                      { value: "Elyse Island", label: "Elyse Island" },
+                      { value: "Sunrise Residence", label: "Sunrise Residence" },
+                      { value: "Lumière Bay", label: "Lumière Bay" },
+                    ]}
+                  />
                 </div>
                 <div>
                   <label className="block text-slate-600 dark:text-slate-400 font-bold mb-1">Nguồn lead</label>
-                  <select
+                  <PremiumSelect
                     value={newLead.source}
-                    onChange={e => setNewLead({ ...newLead, source: e.target.value })}
-                    className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold"
-                  >
-                    <option value="facebook">Facebook Ads</option>
-                    <option value="zalo">Zalo OA</option>
-                    <option value="google">Google Ads</option>
-                    <option value="referral">Người giới thiệu</option>
-                  </select>
+                    onChange={(val) => setNewLead({ ...newLead, source: val })}
+                    options={[
+                      { value: "facebook", label: "Facebook Ads" },
+                      { value: "zalo", label: "Zalo OA" },
+                      { value: "google", label: "Google Ads" },
+                      { value: "referral", label: "Người giới thiệu" },
+                    ]}
+                  />
                 </div>
               </div>
 
