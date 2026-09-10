@@ -146,52 +146,52 @@ export default function BIAnalyticsPage() {
         </div>
       </div>
 
-      {/* ── 2. INSIGHT ENGINE (AI INTELLIGENCE ALERTS) ── */}
-      <div className="bg-gradient-to-br from-blue-900 via-slate-900 to-slate-950 text-white rounded-3xl p-6 shadow-xl space-y-4">
-        <div className="flex items-center justify-between border-b border-white/10 pb-3">
+      {/* ── 2. INSIGHT ENGINE (AI INTELLIGENCE ALERTS WITH HIGH CONTRAST) ── */}
+      <div className="bg-slate-900 border border-slate-700 text-white rounded-3xl p-6 shadow-xl space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-amber-400" />
-            <h2 className="text-base font-black tracking-wide uppercase text-blue-300">INSIGHT ENGINE — PHÂN TÍCH TỰ ĐỘNG</h2>
+            <h2 className="text-sm font-black tracking-wider uppercase text-white">INSIGHT ENGINE — PHÂN TÍCH TỰ ĐỘNG</h2>
           </div>
-          <span className="text-[11px] font-extrabold bg-blue-500/30 text-blue-200 px-3 py-1 rounded-full border border-blue-400/30">
+          <span className="text-[11px] font-black bg-blue-600 text-white px-3 py-1 rounded-full shadow-2xs">
             Realtime Analytics Layer
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-semibold">
-          {/* Anomaly 1 */}
-          <div className="p-4 bg-white/5 backdrop-blur-md rounded-2xl border border-rose-500/30 space-y-2">
-            <div className="flex items-center justify-between text-rose-400 font-extrabold text-xs">
-              <span className="flex items-center gap-1.5"><ShieldAlert className="w-4 h-4" /> Cảnh báo bất thường</span>
-              <span>HIGH IMPACT</span>
+          {/* Anomaly 1 - Red Alert */}
+          <div className="p-4 bg-rose-950/40 rounded-2xl border-2 border-rose-500/80 space-y-2">
+            <div className="flex items-center justify-between text-rose-400 font-black text-xs">
+              <span className="flex items-center gap-1.5"><ShieldAlert className="w-4 h-4 text-rose-400" /> Cảnh báo bất thường</span>
+              <span className="bg-rose-600 text-white px-2 py-0.5 rounded text-[10px] font-black">HIGH IMPACT</span>
             </div>
-            <p className="text-sm font-black text-white">Conversion giảm 2.1 điểm %</p>
-            <p className="text-[11px] text-slate-300">
-              Điểm rơi chính nằm ở bước <span className="text-rose-300 font-bold">Site Visit ➔ Deposit (42.9%)</span>. Cần rà soát quy trình tư vấn thực địa.
+            <p className="text-base font-black text-white tracking-tight">Conversion giảm 2.1 điểm %</p>
+            <p className="text-xs text-slate-200 font-semibold leading-relaxed">
+              Điểm rơi chính nằm ở bước <span className="text-rose-300 font-black underline decoration-rose-400">Site Visit ➔ Deposit (42.9%)</span>. Cần rà soát quy trình tư vấn thực địa.
             </p>
           </div>
 
-          {/* Anomaly 2 */}
-          <div className="p-4 bg-white/5 backdrop-blur-md rounded-2xl border border-amber-500/30 space-y-2">
-            <div className="flex items-center justify-between text-amber-400 font-extrabold text-xs">
-              <span className="flex items-center gap-1.5"><AlertTriangle className="w-4 h-4" /> Ứng đọng kho hàng</span>
-              <span>AGING RISK</span>
+          {/* Anomaly 2 - Amber Alert */}
+          <div className="p-4 bg-amber-950/40 rounded-2xl border-2 border-amber-500/80 space-y-2">
+            <div className="flex items-center justify-between text-amber-400 font-black text-xs">
+              <span className="flex items-center gap-1.5"><AlertTriangle className="w-4 h-4 text-amber-400" /> Ứng đọng kho hàng</span>
+              <span className="bg-amber-600 text-white px-2 py-0.5 rounded text-[10px] font-black">AGING RISK</span>
             </div>
-            <p className="text-sm font-black text-white">18.4 tỷ tồn kho &gt;90 ngày</p>
-            <p className="text-[11px] text-slate-300">
-              Tập trung chủ yếu tại dự án <span className="text-amber-300 font-bold">Riverside Heights</span>. Khuyến nghị đưa ra gói ưu đãi thanh toán đợt mới.
+            <p className="text-base font-black text-white tracking-tight">18.4 tỷ tồn kho &gt;90 ngày</p>
+            <p className="text-xs text-slate-200 font-semibold leading-relaxed">
+              Tập trung chủ yếu tại dự án <span className="text-amber-300 font-black underline decoration-amber-400">Riverside Heights</span>. Khuyến nghị đưa ra gói ưu đãi thanh toán đợt mới.
             </p>
           </div>
 
-          {/* Anomaly 3 */}
-          <div className="p-4 bg-white/5 backdrop-blur-md rounded-2xl border border-emerald-500/30 space-y-2">
-            <div className="flex items-center justify-between text-emerald-400 font-extrabold text-xs">
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> Kênh hiệu quả cao</span>
-              <span>OPTIMIZATION</span>
+          {/* Anomaly 3 - Emerald Alert */}
+          <div className="p-4 bg-emerald-950/40 rounded-2xl border-2 border-emerald-500/80 space-y-2">
+            <div className="flex items-center justify-between text-emerald-400 font-black text-xs">
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> Kênh hiệu quả cao</span>
+              <span className="bg-emerald-600 text-white px-2 py-0.5 rounded text-[10px] font-black">OPTIMIZATION</span>
             </div>
-            <p className="text-sm font-black text-white">Referral có conversion 19.3%</p>
-            <p className="text-[11px] text-slate-300">
-              Chỉ số chuyển đổi từ nguồn giới thiệu cao hơn Facebook Ads gấp <span className="text-emerald-300 font-bold">2.6 lần</span>. Đề xuất tăng hoa hồng CTV.
+            <p className="text-base font-black text-white tracking-tight">Referral có conversion 19.3%</p>
+            <p className="text-xs text-slate-200 font-semibold leading-relaxed">
+              Chỉ số chuyển đổi từ nguồn giới thiệu cao hơn Facebook Ads gấp <span className="text-emerald-300 font-black underline decoration-emerald-400">2.6 lần</span>. Đề xuất tăng hoa hồng CTV.
             </p>
           </div>
         </div>
