@@ -246,17 +246,18 @@ export default function RealEstateDashboardPage() {
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
-      {/* 1. TOP LIGHT EXECUTIVE HEADER BANNER CARD (MATCHING REFERENCE IMAGE 1) */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-50 via-blue-50/40 to-sky-100/50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-850 border border-slate-200/90 dark:border-slate-800 p-6 shadow-xs transition-all">
-        {/* Subtle Watermark Decorative Banner Graphic */}
-        <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-15 dark:opacity-20 pointer-events-none bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-400 via-indigo-500 to-transparent flex items-center justify-end pr-6">
-          <div className="text-right select-none hidden md:block">
-            <span className="text-2xl font-black italic tracking-tighter text-slate-800 dark:text-white block">Elyse Island</span>
-            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">Đô thị biển Kiến tạo tương lai</span>
-          </div>
-        </div>
+      {/* 1. TOP LIGHT EXECUTIVE HEADER BANNER CARD (WITH SYNCHRONIZED SKYLINE BACKGROUND) */}
+      <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm min-h-[150px] flex items-center">
+        {/* Synchronized Coastal Skyline Background Image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-right bg-no-repeat opacity-95 dark:opacity-40"
+          style={{ backgroundImage: `url('/images/bella-land-skyline.png')` }}
+        />
 
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        {/* Gradient Overlay for Text Readability on Left */}
+        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/85 to-transparent dark:from-slate-900 dark:via-slate-900/90 dark:to-transparent w-full md:w-3/4 pointer-events-none" />
+
+        <div className="relative z-10 w-full p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           {/* Left Title & Breadcrumbs */}
           <div>
             <div className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">
@@ -284,7 +285,7 @@ export default function RealEstateDashboardPage() {
                     handleSelectProject(projects[nextIdx]);
                   }
                 }}
-                className="flex items-center gap-2 px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xs hover:border-blue-400 transition-all text-left"
+                className="flex items-center gap-2 px-3.5 py-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xs hover:border-blue-400 transition-all text-left"
               >
                 <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-600 flex items-center justify-center font-bold shrink-0">
                   🏢
@@ -302,7 +303,7 @@ export default function RealEstateDashboardPage() {
             </div>
 
             {/* Month Picker Pill */}
-            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xs text-xs font-extrabold text-slate-800 dark:text-slate-200">
+            <div className="flex items-center gap-2 px-3 py-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xs text-xs font-extrabold text-slate-800 dark:text-slate-200">
               <span>📅 Tháng 7/2026</span>
               <span className="text-[10px] text-slate-400">▾</span>
             </div>
@@ -312,7 +313,7 @@ export default function RealEstateDashboardPage() {
               <button
                 onClick={handleRefresh}
                 disabled={isLoading || isRefreshing}
-                className="p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-xl shadow-2xs transition-all active:scale-95"
+                className="p-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur border border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-700 dark:text-slate-300 rounded-xl shadow-2xs transition-all active:scale-95"
                 title="Tải lại dữ liệu"
               >
                 <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-blue-600' : ''}`} />
@@ -321,7 +322,7 @@ export default function RealEstateDashboardPage() {
               <div className="relative">
                 <button
                   onClick={handleToggleNotifications}
-                  className="relative p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-xl shadow-2xs transition-all active:scale-95"
+                  className="relative p-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur border border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-700 dark:text-slate-300 rounded-xl shadow-2xs transition-all active:scale-95"
                   title="Thông báo"
                 >
                   <Bell className="w-4 h-4" />
@@ -356,8 +357,8 @@ export default function RealEstateDashboardPage() {
               </div>
 
               {/* User Profile Badge */}
-              <div className="flex items-center gap-2 pl-2 border-l border-slate-200/80 dark:border-slate-700">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white font-black text-xs flex items-center justify-center shadow-xs">
+              <div className="flex items-center gap-2 pl-2 border-l border-slate-200/80 dark:border-slate-700 bg-white/95 dark:bg-slate-800/95 px-2.5 py-1 rounded-xl shadow-2xs">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white font-black text-xs flex items-center justify-center shadow-xs">
                   {monogram}
                 </div>
                 <div className="hidden xl:block text-left">
