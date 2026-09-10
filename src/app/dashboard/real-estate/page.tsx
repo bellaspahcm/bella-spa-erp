@@ -246,16 +246,19 @@ export default function RealEstateDashboardPage() {
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
-      {/* 1. TOP LIGHT EXECUTIVE HEADER BANNER CARD (WITH SYNCHRONIZED SKYLINE BACKGROUND) */}
-      <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm min-h-[150px] flex items-center">
-        {/* Synchronized Coastal Skyline Background Image */}
-        <div 
-          className="absolute inset-0 bg-cover bg-right bg-no-repeat opacity-95 dark:opacity-40"
-          style={{ backgroundImage: `url('/images/bella-land-skyline.png')` }}
-        />
-
-        {/* Gradient Overlay for Text Readability on Left */}
-        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/85 to-transparent dark:from-slate-900 dark:via-slate-900/90 dark:to-transparent w-full md:w-3/4 pointer-events-none" />
+      {/* 1. TOP LIGHT EXECUTIVE HEADER BANNER CARD (SHARED WITH PROJECTS PAGE BANNER) */}
+      <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm min-h-[160px] flex items-center">
+        {/* Shared Background Panorama Skyline Photo */}
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+          <img
+            src="/images/bella-land-hero-banner.png?v=9"
+            onError={(e) => {
+              e.currentTarget.src = "https://images.unsplash.com/photo-1477959858617-67f30ac4ce78?auto=format&fit=crop&w=1600&q=80";
+            }}
+            alt="Skyline Panorama"
+            className="w-full h-full object-cover object-center opacity-100 dark:opacity-90"
+          />
+        </div>
 
         <div className="relative z-10 w-full p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           {/* Left Title & Breadcrumbs */}
