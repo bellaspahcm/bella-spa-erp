@@ -128,9 +128,25 @@ const REPORT_PACKAGES: ReportPackage[] = [
       { label: "Nợ quá hạn >30 ngày", value: "12.4 tỷ" },
       { label: "Tỷ lệ hoàn thành kế hoạch", value: "92.0%" },
     ],
-    pdfAvailable: true,
-    excelAvailable: true,
+    categoryColor: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300",
+    description: "Phân tích chi phí CPA/CPL, tỷ lệ lead nhận -> đàm phán -> cọc, cùng hiệu quả kênh chạy quảng cáo.",
+    lastUpdated: "01/08/2026",
+    frequency: "Hàng tuần",
+    formats: ["PDF", "Excel"],
+    downloadsCount: 76
   },
+  {
+    id: "REP-005",
+    title: "Báo Cáo Tiến Độ Pháp Lý & Cấp Sổ Hồng",
+    category: "executive",
+    categoryLabel: "Ban Giám Đốc",
+    categoryColor: "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300",
+    description: "Theo dõi tình trạng phê duyệt 1/500, GPLX, tiến độ nộp hồ sơ xin cấp sổ hồng cho cư dân các dự án.",
+    lastUpdated: "28/07/2026",
+    frequency: "Hàng tháng",
+    formats: ["PDF"],
+    downloadsCount: 64
+  }
 ];
 
 const EXPORT_AUDIT_TRAIL: ExportAuditItem[] = [
@@ -153,11 +169,11 @@ export default function ReportsPage() {
   });
 
   const handleDownload = (title: string, format: "PDF" | "Excel") => {
-    toast.loading(`Đang tải tệp ${format} cho "${title}"...`);
-    setTimeout(() => {
-      toast.dismiss();
-      toast.success(`✅ Đã tải tệp ${format} thành công!`);
-    }, 1000);
+    const ext = format === "Excel" ? "csv" : "txt";
+    const mime = format === "Excel" ? "text/csv;charset=utf-8" : "text/plain;charset=utf-8";
+    const content = generateMockCsvContent(title, ["Metric", "Value", "Status", "Timestamp"]);
+    triggerBrowserDownload(`${title.replace(/\s+/g, "_")}.${ext}`, content, mime);
+    toast.success(`✅ Đã tải tệp ${format} cho "${title}" thành công!`);
   };
 
   const handleShare = (title: string) => {

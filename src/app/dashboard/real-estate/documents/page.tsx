@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { triggerBrowserDownload, generateMockCsvContent } from "@/modules/real_estate/utils/exportUtils";
 import {
   FileText, Search, Download, Eye, Clock,
   CheckCircle2, AlertTriangle, XCircle, FileSignature,
@@ -831,7 +832,11 @@ export default function LegalDocumentsOperationsCenterPage() {
           {/* Right Actions: Export & Create Button */}
           <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
             <button
-              onClick={() => toast.success("Đang xuất file Excel báo cáo hồ sơ pháp lý...")}
+              onClick={() => {
+                const csvData = generateMockCsvContent("Báo Cáo Hồ Sơ Pháp Lý Bella Land", ["DocCode", "Title", "Project", "Status"]);
+                triggerBrowserDownload("Bao_Cao_Ho_So_Phap_Ly.csv", csvData);
+                toast.success("✅ Đã xuất file Excel báo cáo hồ sơ pháp lý thành công!");
+              }}
               className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-2xs transition flex items-center gap-1.5"
             >
               <Download className="w-3.5 h-3.5 text-slate-500" />
@@ -1001,7 +1006,9 @@ export default function LegalDocumentsOperationsCenterPage() {
                               <button
                                 onClick={() => {
                                   setActiveActionMenuId(null);
-                                  toast.success(`Đang tải xuống ${doc.code}`);
+                                  const content = generateMockCsvContent(`Legal Document: ${doc.title}`, ["Code", "Version", "Status"], );
+                                  triggerBrowserDownload(`${doc.code}.txt`, content, "text/plain;charset=utf-8");
+                                  toast.success(`✅ Đã tải xuống ${doc.code} thành công!`);
                                 }}
                                 className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
                               >
@@ -1389,7 +1396,11 @@ export default function LegalDocumentsOperationsCenterPage() {
                 </button>
 
                 <button
-                  onClick={() => toast.success(`Đã tải xuống file ${selectedDoc.code}.pdf`)}
+                  onClick={() => {
+                    const content = generateMockCsvContent(`Document: ${selectedDoc.title}`, ["Code", "Project", "Status"]);
+                    triggerBrowserDownload(`${selectedDoc.code}.pdf.txt`, content, "text/plain;charset=utf-8");
+                    toast.success(`✅ Đã tải xuống file ${selectedDoc.code}.pdf thành công!`);
+                  }}
                   className="flex-1 py-2 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold text-xs transition flex items-center justify-center gap-1.5"
                 >
                   <Download className="w-3.5 h-3.5" /> Tải xuống

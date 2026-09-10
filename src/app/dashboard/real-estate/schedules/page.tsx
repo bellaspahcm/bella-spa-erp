@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { triggerBrowserDownload, generateMockCsvContent } from "@/modules/real_estate/utils/exportUtils";
 import {
   Calendar, Clock, Users, Plus, Search, Filter,
   ChevronLeft, ChevronRight, X, CheckCircle2,
@@ -468,7 +469,11 @@ export default function SchedulesPage() {
 
           <div className="flex items-center gap-2 shrink-0">
             <button
-              onClick={() => toast.success("Đang xuất báo cáo lịch làm việc...")}
+              onClick={() => {
+                const content = generateMockCsvContent("Báo Cáo Lịch Làm Việc Bella Land", ["StaffName", "ShiftType", "Status", "Date"]);
+                triggerBrowserDownload("Bao_Cao_Lich_Lam_Viec.csv", content);
+                toast.success("✅ Đã xuất báo cáo lịch làm việc thành công!");
+              }}
               className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-2xs transition flex items-center gap-1.5"
             >
               <Download className="w-3.5 h-3.5 text-slate-500" />

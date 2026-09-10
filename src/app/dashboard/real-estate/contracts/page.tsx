@@ -10,6 +10,7 @@ import {
   FileCheck, ExternalLink, RefreshCw, Send, DollarSign
 } from "lucide-react";
 import { toast } from "sonner";
+import { triggerBrowserDownload, generateMockCsvContent } from "@/modules/real_estate/utils/exportUtils";
 import Link from "next/link";
 import { PremiumSelect } from "@/components/ui/PremiumSelect";
 
@@ -892,7 +893,11 @@ export default function RealEstateContractsPage() {
                 <FileText className="w-3.5 h-3.5" /> Xem hợp đồng
               </button>
               <button
-                onClick={() => toast.success(`Tải bộ hồ sơ HĐ ${selectedContract.contractNo} PDF thành công!`)}
+                onClick={() => {
+                  const content = generateMockCsvContent(`Hợp Đồng ${selectedContract.contractNo}`, ["ContractNo", "Customer", "Unit", "TotalValue"]);
+                  triggerBrowserDownload(`HopDong_${selectedContract.contractNo}.pdf.txt`, content, "text/plain;charset=utf-8");
+                  toast.success(`✅ Tải bộ hồ sơ HĐ ${selectedContract.contractNo} PDF thành công!`);
+                }}
                 className="flex-1 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all"
               >
                 <Download className="w-3.5 h-3.5" /> Tải hồ sơ

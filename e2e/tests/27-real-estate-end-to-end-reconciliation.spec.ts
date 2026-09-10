@@ -52,14 +52,9 @@ test.describe("BELLA LAND V2 — Final Product Reconciliation E2E Journeys", () 
     await page.waitForLoadState("domcontentloaded");
     expect(page.url()).toContain("/dashboard/real-estate/apartments");
 
-<<<<<<< HEAD
-    // 2. Verify page header & brand styling
-    await expect(page.locator("body")).toBeVisible({ timeout: 10000 });
-=======
     // 2. Verify matrix grid or list container
     const mainContent = await page.locator("main, body").first();
     await expect(mainContent).toBeVisible();
->>>>>>> d79a4a861050ae06bcee5beebb504f75288e67e3
 
     // 3. Navigate to Projects Catalog
     await page.goto("/dashboard/real-estate/projects");
