@@ -37,10 +37,14 @@ export default function RealEstateDashboardPage() {
     created_at: string;
   };
 
-  // States for notifications
+  // States for notifications & dropdowns
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [showNotifDropdown, setShowNotifDropdown] = useState<boolean>(false);
+  const [showProjectDropdown, setShowProjectDropdown] = useState<boolean>(false);
+  const [selectedPeriod, setSelectedPeriod] = useState<string>('Tháng 7/2026');
+  const [showPeriodDropdown, setShowPeriodDropdown] = useState<boolean>(false);
+  const [showUserDropdown, setShowUserDropdown] = useState<boolean>(false);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -247,16 +251,16 @@ export default function RealEstateDashboardPage() {
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
       {/* 1. TOP LIGHT EXECUTIVE HEADER BANNER CARD (SHARED WITH PROJECTS PAGE BANNER) */}
-      <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm min-h-[190px] flex items-center">
+      <div className="relative rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm min-h-[190px] flex items-center">
         {/* Shared Background Panorama Skyline Photo */}
-        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden rounded-2xl">
           <img
             src="/images/bella-land-hero-banner.png?v=9"
             onError={(e) => {
               e.currentTarget.src = "https://images.unsplash.com/photo-1477959858617-67f30ac4ce78?auto=format&fit=crop&w=1600&q=80";
             }}
             alt="Skyline Panorama"
-            className="w-full h-full object-cover object-[center_65%] opacity-100 dark:opacity-90"
+            className="w-full h-full object-cover object-[center_65%] opacity-100 dark:opacity-90 rounded-2xl"
           />
         </div>
 
@@ -278,40 +282,130 @@ export default function RealEstateDashboardPage() {
 
           {/* Right Context Controls & User Badge */}
           <div className="flex flex-wrap items-center gap-3">
-            {/* Context Project Selector Pill */}
+            {/* Context Project Selector Pill Dropdown */}
             <div className="relative">
               <button
                 type="button"
                 onClick={() => {
-                  if (projects.length > 1) {
-                    const nextIdx = (projects.findIndex(p => p.id === selectedProject?.id) + 1) % projects.length;
-                    handleSelectProject(projects[nextIdx]);
-                  }
+                  setShowProjectDropdown(!showProjectDropdown);
+                  setShowPeriodDropdown(false);
+                  setShowNotifDropdown(false);
+                  setShowUserDropdown(false);
                 }}
-                className="flex items-center gap-2 px-3.5 py-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xs hover:border-blue-400 transition-all text-left"
+                className="flex items-center gap-2 px-3.5 py-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xs hover:border-blue-400 transition-all text-left active:scale-[0.98]"
               >
                 <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-600 flex items-center justify-center font-bold shrink-0">
                   🏢
                 </div>
                 <div>
                   <div className="text-xs font-extrabold text-slate-900 dark:text-white flex items-center gap-1">
-                    {selectedProject?.name || 'Elyse Island'}
+                    {selectedProject?.name || 'Vinhomes Green Paradise'}
                     <span className="text-[10px] text-slate-400">▾</span>
                   </div>
                   <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 truncate max-w-[180px]">
-                    📍 {selectedProject?.location || 'Shophouse Marina, TP. Nha Trang'}
+                    📍 {selectedProject?.location || 'Grand Island, TP. Hồ Chí Minh'}
                   </div>
                 </div>
               </button>
+
+              {showProjectDropdown && (
+                <>
+                  <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setShowProjectDropdown(false)} />
+                  <div className="absolute left-0 mt-2 z-[100] w-72 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-2xl p-3 space-y-1">
+                    <div className="px-2 py-1.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Chọn dự án kinh doanh</span>
+                      <span className="text-[10px] bg-blue-100 text-blue-700 font-extrabold px-2 py-0.5 rounded-full">{projects.length} dự án</span>
+                    </div>
+                    <div className="max-h-60 overflow-y-auto space-y-1 pt-1">
+                      {projects.map((proj) => {
+                        const isSelected = selectedProject?.id === proj.id;
+                        return (
+                          <button
+                            key={proj.id}
+                            type="button"
+                            onClick={() => {
+                              handleSelectProject(proj);
+                              setShowProjectDropdown(false);
+                              toast.success(`Đã chuyển sang dự án ${proj.name}`);
+                            }}
+                            className={`w-full text-left p-2.5 rounded-xl text-xs flex items-center justify-between transition-colors ${
+                              isSelected
+                                ? 'bg-blue-50 dark:bg-blue-950/60 font-bold text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60'
+                                : 'hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300'
+                            }`}
+                          >
+                            <div className="truncate">
+                              <p className="font-bold text-slate-900 dark:text-white truncate">{proj.name}</p>
+                              <p className="text-[10px] text-slate-500 truncate mt-0.5">📍 {proj.location || 'Chưa cập nhật vị trí'}</p>
+                            </div>
+                            {isSelected && <span className="text-blue-600 dark:text-blue-400 font-extrabold text-sm ml-2">✓</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
-            {/* Month Picker Pill */}
-            <div className="flex items-center gap-2 px-3 py-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xs text-xs font-extrabold text-slate-800 dark:text-slate-200">
-              <span>📅 Tháng 7/2026</span>
-              <span className="text-[10px] text-slate-400">▾</span>
+            {/* Month / Period Picker Pill Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPeriodDropdown(!showPeriodDropdown);
+                  setShowProjectDropdown(false);
+                  setShowNotifDropdown(false);
+                  setShowUserDropdown(false);
+                }}
+                className="flex items-center gap-2 px-3 py-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur border border-slate-200 dark:border-slate-700 hover:border-amber-400 rounded-xl shadow-2xs text-xs font-extrabold text-slate-800 dark:text-slate-200 transition-all active:scale-[0.98]"
+              >
+                <span>📅 {selectedPeriod}</span>
+                <span className="text-[10px] text-slate-400">▾</span>
+              </button>
+
+              {showPeriodDropdown && (
+                <>
+                  <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setShowPeriodDropdown(false)} />
+                  <div className="absolute right-0 mt-2 z-50 w-56 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-xl p-2 space-y-1">
+                    <div className="px-2 py-1 border-b border-slate-100 dark:border-slate-800 text-[11px] font-bold text-slate-400 uppercase">
+                      Kỳ báo cáo kinh doanh
+                    </div>
+                    {[
+                      'Tháng 5/2026',
+                      'Tháng 6/2026',
+                      'Tháng 7/2026',
+                      'Tháng 8/2026',
+                      'Quý 3/2026',
+                      'Năm 2026'
+                    ].map((period) => {
+                      const isSelected = selectedPeriod === period;
+                      return (
+                        <button
+                          key={period}
+                          type="button"
+                          onClick={() => {
+                            setSelectedPeriod(period);
+                            setShowPeriodDropdown(false);
+                            toast.success(`Đã cập nhật kỳ báo cáo: ${period}`);
+                          }}
+                          className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-colors flex items-center justify-between ${
+                            isSelected
+                              ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800'
+                              : 'hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300'
+                          }`}
+                        >
+                          <span>{period}</span>
+                          {isSelected && <span className="text-amber-600 font-extrabold">✓</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </div>
 
-            {/* Action Buttons: Refresh, Notif, Settings */}
+            {/* Action Buttons: Refresh, Notif, User Menu */}
             <div className="flex items-center gap-2">
               <button
                 onClick={handleRefresh}
@@ -359,19 +453,69 @@ export default function RealEstateDashboardPage() {
                 )}
               </div>
 
-              {/* User Profile Badge */}
-              <div className="flex items-center gap-2 pl-2 border-l border-slate-200/80 dark:border-slate-700 bg-white/95 dark:bg-slate-800/95 px-2.5 py-1 rounded-xl shadow-2xs">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white font-black text-xs flex items-center justify-center shadow-xs">
-                  {monogram}
-                </div>
-                <div className="hidden xl:block text-left">
-                  <div className="text-xs font-black text-slate-900 dark:text-white leading-tight">
-                    {user?.full_name || 'Nguyễn Văn A'}
+              {/* User Profile Badge Dropdown */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowUserDropdown(!showUserDropdown);
+                    setShowProjectDropdown(false);
+                    setShowPeriodDropdown(false);
+                    setShowNotifDropdown(false);
+                  }}
+                  className="flex items-center gap-2 pl-2 border-l border-slate-200/80 dark:border-slate-700 bg-white/95 dark:bg-slate-800/95 px-2.5 py-1 rounded-xl shadow-2xs hover:border-slate-400 transition-all active:scale-[0.98]"
+                >
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white font-black text-xs flex items-center justify-center shadow-xs">
+                    {monogram}
                   </div>
-                  <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
-                    Quản trị viên
+                  <div className="hidden xl:block text-left">
+                    <div className="text-xs font-black text-slate-900 dark:text-white leading-tight">
+                      {user?.full_name || 'Quản Lý BĐS Bella Land'}
+                    </div>
+                    <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                      Quản trị viên
+                    </div>
                   </div>
-                </div>
+                </button>
+
+                {showUserDropdown && (
+                  <>
+                    <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setShowUserDropdown(false)} />
+                    <div className="absolute right-0 mt-2 z-50 w-64 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-xl p-3 space-y-2 text-xs">
+                      <div className="p-2 bg-slate-50 dark:bg-slate-900 rounded-xl">
+                        <p className="font-extrabold text-slate-900 dark:text-white">{user?.full_name || 'Quản Lý BĐS Bella Land'}</p>
+                        <p className="text-[11px] text-slate-500 truncate">{user?.email || 'admin@bellaland.vn'}</p>
+                        <div className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-md">
+                          <span>●</span> Tenant ID: {tenantContext.tenantId || 'bellaland-prod'}
+                        </div>
+                      </div>
+                      <div className="space-y-1 pt-1 border-t border-slate-100 dark:border-slate-800">
+                        <a
+                          href="/dashboard/real-estate/people"
+                          className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl font-semibold text-slate-700 dark:text-slate-300 transition-colors"
+                        >
+                          👥 Quản lý Nhân sự & Môi giới
+                        </a>
+                        <a
+                          href="/dashboard/real-estate/settings"
+                          className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl font-semibold text-slate-700 dark:text-slate-300 transition-colors"
+                        >
+                          ⚙️ Cấu hình hệ thống Bella Land
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowUserDropdown(false);
+                            toast.info('Phiên làm việc Quản trị viên đang hoạt động an toàn');
+                          }}
+                          className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-rose-50 text-rose-600 rounded-xl font-semibold transition-colors"
+                        >
+                          🔒 Trạng thái Bảo mật Tenant
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -387,9 +531,9 @@ export default function RealEstateDashboardPage() {
         signedCount={signedCount || 78}
         paidCount={paidCount || 9}
         deliveredCount={deliveredCount || 25}
+        selectedProjectName={selectedProject?.name || 'Vinhomes Green Paradise'}
+        selectedPeriod={selectedPeriod}
       />
     </div>
   );
 }
-
-
