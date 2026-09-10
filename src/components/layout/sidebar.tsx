@@ -1037,7 +1037,7 @@ export function Sidebar() {
 
         {/* ── Nav (scrollable) ── */}
         <nav className={cn(
-          "flex-1 min-h-0 px-5 space-y-1.5 overflow-y-auto relative z-10 pb-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:transparent [&::-webkit-scrollbar-thumb]:rounded-full",
+          "flex-1 min-h-0 px-3 space-y-1 overflow-y-auto relative z-10 pb-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:transparent [&::-webkit-scrollbar-thumb]:rounded-full",
           isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell || isBellaHealthcareShell
             ? "" 
             : "[&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700",
@@ -1049,7 +1049,7 @@ export function Sidebar() {
                 <div 
                   key={`header-${idx}`} 
                   className={cn(
-                    "px-5 pt-3 pb-1 text-[9.5px] font-extrabold uppercase tracking-[0.2em] relative z-10 select-none pointer-events-none mt-4 first:mt-1",
+                    "px-3 pt-2.5 pb-1 text-[9px] font-extrabold uppercase tracking-[0.18em] relative z-10 select-none pointer-events-none mt-3 first:mt-1",
                     isBellaEducationShell
                       ? "text-slate-400 dark:text-slate-500"
                       : "text-primary/60 dark:text-[#A67D44]/60",
@@ -1120,9 +1120,9 @@ export function Sidebar() {
             return (
               <Link key={item.href} href={item.href} onClick={handleNavigation} aria-current={isActive ? 'page' : undefined} prefetch={false}>
                 <motion.div
-                  whileHover={{ x: 3 }}
+                  whileHover={{ x: 2 }}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-300 relative group cursor-pointer border",
+                    "flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-300 relative group cursor-pointer border",
                     isBellaEducationShell && isActive
                       ? activeEduClass
                       : isBellaEducationShell
@@ -1141,7 +1141,7 @@ export function Sidebar() {
                   )}
                 >
                   <item.icon className={cn(
-                    "w-[18px] h-[18px] transition-all duration-300 shrink-0",
+                    "w-4 h-4 transition-all duration-300 shrink-0",
                     isBellaEducationShell
                       ? (isActive ? activeEduIconClass : "text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300")
                       : (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell || isBellaHealthcareShell)
@@ -1149,7 +1149,7 @@ export function Sidebar() {
                       : (isActive ? "text-primary dark:text-[#A67D44] scale-105" : "text-[#A07888] dark:text-[#CDBCAB]/80 group-hover:text-primary dark:group-hover:text-[#A67D44]")
                   )} />
                   <span className={cn(
-                    "text-[14px] tracking-tight transition-all duration-300 truncate",
+                    "text-[12.5px] tracking-tight transition-all duration-300 truncate",
                     isBellaEducationShell
                       ? (isActive ? activeEduTextClass : "font-medium text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white")
                       : (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell || isBellaHealthcareShell)
@@ -1185,27 +1185,27 @@ export function Sidebar() {
         </nav>
 
         {/* ── Theme Switcher, User Profile & Logout — pinned at bottom ── */}
-        <div className="mt-auto shrink-0 relative z-10 px-4 pt-2 pb-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] flex flex-col gap-2">
+        <div className="mt-auto shrink-0 relative z-10 px-2.5 pt-2 pb-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] flex flex-col gap-2">
           {/* Unified Profile & Actions Panel */}
           <div className={cn(
-            "bg-white dark:bg-[#181a20] rounded-[1.25rem] shadow-xs border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700",
+            "bg-white dark:bg-[#181a20] rounded-xl shadow-xs border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700",
             (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell || isBellaHealthcareShell) && "beauty-erp-profile-card"
           )}>
-            <div className="p-3 flex items-center gap-3">
+            <div className="p-2.5 flex items-center gap-2.5">
               <div className="relative shrink-0">
                 <div className={cn(
-                  "w-9 h-9 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-full flex items-center justify-center font-extrabold text-sm shadow-2xs transition-transform duration-300 group-hover:scale-105",
+                  "w-8 h-8 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-full flex items-center justify-center font-extrabold text-xs shadow-2xs transition-transform duration-300 group-hover:scale-105",
                   (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell || isBellaHealthcareShell) && "beauty-erp-avatar"
                 )}>
                   {user?.full_name?.charAt(0)?.toUpperCase() || 'A'}
                 </div>
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-[#11100F] rounded-full" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-[#11100F] rounded-full" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-extrabold text-slate-800 dark:text-slate-100 truncate leading-tight beauty-erp-profile-name">
+                <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate leading-tight beauty-erp-profile-name">
                   {user?.full_name || 'Admin Preschool'}
                 </p>
-                <p className="text-[9px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-[0.1em] mt-0.5 beauty-erp-profile-role">
+                <p className="text-[8.5px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-[0.08em] mt-0.5 beauty-erp-profile-role">
                   {roleLabel}
                 </p>
               </div>
@@ -1216,24 +1216,24 @@ export function Sidebar() {
               (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell || isBellaHealthcareShell) && "beauty-erp-profile-divider"
             )} />
             
-            <div className="flex items-center justify-between p-2 gap-2">
-               <div className="flex-1 px-2">
+            <div className="flex items-center justify-between p-1.5 gap-1 min-w-0">
+               <div className="flex-1 min-w-0 px-0.5">
                  <ThemeToggle />
                </div>
                
                {user?.role && user.role !== 'customer' && !isDashboardHome && (
-                 <AdminNotificationBell position="top" className="shrink-0" />
+                 <AdminNotificationBell position="top" className="shrink-0 scale-90" />
                )}
 
                <button 
                  onClick={handleLogout} 
                  title="Đăng xuất"
                  className={cn(
-                   "p-2 mr-1 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-100 transition-all",
+                   "p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-100 transition-all shrink-0",
                    (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell || isBellaHealthcareShell) && "beauty-erp-icon-button"
                  )}
                >
-                 <LogOut className="w-4 h-4" />
+                 <LogOut className="w-3.5 h-3.5" />
                </button>
             </div>
           </div>
