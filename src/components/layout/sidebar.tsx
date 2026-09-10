@@ -1145,7 +1145,7 @@ export function Sidebar() {
                     isBellaEducationShell
                       ? (isActive ? activeEduIconClass : "text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300")
                       : (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell || isBellaHealthcareShell)
-                      ? (isActive ? "text-[#042f2e] scale-105" : (isBellaAutoShell || isBellaHealthcareShell) ? "text-slate-200 opacity-90 group-hover:text-amber-300 group-hover:scale-110" : "text-inherit opacity-85 group-hover:text-white group-hover:opacity-100")
+                      ? (isActive ? (isJadePreset ? "text-amber-400 scale-105" : "text-[#042f2e] scale-105") : (isBellaAutoShell || isBellaHealthcareShell) ? "text-slate-200 opacity-90 group-hover:text-amber-300 group-hover:scale-110" : "text-inherit opacity-85 group-hover:text-white group-hover:opacity-100")
                       : (isActive ? "text-primary dark:text-[#A67D44] scale-105" : "text-[#A07888] dark:text-[#CDBCAB]/80 group-hover:text-primary dark:group-hover:text-[#A67D44]")
                   )} />
                   <span className={cn(
@@ -1153,7 +1153,7 @@ export function Sidebar() {
                     isBellaEducationShell
                       ? (isActive ? activeEduTextClass : "font-medium text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white")
                       : (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell || isBellaHealthcareShell)
-                      ? (isActive ? "font-extrabold text-[#042f2e]" : (isBellaAutoShell || isBellaHealthcareShell) ? "font-semibold text-slate-100 group-hover:text-white" : "font-semibold text-inherit group-hover:text-white")
+                      ? (isActive ? (isJadePreset ? "font-extrabold text-white" : "font-extrabold text-[#042f2e]") : (isBellaAutoShell || isBellaHealthcareShell) ? "font-semibold text-slate-100 group-hover:text-white" : "font-semibold text-inherit group-hover:text-white")
                       : (isActive ? "font-extrabold text-primary dark:text-[#EFE9E1]" : "font-semibold")
                   )}>{item.label}</span>
 
@@ -1170,7 +1170,7 @@ export function Sidebar() {
                       layoutId="active-indicator"
                       className={cn(
                         "absolute right-3.5 w-1.5 h-1.5 rounded-full",
-                        (isBellaAutoShell || isBellaHealthcareShell)
+                        (isBellaAutoShell || isBellaHealthcareShell || isJadePreset)
                           ? "bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.9)]"
                           : (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell)
                           ? "bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"
