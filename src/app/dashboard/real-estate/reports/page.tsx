@@ -9,6 +9,7 @@ import {
   Search, ShieldCheck, Mail, ArrowUpRight
 } from "lucide-react";
 import { toast } from "sonner";
+import { downloadPdfReport, downloadExcelReport } from "@/modules/real_estate/utils/exportUtils";
 
 // ── Types & Interfaces ────────────────────────────────────────────────────────
 
@@ -169,10 +170,12 @@ export default function ReportsPage() {
   });
 
   const handleDownload = (title: string, format: "PDF" | "Excel") => {
-    const ext = format === "Excel" ? "csv" : "txt";
-    const mime = format === "Excel" ? "text/csv;charset=utf-8" : "text/plain;charset=utf-8";
-    const content = generateMockCsvContent(title, ["Metric", "Value", "Status", "Timestamp"]);
-    triggerBrowserDownload(`${title.replace(/\s+/g, "_")}.${ext}`, content, mime);
+    const filename = `${title.replace(/\s+/g, "_")}`;
+    if (format === "PDF") {
+      downloadPdfReport(`${filename}.pdf`, title, { Format: "PDF Report", Period: selectedPeriod });
+    } else {
+      downloadExcelReport(`${filename}.csv`, title, ["Metric", "Value", "Status", "Timestamp"]);
+    }
     toast.success(`✅ Đã tải tệp ${format} cho "${title}" thành công!`);
   };
 

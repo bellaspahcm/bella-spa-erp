@@ -18,7 +18,7 @@ import {
 import { fetchProductsAction } from "@/modules/real_estate/actions/productActions";
 import { PremiumSelect } from "@/components/ui/PremiumSelect";
 import { Database } from "@/types/database.types";
-import { triggerBrowserDownload, generateMockCsvContent } from "@/modules/real_estate/utils/exportUtils";
+import { downloadPdfReport, downloadExcelReport } from "@/modules/real_estate/utils/exportUtils";
 
 type ProjectRow = Database["public"]["Tables"]["real_estate_projects"]["Row"];
 type ProductRow = Database["public"]["Tables"]["real_estate_products"]["Row"];
@@ -783,8 +783,12 @@ export default function RealEstateProjectsPage() {
                     <p className="text-[11px] text-slate-400 mt-0.5">{rep.type} · {rep.date}</p>
                   </div>
                   <button onClick={() => {
-                    const csvData = generateMockCsvContent(rep.title, ["ProjectCode", "UnitCode", "Status", "Revenue_VND"]);
-                    triggerBrowserDownload(`${rep.title.replace(/\s+/g, "_")}.csv`, csvData);
+                    const filename = `${rep.title.replace(/\s+/g, "_")}`;
+                    if (rep.type.includes("PDF")) {
+                      downloadPdfReport(`${filename}.pdf`, rep.title, { Type: rep.type, Date: rep.date });
+                    } else {
+                      downloadExcelReport(`${filename}.csv`, rep.title, ["ProjectCode", "UnitCode", "Status", "Revenue_VND"]);
+                    }
                     toast.success(`✅ Đã tải tệp báo cáo "${rep.title}" thành công!`);
                   }} className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-bold hover:bg-slate-100">
                     Tải về 📥
