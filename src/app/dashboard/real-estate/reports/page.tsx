@@ -1,333 +1,464 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  FileBarChart2, Download, Calendar, Filter, RefreshCw,
-  TrendingUp, Building2, FileText, Users, CheckCircle2,
-  Clock, AlertTriangle, ChevronDown,
-  DollarSign, FileSignature, Wallet, Bookmark, Target, BarChart3, Trophy
+  FileText, FileSpreadsheet, Download, Calendar, Filter, RefreshCw,
+  Plus, Eye, Share2, Clock, CheckCircle2, Building2, TrendingUp,
+  Users, DollarSign, Layers, ChevronDown, Sparkles, FileArchive,
+  Search, ShieldCheck, Mail, ArrowUpRight
 } from "lucide-react";
-import { fetchBIReportAction } from "@/modules/real_estate/actions/biReportActions";
-import type { BIReportSnapshot } from "@/modules/real_estate/services/BIReportService";
+import { toast } from "sonner";
 
-function formatVnd(v: number) {
-  if (v >= 1e9) return `${(v / 1e9).toFixed(2)} tỷ VNĐ`;
-  if (v >= 1e6) return `${(v / 1e6).toFixed(0)} triệu VNĐ`;
-  return `${v.toLocaleString("vi-VN")} đ`;
+// ── Types & Interfaces ────────────────────────────────────────────────────────
+
+type ReportCategoryFilter = "all" | "executive" | "sales" | "inventory" | "crm" | "finance";
+
+interface ReportPackage {
+  id: string;
+  title: string;
+  category: ReportCategoryFilter;
+  categoryLabel: string;
+  period: string;
+  scope: string;
+  updatedAt: string;
+  author: string;
+  metrics: { label: string; value: string }[];
+  pdfAvailable: boolean;
+  excelAvailable: boolean;
 }
 
-const REPORT_TYPES = [
-  { id: "executive", label: "Báo Cáo Điều Hành", icon: TrendingUp, desc: "Tổng quan KPI cho Ban Giám Đốc" },
-  { id: "inventory", label: "Báo Cáo Tồn Kho BĐS", icon: Building2, desc: "Chi tiết trạng thái từng căn hộ" },
-  { id: "sales", label: "Báo Cáo Kinh Doanh", icon: FileText, desc: "Hợp đồng, đặt cọc, thanh toán tiến độ" },
-  { id: "crm", label: "Báo Cáo CRM", icon: Users, desc: "Leads, phễu chuyển đổi, môi giới" },
-] as const;
+interface ExportAuditItem {
+  id: string;
+  time: string;
+  title: string;
+  period: string;
+  author: string;
+  format: "PDF" | "Excel" | "CSV";
+  status: "completed" | "processing";
+}
 
-type ReportId = (typeof REPORT_TYPES)[number]["id"];
+// ── Data Mock ─────────────────────────────────────────────────────────────────
+
+const REPORT_PACKAGES: ReportPackage[] = [
+  {
+    id: "rep-001",
+    title: "Báo cáo Điều hành Tháng 9/2026",
+    category: "executive",
+    categoryLabel: "Điều hành",
+    period: "Tháng 9/2026 (01/09 - 30/09)",
+    scope: "Toàn tập đoàn Bella Land Group",
+    updatedAt: "10/09/2026 11:03",
+    author: "Nguyễn Văn A (Giám đốc Điều hành)",
+    metrics: [
+      { label: "Doanh thu HĐMB", value: "458.5 tỷ" },
+      { label: "Thực thu tiền mặt", value: "371.2 tỷ" },
+      { label: "Số HĐMB đã ký", value: "142 HĐ" },
+      { label: "Tỷ lệ thu tiền", value: "81.0%" },
+    ],
+    pdfAvailable: true,
+    excelAvailable: true,
+  },
+  {
+    id: "rep-002",
+    title: "Báo cáo Kinh doanh & Doanh số Sales",
+    category: "sales",
+    categoryLabel: "Kinh doanh",
+    period: "Tháng 9/2026",
+    scope: "Chi nhánh HCM & Bình Dương & Đà Nẵng",
+    updatedAt: "09/09/2026 18:30",
+    author: "Trần Thị B (Trưởng phòng Kinh doanh)",
+    metrics: [
+      { label: "Tổng đặt cọc", value: "180 HĐ" },
+      { label: "Đặt giữ chỗ", value: "240 chỗ" },
+      { label: "Tỷ lệ chốt Lead → HĐ", value: "11.3%" },
+      { label: "Giá trị HĐ bình quân", value: "3.2 tỷ" },
+    ],
+    pdfAvailable: true,
+    excelAvailable: true,
+  },
+  {
+    id: "rep-003",
+    title: "Báo cáo Tồn kho & Hấp thụ Sản phẩm BĐS",
+    category: "inventory",
+    categoryLabel: "Tồn kho BĐS",
+    period: "Kỳ Tháng 9/2026",
+    scope: "Dự án Elyse Island, Grand Tower, Riverside",
+    updatedAt: "08/09/2026 14:15",
+    author: "Lê Hoàng C (Quản lý Kho hàng)",
+    metrics: [
+      { label: "Tổng sản phẩm", value: "286 căn" },
+      { label: "Hàng trống (Available)", value: "119 căn" },
+      { label: "Tỷ lệ lấp đầy", value: "58.3%" },
+      { label: "Giá trị hàng chưa bán", value: "1,420 tỷ" },
+    ],
+    pdfAvailable: false,
+    excelAvailable: true,
+  },
+  {
+    id: "rep-004",
+    title: "Báo cáo CRM & Hiệu quả Kênh Marketing",
+    category: "crm",
+    categoryLabel: "CRM & Marketing",
+    period: "Tháng 9/2026",
+    scope: "Mạng lưới Marketing & Đại lý F1",
+    updatedAt: "07/09/2026 16:45",
+    author: "Phạm Thị D (Head of Marketing)",
+    metrics: [
+      { label: "Tổng Lead phát sinh", value: "1,250 leads" },
+      { label: "Site Visit tham quan", value: "420 lượt" },
+      { label: "Kênh dẫn đầu", value: "Referral (19.3%)" },
+      { label: "Chi phí / Lead", value: "420.000 đ" },
+    ],
+    pdfAvailable: true,
+    excelAvailable: true,
+  },
+  {
+    id: "rep-005",
+    title: "Báo cáo Tài chính & Tiến độ Thu hồi nợ BĐS",
+    category: "finance",
+    categoryLabel: "Tài chính",
+    period: "Quý 3/2026",
+    scope: "Khối Tài chính Kế toán",
+    updatedAt: "05/09/2026 10:20",
+    author: "Vũ Văn E (Kế toán trưởng)",
+    metrics: [
+      { label: "Thực thu đợt 1", value: "371.2 tỷ" },
+      { label: "Còn phải thu đợt 2", value: "87.3 tỷ" },
+      { label: "Nợ quá hạn >30 ngày", value: "12.4 tỷ" },
+      { label: "Tỷ lệ hoàn thành kế hoạch", value: "92.0%" },
+    ],
+    pdfAvailable: true,
+    excelAvailable: true,
+  },
+];
+
+const EXPORT_AUDIT_TRAIL: ExportAuditItem[] = [
+  { id: "aud-001", time: "10/09/2026 11:03", title: "Báo cáo Điều hành Tháng 9/2026", period: "Tháng 9/2026", author: "Nguyễn Văn A", format: "PDF", status: "completed" },
+  { id: "aud-002", time: "09/09/2026 18:35", title: "Báo cáo Kinh doanh & Doanh số Sales", period: "Tháng 9/2026", author: "Trần Thị B", format: "Excel", status: "completed" },
+  { id: "aud-003", time: "08/09/2026 14:20", title: "Báo cáo Tồn kho & Hấp thụ Sản phẩm", period: "Tháng 9/2026", author: "Lê Hoàng C", format: "Excel", status: "completed" },
+  { id: "aud-004", time: "05/09/2026 09:12", title: "Báo cáo CRM & Hiệu quả Kênh", period: "Tháng 8/2026", author: "Phạm Thị D", format: "PDF", status: "completed" },
+];
 
 export default function ReportsPage() {
-  const [data, setData] = useState<BIReportSnapshot | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [selectedReport, setSelectedReport] = useState<ReportId>("executive");
-  const [period, setPeriod] = useState<string>(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const [activeCategory, setActiveCategory] = useState<ReportCategoryFilter>("all");
+  const [selectedPeriod, setSelectedPeriod] = useState("Tháng 9/2026");
+  const [selectedProject, setSelectedProject] = useState("all");
+  const [previewReport, setPreviewReport] = useState<ReportPackage | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const filteredPackages = REPORT_PACKAGES.filter(p => {
+    if (activeCategory !== "all" && p.category !== activeCategory) return false;
+    return true;
   });
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    const res = await fetchBIReportAction(period);
-    if (res.success && res.data) setData(res.data);
-    setLoading(false);
-  }, [period]);
+  const handleDownload = (title: string, format: "PDF" | "Excel") => {
+    toast.loading(`Đang tải tệp ${format} cho "${title}"...`);
+    setTimeout(() => {
+      toast.dismiss();
+      toast.success(`✅ Đã tải tệp ${format} thành công!`);
+    }, 1000);
+  };
 
-  useEffect(() => { load(); }, [load]);
-
-  const handlePrint = () => window.print();
-
-  const kpis = data?.kpis;
-  const funnel = data?.funnel;
-  const snapshots = data?.projectSnapshots ?? [];
+  const handleShare = (title: string) => {
+    toast.success(`🔗 Đã sao chép liên kết chia sẻ báo cáo "${title}" vào bộ nhớ tạm!`);
+  };
 
   return (
-    <div className="space-y-8">
-      {/* ─ Header ─ */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="p-6 md:p-8 space-y-6 max-w-[1600px] mx-auto font-sans text-slate-900 dark:text-slate-100">
+      
+      {/* ── 1. PAGE HEADER & TOOLBAR ── */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-              <FileBarChart2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            Trung Tâm Báo Cáo
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mb-1">
+            <span>Bella Land</span>
+            <span>/</span>
+            <span className="text-slate-900 dark:text-white font-bold">Trung tâm báo cáo</span>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+            Trung tâm báo cáo
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-            Xuất và xem báo cáo quản trị theo kỳ
+          <p className="text-xs md:text-sm text-slate-500 font-semibold mt-0.5">
+            Quản lý, tạo, xem, lưu, xuất và chia sẻ báo cáo quản trị chính thức Bella Land
           </p>
         </div>
-        <div className="flex items-center gap-3 flex-wrap">
+
+        {/* Global Toolbar */}
+        <div className="flex items-center gap-2.5 flex-wrap text-xs font-semibold">
           <div className="relative">
-            <input
-              type="month"
-              value={period}
-              onChange={e => setPeriod(e.target.value)}
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-slate-900 dark:text-white text-sm pr-8 focus:outline-none focus:border-amber-500/50"
-            />
-            <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
-          <button
-            onClick={load}
-            disabled={loading}
-            className="flex items-center gap-2 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-            Tải lại
-          </button>
-          <button
-            onClick={handlePrint}
-            className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-black px-4 py-2 rounded-xl text-sm font-bold transition-all"
-          >
-            <Download className="w-4 h-4" />
-            Xuất PDF
-          </button>
-        </div>
-      </div>
-
-      {/* ─ Report Type Tabs ─ */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {REPORT_TYPES.map(rt => {
-          const Icon = rt.icon;
-          const active = selectedReport === rt.id;
-          return (
-            <button
-              key={rt.id}
-              onClick={() => setSelectedReport(rt.id)}
-              className={`flex items-start gap-3 p-4 rounded-2xl border transition-all text-left ${
-                active
-                  ? "bg-amber-50 dark:bg-amber-500/15 border-amber-300 dark:border-amber-500/40"
-                  : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-amber-300 dark:hover:border-amber-700/50"
-              }`}
+            <select
+              value={selectedPeriod}
+              onChange={e => setSelectedPeriod(e.target.value)}
+              className="pl-3 pr-8 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs font-bold appearance-none cursor-pointer focus:outline-none shadow-2xs"
             >
-              <Icon className={`w-5 h-5 mt-0.5 shrink-0 ${active ? "text-amber-600 dark:text-amber-400" : "text-slate-400 dark:text-slate-500"}`} />
-              <div>
-                <p className={`font-bold text-sm ${active ? "text-amber-700 dark:text-amber-300" : "text-slate-700 dark:text-slate-300"}`}>{rt.label}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5">{rt.desc}</p>
-              </div>
-            </button>
-          );
-        })}
+              <option value="Tháng 9/2026">📅 Kỳ Tháng 9/2026</option>
+              <option value="Tháng 8/2026">Kỳ Tháng 8/2026</option>
+              <option value="Quý 3/2026">Kỳ Quý 3/2026</option>
+              <option value="Năm 2026">Báo cáo Năm 2026</option>
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+
+          <select
+            value={selectedProject}
+            onChange={e => setSelectedProject(e.target.value)}
+            className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none shadow-2xs"
+          >
+            <option value="all">Toàn bộ dự án</option>
+            <option value="elyse">Elyse Island</option>
+            <option value="grand">The Grand Tower</option>
+            <option value="riverside">Riverside Heights</option>
+          </select>
+
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-extrabold text-xs shadow-xs cursor-pointer active:scale-95"
+          >
+            <Plus className="w-4 h-4" /> Tạo báo cáo mới ▾
+          </button>
+        </div>
       </div>
 
-      {loading && (
-        <div className="flex items-center justify-center h-64">
-          <RefreshCw className="w-8 h-8 animate-spin text-amber-500" />
-        </div>
-      )}
+      {/* ── 2. REPORT CATEGORY FILTER TABS ── */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-b border-slate-200 dark:border-slate-800">
+        {[
+          { id: "all", label: "Tất cả báo cáo (5)" },
+          { id: "executive", label: "Điều hành" },
+          { id: "sales", label: "Kinh doanh" },
+          { id: "inventory", label: "Tồn kho BĐS" },
+          { id: "crm", label: "CRM & Marketing" },
+          { id: "finance", label: "Tài chính & Dòng tiền" },
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveCategory(tab.id as any)}
+            className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all shrink-0 cursor-pointer ${
+              activeCategory === tab.id
+                ? "bg-slate-900 dark:bg-blue-600 text-white shadow-xs"
+                : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-      {/* ─── Report Body ─── */}
-      {!loading && data && (
-        <motion.div
-          key={selectedReport}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
-        >
-          {/* Executive Summary */}
-          {selectedReport === "executive" && kpis && (
-            <>
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2.5 bg-amber-100 dark:bg-amber-500/20 rounded-xl">
-                    <TrendingUp className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-black text-slate-900 dark:text-white">Báo Cáo Điều Hành</h2>
-                    <p className="text-slate-500 dark:text-slate-400 text-xs">Kỳ: {period} · Tạo lúc: {new Date(data.generatedAt).toLocaleString("vi-VN")}</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {([
-                    { label: "Tổng Doanh Thu (Ký HĐMB)", value: formatVnd(kpis.totalRevenue), Icon: DollarSign, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
-                    { label: "Số Hợp Đồng HĐMB", value: String(kpis.totalContracts), Icon: FileSignature, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-900/30" },
-                    { label: "Số Đặt Cọc", value: String(kpis.totalDeposits), Icon: Wallet, color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-100 dark:bg-violet-900/30" },
-                    { label: "Số Đặt Giữ Chỗ", value: String(kpis.totalBookings), Icon: Bookmark, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-100 dark:bg-amber-900/30" },
-                    { label: "Tỷ Lệ Chốt Lead → HĐ", value: `${kpis.netConversionRate}%`, Icon: Target, color: "text-rose-600 dark:text-rose-400", bg: "bg-rose-100 dark:bg-rose-900/30" },
-                    { label: "Giá Trị HĐ Bình Quân", value: formatVnd(kpis.avgDealSizeVnd), Icon: BarChart3, color: "text-cyan-600 dark:text-cyan-400", bg: "bg-cyan-100 dark:bg-cyan-900/30" },
-                  ] as const).map(item => (
-                    <div key={item.label} className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-3 ${item.bg}`}>
-                        <item.Icon className={`w-5 h-5 ${item.color}`} />
-                      </div>
-                      <p className="text-slate-900 dark:text-white font-black text-xl">{item.value}</p>
-                      <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">{item.label}</p>
-                    </div>
-                  ))}
-                </div>
-
-                {kpis.topProjectName && (
-                  <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-2xl flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0">
-                      <Trophy className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                    </div>
-                    <div>
-                      <p className="text-slate-900 dark:text-white font-bold">Dự Án Dẫn Đầu: {kpis.topProjectName}</p>
-                      <p className="text-slate-500 dark:text-slate-400 text-sm">Giá trị giao dịch: {formatVnd(kpis.topProjectRevenue)}</p>
-                    </div>
-                  </div>
-                )}
+      {/* ── 3. OFFICIAL REPORT PACKAGES GRID (DOCUMENT CARDS) ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {filteredPackages.map(pkg => (
+          <div
+            key={pkg.id}
+            className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-xs space-y-4 flex flex-col justify-between hover:border-blue-400 transition-all group"
+          >
+            <div className="space-y-3">
+              {/* Card Header */}
+              <div className="flex items-start justify-between gap-2">
+                <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
+                  {pkg.categoryLabel}
+                </span>
+                <span className="text-[10px] text-slate-400 font-mono">{pkg.updatedAt}</span>
               </div>
 
-              {/* Funnel summary */}
-              {funnel && (
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
-                  <h3 className="font-black text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                    <Filter className="w-4 h-4 text-amber-500" />
-                    Hiệu Suất Phễu Bán Hàng
-                  </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {[
-                      { label: "Leads Mới", value: funnel.leads, color: "text-slate-700 dark:text-slate-300" },
-                      { label: "Đủ ĐK (Qualified)", value: funnel.qualified, color: "text-blue-600 dark:text-blue-400" },
-                      { label: "Tham Quan Thực Tế", value: funnel.siteVisits, color: "text-purple-600 dark:text-purple-400" },
-                      { label: "Ký HĐMB (Đích Đến)", value: funnel.contracts, color: "text-emerald-600 dark:text-emerald-400" },
-                    ].map(f => (
-                      <div key={f.label} className="text-center p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl">
-                        <p className={`text-3xl font-black ${f.color}`}>{f.value}</p>
-                        <p className="text-slate-500 dark:text-slate-400 text-xs mt-2">{f.label}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-center text-slate-500 dark:text-slate-400 text-sm mt-4">
-                    Tỷ lệ chuyển đổi tổng thể: <span className="text-amber-600 dark:text-amber-400 font-black">{funnel.conversionLeadToContract}%</span>
-                  </p>
-                </div>
-              )}
-            </>
-          )}
-
-          {/* Inventory Report */}
-          {selectedReport === "inventory" && (
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 overflow-x-auto shadow-sm">
-              <h2 className="text-lg font-black text-slate-900 dark:text-white mb-5 flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-amber-500" />
-                Báo Cáo Tồn Kho Bất Động Sản — {period}
-              </h2>
-              <table className="w-full text-sm min-w-[700px]">
-                <thead>
-                  <tr className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">
-                    {["Dự Án", "Tổng SP", "Trống", "Giữ Chỗ", "Đặt Cọc", "Ký HĐ", "Bàn Giao", "Kín (%)", "Giá Trị Danh Mục", "Đã Giao Dịch"].map(h => (
-                      <th key={h} className="text-right first:text-left pb-3 font-bold">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {snapshots.map(s => (
-                    <tr key={s.projectId} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                      <td className="py-3 text-slate-900 dark:text-white font-bold">{s.projectName}</td>
-                      <td className="py-3 text-right text-slate-600 dark:text-slate-400">{s.total}</td>
-                      <td className="py-3 text-right text-slate-600 dark:text-slate-400">{s.available}</td>
-                      <td className="py-3 text-right text-amber-600 dark:text-amber-400">{s.booked}</td>
-                      <td className="py-3 text-right text-orange-600 dark:text-orange-400">{s.deposited}</td>
-                      <td className="py-3 text-right text-emerald-600 dark:text-emerald-400">{s.signed}</td>
-                      <td className="py-3 text-right text-blue-600 dark:text-blue-400">{s.handover}</td>
-                      <td className="py-3 text-right font-black">
-                        <span className={s.occupancyRatePct >= 80 ? "text-emerald-600 dark:text-emerald-400" : s.occupancyRatePct >= 50 ? "text-amber-600 dark:text-amber-400" : "text-rose-600 dark:text-rose-400"}>
-                          {s.occupancyRatePct}%
-                        </span>
-                      </td>
-                      <td className="py-3 text-right text-slate-500 dark:text-slate-400">{formatVnd(s.totalValueVnd)}</td>
-                      <td className="py-3 text-right text-emerald-600 dark:text-emerald-400 font-bold">{formatVnd(s.soldValueVnd)}</td>
-                    </tr>
-                  ))}
-                  {snapshots.length === 0 && (
-                    <tr>
-                      <td colSpan={10} className="py-8 text-center text-slate-400 dark:text-slate-500 text-sm italic">
-                        Chưa có dữ liệu dự án nào
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Sales Report */}
-          {selectedReport === "sales" && kpis && (
-            <div className="space-y-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
-                <h2 className="text-lg font-black text-slate-900 dark:text-white mb-5 flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-amber-500" />
-                  Báo Cáo Kinh Doanh — {period}
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <h3 className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-widest font-bold">Giao Dịch</h3>
-                    {[
-                      { label: "Số đặt giữ chỗ trong kỳ", value: kpis.totalBookings, icon: <Clock className="w-4 h-4 text-amber-500" /> },
-                      { label: "Số đặt cọc", value: kpis.totalDeposits, icon: <CheckCircle2 className="w-4 h-4 text-orange-500" /> },
-                      { label: "Số hợp đồng HĐMB ký", value: kpis.totalContracts, icon: <FileText className="w-4 h-4 text-emerald-500" /> },
-                      { label: "Số hợp đồng bị huỷ", value: kpis.totalCancelations, icon: <AlertTriangle className="w-4 h-4 text-rose-500" /> },
-                    ].map(row => (
-                      <div key={row.label} className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-800">
-                        <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 text-sm">{row.icon}{row.label}</div>
-                        <span className="text-slate-900 dark:text-white font-black">{row.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="space-y-3">
-                    <h3 className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-widest font-bold">Doanh Thu</h3>
-                    {[
-                      { label: "Tổng doanh thu HĐMB ký", value: formatVnd(kpis.totalRevenue) },
-                      { label: "Giá trị HĐ trung bình", value: formatVnd(kpis.avgDealSizeVnd) },
-                      { label: "Tỷ lệ chốt (Lead → HĐ)", value: `${kpis.netConversionRate}%` },
-                      { label: "Dự án có DT cao nhất", value: kpis.topProjectName ?? "—" },
-                    ].map(row => (
-                      <div key={row.label} className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-800">
-                        <span className="text-slate-600 dark:text-slate-400 text-sm">{row.label}</span>
-                        <span className="text-emerald-600 dark:text-emerald-400 font-black text-sm">{row.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              <div>
+                <h3 className="text-base font-black text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">
+                  {pkg.title}
+                </h3>
+                <p className="text-xs text-slate-500 font-semibold mt-0.5">{pkg.scope}</p>
               </div>
-            </div>
-          )}
 
-          {/* CRM Report */}
-          {selectedReport === "crm" && funnel && (
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
-              <h2 className="text-lg font-black text-slate-900 dark:text-white mb-5 flex items-center gap-2">
-                <Users className="w-5 h-5 text-amber-500" />
-                Báo Cáo CRM — {period}
-              </h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[
-                  { label: "Tổng Leads Mới", value: funnel.leads, color: "text-slate-700 dark:text-slate-300", bg: "bg-slate-50 dark:bg-slate-800/40" },
-                  { label: "Leads Đủ ĐK", value: funnel.qualified, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/30" },
-                  { label: "Đã Tham Quan TT", value: funnel.siteVisits, color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-50 dark:bg-purple-950/30" },
-                  { label: "Đang Đàm Phán", value: funnel.opportunities, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/30" },
-                  { label: "Đã Đặt Giữ Chỗ", value: funnel.bookings, color: "text-orange-600 dark:text-orange-400", bg: "bg-orange-50 dark:bg-orange-950/30" },
-                  { label: "Đã Đặt Cọc", value: funnel.deposits, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
-                  { label: "Đã Ký HĐMB", value: funnel.contracts, color: "text-green-600 dark:text-green-400", bg: "bg-green-50 dark:bg-green-950/30" },
-                  { label: "Tỷ Lệ Chuyển Đổi", value: `${funnel.conversionLeadToContract}%`, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/30" },
-                ].map(item => (
-                  <div key={item.label} className={`${item.bg} rounded-2xl p-4 text-center`}>
-                    <p className={`text-3xl font-black ${item.color}`}>{item.value}</p>
-                    <p className="text-slate-500 dark:text-slate-400 text-xs mt-2">{item.label}</p>
+              {/* Metric Highlights Box */}
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl grid grid-cols-2 gap-2 text-xs">
+                {pkg.metrics.map((m, idx) => (
+                  <div key={idx} className="space-y-0.5">
+                    <span className="text-[10px] text-slate-400 font-bold block truncate">{m.label}</span>
+                    <span className="font-black text-slate-900 dark:text-white text-xs">{m.value}</span>
                   </div>
                 ))}
               </div>
             </div>
-          )}
-        </motion.div>
-      )}
 
-      {/* Footer note */}
-      <p className="text-slate-400 dark:text-slate-500 text-xs text-center flex items-center justify-center gap-2">
-        <Calendar className="w-3 h-3" />
-        Dữ liệu được truy xuất trực tiếp từ hệ thống · Cập nhật mỗi lần tải trang
-      </p>
+            {/* Card Actions Footer */}
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+              <div className="flex items-center justify-between text-[10px] text-slate-400 font-semibold">
+                <span className="truncate">Người tạo: {pkg.author}</span>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setPreviewReport(pkg)}
+                  className="flex-1 py-2 px-2.5 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 text-blue-700 dark:text-blue-300 font-extrabold rounded-xl text-xs flex items-center justify-center gap-1 transition-all"
+                >
+                  <Eye className="w-3.5 h-3.5" /> Xem trước
+                </button>
+                {pkg.pdfAvailable && (
+                  <button
+                    onClick={() => handleDownload(pkg.title, "PDF")}
+                    className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs"
+                    title="Tải tệp PDF"
+                  >
+                    <FileText className="w-4 h-4 text-red-500" />
+                  </button>
+                )}
+                {pkg.excelAvailable && (
+                  <button
+                    onClick={() => handleDownload(pkg.title, "Excel")}
+                    className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs"
+                    title="Tải tệp Excel"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                  </button>
+                )}
+                <button
+                  onClick={() => handleShare(pkg.title)}
+                  className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs"
+                  title="Chia sẻ liên kết"
+                >
+                  <Share2 className="w-4 h-4 text-slate-500" />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── 4. REPORT CATALOG BY BUSINESS CATEGORY ── */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+          <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <Layers className="w-4 h-4 text-blue-600" /> Danh mục mẫu báo cáo chuẩn
+          </h3>
+          <span className="text-xs font-semibold text-slate-400">Tự động tổng hợp dữ liệu từ hệ thống</span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+          {[
+            { title: "Báo cáo Điều hành Tháng", desc: "Tổng hợp KPI doanh thu, HĐMB, thu nợ & dự án dẫn đầu", icon: TrendingUp },
+            { title: "Báo cáo Doanh số Sales", desc: "Chi tiết hợp đồng chốt, đặt cọc và xếp hạng nhân sự Sales", icon: FileText },
+            { title: "Báo cáo Tồn kho & Lấp đầy", desc: "Trạng thái 286 căn hộ, giá trị hàng chưa bán & aging", icon: Building2 },
+            { title: "Báo cáo Kênh Marketing & CRM", desc: "Đo lường chi phí Lead, tỷ lệ site visit & chuyển đổi", icon: Users },
+          ].map((cat, idx) => {
+            const Icon = cat.icon;
+            return (
+              <div key={idx} className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl space-y-2 border border-slate-100 dark:border-slate-800">
+                <Icon className="w-5 h-5 text-blue-600" />
+                <h4 className="font-extrabold text-slate-900 dark:text-white text-xs">{cat.title}</h4>
+                <p className="text-[11px] text-slate-500 font-semibold leading-relaxed">{cat.desc}</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── 5. EXPORT & DISTRIBUTION AUDIT TRAIL ── */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+          <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <Clock className="w-4 h-4 text-slate-500" /> Lịch sử xuất & chia sẻ báo cáo (Audit Trail)
+          </h3>
+          <span className="text-xs font-bold text-slate-400">4 lượt xuất gần nhất</span>
+        </div>
+
+        <div className="overflow-x-auto scrollbar-thin">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead className="bg-slate-50 dark:bg-slate-800/60 text-[11px] font-black text-slate-400 uppercase tracking-wider">
+              <tr>
+                <th className="p-2.5">Thời gian</th>
+                <th className="p-2.5">Tên báo cáo</th>
+                <th className="p-2.5">Kỳ báo cáo</th>
+                <th className="p-2.5">Người xuất</th>
+                <th className="p-2.5 text-center">Định dạng</th>
+                <th className="p-2.5 text-center">Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold">
+              {EXPORT_AUDIT_TRAIL.map(item => (
+                <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                  <td className="p-2.5 text-slate-500 font-mono text-[11px]">{item.time}</td>
+                  <td className="p-2.5 font-bold text-slate-900 dark:text-white">{item.title}</td>
+                  <td className="p-2.5 text-slate-600 dark:text-slate-300">{item.period}</td>
+                  <td className="p-2.5 font-bold text-blue-600">{item.author}</td>
+                  <td className="p-2.5 text-center">
+                    <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-mono font-black ${
+                      item.format === 'PDF' ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-700'
+                    }`}>
+                      {item.format}
+                    </span>
+                  </td>
+                  <td className="p-2.5 text-center">
+                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                      Hoàn thành
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ── PREVIEW MODAL ── */}
+      <AnimatePresence>
+        {previewReport && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 w-full max-w-2xl shadow-xl space-y-5"
+            >
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div>
+                  <span className="text-[10px] font-extrabold uppercase text-blue-600">{previewReport.categoryLabel}</span>
+                  <h3 className="text-lg font-black text-slate-900 dark:text-white">{previewReport.title}</h3>
+                </div>
+                <button onClick={() => setPreviewReport(null)} className="p-1 rounded-lg hover:bg-slate-100">
+                  ✕
+                </button>
+              </div>
+
+              <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl space-y-3 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-slate-500 font-semibold">Kỳ báo cáo:</span>
+                  <span className="font-bold text-slate-900 dark:text-white">{previewReport.period}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500 font-semibold">Phạm vi dữ liệu:</span>
+                  <span className="font-bold text-slate-900 dark:text-white">{previewReport.scope}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500 font-semibold">Tạo bởi:</span>
+                  <span className="font-bold text-blue-600">{previewReport.author}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                {previewReport.metrics.map((m, idx) => (
+                  <div key={idx} className="p-3 border border-slate-200 dark:border-slate-800 rounded-xl space-y-0.5">
+                    <span className="text-[10px] text-slate-400 font-bold block">{m.label}</span>
+                    <span className="text-base font-black text-slate-900 dark:text-white">{m.value}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  onClick={() => setPreviewReport(null)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200"
+                >
+                  Đóng
+                </button>
+                <button
+                  onClick={() => { setPreviewReport(null); handleDownload(previewReport.title, "PDF"); }}
+                  className="px-4 py-2 text-xs font-black text-white bg-blue-600 rounded-xl hover:bg-blue-700 shadow-xs"
+                >
+                  Tải tệp PDF chính thức
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }

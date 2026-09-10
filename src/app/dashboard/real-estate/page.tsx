@@ -246,175 +246,150 @@ export default function RealEstateDashboardPage() {
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
-      {/* Breadcrumbs */}
-      <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
-        <span>Bella Land</span>
-        <span>/</span>
-        <span className="text-slate-900 dark:text-white font-bold">Tổng quan</span>
-      </div>
+      {/* 1. TOP LIGHT EXECUTIVE HEADER BANNER CARD (SHARED WITH PROJECTS PAGE BANNER) */}
+      <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm min-h-[190px] flex items-center">
+        {/* Shared Background Panorama Skyline Photo */}
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+          <img
+            src="/images/bella-land-hero-banner.png?v=9"
+            onError={(e) => {
+              e.currentTarget.src = "https://images.unsplash.com/photo-1477959858617-67f30ac4ce78?auto=format&fit=crop&w=1600&q=80";
+            }}
+            alt="Skyline Panorama"
+            className="w-full h-full object-cover object-[center_65%] opacity-100 dark:opacity-90"
+          />
+        </div>
 
-      {/* Premium Dashboard Welcome Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs transition-all">
-        <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 font-bold text-lg border border-amber-200/60 dark:border-amber-900/50 shadow-2xs select-none">
-            {monogram}
-          </div>
+        <div className="relative z-10 w-full p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          {/* Left Title & Breadcrumbs */}
           <div>
-            <h1 className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-              Chào mừng trở lại, <span className="text-amber-600 dark:text-amber-400">{user?.full_name || 'Admin'}</span>
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">
+              <span>Bella Land</span>
+              <span>›</span>
+              <span className="text-slate-900 dark:text-white font-extrabold">Tổng quan</span>
+            </div>
+            <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+              Tổng quan
             </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-              Hệ thống quản lý bất động sản <span className="font-semibold text-slate-700 dark:text-slate-200">{tenantContext?.tenantName || 'Bella Land'}</span>
+            <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-1">
+              Toàn cảnh hoạt động kinh doanh bất động sản
             </p>
           </div>
-        </div>
 
-        <div className="flex items-center gap-3 self-end md:self-center">
-          {/* Nút Load dữ liệu */}
-          <button
-            onClick={handleRefresh}
-            disabled={isLoading || isRefreshing}
-            className="flex items-center justify-center p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-300 transition-all duration-200 active:scale-95 disabled:opacity-50"
-            title="Tải lại dữ liệu"
-          >
-            <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin text-primary' : ''}`} />
-          </button>
-
-          {/* Nút Thông báo & Dropdown */}
-          <div className="relative">
-            <button
-              onClick={handleToggleNotifications}
-              className="relative flex items-center justify-center p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-300 transition-all duration-200 active:scale-95"
-              title="Xem thông báo"
-            >
-              <Bell className="w-5 h-5" />
-              {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                </span>
-              )}
-            </button>
-
-            {showNotifDropdown && (
-              <>
-                {/* Transparent click-outside overlay */}
-                <div 
-                  className="fixed inset-0 z-40 bg-transparent" 
-                  onClick={() => setShowNotifDropdown(false)} 
-                />
-                
-                <div className="absolute right-0 mt-2 z-50 w-80 sm:w-96 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-xl p-4 space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                    <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                      <Bell className="w-4 h-4 text-primary" />
-                      Thông báo mới
-                    </h3>
-                    {unreadCount > 0 && (
-                      <span className="text-xs font-semibold px-2 py-0.5 bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400 rounded-full">
-                        {unreadCount} chưa đọc
-                      </span>
-                    )}
+          {/* Right Context Controls & User Badge */}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Context Project Selector Pill */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  if (projects.length > 1) {
+                    const nextIdx = (projects.findIndex(p => p.id === selectedProject?.id) + 1) % projects.length;
+                    handleSelectProject(projects[nextIdx]);
+                  }
+                }}
+                className="flex items-center gap-2 px-3.5 py-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xs hover:border-blue-400 transition-all text-left"
+              >
+                <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-600 flex items-center justify-center font-bold shrink-0">
+                  🏢
+                </div>
+                <div>
+                  <div className="text-xs font-extrabold text-slate-900 dark:text-white flex items-center gap-1">
+                    {selectedProject?.name || 'Elyse Island'}
+                    <span className="text-[10px] text-slate-400">▾</span>
                   </div>
-
-                  <div className="max-h-72 overflow-y-auto space-y-2.5 pr-1 scrollbar-thin">
-                    {notifications.length > 0 ? (
-                      notifications.map((n) => (
-                        <div
-                          key={n.id}
-                          className={`p-3 rounded-xl border transition-all text-left ${
-                            n.is_read
-                              ? 'bg-slate-50/50 dark:bg-slate-900/30 border-slate-100 dark:border-slate-800/50'
-                              : 'bg-primary/5 dark:bg-primary/10 border-primary/10'
-                          }`}
-                        >
-                          <h4 className="font-bold text-sm text-slate-900 dark:text-white flex items-center justify-between">
-                            {n.title}
-                            {!n.is_read && <span className="h-1.5 w-1.5 bg-primary rounded-full" />}
-                          </h4>
-                          <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-normal">
-                            {n.message}
-                          </p>
-                          <span className="text-[10px] text-slate-400 dark:text-slate-500 block mt-1.5">
-                            {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(n.created_at).toLocaleDateString()}
-                          </span>
-                        </div>
-                      ))
-                    ) : (
-                      // Trạng thái Fallback Mock notifications cực đẹp khi database trống
-                      <>
-                        <div className="p-3 rounded-xl border bg-primary/5 dark:bg-primary/10 border-primary/10 text-left">
-                          <h4 className="font-bold text-sm text-slate-900 dark:text-white flex items-center justify-between gap-2">
-                            <span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-blue-500" />Lead mới đăng ký dự án</span>
-                            <span className="h-1.5 w-1.5 bg-primary rounded-full shrink-0" />
-                          </h4>
-                          <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-normal">
-                            Khách hàng <b>Nguyễn Văn A</b> vừa đăng ký quan tâm căn hộ Shophouse Elyse Island.
-                          </p>
-                          <span className="text-[10px] text-slate-400 dark:text-slate-500 block mt-1.5">5 phút trước</span>
-                        </div>
-
-                        <div className="p-3 rounded-xl border bg-slate-50/50 dark:bg-slate-900/30 border-slate-100 dark:border-slate-800/50 text-left">
-                          <h4 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
-                            <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />Cảnh báo SLA trễ hạn
-                          </h4>
-                          <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-normal">
-                            Lead <b>Trần Thị B</b> chưa được kỹ thuật viên liên hệ tư vấn sau 15 phút.
-                          </p>
-                          <span className="text-[10px] text-slate-400 dark:text-slate-500 block mt-1.5">20 phút trước</span>
-                        </div>
-
-                        <div className="p-3 rounded-xl border bg-slate-50/50 dark:bg-slate-900/30 border-slate-100 dark:border-slate-800/50 text-left">
-                          <h4 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
-                            <FileSignature className="w-3.5 h-3.5 text-emerald-500" />Hợp đồng đặt cọc mới
-                          </h4>
-                          <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-normal">
-                            Căn hộ <b>A-102 (Elyse Island)</b> đã hoàn tất thủ tục đặt cọc thành công.
-                          </p>
-                          <span className="text-[10px] text-slate-400 dark:text-slate-500 block mt-1.5">1 giờ trước</span>
-                        </div>
-                      </>
-                    )}
+                  <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 truncate max-w-[180px]">
+                    📍 {selectedProject?.location || 'Shophouse Marina, TP. Nha Trang'}
                   </div>
                 </div>
-              </>
-            )}
+              </button>
+            </div>
+
+            {/* Month Picker Pill */}
+            <div className="flex items-center gap-2 px-3 py-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xs text-xs font-extrabold text-slate-800 dark:text-slate-200">
+              <span>📅 Tháng 7/2026</span>
+              <span className="text-[10px] text-slate-400">▾</span>
+            </div>
+
+            {/* Action Buttons: Refresh, Notif, Settings */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleRefresh}
+                disabled={isLoading || isRefreshing}
+                className="p-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur border border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-700 dark:text-slate-300 rounded-xl shadow-2xs transition-all active:scale-95"
+                title="Tải lại dữ liệu"
+              >
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-blue-600' : ''}`} />
+              </button>
+
+              <div className="relative">
+                <button
+                  onClick={handleToggleNotifications}
+                  className="relative p-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur border border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-700 dark:text-slate-300 rounded-xl shadow-2xs transition-all active:scale-95"
+                  title="Thông báo"
+                >
+                  <Bell className="w-4 h-4" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
+                  )}
+                </button>
+
+                {showNotifDropdown && (
+                  <>
+                    <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setShowNotifDropdown(false)} />
+                    <div className="absolute right-0 mt-2 z-50 w-80 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-xl p-4 space-y-2.5">
+                      <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                        <h3 className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
+                          <Bell className="w-3.5 h-3.5 text-blue-600" /> Thông báo
+                        </h3>
+                        <span className="text-[10px] font-bold px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full">System</span>
+                      </div>
+                      <div className="space-y-2 text-xs">
+                        <div className="p-2 rounded-lg bg-blue-50/50 dark:bg-slate-900">
+                          <p className="font-bold text-slate-900 dark:text-white">Lead mới đăng ký dự án</p>
+                          <p className="text-[11px] text-slate-500 mt-0.5">Khách hàng Nguyễn Văn A quan tâm Shophouse Elyse Island.</p>
+                        </div>
+                        <div className="p-2 rounded-lg bg-amber-50/50 dark:bg-slate-900">
+                          <p className="font-bold text-slate-900 dark:text-white">Cảnh báo SLA Lead</p>
+                          <p className="text-[11px] text-slate-500 mt-0.5">3 lead quá hạn 15 phút chưa phân công.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* User Profile Badge */}
+              <div className="flex items-center gap-2 pl-2 border-l border-slate-200/80 dark:border-slate-700 bg-white/95 dark:bg-slate-800/95 px-2.5 py-1 rounded-xl shadow-2xs">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white font-black text-xs flex items-center justify-center shadow-xs">
+                  {monogram}
+                </div>
+                <div className="hidden xl:block text-left">
+                  <div className="text-xs font-black text-slate-900 dark:text-white leading-tight">
+                    {user?.full_name || 'Nguyễn Văn A'}
+                  </div>
+                  <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                    Quản trị viên
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Premium Custom Project Selector */}
-      <PremiumProjectSelector
-        projects={projects}
-        selectedProject={selectedProject}
-        onSelectProject={handleSelectProject}
-      />
-
-      {/* Executive CEO Analytics & Visualizations (Placed First) */}
+      {/* 2. EXECUTIVE DASHBOARD CHARTS & PANELS (MATCHING REFERENCE IMAGE 1) */}
       <CEODashboardCharts
-        totalProductsCount={products.length || 48}
-        availableCount={availableCount || 12}
-        reservedCount={reservedCount || 8}
-        depositedCount={depositedCount || 10}
-        signedCount={signedCount || 14}
-        paidCount={paidCount || 0}
-        deliveredCount={deliveredCount || 4}
-      />
-
-      {/* Project Header Component */}
-      <ProjectHeader
-        project={selectedProject}
-        products={products}
-        onRefresh={loadData}
-      />
-
-      {/* Inventory Matrix Component */}
-      <InventoryMatrixGrid
-        products={products}
-        onUpdateStatus={handleUpdateStatus}
-        onUpdateDetails={handleUpdateDetails}
+        totalProductsCount={products.length || 286}
+        availableCount={availableCount || 119}
+        reservedCount={reservedCount || 24}
+        depositedCount={depositedCount || 31}
+        signedCount={signedCount || 78}
+        paidCount={paidCount || 9}
+        deliveredCount={deliveredCount || 25}
       />
     </div>
   );
 }
+
 

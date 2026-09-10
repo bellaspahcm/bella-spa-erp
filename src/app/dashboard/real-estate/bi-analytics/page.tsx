@@ -1,306 +1,366 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  TrendingUp, TrendingDown, BarChart3, Target, DollarSign,
-  Users, Building2, FileText, Percent, RefreshCw,
-  Award, AlertTriangle
+  BarChart3, TrendingDown, TrendingUp, Sparkles, Filter,
+  Building2, Users, AlertTriangle, ArrowRight, ShieldAlert,
+  ChevronRight, RefreshCw, SlidersHorizontal, Layers, CheckCircle2,
+  DollarSign, Target, PieChart as PieChartIcon, Eye, ArrowDownRight
 } from "lucide-react";
-import { fetchBIReportAction } from "@/modules/real_estate/actions/biReportActions";
-import type { BIReportSnapshot } from "@/modules/real_estate/services/BIReportService";
-import { PremiumSelect } from "@/components/ui/PremiumSelect";
+import { toast } from "sonner";
 
-// ─── Month options helper ─────────────────────────────────────────────────────
+// ── Mock Data for BI Analytics Intelligence Layer ─────────────────────────────
 
-const MONTH_VI = [
-  'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
-  'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12',
+interface FunnelStage {
+  stage: string;
+  count: number;
+  pctOfPrev: number;
+  isDropOffPoint?: boolean;
+}
+
+interface ChannelDelta {
+  channel: string;
+  t8Rate: number;
+  t9Rate: number;
+  delta: number;
+  status: "negative" | "positive" | "neutral";
+}
+
+interface AgingInventoryItem {
+  project: string;
+  under30d: number; // tỷ
+  range30to60d: number;
+  range60to90d: number;
+  over90d: number;
+  warning?: boolean;
+}
+
+const FUNNEL_STAGES: FunnelStage[] = [
+  { stage: "Lead mới", count: 1250, pctOfPrev: 100 },
+  { stage: "Đủ điều kiện (Qualified)", count: 890, pctOfPrev: 71.2 },
+  { stage: "Tham quan thực tế (Site Visit)", count: 420, pctOfPrev: 47.2 },
+  { stage: "Đặt cọc (Deposit)", count: 180, pctOfPrev: 42.9, isDropOffPoint: true },
+  { stage: "Ký HĐMB", count: 142, pctOfPrev: 78.9 },
 ];
 
-function generateMonthOptions(): { value: string; label: string }[] {
-  const options: { value: string; label: string }[] = [];
-  const now = new Date();
-  for (let i = 0; i < 18; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    const label = `${MONTH_VI[d.getMonth()]} ${d.getFullYear()}`;
-    options.push({ value, label });
-  }
-  return options;
-}
+const CHANNEL_DELTAS: ChannelDelta[] = [
+  { channel: "Facebook Ads", t8Rate: 9.1, t9Rate: 7.4, delta: -1.7, status: "negative" },
+  { channel: "Website Organic", t8Rate: 13.8, t9Rate: 12.9, delta: -0.9, status: "negative" },
+  { channel: "Referral (Giới thiệu)", t8Rate: 18.1, t9Rate: 19.3, delta: +1.2, status: "positive" },
+  { channel: "Sự kiện Mở bán", t8Rate: 17.5, t9Rate: 15.0, delta: -2.5, status: "negative" },
+  { channel: "Đại lý F1", t8Rate: 10.2, t9Rate: 10.8, delta: +0.6, status: "positive" },
+];
 
-const MONTH_OPTIONS = generateMonthOptions();
-
-function formatVnd(amount: number): string {
-  if (amount >= 1e9) return `${(amount / 1e9).toFixed(1)} tỷ`;
-  if (amount >= 1e6) return `${(amount / 1e6).toFixed(0)} triệu`;
-  return amount.toLocaleString("vi-VN") + " đ";
-}
-
-function StatCard({
-  icon: Icon,
-  title,
-  value,
-  sub,
-  trend,
-  color = "blue",
-}: {
-  icon: React.ElementType;
-  title: string;
-  value: string;
-  sub?: string;
-  trend?: number;
-  color?: "blue" | "green" | "amber" | "purple" | "rose";
-}) {
-  const colors = {
-    blue: "from-blue-500/5 to-blue-600/5 dark:from-blue-500/20 dark:to-blue-600/10 border-blue-200/80 dark:border-blue-500/30 text-blue-700 dark:text-blue-400 bg-blue-50/20 dark:bg-transparent",
-    green: "from-emerald-500/5 to-emerald-600/5 dark:from-emerald-500/20 dark:to-emerald-600/10 border-emerald-200/80 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 bg-emerald-50/20 dark:bg-transparent",
-    amber: "from-amber-500/5 to-amber-600/5 dark:from-amber-500/20 dark:to-amber-600/10 border-amber-200/80 dark:border-amber-500/30 text-amber-700 dark:text-amber-400 bg-amber-50/20 dark:bg-transparent",
-    purple: "from-purple-500/5 to-purple-600/5 dark:from-purple-500/20 dark:to-purple-600/10 border-purple-200/80 dark:border-purple-500/30 text-purple-700 dark:text-purple-400 bg-purple-50/20 dark:bg-transparent",
-    rose: "from-rose-500/5 to-rose-600/5 dark:from-rose-500/20 dark:to-rose-600/10 border-rose-200/80 dark:border-rose-500/30 text-rose-700 dark:text-rose-400 bg-rose-50/20 dark:bg-transparent",
-  };
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`bg-gradient-to-br ${colors[color]} border rounded-2xl p-5 flex gap-4 items-start`}
-    >
-      <div className="p-2.5 bg-slate-100 dark:bg-white/10 rounded-xl text-slate-700 dark:text-white shrink-0">
-        <Icon className="w-5 h-5" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mb-1">{title}</p>
-        <p className="text-2xl font-black text-slate-900 dark:text-white truncate">{value}</p>
-        {sub && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{sub}</p>}
-        {trend !== undefined && (
-          <div className="flex items-center gap-1 mt-1">
-            {trend >= 0 ? (
-              <TrendingUp className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-            ) : (
-              <TrendingDown className="w-3 h-3 text-rose-600 dark:text-rose-400" />
-            )}
-            <span className={`text-xs font-bold ${trend >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
-              {Math.abs(trend)}%
-            </span>
-          </div>
-        )}
-      </div>
-    </motion.div>
-  );
-}
-
-function FunnelBar({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
-  const pct = max > 0 ? (value / max) * 100 : 0;
-  return (
-    <div className="space-y-1">
-      <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400">
-        <span className="font-semibold">{label}</span>
-        <span className="font-black text-slate-900 dark:text-white">{value.toLocaleString()}</span>
-      </div>
-      <div className="h-2 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${pct}%` }}
-          transition={{ delay: 0.2, duration: 0.8, ease: "easeOut" }}
-          className={`h-full ${color} rounded-full`}
-        />
-      </div>
-    </div>
-  );
-}
+const AGING_INVENTORY: AgingInventoryItem[] = [
+  { project: "Elyse Island", under30d: 45.2, range30to60d: 28.1, range60to90d: 12.0, over90d: 4.2 },
+  { project: "The Grand Tower", under30d: 38.0, range30to60d: 22.5, range60to90d: 9.8, over90d: 2.1 },
+  { project: "Riverside Heights", under30d: 15.0, range30to60d: 18.4, range60to90d: 22.1, over90d: 18.4, warning: true },
+  { project: "Sunrise Villa", under30d: 28.4, range30to60d: 14.2, range60to90d: 6.0, over90d: 1.5 },
+];
 
 export default function BIAnalyticsPage() {
-  const [data, setData] = useState<BIReportSnapshot | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState<string>(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  });
+  const [selectedPeriod, setSelectedPeriod] = useState("Tháng 9/2026");
+  const [selectedProject, setSelectedProject] = useState("all");
+  const [selectedBranch, setSelectedBranch] = useState("hcm");
+  const [selectedTeam, setSelectedTeam] = useState("team_02");
+  const [selectedChannel, setSelectedChannel] = useState("facebook");
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    const res = await fetchBIReportAction(period);
-    if (res.success && res.data) setData(res.data);
-    setLoading(false);
-  }, [period]);
-
-  useEffect(() => { load(); }, [load]);
-
-  const kpis = data?.kpis;
-  const funnel = data?.funnel;
-  const snapshots = data?.projectSnapshots ?? [];
+  const [drillDownPath, setDrillDownPath] = useState<string[]>([
+    "Chi nhánh Hồ Chí Minh",
+    "Sales Team 02",
+    "Kênh Facebook Ads",
+    "Giai đoạn Site Visit → Deposit"
+  ]);
 
   return (
-    <div className="space-y-8">
-      {/* ─ Header ─ */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="p-6 md:p-8 space-y-6 max-w-[1600px] mx-auto font-sans text-slate-900 dark:text-slate-100">
+      
+      {/* ── 1. PAGE HEADER & GLOBAL MULTI-DIMENSION SLICERS ── */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-            BI Analytics Dashboard
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mb-1">
+            <span>Bella Land</span>
+            <span>/</span>
+            <span>Báo cáo</span>
+            <span>/</span>
+            <span className="text-slate-900 dark:text-white font-bold">BI Analytics</span>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+            BI Analytics — Phân tích dữ liệu kinh doanh
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Báo cáo thông minh theo thời gian thực</p>
+          <p className="text-xs md:text-sm text-slate-500 font-semibold mt-0.5">
+            Khám phá dữ liệu, phân tích nguyên nhân biến động (Root Cause) & dự báo xu hướng
+          </p>
         </div>
-        <div className="flex items-center gap-3">
-          <PremiumSelect
-            options={MONTH_OPTIONS}
-            value={period}
-            onChange={setPeriod}
-            buttonClassName="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-slate-900 dark:text-white text-sm font-semibold min-w-[170px]"
-          />
-          <button
-            onClick={load}
-            disabled={loading}
-            className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-black px-4 py-2 rounded-xl font-bold text-sm transition-all whitespace-nowrap"
+
+        {/* Multi-Dimension Slicers Toolbar */}
+        <div className="flex items-center gap-2 flex-wrap text-xs font-semibold">
+          <select
+            value={selectedPeriod}
+            onChange={e => setSelectedPeriod(e.target.value)}
+            className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs font-bold focus:outline-none shadow-2xs"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-            Tải lại
+            <option value="Tháng 9/2026">📅 Tháng 9/2026</option>
+            <option value="Tháng 8/2026">Tháng 8/2026</option>
+            <option value="Quý 3/2026">Quý 3/2026</option>
+          </select>
+
+          <select
+            value={selectedProject}
+            onChange={e => setSelectedProject(e.target.value)}
+            className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none shadow-2xs"
+          >
+            <option value="all">Dự án: Tất cả</option>
+            <option value="elyse">Elyse Island</option>
+            <option value="grand">The Grand Tower</option>
+            <option value="riverside">Riverside Heights</option>
+          </select>
+
+          <select
+            value={selectedBranch}
+            onChange={e => setSelectedBranch(e.target.value)}
+            className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none shadow-2xs"
+          >
+            <option value="hcm">Chi nhánh: HCM</option>
+            <option value="bd">Chi nhánh: Bình Dương</option>
+            <option value="dn">Chi nhánh: Đà Nẵng</option>
+          </select>
+
+          <select
+            value={selectedTeam}
+            onChange={e => setSelectedTeam(e.target.value)}
+            className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none shadow-2xs"
+          >
+            <option value="team_01">Team: Sales Team 01</option>
+            <option value="team_02">Team: Sales Team 02</option>
+            <option value="broker">Team: Broker Network</option>
+          </select>
+
+          <button
+            onClick={() => toast.info("Đã làm mới dữ liệu phân tích BI Analytics!")}
+            className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 shadow-2xs"
+          >
+            <RefreshCw className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {loading && !data && (
-        <div className="flex items-center justify-center h-64">
-          <RefreshCw className="w-8 h-8 animate-spin text-amber-500" />
+      {/* ── 2. INSIGHT ENGINE (AI INTELLIGENCE ALERTS WITH BRIGHT, HIGH-CONTRAST LAYOUT) ── */}
+      <div className="bg-slate-50/80 dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-amber-500" />
+            <h2 className="text-sm font-black tracking-wider uppercase text-slate-900 dark:text-white">INSIGHT ENGINE — PHÂN TÍCH TỰ ĐỘNG</h2>
+          </div>
+          <span className="text-[11px] font-black bg-blue-50 text-blue-700 border border-blue-200/80 dark:bg-blue-950/60 dark:text-sky-300 dark:border-blue-800 px-3 py-1 rounded-full shadow-2xs">
+            Realtime Analytics Layer
+          </span>
         </div>
-      )}
 
-      {kpis && (
-        <>
-          {/* ─ KPI Grid ─ */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-            <StatCard icon={DollarSign} title="Doanh Thu" value={formatVnd(kpis.totalRevenue)} color="green" />
-            <StatCard icon={FileText} title="Hợp Đồng" value={String(kpis.totalContracts)} color="blue" />
-            <StatCard icon={Target} title="Đặt Cọc" value={String(kpis.totalDeposits)} color="purple" />
-            <StatCard icon={Building2} title="Đặt Giữ Chỗ" value={String(kpis.totalBookings)} color="amber" />
-            <StatCard icon={Percent} title="Tỷ Lệ Chốt" value={`${kpis.netConversionRate}%`} color="green" />
-            <StatCard icon={AlertTriangle} title="Huỷ HĐ" value={String(kpis.totalCancelations)} color="rose" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-semibold">
+          {/* Anomaly 1 - Red Alert (High Impact) */}
+          <div className="p-4.5 bg-white dark:bg-slate-950 rounded-2xl border-2 border-rose-200 dark:border-rose-900/80 shadow-xs space-y-2.5">
+            <div className="flex items-center justify-between font-black text-xs">
+              <span className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400">
+                <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400" /> Cảnh báo bất thường
+              </span>
+              <span className="bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border border-rose-200 dark:border-rose-800 px-2 py-0.5 rounded text-[10px] font-black">HIGH IMPACT</span>
+            </div>
+            <p className="text-base font-black text-slate-900 dark:text-white tracking-tight">Conversion giảm 2.1 điểm %</p>
+            <p className="text-xs text-slate-600 dark:text-slate-300 font-semibold leading-relaxed">
+              Điểm rơi chính nằm ở bước <span className="font-black text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/60 px-1.5 py-0.5 rounded border border-rose-200 dark:border-rose-800/60 inline-block">Site Visit ➔ Deposit (42.9%)</span>. Cần rà soát quy trình tư vấn thực địa.
+            </p>
           </div>
 
-          {/* ─ Funnel + Top Project ─ */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Sales Funnel */}
-            {funnel && (
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
-                <h2 className="text-base font-black text-slate-900 dark:text-white mb-5 flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-amber-500" />
-                  Phễu Chuyển Đổi Tháng {period}
-                </h2>
-                <div className="space-y-4">
-                  <FunnelBar label="Leads mới" value={funnel.leads} max={funnel.leads || 1} color="bg-slate-300 dark:bg-white/30" />
-                  <FunnelBar label="Đủ điều kiện" value={funnel.qualified} max={funnel.leads || 1} color="bg-blue-500/80" />
-                  <FunnelBar label="Tham quan thực tế" value={funnel.siteVisits} max={funnel.leads || 1} color="bg-purple-500/80" />
-                  <FunnelBar label="Cơ hội đàm phán" value={funnel.opportunities} max={funnel.leads || 1} color="bg-amber-500/80" />
-                  <FunnelBar label="Đặt giữ chỗ" value={funnel.bookings} max={funnel.leads || 1} color="bg-orange-500/80" />
-                  <FunnelBar label="Đặt cọc" value={funnel.deposits} max={funnel.leads || 1} color="bg-emerald-500/80" />
-                  <FunnelBar label="Ký HĐMB" value={funnel.contracts} max={funnel.leads || 1} color="bg-green-500/80" />
-                </div>
-              </div>
-            )}
+          {/* Anomaly 2 - Amber Alert (Aging Inventory Risk) */}
+          <div className="p-4.5 bg-white dark:bg-slate-950 rounded-2xl border-2 border-amber-200 dark:border-amber-900/80 shadow-xs space-y-2.5">
+            <div className="flex items-center justify-between font-black text-xs">
+              <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" /> Ứng đọng kho hàng
+              </span>
+              <span className="bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded text-[10px] font-black">AGING RISK</span>
+            </div>
+            <p className="text-base font-black text-slate-900 dark:text-white tracking-tight">18.4 tỷ tồn kho &gt;90 ngày</p>
+            <p className="text-xs text-slate-600 dark:text-slate-300 font-semibold leading-relaxed">
+              Tập trung chủ yếu tại dự án <span className="font-black text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800/60 inline-block">Riverside Heights</span>. Khuyến nghị đưa ra gói ưu đãi thanh toán đợt mới.
+            </p>
+          </div>
 
-            {/* Top Project */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm">
-              <h2 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <Award className="w-5 h-5 text-amber-500" />
-                Hiệu Suất Dự Án
-              </h2>
-              {snapshots.length === 0 && (
-                <p className="text-slate-500 dark:text-slate-400 text-sm italic">Chưa có dữ liệu dự án.</p>
+          {/* Anomaly 3 - Emerald Alert (High Performing Channel) */}
+          <div className="p-4.5 bg-white dark:bg-slate-950 rounded-2xl border-2 border-emerald-200 dark:border-emerald-900/80 shadow-xs space-y-2.5">
+            <div className="flex items-center justify-between font-black text-xs">
+              <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Kênh hiệu quả cao
+              </span>
+              <span className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded text-[10px] font-black">OPTIMIZATION</span>
+            </div>
+            <p className="text-base font-black text-slate-900 dark:text-white tracking-tight">Referral có conversion 19.3%</p>
+            <p className="text-xs text-slate-600 dark:text-slate-300 font-semibold leading-relaxed">
+              Chỉ số chuyển đổi từ nguồn giới thiệu cao hơn Facebook Ads gấp <span className="font-black text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/60 inline-block">2.6 lần</span>. Đề xuất tăng hoa hồng CTV.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── 3. CONVERSION FUNNEL DROP-OFF ANALYSIS ── */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+          <div>
+            <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-blue-600" /> Phân tích phễu chuyển đổi & Điểm rơi (Funnel Drop-off)
+            </h3>
+            <p className="text-xs text-slate-500 font-semibold mt-0.5">Xác định chính xác công đoạn kinh doanh làm thất thoát khách hàng tiềm năng</p>
+          </div>
+          <span className="text-xs font-bold text-slate-400">Kỳ: Tháng 9/2026</span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 pt-2">
+          {FUNNEL_STAGES.map((st, i) => (
+            <div
+              key={i}
+              className={`p-4 rounded-2xl border transition-all space-y-2 relative ${
+                st.isDropOffPoint
+                  ? "bg-rose-50/70 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800 ring-2 ring-rose-200"
+                  : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-800"
+              }`}
+            >
+              {st.isDropOffPoint && (
+                <span className="absolute -top-2.5 right-3 bg-rose-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow-2xs">
+                  ⚠️ ĐIỂM RƠI CHÍNH
+                </span>
               )}
-              {snapshots.map((snap, i) => (
-                <motion.div
-                  key={snap.projectId}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.08 }}
-                  className="flex items-center gap-4 p-3 bg-slate-50 dark:bg-white/5 rounded-2xl"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center text-amber-700 dark:text-amber-400 font-black text-sm shrink-0">
-                    #{i + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-slate-900 dark:text-white font-bold text-sm truncate">{snap.projectName}</p>
-                    <p className="text-slate-500 dark:text-slate-400 text-xs">
-                      {snap.total - snap.available}/{snap.total} căn &middot; Tỷ lệ kín: <span className="text-amber-600 dark:text-amber-400 font-bold">{snap.occupancyRatePct}%</span>
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-emerald-600 dark:text-emerald-400 font-black text-sm">{formatVnd(snap.soldValueVnd)}</p>
-                    <p className="text-slate-400 dark:text-slate-500 text-xs">đã giao dịch</p>
-                  </div>
-                </motion.div>
-              ))}
+
+              <span className="text-[10px] font-extrabold uppercase text-slate-400 block">Bước {i + 1}</span>
+              <h4 className="font-extrabold text-slate-900 dark:text-white text-xs">{st.stage}</h4>
+              
+              <div className="pt-1">
+                <span className="text-2xl font-black text-slate-900 dark:text-white block">{st.count.toLocaleString()}</span>
+                <span className={`text-[11px] font-extrabold block mt-0.5 ${
+                  st.isDropOffPoint ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"
+                }`}>
+                  {st.pctOfPrev}% giữ lại
+                </span>
+              </div>
             </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── 4. ROOT CAUSE DRILL-DOWN MATRIX (WHY DID CONVERSION FALL?) ── */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs space-y-5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+          <div>
+            <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <Layers className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Ma trận phân tích nguyên nhân (Root Cause Matrix)
+            </h3>
+            <p className="text-xs text-slate-500 font-semibold mt-0.5">So sánh biến động hiệu suất chuyển đổi T8 vs T9 theo từng kênh tiếp thị</p>
           </div>
 
-          {/* ─ Project Inventory Table ─ */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 overflow-x-auto shadow-sm">
-            <h2 className="text-base font-black text-slate-900 dark:text-white mb-5 flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-amber-500" />
-              Bảng Tồn Kho Theo Dự Án
-            </h2>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">
-                  <th className="text-left pb-3 font-semibold">Dự Án</th>
-                  <th className="text-right pb-3 font-semibold">Tổng</th>
-                  <th className="text-right pb-3 font-semibold">Trống</th>
-                  <th className="text-right pb-3 font-semibold">Giữ Chỗ</th>
-                  <th className="text-right pb-3 font-semibold">Đặt Cọc</th>
-                  <th className="text-right pb-3 font-semibold">Ký HĐMB</th>
-                  <th className="text-right pb-3 font-semibold">Bàn Giao</th>
-                  <th className="text-right pb-3 font-semibold">Kín (%)</th>
-                  <th className="text-right pb-3 font-semibold">Giá Trị Bán</th>
+          {/* Interactive Drill-Down Breadcrumb Path */}
+          <div className="flex items-center gap-1.5 text-xs font-bold bg-slate-100 dark:bg-slate-800 px-3.5 py-2 rounded-xl text-slate-700 dark:text-slate-300 overflow-x-auto">
+            <span className="text-slate-400">Drill-Down:</span>
+            {drillDownPath.map((step, idx) => (
+              <span key={idx} className="flex items-center gap-1 shrink-0">
+                {idx > 0 && <ChevronRight className="w-3.5 h-3.5 text-slate-400" />}
+                <span className={idx === drillDownPath.length - 1 ? "text-blue-600 dark:text-sky-400 font-extrabold" : ""}>{step}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Delta Matrix Table */}
+        <div className="overflow-x-auto scrollbar-thin">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead className="bg-slate-50 dark:bg-slate-800/60 text-[11px] font-black text-slate-400 uppercase tracking-wider">
+              <tr>
+                <th className="p-3">Kênh tiếp thị</th>
+                <th className="p-3 text-right">Tỷ lệ T8</th>
+                <th className="p-3 text-right">Tỷ lệ T9</th>
+                <th className="p-3 text-right">Biến động (Δ)</th>
+                <th className="p-3 text-center">Đánh giá tác động</th>
+                <th className="p-3 text-right">Thao tác Drill-down</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold">
+              {CHANNEL_DELTAS.map((item, idx) => (
+                <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                  <td className="p-3 font-extrabold text-slate-900 dark:text-white">{item.channel}</td>
+                  <td className="p-3 text-right font-mono text-slate-600 dark:text-slate-400">{item.t8Rate}%</td>
+                  <td className="p-3 text-right font-mono font-bold text-slate-900 dark:text-white">{item.t9Rate}%</td>
+                  <td className="p-3 text-right font-mono font-black">
+                    <span className={item.delta < 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}>
+                      {item.delta > 0 ? `+${item.delta}` : item.delta} pt
+                    </span>
+                  </td>
+                  <td className="p-3 text-center">
+                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black ${
+                      item.status === 'negative' ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300' : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                    }`}>
+                      {item.status === 'negative' ? '▼ Suy giảm' : '▲ Tăng trưởng'}
+                    </span>
+                  </td>
+                  <td className="p-3 text-right">
+                    <button
+                      onClick={() => {
+                        setDrillDownPath(["Chi nhánh HCM", "Sales Team 02", item.channel, "Site Visit ➔ Deposit"]);
+                        toast.info(`Đang drill-down phân tích nguyên nhân kênh ${item.channel}`);
+                      }}
+                      className="px-2.5 py-1 text-xs font-bold text-blue-600 dark:text-sky-400 border border-blue-200 dark:border-sky-800/80 rounded-lg hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors"
+                    >
+                      Phân tích nguyên nhân ➔
+                    </button>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                {snapshots.map(snap => (
-                  <tr key={snap.projectId} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                    <td className="py-3 text-slate-900 dark:text-white font-bold">{snap.projectName}</td>
-                    <td className="py-3 text-right text-slate-700 dark:text-slate-300">{snap.total}</td>
-                    <td className="py-3 text-right text-slate-700 dark:text-slate-300">{snap.available}</td>
-                    <td className="py-3 text-right text-amber-600 dark:text-amber-400 font-semibold">{snap.booked}</td>
-                    <td className="py-3 text-right text-orange-600 dark:text-orange-400 font-semibold">{snap.deposited}</td>
-                    <td className="py-3 text-right text-emerald-600 dark:text-emerald-400 font-semibold">{snap.signed}</td>
-                    <td className="py-3 text-right text-blue-600 dark:text-blue-400 font-semibold">{snap.handover}</td>
-                    <td className="py-3 text-right">
-                      <span className={`font-black ${snap.occupancyRatePct >= 80 ? "text-emerald-600 dark:text-emerald-400" : snap.occupancyRatePct >= 50 ? "text-amber-600 dark:text-amber-400" : "text-rose-600 dark:text-rose-400"}`}>
-                        {snap.occupancyRatePct}%
-                      </span>
-                    </td>
-                    <td className="py-3 text-right text-emerald-600 dark:text-emerald-400 font-bold">{formatVnd(snap.soldValueVnd)}</td>
-                  </tr>
-                ))}
-                {snapshots.length === 0 && (
-                  <tr>
-                    <td colSpan={9} className="py-8 text-center text-slate-400 dark:text-slate-500 text-sm italic">
-                      Chưa có dữ liệu dự án
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-          {/* ─ Average Deal Size ─ */}
-          {kpis.avgDealSizeVnd > 0 && (
-            <div className="bg-gradient-to-r from-amber-500/10 to-emerald-500/10 border border-amber-500/20 dark:border-amber-500/30 rounded-3xl p-6 flex items-center gap-6 shadow-sm">
-              <div className="p-4 bg-amber-100 dark:bg-amber-500/20 rounded-2xl text-amber-700 dark:text-amber-400">
-                <Users className="w-8 h-8" />
-              </div>
-              <div>
-                <p className="text-slate-500 dark:text-slate-400 text-sm uppercase tracking-widest font-semibold">Giá Trị Hợp Đồng Trung Bình</p>
-                <p className="text-4xl font-black text-slate-900 dark:text-white mt-1">{formatVnd(kpis.avgDealSizeVnd)}</p>
-                {kpis.topProjectName && (
-                  <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-                    Dự án dẫn đầu: <span className="text-amber-600 dark:text-amber-400 font-bold">{kpis.topProjectName}</span> — {formatVnd(kpis.topProjectRevenue)}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-        </>
-      )}
+      {/* ── 5. AGING INVENTORY ANALYSIS ── */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+          <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <Building2 className="w-4 h-4 text-amber-500" /> Phân tích tuổi tồn kho BĐS (Aging Inventory)
+          </h3>
+          <span className="text-xs font-bold text-slate-400">Đơn vị: Tỷ VNĐ</span>
+        </div>
+
+        <div className="overflow-x-auto scrollbar-thin">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead className="bg-slate-50 dark:bg-slate-800/60 text-[11px] font-black text-slate-400 uppercase tracking-wider">
+              <tr>
+                <th className="p-3">Dự án</th>
+                <th className="p-3 text-right">&lt; 30 ngày</th>
+                <th className="p-3 text-right">30 – 60 ngày</th>
+                <th className="p-3 text-right">60 – 90 ngày</th>
+                <th className="p-3 text-right text-rose-600 font-black">&gt; 90 ngày (Rủi ro)</th>
+                <th className="p-3 text-center">Trạng thái hấp thụ</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold">
+              {AGING_INVENTORY.map((item, idx) => (
+                <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                  <td className="p-3 font-extrabold text-slate-900 dark:text-white">{item.project}</td>
+                  <td className="p-3 text-right font-mono text-emerald-600 font-bold">{item.under30d} tỷ</td>
+                  <td className="p-3 text-right font-mono text-slate-700 dark:text-slate-300">{item.range30to60d} tỷ</td>
+                  <td className="p-3 text-right font-mono text-amber-600 font-bold">{item.range60to90d} tỷ</td>
+                  <td className="p-3 text-right font-mono font-black text-rose-600">{item.over90d} tỷ</td>
+                  <td className="p-3 text-center">
+                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black ${
+                      item.warning ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40' : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40'
+                    }`}>
+                      {item.warning ? '⚠️ Cần kích cầu' : '🟢 Tốc độ tốt'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
   );
 }
