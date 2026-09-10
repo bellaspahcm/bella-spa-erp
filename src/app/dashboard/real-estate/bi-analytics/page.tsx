@@ -146,52 +146,58 @@ export default function BIAnalyticsPage() {
         </div>
       </div>
 
-      {/* ── 2. INSIGHT ENGINE (AI INTELLIGENCE ALERTS WITH HIGH CONTRAST) ── */}
-      <div className="bg-slate-900 border border-slate-700 text-white rounded-3xl p-6 shadow-xl space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+      {/* ── 2. INSIGHT ENGINE (AI INTELLIGENCE ALERTS WITH BRIGHT, HIGH-CONTRAST LAYOUT) ── */}
+      <div className="bg-slate-50/80 dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-amber-400" />
-            <h2 className="text-sm font-black tracking-wider uppercase text-white">INSIGHT ENGINE — PHÂN TÍCH TỰ ĐỘNG</h2>
+            <Sparkles className="w-5 h-5 text-amber-500" />
+            <h2 className="text-sm font-black tracking-wider uppercase text-slate-900 dark:text-white">INSIGHT ENGINE — PHÂN TÍCH TỰ ĐỘNG</h2>
           </div>
-          <span className="text-[11px] font-black bg-blue-600 text-white px-3 py-1 rounded-full shadow-2xs">
+          <span className="text-[11px] font-black bg-blue-50 text-blue-700 border border-blue-200/80 dark:bg-blue-950/60 dark:text-sky-300 dark:border-blue-800 px-3 py-1 rounded-full shadow-2xs">
             Realtime Analytics Layer
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-semibold">
-          {/* Anomaly 1 - Red Alert */}
-          <div className="p-4 bg-rose-950/40 rounded-2xl border-2 border-rose-500/80 space-y-2">
-            <div className="flex items-center justify-between text-rose-400 font-black text-xs">
-              <span className="flex items-center gap-1.5"><ShieldAlert className="w-4 h-4 text-rose-400" /> Cảnh báo bất thường</span>
-              <span className="bg-rose-600 text-white px-2 py-0.5 rounded text-[10px] font-black">HIGH IMPACT</span>
+          {/* Anomaly 1 - Red Alert (High Impact) */}
+          <div className="p-4.5 bg-white dark:bg-slate-950 rounded-2xl border-2 border-rose-200 dark:border-rose-900/80 shadow-xs space-y-2.5">
+            <div className="flex items-center justify-between font-black text-xs">
+              <span className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400">
+                <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400" /> Cảnh báo bất thường
+              </span>
+              <span className="bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border border-rose-200 dark:border-rose-800 px-2 py-0.5 rounded text-[10px] font-black">HIGH IMPACT</span>
             </div>
-            <p className="text-base font-black text-white tracking-tight">Conversion giảm 2.1 điểm %</p>
-            <p className="text-xs text-slate-200 font-semibold leading-relaxed">
-              Điểm rơi chính nằm ở bước <span className="text-rose-300 font-black underline decoration-rose-400">Site Visit ➔ Deposit (42.9%)</span>. Cần rà soát quy trình tư vấn thực địa.
+            <p className="text-base font-black text-slate-900 dark:text-white tracking-tight">Conversion giảm 2.1 điểm %</p>
+            <p className="text-xs text-slate-600 dark:text-slate-300 font-semibold leading-relaxed">
+              Điểm rơi chính nằm ở bước <span className="font-black text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/60 px-1.5 py-0.5 rounded border border-rose-200 dark:border-rose-800/60 inline-block">Site Visit ➔ Deposit (42.9%)</span>. Cần rà soát quy trình tư vấn thực địa.
             </p>
           </div>
 
-          {/* Anomaly 2 - Amber Alert */}
-          <div className="p-4 bg-amber-950/40 rounded-2xl border-2 border-amber-500/80 space-y-2">
-            <div className="flex items-center justify-between text-amber-400 font-black text-xs">
-              <span className="flex items-center gap-1.5"><AlertTriangle className="w-4 h-4 text-amber-400" /> Ứng đọng kho hàng</span>
-              <span className="bg-amber-600 text-white px-2 py-0.5 rounded text-[10px] font-black">AGING RISK</span>
+          {/* Anomaly 2 - Amber Alert (Aging Inventory Risk) */}
+          <div className="p-4.5 bg-white dark:bg-slate-950 rounded-2xl border-2 border-amber-200 dark:border-amber-900/80 shadow-xs space-y-2.5">
+            <div className="flex items-center justify-between font-black text-xs">
+              <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" /> Ứng đọng kho hàng
+              </span>
+              <span className="bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded text-[10px] font-black">AGING RISK</span>
             </div>
-            <p className="text-base font-black text-white tracking-tight">18.4 tỷ tồn kho &gt;90 ngày</p>
-            <p className="text-xs text-slate-200 font-semibold leading-relaxed">
-              Tập trung chủ yếu tại dự án <span className="text-amber-300 font-black underline decoration-amber-400">Riverside Heights</span>. Khuyến nghị đưa ra gói ưu đãi thanh toán đợt mới.
+            <p className="text-base font-black text-slate-900 dark:text-white tracking-tight">18.4 tỷ tồn kho &gt;90 ngày</p>
+            <p className="text-xs text-slate-600 dark:text-slate-300 font-semibold leading-relaxed">
+              Tập trung chủ yếu tại dự án <span className="font-black text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800/60 inline-block">Riverside Heights</span>. Khuyến nghị đưa ra gói ưu đãi thanh toán đợt mới.
             </p>
           </div>
 
-          {/* Anomaly 3 - Emerald Alert */}
-          <div className="p-4 bg-emerald-950/40 rounded-2xl border-2 border-emerald-500/80 space-y-2">
-            <div className="flex items-center justify-between text-emerald-400 font-black text-xs">
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> Kênh hiệu quả cao</span>
-              <span className="bg-emerald-600 text-white px-2 py-0.5 rounded text-[10px] font-black">OPTIMIZATION</span>
+          {/* Anomaly 3 - Emerald Alert (High Performing Channel) */}
+          <div className="p-4.5 bg-white dark:bg-slate-950 rounded-2xl border-2 border-emerald-200 dark:border-emerald-900/80 shadow-xs space-y-2.5">
+            <div className="flex items-center justify-between font-black text-xs">
+              <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Kênh hiệu quả cao
+              </span>
+              <span className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded text-[10px] font-black">OPTIMIZATION</span>
             </div>
-            <p className="text-base font-black text-white tracking-tight">Referral có conversion 19.3%</p>
-            <p className="text-xs text-slate-200 font-semibold leading-relaxed">
-              Chỉ số chuyển đổi từ nguồn giới thiệu cao hơn Facebook Ads gấp <span className="text-emerald-300 font-black underline decoration-emerald-400">2.6 lần</span>. Đề xuất tăng hoa hồng CTV.
+            <p className="text-base font-black text-slate-900 dark:text-white tracking-tight">Referral có conversion 19.3%</p>
+            <p className="text-xs text-slate-600 dark:text-slate-300 font-semibold leading-relaxed">
+              Chỉ số chuyển đổi từ nguồn giới thiệu cao hơn Facebook Ads gấp <span className="font-black text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/60 inline-block">2.6 lần</span>. Đề xuất tăng hoa hồng CTV.
             </p>
           </div>
         </div>
@@ -246,7 +252,7 @@ export default function BIAnalyticsPage() {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
           <div>
             <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
-              <Layers className="w-4 h-4 text-purple-600" /> Ma trận phân tích nguyên nhân (Root Cause Matrix)
+              <Layers className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Ma trận phân tích nguyên nhân (Root Cause Matrix)
             </h3>
             <p className="text-xs text-slate-500 font-semibold mt-0.5">So sánh biến động hiệu suất chuyển đổi T8 vs T9 theo từng kênh tiếp thị</p>
           </div>
@@ -257,7 +263,7 @@ export default function BIAnalyticsPage() {
             {drillDownPath.map((step, idx) => (
               <span key={idx} className="flex items-center gap-1 shrink-0">
                 {idx > 0 && <ChevronRight className="w-3.5 h-3.5 text-slate-400" />}
-                <span className={idx === drillDownPath.length - 1 ? "text-blue-600 dark:text-blue-400 font-extrabold" : ""}>{step}</span>
+                <span className={idx === drillDownPath.length - 1 ? "text-blue-600 dark:text-sky-400 font-extrabold" : ""}>{step}</span>
               </span>
             ))}
           </div>
@@ -283,7 +289,7 @@ export default function BIAnalyticsPage() {
                   <td className="p-3 text-right font-mono text-slate-600 dark:text-slate-400">{item.t8Rate}%</td>
                   <td className="p-3 text-right font-mono font-bold text-slate-900 dark:text-white">{item.t9Rate}%</td>
                   <td className="p-3 text-right font-mono font-black">
-                    <span className={item.delta < 0 ? "text-rose-600" : "text-emerald-600"}>
+                    <span className={item.delta < 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}>
                       {item.delta > 0 ? `+${item.delta}` : item.delta} pt
                     </span>
                   </td>
@@ -300,7 +306,7 @@ export default function BIAnalyticsPage() {
                         setDrillDownPath(["Chi nhánh HCM", "Sales Team 02", item.channel, "Site Visit ➔ Deposit"]);
                         toast.info(`Đang drill-down phân tích nguyên nhân kênh ${item.channel}`);
                       }}
-                      className="px-2.5 py-1 text-xs font-bold text-blue-600 border border-blue-200 dark:border-blue-800 rounded-lg hover:bg-blue-50"
+                      className="px-2.5 py-1 text-xs font-bold text-blue-600 dark:text-sky-400 border border-blue-200 dark:border-sky-800/80 rounded-lg hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors"
                     >
                       Phân tích nguyên nhân ➔
                     </button>
