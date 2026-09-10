@@ -3,7 +3,8 @@ import { ProductCatalogAggregate } from './ProductCatalogAggregate';
 
 export class LegalApprovalSpecification extends Specification<ProductCatalogAggregate> {
   public isSatisfiedBy(candidate: ProductCatalogAggregate): boolean {
-    const docs = (candidate.metadata as unknown)?.legalDocuments;
+    const metadata = candidate.metadata as Record<string, any> | undefined;
+    const docs = metadata?.legalDocuments;
     if (!docs) return false;
 
     // Must have redBookApproved and constructionPermitApproved marked true
