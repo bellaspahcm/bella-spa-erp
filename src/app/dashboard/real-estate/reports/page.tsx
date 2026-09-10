@@ -164,17 +164,17 @@ export default function ReportsPage() {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
-  // Revenue chart month data
+  // Revenue chart month data (Tỉ VNĐ)
   const revenueChartMonths = [
-    { label: "T1", revenue: 35, actual: 25, target: 40 },
-    { label: "T2", revenue: 48, actual: 36, target: 50 },
-    { label: "T3", revenue: 60, actual: 48, target: 60 },
-    { label: "T4", revenue: 55, actual: 42, target: 65 },
-    { label: "T5", revenue: 68, actual: 52, target: 70 },
-    { label: "T6", revenue: 75, actual: 60, target: 75 },
-    { label: "T7", revenue: 80, actual: 68, target: 80 },
-    { label: "T8", revenue: 88, actual: 75, target: 85 },
-    { label: "T9", revenue: 458.5, actual: 371.2, target: 500.0, isHovered: true },
+    { label: "T1", fullLabel: "Tháng 1", revenue: 120, actual: 95, target: 150 },
+    { label: "T2", fullLabel: "Tháng 2", revenue: 160, actual: 130, target: 180 },
+    { label: "T3", fullLabel: "Tháng 3", revenue: 210, actual: 175, target: 230 },
+    { label: "T4", fullLabel: "Tháng 4", revenue: 240, actual: 190, target: 260 },
+    { label: "T5", fullLabel: "Tháng 5", revenue: 290, actual: 230, target: 310 },
+    { label: "T6", fullLabel: "Tháng 6", revenue: 330, actual: 270, target: 360 },
+    { label: "T7", fullLabel: "Tháng 7", revenue: 380, actual: 310, target: 410 },
+    { label: "T8", fullLabel: "Tháng 8", revenue: 410, actual: 340, target: 450 },
+    { label: "T9", fullLabel: "Tháng 9", revenue: 458.5, actual: 371.2, target: 500.0, isHovered: true },
   ];
 
   const handleExport = (format: string) => {
@@ -399,9 +399,35 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          {/* SVG Bar & Line Analytics Chart with Interactive Tooltip on T9 */}
-          <div className="relative pt-4">
-            <div className="h-64 flex items-end justify-between gap-3 px-2">
+          {/* Analytics Chart Container with Y-Axis & X-Axis Baseline */}
+          <div className="relative pt-2 pl-10 pr-2">
+            
+            {/* Y-Axis Numerical Labels & Horizontal Grid Lines */}
+            <div className="absolute left-0 top-2 bottom-8 w-8 flex flex-col justify-between text-[10px] font-mono font-bold text-slate-400 text-right pr-1">
+              <span>500</span>
+              <span>375</span>
+              <span>250</span>
+              <span>125</span>
+              <span>0</span>
+            </div>
+
+            <div className="absolute left-10 right-2 top-2 bottom-8 flex flex-col justify-between pointer-events-none">
+              <div className="border-b border-dashed border-slate-200 dark:border-slate-800 w-full" />
+              <div className="border-b border-dashed border-slate-200 dark:border-slate-800 w-full" />
+              <div className="border-b border-dashed border-slate-200 dark:border-slate-800 w-full" />
+              <div className="border-b border-dashed border-slate-200 dark:border-slate-800 w-full" />
+              <div className="border-b border-slate-300 dark:border-slate-700 w-full" />
+            </div>
+
+            {/* Target Line (-- Kế hoạch: 500.0 tỷ) */}
+            <div className="absolute left-10 right-2 top-2 border-t-2 border-dashed border-blue-400 z-10 pointer-events-none">
+              <span className="absolute -top-3.5 right-0 bg-blue-50 dark:bg-blue-950/80 text-blue-600 text-[9px] font-extrabold px-1.5 py-0.5 rounded border border-blue-200 dark:border-blue-900 shadow-2xs">
+                Target: 500.0 tỷ
+              </span>
+            </div>
+
+            {/* Bars & X-Axis */}
+            <div className="h-64 flex items-end justify-between gap-2 sm:gap-3 relative z-10">
               {revenueChartMonths.map((m, idx) => {
                 const maxVal = 500;
                 const hRev = (m.revenue / maxVal) * 100;
@@ -412,7 +438,7 @@ export default function ReportsPage() {
                     
                     {/* Hover Tooltip for T9 */}
                     {m.isHovered && (
-                      <div className="absolute -top-24 bg-slate-900 text-white rounded-xl p-2.5 shadow-xl text-[11px] font-bold z-20 whitespace-nowrap space-y-1 ring-1 ring-white/10">
+                      <div className="absolute -top-24 bg-slate-900 text-white rounded-xl p-2.5 shadow-xl text-[11px] font-bold z-30 whitespace-nowrap space-y-1 ring-1 ring-white/10">
                         <p className="text-blue-400 font-extrabold border-b border-slate-800 pb-1">Tháng 9/2026</p>
                         <div className="flex justify-between gap-3"><span className="text-slate-400">• Doanh thu:</span> <span>458.5 tỷ</span></div>
                         <div className="flex justify-between gap-3"><span className="text-slate-400">• Thực thu:</span> <span className="text-emerald-400">371.2 tỷ</span></div>
@@ -421,27 +447,36 @@ export default function ReportsPage() {
                     )}
 
                     {/* Dual Bars Container */}
-                    <div className="w-full flex items-end justify-center gap-1.5 h-48">
+                    <div className="w-full flex items-end justify-center gap-1 sm:gap-1.5 h-48">
                       {/* Revenue HĐMB Bar */}
                       <div
                         style={{ height: `${hRev}%` }}
-                        className={`w-3.5 rounded-t-md transition-all ${
+                        className={`w-3 sm:w-4 rounded-t-md transition-all ${
                           m.isHovered ? "bg-blue-600 shadow-md ring-2 ring-blue-300" : "bg-blue-500/80 group-hover:bg-blue-600"
                         }`}
                       />
                       {/* Actual Collection Bar */}
                       <div
                         style={{ height: `${hAct}%` }}
-                        className={`w-3.5 rounded-t-md transition-all ${
+                        className={`w-3 sm:w-4 rounded-t-md transition-all ${
                           m.isHovered ? "bg-emerald-500 shadow-md ring-2 ring-emerald-300" : "bg-emerald-400/80 group-hover:bg-emerald-500"
                         }`}
                       />
                     </div>
 
-                    <span className={`text-xs font-black ${m.isHovered ? "text-blue-600" : "text-slate-500"}`}>{m.label}</span>
+                    {/* X-Axis Month Label */}
+                    <span className={`text-xs font-black transition-colors ${m.isHovered ? "text-blue-600" : "text-slate-500"}`}>
+                      {m.label}
+                    </span>
                   </div>
                 );
               })}
+            </div>
+
+            {/* X-Axis Unit Label */}
+            <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 pt-1.5 border-t border-slate-200 dark:border-slate-800 mt-1">
+              <span>Đơn vị: Tỷ VNĐ</span>
+              <span>Kỳ báo cáo: 9 tháng 2026</span>
             </div>
           </div>
         </div>
