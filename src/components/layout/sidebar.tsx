@@ -427,8 +427,8 @@ const realEstateMenuItems: SidebarMenuItem[] = [
   { icon: UserCheck,       label: 'Quản lý nhân sự',     href: '/dashboard/real-estate/people' },
 
   { type: 'header', label: 'BÁO CÁO' },
-  { icon: FileBarChart2,   label: 'Báo cáo phân tích',    href: '/dashboard/real-estate/reports' },
-  { icon: BarChart3,       label: 'Dashboard tài chính', href: '/dashboard/real-estate/bi-analytics' },
+  { icon: FileBarChart2,   label: 'Trung tâm báo cáo',   href: '/dashboard/real-estate/reports' },
+  { icon: BarChart3,       label: 'BI Analytics',        href: '/dashboard/real-estate/bi-analytics' },
 
   { type: 'header', label: 'CÀI ĐẶT' },
   { icon: Settings,        label: 'Hệ thống',            href: '/dashboard/settings' },
