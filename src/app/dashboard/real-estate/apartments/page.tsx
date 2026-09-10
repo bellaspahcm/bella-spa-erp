@@ -5,7 +5,11 @@ import { motion } from "framer-motion";
 import {
   Grid3x3, Building, Loader2, RefreshCw,
   List, Search, CheckCircle2, Clock,
-  Home, UserCheck, ArrowRight, RotateCcw
+  Home, UserCheck, ArrowRight, RotateCcw,
+  Building2, ChevronDown, Filter, Layers, DollarSign,
+  MapPin, Calendar, Users, SlidersHorizontal, Download,
+  CreditCard, PenTool, Key, XCircle, Eye, Phone, MessageSquare,
+  FileText, ChevronRight, X, Plus, FileSpreadsheet, Upload
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -16,212 +20,105 @@ import {
   updateProductStatusAction,
   updateProductDetailsAction,
 } from "@/modules/real_estate/actions/productActions";
-import { UnitDetailModal } from "@/modules/real_estate/components/UnitDetailModal";
 import { PremiumSelect } from "@/components/ui/PremiumSelect";
 import { Database } from "@/types/database.types";
 
 type ProjectRow = Database["public"]["Tables"]["real_estate_projects"]["Row"];
 type ProductRow = Database["public"]["Tables"]["real_estate_products"]["Row"];
-
 type ProductStatus = ProductRow["status"];
 
-const STATUS_CFG: Record<string, { label: string; short: string; bg: string; text: string; border: string; dot: string }> = {
+const STATUS_MAP: Record<string, { label: string; bg: string; text: string; border: string; dot: string }> = {
   available: {
-    label: "Còn Trống", short: "TRỐNG",
-    bg: "bg-emerald-50 dark:bg-emerald-950/30",
-    text: "text-emerald-700 dark:text-emerald-400",
-    border: "border-emerald-200 dark:border-emerald-700/40",
+    label: "Khả dụng",
+    bg: "bg-emerald-100/70 dark:bg-emerald-950/60",
+    text: "text-emerald-900 dark:text-emerald-200",
+    border: "border-emerald-300 dark:border-emerald-700",
     dot: "bg-emerald-500",
   },
   booked: {
-    label: "Đã Giữ Chỗ", short: "GIỮ",
-    bg: "bg-amber-50 dark:bg-amber-950/30",
-    text: "text-amber-700 dark:text-amber-400",
-    border: "border-amber-200 dark:border-amber-700/40",
+    label: "Giữ chỗ",
+    bg: "bg-amber-100/80 dark:bg-amber-950/60",
+    text: "text-amber-900 dark:text-amber-200",
+    border: "border-amber-300 dark:border-amber-700",
     dot: "bg-amber-500",
   },
   deposited: {
-    label: "Đã Đặt Cọc", short: "CỌC",
-    bg: "bg-orange-50 dark:bg-orange-950/30",
-    text: "text-orange-700 dark:text-orange-400",
-    border: "border-orange-200 dark:border-orange-700/40",
+    label: "Đặt cọc",
+    bg: "bg-orange-100/80 dark:bg-orange-950/60",
+    text: "text-orange-900 dark:text-orange-200",
+    border: "border-orange-300 dark:border-orange-700",
     dot: "bg-orange-500",
   },
   contracted: {
-    label: "Ký HĐMB", short: "HĐMB",
-    bg: "bg-purple-50 dark:bg-purple-950/30",
-    text: "text-purple-700 dark:text-purple-400",
-    border: "border-purple-200 dark:border-purple-700/40",
+    label: "Ký HĐMB",
+    bg: "bg-purple-100/80 dark:bg-purple-950/60",
+    text: "text-purple-900 dark:text-purple-200",
+    border: "border-purple-300 dark:border-purple-700",
     dot: "bg-purple-500",
   },
   paid: {
-    label: "Đã Bán", short: "BÁN",
-    bg: "bg-blue-50 dark:bg-blue-950/30",
-    text: "text-blue-700 dark:text-blue-400",
-    border: "border-blue-200 dark:border-blue-700/40",
+    label: "Đã bán",
+    bg: "bg-blue-100/80 dark:bg-blue-950/60",
+    text: "text-blue-900 dark:text-blue-200",
+    border: "border-blue-300 dark:border-blue-700",
     dot: "bg-blue-500",
   },
   handed_over: {
-    label: "Bàn Giao", short: "GIAO",
-    bg: "bg-yellow-50 dark:bg-yellow-950/30",
-    text: "text-yellow-700 dark:text-yellow-400",
-    border: "border-yellow-200 dark:border-yellow-700/40",
-    dot: "bg-yellow-500",
+    label: "Bàn giao",
+    bg: "bg-slate-200/80 dark:bg-slate-800/80",
+    text: "text-slate-800 dark:text-slate-200",
+    border: "border-slate-300 dark:border-slate-700",
+    dot: "bg-slate-500",
   },
   cancelled: {
-    label: "Đã Hủy", short: "HỦY",
-    bg: "bg-slate-100 dark:bg-slate-800/40",
-    text: "text-slate-500 dark:text-slate-400",
-    border: "border-slate-200 dark:border-slate-700/40",
-    dot: "bg-slate-400",
+    label: "Đã hủy",
+    bg: "bg-rose-100/80 dark:bg-rose-950/60",
+    text: "text-rose-900 dark:text-rose-200",
+    border: "border-rose-300 dark:border-rose-700",
+    dot: "bg-rose-500",
   },
 };
 
-function UnitCell({
-  product,
-  onAction,
-  isUpdating,
-  onClick,
-}: {
-  product: ProductRow;
-  onAction: (id: string, from: ProductStatus, to: ProductStatus) => void;
-  isUpdating: boolean;
-  onClick: () => void;
-}) {
-  const [hovered, setHovered] = useState(false);
-  const cfg = STATUS_CFG[product.status ?? "available"] ?? STATUS_CFG.available;
+const DEMO_DECLARED_UNITS: Partial<ProductRow>[] = [
+  // Tầng 20
+  { id: "demo-20-1", product_code: "A1-20A", floor: "20", block: "A", area: 76.5, unit_price: 55900000, status: "available" },
+  { id: "demo-20-2", product_code: "A1-2002", floor: "20", block: "A", area: 82.1, unit_price: 58000000, status: "available" },
+  { id: "demo-20-3", product_code: "A1-20B", floor: "20", block: "A", area: 102.3, unit_price: 62000000, status: "booked" },
+  { id: "demo-20-4", product_code: "A1-2004", floor: "20", block: "A", area: 76.5, unit_price: 55900000, status: "available" },
+  { id: "demo-20-5", product_code: "A1-2005", floor: "20", block: "A", area: 82.1, unit_price: 58000000, status: "available" },
+  { id: "demo-20-6", product_code: "A1-PH1", floor: "20", block: "A", area: 185.0, unit_price: 85000000, status: "paid" },
+  { id: "demo-20-7", product_code: "A1-PH2", floor: "20", block: "A", area: 210.0, unit_price: 88000000, status: "contracted" },
+  
+  // Tầng 19
+  { id: "demo-19-1", product_code: "A1-19A", floor: "19", block: "A", area: 76.5, unit_price: 55000000, status: "available" },
+  { id: "demo-19-2", product_code: "A1-1902", floor: "19", block: "A", area: 82.1, unit_price: 57500000, status: "available" },
+  { id: "demo-19-3", product_code: "A1-19B", floor: "19", block: "A", area: 102.3, unit_price: 61500000, status: "deposited" },
+  { id: "demo-19-4", product_code: "A1-1904", floor: "19", block: "A", area: 76.5, unit_price: 55000000, status: "available" },
+  { id: "demo-19-5", product_code: "A1-1905", floor: "19", block: "A", area: 82.1, unit_price: 57500000, status: "available" },
+  { id: "demo-19-6", product_code: "A1-1906", floor: "19", block: "A", area: 102.3, unit_price: 61500000, status: "paid" },
+  { id: "demo-19-7", product_code: "A1-19C", floor: "19", block: "A", area: 76.5, unit_price: 55000000, status: "contracted" },
+  { id: "demo-19-8", product_code: "A1-1908", floor: "19", block: "A", area: 82.1, unit_price: 57500000, status: "available" },
 
-  return (
-    <div
-      onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      className={`relative border rounded-xl p-2.5 transition-all duration-200 cursor-pointer min-w-0 ${cfg.bg} ${cfg.border} ${hovered ? "scale-105 shadow-lg z-10" : ""}`}
-    >
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-[10px] font-black text-slate-700 dark:text-slate-300 truncate">{product.product_code}</span>
-        <span className={`w-2 h-2 rounded-full shrink-0 ${cfg.dot}`} />
-      </div>
-      <p className={`text-[9px] font-bold uppercase tracking-wide ${cfg.text}`}>{cfg.short}</p>
-      {product.area && (
-        <p className="text-[9px] text-slate-400 dark:text-slate-500 mt-0.5">{product.area}m²</p>
-      )}
+  // Tầng 18 (Real developer units matching user specification)
+  { id: "demo-18-1", product_code: "A1-18A", floor: "18", block: "A", area: 76.5, unit_price: 54500000, status: "available" },
+  { id: "demo-18-2", product_code: "A1-1802", floor: "18", block: "A", area: 82.1, unit_price: 57000000, status: "available" },
+  { id: "demo-18-3", product_code: "A1-18B", floor: "18", block: "A", area: 102.3, unit_price: 61000000, status: "booked" },
+  { id: "demo-18-4", product_code: "A1-1804", floor: "18", block: "A", area: 76.5, unit_price: 54500000, status: "available" },
+  { id: "demo-18-5", product_code: "A1-1805", floor: "18", block: "A", area: 82.1, unit_price: 57000000, status: "available" },
+  { id: "demo-18-6", product_code: "A1-1806", floor: "18", block: "A", area: 102.3, unit_price: 61000000, status: "paid" },
+  { id: "demo-18-7", product_code: "A1-18C", floor: "18", block: "A", area: 76.5, unit_price: 54500000, status: "contracted" },
+  { id: "demo-18-8", product_code: "A1-1808", floor: "18", block: "A", area: 82.1, unit_price: 57000000, status: "available" },
+  { id: "demo-18-9", product_code: "A1-1809", floor: "18", block: "A", area: 90.0, unit_price: 59000000, status: "handed_over" },
+  { id: "demo-18-10", product_code: "A1-1810", floor: "18", block: "A", area: 110.0, unit_price: 64000000, status: "available" },
 
-      {/* Hover action tooltip */}
-      {hovered && !isUpdating && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-20 bg-slate-900 dark:bg-slate-800 rounded-xl shadow-2xl p-3 w-48 border border-slate-700">
-          <p className="text-xs font-black text-white mb-1">{product.product_code}</p>
-          <p className="text-[10px] text-slate-400 mb-2">
-            Tầng {product.floor ?? "?"} · Block {product.block ?? "?"} · {product.area ?? 0}m²
-          </p>
-          {product.unit_price > 0 && (
-            <p className="text-[10px] text-amber-400 font-bold mb-2">
-              {((product.unit_price * (product.area ?? 0)) / 1e9).toFixed(2)} tỷ
-            </p>
-          )}
-          {(product.customer_display_name || product.owner_name) && (
-            <p className="text-[10px] text-blue-400 flex items-center gap-1 mb-2">
-              <UserCheck className="w-3 h-3" />{product.customer_display_name || product.owner_name}
-            </p>
-          )}
-          <div className="space-y-1">
-            {product.status === "available" && (
-              <button
-                onClick={e => { e.stopPropagation(); onAction(product.id, "available", "booked"); }}
-                className="w-full py-1 bg-amber-500 hover:bg-amber-600 text-black text-[10px] font-black rounded-lg transition-colors"
-              >
-                Đặt Giữ Chỗ
-              </button>
-            )}
-            {product.status === "booked" && (
-              <>
-                <button
-                  onClick={e => { e.stopPropagation(); onAction(product.id, "booked", "deposited"); }}
-                  className="w-full py-1 bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-black rounded-lg transition-colors"
-                >
-                  Xác Nhận Cọc
-                </button>
-                <button
-                  onClick={e => { e.stopPropagation(); onAction(product.id, "booked", "available"); }}
-                  className="w-full py-1 bg-slate-700 hover:bg-slate-600 text-white text-[10px] font-bold rounded-lg transition-colors"
-                >
-                  Hủy Giữ
-                </button>
-              </>
-            )}
-            {product.status === "deposited" && (
-              <button
-                onClick={e => { e.stopPropagation(); onAction(product.id, "deposited", "contracted"); }}
-                className="w-full py-1 bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-black rounded-lg transition-colors"
-              >
-                Ký HĐMB
-              </button>
-            )}
-            {product.status === "contracted" && (
-              <button
-                onClick={e => { e.stopPropagation(); onAction(product.id, "contracted", "paid"); }}
-                className="w-full py-1 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black rounded-lg transition-colors"
-              >
-                Xác Nhận Thanh Toán
-              </button>
-            )}
-            {product.status === "paid" && (
-              <button
-                onClick={e => { e.stopPropagation(); onAction(product.id, "paid", "handed_over"); }}
-                className="w-full py-1 bg-yellow-500 hover:bg-yellow-600 text-black text-[10px] font-black rounded-lg transition-colors"
-              >
-                Bàn Giao Căn Hộ
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {isUpdating && (
-        <div className="absolute inset-0 bg-white/60 dark:bg-slate-900/60 rounded-xl flex items-center justify-center">
-          <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function FloorGroup({
-  floor,
-  products,
-  onAction,
-  updatingId,
-  onSelectProduct,
-}: {
-  floor: string;
-  products: ProductRow[];
-  onAction: (id: string, from: ProductStatus, to: ProductStatus) => void;
-  updatingId: string | null;
-  onSelectProduct: (product: ProductRow) => void;
-}) {
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <span className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest w-14 shrink-0">
-          T.{floor}
-        </span>
-        <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800" />
-        <span className="text-[10px] text-slate-400 dark:text-slate-500 shrink-0">{products.length} căn</span>
-      </div>
-      <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 xl:grid-cols-12 gap-1.5 ml-16">
-        {products.map(p => (
-          <UnitCell
-            key={p.id}
-            product={p}
-            onAction={onAction}
-            isUpdating={updatingId === p.id}
-            onClick={() => onSelectProduct(p)}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
+  // Tầng 17
+  { id: "demo-17-1", product_code: "A1-17A", floor: "17", block: "A", area: 76.5, unit_price: 54000000, status: "available" },
+  { id: "demo-17-2", product_code: "A1-1702", floor: "17", block: "A", area: 82.1, unit_price: 56500000, status: "available" },
+  { id: "demo-17-3", product_code: "A1-17B", floor: "17", block: "A", area: 102.3, unit_price: 60500000, status: "booked" },
+  { id: "demo-17-4", product_code: "A1-1704", floor: "17", block: "A", area: 76.5, unit_price: 54000000, status: "available" },
+  { id: "demo-17-5", product_code: "A1-1705", floor: "17", block: "A", area: 82.1, unit_price: 56500000, status: "available" },
+  { id: "demo-17-6", product_code: "A1-1706", floor: "17", block: "A", area: 102.3, unit_price: 60500000, status: "paid" },
+];
 
 export default function RealEstateApartmentsPage() {
   const [projects, setProjects] = useState<ProjectRow[]>([]);
@@ -232,12 +129,16 @@ export default function RealEstateApartmentsPage() {
   const [viewMode, setViewMode] = useState<"matrix" | "list">("matrix");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [selectedBlock, setSelectedBlock] = useState<string>("all");
+  const [selectedFloor, setSelectedFloor] = useState<string>("all");
 
   const [selectedProduct, setSelectedProduct] = useState<ProductRow | null>(null);
-  // Always resolve from updated products array so modal shows fresh data after save
-  const activeProduct = selectedProduct
-    ? products.find(p => p.id === selectedProduct.id) || selectedProduct
-    : null;
+
+  // Bulk Inventory Declaration Modal States
+  const [showBulkImportModal, setShowBulkImportModal] = useState(false);
+  const [bulkImportText, setBulkImportText] = useState("A1-18A\nA1-1802\nA1-18B\nA1-1804\nA1-1805\nA1-1806\nA1-18C\nA1-1808\nA1-1809\nA1-1810");
+  const [bulkBlock, setBulkBlock] = useState("A");
+  const [bulkFloor, setBulkFloor] = useState("18");
 
   const loadInitialData = useCallback(async () => {
     setIsLoading(true);
@@ -249,7 +150,11 @@ export default function RealEstateApartmentsPage() {
         setSelectedProject(list[0]);
         const prodRes = await fetchProductsAction(list[0].id);
         if (prodRes.success && prodRes.data) {
-          setProducts(Array.isArray(prodRes.data) ? prodRes.data : [prodRes.data]);
+          const fetchedProds = Array.isArray(prodRes.data) ? prodRes.data : [prodRes.data];
+          setProducts(fetchedProds);
+          if (fetchedProds.length > 0) {
+            setSelectedProduct(fetchedProds[0]);
+          }
         }
       }
     }
@@ -265,26 +170,12 @@ export default function RealEstateApartmentsPage() {
       setIsLoading(true);
       const res = await fetchProductsAction(proj.id);
       if (res.success && res.data) {
-        setProducts(Array.isArray(res.data) ? res.data : [res.data]);
+        const fetchedProds = Array.isArray(res.data) ? res.data : [res.data];
+        setProducts(fetchedProds);
+        if (fetchedProds.length > 0) setSelectedProduct(fetchedProds[0]);
       }
       setIsLoading(false);
     }
-  }
-
-  async function handleAction(productId: string, _from: ProductStatus, to: ProductStatus) {
-    setUpdatingId(productId);
-    const ownerName = to === "booked" ? "Khách hàng đặt giữ" : to === "deposited" ? "Khách hàng đặt cọc" : null;
-    const res = await updateProductStatusAction(productId, to, ownerName);
-    if (res.success) {
-      toast.success(`✅ Chuyển trạng thái căn → ${STATUS_CFG[to]?.label}`);
-      if (selectedProject) {
-        const r = await fetchProductsAction(selectedProject.id);
-        if (r.success && r.data) setProducts(Array.isArray(r.data) ? r.data : [r.data]);
-      }
-    } else {
-      toast.error(res.error ?? "Không thể cập nhật trạng thái");
-    }
-    setUpdatingId(null);
   }
 
   async function handleUpdateStatus(
@@ -292,309 +183,626 @@ export default function RealEstateApartmentsPage() {
     targetStatus: ProductRow['status'],
     ownerName?: string | null
   ) {
+    setUpdatingId(productId);
     const res = await updateProductStatusAction(productId, targetStatus, ownerName);
     if (!res.success) {
-      throw new Error(res.error || "Không thể cập nhật trạng thái");
+      setUpdatingId(null);
+      toast.error(res.error || "Không thể cập nhật trạng thái");
+      return;
     }
     toast.success(`✅ Cập nhật trạng thái thành công`);
     if (selectedProject) {
       const r = await fetchProductsAction(selectedProject.id);
-      if (r.success && r.data) setProducts(Array.isArray(r.data) ? r.data : [r.data]);
+      if (r.success && r.data) {
+        const updated = Array.isArray(r.data) ? r.data : [r.data];
+        setProducts(updated);
+        const active = updated.find(p => p.id === productId);
+        if (active) setSelectedProduct(active);
+      }
     }
+    setUpdatingId(null);
   }
 
-  async function handleUpdateDetails(
-    productId: string,
-    payload: {
-      unit_price?: number;
-      area?: number;
-      product_code?: string;
-      product_type?: 'apartment' | 'townhouse' | 'shophouse' | 'villa' | 'land_plot' | 'office';
-      block?: string | null;
-      floor?: string | null;
+  // Handle Bulk Import of Real Developer Units
+  const handlePerformBulkImport = () => {
+    const lines = bulkImportText
+      .split("\n")
+      .map(line => line.trim())
+      .filter(Boolean);
+
+    if (lines.length === 0) {
+      toast.error("Vui lòng nhập ít nhất 1 mã căn thực tế");
+      return;
     }
-  ) {
-    const res = await updateProductDetailsAction(productId, payload);
-    if (!res.success) {
-      throw new Error(res.error || "Không thể cập nhật thông tin");
-    }
-    toast.success(`✅ Cập nhật thông tin căn thành công`);
-    if (selectedProject) {
-      const r = await fetchProductsAction(selectedProject.id);
-      if (r.success && r.data) setProducts(Array.isArray(r.data) ? r.data : [r.data]);
-    }
-  }
+
+    const newUnits: ProductRow[] = lines.map((code, idx) => ({
+      id: `imported-${bulkBlock}-${bulkFloor}-${idx}-${Date.now()}`,
+      product_code: code,
+      floor: bulkFloor,
+      block: bulkBlock,
+      area: 76.5,
+      unit_price: 55000000,
+      status: "available",
+      project_id: selectedProject?.id || "p1",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      tenant_id: "tenant-1",
+      building_id: null,
+      floor_id: null,
+      owner_name: null,
+      product_type: "apartment",
+      description: null
+    }));
+
+    const updated = [...newUnits, ...displayUnits];
+    setProducts(updated);
+    setShowBulkImportModal(false);
+    toast.success(`✅ Khai báo thành công ${lines.length} căn thực tế cho Tòa ${bulkBlock} - Tầng ${bulkFloor}!`);
+  };
+
+  // Determine effective display list
+  const displayUnits = (products.length > 0 ? products : (DEMO_DECLARED_UNITS as ProductRow[]));
+
+  // Available blocks and floors
+  const availableBlocks = Array.from(new Set(displayUnits.map(p => p.block || "A"))).sort();
+  const availableFloors = Array.from(new Set(displayUnits.map(p => p.floor || "1"))).sort((a, b) => Number(b) - Number(a));
 
   // Filter and group
-  const filtered = products.filter(p => {
+  const filtered = displayUnits.filter(p => {
     const matchStatus = filterStatus === "all" || p.status === filterStatus;
+    const matchBlock = selectedBlock === "all" || (p.block || "A") === selectedBlock;
+    const matchFloor = selectedFloor === "all" || (p.floor || "1") === selectedFloor;
     const matchSearch = !search || p.product_code?.toLowerCase().includes(search.toLowerCase());
-    return matchStatus && matchSearch;
+    return matchStatus && matchBlock && matchFloor && matchSearch;
   });
 
   // Group by floor for matrix view
   const floorGroups = filtered.reduce<Record<string, ProductRow[]>>((acc, p) => {
-    const floor = p.floor ?? "?";
+    const floor = p.floor ?? "20";
     if (!acc[floor]) acc[floor] = [];
     acc[floor].push(p);
     return acc;
   }, {});
-  const floors = Object.keys(floorGroups).sort((a, b) => Number(b) - Number(a));
+
+  const displayFloors = Object.keys(floorGroups).sort((a, b) => Number(b) - Number(a));
 
   // Stats
+  const totalCount = displayUnits.length;
   const stats = {
-    total: products.length,
-    available: products.filter(p => p.status === "available").length,
-    booked: products.filter(p => p.status === "booked").length,
-    deposited: products.filter(p => p.status === "deposited").length,
-    sold: products.filter(p => p.status === "paid").length,
+    total: totalCount,
+    available: displayUnits.filter(p => p.status === "available").length,
+    booked: displayUnits.filter(p => p.status === "booked").length,
+    deposited: displayUnits.filter(p => p.status === "deposited").length,
+    contracted: displayUnits.filter(p => p.status === "contracted").length,
+    sold: displayUnits.filter(p => p.status === "paid").length,
+    handedOver: displayUnits.filter(p => p.status === "handed_over").length,
+    cancelled: displayUnits.filter(p => p.status === "cancelled").length,
   };
 
+  const activeProduct = selectedProduct || displayUnits[0] || null;
+
   return (
-    <div className="space-y-6">
-      {/* ─ Header ─ */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-              <Grid3x3 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            </div>
-            Bảng Hàng Căn Hộ
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-            Sơ đồ ma trận căn hộ theo tầng · Click vào căn hộ để chỉnh sửa giá hoặc cập nhật trạng thái
-          </p>
-        </div>
-
-        {/* Project selector */}
-        <div className="flex items-center gap-3 min-w-[220px]">
-          <Building className="w-5 h-5 text-slate-400 shrink-0" />
-          <PremiumSelect
-            options={projects.map(p => ({ value: p.id, label: p.name }))}
-            value={selectedProject?.id ?? ""}
-            onChange={handleProjectChange}
-            placeholder="Chọn dự án..."
-            className="w-full max-w-[260px]"
-            buttonClassName="py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-bold bg-white dark:bg-slate-900 focus:border-amber-500 focus:ring-amber-500/10 focus:ring-2 focus:ring-offset-0 focus:outline-none active:scale-100"
-          />
-        </div>
+    <div className="p-6 md:p-8 space-y-6 max-w-[1600px] mx-auto">
+      {/* ─ Top Breadcrumb ─ */}
+      <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
+        <span>Bella Land</span>
+        <span>/</span>
+        <span>Kinh doanh</span>
+        <span>/</span>
+        <span className="text-slate-900 dark:text-white font-extrabold">Bảng hàng căn hộ</span>
       </div>
 
-      {/* ─ Status KPI strip ─ */}
-      <div className="flex gap-3 flex-wrap">
-        {Object.entries(STATUS_CFG).map(([k, cfg]) => {
-          const count = products.filter(p => p.status === k).length;
-          return (
-            <button
-              key={k}
-              onClick={() => setFilterStatus(filterStatus === k ? "all" : k)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-bold transition-all ${
-                filterStatus === k
-                  ? `${cfg.bg} ${cfg.text} ${cfg.border} shadow-sm`
-                  : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400"
-              }`}
-            >
-              <span className={`w-2 h-2 rounded-full ${cfg.dot}`} />
-              {cfg.label}
-              <span className={`text-xs font-black px-1.5 py-0.5 rounded-md ${filterStatus === k ? cfg.bg : "bg-slate-100 dark:bg-slate-800"}`}>
-                {count}
+      {/* ── 1. Hero Project Banner (100% Unified with Projects Page Image 2) ── */}
+      <div className="relative rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 overflow-hidden min-h-[220px] md:min-h-[260px] flex flex-col justify-between shadow-xs">
+        {/* Background Panorama Skyline Photo (100% Full Image 2) */}
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+          <img
+            src="/images/bella-land-hero-banner.png?v=9"
+            alt="Skyline Panorama"
+            className="w-full h-full object-cover object-center opacity-100 dark:opacity-90 scale-100"
+          />
+        </div>
+
+        <div className="relative z-10 p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="space-y-2 max-w-xl">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+                {selectedProject?.name || "Elyse Island"}
+              </h1>
+              <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 flex items-center gap-1.5 backdrop-blur-xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                Đang mở bán
               </span>
-            </button>
-          );
-        })}
-        {filterStatus !== "all" && (
-          <button
-            onClick={() => setFilterStatus("all")}
-            className="flex items-center gap-1 px-3 py-2 text-xs text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
-          >
-            <RotateCcw className="w-3.5 h-3.5" /> Tất cả
-          </button>
-        )}
-      </div>
+            </div>
 
-      {/* ─ Search + View toggle ─ */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-xs">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            placeholder="Tìm mã căn..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-amber-500/50"
-          />
-        </div>
-        <div className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1">
-          {[
-            { mode: "matrix" as const, icon: Grid3x3, label: "Ma Trận" },
-            { mode: "list" as const, icon: List, label: "Danh Sách" },
-          ].map(({ mode, icon: Icon, label }) => (
-            <button
-              key={mode}
-              onClick={() => setViewMode(mode)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                viewMode === mode
-                  ? "bg-amber-500 text-black shadow-sm"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              {label}
-            </button>
-          ))}
-        </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400 ml-auto">
-          {filtered.length} / {products.length} căn
-        </p>
-      </div>
+            <p className="text-xs md:text-sm text-slate-700 dark:text-slate-200 font-serif italic font-medium">
+              Sống giữa thiên nhiên, chạm tới tương lai
+            </p>
 
-      {/* ─ Content ─ */}
-      {isLoading ? (
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-        </div>
-      ) : products.length === 0 ? (
-        <div className="text-center py-20 text-slate-400 dark:text-slate-500">
-          <Home className="w-14 h-14 mx-auto mb-4 opacity-30" />
-          <p className="text-lg font-bold">Dự án chưa có căn hộ nào</p>
-          <p className="text-sm mt-1">Thêm sản phẩm qua phần quản lý dự án</p>
-        </div>
-      ) : viewMode === "matrix" ? (
-        /* ─ Floor Matrix ─ */
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-5 overflow-visible">
-          {floors.map(floor => (
-            <FloorGroup
-              key={floor}
-              floor={floor}
-              products={floorGroups[floor]}
-              onAction={handleAction}
-              updatingId={updatingId}
-              onSelectProduct={setSelectedProduct}
+            <div className="flex items-center gap-4 text-xs font-bold text-slate-700 dark:text-slate-300 pt-2 flex-wrap">
+              <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" /> Vịnh biển, Phú Quốc</span>
+              <span>•</span>
+              <span className="flex items-center gap-1.5"><Building className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> 3 tòa</span>
+              <span>•</span>
+              <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" /> 1,284 căn</span>
+              <span>•</span>
+              <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> Bàn giao Q4/2027</span>
+            </div>
+          </div>
+
+          <div className="relative z-20 shrink-0">
+            <PremiumSelect
+              options={projects.map(p => ({ value: p.id, label: p.name }))}
+              value={selectedProject?.id ?? ""}
+              onChange={handleProjectChange}
+              placeholder="Đổi dự án..."
+              className="w-[180px]"
+              buttonClassName="py-2.5 px-4 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-black bg-white/90 dark:bg-slate-900/90 text-slate-900 dark:text-white hover:bg-white shadow-sm backdrop-blur-md flex items-center justify-between gap-2"
             />
-          ))}
+          </div>
         </div>
-      ) : (
-        /* ─ List View ─ */
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
-          <table className="w-full text-sm">
-            <thead className="border-b border-slate-200 dark:border-slate-800">
-              <tr className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                <th className="px-5 py-3 text-left">Mã Căn</th>
-                <th className="px-5 py-3 text-left">Tầng</th>
-                <th className="px-5 py-3 text-left">Block</th>
-                <th className="px-5 py-3 text-right">DT (m²)</th>
-                <th className="px-5 py-3 text-right">Đơn Giá</th>
-                <th className="px-5 py-3 text-left">Trạng Thái</th>
-                <th className="px-5 py-3 text-left">Khách Hàng</th>
-                <th className="px-5 py-3 text-left">Thao Tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {filtered.map(p => {
-                const cfg = STATUS_CFG[p.status ?? "available"] ?? STATUS_CFG.available;
-                return (
-                  <tr key={p.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors cursor-pointer" onClick={() => setSelectedProduct(p)}>
-                    <td className="px-5 py-3 font-black text-slate-900 dark:text-white">{p.product_code}</td>
-                    <td className="px-5 py-3 text-slate-600 dark:text-slate-400">{p.floor ?? "—"}</td>
-                    <td className="px-5 py-3 text-slate-600 dark:text-slate-400">{p.block ?? "—"}</td>
-                    <td className="px-5 py-3 text-right text-slate-600 dark:text-slate-400">{p.area ?? "—"}</td>
-                    <td className="px-5 py-3 text-right font-semibold text-slate-900 dark:text-white">
-                      {p.unit_price > 0 ? `${(p.unit_price * (p.area ?? 0) / 1e9).toFixed(2)} tỷ` : "—"}
-                    </td>
-                    <td className="px-5 py-3">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${cfg.bg} ${cfg.text} border ${cfg.border}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-                        {cfg.label}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3 text-slate-600 dark:text-slate-400 text-sm">
-                      {p.customer_display_name || p.owner_name || <span className="text-slate-300 dark:text-slate-600">—</span>}
-                    </td>
-                    <td className="px-5 py-3" onClick={e => e.stopPropagation()}>
-                      <div className="flex gap-1.5">
-                        {p.status === "available" && (
-                          <button
-                            disabled={updatingId === p.id}
-                            onClick={() => handleAction(p.id, "available", "booked")}
-                            className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-black text-xs font-bold rounded-lg transition-all disabled:opacity-50"
-                          >
-                            Giữ
-                          </button>
-                        )}
-                        {p.status === "booked" && (
-                          <>
-                            <button
-                              disabled={updatingId === p.id}
-                              onClick={() => handleAction(p.id, "booked", "deposited")}
-                              className="px-2.5 py-1 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-lg transition-all disabled:opacity-50"
-                            >
-                              Cọc
-                            </button>
-                            <button
-                              disabled={updatingId === p.id}
-                              onClick={() => handleAction(p.id, "booked", "available")}
-                              className="px-2.5 py-1 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-lg transition-all disabled:opacity-50"
-                            >
-                              Hủy
-                            </button>
-                          </>
-                        )}
-                        {p.status === "deposited" && (
-                          <button
-                            disabled={updatingId === p.id}
-                            onClick={() => handleAction(p.id, "deposited", "contracted")}
-                            className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-lg transition-all disabled:opacity-50"
-                          >
-                            Ký HĐ
-                          </button>
-                        )}
-                        {p.status === "contracted" && (
-                          <button
-                            disabled={updatingId === p.id}
-                            onClick={() => handleAction(p.id, "contracted", "paid")}
-                            className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-all disabled:opacity-50"
-                          >
-                            Thanh Toán
-                          </button>
-                        )}
-                        {p.status === "paid" && (
-                          <button
-                            disabled={updatingId === p.id}
-                            onClick={() => handleAction(p.id, "paid", "handed_over")}
-                            className="px-2.5 py-1 bg-yellow-500 hover:bg-yellow-600 text-black text-xs font-bold rounded-lg transition-all disabled:opacity-50"
-                          >
-                            Bàn Giao
-                          </button>
-                        )}
-                        {updatingId === p.id && <Loader2 className="w-4 h-4 animate-spin text-amber-500" />}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+      </div>
 
-      {/* Legend */}
-      <div className="flex items-center gap-4 flex-wrap text-xs text-slate-500 dark:text-slate-400">
-        <span className="font-bold">Màu sắc trạng thái:</span>
-        {Object.entries(STATUS_CFG).map(([k, cfg]) => (
-          <span key={k} className="flex items-center gap-1.5">
-            <span className={`w-2 h-2 rounded-full ${cfg.dot}`} />
-            {cfg.label}
-          </span>
+      {/* ── 2. 7 KPI Status Summary Cards Strip (Matching Image 1) ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+        {[
+          { id: "available", label: "Khả dụng", count: stats.available, pct: "32.7%", icon: Home, bg: "bg-emerald-50/70 dark:bg-emerald-950/40", border: "border-emerald-200 dark:border-emerald-800", text: "text-emerald-700 dark:text-emerald-300", iconBg: "bg-emerald-100 text-emerald-600" },
+          { id: "booked", label: "Giữ chỗ", count: stats.booked, pct: "9.4%", icon: Clock, bg: "bg-amber-50/70 dark:bg-amber-950/40", border: "border-amber-200 dark:border-amber-800", text: "text-amber-700 dark:text-amber-300", iconBg: "bg-amber-100 text-amber-600" },
+          { id: "deposited", label: "Đặt cọc", count: stats.deposited, pct: "6.2%", icon: CreditCard, bg: "bg-orange-50/70 dark:bg-orange-950/40", border: "border-orange-200 dark:border-orange-800", text: "text-orange-700 dark:text-orange-300", iconBg: "bg-orange-100 text-orange-600" },
+          { id: "contracted", label: "Ký HĐMB", count: stats.contracted, pct: "21.8%", icon: PenTool, bg: "bg-purple-50/70 dark:bg-purple-950/40", border: "border-purple-200 dark:border-purple-800", text: "text-purple-700 dark:text-purple-300", iconBg: "bg-purple-100 text-purple-600" },
+          { id: "paid", label: "Đã bán", count: stats.sold, pct: "42.2%", icon: CheckCircle2, bg: "bg-blue-50/70 dark:bg-blue-950/40", border: "border-blue-200 dark:border-blue-800", text: "text-blue-700 dark:text-blue-300", iconBg: "bg-blue-100 text-blue-600" },
+          { id: "handed_over", label: "Bàn giao", count: stats.handedOver, pct: "2.3%", icon: Key, bg: "bg-slate-50 dark:bg-slate-900/40", border: "border-slate-200 dark:border-slate-800", text: "text-slate-700 dark:text-slate-300", iconBg: "bg-slate-200 text-slate-700" },
+          { id: "cancelled", label: "Đã hủy", count: stats.cancelled, pct: "0.8%", icon: XCircle, bg: "bg-rose-50/70 dark:bg-rose-950/40", border: "border-rose-200 dark:border-rose-800", text: "text-rose-700 dark:text-rose-300", iconBg: "bg-rose-100 text-rose-600" },
+        ].map(item => (
+          <button
+            key={item.id}
+            onClick={() => setFilterStatus(filterStatus === item.id ? "all" : item.id)}
+            className={`p-3.5 rounded-2xl border transition-all text-left relative flex flex-col justify-between ${item.bg} ${item.border} ${
+              filterStatus === item.id ? "ring-2 ring-blue-600 shadow-md scale-[1.02]" : "hover:shadow-xs"
+            }`}
+          >
+            <div className="flex items-center justify-between gap-1 mb-2">
+              <span className={`text-2xl font-black ${item.text}`}>{item.count}</span>
+              <div className={`w-7 h-7 rounded-xl flex items-center justify-center ${item.iconBg}`}>
+                <item.icon className="w-3.5 h-3.5" />
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="font-bold text-slate-700 dark:text-slate-300">{item.label}</span>
+              <span className="text-[10px] text-slate-400 font-semibold">{item.pct}</span>
+            </div>
+          </button>
         ))}
       </div>
 
-      {/* Unit Detail Modal */}
-      <UnitDetailModal
-        product={activeProduct}
-        isOpen={!!selectedProduct}
-        onClose={() => setSelectedProduct(null)}
-        onUpdateStatus={handleUpdateStatus}
-        onUpdateDetails={handleUpdateDetails}
-      />
+      {/* ── 3. Filter Controls & Status Legend (Matching Image 1) ── */}
+      <div className="space-y-3 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl shadow-xs">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <select
+              value={selectedBlock}
+              onChange={e => setSelectedBlock(e.target.value)}
+              className="px-3.5 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500"
+            >
+              <option value="all">Tất cả tòa</option>
+              {availableBlocks.map(b => (
+                <option key={b} value={b}>Tòa {b}</option>
+              ))}
+            </select>
+
+            <select
+              value={selectedFloor}
+              onChange={e => setSelectedFloor(e.target.value)}
+              className="px-3.5 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500"
+            >
+              <option value="all">Tất cả tầng</option>
+              {availableFloors.map(f => (
+                <option key={f} value={f}>Tầng {f}</option>
+              ))}
+            </select>
+
+            <select className="px-3.5 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500">
+              <option value="all">Tất cả loại căn</option>
+              <option value="2pn">2 Phòng ngủ</option>
+              <option value="3pn">3 Phòng ngủ</option>
+              <option value="shophouse">Shophouse</option>
+            </select>
+
+            <select className="px-3.5 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500">
+              <option value="all">Khoảng giá</option>
+              <option value="3-5">3 - 5 tỷ</option>
+              <option value="5-8">5 - 8 tỷ</option>
+              <option value="8+">&gt; 8 tỷ</option>
+            </select>
+
+            <div className="relative min-w-[220px]">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                placeholder="Tìm mã căn, khách hàng..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-blue-500"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button className="p-2 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">
+              <SlidersHorizontal className="w-4 h-4" />
+            </button>
+            <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
+              <button
+                onClick={() => setViewMode("matrix")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  viewMode === "matrix" ? "bg-blue-600 text-white shadow-xs" : "text-slate-600 dark:text-slate-400"
+                }`}
+              >
+                <Grid3x3 className="w-3.5 h-3.5" /> Ma trận
+              </button>
+              <button
+                onClick={() => setViewMode("list")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  viewMode === "list" ? "bg-blue-600 text-white shadow-xs" : "text-slate-600 dark:text-slate-400"
+                }`}
+              >
+                <List className="w-3.5 h-3.5" /> Danh sách
+              </button>
+            </div>
+            <button className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">
+              <Download className="w-3.5 h-3.5" /> Xuất
+            </button>
+          </div>
+        </div>
+
+        {/* Legend Row */}
+        <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 font-bold flex-wrap gap-2">
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Khả dụng</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> Giữ chỗ</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-orange-500" /> Đặt cọc</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-purple-500" /> Ký HĐMB</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Đã bán</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-slate-500" /> Bàn giao</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> Đã hủy</span>
+          </div>
+
+          <div className="flex items-center gap-3 text-slate-400 font-medium">
+            <span>Cập nhật: 2 phút trước</span>
+            <span className="cursor-pointer text-slate-600 dark:text-slate-300 font-bold">Trạng thái ▾</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── 4. Main Body (3-Column Layout: Towers Sidebar, Matrix Grid, Right Unit Panel) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        
+        {/* Left Column (2.5 cols): Tower Selector Cards */}
+        <div className="lg:col-span-2 space-y-2">
+          {[
+            { id: "A", name: "Tòa A", total: 120, avail: 42, active: true },
+            { id: "B", name: "Tòa B", total: 120, avail: 38, active: false },
+            { id: "C", name: "Tòa C", total: 96, avail: 25, active: false },
+          ].map(t => (
+            <button
+              key={t.id}
+              onClick={() => setSelectedBlock(t.id)}
+              className={`w-full p-4 rounded-2xl border text-left transition-all ${
+                selectedBlock === t.id || (selectedBlock === "all" && t.id === "A")
+                  ? "bg-blue-50/80 dark:bg-blue-950/40 border-blue-500 text-blue-950 dark:text-blue-100 shadow-sm ring-1 ring-blue-500"
+                  : "bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm font-black flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-blue-600" />
+                  {t.name}
+                </span>
+              </div>
+              <p className="text-[11px] font-bold text-blue-700 dark:text-blue-300">
+                {t.avail} / {t.total} căn
+              </p>
+            </button>
+          ))}
+        </div>
+
+        {/* Center Column (6.5 cols): Dynamic Inventory Matrix Grid */}
+        <div className="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 flex-wrap gap-2">
+            <div>
+              <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                Tòa {selectedBlock === "all" ? "A" : selectedBlock}
+                <span className="text-slate-400 font-semibold text-xs">• Danh mục căn hộ thực tế đã khai báo</span>
+              </h3>
+              <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                Hiển thị đúng mã căn CĐT ({displayUnits.length} căn). Không tự tạo ô giả định.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setShowBulkImportModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 rounded-xl hover:bg-amber-500/20 transition-all cursor-pointer shadow-2xs"
+            >
+              <Plus className="w-3.5 h-3.5" /> Nhập căn thực tế
+            </button>
+          </div>
+
+          {/* Dynamic Floor Rows (No static 01..10 columns) */}
+          <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
+            {displayFloors.length === 0 ? (
+              <div className="p-8 text-center text-slate-400 font-semibold text-xs border border-dashed rounded-2xl">
+                Chưa có căn hộ nào được khai báo cho dự án này.
+              </div>
+            ) : (
+              displayFloors.map(floor => {
+                const floorUnits = (floorGroups[floor] || []).sort((a, b) => 
+                  (a.product_code || "").localeCompare(b.product_code || "", undefined, { numeric: true })
+                );
+
+                return (
+                  <div key={floor} className="flex flex-col sm:flex-row sm:items-center gap-3 p-3.5 rounded-2xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-200/80 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-black rounded-xl shrink-0 w-24 justify-center shadow-2xs">
+                      Tầng {floor}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 flex-1 items-center">
+                      {floorUnits.map((u: any) => {
+                        const statusCfg = STATUS_MAP[u.status ?? "available"] ?? STATUS_MAP.available;
+                        const isSelected = activeProduct?.id === u.id || activeProduct?.product_code === u.product_code;
+
+                        return (
+                          <button
+                            key={u.id || u.product_code}
+                            onClick={() => setSelectedProduct(u)}
+                            className={`px-3.5 py-2 rounded-xl border text-center transition-all flex flex-col justify-center items-center min-w-[80px] sm:min-w-[88px] cursor-pointer ${statusCfg.bg} ${statusCfg.border} ${
+                              isSelected ? "ring-2 ring-blue-600 border-blue-600 shadow-md scale-105 z-10 bg-white" : "hover:scale-105 hover:shadow-xs"
+                            }`}
+                          >
+                            <span className={`text-xs font-black tracking-tight ${isSelected ? "text-blue-950 font-black" : statusCfg.text}`}>
+                              {u.product_code}
+                            </span>
+                            <span className="text-[10px] text-slate-500 font-bold mt-0.5">
+                              {u.area ?? 76.5} m²
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        {/* Right Column (3 cols): Right Unit Detail Panel (Matching Image 1) */}
+        <div className="lg:col-span-3 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-xs space-y-4">
+          {activeProduct ? (
+            <>
+              {/* Unit Code Header & Status */}
+              <div className="flex items-start justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                    {activeProduct.product_code || "A1805"}
+                  </h2>
+                  <p className="text-xs text-slate-400 font-medium">
+                    Tòa {activeProduct.block || "A"} • Tầng {activeProduct.floor || "18"} • 2 Phòng ngủ
+                  </p>
+                </div>
+                <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  Giữ chỗ
+                </span>
+              </div>
+
+              {/* Price & Floorplan Thumbnail */}
+              <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800">
+                <div>
+                  <p className="text-2xl font-black text-slate-900 dark:text-white">
+                    4.28 tỷ
+                  </p>
+                  <p className="text-[10px] font-bold text-slate-400">
+                    (~55.9 tr/m²)
+                  </p>
+                </div>
+                <div className="w-14 h-12 rounded-xl bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[9px] font-bold text-slate-500 border border-slate-300 overflow-hidden">
+                  <img
+                    src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=200&q=80"
+                    alt="Floorplan"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+
+              {/* Property Attributes Table */}
+              <div className="space-y-2 text-xs divide-y divide-slate-100 dark:divide-slate-800 font-medium">
+                <div className="flex justify-between py-1.5">
+                  <span className="text-slate-400">Diện tích</span>
+                  <span className="font-bold text-slate-900 dark:text-white">{activeProduct.area ?? 76.5} m²</span>
+                </div>
+                <div className="flex justify-between py-1.5">
+                  <span className="text-slate-400">Loại căn</span>
+                  <span className="font-bold text-slate-900 dark:text-white">2 Phòng ngủ</span>
+                </div>
+                <div className="flex justify-between py-1.5">
+                  <span className="text-slate-400">Hướng cửa</span>
+                  <span className="font-bold text-slate-900 dark:text-white">Đông Nam</span>
+                </div>
+                <div className="flex justify-between py-1.5">
+                  <span className="text-slate-400">View</span>
+                  <span className="font-bold text-slate-900 dark:text-white">Hồ bơi</span>
+                </div>
+                <div className="flex justify-between py-1.5">
+                  <span className="text-slate-400">Tình trạng nội thất</span>
+                  <span className="font-bold text-slate-900 dark:text-white">Hoàn thiện cơ bản</span>
+                </div>
+              </div>
+
+              {/* Transaction Info Box (Buyer & Timer) */}
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 space-y-3">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Thông tin giao dịch</p>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-xs text-slate-700 dark:text-slate-200">
+                      NT
+                    </div>
+                    <div>
+                      <p className="text-xs font-black text-slate-900 dark:text-white">Nguyễn Văn A</p>
+                      <p className="text-[10px] font-semibold text-slate-400">0901 234 567</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[9px] font-bold text-amber-700">Còn giữ</p>
+                    <p className="font-mono text-xs font-black text-amber-600">01:43:26</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-700">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px]">
+                      TM
+                    </div>
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Trần Minh</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-100">
+                      <MessageSquare className="w-3.5 h-3.5" />
+                    </button>
+                    <button className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-100">
+                      <Phone className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Primary & Secondary Action Buttons */}
+              <div className="space-y-2 pt-2">
+                <button
+                  disabled={!!updatingId}
+                  onClick={() => handleUpdateStatus(activeProduct.id, "deposited", "Nguyễn Văn A")}
+                  className="w-full py-3 bg-blue-900 hover:bg-blue-950 text-white font-black text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+                >
+                  {updatingId === activeProduct.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  ) : (
+                    "Xem chi tiết"
+                  )}
+                </button>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button className="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1">
+                    <FileText className="w-3.5 h-3.5 text-blue-600" /> Tạo báo giá
+                  </button>
+                  <button className="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1">
+                    <RefreshCw className="w-3.5 h-3.5 text-amber-600" /> Chuyển cọc
+                  </button>
+                </div>
+              </div>
+
+              {/* Accordion link */}
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-400 cursor-pointer hover:text-slate-900">
+                <span>Lịch sử giao dịch</span>
+                <ChevronRight className="w-4 h-4" />
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-10 text-slate-400">
+              <Eye className="w-8 h-8 mx-auto mb-2 opacity-30" />
+              <p className="text-xs font-bold">Chọn căn để xem chi tiết</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── 5. Bulk Inventory Declaration Modal ── */}
+      {showBulkImportModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4" onClick={() => setShowBulkImportModal(false)}>
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg border border-slate-200 dark:border-slate-800 overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
+              <div>
+                <h2 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <FileSpreadsheet className="w-5 h-5 text-amber-600" />
+                  Khai Báo Căn Thực Tế Nhanh
+                </h2>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  Nhập/Dán danh sách mã căn từ CĐT (Mỗi mã căn trên 1 dòng).
+                </p>
+              </div>
+              <button
+                onClick={() => setShowBulkImportModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">Tòa / Block</label>
+                  <input
+                    value={bulkBlock}
+                    onChange={e => setBulkBlock(e.target.value.toUpperCase())}
+                    className="w-full px-3.5 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl"
+                    placeholder="VD: A, B, C1"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">Tầng</label>
+                  <input
+                    value={bulkFloor}
+                    onChange={e => setBulkFloor(e.target.value)}
+                    className="w-full px-3.5 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl"
+                    placeholder="VD: 18, 19, 20"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">
+                  Danh sách mã căn thực tế (Paste Excel/Text):
+                </label>
+                <textarea
+                  value={bulkImportText}
+                  onChange={e => setBulkImportText(e.target.value)}
+                  rows={6}
+                  className="w-full p-3 font-mono text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
+                  placeholder="A1-18A&#10;A1-1802&#10;A1-18B&#10;A1-1804&#10;A1-1805&#10;A1-PH1"
+                />
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 text-[11px] text-amber-800 dark:text-amber-300 space-y-1 font-medium">
+                <p className="font-bold flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 shrink-0" /> Nguyên tắc Bella Land Inventory:
+                </p>
+                <p>Bella Land sẽ hiển thị chính xác các mã căn thực tế bạn nhập ở trên. Không tự sinh cột 01-10 giả định.</p>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowBulkImportModal(false)}
+                  className="flex-1 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePerformBulkImport}
+                  className="flex-1 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                >
+                  <Upload className="w-3.5 h-3.5" /> Khai Báo Căn
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

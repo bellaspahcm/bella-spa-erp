@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Corinthia, Inter, Playfair_Display, Geist } from 'next/font/google';
+import { Corinthia, Inter, Playfair_Display, Geist, Dancing_Script } from 'next/font/google';
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -9,6 +9,12 @@ export const viewport: Viewport = {
   userScalable: false,
   viewportFit: 'cover',
 };
+
+const dancingScript = Dancing_Script({
+  subsets: ['latin', 'vietnamese'],
+  variable: '--font-cursive',
+  weight: ['400', '500', '600', '700'],
+});
 
 const corinthia = Corinthia({
   weight: ['400', '700'],
@@ -76,7 +82,7 @@ export default async function RootLayout({
   const theme = cookieStore.get("theme")?.value || "light";
 
   return (
-    <html lang="vi" className={cn("h-full", "antialiased", theme === "dark" ? "dark" : "", corinthia.variable, playfair.variable, inter.variable, "font-sans", geist.variable)} suppressHydrationWarning>
+    <html lang="vi" className={cn("h-full", "antialiased", theme === "dark" ? "dark" : "", dancingScript.variable, corinthia.variable, playfair.variable, inter.variable, "font-sans", geist.variable)} suppressHydrationWarning>
       <head>
         <meta name="theme-color" content="#f8fafc" />
         <Script

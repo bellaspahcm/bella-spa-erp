@@ -1,5 +1,5 @@
 'use client';
-/* Quản lý Bảng Hàng Căn Hộ & Dự Án Bất Động Sản */
+/* Quản lý Bảng Hàng Căn Hộ & Dự Án Bất Động Sản - Bella Land V2 */
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { Bell, RefreshCw, Zap, AlertTriangle, FileSignature } from 'lucide-react';
@@ -245,19 +245,26 @@ export default function RealEstateDashboardPage() {
   const monogram = user?.full_name ? user.full_name.substring(0, 2).toUpperCase() : 'AD';
 
   return (
-    <div className="p-6 w-full space-y-6">
+    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
+      {/* Breadcrumbs */}
+      <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
+        <span>Bella Land</span>
+        <span>/</span>
+        <span className="text-slate-900 dark:text-white font-bold">Tổng quan</span>
+      </div>
+
       {/* Premium Dashboard Welcome Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800/80 shadow-sm transition-all">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs transition-all">
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold text-lg border border-primary/20 shadow-sm select-none">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 font-bold text-lg border border-amber-200/60 dark:border-amber-900/50 shadow-2xs select-none">
             {monogram}
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-              Chào mừng trở lại, <span className="text-primary font-extrabold">{user?.full_name || 'Admin'}</span>
+            <h1 className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+              Chào mừng trở lại, <span className="text-amber-600 dark:text-amber-400">{user?.full_name || 'Admin'}</span>
             </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-              Hệ thống quản lý bất động sản <span className="font-semibold text-slate-700 dark:text-slate-200">{tenantContext?.tenantName || 'Bella Real Estate'}</span>
+            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+              Hệ thống quản lý bất động sản <span className="font-semibold text-slate-700 dark:text-slate-200">{tenantContext?.tenantName || 'Bella Land'}</span>
             </p>
           </div>
         </div>

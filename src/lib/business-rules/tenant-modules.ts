@@ -106,8 +106,8 @@ export const DEFAULT_CLEANING_TENANT_BRAND_THEME: TenantBrandTheme = {
 export const DEFAULT_REAL_ESTATE_TENANT_BRAND_THEME: TenantBrandTheme = {
   brandName: '',
   logoUrl: '',
-  primaryColor: '#1E3A8A', // Navy 900 - professional real estate navy
-  accentColor: '#D97706', // Amber 600 - gold accent
+  primaryColor: '#0F172A', // Slate 900 - clean enterprise navy
+  accentColor: '#D97706', // Amber 600 - rich gold accent
   portalDisplayName: '',
   invoiceDisplayName: '',
   stylePreset: 'luxury_navy',

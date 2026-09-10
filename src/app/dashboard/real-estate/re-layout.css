@@ -6,66 +6,53 @@
  * Spa / Babycare / Industrial Cleaning tenants never load this file.
  */
 
-/* ─── Design Tokens ─────────────────────────────────────────────────────────── */
+/* ─── Design Tokens V2 — Enterprise Real Estate x Financial Dashboard ─── */
 [data-re-layout] {
-  --re-navy:         #0f172a; /* Clean high-contrast slate-900 */
+  --re-navy:         #0f172a; /* Slate-900 primary text & dark accent */
   --re-navy-mid:     #1e293b;
   --re-navy-light:   #334155;
-  --re-gold:         #b45309; /* Compliant AAA text contrast amber */
-  --re-gold-light:   #d97706;
-  --re-gold-pale:    #fef3c7;
+  --re-gold:         #d97706; /* Amber-600 gold accent */
+  --re-gold-dark:    #b45309;
+  --re-gold-pale:    #fffbeb;
   --re-surface:      #ffffff;
-  --re-border:       #e2e8f0; /* Crisp slate-200 border */
+  --re-bg-warm:      #f6f7f9; /* Warm gray enterprise canvas */
+  --re-border:       #e2e8f0; /* Slate-200 border */
   --re-border-soft:  #f1f5f9; /* Slate-100 border */
-  --re-shadow-gold:  0 10px 15px -3px rgba(217, 119, 6, 0.1), 0 4px 6px -2px rgba(217, 119, 6, 0.05);
-  --re-shadow-card:  0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  --re-radius:       20px;
-  --re-radius-sm:    12px;
+  --re-shadow-sm:    0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02);
+  --re-shadow-card:  0 4px 6px -1px rgba(15, 23, 42, 0.03), 0 2px 4px -2px rgba(15, 23, 42, 0.02);
+  --re-radius:       16px;
+  --re-radius-sm:    10px;
 }
 
 /* ─── Root Background ────────────────────────────────────────────────────────── */
 .re-layout-root {
-  background:
-    radial-gradient(circle at 10% 20%, rgba(243, 244, 246, 0.8) 0%, rgba(229, 231, 235, 0.3) 90%),
-    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  background: var(--re-bg-warm);
   min-height: 100vh;
 }
 
 html.dark .re-layout-root {
-  background:
-    radial-gradient(circle at 10% 20%, rgba(15, 23, 42, 0.85) 0%, rgba(9, 15, 32, 0.95) 90%),
-    linear-gradient(135deg, #0b1329 0%, #020617 100%);
+  background: #090d16;
 }
 
 /* ─── Page Headers ───────────────────────────────────────────────────────────── */
 [data-re-layout] h1 {
   color: var(--re-navy);
   font-weight: 800;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.02em;
 }
 
 [data-re-layout] h1 svg {
   color: var(--re-gold);
 }
 
-/* ─── Stat / KPI Cards ───────────────────────────────────────────────────────── */
+/* ─── Stat / KPI Summaries ───────────────────────────────────────────────────── */
 [data-re-layout] .re-stat-card {
-  background: linear-gradient(135deg, #ffffff 0%, #faf6ee 100%);
-  border: 1px solid var(--re-border-soft);
+  background: var(--re-surface);
+  border: 1px solid var(--re-border);
   border-radius: var(--re-radius);
-  box-shadow: var(--re-shadow-card);
+  box-shadow: var(--re-shadow-sm);
   position: relative;
   overflow: hidden;
-}
-
-[data-re-layout] .re-stat-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--re-gold), var(--re-gold-light));
 }
 
 /* ─── Generic Cards ──────────────────────────────────────────────────────────── */
@@ -73,13 +60,13 @@ html.dark .re-layout-root {
   background: var(--re-surface);
   border: 1px solid var(--re-border);
   border-radius: var(--re-radius);
-  box-shadow: var(--re-shadow-card);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  box-shadow: var(--re-shadow-sm);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 [data-re-layout] .re-card:hover {
-  box-shadow: var(--re-shadow-gold);
-  transform: translateY(-2px);
+  border-color: rgba(217, 119, 6, 0.3);
+  box-shadow: var(--re-shadow-card);
 }
 
 /* ─── Gold Badge ─────────────────────────────────────────────────────────────── */

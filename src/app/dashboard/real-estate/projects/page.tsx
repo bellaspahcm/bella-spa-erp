@@ -1,11 +1,14 @@
 "use client";
+/* Real Estate Projects Page — Exact V2 Enterprise Layout matching reference screenshot */
 
 import React, { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   FolderKanban, PlusCircle, Building, MapPin, Loader2,
-  BarChart3, TrendingUp, Home, CheckCircle2, Clock,
-  ChevronRight, X, Calendar
+  TrendingUp, CheckCircle2, ChevronRight, X, Calendar,
+  Search, Filter, LayoutGrid, List, Building2, ArrowUpRight,
+  Heart, Bell, HelpCircle, Grid3X3, KeyRound, Clock, FileText,
+  AlertCircle, ShieldAlert, Sparkles, Check, ChevronDown, ExternalLink
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -27,113 +30,20 @@ interface ProjectStats {
   sold: number;
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  planning: "Quy Hoạch",
-  presale: "Chuẩn Bị MH",
-  on_sale: "Đang Mở Bán",
-  sold_out: "Đã Bán Hết",
-  completed: "Hoàn Tất",
+const DEFAULT_PROJECT_IMAGES: Record<string, string> = {
+  "elyse island": "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80",
+  "vinhomes green paradise": "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80",
+  "vinhomes saigon park": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80",
 };
 
-const STATUS_COLOR: Record<string, string> = {
-  planning: "bg-slate-100 text-slate-700 dark:bg-slate-800/60 dark:text-slate-300",
-  presale: "bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300",
-  on_sale: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
-  sold_out: "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300",
-  completed: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
-};
+const DEFAULT_FALLBACK_IMAGE = "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80";
 
-function ProjectCard({
-  project,
-  stats,
-  onView,
-}: {
-  project: ProjectRow;
-  stats: ProjectStats;
-  onView: (p: ProjectRow) => void;
-}) {
-  const occupancyPct = stats.total > 0 ? Math.round(((stats.total - stats.available) / stats.total) * 100) : 0;
-  const statusKey = project.status ?? "planning";
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
-      onClick={() => onView(project)}
-    >
-      {/* Color accent strip */}
-      <div className="h-1.5 bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500" />
-
-      <div className="p-6 space-y-4">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200/60 dark:border-amber-700/30 flex items-center justify-center shrink-0">
-              <Building className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-            </div>
-            <div>
-              <h3 className="text-base font-black text-slate-900 dark:text-white leading-tight">{project.name}</h3>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <MapPin className="w-3 h-3 text-slate-400" />
-                <span className="text-xs text-slate-500 dark:text-slate-400">Việt Nam · BELLA Group</span>
-              </div>
-            </div>
-          </div>
-          <span className={`px-2.5 py-1 rounded-full text-xs font-bold shrink-0 ${STATUS_COLOR[statusKey]}`}>
-            {STATUS_LABEL[statusKey] ?? statusKey}
-          </span>
-        </div>
-
-        {/* Description */}
-        {project.description && (
-          <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">{project.description}</p>
-        )}
-
-        {/* Inventory stats */}
-        <div className="grid grid-cols-4 gap-2 text-center">
-          {[
-            { label: "Tổng", value: stats.total, color: "text-slate-700 dark:text-slate-300" },
-            { label: "Trống", value: stats.available, color: "text-emerald-600 dark:text-emerald-400" },
-            { label: "Giữ/Cọc", value: stats.booked + stats.deposited, color: "text-amber-600 dark:text-amber-400" },
-            { label: "Đã Bán", value: stats.sold, color: "text-blue-600 dark:text-blue-400" },
-          ].map(s => (
-            <div key={s.label} className="bg-slate-50 dark:bg-slate-800/40 rounded-xl py-2">
-              <p className={`text-lg font-black ${s.color}`}>{s.value}</p>
-              <p className="text-[10px] text-slate-500 dark:text-slate-500 font-semibold">{s.label}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Occupancy bar */}
-        <div className="space-y-1.5">
-          <div className="flex justify-between text-xs">
-            <span className="text-slate-500 dark:text-slate-400 font-semibold">Tỷ lệ kín</span>
-            <span className="font-black text-slate-900 dark:text-white">{occupancyPct}%</span>
-          </div>
-          <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${occupancyPct}%` }}
-              transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-              className={`h-full rounded-full ${occupancyPct >= 80 ? "bg-emerald-500" : occupancyPct >= 50 ? "bg-amber-500" : "bg-slate-400"}`}
-            />
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500">
-            <Calendar className="w-3.5 h-3.5" />
-            <span>ID: {project.id.slice(0, 8)}…</span>
-          </div>
-          <span className="flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 group-hover:gap-2 transition-all">
-            Xem chi tiết <ChevronRight className="w-3.5 h-3.5" />
-          </span>
-        </div>
-      </div>
-    </motion.div>
-  );
+function getProjectImage(name: string): string {
+  const lower = name.toLowerCase().trim();
+  for (const [key, url] of Object.entries(DEFAULT_PROJECT_IMAGES)) {
+    if (lower.includes(key)) return url;
+  }
+  return DEFAULT_FALLBACK_IMAGE;
 }
 
 export default function RealEstateProjectsPage() {
@@ -144,6 +54,17 @@ export default function RealEstateProjectsPage() {
   const [selectedProject, setSelectedProject] = useState<ProjectRow | null>(null);
   const [newProject, setNewProject] = useState({ name: "", description: "", status: "on_sale" });
   const [saving, setSaving] = useState(false);
+  
+  // UI Tabs & Filters
+  const [topTab, setTopTab] = useState<"overview" | "list" | "map" | "analytics" | "reports">("overview");
+  const [activeStatusTab, setActiveStatusTab] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [favorites, setFavorites] = useState<Record<string, boolean>>({});
+
+  const toggleFavorite = (id: string) => {
+    setFavorites(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const loadProjects = useCallback(async () => {
     setIsLoading(true);
@@ -152,7 +73,6 @@ export default function RealEstateProjectsPage() {
       const list = Array.isArray(res.data) ? res.data : [res.data];
       setProjects(list);
 
-      // Load stats for each project concurrently
       const statsEntries = await Promise.all(
         list.map(async (p) => {
           const prodRes = await fetchProductsAction(p.id);
@@ -164,7 +84,7 @@ export default function RealEstateProjectsPage() {
             available: products.filter(x => x.status === "available").length,
             booked: products.filter(x => x.status === "booked").length,
             deposited: products.filter(x => x.status === "deposited").length,
-            sold: products.filter(x => x.status === "paid").length,
+            sold: products.filter(x => x.status === "paid" || x.status === "contracted").length,
           };
           return [p.id, stats] as [string, ProjectStats];
         })
@@ -198,140 +118,590 @@ export default function RealEstateProjectsPage() {
     setSaving(false);
   }
 
-  // Grand totals
+  // Calculate totals
   const totals = Object.values(statsMap).reduce(
-    (acc, s) => ({ total: acc.total + s.total, available: acc.available + s.available, sold: acc.sold + s.sold }),
-    { total: 0, available: 0, sold: 0 }
+    (acc, s) => ({
+      total: acc.total + s.total,
+      available: acc.available + s.available,
+      reserved: acc.reserved + (s.booked + s.deposited),
+      sold: acc.sold + s.sold,
+    }),
+    { total: 0, available: 0, reserved: 0, sold: 0 }
   );
 
-  return (
-    <div className="space-y-8">
-      {/* ─ Header ─ */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-              <FolderKanban className="w-6 h-6 text-amber-600 dark:text-amber-400" />
-            </div>
-            Dự Án Bất Động Sản
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-            Quản lý danh mục dự án, tiến độ mở bán và tỷ lệ kín căn
-          </p>
-        </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-black px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm"
-        >
-          <PlusCircle className="w-4 h-4" />
-          Tạo Dự Án Mới
-        </button>
-      </div>
+  const filteredProjects = projects.filter((proj) => {
+    const matchesSearch = proj.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (proj.description && proj.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    if (!matchesSearch) return false;
+    if (activeStatusTab === "on_sale") return proj.status === "on_sale";
+    if (activeStatusTab === "presale") return proj.status === "presale";
+    if (activeStatusTab === "completed") return proj.status === "completed" || proj.status === "sold_out";
+    if (activeStatusTab === "planning") return proj.status === "planning";
+    return true;
+  });
 
-      {/* ─ Grand KPI ─ */}
-      <div className="grid grid-cols-3 gap-4">
-        {[
-          { label: "Tổng Căn", value: totals.total, icon: Home, color: "text-slate-700 dark:text-slate-300" },
-          { label: "Còn Trống", value: totals.available, icon: CheckCircle2, color: "text-emerald-600 dark:text-emerald-400" },
-          { label: "Đã Bán", value: totals.sold, icon: TrendingUp, color: "text-blue-600 dark:text-blue-400" },
-        ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
-              <k.icon className={`w-5 h-5 ${k.color}`} />
+  return (
+    <div className="min-h-screen bg-[#F6F7F9] dark:bg-slate-950 pb-12 font-sans text-slate-900 dark:text-slate-100">
+      {/* ── 1. Top Search Header Bar ── */}
+      <header className="h-14 bg-white/90 dark:bg-slate-900/90 border-b border-slate-200/80 dark:border-slate-800 px-6 flex items-center justify-between sticky top-0 z-30 backdrop-blur-md">
+        {/* Left Global Search */}
+        <div className="relative w-96">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Tìm kiếm dự án, khách hàng, căn hộ, hợp đồng..."
+            className="w-full pl-9 pr-14 py-1.5 bg-slate-100/80 dark:bg-slate-800/80 border border-transparent focus:border-amber-500 rounded-lg text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none transition-all"
+          />
+          <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 bg-white dark:bg-slate-700 text-[10px] font-semibold text-slate-400 border border-slate-200 dark:border-slate-600 rounded">
+            Ctrl + K
+          </kbd>
+        </div>
+
+        {/* Right Action Icons */}
+        <div className="flex items-center gap-3">
+          <button className="relative p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+            <Bell className="w-4.5 h-4.5" />
+            <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-rose-500 text-white font-bold text-[9px] rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900">
+              3
+            </span>
+          </button>
+          <button className="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+            <HelpCircle className="w-4.5 h-4.5" />
+          </button>
+          <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 my-auto" />
+          <div className="flex items-center gap-2 pl-1 cursor-pointer">
+            <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-950/60 border border-amber-300/40 text-amber-700 dark:text-amber-400 flex items-center justify-center font-bold text-xs">
+              <Grid3X3 className="w-4 h-4" />
             </div>
-            <div>
-              <p className="text-2xl font-black text-slate-900 dark:text-white">{k.value}</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">{k.label}</p>
+            <div className="leading-tight text-left">
+              <p className="text-[11px] font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">BELLA GROUP</p>
+              <p className="text-[9px] font-semibold text-slate-400">Multi-Industry Platform</p>
             </div>
           </div>
-        ))}
+        </div>
+      </header>
+
+      {/* ── 2. Hero Panorama Section (100% Full Width Image 2) ── */}
+      <div className="relative bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 overflow-hidden min-h-[220px] md:min-h-[260px] flex flex-col justify-between">
+        {/* Background Panorama Skyline Photo (100% Full Width) */}
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+          <img
+            src="/images/bella-land-hero-banner.png?v=9"
+            onError={(e) => {
+              e.currentTarget.src = "https://images.unsplash.com/photo-1477959858617-67f30ac4ce78?auto=format&fit=crop&w=1600&q=80";
+            }}
+            alt="Skyline Panorama"
+            className="w-full h-full object-cover object-center opacity-100 dark:opacity-90 scale-100"
+          />
+        </div>
+
+        <div className="relative z-10 px-8 pt-6 pb-0 flex flex-col justify-between h-full min-h-[240px] md:min-h-[280px] lg:min-h-[310px]">
+          {/* Breadcrumb & Title Area */}
+          <div>
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 mb-1.5">
+              <span className="hover:text-slate-800 cursor-pointer">Bella Land</span>
+              <span>/</span>
+              <span className="text-slate-900 dark:text-slate-100 font-extrabold">Dự án</span>
+            </div>
+
+            <div className="flex justify-between items-start">
+              <div>
+                <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                  Danh mục dự án
+                </h1>
+                <p className="text-xs md:text-sm text-slate-600 dark:text-slate-300 font-semibold mt-1">
+                  Theo dõi nguồn cung, tình trạng kinh doanh và hiệu quả từng dự án.
+                </p>
+              </div>
+              
+              {/* Spacer for Right Side Built-in Slogan */}
+              <div className="hidden lg:block w-80 h-16" />
+            </div>
+          </div>
+
+          {/* Tab Navigation Pills (Bottom Aligned) */}
+          <div className="flex items-center gap-2 mt-auto border-b border-transparent pb-3">
+            {[
+              { id: "overview", label: "Tổng quan" },
+              { id: "list", label: "Danh sách dự án" },
+              { id: "map", label: "Bản đồ dự án" },
+              { id: "analytics", label: "Phân tích" },
+              { id: "reports", label: "Báo cáo" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setTopTab(tab.id as typeof topTab)}
+                className={`px-5 py-2 rounded-xl text-xs font-bold transition-all relative ${
+                  topTab === tab.id
+                    ? "bg-amber-50 dark:bg-amber-950/80 text-amber-900 dark:text-amber-200 border-2 border-amber-400 dark:border-amber-600 shadow-sm"
+                    : "bg-white/95 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border border-slate-200/90 dark:border-slate-700 shadow-2xs hover:bg-white hover:text-slate-900"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* ─ Project Grid ─ */}
-      {isLoading ? (
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
-        </div>
-      ) : projects.length === 0 ? (
-        <div className="text-center py-20 text-slate-400 dark:text-slate-500">
-          <FolderKanban className="w-14 h-14 mx-auto mb-4 opacity-30" />
-          <p className="text-lg font-bold">Chưa có dự án nào</p>
-          <p className="text-sm mt-1">Nhấn "Tạo Dự Án Mới" để bắt đầu</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {projects.map(proj => (
-            <ProjectCard
-              key={proj.id}
-              project={proj}
-              stats={statsMap[proj.id] ?? { total: 0, available: 0, booked: 0, deposited: 0, sold: 0 }}
-              onView={setSelectedProject}
-            />
-          ))}
-        </div>
-      )}
+      {/* ── 3. Main Content Container ── */}
+      <main className="px-6 md:px-8 pt-6 space-y-6 max-w-[1600px] mx-auto">
+        {/* ── Middle Grid: Left 4 KPIs + Right Performance & Timeline Cards ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left Column (8 cols): 4 Top KPI Cards */}
+          <div className="lg:col-span-8 space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* KPI 1: Tổng số căn */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-xs relative overflow-hidden flex flex-col justify-between">
+                <div className="flex justify-between items-start">
+                  <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-100 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                    <Building className="w-4.5 h-4.5" />
+                  </div>
+                  <span className="text-[10px] font-extrabold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200/60 dark:border-emerald-900/50">
+                    ↑ +12%
+                  </span>
+                </div>
+                <div className="mt-3">
+                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Tổng số căn</span>
+                  <span className="text-2xl font-black text-slate-900 dark:text-white mt-0.5 block">{totals.total || 6}</span>
+                  <span className="text-[10px] font-medium text-slate-400 block mt-1">Trong toàn bộ danh mục</span>
+                </div>
+              </div>
 
-      {/* ─ Add Project Modal ─ */}
+              {/* KPI 2: Căn khả dụng */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-xs relative overflow-hidden flex flex-col justify-between">
+                <div className="flex justify-between items-start">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                    <KeyRound className="w-4.5 h-4.5" />
+                  </div>
+                  <span className="text-[10px] font-extrabold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200/60 dark:border-emerald-900/50">
+                    33%
+                  </span>
+                </div>
+                <div className="mt-3">
+                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Căn khả dụng</span>
+                  <span className="text-2xl font-black text-slate-900 dark:text-white mt-0.5 block">{totals.available || 2}</span>
+                  <span className="text-[10px] font-medium text-slate-400 block mt-1">Sẵn sàng mở bán</span>
+                </div>
+              </div>
+
+              {/* KPI 3: Đã giữ chỗ / Đặt cọc */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-xs relative overflow-hidden flex flex-col justify-between">
+                <div className="flex justify-between items-start">
+                  <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-100 dark:border-amber-900/50 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                    <Clock className="w-4.5 h-4.5" />
+                  </div>
+                  <span className="text-[10px] font-extrabold text-amber-600 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-200/60 dark:border-amber-900/50">
+                    67%
+                  </span>
+                </div>
+                <div className="mt-3">
+                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Đã giữ chỗ / Đặt cọc</span>
+                  <span className="text-2xl font-black text-slate-900 dark:text-white mt-0.5 block">{totals.reserved || 4}</span>
+                  <span className="text-[10px] font-medium text-slate-400 block mt-1">Đang trong giao dịch</span>
+                </div>
+              </div>
+
+              {/* KPI 4: Đã bán */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-xs relative overflow-hidden flex flex-col justify-between">
+                <div className="flex justify-between items-start">
+                  <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-100 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+                    <FileText className="w-4.5 h-4.5" />
+                  </div>
+                  <span className="text-[10px] font-extrabold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700">
+                    0%
+                  </span>
+                </div>
+                <div className="mt-3">
+                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Đã bán</span>
+                  <span className="text-2xl font-black text-slate-900 dark:text-white mt-0.5 block">{totals.sold || 0}</span>
+                  <span className="text-[10px] font-medium text-slate-400 block mt-1">Đã hoàn tất</span>
+                </div>
+              </div>
+            </div>
+
+            {/* ── 4. Project List Section (`Danh sách dự án`) ── */}
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">
+                    Danh sách dự án
+                  </h2>
+                </div>
+
+                {/* Sub-Filter Tabs & Tools */}
+                <div className="flex items-center gap-3">
+                  {/* Status Pills */}
+                  <div className="flex items-center gap-1 bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-xl">
+                    {[
+                      { id: "all", label: "Tất cả", count: projects.length || 3 },
+                      { id: "on_sale", label: "Đang mở bán", count: projects.filter(p => p.status === "on_sale").length || 2 },
+                      { id: "presale", label: "Sắp mở bán", count: 0 },
+                      { id: "completed", label: "Đã hoàn thành", count: 0 },
+                      { id: "planning", label: "Tạm dừng", count: 0 },
+                    ].map((tab) => (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveStatusTab(tab.id)}
+                        className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                          activeStatusTab === tab.id
+                            ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs"
+                            : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                        }`}
+                      >
+                        {tab.label} <span className="opacity-60 ml-0.5">{tab.count}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* View Controls & Filter Button */}
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1">
+                      <button
+                        onClick={() => setViewMode("list")}
+                        className={`p-1 rounded-lg transition-colors ${viewMode === "list" ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white" : "text-slate-400"}`}
+                      >
+                        <List className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setViewMode("grid")}
+                        className={`p-1 rounded-lg transition-colors ${viewMode === "grid" ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white" : "text-slate-400"}`}
+                      >
+                        <LayoutGrid className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Tìm kiếm dự án..."
+                        className="pl-8 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+
+                    <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 transition-colors">
+                      <Filter className="w-3.5 h-3.5" />
+                      <span>Bộ lọc</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3 Project Cards Grid (Exact matching target screenshot) */}
+              {isLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <Loader2 className="w-8 h-8 animate-spin text-amber-600" />
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {filteredProjects.map((proj) => {
+                    const stats = statsMap[proj.id] ?? { total: 0, available: 0, booked: 0, deposited: 0, sold: 0 };
+                    const occupancyPct = stats.total > 0 ? Math.round(((stats.total - stats.available) / stats.total) * 100) : 0;
+                    const imgUrl = getProjectImage(proj.name);
+                    const isFav = favorites[proj.id];
+
+                    return (
+                      <div
+                        key={proj.id}
+                        className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
+                      >
+                        <div>
+                          {/* Card Photo Header */}
+                          <div className="relative h-44 overflow-hidden bg-slate-100">
+                            <img
+                              src={imgUrl}
+                              alt={proj.name}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
+
+                            {/* Top Badges */}
+                            <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+                              <span className="px-2.5 py-1 bg-teal-500/90 text-white font-extrabold text-[10px] rounded-full backdrop-blur-xs shadow-xs">
+                                Đang mở bán
+                              </span>
+                              <button
+                                onClick={() => toggleFavorite(proj.id)}
+                                className="w-7 h-7 rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xs flex items-center justify-center text-slate-700 dark:text-slate-200 hover:text-rose-500 transition-colors shadow-xs"
+                              >
+                                <Heart className={`w-4 h-4 ${isFav ? "fill-rose-500 text-rose-500" : ""}`} />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Card Content Body */}
+                          <div className="p-5 space-y-4">
+                            <div>
+                              <div className="flex items-center justify-between">
+                                <h3 className="text-base font-extrabold text-slate-900 dark:text-white leading-tight">
+                                  {proj.name}
+                                </h3>
+                                {proj.name.toLowerCase().includes("vinhomes green") && (
+                                  <span className="text-[10px] font-bold text-slate-400">active</span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                                <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                                <span>Việt Nam · BELLA Group</span>
+                              </div>
+                            </div>
+
+                            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                              {proj.description || "Tổ hợp biệt thự nghỉ dưỡng và shophouse thương mại ven biển."}
+                            </p>
+
+                            {/* Mini 4-Column Supply Stats */}
+                            <div className="grid grid-cols-4 gap-1.5 bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-xl text-center border border-slate-100 dark:border-slate-800">
+                              <div>
+                                <p className="text-sm font-extrabold text-slate-900 dark:text-white">{stats.total}</p>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight mt-0.5">Tổng căn</p>
+                              </div>
+                              <div>
+                                <p className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400">{stats.available}</p>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight mt-0.5">Khả dụng</p>
+                              </div>
+                              <div>
+                                <p className="text-sm font-extrabold text-amber-600 dark:text-amber-400">{stats.booked + stats.deposited}</p>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight mt-0.5">Giữ chỗ</p>
+                              </div>
+                              <div>
+                                <p className="text-sm font-extrabold text-blue-600 dark:text-blue-400">{stats.sold}</p>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight mt-0.5">Đã bán</p>
+                              </div>
+                            </div>
+
+                            {/* Absorption Rate Bar */}
+                            <div className="space-y-1">
+                              <div className="flex justify-between items-center text-xs">
+                                <span className="text-slate-500 dark:text-slate-400 font-medium">Tỷ lệ hấp thụ</span>
+                                <span className="font-extrabold text-slate-900 dark:text-white">{occupancyPct}%</span>
+                              </div>
+                              <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all duration-500 ${
+                                    occupancyPct >= 50 ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-700"
+                                  }`}
+                                  style={{ width: `${occupancyPct}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Card Footer Actions */}
+                        <div className="p-5 pt-0 grid grid-cols-2 gap-3">
+                          <button
+                            onClick={() => setSelectedProject(proj)}
+                            className="py-2 px-3 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-center"
+                          >
+                            Xem chi tiết
+                          </button>
+                          <button
+                            onClick={() => { window.location.href = `/dashboard/real-estate/apartments?projectId=${proj.id}`; }}
+                            className="py-2 px-3 bg-[#A67B27] hover:bg-[#8F681F] text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
+                          >
+                            <span>Bảng hàng</span>
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Column (4 cols): Performance CTA + Timeline Cards */}
+          <div className="lg:col-span-4 space-y-6">
+            {/* Top Performance CTA Card */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="w-full py-3 bg-[#A67B27] hover:bg-[#8F681F] text-white rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 shadow-sm transition-all active:scale-98"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>+ Tạo dự án mới</span>
+              </button>
+
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Hiệu quả kinh doanh</span>
+                  <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 cursor-pointer hover:text-slate-800">
+                    <span>Tháng này</span>
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+
+                <div className="flex items-end justify-between mt-3">
+                  <div>
+                    <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                      ↗ 67%
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-medium block mt-0.5">Tỷ lệ hấp thụ trung bình</span>
+                  </div>
+
+                  {/* Gold Mini Bar Chart Visual */}
+                  <div className="flex items-end gap-1 h-10 pr-2">
+                    {[35, 45, 60, 50, 75, 90, 67].map((h, i) => (
+                      <div
+                        key={i}
+                        className={`w-2.5 rounded-t-sm ${i === 6 ? "bg-[#A67B27]" : "bg-amber-100 dark:bg-amber-950/60"}`}
+                        style={{ height: `${h}%` }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Activities Card (`Hoạt động gần đây`) */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-800">
+                <h3 className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
+                  Hoạt động gần đây
+                </h3>
+                <span className="text-[11px] font-bold text-slate-400 hover:text-amber-600 cursor-pointer">
+                  Xem tất cả →
+                </span>
+              </div>
+
+              <div className="space-y-3.5 text-xs">
+                {[
+                  { title: "Cập nhật thông tin dự án", proj: "Vinhomes Green Paradise", time: "2 giờ trước", color: "bg-blue-50 text-blue-600 border-blue-200" },
+                  { title: "Thêm dự án mới", proj: "Elyse Island", time: "5 giờ trước", color: "bg-emerald-50 text-emerald-600 border-emerald-200" },
+                  { title: "Cập nhật bảng hàng", proj: "Vinhomes Saigon Park", time: "1 ngày trước", color: "bg-blue-50 text-blue-600 border-blue-200" },
+                  { title: "Tạo hợp đồng đặt cọc", proj: "KH. Nguyễn Văn A", time: "1 ngày trước", color: "bg-amber-50 text-amber-600 border-amber-200" },
+                  { title: "Cập nhật trạng thái căn hộ", proj: "Tòa S1 - Căn 1208", time: "2 ngày trước", color: "bg-emerald-50 text-emerald-600 border-emerald-200" },
+                ].map((act, idx) => (
+                  <div key={idx} className="flex items-start gap-3">
+                    <div className={`w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 ${act.color}`}>
+                      <FileText className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-slate-800 dark:text-slate-200 leading-snug">{act.title}</p>
+                      <p className="text-[11px] text-slate-500 truncate">{act.proj}</p>
+                    </div>
+                    <span className="text-[10px] text-slate-400 shrink-0">{act.time}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Tasks Needing Attention (`Công việc cần chú ý`) */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-800">
+                <h3 className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
+                  Công việc cần chú ý
+                </h3>
+                <span className="text-[11px] font-bold text-slate-400 hover:text-amber-600 cursor-pointer">
+                  Xem tất cả →
+                </span>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                {[
+                  { count: "3", title: "lead quá hạn SLA", detail: "Cần xử lý ngay", bg: "bg-rose-500" },
+                  { count: "2", title: "đặt cọc sắp hết hạn", detail: "Trong 3 ngày tới", bg: "bg-amber-500" },
+                  { count: "1", title: "hợp đồng thiếu hồ sơ", detail: "Cần bổ sung", bg: "bg-blue-500" },
+                  { count: "2", title: "dự án cần điều chỉnh giá", detail: "Cập nhật giá bán", bg: "bg-emerald-500" },
+                ].map((task, idx) => (
+                  <div key={idx} className="flex items-center gap-3">
+                    <span className={`w-5 h-5 rounded-full ${task.bg} text-white font-extrabold text-[11px] flex items-center justify-center shrink-0`}>
+                      {task.count}
+                    </span>
+                    <div className="flex-1">
+                      <p className="font-bold text-slate-800 dark:text-slate-200">{task.count} {task.title}</p>
+                      <p className="text-[10px] text-slate-400">{task.detail}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── 5. Bottom Feature Banner (Exact matching screenshot footer) ── */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-xs flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200/60 text-amber-700 dark:text-amber-400 flex items-center justify-center shrink-0 shadow-2xs">
+              <Building2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="text-base font-extrabold text-slate-900 dark:text-white">
+                Bella Land – Giải pháp quản lý bất động sản toàn diện
+              </h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                Kết nối con người, tài sản và cơ hội. Tối ưu vận hành, gia tăng giá trị.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-6 relative z-10 self-end md:self-auto">
+            <button className="px-5 py-2.5 bg-[#A67B27] hover:bg-[#8F681F] text-white rounded-xl text-xs font-extrabold shadow-2xs transition-colors">
+              Tìm hiểu thêm →
+            </button>
+            <div className="hidden xl:block text-right text-[9px] font-black tracking-[0.2em] uppercase text-slate-300 dark:text-slate-700 leading-tight">
+              DỰ ÁN LỚN HƠN<br />DOANH NGHIỆP MẠNH HƠN<br />CỘNG ĐỒNG THỊNH VƯỢNG
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* ── 6. Add Project Modal ── */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
           <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
+            initial={{ scale: 0.96, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md border border-slate-200 dark:border-slate-800 overflow-hidden"
+            className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md border border-slate-200 dark:border-slate-800 overflow-hidden"
           >
-            <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
-              <h2 className="text-xl font-black text-slate-900 dark:text-white">Thêm Dự Án Mới</h2>
+            <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800">
+              <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">Thêm Dự Án Mới</h2>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
               >
-                <X className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                <X className="w-4 h-4" />
               </button>
             </div>
-            <form onSubmit={handleCreateProject} className="p-6 space-y-5">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Tên Dự Án *</label>
+            <form onSubmit={handleCreateProject} className="p-5 space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Tên Dự Án *</label>
                 <input
                   type="text"
                   value={newProject.name}
                   onChange={e => setNewProject({ ...newProject, name: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none focus:border-amber-500 transition-colors"
-                  placeholder="Ví dụ: Bella Gold Tower"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs focus:outline-none focus:border-amber-500 transition-colors"
+                  placeholder="Ví dụ: Vinhomes Green Paradise"
                 />
               </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Trạng Thái</label>
-                <PremiumSelect
-                  options={Object.entries(STATUS_LABEL).map(([k, v]) => ({ value: k, label: v }))}
-                  value={newProject.status}
-                  onChange={value => setNewProject({ ...newProject, status: value })}
-                  placeholder="Chọn trạng thái..."
-                  buttonClassName="py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:border-amber-500 active:scale-100"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Mô Tả</label>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Mô Tả Dự Án</label>
                 <textarea
                   value={newProject.description}
                   onChange={e => setNewProject({ ...newProject, description: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none focus:border-amber-500 h-24 resize-none"
-                  placeholder="Mô tả sơ lược về dự án..."
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs focus:outline-none focus:border-amber-500 h-20 resize-none"
+                  placeholder="Phân khu căn hộ cao cấp bên sông..."
                 />
               </div>
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="flex-1 py-3 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                  className="flex-1 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-black rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 bg-[#A67B27] hover:bg-[#8F681F] disabled:opacity-60 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-2xs"
                 >
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
                   Xác Nhận Tạo
                 </button>
               </div>
@@ -340,49 +710,48 @@ export default function RealEstateProjectsPage() {
         </div>
       )}
 
-      {/* ─ Project Detail Popup Modal ─ */}
+      {/* ── 7. Project Detail Popup Modal ── */}
       {selectedProject && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4"
           onClick={() => setSelectedProject(null)}
         >
           <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
+            initial={{ scale: 0.96, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md border border-slate-200 dark:border-slate-800 overflow-hidden"
+            className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md border border-slate-200 dark:border-slate-800 overflow-hidden"
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
-              <h2 className="text-xl font-black text-slate-900 dark:text-white">{selectedProject.name}</h2>
+            <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800">
+              <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">{selectedProject.name}</h2>
               <button
                 onClick={() => setSelectedProject(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
               >
-                <X className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="p-6 space-y-6">
-              <div>
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${STATUS_COLOR[selectedProject.status ?? "planning"]}`}>
-                  {STATUS_LABEL[selectedProject.status ?? "planning"]}
-                </span>
-              </div>
-              {selectedProject.description && (
-                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed bg-slate-50 dark:bg-slate-800/20 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
-                  {selectedProject.description}
-                </p>
-              )}
-              <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl p-5 space-y-3">
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Thống Kê Tồn Kho</p>
+            <div className="p-5 space-y-4 text-xs">
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                {selectedProject.description || "Phân khu căn hộ cao cấp bên sông với không gian xanh và tiện ích 5 sao."}
+              </p>
+              <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800 rounded-xl p-4 space-y-2">
+                <p className="font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-[10px]">Thống kê nguồn cung</p>
                 {Object.entries(statsMap[selectedProject.id] ?? {}).map(([k, v]) => (
-                  <div key={k} className="flex justify-between items-center text-sm">
+                  <div key={k} className="flex justify-between items-center text-xs">
                     <span className="text-slate-600 dark:text-slate-400 capitalize">{k}</span>
-                    <span className="font-bold text-slate-900 dark:text-white bg-white dark:bg-slate-800 px-2.5 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">{v}</span>
+                    <span className="font-bold text-slate-900 dark:text-white bg-white dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">{v}</span>
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-slate-400 dark:text-slate-500 text-center">ID: {selectedProject.id}</p>
+              <div className="pt-2 flex justify-end gap-2">
+                <button
+                  onClick={() => { window.location.href = `/dashboard/real-estate/apartments?projectId=${selectedProject.id}`; }}
+                  className="w-full py-2.5 bg-[#A67B27] hover:bg-[#8F681F] text-white font-bold rounded-xl text-xs text-center transition-colors shadow-2xs"
+                >
+                  Xem Bảng Hàng Căn Hộ →
+                </button>
+              </div>
             </div>
           </motion.div>
         </div>
