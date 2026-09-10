@@ -18,6 +18,7 @@ import {
 import { fetchProductsAction } from "@/modules/real_estate/actions/productActions";
 import { PremiumSelect } from "@/components/ui/PremiumSelect";
 import { Database } from "@/types/database.types";
+import { downloadPdfReport, downloadCsvReport } from "@/modules/real_estate/utils/exportUtils";
 
 type ProjectRow = Database["public"]["Tables"]["real_estate_projects"]["Row"];
 type ProductRow = Database["public"]["Tables"]["real_estate_products"]["Row"];
@@ -246,7 +247,8 @@ export default function RealEstateProjectsPage() {
 
       {/* ── 3. Main Content Container ── */}
       <main className="px-6 md:px-8 pt-6 space-y-6 max-w-[1600px] mx-auto">
-        {/* ── Middle Grid: Left 4 KPIs + Right Performance & Timeline Cards ── */}
+        {/* Tab 1: Overview View */}
+        {topTab === "overview" && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Column (8 cols): 4 Top KPI Cards */}
           <div className="lg:col-span-8 space-y-6">
@@ -564,7 +566,10 @@ export default function RealEstateProjectsPage() {
                 <h3 className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
                   Hoạt động gần đây
                 </h3>
-                <span className="text-[11px] font-bold text-slate-400 hover:text-amber-600 cursor-pointer">
+                <span 
+                  onClick={() => { window.location.href = "/dashboard/real-estate/global-search"; }} 
+                  className="text-[11px] font-bold text-slate-400 hover:text-amber-600 cursor-pointer"
+                >
                   Xem tất cả →
                 </span>
               </div>
@@ -597,7 +602,10 @@ export default function RealEstateProjectsPage() {
                 <h3 className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
                   Công việc cần chú ý
                 </h3>
-                <span className="text-[11px] font-bold text-slate-400 hover:text-amber-600 cursor-pointer">
+                <span 
+                  onClick={() => { window.location.href = "/dashboard/real-estate/schedules"; }} 
+                  className="text-[11px] font-bold text-slate-400 hover:text-amber-600 cursor-pointer"
+                >
                   Xem tất cả →
                 </span>
               </div>
@@ -623,6 +631,173 @@ export default function RealEstateProjectsPage() {
             </div>
           </div>
         </div>
+        )}
+
+        {/* Tab 2: Full Project List Table View */}
+        {topTab === "list" && (
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-4">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-800">
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Danh sách chi tiết dự án</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Bảng dữ liệu tổng hợp toàn bộ {filteredProjects.length} dự án bất động sản</p>
+              </div>
+              <button onClick={() => setShowAddModal(true)} className="px-4 py-2 bg-[#A67B27] text-white rounded-xl text-xs font-bold shadow-2xs">
+                + Thêm dự án mới
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 uppercase tracking-wider font-extrabold text-[10px] border-b border-slate-200 dark:border-slate-800">
+                    <th className="p-3">Tên dự án</th>
+                    <th className="p-3">Trạng thái</th>
+                    <th className="p-3">Tổng số căn</th>
+                    <th className="p-3">Khả dụng</th>
+                    <th className="p-3">Giữ chỗ / Cọc</th>
+                    <th className="p-3">Đã bán</th>
+                    <th className="p-3">Tỷ lệ hấp thụ</th>
+                    <th className="p-3 text-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {filteredProjects.map((p) => {
+                    const st = statsMap[p.id] || { total: 0, available: 0, booked: 0, deposited: 0, sold: 0 };
+                    const rate = st.total > 0 ? Math.round(((st.total - st.available) / st.total) * 100) : 0;
+                    return (
+                      <tr key={p.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                        <td className="p-3 font-bold text-slate-900 dark:text-white">{p.name}</td>
+                        <td className="p-3">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-400 border border-teal-200 dark:border-teal-800">
+                            {p.status === "on_sale" ? "Đang mở bán" : p.status}
+                          </span>
+                        </td>
+                        <td className="p-3 font-semibold">{st.total}</td>
+                        <td className="p-3 font-semibold text-emerald-600">{st.available}</td>
+                        <td className="p-3 font-semibold text-amber-600">{st.booked + st.deposited}</td>
+                        <td className="p-3 font-semibold text-blue-600">{st.sold}</td>
+                        <td className="p-3 font-bold">{rate}%</td>
+                        <td className="p-3 text-right space-x-2">
+                          <button onClick={() => setSelectedProject(p)} className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-[11px] font-bold hover:bg-slate-200">
+                            Chi tiết
+                          </button>
+                          <button onClick={() => { window.location.href = `/dashboard/real-estate/apartments?projectId=${p.id}`; }} className="px-2.5 py-1 bg-[#A67B27] text-white rounded-lg text-[11px] font-bold">
+                            Bảng hàng →
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 3: Interactive Project Map View */}
+        {topTab === "map" && (
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Bản đồ địa lý dự án (GIS Interactive Map)</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Vị trí quy hoạch, tọa độ và mật độ phân bố danh mục dự án</p>
+              </div>
+              <span className="px-3 py-1 bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-extrabold text-xs rounded-xl border border-blue-200">
+                Hiển thị 3 tọa độ thực tế
+              </span>
+            </div>
+            <div className="relative h-96 bg-slate-100 dark:bg-slate-800/80 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 flex items-center justify-center">
+              <img
+                src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=1200&q=80"
+                alt="Map representation"
+                className="w-full h-full object-cover opacity-80"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-black/30" />
+              {/* Map Pin 1 */}
+              <div className="absolute top-1/3 left-1/4 bg-amber-500 text-white px-3 py-1.5 rounded-xl shadow-lg font-black text-xs flex items-center gap-1.5 border-2 border-white animate-bounce cursor-pointer" onClick={() => setSelectedProject(projects[0])}>
+                <MapPin className="w-4 h-4" /> Vinhomes Green Paradise (1,200 căn)
+              </div>
+              {/* Map Pin 2 */}
+              <div className="absolute top-1/2 left-2/3 bg-teal-500 text-white px-3 py-1.5 rounded-xl shadow-lg font-black text-xs flex items-center gap-1.5 border-2 border-white cursor-pointer" onClick={() => setSelectedProject(projects[1])}>
+                <MapPin className="w-4 h-4" /> Elyse Island (850 căn)
+              </div>
+              {/* Map Pin 3 */}
+              <div className="absolute bottom-1/4 left-1/2 bg-blue-500 text-white px-3 py-1.5 rounded-xl shadow-lg font-black text-xs flex items-center gap-1.5 border-2 border-white cursor-pointer" onClick={() => setSelectedProject(projects[2])}>
+                <MapPin className="w-4 h-4" /> Vinhomes Saigon Park (2,400 căn)
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 4: Analytics & Sales Velocity */}
+        {topTab === "analytics" && (
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-6">
+            <div>
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Phân tích chuyên sâu & Tốc độ hấp thụ (Sales Velocity)</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Biểu đồ so sánh nguồn cung, tỷ lệ lấp đầy và doanh thu dự kiến</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                <span className="text-xs font-bold text-slate-500">Tỷ lệ hấp thụ bình quân</span>
+                <p className="text-3xl font-black text-emerald-600 mt-1">67.4%</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">Tăng +14.2% so với quý trước</p>
+              </div>
+              <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                <span className="text-xs font-bold text-slate-500">Thời gian bán trung bình / sản phẩm</span>
+                <p className="text-3xl font-black text-amber-600 mt-1">18 ngày</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">Rút ngắn 4 ngày nhờ Bella AI Lead Scoring</p>
+              </div>
+              <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                <span className="text-xs font-bold text-slate-500">Giá trị tổng kho kinh doanh</span>
+                <p className="text-3xl font-black text-blue-600 mt-1">12,450 tỷ VNĐ</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">Bao gồm phân khu biệt thự & shophouse</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 5: Reports & Exports */}
+        {topTab === "reports" && (
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Báo cáo tổng hợp dự án & Nguồn cung</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Xuất các báo cáo chuẩn định dạng PDF/Excel cho hội đồng quản trị</p>
+              </div>
+              <button 
+                onClick={() => { window.location.href = "/dashboard/real-estate/reports"; }}
+                className="px-4 py-2 bg-[#A67B27] text-white rounded-xl text-xs font-bold shadow-2xs"
+              >
+                Mở trung tâm báo cáo BI →
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              {[
+                { title: "Báo cáo tiến độ mở bán & Giữ chỗ", type: "PDF · Executive Summary", date: "Cập nhật hôm nay" },
+                { title: "Báo cáo phân bổ sản phẩm theo khoảng giá", type: "CSV · Detailed Ledger", date: "Cập nhật 1 giờ trước" },
+                { title: "Báo cáo hiệu quả sàn F1 / F2 liên kết", type: "PDF · Agency Ranking", date: "Cập nhật hôm nay" },
+                { title: "Báo cáo dòng tiền cọc và thanh toán đợt", type: "CSV · Financial Statement", date: "Cập nhật hôm nay" },
+              ].map((rep, idx) => (
+                <div key={idx} className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                  <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white text-xs">{rep.title}</h4>
+                    <p className="text-[11px] text-slate-400 mt-0.5">{rep.type} · {rep.date}</p>
+                  </div>
+                  <button onClick={() => {
+                    const filename = `${rep.title.replace(/\s+/g, "_")}`;
+                    if (rep.type.includes("PDF")) {
+                      downloadPdfReport(`${filename}.pdf`, rep.title, { Type: rep.type, Date: rep.date });
+                    } else {
+                      downloadCsvReport(`${filename}.csv`, rep.title, ["ProjectCode", "UnitCode", "Status", "Revenue_VND"]);
+                    }
+                    toast.success(`✅ Đã tải tệp báo cáo "${rep.title}" thành công!`);
+                  }} className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-bold hover:bg-slate-100">
+                    Tải về 📥
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── 5. Bottom Feature Banner (Exact matching screenshot footer) ── */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-xs flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
@@ -641,7 +816,10 @@ export default function RealEstateProjectsPage() {
           </div>
 
           <div className="flex items-center gap-6 relative z-10 self-end md:self-auto">
-            <button className="px-5 py-2.5 bg-[#A67B27] hover:bg-[#8F681F] text-white rounded-xl text-xs font-extrabold shadow-2xs transition-colors">
+            <button 
+              onClick={() => setTopTab("analytics")} 
+              className="px-5 py-2.5 bg-[#A67B27] hover:bg-[#8F681F] text-white rounded-xl text-xs font-extrabold shadow-2xs transition-colors"
+            >
               Tìm hiểu thêm →
             </button>
             <div className="hidden xl:block text-right text-[9px] font-black tracking-[0.2em] uppercase text-slate-300 dark:text-slate-700 leading-tight">

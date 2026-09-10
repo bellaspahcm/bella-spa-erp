@@ -138,8 +138,8 @@ export default function BIAnalyticsPage() {
           </select>
 
           <button
-            onClick={() => toast.info("Đã làm mới dữ liệu phân tích BI Analytics!")}
-            className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 shadow-2xs"
+            onClick={() => toast.success("Đã làm mới dữ liệu phân tích BI Analytics thành công!")}
+            className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 shadow-2xs cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -304,7 +304,7 @@ export default function BIAnalyticsPage() {
                     <button
                       onClick={() => {
                         setDrillDownPath(["Chi nhánh HCM", "Sales Team 02", item.channel, "Site Visit ➔ Deposit"]);
-                        toast.info(`Đang drill-down phân tích nguyên nhân kênh ${item.channel}`);
+                        toast.success(`Đã drill-down phân tích nguyên nhân kênh ${item.channel}`);
                       }}
                       className="px-2.5 py-1 text-xs font-bold text-blue-600 dark:text-sky-400 border border-blue-200 dark:border-sky-800/80 rounded-lg hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors"
                     >

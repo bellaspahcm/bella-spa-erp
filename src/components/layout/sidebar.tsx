@@ -1122,7 +1122,7 @@ export function Sidebar() {
                 <motion.div
                   whileHover={{ x: 2 }}
                   className={cn(
-                    "flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-300 relative group cursor-pointer border",
+                    "flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-300 relative group cursor-pointer border border-transparent",
                     isBellaEducationShell && isActive
                       ? activeEduClass
                       : isBellaEducationShell
@@ -1130,7 +1130,10 @@ export function Sidebar() {
                       : (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell || isBellaHealthcareShell) && "beauty-erp-nav-item",
                     (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell || isBellaHealthcareShell) && isActive && "beauty-erp-nav-item-active",
                     !isBellaEducationShell && (
-                      isActive
+                      // Real estate: CSS owns all visual state — emit NO color/bg classes
+                      isRealEstateShell
+                        ? ""
+                        : isActive
                         ? (isBellaAutoShell || isBellaHealthcareShell)
                           ? "bg-white text-[#042f2e] border-amber-400/60 shadow-[0_2px_10px_rgba(0,0,0,0.18)] ring-1 ring-amber-400/40 backdrop-blur-md font-bold"
                           : "bg-white text-primary border-primary/20 shadow-[0_2px_10px_rgba(219,39,119,0.12)] ring-1 ring-primary/20 dark:bg-[#5D1C34]/30 dark:text-[#EFE9E1] dark:border-[#A67D44]/40 dark:ring-[#A67D44]/20 dark:shadow-none"
@@ -1144,7 +1147,10 @@ export function Sidebar() {
                     "w-4 h-4 transition-all duration-300 shrink-0",
                     isBellaEducationShell
                       ? (isActive ? activeEduIconClass : "text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300")
-                      : (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell || isBellaHealthcareShell)
+                      // Real estate: CSS owns icon color — emit NO color classes, only scale
+                      : isRealEstateShell
+                      ? (isActive ? "scale-105" : "")
+                      : (isBeautySpaShell || isIndustrialCleaningShell || isBellaAutoShell || isBellaHealthcareShell)
                       ? (isActive ? "text-[#042f2e] scale-105" : (isBellaAutoShell || isBellaHealthcareShell) ? "text-slate-200 opacity-90 group-hover:text-amber-300 group-hover:scale-110" : "text-inherit opacity-85 group-hover:text-white group-hover:opacity-100")
                       : (isActive ? "text-primary dark:text-[#A67D44] scale-105" : "text-[#A07888] dark:text-[#CDBCAB]/80 group-hover:text-primary dark:group-hover:text-[#A67D44]")
                   )} />
@@ -1152,7 +1158,10 @@ export function Sidebar() {
                     "text-[12.5px] tracking-tight transition-all duration-300 truncate",
                     isBellaEducationShell
                       ? (isActive ? activeEduTextClass : "font-medium text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white")
-                      : (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell || isBellaHealthcareShell)
+                      // Real estate: CSS owns span color — emit NO color classes, only weight hint
+                      : isRealEstateShell
+                      ? (isActive ? "font-extrabold" : "font-semibold")
+                      : (isBeautySpaShell || isIndustrialCleaningShell || isBellaAutoShell || isBellaHealthcareShell)
                       ? (isActive ? "font-extrabold text-[#042f2e]" : (isBellaAutoShell || isBellaHealthcareShell) ? "font-semibold text-slate-100 group-hover:text-white" : "font-semibold text-inherit group-hover:text-white")
                       : (isActive ? "font-extrabold text-primary dark:text-[#EFE9E1]" : "font-semibold")
                   )}>{item.label}</span>
@@ -1172,7 +1181,9 @@ export function Sidebar() {
                         "absolute right-3.5 w-1.5 h-1.5 rounded-full",
                         (isBellaAutoShell || isBellaHealthcareShell)
                           ? "bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.9)]"
-                          : (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell)
+                          : isRealEstateShell
+                          ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]"
+                          : (isBeautySpaShell || isIndustrialCleaningShell)
                           ? "bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"
                           : "bg-primary dark:bg-[#A67D44] shadow-[0_0_6px_rgba(219,39,119,0.4)] dark:shadow-[0_0_6px_rgba(166,125,68,0.4)]"
                       )}

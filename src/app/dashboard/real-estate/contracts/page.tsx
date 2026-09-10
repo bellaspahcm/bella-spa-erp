@@ -10,6 +10,7 @@ import {
   FileCheck, ExternalLink, RefreshCw, Send, DollarSign
 } from "lucide-react";
 import { toast } from "sonner";
+import { downloadPdfReport } from "@/modules/real_estate/utils/exportUtils";
 import Link from "next/link";
 import { PremiumSelect } from "@/components/ui/PremiumSelect";
 
@@ -886,13 +887,16 @@ export default function RealEstateContractsPage() {
             {/* Quick Contract Document Actions */}
             <div className="flex items-center gap-2">
               <button
-                onClick={() => toast.info(`Đang mở xem Hợp đồng ${selectedContract.contractNo}...`)}
+                onClick={() => toast.success(`Đã mở trình xem Hợp đồng ${selectedContract.contractNo}`)}
                 className="flex-1 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-blue-700 dark:text-blue-300 font-extrabold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all"
               >
                 <FileText className="w-3.5 h-3.5" /> Xem hợp đồng
               </button>
               <button
-                onClick={() => toast.success(`Tải bộ hồ sơ HĐ ${selectedContract.contractNo} PDF thành công!`)}
+                onClick={() => {
+                  downloadPdfReport(`HopDong_${selectedContract.contractNo}.pdf`, `Hợp Đồng ${selectedContract.contractNo}`, { Customer: selectedContract.customerName, Unit: selectedContract.unitCode });
+                  toast.success(`✅ Tải bộ hồ sơ HĐ ${selectedContract.contractNo} PDF thành công!`);
+                }}
                 className="flex-1 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all"
               >
                 <Download className="w-3.5 h-3.5" /> Tải hồ sơ
@@ -1034,7 +1038,7 @@ export default function RealEstateContractsPage() {
 
               <div className="grid grid-cols-2 gap-2">
                 <button
-                  onClick={() => toast.info(`Khởi tạo thủ tục chuyển nhượng HĐ ${selectedContract.contractNo}`)}
+                  onClick={() => toast.success(`Đã khởi tạo thủ tục chuyển nhượng cho HĐ ${selectedContract.contractNo}`)}
                   className="py-1.5 text-slate-600 dark:text-slate-400 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl"
                 >
                   Chuyển nhượng

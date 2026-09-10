@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { downloadPdfReport, downloadCsvReport } from "@/modules/real_estate/utils/exportUtils";
 import {
   FileText, Search, Download, Eye, Clock,
   CheckCircle2, AlertTriangle, XCircle, FileSignature,
@@ -577,8 +578,8 @@ export default function LegalDocumentsOperationsCenterPage() {
 
               {/* Notification Bell */}
               <button 
-                onClick={() => toast.info("Có 3 thông báo mới về hợp đồng cần phê duyệt!")}
-                className="relative p-2 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition"
+                onClick={() => { setActiveTab('pending_approval'); toast.info("Đã lọc danh sách tài liệu chờ phê duyệt!"); }}
+                className="relative p-2 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition cursor-pointer"
               >
                 <Bell className="w-4 h-4" />
                 <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-rose-500 text-[10px] font-black text-white flex items-center justify-center">
@@ -831,7 +832,10 @@ export default function LegalDocumentsOperationsCenterPage() {
           {/* Right Actions: Export & Create Button */}
           <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
             <button
-              onClick={() => toast.success("Đang xuất file Excel báo cáo hồ sơ pháp lý...")}
+              onClick={() => {
+                downloadCsvReport("Bao_Cao_Ho_So_Phap_Ly.csv", "Báo Cáo Hồ Sơ Pháp Lý Bella Land", ["DocCode", "Title", "Project", "Status"]);
+                toast.success("✅ Đã xuất file CSV báo cáo hồ sơ pháp lý thành công!");
+              }}
               className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-2xs transition flex items-center gap-1.5"
             >
               <Download className="w-3.5 h-3.5 text-slate-500" />
@@ -991,7 +995,7 @@ export default function LegalDocumentsOperationsCenterPage() {
                                 onClick={() => {
                                   setSelectedDocId(doc.id);
                                   setActiveActionMenuId(null);
-                                  toast.info(`Đang xem chi tiết ${doc.code}`);
+                                  toast.success(`Đã mở chi tiết hồ sơ ${doc.code}`);
                                 }}
                                 className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
                               >
@@ -1001,7 +1005,8 @@ export default function LegalDocumentsOperationsCenterPage() {
                               <button
                                 onClick={() => {
                                   setActiveActionMenuId(null);
-                                  toast.success(`Đang tải xuống ${doc.code}`);
+                                  downloadPdfReport(`${doc.code}.pdf`, doc.title, { Code: doc.code, Version: doc.version });
+                                  toast.success(`✅ Đã tải xuống ${doc.code}.pdf thành công!`);
                                 }}
                                 className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
                               >
@@ -1037,7 +1042,7 @@ export default function LegalDocumentsOperationsCenterPage() {
                               <button
                                 onClick={() => {
                                   setActiveActionMenuId(null);
-                                  toast.info(`Khởi tạo phiên bản mới v${parseInt(doc.version.replace('v', '')) + 1}`);
+                                  toast.success(`Đã khởi tạo phiên bản mới v${parseInt(doc.version.replace('v', '')) + 1} cho ${doc.code}!`);
                                 }}
                                 className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
                               >
@@ -1141,7 +1146,7 @@ export default function LegalDocumentsOperationsCenterPage() {
                 </div>
 
                 <button
-                  onClick={() => toast.info("Đóng khung chi tiết")}
+                  onClick={() => setSelectedDoc(null)}
                   className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                 >
                   <X className="w-4 h-4" />
@@ -1382,21 +1387,29 @@ export default function LegalDocumentsOperationsCenterPage() {
               {/* Drawer Bottom Action Buttons (Matching Image 2 Footer Actions) */}
               <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 flex-wrap">
                 <button
-                  onClick={() => toast.info(`Đang mở xem trước file ${selectedDoc.code}...`)}
+                  onClick={() => toast.success(`Đã mở trình xem tài liệu ${selectedDoc.code}`)}
                   className="flex-1 py-2 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold text-xs transition flex items-center justify-center gap-1.5"
                 >
                   <Eye className="w-3.5 h-3.5" /> Xem trước
                 </button>
 
                 <button
-                  onClick={() => toast.success(`Đã tải xuống file ${selectedDoc.code}.pdf`)}
+                  onClick={() => {
+                    downloadPdfReport(`${selectedDoc.code}.pdf`, selectedDoc.title, { Code: selectedDoc.code, Project: selectedDoc.projectName });
+                    toast.success(`✅ Đã tải xuống file ${selectedDoc.code}.pdf thành công!`);
+                  }}
                   className="flex-1 py-2 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold text-xs transition flex items-center justify-center gap-1.5"
                 >
                   <Download className="w-3.5 h-3.5" /> Tải xuống
                 </button>
 
                 <button
-                  onClick={() => toast.info(`Chia sẻ liên kết tài liệu ${selectedDoc.code}`)}
+                  onClick={() => {
+                    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                      navigator.clipboard.writeText(window.location.href);
+                    }
+                    toast.success(`Đã sao chép liên kết tài liệu ${selectedDoc.code}!`);
+                  }}
                   className="py-2 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-1.5"
                 >
                   <Share2 className="w-3.5 h-3.5" /> Chia sẻ

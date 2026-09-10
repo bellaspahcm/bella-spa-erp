@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import {
   TrendingUp,
   DollarSign,
@@ -34,6 +36,8 @@ interface CEODashboardChartsProps {
   signedCount: number;
   paidCount: number;
   deliveredCount: number;
+  selectedProjectName?: string;
+  selectedPeriod?: string;
 }
 
 export const CEODashboardCharts: React.FC<CEODashboardChartsProps> = ({
@@ -44,7 +48,10 @@ export const CEODashboardCharts: React.FC<CEODashboardChartsProps> = ({
   signedCount = 78,
   paidCount = 9,
   deliveredCount = 25,
+  selectedProjectName = 'Tất cả dự án',
+  selectedPeriod = 'Tháng 7/2026',
 }) => {
+  const router = useRouter();
   const [selectedFloor, setSelectedFloor] = useState<string>('Tầng 5');
 
   // Calculated Absorption Rate
@@ -85,25 +92,26 @@ export const CEODashboardCharts: React.FC<CEODashboardChartsProps> = ({
 
   // Attention Items
   const attentionItems = [
-    { id: 1, count: 7, badgeBg: 'bg-red-500 text-white', title: '7 Lead quá SLA', action: 'Cần xử lý ngay', border: 'border-red-200 hover:border-red-400' },
-    { id: 2, count: 5, badgeBg: 'bg-orange-500 text-white', title: '5 Hợp đồng chờ duyệt', action: 'Chờ phê duyệt', border: 'border-orange-200 hover:border-orange-400' },
-    { id: 3, count: 3, badgeBg: 'bg-amber-500 text-white', title: '3 Giữ chỗ sắp hết hạn', action: 'Trong 3 ngày tới', border: 'border-amber-200 hover:border-amber-400' },
-    { id: 4, count: 2, badgeBg: 'bg-red-600 text-white', title: '2 Khoản thanh toán quá hạn', action: 'Cần đối soát', border: 'border-red-200 hover:border-red-400' },
-    { id: 5, count: 4, badgeBg: 'bg-blue-600 text-white', title: '4 Hồ sơ bàn giao thiếu tài liệu', action: 'Cần bổ sung', border: 'border-blue-200 hover:border-blue-400' },
+    { id: 1, count: 7, badgeBg: 'bg-red-500 text-white', title: '7 Lead quá SLA', action: 'Cần xử lý ngay', border: 'border-red-200 hover:border-red-400', route: '/dashboard/real-estate/leads' },
+    { id: 2, count: 5, badgeBg: 'bg-orange-500 text-white', title: '5 Hợp đồng chờ duyệt', action: 'Chờ phê duyệt', border: 'border-orange-200 hover:border-orange-400', route: '/dashboard/real-estate/contracts' },
+    { id: 3, count: 3, badgeBg: 'bg-amber-500 text-white', title: '3 Giữ chỗ sắp hết hạn', action: 'Trong 3 ngày tới', border: 'border-amber-200 hover:border-amber-400', route: '/dashboard/real-estate/apartments' },
+    { id: 4, count: 2, badgeBg: 'bg-red-600 text-white', title: '2 Khoản thanh toán quá hạn', action: 'Cần đối soát', border: 'border-red-200 hover:border-red-400', route: '/dashboard/real-estate/contracts' },
+    { id: 5, count: 4, badgeBg: 'bg-blue-600 text-white', title: '4 Hồ sơ bàn giao thiếu tài liệu', action: 'Cần bổ sung', border: 'border-blue-200 hover:border-blue-400', route: '/dashboard/real-estate/documents' },
   ];
 
-  // Unit Floor Matrix Sample Units
+  // Dynamic Unit Floor Matrix Generator based on selectedFloor
+  const floorNum = selectedFloor.replace(/\D/g, '') || '5';
   const floorUnits = [
-    { code: 'CH-01', status: 'available', label: 'Tự do', bg: 'bg-emerald-50 text-emerald-700 border-emerald-300', dot: 'bg-emerald-500' },
-    { code: 'CH-02', status: 'booked', label: 'Giữ chỗ', bg: 'bg-amber-50 text-amber-700 border-amber-300', dot: 'bg-amber-500' },
-    { code: 'CH-03', status: 'deposited', label: 'Đã cọc', bg: 'bg-orange-50 text-orange-700 border-orange-300', dot: 'bg-orange-500' },
-    { code: 'CH-04', status: 'contracted', label: 'Ký HĐMB', bg: 'bg-purple-50 text-purple-700 border-purple-300', dot: 'bg-purple-600' },
-    { code: 'CH-05', status: 'available', label: 'Tự do', bg: 'bg-emerald-50 text-emerald-700 border-emerald-300', dot: 'bg-emerald-500' },
-    { code: 'CH-06', status: 'paid', label: 'Thanh toán', bg: 'bg-blue-50 text-blue-700 border-blue-300', dot: 'bg-blue-600' },
-    { code: 'CH-07', status: 'handed_over', label: 'Bàn giao', bg: 'bg-slate-100 text-slate-700 border-slate-300', dot: 'bg-slate-500' },
-    { code: 'CH-08', status: 'available', label: 'Tự do', bg: 'bg-emerald-50 text-emerald-700 border-emerald-300', dot: 'bg-emerald-500' },
-    { code: 'CH-09', status: 'deposited', label: 'Đã cọc', bg: 'bg-orange-50 text-orange-700 border-orange-300', dot: 'bg-orange-500' },
-    { code: 'CH-10', status: 'available', label: 'Tự do', bg: 'bg-emerald-50 text-emerald-700 border-emerald-300', dot: 'bg-emerald-500' },
+    { code: `CH-${floorNum}01`, status: 'available', label: 'Tự do', bg: 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100', dot: 'bg-emerald-500' },
+    { code: `CH-${floorNum}02`, status: 'booked', label: 'Giữ chỗ', bg: 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100', dot: 'bg-amber-500' },
+    { code: `CH-${floorNum}03`, status: 'deposited', label: 'Đã cọc', bg: 'bg-orange-50 text-orange-700 border-orange-300 hover:bg-orange-100', dot: 'bg-orange-500' },
+    { code: `CH-${floorNum}04`, status: 'contracted', label: 'Ký HĐMB', bg: 'bg-purple-50 text-purple-700 border-purple-300 hover:bg-purple-100', dot: 'bg-purple-600' },
+    { code: `CH-${floorNum}05`, status: 'available', label: 'Tự do', bg: 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100', dot: 'bg-emerald-500' },
+    { code: `CH-${floorNum}06`, status: 'paid', label: 'Thanh toán', bg: 'bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100', dot: 'bg-blue-600' },
+    { code: `CH-${floorNum}07`, status: 'handed_over', label: 'Bàn giao', bg: 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200', dot: 'bg-slate-500' },
+    { code: `CH-${floorNum}08`, status: 'available', label: 'Tự do', bg: 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100', dot: 'bg-emerald-500' },
+    { code: `CH-${floorNum}09`, status: 'deposited', label: 'Đã cọc', bg: 'bg-orange-50 text-orange-700 border-orange-300 hover:bg-orange-100', dot: 'bg-orange-500' },
+    { code: `CH-${floorNum}10`, status: 'available', label: 'Tự do', bg: 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100', dot: 'bg-emerald-500' },
   ];
 
   // Recent Activity Feed
@@ -167,11 +175,11 @@ export const CEODashboardCharts: React.FC<CEODashboardChartsProps> = ({
           </div>
           <div className="mt-3">
             <div className="text-3xl font-black text-slate-900 dark:text-white font-mono">
-              58.3<span className="text-sm font-bold text-purple-600">%</span>
+              {absorptionRate}<span className="text-sm font-bold text-purple-600">%</span>
             </div>
             <div className="flex items-center gap-1 text-xs text-purple-600 font-bold mt-2">
               <TrendingUp className="w-3.5 h-3.5" />
-              <span>↗ 4.2 điểm % so với tháng trước</span>
+              <span>{totalOccupied}/{totalProductsCount} căn occupied</span>
             </div>
           </div>
         </div>
@@ -317,7 +325,7 @@ export const CEODashboardCharts: React.FC<CEODashboardChartsProps> = ({
                 <AlertTriangle className="w-5 h-5 text-rose-500" />
                 Cần chú ý hôm nay
               </h3>
-              <button className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5">
+              <button onClick={() => router.push('/dashboard/real-estate/leads')} className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5 cursor-pointer">
                 Xem tất cả (21) <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -326,6 +334,7 @@ export const CEODashboardCharts: React.FC<CEODashboardChartsProps> = ({
               {attentionItems.map((item) => (
                 <div
                   key={item.id}
+                  onClick={() => router.push(item.route)}
                   className={`flex items-center justify-between p-3 rounded-xl border bg-slate-50/60 dark:bg-slate-800/40 transition-all cursor-pointer ${item.border}`}
                 >
                   <div className="flex items-center gap-3">
@@ -379,77 +388,105 @@ export const CEODashboardCharts: React.FC<CEODashboardChartsProps> = ({
 
         {/* Right 1/2: Inventory Breakdown Donut & List */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-6 shadow-xs">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-              <PieChartIcon className="w-5 h-5 text-emerald-600" />
-              Tồn kho & trạng thái bảng hàng
-            </h3>
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Tổng: 286 căn</span>
-          </div>
+          {(() => {
+            const totalCount = totalProductsCount || 286;
+            const pctAvail = totalCount > 0 ? (availableCount / totalCount) * 100 : 41.6;
+            const pctRes = totalCount > 0 ? (reservedCount / totalCount) * 100 : 8.4;
+            const pctDep = totalCount > 0 ? (depositedCount / totalCount) * 100 : 10.8;
+            const pctSig = totalCount > 0 ? (signedCount / totalCount) * 100 : 27.3;
+            const pctPaid = totalCount > 0 ? (paidCount / totalCount) * 100 : 3.1;
+            const pctDel = totalCount > 0 ? (deliveredCount / totalCount) * 100 : 8.7;
 
-          <div className="flex flex-col sm:flex-row items-center gap-6">
-            {/* Center Donut Ring Graphic */}
-            <div className="relative w-44 h-44 shrink-0 flex items-center justify-center">
-              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                <path className="text-slate-100 dark:text-slate-800" strokeWidth="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                <path className="text-emerald-500" strokeDasharray="41.6, 100" strokeDashoffset="0" strokeWidth="4" stroke="currentColor" fill="none" />
-                <path className="text-amber-500" strokeDasharray="8.4, 100" strokeDashoffset="-41.6" strokeWidth="4" stroke="currentColor" fill="none" />
-                <path className="text-orange-500" strokeDasharray="10.8, 100" strokeDashoffset="-50" strokeWidth="4" stroke="currentColor" fill="none" />
-                <path className="text-purple-600" strokeDasharray="27.3, 100" strokeDashoffset="-60.8" strokeWidth="4" stroke="currentColor" fill="none" />
-                <path className="text-blue-600" strokeDasharray="3.1, 100" strokeDashoffset="-88.1" strokeWidth="4" stroke="currentColor" fill="none" />
-                <path className="text-slate-400" strokeDasharray="8.7, 100" strokeDashoffset="-91.2" strokeWidth="4" stroke="currentColor" fill="none" />
-              </svg>
-              <div className="absolute flex flex-col items-center justify-center text-center">
-                <span className="text-2xl font-black text-slate-900 dark:text-white font-mono">58.3%</span>
-                <span className="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase">Đã hấp thụ</span>
-              </div>
-            </div>
+            const offsetAvail = 0;
+            const offsetRes = -pctAvail;
+            const offsetDep = -(pctAvail + pctRes);
+            const offsetSig = -(pctAvail + pctRes + pctDep);
+            const offsetPaid = -(pctAvail + pctRes + pctDep + pctSig);
+            const offsetDel = -(pctAvail + pctRes + pctDep + pctSig + pctPaid);
 
-            {/* Right Status Breakdown List */}
-            <div className="flex-1 space-y-2 w-full text-xs">
-              <div className="flex justify-between items-center p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40">
-                <span className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Tự do (Available)
-                </span>
-                <span className="font-mono font-extrabold text-slate-900 dark:text-white">119 <span className="text-slate-400 text-[10px]">41.6%</span></span>
-              </div>
+            return (
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                    <PieChartIcon className="w-5 h-5 text-emerald-600" />
+                    Tồn kho & trạng thái bảng hàng
+                  </h3>
+                  <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Tổng: {totalCount} căn</span>
+                </div>
 
-              <div className="flex justify-between items-center p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40">
-                <span className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> Giữ chỗ (Holding)
-                </span>
-                <span className="font-mono font-extrabold text-slate-900 dark:text-white">24 <span className="text-slate-400 text-[10px]">8.4%</span></span>
-              </div>
+                <div className="flex flex-col sm:flex-row items-center gap-6">
+                  {/* Center Donut Ring Graphic */}
+                  <div className="relative w-44 h-44 shrink-0 flex items-center justify-center">
+                    {/* Multi-color Donut Ring using Conic Gradient */}
+                    <div
+                      className="w-44 h-44 rounded-full p-4 flex items-center justify-center shadow-sm transition-all duration-500"
+                      style={{
+                        background: `conic-gradient(
+                          #10b981 0% ${(pctAvail).toFixed(2)}%,
+                          #f59e0b ${(pctAvail).toFixed(2)}% ${(pctAvail + pctRes).toFixed(2)}%,
+                          #f97316 ${(pctAvail + pctRes).toFixed(2)}% ${(pctAvail + pctRes + pctDep).toFixed(2)}%,
+                          #9333ea ${(pctAvail + pctRes + pctDep).toFixed(2)}% ${(pctAvail + pctRes + pctDep + pctSig).toFixed(2)}%,
+                          #2563eb ${(pctAvail + pctRes + pctDep + pctSig).toFixed(2)}% ${(pctAvail + pctRes + pctDep + pctSig + pctPaid).toFixed(2)}%,
+                          #94a3b8 ${(pctAvail + pctRes + pctDep + pctSig + pctPaid).toFixed(2)}% 100%
+                        )`
+                      }}
+                    >
+                      {/* Inner Hole for Donut Center Text */}
+                      <div className="w-full h-full bg-white dark:bg-slate-900 rounded-full flex flex-col items-center justify-center text-center shadow-xs">
+                        <span className="text-2xl font-black text-slate-900 dark:text-white font-mono">{absorptionRate}%</span>
+                        <span className="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase">Đã hấp thụ</span>
+                      </div>
+                    </div>
+                  </div>
 
-              <div className="flex justify-between items-center p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40">
-                <span className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
-                  <span className="w-2.5 h-2.5 rounded-full bg-orange-500" /> Đã cọc (Deposited)
-                </span>
-                <span className="font-mono font-extrabold text-slate-900 dark:text-white">31 <span className="text-slate-400 text-[10px]">10.8%</span></span>
-              </div>
+                  {/* Right Status Breakdown List */}
+                  <div className="flex-1 space-y-2 w-full text-xs">
+                    <div className="flex justify-between items-center p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40">
+                      <span className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Tự do (Available)
+                      </span>
+                      <span className="font-mono font-extrabold text-slate-900 dark:text-white">{availableCount} <span className="text-slate-400 text-[10px]">{pctAvail.toFixed(1)}%</span></span>
+                    </div>
 
-              <div className="flex justify-between items-center p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40">
-                <span className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
-                  <span className="w-2.5 h-2.5 rounded-full bg-purple-600" /> Ký HĐMB
-                </span>
-                <span className="font-mono font-extrabold text-slate-900 dark:text-white">78 <span className="text-slate-400 text-[10px]">27.3%</span></span>
-              </div>
+                    <div className="flex justify-between items-center p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40">
+                      <span className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> Giữ chỗ (Holding)
+                      </span>
+                      <span className="font-mono font-extrabold text-slate-900 dark:text-white">{reservedCount} <span className="text-slate-400 text-[10px]">{pctRes.toFixed(1)}%</span></span>
+                    </div>
 
-              <div className="flex justify-between items-center p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40">
-                <span className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-600" /> Thanh toán
-                </span>
-                <span className="font-mono font-extrabold text-slate-900 dark:text-white">9 <span className="text-slate-400 text-[10px]">3.1%</span></span>
-              </div>
+                    <div className="flex justify-between items-center p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40">
+                      <span className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
+                        <span className="w-2.5 h-2.5 rounded-full bg-orange-500" /> Đã cọc (Deposited)
+                      </span>
+                      <span className="font-mono font-extrabold text-slate-900 dark:text-white">{depositedCount} <span className="text-slate-400 text-[10px]">{pctDep.toFixed(1)}%</span></span>
+                    </div>
 
-              <div className="flex justify-between items-center p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40">
-                <span className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
-                  <span className="w-2.5 h-2.5 rounded-full bg-slate-400" /> Bàn giao
-                </span>
-                <span className="font-mono font-extrabold text-slate-900 dark:text-white">25 <span className="text-slate-400 text-[10px]">8.7%</span></span>
-              </div>
-            </div>
-          </div>
+                    <div className="flex justify-between items-center p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40">
+                      <span className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
+                        <span className="w-2.5 h-2.5 rounded-full bg-purple-600" /> Ký HĐMB
+                      </span>
+                      <span className="font-mono font-extrabold text-slate-900 dark:text-white">{signedCount} <span className="text-slate-400 text-[10px]">{pctSig.toFixed(1)}%</span></span>
+                    </div>
+
+                    <div className="flex justify-between items-center p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40">
+                      <span className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
+                        <span className="w-2.5 h-2.5 rounded-full bg-blue-600" /> Thanh toán
+                      </span>
+                      <span className="font-mono font-extrabold text-slate-900 dark:text-white">{paidCount} <span className="text-slate-400 text-[10px]">{pctPaid.toFixed(1)}%</span></span>
+                    </div>
+
+                    <div className="flex justify-between items-center p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40">
+                      <span className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
+                        <span className="w-2.5 h-2.5 rounded-full bg-slate-400" /> Bàn giao
+                      </span>
+                      <span className="font-mono font-extrabold text-slate-900 dark:text-white">{deliveredCount} <span className="text-slate-400 text-[10px]">{pctDel.toFixed(1)}%</span></span>
+                    </div>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
         </div>
       </div>
 
@@ -466,7 +503,7 @@ export const CEODashboardCharts: React.FC<CEODashboardChartsProps> = ({
               <select className="text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 outline-none">
                 <option>Tháng 7/2026</option>
               </select>
-              <button className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5">
+              <button onClick={() => router.push('/dashboard/real-estate/people')} className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5 cursor-pointer">
                 Xem tất cả ➔
               </button>
             </div>
@@ -515,7 +552,7 @@ export const CEODashboardCharts: React.FC<CEODashboardChartsProps> = ({
                 <Building2 className="w-5 h-5 text-emerald-600" />
                 Hiệu suất dự án
               </h3>
-              <button className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5">
+              <button onClick={() => router.push('/dashboard/real-estate/projects')} className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5 cursor-pointer">
                 Xem chi tiết ➔
               </button>
             </div>
@@ -616,16 +653,22 @@ export const CEODashboardCharts: React.FC<CEODashboardChartsProps> = ({
           {/* 10 Unit Cards Matrix */}
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
             {floorUnits.map((u, i) => (
-              <div
+              <button
                 key={i}
-                className={`p-3 rounded-xl border flex flex-col items-center justify-center text-center transition-all cursor-pointer hover:scale-105 ${u.bg}`}
+                type="button"
+                onClick={() => {
+                  toast.info(`Đang mở quản lý căn ${u.code} (${u.label})`);
+                  router.push('/dashboard/real-estate/apartments');
+                }}
+                className={`p-3 rounded-xl border flex flex-col items-center justify-center text-center transition-all cursor-pointer hover:scale-105 active:scale-95 text-left ${u.bg}`}
+                title={`Click để xem chi tiết căn ${u.code} (${u.label})`}
               >
                 <span className="font-mono font-black text-sm text-slate-900 dark:text-white">{u.code}</span>
                 <span className="flex items-center gap-1 text-[10px] font-bold mt-1">
                   <span className={`w-1.5 h-1.5 rounded-full ${u.dot}`} />
                   {u.label}
                 </span>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -637,7 +680,7 @@ export const CEODashboardCharts: React.FC<CEODashboardChartsProps> = ({
               <Clock className="w-5 h-5 text-blue-600" />
               Hoạt động gần đây
             </h3>
-            <button className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5">
+            <button onClick={() => router.push('/dashboard/real-estate/documents')} className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5 cursor-pointer">
               Xem tất cả ➔
             </button>
           </div>

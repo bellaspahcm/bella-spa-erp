@@ -1130,7 +1130,7 @@ html[data-tenant-module="pending"] .beauty-erp-nav-item {
   border-color: transparent !important;
 }
 
-html[data-tenant-module="pending"] .beauty-erp-nav-item:hover {
+html[data-tenant-module="pending"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover {
   background: rgba(255, 255, 255, 0.72) !important;
   border-color: rgba(200, 169, 122, 0.42) !important;
   color: #074e44 !important;
@@ -1231,28 +1231,49 @@ html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-header {
 html[data-tenant-brand-preset="jade_wellness"] .text-\[9\.5px\][class*="text-primary"] {
   color: #e8d4a8 !important;
 }
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item { color: rgba(241, 245, 249, 0.95) !important; }
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item svg { color: rgba(226, 232, 240, 0.90) !important; }
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item span { color: #f1f5f9 !important; }
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:hover {
+/* jade_wellness — NORMAL */
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item {
+  color: rgba(241, 245, 249, 0.90) !important;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item svg { color: rgba(226, 232, 240, 0.80) !important; }
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item span { color: #e2e8f0 !important; }
+
+/* jade_wellness — HOVER (non-active only — never repaints active state) */
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover {
   color: #ffffff !important;
-  background: rgba(255, 255, 255, 0.12) !important;
-  border-color: rgba(245, 158, 11, 0.40) !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18) !important;
+  background: rgba(255, 255, 255, 0.09) !important;
+  border-color: rgba(245, 158, 11, 0.30) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12) !important;
 }
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:hover svg,
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:hover * { color: #f59e0b !important; }
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:hover span { color: #ffffff !important; }
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover svg { color: #f59e0b !important; }
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover span { color: #ffffff !important; }
+
+/* jade_wellness — ACTIVE (canonical — dark emerald sidebar → translucent emerald highlight) */
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active {
-  background: #ffffff !important;
-  border-color: rgba(245, 158, 11, 0.50) !important;
-  color: #064e3b !important;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25) !important;
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.28) 0%, rgba(16, 185, 129, 0.13) 100%) !important;
+  border-color: transparent !important;
+  border-left-color: #10b981 !important;
+  border-left-width: 3px !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 12px rgba(16, 185, 129, 0.22) !important;
 }
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active svg,
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active svg {
+  color: #f59e0b !important;
+  filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.50)) !important;
+}
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active span {
-  color: #064e3b !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
 }
+
+/* jade_wellness — ACTIVE + HOVER (only brightens bg — text/icon MUST remain white/gold) */
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active:hover {
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.38) 0%, rgba(16, 185, 129, 0.22) 100%) !important;
+}
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active:hover svg { color: #f59e0b !important; }
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active:hover span { color: #ffffff !important; }
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-profile-card,
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-avatar,
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-icon-button {
@@ -1293,15 +1314,48 @@ html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-header {
 html[data-tenant-brand-preset="luxury_navy"] .text-\[9\.5px\][class*="text-primary"] {
   color: #fbbf24 !important;
 }
-html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item { color: rgba(248, 250, 252, 0.85) !important; }
-html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item:hover { color: #ffffff !important; background: rgba(217, 119, 6, 0.22) !important; }
-html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item:hover svg,
-html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item:hover * { color: #ffffff !important; }
-html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item-active {
-  background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
-  border-color: rgba(255, 255, 255, 0.32) !important;
-  color: #ffffff !important;
+/* luxury_navy — NORMAL */
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item {
+  color: rgba(248, 250, 252, 0.80) !important;
+  background: transparent !important;
+  border-color: transparent !important;
 }
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item svg { color: rgba(203, 213, 225, 0.70) !important; }
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item span { color: rgba(248, 250, 252, 0.80) !important; }
+
+/* luxury_navy — HOVER (non-active only) */
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.07) !important;
+  border-color: rgba(255, 255, 255, 0.10) !important;
+}
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover svg { color: #f59e0b !important; }
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover span { color: #ffffff !important; }
+
+/* luxury_navy — ACTIVE (canonical) */
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item-active {
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.28) 0%, rgba(16, 185, 129, 0.13) 100%) !important;
+  border-color: transparent !important;
+  border-left-color: #10b981 !important;
+  border-left-width: 3px !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 12px rgba(16, 185, 129, 0.20) !important;
+}
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item-active svg {
+  color: #f59e0b !important;
+  filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.50)) !important;
+}
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item-active span {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+/* luxury_navy — ACTIVE + HOVER (only brightens bg, text/icon MUST remain) */
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item-active:hover {
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.38) 0%, rgba(16, 185, 129, 0.22) 100%) !important;
+}
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item-active:hover svg { color: #f59e0b !important; }
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item-active:hover span { color: #ffffff !important; }
 html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-profile-card,
 html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-avatar,
 html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-icon-button {
@@ -1346,22 +1400,38 @@ html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item,
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item *,
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item span {
   color: #dbeafe !important;
+  border-color: transparent !important;
 }
-html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover {
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item svg {
+  color: #dbeafe !important;
+}
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover {
   color: #ffffff !important;
   background: rgba(59, 130, 246, 0.22) !important;
 }
-html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover svg,
-html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover * {
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover svg,
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover * {
   color: #ffffff !important;
 }
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item-active {
   background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%) !important;
-  border-color: rgba(16, 185, 129, 0.52) !important;
+  border-left-color: #60a5fa !important;
+  border-left-width: 3px !important;
+  border-top-color: transparent !important;
+  border-right-color: transparent !important;
+  border-bottom-color: transparent !important;
   color: #ffffff !important;
 }
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item-active svg,
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item-active span {
+  color: #ffffff !important;
+}
+/* ocean_clean — ACTIVE + HOVER (lock white text/icon, brighten bg) */
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item-active:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #60a5fa 100%) !important;
+}
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item-active:hover svg,
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item-active:hover span {
   color: #ffffff !important;
 }
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item svg {
@@ -1424,15 +1494,34 @@ html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-header {
 html[data-tenant-brand-preset="graphite_luxe"] .text-\[9\.5px\][class*="text-primary"] {
   color: #d4d4d8 !important;
 }
-html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-item { color: rgba(244, 244, 245, 0.85) !important; }
-html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-item:hover { color: #ffffff !important; background: rgba(161, 161, 170, 0.22) !important; }
-html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-item:hover svg,
-html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-item:hover * { color: #ffffff !important; }
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-item {
+  color: rgba(244, 244, 245, 0.85) !important;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover { color: #ffffff !important; background: rgba(161, 161, 170, 0.22) !important; }
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover svg,
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover * { color: #ffffff !important; }
+/* graphite_luxe — ACTIVE */
 html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-item-active {
   background: linear-gradient(135deg, #3f3f46 0%, #27272a 100%) !important;
-  border-color: rgba(161, 161, 170, 0.52) !important;
+  border-left-color: #a1a1aa !important;
+  border-left-width: 3px !important;
+  border-top-color: transparent !important;
+  border-right-color: transparent !important;
+  border-bottom-color: transparent !important;
   color: #ffffff !important;
 }
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-item-active svg { color: #a1a1aa !important; }
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-item-active span { color: #ffffff !important; }
+
+/* graphite_luxe — ACTIVE + HOVER (lock zinc text/icon, only brightens bg) */
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-item-active:hover {
+  background: linear-gradient(135deg, #52525b 0%, #3f3f46 100%) !important;
+}
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-item-active:hover svg { color: #a1a1aa !important; }
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-item-active:hover span { color: #ffffff !important; }
+
 html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-profile-card,
 html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-avatar,
 html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-icon-button {
@@ -1496,45 +1585,127 @@ html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-header {
 html[data-tenant-brand-preset="bella_rose"] .text-\[9\.5px\][class*="text-primary"] {
   color: #be123c !important;
 }
-html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item { color: #831843 !important; }
-html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item:hover { color: #500724 !important; background: rgba(251, 207, 232, 0.65) !important; }
-html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item:hover svg,
-html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item:hover * { color: #500724 !important; }
+html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item {
+  color: #831843 !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* bella_rose — HOVER (non-active only) */
+html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover { color: #500724 !important; background: rgba(251, 207, 232, 0.65) !important; }
+html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover svg,
+html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover * { color: #500724 !important; }
+
+/* bella_rose — ACTIVE */
 html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item-active {
   background: linear-gradient(135deg, #a91555 0%, #9d174d 100%) !important;
   border-color: rgba(248, 165, 194, 0.52) !important;
   color: #ffffff !important;
+  box-shadow: 0 10px 28px rgba(169, 21, 85, 0.28) !important;
+}
+html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item-active svg { color: #fda4af !important; }
+html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item-active span { color: #ffffff !important; }
+
+/* bella_rose — ACTIVE + HOVER (lock text/icon) */
+html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item-active:hover {
+  background: linear-gradient(135deg, #be123c 0%, #a91555 100%) !important;
+}
+html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item-active:hover svg { color: #fda4af !important; }
+html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item-active:hover span { color: #ffffff !important; }
+
+/* =========================================================================
+   5. SLATE MINIMAL (White & Slate Gray — #334155 slate-700)
+   Light sidebar: white background, dark slate text, clean modern look
+   ========================================================================= */
+html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-sidebar,
+html[data-tenant-brand-preset="slate_minimal"] aside.beauty-erp-sidebar,
+html[data-tenant-brand-preset="slate_minimal"] aside[class*="bg-"] {
+  background: #f1f5f9 !important;  /* slate-100 — soft light base */
+  border-color: rgba(51, 65, 85, 0.14) !important;
+  box-shadow: 4px 0 24px rgba(51, 65, 85, 0.06) !important;
+}
+html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-logo-mark {
+  background: linear-gradient(135deg, #334155 0%, #64748b 100%) !important;
+  border-color: rgba(51, 65, 85, 0.24) !important;
+}
+html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-brand-script { color: #1e293b !important; }
+html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-brand-subtitle,
+html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-nav-header {
+  color: #64748b !important;
+}
+html[data-tenant-brand-preset="slate_minimal"] .text-\[9\.5px\][class*="text-primary"] {
+  color: #64748b !important;
+}
+/* — INACTIVE — */
+html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-nav-item {
+  color: #334155 !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-nav-item svg { color: rgba(51, 65, 85, 0.70) !important; }
+html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-nav-item span { color: #334155 !important; }
+
+/* — HOVER (non-active) — */
+html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover {
+  color: #1e293b !important;
+  background: rgba(51, 65, 85, 0.08) !important;
+  border-color: rgba(51, 65, 85, 0.14) !important;
+}
+html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover svg,
+html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover span {
+  color: #1e293b !important;
 }
 
-/* Universal Active Nav Item Child High-Contrast Overrides (excluding light-pill presets like jade_wellness) */
-html[data-tenant-module]:not([data-tenant-brand-preset="jade_wellness"]) .beauty-erp-nav-item-active *,
-html[data-tenant-module]:not([data-tenant-brand-preset="jade_wellness"]) .beauty-erp-nav-item-active svg,
-html[data-tenant-module]:not([data-tenant-brand-preset="jade_wellness"]) .beauty-erp-nav-item-active span,
-html[data-tenant-module]:not([data-tenant-brand-preset="jade_wellness"]) .beauty-erp-nav-item-active p,
-html[data-tenant-brand-preset]:not([data-tenant-brand-preset="jade_wellness"]) .beauty-erp-nav-item-active *,
-html[data-tenant-brand-preset]:not([data-tenant-brand-preset="jade_wellness"]) .beauty-erp-nav-item-active svg,
-html[data-tenant-brand-preset]:not([data-tenant-brand-preset="jade_wellness"]) .beauty-erp-nav-item-active span,
-html[data-tenant-brand-preset]:not([data-tenant-brand-preset="jade_wellness"]) .beauty-erp-nav-item-active p {
+/* — ACTIVE — */
+html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-nav-item-active {
+  background: linear-gradient(135deg, rgba(51,65,85,0.16) 0%, rgba(51,65,85,0.07) 100%) !important;
+  border-color: transparent !important;
+  border-left-color: #334155 !important;
+  border-left-width: 3px !important;
+  border-top-color: transparent !important;
+  border-right-color: transparent !important;
+  border-bottom-color: transparent !important;
+  color: #1e293b !important;
+  box-shadow: 0 2px 8px rgba(51, 65, 85, 0.10) !important;
+}
+html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-nav-item-active svg { color: #334155 !important; }
+html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-nav-item-active span { color: #1e293b !important; }
+
+/* — ACTIVE HOVER (transparent gradient, matching other presets) — */
+html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-nav-item-active:hover {
+  background: linear-gradient(135deg, rgba(51,65,85,0.22) 0%, rgba(51,65,85,0.12) 100%) !important;
+  box-shadow: 0 4px 14px rgba(51, 65, 85, 0.14) !important;
+}
+html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-nav-item-active:hover svg { color: #334155 !important; }
+html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-nav-item-active:hover span { color: #1e293b !important; }
+
+/* — Profile card — */
+html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-profile-name {
+  color: #1e293b !important;
+  font-weight: 700 !important;
+}
+html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-profile-role {
+  color: #334155 !important;
+  font-weight: 600 !important;
+}
+
+
+/* Universal Active Nav Item — spa/beauty shells with bg-white active style */
+/* Real estate (jade_wellness/luxury_navy) and Education have their own canonical rules */
+.beauty-erp-nav-item-active.bg-white *,
+.beauty-erp-nav-item-active.bg-white svg,
+.beauty-erp-nav-item-active.bg-white span,
+.beauty-erp-nav-item-active.bg-white p {
+  color: #042f2e !important;
+}
+
+/* Dark pill active nav items (non-white bg) — high contrast white text */
+.beauty-erp-nav-item-active:not(.bg-white):not([class*="bg-white"]) *,
+.beauty-erp-nav-item-active:not(.bg-white):not([class*="bg-white"]) svg,
+.beauty-erp-nav-item-active:not(.bg-white):not([class*="bg-white"]) span {
   color: #ffffff !important;
-}
-
-/* Jade Wellness active item high contrast rule - Dark emerald text on white pill whether hovered or not */
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active,
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active:hover {
-  background: #ffffff !important;
-  border-color: rgba(245, 158, 11, 0.60) !important;
-  color: #064e3b !important;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25) !important;
-}
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active *,
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active svg,
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active span,
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active p,
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active:hover *,
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active:hover svg,
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active:hover span,
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active:hover p {
-  color: #064e3b !important;
 }
 
 /* =========================================================================
@@ -1691,34 +1862,18 @@ html[data-tenant-module="beauty_spa"] .beauty-erp-nav-scroll::-webkit-scrollbar-
   background: rgba(200, 169, 122, 0.52) !important;
 }
 
+/* beauty_spa — NORMAL (structural only; visual states owned by canonical block ~L2498) */
 html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item {
   color: rgba(248, 246, 242, 0.74) !important;
   border-color: transparent !important;
-}
-
-html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item:hover {
-  background: rgba(248, 246, 242, 0.08) !important;
-  border-color: rgba(200, 169, 122, 0.24) !important;
-  color: #ffffff !important;
-  box-shadow: 0 10px 28px rgba(11, 34, 64, 0.14) !important;
-}
-
-html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item-active {
-  background: rgba(248, 246, 242, 0.96) !important;
-  border-color: rgba(200, 169, 122, 0.54) !important;
-  color: #074e44 !important;
-  box-shadow: 0 14px 32px rgba(11, 34, 64, 0.2) !important;
+  background: transparent !important;
 }
 
 html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item svg,
 html[data-tenant-module="beauty_spa"] .beauty-erp-icon-button svg {
   color: currentColor !important;
 }
-
-html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item-active svg,
-html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item-active span {
-  color: #074e44 !important;
-}
+/* beauty_spa hover/active states: canonical owner is [data-tenant-module="beauty_spa"] block ~L2498 */
 
 html[data-tenant-module="beauty_spa"] .beauty-erp-profile-card {
   background: rgba(248, 246, 242, 0.1) !important;
@@ -1998,23 +2153,23 @@ html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item span {
   color: rgba(224, 242, 254, 0.80) !important;
 }
 
-/* Nav items — hover */
-html[data-tenant-module="bella_auto"] .beauty-erp-nav-item:hover,
-html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item:hover {
+/* Nav items — HOVER (non-active only) */
+html[data-tenant-module="bella_auto"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover {
   background: rgba(6, 182, 212, 0.12) !important;
   border-color: rgba(6, 182, 212, 0.30) !important;
   color: #ffffff !important;
   box-shadow: 0 6px 16px rgba(14, 116, 144, 0.18) !important;
 }
 
-html[data-tenant-module="bella_auto"] .beauty-erp-nav-item:hover svg,
-html[data-tenant-module="bella_auto"] .beauty-erp-nav-item:hover span,
-html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item:hover svg,
-html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item:hover span {
+html[data-tenant-module="bella_auto"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover svg,
+html[data-tenant-module="bella_auto"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover span,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover svg,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover span {
   color: #ffffff !important;
 }
 
-/* Nav items — active */
+/* Nav items — ACTIVE */
 html[data-tenant-module="bella_auto"] .beauty-erp-nav-item-active,
 html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item-active {
   background: linear-gradient(135deg, rgba(6, 182, 212, 0.30) 0%, rgba(20, 184, 166, 0.25) 100%) !important;
@@ -2027,6 +2182,18 @@ html[data-tenant-module="bella_auto"] .beauty-erp-nav-item-active svg,
 html[data-tenant-module="bella_auto"] .beauty-erp-nav-item-active span,
 html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item-active svg,
 html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item-active span {
+  color: #ffffff !important;
+}
+
+/* Nav items — ACTIVE + HOVER (lock text/icon, only brighten bg) */
+html[data-tenant-module="bella_auto"] .beauty-erp-nav-item-active:hover,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item-active:hover {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.42) 0%, rgba(20, 184, 166, 0.36) 100%) !important;
+}
+html[data-tenant-module="bella_auto"] .beauty-erp-nav-item-active:hover svg,
+html[data-tenant-module="bella_auto"] .beauty-erp-nav-item-active:hover span,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item-active:hover svg,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item-active:hover span {
   color: #ffffff !important;
 }
 
@@ -2143,29 +2310,29 @@ html[data-tenant-module="bella_healthcare"] .beauty-erp-mobile-header .beauty-er
    REAL ESTATE (BELLA LAND) THEME - System-wide Overrides V2
    ========================================================================= */
 /* Real Estate body background — Warm enterprise slate/gray background */
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) body {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) body {
   background-color: #f6f7f9 !important;
   background-image: none !important;
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-sidebar {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .beauty-erp-sidebar {
   background: #0f172a !important;
   border-color: rgba(226, 232, 240, 0.1) !important;
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.06) !important;
   color: #f8fafc !important;
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) aside.beauty-erp-sidebar,
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) aside[class*="bg-[#FFF0F3]"],
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) aside[class*="bg-[#FAFAFA]"],
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) aside[class*="border-[#FBCFE8]"] {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) aside.beauty-erp-sidebar,
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) aside[class*="bg-[#FFF0F3]"],
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) aside[class*="bg-[#FAFAFA]"],
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) aside[class*="border-[#FBCFE8]"] {
   background: #0f172a !important;
   border-color: rgba(226, 232, 240, 0.1) !important;
   color: #f8fafc !important;
 }
 
 /* Real Estate: Inner card background matching tenant brand preset */
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-sidebar > div {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .beauty-erp-sidebar > div {
   background: #0f172a !important;
   border-color: rgba(226, 232, 240, 0.1) !important;
 }
@@ -2190,6 +2357,11 @@ html[data-tenant-module="real_estate"][data-tenant-brand-preset="bella_rose"] .b
   border-color: rgba(236, 72, 153, 0.15) !important;
 }
 
+html[data-tenant-module="real_estate"][data-tenant-brand-preset="slate_minimal"] .beauty-erp-sidebar > div {
+  background: #ffffff !important;
+  border-color: rgba(51, 65, 85, 0.10) !important;
+}
+
 /* Remove loud decorative outer outline for Real Estate sidebar */
 html[data-tenant-module="real_estate"] .beauty-erp-sidebar::before {
   display: none !important;
@@ -2205,98 +2377,66 @@ html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-profile-role {
   font-weight: 700 !important;
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-logo-mark {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .beauty-erp-logo-mark {
   background: #1e293b !important;
   border: 1px solid rgba(217, 119, 6, 0.4) !important;
   color: #d97706 !important;
   box-shadow: none !important;
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-brand-script {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .beauty-erp-brand-script {
   color: #f8fafc !important;
   text-shadow: none !important;
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-brand-subtitle {
+/* ── real_estate/luxury_navy brand-subtitle & profile overrides (module-level, non-nav) ── */
+/* Nav item states are owned by [data-tenant-brand-preset="luxury_navy"] block above */
+
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .beauty-erp-brand-subtitle {
   color: #94a3b8 !important;
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-nav-header {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .beauty-erp-nav-header {
   color: #64748b !important;
   font-size: 10px !important;
   font-weight: 700 !important;
   letter-spacing: 0.12em !important;
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-profile-role {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .beauty-erp-profile-role {
   color: #d97706 !important;
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-nav-item {
-  color: #94a3b8 !important;
-  border-color: transparent !important;
-  font-weight: 500 !important;
-}
-
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-nav-item svg,
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-nav-item span {
-  color: #94a3b8 !important;
-}
-
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-nav-item:hover {
-  background: rgba(248, 250, 252, 0.05) !important;
-  color: #ffffff !important;
-}
-
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-nav-item:hover svg,
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-nav-item:hover span {
-  color: #ffffff !important;
-}
-
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-nav-item-active {
-  background: rgba(217, 119, 6, 0.12) !important;
-  border-left: 3px solid #d97706 !important;
-  border-radius: 8px !important;
-  color: #ffffff !important;
-  font-weight: 700 !important;
-  box-shadow: none !important;
-}
-
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-nav-item-active svg,
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-nav-item-active span {
-  color: #d97706 !important;
-}
-
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-profile-card,
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-avatar,
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-icon-button {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .beauty-erp-profile-card,
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .beauty-erp-avatar,
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .beauty-erp-icon-button {
   background: #1e293b !important;
   border-color: rgba(226, 232, 240, 0.1) !important;
   color: #ffffff !important;
 }
 
 /* Real Estate: Override pink/rose utility classes — scoped to luxury_navy preset (default) only */
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .bg-rose-50,
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .bg-pink-50 {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .bg-rose-50,
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .bg-pink-50 {
   background-color: #f0f9ff !important;
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .bg-rose-100,
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .bg-pink-100 {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .bg-rose-100,
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .bg-pink-100 {
   background-color: #e0f2fe !important;
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .border-rose-100,
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .border-pink-100 {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .border-rose-100,
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .border-pink-100 {
   border-color: #bae6fd !important;
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .hover\:border-rose-200:hover {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .hover\:border-rose-200:hover {
   border-color: #7dd3fc !important;
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .text-rose-500,
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .text-pink-500 {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .text-rose-500,
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .text-pink-500 {
   color: #0284c7 !important;
 }
 
@@ -2472,7 +2612,8 @@ html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item {
   color: var(--beauty-sub) !important;
 }
 
-html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item:hover {
+/* beauty_spa HOVER — broad rule kept for compat (below :not rule is canonical) */
+html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover {
   background: rgba(255, 255, 255, 0.72) !important;
   border-color: var(--beauty-border-strong) !important;
   color: var(--beauty-em) !important;
@@ -3703,11 +3844,7 @@ html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item svg,
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-icon-button svg {
   color: currentColor !important;
 }
-
-html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item-active svg,
-html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item-active span {
-  color: #FFFFFF !important; /* White cho icon và text active */
-}
+/* industrial_cleaning active svg/span canonical rule is in L4388 block — removed early duplicate */
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-profile-card {
   background: rgba(255, 255, 255, 0.64) !important; /* White với opacity */
@@ -3970,7 +4107,7 @@ html[data-tenant-brand-button="minimal"][data-tenant-module="industrial_cleaning
    ========================================================================= */
 /* Real Estate tenant shell: premium navy and amber theme. Only applies when luxury_navy preset
    is active (i.e. no other brand preset has been explicitly selected). */
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) {
   --primary: #1e3a8a; /* Deep Navy - primary action color */
   --primary-hover: #1d4ed8; /* Blue-700 - hover state */
   --primary-foreground: #ffffff;
@@ -3989,7 +4126,7 @@ html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_welln
   --ring: #d97706; /* Amber focus ring */
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) body {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) body {
   background-color: #f8fafc;
   background-image:
     linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%),
@@ -3997,100 +4134,100 @@ html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_welln
     radial-gradient(ellipse 58% 42% at 100% 14%, rgba(217, 119, 6, 0.05) 0%, transparent 55%);
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) [class*="bg-pink-"],
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) [class*="bg-rose-"] {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) [class*="bg-pink-"],
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) [class*="bg-rose-"] {
   background-color: rgba(217, 119, 6, 0.08) !important; /* Amber-50/100 equivalent */
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) [class*="bg-pink-500"],
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) [class*="bg-pink-600"],
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) [class*="bg-rose-500"],
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) [class*="bg-rose-600"] {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) [class*="bg-pink-500"],
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) [class*="bg-pink-600"],
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) [class*="bg-rose-500"],
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) [class*="bg-rose-600"] {
   background-color: #d97706 !important; /* Amber-600 */
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) [class*="bg-pink-500"]:hover,
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) [class*="bg-pink-600"]:hover,
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) [class*="bg-rose-500"]:hover,
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) [class*="bg-rose-600"]:hover {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) [class*="bg-pink-500"]:hover,
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) [class*="bg-pink-600"]:hover,
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) [class*="bg-rose-500"]:hover,
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) [class*="bg-rose-600"]:hover {
   background-color: #b45309 !important; /* Amber-700 */
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) [class*="text-pink-"],
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) [class*="text-rose-"] {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) [class*="text-pink-"],
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) [class*="text-rose-"] {
   color: #1e3a8a !important; /* Navy instead of pink */
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) [class*="border-pink-"],
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) [class*="border-rose-"] {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) [class*="border-pink-"],
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) [class*="border-rose-"] {
   border-color: rgba(217, 119, 6, 0.28) !important; /* Amber border */
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) [class*="shadow-rose-"],
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) [class*="shadow-pink-"] {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) [class*="shadow-rose-"],
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) [class*="shadow-pink-"] {
   --tw-shadow-color: rgba(217, 119, 6, 0.3) !important;
   --tw-shadow: var(--tw-shadow-colored) !important;
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .glass-pink {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .glass-pink {
   background: rgba(255, 255, 255, 0.82) !important;
   border-color: rgba(217, 119, 6, 0.26) !important;
   box-shadow: 0 18px 42px rgba(30, 58, 138, 0.05) !important;
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .luxury-card-pink {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .luxury-card-pink {
   background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%) !important;
   border-color: rgba(217, 119, 6, 0.3) !important;
   color: #ffffff !important;
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) [class*="bg-[#5D1C34]"] {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) [class*="bg-[#5D1C34]"] {
   background-color: rgba(30, 58, 138, 0.15) !important; /* Navy-900 / 15% override */
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) [class*="border-[#5D1C34]"] {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) [class*="border-[#5D1C34]"] {
   border-color: rgba(217, 119, 6, 0.24) !important;
 }
 
 /* Real Estate Dark Mode Overrides — scoped to luxury_navy preset (default) */
-html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) body {
+html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) body {
   background-color: #0b0f19 !important;
   background-image:
     radial-gradient(circle at 0% 0%, rgba(37, 99, 235, 0.03) 0%, transparent 40%),
     radial-gradient(circle at 100% 100%, rgba(217, 119, 6, 0.03) 0%, transparent 40%) !important;
 }
 
-html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .glass-pink,
-html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .luxury-card-white,
-html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .luxury-box-hover,
-html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .bg-white,
-html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) [class*="bg-white"],
-html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .bg-slate-50 {
+html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .glass-pink,
+html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .luxury-card-white,
+html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .luxury-box-hover,
+html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .bg-white,
+html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) [class*="bg-white"],
+html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .bg-slate-50 {
   background: rgba(15, 23, 42, 0.75) !important;
   border-color: rgba(217, 119, 6, 0.2) !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
   color: #f8fafc !important;
 }
 
-html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .glass-pink:hover,
-html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .luxury-card-white:hover,
-html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .luxury-box-hover:hover {
+html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .glass-pink:hover,
+html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .luxury-card-white:hover,
+html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .luxury-box-hover:hover {
   border-color: rgba(217, 119, 6, 0.35) !important;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5) !important;
 }
 
-html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .luxury-card-pink {
+html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .luxury-card-pink {
   background: linear-gradient(135deg, #1e3a8a 0%, #172554 100%) !important;
   border-color: rgba(217, 119, 6, 0.25) !important;
   color: #ffffff !important;
 }
 
-html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) [class*="bg-[#5D1C34]"] {
+html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) [class*="bg-[#5D1C34]"] {
   background-color: rgba(30, 58, 138, 0.25) !important; /* Navy-900 / 25% override */
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-mobile-header,
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-sidebar {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .beauty-erp-mobile-header,
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .beauty-erp-sidebar {
   background: linear-gradient(180deg, #0b1329 0%, #1e3a8a 100%) !important;
   border-right: 1px solid rgba(217, 119, 6, 0.16) !important;
   border-color: rgba(217, 119, 6, 0.16) !important;
@@ -4098,7 +4235,7 @@ html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_welln
   color: #ffffff !important;
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-sidebar::before {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .beauty-erp-sidebar::before {
   content: "";
   position: absolute;
   inset: 12px;
@@ -4107,14 +4244,14 @@ html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_welln
   border-radius: 24px;
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-logo-mark {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .beauty-erp-logo-mark {
   background: linear-gradient(145deg, #1e3a8a 0%, #0b1329 100%) !important;
   border: 1px solid rgba(217, 119, 6, 0.6) !important;
   color: #f59e0b !important;
   box-shadow: 0 8px 24px rgba(11, 19, 41, 0.3) !important;
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-brand-script {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .beauty-erp-brand-script {
   font-family: var(--font-sans, system-ui, sans-serif) !important;
   font-weight: 800 !important;
   letter-spacing: -0.02em !important;
@@ -4123,48 +4260,18 @@ html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_welln
   font-style: normal !important;
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-brand-script span {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .beauty-erp-brand-script span {
   color: #ffffff !important;
   font-family: var(--font-sans, system-ui, sans-serif) !important;
   font-style: normal !important;
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-brand-subtitle {
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .beauty-erp-brand-subtitle {
   color: #f59e0b !important;
   letter-spacing: 0.18em !important;
 }
 
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-nav-item {
-  color: #94a3b8 !important;
-  background: transparent !important;
-  border-color: transparent !important;
-}
-
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-nav-item svg {
-  color: #64748b !important;
-}
-
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-nav-item:hover:not(.beauty-erp-nav-item-active) {
-  color: #ffffff !important;
-  background: rgba(255, 255, 255, 0.05) !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
-}
-
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-nav-item:hover:not(.beauty-erp-nav-item-active) svg {
-  color: #cbd5e1 !important;
-}
-
-html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-nav-item-active {
-  background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%) !important;
-  border-color: rgba(217, 119, 6, 0.4) !important;
-  color: #ffffff !important;
-  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25) !important;
-}
-
-html[data-tenant-module="real_estate"] .beauty-erp-nav-item-active svg,
-html[data-tenant-module="real_estate"] .beauty-erp-nav-item-active span {
-  color: #ffffff !important;
-}
+/* Nav item states for real_estate/luxury_navy are owned by [data-tenant-brand-preset="luxury_navy"] block — see ~L1317 */
 
 html[data-tenant-module="real_estate"] .beauty-erp-profile-card {
   background: rgba(15, 23, 42, 0.5) !important;
@@ -4200,6 +4307,91 @@ html[data-tenant-module="real_estate"] .beauty-erp-icon-button {
 html[data-tenant-module="real_estate"] .beauty-erp-icon-button:hover {
   color: #ffffff !important;
   background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* =========================================================================
+   SLATE MINIMAL — Real Estate module full override (beats module-only dark rules)
+   Specificity: [data-tenant-module][data-tenant-brand-preset] > [data-tenant-module]
+   ========================================================================= */
+html[data-tenant-module="real_estate"][data-tenant-brand-preset="slate_minimal"] {
+  --primary: #334155;
+  --primary-hover: #1e293b;
+  --primary-foreground: #ffffff;
+  --secondary: #64748b;
+  --secondary-foreground: #ffffff;
+  --accent: #334155;
+  --accent-foreground: #ffffff;
+  --background: #f8fafc;
+  --foreground: #1e293b;
+  --card: #ffffff;
+  --card-foreground: #1e293b;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --border: rgba(51, 65, 85, 0.16);
+  --input: rgba(51, 65, 85, 0.14);
+  --ring: #334155;
+}
+html[data-tenant-module="real_estate"][data-tenant-brand-preset="slate_minimal"] body {
+  background-color: #f8fafc !important;
+}
+/* Sidebar light override */
+html[data-tenant-module="real_estate"][data-tenant-brand-preset="slate_minimal"] .beauty-erp-sidebar {
+  background: #f1f5f9 !important;
+  border-right: 1px solid rgba(51, 65, 85, 0.12) !important;
+  border-color: rgba(51, 65, 85, 0.12) !important;
+  box-shadow: 4px 0 24px rgba(51, 65, 85, 0.06) !important;
+  color: #1e293b !important;
+}
+html[data-tenant-module="real_estate"][data-tenant-brand-preset="slate_minimal"] .beauty-erp-sidebar::before {
+  display: none !important;
+}
+/* Logo mark */
+html[data-tenant-module="real_estate"][data-tenant-brand-preset="slate_minimal"] .beauty-erp-logo-mark {
+  background: linear-gradient(135deg, #334155 0%, #64748b 100%) !important;
+  border: 1px solid rgba(51, 65, 85, 0.30) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(51, 65, 85, 0.18) !important;
+}
+/* Brand text */
+html[data-tenant-module="real_estate"][data-tenant-brand-preset="slate_minimal"] .beauty-erp-brand-script,
+html[data-tenant-module="real_estate"][data-tenant-brand-preset="slate_minimal"] .beauty-erp-brand-script span {
+  color: #1e293b !important;
+  font-style: normal !important;
+}
+html[data-tenant-module="real_estate"][data-tenant-brand-preset="slate_minimal"] .beauty-erp-brand-subtitle {
+  color: #64748b !important;
+  letter-spacing: 0.12em !important;
+}
+/* Nav section header labels */
+html[data-tenant-module="real_estate"][data-tenant-brand-preset="slate_minimal"] .beauty-erp-nav-header {
+  color: #94a3b8 !important;
+}
+/* Profile card */
+html[data-tenant-module="real_estate"][data-tenant-brand-preset="slate_minimal"] .beauty-erp-profile-card {
+  background: rgba(241, 245, 249, 0.90) !important;
+  border-color: rgba(51, 65, 85, 0.12) !important;
+  backdrop-filter: blur(8px) !important;
+}
+html[data-tenant-module="real_estate"][data-tenant-brand-preset="slate_minimal"] .beauty-erp-profile-name {
+  color: #1e293b !important;
+}
+html[data-tenant-module="real_estate"][data-tenant-brand-preset="slate_minimal"] .beauty-erp-profile-role {
+  color: #334155 !important;
+}
+html[data-tenant-module="real_estate"][data-tenant-brand-preset="slate_minimal"] .beauty-erp-avatar {
+  background-color: rgba(51, 65, 85, 0.12) !important;
+  color: #334155 !important;
+}
+html[data-tenant-module="real_estate"][data-tenant-brand-preset="slate_minimal"] .beauty-erp-profile-divider {
+  background: linear-gradient(to right, transparent, rgba(51, 65, 85, 0.12), transparent) !important;
+}
+/* Icon buttons */
+html[data-tenant-module="real_estate"][data-tenant-brand-preset="slate_minimal"] .beauty-erp-icon-button {
+  color: #64748b !important;
+}
+html[data-tenant-module="real_estate"][data-tenant-brand-preset="slate_minimal"] .beauty-erp-icon-button:hover {
+  color: #1e293b !important;
+  background-color: rgba(51, 65, 85, 0.08) !important;
 }
 
 /* =========================================================================
@@ -4368,17 +4560,19 @@ html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item {
   border-color: transparent !important;
 }
 
-html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item:hover {
+/* industrial_cleaning — HOVER (non-active only) */
+html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover {
   background: rgba(255, 255, 255, 0.08) !important;
   border-color: rgba(188, 254, 254, 0.22) !important;
   color: #FFFFFF !important;
   box-shadow: 0 10px 28px rgba(0, 28, 68, 0.16) !important;
 }
 
+/* industrial_cleaning — ACTIVE */
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item-active {
   background: rgba(255, 255, 255, 0.96) !important;
   border-color: rgba(45, 147, 174, 0.5) !important;
-  border-radius: 1.5rem !important; /* Fix cắt viền trắng */
+  border-radius: 1.5rem !important;
   color: #2D93AE !important;
   box-shadow: 0 14px 32px rgba(0, 28, 68, 0.22) !important;
 }
@@ -4390,6 +4584,16 @@ html[data-tenant-module="industrial_cleaning"] .beauty-erp-icon-button svg {
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item-active svg,
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item-active span {
+  color: #2D93AE !important;
+}
+
+/* industrial_cleaning — ACTIVE + HOVER (lock teal text/icon, only brightens bg) */
+html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item-active:hover {
+  background: rgba(255, 255, 255, 1.0) !important;
+  box-shadow: 0 18px 40px rgba(0, 28, 68, 0.28) !important;
+}
+html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item-active:hover svg,
+html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item-active:hover span {
   color: #2D93AE !important;
 }
 
@@ -5423,5 +5627,43 @@ html[data-tenant-module="beauty_spa"] .customer-detail-card:hover {
   main > div.flex-1 {
     padding-top: 1.5rem !important; /* pt-6: 24px space before content text, keeping background unified */
   }
+}
+
+/* ==========================================================================
+   SETTINGS UI ISOLATION SCOPE
+   [data-settings-ui="appearance"]
+
+   INVARIANT:
+   Tenant/module/preset theme CSS MUST NOT leak structural effects
+   (border, ring, outline, box-shadow, text-shadow)
+   into plain text elements (p, span, label, h*) inside the Settings panel.
+   Input/button borders are NOT affected — they use Tailwind classes directly.
+   ========================================================================== */
+
+/* Reset structural effects on TEXT elements only — NOT on inputs/buttons */
+[data-settings-ui="appearance"] p,
+[data-settings-ui="appearance"] span:not(.bella-settings-swatch),
+[data-settings-ui="appearance"] label,
+[data-settings-ui="appearance"] h1,
+[data-settings-ui="appearance"] h2,
+[data-settings-ui="appearance"] h3,
+[data-settings-ui="appearance"] h4 {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+/* Preset card selected state — canonical single owner.
+   ONLY the outer card border changes. Text inside is NOT boxed. */
+.bella-settings-preset-active {
+  /* border-color: Tailwind border-primary/40 class */
+  /* background: Tailwind bg-primary/[0.04] class  */
+}
+
+/* Prevent nav item rules from targeting settings content */
+[data-settings-ui="appearance"] .beauty-erp-nav-item,
+[data-settings-ui="appearance"] .beauty-erp-nav-item-active {
+  all: revert;
 }
 

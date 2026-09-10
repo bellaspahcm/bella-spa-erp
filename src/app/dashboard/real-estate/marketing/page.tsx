@@ -250,6 +250,7 @@ export default function RealEstateMarketingPage() {
   const [activeSubsystem, setActiveSubsystem] = useState<'campaigns' | 'channels' | 'analytics'>('campaigns');
   const [campaigns, setCampaigns] = useState<CampaignItem[]>(INITIAL_CAMPAIGNS);
   const [agencies, setAgencies] = useState<AgencyItem[]>(INITIAL_AGENCIES);
+  const [selectedAgency, setSelectedAgency] = useState<AgencyItem | null>(null);
 
   // Filters
   const [filterProject, setFilterProject] = useState<string>('all');
@@ -800,8 +801,8 @@ export default function RealEstateMarketingPage() {
                   <span>{agency.contactPerson} ({agency.contactPhone})</span>
                 </div>
                 <button
-                  onClick={() => toast.info(`Mở chi tiết đại lý ${agency.name}`)}
-                  className="text-blue-600 font-bold hover:underline"
+                  onClick={() => setSelectedAgency(agency)}
+                  className="text-blue-600 font-bold hover:underline cursor-pointer"
                 >
                   Chi tiết ➔
                 </button>
@@ -1095,6 +1096,82 @@ export default function RealEstateMarketingPage() {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+        {/* AGENCY DETAIL MODAL */}
+        {selectedAgency && (
+          <div 
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4"
+            onClick={() => setSelectedAgency(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-lg border border-slate-200 dark:border-slate-800 overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800">
+                <div>
+                  <span className="text-[10px] font-black uppercase text-amber-600 tracking-wider">Hồ sơ sàn liên kết F1</span>
+                  <h3 className="text-lg font-black text-slate-900 dark:text-white">{selectedAgency.name}</h3>
+                </div>
+                <button
+                  onClick={() => setSelectedAgency(null)}
+                  className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="p-5 space-y-4 text-xs">
+                <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                  <div>
+                    <span className="text-slate-400 font-semibold block text-[10px]">Dự án phân phối</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200">{selectedAgency.assignedProject}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-semibold block text-[10px]">Cấp độ sàn</span>
+                    <span className="font-bold text-emerald-600">{selectedAgency.tier}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-semibold block text-[10px]">Hạn mức Lead tháng</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200">{selectedAgency.leadsDelivered} / {selectedAgency.leadQuota} leads</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-semibold block text-[10px]">Chỉ tiêu chuyển đổi</span>
+                    <span className="font-bold text-blue-600">{selectedAgency.convertedDeals} giao dịch ({((selectedAgency.convertedDeals / selectedAgency.leadsDelivered) * 100).toFixed(1)}%)</span>
+                  </div>
+                </div>
+
+                <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 p-4 rounded-xl space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-amber-900 dark:text-amber-300">Tỷ lệ hoa hồng hợp đồng:</span>
+                    <span className="font-black text-amber-700 dark:text-amber-400 text-sm">{selectedAgency.commissionRate}%</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-1 border-t border-amber-200/60">
+                    <span className="font-bold text-amber-900 dark:text-amber-300">Tổng doanh số tạo ra:</span>
+                    <span className="font-black text-indigo-600 text-sm">{(selectedAgency.revenueGenerated / 1000000000).toFixed(1)} Tỷ VNĐ</span>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex justify-end gap-2">
+                  <button
+                    onClick={() => {
+                      if (typeof window !== 'undefined') window.location.href = `tel:${selectedAgency.contactPhone}`;
+                    }}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5"
+                  >
+                    <Phone className="w-3.5 h-3.5" /> Gọi điện ({selectedAgency.contactPhone})
+                  </button>
+                  <button
+                    onClick={() => setSelectedAgency(null)}
+                    className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs hover:bg-slate-200"
+                  >
+                    Đóng
+                  </button>
+                </div>
+              </div>
             </motion.div>
           </div>
         )}
