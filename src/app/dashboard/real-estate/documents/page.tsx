@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { downloadPdfReport, downloadExcelReport } from "@/modules/real_estate/utils/exportUtils";
+import { downloadPdfReport, downloadCsvReport } from "@/modules/real_estate/utils/exportUtils";
 import {
   FileText, Search, Download, Eye, Clock,
   CheckCircle2, AlertTriangle, XCircle, FileSignature,
@@ -833,8 +833,8 @@ export default function LegalDocumentsOperationsCenterPage() {
           <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
             <button
               onClick={() => {
-                downloadExcelReport("Bao_Cao_Ho_So_Phap_Ly.csv", "Báo Cáo Hồ Sơ Pháp Lý Bella Land", ["DocCode", "Title", "Project", "Status"]);
-                toast.success("✅ Đã xuất file Excel báo cáo hồ sơ pháp lý thành công!");
+                downloadCsvReport("Bao_Cao_Ho_So_Phap_Ly.csv", "Báo Cáo Hồ Sơ Pháp Lý Bella Land", ["DocCode", "Title", "Project", "Status"]);
+                toast.success("✅ Đã xuất file CSV báo cáo hồ sơ pháp lý thành công!");
               }}
               className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-2xs transition flex items-center gap-1.5"
             >

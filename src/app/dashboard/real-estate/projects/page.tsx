@@ -18,7 +18,7 @@ import {
 import { fetchProductsAction } from "@/modules/real_estate/actions/productActions";
 import { PremiumSelect } from "@/components/ui/PremiumSelect";
 import { Database } from "@/types/database.types";
-import { downloadPdfReport, downloadExcelReport } from "@/modules/real_estate/utils/exportUtils";
+import { downloadPdfReport, downloadCsvReport } from "@/modules/real_estate/utils/exportUtils";
 
 type ProjectRow = Database["public"]["Tables"]["real_estate_projects"]["Row"];
 type ProductRow = Database["public"]["Tables"]["real_estate_products"]["Row"];
@@ -773,9 +773,9 @@ export default function RealEstateProjectsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
               {[
                 { title: "Báo cáo tiến độ mở bán & Giữ chỗ", type: "PDF · Executive Summary", date: "Cập nhật hôm nay" },
-                { title: "Báo cáo phân bổ sản phẩm theo khoảng giá", type: "Excel · Detailed Ledger", date: "Cập nhật 1 giờ trước" },
+                { title: "Báo cáo phân bổ sản phẩm theo khoảng giá", type: "CSV · Detailed Ledger", date: "Cập nhật 1 giờ trước" },
                 { title: "Báo cáo hiệu quả sàn F1 / F2 liên kết", type: "PDF · Agency Ranking", date: "Cập nhật hôm nay" },
-                { title: "Báo cáo dòng tiền cọc và thanh toán đợt", type: "Excel · Financial Statement", date: "Cập nhật hôm nay" },
+                { title: "Báo cáo dòng tiền cọc và thanh toán đợt", type: "CSV · Financial Statement", date: "Cập nhật hôm nay" },
               ].map((rep, idx) => (
                 <div key={idx} className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-700 flex justify-between items-center">
                   <div>
@@ -787,7 +787,7 @@ export default function RealEstateProjectsPage() {
                     if (rep.type.includes("PDF")) {
                       downloadPdfReport(`${filename}.pdf`, rep.title, { Type: rep.type, Date: rep.date });
                     } else {
-                      downloadExcelReport(`${filename}.csv`, rep.title, ["ProjectCode", "UnitCode", "Status", "Revenue_VND"]);
+                      downloadCsvReport(`${filename}.csv`, rep.title, ["ProjectCode", "UnitCode", "Status", "Revenue_VND"]);
                     }
                     toast.success(`✅ Đã tải tệp báo cáo "${rep.title}" thành công!`);
                   }} className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-bold hover:bg-slate-100">
