@@ -2,8 +2,8 @@ import { Metadata } from 'next';
 import { PeopleDirectoryPage } from '@/modules/real_estate/components/PeopleDirectoryPage';
 
 export const metadata: Metadata = {
-  title: 'Danh Mục Nhân Sự — Bella Real Estate',
-  description: 'Quản lý danh mục nhân sự: Sale, Môi giới, Đại lý, Đối tác của hệ thống bất động sản.',
+  title: 'Quản lý nhân sự — Bella Real Estate',
+  description: 'Quản lý nhân sự: Sales, Môi giới, Đại lý, Đối tác của hệ thống bất động sản Bella Land.',
 };
 
 export default function PeopleDirectoryRoute() {
