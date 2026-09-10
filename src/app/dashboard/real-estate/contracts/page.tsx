@@ -1,647 +1,1171 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FileText, CheckCircle2, Clock, XCircle, AlertTriangle,
-  ChevronDown, ChevronRight, Plus, RefreshCw, ArrowRight,
-  Banknote, User, Building2, Calendar, Search, Filter,
-  CheckCheck, BadgeCheck, TrendingUp
+  ChevronRight, Plus, Download, Search, Filter,
+  CheckCheck, BadgeCheck, TrendingUp, Building2, User,
+  Calendar, Wallet, ShieldAlert, MoreVertical, X,
+  FileCheck, ExternalLink, RefreshCw, Send, DollarSign
 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  fetchContractsAction,
-  signContractAction,
-  recordMilestonePaymentAction,
-  createContractAction,
-  type ContractRecord,
-  type PaymentMilestone,
-} from "@/modules/real_estate/actions/contractActions";
-
+import Link from "next/link";
 import { PremiumSelect } from "@/components/ui/PremiumSelect";
 
-function fmt(n: number) {
-  if (n >= 1e9) return `${(n / 1e9).toFixed(2)} tỷ`;
-  if (n >= 1e6) return `${(n / 1e6).toFixed(0)} triệu`;
-  return n.toLocaleString("vi-VN") + " đ";
+export interface ContractItem {
+  id: string;
+  contractNo: string;
+  contractType: 'HĐMB' | 'HĐĐC' | 'HĐCG';
+  contractTypeLabel: string;
+  signedDate: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string;
+  customerAvatar: string;
+  projectName: string;
+  projectImg: string;
+  unitCode: string;
+  unitSpec: string; // e.g. '2PN · 76.2m²'
+  totalValueVnd: number;
+  totalValueText: string;
+  paidValueVnd: number;
+  remainingValueVnd: number;
+  paidText: string;
+  remainingText: string;
+  paidPct: number;
+  nextMilestoneAmount: string;
+  nextMilestoneDate: string;
+  nextMilestoneDueText: string;
+  nextMilestoneStatus: 'breached' | 'warning' | 'normal' | 'none';
+  status: 'active' | 'deposited' | 'completed' | 'warning' | 'overdue' | 'waiting_signature' | 'terminated';
+  statusLabel: string;
+  statusColor: string;
+  // Detail Drawer Attributes
+  effectiveDate: string;
+  estimatedHandover: string;
+  paymentMilestones: {
+    name: string;
+    amount: string;
+    dueDate: string;
+    status: 'paid' | 'due_soon' | 'pending' | 'overdue';
+    statusLabel: string;
+  }[];
 }
 
-const STATUS_CONFIG = {
-  draft: { label: "Bản Thảo", icon: Clock, color: "bg-slate-100 text-slate-700 dark:bg-slate-800/60 dark:text-slate-300", dot: "bg-slate-400" },
-  active: { label: "Đang Hiệu Lực", icon: CheckCircle2, color: "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300", dot: "bg-blue-500" },
-  completed: { label: "Hoàn Tất", icon: BadgeCheck, color: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300", dot: "bg-emerald-500" },
-  terminated: { label: "Đã Hủy", icon: XCircle, color: "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300", dot: "bg-rose-500" },
-  signed: { label: "Đã Ký", icon: CheckCheck, color: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300", dot: "bg-emerald-500" },
-  cancelled: { label: "Đã Hủy", icon: XCircle, color: "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300", dot: "bg-rose-500" },
-};
-
-function StatusBadge({ status }: { status: ContractRecord["status"] }) {
-  const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.draft;
-  return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${cfg.color}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-      {cfg.label}
-    </span>
-  );
-}
-
-function MilestoneRow({
-  milestone,
-  contractId,
-  onPay,
-}: {
-  milestone: PaymentMilestone;
-  contractId: string;
-  onPay: (cid: string, mid: string) => void;
-}) {
-  const isPaid = milestone.status === "paid";
-  const isOverdue = milestone.status === "overdue";
-  return (
-    <div className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
-      isPaid
-        ? "bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200/50 dark:border-emerald-800/30"
-        : isOverdue
-        ? "bg-rose-50/50 dark:bg-rose-950/20 border-rose-200/50 dark:border-rose-800/30"
-        : "bg-slate-50/50 dark:bg-slate-800/20 border-slate-200/50 dark:border-slate-700/30"
-    }`}>
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-        isPaid ? "bg-emerald-100 dark:bg-emerald-900/50" : isOverdue ? "bg-rose-100 dark:bg-rose-900/50" : "bg-slate-100 dark:bg-slate-700/50"
-      }`}>
-        {isPaid ? (
-          <CheckCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-        ) : isOverdue ? (
-          <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400" />
-        ) : (
-          <Clock className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-baseline gap-2">
-          <p className="text-sm font-bold text-slate-900 dark:text-white">{milestone.label}</p>
-          <span className="text-xs text-slate-500 dark:text-slate-400">({milestone.percentage}%)</span>
-        </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400">{milestone.dueDateLabel}</p>
-        {isPaid && milestone.paidDate && (
-          <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">Đã thu: {milestone.paidDate}</p>
-        )}
-      </div>
-      <div className="text-right shrink-0">
-        <p className="text-sm font-black text-slate-900 dark:text-white">{fmt(milestone.amountVnd)}</p>
-        {!isPaid && (
-          <button
-            onClick={() => onPay(contractId, milestone.id)}
-            className="mt-1 px-2.5 py-1 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-black rounded-lg transition-all"
-          >
-            Ghi Thu
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ContractCard({
-  contract,
-  onSign,
-  onPay,
-}: {
-  contract: ContractRecord;
-  onSign: (id: string) => void;
-  onPay: (cid: string, mid: string) => void;
-}) {
-  const [expanded, setExpanded] = useState(false);
-  const paidTotal = contract.milestones.filter(m => m.status === "paid").reduce((s, m) => s + m.amountVnd, 0);
-  const paidPct = Math.round((paidTotal / contract.finalValueVnd) * 100);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-    >
-      {/* Card Header */}
-      <div className="p-5">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200/50 dark:border-amber-700/30 flex items-center justify-center shrink-0">
-              <FileText className="w-6 h-6 text-amber-600 dark:text-amber-400" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-base font-black text-slate-900 dark:text-white">{contract.contractNo}</h3>
-                <StatusBadge status={contract.status} />
-              </div>
-              <div className="flex items-center gap-4 mt-1 text-sm text-slate-500 dark:text-slate-400 flex-wrap">
-                <span className="flex items-center gap-1"><User className="w-3.5 h-3.5" />{contract.customerName}</span>
-                <span className="flex items-center gap-1"><Building2 className="w-3.5 h-3.5" />{contract.unitCode}</span>
-                <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />{contract.createdAt}</span>
-              </div>
-            </div>
-          </div>
-          <div className="text-right shrink-0">
-            <p className="text-2xl font-black text-slate-900 dark:text-white">{fmt(contract.finalValueVnd)}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Giá gốc: {fmt(contract.totalValueVnd)} + VAT {contract.vatRate}% + KPBT {contract.maintenanceFee}%
-            </p>
-          </div>
-        </div>
-
-        {/* Payment Progress */}
-        <div className="mt-4 space-y-1.5">
-          <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400">
-            <span className="font-semibold">Tiến độ thu tiền</span>
-            <span className="font-black text-slate-900 dark:text-white">{paidPct}% — {fmt(paidTotal)}</span>
-          </div>
-          <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${paidPct}%` }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-              className={`h-full rounded-full ${paidPct === 100 ? "bg-emerald-500" : "bg-amber-500"}`}
-            />
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="mt-4 flex items-center justify-between">
-          <div className="flex gap-2">
-            {contract.status === "draft" && (
-              <button
-                onClick={() => onSign(contract.id)}
-                className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all"
-              >
-                <CheckCheck className="w-4 h-4" />
-                Ký Hợp Đồng
-              </button>
-            )}
-            <span className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
-              <User className="w-3.5 h-3.5" />Sale: {contract.saleName}
-            </span>
-          </div>
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 font-bold hover:text-amber-700 dark:hover:text-amber-300 transition-colors"
-          >
-            {expanded ? "Ẩn lịch thanh toán" : "Xem lịch thanh toán"}
-            {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-          </button>
-        </div>
-      </div>
-
-      {/* Expanded Milestones */}
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="border-t border-slate-100 dark:border-slate-800 overflow-hidden"
-          >
-            <div className="p-5 space-y-2">
-              <h4 className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">
-                Lịch Thanh Toán Tiến Độ
-              </h4>
-              {contract.milestones.map(ms => (
-                <MilestoneRow
-                  key={ms.id}
-                  milestone={ms}
-                  contractId={contract.id}
-                  onPay={onPay}
-                />
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-}
+const CONTRACT_DATA: ContractItem[] = [
+  {
+    id: 'ct-001',
+    contractNo: 'HĐMB-2026-0184',
+    contractType: 'HĐMB',
+    contractTypeLabel: 'Hợp đồng mua bán căn hộ',
+    signedDate: '01/09/2026',
+    customerName: 'Lê Văn Chánh',
+    customerPhone: '0901 234 567',
+    customerEmail: 'le.chanh@gmail.com',
+    customerAvatar: 'L',
+    projectName: 'Elyse Island',
+    projectImg: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=120&q=80',
+    unitCode: 'A1-1804',
+    unitSpec: '2PN · 76.2m²',
+    totalValueVnd: 4280000000,
+    totalValueText: '4.28 tỷ',
+    paidValueVnd: 1284000000,
+    remainingValueVnd: 2996000000,
+    paidText: '1.28 tỷ',
+    remainingText: '3.00 tỷ',
+    paidPct: 30,
+    nextMilestoneAmount: '428 triệu',
+    nextMilestoneDate: '18/09/2026',
+    nextMilestoneDueText: 'Còn 8 ngày',
+    nextMilestoneStatus: 'warning',
+    status: 'active',
+    statusLabel: 'Đang hiệu lực',
+    statusColor: 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800',
+    effectiveDate: '01/09/2026',
+    estimatedHandover: 'Q4/2027',
+    paymentMilestones: [
+      { name: 'Đặt cọc', amount: '200.000.000 ₫', dueDate: '01/09/2026', status: 'paid', statusLabel: 'Đã thu' },
+      { name: 'Đợt 1', amount: '1.084.000.000 ₫', dueDate: '05/09/2026', status: 'paid', statusLabel: 'Đã thu' },
+      { name: 'Đợt 2', amount: '428.000.000 ₫', dueDate: '18/09/2026', status: 'due_soon', statusLabel: 'Còn 8 ngày' },
+      { name: 'Đợt 3', amount: '856.000.000 ₫', dueDate: '18/11/2026', status: 'pending', statusLabel: 'Chưa đến hạn' },
+      { name: 'Đợt 4', amount: '1.712.000.000 ₫', dueDate: '18/02/2027', status: 'pending', statusLabel: 'Chưa đến hạn' },
+    ]
+  },
+  {
+    id: 'ct-002',
+    contractNo: 'HĐMB-2026-0183',
+    contractType: 'HĐMB',
+    contractTypeLabel: 'Hợp đồng mua bán căn hộ',
+    signedDate: '28/08/2026',
+    customerName: 'Phạm Thị Diễm',
+    customerPhone: '0912 345 678',
+    customerEmail: 'phamthidiem@hotmail.com',
+    customerAvatar: 'P',
+    projectName: 'Elyse Island',
+    projectImg: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=120&q=80',
+    unitCode: 'A1-2108',
+    unitSpec: '3PN · 98.5m²',
+    totalValueVnd: 5650000000,
+    totalValueText: '5.65 tỷ',
+    paidValueVnd: 2000000000,
+    remainingValueVnd: 3650000000,
+    paidText: '2.00 tỷ',
+    remainingText: '3.65 tỷ',
+    paidPct: 35,
+    nextMilestoneAmount: '1.20 tỷ',
+    nextMilestoneDate: '28/10/2026',
+    nextMilestoneDueText: 'Còn 50 ngày',
+    nextMilestoneStatus: 'normal',
+    status: 'active',
+    statusLabel: 'Đang hiệu lực',
+    statusColor: 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800',
+    effectiveDate: '28/08/2026',
+    estimatedHandover: 'Q4/2027',
+    paymentMilestones: [
+      { name: 'Đặt cọc', amount: '300.000.000 ₫', dueDate: '28/08/2026', status: 'paid', statusLabel: 'Đã thu' },
+      { name: 'Đợt 1', amount: '1.700.000.000 ₫', dueDate: '15/09/2026', status: 'paid', statusLabel: 'Đã thu' },
+      { name: 'Đợt 2', amount: '1.200.000.000 ₫', dueDate: '28/10/2026', status: 'pending', statusLabel: 'Còn 50 ngày' }
+    ]
+  },
+  {
+    id: 'ct-003',
+    contractNo: 'HĐĐC-2026-0112',
+    contractType: 'HĐĐC',
+    contractTypeLabel: 'Hợp đồng đặt cọc giữ chỗ',
+    signedDate: '15/08/2026',
+    customerName: 'Hoàng Minh Đức',
+    customerPhone: '0933 111 222',
+    customerEmail: 'hmduc@company.vn',
+    customerAvatar: 'H',
+    projectName: 'Sunrise Residence',
+    projectImg: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=120&q=80',
+    unitCode: 'S2-1205',
+    unitSpec: '2PN · 75.4m²',
+    totalValueVnd: 200000000,
+    totalValueText: '200 triệu',
+    paidValueVnd: 200000000,
+    remainingValueVnd: 0,
+    paidText: '200 triệu',
+    remainingText: '0',
+    paidPct: 100,
+    nextMilestoneAmount: 'Ký HĐMB',
+    nextMilestoneDate: '30/09/2026',
+    nextMilestoneDueText: 'Còn 20 ngày',
+    nextMilestoneStatus: 'normal',
+    status: 'deposited',
+    statusLabel: 'Đã đặt cọc',
+    statusColor: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800',
+    effectiveDate: '15/08/2026',
+    estimatedHandover: 'Q2/2028',
+    paymentMilestones: [
+      { name: 'Giữ chỗ', amount: '50.000.000 ₫', dueDate: '15/08/2026', status: 'paid', statusLabel: 'Đã thu' },
+      { name: 'Bổ sung cọc', amount: '150.000.000 ₫', dueDate: '20/08/2026', status: 'paid', statusLabel: 'Đã thu' }
+    ]
+  },
+  {
+    id: 'ct-004',
+    contractNo: 'HĐMB-2026-0178',
+    contractType: 'HĐMB',
+    contractTypeLabel: 'Hợp đồng mua bán căn hộ',
+    signedDate: '10/07/2026',
+    customerName: 'Ngô Thị Hạnh',
+    customerPhone: '0967 123 456',
+    customerEmail: 'hanh.nt@gmail.com',
+    customerAvatar: 'N',
+    projectName: 'Lumière Bay',
+    projectImg: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=120&q=80',
+    unitCode: 'L1-2402',
+    unitSpec: '1PN · 52.1m²',
+    totalValueVnd: 3120000000,
+    totalValueText: '3.12 tỷ',
+    paidValueVnd: 3120000000,
+    remainingValueVnd: 0,
+    paidText: '3.12 tỷ',
+    remainingText: '0',
+    paidPct: 100,
+    nextMilestoneAmount: '-',
+    nextMilestoneDate: '-',
+    nextMilestoneDueText: 'Hoàn tất thanh toán',
+    nextMilestoneStatus: 'none',
+    status: 'completed',
+    statusLabel: 'Hoàn tất',
+    statusColor: 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800',
+    effectiveDate: '10/07/2026',
+    estimatedHandover: 'Đã bàn giao Q3/2026',
+    paymentMilestones: [
+      { name: 'Tất toán 100%', amount: '3.120.000.000 ₫', dueDate: '10/07/2026', status: 'paid', statusLabel: 'Đã thu' }
+    ]
+  },
+  {
+    id: 'ct-005',
+    contractNo: 'HĐMB-2026-0175',
+    contractType: 'HĐMB',
+    contractTypeLabel: 'Hợp đồng mua bán căn hộ',
+    signedDate: '05/07/2026',
+    customerName: 'Đỗ Minh Tuấn',
+    customerPhone: '0909 988 776',
+    customerEmail: 'tuan.dm@gmail.com',
+    customerAvatar: 'Đ',
+    projectName: 'Bella Premium',
+    projectImg: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=120&q=80',
+    unitCode: 'B1-1606',
+    unitSpec: '2PN · 68.5m²',
+    totalValueVnd: 4900000000,
+    totalValueText: '4.90 tỷ',
+    paidValueVnd: 1500000000,
+    remainingValueVnd: 3400000000,
+    paidText: '1.50 tỷ',
+    remainingText: '3.40 tỷ',
+    paidPct: 31,
+    nextMilestoneAmount: '850 triệu',
+    nextMilestoneDate: '05/10/2026',
+    nextMilestoneDueText: 'Còn 17 ngày',
+    nextMilestoneStatus: 'warning',
+    status: 'warning',
+    statusLabel: 'Sắp đến hạn',
+    statusColor: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800',
+    effectiveDate: '05/07/2026',
+    estimatedHandover: 'Q1/2027',
+    paymentMilestones: [
+      { name: 'Đặt cọc', amount: '200.000.000 ₫', dueDate: '05/07/2026', status: 'paid', statusLabel: 'Đã thu' },
+      { name: 'Đợt 1', amount: '1.300.000.000 ₫', dueDate: '15/07/2026', status: 'paid', statusLabel: 'Đã thu' },
+      { name: 'Đợt 2', amount: '850.000.000 ₫', dueDate: '05/10/2026', status: 'due_soon', statusLabel: 'Còn 17 ngày' }
+    ]
+  },
+  {
+    id: 'ct-006',
+    contractNo: 'HĐMB-2026-0168',
+    contractType: 'HĐMB',
+    contractTypeLabel: 'Hợp đồng mua bán căn hộ',
+    signedDate: '20/06/2026',
+    customerName: 'Bùi Thị Mai',
+    customerPhone: '0933 666 888',
+    customerEmail: 'mai.bt@gmail.com',
+    customerAvatar: 'B',
+    projectName: 'Elyse Island',
+    projectImg: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=120&q=80',
+    unitCode: 'A2-0901',
+    unitSpec: '2PN · 76.0m²',
+    totalValueVnd: 4350000000,
+    totalValueText: '4.35 tỷ',
+    paidValueVnd: 0,
+    remainingValueVnd: 4350000000,
+    paidText: '0',
+    remainingText: '4.35 tỷ',
+    paidPct: 0,
+    nextMilestoneAmount: '435 triệu',
+    nextMilestoneDate: '20/09/2026',
+    nextMilestoneDueText: '🔴 Còn 10 ngày',
+    nextMilestoneStatus: 'breached',
+    status: 'overdue',
+    statusLabel: 'Quá hạn',
+    statusColor: 'bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800',
+    effectiveDate: '20/06/2026',
+    estimatedHandover: 'Q4/2027',
+    paymentMilestones: [
+      { name: 'Đợt 1 quá hạn', amount: '435.000.000 ₫', dueDate: '20/09/2026', status: 'overdue', statusLabel: '🔴 Quá hạn' }
+    ]
+  },
+  {
+    id: 'ct-007',
+    contractNo: 'HĐMB-2026-0159',
+    contractType: 'HĐMB',
+    contractTypeLabel: 'Hợp đồng mua bán căn hộ',
+    signedDate: '12/06/2026',
+    customerName: 'Trần Nam',
+    customerPhone: '0987 654 321',
+    customerEmail: 'nam.tran@gmail.com',
+    customerAvatar: 'T',
+    projectName: 'Sunrise Residence',
+    projectImg: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=120&q=80',
+    unitCode: 'S1-2003',
+    unitSpec: '3PN · 102.3m²',
+    totalValueVnd: 6800000000,
+    totalValueText: '6.80 tỷ',
+    paidValueVnd: 4080000000,
+    remainingValueVnd: 2720000000,
+    paidText: '4.08 tỷ',
+    remainingText: '2.72 tỷ',
+    paidPct: 60,
+    nextMilestoneAmount: '680 triệu',
+    nextMilestoneDate: '12/11/2026',
+    nextMilestoneDueText: 'Còn 58 ngày',
+    nextMilestoneStatus: 'normal',
+    status: 'active',
+    statusLabel: 'Đang hiệu lực',
+    statusColor: 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800',
+    effectiveDate: '12/06/2026',
+    estimatedHandover: 'Q2/2028',
+    paymentMilestones: [
+      { name: 'Đặt cọc & Đợt 1', amount: '4.080.000.000 ₫', dueDate: '12/06/2026', status: 'paid', statusLabel: 'Đã thu' },
+      { name: 'Đợt 2', amount: '680.000.000 ₫', dueDate: '12/11/2026', status: 'pending', statusLabel: 'Còn 58 ngày' }
+    ]
+  },
+  {
+    id: 'ct-008',
+    contractNo: 'HĐĐC-2026-0098',
+    contractType: 'HĐĐC',
+    contractTypeLabel: 'Hợp đồng đặt cọc giữ chỗ',
+    signedDate: '01/06/2026',
+    customerName: 'Phan Thuận',
+    customerPhone: '0918 222 333',
+    customerEmail: 'thuan.pt@gmail.com',
+    customerAvatar: 'P',
+    projectName: 'Elyse Island',
+    projectImg: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=120&q=80',
+    unitCode: 'A1-1705',
+    unitSpec: '2PN · 76.2m²',
+    totalValueVnd: 300000000,
+    totalValueText: '300 triệu',
+    paidValueVnd: 300000000,
+    remainingValueVnd: 0,
+    paidText: '300 triệu',
+    remainingText: '0',
+    paidPct: 100,
+    nextMilestoneAmount: 'Ký HĐMB',
+    nextMilestoneDate: '30/09/2026',
+    nextMilestoneDueText: 'Còn 20 ngày',
+    nextMilestoneStatus: 'normal',
+    status: 'waiting_signature',
+    statusLabel: 'Chờ ký',
+    statusColor: 'bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+    effectiveDate: '01/06/2026',
+    estimatedHandover: 'Q4/2027',
+    paymentMilestones: [
+      { name: 'Đặt cọc 100%', amount: '300.000.000 ₫', dueDate: '01/06/2026', status: 'paid', statusLabel: 'Đã thu' }
+    ]
+  }
+];
 
 export default function RealEstateContractsPage() {
-  const [contracts, setContracts] = useState<ContractRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [contracts, setContracts] = useState<ContractItem[]>(CONTRACT_DATA);
+  const [selectedContractId, setSelectedContractId] = useState<string | null>('ct-001');
+  const [domainTab, setDomainTab] = useState<'overview' | 'deposit' | 'contract' | 'payment' | 'debt'>('overview');
+  const [urgencyFilter, setUrgencyFilter] = useState<string>('all');
+  const [search, setSearch] = useState<string>('');
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
-  const [projectName, setProjectName] = useState("Bella Residences");
-  const [unitCode, setUnitCode] = useState("");
-  const [totalValueVnd, setTotalValueVnd] = useState(3000000000);
-  const [vatRate, setVatRate] = useState(10);
-  const [maintenanceFee, setMaintenanceFee] = useState(2);
-  const [discount, setDiscount] = useState(0);
-  const [saleName, setSaleName] = useState("Nguyễn Văn Minh");
-  const [submitting, setSubmitting] = useState(false);
+  // Dropdown filters
+  const [filterProject, setFilterProject] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterType, setFilterType] = useState<string>('all');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!customerName || !customerPhone || !unitCode || !saleName) {
-      toast.error("Vui lòng điền đầy đủ các thông tin bắt buộc!");
-      return;
-    }
-    setSubmitting(true);
-    const res = await createContractAction({
-      customerName,
-      customerPhone,
-      projectName,
-      unitCode,
-      totalValueVnd,
-      vatRate,
-      maintenanceFee,
-      discount,
-      saleName,
-    });
-    setSubmitting(false);
-    if (res.success) {
-      toast.success("✅ Lập hợp đồng mới thành công (bản thảo)!");
-      setIsModalOpen(false);
-      // Reset form
-      setCustomerName("");
-      setCustomerPhone("");
-      setUnitCode("");
-      setTotalValueVnd(3000000000);
-      setDiscount(0);
-      await load();
-    } else {
-      toast.error(res.error ?? "Không thể lập hợp đồng");
-    }
-  };
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    const res = await fetchContractsAction();
-    if (res.success && res.data) setContracts(res.data);
-    else toast.error(res.error ?? "Không thể tải dữ liệu hợp đồng");
-    setLoading(false);
+  const selectedContract = useMemo(() => {
+    return contracts.find(c => c.id === selectedContractId) || null;
+  }, [contracts, selectedContractId]);
+
+  // Financial Operational KPIs (Exact matching Reference Image 1)
+  const stats = useMemo(() => {
+    return {
+      activeCount: 128,
+      totalCount: 186,
+      totalValueText: '486.2 tỷ',
+      avgValueText: 'TB: 3.8 tỷ/HĐ',
+      paidTotalText: '312.8 tỷ',
+      paidPctText: '64.4%',
+      remainingTotalText: '173.4 tỷ',
+      remainingPctText: '35.6%',
+      overdueCount: 12,
+      overdueAmountText: '18.6 tỷ',
+      dueSoonCount: 26,
+      dueSoonAmountText: '42.2 tỷ',
+      needActionCount: 18,
+      waitingSignatureCount: 8,
+      missingDocCount: 4
+    };
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  // Filtered Contracts
+  const filteredContracts = useMemo(() => {
+    return contracts.filter(c => {
+      // Domain Tab
+      if (domainTab === 'deposit' && c.contractType !== 'HĐĐC') return false;
+      if (domainTab === 'contract' && c.contractType !== 'HĐMB') return false;
 
-  async function handleSign(contractId: string) {
-    const res = await signContractAction(contractId);
-    if (res.success) {
-      toast.success("✅ Ký hợp đồng thành công!");
-      await load();
-    } else {
-      toast.error(res.error ?? "Ký hợp đồng thất bại");
-    }
-  }
+      // Urgency Filter
+      if (urgencyFilter === 'overdue' && c.status !== 'overdue') return false;
+      if (urgencyFilter === 'due_soon' && c.status !== 'warning') return false;
+      if (urgencyFilter === 'waiting_signature' && c.status !== 'waiting_signature') return false;
 
-  async function handlePay(contractId: string, milestoneId: string) {
-    const res = await recordMilestonePaymentAction(contractId, milestoneId);
-    if (res.success) {
-      toast.success("💰 Ghi nhận thanh toán thành công!");
-      await load();
-    } else {
-      toast.error(res.error ?? "Ghi nhận thất bại");
-    }
-  }
+      // Dropdowns
+      if (filterProject !== 'all' && c.projectName !== filterProject) return false;
+      if (filterStatus !== 'all' && c.status !== filterStatus) return false;
 
-  const filtered = contracts.filter(c => {
-    const matchSearch =
-      !search ||
-      c.contractNo.toLowerCase().includes(search.toLowerCase()) ||
-      c.customerName.toLowerCase().includes(search.toLowerCase()) ||
-      c.unitCode.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = filterStatus === "all" || c.status === filterStatus;
-    return matchSearch && matchStatus;
-  });
+      // Search
+      if (search) {
+        const q = search.toLowerCase();
+        const mNo = c.contractNo.toLowerCase().includes(q);
+        const mCust = c.fullName ? c.fullName.toLowerCase().includes(q) : c.customerName.toLowerCase().includes(q);
+        const mUnit = c.unitCode.toLowerCase().includes(q);
+        if (!mNo && !mCust && !mUnit) return false;
+      }
+      return true;
+    });
+  }, [contracts, domainTab, urgencyFilter, filterProject, filterStatus, search]);
 
-  // Summary stats
-  const totalValue = contracts.reduce((s, c) => s + c.finalValueVnd, 0);
-  const paidValue = contracts.reduce(
-    (s, c) => s + c.milestones.filter(m => m.status === "paid").reduce((ms, m) => ms + m.amountVnd, 0),
-    0
-  );
-  const activeCount = contracts.filter(c => c.status === "active").length;
-  const completedCount = contracts.filter(c => c.status === "completed").length;
+  const handleRecordPayment = () => {
+    if (!selectedContract) return;
+    setContracts(prev => prev.map(c => {
+      if (c.id !== selectedContract.id) return c;
+      return {
+        ...c,
+        paidValueVnd: c.paidValueVnd + 428000000,
+        remainingValueVnd: Math.max(0, c.remainingValueVnd - 428000000),
+        paidText: '1.71 tỷ',
+        remainingText: '2.57 tỷ',
+        paidPct: 40,
+        nextMilestoneAmount: '856 triệu',
+        nextMilestoneDate: '18/11/2026',
+        nextMilestoneDueText: 'Còn 68 ngày',
+        nextMilestoneStatus: 'normal',
+        paymentMilestones: c.paymentMilestones.map(m => m.status === 'due_soon' ? { ...m, status: 'paid', statusLabel: 'Đã thu' } : m)
+      };
+    }));
+    setShowPaymentModal(false);
+    toast.success(`✅ Đã ghi nhận thanh toán 428.000.000 ₫ cho hợp đồng ${selectedContract.contractNo}!`);
+  };
 
   return (
-    <div className="space-y-8">
-      {/* ─ Header ─ */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="p-6 md:p-8 space-y-6 max-w-[1600px] mx-auto font-sans text-slate-900 dark:text-slate-100 pb-12">
+      {/* ── 1. Header Bar & Controls (Matching Image 1) ── */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-              <FileText className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 mb-1">
+            <span>Bella Land</span>
+            <span>/</span>
+            <span>Kinh doanh</span>
+            <span>/</span>
+            <span className="text-slate-700 dark:text-slate-200 font-bold">Hợp đồng & Thanh toán</span>
+          </div>
+          <h1 className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+              <FileText className="w-5 h-5" />
             </div>
-            Hợp Đồng & Đặt Cọc
+            Hợp đồng & Thanh toán
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-            Quản lý HĐMB, lịch thanh toán tiến độ và công nợ khách hàng
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+            Quản lý đặt cọc, HĐMB, tiến độ thanh toán và công nợ khách hàng
           </p>
         </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-black px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm"
-        >
-          <Plus className="w-4 h-4" />
-          Lập Hợp Đồng Mới
-        </button>
-      </div>
 
-      {/* ─ KPI Row ─ */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { icon: FileText, label: "Tổng Hợp Đồng", value: String(contracts.length), color: "blue" },
-          { icon: CheckCircle2, label: "Đang Hiệu Lực", value: String(activeCount), color: "amber" },
-          { icon: BadgeCheck, label: "Hoàn Tất", value: String(completedCount), color: "green" },
-          { icon: TrendingUp, label: "Đã Thu / Tổng Giá Trị", value: `${fmt(paidValue)} / ${fmt(totalValue)}`, color: "purple" },
-        ].map(kpi => (
-          <div key={kpi.label} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">{kpi.label}</p>
-            <p className="text-xl font-black text-slate-900 dark:text-white">{kpi.value}</p>
+        <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+          <select className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 shadow-xs focus:outline-none">
+            <option value="elyse">🏢 Elyse Island</option>
+            <option value="sunrise">Sunrise Residence</option>
+            <option value="lumiere">Lumière Bay</option>
+          </select>
+
+          <div className="relative min-w-[240px]">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              placeholder="Tìm số HĐ, khách hàng, mã căn..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full pl-8 pr-12 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none shadow-xs"
+            />
+            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">Ctrl K</span>
           </div>
-        ))}
+
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-4 py-2 rounded-xl text-xs font-extrabold bg-amber-500 hover:bg-amber-600 text-black shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+          >
+            <Plus className="w-4 h-4" /> Lập hợp đồng mới ▾
+          </button>
+        </div>
       </div>
 
-      {/* ─ Filters ─ */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            placeholder="Tìm số HĐ, khách hàng, mã căn..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-amber-500/50"
-          />
+      {/* ── 2. Top 6 Financial Operational KPI Cards (Matching Image 1) ── */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
+        {/* Card 1: Hợp đồng active */}
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-bold text-emerald-600 uppercase tracking-wider text-[10px]">↑ 12%</span>
+            <FileText className="w-4 h-4 text-emerald-500 opacity-60" />
+          </div>
+          <div className="mt-2">
+            <span className="text-2xl lg:text-3xl font-black text-emerald-600">{stats.activeCount}</span>
+            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-0.5">Hợp đồng active</p>
+            <p className="text-[10px] text-slate-400 font-medium">Tổng: {stats.totalCount}</p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-slate-400 shrink-0" />
-          {["all", "draft", "active", "completed", "terminated"].map(s => (
+
+        {/* Card 2: Tổng giá trị HĐ */}
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-bold text-amber-600 uppercase tracking-wider text-[10px]">↑ 8%</span>
+            <FileCheck className="w-4 h-4 text-amber-500 opacity-60" />
+          </div>
+          <div className="mt-2">
+            <span className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white">{stats.totalValueText}</span>
+            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-0.5">Tổng giá trị HĐ</p>
+            <p className="text-[10px] text-slate-400 font-medium">{stats.avgValueText}</p>
+          </div>
+        </div>
+
+        {/* Card 3: Đã thu */}
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-bold text-emerald-600 uppercase tracking-wider text-[10px]">↑ 15%</span>
+            <Wallet className="w-4 h-4 text-emerald-500 opacity-60" />
+          </div>
+          <div className="mt-2">
+            <span className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white">{stats.paidTotalText}</span>
+            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-0.5">Đã thu</p>
+            <p className="text-[10px] text-emerald-600 font-extrabold">{stats.paidPctText}</p>
+          </div>
+        </div>
+
+        {/* Card 4: Còn phải thu */}
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-bold text-rose-500 uppercase tracking-wider text-[10px]">↓ 5%</span>
+            <Clock className="w-4 h-4 text-blue-500 opacity-60" />
+          </div>
+          <div className="mt-2">
+            <span className="text-2xl lg:text-3xl font-black text-blue-600">{stats.remainingTotalText}</span>
+            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-0.5">Còn phải thu</p>
+            <p className="text-[10px] text-slate-400 font-medium">{stats.remainingPctText}</p>
+          </div>
+        </div>
+
+        {/* Card 5: Kỳ thanh toán quá hạn */}
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-bold text-rose-600 uppercase tracking-wider text-[10px]">↑ 33%</span>
+            <AlertTriangle className="w-4 h-4 text-rose-500 opacity-60" />
+          </div>
+          <div className="mt-2">
+            <span className="text-2xl lg:text-3xl font-black text-rose-600">{stats.overdueCount}</span>
+            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-0.5">Kỳ thanh toán quá hạn</p>
+            <p className="text-[10px] text-rose-600 font-extrabold">{stats.overdueAmountText}</p>
+          </div>
+        </div>
+
+        {/* Card 6: Sắp đến hạn */}
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-bold text-emerald-600 uppercase tracking-wider text-[10px]">↑ 8%</span>
+            <Calendar className="w-4 h-4 text-blue-500 opacity-60" />
+          </div>
+          <div className="mt-2">
+            <span className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white">{stats.dueSoonCount}</span>
+            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-0.5">Sắp đến hạn (7 ngày)</p>
+            <p className="text-[10px] text-slate-400 font-medium">{stats.dueSoonAmountText}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── 3. Domain Views & Action Queue Filter Toolbar (Matching Image 1) ── */}
+      <div className="space-y-3 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl shadow-xs">
+        {/* Domain View Tabs */}
+        <div className="flex items-center gap-6 border-b border-slate-100 dark:border-slate-800 pb-2 text-xs font-bold">
+          {[
+            { id: 'overview', label: 'Tổng quan' },
+            { id: 'deposit', label: 'Đặt cọc' },
+            { id: 'contract', label: 'Hợp đồng' },
+            { id: 'payment', label: 'Thanh toán' },
+            { id: 'debt', label: 'Công nợ' },
+          ].map(tab => (
             <button
-              key={s}
-              onClick={() => setFilterStatus(s)}
-              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all ${
-                filterStatus === s
-                  ? "bg-amber-500 text-black"
-                  : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-amber-300"
+              key={tab.id}
+              onClick={() => setDomainTab(tab.id as any)}
+              className={`pb-1 transition-all cursor-pointer ${
+                domainTab === tab.id
+                  ? 'text-blue-600 border-b-2 border-blue-600 font-black'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              {s === "all" ? "Tất cả" : STATUS_CONFIG[s as keyof typeof STATUS_CONFIG]?.label ?? s}
+              {tab.label}
             </button>
           ))}
         </div>
-      </div>
 
-      {/* ─ Contract List ─ */}
-      {loading ? (
-        <div className="flex items-center justify-center h-48">
-          <RefreshCw className="w-8 h-8 animate-spin text-amber-500" />
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-slate-400 dark:text-slate-500">
-          <FileText className="w-12 h-12 mx-auto mb-3 opacity-40" />
-          <p className="font-semibold">Không có hợp đồng nào phù hợp</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {filtered.map(contract => (
-            <ContractCard
-              key={contract.id}
-              contract={contract}
-              onSign={handleSign}
-              onPay={handlePay}
-            />
+        {/* Action Queue Urgency Filters (Row 2 Pills) */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          {[
+            { id: 'all', label: `Tất cả (${stats.totalCount})` },
+            { id: 'need_action', label: `🔴 Cần xử lý (${stats.needActionCount})` },
+            { id: 'overdue', label: `🔴 Quá hạn (${stats.overdueCount})` },
+            { id: 'due_soon', label: `⚠️ Sắp đến hạn (${stats.dueSoonCount})` },
+            { id: 'waiting_signature', label: `👤 Chờ ký (${stats.waitingSignatureCount})` },
+            { id: 'missing_docs', label: `📁 Thiếu hồ sơ (${stats.missingDocCount})` },
+          ].map(filter => (
+            <button
+              key={filter.id}
+              onClick={() => setUrgencyFilter(filter.id)}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1 cursor-pointer ${
+                urgencyFilter === filter.id
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'bg-slate-100/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
+              }`}
+            >
+              {filter.label}
+            </button>
           ))}
         </div>
-      )}
 
-      {/* ─ Create Contract Modal ─ */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsModalOpen(false)}
-              className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
-            />
-
-            {/* Modal Content */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ duration: 0.2 }}
-              className="relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-2xl z-10 flex flex-col max-h-[90vh]"
+        {/* Secondary Dropdown Row */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-2 flex-wrap text-xs font-semibold">
+            <select
+              value={filterProject}
+              onChange={e => setFilterProject(e.target.value)}
+              className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none"
             >
-              {/* Header */}
-              <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-amber-500" />
-                  Lập Hợp Đồng Mới
-                </h3>
-                <button
-                  onClick={() => setIsModalOpen(false)}
-                  className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-                >
-                  <XCircle className="w-5 h-5" />
-                </button>
+              <option value="all">Dự án: Tất cả</option>
+              <option value="Elyse Island">Elyse Island</option>
+              <option value="Sunrise Residence">Sunrise Residence</option>
+              <option value="Lumière Bay">Lumière Bay</option>
+              <option value="Bella Premium">Bella Premium</option>
+            </select>
+
+            <select
+              value={filterStatus}
+              onChange={e => setFilterStatus(e.target.value)}
+              className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none"
+            >
+              <option value="all">Trạng thái: Tất cả</option>
+              <option value="active">Đang hiệu lực</option>
+              <option value="deposited">Đã đặt cọc</option>
+              <option value="completed">Hoàn tất</option>
+              <option value="warning">Sắp đến hạn</option>
+              <option value="overdue">Quá hạn</option>
+            </select>
+
+            <select
+              value={filterType}
+              onChange={e => setFilterType(e.target.value)}
+              className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none"
+            >
+              <option value="all">Loại: Tất cả</option>
+              <option value="HĐMB">HĐMB</option>
+              <option value="HĐĐC">HĐĐC</option>
+            </select>
+
+            <select className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none">
+              <option value="all">Ngày ký: Tất cả</option>
+              <option value="today">Hôm nay</option>
+              <option value="this_month">Tháng này</option>
+            </select>
+
+            <button className="p-1.5 rounded-xl text-slate-500 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100">
+              <Filter className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-100">
+              <Download className="w-3.5 h-3.5" /> Xuất
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── 4. Main Body: Contract Table & Contract 360 Workspace Drawer (Matching Image 1) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        
+        {/* Left Column (Contract Work Queue Table) */}
+        <div className={`${selectedContract ? 'lg:col-span-8' : 'lg:col-span-12'} bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xs transition-all`}>
+          <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
+            <table className="w-full text-left text-xs border-collapse min-w-[1050px]">
+              <thead className="bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800 text-[11px] font-black text-slate-400 uppercase tracking-wider">
+                <tr>
+                  <th className="p-3.5 w-10 text-center whitespace-nowrap">
+                    <input type="checkbox" className="rounded text-blue-600 focus:ring-blue-500" />
+                  </th>
+                  <th className="p-3.5 whitespace-nowrap">SỐ HỢP ĐỒNG</th>
+                  <th className="p-3.5 whitespace-nowrap">KHÁCH HÀNG</th>
+                  <th className="p-3.5 whitespace-nowrap">DỰ ÁN / CĂN</th>
+                  <th className="p-3.5 whitespace-nowrap">GIÁ TRỊ HĐ</th>
+                  <th className="p-3.5 whitespace-nowrap">ĐÃ THU / CÒN LẠI</th>
+                  <th className="p-3.5 whitespace-nowrap">KỲ TIẾP THEO</th>
+                  <th className="p-3.5 whitespace-nowrap">TRẠNG THÁI</th>
+                  <th className="p-3.5 text-right whitespace-nowrap">THAO TÁC</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
+                {filteredContracts.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="text-center py-12 text-slate-400 font-semibold whitespace-nowrap">
+                      Không tìm thấy hợp đồng nào phù hợp với bộ lọc.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredContracts.map(contract => {
+                    const isSelected = selectedContractId === contract.id;
+
+                    return (
+                      <tr
+                        key={contract.id}
+                        onClick={() => setSelectedContractId(contract.id)}
+                        className={`transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-blue-50/70 dark:bg-blue-950/40 font-semibold'
+                            : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/50'
+                        }`}
+                      >
+                        <td className="p-3.5 text-center whitespace-nowrap" onClick={e => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => setSelectedContractId(contract.id)}
+                            className="rounded text-blue-600 focus:ring-blue-500"
+                          />
+                        </td>
+
+                        {/* Contract No & Date */}
+                        <td className="p-3.5 whitespace-nowrap">
+                          <p className="font-extrabold text-blue-900 dark:text-blue-300 text-xs whitespace-nowrap">{contract.contractNo}</p>
+                          <p className="text-[10px] text-slate-400 font-medium whitespace-nowrap mt-0.5">{contract.signedDate}</p>
+                        </td>
+
+                        {/* Customer Info */}
+                        <td className="p-3.5 whitespace-nowrap">
+                          <div className="flex items-center gap-2 whitespace-nowrap">
+                            <div className="w-7 h-7 rounded-full bg-purple-100 text-purple-700 font-black flex items-center justify-center text-xs shrink-0">
+                              {contract.customerAvatar}
+                            </div>
+                            <div className="whitespace-nowrap">
+                              <p className="font-extrabold text-slate-900 dark:text-white text-xs whitespace-nowrap">{contract.customerName}</p>
+                              <p className="text-[10px] text-slate-500 font-medium whitespace-nowrap">{contract.customerPhone}</p>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Project & Unit Spec */}
+                        <td className="p-3.5 whitespace-nowrap">
+                          <div className="flex items-center gap-2 whitespace-nowrap">
+                            <img src={contract.projectImg} alt={contract.projectName} className="w-8 h-8 rounded-lg object-cover shrink-0" />
+                            <div className="whitespace-nowrap">
+                              <p className="font-extrabold text-slate-900 dark:text-white text-xs whitespace-nowrap">{contract.projectName}</p>
+                              <p className="text-[10px] text-slate-500 font-semibold whitespace-nowrap">{contract.unitCode} · {contract.unitSpec}</p>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Contract Total Value */}
+                        <td className="p-3.5 whitespace-nowrap">
+                          <span className="font-extrabold text-slate-900 dark:text-white text-xs whitespace-nowrap">
+                            {contract.totalValueText}
+                          </span>
+                        </td>
+
+                        {/* Paid vs Remaining with Progress Bar */}
+                        <td className="p-3.5 whitespace-nowrap">
+                          <div className="space-y-1 w-32 whitespace-nowrap">
+                            <div className="flex justify-between text-[11px] font-bold">
+                              <span className="text-slate-900 dark:text-white">{contract.paidText}</span>
+                              <span className="text-slate-400 font-medium">/ {contract.remainingText}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <div className="flex-1 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${contract.paidPct}%` }} />
+                              </div>
+                              <span className="text-[10px] font-bold text-slate-500">{contract.paidPct}%</span>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Next Milestone Schedule */}
+                        <td className="p-3.5 whitespace-nowrap">
+                          <p className="font-bold text-slate-900 dark:text-white text-xs whitespace-nowrap">{contract.nextMilestoneAmount}</p>
+                          <div className="flex items-center gap-1 text-[10px] font-medium text-slate-500 whitespace-nowrap mt-0.5">
+                            <span>{contract.nextMilestoneDate}</span>
+                            {contract.nextMilestoneStatus === 'breached' && (
+                              <span className="text-rose-600 font-extrabold">🔴 {contract.nextMilestoneDueText}</span>
+                            )}
+                            {contract.nextMilestoneStatus === 'warning' && (
+                              <span className="text-amber-600 font-extrabold">Còn 17 ngày</span>
+                            )}
+                            {contract.nextMilestoneStatus === 'normal' && (
+                              <span className="text-slate-500 font-semibold">{contract.nextMilestoneDueText}</span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Status Badge */}
+                        <td className="p-3.5 whitespace-nowrap">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border inline-block whitespace-nowrap ${contract.statusColor}`}>
+                            ● {contract.statusLabel}
+                          </span>
+                        </td>
+
+                        {/* Action Dots */}
+                        <td className="p-3.5 text-right whitespace-nowrap" onClick={e => e.stopPropagation()}>
+                          <button
+                            onClick={() => setSelectedContractId(contract.id)}
+                            className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                          >
+                            ⋮
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination Footer */}
+          <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 font-medium">
+            <div>
+              Hiển thị <span className="font-extrabold text-slate-900 dark:text-white">1 - 8</span> của <span className="font-extrabold text-slate-900 dark:text-white">186</span> hợp đồng
+            </div>
+
+            <div className="flex items-center gap-1 font-bold">
+              <button className="w-8 h-8 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-100">
+                ‹
+              </button>
+              <button className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs">
+                1
+              </button>
+              <button className="w-8 h-8 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-100">
+                2
+              </button>
+              <button className="w-8 h-8 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-100">
+                3
+              </button>
+              <button className="w-8 h-8 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-100">
+                4
+              </button>
+              <button className="w-8 h-8 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-100">
+                5
+              </button>
+              <span className="px-1 text-slate-400">...</span>
+              <button className="w-8 h-8 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-100">
+                24
+              </button>
+              <button className="w-8 h-8 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-100">
+                ›
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span>Hiển thị</span>
+              <select className="px-2.5 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none">
+                <option value="8">8 / trang</option>
+                <option value="20">20 / trang</option>
+                <option value="50">50 / trang</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Contract & Collection Detail Drawer (Matching Image 1 Right Panel) */}
+        {selectedContract && (
+          <div className="lg:col-span-4 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-md space-y-5 sticky top-6">
+            {/* Drawer Header */}
+            <div className="flex items-start justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                    {selectedContract.contractNo}
+                  </h2>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border ${selectedContract.statusColor}`}>
+                    ● {selectedContract.statusLabel}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 font-bold tracking-wider uppercase mt-0.5">
+                  {selectedContract.contractTypeLabel}
+                </p>
               </div>
 
-              {/* Form Body */}
-              <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      Tên Khách Hàng <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Nguyễn Văn A"
-                      value={customerName}
-                      onChange={e => setCustomerName(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:border-amber-500"
-                    />
+              <button
+                onClick={() => setSelectedContractId(null)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Quick Contract Document Actions */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => toast.info(`Đang mở xem Hợp đồng ${selectedContract.contractNo}...`)}
+                className="flex-1 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-blue-700 dark:text-blue-300 font-extrabold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all"
+              >
+                <FileText className="w-3.5 h-3.5" /> Xem hợp đồng
+              </button>
+              <button
+                onClick={() => toast.success(`Tải bộ hồ sơ HĐ ${selectedContract.contractNo} PDF thành công!`)}
+                className="flex-1 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all"
+              >
+                <Download className="w-3.5 h-3.5" /> Tải hồ sơ
+              </button>
+              <button className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl text-slate-500">
+                <MoreVertical className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Thông tin chung */}
+            <div className="space-y-2 text-xs">
+              <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-wider">THÔNG TIN CHUNG</h4>
+              <div className="flex gap-3 bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800">
+                <div className="space-y-1.5 flex-1">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Dự án</span>
+                    <span className="font-extrabold text-slate-900 dark:text-white">{selectedContract.projectName}</span>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      Số Điện Thoại <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="0901 234 567"
-                      value={customerPhone}
-                      onChange={e => setCustomerPhone(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:border-amber-500"
-                    />
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Mã căn</span>
+                    <span className="font-extrabold text-blue-600 dark:text-blue-400">{selectedContract.unitCode}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Loại căn</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200">{selectedContract.unitSpec.split('·')[0]}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Diện tích</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200">{selectedContract.unitSpec.split('·')[1] || '76.2 m²'}</span>
+                  </div>
+                  <div className="flex justify-between pt-1 border-t border-slate-200/50">
+                    <span className="text-slate-500 font-medium">Giá trị hợp đồng</span>
+                    <span className="font-black text-slate-900 dark:text-white">{selectedContract.totalValueVnd.toLocaleString('vi-VN')} ₫</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Ngày ký</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200">{selectedContract.signedDate}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Ngày hiệu lực</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200">{selectedContract.effectiveDate}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Ngày bàn giao (dự kiến)</span>
+                    <span className="font-bold text-emerald-600">{selectedContract.estimatedHandover}</span>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      Dự Án Bất Động Sản
-                    </label>
-                    <PremiumSelect
-                      options={[
-                        { value: "Bella Residences", label: "Bella Residences" },
-                        { value: "Bella Premium", label: "Bella Premium" },
-                        { value: "Bella Grand", label: "Bella Grand" },
-                      ]}
-                      value={projectName}
-                      onChange={setProjectName}
-                      buttonClassName="h-9 py-0 px-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-normal text-slate-900 dark:text-white hover:bg-slate-100/50 dark:hover:bg-slate-900/50 shadow-none focus:border-amber-500/50 focus:ring-0 focus:ring-offset-0"
-                      dropdownClassName="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-xl rounded-xl py-1"
-                      itemClassName="px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm font-normal transition-colors"
-                      selectedItemClassName="bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold px-4 py-2 text-sm"
-                    />
+                <img src={selectedContract.projectImg} alt={selectedContract.projectName} className="w-20 h-28 rounded-xl object-cover shrink-0 shadow-2xs" />
+              </div>
+            </div>
+
+            {/* Khách hàng */}
+            <div className="space-y-2 text-xs">
+              <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-wider">KHÁCH HÀNG</h4>
+              <Link
+                href="/dashboard/real-estate/customers"
+                className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 hover:bg-slate-100 transition-all group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-700 font-black flex items-center justify-center text-xs">
+                    {selectedContract.customerAvatar}
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      Mã Sản Phẩm Căn Hộ <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Gold Tower A-1201"
-                      value={unitCode}
-                      onChange={e => setUnitCode(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:border-amber-500"
-                    />
+                  <div>
+                    <p className="font-extrabold text-slate-900 dark:text-white text-xs">{selectedCustomerName(selectedContract)}</p>
+                    <p className="text-[10px] text-slate-400 font-medium">{selectedContract.customerPhone} · {selectedContract.customerEmail}</p>
                   </div>
                 </div>
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      Giá Trị Gốc (VNĐ)
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      min={0}
-                      value={totalValueVnd}
-                      onChange={e => setTotalValueVnd(Number(e.target.value))}
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:border-amber-500"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      Chiết Khấu (VNĐ)
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      min={0}
-                      value={discount}
-                      onChange={e => setDiscount(Number(e.target.value))}
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:border-amber-500"
-                    />
-                  </div>
+            {/* Tiến độ thanh toán */}
+            <div className="space-y-2 text-xs">
+              <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-wider">TIẾN ĐỘ THANH TOÁN</h4>
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500 font-medium">Đã thu</span>
+                  <span className="font-black text-slate-900 dark:text-white">{selectedContract.paidValueVnd.toLocaleString('vi-VN')} ₫ <span className="text-emerald-600 font-extrabold text-[11px]">({selectedContract.paidPct}%)</span></span>
                 </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      Thuế VAT (%)
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      min={0}
-                      value={vatRate}
-                      onChange={e => setVatRate(Number(e.target.value))}
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:border-amber-500"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      Kinh Phí Bảo Trì (%)
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      min={0}
-                      value={maintenanceFee}
-                      onChange={e => setMaintenanceFee(Number(e.target.value))}
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:border-amber-500"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      Sale Phụ Trách <span className="text-rose-500">*</span>
-                    </label>
-                    <PremiumSelect
-                      options={[
-                        { value: "Nguyễn Văn Minh", label: "Nguyễn Văn Minh" },
-                        { value: "Trần Thị Anh", label: "Trần Thị Anh" },
-                        { value: "Lê Quốc Binh", label: "Lê Quốc Binh" },
-                        { value: "Phạm Thị Cam", label: "Phạm Thị Cam" },
-                        { value: "Đỗ Hải Đăng", label: "Đỗ Hải Đăng" },
-                      ]}
-                      value={saleName}
-                      onChange={setSaleName}
-                      buttonClassName="h-9 py-0 px-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-normal text-slate-900 dark:text-white hover:bg-slate-100/50 dark:hover:bg-slate-900/50 shadow-none focus:border-amber-500/50 focus:ring-0 focus:ring-offset-0"
-                      dropdownClassName="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-xl rounded-xl py-1"
-                      itemClassName="px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm font-normal transition-colors"
-                      selectedItemClassName="bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold px-4 py-2 text-sm"
-                    />
-                  </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500 font-medium">Còn phải thu</span>
+                  <span className="font-black text-blue-600 dark:text-blue-400">{selectedContract.remainingValueVnd.toLocaleString('vi-VN')} ₫ <span className="text-slate-400 font-bold text-[11px]">({100 - selectedContract.paidPct}%)</span></span>
                 </div>
+                <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${selectedContract.paidPct}%` }} />
+                </div>
+              </div>
+            </div>
 
-                <div className="p-4 bg-slate-50 dark:bg-slate-950/40 rounded-2xl border border-slate-100 dark:border-slate-800/80 space-y-1">
-                  <div className="flex justify-between text-xs text-slate-500">
-                    <span>Giá trị gốc:</span>
-                    <span>{fmt(totalValueVnd)}</span>
-                  </div>
-                  <div className="flex justify-between text-xs text-slate-500">
-                    <span>VAT ({vatRate}%):</span>
-                    <span>+{fmt(totalValueVnd * (vatRate / 100))}</span>
-                  </div>
-                  <div className="flex justify-between text-xs text-slate-500">
-                    <span>KPBT ({maintenanceFee}%):</span>
-                    <span>+{fmt(totalValueVnd * (maintenanceFee / 100))}</span>
-                  </div>
-                  {discount > 0 && (
-                    <div className="flex justify-between text-xs text-rose-500">
-                      <span>Chiết khấu:</span>
-                      <span>-{fmt(discount)}</span>
+            {/* Lịch thanh toán */}
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-wider">LỊCH THANH TOÁN</h4>
+                <button className="text-[10px] font-bold text-blue-600 hover:underline">Xem tất cả</button>
+              </div>
+
+              <div className="space-y-2">
+                {selectedContract.paymentMilestones.map((m, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 text-[11px]">
+                    <div className="flex items-center gap-2">
+                      {m.status === 'paid' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
+                      {m.status === 'due_soon' && <Clock className="w-4 h-4 text-amber-500 animate-pulse" />}
+                      {m.status === 'pending' && <div className="w-4 h-4 rounded-full border-2 border-slate-300 dark:border-slate-600" />}
+                      {m.status === 'overdue' && <AlertTriangle className="w-4 h-4 text-rose-500" />}
+                      <div>
+                        <span className="font-extrabold text-slate-900 dark:text-white block">{m.name}</span>
+                        <span className="font-bold text-slate-500">{m.amount}</span>
+                      </div>
                     </div>
-                  )}
-                  <div className="flex justify-between text-sm font-black text-slate-900 dark:text-white border-t border-slate-200 dark:border-slate-800 pt-2 mt-1">
-                    <span>Tổng giá trị hợp đồng:</span>
-                    <span className="text-amber-600 dark:text-amber-400">
-                      {fmt(totalValueVnd * (1 + vatRate / 100 + maintenanceFee / 100) - discount)}
-                    </span>
+
+                    <div className="text-right">
+                      <span className="text-slate-400 font-medium block">{m.dueDate}</span>
+                      {m.status === 'paid' && <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[9px] font-black">Đã thu</span>}
+                      {m.status === 'due_soon' && <span className="text-rose-600 font-black text-[10px]">Còn 8 ngày</span>}
+                      {m.status === 'pending' && <span className="text-slate-400 text-[9px]">Chưa đến hạn</span>}
+                      {m.status === 'overdue' && <span className="text-rose-600 font-black text-[10px]">Quá hạn</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Bottom Action Controls */}
+            <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                onClick={() => setShowPaymentModal(true)}
+                className="w-full py-2.5 bg-blue-900 hover:bg-blue-950 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <DollarSign className="w-4 h-4 text-emerald-400" /> Ghi nhận thanh toán
+              </button>
+
+              <button
+                onClick={() => toast.success(`Đã phát hành Phiếu thu cho HĐ ${selectedContract.contractNo}!`)}
+                className="w-full py-2 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 text-blue-700 dark:text-blue-300 font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5"
+              >
+                Tạo phiếu thu
+              </button>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => toast.info(`Khởi tạo thủ tục chuyển nhượng HĐ ${selectedContract.contractNo}`)}
+                  className="py-1.5 text-slate-600 dark:text-slate-400 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl"
+                >
+                  Chuyển nhượng
+                </button>
+                <button
+                  onClick={() => toast.error(`Cảnh báo thanh lý/hủy HĐ ${selectedContract.contractNo}`)}
+                  className="py-1.5 text-rose-600 font-bold text-xs hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl"
+                >
+                  Hủy hợp đồng
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── 5. Modal: Lập Hợp Đồng Mới ── */}
+      <AnimatePresence>
+        {showAddModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowAddModal(false)} className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl z-10 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-amber-500" /> Lập Hợp Đồng Mới
+                </h3>
+                <button onClick={() => setShowAddModal(false)} className="p-1 text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+              </div>
+
+              <form onSubmit={e => { e.preventDefault(); toast.success('✅ Đã lập hợp đồng mới thành công!'); setShowAddModal(false); }} className="space-y-3 text-xs">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Loại hợp đồng</label>
+                    <select className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none font-bold">
+                      <option value="HĐMB">HĐMB - Hợp đồng mua bán</option>
+                      <option value="HĐĐC">HĐĐC - Hợp đồng đặt cọc</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Dự án</label>
+                    <select className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none font-bold">
+                      <option>Elyse Island</option>
+                      <option>Sunrise Residence</option>
+                      <option>Lumière Bay</option>
+                    </select>
                   </div>
                 </div>
 
-                {/* Footer buttons */}
-                <div className="flex gap-3 justify-end pt-4 border-t border-slate-100 dark:border-slate-800">
-                  <button
-                    type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 text-sm font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl transition-colors"
-                  >
-                    Hủy bỏ
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="px-5 py-2 text-sm font-bold bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-black rounded-xl transition-colors flex items-center gap-1.5"
-                  >
-                    {submitting ? (
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <CheckCheck className="w-4 h-4" />
-                    )}
-                    Tạo Bản Thảo
-                  </button>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Khách hàng đứng tên *</label>
+                    <input required placeholder="Lê Văn Chánh" className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none" />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Mã căn hộ *</label>
+                    <input required placeholder="A1-1804" className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none font-bold" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Giá trị hợp đồng (VNĐ)</label>
+                    <input required placeholder="4.280.000.000" className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none font-bold" />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Ngày ký hợp đồng</label>
+                    <input type="date" defaultValue="2026-09-10" className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none font-bold" />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <button type="button" onClick={() => setShowAddModal(false)} className="px-4 py-2 font-bold bg-slate-100 text-slate-600 rounded-xl">Hủy</button>
+                  <button type="submit" className="px-5 py-2 font-bold bg-amber-500 hover:bg-amber-600 text-black rounded-xl">Khởi tạo bản thảo</button>
                 </div>
               </form>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
+
+      {/* ── 6. Modal: Ghi Nhận Thanh Toán ── */}
+      <AnimatePresence>
+        {showPaymentModal && selectedContract && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowPaymentModal(false)} className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl z-10 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-emerald-500" /> Ghi Nhận Thanh Toán Tiến Độ
+                </h3>
+                <button onClick={() => setShowPaymentModal(false)} className="p-1 text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
+                  <p className="font-extrabold text-slate-900 dark:text-white">{selectedContract.contractNo} - {selectedContract.customerName}</p>
+                  <p className="text-slate-500 mt-0.5">Mã căn: <strong className="text-blue-600">{selectedContract.unitCode}</strong></p>
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Đợt thanh toán</label>
+                  <input disabled value="Đợt 2 - 428.000.000 ₫ (Hạn 18/09/2026)" className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold" />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Hình thức thanh toán</label>
+                  <select className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none font-bold">
+                    <option>Chuyển khoản ngân hàng (Vietcombank)</option>
+                    <option>Thẻ ngân hàng / POS</option>
+                    <option>Tiền mặt</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Mã giao dịch / Ghi chú</label>
+                  <input placeholder="VD: VCB-20260910-889912" className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none" />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <button type="button" onClick={() => setShowPaymentModal(false)} className="px-4 py-2 font-bold bg-slate-100 text-slate-600 rounded-xl">Hủy</button>
+                  <button onClick={handleRecordPayment} className="px-5 py-2 font-bold bg-blue-900 text-white rounded-xl">Xác nhận thu tiền</button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
+}
+
+function selectedCustomerName(contract: ContractItem) {
+  return contract.customerName;
 }
