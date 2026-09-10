@@ -247,7 +247,7 @@ export default function RealEstateDashboardPage() {
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
       {/* 1. TOP LIGHT EXECUTIVE HEADER BANNER CARD (SHARED WITH PROJECTS PAGE BANNER) */}
-      <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm min-h-[200px] flex items-center">
+      <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm min-h-[190px] flex items-center">
         {/* Shared Background Panorama Skyline Photo */}
         <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
           <img
@@ -256,11 +256,11 @@ export default function RealEstateDashboardPage() {
               e.currentTarget.src = "https://images.unsplash.com/photo-1477959858617-67f30ac4ce78?auto=format&fit=crop&w=1600&q=80";
             }}
             alt="Skyline Panorama"
-            className="w-full h-full object-cover object-[center_0%] opacity-100 dark:opacity-90"
+            className="w-full h-full object-cover object-[center_65%] opacity-100 dark:opacity-90"
           />
         </div>
 
-        <div className="relative z-10 w-full px-6 pt-3 pb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div className="relative z-10 w-full p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           {/* Left Title & Breadcrumbs */}
           <div>
             <div className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">
