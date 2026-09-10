@@ -805,121 +805,7 @@ export function PeopleDirectoryPage() {
 
         {/* ── RIGHT DETAIL DRAWER (PEOPLE OPERATING WORKSPACE COMMAND) ── */}
         {selectedPerson && (
-          <div className="lg:col-span-4 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-lg space-y-4 transition-all">
-            
-            {/* Drawer Top Controls */}
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-400">HỒ SƠ VẬN HÀNH NHÂN SỰ</span>
-              <button onClick={() => setSelectedPerson(null)} className="p-1 rounded-lg hover:bg-slate-100">
-                <X className="w-4 h-4 text-slate-400" />
-              </button>
-            </div>
-
-            {/* Profile Header Card */}
-            <div className="flex items-center gap-3.5">
-              <div className="w-14 h-14 rounded-2xl bg-blue-600 text-white font-black flex items-center justify-center text-xl shadow-sm">
-                {selectedPerson.fullName.charAt(0)}
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-base font-black text-slate-900 dark:text-white truncate">{selectedPerson.fullName}</h3>
-                <p className="text-xs text-slate-500 font-semibold">{selectedPerson.roleTitle} • <span className="font-mono text-blue-600">{selectedPerson.code}</span></p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-black rounded-md">
-                    ● {selectedPerson.statusLabel}
-                  </span>
-                  <span className="text-[10px] text-slate-400">{selectedPerson.categoryLabel}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Contact Bar */}
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                onClick={() => toast.info(`Đang kết nối cuộc gọi với ${selectedPerson.phone}...`)}
-                className="py-2 px-3 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-center gap-1"
-              >
-                <Phone className="w-3.5 h-3.5 text-blue-600" /> Gọi điện
-              </button>
-              <button
-                onClick={() => toast.info(`Mở cổng nhắn tin Zalo/Chat với ${selectedPerson.fullName}`)}
-                className="py-2 px-3 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-center gap-1"
-              >
-                <MessageSquare className="w-3.5 h-3.5 text-cyan-600" /> Nhắn tin
-              </button>
-              <button
-                onClick={() => toast.info(`Gửi email cho ${selectedPerson.email}`)}
-                className="py-2 px-3 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-center gap-1"
-              >
-                <Mail className="w-3.5 h-3.5 text-amber-600" /> Email
-              </button>
-            </div>
-
-            {/* Overview / Performance / Scope Sections */}
-            <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
-              
-              {/* Organizational Position */}
-              <div className="space-y-1.5">
-                <h4 className="font-extrabold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] text-slate-400">Vị trí tổ chức</h4>
-                <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl space-y-1.5 font-semibold">
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Chi nhánh:</span>
-                    <span className="text-slate-900 dark:text-white font-bold">{selectedPerson.branch}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Phòng ban:</span>
-                    <span className="text-slate-900 dark:text-white font-bold">{selectedPerson.department}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Quản lý trực tiếp:</span>
-                    <span className="text-blue-600 font-bold">{selectedPerson.managerName}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Monthly Performance */}
-              <div className="space-y-1.5">
-                <h4 className="font-extrabold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] text-slate-400">Hiệu suất tháng 9/2026</h4>
-                <div className="grid grid-cols-2 gap-2 text-center">
-                  <div className="p-3 bg-blue-50/50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900 rounded-2xl">
-                    <span className="text-[10px] text-slate-500 font-bold">Doanh số đạt được</span>
-                    <span className="text-lg font-black text-blue-600 block mt-0.5">
-                      {selectedPerson.monthlyRevenue > 0 ? `${(selectedPerson.monthlyRevenue / 1000000000).toFixed(1)} tỷ` : '0 tỷ'}
-                    </span>
-                  </div>
-                  <div className="p-3 bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900 rounded-2xl">
-                    <span className="text-[10px] text-slate-500 font-bold">Giao dịch chốt</span>
-                    <span className="text-lg font-black text-emerald-600 block mt-0.5">{selectedPerson.dealsClosedCount} HĐ</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Scope & Access Governance */}
-              <div className="space-y-1.5">
-                <h4 className="font-extrabold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] text-slate-400">Phạm vi quản lý & Quyền hạn</h4>
-                <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl space-y-2">
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <div>
-                      <p className="font-extrabold text-slate-900 dark:text-white text-[11px]">{selectedPerson.accessRole}</p>
-                      <p className="text-[10px] text-slate-500 font-semibold">{selectedPerson.governanceScope}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="pt-2 flex justify-end gap-2">
-                <button
-                  onClick={() => toast.info(`Mở giao diện phân quyền chi tiết cho ${selectedPerson.fullName}`)}
-                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow-xs text-xs"
-                >
-                  Cấu hình phân quyền ➔
-                </button>
-              </div>
-
-            </div>
-
-          </div>
+          <DrawerPanel person={selectedPerson} onClose={() => setSelectedPerson(null)} />
         )}
 
       </div>
@@ -1079,6 +965,186 @@ export function PeopleDirectoryPage() {
         )}
       </AnimatePresence>
 
+    </div>
+  );
+}
+
+function DrawerPanel({ person, onClose }: { person: PeopleItem; onClose: () => void }) {
+  const [tab, setTab] = useState<'overview' | 'performance' | 'access' | 'history'>('overview');
+
+  return (
+    <div className="lg:col-span-4 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-lg space-y-4 transition-all">
+      {/* Drawer Top Controls */}
+      <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+        <span className="text-xs font-black uppercase tracking-wider text-slate-400">HỒ SƠ VẬN HÀNH NHÂN SỰ</span>
+        <button onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
+          <X className="w-4 h-4 text-slate-400" />
+        </button>
+      </div>
+
+      {/* Profile Header Card */}
+      <div className="flex items-center gap-3.5">
+        <div className="w-14 h-14 rounded-2xl bg-blue-600 text-white font-black flex items-center justify-center text-xl shadow-sm shrink-0">
+          {person.fullName.charAt(0)}
+        </div>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-base font-black text-slate-900 dark:text-white truncate">{person.fullName}</h3>
+          <p className="text-xs text-slate-500 font-semibold">{person.roleTitle} • <span className="font-mono text-blue-600">{person.code}</span></p>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-black rounded-md">
+              ● {person.statusLabel}
+            </span>
+            <span className="text-[10px] text-slate-400">{person.categoryLabel}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Contact Bar */}
+      <div className="grid grid-cols-3 gap-2">
+        <button onClick={() => toast.info(`Đang gọi ${person.phone}...`)} className="py-2 px-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-center gap-1">
+          <Phone className="w-3.5 h-3.5 text-blue-600" /> Gọi điện
+        </button>
+        <button onClick={() => toast.info(`Mở nhắn tin với ${person.fullName}`)} className="py-2 px-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-center gap-1">
+          <MessageSquare className="w-3.5 h-3.5 text-cyan-600" /> Nhắn tin
+        </button>
+        <button onClick={() => toast.info(`Gửi email cho ${person.email}`)} className="py-2 px-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-center gap-1">
+          <Mail className="w-3.5 h-3.5 text-amber-600" /> Email
+        </button>
+      </div>
+
+      {/* Sub-Tabs Bar: [Tổng quan | Hiệu suất | Quyền | Lịch sử] */}
+      <div className="flex items-center border-b border-slate-100 dark:border-slate-800 gap-1 pt-1">
+        {[
+          { id: 'overview', label: 'Tổng quan' },
+          { id: 'performance', label: 'Hiệu suất' },
+          { id: 'access', label: 'Quyền' },
+          { id: 'history', label: 'Lịch sử' },
+        ].map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id as any)}
+            className={`py-1.5 px-3 text-xs font-extrabold border-b-2 transition-all cursor-pointer ${
+              tab === t.id
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab Contents */}
+      <div className="space-y-4 pt-1 text-xs">
+        {tab === 'overview' && (
+          <div className="space-y-3">
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl space-y-2 font-semibold">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Chi nhánh:</span>
+                <span className="text-slate-900 dark:text-white font-bold">{person.branch}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Phòng ban / Team:</span>
+                <span className="text-slate-900 dark:text-white font-bold">{person.department} • {person.team}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Quản lý trực tiếp:</span>
+                <span className="text-blue-600 font-bold">{person.managerName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Ngày gia nhập:</span>
+                <span className="text-slate-800 dark:text-slate-200">{person.joinedDate}</span>
+              </div>
+            </div>
+
+            <div>
+              <span className="font-extrabold text-slate-400 uppercase tracking-wider text-[10px] block mb-1.5">DỰ ÁN PHỤ TRÁCH</span>
+              <div className="flex flex-wrap gap-1.5">
+                {person.assignedProjects.map((proj, idx) => (
+                  <span key={idx} className="px-2.5 py-1 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-extrabold rounded-lg text-xs">
+                    🏙️ {proj}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === 'performance' && (
+          <div className="space-y-3">
+            <span className="font-extrabold text-slate-400 uppercase tracking-wider text-[10px] block">HIỆU SUẤT THÁNG 9/2026</span>
+            <div className="grid grid-cols-2 gap-2 text-center">
+              <div className="p-3 bg-blue-50/50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900 rounded-2xl">
+                <span className="text-[10px] text-slate-500 font-bold">Doanh số đạt</span>
+                <span className="text-base font-black text-blue-600 block mt-0.5">
+                  {person.monthlyRevenue > 0 ? `${(person.monthlyRevenue / 1000000000).toFixed(1)} tỷ` : '0 tỷ'}
+                </span>
+              </div>
+              <div className="p-3 bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900 rounded-2xl">
+                <span className="text-[10px] text-slate-500 font-bold">Giao dịch chốt</span>
+                <span className="text-base font-black text-emerald-600 block mt-0.5">{person.dealsClosedCount} HĐ</span>
+              </div>
+              <div className="p-3 bg-purple-50/50 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-900 rounded-2xl">
+                <span className="text-[10px] text-slate-500 font-bold">Tỷ lệ Conversion</span>
+                <span className="text-base font-black text-purple-600 block mt-0.5">{person.conversionRate}%</span>
+              </div>
+              <div className="p-3 bg-amber-50/50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900 rounded-2xl">
+                <span className="text-[10px] text-slate-500 font-bold">Đánh giá SLA</span>
+                <span className="text-base font-black text-amber-600 block mt-0.5">{person.slaScore}%</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === 'access' && (
+          <div className="space-y-3">
+            <span className="font-extrabold text-slate-400 uppercase tracking-wider text-[10px] block">PHẠM VI & PHÂN QUYỀN HỆ THỐNG</span>
+            <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl space-y-2.5">
+              <div className="flex items-start gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-extrabold text-slate-900 dark:text-white text-xs">{person.accessRole}</p>
+                  <p className="text-[11px] text-slate-500 font-semibold">{person.governanceScope}</p>
+                </div>
+              </div>
+              <div className="border-t border-slate-200/60 dark:border-slate-700 pt-2 space-y-1 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                <p>• Lead Management: <span className="font-bold text-slate-900 dark:text-white">Manage Team Scope</span></p>
+                <p>• Hợp đồng BĐS: <span className="font-bold text-slate-900 dark:text-white">Xem & Tạo mới</span></p>
+                <p>• Phê duyệt thanh toán: <span className="font-bold text-blue-600">Level 2 Approval</span></p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === 'history' && (
+          <div className="space-y-2">
+            <span className="font-extrabold text-slate-400 uppercase tracking-wider text-[10px] block">NHẬT KÝ HOẠT ĐỘNG GẦN ĐÂY</span>
+            <div className="space-y-2 text-[11px]">
+              <div className="p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl flex items-center justify-between">
+                <div>
+                  <p className="font-bold text-slate-800 dark:text-slate-200">Chốt thành công giao dịch #HĐ-882</p>
+                  <p className="text-[10px] text-slate-400">Dự án Elyse Island • Căn B12-04</p>
+                </div>
+                <span className="text-[10px] text-slate-400 font-semibold">15 phút trước</span>
+              </div>
+              <div className="p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl flex items-center justify-between">
+                <div>
+                  <p className="font-bold text-slate-800 dark:text-slate-200">Tiếp nhận 3 Lead tiềm năng mới</p>
+                  <p className="text-[10px] text-slate-400">Từ chiến dịch Marketing Facebook</p>
+                </div>
+                <span className="text-[10px] text-slate-400 font-semibold">2 giờ trước</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <button
+          onClick={() => toast.info(`Mở giao diện phân quyền chi tiết cho ${person.fullName}`)}
+          className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow-xs text-xs mt-2"
+        >
+          Cấu hình phân quyền chi tiết ➔
+        </button>
+      </div>
     </div>
   );
 }
