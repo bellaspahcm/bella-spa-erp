@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   TrendingUp,
   DollarSign,
@@ -45,6 +46,7 @@ export const CEODashboardCharts: React.FC<CEODashboardChartsProps> = ({
   paidCount = 9,
   deliveredCount = 25,
 }) => {
+  const router = useRouter();
   const [selectedFloor, setSelectedFloor] = useState<string>('Tầng 5');
 
   // Calculated Absorption Rate
@@ -85,11 +87,11 @@ export const CEODashboardCharts: React.FC<CEODashboardChartsProps> = ({
 
   // Attention Items
   const attentionItems = [
-    { id: 1, count: 7, badgeBg: 'bg-red-500 text-white', title: '7 Lead quá SLA', action: 'Cần xử lý ngay', border: 'border-red-200 hover:border-red-400' },
-    { id: 2, count: 5, badgeBg: 'bg-orange-500 text-white', title: '5 Hợp đồng chờ duyệt', action: 'Chờ phê duyệt', border: 'border-orange-200 hover:border-orange-400' },
-    { id: 3, count: 3, badgeBg: 'bg-amber-500 text-white', title: '3 Giữ chỗ sắp hết hạn', action: 'Trong 3 ngày tới', border: 'border-amber-200 hover:border-amber-400' },
-    { id: 4, count: 2, badgeBg: 'bg-red-600 text-white', title: '2 Khoản thanh toán quá hạn', action: 'Cần đối soát', border: 'border-red-200 hover:border-red-400' },
-    { id: 5, count: 4, badgeBg: 'bg-blue-600 text-white', title: '4 Hồ sơ bàn giao thiếu tài liệu', action: 'Cần bổ sung', border: 'border-blue-200 hover:border-blue-400' },
+    { id: 1, count: 7, badgeBg: 'bg-red-500 text-white', title: '7 Lead quá SLA', action: 'Cần xử lý ngay', border: 'border-red-200 hover:border-red-400', route: '/dashboard/real-estate/leads' },
+    { id: 2, count: 5, badgeBg: 'bg-orange-500 text-white', title: '5 Hợp đồng chờ duyệt', action: 'Chờ phê duyệt', border: 'border-orange-200 hover:border-orange-400', route: '/dashboard/real-estate/contracts' },
+    { id: 3, count: 3, badgeBg: 'bg-amber-500 text-white', title: '3 Giữ chỗ sắp hết hạn', action: 'Trong 3 ngày tới', border: 'border-amber-200 hover:border-amber-400', route: '/dashboard/real-estate/apartments' },
+    { id: 4, count: 2, badgeBg: 'bg-red-600 text-white', title: '2 Khoản thanh toán quá hạn', action: 'Cần đối soát', border: 'border-red-200 hover:border-red-400', route: '/dashboard/real-estate/contracts' },
+    { id: 5, count: 4, badgeBg: 'bg-blue-600 text-white', title: '4 Hồ sơ bàn giao thiếu tài liệu', action: 'Cần bổ sung', border: 'border-blue-200 hover:border-blue-400', route: '/dashboard/real-estate/documents' },
   ];
 
   // Unit Floor Matrix Sample Units
@@ -317,7 +319,7 @@ export const CEODashboardCharts: React.FC<CEODashboardChartsProps> = ({
                 <AlertTriangle className="w-5 h-5 text-rose-500" />
                 Cần chú ý hôm nay
               </h3>
-              <button className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5">
+              <button onClick={() => router.push('/dashboard/real-estate/leads')} className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5 cursor-pointer">
                 Xem tất cả (21) <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -326,6 +328,7 @@ export const CEODashboardCharts: React.FC<CEODashboardChartsProps> = ({
               {attentionItems.map((item) => (
                 <div
                   key={item.id}
+                  onClick={() => router.push(item.route)}
                   className={`flex items-center justify-between p-3 rounded-xl border bg-slate-50/60 dark:bg-slate-800/40 transition-all cursor-pointer ${item.border}`}
                 >
                   <div className="flex items-center gap-3">
@@ -466,7 +469,7 @@ export const CEODashboardCharts: React.FC<CEODashboardChartsProps> = ({
               <select className="text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 outline-none">
                 <option>Tháng 7/2026</option>
               </select>
-              <button className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5">
+              <button onClick={() => router.push('/dashboard/real-estate/people')} className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5 cursor-pointer">
                 Xem tất cả ➔
               </button>
             </div>
@@ -515,7 +518,7 @@ export const CEODashboardCharts: React.FC<CEODashboardChartsProps> = ({
                 <Building2 className="w-5 h-5 text-emerald-600" />
                 Hiệu suất dự án
               </h3>
-              <button className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5">
+              <button onClick={() => router.push('/dashboard/real-estate/projects')} className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5 cursor-pointer">
                 Xem chi tiết ➔
               </button>
             </div>
@@ -637,7 +640,7 @@ export const CEODashboardCharts: React.FC<CEODashboardChartsProps> = ({
               <Clock className="w-5 h-5 text-blue-600" />
               Hoạt động gần đây
             </h3>
-            <button className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5">
+            <button onClick={() => router.push('/dashboard/real-estate/documents')} className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5 cursor-pointer">
               Xem tất cả ➔
             </button>
           </div>
