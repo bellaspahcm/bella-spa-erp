@@ -49,14 +49,14 @@ export class ReservationService {
     if (!res.success) {
       return {
         success: false,
-        error: res.error,
+        error: typeof res.error === 'string' ? res.error : String(res.error || 'Reservation failed'),
       };
     }
 
     return {
       success: true,
-      reservationId: res.reservation_id,
-      expiresAt: res.expires_at,
+      reservationId: typeof res.reservation_id === 'string' ? res.reservation_id : undefined,
+      expiresAt: typeof res.expires_at === 'string' ? res.expires_at : undefined,
     };
   }
 
