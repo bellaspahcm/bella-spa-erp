@@ -147,10 +147,10 @@ export default function RealEstateApartmentsPage() {
   const [createForm, setCreateForm] = useState({
     product_code: "",
     product_type: "apartment" as const,
-    block: "A",
-    floor: "1",
-    area: 100, // Default 100m² (reasonable apartment size)
-    unit_price: 50000000, // Default 50M VND/m² (reasonable price)
+    block: "",
+    floor: "",
+    area: undefined as number | undefined, // Empty by default - user must input
+    unit_price: undefined as number | undefined, // Empty by default - user must input
     status: "available" as const,
   });
 
@@ -229,12 +229,12 @@ export default function RealEstateApartmentsPage() {
       return;
     }
 
-    if (createForm.area <= 0) {
+    if (createForm.area === undefined || createForm.area <= 0) {
       toast.error("Vui lòng nhập diện tích lớn hơn 0");
       return;
     }
 
-    if (createForm.unit_price <= 0) {
+    if (createForm.unit_price === undefined || createForm.unit_price <= 0) {
       toast.error("Vui lòng nhập đơn giá lớn hơn 0");
       return;
     }
@@ -248,8 +248,8 @@ export default function RealEstateApartmentsPage() {
         status: createForm.status,
         block: createForm.block || null,
         floor: createForm.floor || null,
-        area: createForm.area > 0 ? createForm.area : null,
-        unit_price: createForm.unit_price > 0 ? createForm.unit_price : null,
+        area: createForm.area || null,
+        unit_price: createForm.unit_price || null,
       });
 
       if (!result.success) {
@@ -273,10 +273,10 @@ export default function RealEstateApartmentsPage() {
       setCreateForm({
         product_code: "",
         product_type: "apartment",
-        block: "A",
-        floor: "1",
-        area: 0,
-        unit_price: 0,
+        block: "",
+        floor: "",
+        area: undefined,
+        unit_price: undefined,
         status: "available",
       });
       setShowCreateModal(false);
