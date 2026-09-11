@@ -14,22 +14,27 @@ import {
 } from "@/modules/real_estate/actions/reservationActions";
 import { fetchProductsAction } from "@/modules/real_estate/actions/productActions";
 import { fetchCustomersAction } from "@/modules/real_estate/actions/customerActions";
+import { fetchProjectsAction } from "@/modules/real_estate/actions/projectActions";
 import { Database } from "@/types/database.types";
 
 type ReservationRow = Database["public"]["Tables"]["re_reservations"]["Row"];
 type ProductRow = Database["public"]["Tables"]["real_estate_products"]["Row"];
 type CustomerRow = Database["public"]["Tables"]["re_customers"]["Row"];
+type ProjectRow = Database["public"]["Tables"]["real_estate_projects"]["Row"];
 
 export default function ReservationsPage() {
   const [reservations, setReservations] = useState<any[]>([]);
+  const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [customers, setCustomers] = useState<CustomerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [loadingProducts, setLoadingProducts] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
+    project_id: "",
     product_id: "",
     customer_id: "",
     deposit_amount: "",
@@ -40,9 +45,9 @@ export default function ReservationsPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [reservationsResult, productsResult, customersResult] = await Promise.all([
+      const [reservationsResult, projectsResult, customersResult] = await Promise.all([
         fetchReservationsAction(),
-        fetchProductsAction(),
+        fetchProjectsAction(),
         fetchCustomersAction()
       ]);
 
@@ -50,8 +55,8 @@ export default function ReservationsPage() {
         setReservations(reservationsResult.data);
       }
 
-      if (productsResult.success && productsResult.data) {
-        setProducts(productsResult.data.filter(p => p.status === 'available'));
+      if (projectsResult.success && projectsResult.data) {
+        setProjects(projectsResult.data);
       }
 
       if (customersResult.success && customersResult.data) {
@@ -65,11 +70,48 @@ export default function ReservationsPage() {
     }
   };
 
+  // Load products when project selected
+  const loadProductsForProject = async (projectId: string) => {
+    if (!projectId) {
+      setProducts([]);
+      return;
+    }
+
+    setLoadingProducts(true);
+    try {
+      const result = await fetchProductsAction(projectId);
+      if (result.success && result.data) {
+        setProducts(Array.isArray(result.data) ? result.data.filter(p => p.status === 'available') : []);
+      } else {
+        setProducts([]);
+      }
+    } catch (error) {
+      console.error('Failed to load products:', error);
+      toast.error('Failed to load products');
+      setProducts([]);
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
+
   useEffect(() => {
     loadData();
   }, []);
 
+  // Load products when project changes
+  useEffect(() => {
+    if (formData.project_id) {
+      loadProductsForProject(formData.project_id);
+      // Reset product selection when project changes
+      setFormData(prev => ({ ...prev, product_id: "" }));
+    }
+  }, [formData.project_id]);
+
   const handleCreate = async () => {
+    if (!formData.project_id) {
+      toast.error('Please select a project');
+      return;
+    }
     if (!formData.product_id || !formData.customer_id || !formData.deposit_amount) {
       toast.error('Please fill in all required fields');
       return;
@@ -88,11 +130,13 @@ export default function ReservationsPage() {
         toast.success('Reservation created successfully');
         setShowCreateModal(false);
         setFormData({
+          project_id: "",
           product_id: "",
           customer_id: "",
           deposit_amount: "",
           notes: ""
         });
+        setProducts([]); // Clear products
         loadData();
       } else {
         toast.error(result.error || 'Failed to create reservation');
@@ -313,6 +357,28 @@ export default function ReservationsPage() {
             </div>
 
             <div className="p-6 space-y-6">
+              {/* Project Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Project <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={formData.project_id}
+                  onChange={(e) => setFormData({ ...formData, project_id: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Select a project</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.project_name}
+                    </option>
+                  ))}
+                </select>
+                {projects.length === 0 && (
+                  <p className="mt-1 text-sm text-amber-600">No projects found</p>
+                )}
+              </div>
+
               {/* Product Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -321,17 +387,23 @@ export default function ReservationsPage() {
                 <select
                   value={formData.product_id}
                   onChange={(e) => setFormData({ ...formData, product_id: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={!formData.project_id || loadingProducts}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <option value="">Select a product</option>
+                  <option value="">
+                    {loadingProducts ? 'Loading products...' : 'Select a product'}
+                  </option>
                   {products.map((product) => (
                     <option key={product.id} value={product.id}>
                       {product.product_code} - {product.product_type} ({product.area}m²)
                     </option>
                   ))}
                 </select>
-                {products.length === 0 && (
-                  <p className="mt-1 text-sm text-amber-600">No available products found</p>
+                {!formData.project_id && (
+                  <p className="mt-1 text-sm text-gray-500">Please select a project first</p>
+                )}
+                {formData.project_id && products.length === 0 && !loadingProducts && (
+                  <p className="mt-1 text-sm text-amber-600">No available products found in this project</p>
                 )}
               </div>
 
