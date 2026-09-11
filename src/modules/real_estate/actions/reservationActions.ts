@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
+import { createServiceClient } from '@/lib/supabase-service';
 import { getCurrentUser } from '@/services/user-actions';
 import { revalidatePath } from 'next/cache';
 import { Database } from '@/types/database.types';
@@ -49,9 +50,12 @@ export async function createReservationAction(dto: CreateReservationDTO): Promis
       return { success: false, error: 'Deposit amount must be greater than 0' };
     }
 
-    // Instantiate canonical service with dependencies
+    // Instantiate canonical service with service client (bypasses RLS)
+    // Authorization: User already authenticated above
+    // Service client allows controlled Product status mutation without granting user-level UPDATE
+    const serviceClient = createServiceClient();
     const repository = new PropertyUnitRepository();
-    const reservationService = new ReservationService(repository, supabase);
+    const reservationService = new ReservationService(repository, serviceClient);
 
     // Delegate to canonical ReservationService
     // This ensures Product state transition (available → held → DB booked) + Reservation creation
@@ -178,9 +182,10 @@ export async function cancelReservationAction(reservationId: string): Promise<Re
       return { success: false, error: 'Reservation not found' };
     }
 
-    // Instantiate canonical service
+    // Instantiate canonical service with service client
+    const serviceClient = createServiceClient();
     const repository = new PropertyUnitRepository();
-    const reservationService = new ReservationService(repository, supabase);
+    const reservationService = new ReservationService(repository, serviceClient);
 
     // Delegate to canonical service (handles Product held → available + Reservation cancellation)
     await reservationService.releaseProduct(

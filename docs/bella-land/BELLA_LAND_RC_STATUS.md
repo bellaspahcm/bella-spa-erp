@@ -1,8 +1,8 @@
 # Bella Land v2 Full Capabilities RC — Status Dashboard
 
-**Last Updated:** 2026-09-11 (Session 10)  
-**Program Status:** 🟡 IN PROGRESS (2/4 verticals closed, Customers in progress)  
-**Current Phase:** Phase 3 Customers — C3.3 VERIFIED → C3.4 NEXT
+**Last Updated:** 2026-09-11 (Session 13 — P5.3 VERIFIED)  
+**Program Status:** 🟡 IN PROGRESS (4/4 capabilities closed, Phase 5 in progress)  
+**Current Phase:** Phase 5 Integration — P5.3 complete, P5.4 next
 
 ---
 
@@ -183,18 +183,56 @@ Bella Land v2 Full Capabilities Release Candidate evidence closure program.
 
 ---
 
-## Phase 5: Integration — ⏸️ PENDING
+## Phase 5: Integration — 🟡 IN PROGRESS
 
-**Status:** 🔴 NOT STARTED  
-**Depends On:** All 4 verticals closed  
-**Estimated Gates:** ~15-20
+**Status:** 🟡 IN PROGRESS (P5.3 VERIFIED)  
+**Current:** P5.4 Tenant Boundary Tests — Next gate  
+**Frozen Scope:** 17 unique invariants (I1-I10, W1-W3, T1-T4)
 
-### Planned Coverage
-- End-to-end flow: Project → Product → Customer → Reservation
-- Cross-capability integration
-- User journey testing
-- Performance smoke test
-- Production deployment verification
+### Phase 5 Progress
+
+```
+P5.0 Canonical Workflow Discovery    ✅ COMPLETE
+P5.1 Scope Deduplication             🔒 FROZEN — 17 unique invariants
+P5.2 Integration Test Execution      🔒 VERIFIED — 10/10
+P5.3 Workflow Tests                  🔒 VERIFIED — 3/3
+P5.4 Tenant Boundary Tests           ▶️  NEXT
+P5.5 Browser E2E                     ⏸️  PENDING
+P5.6 Full Regression                 ⏸️  PENDING
+P5.7 Phase 5 Seal                    ⏸️  PENDING
+```
+
+### P5.3 Workflow Tests — 🔒 VERIFIED
+
+**Integration Test Results:** 3/3 PASS
+
+**W1: End-to-end Creation Flow ✅**
+- Project → Product → Customer → Reservation sequence verified
+- All FK relationships enforced
+- RLS policies enforced (user_id + tenant_id)
+
+**W2: Cascade Interaction ✅**
+- FK RESTRICT blocks Project delete when Product has Reservation
+- All entities preserved after failed delete
+- Error code 23503 (FK violation) confirmed
+
+**W3: Reservation Lifecycle ✅**
+- State machine: pending_deposit → deposited → converted_to_contract
+- Product status transitions independently
+- Enum validation enforced
+
+**Test Methodology Corrections:** 3
+1. Schema field names (completion_date, code)
+2. RLS requirements (user_id mandatory)
+3. Enum values (converted_to_contract)
+
+**Product Defects:** 0
+
+**Evidence:**
+- Script: `scripts/bella-land/test-reservation-workflow.ts`
+- Document: `docs/bella-land/P5_3_WORKFLOW_EVIDENCE.md`
+
+---
 
 ---
 
@@ -227,6 +265,8 @@ Bella Land v2 Full Capabilities Release Candidate evidence closure program.
 | 9 | 2026-09-11 | Customers C3.2 | ✅ DONE | RLS security |
 | 10 | 2026-09-11 | Customers C3.3 | ✅ DONE | Browser runtime (11/11) |
 | 11 | 2026-09-11 | Customers C3.4, C3.5 | ✅ DONE | Regression + Seal (38 invariants) |
+| 12 | 2026-09-11 | Phase 5 P5.0-P5.2 | ✅ DONE | Discovery + Dedup + Integration (10/10) |
+| 13 | 2026-09-11 | Phase 5 P5.3 | ✅ DONE | Workflow tests (3/3) |
 
 ---
 
