@@ -23,14 +23,14 @@ Bella Land v2 Full Capabilities Release Candidate evidence closure program.
 │ BELLA LAND RC — EVIDENCE CLOSURE PROGRAM                │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
-│ Projects       🔒 CLOSED    10/10 gates    Session 1-4 │
-│ Products       🔒 CLOSED    35/35 gates    Session 5-7 │
-│ Customers      🟡 PROGRESS  25 verified    Session 8-10│
+│ Projects       🔒 CLOSED    10 invariants  Session 1-4 │
+│ Products       🔒 CLOSED    35 invariants  Session 5-7 │
+│ Customers      🔒 CLOSED    38 invariants  Session 8-11│
 │ Reservations   🔒 CLOSED    Verified       Prior work  │
-│ Phase 5        ⏸️  PENDING   TBD gates     After C3    │
+│ Phase 5        ⏸️  PENDING   TBD           After 4/4   │
 │                                                         │
-│ RC STATUS:     🟡 IN PROGRESS                          │
-│ VERIFIED:      70 gates (45 closed + 25 in-progress)   │
+│ RC STATUS:     🟢 4/4 CAPABILITIES CLOSED              │
+│ VERIFIED:      83+ unique invariants                   │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -206,7 +206,7 @@ Bella Land v2 Full Capabilities Release Candidate evidence closure program.
 | Customers | 38 invariants | 🔒 CLOSED | 8-11 | ✅ Complete |
 | Reservations | TBD | 🔒 CLOSED | Prior | ✅ Complete |
 | Phase 5 | TBD | ⏸️ PENDING | TBD | — |
-| **TOTAL** | **83+ verified** | **🟡 IN PROGRESS** | **3/4 closed** | **Evidence-based** |
+| **TOTAL** | **83+ verified** | **🟢 4/4 CLOSED** | **Phase 5 pending** | **Evidence-based** |
 
 ---
 
@@ -303,14 +303,23 @@ All code changes properly verified, test artifacts cleaned up, documentation com
 **Status:** Ready to start  
 **Prerequisites:** ✅ All 4 capabilities closed
 
-**Scope:**
-- End-to-end workflow: Project → Product → Customer → Reservation
-- Cross-capability integration points
-- User journey testing  
-- Performance smoke test
-- Production deployment verification
+**Critical Difference:**
+- 4/4 capabilities CLOSED = each part works in isolation
+- Phase 5 = prove parts work together as integrated system
 
-**Expected:** ~15-20 integration invariants
+**Methodology:**
+1. Canonical workflow discovery
+2. Map actual relationships: Projects ↔ Products ↔ Customers ↔ Reservations
+3. Identify cross-capability invariants
+4. Deduplicate existing capability invariants
+5. **Freeze EXACT Phase 5 scope** (no estimates)
+6. Execute integration tests
+7. Adversarial / tenant-boundary testing
+8. Browser E2E workflow
+9. Full regression
+10. Phase 5 🔒 CLOSED
+
+**Gate Count:** TBD after workflow discovery
 
 ---
 

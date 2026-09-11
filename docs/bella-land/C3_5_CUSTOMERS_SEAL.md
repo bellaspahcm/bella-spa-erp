@@ -296,14 +296,23 @@ Reservations   🔒 CLOSED — verified (count TBD)
 
 **Objective:** Prove 4 capabilities work together as complete Bella Land workflow
 
-**Expected Coverage:**
-- End-to-end workflow: Project → Product → Customer → Reservation
-- Cross-capability integration points
-- User journey testing
-- Performance smoke test
-- Production deployment verification
+**Critical Difference:**
+- 4/4 capabilities CLOSED = each part works correctly in isolation
+- Phase 5 = prove parts work together as integrated system
 
-**Gate Estimate:** ~15-20 integration invariants
+**Methodology:**
+1. Canonical workflow discovery
+2. Map actual relationships (Projects ↔ Products ↔ Customers ↔ Reservations)
+3. Identify cross-capability invariants
+4. Deduplicate existing capability invariants
+5. **Freeze EXACT Phase 5 scope** (no estimates)
+6. Integration execution
+7. Adversarial / tenant-boundary testing
+8. Browser E2E workflow
+9. Full regression
+10. Phase 5 🔒 CLOSED
+
+**Gate Count:** TBD after workflow discovery (no estimates until frozen)
 
 ---
 
