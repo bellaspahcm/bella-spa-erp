@@ -80,7 +80,7 @@ export class ReservationService implements IReservationContract {
   /**
    * Releases a reservation hold, returning property status back to 'available'.
    */
-  async releaseProduct(tenantId: string, productId: string, reservationId: string): Promise<void> {
+  async releaseProduct(tenantId: string, productId: string, reservationId: string, userId: string): Promise<void> {
     if (!tenantId) throw new Error('TENANT_ISOLATION_VIOLATION: tenantId is required');
 
     const unit = await this.repository.findById(this.supabase, tenantId, productId);
@@ -97,7 +97,7 @@ export class ReservationService implements IReservationContract {
         status: 'cancelled' as any,
         cancelled_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        updated_by: tenantId // Using tenantId as fallback since userId not stored in params
+        updated_by: userId
       })
       .eq('id', reservationId)
       .eq('tenant_id', tenantId);
