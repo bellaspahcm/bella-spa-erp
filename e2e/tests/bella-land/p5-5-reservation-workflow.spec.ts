@@ -56,11 +56,9 @@ test.describe('P5.5 Reservation Workflow E2E', () => {
     // Wait for navigation after login
     await page.waitForURL(/\/dashboard/, { timeout: 15000 });
     
-    // Verify logged in - look for dashboard elements
-    const dashboardElement = page.locator('h1, h2').filter({ hasText: /Dashboard|Tổng quan/i }).or(
-      page.locator('[href="/dashboard"]').first()
-    );
-    await expect(dashboardElement).toBeVisible({ timeout: 10000 });
+    // Verify logged in - look for dashboard heading specifically
+    const dashboardHeading = page.locator('h1').filter({ hasText: /Dashboard|Tổng quan/i }).first();
+    await expect(dashboardHeading).toBeVisible({ timeout: 10000 });
     
     await page.screenshot({ path: 'test-results/p5-5-step-1-login.png', fullPage: true });
     console.log('✅ Step 1 PASS: Logged in successfully');
