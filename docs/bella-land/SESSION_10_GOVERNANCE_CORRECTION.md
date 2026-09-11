@@ -78,7 +78,7 @@ Expected: TBD gates (depends on lifecycle check)
 ```
 SESSION 11: C3.4 Full Regression
 │
-├── Step 1: Canonical Lifecycle Check (5 min) ← MANDATORY FIRST STEP
+├── Step 1: Canonical Lifecycle Check ← MANDATORY FIRST STEP
 │   └── Read: Customer lifecycle policy
 │       - Create: ✓ confirmed
 │       - Read/List: verify allowed
@@ -168,7 +168,7 @@ TOTAL:     70 gates VERIFIED
 ## Next Session
 
 **Session 11: C3.4 Regression**
-- Start with canonical lifecycle check (5 min)
+- Start with canonical lifecycle check
 - Scope TBD after lifecycle check
 - No automatic CRUD expansion
 - Evidence-based gate counting only

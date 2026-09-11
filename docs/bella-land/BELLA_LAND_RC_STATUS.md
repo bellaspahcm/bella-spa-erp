@@ -301,10 +301,11 @@ All code changes properly verified, test artifacts cleaned up, documentation com
 - **Do NOT test operations that canonical design doesn't support**
 
 **Plan:**
-1. Quick canonical lifecycle verification (5 mins)
+1. Canonical lifecycle verification
    - Check `CustomerService` for lifecycle methods
    - Check database schema for `deleted_at`, `archived_at`, `status` fields
    - Document canonical customer lifecycle
+   - Determine supported operations
 
 2. C3.4 Regression Execution
    - Rerun C3.1 Write Flow (5 gates) — regression check
