@@ -23,14 +23,15 @@ Bella Land v2 Full Capabilities Release Candidate evidence closure program.
 │ BELLA LAND RC — EVIDENCE CLOSURE PROGRAM                │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
-│ Projects       🔒 CLOSED    10 invariants  Session 1-4 │
-│ Products       🔒 CLOSED    35 invariants  Session 5-7 │
-│ Customers      🔒 CLOSED    38 invariants  Session 8-11│
-│ Reservations   🔒 CLOSED    Verified       Prior work  │
-│ Phase 5        ⏸️  PENDING   TBD           After 4/4   │
+│ Projects       🔒 CLOSED    10 unique invariants        │
+│ Products       🔒 CLOSED    35 unique invariants        │
+│ Customers      🔒 CLOSED    38 unique invariants        │
+│ Reservations   🔒 CLOSED    count not reconciled        │
+│ Phase 5        ⏸️  PENDING   TBD after discovery        │
 │                                                         │
-│ RC STATUS:     🟢 4/4 CAPABILITIES CLOSED              │
-│ VERIFIED:      83+ unique invariants                   │
+│ CAPABILITIES:  🔒 4/4 CLOSED                           │
+│ KNOWN FROZEN:  83 unique invariants                    │
+│ PROGRAM TOTAL: NOT YET FROZEN                          │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -206,7 +207,9 @@ Bella Land v2 Full Capabilities Release Candidate evidence closure program.
 | Customers | 38 invariants | 🔒 CLOSED | 8-11 | ✅ Complete |
 | Reservations | TBD | 🔒 CLOSED | Prior | ✅ Complete |
 | Phase 5 | TBD | ⏸️ PENDING | TBD | — |
-| **TOTAL** | **83+ verified** | **🟢 4/4 CLOSED** | **Phase 5 pending** | **Evidence-based** |
+| **CAPABILITIES** | **4/4 CLOSED** | **Maturity verdict** |
+| **Known Frozen** | **83 invariants** | **Projects+Products+Customers** |
+| **Program Total** | **NOT FROZEN** | **Reservations not reconciled** |
 
 ---
 
