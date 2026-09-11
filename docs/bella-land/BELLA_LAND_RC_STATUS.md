@@ -25,12 +25,12 @@ Bella Land v2 Full Capabilities Release Candidate evidence closure program.
 │                                                         │
 │ Projects       🔒 CLOSED    10/10 gates    Session 1-4 │
 │ Products       🔒 CLOSED    35/35 gates    Session 5-7 │
-│ Customers      🟡 PROGRESS  25/~45 gates   Session 8-10│
-│ Reservations   🔒 CLOSED    Verified      Prior work   │
-│ Phase 5        ⏸️  PENDING   Integration  After C3     │
+│ Customers      🟡 PROGRESS  25 verified    Session 8-10│
+│ Reservations   🔒 CLOSED    Verified       Prior work  │
+│ Phase 5        ⏸️  PENDING   TBD gates     After C3    │
 │                                                         │
 │ RC STATUS:     🟡 IN PROGRESS                          │
-│ COMPLETION:    2/4 verticals, Customers 55%            │
+│ VERIFIED:      70 gates (45 closed + 25 in-progress)   │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -101,7 +101,7 @@ Bella Land v2 Full Capabilities Release Candidate evidence closure program.
 
 ## Phase 3: Customers — 🟡 IN PROGRESS
 
-**Status:** � VERIFIED 25/~45 gates (55%)  
+**Status:** 🟡 25 gates VERIFIED (denominator not frozen)  
 **Sessions:** 8–10  
 **Current:** C3.3 VERIFIED → C3.4 NEXT
 
@@ -112,8 +112,13 @@ Bella Land v2 Full Capabilities Release Candidate evidence closure program.
 | C3.1 Write Flow | 5 | 🔒 VERIFIED | `test-customer-creation.ts` |
 | C3.2 Security | 9 | 🔒 VERIFIED | `test-customer-authenticated-security.ts` |
 | C3.3 Browser | 11 | 🔒 VERIFIED | Manual B1-B11 + `C3_3_VERIFIED.md` |
-| C3.4 Regression | ~20 | ⏸️ NEXT | Full suite |
-| C3.5 Seal | ~45 total | ⏸️ PENDING | Final seal |
+| C3.4 Regression | TBD | ⏸️ NEXT | Scope after canonical check |
+| C3.5 Seal | TBD | ⏸️ PENDING | Final seal |
+
+**Governance Note:** 
+- No percentages until denominators frozen
+- C3.4 scope depends on canonical customer lifecycle check
+- DO NOT test operations not in canonical design
 
 ### Completed Gates (25/~45)
 **C3.1 Write Flow (5/5):** ✅
@@ -191,10 +196,10 @@ Bella Land v2 Full Capabilities Release Candidate evidence closure program.
 |----------|-------|--------|----------|----------|
 | Projects | 10 | 🔒 CLOSED | 1-4 | ✅ Complete |
 | Products | 35 | 🔒 CLOSED | 5-7 | ✅ Complete |
-| Customers | 25/~45 | 🟡 PROGRESS | 8-10 | ✅ Partial |
+| Customers | 25 verified | 🟡 IN PROGRESS | 8-10 | ✅ Partial (C3.0-C3.3) |
 | Reservations | — | 🔒 CLOSED | Prior | ✅ Complete |
-| Phase 5 | ~15 | ⏸️ PENDING | TBD | — |
-| **TOTAL** | **~105** | **🟡 70/105** | **67%** | **In Progress** |
+| Phase 5 | TBD | ⏸️ PENDING | TBD | — |
+| **TOTAL** | **70 verified** | **🟡 IN PROGRESS** | **Denominators not frozen** | **Evidence-based** |
 
 ---
 
@@ -289,18 +294,30 @@ All code changes properly verified, test artifacts cleaned up, documentation com
 ### Immediate: Session 11
 **Focus:** Phase 3 Customers (C3.4 Full Regression)
 
+**Critical First Step: Canonical Lifecycle Check**
+- Before adding delete/archive/deactivate tests, verify canonical customer lifecycle
+- Check existing customer service for supported operations
+- Confirm: delete vs. soft delete vs. archive vs. deactivate
+- **Do NOT test operations that canonical design doesn't support**
+
 **Plan:**
-1. C3.4 Customers Regression
+1. Quick canonical lifecycle verification (5 mins)
+   - Check `CustomerService` for lifecycle methods
+   - Check database schema for `deleted_at`, `archived_at`, `status` fields
+   - Document canonical customer lifecycle
+
+2. C3.4 Regression Execution
    - Rerun C3.1 Write Flow (5 gates) — regression check
    - Rerun C3.2 Authenticated Security (9 gates) — regression check
-   - Add read customer operations (fetch single, fetch list)
-   - Add update customer operations (edit name, phone, email)
-   - Add delete customer operations (soft delete with deleted_at)
-   - ~20-25 gates total
+   - Read operations regression (fetch single, fetch list)
+   - Update operations regression (if canonical allows)
+   - Delete/archive operations (ONLY if canonical lifecycle supports)
+   - Gate count: TBD after lifecycle check
 
 **Expected Deliverables:**
+- Canonical lifecycle check result
 - Regression test results (C3.1 + C3.2 rerun)
-- New test scripts for read/update/delete
+- New test scripts (based on canonical lifecycle only)
 - `C3_4_REGRESSION_RESULTS.md`
 
 ---
@@ -401,9 +418,9 @@ All code changes properly verified, test artifacts cleaned up, documentation com
 
 ---
 
-**Bella Land RC Status: 🟡 IN PROGRESS — 67% Complete (70/~105 gates)**
+**Bella Land RC Status: 🟡 IN PROGRESS — 70 gates verified (45 closed + 25 in-progress)**
 
-_Next: Phase 3 Customers C3.4 Regression (Session 11)_
+_Next: Phase 3 Customers C3.4 Regression (Session 11) — Canonical lifecycle check first_
 
 ---
 
