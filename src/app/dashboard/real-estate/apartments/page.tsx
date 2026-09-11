@@ -149,8 +149,8 @@ export default function RealEstateApartmentsPage() {
     product_type: "apartment" as const,
     block: "A",
     floor: "1",
-    area: 0,
-    unit_price: 0,
+    area: 100, // Default 100m² (reasonable apartment size)
+    unit_price: 50000000, // Default 50M VND/m² (reasonable price)
     status: "available" as const,
   });
 
@@ -226,6 +226,16 @@ export default function RealEstateApartmentsPage() {
 
     if (!createForm.product_code.trim()) {
       toast.error("Vui lòng nhập mã căn");
+      return;
+    }
+
+    if (createForm.area <= 0) {
+      toast.error("Vui lòng nhập diện tích lớn hơn 0");
+      return;
+    }
+
+    if (createForm.unit_price <= 0) {
+      toast.error("Vui lòng nhập đơn giá lớn hơn 0");
       return;
     }
 
