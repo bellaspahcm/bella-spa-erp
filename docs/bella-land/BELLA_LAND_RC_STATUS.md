@@ -99,11 +99,11 @@ Bella Land v2 Full Capabilities Release Candidate evidence closure program.
 
 ---
 
-## Phase 3: Customers — 🟡 IN PROGRESS
+## Phase 3: Customers — 🔒 CLOSED
 
-**Status:** 🟡 25 gates VERIFIED (denominator not frozen)  
-**Sessions:** 8–10  
-**Current:** C3.3 VERIFIED → C3.4 NEXT
+**Status:** 🔒 SEALED (38 unique invariants)  
+**Sessions:** 8–11  
+**Seal:** C3.5 COMPLETE
 
 ### Sub-phases
 | Sub-phase | Gates | Status | Evidence |
@@ -112,15 +112,15 @@ Bella Land v2 Full Capabilities Release Candidate evidence closure program.
 | C3.1 Write Flow | 5 | 🔒 VERIFIED | `test-customer-creation.ts` |
 | C3.2 Security | 9 | 🔒 VERIFIED | `test-customer-authenticated-security.ts` |
 | C3.3 Browser | 11 | 🔒 VERIFIED | Manual B1-B11 + `C3_3_VERIFIED.md` |
-| C3.4 Regression | TBD | ⏸️ NEXT | Scope after canonical check |
-| C3.5 Seal | TBD | ⏸️ PENDING | Final seal |
+| C3.4 Regression | 27 | 🔒 VERIFIED | 14 reruns + 13 new |
+| C3.5 Seal | 38 unique | 🔒 COMPLETE | `C3_5_CUSTOMERS_SEAL.md` |
 
 **Governance Note:** 
-- No percentages until denominators frozen
-- C3.4 scope depends on canonical customer lifecycle check
-- DO NOT test operations not in canonical design
+- Unique invariants: 38 (deduplicated)
+- Verification executions: 52 (38 unique + 14 reruns)
+- Formula verified: 52 = 38 + 14 ✅
 
-### Completed Gates (25/~45)
+### Completed Gates (38 unique invariants)
 **C3.1 Write Flow (5/5):** ✅
 - W1: Create customer service-role
 - W2: Field semantics validation
@@ -141,12 +141,19 @@ Bella Land v2 Full Capabilities Release Candidate evidence closure program.
 - B9-B10: Data refresh + persistence
 - B11: DB verification
 
-### Key Achievements
-✅ RLS canonical pattern applied  
-✅ Import path corrected to canonical  
-✅ Browser runtime verified (11/11)  
-✅ Three-layer evidence (action + security + browser)  
-✅ No Layer 5 needed (root entity confirmed)
+**C3.4 Full Regression (27/27):** ✅
+- C3.1 regression: 5/5 (reruns)
+- C3.2 regression: 9/9 (reruns)
+- Read operations: 4/4 (new)
+- Update operations: 5/5 (new)
+- Soft delete: 4/4 (new)
+
+**C3.5 Seal (38 unique invariants):** ✅ CLOSED
+- Canonical lifecycle verified (4 operations)
+- Evidence layers: action/RLS/browser/regression
+- Deduplication: 52 executions → 38 unique
+- Product defects: 0
+- Unbounded blockers: 0
 
 ### Key Artifacts
 - Test scripts:
@@ -194,12 +201,12 @@ Bella Land v2 Full Capabilities Release Candidate evidence closure program.
 
 | Vertical | Gates | Status | Sessions | Evidence |
 |----------|-------|--------|----------|----------|
-| Projects | 10 | 🔒 CLOSED | 1-4 | ✅ Complete |
-| Products | 35 | 🔒 CLOSED | 5-7 | ✅ Complete |
-| Customers | 25 verified | 🟡 IN PROGRESS | 8-10 | ✅ Partial (C3.0-C3.3) |
-| Reservations | — | 🔒 CLOSED | Prior | ✅ Complete |
+| Projects | 10 invariants | 🔒 CLOSED | 1-4 | ✅ Complete |
+| Products | 35 invariants | 🔒 CLOSED | 5-7 | ✅ Complete |
+| Customers | 38 invariants | 🔒 CLOSED | 8-11 | ✅ Complete |
+| Reservations | TBD | 🔒 CLOSED | Prior | ✅ Complete |
 | Phase 5 | TBD | ⏸️ PENDING | TBD | — |
-| **TOTAL** | **70 verified** | **🟡 IN PROGRESS** | **Denominators not frozen** | **Evidence-based** |
+| **TOTAL** | **83+ verified** | **🟡 IN PROGRESS** | **3/4 closed** | **Evidence-based** |
 
 ---
 
@@ -216,7 +223,7 @@ Bella Land v2 Full Capabilities Release Candidate evidence closure program.
 | 8 | 2026-09-11 | Customers C3.0-C3.1 | ✅ DONE | Discovery + Write flow |
 | 9 | 2026-09-11 | Customers C3.2 | ✅ DONE | RLS security |
 | 10 | 2026-09-11 | Customers C3.3 | ✅ DONE | Browser runtime (11/11) |
-| **11** | **TBD** | **Customers C3.4** | **⏸️ NEXT** | **Regression suite** |
+| 11 | 2026-09-11 | Customers C3.4, C3.5 | ✅ DONE | Regression + Seal (38 invariants) |
 
 ---
 
@@ -291,69 +298,47 @@ All code changes properly verified, test artifacts cleaned up, documentation com
 
 ## Next Steps
 
-### Immediate: Session 11
-**Focus:** Phase 3 Customers (C3.4 Full Regression)
+### Session 12: Phase 5 Cross-Capability Integration
 
-**Critical First Step: Canonical Lifecycle Check**
-- Before adding delete/archive/deactivate tests, verify canonical customer lifecycle
-- Check existing customer service for supported operations
-- Confirm: delete vs. soft delete vs. archive vs. deactivate
-- **Do NOT test operations that canonical design doesn't support**
+**Status:** Ready to start  
+**Prerequisites:** ✅ All 4 capabilities closed
 
-**Plan:**
-1. Canonical lifecycle verification
-   - Check `CustomerService` for lifecycle methods
-   - Check database schema for `deleted_at`, `archived_at`, `status` fields
-   - Document canonical customer lifecycle
-   - Determine supported operations
+**Scope:**
+- End-to-end workflow: Project → Product → Customer → Reservation
+- Cross-capability integration points
+- User journey testing  
+- Performance smoke test
+- Production deployment verification
 
-2. C3.4 Regression Execution
-   - Rerun C3.1 Write Flow (5 gates) — regression check
-   - Rerun C3.2 Authenticated Security (9 gates) — regression check
-   - Read operations regression (fetch single, fetch list)
-   - Update operations regression (if canonical allows)
-   - Delete/archive operations (ONLY if canonical lifecycle supports)
-   - Gate count: TBD after lifecycle check
-
-**Expected Deliverables:**
-- Canonical lifecycle check result
-- Regression test results (C3.1 + C3.2 rerun)
-- New test scripts (based on canonical lifecycle only)
-- `C3_4_REGRESSION_RESULTS.md`
+**Expected:** ~15-20 integration invariants
 
 ---
 
-### After Regression: Session 12
-**Focus:** C3.5 Customers Seal
+### Final: Bella Land v2 RC Final Seal
 
-**Scope:**
-- Verify all ~45 gates completed
-- Final audit of evidence
-- Customers seal document
-- Update RC status (3/4 verticals closed)
-
----
-
-### Final: Session 13+
-**Focus:** Phase 5 Integration + Bella Land RC Final Seal
-
-**Scope:**
-- End-to-end integration testing
-- Performance verification
-- Final deployment validation
+**After Phase 5:**
+- Audit all evidence
+- Count total unique invariants
+- Final regression smoke test
 - RC seal document
+- Bella Land v2 RC ready for release
 
 ---
 
 ## Documentation Index
 
-### Evidence Documents — Customers (New)
+### Evidence Documents — Customers
 - `C3_0_CUSTOMERS_DISCOVERY.md` — Requirements and scope
 - `C3_2_VERIFIED.md` — RLS security evidence
 - `C3_3_VERIFIED.md` — Browser runtime evidence (11/11)
+- `C3_3_MANUAL_TEST_CHECKLIST.md` — Manual test procedure
+- `C3_4_CANONICAL_LIFECYCLE_VERDICT.md` — Canonical operations
+- `C3_4_REGRESSION_RESULTS.md` — Full regression (27/27)
+- `C3_5_CUSTOMERS_SEAL.md` — Final seal (38 invariants) ← NEW
 - `SESSION_8_FINAL.md` — C3.1 write flow session
 - `SESSION_9_COMPLETE.md` — C3.2 security session
 - `SESSION_10_COMPLETE.md` — C3.3 browser session
+- `SESSION_11_COMPLETE.md` — C3.4 regression + C3.5 seal
 
 ### Evidence Documents — Products
 - `P1_BASELINE_LOCKED.md` — Projects seal
