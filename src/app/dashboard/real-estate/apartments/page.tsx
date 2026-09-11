@@ -683,20 +683,29 @@ export default function RealEstateApartmentsPage() {
                     Tòa {activeProduct.block || "A"} • Tầng {activeProduct.floor || "18"} • 2 Phòng ngủ
                   </p>
                 </div>
-                <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  Giữ chỗ
-                </span>
+                {(() => {
+                  const statusCfg = STATUS_MAP[activeProduct.status ?? "available"] ?? STATUS_MAP.available;
+                  return (
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border flex items-center gap-1 ${statusCfg.bg} ${statusCfg.text} ${statusCfg.border}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot}`} />
+                      {statusCfg.label}
+                    </span>
+                  );
+                })()}
               </div>
 
               {/* Price & Floorplan Thumbnail */}
               <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800">
                 <div>
                   <p className="text-2xl font-black text-slate-900 dark:text-white">
-                    4.28 tỷ
+                    {activeProduct.unit_price
+                      ? (activeProduct.unit_price / 1_000_000_000).toFixed(2) + ' tỷ'
+                      : '—'}
                   </p>
                   <p className="text-[10px] font-bold text-slate-400">
-                    (~55.9 tr/m²)
+                    {activeProduct.unit_price && activeProduct.area
+                      ? `(~${(activeProduct.unit_price / activeProduct.area / 1_000_000).toFixed(1)} tr/m²)`
+                      : ''}
                   </p>
                 </div>
                 <div className="w-14 h-12 rounded-xl bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[9px] font-bold text-slate-500 border border-slate-300 overflow-hidden">
@@ -732,43 +741,29 @@ export default function RealEstateApartmentsPage() {
                 </div>
               </div>
 
-              {/* Transaction Info Box (Buyer & Timer) */}
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 space-y-3">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Thông tin giao dịch</p>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-xs text-slate-700 dark:text-slate-200">
-                      NT
+              {/* Transaction Info Box (Buyer & Timer) - Only show if product has owner */}
+              {activeProduct.owner_name && (activeProduct.status === 'booked' || activeProduct.status === 'deposited' || activeProduct.status === 'contracted') && (
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 space-y-3">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Thông tin giao dịch</p>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-xs text-slate-700 dark:text-slate-200">
+                        {activeProduct.owner_name.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-slate-900 dark:text-white">{activeProduct.owner_name}</p>
+                        <p className="text-[10px] font-semibold text-slate-400">Khách hàng</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs font-black text-slate-900 dark:text-white">Nguyễn Văn A</p>
-                      <p className="text-[10px] font-semibold text-slate-400">0901 234 567</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[9px] font-bold text-amber-700">Còn giữ</p>
-                    <p className="font-mono text-xs font-black text-amber-600">01:43:26</p>
+                    {activeProduct.status === 'booked' && (
+                      <div className="text-right">
+                        <p className="text-[9px] font-bold text-amber-700">Đang giữ chỗ</p>
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-700">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px]">
-                      TM
-                    </div>
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Trần Minh</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <button className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-100">
-                      <MessageSquare className="w-3.5 h-3.5" />
-                    </button>
-                    <button className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-100">
-                      <Phone className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
+              )}
 
               {/* Primary & Secondary Action Buttons */}
               <div className="space-y-2 pt-2">
