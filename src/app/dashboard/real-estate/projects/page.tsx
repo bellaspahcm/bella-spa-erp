@@ -53,7 +53,7 @@ export default function RealEstateProjectsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState<ProjectRow | null>(null);
-  const [newProject, setNewProject] = useState({ name: "", description: "", status: "on_sale" });
+  const [newProject, setNewProject] = useState({ name: "", description: "", status: "active" });
   const [saving, setSaving] = useState(false);
   
   // UI Tabs & Filters
@@ -100,23 +100,52 @@ export default function RealEstateProjectsPage() {
   useEffect(() => { loadProjects(); }, [loadProjects]);
 
   async function handleCreateProject(e: React.FormEvent) {
+    console.log('[handleCreateProject] START', { name: newProject.name });
     e.preventDefault();
-    if (!newProject.name.trim()) { toast.error("Vui lòng điền tên dự án"); return; }
-    setSaving(true);
-    const res = await createProjectAction({
-      name: newProject.name.trim(),
-      description: newProject.description.trim() || null,
-      status: newProject.status as ProjectRow["status"],
-    });
-    if (res.success) {
-      toast.success("✅ Tạo dự án thành công!");
-      setShowAddModal(false);
-      setNewProject({ name: "", description: "", status: "on_sale" });
-      await loadProjects();
-    } else {
-      toast.error(res.error ?? "Lỗi khi tạo dự án");
+    if (!newProject.name.trim()) { 
+      console.log('[handleCreateProject] REJECTED: Empty name');
+      toast.error("Vui lòng điền tên dự án"); 
+      return; 
     }
-    setSaving(false);
+    setSaving(true);
+    
+    console.log('[handleCreateProject] Calling createProjectAction', {
+      name: newProject.name.trim(),
+      status: newProject.status,
+    });
+    
+    try {
+      const res = await createProjectAction({
+        name: newProject.name.trim(),
+        description: newProject.description.trim() || null,
+        status: newProject.status as ProjectRow["status"],
+      });
+      
+      console.log('[handleCreateProject] Action returned', { 
+        success: res.success, 
+        hasData: !!res.data,
+        error: res.error 
+      });
+      
+      if (res.success) {
+        console.log('[handleCreateProject] SUCCESS - Showing toast and closing modal');
+        toast.success("✅ Tạo dự án thành công!");
+        setShowAddModal(false);
+        setNewProject({ name: "", description: "", status: "active" });
+        console.log('[handleCreateProject] Reloading projects...');
+        await loadProjects();
+        console.log('[handleCreateProject] Projects reloaded');
+      } else {
+        console.log('[handleCreateProject] FAILED - Showing error toast', res.error);
+        toast.error(res.error ?? "Lỗi khi tạo dự án");
+      }
+    } catch (error) {
+      console.error('[handleCreateProject] EXCEPTION', error);
+      toast.error("Lỗi không xác định khi tạo dự án");
+    } finally {
+      setSaving(false);
+      console.log('[handleCreateProject] COMPLETE');
+    }
   }
 
   // Calculate totals
@@ -134,10 +163,9 @@ export default function RealEstateProjectsPage() {
     const matchesSearch = proj.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (proj.description && proj.description.toLowerCase().includes(searchQuery.toLowerCase()));
     if (!matchesSearch) return false;
-    if (activeStatusTab === "on_sale") return proj.status === "on_sale";
-    if (activeStatusTab === "presale") return proj.status === "presale";
-    if (activeStatusTab === "completed") return proj.status === "completed" || proj.status === "sold_out";
+    if (activeStatusTab === "active") return proj.status === "active";
     if (activeStatusTab === "planning") return proj.status === "planning";
+    if (activeStatusTab === "completed") return proj.status === "completed" || proj.status === "cancelled";
     return true;
   });
 
@@ -337,10 +365,9 @@ export default function RealEstateProjectsPage() {
                   <div className="flex items-center gap-1 bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-xl">
                     {[
                       { id: "all", label: "Tất cả", count: projects.length || 3 },
-                      { id: "on_sale", label: "Đang mở bán", count: projects.filter(p => p.status === "on_sale").length || 2 },
-                      { id: "presale", label: "Sắp mở bán", count: 0 },
-                      { id: "completed", label: "Đã hoàn thành", count: 0 },
-                      { id: "planning", label: "Tạm dừng", count: 0 },
+                      { id: "active", label: "Đang hoạt động", count: projects.filter(p => p.status === "active").length || 2 },
+                      { id: "planning", label: "Đang lập kế hoạch", count: projects.filter(p => p.status === "planning").length || 0 },
+                      { id: "completed", label: "Đã hoàn thành", count: projects.filter(p => p.status === "completed" || p.status === "cancelled").length || 0 },
                     ].map((tab) => (
                       <button
                         key={tab.id}
@@ -422,8 +449,17 @@ export default function RealEstateProjectsPage() {
 
                             {/* Top Badges */}
                             <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
-                              <span className="px-2.5 py-1 bg-teal-500/90 text-white font-extrabold text-[10px] rounded-full backdrop-blur-xs shadow-xs">
-                                Đang mở bán
+                              <span className={`px-2.5 py-1 text-white font-extrabold text-[10px] rounded-full backdrop-blur-xs shadow-xs ${
+                                proj.status === "active" ? "bg-teal-500/90" :
+                                proj.status === "planning" ? "bg-amber-500/90" :
+                                proj.status === "completed" ? "bg-slate-500/90" :
+                                "bg-rose-500/90"
+                              }`}>
+                                {proj.status === "active" ? "Đang hoạt động" :
+                                 proj.status === "planning" ? "Đang lập kế hoạch" :
+                                 proj.status === "completed" ? "Đã hoàn thành" :
+                                 proj.status === "cancelled" ? "Đã hủy" :
+                                 proj.status}
                               </span>
                               <button
                                 onClick={() => toggleFavorite(proj.id)}
@@ -667,8 +703,17 @@ export default function RealEstateProjectsPage() {
                       <tr key={p.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
                         <td className="p-3 font-bold text-slate-900 dark:text-white">{p.name}</td>
                         <td className="p-3">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-400 border border-teal-200 dark:border-teal-800">
-                            {p.status === "on_sale" ? "Đang mở bán" : p.status}
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                            p.status === "active" ? "bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-400 border-teal-200 dark:border-teal-800" :
+                            p.status === "planning" ? "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border-amber-200 dark:border-amber-800" :
+                            p.status === "completed" ? "bg-slate-50 text-slate-700 dark:bg-slate-950/60 dark:text-slate-400 border-slate-200 dark:border-slate-800" :
+                            "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border-rose-200 dark:border-rose-800"
+                          }`}>
+                            {p.status === "active" ? "Đang hoạt động" :
+                             p.status === "planning" ? "Đang lập kế hoạch" :
+                             p.status === "completed" ? "Đã hoàn thành" :
+                             p.status === "cancelled" ? "Đã hủy" :
+                             p.status}
                           </span>
                         </td>
                         <td className="p-3 font-semibold">{st.total}</td>
@@ -865,6 +910,19 @@ export default function RealEstateProjectsPage() {
                   className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs focus:outline-none focus:border-amber-500 h-20 resize-none"
                   placeholder="Phân khu căn hộ cao cấp bên sông..."
                 />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Trạng Thái</label>
+                <select
+                  value={newProject.status}
+                  onChange={e => setNewProject({ ...newProject, status: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs focus:outline-none focus:border-amber-500 transition-colors"
+                >
+                  <option value="planning">Đang lập kế hoạch</option>
+                  <option value="active">Đang hoạt động</option>
+                  <option value="completed">Đã hoàn thành</option>
+                  <option value="cancelled">Đã hủy</option>
+                </select>
               </div>
               <div className="flex gap-3 pt-2">
                 <button

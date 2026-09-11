@@ -43,20 +43,20 @@ export class ReservationService implements IReservationContract {
     await this.repository.save(this.supabase, unit);
 
     // 4. Create reservation log in 're_reservations' table
-    const expiresAt = new Date(Date.now() + params.durationMinutes * 60000).toISOString();
+    // Note: Database schema uses reservation_status enum ('pending_deposit' | 'deposited' | 'converted_to_contract' | 'cancelled')
+    // Columns: tenant_id, product_id, customer_id, deposit_amount, status, reserved_at, created_by, updated_by
     const { data: resData, error: resError } = await this.supabase
       .from('re_reservations')
       .insert({
         tenant_id: params.tenantId,
         product_id: params.productId,
-        user_id: params.userId,
         customer_id: params.customerId,
-        duration_minutes: params.durationMinutes,
-        status: 'active' as any,
-        expires_at: expiresAt,
-        deposit_amount: 0 // Default to zero before actual deposit payment
+        deposit_amount: 0, // Default to zero before actual deposit payment
+        status: 'pending_deposit' as any, // Aligned with reservation_status enum
+        created_by: params.userId,
+        updated_by: params.userId
       })
-      .select('id')
+      .select('id, reserved_at')
       .single();
 
     if (resError) {
@@ -65,6 +65,10 @@ export class ReservationService implements IReservationContract {
       await this.repository.save(this.supabase, unit);
       throw new Error(`DATABASE_ERROR: Failed to register reservation: ${resError.message}`);
     }
+
+    // Calculate expiry based on reserved_at timestamp (using default 24 hours for now)
+    const reservedAt = new Date(resData.reserved_at || new Date());
+    const expiresAt = new Date(reservedAt.getTime() + (params.durationMinutes || 1440) * 60000).toISOString();
 
     return {
       success: true,
@@ -86,12 +90,14 @@ export class ReservationService implements IReservationContract {
     unit.release();
     await this.repository.save(this.supabase, unit);
 
-    // Update reservation status in database
+    // Update reservation status in database (use reservation_status enum: 'cancelled')
     const { error: resError } = await this.supabase
       .from('re_reservations')
       .update({
         status: 'cancelled' as any,
-        updated_at: new Date().toISOString()
+        cancelled_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        updated_by: tenantId // Using tenantId as fallback since userId not stored in params
       })
       .eq('id', reservationId)
       .eq('tenant_id', tenantId);
