@@ -44,11 +44,12 @@ export class ReservationService implements IReservationContract {
 
     // 4. Create reservation log in 're_reservations' table
     // Note: Database schema uses reservation_status enum ('pending_deposit' | 'deposited' | 'converted_to_contract' | 'cancelled')
-    // Columns: tenant_id, product_id, customer_id, deposit_amount, status, reserved_at, created_by, updated_by
+    // Columns: tenant_id, user_id, product_id, customer_id, deposit_amount, status, reserved_at, created_by, updated_by
     const { data: resData, error: resError } = await this.supabase
       .from('re_reservations')
       .insert({
         tenant_id: params.tenantId,
+        user_id: params.userId,
         product_id: params.productId,
         customer_id: params.customerId,
         deposit_amount: 0, // Default to zero before actual deposit payment
