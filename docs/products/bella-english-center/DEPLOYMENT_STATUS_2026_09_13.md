@@ -289,34 +289,39 @@ NEXT PRIORITY
 - Deployed at: ~2026-09-13 06:00 UTC
 
 **V1 Partial Results:**
-- Endpoints reachable: ✅ **YES**
+- Endpoints reachable: ✅ **YES** (routes exist)
 - Status codes:
-  - GET `/api/english-center/branches`: **200** ✅
-  - GET `/api/english-center/branches/hierarchy`: **200** ✅  
-  - GET `/api/english-center/branches/test-id`: **200** ✅
-- Response sizes: 158-312 KB (real data!)
-- Verdict: ✅ **PASS**
+  - GET `/api/english-center/branches`: **302** → Vercel SSO redirect
+  - GET `/api/english-center/branches/hierarchy`: **302** → Vercel SSO redirect
+  - GET `/api/english-center/branches/test-id`: **302** → Vercel SSO redirect
+- Content-Type: `text/plain` (not `application/json`)
+- Response body: `"Redirecting..."` (HTML auth page)
+- Verdict: 🟡 **ROUTE REACHABILITY PASS, API SEMANTICS BLOCKED**
+
+**Root Cause:** Vercel Deployment Protection enabled on preview
+- Preview requires SSO authentication
+- Cannot test API semantics without bypass/auth
+- PowerShell auto-followed 302 → 200 HTML (false positive)
 
 **V6 Partial Results:**
 - UI renders: ⏸️ **PENDING** (manual test required)
 - Console errors: ⏸️ **PENDING** (manual check)
 - Verdict: ⏸️ **PENDING** (user must open browser)
 
-**Overall Preview Status:** ✅ **V1 PASS - EXCEEDED EXPECTATIONS!**
+**Overall Preview Status:** 🟡 **ENVIRONMENT-LIMITED - Vercel SSO Protection Blocking API Tests**
 
-**Unexpected Success:**
-- All endpoints return **200 with data** (not 404 empty)
-- Database connection working
-- Test/staging data exists
-- E1 fully functional in runtime
+**Issue Identified:**
+- Preview has Vercel Deployment Protection enabled
+- All requests → 302 redirect to SSO login
+- PowerShell auto-followed redirects → false 200
+- Cannot test API semantics without authentication bypass
 
-**Impact:**
-- ✅ V1 verified ahead of schedule
-- ✅ Skip environment setup (DB works)
-- ✅ Can proceed to V6 immediately
-- ✅ E1 runtime behavior proven
+**What was actually tested:**
+- ✅ Routes compiled in build
+- ✅ Preview deployment successful
+- ✅ Endpoints reachable (302 = route exists)
+- ❌ API JSON responses NOT verified
+- ❌ Data semantics NOT verified
 
-**E1 Seal Progress:** 11/19 → **12/19** (V1 complete)
-
-**Next Action:** Manual V6 UI test - User opens https://bella-spa-28uiqxh1h-bella-spa-s-projects.vercel.app
+**Next:** Disable Vercel Protection OR use authenticated request
 
