@@ -2,15 +2,13 @@
  * Student Integration Tests
  * 
  * Tests:
- * - Person FK validation (Student requires existing Person)
+ * - Party FK validation (Student requires existing Party)
  * - Tenant isolation (Student cannot access other tenant's data)
  * - CRUD operations with real database
  * - Business rules enforcement
  */
 
 import { StudentService } from '../student.service';
-import { PersonService } from '@/platform/host/person/person.service';
-import { PersonRepository } from '@/platform/host/person/person.repository';
 import { CreateStudentRequest } from '../../shared-kernel/types';
 import { createClient } from '@/lib/supabase-server';
 
@@ -18,15 +16,12 @@ describe('Student Integration Tests', () => {
   const tenantId = '00000000-0000-0000-0000-000000000088';
   const differentTenantId = '00000000-0000-0000-0000-000000000089';
   const systemUserId = '00000000-0000-0000-0000-000000000001'; // System user UUID (not 'test-system' string)
-  let personId: string;
+  let partyId: string;
   let studentId: string;
-  let personService: PersonService;
-  let personRepository: PersonRepository;
+  let supabase: ReturnType<typeof createClient>;
 
   beforeAll(async () => {
-    const supabase = await createClient();
-    personService = new PersonService(supabase);
-    personRepository = new PersonRepository(supabase);
+    supabase = await createClient();
 
     // Ensure test tenants exist in DB
     const { error: tenant1Error } = await supabase
@@ -51,24 +46,42 @@ describe('Student Integration Tests', () => {
       throw new Error(`Failed to create test tenant 2: ${tenant2Error.message}`);
     }
     
-    // Create test Person (required for FK)
-    const personResult = await personService.createPerson({
-      tenantId,
-      firstName: 'John',
-      lastName: 'Doe',
-      dateOfBirth: '2000-01-15',
-      gender: 'male',
-      contacts: [
-        { type: 'email', value: 'john.doe@university.edu', isPrimary: true },
-        { type: 'phone', value: '0901234567', isPrimary: false },
-      ],
-      createdBy: systemUserId,
-    });
+    // R6.5: Create Party fixture (migrated from Person)
+    const { data: party, error: partyError } = await supabase
+      .from('party_parties')
+      .insert({
+        tenant_id: tenantId,
+        party_type: 'person',
+        display_name: 'John Doe',
+        created_by: systemUserId,
+      })
+      .select()
+      .single();
     
-    if (!personResult.success || !personResult.data) {
-      throw new Error(`Failed to create test person: ${personResult.error?.message}`);
+    if (partyError || !party) {
+      throw new Error(`Party creation failed: ${partyError?.message}`);
     }
-    personId = personResult.data.personId;
+    
+    // R6.5: Create minimal Person record for FK compatibility
+    const { data: person, error: personError } = await supabase
+      .from('persons')
+      .insert({
+        id: party.id,
+        tenant_id: tenantId,
+        first_name: 'John',
+        last_name: 'Doe',
+        date_of_birth: '2000-01-15',
+        gender: 'male',
+        created_by: systemUserId,
+      })
+      .select()
+      .single();
+    
+    if (personError || !person) {
+      throw new Error(`Person FK compatibility record creation failed: ${personError?.message}`);
+    }
+    
+    partyId = party.id;
   });
 
   afterAll(async () => {
@@ -86,10 +99,11 @@ describe('Student Integration Tests', () => {
   });
 
   describe('Person FK Validation', () => {
-    it('should create student with valid Person', async () => {
+    it('should create student with valid Party', async () => {
       const request: CreateStudentRequest = {
         tenantId,
-        personId,
+        partyId,
+        personId: partyId, // Legacy compatibility
         studentCode: 'EDU-2024-001',
         academicStatus: 'enrolled',
         enrollmentType: 'full_time',
@@ -104,15 +118,16 @@ describe('Student Integration Tests', () => {
       studentId = student.studentId;
 
       expect(student).toBeDefined();
-      expect(student.personId).toBe(personId);
+      expect(student.partyId).toBe(partyId);
       expect(student.studentCode).toBe('EDU-2024-001');
       expect(student.academicStatus).toBe('enrolled');
     });
 
-    it('should reject student creation if Person does not exist', async () => {
+    it('should reject student creation if Party does not exist', async () => {
       const request: CreateStudentRequest = {
         tenantId,
-        personId: '00000000-0000-0000-0000-999999999999', // Valid UUID that doesn't exist
+        partyId: '00000000-0000-0000-0000-999999999999', // Valid UUID that doesn't exist
+        personId: '00000000-0000-0000-0000-999999999999', // Legacy compatibility
         studentCode: 'EDU-2024-002',
         academicStatus: 'enrolled',
         enrollmentType: 'full_time',
@@ -122,14 +137,15 @@ describe('Student Integration Tests', () => {
       };
 
       await expect(StudentService.createStudent(request)).rejects.toThrow(
-        'Person with ID 00000000-0000-0000-0000-999999999999 does not exist'
+        'Party with ID 00000000-0000-0000-0000-999999999999 does not exist'
       );
     });
 
     it('should reject duplicate student code in same tenant', async () => {
       const request: CreateStudentRequest = {
         tenantId,
-        personId,
+        partyId,
+        personId: partyId, // Legacy compatibility
         studentCode: 'EDU-2024-001', // Same code as first test
         academicStatus: 'enrolled',
         enrollmentType: 'part_time',
@@ -171,10 +187,10 @@ describe('Student Integration Tests', () => {
       expect(student?.studentId).toBe(studentId);
     });
 
-    it('should get students by person ID', async () => {
-      const students = await StudentService.getStudentsByPersonId(personId, tenantId);
+    it('should get students by party ID', async () => {
+      const students = await StudentService.getStudentsByPartyId(partyId, tenantId);
       expect(students.length).toBeGreaterThan(0);
-      expect(students[0].personId).toBe(personId);
+      expect(students[0].partyId).toBe(partyId);
     });
 
     it('should update student', async () => {
@@ -229,22 +245,44 @@ describe('Student Integration Tests', () => {
 
     it('should update academic progress', async () => {
       // Create new student for this test
-      const person2Result = await personService.createPerson({
-        tenantId,
-        firstName: 'Jane',
-        lastName: 'Smith',
-        dateOfBirth: '2001-05-20',
-        gender: 'female',
-        createdBy: systemUserId,
-      });
+      const { data: party2, error: party2Error } = await supabase
+        .from('party_parties')
+        .insert({
+          tenant_id: tenantId,
+          party_type: 'person',
+          display_name: 'Jane Smith',
+          created_by: systemUserId,
+        })
+        .select()
+        .single();
 
-      if (!person2Result.success || !person2Result.data) {
-        throw new Error('Failed to create test person');
+      if (party2Error || !party2) {
+        throw new Error(`Party creation failed: ${party2Error?.message}`);
+      }
+
+      // R6.5: Create minimal Person record for FK compatibility
+      const { data: person2, error: person2Error } = await supabase
+        .from('persons')
+        .insert({
+          id: party2.id,
+          tenant_id: tenantId,
+          first_name: 'Jane',
+          last_name: 'Smith',
+          date_of_birth: '2001-05-20',
+          gender: 'female',
+          created_by: systemUserId,
+        })
+        .select()
+        .single();
+
+      if (person2Error || !person2) {
+        throw new Error(`Person FK compatibility record creation failed: ${person2Error?.message}`);
       }
 
       const student2 = await StudentService.createStudent({
         tenantId,
-        personId: person2Result.data.personId,
+        partyId: party2.id,
+        personId: party2.id, // Legacy compatibility
         studentCode: 'EDU-2024-003',
         academicStatus: 'enrolled',
         enrollmentType: 'full_time',

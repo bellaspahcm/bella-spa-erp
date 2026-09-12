@@ -24,16 +24,19 @@ export class StudentAggregate {
 
   /**
    * Create new Student
-   * Validates business rules before creation
+   * R3: Validates partyId if provided, falls back to personId
    */
   static create(request: CreateStudentRequest): StudentAggregate {
     // Validate required fields
     if (!request.tenantId?.trim()) {
       throw new Error('Tenant ID is required');
     }
-    if (!request.personId?.trim()) {
-      throw new Error('Person ID is required (Student must reference a Person)');
+    
+    // R3: Require either partyId or personId
+    if (!request.partyId?.trim() && !request.personId?.trim()) {
+      throw new Error('Either Party ID or Person ID is required');
     }
+    
     if (!request.studentCode?.trim()) {
       throw new Error('Student code is required');
     }
@@ -72,7 +75,8 @@ export class StudentAggregate {
     const student: Student = {
       studentId: crypto.randomUUID(),
       tenantId: request.tenantId,
-      personId: request.personId,
+      partyId: request.partyId,           // R3 NEW
+      personId: request.personId,         // LEGACY
       studentCode: normalizedCode,
       academicStatus: request.academicStatus,
       enrollmentType: request.enrollmentType,

@@ -1,0 +1,64 @@
+# CODEOWNERS — Repository Ownership and Review Requirements
+#
+# Format: <path pattern> <owners>
+# Owners are notified when PRs modify files matching patterns.
+# At least one owner must approve before merge.
+
+# ============================================================================
+# PLATFORM OWNERSHIP
+# ============================================================================
+
+# Platform Finance (F3 AR Contract + Engine)
+/src/platform/finance/contracts/f3-ar.contract.ts @platform-finance-team
+/src/platform/finance/engines/f3-ar-engine.ts @platform-finance-team
+/src/platform/finance/index.ts @platform-finance-team
+/docs/platform/finance/ @platform-finance-team
+
+# Platform Finance Tests (Regression Protection)
+/src/platform/finance/**/*.test.ts @platform-finance-team
+/src/platform/finance/**/__tests__/ @platform-finance-team
+
+# ============================================================================
+# PRODUCT OWNERSHIP
+# ============================================================================
+
+# Bella English Center
+/src/products/bella-english-center/ @english-center-team
+/docs/products/bella-english-center/ @english-center-team
+
+# English Center Billing (consumes Platform Finance)
+# Requires both English Center + Platform Finance review for architectural compliance
+/src/products/bella-english-center/billing/ @english-center-team @platform-finance-team
+
+# ============================================================================
+# ARCHITECTURE GOVERNANCE
+# ============================================================================
+
+# Architecture Documentation (requires Architecture team approval)
+/docs/architecture/ @architecture-team
+
+# Steering Rules (MANDATORY patterns for ALL code)
+/.kiro/steering/ @architecture-team
+
+# CI/CD Configuration
+/.github/workflows/ @devops-team @architecture-team
+
+# Database Migrations (requires DBA + Architecture review)
+/supabase/migrations/ @database-team @architecture-team
+
+# ============================================================================
+# NOTES
+# ============================================================================
+#
+# Team Aliases (configure in GitHub Settings → Teams):
+# - @platform-finance-team: Owners of Platform Finance F3 AR
+# - @english-center-team: Owners of English Center Product
+# - @architecture-team: Architecture review board
+# - @database-team: Database administrators
+# - @devops-team: CI/CD and infrastructure
+#
+# Review Requirements:
+# - Platform Finance contract changes require Architecture team approval
+# - Product billing integration requires both Product + Platform review
+# - Migration files require DBA + Architecture approval
+#

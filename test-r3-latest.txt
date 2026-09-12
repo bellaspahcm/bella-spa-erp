@@ -1,0 +1,202 @@
+
+> bella-spa-erp@0.1.0 test
+> jest tests/remediation/r3-integration.test.ts
+
+  console.log
+    Γùç injected env (0) from .env.test // tip: Γîÿ suppress logs { quiet: true }
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+  console.log
+    [Jest Setup] SUPABASE_SERVICE_ROLE_KEY loaded: true
+
+      at Object.log (jest.setup.ts:13:9)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.warn
+    Could not create other-tenant party (RLS?): {
+      code: '23503',
+      details: 'Key (tenant_id)=(99999999-9999-9999-9999-999999999999) is not present in table "tenants".',
+      hint: null,
+      message: 'insert or update on table "party_parties" violates foreign key constraint "party_parties_tenant_id_fkey"'
+    }
+
+    [0m [90m 77 |[39m
+     [90m 78 |[39m     [36mif[39m (party2Error) {
+    [31m[1m>[22m[39m[90m 79 |[39m       console[33m.[39mwarn([32m'Could not create other-tenant party (RLS?):'[39m[33m,[39m party2Error)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 80 |[39m       [90m// Use same tenant but mark for cross-tenant test skip[39m
+     [90m 81 |[39m       testPartyId2 [33m=[39m testPartyId[33m;[39m
+     [90m 82 |[39m     } [36melse[39m {[0m
+
+      at Object.warn (tests/remediation/r3-integration.test.ts:79:15)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+  console.log
+    [createServerClient] Test environment detected - using service role client
+
+      at log (src/lib/supabase-server.ts:24:13)
+
+FAIL tests/remediation/r3-integration.test.ts
+  R3 Education Identity Cutover - Integration Tests
+    ├ù T1: Valid Party creates Student (201 ms)
+    ΓêÜ T2: Invalid Party rejected (347 ms)
+    ΓêÜ T3: student.party_id persisted in database (267 ms)
+    ΓêÜ T4: Legacy person_id remains readable (134 ms)
+    ΓêÜ T5: No new persons row created during Student creation (566 ms)
+    ├ù T6: Cross-tenant Party rejected (373 ms)
+    ΓêÜ T7: Existing 631 students readable via findByPartyId (221 ms)
+    ΓêÜ T8: findByPartyId returns correct students (304 ms)
+    ├ù T9: Contract partyId semantics correct (not person_id) (188 ms)
+    ΓêÜ T10: Cannot create duplicate Student for same Party in same program (315 ms)
+    ΓêÜ BONUS: Non-person party rejected (104 ms)
+
+  ΓùÅ R3 Education Identity Cutover - Integration Tests ΓÇ║ T1: Valid Party creates Student
+
+    Failed to create student: invalid input syntax for type uuid: "r3-test"
+
+      74 |         throw new Error(`Student code ${student.studentCode} already exists in this tenant`);
+      75 |       }
+    > 76 |       throw new Error(`Failed to create student: ${error.message}`);
+         |             ^
+      77 |     }
+      78 |
+      79 |     return this.mapRowToDomain(data as StudentsTableRow);
+
+      at StudentRepository.create (src/platform/education/student/student.repository.ts:76:13)
+      at StudentService.createStudent (src/platform/education/student/student.service.ts:52:12)
+      at Object.<anonymous> (tests/remediation/r3-integration.test.ts:114:21)
+
+  ΓùÅ R3 Education Identity Cutover - Integration Tests ΓÇ║ T6: Cross-tenant Party rejected
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: {"academicStatus": "enrolled", "actualGraduationDate": undefined, "createdAt": "2026-09-12T10:16:24.852+00:00", "createdBy": undefined, "currentLevel": undefined, "emergencyContactName": undefined, "emergencyContactPhone": undefined, "emergencyContactRelationship": undefined, "enrollmentDate": "2026-09-01", "enrollmentType": "full_time", "expectedGraduationDate": undefined, "gpa": undefined, "metadata": undefined, "partyId": "5fc3d773-e542-4b0a-9847-d1c7b355b8ca", "personId": "9b0b101d-fe14-471b-b7f7-cb50cb86fed4", "programId": "test-program", "studentCode": "EDU-2026-006", "studentId": "5c19ce39-1b05-48e1-a324-4d729aedb32a", "tenantId": "00000000-0000-0000-0000-000000000001", "totalCredits": undefined, "updatedAt": "2026-09-12T10:16:24.852+00:00", "updatedBy": undefined}
+
+      231 |   test('T6: Cross-tenant Party rejected', async () => {
+      232 |     // Try to create student in TEST_TENANT with party from other-tenant
+    > 233 |     await expect(
+          |           ^
+      234 |       StudentService.createStudent({
+      235 |         tenantId: TEST_TENANT,
+      236 |         partyId: testPartyId2, // From different tenant
+
+      at expect (node_modules/expect/build/index.js:2116:15)
+      at Object.expect (tests/remediation/r3-integration.test.ts:233:11)
+
+  ΓùÅ R3 Education Identity Cutover - Integration Tests ΓÇ║ T9: Contract partyId semantics correct (not person_id)
+
+    Failed to create student: insert or update on table "students" violates foreign key constraint "students_person_fk"
+
+      74 |         throw new Error(`Student code ${student.studentCode} already exists in this tenant`);
+      75 |       }
+    > 76 |       throw new Error(`Failed to create student: ${error.message}`);
+         |             ^
+      77 |     }
+      78 |
+      79 |     return this.mapRowToDomain(data as StudentsTableRow);
+
+      at StudentRepository.create (src/platform/education/student/student.repository.ts:76:13)
+      at StudentService.createStudent (src/platform/education/student/student.service.ts:52:12)
+      at StudentContractImpl.registerStudent (src/platform/education/contracts/student.contract.impl.ts:7:21)
+      at Object.<anonymous> (tests/remediation/r3-integration.test.ts:305:17)
+
+Test Suites: 1 failed, 1 total
+Tests:       3 failed, 8 passed, 11 total
+Snapshots:   0 total
+Time:        4.976 s, estimated 8 s
+Ran all test suites matching tests/remediation/r3-integration.test.ts.

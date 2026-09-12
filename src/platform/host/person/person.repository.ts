@@ -25,6 +25,12 @@ export class PersonRepository {
   /**
    * Save a new person to database
    */
+  /**
+   * Save new Person to database
+   * 
+   * @deprecated Legacy Person identity (internal). Use PartyRepository for new code.
+   * See: E0.1A-R Identity Remediation (R5 freeze 2026-09-12)
+   */
   async save(person: Person): Promise<Person> {
     const insert: PersonInsert = {
       id: person.personId,
@@ -63,6 +69,12 @@ export class PersonRepository {
 
   /**
    * Update existing person
+   */
+  /**
+   * Update existing Person
+   * 
+   * @deprecated Legacy Person identity (internal). Use PartyRepository for new code.
+   * See: E0.1A-R Identity Remediation (R5 freeze 2026-09-12)
    */
   async update(person: Person): Promise<Person> {
     const update: PersonUpdate = {
@@ -215,6 +227,12 @@ export class PersonRepository {
 
   /**
    * Delete person (soft delete - set status to inactive)
+   */
+  /**
+   * Delete Person
+   * 
+   * @deprecated Legacy Person identity (internal). Use PartyRepository for new code.
+   * See: E0.1A-R Identity Remediation (R5 freeze 2026-09-12)
    */
   async delete(personId: string, tenantId: string): Promise<void> {
     const { error } = await this.supabase

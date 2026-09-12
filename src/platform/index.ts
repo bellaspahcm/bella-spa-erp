@@ -379,3 +379,24 @@ export type {
   VerticalProviders,
   VerificationResult,
 } from './composition';
+
+// ─── Org Unit Engine (Organizational Hierarchy) ───────────────────────────
+export { orgUnitEngine, createOrgUnitEngine } from './org-unit';
+export type {
+  IOrgUnitContract,
+  OrgUnit,
+  OrgUnitType,
+  CreateOrgUnitInput,
+  UpdateOrgUnitInput,
+  OrgUnitFilter,
+  OrgUnitHierarchy,
+  IOrgUnitRepository,
+} from './org-unit';
+export {
+  OrgUnitError,
+  OrgUnitNotFoundError,
+  OrgUnitParentNotFoundError,
+  OrgUnitCodeConflictError,
+  OrgUnitCircularReferenceError,
+  OrgUnitTenantMismatchError,
+} from './org-unit';

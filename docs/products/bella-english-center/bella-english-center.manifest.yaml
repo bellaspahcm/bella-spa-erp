@@ -1,0 +1,538 @@
+# ==============================================================================
+# BELLA ENGLISH CENTER — EXECUTABLE PRODUCT MANIFEST
+# ==============================================================================
+# Version: 1.0
+# Created: 2026-09-12
+# Purpose: Machine-readable architecture compilation for AI Factory
+# Status: E0 Architecture Frozen, Implementation Blocked by 2 gaps
+# ==============================================================================
+
+manifest_version: "1.0"
+
+product:
+  id: bella-english-center
+  name: Bella English Center
+  tier: product_vertical
+  platform: education-os
+  status: architecture_compiled
+  implementation_status: blocked
+  created: 2026-09-12
+  sealed: 2026-09-12
+
+metadata:
+  total_capabilities: 22
+  platform_reuse: 10
+  product_specific: 9
+  promotion_candidates: 3
+  total_rules: 44
+  blocking_gaps: 2
+  architecture_frozen: true
+  implementation_ready: false
+
+# ==============================================================================
+# BLOCKING GAPS (Must be resolved before E1 implementation)
+# ==============================================================================
+
+blocking_gaps:
+  E0.1A-R:
+    title: Identity Migration (Person → Party)
+    owner: platform-core-team
+    severity: blocking
+    blocks_capabilities: [student]
+    blocks_rules: [CROSS-IDENTITY-ALL]
+    blocks_gates: [5, 11]
+    remediation:
+      - Migrate students table person_id → party_id
+      - Migrate persons data → party_parties
+      - Update Education Kernel to use Party
+    status: open
+
+  E0.1B-R:
+    title: Finance AR Contract Missing
+    owner: platform-finance-team
+    severity: blocking
+    blocks_capabilities: [finance_invoice, enrollment]
+    blocks_rules: [INV-FIN-01, INV-FIN-02, INV-FIN-03, INV-FIN-04, INV-DISC-01, CROSS-ENR-FIN]
+    blocks_gates: [2, 10]
+    remediation:
+      - Create IFinanceReceivableContract
+      - Implement issueInvoice recordPayment allocatePayment
+      - Export from platform/finance
+    status: open
+
+# ==============================================================================
+# CAPABILITY REGISTRY
+# ==============================================================================
+
+capabilities:
+  # PLATFORM REUSE
+  lead_crm:
+    owner: platform-core
+    mode: reuse
+    contract: LeadWorkflowEngine
+    direct_db: false
+    gates: [0]
+    status: ready
+
+  student:
+    owner: education-kernel
+    mode: reuse
+    contract: IEducationStudentContract
+    direct_db: false
+    gates: [0, 1, 2, 5, 11]
+    status: blocked
+    blocked_by: E0.1A-R
+
+  enrollment:
+    owner: education-kernel
+    mode: reuse
+    contract: IEducationEnrollmentContract
+    direct_db: false
+    gates: [0, 1, 2, 3, 4, 8]
+    cross_domain: [finance, class]
+    status: partial_blocked
+    blocked_by: E0.1B-R
+
+  attendance:
+    owner: education-kernel
+    mode: reuse
+    contract: IEducationAttendanceContract
+    direct_db: false
+    gates: [0, 1, 2, 3, 4]
+    cross_domain: [enrollment]
+    status: ready
+
+  assessment:
+    owner: education-kernel
+    mode: reuse
+    contract: IEducationAssessmentContract
+    direct_db: false
+    gates: [0, 1, 2, 3, 4, 9]
+    status: ready
+
+  teacher_assignment:
+    owner: education-kernel
+    mode: reuse
+    contract: IEducationTeacherAssignmentContract
+    direct_db: false
+    gates: [0, 1, 2]
+    cross_domain: [scheduling]
+    status: ready
+
+  course_template:
+    owner: education-kernel
+    mode: reuse
+    contract: IEducationCourseContract
+    direct_db: false
+    gates: [0, 1, 2]
+    note: Template only, no temporal/capacity
+    status: ready
+
+  finance_invoice:
+    owner: platform-finance
+    mode: reuse
+    contract: IFinanceReceivableContract
+    direct_db: false
+    gates: [0, 2, 10]
+    status: blocked
+    blocked_by: E0.1B-R
+
+  finance_reversal:
+    owner: platform-finance
+    mode: reuse
+    contract: ledgerService.reverseTransaction
+    direct_db: false
+    gates: [0, 2]
+    status: ready
+
+  authorization:
+    owner: platform-core
+    mode: reuse
+    contract: IAMMatrix
+    direct_db: false
+    gates: [0, 6]
+    status: ready
+
+  # PRODUCT SPECIFIC
+  consultation:
+    owner: english-center
+    mode: product_specific
+    contract: null
+    direct_db: true
+    table: english_center_consultations
+    gates: [0, 4]
+    status: ready
+
+  placement_test:
+    owner: english-center
+    mode: product_specific
+    contract: null
+    direct_db: true
+    table: english_center_placement_tests
+    gates: [0, 4]
+    status: ready
+
+  trial_class:
+    owner: english-center
+    mode: product_specific
+    contract: null
+    direct_db: true
+    table: english_center_trial_classes
+    gates: [0, 4]
+    status: ready
+
+  course_offering:
+    owner: english-center
+    mode: product_specific
+    contract: null
+    direct_db: true
+    table: english_center_course_offerings
+    base: course_template
+    gates: [0, 4]
+    status: ready
+
+  class:
+    owner: english-center
+    mode: product_specific
+    contract: null
+    direct_db: true
+    table: english_center_classes
+    cross_domain: [enrollment, teacher_assignment]
+    gates: [0, 4]
+    status: ready
+
+  session:
+    owner: english-center
+    mode: product_specific
+    contract: null
+    direct_db: true
+    table: english_center_sessions
+    cross_domain: [attendance]
+    gates: [0, 4]
+    status: ready
+
+  makeup_session:
+    owner: english-center
+    mode: product_specific
+    contract: null
+    direct_db: true
+    table: english_center_makeup_sessions
+    gates: [0, 4]
+    status: ready
+
+  renewal:
+    owner: english-center
+    mode: workflow_orchestration
+    contract: null
+    direct_db: true
+    table: english_center_renewal_opportunities
+    orchestrates: [enrollment]
+    gates: [0, 2, 4]
+    status: ready
+
+  teacher_scheduling:
+    owner: english-center
+    mode: product_specific
+    contract: null
+    direct_db: true
+    table: english_center_teacher_availability
+    gates: [0, 4]
+    status: ready
+
+  # PROMOTION CANDIDATES
+  program:
+    owner: english-center
+    mode: promotion_candidate
+    defer_until: product_3
+    gates: [0, 4]
+    status: ready
+
+  level:
+    owner: english-center
+    mode: promotion_candidate
+    defer_until: product_3
+    gates: [0, 4]
+    status: ready
+
+  organizational_scope:
+    owner: english-center
+    mode: promotion_candidate
+    defer_until: product_3
+    gates: [0, 4]
+    status: ready
+
+# ==============================================================================
+# RULE REGISTRY
+# ==============================================================================
+
+rules:
+  total: 44
+
+  business_invariants:
+    count: 24
+    enforcement: runtime_block
+    rules:
+      INV-LEAD-01: {intent: lead_state_machine, owner: platform-core, status: ready}
+      INV-CONS-01: {intent: no_double_booking, owner: english-center, status: ready}
+      INV-PLACE-01: {intent: test_integrity, owner: english-center, status: ready}
+      INV-TRIAL-01: {intent: capacity_enforcement, owner: english-center, status: ready}
+      INV-TRIAL-02: {intent: time_constraint, owner: english-center, status: ready}
+      INV-LEVEL-01: {intent: level_in_program, owner: english-center, status: ready}
+      INV-OFFER-01: {intent: date_constraints, owner: english-center, status: ready}
+      INV-CLASS-01: {intent: teacher_no_conflict, owner: english-center, cross_domain: teacher, status: ready}
+      INV-CLASS-02: {intent: capacity_enforcement, owner: english-center, cross_domain: enrollment, status: ready}
+      INV-ENR-01: {intent: payment_required, owner: multi, cross_domain: finance, status: blocked, blocked_by: E0.1B-R}
+      INV-ENR-02: {intent: assessment_required, owner: multi, status: ready}
+      INV-ENR-03: {intent: state_transitions, owner: education-kernel, status: ready}
+      INV-SESS-01: {intent: teacher_conflict_forbidden, owner: english-center, cross_domain: teacher, status: ready}
+      INV-ATT-01: {intent: enrollment_required, owner: multi, cross_domain: enrollment, status: ready}
+      INV-MAKEUP-02: {intent: no_double_credit, owner: english-center, status: ready}
+      INV-ASSESS-01: {intent: range_validation, owner: multi, status: ready}
+      INV-ASSESS-02: {intent: calculation_accuracy, owner: multi, status: ready}
+      INV-COMP-01: {intent: completion_criteria, owner: multi, status: ready}
+      INV-FIN-03: {intent: payment_for_activation, owner: multi, cross_domain: finance, status: blocked, blocked_by: E0.1B-R}
+      INV-TEACH-01: {intent: schedule_conflict_forbidden, owner: english-center, cross_domain: teacher, status: ready}
+      INV-TEACH-02: {intent: availability_respect, owner: english-center, status: ready}
+      INV-BRANCH-01: {intent: data_isolation, owner: english-center, enforcement: authorization, status: ready}
+      CROSS-ENR-FIN: {intent: enrollment_finance_consistency, owner: english-center, status: blocked, blocked_by: E0.1B-R}
+      CROSS-ATT-CLASS: {intent: attendance_enrollment_consistency, owner: english-center, status: ready}
+      CROSS-TEACH-SCHEDULE: {intent: teacher_schedule_consistency, owner: english-center, status: ready}
+
+  architecture_invariants:
+    count: 5
+    enforcement: ci_gate
+    rules:
+      INV-RENEW-02: {intent: use_enrollment_contract, gate: 2, status: ready}
+      INV-FIN-01: {intent: use_finance_contract, gate: 2, status: blocked, blocked_by: E0.1B-R}
+      INV-FIN-02: {intent: use_finance_contract, gate: 2, status: blocked, blocked_by: E0.1B-R}
+      INV-REFUND-02: {intent: use_reversal_contract, gate: 2, status: ready}
+      CROSS-IDENTITY-ALL: {intent: use_party_not_person, gate: [5, 11], status: blocked, blocked_by: E0.1A-R}
+
+  policies:
+    count: 10
+    enforcement: workflow_guard
+    configurable: true
+    rules:
+      INV-LEAD-02: {intent: sla_duration, owner: english-center, status: ready}
+      INV-LEAD-03: {intent: rotation_algorithm, owner: english-center, status: ready}
+      INV-PLACE-02: {intent: score_ranges, owner: english-center, status: ready}
+      INV-ATT-02: {intent: absence_threshold, owner: english-center, status: ready}
+      INV-MAKEUP-01: {intent: eligibility_rules, owner: english-center, status: ready}
+      INV-ASSESS-03: {intent: certification_threshold, owner: english-center, status: ready}
+      INV-FIN-04: {intent: installment_grace, owner: english-center, status: blocked, blocked_by: E0.1B-R}
+      INV-REFUND-01: {intent: refund_schedule, owner: english-center, status: ready}
+      INV-DISC-01: {intent: discount_rules, owner: english-center, status: blocked, blocked_by: E0.1B-R}
+      INV-KPI-01: {intent: kpi_definitions, owner: english-center, status: ready}
+
+  workflows:
+    count: 5
+    enforcement: workflow_guard
+    skippable: true
+    rules:
+      INV-CONS-02: {intent: consultation_outcome, owner: english-center, status: ready}
+      INV-PROG-01: {intent: program_recommendation, owner: english-center, status: ready}
+      INV-PROG-02: {intent: level_progression, owner: english-center, status: ready}
+      INV-RENEW-01: {intent: renewal_trigger, owner: english-center, status: ready}
+      INV-TRANSFER-01: {intent: transfer_approval, owner: english-center, status: ready}
+
+# ==============================================================================
+# GATE REGISTRY
+# ==============================================================================
+
+gates:
+  0:
+    name: Tenant Isolation
+    enforcement: database_rls
+    applies_to: all
+    status: ready
+
+  1:
+    name: No Kernel Modification
+    enforcement: ci_gate
+    applies_to: product_code
+    status: ready
+
+  2:
+    name: Contract Layer
+    enforcement: ci_gate
+    applies_to: kernel_platform_calls
+    status: partial_blocked
+    blocked_by: E0.1B-R
+
+  3:
+    name: Event After Persistence
+    enforcement: runtime
+    applies_to: events
+    status: ready
+
+  4:
+    name: Additive Migration
+    enforcement: ci_gate
+    applies_to: migrations
+    status: ready
+
+  5:
+    name: Party Identity
+    enforcement: ci_gate
+    applies_to: new_code
+    status: blocked
+    blocked_by: E0.1A-R
+
+  6:
+    name: RBAC
+    enforcement: runtime
+    applies_to: protected_operations
+    status: ready
+
+  8:
+    name: Prerequisite Validation
+    enforcement: runtime
+    applies_to: enrollment
+    status: ready
+
+  9:
+    name: GPA Calculation
+    enforcement: runtime
+    applies_to: assessment
+    status: ready
+
+  10:
+    name: Financial Immutability
+    enforcement: runtime
+    applies_to: finance
+    status: blocked
+    blocked_by: E0.1B-R
+
+  11:
+    name: Identity Migration Warning
+    enforcement: audit
+    applies_to: legacy_code
+    status: blocked
+    blocked_by: E0.1A-R
+
+# ==============================================================================
+# ALLOWED EXTENSIONS
+# ==============================================================================
+
+allowed_extensions:
+  context_table:
+    pattern: "{product}_{entity}_contexts"
+    fk_required: true
+    tenant_isolation: true
+    examples:
+      - english_center_student_contexts
+      - english_center_enrollment_contexts
+      - english_center_invoice_contexts
+
+  product_entity:
+    pattern: "{product}_{entity_name}"
+    tenant_isolation: true
+    additive_only: true
+    examples:
+      - english_center_placement_tests
+      - english_center_classes
+      - english_center_sessions
+
+  party_role:
+    pattern: "{product}:{role}"
+    via: PartyRole
+    examples:
+      - english-center:teacher
+      - english-center:sales
+      - english-center:branch-manager
+
+  event_subscription:
+    allowed: true
+    read_only: true
+    examples:
+      - enrollment.completed
+      - payment.received
+
+# ==============================================================================
+# FORBIDDEN ACTIONS
+# ==============================================================================
+
+forbidden_actions:
+  - action: kernel_modification
+    severity: BLOCK
+    gate: 1
+
+  - action: contract_bypass
+    severity: BLOCK
+    gate: 2
+
+  - action: identity_violation
+    severity: BLOCK
+    gate: [5, 11]
+    blocked_by: E0.1A-R
+
+  - action: duplicate_source_of_truth
+    severity: BLOCK
+    gate: 1
+
+  - action: tenant_bypass
+    severity: BLOCK
+    gate: 0
+
+  - action: destructive_migration
+    severity: BLOCK
+    gate: 4
+
+# ==============================================================================
+# IMPLEMENTATION READINESS
+# ==============================================================================
+
+readiness:
+  capabilities_ready: 18
+  capabilities_total: 22
+  capabilities_blocked: 4
+
+  rules_ready: 38
+  rules_total: 44
+  rules_blocked: 6
+
+  gates_ready: 9
+  gates_total: 11
+  gates_blocked: 2
+
+  ready_percentage: 81.8
+
+  can_start_implementation: false
+  blockers:
+    - E0.1A-R
+    - E0.1B-R
+
+# ==============================================================================
+# VALIDATION
+# ==============================================================================
+
+validation:
+  schema_version: "1.0"
+  manifest_integrity: valid
+  total_capabilities_match: true
+  total_rules_match: true
+  blocking_gaps_tracked: true
+  ownership_conflicts: false
+  unknown_owners: false
+  semantic_duplicates: false
+  critical_unenforceable: false
+
+# ==============================================================================
+# STATUS
+# ==============================================================================
+
+status:
+  architecture_frozen: true
+  manifest_locked: true
+  implementation_ready: false
+  next_phase: E1_implementation
+  next_phase_requires:
+    - E0.1A-R_resolved
+    - E0.1B-R_resolved
+
+timeline:
+  E0_discovery: 2026-09-12_COMPLETE
+  E0_4_invariants: 2026-09-12_SEALED
+  E0_5_manifest: 2026-09-12_SEALED
+  platform_remediation: PARALLEL
+  E1_implementation: BLOCKED

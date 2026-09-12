@@ -17,16 +17,23 @@ import { Student, StudentsTableInsert, StudentsTableUpdate, StudentsTableRow } f
 export class StudentRepository {
   /**
    * Create new student
-   * Validates person_id FK exists before insert
+   * R3: Validates party_id FK exists (canonical identity)
+   * LEGACY: Still validates person_id for compatibility
    */
   static async create(student: Student): Promise<Student> {
     const supabase = await createClient();
+
+    // R3: Require party_id for new students
+    if (!student.partyId) {
+      throw new Error('party_id is required for new students (R3 requirement)');
+    }
 
     // Map domain model to database row
     const row: StudentsTableInsert = {
       student_id: student.studentId,
       tenant_id: student.tenantId,
-      person_id: student.personId,
+      party_id: student.partyId,     // R3 NEW: canonical identity
+      person_id: student.personId,   // LEGACY: compatibility
       student_code: student.studentCode,
       academic_status: student.academicStatus,
       enrollment_type: student.enrollmentType,
@@ -54,7 +61,11 @@ export class StudentRepository {
       .single();
 
     if (error) {
-      // Check if error is FK violation (person_id doesn't exist)
+      // Check if error is FK violation (party_id doesn't exist) — R3
+      if (error.code === '23503' && error.message.includes('party_id')) {
+        throw new Error(`Party with ID ${student.partyId} does not exist`);
+      }
+      // Check if error is FK violation (person_id doesn't exist) — LEGACY
       if (error.code === '23503' && error.message.includes('person_id')) {
         throw new Error(`Person with ID ${student.personId} does not exist`);
       }
@@ -115,7 +126,29 @@ export class StudentRepository {
   }
 
   /**
-   * Find students by person ID (with tenant isolation)
+   * Find students by party ID (R3 NEW — canonical query)
+   * A party can be a student in multiple programs
+   */
+  static async findByPartyId(partyId: string, tenantId: string): Promise<Student[]> {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+      .from('students')
+      .select('*')
+      .eq('party_id', partyId)
+      .eq('tenant_id', tenantId)
+      .order('enrollment_date', { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to find students by party: ${error.message}`);
+    }
+
+    return (data as StudentsTableRow[]).map(this.mapRowToDomain);
+  }
+
+  /**
+   * Find students by person ID (LEGACY — deprecated, use findByPartyId)
+   * @deprecated Use findByPartyId() instead
    * A person can be a student in multiple programs
    */
   static async findByPersonId(personId: string, tenantId: string): Promise<Student[]> {
@@ -289,7 +322,8 @@ export class StudentRepository {
     return {
       studentId: row.student_id,
       tenantId: row.tenant_id,
-      personId: row.person_id,
+      partyId: row.party_id ?? undefined,         // R3 NEW
+      personId: row.person_id,                     // LEGACY
       studentCode: row.student_code,
       academicStatus: row.academic_status,
       enrollmentType: row.enrollment_type,

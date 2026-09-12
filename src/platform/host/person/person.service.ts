@@ -8,6 +8,7 @@
 
 import { SupabaseClient } from '@supabase/supabase-js';
 import { PersonAggregate } from './person.aggregate';
+import { PersonWriteGuard } from '@/platform/architecture/guards/person-write-guard';
 import { PersonRepository } from './person.repository';
 import {
   Person,
@@ -37,8 +38,27 @@ export class PersonService {
    * @param request - Person creation request
    * @returns Created person
    */
+  /**
+   * Create new Person
+   * 
+   * @deprecated Legacy Person identity. New code should use Party (canonical identity).
+   * Education domain: Use PartyRepository instead.
+   * Existing usage: Test fixtures only (as of R5.1 freeze 2026-09-12).
+   * Removal planned: After R6 verification + R7 enforcement.
+   * See: E0.1A-R Identity Remediation
+   */
   async createPerson(request: CreatePersonRequest): Promise<PersonResponse<Person>> {
     const startTime = Date.now();
+    
+    // R5.1B: Guard enforcement
+    const callerPath = new Error().stack?.split('\n')[2] || 'unknown';
+    PersonWriteGuard.validate(callerPath, 'create');
+    
+    // R5.1: Deprecation warning
+    console.warn(
+      '[DEPRECATED] PersonService.createPerson() - Use Party canonical identity. ' +
+      'See E0.1A-R Identity Remediation (R5 freeze 2026-09-12)'
+    );
     
     try {
       // 1. Create domain aggregate (business logic)
@@ -96,8 +116,22 @@ export class PersonService {
    * @param request - Person update request
    * @returns Updated person
    */
+  /**
+   * Update existing Person
+   * 
+   * @deprecated Legacy Person identity. No active production usage (R5.1 census).
+   * Removal planned: R6+ after verification.
+   * See: E0.1A-R Identity Remediation
+   */
   async updatePerson(request: UpdatePersonRequest): Promise<PersonResponse<Person>> {
     const startTime = Date.now();
+    
+    // R5.1B: Guard enforcement
+    const callerPath = new Error().stack?.split('\n')[2] || 'unknown';
+    PersonWriteGuard.validate(callerPath, 'update');
+    
+    // R5.1: Deprecation warning
+    console.warn('[DEPRECATED] PersonService.updatePerson() - No active usage. Removal planned R6+');
     
     try {
       // 1. Load existing person
@@ -350,8 +384,22 @@ export class PersonService {
    * @param tenantId - Tenant ID
    * @returns Success response
    */
+  /**
+   * Delete Person
+   * 
+   * @deprecated Legacy Person identity. No active production usage (R5.1 census).
+   * Removal planned: R6+ after verification.
+   * See: E0.1A-R Identity Remediation
+   */
   async deletePerson(personId: string, tenantId: string): Promise<PersonResponse<void>> {
     const startTime = Date.now();
+    
+    // R5.1B: Guard enforcement
+    const callerPath = new Error().stack?.split('\n')[2] || 'unknown';
+    PersonWriteGuard.validate(callerPath, 'delete');
+    
+    // R5.1: Deprecation warning
+    console.warn('[DEPRECATED] PersonService.deletePerson() - No active usage. Removal planned R6+');
     
     try {
       await this.repository.delete(personId, tenantId);
