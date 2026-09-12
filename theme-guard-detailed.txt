@@ -1,0 +1,735 @@
+
+> bella-spa-erp@0.1.0 theme:guard
+> npx tsx scripts/architecture/theme-guard.ts
+
+
+≡ƒ¢í∩╕Å  BELLA THEME ARCHITECTURE GUARD
+=====================================
+
+≡ƒôü Scanning CSS theme files...
+≡ƒôü Scanning shared component files...
+
+Γ£à Scanned 30 files
+
+Γ¥î THEME ARCHITECTURE VIOLATIONS DETECTED
+
+==========================================
+
+≡ƒö┤ BLOCK (108) - Must fix before commit:
+
+  File: src/app/globals.css:555
+  Rule: DUPLICATE_VISUAL_OWNER
+  Issue: Duplicate visual ownership for "luxury-box:hover": found 5 conflicting definitions
+  Code: Line 555: .luxury-box-hover:hover; Line 861: .dark .luxury-box-hover:hover; Line 2681: html[data-tenant-module="beauty_spa"] .luxury-box-hover:hover; Line 3193: html.dark[data-tenant-module="beauty_spa"] .luxury-box-hover:hover; Line 4215: html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]):not([data-tenant-brand-preset="slate_minimal"]) .luxury-box-hover:hover
+  Fix: Consolidate into single definition or ensure each is tenant-scoped
+
+  File: src/app/globals.css:977
+  Rule: DUPLICATE_VISUAL_OWNER
+  Issue: Duplicate visual ownership for "text-primary:bg": found 3 conflicting definitions
+  Code: Line 977: .dark .text-primary.bg-primary\/5; Line 978: .dark .text-primary.bg-primary\/5; Line 979: .dark .text-primary.bg-primary\/5
+  Fix: Consolidate into single definition or ensure each is tenant-scoped
+
+  File: src/app/globals.css:1134
+  Rule: DUPLICATE_VISUAL_OWNER
+  Issue: Duplicate visual ownership for "beauty-erp-nav-item:active": found 95 conflicting definitions
+  Code: Line 1134: html[data-tenant-module="pending"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover; Line 1135: html[data-tenant-module="pending"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover; Line 1136: html[data-tenant-module="pending"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover; Line 1140: html[data-tenant-module="pending"] .beauty-erp-nav-item-active; Line 1141: html[data-tenant-module="pending"] .beauty-erp-nav-item-active; Line 1142: html[data-tenant-module="pending"] .beauty-erp-nav-item-active; Line 1148: html[data-tenant-module="pending"] .beauty-erp-nav-item-active span; Line 1152: html[data-tenant-module="pending"] .beauty-erp-nav-item-active:hover; Line 1153: html[data-tenant-module="pending"] .beauty-erp-nav-item-active:hover; Line 1154: html[data-tenant-module="pending"] .beauty-erp-nav-item-active:hover; Line 1159: html[data-tenant-module="pending"] .beauty-erp-nav-item-active:hover span; Line 1245: html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover; Line 1246: html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover; Line 1247: html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover; Line 1255: html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active; Line 1256: html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active; Line 1259: html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active; Line 1263: html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active svg; Line 1267: html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active span; Line 1273: html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active:hover; Line 1328: html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover; Line 1329: html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover; Line 1330: html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover; Line 1337: html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item-active; Line 1338: html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item-active; Line 1341: html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item-active; Line 1345: html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item-active svg; Line 1349: html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item-active span; Line 1355: html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item-active:hover; Line 1409: html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover; Line 1410: html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover; Line 1414: html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover *; Line 1417: html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item-active; Line 1423: html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item-active; Line 1427: html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item-active span; Line 1431: html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item-active:hover; Line 1435: html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item-active:hover span; Line 1507: html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-item-active; Line 1513: html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-item-active; Line 1520: html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-item-active:hover; Line 1602: html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item-active; Line 1603: html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item-active; Line 1604: html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item-active; Line 1612: html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item-active:hover; Line 1652: html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover; Line 1653: html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover; Line 1654: html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover; Line 1658: html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover span; Line 1663: html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-nav-item-active; Line 1664: html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-nav-item-active; Line 1670: html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-nav-item-active; Line 1678: html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-nav-item-active:hover; Line 1701: .beauty-erp-nav-item-active.bg-white p; Line 1708: .beauty-erp-nav-item-active:not(.bg-white):not([class*="bg-white"]) span; Line 2159: html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover; Line 2160: html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover; Line 2161: html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover; Line 2169: html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover span; Line 2175: html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item-active; Line 2176: html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item-active; Line 2177: html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item-active; Line 2185: html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item-active span; Line 2191: html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item-active:hover; Line 2197: html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item-active:hover span; Line 2617: html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover; Line 2618: html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover; Line 2619: html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover; Line 2624: html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item-active; Line 2625: html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item-active; Line 2626: html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item-active; Line 2632: html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item-active span; Line 2636: html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item:hover:not(.beauty-erp-nav-item-active); Line 2637: html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item:hover:not(.beauty-erp-nav-item-active); Line 2638: html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item:hover:not(.beauty-erp-nav-item-active); Line 2642: html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item-active:hover; Line 2643: html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item-active:hover; Line 2644: html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item-active:hover; Line 2649: html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item-active:hover span; Line 3069: html.dark[data-tenant-module="pending"] .beauty-erp-nav-item:hover:not(.beauty-erp-nav-item-active); Line 3070: html.dark[data-tenant-module="pending"] .beauty-erp-nav-item:hover:not(.beauty-erp-nav-item-active); Line 3071: html.dark[data-tenant-module="pending"] .beauty-erp-nav-item:hover:not(.beauty-erp-nav-item-active); Line 3078: html.dark[data-tenant-module="pending"] .beauty-erp-nav-item:hover:not(.beauty-erp-nav-item-active) span; Line 3085: html.dark[data-tenant-module="pending"] .beauty-erp-nav-item-active:hover; Line 3086: html.dark[data-tenant-module="pending"] .beauty-erp-nav-item-active:hover; Line 3088: html.dark[data-tenant-module="pending"] .beauty-erp-nav-item-active:hover; Line 3099: html.dark[data-tenant-module="pending"] .beauty-erp-nav-item-active:hover span; Line 4565: html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover; Line 4566: html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover; Line 4567: html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item:not(.beauty-erp-nav-item-active):hover; Line 4573: html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item-active; Line 4574: html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item-active; Line 4576: html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item-active; Line 4587: html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item-active span; Line 4592: html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item-active:hover; Line 4597: html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item-active:hover span
+  Fix: Consolidate into single definition or ensure each is tenant-scoped
+
+  File: src/app/globals.css:1185
+  Rule: DUPLICATE_VISUAL_OWNER
+  Issue: Duplicate visual ownership for "beauty:active": found 13 conflicting definitions
+  Code: Line 1185: html[data-tenant-module="pending"] .beauty-active-care-badge; Line 1187: html[data-tenant-module="pending"] .beauty-active-care-badge; Line 1195: html[data-tenant-module="pending"] .beauty-active-care-badge span; Line 2787: html[data-tenant-module="beauty_spa"] .beauty-active-care-badge; Line 2789: html[data-tenant-module="beauty_spa"] .beauty-active-care-badge; Line 2799: html[data-tenant-module="beauty_spa"] .beauty-active-care-badge span; Line 3223: html.dark[data-tenant-module="pending"] .beauty-active-care-badge span; Line 3965: html[data-tenant-module="industrial_cleaning"] .beauty-active-care-badge; Line 3967: html[data-tenant-module="industrial_cleaning"] .beauty-active-care-badge; Line 3975: html[data-tenant-module="industrial_cleaning"] .beauty-active-care-badge span; Line 4674: html[data-tenant-module="industrial_cleaning"] .beauty-active-care-badge; Line 4676: html[data-tenant-module="industrial_cleaning"] .beauty-active-care-badge; Line 4684: html[data-tenant-module="industrial_cleaning"] .beauty-active-care-badge span
+  Fix: Consolidate into single definition or ensure each is tenant-scoped
+
+  File: src/app/globals.css:1966
+  Rule: DUPLICATE_VISUAL_OWNER
+  Issue: Duplicate visual ownership for "animate-spin:text": found 3 conflicting definitions
+  Code: Line 1966: html[data-tenant-module="beauty_spa"] .animate-spin.text-rose-500; Line 4910: html[data-tenant-module="beauty_spa"] .animate-spin.text-rose-500; Line 5105: html[data-tenant-module="beauty_spa"] .animate-spin.text-rose-500
+  Fix: Consolidate into single definition or ensure each is tenant-scoped
+
+  File: src/app/globals.css:2275
+  Rule: DUPLICATE_VISUAL_OWNER
+  Issue: Duplicate visual ownership for "beauty-theme-toggle:active": found 16 conflicting definitions
+  Code: Line 2275: html[data-tenant-module="bella_healthcare"] .beauty-theme-toggle-active-light; Line 2276: html[data-tenant-module="bella_healthcare"] .beauty-theme-toggle-active-light; Line 2286: html[data-tenant-module="bella_healthcare"] .beauty-theme-toggle-active-dark; Line 2287: html[data-tenant-module="bella_healthcare"] .beauty-theme-toggle-active-dark; Line 3415: html.dark[data-tenant-module="pending"] .beauty-theme-toggle-active-light; Line 3416: html.dark[data-tenant-module="pending"] .beauty-theme-toggle-active-light; Line 3421: html.dark[data-tenant-module="pending"] .beauty-theme-toggle-active-dark; Line 3422: html.dark[data-tenant-module="pending"] .beauty-theme-toggle-active-dark; Line 3887: html[data-tenant-module="industrial_cleaning"] .beauty-theme-toggle-active-light; Line 3888: html[data-tenant-module="industrial_cleaning"] .beauty-theme-toggle-active-light; Line 3893: html[data-tenant-module="industrial_cleaning"] .beauty-theme-toggle-active-dark; Line 3894: html[data-tenant-module="industrial_cleaning"] .beauty-theme-toggle-active-dark; Line 3910: html[data-tenant-module="real_estate"] .beauty-theme-toggle-active-light; Line 3911: html[data-tenant-module="real_estate"] .beauty-theme-toggle-active-light; Line 3916: html[data-tenant-module="real_estate"] .beauty-theme-toggle-active-dark; Line 3917: html[data-tenant-module="real_estate"] .beauty-theme-toggle-active-dark
+  Fix: Consolidate into single definition or ensure each is tenant-scoped
+
+  File: src/app/globals.css:2728
+  Rule: DUPLICATE_VISUAL_OWNER
+  Issue: Duplicate visual ownership for "beauty-calendar-day:active": found 3 conflicting definitions
+  Code: Line 2728: html[data-tenant-module="beauty_spa"] .beauty-calendar-day-active; Line 2730: html[data-tenant-module="beauty_spa"] .beauty-calendar-day-active; Line 2736: html[data-tenant-module="beauty_spa"] .beauty-calendar-day-active span
+  Fix: Consolidate into single definition or ensure each is tenant-scoped
+
+  File: src/app/globals.css:3838
+  Rule: DUPLICATE_VISUAL_OWNER
+  Issue: Duplicate visual ownership for "beauty-date-ribbon-day:active": found 2 conflicting definitions
+  Code: Line 3838: html[data-tenant-module="industrial_cleaning"] .beauty-date-ribbon-day-active; Line 3840: html[data-tenant-module="industrial_cleaning"] .beauty-date-ribbon-day-active
+  Fix: Consolidate into single definition or ensure each is tenant-scoped
+
+  File: src/app/globals.css:1054
+  Rule: BROAD_TENANT_SELECTOR
+  Issue: Tenant selector targets <div> without component scope
+  Code: html[data-tenant-module="pending"] div[class*="bg-white/30"],
+  Fix: Add component class: html[data-tenant="..."] .component-name div
+
+  File: src/app/globals.css:1055
+  Rule: BROAD_TENANT_SELECTOR
+  Issue: Tenant selector targets <div> without component scope
+  Code: html[data-tenant-module="pending"] div[class*="bg-white/50"],
+  Fix: Add component class: html[data-tenant="..."] .component-name div
+
+  File: src/app/globals.css:1970
+  Rule: BROAD_TENANT_SELECTOR
+  Issue: Tenant selector targets <button> without component scope
+  Code: html[data-tenant-module="beauty_spa"] button svg,
+  Fix: Add component class: html[data-tenant="..."] .component-name button
+
+  File: src/app/globals.css:2667
+  Rule: BROAD_TENANT_SELECTOR
+  Issue: Tenant selector targets <div> without component scope
+  Code: html[data-tenant-module="beauty_spa"] div[class*="bg-white/30"],
+  Fix: Add component class: html[data-tenant="..."] .component-name div
+
+  File: src/app/globals.css:2668
+  Rule: BROAD_TENANT_SELECTOR
+  Issue: Tenant selector targets <div> without component scope
+  Code: html[data-tenant-module="beauty_spa"] div[class*="bg-white/50"],
+  Fix: Add component class: html[data-tenant="..."] .component-name div
+
+  File: src/app/globals.css:2747
+  Rule: BROAD_TENANT_SELECTOR
+  Issue: Tenant selector targets <button> without component scope
+  Code: html[data-tenant-module="beauty_spa"] button[class*="bg-primary"]:not([class*="bg-primary/"]),
+  Fix: Add component class: html[data-tenant="..."] .component-name button
+
+  File: src/app/globals.css:2748
+  Rule: BROAD_TENANT_SELECTOR
+  Issue: Tenant selector targets <a> without component scope
+  Code: html[data-tenant-module="beauty_spa"] a[class*="bg-primary"]:not([class*="bg-primary/"]),
+  Fix: Add component class: html[data-tenant="..."] .component-name a
+
+  File: src/app/globals.css:2749
+  Rule: BROAD_TENANT_SELECTOR
+  Issue: Tenant selector targets <button> without component scope
+  Code: html[data-tenant-module="beauty_spa"] button[class*="from-primary"],
+  Fix: Add component class: html[data-tenant="..."] .component-name button
+
+  File: src/app/globals.css:2750
+  Rule: BROAD_TENANT_SELECTOR
+  Issue: Tenant selector targets <a> without component scope
+  Code: html[data-tenant-module="beauty_spa"] a[class*="from-primary"] {
+  Fix: Add component class: html[data-tenant="..."] .component-name a
+
+  File: src/app/globals.css:2757
+  Rule: BROAD_TENANT_SELECTOR
+  Issue: Tenant selector targets <button> without component scope
+  Code: html[data-tenant-module="beauty_spa"] button[class*="bg-primary"]:not([class*="bg-primary/"]):hover,
+  Fix: Add component class: html[data-tenant="..."] .component-name button
+
+  File: src/app/globals.css:2758
+  Rule: BROAD_TENANT_SELECTOR
+  Issue: Tenant selector targets <a> without component scope
+  Code: html[data-tenant-module="beauty_spa"] a[class*="bg-primary"]:not([class*="bg-primary/"]):hover,
+  Fix: Add component class: html[data-tenant="..."] .component-name a
+
+  File: src/app/globals.css:2759
+  Rule: BROAD_TENANT_SELECTOR
+  Issue: Tenant selector targets <button> without component scope
+  Code: html[data-tenant-module="beauty_spa"] button[class*="from-primary"]:hover,
+  Fix: Add component class: html[data-tenant="..."] .component-name button
+
+  File: src/app/globals.css:2760
+  Rule: BROAD_TENANT_SELECTOR
+  Issue: Tenant selector targets <a> without component scope
+  Code: html[data-tenant-module="beauty_spa"] a[class*="from-primary"]:hover {
+  Fix: Add component class: html[data-tenant="..."] .component-name a
+
+  File: src/app/globals.css:2821
+  Rule: BROAD_TENANT_SELECTOR
+  Issue: Tenant selector targets <input> without component scope
+  Code: html[data-tenant-module="beauty_spa"] input:not([type="checkbox"]):not([type="radio"]),
+  Fix: Add component class: html[data-tenant="..."] .component-name input
+
+  File: src/app/globals.css:2832
+  Rule: BROAD_TENANT_SELECTOR
+  Issue: Tenant selector targets <input> without component scope
+  Code: html[data-tenant-module="beauty_spa"] input:not([type="checkbox"]):not([type="radio"]):focus,
+  Fix: Add component class: html[data-tenant="..."] .component-name input
+
+  File: src/app/globals.css:3603
+  Rule: BROAD_TENANT_SELECTOR
+  Issue: Tenant selector targets <input> without component scope
+  Code: html[data-tenant-module="beauty_spa"] input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+  Fix: Add component class: html[data-tenant="..."] .component-name input
+
+  File: src/app/globals.css:3999
+  Rule: BROAD_TENANT_SELECTOR
+  Issue: Tenant selector targets <button> without component scope
+  Code: html[data-tenant-module="industrial_cleaning"] button[class*="bg-rose-500"],
+  Fix: Add component class: html[data-tenant="..."] .component-name button
+
+  File: src/app/globals.css:4000
+  Rule: BROAD_TENANT_SELECTOR
+  Issue: Tenant selector targets <button> without component scope
+  Code: html[data-tenant-module="industrial_cleaning"] button[class*="bg-rose-600"],
+  Fix: Add component class: html[data-tenant="..."] .component-name button
+
+  File: src/app/globals.css:4001
+  Rule: BROAD_TENANT_SELECTOR
+  Issue: Tenant selector targets <a> without component scope
+  Code: html[data-tenant-module="industrial_cleaning"] a[class*="bg-rose-500"],
+  Fix: Add component class: html[data-tenant="..."] .component-name a
+
+  File: src/app/globals.css:4002
+  Rule: BROAD_TENANT_SELECTOR
+  Issue: Tenant selector targets <a> without component scope
+  Code: html[data-tenant-module="industrial_cleaning"] a[class*="bg-rose-600"] {
+  Fix: Add component class: html[data-tenant="..."] .component-name a
+
+  File: src/app/globals.css:4006
+  Rule: BROAD_TENANT_SELECTOR
+  Issue: Tenant selector targets <button> without component scope
+  Code: html[data-tenant-module="industrial_cleaning"] button[class*="bg-rose-500"]:hover,
+  Fix: Add component class: html[data-tenant="..."] .component-name button
+
+  File: src/app/globals.css:4007
+  Rule: BROAD_TENANT_SELECTOR
+  Issue: Tenant selector targets <button> without component scope
+  Code: html[data-tenant-module="industrial_cleaning"] button[class*="bg-rose-600"]:hover,
+  Fix: Add component class: html[data-tenant="..."] .component-name button
+
+  File: src/app/globals.css:4008
+  Rule: BROAD_TENANT_SELECTOR
+  Issue: Tenant selector targets <button> without component scope
+  Code: html[data-tenant-module="industrial_cleaning"] button[class*="hover:bg-rose-600"],
+  Fix: Add component class: html[data-tenant="..."] .component-name button
+
+  File: src/app/globals.css:4009
+  Rule: BROAD_TENANT_SELECTOR
+  Issue: Tenant selector targets <a> without component scope
+  Code: html[data-tenant-module="industrial_cleaning"] a[class*="bg-rose-500"]:hover,
+  Fix: Add component class: html[data-tenant="..."] .component-name a
+
+  File: src/app/globals.css:4010
+  Rule: BROAD_TENANT_SELECTOR
+  Issue: Tenant selector targets <a> without component scope
+  Code: html[data-tenant-module="industrial_cleaning"] a[class*="bg-rose-600"]:hover {
+  Fix: Add component class: html[data-tenant="..."] .component-name a
+
+  File: src/app/globals.css:4049
+  Rule: BROAD_TENANT_SELECTOR
+  Issue: Tenant selector targets <input> without component scope
+  Code: html[data-tenant-module="industrial_cleaning"] input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+  Fix: Add component class: html[data-tenant="..."] .component-name input
+
+  File: src/app/globals.css:254
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 3 chained :not() selectors - indicates tenant inheritance issue
+  Code: .customer-detail-ktv-select .absolute.z-50 button:not(.bg-rose-50):not([class*="bg-rose-50"]):not([class*="bg-primary/"]
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:255
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 3 chained :not() selectors - indicates tenant inheritance issue
+  Code: .customer-detail-ktv-select div[class*="z-50"] button:not(.bg-rose-50):not([class*="bg-rose-50"]):not([class*="bg-primar
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2313
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2318
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2325
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2326
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2327
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2328
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2335
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2380
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2387
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2395
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2399
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2406
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2410
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2411
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2412
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2419
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2420
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2424
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2425
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2429
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2430
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2434
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2438
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2439
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2531
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 6 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="beauty_spa"] main h1:not(.text-white):not([class*="text-white"]):not([class*="text-slate-50"]):
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2532
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 6 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="beauty_spa"] main h2:not(.text-white):not([class*="text-white"]):not([class*="text-slate-50"]):
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2908
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 4 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="beauty_spa"] .active-booking-panel span:not([class*="text-slate-900"]):not([class*="text-rose-6
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:3603
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 3 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="beauty_spa"] input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4049
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 3 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="industrial_cleaning"] input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4110
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4129
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4137
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4138
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4142
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4143
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4144
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4145
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4149
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4150
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4151
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4152
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4156
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4157
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4161
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4162
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4166
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4167
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4172
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4178
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4184
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4188
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4193
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-prese
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4200
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-prese
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4201
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-prese
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4202
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-prese
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4203
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-prese
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4204
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-prese
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4205
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-prese
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4212
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-prese
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4213
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-prese
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4214
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-prese
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4219
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-prese
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4225
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-prese
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4229
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4230
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4238
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4247
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4254
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4263
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:4269
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 5 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="oc
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:5060
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 12 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="beauty_spa"] .luxury-card-pink *:not(.bg-white):not(.bg-white *):not([class*="bg-white"]):not([
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:5264
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 12 chained :not() selectors - indicates tenant inheritance issue
+  Code: html[data-tenant-module="beauty_spa"] .luxury-card-pink *:not(.bg-white):not(.bg-white *):not([class*="bg-white"]):not([
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+ΓÜá∩╕Å  WARN (12) - Review recommended:
+
+  File: src/app/globals.css:1705
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 2 chained :not() selectors - indicates tenant inheritance issue
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:1706
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 2 chained :not() selectors - indicates tenant inheritance issue
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:1707
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 2 chained :not() selectors - indicates tenant inheritance issue
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2821
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 2 chained :not() selectors - indicates tenant inheritance issue
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2832
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 2 chained :not() selectors - indicates tenant inheritance issue
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2846
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 2 chained :not() selectors - indicates tenant inheritance issue
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2907
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 2 chained :not() selectors - indicates tenant inheritance issue
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:2909
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 2 chained :not() selectors - indicates tenant inheritance issue
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:3236
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 2 chained :not() selectors - indicates tenant inheritance issue
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:3241
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 2 chained :not() selectors - indicates tenant inheritance issue
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:3259
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 2 chained :not() selectors - indicates tenant inheritance issue
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+  File: src/app/globals.css:3262
+  Rule: EXCLUSION_CHAIN_SMELL
+  Issue: Found 2 chained :not() selectors - indicates tenant inheritance issue
+  Fix: Each tenant should define complete theme; avoid inheritance via :not() chains
+
+
+==========================================
+Total: 108 BLOCK, 12 WARN
+
+Γ¥î Theme architecture guard FAILED - fix BLOCK violations before committing
+

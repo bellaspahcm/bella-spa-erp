@@ -174,6 +174,33 @@ const FROZEN_LAYERS: FrozenLayer[] = [
       'No entity mutation',
     ],
   },
+  {
+    id: 'E0.1D-R',
+    name: 'Platform Org Unit Contract',
+    status: 'SEALED',
+    artifacts: [
+      { path: 'src/platform/org-unit/index.ts', type: 'CONTRACT', publicAPI: true },
+      { path: 'src/platform/org-unit/org-unit.repository.ts', type: 'REPOSITORY', publicAPI: false },
+      { path: 'src/platform/org-unit/org-unit.engine.ts', type: 'ENGINE', publicAPI: false },
+    ],
+    allowedImports: [
+      'node:',
+      '@supabase/supabase-js',
+      '@/lib/supabase',
+      'src/platform/org-unit/',
+    ],
+    forbiddenImports: [
+      'src/products/',
+      'src/workflows/',
+    ],
+    invariants: [
+      'Tenant isolation mandatory',
+      'Circular reference blocked',
+      'Code uniqueness per tenant',
+      'Parent validation enforced',
+      'No product-specific logic',
+    ],
+  },
 ];
 
 // ============================================================================

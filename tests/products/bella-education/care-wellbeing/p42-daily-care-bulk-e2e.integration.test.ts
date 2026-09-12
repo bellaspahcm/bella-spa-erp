@@ -46,13 +46,32 @@ describe("P4.2 Daily Care Operations - Classroom Bulk Workflow & Partial Success
       .single();
     parentId = parent!.id;
 
-    // 3. Seed 3 Students
+    // 2a. Create Party for parent (R4: Required for party_id FK)
+    const { data: parentParty, error: partyError } = await supabase
+      .from("party_parties")
+      .insert({
+        tenant_id: tenantId,
+        party_type: 'person',
+        display_name: 'Parent P42',
+      })
+      .select("id")
+      .single();
+    
+    if (partyError) {
+      console.error('Failed to create parent Party:', partyError);
+      throw partyError;
+    }
+    
+    const parentPartyId = parentParty!.id;
+
+    // 3. Seed 3 Students using Party semantics
     const createStudent = async (code: string) => {
-      const { data: s } = await supabase
+      const { data: s, error: studentError } = await supabase
         .from("students")
         .insert({
           tenant_id: tenantId,
-          person_id: parentId,
+          party_id: parentPartyId,   // R4: Use Party FK
+          person_id: parentId,       // LEGACY FK (still required until R5)
           student_code: code,
           academic_status: "enrolled",
           enrollment_type: "full_time",
@@ -61,6 +80,12 @@ describe("P4.2 Daily Care Operations - Classroom Bulk Workflow & Partial Success
         })
         .select("student_id")
         .single();
+      
+      if (studentError) {
+        console.error(`Failed to create student ${code}:`, studentError);
+        throw studentError;
+      }
+      
       return s!.student_id;
     };
 

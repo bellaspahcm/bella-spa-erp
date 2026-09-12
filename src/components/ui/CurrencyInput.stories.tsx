@@ -88,7 +88,7 @@ export function CurrencyInputDemo() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-2">
+              <label className="block text-xs font-bold accounting-label-debit mb-2">
                 Phát sinh Nợ (Debit)
               </label>
               <CurrencyInput 
@@ -98,11 +98,11 @@ export function CurrencyInputDemo() {
                   if (val > 0) setCreditValue(0);
                 }}
                 placeholder="0"
-                className="text-emerald-600"
+                className="accounting-input-debit"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-rose-700 dark:text-rose-400 mb-2">
+              <label className="block text-xs font-bold accounting-label-credit mb-2">
                 Phát sinh Có (Credit)
               </label>
               <CurrencyInput 
@@ -112,7 +112,7 @@ export function CurrencyInputDemo() {
                   if (val > 0) setDebitValue(0);
                 }}
                 placeholder="0"
-                className="text-rose-600"
+                className="accounting-input-credit"
               />
             </div>
           </div>

@@ -67,13 +67,13 @@ export class ReservationProductService {
   /**
    * Releases an active hold.
    */
-  async releaseProduct(tenantId: string, productId: string, reservationId: string): Promise<void> {
+  async releaseProduct(tenantId: string, productId: string, reservationId: string, userId: string): Promise<void> {
     this.assertCapability('sales_reservation_command');
     this.assertWorkflow('property_sales_lifecycle');
 
     if (!tenantId) throw new Error('TENANT_ISOLATION_VIOLATION: tenantId is required');
     if (!productId) throw new Error('PRODUCT_BOUNDARY_VIOLATION: productId is required');
 
-    await this.reservationContract.releaseProduct(tenantId, productId, reservationId);
+    await this.reservationContract.releaseProduct(tenantId, productId, reservationId, userId);
   }
 }
