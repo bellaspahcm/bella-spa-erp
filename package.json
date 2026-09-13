@@ -12,7 +12,7 @@
     "build": "next build",
     "build:prod": "cross-env NODE_ENV=production SKIP_TYPE_CHECK=true next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "node scripts/lint-changed-files.mjs",
     "architecture:test": "ts-node src/architecture/fitness/dependency-test.ts",
     "lint:strict": "eslint --config eslint.strict.config.mjs \"src/**/*.{ts,tsx}\"",
     "env:check": "node scripts/check-required-env.mjs",
