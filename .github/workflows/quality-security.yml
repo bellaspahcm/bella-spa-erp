@@ -36,33 +36,105 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+      
+      - name: Check if TypeScript/JavaScript files changed
+        id: check-lint-needed
+        run: |
+          # Get changed files
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            git fetch origin "$GITHUB_BASE_REF" || true
+            CHANGED_FILES=$(git diff --name-only "origin/$GITHUB_BASE_REF"...HEAD 2>/dev/null || echo "")
+          else
+            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD 2>/dev/null || echo "")
+          fi
+          
+          # Check if any application TS/JS files changed (exclude infra and tests)
+          if echo "$CHANGED_FILES" | grep -E '\.(ts|tsx|js|jsx|mjs|cjs)$' | grep -vE '^(scripts/|\.github/|src/__tests__/)|\.(test|spec)\.(ts|tsx|js|jsx)$' | grep -q '.'; then
+            echo "needs_lint=true" >> $GITHUB_OUTPUT
+            echo "✅ Found application TS/JS files to lint"
+          else
+            echo "needs_lint=false" >> $GITHUB_OUTPUT
+            echo "⏭️  No application code changed, skipping lint"
+          fi
+
+          if echo "$CHANGED_FILES" | grep -qE '^(src/app/api/|docs/guides/api-reference\.md|docs/technical/api-versioning-policy\.md|docs/api-reference\.md|docs/api-versioning-policy\.md|scripts/check-api-docs\.mjs|scripts/check-api-versioning\.mjs)'; then
+            echo "needs_api_docs=true" >> $GITHUB_OUTPUT
+            echo "✅ Found API surface or API documentation files to verify"
+          else
+            echo "needs_api_docs=false" >> $GITHUB_OUTPUT
+            echo "⏭️  No API surface or API documentation changes, skipping API docs checks"
+          fi
+
+          if echo "$CHANGED_FILES" | grep -qE '^(src/(app|components|core|lib|modules|platform|products|services|shared)/|supabase/|database/|migrations/|prisma/migrations/|package\.json|package-lock\.json|scripts/check-supabase-|scripts/check-business-invariants\.cjs|.*\.sql$)'; then
+            echo "needs_db_checks=true" >> $GITHUB_OUTPUT
+            echo "✅ Found database, application, or DB-check files to verify"
+          else
+            echo "needs_db_checks=false" >> $GITHUB_OUTPUT
+            echo "⏭️  No database, application, or DB-check changes, skipping live DB checks"
+          fi
+
+          if echo "$CHANGED_FILES" | grep -qE '(^|/)package\.json$|(^|/)package-lock\.json$|^scripts/(audit-production|check-secret-leaks)\.mjs$|^src/__tests__/log-redactor\.test\.ts$'; then
+            echo "needs_security_checks=true" >> $GITHUB_OUTPUT
+            echo "✅ Found dependency/security files to verify"
+          else
+            echo "needs_security_checks=false" >> $GITHUB_OUTPUT
+            echo "⏭️  No dependency/security files changed, skipping dependency audit and secret guards"
+          fi
+
+          if echo "$CHANGED_FILES" | grep -qE '^(src/app/|src/components/|src/lib/|src/services/|src/modules/|src/products/|e2e/|playwright\.config\.|package\.json|package-lock\.json)'; then
+            echo "needs_e2e_checks=true" >> $GITHUB_OUTPUT
+            echo "✅ Found app, e2e, or package files to verify with browser smoke tests"
+          else
+            echo "needs_e2e_checks=false" >> $GITHUB_OUTPUT
+            echo "⏭️  No app/e2e/package changes, skipping browser smoke tests"
+          fi
 
       - name: Required CI environment config
         run: npm run ci:env:check
 
       - name: Lint
+        if: steps.check-lint-needed.outputs.needs_lint == 'true'
         run: npm run lint
+      
+      - name: Lint skipped (infrastructure-only PR)
+        if: steps.check-lint-needed.outputs.needs_lint == 'false'
+        run: echo "✅ Lint skipped - infrastructure-only PR"
 
       - name: API documentation coverage
+        if: steps.check-lint-needed.outputs.needs_api_docs == 'true'
         run: npm run docs:api:check
 
       - name: API versioning policy
+        if: steps.check-lint-needed.outputs.needs_api_docs == 'true'
         run: npm run docs:api:versioning
 
+      - name: API documentation checks skipped
+        if: steps.check-lint-needed.outputs.needs_api_docs == 'false'
+        run: echo "✅ API docs checks skipped - no API surface or API documentation changes"
+
       - name: Supabase migration drift check
+        if: steps.check-lint-needed.outputs.needs_db_checks == 'true'
         run: npm run db:migration:check
 
       - name: Supabase RPC grant policy
+        if: steps.check-lint-needed.outputs.needs_db_checks == 'true'
         run: npm run db:rpc-grants:check
 
       - name: Supabase data access smoke
+        if: steps.check-lint-needed.outputs.needs_db_checks == 'true'
         run: npm run db:access:check
 
       - name: Supabase live RPC smoke
+        if: steps.check-lint-needed.outputs.needs_db_checks == 'true'
         run: npm run db:rpc-smoke:check
 
       - name: Business data invariant guard
+        if: steps.check-lint-needed.outputs.needs_db_checks == 'true'
         run: npm run db:business:check
+
+      - name: Live DB checks skipped
+        if: steps.check-lint-needed.outputs.needs_db_checks == 'false'
+        run: echo "✅ Live DB checks skipped - no database, application, or DB-check changes"
 
       - name: Production build
         run: npm run build
@@ -74,18 +146,27 @@ jobs:
         run: npm test -- src/__tests__/export-actions.test.ts --runInBand
 
       - name: Dependency audit
+        if: steps.check-lint-needed.outputs.needs_security_checks == 'true'
         run: npm run security:audit
 
       - name: Secret and log leak guard
+        if: steps.check-lint-needed.outputs.needs_security_checks == 'true'
         run: npm run security:secrets
 
       - name: Log redaction tests
+        if: steps.check-lint-needed.outputs.needs_security_checks == 'true'
         run: npm test -- src/__tests__/log-redactor.test.ts --runInBand
 
+      - name: Security checks skipped
+        if: steps.check-lint-needed.outputs.needs_security_checks == 'false'
+        run: echo "✅ Security checks skipped - no dependency/security files changed"
+
       - name: Install Playwright Chromium
+        if: steps.check-lint-needed.outputs.needs_e2e_checks == 'true'
         run: npx playwright install --with-deps chromium
 
       - name: Authenticated route smoke
+        if: steps.check-lint-needed.outputs.needs_e2e_checks == 'true'
         timeout-minutes: 8
         run: npm run e2e:auth-smoke
         env:
@@ -95,6 +176,7 @@ jobs:
           E2E_VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.E2E_VERCEL_AUTOMATION_BYPASS_SECRET }}
 
       - name: Beauty operational UAT smoke
+        if: steps.check-lint-needed.outputs.needs_e2e_checks == 'true'
         timeout-minutes: 12
         run: npm run e2e:beauty-uat
         env:
@@ -104,6 +186,7 @@ jobs:
           E2E_VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.E2E_VERCEL_AUTOMATION_BYPASS_SECRET }}
 
       - name: Responsive visual smoke
+        if: steps.check-lint-needed.outputs.needs_e2e_checks == 'true'
         timeout-minutes: 35
         run: npm run e2e:visual
         env:
@@ -117,9 +200,14 @@ jobs:
           E2E_VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.E2E_VERCEL_AUTOMATION_BYPASS_SECRET }}
 
       - name: Assert responsive visual smoke results
+        if: steps.check-lint-needed.outputs.needs_e2e_checks == 'true'
         run: npm run e2e:visual:assert
         env:
           E2E_VISUAL_EXPECTED_TESTS: "30"
+
+      - name: Browser smoke tests skipped
+        if: steps.check-lint-needed.outputs.needs_e2e_checks == 'false'
+        run: echo "✅ Browser smoke tests skipped - no app/e2e/package changes"
 
       - name: Upload Playwright report
         if: ${{ always() }}

@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 
 const apiRoot = join(process.cwd(), 'src', 'app', 'api');
-const docsPath = join(process.cwd(), 'docs', 'api-reference.md');
+const docsPath = join(process.cwd(), 'docs', 'guides', 'api-reference.md');
 const httpMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
 const methodExportPatterns = {
   GET: /export\s+async\s+function\s+GET\b/,
