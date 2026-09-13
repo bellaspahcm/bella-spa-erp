@@ -1,0 +1,4 @@
+# Git Workflow Constitution - Infrastructure files
+.github/workflows/
+scripts/branch-reconciliation.js
+docs/architecture/
