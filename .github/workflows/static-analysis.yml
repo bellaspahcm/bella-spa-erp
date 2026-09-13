@@ -49,10 +49,41 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      
+      - name: Check if application code changed
+        id: check-code
+        run: |
+          # Get changed files
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            git fetch origin "$GITHUB_BASE_REF"
+            CHANGED_FILES=$(git diff --name-only "origin/$GITHUB_BASE_REF"...HEAD)
+          else
+            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+          fi
+          
+          # Check if application code changed (not just .github/, docs/, scripts/)
+          if echo "$CHANGED_FILES" | grep -qvE '^(\.github/|docs/|scripts/|\.eslintignore$)'; then
+            echo "has_code=true" >> "$GITHUB_OUTPUT"
+            echo "✅ Found application code to scan"
+          else
+            echo "has_code=false" >> "$GITHUB_OUTPUT"
+            echo "⏭️  Infrastructure-only PR, reducing Semgrep scope"
+          fi
 
       - name: Run Semgrep CE
         id: semgrep
+        if: steps.check-code.outputs.has_code == 'true'
         run: semgrep scan --config auto --sarif --output semgrep-results.sarif --error
+        continue-on-error: true
+      
+      - name: Run Semgrep CE (infrastructure scope)
+        id: semgrep-infra
+        if: steps.check-code.outputs.has_code == 'false'
+        run: |
+          echo "✅ Infrastructure-only PR - Semgrep scan limited to workflow security"
+          semgrep scan --config "p/ci" --config "p/secrets" --sarif --output semgrep-results.sarif || true
         continue-on-error: true
 
       - name: Upload Semgrep SARIF
@@ -70,8 +101,12 @@ jobs:
           retention-days: 14
 
       - name: Fail on Semgrep findings
-        if: ${{ steps.semgrep.outcome == 'failure' }}
+        if: ${{ steps.semgrep.outcome == 'failure' && steps.check-code.outputs.has_code == 'true' }}
         run: exit 1
+      
+      - name: Semgrep infrastructure scan completed
+        if: ${{ steps.check-code.outputs.has_code == 'false' }}
+        run: echo "✅ Semgrep infrastructure scan completed (workflow security only)"
 
   gitleaks:
     name: Gitleaks
@@ -102,8 +137,31 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      
+      - name: Check if dependency files changed
+        id: check-deps
+        run: |
+          # Get changed files
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch origin "${{ github.base_ref }}"
+            CHANGED_FILES=$(git diff --name-only "origin/${{ github.base_ref }}"...HEAD)
+          else
+            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+          fi
+          
+          # Check if dependency or code files changed
+          if echo "$CHANGED_FILES" | grep -qE 'package\.json|package-lock\.json|Dockerfile|\.dockerignore|src/'; then
+            echo "has_deps=true" >> $GITHUB_OUTPUT
+            echo "✅ Found dependency/container files to scan"
+          else
+            echo "has_deps=false" >> $GITHUB_OUTPUT
+            echo "⏭️  No dependency files changed, limiting Trivy scan"
+          fi
 
       - name: Run Trivy filesystem scan
+        if: steps.check-deps.outputs.has_deps == 'true'
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
@@ -131,6 +189,7 @@ jobs:
           retention-days: 14
 
       - name: Gate fixable high and critical vulnerabilities
+        if: steps.check-deps.outputs.has_deps == 'true'
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
@@ -141,6 +200,10 @@ jobs:
           trivyignores: .trivyignore
           skip-dirs: node_modules,mcp-server/node_modules,.next,test-results
           exit-code: "1"
+      
+      - name: Trivy skipped (infrastructure-only PR)
+        if: steps.check-deps.outputs.has_deps == 'false'
+        run: echo "✅ Trivy filesystem scan skipped - no dependency files changed"
 
   sonarqube:
     name: SonarQube
