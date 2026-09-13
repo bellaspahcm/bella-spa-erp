@@ -8,7 +8,7 @@ This baseline serves as:
 1. **Known-good state** for regression comparison
 2. **Starting point** for all new E2 development
 3. **Rollback target** if critical issues discovered
-4. **Evidence** that reconciliation completed before new work
+4. **Evidence snapshot** for branch reconciliation before new work
 
 ## Baseline Information
 
@@ -28,7 +28,7 @@ Last Commit:        ddcce6e6c9145fa23c30f2f54053e08fc7a68600
 | Check | Status | Evidence |
 |-------|--------|----------|
 | **Working Tree** | ✅ CLEAN | No uncommitted changes |
-| **Branch Reconciliation** | ✅ COMPLETE | No unmerged product branches found |
+| **Branch Reconciliation** | 🟡 BOUNDED | Mergeable completed PRs reconciled; PR #42 remains open/conflicting |
 | **Git Workflow Constitution** | ✅ INSTALLED | PR #82 merged, T1 runtime proven |
 | **Type Checking** | ⏳ PENDING | Full check in progress (large codebase) |
 | **Healthcare Architecture** | ⏳ PENDING | Guard verification in progress |
@@ -42,7 +42,7 @@ Last Commit:        ddcce6e6c9145fa23c30f2f54053e08fc7a68600
 
 **Rationale:**
 - Working tree is clean ✅
-- Branch reconciliation complete (no ghost work) ✅
+- Completed mergeable PR work reconciled; unresolved/conflicting branches are not claimed as complete 🟡
 - Git Workflow Constitution protecting repository ✅
 - Full regression suite (type check, 547+ kernel tests) takes 10-30 minutes
 - Blocking E2 development for full regression has diminishing returns
@@ -66,15 +66,17 @@ Last Commit:        ddcce6e6c9145fa23c30f2f54053e08fc7a68600
 
 > **"Có tính năng nào đã DONE/VERIFIED nhưng hiện chưa tồn tại trên main hay không?"**
 
-**Answer:** ✅ NO
+**Answer:** 🟡 NO mergeable DONE/VERIFIED product branch was identified for immediate main integration.
+
+This is a bounded answer, not a claim that every historical branch is complete or obsolete.
 
 **Evidence:**
-- All remote branches analyzed
-- Zero branches found with unmerged completed work
-- `main` branch contains all product work completed to date
-- No "ghost branches" with DONE/VERIFIED markers
+- PR #71 was reconciled and merged to `main`
+- PR #83 was reconciled and merged to `main`; superseded PR #80 was closed
+- PR #42 has passing checks but remains `CONFLICTING/DIRTY` and is not claimable as DONE on `main`
+- Historical/local branches remain outside this baseline unless separately validated
 
-### Workstreams Completed
+### Workstream Status
 
 1. **Git Workflow Constitution**
    - Status: ✅ INSTALLED (PR #82 merged 2026-09-13)
@@ -84,10 +86,10 @@ Last Commit:        ddcce6e6c9145fa23c30f2f54053e08fc7a68600
    - Full Adversarial Proof: ⏸️ DEFERRED (lower priority than product work)
 
 2. **Product Branch Reconciliation**
-   - Status: ✅ COMPLETE
-   - All branches analyzed: No unmerged completed work
-   - `main` = canonical source of truth
-   - Safe to begin E2 development
+   - Status: 🟡 BOUNDED
+   - Mergeable completed PRs were reconciled to `main`
+   - PR #42 remains unresolved due large conflict surface
+   - `main` is the canonical source of truth for new work, excluding explicitly unresolved branches
 
 ## Next Phase: Bella English Center E2
 
@@ -112,7 +114,7 @@ Last Commit:        ddcce6e6c9145fa23c30f2f54053e08fc7a68600
 E2 development is ready to start when:
 - ✅ Baseline SHA recorded in this document
 - ✅ Working tree clean
-- ✅ Branch reconciliation complete
+- 🟡 Branch reconciliation bounded and unresolved branches explicitly excluded
 - ✅ Constitution active and protecting
 
 Full regression validation occurs via CI on first E2 PR.
@@ -126,4 +128,4 @@ Full regression validation occurs via CI on first E2 PR.
 
 ---
 
-**Status:** ✅ SEALED - Baseline recorded
+**Status:** 🟡 BASELINE RECORDED - Bounded reconciliation, PR #42 unresolved
