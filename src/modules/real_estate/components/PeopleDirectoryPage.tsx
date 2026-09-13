@@ -17,6 +17,7 @@ import {
   SlidersHorizontal, Sparkles, DollarSign, Globe, Check, Eye, MessageSquare
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 // ── Interfaces & Types ────────────────────────────────────────────────────────
 
@@ -534,39 +535,39 @@ export function PeopleDirectoryPage() {
               />
             </div>
 
-            <select
+            <PremiumSelect
               value={filterBranch}
-              onChange={e => setFilterBranch(e.target.value)}
-              className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none"
-            >
-              <option value="all">Chi nhánh: Tất cả</option>
-              <option value="Chi nhánh Hồ Chí Minh">Chi nhánh Hồ Chí Minh</option>
-              <option value="Chi nhánh Bình Dương">Chi nhánh Bình Dương</option>
-              <option value="Chi nhánh Đà Nẵng">Chi nhánh Đà Nẵng</option>
-            </select>
+              onChange={(val) => setFilterBranch(val)}
+              options={[
+                { value: "all", label: "Chi nhánh: Tất cả" },
+                { value: "Chi nhánh Hồ Chí Minh", label: "Chi nhánh Hồ Chí Minh" },
+                { value: "Chi nhánh Bình Dương", label: "Chi nhánh Bình Dương" },
+                { value: "Chi nhánh Đà Nẵng", label: "Chi nhánh Đà Nẵng" },
+              ]}
+            />
 
-            <select
+            <PremiumSelect
               value={filterDepartment}
-              onChange={e => setFilterDepartment(e.target.value)}
-              className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none"
-            >
-              <option value="all">Phòng ban: Tất cả</option>
-              <option value="Khối Kinh doanh">Khối Kinh doanh</option>
-              <option value="Khối Vận hành">Khối Vận hành</option>
-              <option value="Khối CSKH">Khối CSKH</option>
-              <option value="Khối Pháp lý">Khối Pháp lý</option>
-            </select>
+              onChange={(val) => setFilterDepartment(val)}
+              options={[
+                { value: "all", label: "Phòng ban: Tất cả" },
+                { value: "Khối Kinh doanh", label: "Khối Kinh doanh" },
+                { value: "Khối Vận hành", label: "Khối Vận hành" },
+                { value: "Khối CSKH", label: "Khối CSKH" },
+                { value: "Khối Pháp lý", label: "Khối Pháp lý" },
+              ]}
+            />
 
-            <select
+            <PremiumSelect
               value={filterStatus}
-              onChange={e => setFilterStatus(e.target.value)}
-              className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none"
-            >
-              <option value="all">Trạng thái: Tất cả</option>
-              <option value="active">🟢 Hoạt động</option>
-              <option value="on_leave">🟡 Nghỉ phép</option>
-              <option value="inactive">🔴 Ngừng hoạt động</option>
-            </select>
+              onChange={(val) => setFilterStatus(val)}
+              options={[
+                { value: "all", label: "Trạng thái: Tất cả" },
+                { value: "active", label: "🟢 Hoạt động" },
+                { value: "on_leave", label: "🟡 Nghỉ phép" },
+                { value: "inactive", label: "🔴 Ngừng hoạt động" },
+              ]}
+            />
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
@@ -844,29 +845,29 @@ export function PeopleDirectoryPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-slate-700 dark:text-slate-300 mb-1">Phân loại nhân sự</label>
-                    <select
+                    <PremiumSelect
                       value={newPerson.category}
-                      onChange={e => setNewPerson({ ...newPerson, category: e.target.value as any })}
-                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none"
-                    >
-                      <option value="employee">Nhân viên nội bộ</option>
-                      <option value="broker">Môi giới tự do</option>
-                      <option value="agency">Đại lý F1</option>
-                      <option value="partner">Đối tác F2</option>
-                    </select>
+                      onChange={(val) => setNewPerson({ ...newPerson, category: val as any })}
+                      options={[
+                        { value: "employee", label: "Nhân viên nội bộ" },
+                        { value: "broker", label: "Môi giới tự do" },
+                        { value: "agency", label: "Đại lý F1" },
+                        { value: "partner", label: "Đối tác F2" },
+                      ]}
+                    />
                   </div>
 
                   <div>
                     <label className="block text-slate-700 dark:text-slate-300 mb-1">Chi nhánh trực thuộc</label>
-                    <select
+                    <PremiumSelect
                       value={newPerson.branch}
-                      onChange={e => setNewPerson({ ...newPerson, branch: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none"
-                    >
-                      <option value="Chi nhánh Hồ Chí Minh">Chi nhánh Hồ Chí Minh</option>
-                      <option value="Chi nhánh Bình Dương">Chi nhánh Bình Dương</option>
-                      <option value="Chi nhánh Đà Nẵng">Chi nhánh Đà Nẵng</option>
-                    </select>
+                      onChange={(val) => setNewPerson({ ...newPerson, branch: val })}
+                      options={[
+                        { value: "Chi nhánh Hồ Chí Minh", label: "Chi nhánh Hồ Chí Minh" },
+                        { value: "Chi nhánh Bình Dương", label: "Chi nhánh Bình Dương" },
+                        { value: "Chi nhánh Đà Nẵng", label: "Chi nhánh Đà Nẵng" },
+                      ]}
+                    />
                   </div>
                 </div>
 
