@@ -1,3 +1,59 @@
+# ARCHITECTURE GATE RESULT — PR82 CI REMEDIATION
+
+> **Status:** PASS — CI-only remediation, no Product Vertical or Kernel impact
+> **Date:** 2026-09-13
+> **Scope:** GitHub Actions checks for PR #82 (`infra/git-workflow-constitution-install`)
+
+---
+
+## 1. Product Manifest (Capabilities & Scope)
+
+This change is limited to CI workflow execution policy:
+- Bound API documentation checks to API/API-documentation changes.
+- Remove unsafe direct GitHub context interpolation from shell `run:` blocks.
+- Pin the branch-cleanup GitHub Action to an immutable commit SHA.
+
+No Healthcare, Education, Logistics, Finance, or Product Vertical runtime capability is added or changed.
+
+## 2. Ownership Map ("WHO OWNS THIS DATA?")
+
+No business data or domain entity is owned or modified by this change.
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `.github/workflows/*` | Repository CI Governance | Automation policy only |
+| `docs/api-reference.md` | API Documentation Governance | Referenced deliverable, not created in this change |
+
+## 3. Contract Dependency Map
+
+```
+GitHub PR event
+        │
+        ▼
+GitHub Actions workflow checks
+        │
+        ├── Repo scripts (`npm run docs:api:*`)
+        └── GitHub Advanced Security Semgrep OSS
+```
+
+No Product -> Contract -> Kernel dependency exists in this remediation.
+
+## 4. Additive Migration Plan
+
+No database migration. No schema change. No RLS policy change.
+
+## 5. 11 Automated Verification Gates Plan
+
+The Healthcare/Education 11-gate product-vertical suite is not applicable because no vertical or kernel code is touched.
+
+Targeted verification for this CI remediation:
+- YAML parse / workflow syntax validation.
+- Semgrep OSS annotations addressed without disabling scanner.
+- API docs check remains enforced for API/API-doc changes and is skipped for infra-only PRs.
+- GitHub Actions status rechecked after commit/push.
+
+---
+
 # ARCHITECTURE GATE RESULT — BELLA FINANCE OS KERNEL F1
 
 > **Status:** APPROVED BY HUMAN ARCHITECT  

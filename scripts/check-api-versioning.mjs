@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 
 const apiRoot = join(process.cwd(), 'src', 'app', 'api');
-const policyPath = join(process.cwd(), 'docs', 'api-versioning-policy.md');
+const policyPath = join(process.cwd(), 'docs', 'technical', 'api-versioning-policy.md');
 
 const allowedRoutePatterns = [
   /^\/api\/v\d+(?:\/|$)/,
@@ -55,7 +55,7 @@ const requiredPolicyPhrases = [
 
 for (const phrase of requiredPolicyPhrases) {
   if (!policy.includes(phrase)) {
-    violations.push(`docs/api-versioning-policy.md missing required phrase: ${phrase}`);
+      violations.push(`docs/technical/api-versioning-policy.md missing required phrase: ${phrase}`);
   }
 }
 

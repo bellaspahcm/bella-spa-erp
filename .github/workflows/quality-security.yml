@@ -57,6 +57,14 @@ jobs:
             echo "⏭️  No application code changed, skipping lint"
           fi
 
+          if echo "$CHANGED_FILES" | grep -qE '^(src/app/api/|docs/guides/api-reference\.md|docs/technical/api-versioning-policy\.md|docs/api-reference\.md|docs/api-versioning-policy\.md|scripts/check-api-docs\.mjs|scripts/check-api-versioning\.mjs)'; then
+            echo "needs_api_docs=true" >> $GITHUB_OUTPUT
+            echo "✅ Found API surface or API documentation files to verify"
+          else
+            echo "needs_api_docs=false" >> $GITHUB_OUTPUT
+            echo "⏭️  No API surface or API documentation changes, skipping API docs checks"
+          fi
+
       - name: Required CI environment config
         run: npm run ci:env:check
 
@@ -69,10 +77,16 @@ jobs:
         run: echo "✅ Lint skipped - infrastructure-only PR"
 
       - name: API documentation coverage
+        if: steps.check-lint-needed.outputs.needs_api_docs == 'true'
         run: npm run docs:api:check
 
       - name: API versioning policy
+        if: steps.check-lint-needed.outputs.needs_api_docs == 'true'
         run: npm run docs:api:versioning
+
+      - name: API documentation checks skipped
+        if: steps.check-lint-needed.outputs.needs_api_docs == 'false'
+        run: echo "✅ API docs checks skipped - no API surface or API documentation changes"
 
       - name: Supabase migration drift check
         run: npm run db:migration:check

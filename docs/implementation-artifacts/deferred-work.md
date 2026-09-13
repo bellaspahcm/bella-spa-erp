@@ -8,3 +8,7 @@
 - Enable paid Supabase Read Replica only when approved; add an authoritative replication-lag RPC or metric before marking replica health complete.
 - Regenerate Supabase database types for api_partners and API gateway tables, then remove temporary local typed adapters.
 - Cancel or ignore stale SLA configuration responses when the selected partner changes during an in-flight request.
+
+## CI Supply-Chain Hardening
+
+- 2026-09-13: Audit and pin all remaining mutable GitHub Actions and container references across `.github/workflows/`. PR #82 only addressed the exact Semgrep OSS new mutable-tag alert for `actions/github-script@v7`; broader pinning should be reviewed as a separate supply-chain hardening change.

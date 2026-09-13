@@ -168,9 +168,9 @@ jobs:
         id: check-deps
         run: |
           # Get changed files
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            git fetch origin "${{ github.base_ref }}"
-            CHANGED_FILES=$(git diff --name-only "origin/${{ github.base_ref }}"...HEAD)
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            git fetch origin "$GITHUB_BASE_REF"
+            CHANGED_FILES=$(git diff --name-only "origin/$GITHUB_BASE_REF"...HEAD)
           else
             CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
           fi
