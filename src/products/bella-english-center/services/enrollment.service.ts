@@ -12,7 +12,6 @@ import {
   ListEnrollmentsFilter,
   UpdateEnglishEnrollmentInput,
 } from '../types/enrollment.types';
-import { v4 as uuidv4 } from 'uuid';
 
 export class EnglishCenterEnrollmentService {
   private readonly enrollmentContract: EnrollmentContractImpl;
@@ -33,7 +32,7 @@ export class EnglishCenterEnrollmentService {
     input: CreateEnglishEnrollmentInput
   ): Promise<EnglishCenterEnrollmentView> {
     // Step 1: Create canonical enrollment via Platform contract
-    const requestId = uuidv4();
+    const requestId = crypto.randomUUID();
     const canonicalEnrollment = await this.enrollmentContract.enrollStudent({
       tenantId,
       studentPartyId: input.studentPartyId,
