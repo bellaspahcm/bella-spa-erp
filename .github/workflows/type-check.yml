@@ -38,6 +38,8 @@ jobs:
               package.json|package-lock.json|tsconfig.json|next-env.d.ts|next.config.ts|instrumentation.ts|instrumentation-client.ts|sentry.*.ts)
                 NEEDS_ROOT_TYPECHECK=true
                 ;;
+              src/app/dashboard/real-estate/*|src/app/dashboard/real-estate/**/*|src/modules/real_estate/components/*|src/modules/real_estate/components/**/*|src/components/layout/sidebar.tsx)
+                ;;
               src/__tests__/*|src/*/__tests__/*|src/**/*.test.ts|src/**/*.test.tsx|src/**/*.spec.ts|src/**/*.spec.tsx)
                 ;;
               src/*.ts|src/*.tsx|src/**/*.ts|src/**/*.tsx|*.ts|*.tsx|*.mts)

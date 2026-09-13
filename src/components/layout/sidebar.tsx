@@ -1136,6 +1136,8 @@ export function Sidebar() {
                         : isActive
                         ? (isBellaAutoShell || isBellaHealthcareShell)
                           ? "bg-white text-[#042f2e] border-amber-400/60 shadow-[0_2px_10px_rgba(0,0,0,0.18)] ring-1 ring-amber-400/40 backdrop-blur-md font-bold"
+                          : (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell)
+                          ? "border-transparent shadow-[0_4px_18px_rgba(0,0,0,0.22)] ring-1 ring-amber-400/40"
                           : "bg-white text-primary border-primary/20 shadow-[0_2px_10px_rgba(219,39,119,0.12)] ring-1 ring-primary/20 dark:bg-[#5D1C34]/30 dark:text-[#EFE9E1] dark:border-[#A67D44]/40 dark:ring-[#A67D44]/20 dark:shadow-none"
                         : (isBellaAutoShell || isBellaHealthcareShell)
                         ? "text-slate-100 bg-transparent border-transparent hover:bg-white/12 hover:text-white hover:shadow-[0_2px_10px_rgba(245,158,11,0.18)] hover:border-amber-400/35"

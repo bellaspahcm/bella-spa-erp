@@ -94,7 +94,7 @@ jobs:
 
       - name: Lint
         if: steps.check-lint-needed.outputs.needs_lint == 'true'
-        run: npm run lint
+        run: node scripts/lint-changed-files.mjs
       
       - name: Lint skipped (infrastructure-only PR)
         if: steps.check-lint-needed.outputs.needs_lint == 'false'
