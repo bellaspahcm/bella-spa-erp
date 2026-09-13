@@ -263,7 +263,8 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const report = `${{ steps.scope-check.outputs.report }}`;
+            // Get report from previous step output (already stringified)
+            const report = process.env.REPORT_CONTENT;
             
             // Find existing comment
             const comments = await github.rest.issues.listComments({
@@ -291,6 +292,8 @@ jobs:
                 body: report
               });
             }
+        env:
+          REPORT_CONTENT: ${{ steps.scope-check.outputs.report }}
       
       - name: Block PR if errors detected
         if: steps.scope-check.outputs.has_errors == 'true'
