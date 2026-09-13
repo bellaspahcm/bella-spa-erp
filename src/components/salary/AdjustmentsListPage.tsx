@@ -159,7 +159,7 @@ export function AdjustmentsListPage() {
     try {
       const supabase = createClient();
       
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       let query = (supabase as unknown)
         .from('salary_adjustments')
         .select(`
@@ -217,7 +217,7 @@ export function AdjustmentsListPage() {
       }
 
       // Transform data
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       const adjustmentsData: SalaryAdjustment[] = (data || []).map((adj: Record<string, unknown>) => ({
         id: adj.id,
         ktv_id: adj.ktv_id,

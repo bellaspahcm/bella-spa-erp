@@ -128,7 +128,7 @@ export interface WorkflowInstance {
    * - `receivedItems: Array` - Items received
    * - `approvalStatus: string` - Current approval state
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   context: Record<string, unknown>;
   
   /** When the workflow started (ISO 8601 timestamp) */
@@ -163,6 +163,6 @@ export interface WorkflowInstance {
    * - `stateTransitions: Array` - History of state changes
    * - `performanceMetrics: object` - Step-level performance data
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   metadata: Record<string, unknown>;
 }

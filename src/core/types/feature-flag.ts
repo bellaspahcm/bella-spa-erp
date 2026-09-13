@@ -58,7 +58,7 @@ export interface FeatureFlag {
    * - `allowedRoles: string[]` - User roles that can access this feature
    * - `allowedUserIds: string[]` - Specific users with access
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   metadata?: Readonly<Record<string, unknown>>;
 }
 

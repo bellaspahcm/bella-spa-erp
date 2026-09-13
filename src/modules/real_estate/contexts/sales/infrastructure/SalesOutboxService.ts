@@ -1,6 +1,6 @@
 import { supabase as typedSupabase } from '@/lib/supabase';
 import type { SupabaseClient } from '@supabase/supabase-js';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const supabase = typedSupabase as unknown as SupabaseClient<any>;
 
 export class SalesOutboxService {

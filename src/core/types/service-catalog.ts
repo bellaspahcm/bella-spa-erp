@@ -91,7 +91,7 @@ export interface CoreServiceCatalogItem {
    * - `parts_included: boolean` - Whether parts are included in price
    * - `warranty_months: number` - Service warranty period
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   metadata: Record<string, unknown>;
 }
 

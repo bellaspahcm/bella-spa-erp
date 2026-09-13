@@ -105,7 +105,7 @@ export interface CoreBookingOrder {
    * - `parts_needed: Array` - Parts required for the job
    * - `completion_photos: string[]` - URLs to completion photos
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   metadata: Record<string, unknown>;
 }
 

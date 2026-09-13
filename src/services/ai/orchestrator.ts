@@ -194,9 +194,9 @@ async function loadGeminiApiKey(supabase: SupabaseClient<Database>, tenantId: st
 
   if (!geminiApiKey || geminiApiKey.trim().length < 10) {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+       
       const fs = require("fs");
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+       
       const path = require("path");
       const envPath = path.join(process.cwd(), ".env.local");
       if (fs.existsSync(envPath)) {
@@ -282,9 +282,9 @@ export async function runCOOOrchestrator(
   let strategicRecommendations = getStrategicRecommendations(routedTo);
 
   if (!geminiApiKey || geminiApiKey.trim().length < 10) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const fs = require("fs");
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const path = require("path");
     const envPath = path.join(process.cwd(), ".env.local");
     const exists = fs.existsSync(envPath);
