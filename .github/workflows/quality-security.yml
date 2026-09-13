@@ -81,6 +81,14 @@ jobs:
             echo "⏭️  No dependency/security files changed, skipping dependency audit and secret guards"
           fi
 
+          if echo "$CHANGED_FILES" | grep -qE '^(src/app/|src/components/|src/lib/|src/services/|src/modules/|src/products/|e2e/|playwright\.config\.|package\.json|package-lock\.json)'; then
+            echo "needs_e2e_checks=true" >> $GITHUB_OUTPUT
+            echo "✅ Found app, e2e, or package files to verify with browser smoke tests"
+          else
+            echo "needs_e2e_checks=false" >> $GITHUB_OUTPUT
+            echo "⏭️  No app/e2e/package changes, skipping browser smoke tests"
+          fi
+
       - name: Required CI environment config
         run: npm run ci:env:check
 
@@ -154,9 +162,11 @@ jobs:
         run: echo "✅ Security checks skipped - no dependency/security files changed"
 
       - name: Install Playwright Chromium
+        if: steps.check-lint-needed.outputs.needs_e2e_checks == 'true'
         run: npx playwright install --with-deps chromium
 
       - name: Authenticated route smoke
+        if: steps.check-lint-needed.outputs.needs_e2e_checks == 'true'
         timeout-minutes: 8
         run: npm run e2e:auth-smoke
         env:
@@ -166,6 +176,7 @@ jobs:
           E2E_VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.E2E_VERCEL_AUTOMATION_BYPASS_SECRET }}
 
       - name: Beauty operational UAT smoke
+        if: steps.check-lint-needed.outputs.needs_e2e_checks == 'true'
         timeout-minutes: 12
         run: npm run e2e:beauty-uat
         env:
@@ -175,6 +186,7 @@ jobs:
           E2E_VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.E2E_VERCEL_AUTOMATION_BYPASS_SECRET }}
 
       - name: Responsive visual smoke
+        if: steps.check-lint-needed.outputs.needs_e2e_checks == 'true'
         timeout-minutes: 35
         run: npm run e2e:visual
         env:
@@ -188,9 +200,14 @@ jobs:
           E2E_VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.E2E_VERCEL_AUTOMATION_BYPASS_SECRET }}
 
       - name: Assert responsive visual smoke results
+        if: steps.check-lint-needed.outputs.needs_e2e_checks == 'true'
         run: npm run e2e:visual:assert
         env:
           E2E_VISUAL_EXPECTED_TESTS: "30"
+
+      - name: Browser smoke tests skipped
+        if: steps.check-lint-needed.outputs.needs_e2e_checks == 'false'
+        run: echo "✅ Browser smoke tests skipped - no app/e2e/package changes"
 
       - name: Upload Playwright report
         if: ${{ always() }}
