@@ -3,12 +3,18 @@ name: Mobile CI
 on:
   push:
     paths:
+      - '.github/workflows/mobile-ci.yml'
       - 'apps/mobile/**'
       - 'packages/shared/**'
+      - 'scripts/audit-rls-security.ts'
+      - 'scripts/check-secret-leaks.mjs'
   pull_request:
     paths:
+      - '.github/workflows/mobile-ci.yml'
       - 'apps/mobile/**'
       - 'packages/shared/**'
+      - 'scripts/audit-rls-security.ts'
+      - 'scripts/check-secret-leaks.mjs'
 
 jobs:
   validate:
