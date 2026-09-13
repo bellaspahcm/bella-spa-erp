@@ -52,7 +52,7 @@ export async function fetchTenantContext(
     tenant: {
       id: data.id,
       name: data.name ?? '',
-      moduleKey: getDefaultTenantModuleKey(data.enabled_modules),
+      moduleKey: getDefaultTenantModuleKey(),
       logoUrl: data.logo_url ?? null,
       status: data.status ?? null,
     },

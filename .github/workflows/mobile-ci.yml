@@ -27,8 +27,11 @@ jobs:
       - name: Shared package typecheck
         run: npm run shared:typecheck
 
+      - name: Install mobile dependencies
+        run: npm install --prefix apps/mobile --no-package-lock --ignore-scripts
+
       - name: Mobile typecheck
-        run: npm run mobile:typecheck
+        run: npx tsc -p apps/mobile/tsconfig.json --noEmit
 
       - name: Web build (regression check)
         run: npm run build
