@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -35,11 +35,7 @@ export default function EnrollmentDetailPage({ params }: { params: { id: string 
   const [editMode, setEditMode] = useState(false);
   const [editData, setEditData] = useState({ classId: '', programId: '' });
 
-  useEffect(() => {
-    fetchEnrollment();
-  }, [params.id]);
-
-  const fetchEnrollment = async () => {
+  const fetchEnrollment = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -61,7 +57,11 @@ export default function EnrollmentDetailPage({ params }: { params: { id: string 
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
+
+  useEffect(() => {
+    fetchEnrollment();
+  }, [fetchEnrollment]);
 
   const handleUpdate = async () => {
     if (!enrollment) return;

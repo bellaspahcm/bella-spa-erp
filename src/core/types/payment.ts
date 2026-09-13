@@ -99,7 +99,7 @@ export interface PaymentIntent {
    * - `cardBrand: string` - Visa, Mastercard, etc.
    * - `authorizationCode: string` - Payment gateway auth code
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   metadata: Record<string, unknown>;
 }
 
@@ -146,7 +146,7 @@ export interface InvoiceLineItem {
    * - `taxRate: number` - Tax rate applied (if applicable)
    * - `discountApplied: number` - Discount amount (if applicable)
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   metadata?: Record<string, unknown>;
 }
 

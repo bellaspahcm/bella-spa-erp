@@ -1,0 +1,260 @@
+name: CI - Quality Gates
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      
+      - name: Check if TypeScript/JavaScript files changed
+        id: check-files
+        run: |
+          # Get changed files
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          else
+            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+          fi
+          
+          # Check if any TS/JS files changed (exclude scripts/, .github/)
+          if echo "$CHANGED_FILES" | grep -E '\.(ts|tsx|js|jsx|mjs|cjs)$' | grep -vE '^(scripts/|\.github/)'; then
+            echo "has_code=true" >> $GITHUB_OUTPUT
+            echo "✅ Found application TS/JS files to lint"
+          else
+            echo "has_code=false" >> $GITHUB_OUTPUT
+            echo "⏭️  No application code changed (only infrastructure files), skipping lint"
+          fi
+      
+      - uses: actions/setup-node@v6
+        if: steps.check-files.outputs.has_code == 'true'
+        with:
+          node-version: '24'
+          cache: npm
+      
+      - run: npm ci
+        if: steps.check-files.outputs.has_code == 'true'
+      
+      - run: npm run lint
+        if: steps.check-files.outputs.has_code == 'true'
+      
+      - name: Lint skipped (infrastructure-only PR)
+        if: steps.check-files.outputs.has_code == 'false'
+        run: echo "✅ Lint skipped - no application code changed"
+
+  tests:
+    name: Unit and Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm test -- --runInBand
+        env:
+          NODE_ENV: test
+
+  real-db-e2e:
+    name: Real Database Business E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Require isolated E2E database credentials
+        env:
+          SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.E2E_SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          test -n "$SUPABASE_URL"
+          test -n "$SUPABASE_SERVICE_ROLE_KEY"
+      - name: Run real database business E2E
+        env:
+          NODE_ENV: test
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+          SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.E2E_SUPABASE_SERVICE_ROLE_KEY }}
+        run: npm run test:real-db-e2e
+
+  security:
+    name: Dependency and Secret Gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      
+      - name: Check if dependency files changed
+        id: check-deps
+        run: |
+          # Get changed files
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          else
+            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+          fi
+          
+          # Check if any dependency/code files changed
+          if echo "$CHANGED_FILES" | grep -qE 'package\.json|package-lock\.json|\.npmrc|src/|\.env'; then
+            echo "has_deps=true" >> $GITHUB_OUTPUT
+            echo "✅ Found dependency/code files to check"
+          else
+            echo "has_deps=false" >> $GITHUB_OUTPUT
+            echo "⏭️  No dependency/code files changed, skipping security gates"
+          fi
+      
+      - uses: actions/setup-node@v6
+        if: steps.check-deps.outputs.has_deps == 'true'
+        with:
+          node-version: '24'
+          cache: npm
+      
+      - run: npm ci
+        if: steps.check-deps.outputs.has_deps == 'true'
+      
+      - run: npm run security:audit
+        if: steps.check-deps.outputs.has_deps == 'true'
+      
+      - run: npm run security:secrets
+        if: steps.check-deps.outputs.has_deps == 'true'
+      
+      - name: Security gates skipped (infrastructure-only PR)
+        if: steps.check-deps.outputs.has_deps == 'false'
+        run: echo "✅ Security gates skipped - no dependency/code files changed"
+
+  migrations:
+    name: Migration Gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      
+      - name: Check if migration files changed
+        id: check-migrations
+        run: |
+          # Get changed files
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          else
+            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+          fi
+          
+          # Check if any migration files changed
+          if echo "$CHANGED_FILES" | grep -qE 'supabase/migrations/|prisma/migrations/|\.sql$'; then
+            echo "has_migrations=true" >> $GITHUB_OUTPUT
+            echo "✅ Found migration files to check"
+          else
+            echo "has_migrations=false" >> $GITHUB_OUTPUT
+            echo "⏭️  No migration files changed, skipping gates"
+          fi
+      
+      - uses: actions/setup-node@v6
+        if: steps.check-migrations.outputs.has_migrations == 'true'
+        with:
+          node-version: '24'
+          cache: npm
+      
+      - run: npm ci
+        if: steps.check-migrations.outputs.has_migrations == 'true'
+      
+      - name: Resolve migration comparison base
+        if: steps.check-migrations.outputs.has_migrations == 'true'
+        id: migration-base
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          base="$PR_BASE_SHA"
+          if [ -z "$base" ]; then
+            base="$PUSH_BEFORE_SHA"
+          fi
+          if [ -z "$base" ] || printf '%s' "$base" | grep -Eq '^0+$'; then
+            base="HEAD^"
+          fi
+          git rev-parse --verify "$base^{commit}" > /dev/null
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+      - name: Zero-downtime migration policy
+        if: steps.check-migrations.outputs.has_migrations == 'true'
+        env:
+          BASE_REF: ${{ steps.migration-base.outputs.base }}
+        run: npm run db:migration:zero-downtime -- --base "$BASE_REF"
+      
+      - name: Require database drift credentials
+        if: steps.check-migrations.outputs.has_migrations == 'true'
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: test -n "$SUPABASE_DB_URL"
+      
+      - name: Supabase migration drift
+        if: steps.check-migrations.outputs.has_migrations == 'true'
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: npm run db:migration:check
+      
+      - name: Migration gates skipped (no migrations changed)
+        if: steps.check-migrations.outputs.has_migrations == 'false'
+        run: echo "✅ Migration gates skipped - no migration files changed"
+
+  build:
+    name: Production Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL || vars.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY || vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+
+  all-gates:
+    name: All Required Gates Passed
+    if: always()
+    needs: [lint, tests, real-db-e2e, security, migrations, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce required results
+        env:
+          LINT_RESULT: ${{ needs.lint.result }}
+          TEST_RESULT: ${{ needs.tests.result }}
+          REAL_DB_E2E_RESULT: ${{ needs.real-db-e2e.result }}
+          SECURITY_RESULT: ${{ needs.security.result }}
+          MIGRATION_RESULT: ${{ needs.migrations.result }}
+          BUILD_RESULT: ${{ needs.build.result }}
+        run: |
+          test "$LINT_RESULT" = success
+          test "$TEST_RESULT" = success
+          test "$REAL_DB_E2E_RESULT" = success
+          test "$SECURITY_RESULT" = success
+          test "$MIGRATION_RESULT" = success
+          test "$BUILD_RESULT" = success

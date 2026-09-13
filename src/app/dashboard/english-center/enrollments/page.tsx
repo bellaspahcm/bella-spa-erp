@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -27,11 +27,7 @@ export default function EnrollmentsListPage() {
   const [branchFilter, setBranchFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
 
-  useEffect(() => {
-    fetchEnrollments();
-  }, [branchFilter, statusFilter]);
-
-  const fetchEnrollments = async () => {
+  const fetchEnrollments = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -53,7 +49,11 @@ export default function EnrollmentsListPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [branchFilter, statusFilter]);
+
+  useEffect(() => {
+    fetchEnrollments();
+  }, [fetchEnrollments]);
 
   return (
     <div className="container mx-auto px-4 py-8">

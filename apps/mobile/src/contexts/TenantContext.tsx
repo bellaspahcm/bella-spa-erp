@@ -89,7 +89,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // ── Case 1: No session or no tenant_id ──────────────────────────────
     if (auth.status !== 'authenticated' || !tenantId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setState({ status: 'none' });
       return;
     }

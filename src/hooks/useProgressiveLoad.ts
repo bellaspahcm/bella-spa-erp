@@ -50,7 +50,7 @@ interface UseProgressiveLoadOptions {
    * Dependencies array — if any value changes the entire load sequence is
    * re-triggered, identical to the second argument of `useEffect`.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   deps?: unknown[];
 }
 
@@ -124,7 +124,7 @@ export function useProgressiveLoad({
         clearTimeout(secondaryTimerRef.current);
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [runLoad]);
 
   return {

@@ -10,7 +10,7 @@
 
 // ─── Shared cache store (defined outside so tests can clear it) ───────────────
 // Must use `var` so it is accessible inside the hoisted jest.mock factory
-// eslint-disable-next-line no-var
+ 
 var cacheStore: Map<string, unknown>;
 
 // Mock the entire multi-tier cache layer so MemoryCache singleton

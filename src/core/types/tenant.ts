@@ -83,7 +83,7 @@ export interface TenantContext {
    * - `inventoryAlertThreshold: number` - Stock level to trigger alerts
    * - `defaultTaxRate: number` - Default tax rate for invoices
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   readonly settings: Readonly<Record<string, unknown>>;
 }
 
