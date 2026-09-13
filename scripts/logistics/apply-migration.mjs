@@ -29,7 +29,7 @@ if (!DB_URL) {
 
 async function applyMigration() {
   console.log('🔄 APPLYING LOGISTICS SCHEMA MIGRATION\n');
-  console.log('Database:', DB_URL.replace(/:[^:]+@/, ':****@')); // Hide password
+  console.log('Database:', DB_URL.replace(/:[^:]+@/, ':****@')); // Redact credential
   console.log('Migration: supabase/migrations/20260821115404_logistics_schema.sql\n');
 
   const client = new Client({

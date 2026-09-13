@@ -16,8 +16,8 @@ import { GovernanceViolationError, type PolicyValidationResult } from './types';
 export class PolicyEngineService {
   private static instance: PolicyEngineService | null = null;
 
-  // Authoritative public key matching the private key used in generate-risk-registry.mjs
-  private readonly publicKeyPem: string = `-----BEGIN PUBLIC KEY-----
+  // Authoritative public key matching the offline signing key used by generate-risk-registry.mjs.
+  private static readonly DEFAULT_PUBLIC_KEY_PEM = `-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA9n062HNQWTM5Eo9xTf/f
 yZ9kBsA7Jt6h9ARLcvFa0FSUCNmS5qer5HBPyZIgKIlo4dOLh2VXMCz30bKFQuyN
 njdTy80q7W0h6gvqCKvkKV8WX+XUgLEvN2BhXl/fXY7CSVSbC1vuUZId3dWeCcNV
@@ -29,7 +29,8 @@ DwIDAQAB
 
   private constructor(
     private readonly capabilityRegistry: CapabilityRegistryService,
-    private readonly matrixFilePath: string = 'docs/governance/HEALTHCARE_CAPABILITY_RISK_MATRIX.md'
+    private readonly matrixFilePath: string = 'docs/governance/HEALTHCARE_CAPABILITY_RISK_MATRIX.md',
+    private readonly publicKeyPem: string = PolicyEngineService.DEFAULT_PUBLIC_KEY_PEM
   ) {}
 
   /**
@@ -37,10 +38,11 @@ DwIDAQAB
    */
   public static initialize(
     capabilityRegistry: CapabilityRegistryService,
-    matrixFilePath?: string
+    matrixFilePath?: string,
+    publicKeyPem?: string
   ): PolicyEngineService {
     if (!PolicyEngineService.instance) {
-      PolicyEngineService.instance = new PolicyEngineService(capabilityRegistry, matrixFilePath);
+      PolicyEngineService.instance = new PolicyEngineService(capabilityRegistry, matrixFilePath, publicKeyPem);
     }
     return PolicyEngineService.instance;
   }

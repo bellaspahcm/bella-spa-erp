@@ -24,8 +24,10 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY // Use service role for full access
 );
 
+const hasServiceRoleKey = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
+
 console.log('🔐 Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
-console.log('🔐 Service key loaded:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+console.log('🔐 Service key loaded:', hasServiceRoleKey);
 console.log('');
 
 

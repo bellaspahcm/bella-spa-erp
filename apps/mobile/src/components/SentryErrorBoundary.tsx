@@ -7,7 +7,6 @@
 
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import * as Updates from 'expo-updates';
 
 interface SentryErrorFallbackProps {
   error: Error;
@@ -23,18 +22,7 @@ export function SentryErrorFallback({
   resetError,
 }: SentryErrorFallbackProps) {
   const handleReload = async () => {
-    try {
-      // Try to reload the app (works in production builds)
-      if (!__DEV__) {
-        await Updates.reloadAsync();
-      } else {
-        // In development, just reset the error boundary
-        resetError();
-      }
-    } catch (reloadError) {
-      console.error('Failed to reload app:', reloadError);
-      resetError(); // Fallback to simple reset
-    }
+    resetError();
   };
 
   return (
