@@ -1,5 +1,6 @@
 -- ============================================================================
 -- E4 — ENGLISH CENTER TEACHERS & WORKFORCE
+-- Zero-downtime migration: tables + policies, indexes added concurrently after
 -- ============================================================================
 
 BEGIN;
@@ -18,10 +19,6 @@ CREATE TABLE IF NOT EXISTS public.english_center_teachers (
   updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_teachers_tenant ON public.english_center_teachers(tenant_id);
-CREATE INDEX idx_teachers_party ON public.english_center_teachers(party_id);
-CREATE INDEX idx_teachers_status ON public.english_center_teachers(status);
-
 CREATE TABLE IF NOT EXISTS public.english_center_teacher_branches (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
@@ -32,10 +29,6 @@ CREATE TABLE IF NOT EXISTS public.english_center_teacher_branches (
   assigned_at TIMESTAMP NOT NULL DEFAULT NOW(),
   created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
-
-CREATE INDEX idx_teacher_branches_tenant ON public.english_center_teacher_branches(tenant_id);
-CREATE INDEX idx_teacher_branches_teacher ON public.english_center_teacher_branches(teacher_id);
-CREATE INDEX idx_teacher_branches_branch ON public.english_center_teacher_branches(branch_id);
 
 ALTER TABLE public.english_center_teachers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.english_center_teacher_branches ENABLE ROW LEVEL SECURITY;
@@ -50,3 +43,11 @@ CREATE TRIGGER trg_teachers_updated_at BEFORE UPDATE ON public.english_center_te
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 COMMIT;
+
+-- Indexes created outside transaction for zero-downtime
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_teachers_tenant ON public.english_center_teachers(tenant_id);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_teachers_party ON public.english_center_teachers(party_id);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_teachers_status ON public.english_center_teachers(status);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_teacher_branches_tenant ON public.english_center_teacher_branches(tenant_id);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_teacher_branches_teacher ON public.english_center_teacher_branches(teacher_id);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_teacher_branches_branch ON public.english_center_teacher_branches(branch_id);
