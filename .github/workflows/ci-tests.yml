@@ -51,7 +51,7 @@ jobs:
       - run: npm ci
         if: steps.check-files.outputs.has_code == 'true'
       
-      - run: npm run lint
+      - run: node scripts/lint-changed-files.mjs
         if: steps.check-files.outputs.has_code == 'true'
       
       - name: Lint skipped (infrastructure-only PR)
