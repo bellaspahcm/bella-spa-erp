@@ -118,6 +118,14 @@ function main() {
   const state = analyzeMigrationState(localVersions, remoteVersions);
   printState(state);
 
+  // Allow empty remote database (fresh installation scenario)
+  if (remoteVersions.length === 0) {
+    console.log('⚠️  Remote database is empty (fresh installation).');
+    console.log('✅ Migration drift check skipped for empty remote database.');
+    console.log('Migrations will be applied on first deployment.');
+    return;
+  }
+
   if (state.pendingLocal.length > 0) {
     console.error('Remote Supabase database is missing local migrations:');
     for (const version of state.pendingLocal) {
