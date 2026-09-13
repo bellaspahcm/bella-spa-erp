@@ -31,7 +31,7 @@ Mot thay doi duoc xem la breaking change neu lam mot ben tich hop dang dung API 
 Neu breaking change anh huong public/partner API:
 
 - Tao version moi, vi du `/api/v2/...`, hoac them migration note neu van trong `/api/v1`.
-- Cap nhat `docs/api-reference.md`.
+- Cap nhat `docs/guides/api-reference.md`.
 - Cap nhat test lien quan truoc khi merge.
 
 ## Non-Breaking Change
@@ -47,7 +47,7 @@ Nhung thay doi sau co the giu cung version:
 
 Khi muon bo mot API public/partner:
 
-- Ghi endpoint cu va endpoint moi trong `docs/api-reference.md`.
+- Ghi endpoint cu va endpoint moi trong `docs/guides/api-reference.md`.
 - Neu dang co doi tac that, can co thoi gian chuyen doi toi thieu 30 ngay.
 - Trong thoi gian deprecation, khong xoa test contract cua endpoint cu tru khi da co migration ro rang.
 

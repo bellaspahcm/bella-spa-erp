@@ -352,7 +352,7 @@ export default function AppearanceTab() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" data-settings-ui="appearance">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -570,27 +570,33 @@ export default function AppearanceTab() {
                         type="button"
                         onClick={() => applyBrandPreset(preset)}
                         className={cn(
-                          'rounded-2xl border p-4 text-left transition-all',
+                          'rounded-2xl p-4 text-left transition-all duration-200',
                           isActive
-                            ? 'border-primary bg-primary/5 text-slate-900 shadow-sm ring-4 ring-primary/10'
-                            : 'border-slate-100 bg-slate-50 text-slate-600 hover:border-primary/30 hover:bg-white',
+                            ? 'bella-settings-preset-active border border-primary/40 bg-primary/[0.04] shadow-sm'
+                            : 'border border-slate-100 bg-slate-50 text-slate-600 hover:border-slate-200 hover:bg-white',
                         )}
                       >
                         <div className="mb-3 flex items-center gap-2">
+                          {/* Decorative color dots — inline border intentional as these are visual swatches, not text */}
                           <span
-                            className="h-7 w-7 rounded-xl border border-white shadow-sm"
-                            style={{ backgroundColor: preset.primaryColor }}
+                            className="h-7 w-7 shrink-0 rounded-xl shadow-sm"
+                            style={{ backgroundColor: preset.primaryColor, border: '2px solid white' }}
                           />
                           <span
-                            className="h-7 w-7 rounded-xl border border-white shadow-sm"
-                            style={{ backgroundColor: preset.accentColor }}
+                            className="h-7 w-7 shrink-0 rounded-xl shadow-sm"
+                            style={{ backgroundColor: preset.accentColor, border: '2px solid white' }}
                           />
+                          {isActive && (
+                            <CheckCircle2 className="ml-auto h-4 w-4 shrink-0 text-primary" />
+                          )}
                         </div>
-                        <p className="text-sm font-black">{preset.label}</p>
+                        <p className="text-sm font-black text-slate-900">{preset.label}</p>
                         <p className="mt-1 text-xs font-bold leading-relaxed text-slate-500">{preset.description}</p>
                       </button>
                     );
                   })}
+
+
                 </div>
               </div>
 

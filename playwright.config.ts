@@ -75,7 +75,7 @@ function isLocalBaseUrl(value: string): boolean {
   }
 }
 
-const SHOULD_START_DEV_SERVER = isLocalBaseUrl(BASE_URL);
+const SHOULD_START_DEV_SERVER = isLocalBaseUrl(BASE_URL) && !process.env.SKIP_WEBSERVER;
 
 export default defineConfig({
   testDir: "./e2e/tests",

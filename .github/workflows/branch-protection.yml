@@ -1,0 +1,194 @@
+name: Validate PR Scope
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  validate-scope:
+    runs-on: ubuntu-latest
+    name: Validate PR Scope
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Get changed files
+        id: changed-files
+        run: |
+          # Get changed files between PR base and head
+          git fetch origin ${{ github.base_ref }}
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          echo "$CHANGED_FILES"
+          echo "files<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGED_FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
+      - name: Analyze PR scope
+        id: analyze
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const changedFiles = `${{ steps.changed-files.outputs.files }}`.split('\n').filter(f => f.trim());
+            
+            console.log(`Analyzing ${changedFiles.length} changed files...`);
+            
+            // Product scope detection
+            const productScopes = new Set();
+            const kernelFiles = [];
+            const platformFiles = [];
+            
+            for (const file of changedFiles) {
+              // Healthcare products
+              if (file.match(/src\/products\/bella-healthcare/)) productScopes.add('Healthcare');
+              if (file.match(/src\/domains\/healthcare\/products\/\w+/)) {
+                const match = file.match(/src\/domains\/healthcare\/products\/(\w+)/);
+                if (match) productScopes.add(`H-${match[1]}`);
+              }
+              
+              // Education products
+              if (file.match(/src\/products\/bella-english-center/)) productScopes.add('English Center');
+              if (file.match(/src\/domains\/education\/products\/\w+/)) {
+                const match = file.match(/src\/domains\/education\/products\/(\w+)/);
+                if (match) productScopes.add(`E-${match[1]}`);
+              }
+              
+              // Real Estate products
+              if (file.match(/src\/products\/bella-land/)) productScopes.add('Bella Land');
+              if (file.match(/src\/domains\/real-estate\/products\/\w+/)) {
+                const match = file.match(/src\/domains\/real-estate\/products\/(\w+)/);
+                if (match) productScopes.add(`R-${match[1]}`);
+              }
+              
+              // Platform Kernel
+              if (file.match(/src\/platform\/(?!__tests__|types|index)/)) {
+                platformFiles.push(file);
+              }
+              
+              // Healthcare Kernel (H1-H12)
+              if (file.match(/src\/platform\/healthcare\/engines\//)) {
+                kernelFiles.push(file);
+              }
+            }
+            
+            const scopes = Array.from(productScopes);
+            const fileCount = changedFiles.length;
+            
+            console.log(`Detected scopes: ${scopes.join(', ')}`);
+            console.log(`Kernel files: ${kernelFiles.length}`);
+            console.log(`Platform files: ${platformFiles.length}`);
+            console.log(`File count: ${fileCount}`);
+            
+            // Determine status
+            let status = '✅ ALLOWED';
+            let conclusion = 'success';
+            let message = '';
+            
+            if (scopes.length > 1) {
+              status = '❌ BLOCKED';
+              conclusion = 'failure';
+              message = `**Multi-scope contamination detected:** ${scopes.join(' + ')}\\n\\nEach PR must modify only ONE product vertical.\\n\\n**Resolution:** Split into ${scopes.length} separate PRs.`;
+            } else if (fileCount > 100) {
+              status = '⚠️ REVIEW REQUIRED';
+              conclusion = 'neutral';
+              message = `**Large PR:** ${fileCount} files changed.\\n\\nPlease provide justification for this size or consider splitting.`;
+            } else if (kernelFiles.length > 0) {
+              status = '⚠️ KERNEL MODIFICATION';
+              conclusion = 'neutral';
+              message = `**Healthcare Kernel modification detected** (H1-H12 frozen):\\n${kernelFiles.slice(0, 5).map(f => \`- \${f}\`).join('\\n')}\\n\\nRequires Architecture Change Request (ACR).`;
+            } else if (platformFiles.length > 0 && scopes.length > 0) {
+              status = '⚠️ PLATFORM + PRODUCT';
+              conclusion = 'neutral';
+              message = `**Platform + Product coupling detected.**\\n\\nIf this is a contract change, document the dependency.`;
+            } else if (scopes.length === 1) {
+              status = '✅ ALLOWED';
+              conclusion = 'success';
+              message = `**Single product scope:** ${scopes[0]}\\n\\n${fileCount} files changed. Scope is clean.`;
+            } else if (scopes.length === 0 && (platformFiles.length > 0 || changedFiles.some(f => f.match(/^(docs|scripts|\.github)/)))){
+              status = '✅ ALLOWED';
+              conclusion = 'success';
+              message = `**Infrastructure/Platform-only change.**\\n\\n${fileCount} files changed. No product contamination.`;
+            }
+            
+            core.setOutput('status', status);
+            core.setOutput('conclusion', conclusion);
+            core.setOutput('message', message);
+            core.setOutput('scopes', scopes.join(', ') || 'Infrastructure');
+            core.setOutput('file_count', fileCount);
+            
+            // Set check status
+            return {
+              status,
+              conclusion,
+              message,
+              scopes: scopes.join(', ') || 'Infrastructure',
+              fileCount
+            };
+      
+      - name: Post comment
+        if: steps.analyze.outputs.message
+        uses: actions/github-script@v7
+        env:
+          STATUS_MESSAGE: ${{ steps.analyze.outputs.message }}
+        with:
+          script: |
+            const message = process.env.STATUS_MESSAGE;
+            const status = '${{ steps.analyze.outputs.status }}';
+            
+            const body = `## Git Workflow Constitution — Scope Validation
+            
+${status}
+
+${message}
+
+---
+*Enforced by: Git Workflow Constitution*
+*See: \`docs/architecture/GIT_WORKFLOW_CONSTITUTION.md\`*`;
+            
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number
+            });
+            
+            const botComment = comments.find(c => c.user.type === 'Bot' && c.body.includes('Git Workflow Constitution'));
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body
+              });
+            }
+      
+      - name: Set check conclusion
+        if: always()
+        run: |
+          conclusion="${{ steps.analyze.outputs.conclusion }}"
+          
+          if [ "$conclusion" = "failure" ]; then
+            echo "❌ PR BLOCKED: Multi-scope contamination detected"
+            exit 1
+          elif [ "$conclusion" = "neutral" ]; then
+            echo "⚠️ REVIEW REQUIRED: Manual approval needed"
+            exit 0
+          else
+            echo "✅ PR ALLOWED: Scope validation passed"
+            exit 0
+          fi

@@ -52,7 +52,7 @@ export class ReservationService implements IReservationContract {
         user_id: params.userId,
         customer_id: params.customerId,
         duration_minutes: params.durationMinutes,
-        status: 'pending_deposit',
+        status: 'active' as any,
         expires_at: expiresAt,
         deposit_amount: 0 // Default to zero before actual deposit payment
       })
@@ -90,7 +90,7 @@ export class ReservationService implements IReservationContract {
     const { error: resError } = await this.supabase
       .from('re_reservations')
       .update({
-        status: 'cancelled',
+        status: 'cancelled' as any,
         updated_at: new Date().toISOString()
       })
       .eq('id', reservationId)
