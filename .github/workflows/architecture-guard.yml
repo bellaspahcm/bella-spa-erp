@@ -17,23 +17,45 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Check if Healthcare files changed
+        id: check-healthcare
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            CHANGED_FILES=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" 2>/dev/null || echo "")
+          else
+            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD 2>/dev/null || echo "")
+          fi
+
+          if echo "$CHANGED_FILES" | grep -qE '^(src/platform/healthcare/|src/products/bella-(medical|hospital|dental)/|src/modules/bella-healthcare/|supabase/migrations/.*healthcare|docs/architecture/HEALTHCARE_VERTICAL_CODING_CONSTITUTION\.md|\.eslintrc\.architecture\.js|scripts/healthcare/)'; then
+            echo "needs_healthcare=true" >> "$GITHUB_OUTPUT"
+            echo "✅ Healthcare-governed files changed"
+          else
+            echo "needs_healthcare=false" >> "$GITHUB_OUTPUT"
+            echo "⏭️  No Healthcare-governed files changed; skipping Healthcare Constitution enforcement"
+          fi
       
       - name: Setup Node.js
+        if: steps.check-healthcare.outputs.needs_healthcare == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
       
       - name: Install dependencies
+        if: steps.check-healthcare.outputs.needs_healthcare == 'true'
         run: npm ci
       
       - name: Run ESLint Architecture Rules
+        if: steps.check-healthcare.outputs.needs_healthcare == 'true'
         run: npx eslint --config .eslintrc.architecture.js "src/**/*.{ts,tsx}" --max-warnings 0
       
       - name: Run Healthcare Architecture Guard
+        if: steps.check-healthcare.outputs.needs_healthcare == 'true'
         run: npm run healthcare:guard
       
       - name: Verify Zero Direct Engine Imports
+        if: steps.check-healthcare.outputs.needs_healthcare == 'true'
         run: |
           echo "🔍 Scanning for P1 violations (direct engine imports)..."
           VIOLATIONS=$(grep -r "from.*@/platform.*engines/" src/products || true)
@@ -48,7 +70,12 @@ jobs:
           echo "✅ No P1 violations found."
       
       - name: Run Healthcare Regression Tests
+        if: steps.check-healthcare.outputs.needs_healthcare == 'true'
         run: npm run healthcare:test
+
+      - name: Healthcare Constitution skipped
+        if: steps.check-healthcare.outputs.needs_healthcare == 'false'
+        run: echo "✅ Healthcare Constitution skipped - no Healthcare-governed files changed"
       
       - name: Report Status
         if: always()

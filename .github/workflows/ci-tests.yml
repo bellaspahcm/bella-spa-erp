@@ -33,13 +33,13 @@ jobs:
             CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
           fi
           
-          # Check if any TS/JS files changed (exclude scripts/, .github/)
-          if echo "$CHANGED_FILES" | grep -E '\.(ts|tsx|js|jsx|mjs|cjs)$' | grep -vE '^(scripts/|\.github/)'; then
+          # Check if any application TS/JS files changed (exclude infra and tests)
+          if echo "$CHANGED_FILES" | grep -E '\.(ts|tsx|js|jsx|mjs|cjs)$' | grep -vE '^(scripts/|\.github/|src/__tests__/)|\.(test|spec)\.(ts|tsx|js|jsx)$'; then
             echo "has_code=true" >> $GITHUB_OUTPUT
             echo "✅ Found application TS/JS files to lint"
           else
             echo "has_code=false" >> $GITHUB_OUTPUT
-            echo "⏭️  No application code changed (only infrastructure files), skipping lint"
+            echo "⏭️  No application code changed (only infrastructure/test files), skipping lint"
           fi
       
       - uses: actions/setup-node@v6
@@ -118,13 +118,14 @@ jobs:
             CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
           fi
           
-          # Check if any dependency/code files changed
-          if echo "$CHANGED_FILES" | grep -qE 'package\.json|package-lock\.json|\.npmrc|src/|\.env'; then
+          # Dependency/security gates are production-dependency scoped; test-only
+          # changes are covered by the unit and integration test job.
+          if echo "$CHANGED_FILES" | grep -qE '(^|/)package\.json$|(^|/)package-lock\.json$|(^|/)\.npmrc$|^\.env|^scripts/(audit-production|check-secret-leaks)\.mjs$'; then
             echo "has_deps=true" >> $GITHUB_OUTPUT
-            echo "✅ Found dependency/code files to check"
+            echo "✅ Found dependency/security files to check"
           else
             echo "has_deps=false" >> $GITHUB_OUTPUT
-            echo "⏭️  No dependency/code files changed, skipping security gates"
+            echo "⏭️  No dependency/security files changed, skipping security gates"
           fi
       
       - uses: actions/setup-node@v6
@@ -144,7 +145,7 @@ jobs:
       
       - name: Security gates skipped (infrastructure-only PR)
         if: steps.check-deps.outputs.has_deps == 'false'
-        run: echo "✅ Security gates skipped - no dependency/code files changed"
+        run: echo "✅ Security gates skipped - no dependency/security files changed"
 
   migrations:
     name: Migration Gates

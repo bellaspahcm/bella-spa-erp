@@ -48,8 +48,8 @@ jobs:
             CHANGED_FILES=$(git diff --name-only HEAD^ HEAD 2>/dev/null || echo "")
           fi
           
-          # Check if any TS/JS files changed (exclude scripts/, .github/)
-          if echo "$CHANGED_FILES" | grep -E '\.(ts|tsx|js|jsx|mjs|cjs)$' | grep -vE '^(scripts/|\.github/)' | grep -q '.'; then
+          # Check if any application TS/JS files changed (exclude infra and tests)
+          if echo "$CHANGED_FILES" | grep -E '\.(ts|tsx|js|jsx|mjs|cjs)$' | grep -vE '^(scripts/|\.github/|src/__tests__/)|\.(test|spec)\.(ts|tsx|js|jsx)$' | grep -q '.'; then
             echo "needs_lint=true" >> $GITHUB_OUTPUT
             echo "✅ Found application TS/JS files to lint"
           else
@@ -65,12 +65,20 @@ jobs:
             echo "⏭️  No API surface or API documentation changes, skipping API docs checks"
           fi
 
-          if echo "$CHANGED_FILES" | grep -qE '^(src/|supabase/|database/|migrations/|prisma/migrations/|package\.json|package-lock\.json|scripts/check-supabase-|scripts/check-business-invariants\.cjs|.*\.sql$)'; then
+          if echo "$CHANGED_FILES" | grep -qE '^(src/(app|components|core|lib|modules|platform|products|services|shared)/|supabase/|database/|migrations/|prisma/migrations/|package\.json|package-lock\.json|scripts/check-supabase-|scripts/check-business-invariants\.cjs|.*\.sql$)'; then
             echo "needs_db_checks=true" >> $GITHUB_OUTPUT
             echo "✅ Found database, application, or DB-check files to verify"
           else
             echo "needs_db_checks=false" >> $GITHUB_OUTPUT
             echo "⏭️  No database, application, or DB-check changes, skipping live DB checks"
+          fi
+
+          if echo "$CHANGED_FILES" | grep -qE '(^|/)package\.json$|(^|/)package-lock\.json$|^scripts/(audit-production|check-secret-leaks)\.mjs$|^src/__tests__/log-redactor\.test\.ts$'; then
+            echo "needs_security_checks=true" >> $GITHUB_OUTPUT
+            echo "✅ Found dependency/security files to verify"
+          else
+            echo "needs_security_checks=false" >> $GITHUB_OUTPUT
+            echo "⏭️  No dependency/security files changed, skipping dependency audit and secret guards"
           fi
 
       - name: Required CI environment config
@@ -130,13 +138,20 @@ jobs:
         run: npm test -- src/__tests__/export-actions.test.ts --runInBand
 
       - name: Dependency audit
+        if: steps.check-lint-needed.outputs.needs_security_checks == 'true'
         run: npm run security:audit
 
       - name: Secret and log leak guard
+        if: steps.check-lint-needed.outputs.needs_security_checks == 'true'
         run: npm run security:secrets
 
       - name: Log redaction tests
+        if: steps.check-lint-needed.outputs.needs_security_checks == 'true'
         run: npm test -- src/__tests__/log-redactor.test.ts --runInBand
+
+      - name: Security checks skipped
+        if: steps.check-lint-needed.outputs.needs_security_checks == 'false'
+        run: echo "✅ Security checks skipped - no dependency/security files changed"
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium

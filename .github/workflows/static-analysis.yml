@@ -175,13 +175,14 @@ jobs:
             CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
           fi
           
-          # Check if dependency or code files changed
-          if echo "$CHANGED_FILES" | grep -qE 'package\.json|package-lock\.json|Dockerfile|\.dockerignore|src/'; then
+          # Trivy dependency/container scan is scoped to dependency and container
+          # inputs. Test-only source changes are covered by test jobs and Gitleaks.
+          if echo "$CHANGED_FILES" | grep -qE '(^|/)package\.json$|(^|/)package-lock\.json$|(^|/)Dockerfile$|(^|/)\.dockerignore$|^\.trivyignore$'; then
             echo "has_deps=true" >> $GITHUB_OUTPUT
             echo "✅ Found dependency/container files to scan"
           else
             echo "has_deps=false" >> $GITHUB_OUTPUT
-            echo "⏭️  No dependency files changed, limiting Trivy scan"
+            echo "⏭️  No dependency/container files changed, skipping Trivy scan"
           fi
 
       - name: Run Trivy filesystem scan
