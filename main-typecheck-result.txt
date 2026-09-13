@@ -1,0 +1,8 @@
+npm error Missing script: "typecheck"
+npm error
+npm error Did you mean this?
+npm error   npm run type-check # run the "type-check" package script
+npm error
+npm error To see a list of scripts, run:
+npm error   npm run
+npm error A complete log of this run can be found in: D:\.npm-cache\_logs\2026-09-13T03_49_04_684Z-debug-0.log
