@@ -30,6 +30,9 @@ export type EnrollmentType =
 /**
  * Student - represents academic role of a Person
  * References Person for identity (name, DOB, contacts)
+ * 
+ * R3 CUTOVER: Added party_id (canonical identity)
+ * R5.3: personId marked @deprecated (legacy backfill, non-canonical)
  */
 export interface Student {
   // Primary key
@@ -38,8 +41,16 @@ export interface Student {
   // Tenant isolation
   tenantId: string;
   
-  // Person reference (identity aggregate root)
-  personId: string; // Foreign key to persons table
+  // Party reference (canonical identity) — R3 NEW
+  partyId?: string; // Foreign key to party_parties table
+  
+  /**
+   * Person reference (LEGACY backfill — non-canonical)
+   * @deprecated Use partyId for canonical identity. This field retained for legacy data backfill only.
+   * Production code should NOT rely on this field. Removal planned: R6+.
+   * See: E0.1A-R Identity Remediation (R5.3)
+   */
+  personId: string; // Foreign key to persons table (legacy)
   
   // Student-specific fields
   studentCode: string;      // Unique identifier (e.g., "EDU-2024-001")
@@ -74,10 +85,20 @@ export interface Student {
 
 /**
  * Create Student Request
+ * R3 CUTOVER: Added partyId (canonical), kept personId (legacy compatibility)
+ * R5.3: personId marked @deprecated (compatibility bridge only)
  */
 export interface CreateStudentRequest {
   tenantId: string;
-  personId: string;         // Must reference existing Person
+  partyId?: string;         // NEW: Canonical Party identity (post-R3)
+  
+  /**
+   * @deprecated Legacy Person FK compatibility. Production code should use partyId instead.
+   * Backfilled automatically for legacy data. Removal planned: R6+.
+   * See: E0.1A-R Identity Remediation (R5.3)
+   */
+  personId: string;
+  
   studentCode: string;
   academicStatus: AcademicStatus;
   enrollmentType: EnrollmentType;
@@ -138,6 +159,7 @@ export interface StudentWithPerson extends Student {
 export interface StudentsTableRow {
   student_id: string;
   tenant_id: string;
+  party_id: string | null;  // R3 NEW: canonical identity
   person_id: string;
   student_code: string;
   academic_status: AcademicStatus;
@@ -162,6 +184,7 @@ export interface StudentsTableRow {
 export interface StudentsTableInsert {
   student_id?: string;
   tenant_id: string;
+  party_id?: string | null; // R3 NEW: canonical identity
   person_id: string;
   student_code: string;
   academic_status: AcademicStatus;

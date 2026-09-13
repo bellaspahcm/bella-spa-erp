@@ -15,6 +15,49 @@ export interface ProductResult {
   error?: string;
 }
 
+export async function createProductAction(
+  projectId: string,
+  data: {
+    product_code: string;
+    product_type: 'apartment' | 'townhouse' | 'shophouse' | 'villa' | 'land_plot' | 'office';
+    status?: 'available' | 'booked' | 'deposited' | 'contracted' | 'paid' | 'handed_over' | 'cancelled';
+    area?: number | null;
+    unit_price?: number | null;
+    block?: string | null;
+    floor?: string | null;
+  }
+): Promise<ProductResult> {
+  try {
+    const supabase = await createClient();
+    const user = await getCurrentUser();
+
+    if (!user || !user.tenant_id) {
+      return { success: false, error: 'Unauthorized: Missing tenant context' };
+    }
+    if (!projectId) {
+      return { success: false, error: 'Project ID is required' };
+    }
+
+    const product = await ProductService.createProduct(
+      supabase,
+      user.tenant_id,
+      projectId,
+      data
+    );
+
+    revalidatePath('/dashboard/real-estate/apartments');
+    revalidatePath(`/dashboard/real-estate/projects/${projectId}`);
+
+    return { success: true, data: product };
+  } catch (error) {
+    console.error('[productActions] Error in createProductAction:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'System error'
+    };
+  }
+}
+
 export async function fetchProductsAction(
   projectId: string
 ): Promise<ProductResult> {

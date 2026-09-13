@@ -14,21 +14,34 @@
 import { StudentAggregate } from './student.aggregate';
 import { StudentRepository } from './student.repository';
 import { Student, CreateStudentRequest, UpdateStudentRequest } from '../shared-kernel/types';
-import { PersonRepository } from '@/platform/host/person/person.repository';
+import { PartyRepository } from '@/platform/host/party/party.repository';  // R3 NEW
+import { PersonRepository } from '@/platform/host/person/person.repository';  // LEGACY
 import { createClient } from '@/lib/supabase-server';
 
 export class StudentService {
   /**
    * Create new student
-   * Validates Person exists before creating Student
+   * R3: Validates Party exists (canonical identity)
+   * LEGACY: Falls back to Person validation if partyId not provided
    */
   static async createStudent(request: CreateStudentRequest): Promise<Student> {
-    // Validate Person exists (aggregate root must exist first)
     const supabase = await createClient();
-    const personRepo = new PersonRepository(supabase);
-    const person = await personRepo.findById(request.personId, request.tenantId);
-    if (!person) {
-      throw new Error(`Person with ID ${request.personId} does not exist`);
+
+    // R3: Validate Party if partyId provided
+    if (request.partyId) {
+      const partyRepo = new PartyRepository(supabase);
+      const validation = await partyRepo.validatePartyType(request.partyId, request.tenantId, 'person');
+      
+      if (!validation.valid) {
+        throw new Error(validation.error || `Party validation failed`);
+      }
+    } else {
+      // LEGACY: Validate Person (compatibility path during R3-R5)
+      const personRepo = new PersonRepository(supabase);
+      const person = await personRepo.findById(request.personId, request.tenantId);
+      if (!person) {
+        throw new Error(`Person with ID ${request.personId} does not exist`);
+      }
     }
 
     // Create aggregate (business logic + validation)
@@ -54,7 +67,15 @@ export class StudentService {
   }
 
   /**
-   * Get students by person ID
+   * Get students by party ID (R3 NEW — canonical query)
+   */
+  static async getStudentsByPartyId(partyId: string, tenantId: string): Promise<Student[]> {
+    return await StudentRepository.findByPartyId(partyId, tenantId);
+  }
+
+  /**
+   * Get students by person ID (LEGACY — deprecated)
+   * @deprecated Use getStudentsByPartyId() instead
    */
   static async getStudentsByPersonId(personId: string, tenantId: string): Promise<Student[]> {
     return await StudentRepository.findByPersonId(personId, tenantId);

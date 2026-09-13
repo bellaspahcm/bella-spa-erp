@@ -1,0 +1,421 @@
+---
+name: Branch Protection & Reconciliation
+
+on:
+  schedule:
+    # Daily at midnight UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  # Job 1: Daily Branch Reconciliation
+  reconcile-branches:
+    name: Branch Reconciliation
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Fetch all branches
+        run: |
+          git fetch --all --prune
+          git branch -r
+      
+      - name: Run branch reconciliation
+        id: reconcile
+        run: |
+          node scripts/branch-reconciliation.js
+          echo "report_generated=true" >> $GITHUB_OUTPUT
+        continue-on-error: true
+      
+      - name: Upload reconciliation report
+        if: steps.reconcile.outputs.report_generated == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: branch-reconciliation-report
+          path: BRANCH_RECONCILIATION_REPORT.md
+          retention-days: 30
+      
+      - name: Create issue for stale branches
+        if: failure() && steps.reconcile.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('BRANCH_RECONCILIATION_REPORT.md', 'utf8');
+            
+            // Check if issue already exists
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'branch-reconciliation'
+            });
+            
+            if (issues.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '⚠️ Stale Branches Detected - Action Required',
+                body: `## Branch Reconciliation Alert\n\n${report}\n\n**Action Required:** Review and cleanup stale branches.\n\n**Workflow Run:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+                labels: ['branch-reconciliation', 'maintenance']
+              });
+            }
+      
+      - name: Comment on existing issue
+        if: failure() && steps.reconcile.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('BRANCH_RECONCILIATION_REPORT.md', 'utf8');
+            
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'branch-reconciliation'
+            });
+            
+            if (issues.data.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issues.data[0].number,
+                body: `## Updated Reconciliation Report (${new Date().toISOString().split('T')[0]})\n\n${report}\n\n**Workflow Run:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+              });
+            }
+
+  # Job 2: PR Scope Validation
+  validate-pr-scope:
+    name: Validate PR Scope
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          files_separator: '\n'
+      
+      - name: Analyze PR scope
+        id: scope-check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const changedFiles = `${{ steps.changed-files.outputs.all_changed_files }}`.split('\n').filter(Boolean);
+            const fileCount = changedFiles.length;
+            
+            // Detect scopes
+            const scopes = new Set();
+            const scopePatterns = {
+              'Platform Healthcare': /^src\/platform\/healthcare\//,
+              'Platform Logistics': /^src\/platform\/logistics\//,
+              'Platform Identity': /^src\/platform\/identity\//,
+              'Platform Finance': /^src\/platform\/finance\//,
+              'Platform Org-Unit': /^src\/platform\/org-unit\//,
+              'Product English Center': /^src\/products\/bella-english-center\//,
+              'Product Bella Land': /^src\/products\/bella-land\//,
+              'Migrations': /^supabase\/migrations\//,
+              'Docs': /^docs\//,
+              'Scripts': /^scripts\//,
+              'Config': /^(\.github|\.kiro|tsconfig|package\.json)/
+            };
+            
+            changedFiles.forEach(file => {
+              for (const [scope, pattern] of Object.entries(scopePatterns)) {
+                if (pattern.test(file)) {
+                  scopes.add(scope);
+                }
+              }
+            });
+            
+            const scopeList = Array.from(scopes);
+            
+            // Validation
+            let status = '✅ PASS';
+            let warnings = [];
+            let errors = [];
+            
+            // Check 1: File count
+            if (fileCount > 100) {
+              warnings.push(`⚠️ **PR VERY LARGE:** ${fileCount} files changed (limit: 100)`);
+              warnings.push(`⚠️ **ACTION REQUIRED:** Provide justification in PR description for large file count`);
+              warnings.push(`⚠️ Valid exceptions: large migrations, generated code, dependency-coupled changes`);
+              // Note: Changed from hard-block to warning to allow justified exceptions
+              // Requires explicit review approval but not auto-blocked
+            } else if (fileCount > 50) {
+              warnings.push(`⚠️ **Large PR:** ${fileCount} files changed (warning threshold: 50)`);
+            }
+            
+            // Check 2: Multi-scope
+            const productScopes = scopeList.filter(s => s.startsWith('Product'));
+            const platformScopes = scopeList.filter(s => s.startsWith('Platform') && !s.includes('Org-Unit'));
+            
+            if (productScopes.length > 1) {
+              errors.push(`❌ **MULTI-PRODUCT PR:** ${productScopes.join(', ')}`);
+              status = '❌ BLOCKED';
+            }
+            
+            if (platformScopes.length > 2) {
+              warnings.push(`⚠️ **Multiple Platform Layers:** ${platformScopes.join(', ')}`);
+              warnings.push(`⚠️ If dependency-coupled, provide justification in PR description`);
+            }
+            
+            // Check combined Platform + Product
+            if (platformScopes.length > 0 && productScopes.length > 0) {
+              warnings.push(`⚠️ **Platform + Product in same PR:** ${[...platformScopes, ...productScopes].join(', ')}`);
+              warnings.push(`⚠️ Verify: Are these dependency-coupled? If yes, document in PR description. If no, split into separate PRs.`);
+            }
+            
+            // Check 3: Branch naming
+            const branchName = context.payload.pull_request.head.ref;
+            const validPrefixes = ['platform/', 'product/', 'fix/', 'docs/', 'chore/'];
+            const hasValidPrefix = validPrefixes.some(prefix => branchName.startsWith(prefix));
+            
+            if (!hasValidPrefix && !['main', 'master'].includes(branchName)) {
+              warnings.push(`⚠️ **Branch naming:** Use prefix like platform/, product/, fix/`);
+            }
+            
+            // Build report
+            let report = `## PR Scope Analysis\n\n`;
+            report += `**Status:** ${status}\n`;
+            report += `**Branch:** \`${branchName}\`\n`;
+            report += `**Files Changed:** ${fileCount}\n`;
+            report += `**Scopes Detected:** ${scopeList.length > 0 ? scopeList.join(', ') : 'None'}\n\n`;
+            
+            if (errors.length > 0) {
+              report += `### ❌ Errors (Must Fix)\n\n`;
+              errors.forEach(err => report += `${err}\n`);
+              report += `\n`;
+            }
+            
+            if (warnings.length > 0) {
+              report += `### ⚠️ Warnings\n\n`;
+              warnings.forEach(warn => report += `${warn}\n`);
+              report += `\n`;
+            }
+            
+            if (errors.length === 0 && warnings.length === 0) {
+              report += `### ✅ All Checks Passed\n\n`;
+              report += `- File count within limits\n`;
+              report += `- Single scope detected\n`;
+              report += `- Clean PR structure\n\n`;
+            }
+            
+            report += `---\n\n`;
+            report += `**Changed Files by Scope:**\n\n`;
+            
+            const filesByScope = {};
+            changedFiles.forEach(file => {
+              let matched = false;
+              for (const [scope, pattern] of Object.entries(scopePatterns)) {
+                if (pattern.test(file)) {
+                  if (!filesByScope[scope]) filesByScope[scope] = [];
+                  filesByScope[scope].push(file);
+                  matched = true;
+                  break;
+                }
+              }
+              if (!matched) {
+                if (!filesByScope['Other']) filesByScope['Other'] = [];
+                filesByScope['Other'].push(file);
+              }
+            });
+            
+            for (const [scope, files] of Object.entries(filesByScope)) {
+              report += `**${scope}** (${files.length} files)\n`;
+              files.slice(0, 10).forEach(f => report += `- \`${f}\`\n`);
+              if (files.length > 10) {
+                report += `- ... and ${files.length - 10} more\n`;
+              }
+              report += `\n`;
+            }
+            
+            report += `---\n\n`;
+            report += `📖 **Reference:** [Git Workflow Constitution](docs/architecture/GIT_WORKFLOW_CONSTITUTION.md)\n`;
+            
+            // Output
+            core.setOutput('status', status);
+            core.setOutput('report', report);
+            core.setOutput('has_errors', errors.length > 0);
+            
+            return { status, fileCount, scopes: scopeList, errors, warnings };
+      
+      - name: Comment PR with scope analysis
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const report = `${{ steps.scope-check.outputs.report }}`;
+            
+            // Find existing comment
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number
+            });
+            
+            const botComment = comments.data.find(c => 
+              c.user.type === 'Bot' && c.body.includes('PR Scope Analysis')
+            );
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: report
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body: report
+              });
+            }
+      
+      - name: Block PR if errors detected
+        if: steps.scope-check.outputs.has_errors == 'true'
+        run: |
+          echo "❌ PR blocked due to scope violations"
+          echo "See PR comment for details"
+          exit 1
+      
+      - name: Set status check
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          script: |
+            const status = '${{ steps.scope-check.outputs.status }}';
+            const state = status.includes('BLOCKED') ? 'failure' : 'success';
+            
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.payload.pull_request.head.sha,
+              state: state,
+              context: 'PR Scope Validation',
+              description: status,
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            });
+
+  # Job 3: Auto-cleanup merged branches
+  cleanup-merged-branches:
+    name: Cleanup Merged Branches
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Detect merged branches
+        id: detect-merged
+        run: |
+          git fetch --all --prune
+          
+          # Get all merged remote branches (excluding main/master)
+          merged_branches=$(git branch -r --merged origin/main | grep -v 'HEAD' | grep -v 'main' | grep -v 'master' | sed 's/origin\///' | tr -d ' ')
+          
+          echo "Merged branches:"
+          echo "$merged_branches"
+          
+          # Save to file
+          echo "$merged_branches" > merged_branches.txt
+          
+          count=$(echo "$merged_branches" | grep -c . || echo 0)
+          echo "merged_count=$count" >> $GITHUB_OUTPUT
+      
+      - name: Delete merged branches
+        if: steps.detect-merged.outputs.merged_count > 0
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const mergedBranches = fs.readFileSync('merged_branches.txt', 'utf8')
+              .split('\n')
+              .filter(Boolean);
+            
+            console.log(`Found ${mergedBranches.length} merged branches to delete`);
+            
+            const deleted = [];
+            const failed = [];
+            
+            for (const branch of mergedBranches) {
+              try {
+                // Skip if branch is protected
+                if (['main', 'master', 'develop', 'staging', 'production'].includes(branch)) {
+                  console.log(`Skipping protected branch: ${branch}`);
+                  continue;
+                }
+                
+                await github.rest.git.deleteRef({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ref: `heads/${branch}`
+                });
+                
+                console.log(`✅ Deleted: ${branch}`);
+                deleted.push(branch);
+              } catch (error) {
+                console.log(`❌ Failed to delete ${branch}: ${error.message}`);
+                failed.push({ branch, error: error.message });
+              }
+            }
+            
+            // Create summary
+            let summary = `## Branch Cleanup Summary\n\n`;
+            summary += `**Date:** ${new Date().toISOString().split('T')[0]}\n\n`;
+            
+            if (deleted.length > 0) {
+              summary += `### ✅ Deleted Branches (${deleted.length})\n\n`;
+              deleted.forEach(b => summary += `- \`${b}\`\n`);
+              summary += `\n`;
+            }
+            
+            if (failed.length > 0) {
+              summary += `### ❌ Failed to Delete (${failed.length})\n\n`;
+              failed.forEach(f => summary += `- \`${f.branch}\`: ${f.error}\n`);
+              summary += `\n`;
+            }
+            
+            if (deleted.length === 0 && failed.length === 0) {
+              summary += `No merged branches to clean up.\n`;
+            }
+            
+            fs.writeFileSync('cleanup_summary.md', summary);
+            console.log(summary);
+      
+      - name: Upload cleanup summary
+        if: steps.detect-merged.outputs.merged_count > 0
+        uses: actions/upload-artifact@v4
+        with:
+          name: branch-cleanup-summary
+          path: cleanup_summary.md
+          retention-days: 90

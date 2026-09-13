@@ -28,6 +28,9 @@ export class PropertyUnitRepository {
       throw new Error(`DATABASE_ERROR: Failed to load property unit: ${error.message}`);
     }
 
+    // Map DB status to domain enum (booked → held)
+    const domainStatus = (data.status === 'booked' ? 'held' : data.status) as PropertyUnitStatus;
+
     return new PropertyUnit({
       id: data.id,
       tenantId: data.tenant_id,
@@ -37,19 +40,24 @@ export class PropertyUnitRepository {
       unitCode: (data as any).unit_code || data.product_code || '',
       area: Number(data.area || 0),
       unitPrice: Number(data.unit_price || 0),
-      status: (data.status as PropertyUnitStatus) || 'available',
+      status: domainStatus || 'available',
       ownerName: data.owner_name || null
     });
   }
 
   /**
    * Saves the state of a PropertyUnit back to the database.
+   * Maps domain status to DB enum (held → booked).
    */
   async save(supabase: SupabaseClient<Database>, unit: PropertyUnit): Promise<void> {
+    // Map domain status to DB enum
+    // Domain uses 'held' as canonical, but DB enum only has 'booked'
+    const dbStatus = unit.status === 'held' ? 'booked' : unit.status;
+    
     const { error } = await supabase
       .from('real_estate_products')
       .update({
-        status: unit.status,
+        status: dbStatus,
         owner_name: unit.ownerName,
         updated_at: new Date().toISOString()
       })
@@ -76,17 +84,22 @@ export class PropertyUnitRepository {
       throw new Error(`DATABASE_ERROR: Failed to fetch products for project: ${error.message}`);
     }
 
-    return data.map(item => new PropertyUnit({
-      id: item.id,
-      tenantId: item.tenant_id,
-      projectId: item.project_id,
-      productCode: item.product_code || '',
-      productType: (item.product_type as 'apartment' | 'townhouse' | 'shophouse' | 'villa') || 'apartment',
-      unitCode: (item as any).unit_code || item.product_code || '',
-      area: Number(item.area || 0),
-      unitPrice: Number(item.unit_price || 0),
-      status: (item.status as PropertyUnitStatus) || 'available',
-      ownerName: item.owner_name || null
-    }));
+    return data.map(item => {
+      // Map DB status to domain enum (booked → held)
+      const domainStatus = (item.status === 'booked' ? 'held' : item.status) as PropertyUnitStatus;
+      
+      return new PropertyUnit({
+        id: item.id,
+        tenantId: item.tenant_id,
+        projectId: item.project_id,
+        productCode: item.product_code || '',
+        productType: (item.product_type as 'apartment' | 'townhouse' | 'shophouse' | 'villa') || 'apartment',
+        unitCode: (item as any).unit_code || item.product_code || '',
+        area: Number(item.area || 0),
+        unitPrice: Number(item.unit_price || 0),
+        status: domainStatus || 'available',
+        ownerName: item.owner_name || null
+      });
+    });
   }
 }

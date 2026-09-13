@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Users, Phone, Mail, MessageSquare, Building2,
@@ -14,6 +14,10 @@ import {
 import { toast } from "sonner";
 import Link from "next/link";
 import { PremiumSelect } from "@/components/ui/PremiumSelect";
+import {
+  createCustomerAction,
+  fetchCustomersAction,
+} from "@/modules/real_estate/actions/customerActions";
 
 export interface CustomerItem {
   id: string;
@@ -400,9 +404,77 @@ export default function RealEstateCustomersPage() {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>('c-001');
   const [activeTabFilter, setActiveTabFilter] = useState<string>('all');
   const [search, setSearch] = useState<string>('');
+  const [isLoadingCustomers, setIsLoadingCustomers] = useState(false);
+  const [realCustomersCount, setRealCustomersCount] = useState(0);
   
   // Secondary Dropdowns
   const [filterProject, setFilterProject] = useState<string>('all');
+  
+  // Load real customers from database
+  const loadRealCustomers = useCallback(async () => {
+    setIsLoadingCustomers(true);
+    try {
+      const result = await fetchCustomersAction();
+      if (result.success && result.data) {
+        setRealCustomersCount(result.data.length);
+        console.log(`[Customers] Loaded ${result.data.length} real customers from database`);
+      } else {
+        console.error('[Customers] Failed to load:', result.error);
+        toast.error(`Failed to load customers: ${result.error}`);
+      }
+    } catch (err) {
+      console.error('[Customers] Unexpected error:', err);
+      toast.error('Unexpected error loading customers');
+    } finally {
+      setIsLoadingCustomers(false);
+    }
+  }, []);
+  
+  useEffect(() => {
+    loadRealCustomers();
+  }, [loadRealCustomers]);
+  
+  // Handle create customer
+  const handleCreateCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formName.trim()) {
+      toast.error('❌ Customer name is required');
+      return;
+    }
+    
+    if (!formPhone.trim()) {
+      toast.error('❌ Phone number is required');
+      return;
+    }
+    
+    setIsCreatingCustomer(true);
+    
+    try {
+      const result = await createCustomerAction({
+        name: formName.trim(),
+        phone: formPhone.trim(),
+        email: formEmail.trim() || null,
+      });
+      
+      if (result.success) {
+        toast.success('✅ Đã tạo khách hàng thành công!');
+        setShowAddModal(false);
+        setFormName('');
+        setFormPhone('');
+        setFormEmail('');
+        // Reload customers
+        await loadRealCustomers();
+      } else {
+        toast.error(`❌ ${result.error}`);
+      }
+    } catch (err) {
+      console.error('[handleCreateCustomer] Error:', err);
+      toast.error('❌ Unexpected error creating customer');
+    } finally {
+      setIsCreatingCustomer(false);
+    }
+  };
   const [filterSource, setFilterSource] = useState<string>('all');
   const [filterDemand, setFilterDemand] = useState<string>('all');
   const [filterBudget, setFilterBudget] = useState<string>('all');
@@ -414,6 +486,12 @@ export default function RealEstateCustomersPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showReassignModal, setShowReassignModal] = useState(false);
   const [newInteractionNote, setNewInteractionNote] = useState('');
+  
+  // Create Customer Form State
+  const [formName, setFormName] = useState('');
+  const [formPhone, setFormPhone] = useState('');
+  const [formEmail, setFormEmail] = useState('');
+  const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
 
   const selectedCustomer = useMemo(() => {
     return customers.find(c => c.id === selectedCustomerId) || null;
@@ -1181,42 +1259,91 @@ export default function RealEstateCustomersPage() {
                 <button onClick={() => setShowAddModal(false)} className="p-1 text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
               </div>
 
-              <form onSubmit={e => { e.preventDefault(); toast.success('✅ Đã khởi tạo hồ sơ Khách hàng 360° mới!'); setShowAddModal(false); }} className="space-y-3 text-xs">
+              <form onSubmit={handleCreateCustomer} className="space-y-3 text-xs">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Họ và tên *</label>
-                    <input required placeholder="Lê Văn Chánh" className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none" />
+                    <input
+                      required
+                      value={formName}
+                      onChange={e => setFormName(e.target.value)}
+                      placeholder="Lê Văn Chánh"
+                      disabled={isCreatingCustomer}
+                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none disabled:opacity-50"
+                    />
                   </div>
                   <div>
                     <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Số điện thoại *</label>
-                    <input required placeholder="0901 234 567" className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none" />
+                    <input
+                      required
+                      value={formPhone}
+                      onChange={e => setFormPhone(e.target.value)}
+                      placeholder="0901 234 567"
+                      disabled={isCreatingCustomer}
+                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none disabled:opacity-50"
+                    />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Email</label>
+                    <input
+                      type="email"
+                      value={formEmail}
+                      onChange={e => setFormEmail(e.target.value)}
+                      placeholder="example@email.com"
+                      disabled={isCreatingCustomer}
+                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none disabled:opacity-50"
+                    />
+                  </div>
+                  <div>
                     <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Dự án quan tâm</label>
-                    <select className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none">
+                    <select
+                      disabled={isCreatingCustomer}
+                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none disabled:opacity-50"
+                    >
                       <option>Elyse Island</option>
                       <option>Sunrise Residence</option>
                       <option>Lumière Bay</option>
                       <option>Bella Premium</option>
                     </select>
                   </div>
-                  <div>
-                    <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Ngân sách dự kiến</label>
-                    <input placeholder="3.0 – 5.0 tỷ" className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none" />
-                  </div>
                 </div>
 
                 <div>
                   <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Nhu cầu & Ghi chú đặc biệt</label>
-                  <textarea placeholder="VD: Tìm căn view sông, tầng cao, ưu tiên đầu tư..." rows={2} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none resize-none" />
+                  <textarea
+                    placeholder="VD: Tìm căn view sông, tầng cao, ưu tiên đầu tư..."
+                    rows={2}
+                    disabled={isCreatingCustomer}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none resize-none disabled:opacity-50"
+                  />
                 </div>
 
                 <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-                  <button type="button" onClick={() => setShowAddModal(false)} className="px-4 py-2 font-bold bg-slate-100 text-slate-600 rounded-xl">Hủy</button>
-                  <button type="submit" className="px-5 py-2 font-bold bg-blue-600 text-white rounded-xl">Tạo hồ sơ 360°</button>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    disabled={isCreatingCustomer}
+                    className="px-4 py-2 font-bold bg-slate-100 text-slate-600 rounded-xl disabled:opacity-50"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isCreatingCustomer}
+                    className="px-5 py-2 font-bold bg-blue-600 text-white rounded-xl disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {isCreatingCustomer ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        Đang tạo...
+                      </>
+                    ) : (
+                      'Tạo khách hàng'
+                    )}
+                  </button>
                 </div>
               </form>
             </motion.div>

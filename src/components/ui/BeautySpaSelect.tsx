@@ -83,7 +83,7 @@ export const BeautySpaSelect: React.FC<BeautySpaSelectProps> = ({
       >
         <div className="flex items-center gap-2 min-w-0">
           {selectedOption?.icon && (
-            <div className="text-emerald-600 shrink-0">
+            <div className="beauty-spa-select-icon shrink-0">
               {selectedOption.icon}
             </div>
           )}
@@ -149,7 +149,7 @@ export const BeautySpaSelect: React.FC<BeautySpaSelectProps> = ({
                           <span className="truncate">{option.label}</span>
                         </div>
                         {value === option.value && (
-                          <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <Check className="w-4 h-4 beauty-spa-select-check shrink-0" />
                         )}
                       </button>
                     ))}
@@ -174,8 +174,8 @@ export const BeautySpaSelect: React.FC<BeautySpaSelectProps> = ({
                     <div className="flex items-center gap-2 min-w-0">
                       {option.icon && (
                         <div className={cn(
-                          "transition-colors shrink-0",
-                          value === option.value ? "text-emerald-600" : "text-slate-400"
+                          "transition-colors shrink-0 beauty-spa-select-icon",
+                          value === option.value ? "beauty-spa-select-icon-active" : ""
                         )}>
                           {option.icon}
                         </div>
@@ -183,7 +183,7 @@ export const BeautySpaSelect: React.FC<BeautySpaSelectProps> = ({
                       <span className="truncate">{option.label}</span>
                     </div>
                     {value === option.value && (
-                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <Check className="w-4 h-4 beauty-spa-select-check shrink-0" />
                     )}
                   </button>
                 ))

@@ -15,7 +15,6 @@ import { AttendanceContractImpl } from '../contracts/attendance.contract.impl';
 import { AssessmentContractImpl } from '../contracts/assessment.contract.impl';
 import { StudentService } from '../student/student.service';
 import { CourseService } from '../course/course.service';
-import { PersonService } from '@/platform/host/person/person.service';
 import { Course } from '../domain/course.entity';
 import { EducationEngineService } from '../education-engine.service';
 import { SupabaseEducationRepository } from '../repositories/supabase-education.repository';
@@ -39,35 +38,42 @@ describe('Education OS — 11 Automated Verification Gates', () => {
     supabase = createClient(supabaseUrl, supabaseKey);
     eventBus = new MemoryEventBusAdapter();
 
-    // Clean up old test data
-    await supabase.from('edu_assessments').delete().in('tenant_id', [TENANT_A, TENANT_B]);
-    await supabase.from('edu_attendance').delete().in('tenant_id', [TENANT_A, TENANT_B]);
-    await supabase.from('edu_enrollments').delete().in('tenant_id', [TENANT_A, TENANT_B]);
-    await supabase.from('edu_courses').delete().in('tenant_id', [TENANT_A, TENANT_B]);
-    await supabase.from('enrollments').delete().in('tenant_id', [TENANT_A, TENANT_B]);
-    await supabase.from('courses').delete().in('tenant_id', [TENANT_A, TENANT_B]);
-    await supabase.from('students').delete().in('tenant_id', [TENANT_A, TENANT_B]);
-    await supabase.from('persons').delete().in('tenant_id', [TENANT_A, TENANT_B]);
-    await supabase.from('tenants').delete().in('id', [TENANT_A, TENANT_B]);
+    // Clean up old test data (parallel deletion for performance)
+    await Promise.all([
+      supabase.from('edu_assessments').delete().in('tenant_id', [TENANT_A, TENANT_B]),
+      supabase.from('edu_attendance').delete().in('tenant_id', [TENANT_A, TENANT_B]),
+      supabase.from('edu_enrollments').delete().in('tenant_id', [TENANT_A, TENANT_B]),
+      supabase.from('edu_courses').delete().in('tenant_id', [TENANT_A, TENANT_B]),
+      supabase.from('enrollments').delete().in('tenant_id', [TENANT_A, TENANT_B]),
+      supabase.from('courses').delete().in('tenant_id', [TENANT_A, TENANT_B]),
+      supabase.from('students').delete().in('tenant_id', [TENANT_A, TENANT_B]),
+      supabase.from('persons').delete().in('tenant_id', [TENANT_A, TENANT_B]),
+      supabase.from('party_parties').delete().in('tenant_id', [TENANT_A, TENANT_B]),
+      supabase.from('tenants').delete().in('id', [TENANT_A, TENANT_B]),
+    ]);
 
     // Seed tenants
     await supabase.from('tenants').upsert([
       { id: TENANT_A, name: 'Tenant School A', status: 'active' },
       { id: TENANT_B, name: 'Tenant Training B', status: 'active' },
     ]);
-  });
+  }, 30000); // 30 second timeout for DB integration setup
 
   afterAll(async () => {
-    await supabase.from('edu_assessments').delete().in('tenant_id', [TENANT_A, TENANT_B]);
-    await supabase.from('edu_attendance').delete().in('tenant_id', [TENANT_A, TENANT_B]);
-    await supabase.from('edu_enrollments').delete().in('tenant_id', [TENANT_A, TENANT_B]);
-    await supabase.from('edu_courses').delete().in('tenant_id', [TENANT_A, TENANT_B]);
-    await supabase.from('enrollments').delete().in('tenant_id', [TENANT_A, TENANT_B]);
-    await supabase.from('courses').delete().in('tenant_id', [TENANT_A, TENANT_B]);
-    await supabase.from('students').delete().in('tenant_id', [TENANT_A, TENANT_B]);
-    await supabase.from('persons').delete().in('tenant_id', [TENANT_A, TENANT_B]);
-    await supabase.from('tenants').delete().in('id', [TENANT_A, TENANT_B]);
-  });
+    // Cleanup (parallel deletion)
+    await Promise.all([
+      supabase.from('edu_assessments').delete().in('tenant_id', [TENANT_A, TENANT_B]),
+      supabase.from('edu_attendance').delete().in('tenant_id', [TENANT_A, TENANT_B]),
+      supabase.from('edu_enrollments').delete().in('tenant_id', [TENANT_A, TENANT_B]),
+      supabase.from('edu_courses').delete().in('tenant_id', [TENANT_A, TENANT_B]),
+      supabase.from('enrollments').delete().in('tenant_id', [TENANT_A, TENANT_B]),
+      supabase.from('courses').delete().in('tenant_id', [TENANT_A, TENANT_B]),
+      supabase.from('students').delete().in('tenant_id', [TENANT_A, TENANT_B]),
+      supabase.from('persons').delete().in('tenant_id', [TENANT_A, TENANT_B]),
+      supabase.from('party_parties').delete().in('tenant_id', [TENANT_A, TENANT_B]),
+      supabase.from('tenants').delete().in('id', [TENANT_A, TENANT_B]),
+    ]);
+  }, 30000); // 30 second timeout for cleanup
 
   /**
    * Gate 1: Architecture Compliance
@@ -129,25 +135,54 @@ describe('Education OS — 11 Automated Verification Gates', () => {
       expect(courseDto.id).toBeDefined();
       expect(courseDto.courseCode).toBe('CS202');
 
-      // Create a Person profile first
-      const personService = new PersonService(supabase);
-      const personRes = await personService.createPerson({
-        tenantId: TENANT_A,
-        firstName: 'Alice',
-        lastName: 'Wonderland',
-        dateOfBirth: '2000-01-01',
-        gender: 'female',
-        createdBy: TEST_USER,
-      });
-      expect(personRes.success).toBe(true);
+      // R6.5: Create Party fixture (migrated from Person)
+      const { data: party, error: partyError } = await supabase
+        .from('party_parties')
+        .insert({
+          tenant_id: TENANT_A,
+          party_type: 'person',
+          display_name: 'Alice Wonderland',
+          created_by: TEST_USER,
+        })
+        .select()
+        .single();
+      
+      if (partyError || !party) {
+        throw new Error(`Party creation failed: ${partyError?.message}`);
+      }
+
+      // R6.5: Create minimal Person record for FK compatibility
+      const { data: person, error: personError } = await supabase
+        .from('persons')
+        .insert({
+          id: party.id, // Use same ID as Party for consistency
+          tenant_id: TENANT_A,
+          first_name: 'Alice',
+          last_name: 'Wonderland',
+          date_of_birth: '2000-01-01',
+          gender: 'female',
+          created_by: TEST_USER,
+        })
+        .select()
+        .single();
+      
+      if (personError) {
+        console.error('Person creation error:', personError);
+        throw new Error(`Person FK compatibility record creation failed: ${personError.message}`);
+      }
+      if (!person || !person.id) {
+        throw new Error('Person record was not created (no data returned)');
+      }
+
+      console.log(`Created Person with ID: ${person.id}, Party ID: ${party.id}`);
 
       // Register Student through contract
       const studentDto = await studentContract.registerStudent({
         tenantId: TENANT_A,
-        partyId: personRes.data!.personId,
+        partyId: party.id,
         studentCode: 'EDU-2026-001',
       });
-      expect(studentDto.partyId).toBe(personRes.data!.personId);
+      expect(studentDto.partyId).toBe(party.id);
       expect(studentDto.studentCode).toBe('EDU-2026-001');
     });
   });
@@ -303,19 +338,45 @@ describe('Education OS — 11 Automated Verification Gates', () => {
    */
   describe('Gate 8: Temporal Provenance', () => {
     it('should log academic status changes inside platform timeline primitive', async () => {
-      const personService = new PersonService(supabase);
-      const person = await personService.createPerson({
-        tenantId: TENANT_A,
-        firstName: 'Charlie',
-        lastName: 'Brown',
-        dateOfBirth: '2000-03-03',
-        gender: 'male',
-        createdBy: TEST_USER,
-      });
+      // R6.5: Create Party fixture (migrated from Person)
+      const { data: party, error: partyError } = await supabase
+        .from('party_parties')
+        .insert({
+          tenant_id: TENANT_A,
+          party_type: 'person',
+          display_name: 'Charlie Brown',
+          created_by: TEST_USER,
+        })
+        .select()
+        .single();
+      
+      if (partyError || !party) {
+        throw new Error(`Party creation failed: ${partyError?.message}`);
+      }
+
+      // R6.5: Create minimal Person record for FK compatibility
+      const { data: person, error: personError } = await supabase
+        .from('persons')
+        .insert({
+          id: party.id,
+          tenant_id: TENANT_A,
+          first_name: 'Charlie',
+          last_name: 'Brown',
+          date_of_birth: '2000-03-03',
+          gender: 'male',
+          created_by: TEST_USER,
+        })
+        .select()
+        .single();
+      
+      if (personError || !person) {
+        throw new Error(`Person FK compatibility record creation failed: ${personError?.message}`);
+      }
 
       const student = await StudentService.createStudent({
         tenantId: TENANT_A,
-        personId: person.data!.personId,
+        partyId: party.id,
+        personId: party.id, // Legacy compatibility (will be ignored)
         studentCode: 'EDU-2026-999',
         academicStatus: 'enrolled',
         enrollmentType: 'full_time',

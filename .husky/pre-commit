@@ -2,3 +2,19 @@
 # Blocks commits that modify frozen kernel files (E7.1, E7.2, E7.3)
 
 node scripts/architecture/git-pre-commit-guard.js
+
+# Theme Architecture Guard — NO-NEW-DEBT ENFORCEMENT (BLOCKING)
+# Baseline: 108 BLOCK violations allowed (legacy debt)
+# New violations or count increase: BLOCKED
+# Violations removed or unchanged: PASS
+
+echo ""
+echo "🎨 Running Theme Architecture Guard (No-New-Debt Mode)..."
+npm run theme:guard:diff --silent || {
+  echo "❌ Theme guard BLOCKED: New violations introduced or existing count increased."
+  echo "   Run 'npm run theme:guard' to see details."
+  echo "   Fix new violations or run 'npm run theme:guard:update-baseline' if justified."
+  exit 1
+}
+echo "✅ Theme guard PASS: No new debt introduced"
+echo ""

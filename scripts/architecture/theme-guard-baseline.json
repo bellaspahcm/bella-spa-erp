@@ -1,0 +1,13 @@
+{
+  "version": "1.0.0",
+  "date": "2026-09-10",
+  "baseline": {
+    "BROAD_TENANT_SELECTOR": 26,
+    "DUPLICATE_VISUAL_OWNER": 8,
+    "EXCLUSION_CHAIN_SMELL_BLOCK": 74,
+    "EXCLUSION_CHAIN_SMELL_WARN": 12,
+    "TOTAL_BLOCK": 108,
+    "TOTAL_WARN": 12
+  },
+  "violations": []
+}

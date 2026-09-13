@@ -19,6 +19,7 @@ import {
   fetchProductsAction,
   updateProductStatusAction,
   updateProductDetailsAction,
+  createProductAction,
 } from "@/modules/real_estate/actions/productActions";
 import { PremiumSelect } from "@/components/ui/PremiumSelect";
 import { Database } from "@/types/database.types";
@@ -140,6 +141,19 @@ export default function RealEstateApartmentsPage() {
   const [bulkBlock, setBulkBlock] = useState("A");
   const [bulkFloor, setBulkFloor] = useState("18");
 
+  // Create Product Modal States (P2.3 Production UI)
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    product_code: "",
+    product_type: "apartment" as const,
+    block: "",
+    floor: "",
+    area: undefined as number | undefined, // Empty by default - user must input
+    unit_price: undefined as number | undefined, // Empty by default - user must input
+    status: "available" as const,
+  });
+
   const loadInitialData = useCallback(async () => {
     setIsLoading(true);
     const resProjects = await fetchProjectsAction();
@@ -201,6 +215,78 @@ export default function RealEstateApartmentsPage() {
       }
     }
     setUpdatingId(null);
+  }
+
+  // P2.3 Production UI: Create Product via verified hardened path
+  async function handleCreateProduct() {
+    if (!selectedProject) {
+      toast.error("Vui lòng chọn dự án trước");
+      return;
+    }
+
+    if (!createForm.product_code.trim()) {
+      toast.error("Vui lòng nhập mã căn");
+      return;
+    }
+
+    if (createForm.area === undefined || createForm.area <= 0) {
+      toast.error("Vui lòng nhập diện tích lớn hơn 0");
+      return;
+    }
+
+    if (createForm.unit_price === undefined || createForm.unit_price <= 0) {
+      toast.error("Vui lòng nhập đơn giá lớn hơn 0");
+      return;
+    }
+
+    setIsCreating(true);
+
+    try {
+      const result = await createProductAction(selectedProject.id, {
+        product_code: createForm.product_code,
+        product_type: createForm.product_type,
+        status: createForm.status,
+        block: createForm.block || null,
+        floor: createForm.floor || null,
+        area: createForm.area || null,
+        unit_price: createForm.unit_price || null,
+      });
+
+      if (!result.success) {
+        toast.error(result.error || "Không thể tạo căn");
+        setIsCreating(false);
+        return;
+      }
+
+      toast.success(`✅ Tạo căn ${createForm.product_code} thành công`);
+      
+      // Reload products
+      const refreshResult = await fetchProductsAction(selectedProject.id);
+      if (refreshResult.success && refreshResult.data) {
+        const updated = Array.isArray(refreshResult.data) ? refreshResult.data : [refreshResult.data];
+        setProducts(updated);
+        const newProduct = updated.find(p => p.id === result.data?.id);
+        if (newProduct) setSelectedProduct(newProduct);
+      }
+
+      // Reset form and close modal
+      setCreateForm({
+        product_code: "",
+        product_type: "apartment",
+        block: "",
+        floor: "",
+        area: undefined,
+        unit_price: undefined,
+        status: "available",
+      });
+      setShowCreateModal(false);
+
+    } catch (error) {
+      console.error('[P2.3 Production UI] Error:', error);
+      toast.error("Lỗi hệ thống khi tạo căn");
+    } finally {
+      setIsCreating(false);
+    }
   }
 
   // Handle Bulk Import of Real Developer Units
@@ -518,12 +604,21 @@ export default function RealEstateApartmentsPage() {
               </p>
             </div>
 
-            <button
-              onClick={() => setShowBulkImportModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 rounded-xl hover:bg-amber-500/20 transition-all cursor-pointer shadow-2xs"
-            >
-              <Plus className="w-3.5 h-3.5" /> Nhập căn thực tế
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/30 rounded-xl hover:bg-blue-500/20 transition-all cursor-pointer shadow-2xs"
+              >
+                <Plus className="w-3.5 h-3.5" /> Tạo căn mới
+              </button>
+
+              <button
+                onClick={() => setShowBulkImportModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 rounded-xl hover:bg-amber-500/20 transition-all cursor-pointer shadow-2xs"
+              >
+                <Plus className="w-3.5 h-3.5" /> Nhập căn thực tế
+              </button>
+            </div>
           </div>
 
           {/* Dynamic Floor Rows (No static 01..10 columns) */}
@@ -588,20 +683,29 @@ export default function RealEstateApartmentsPage() {
                     Tòa {activeProduct.block || "A"} • Tầng {activeProduct.floor || "18"} • 2 Phòng ngủ
                   </p>
                 </div>
-                <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  Giữ chỗ
-                </span>
+                {(() => {
+                  const statusCfg = STATUS_MAP[activeProduct.status ?? "available"] ?? STATUS_MAP.available;
+                  return (
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border flex items-center gap-1 ${statusCfg.bg} ${statusCfg.text} ${statusCfg.border}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot}`} />
+                      {statusCfg.label}
+                    </span>
+                  );
+                })()}
               </div>
 
               {/* Price & Floorplan Thumbnail */}
               <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800">
                 <div>
                   <p className="text-2xl font-black text-slate-900 dark:text-white">
-                    4.28 tỷ
+                    {activeProduct.unit_price
+                      ? (activeProduct.unit_price / 1_000_000_000).toFixed(2) + ' tỷ'
+                      : '—'}
                   </p>
                   <p className="text-[10px] font-bold text-slate-400">
-                    (~55.9 tr/m²)
+                    {activeProduct.unit_price && activeProduct.area
+                      ? `(~${(activeProduct.unit_price / activeProduct.area / 1_000_000).toFixed(1)} tr/m²)`
+                      : ''}
                   </p>
                 </div>
                 <div className="w-14 h-12 rounded-xl bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[9px] font-bold text-slate-500 border border-slate-300 overflow-hidden">
@@ -637,43 +741,29 @@ export default function RealEstateApartmentsPage() {
                 </div>
               </div>
 
-              {/* Transaction Info Box (Buyer & Timer) */}
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 space-y-3">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Thông tin giao dịch</p>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-xs text-slate-700 dark:text-slate-200">
-                      NT
+              {/* Transaction Info Box (Buyer & Timer) - Only show if product has owner */}
+              {activeProduct.owner_name && (activeProduct.status === 'booked' || activeProduct.status === 'deposited' || activeProduct.status === 'contracted') && (
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 space-y-3">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Thông tin giao dịch</p>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-xs text-slate-700 dark:text-slate-200">
+                        {activeProduct.owner_name.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-slate-900 dark:text-white">{activeProduct.owner_name}</p>
+                        <p className="text-[10px] font-semibold text-slate-400">Khách hàng</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs font-black text-slate-900 dark:text-white">Nguyễn Văn A</p>
-                      <p className="text-[10px] font-semibold text-slate-400">0901 234 567</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[9px] font-bold text-amber-700">Còn giữ</p>
-                    <p className="font-mono text-xs font-black text-amber-600">01:43:26</p>
+                    {activeProduct.status === 'booked' && (
+                      <div className="text-right">
+                        <p className="text-[9px] font-bold text-amber-700">Đang giữ chỗ</p>
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-700">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px]">
-                      TM
-                    </div>
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Trần Minh</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <button className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-100">
-                      <MessageSquare className="w-3.5 h-3.5" />
-                    </button>
-                    <button className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-100">
-                      <Phone className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
+              )}
 
               {/* Primary & Secondary Action Buttons */}
               <div className="space-y-2 pt-2">
@@ -799,6 +889,184 @@ export default function RealEstateApartmentsPage() {
                   <Upload className="w-3.5 h-3.5" /> Khai Báo Căn
                 </button>
               </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* P2.3 Production UI: Create Product Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-lg w-full border border-slate-200 dark:border-slate-800"
+          >
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                    Tạo căn / sản phẩm mới
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Dự án: <span className="font-bold text-slate-700 dark:text-slate-300">{selectedProject?.name}</span>
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  disabled={isCreating}
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors disabled:opacity-50"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+              {/* Product Code */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Mã căn <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={createForm.product_code}
+                  onChange={(e) => setCreateForm({ ...createForm, product_code: e.target.value })}
+                  placeholder="VD: A1-05-01"
+                  disabled={isCreating}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                />
+              </div>
+
+              {/* Product Type */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Loại căn <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={createForm.product_type}
+                  onChange={(e) => setCreateForm({ ...createForm, product_type: e.target.value as any })}
+                  disabled={isCreating}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                >
+                  <option value="apartment">Căn hộ</option>
+                  <option value="townhouse">Nhà phố</option>
+                  <option value="shophouse">Shophouse</option>
+                  <option value="villa">Biệt thự</option>
+                </select>
+              </div>
+
+              {/* Block & Floor */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Block/Tòa
+                  </label>
+                  <input
+                    type="text"
+                    value={createForm.block}
+                    onChange={(e) => setCreateForm({ ...createForm, block: e.target.value })}
+                    placeholder="A, B, C..."
+                    disabled={isCreating}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Tầng
+                  </label>
+                  <input
+                    type="text"
+                    value={createForm.floor}
+                    onChange={(e) => setCreateForm({ ...createForm, floor: e.target.value })}
+                    placeholder="1, 2, 3..."
+                    disabled={isCreating}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                  />
+                </div>
+              </div>
+
+              {/* Area & Price */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Diện tích (m²)
+                  </label>
+                  <input
+                    type="number"
+                    value={createForm.area || ""}
+                    onChange={(e) => setCreateForm({ ...createForm, area: parseFloat(e.target.value) || 0 })}
+                    placeholder="0.00"
+                    disabled={isCreating}
+                    min="0"
+                    step="0.01"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Đơn giá (VNĐ/m²)
+                  </label>
+                  <input
+                    type="number"
+                    value={createForm.unit_price || ""}
+                    onChange={(e) => setCreateForm({ ...createForm, unit_price: parseFloat(e.target.value) || 0 })}
+                    placeholder="0"
+                    disabled={isCreating}
+                    min="0"
+                    step="1000"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                  />
+                </div>
+              </div>
+
+              {/* Status */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Trạng thái
+                </label>
+                <select
+                  value={createForm.status}
+                  onChange={(e) => setCreateForm({ ...createForm, status: e.target.value as any })}
+                  disabled={isCreating}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                >
+                  <option value="available">Khả dụng</option>
+                  <option value="booked">Giữ chỗ</option>
+                  <option value="deposited">Đặt cọc</option>
+                  <option value="contracted">Ký HĐMB</option>
+                  <option value="paid">Đã bán</option>
+                  <option value="handed_over">Bàn giao</option>
+                  <option value="cancelled">Đã hủy</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(false)}
+                disabled={isCreating}
+                className="flex-1 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleCreateProduct}
+                disabled={isCreating || !createForm.product_code.trim()}
+                className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isCreating ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Đang tạo...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-3.5 h-3.5" /> Tạo căn
+                  </>
+                )}
+              </button>
             </div>
           </motion.div>
         </div>

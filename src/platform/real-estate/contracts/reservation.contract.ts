@@ -30,5 +30,5 @@ export interface IReservationContract {
   /**
    * Releases an active reservation, returning status to AVAILABLE.
    */
-  releaseProduct(tenantId: string, productId: string, reservationId: string): Promise<void>;
+  releaseProduct(tenantId: string, productId: string, reservationId: string, userId: string): Promise<void>;
 }

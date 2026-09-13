@@ -4,7 +4,6 @@
 
 import { EnrollmentService } from '../enrollment.service';
 import { StudentService } from '../../student/student.service';
-import { PersonService } from '@/platform/host/person/person.service';
 import { CreateEnrollmentRequest } from '../../shared-kernel/enrollment-types';
 import { createClient } from '@/lib/supabase-server';
 import { TEST_USER_UUID, NON_EXISTENT_UUID, TEST_TENANT_UUID, ensureTestTenantExists, cleanupTestTenant } from '@/platform/__tests__/test-helpers';
@@ -12,7 +11,7 @@ import { TEST_USER_UUID, NON_EXISTENT_UUID, TEST_TENANT_UUID, ensureTestTenantEx
 describe('Enrollment Integration Tests', () => {
   // Use same tenant as Student tests (known to exist)
   const tenantId = '00000000-0000-0000-0000-000000000088';
-  let personId: string;
+  let partyId: string;
   let studentId: string;
   let courseId: string;
   let enrollmentId: string;
@@ -20,32 +19,49 @@ describe('Enrollment Integration Tests', () => {
   beforeAll(async () => {
     // Skip tenant seeding - use existing tenant from environment
     const supabase = await createClient();
-    const personService = new PersonService(supabase);
 
-    // Create Person
-    const personResult = await personService.createPerson({
-      tenantId,
-      firstName: 'Jane',
-      lastName: 'Smith',
-      dateOfBirth: '2001-05-20',
-      gender: 'female',
-      createdBy: TEST_USER_UUID,
-    });
+    // R6.5: Create Party fixture (migrated from Person)
+    const { data: party, error: partyError } = await supabase
+      .from('party_parties')
+      .insert({
+        tenant_id: tenantId,
+        party_type: 'person',
+        display_name: 'Jane Smith',
+        created_by: TEST_USER_UUID,
+      })
+      .select()
+      .single();
     
-    if (!personResult.success) {
-      console.error('Person creation error:', personResult.error);
-      throw new Error(`Person creation failed: ${personResult.error?.message || 'Unknown error'}`);
-    }
-    if (!personResult.data) {
-      throw new Error('Person creation returned no data');
+    if (partyError || !party) {
+      throw new Error(`Party creation failed: ${partyError?.message}`);
     }
     
-    personId = personResult.data.personId;
+    // R6.5: Create minimal Person record for FK compatibility
+    const { data: person, error: personError } = await supabase
+      .from('persons')
+      .insert({
+        id: party.id,
+        tenant_id: tenantId,
+        first_name: 'Jane',
+        last_name: 'Smith',
+        date_of_birth: '2001-05-20',
+        gender: 'female',
+        created_by: TEST_USER_UUID,
+      })
+      .select()
+      .single();
+    
+    if (personError || !person) {
+      throw new Error(`Person FK compatibility record creation failed: ${personError?.message}`);
+    }
+    
+    partyId = party.id;
 
     // Create Student
     const student = await StudentService.createStudent({
       tenantId,
-      personId,
+      partyId,
+      personId: partyId, // Legacy compatibility (will be ignored)
       studentCode: 'EDU-2024-100',
       academicStatus: 'enrolled',
       enrollmentType: 'full_time',
