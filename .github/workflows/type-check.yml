@@ -13,19 +13,61 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if root typecheck files changed
+        id: changes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            CHANGED_FILES=$(git diff --name-only "origin/$GITHUB_BASE_REF"...HEAD)
+          else
+            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD 2>/dev/null || git ls-files)
+          fi
+
+          printf '%s\n' "$CHANGED_FILES"
+
+          NEEDS_ROOT_TYPECHECK=false
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+
+            case "$file" in
+              package.json|package-lock.json|tsconfig.json|next-env.d.ts|next.config.ts|instrumentation.ts|instrumentation-client.ts|sentry.*.ts)
+                NEEDS_ROOT_TYPECHECK=true
+                ;;
+              src/__tests__/*|src/*/__tests__/*|src/**/*.test.ts|src/**/*.test.tsx|src/**/*.spec.ts|src/**/*.spec.tsx)
+                ;;
+              src/*.ts|src/*.tsx|src/**/*.ts|src/**/*.tsx|*.ts|*.tsx|*.mts)
+                NEEDS_ROOT_TYPECHECK=true
+                ;;
+            esac
+          done <<< "$CHANGED_FILES"
+
+          echo "needs_root_typecheck=$NEEDS_ROOT_TYPECHECK" >> "$GITHUB_OUTPUT"
 
       - name: Setup Node.js
+        if: steps.changes.outputs.needs_root_typecheck == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
       - name: Install dependencies
+        if: steps.changes.outputs.needs_root_typecheck == 'true'
         run: npm ci --legacy-peer-deps
 
       - name: Type check
+        if: steps.changes.outputs.needs_root_typecheck == 'true'
         run: npm run type-check
 
       - name: Lint strict
+        if: steps.changes.outputs.needs_root_typecheck == 'true'
         run: npm run lint:strict
         continue-on-error: true
+
+      - name: Root typecheck skipped
+        if: steps.changes.outputs.needs_root_typecheck != 'true'
+        run: echo "Root typecheck skipped because this PR only changes files outside root tsconfig coverage."

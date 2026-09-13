@@ -64,14 +64,57 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Check if unit/integration tests are needed
+        id: check-tests
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            CHANGED_FILES=$(git diff --name-only "origin/$GITHUB_BASE_REF"...HEAD)
+          else
+            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+          fi
+
+          echo "$CHANGED_FILES"
+
+          TEST_FILES=$(echo "$CHANGED_FILES" | grep -E '^(src/__tests__/|tests/).*\.(test|spec)\.(ts|tsx|js|jsx)$' | tr '\n' ' ' || true)
+          if echo "$CHANGED_FILES" | grep -E '\.(ts|tsx|js|jsx|mjs|cjs)$' | grep -vE '^(\.github/|scripts/|src/__tests__/|tests/)|\.(test|spec)\.(ts|tsx|js|jsx)$'; then
+            echo "mode=full" >> "$GITHUB_OUTPUT"
+            echo "✅ Found application code changes; running full unit/integration suite"
+          elif [ -n "$TEST_FILES" ]; then
+            echo "mode=targeted" >> "$GITHUB_OUTPUT"
+            echo "test_files=$TEST_FILES" >> "$GITHUB_OUTPUT"
+            echo "✅ Found changed test files; running targeted test suite"
+          else
+            echo "mode=skip" >> "$GITHUB_OUTPUT"
+            echo "⏭️  No unit/integration test-covered code changed, skipping tests"
+          fi
+
       - uses: actions/setup-node@v6
+        if: steps.check-tests.outputs.mode != 'skip'
         with:
           node-version: '24'
           cache: npm
+
       - run: npm ci
-      - run: npm test -- --runInBand
+        if: steps.check-tests.outputs.mode != 'skip'
+
+      - name: Run full unit and integration suite
+        if: steps.check-tests.outputs.mode == 'full'
+        run: npm test -- --runInBand
         env:
           NODE_ENV: test
+
+      - name: Run targeted changed tests
+        if: steps.check-tests.outputs.mode == 'targeted'
+        run: npm test -- --runInBand ${{ steps.check-tests.outputs.test_files }}
+        env:
+          NODE_ENV: test
+
+      - name: Unit/integration tests skipped
+        if: steps.check-tests.outputs.mode == 'skip'
+        run: echo "✅ Unit/integration tests skipped - no covered code or test files changed"
 
   real-db-e2e:
     name: Real Database Business E2E
