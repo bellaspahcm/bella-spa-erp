@@ -63,8 +63,8 @@ jobs:
             CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
           fi
           
-          # Check if application code changed (not just .github/, docs/, scripts/)
-          if echo "$CHANGED_FILES" | grep -qvE '^(\.github/|docs/|scripts/|\.eslintignore$)'; then
+          # Check if application/src code changed (exclude .github/, docs/, scripts/)
+          if echo "$CHANGED_FILES" | grep -vE '^(\.github/|docs/|scripts/|\.eslintignore$|\.trivyignore$)' | grep -q '.'; then
             echo "has_code=true" >> "$GITHUB_OUTPUT"
             echo "✅ Found application code to scan"
           else

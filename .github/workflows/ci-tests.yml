@@ -33,13 +33,13 @@ jobs:
             CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
           fi
           
-          # Check if any TS/JS files changed
-          if echo "$CHANGED_FILES" | grep -qE '\.(ts|tsx|js|jsx|mjs|cjs)$'; then
+          # Check if any TS/JS files changed (exclude scripts/, .github/)
+          if echo "$CHANGED_FILES" | grep -E '\.(ts|tsx|js|jsx|mjs|cjs)$' | grep -vE '^(scripts/|\.github/)'; then
             echo "has_code=true" >> $GITHUB_OUTPUT
-            echo "✅ Found TS/JS files to lint"
+            echo "✅ Found application TS/JS files to lint"
           else
             echo "has_code=false" >> $GITHUB_OUTPUT
-            echo "⏭️  No TS/JS files changed, skipping lint"
+            echo "⏭️  No application code changed (only infrastructure files), skipping lint"
           fi
       
       - uses: actions/setup-node@v6
