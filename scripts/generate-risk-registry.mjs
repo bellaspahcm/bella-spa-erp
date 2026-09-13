@@ -7,35 +7,19 @@ const workspaceDir = 'd:/Antigravity/Projects/BELLA SPA ERP';
 const matrixPath = path.join(workspaceDir, 'docs/governance/HEALTHCARE_CAPABILITY_RISK_MATRIX.md');
 const seedPath = path.join(workspaceDir, 'supabase/migrations/20260808000003_seed_capability_risk_registry.sql');
 
-// Stable private key for RSA signing
-const PRIVATE_KEY_PEM = `-----BEGIN PRIVATE KEY-----
-MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQD2fTrYc1BZMzkS
-j3FN/9/Jn2QGwDsm3qH0BEty8VrQVJQI2ZLmp6vkcE/JkiAoiWjh04uHZVcwLPfR
-soVC7I2eN1PLzSrtbSHqC+oIq+QpXxZf5dSAsS83YGFeX99djsJJVJsLW+5Rkh3d
-1Z4Jw1UwwYJwDGMRImTrXRM0x1e+t5lys3qlvSN33kiQ85wSF46JKHKRDWDXCTJr
-kLt9aZi8kuiOpiF6d5WcqaqB0o7HsAT1wL5bO8xi1N6ie/DXn5I8XEm2ESGgOEPU
-Bck6szZos4oMp0VHsqesqvJx5tKKBxAWipvLJ/vj6mfZazmkHgKAb08ri6aRppub
-fhDHYWIPAgMBAAECggEAVkONjKMOw6kBmFVLOhkKoO1/fD1adkgENfoqzZdaSP7Q
-sCg1GTQlHFWSFuFlD8rHQgFfG4uD8ABM2r63lKxlA7IpSXIMS/udmuOAjHhb6X61
-veoZbNCVzbOVYAn9iiikJjXN7TPHPBT/Dtvr607JSb7vf3dWVHDNEPIJ/ralJsE6
-xmDKbMZziXaZIF8cdBCHGfwsBVQlgOfKEjs5t5Wip3MYzoeAHf1PKAvNwJ0UIUtq
-KHUtR64KhyVT6fOS4cByQpFv00ua+P+Z9YyuCHoGN73xX75zovekmFZrdKWVIZ7+
-8A1wRSAPo5IbrGWCOyOOk1DmeqUN/6GJVSywP/FygQKBgQD8ctMbAcwrnsmlpM3w
-gJtLtc4GTzuvZitk/6jC1UYy0fPZTg9nsl+LkESJcjUQdtI4UgBndUATx6Qnjs3I
-sJP9mOlOBnRGQ7dKa17TU9zZAtKDAWqiALxwml0mSEwUh9P2f0sgZfY+MuwdBOAs
-/pf1RN2nj1QlqZcukneJxHYpKQKBgQD59PFrXWQP3lMzf2MMl9vbfJ08SmOnYkC0
-Za+Vguknn41JoY5vyV9qVauxwQG3H6vvmU/EfqKsIwFEWEMhkyQAeDDKhckqPnkV
-Y5PmwPoYn5q+B2Y1yhhUXAaADTKyf7KxIT6V4unlp1SOh70oUeG8QeoffV8kWQUO
-qwXuXBpAdwKBgQDPoGzKAI94rM8yIjqSfGO9QBjjjZUMLF6yYabeH2Tt9Um2RwJa
-ihUVByGnXbwQ/3jkg2T7si5yVjdHpabQUZJV98aiuqI1DAqa9XX3Hzk7bpvOzYJz
-HWHexsan7rxMAm6thII4ckO1YlJZh6IMv5QhUHNxFWvi0fmafzI7p857CQKBgQCf
-1CIzFuqOwwjMmx4IxWnONSaNkLucIlVhhMv7fFP+BCXh+S4NCOS8J7+7z8B7CgN1
-F8FL0fXOwCtlOlLiuyWAL1pzhYyWOJBQPvYpzSeeayAVdsHCj1FzT8zQQKA0RzdJ
-0Aom6YvKT27gHKe1inYfXL6KGC6oHUwAjxchzT70DQKBgQDdAXcRVcVieZh0Zato
-+OTfYVnnB8nURhhzOgGqPoq/M5qMLP1ZETo6ePygnf3qUICHSmSS/jeMenWlX1ep
-d09QI+KB4M8tni4JEJqfdFQEMyEKGVyAgN8HuzAJFc98vXmeMyYfh8/oRkEww+3p
-CZ9L3UxLxjkGt4Ps5RaTOG9oTA==
------END PRIVATE KEY-----`;
+function loadSigningPrivateKey() {
+  if (process.env.CAPABILITY_RISK_REGISTRY_PRIVATE_KEY_PEM) {
+    return process.env.CAPABILITY_RISK_REGISTRY_PRIVATE_KEY_PEM.replace(/\\n/g, '\n');
+  }
+
+  if (process.env.CAPABILITY_RISK_REGISTRY_PRIVATE_KEY_PATH) {
+    return fs.readFileSync(process.env.CAPABILITY_RISK_REGISTRY_PRIVATE_KEY_PATH, 'utf8');
+  }
+
+  throw new Error(
+    'Missing signing key. Set CAPABILITY_RISK_REGISTRY_PRIVATE_KEY_PEM or CAPABILITY_RISK_REGISTRY_PRIVATE_KEY_PATH.'
+  );
+}
 
 function generateRegistry() {
   console.log('[Registry Generator] Starting...');
@@ -54,7 +38,7 @@ function generateRegistry() {
   const signer = crypto.createSign('sha256');
   signer.update(matrixHash);
   signer.end();
-  const signature = signer.sign(PRIVATE_KEY_PEM, 'hex');
+  const signature = signer.sign(loadSigningPrivateKey(), 'hex');
   console.log(`[Registry Generator] Cryptographic Signature generated.`);
 
   // 3. Parse capabilities from Markdown tables

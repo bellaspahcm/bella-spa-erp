@@ -221,8 +221,9 @@ export async function executeMigration(params) {
       );
     }
     
+    const grantRecordPresent = Boolean(consumption.token_id);
     console.log('✅ Token consumed successfully\n');
-    console.log('   Token ID:', consumption.token_id);
+    console.log('   Authorization record:', grantRecordPresent ? 'present' : 'missing');
     console.log('   Used at:', consumption.used_at);
     console.log('');
     
