@@ -65,6 +65,14 @@ jobs:
             echo "⏭️  No API surface or API documentation changes, skipping API docs checks"
           fi
 
+          if echo "$CHANGED_FILES" | grep -qE '^(src/|supabase/|database/|migrations/|prisma/migrations/|package\.json|package-lock\.json|scripts/check-supabase-|scripts/check-business-invariants\.cjs|.*\.sql$)'; then
+            echo "needs_db_checks=true" >> $GITHUB_OUTPUT
+            echo "✅ Found database, application, or DB-check files to verify"
+          else
+            echo "needs_db_checks=false" >> $GITHUB_OUTPUT
+            echo "⏭️  No database, application, or DB-check changes, skipping live DB checks"
+          fi
+
       - name: Required CI environment config
         run: npm run ci:env:check
 
@@ -89,19 +97,28 @@ jobs:
         run: echo "✅ API docs checks skipped - no API surface or API documentation changes"
 
       - name: Supabase migration drift check
+        if: steps.check-lint-needed.outputs.needs_db_checks == 'true'
         run: npm run db:migration:check
 
       - name: Supabase RPC grant policy
+        if: steps.check-lint-needed.outputs.needs_db_checks == 'true'
         run: npm run db:rpc-grants:check
 
       - name: Supabase data access smoke
+        if: steps.check-lint-needed.outputs.needs_db_checks == 'true'
         run: npm run db:access:check
 
       - name: Supabase live RPC smoke
+        if: steps.check-lint-needed.outputs.needs_db_checks == 'true'
         run: npm run db:rpc-smoke:check
 
       - name: Business data invariant guard
+        if: steps.check-lint-needed.outputs.needs_db_checks == 'true'
         run: npm run db:business:check
+
+      - name: Live DB checks skipped
+        if: steps.check-lint-needed.outputs.needs_db_checks == 'false'
+        run: echo "✅ Live DB checks skipped - no database, application, or DB-check changes"
 
       - name: Production build
         run: npm run build

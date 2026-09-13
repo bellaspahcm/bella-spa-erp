@@ -10,6 +10,7 @@
 
 This change is limited to CI workflow execution policy:
 - Bound API documentation checks to API/API-documentation changes.
+- Bound live Supabase/DB checks to database, application, or DB-check changes.
 - Remove unsafe direct GitHub context interpolation from shell `run:` blocks.
 - Pin the branch-cleanup GitHub Action to an immutable commit SHA.
 
@@ -50,6 +51,7 @@ Targeted verification for this CI remediation:
 - YAML parse / workflow syntax validation.
 - Semgrep OSS annotations addressed without disabling scanner.
 - API docs check remains enforced for API/API-doc changes and is skipped for infra-only PRs.
+- Live DB checks remain enforced for DB/application/DB-check changes and are skipped for infra-only PRs.
 - GitHub Actions status rechecked after commit/push.
 
 ---
