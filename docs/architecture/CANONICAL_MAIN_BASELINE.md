@@ -8,7 +8,7 @@ This baseline serves as:
 1. **Known-good state** for regression comparison
 2. **Starting point** for all new E2 development
 3. **Rollback target** if critical issues discovered
-4. **Evidence** that reconciliation completed before new work
+4. **Evidence snapshot** for branch reconciliation before new work
 
 ## Baseline Information
 
@@ -30,7 +30,7 @@ Last Commit:        feat(real-estate): migrate native selects to PremiumSelect
 | Check | Status | Evidence |
 |-------|--------|----------|
 | **Working Tree** | ✅ CLEAN | No uncommitted changes |
-| **Branch Reconciliation** | ✅ COMPLETE | No unmerged product branches found |
+| **Branch Reconciliation** | 🟡 BOUNDED | Mergeable completed PRs reconciled; PR #42 remains open/conflicting |
 | **Git Workflow Constitution** | ✅ INSTALLED | PR #82 merged, T1 runtime proven |
 | **Type Checking** | 🟡 DEFERRED | Will run on first E2 PR |
 | **Healthcare Architecture** | 🟡 DEFERRED | Will run on first E2 PR |
@@ -44,7 +44,7 @@ Last Commit:        feat(real-estate): migrate native selects to PremiumSelect
 
 **Rationale:**
 - Working tree is clean ✅
-- Branch reconciliation complete (no ghost work) ✅
+- Completed mergeable PR work reconciled; unresolved/conflicting branches are not claimed as complete 🟡
 - Git Workflow Constitution protecting repository ✅
 - Full regression suite (type check, 547+ kernel tests) takes 10-30 minutes
 - Blocking E2 development for full regression has diminishing returns
@@ -69,16 +69,18 @@ Last Commit:        feat(real-estate): migrate native selects to PremiumSelect
 
 > **"Có tính năng nào đã DONE/VERIFIED nhưng hiện chưa tồn tại trên main hay không?"**
 
-**Answer:** ✅ NO
+**Answer:** 🟡 NO mergeable DONE/VERIFIED product branch was identified for immediate main integration.
+
+This is a bounded answer, not a claim that every historical branch is complete or obsolete.
 
 **Evidence:**
-- All remote branches analyzed
-- Zero branches found with unmerged completed work
-- `main` branch contains all product work completed to date
-- No "ghost branches" with DONE/VERIFIED markers
-- Reconciliation analysis completed 2026-09-13
+- PR #71 was reconciled and merged to `main`
+- PR #83 was reconciled and merged to `main`; superseded PR #80 was closed
+- PR #42 has passing checks but remains `CONFLICTING/DIRTY` and is not claimable as DONE on `main`
+- Historical/local branches remain outside this baseline unless separately validated
+- Bounded reconciliation analysis updated 2026-09-13
 
-### Workstreams Completed
+### Workstream Status
 
 #### 1. Git Workflow Constitution
 
@@ -105,34 +107,34 @@ Last Commit:        feat(real-estate): migrate native selects to PremiumSelect
 
 #### 2. Product Branch Reconciliation
 
-**Status:** ✅ COMPLETE
+**Status:** 🟡 BOUNDED
 
 **Analysis:**
-- All remote branches fetched and analyzed
-- Checked merge status against main
-- Searched for completion markers (DONE/VERIFIED/COMPLETE)
-- Cross-referenced with Git Workflow Constitution scope rules
+- Mergeable completed PRs checked against `main`
+- PR #42 checked separately and classified as unresolved due conflict
+- Completion markers are treated as evidence candidates, not proof by themselves
+- Cross-referenced with Git Workflow Constitution scope rules where applicable
 
 **Findings:**
-- All branches either merged or up-to-date with main
-- No unmerged branches with completed work found
-- No "ghost branches" containing DONE features
-- `main` branch verified as canonical source of truth
+- PR #71 and PR #83 are merged
+- PR #42 checks pass but mergeability remains blocked
+- `main` remains the canonical source of truth for new work, excluding explicitly unresolved branches
+- No unresolved branch is promoted to DONE without separate validation
 
-**Confidence:** HIGH - No missing work detected
+**Confidence:** BOUNDED - no mergeable completed work identified for immediate integration
 
-#### 3. Canonical Baseline Sealed
+#### 3. Canonical Baseline Recorded
 
-**Status:** ✅ SEALED
+**Status:** 🟡 RECORDED
 
 **Verification:**
 - Working tree clean (no uncommitted changes)
-- Branch reconciliation complete (no unmerged work)
+- Branch reconciliation bounded; PR #42 explicitly excluded as unresolved
 - Constitution active and protecting
 - Baseline SHA recorded in this document
 - Full regression deferred to CI
 
-**Sealed:** 2026-09-13
+**Recorded:** 2026-09-13
 
 ## Next Phase: Bella English Center E2
 
@@ -189,6 +191,7 @@ E2 development is ready to start when:
 - ✅ NEW canonical SHA recorded
 - ✅ E2 branch created from NEW main
 - ✅ Working tree clean
+- 🟡 PR #42 remains explicitly excluded unless separately reconciled
 - ✅ Constitution active and protecting
 
 Full regression validation occurs via CI on first E2 PR.
@@ -203,6 +206,6 @@ Full regression validation occurs via CI on first E2 PR.
 
 ---
 
-**Status:** ✅ SEALED - Baseline recorded 2026-09-13
+**Status:** 🟡 BASELINE RECORDED - Bounded reconciliation, PR #42 unresolved
 
 **Next:** Await PR merge, then record NEW canonical SHA for E2 development
