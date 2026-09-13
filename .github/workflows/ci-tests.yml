@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@d23441aed35dce496c1155e4d50ce398b90c0b8c # v6
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       
@@ -42,7 +42,7 @@ jobs:
             echo "⏭️  No application code changed (only infrastructure files), skipping lint"
           fi
       
-      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v6
+      - uses: actions/setup-node@v6
         if: steps.check-files.outputs.has_code == 'true'
         with:
           node-version: '24'
@@ -63,8 +63,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@d23441aed35dce496c1155e4d50ce398b90c0b8c # v6
-      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v6
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: '24'
           cache: npm
@@ -78,8 +78,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@d23441aed35dce496c1155e4d50ce398b90c0b8c # v6
-      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v6
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: '24'
           cache: npm
@@ -104,7 +104,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@d23441aed35dce496c1155e4d50ce398b90c0b8c # v6
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       
@@ -127,7 +127,7 @@ jobs:
             echo "⏭️  No dependency/code files changed, skipping security gates"
           fi
       
-      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v6
+      - uses: actions/setup-node@v6
         if: steps.check-deps.outputs.has_deps == 'true'
         with:
           node-version: '24'
@@ -151,7 +151,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@d23441aed35dce496c1155e4d50ce398b90c0b8c # v6
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       
@@ -174,7 +174,7 @@ jobs:
             echo "⏭️  No migration files changed, skipping gates"
           fi
       
-      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v6
+      - uses: actions/setup-node@v6
         if: steps.check-migrations.outputs.has_migrations == 'true'
         with:
           node-version: '24'
@@ -187,8 +187,6 @@ jobs:
         if: steps.check-migrations.outputs.has_migrations == 'true'
         id: migration-base
         env:
-          # nosemgrep: yaml.github-actions.security.run-shell-injection.run-shell-injection
-          # Safe: github.event.* values are passed through env: block first, then accessed as shell vars
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PUSH_BEFORE_SHA: ${{ github.event.before }}
         run: |
@@ -204,8 +202,6 @@ jobs:
       - name: Zero-downtime migration policy
         if: steps.check-migrations.outputs.has_migrations == 'true'
         env:
-          # nosemgrep: yaml.github-actions.security.run-shell-injection.run-shell-injection
-          # Safe: steps output is passed through env: block, accessed as shell var in quoted context
           BASE_REF: ${{ steps.migration-base.outputs.base }}
         run: npm run db:migration:zero-downtime -- --base "$BASE_REF"
       
@@ -230,8 +226,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@d23441aed35dce496c1155e4d50ce398b90c0b8c # v6
-      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v6
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: '24'
           cache: npm
@@ -249,9 +245,6 @@ jobs:
     steps:
       - name: Enforce required results
         env:
-          # nosemgrep: yaml.github-actions.security.run-shell-injection.run-shell-injection
-          # Safe: needs.*.result contains only GitHub-controlled job status values (success/failure/cancelled)
-          # These are not user-controllable and do not pose injection risk
           LINT_RESULT: ${{ needs.lint.result }}
           TEST_RESULT: ${{ needs.tests.result }}
           REAL_DB_E2E_RESULT: ${{ needs.real-db-e2e.result }}
