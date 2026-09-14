@@ -1,3 +1,80 @@
+# ARCHITECTURE GATE RESULT - BELLA ENGLISH CENTER POST-RC ENVIRONMENT CLOSURE
+
+> **Status:** PASS - dev-only API auth-context repair for Post-RC runtime validation
+> **Date:** 2026-09-15
+> **Canonical base:** `origin/main@fbff36721c3f53067cbd3992157dbb3ba04e634a`
+> **Scope:** English Center API runtime validation path only
+
+---
+
+## 1. Product Manifest (Capabilities & Scope)
+
+This closure does not add a new English Center business capability. It fixes the local Post-RC browser validation path where development mock authentication resolves a tenant/user but the API repository Supabase client remains anonymous, causing RLS-backed Command Center reads to fail against `public.user_org_unit_access`.
+
+Included:
+- Keep E6-E9 product surfaces unchanged.
+- Keep canonical Education OS contracts unchanged.
+- Use a service-role Supabase client only for the existing development mock-user branch.
+- Preserve production cookie/JWT Supabase client behavior.
+
+Excluded:
+- No Education Kernel modification.
+- No Healthcare, Logistics, Finance, or cross-industry dependency.
+- No `anon` database grant expansion to make tests pass.
+- No new database table, policy, or migration in code.
+
+## 2. Ownership Map ("WHO OWNS THIS DATA?")
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `src/app/api/english-center/_shared.ts` | Bella English Center API boundary | API context resolution only |
+| `public.user_org_unit_access` | Platform Authorization projection | Existing branch/org-unit access read model |
+| English Center E2-E8 tables | Bella English Center Product | Existing product-owned projections and runtime data |
+
+## 3. Contract Dependency Map
+
+```
+Post-RC browser gate
+        |
+        v
+English Center API context
+        |
+        +-- production auth: SSR Supabase client with user JWT
+        |
+        +-- development mock auth: service-role Supabase client
+        |
+        v
+English Center repositories
+        |
+        v
+Platform Authorization projection (user_org_unit_access)
+        |
+        v
+Product RLS / tenant / branch scope
+```
+
+No Product -> Education Kernel bypass is introduced.
+
+## 4. Additive Migration Plan
+
+No code migration is added. Environment closure applied canonical existing migrations/grants to the linked Supabase project and refreshed PostgREST schema cache separately from this source patch.
+
+## 5. 11 Automated Verification Gates Plan
+
+- Gate 1 Architecture Compliance: no `src/platform/education/` change; no cross-industry import.
+- Gate 2 Contract Boundary: no Education contract bypass change.
+- Gate 3 Tenant Isolation: preserve tenant lookup and RLS-backed branch filtering.
+- Gate 4 RLS & Authorization: do not grant `anon`; development mock uses controlled admin client.
+- Gate 5 Database Migration Safety: no new migration.
+- Gate 6 Event-After-Persistence: not applicable; read-only API context path.
+- Gate 7 Academic Safety Routing: not applicable; no assessment calculation change.
+- Gate 8 Temporal Provenance: not applicable; no temporal write.
+- Gate 9 Rule Governance: not applicable; no grading rule change.
+- Gate 10 Audit Evidence Integrity: not applicable; no transcript/export change.
+- Gate 11 Platform Regression: run Post-RC browser gate and targeted English Center API tests.
+
+---
+
 # ARCHITECTURE GATE RESULT — PR82 CI REMEDIATION
 
 > **Status:** PASS — CI-only remediation, no Product Vertical or Kernel impact

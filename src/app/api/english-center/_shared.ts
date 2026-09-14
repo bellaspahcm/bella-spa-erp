@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { headers } from 'next/headers';
-import type { User } from '@supabase/supabase-js';
+import { createClient as createSupabaseClient, type SupabaseClient, type User } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
 
 export interface EnglishCenterApiContext {
-  readonly supabase: ReturnType<typeof createClient>;
+  readonly supabase: SupabaseClient<Database>;
   readonly tenantId: string;
   readonly userId: string;
 }
@@ -13,6 +13,11 @@ export interface EnglishCenterApiContext {
 type EnglishCenterResolvedUser = {
   readonly id: string;
   readonly tenantId: string | null;
+};
+
+type EnglishCenterDevelopmentMockContext = {
+  readonly user: EnglishCenterResolvedUser;
+  readonly supabase: SupabaseClient<Database>;
 };
 
 type EnglishCenterProfile = Pick<Database['public']['Tables']['users']['Row'], 'id' | 'tenant_id'>;
@@ -25,8 +30,19 @@ function getSupabaseAdminKey(): string {
   return process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 }
 
+function createEnglishCenterAdminClient(): SupabaseClient<Database> | null {
+  const adminUrl = getSupabaseAdminUrl();
+  const adminKey = getSupabaseAdminKey();
+
+  if (!adminUrl || !adminKey) return null;
+
+  return createSupabaseClient<Database>(adminUrl, adminKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
 async function resolveProfileUser(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient<Database>,
   user: User,
 ): Promise<EnglishCenterResolvedUser | null> {
   const { data } = await supabase
@@ -50,19 +66,13 @@ async function resolveProfileUser(
   return emailProfile ? { id: emailProfile.id, tenantId: emailProfile.tenant_id } : null;
 }
 
-async function resolveDevelopmentMockUser(): Promise<EnglishCenterResolvedUser | null> {
+async function resolveDevelopmentMockUser(): Promise<EnglishCenterDevelopmentMockContext | null> {
   if (process.env.NODE_ENV !== 'development') return null;
 
   const mockEmail = (await headers()).get('x-mock-user-email');
-  const adminUrl = getSupabaseAdminUrl();
-  const adminKey = getSupabaseAdminKey();
+  const adminClient = createEnglishCenterAdminClient();
 
-  if (!mockEmail || !adminUrl || !adminKey) return null;
-
-  const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
-  const adminClient = createSupabaseClient<Database>(adminUrl, adminKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  if (!mockEmail || !adminClient) return null;
 
   const { data } = await adminClient
     .from('users')
@@ -70,7 +80,12 @@ async function resolveDevelopmentMockUser(): Promise<EnglishCenterResolvedUser |
     .eq('email', mockEmail)
     .maybeSingle<EnglishCenterProfile>();
 
-  return data ? { id: data.id, tenantId: data.tenant_id } : null;
+  return data
+    ? {
+      user: { id: data.id, tenantId: data.tenant_id },
+      supabase: adminClient,
+    }
+    : null;
 }
 
 export async function getEnglishCenterApiContext(): Promise<
@@ -83,12 +98,13 @@ export async function getEnglishCenterApiContext(): Promise<
     error: authError,
   } = await supabase.auth.getUser();
 
+  const developmentMock = user ? null : await resolveDevelopmentMockUser();
   const resolvedUser = user
     ? {
       id: user.id,
       tenantId: user.user_metadata?.tenant_id ?? null,
     }
-    : await resolveDevelopmentMockUser();
+    : developmentMock?.user;
   const fallbackUser = user && resolvedUser && !resolvedUser.tenantId
     ? await resolveProfileUser(supabase, user)
     : null;
@@ -107,7 +123,7 @@ export async function getEnglishCenterApiContext(): Promise<
 
   return {
     context: {
-      supabase,
+      supabase: developmentMock?.supabase ?? supabase,
       tenantId,
       userId,
     },
