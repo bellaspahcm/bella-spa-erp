@@ -5,6 +5,7 @@
 **E5 seal baseline:** `origin/main@af28f1a0`
 **E6 seal baseline:** `origin/main@a493ab88`
 **E7 seal baseline:** `origin/main@364b624c`
+**E8 seal baseline:** `origin/main@e4c085b0`
 
 ---
 
@@ -21,7 +22,9 @@ E6 - Attendance/Learning Ops      BOUNDED VERIFIED + SEALED
 
 E7 - Tuition/Billing              BOUNDED VERIFIED + SEALED
 
-E8+                              NOT OPENED
+E8 - Parent/Student Engagement    BOUNDED VERIFIED + SEALED
+
+E9+                              NOT OPENED
 ```
 
 The E2/E3/E4 seal is bounded to English Center evidence. It does not claim full
@@ -37,8 +40,11 @@ canonical main smoke passed on `origin/main@a493ab88`.
 E7 is sealed after PR #100 merged to `main` under legitimate GitHub policy and
 canonical main smoke passed on `origin/main@364b624c`.
 
-E8+ is not opened. E8 implementation requires its own architecture gate result
-from canonical main after E7 seal.
+E8 is sealed after PR #102 merged to `main` under legitimate GitHub policy and
+canonical main smoke passed on `origin/main@e4c085b0`.
+
+E9+ is not opened. E9 implementation requires its own architecture gate result
+from canonical main after E8 seal.
 
 ---
 
@@ -87,7 +93,18 @@ E7 education conformance         39/39 PASS
 E7 PR #100 merge                 MERGED: 364b624c
 E7 canonical main smoke          PASS
 E7 implementation                BOUNDED VERIFIED + SEALED
-E8 implementation                NOT OPENED
+E8 architecture gate             PASS
+E8 service tests                 7/7 PASS
+E8 English Center regression     62/62 PASS
+E8 scoped TypeScript check       PASS: bounded baseline 162/162
+E8 migration zero-downtime       PASS
+E8 migration changed-check       PASS / empty-remote drift skip
+E8 architecture guard            PASS
+E8 education conformance         39/39 PASS
+E8 PR #102 merge                 MERGED: e4c085b0
+E8 canonical main smoke          PASS
+E8 implementation                BOUNDED VERIFIED + SEALED
+E9 implementation                NOT OPENED
 ```
 
 ---
@@ -133,6 +150,12 @@ DEBT-REALDB-SMOKE-LATENCY-01
   Supabase setup timeout before the immediate rerun passed 55/55.
   Owner: CI/database test infrastructure reliability
   Status: not E7-introduced; PR #100 CI and canonical-main rerun passed
+
+DEBT-REALDB-E2E-GATEWAY-01
+  PR #102 Real Database Business E2E initially failed with Bad Gateway in
+  existing accounting, order lifecycle, refund, and payroll real-db setup.
+  Owner: CI/database test infrastructure reliability
+  Status: not E8-introduced; failed jobs passed on rerun before merge
 ```
 
 ---
@@ -147,4 +170,6 @@ DEBT-REALDB-SMOKE-LATENCY-01
 - `E5_BOUNDED_SEAL_REVIEW.md`
 - `E6_BOUNDED_SEAL_REVIEW.md`
 - `E7_BOUNDED_SEAL_REVIEW.md`
+- `E8_ARCHITECTURE_GATE_RESULT.md`
+- `E8_BOUNDED_SEAL_REVIEW.md`
 - `E6_E10_ROADMAP_RECONCILIATION.md`
