@@ -12,6 +12,8 @@
 **RC closure merge baseline:** `origin/main@92da566a`
 **Post-RC validation baseline:** `origin/main@391b0ec5`
 **Post-RC validation merge baseline:** `origin/main@62074058`
+**Field Verified RC baseline:** `origin/main@d4417cf8`
+**Production Candidate readiness baseline:** `origin/main@d4417cf8`
 
 ---
 
@@ -69,6 +71,12 @@ dedicated browser and real-database validation gates and found a runtime
 environment/schema proof gap in the Command Center path. This does not invalidate
 the bounded RC; it holds Field Verified RC until the dedicated environment gates
 pass.
+
+Field Verified RC was reached after the runtime database, browser, and Command
+Center API blockers were closed and revalidated on canonical `origin/main@d4417cf8`.
+Production Candidate remains held pending deployment, rollback, backup/restore,
+alerting, and production runtime evidence recorded in
+`PRODUCTION_CANDIDATE_READINESS_REVIEW.md`.
 
 ---
 
@@ -182,6 +190,11 @@ Post-RC canonical architecture guard PASS on origin/main@62074058
 Post-RC canonical build          PASS on origin/main@62074058
 Post-RC canonical browser gate   FAIL / runtime schema-grant blocker remains
 Post-RC final decision           BOUNDED RC retained; Field Verified RC HELD
+Field Verified RC real DB validation PASS on origin/main@d4417cf8
+Field Verified RC browser gate   PASS on origin/main@d4417cf8
+Field Verified RC command center API PASS on origin/main@d4417cf8
+Production Candidate review      COMPLETE on origin/main@d4417cf8
+Production Candidate decision    HELD / operations evidence not yet complete
 ```
 
 ---
@@ -289,4 +302,5 @@ POST-RC-ORGUNIT-GRANT-01
 - `RC_CLOSURE_EVIDENCE.md`
 - `POST_RC_VALIDATION_ARCHITECTURE_GATE_RESULT.md`
 - `POST_RC_VALIDATION_EVIDENCE.md`
+- `PRODUCTION_CANDIDATE_READINESS_REVIEW.md`
 - `E6_E10_ROADMAP_RECONCILIATION.md`
