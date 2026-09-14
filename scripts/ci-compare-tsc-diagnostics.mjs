@@ -3,17 +3,47 @@ import { pathToFileURL } from 'node:url';
 
 const DIAGNOSTIC_PATTERN = /^(.+?)\((\d+),(\d+)\): error (TS\d+): (.+)$/;
 
+function normalizeUnionLiteralOrder(message) {
+  return message.replace(/"[^"]+"(?:\s+\|\s+"[^"]+")+/g, (unionText) => {
+    const literals = unionText
+      .split(/\s+\|\s+/)
+      .map((literal) => literal.trim())
+      .sort();
+    return literals.join(' | ');
+  });
+}
+
+function normalizeSignature(signature) {
+  const match = signature.match(/^([^|]+)\|(TS\d+)\|(.+)$/);
+  if (!match) return signature;
+
+  const [, file, code, message] = match;
+  return `${file}|${code}|${normalizeUnionLiteralOrder(message)}`;
+}
+
+function normalizeDiagnosticCounts(diagnostics) {
+  const counts = new Map();
+
+  for (const [signature, count] of Object.entries(diagnostics)) {
+    const normalized = normalizeSignature(signature);
+    counts.set(normalized, (counts.get(normalized) ?? 0) + count);
+  }
+
+  return Object.fromEntries([...counts.entries()].sort(([left], [right]) => left.localeCompare(right)));
+}
+
 function normalizeDiagnosticLine(line) {
   const match = line.match(DIAGNOSTIC_PATTERN);
   if (!match) return null;
 
   const [, rawFile, , , code, message] = match;
   const file = rawFile.replace(/\\/g, '/').replace(/^\.\//, '');
+  const normalizedMessage = normalizeUnionLiteralOrder(message.trim());
   return {
     file,
     code,
-    message: message.trim(),
-    signature: `${file}|${code}|${message.trim()}`,
+    message: normalizedMessage,
+    signature: `${file}|${code}|${normalizedMessage}`,
   };
 }
 
@@ -30,17 +60,19 @@ export function parseDiagnostics(text) {
 }
 
 export function compareDiagnostics(baselineDiagnostics, currentDiagnostics) {
+  const normalizedBaseline = normalizeDiagnosticCounts(baselineDiagnostics);
+  const normalizedCurrent = normalizeDiagnosticCounts(currentDiagnostics);
   const added = [];
   const reduced = [];
   const unchanged = [];
   const signatures = new Set([
-    ...Object.keys(baselineDiagnostics),
-    ...Object.keys(currentDiagnostics),
+    ...Object.keys(normalizedBaseline),
+    ...Object.keys(normalizedCurrent),
   ]);
 
   for (const signature of [...signatures].sort()) {
-    const baselineCount = baselineDiagnostics[signature] ?? 0;
-    const currentCount = currentDiagnostics[signature] ?? 0;
+    const baselineCount = normalizedBaseline[signature] ?? 0;
+    const currentCount = normalizedCurrent[signature] ?? 0;
     const delta = currentCount - baselineCount;
 
     if (delta > 0) {
@@ -52,8 +84,8 @@ export function compareDiagnostics(baselineDiagnostics, currentDiagnostics) {
     }
   }
 
-  const baselineTotal = Object.values(baselineDiagnostics).reduce((sum, count) => sum + count, 0);
-  const currentTotal = Object.values(currentDiagnostics).reduce((sum, count) => sum + count, 0);
+  const baselineTotal = Object.values(normalizedBaseline).reduce((sum, count) => sum + count, 0);
+  const currentTotal = Object.values(normalizedCurrent).reduce((sum, count) => sum + count, 0);
 
   return {
     status: added.length > 0 ? 'BLOCK' : 'ALLOW',
