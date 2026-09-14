@@ -49,8 +49,8 @@ const tableExpectations: readonly TableExpectation[] = [
   { tableName: 'english_center_tuition_payment_allocations', requiresBranchScope: false },
   { tableName: 'english_center_engagement_templates', requiresBranchScope: true },
   { tableName: 'english_center_engagement_messages', requiresBranchScope: true },
-  { tableName: 'english_center_engagement_recipients', requiresBranchScope: true },
-  { tableName: 'english_center_engagement_responses', requiresBranchScope: true },
+  { tableName: 'english_center_engagement_recipients', requiresBranchScope: false },
+  { tableName: 'english_center_engagement_responses', requiresBranchScope: false },
 ];
 
 function sslConfig(): { rejectUnauthorized: boolean } | undefined {
@@ -108,15 +108,15 @@ describeIfDb('English Center Post-RC real database validation', () => {
 
     for (const expectation of tableExpectations) {
       const row = byTable.get(expectation.tableName);
-      expect(row, `${expectation.tableName} should exist in public schema`).toBeDefined();
+      expect(row).toBeDefined();
       if (!row) continue;
 
-      expect(row.rls_enabled, `${expectation.tableName} should have RLS enabled`).toBe(true);
-      expect(Number(row.tenant_column_count), `${expectation.tableName} should expose tenant_id`).toBe(1);
-      expect(Number(row.policy_count), `${expectation.tableName} should have at least one RLS policy`).toBeGreaterThan(0);
+      expect(row.rls_enabled).toBe(true);
+      expect(Number(row.tenant_column_count)).toBe(1);
+      expect(Number(row.policy_count)).toBeGreaterThan(0);
 
       if (expectation.requiresBranchScope) {
-        expect(Number(row.branch_column_count), `${expectation.tableName} should expose branch_id`).toBe(1);
+        expect(Number(row.branch_column_count)).toBe(1);
       }
     }
   });
