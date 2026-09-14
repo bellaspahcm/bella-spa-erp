@@ -1,7 +1,7 @@
 # Bella English Center E6-E10 Roadmap Reconciliation
 
 **Date:** 2026-09-14
-**Canonical main:** `af28f1a0`
+**Roadmap base:** `origin/main@af28f1a0`
 **Status:** ROADMAP RECONCILED / E6 NOT OPENED
 
 ---

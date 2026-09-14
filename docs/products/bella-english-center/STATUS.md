@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-09-14
 **Canonical authority:** `E2_E3_E4_GOVERNANCE_ACCEPTANCE.md`
-**Canonical main:** `af28f1a0`
+**E5 seal baseline:** `origin/main@af28f1a0`
 
 ---
 
