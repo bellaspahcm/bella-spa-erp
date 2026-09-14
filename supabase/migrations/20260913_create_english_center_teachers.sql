@@ -8,7 +8,7 @@ BEGIN;
 CREATE TABLE IF NOT EXISTS public.english_center_teachers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
-  party_id UUID NOT NULL UNIQUE REFERENCES public.parties(id) ON DELETE CASCADE,
+  party_id UUID NOT NULL UNIQUE REFERENCES public.party_parties(id) ON DELETE CASCADE,
   employee_code VARCHAR(50),
   certifications JSONB DEFAULT '[]'::jsonb,
   specializations VARCHAR[],

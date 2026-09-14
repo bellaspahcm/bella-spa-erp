@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS public.english_center_classes (
   name VARCHAR(200) NOT NULL,
   capacity INTEGER NOT NULL DEFAULT 20 CHECK (capacity > 0),
   enrolled_count INTEGER NOT NULL DEFAULT 0 CHECK (enrolled_count >= 0),
-  teacher_id UUID REFERENCES public.parties(id) ON DELETE SET NULL,
+  teacher_id UUID REFERENCES public.party_parties(id) ON DELETE SET NULL,
   start_date DATE,
   end_date DATE,
   schedule_days VARCHAR[],
