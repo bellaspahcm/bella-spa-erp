@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "directDatabaseAccess",
+    "internalKernelImports",
+    "crossVerticalLeakage"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "comment": { "type": "string" },
+    "directDatabaseAccess": { "$ref": "#/$defs/category" },
+    "internalKernelImports": { "$ref": "#/$defs/category" },
+    "crossVerticalLeakage": { "$ref": "#/$defs/category" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "category": {
+      "type": "object",
+      "required": ["owner", "debtId", "reviewedAt", "violations"],
+      "properties": {
+        "owner": { "type": "string" },
+        "debtId": { "type": "string" },
+        "reviewedAt": { "type": "string" },
+        "violations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

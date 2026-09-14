@@ -4,6 +4,10 @@ on:
   pull_request:
     branches: [main, develop]
     paths:
+      - '.github/ci/**'
+      - '.github/workflows/architecture-guard.yml'
+      - 'package.json'
+      - 'scripts/**'
       - 'src/**/*.ts'
       - 'src/**/*.tsx'
   push:
@@ -128,7 +132,7 @@ jobs:
         run: npm ci
       
       - name: Run Education Architecture Tests
-        run: npm run education:architecture
+        run: npm run education:architecture:ci
       
       - name: Run Education Conformance Tests
         run: npm run education:conformance
