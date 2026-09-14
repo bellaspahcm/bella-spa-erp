@@ -89,6 +89,27 @@ const cases = [
     },
   },
   {
+    name: 'SKIP typecheck for workflow-only CI policy change',
+    files: ['.github/workflows/ci-tests.yml', 'scripts/ci-scope-router.mjs'],
+    expect(result) {
+      assert.equal(result.scope_status, 'ALLOW');
+      assert.equal(result.scope_level, 'platform');
+      assert.equal(result.needs_typecheck, false);
+      assert.equal(result.typecheck_mode, 'skip');
+    },
+  },
+  {
+    name: 'RUN affected typecheck for scoped Education tsconfig change',
+    files: ['tsconfig.education.json', 'tsconfig.english-center.json'],
+    expect(result) {
+      assert.equal(result.scope_status, 'ALLOW');
+      assert.equal(result.scope_level, 'os');
+      assert.equal(result.needs_typecheck, true);
+      assert.equal(result.typecheck_mode, 'affected');
+      assertIncludes(result.affected_products, 'english_center', 'English Center should be affected by scoped Education config');
+    },
+  },
+  {
     name: 'BLOCK multi-product product-only contamination',
     files: [
       'src/products/bella-english-center/services/class.service.ts',

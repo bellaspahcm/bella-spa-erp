@@ -93,6 +93,9 @@ const API_DOCS_PATTERN = /^(src\/app\/api\/|docs\/(guides\/)?api-reference\.md|d
 const DOC_PATTERN = /^docs\//;
 const WORKFLOW_PATTERN = /^\.github\/workflows\//;
 const ROOT_PLATFORM_PATTERN = /^(src\/(core|lib|services|shared|types|components\/layout)\/|packages\/|next\.config\.|instrumentation|tsconfig\.json|jest\.config|playwright\.config|eslint|postcss|tailwind|middleware\.ts$|next-env\.d\.ts$)/;
+const APP_CODE_PATTERN = /^(src\/|apps\/mobile\/|packages\/).*\.(ts|tsx|js|jsx|mts)$/;
+const ROOT_TYPECHECK_SURFACE_PATTERN = /^(src\/(core|lib|services|shared|types|components\/layout)\/|packages\/|tsconfig\.json$|next-env\.d\.ts$|next\.config\.|instrumentation|sentry\..*\.ts$|middleware\.ts$|package-lock\.json$)/;
+const TYPECHECK_CONFIG_PATTERN = /^tsconfig(\..+)?\.json$/;
 const SECURITY_SCRIPT_PATTERN = /^scripts\/(audit-production|check-secret-leaks|check-ci-quality-env)\.mjs$/;
 
 function normalize(file) {
@@ -172,6 +175,9 @@ export function classifyFiles(files) {
   let hasInfra = false;
   let hasSecuritySurface = false;
   let hasCore = false;
+  let hasAppCode = false;
+  let hasRootTypecheckSurface = false;
+  let hasTypecheckConfig = false;
 
   for (const file of normalizedFiles) {
     hasCode ||= CODE_PATTERN.test(file);
@@ -183,6 +189,9 @@ export function classifyFiles(files) {
     hasWorkflow ||= WORKFLOW_PATTERN.test(file);
     hasSecuritySurface ||= SECURITY_SCRIPT_PATTERN.test(file);
     hasCore ||= /^src\/core\//.test(file);
+    hasAppCode ||= APP_CODE_PATTERN.test(file) && !TEST_PATTERN.test(file);
+    hasRootTypecheckSurface ||= ROOT_TYPECHECK_SURFACE_PATTERN.test(file);
+    hasTypecheckConfig ||= TYPECHECK_CONFIG_PATTERN.test(file);
 
     for (const [key, scope] of Object.entries(PRODUCT_SCOPES)) {
       if (matchesAny(file, scope.patterns)) {
@@ -215,6 +224,7 @@ export function classifyFiles(files) {
   const docsOnly = normalizedFiles.length > 0
     && normalizedFiles.every((file) => DOC_PATTERN.test(file) || /^\.github\/pull_request_template\.md$/.test(file));
   const sourceTouched = hasCode || hasDependencies;
+  const needsTypecheck = (hasAppCode || hasRootTypecheckSurface || hasTypecheckConfig) && !docsOnly;
 
   let scopeLevel = 'infra_only';
   if (hasPlatform) {
@@ -233,7 +243,6 @@ export function classifyFiles(files) {
   const osLabels = [...os].map((key) => OS_SCOPES[key].label);
   const affectedProductLabels = [...affectedProducts].map((key) => PRODUCT_SCOPES[key]?.label ?? key);
 
-  const needsTypecheck = sourceTouched && !docsOnly;
   const needsTests = (hasCode || hasTest) && !docsOnly;
   const needsBuild = (hasCode || hasDependencies || scopeLevel === 'platform') && !hasMigration && !docsOnly;
   const needsArchitectureGuard = hasCode && !docsOnly;
@@ -244,9 +253,16 @@ export function classifyFiles(files) {
   const needsDependencySecurityDeep = hasDependencies || hasSecuritySurface;
   const needsSecurityLightweight = sourceTouched || hasInfra;
 
-  const typecheckMode = scopeLevel === 'platform' || hasDependencies
-    ? 'full'
-    : (scopeLevel === 'os' ? 'affected' : (needsTypecheck ? 'changed' : 'skip'));
+  let typecheckMode = 'skip';
+  if (needsTypecheck) {
+    if (hasRootTypecheckSurface) {
+      typecheckMode = 'full';
+    } else if (scopeLevel === 'os' || os.size > 0 || affectedProducts.size > 1 || hasTypecheckConfig) {
+      typecheckMode = 'affected';
+    } else {
+      typecheckMode = 'changed';
+    }
+  }
 
   const messageParts = [];
   messageParts.push(`scope=${scopeLevel}`);
@@ -266,6 +282,7 @@ export function classifyFiles(files) {
     os: [...os],
     affected_products: [...affectedProducts],
     has_code: hasCode,
+    has_app_code: hasAppCode,
     has_tests: hasTest,
     migrations_changed: hasMigration,
     dependencies_changed: hasDependencies,
