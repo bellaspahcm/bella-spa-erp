@@ -3,7 +3,8 @@
 **Date:** 2026-09-15
 **Branch:** `codex/rc-closure-english-center`
 **Base:** `origin/main@4b213e74`
-**Status:** IMPLEMENTED / PENDING PR + CANONICAL-MAIN SMOKE
+**Merge:** PR #107 -> `origin/main@92da566a`
+**Status:** SEALED / BOUNDED RELEASE CANDIDATE
 
 ---
 
@@ -128,6 +129,68 @@ Focused forbidden Education direct-DB / non-contract scan on RC closure files
 
 ---
 
+## Dependency-Aware CI
+
+```text
+PR #107
+  Merged: 92da566a
+
+Affected Unit and Integration Tests PASS
+All Required Gates Passed           PASS
+Architecture Guard Verification     PASS
+Changed-file Lint                   PASS
+CodeQL                              PASS
+Dependency Boundary Check           PASS
+Education Constitution Enforcement  PASS
+Frozen File Check                   PASS
+Gitleaks                            PASS
+Healthcare Constitution Enforcement PASS
+Logistics Kernel Regression         PASS after rerun
+Relevant App Build                  PASS
+Security Gates                      PASS
+Semgrep CE                          PASS
+Semgrep OSS                         PASS
+SonarQube                           PASS
+Trivy filesystem                    PASS
+Type Check (changed)                PASS
+Validate PR Scope                   PASS
+Vercel                              PASS
+quality-security                    PASS
+```
+
+The first Logistics Kernel Regression attempt failed with runner/toolchain
+setup behavior, then passed on a failed-job rerun without a code change.
+
+---
+
+## Canonical-Main Smoke
+
+Executed after PR #107 merge from detached canonical
+`origin/main@92da566a`.
+
+```text
+npm test -- src/app/api/english-center/__tests__/rc-closure-surface.test.ts --runInBand
+  Test Suites: 1 passed, 1 total
+  Tests:       4 passed, 4 total
+
+npm test -- src/products/bella-english-center/__tests__ src/app/api/english-center/__tests__/rc-closure-surface.test.ts --runInBand
+  Test Suites: 10 passed, 10 total
+  Tests:       73 passed, 73 total
+
+npm run arch:guard
+  PASS
+
+npm run build
+  PASS
+```
+
+The production build collected the new English Center API routes and dashboard
+pages for learning, tuition, engagement, and command center. The existing
+`experimental.turbo` Next.js config warning appeared but did not fail the
+build.
+
+---
+
 ## Attribution Notes
 
 ```text
@@ -151,13 +214,14 @@ npm run typecheck:changed
 
 ## RC Decision
 
-This branch closes the E10 UI/API consumption blocker locally. It does not yet
-claim final Release Candidate status because two release actions still require
-post-merge evidence:
+RC Closure closes the E10 UI/API consumption blocker through PR #107 and
+canonical-main smoke.
 
 ```text
-[ ] PR merge through dependency-aware CI
-[ ] Canonical origin/main smoke after merge
+[x] PR merge through dependency-aware CI
+[x] Canonical origin/main smoke after merge
 ```
 
-After those pass, the E10 decision can move from `RC HELD` to `RC`.
+Bella English Center is now a bounded Release Candidate on
+`origin/main@92da566a`. Live browser/real-database E2E is not claimed here
+unless executed by a dedicated environment gate.

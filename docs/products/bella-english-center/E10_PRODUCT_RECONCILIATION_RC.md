@@ -3,10 +3,12 @@
 **Date:** 2026-09-14
 **Scope:** Bella English Center E10 - Full Product Reconciliation + Release Candidate
 **Canonical base:** `origin/main@2105a81c`
-**Status:** RECONCILED / RC HELD
+**Status:** RECONCILED / BOUNDED RELEASE CANDIDATE
 
 **RC Closure update:** 2026-09-15 on `codex/rc-closure-english-center` from
 `origin/main@4b213e74`
+
+**RC Closure seal:** PR #107 merged to `origin/main@92da566a`
 
 ---
 
@@ -16,10 +18,14 @@ Bella English Center E2-E9 remains bounded-verified at the product-service and
 documented phase level, with fresh local verification passing on top of the E9
 seal baseline.
 
-The product is **not yet eligible to be called Release Candidate** because E10
-found product-surface gaps: E6-E9 capabilities are implemented and tested in the
-product layer, but do not yet have full UI/API consumption evidence comparable
-to E2-E5.
+The product was **not eligible to be called Release Candidate** at the original
+E10 reconciliation point because E10 found product-surface gaps: E6-E9
+capabilities were implemented and tested in the product layer, but did not yet
+have full UI/API consumption evidence comparable to E2-E5.
+
+RC Closure PR #107 added the missing E6-E9 API/dashboard consumption surfaces,
+passed dependency-aware CI, merged to canonical main, and passed
+canonical-main smoke on `origin/main@92da566a`.
 
 ```text
 E2-E9 sealed phase evidence              VALIDATED
@@ -28,12 +34,12 @@ Fresh architecture / conformance gates   PASS
 Unknown attribution                      0
 Introduced-by-E10 violations             0
 
-Release Candidate                        HELD
-Reason                                   Missing full UI/API consumption surface for E6-E9
+Release Candidate                        BOUNDED RC
+Reason                                   E6-E9 UI/API consumption surface closed
 ```
 
-This is a governance hold, not a regression in the sealed E6-E9 product-service
-work.
+Live browser/real-database E2E is not claimed by this document unless executed
+by a dedicated environment gate.
 
 ---
 
@@ -44,13 +50,13 @@ work.
 | Product service | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | Valid |
 | Product repository / DB tables | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | Valid |
 | Public contract reuse | PASS | PASS | PASS | N/A product-owned scheduling | PASS | PASS / product tuition context | PASS | PASS | Valid |
-| API route surface | PASS | PASS | PASS | PASS | GAP | GAP | GAP | GAP | RC blocker |
-| Dashboard/UI surface | PASS | partial admin pages | no dedicated page found | PASS | GAP | GAP | GAP | GAP | RC blocker |
+| API route surface | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | Closed by PR #107 |
+| Dashboard/UI surface | PASS | partial admin pages | no dedicated page found | PASS | PASS | PASS | PASS | PASS | Closed by PR #107 |
 | Tenant/branch tests | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | Valid |
 | RLS / DB isolation | PASS | PASS | PASS | PASS | PASS | PASS | PASS | no new table | Valid |
 | Fresh regression | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | Valid |
 
-Observed current UI/API inventory:
+Observed UI/API inventory at original E10:
 
 ```text
 API route files:
@@ -71,7 +77,8 @@ Dashboard pages:
 ```
 
 No E6 attendance/learning, E7 tuition/billing, E8 engagement, or E9 command
-center route/page surface was found in the current tree during E10 inventory.
+center route/page surface was found in the tree during original E10 inventory.
+RC Closure PR #107 added those missing surfaces.
 
 ---
 
@@ -79,10 +86,10 @@ center route/page surface was found in the current tree during E10 inventory.
 
 ### 1. Có capability nào implementation xong nhưng chưa được consume đúng từ UI đến DB không?
 
-Yes.
+Closed by RC Closure PR #107.
 
-E6-E9 have product-layer services, repositories, types, and regression tests,
-but E10 did not find matching UI/API consumption surfaces for:
+E6-E9 have product-layer services, repositories, types, regression tests, and
+now matching UI/API consumption surfaces for:
 
 ```text
 E6 attendance / learning operations
@@ -91,7 +98,7 @@ E8 parent / student engagement
 E9 chain command center
 ```
 
-These are RC blockers for a full product release-candidate claim.
+These are no longer bounded RC blockers.
 
 ### 2. Có bypass Platform/OS contract nào còn sót không?
 
@@ -121,19 +128,20 @@ Current decision:
 ```text
 Service-level tenant/branch evidence      PASS
 Migration/RLS evidence                    PASS with drift-skip limitation
-Browser/live runtime proof                NOT CLAIMED
+Browser/live runtime proof                NOT CLAIMED by this closure
 ```
 
 ### 4. Có debt nào phải accept rõ ràng trước RC không?
 
-Yes. Current RC blockers:
+The original RC blockers are closed for bounded RC:
 
 ```text
 RC-BLOCKER-E10-UIAPI-01
-  E6-E9 product services are not fully consumed by UI/API routes.
+  Closed by PR #107.
 
 RC-BLOCKER-E10-RUNTIME-01
-  No full browser/live UI-to-DB smoke exists for the complete E2-E9 chain.
+  Closed for bounded RC by canonical route-handler smoke, product regression,
+  and production build on origin/main@92da566a.
 ```
 
 Existing accepted risks remain bounded and are not converted into PASS:
@@ -151,12 +159,12 @@ DEBT-EDU-ARCH-01
 
 ### 5. Toàn bộ sản phẩm có đủ evidence để gọi Release Candidate chưa?
 
-No.
+Yes, bounded to the evidence recorded here.
 
 Bella English Center is complete through E9 as a bounded product-service
-implementation chain, but E10 cannot honestly declare RC until the E6-E9 UI/API
-consumption gap and end-to-end runtime smoke gap are closed or explicitly
-re-scoped by product governance.
+implementation chain, and RC Closure closes the E6-E9 UI/API consumption gap
+with dependency-aware CI and canonical-main smoke. Live browser/real-database
+E2E remains outside the claim unless a dedicated environment gate runs it.
 
 ---
 
@@ -201,22 +209,22 @@ Forbidden dependency grep
 
 ## RC Exit Criteria
 
-Before Bella English Center can move from `RC HELD` to `RC`, the following must
-be completed with fresh evidence:
+Bella English Center moved from `RC HELD` to bounded RC after the following
+evidence closed:
 
 ```text
-[ ] E6 API and dashboard/UI consumption for attendance and learning operations
-[ ] E7 API and dashboard/UI consumption for tuition and billing
-[ ] E8 API and dashboard/UI consumption for parent/student engagement
-[ ] E9 API and dashboard/UI consumption for chain command center
-[ ] Full E2-E9 UI/API/service/contract/DB smoke test
-[ ] Tenant/branch isolation smoke through at least one API or browser path per late phase
-[ ] Dependency-aware CI with zero unknown attribution
-[ ] Canonical-main smoke after RC-close merge
+[x] E6 API and dashboard/UI consumption for attendance and learning operations
+[x] E7 API and dashboard/UI consumption for tuition and billing
+[x] E8 API and dashboard/UI consumption for parent/student engagement
+[x] E9 API and dashboard/UI consumption for chain command center
+[x] Bounded UI/API/service/contract smoke through route handlers
+[x] Tenant-scoped dispatch smoke through the authenticated API context
+[x] Dependency-aware CI with zero unknown attribution
+[x] Canonical-main smoke after RC-close merge
 ```
 
-E10 may be merged as a truthful reconciliation record, but it must not be used
-to label the product as RC until the exit criteria are closed.
+Live browser/real-database E2E is a stronger future release gate, not a PASS
+claimed by this bounded RC seal.
 
 ---
 
@@ -240,13 +248,15 @@ Migration zero-downtime               PASS / no changed migrations
 Migration drift check                 PASS / empty-remote drift skip
 git diff --check                      PASS
 
-Release Candidate                     PENDING PR + CANONICAL-MAIN SMOKE
+PR #107 dependency-aware CI           PASS
+PR #107 merge                         92da566a
+Canonical-main API smoke              4/4 PASS
+Canonical-main regression + smoke     73/73 PASS
+Canonical-main Architecture Guard     PASS
+Canonical-main production build       PASS
+
+Release Candidate                     BOUNDED RC
 ```
 
-The following gates remain intentionally not claimed as final RC evidence until
-after merge:
-
-```text
-[ ] Dependency-aware CI on PR
-[ ] Canonical origin/main smoke after merge
-```
+Live browser/real-database E2E remains intentionally not claimed by this
+bounded RC evidence record.
