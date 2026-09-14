@@ -5,10 +5,10 @@
  */
 
 import { englishBranchService } from '../services/branch.service';
-import { orgUnitEngine } from '@/platform';
+import { orgUnitEngine } from '@/platform/org-unit';
 
 // Mock Platform orgUnitEngine
-jest.mock('@/platform', () => ({
+jest.mock('@/platform/org-unit', () => ({
   orgUnitEngine: {
     createOrgUnit: jest.fn(),
     updateOrgUnit: jest.fn(),

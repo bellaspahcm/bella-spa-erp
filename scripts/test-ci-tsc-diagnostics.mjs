@@ -39,7 +39,7 @@ assert.equal(reduced.reduced.length, 1);
 console.log('PASS DEBT REDUCTION = ALLOW');
 
 const reviewedBaselines = JSON.parse(readFileSync('.github/ci/tsc-diagnostic-baselines.json', 'utf8'));
-for (const scope of ['education-affected', 'english-center-affected']) {
+for (const scope of ['education-affected', 'english-center', 'english-center-affected']) {
   const reviewed = reviewedBaselines[scope]?.diagnostics;
   assert.ok(reviewed, `${scope} must have a reviewed diagnostic baseline`);
 

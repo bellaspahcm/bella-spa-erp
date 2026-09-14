@@ -8,7 +8,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { OrgUnit } from '@/platform';
+import type { OrgUnit } from '@/platform/org-unit';
 
 interface BranchSelectorProps {
   tenantId: string;
