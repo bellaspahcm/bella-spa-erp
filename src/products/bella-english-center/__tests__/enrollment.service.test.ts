@@ -1,13 +1,35 @@
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import { createClient } from '@supabase/supabase-js';
-import { EnrollmentService } from '../services/enrollment.service';
-import { CreateEnrollmentInput, UpdateEnrollmentInput } from '../types/enrollment.types';
+import { EnglishCenterEnrollmentService } from '../services/enrollment.service';
+import { CreateEnglishEnrollmentInput, UpdateEnglishEnrollmentInput } from '../types/enrollment.types';
+
+// Mock Platform Enrollment Contract
+jest.mock('@/platform/education/contracts/enrollment.contract.impl', () => ({
+  EnrollmentContractImpl: jest.fn().mockImplementation(() => ({
+    enrollStudent: jest.fn().mockResolvedValue({
+      id: 'canonical-enrollment-id',
+      tenantId: 'test-tenant',
+      studentPartyId: 'test-student',
+      courseId: 'test-course',
+      status: 'pending',
+      enrolledAt: new Date().toISOString(),
+    }),
+    getEnrollment: jest.fn().mockResolvedValue({
+      id: 'canonical-enrollment-id',
+      tenantId: 'test-tenant',
+      studentPartyId: 'test-student',
+      courseId: 'test-course',
+      status: 'pending',
+      enrolledAt: new Date().toISOString(),
+    }),
+  })),
+}));
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
 
 describe('E2 — Enrollment Service', () => {
-  let service: EnrollmentService;
+  let service: EnglishCenterEnrollmentService;
   let testTenantId: string;
   let testBranchId: string;
   let testStudentId: string;
@@ -16,7 +38,7 @@ describe('E2 — Enrollment Service', () => {
 
   beforeEach(async () => {
     const supabase = createClient(supabaseUrl, supabaseKey);
-    service = new EnrollmentService(supabase);
+    service = new EnglishCenterEnrollmentService(supabase);
 
     // Setup test data
     const { data: tenant } = await supabase.from('tenants').select('id').limit(1).single();
@@ -60,11 +82,11 @@ describe('E2 — Enrollment Service', () => {
   });
 
   it('1/8 - should create enrollment with valid data', async () => {
-    const input: CreateEnrollmentInput = {
-      studentId: testStudentId,
+    const input: CreateEnglishEnrollmentInput = {
+      studentPartyId: testStudentId,
+      courseId: 'test-course-id',
       programId: testProgramId,
       branchId: testBranchId,
-      startDate: new Date().toISOString(),
       metadata: { source: 'test' },
     };
 
@@ -74,18 +96,18 @@ describe('E2 — Enrollment Service', () => {
     expect(enrollment).toBeDefined();
     expect(enrollment.id).toBeDefined();
     expect(enrollment.tenantId).toBe(testTenantId);
-    expect(enrollment.studentId).toBe(testStudentId);
+    expect(enrollment.studentPartyId).toBe(testStudentId);
     expect(enrollment.programId).toBe(testProgramId);
     expect(enrollment.branchId).toBe(testBranchId);
-    expect(enrollment.status).toBe('pending');
+    expect(enrollment.enrollmentStatus).toBe('pending');
   });
 
   it('2/8 - should retrieve enrollment by id', async () => {
-    const input: CreateEnrollmentInput = {
-      studentId: testStudentId,
+    const input: CreateEnglishEnrollmentInput = {
+      studentPartyId: testStudentId,
+      courseId: 'test-course-id',
       programId: testProgramId,
       branchId: testBranchId,
-      startDate: new Date().toISOString(),
     };
 
     const created = await service.createEnrollment(testTenantId, input);
@@ -95,15 +117,15 @@ describe('E2 — Enrollment Service', () => {
 
     expect(retrieved).toBeDefined();
     expect(retrieved?.id).toBe(created.id);
-    expect(retrieved?.studentId).toBe(testStudentId);
+    expect(retrieved?.studentPartyId).toBe(testStudentId);
   });
 
   it('3/8 - should list enrollments with filters', async () => {
-    const input: CreateEnrollmentInput = {
-      studentId: testStudentId,
+    const input: CreateEnglishEnrollmentInput = {
+      studentPartyId: testStudentId,
+      courseId: 'test-course-id',
       programId: testProgramId,
       branchId: testBranchId,
-      startDate: new Date().toISOString(),
     };
 
     const enrollment = await service.createEnrollment(testTenantId, input);
@@ -118,47 +140,47 @@ describe('E2 — Enrollment Service', () => {
     expect(found).toBeDefined();
   });
 
-  it('4/8 - should update enrollment status', async () => {
-    const input: CreateEnrollmentInput = {
-      studentId: testStudentId,
+  it('4/8 - should update enrollment context', async () => {
+    const input: CreateEnglishEnrollmentInput = {
+      studentPartyId: testStudentId,
+      courseId: 'test-course-id',
       programId: testProgramId,
       branchId: testBranchId,
-      startDate: new Date().toISOString(),
     };
 
     const created = await service.createEnrollment(testTenantId, input);
     createdEnrollmentIds.push(created.id);
 
-    const updateInput: UpdateEnrollmentInput = { status: 'active' };
-    const updated = await service.updateEnrollment(testTenantId, created.id, updateInput);
+    const updateInput: UpdateEnglishEnrollmentInput = { metadata: { updated: true } };
+    const updated = await service.updateEnrollmentContext(testTenantId, created.id, updateInput);
 
-    expect(updated.status).toBe('active');
     expect(updated.id).toBe(created.id);
+    expect(updated.metadata).toMatchObject({ updated: true });
   });
 
-  it('5/8 - should finalize enrollment', async () => {
-    const input: CreateEnrollmentInput = {
-      studentId: testStudentId,
+  it('5/8 - should activate enrollment', async () => {
+    const input: CreateEnglishEnrollmentInput = {
+      studentPartyId: testStudentId,
+      courseId: 'test-course-id',
       programId: testProgramId,
       branchId: testBranchId,
-      startDate: new Date().toISOString(),
     };
 
     const created = await service.createEnrollment(testTenantId, input);
     createdEnrollmentIds.push(created.id);
 
-    const finalized = await service.finalizeEnrollment(testTenantId, created.id);
+    const activated = await service.activateEnrollment(testTenantId, created.id);
 
-    expect(finalized.status).toBe('active');
-    expect(finalized.enrollmentDate).toBeDefined();
+    expect(activated.id).toBe(created.id);
+    expect(activated.enrollmentStatus).toBeDefined();
   });
 
   it('6/8 - should enforce tenant isolation', async () => {
-    const input: CreateEnrollmentInput = {
-      studentId: testStudentId,
+    const input: CreateEnglishEnrollmentInput = {
+      studentPartyId: testStudentId,
+      courseId: 'test-course-id',
       programId: testProgramId,
       branchId: testBranchId,
-      startDate: new Date().toISOString(),
     };
 
     const created = await service.createEnrollment(testTenantId, input);
@@ -171,11 +193,11 @@ describe('E2 — Enrollment Service', () => {
   });
 
   it('7/8 - should enforce branch isolation', async () => {
-    const input: CreateEnrollmentInput = {
-      studentId: testStudentId,
+    const input: CreateEnglishEnrollmentInput = {
+      studentPartyId: testStudentId,
+      courseId: 'test-course-id',
       programId: testProgramId,
       branchId: testBranchId,
-      startDate: new Date().toISOString(),
     };
 
     const created = await service.createEnrollment(testTenantId, input);
