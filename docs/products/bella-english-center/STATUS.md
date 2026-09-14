@@ -9,6 +9,7 @@
 **E9 seal baseline:** `origin/main@19b57f09`
 **E10 reconciliation baseline:** `origin/main@2105a81c`
 **RC closure branch baseline:** `origin/main@4b213e74`
+**RC closure merge baseline:** `origin/main@92da566a`
 
 ---
 
@@ -29,7 +30,7 @@ E8 - Parent/Student Engagement    BOUNDED VERIFIED + SEALED
 
 E9 - Chain Command Center         BOUNDED VERIFIED + SEALED
 
-E10 - Product Reconciliation / RC RECONCILED / RC CLOSURE IMPLEMENTED LOCALLY
+E10 - Product Reconciliation / RC RECONCILED / RC CLOSURE SEALED
 ```
 
 The E2/E3/E4 seal is bounded to English Center evidence. It does not claim full
@@ -56,9 +57,9 @@ passed, but RC is held because E10 found missing full UI/API consumption
 surfaces for E6-E9 and no full browser/live UI-to-DB smoke for the complete
 E2-E9 chain.
 
-RC Closure is opened from canonical `origin/main@4b213e74`. It implements E6-E9
-API/dashboard consumption surfaces and local smoke evidence. Final RC remains
-pending PR merge through dependency-aware CI and canonical-main smoke.
+RC Closure was opened from canonical `origin/main@4b213e74`, merged through
+PR #107, and smoke-tested on canonical `origin/main@92da566a`. It implements
+E6-E9 API/dashboard consumption surfaces and closes the E10 bounded RC hold.
 
 ---
 
@@ -137,7 +138,7 @@ E10 migration changed-check      PASS / empty-remote drift skip
 E10 architecture guard           PASS
 E10 education conformance        39/39 PASS
 E10 forbidden dependency grep    PASS / no hits
-E10 RC decision                  HELD
+E10 RC decision                  BOUNDED RELEASE CANDIDATE after RC Closure
 RC closure architecture gate     PASS
 RC closure API smoke             4/4 PASS
 RC closure regression + smoke    73/73 PASS
@@ -149,8 +150,12 @@ RC closure migration changed-check PASS / empty-remote drift skip
 RC closure git diff --check      PASS
 RC closure focused any scan      PASS / no hits
 RC closure focused forbidden scan PASS / no hits
-RC closure TypeScript changed    ATTEMPTED / no diagnostic before interruption
-RC closure final RC              PENDING PR + CANONICAL-MAIN SMOKE
+RC closure TypeScript changed    PASS on PR #107 dependency-aware CI
+RC closure PR #107 merge         MERGED: 92da566a
+RC closure canonical API smoke   4/4 PASS on origin/main@92da566a
+RC closure canonical regression  73/73 PASS on origin/main@92da566a
+RC closure canonical build       PASS on origin/main@92da566a
+RC closure final RC              BOUNDED RELEASE CANDIDATE
 ```
 
 ---
@@ -208,13 +213,15 @@ RC-BLOCKER-E10-UIAPI-01
   not find matching UI/API consumption surfaces for attendance/learning,
   tuition/billing, engagement, and chain command center.
   Owner: English Center product surface
-  Status: closed locally by RC Closure branch; pending PR/CI/canonical smoke
+  Status: closed by PR #107 and canonical smoke on origin/main@92da566a
 
 RC-BLOCKER-E10-RUNTIME-01
   E10 did not execute a full browser/live UI-to-DB smoke across the complete
   E2-E9 product chain.
   Owner: English Center release validation
-  Status: partially reduced by API smoke; canonical-main runtime smoke still pending
+  Status: closed for bounded RC by canonical route-handler smoke, product
+  regression, and production build on origin/main@92da566a; live browser/real
+  database E2E remains not claimed unless run by a dedicated environment gate
 ```
 
 ---
