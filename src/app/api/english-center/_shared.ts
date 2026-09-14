@@ -89,7 +89,7 @@ export async function getEnglishCenterApiContext(): Promise<
       tenantId: user.user_metadata?.tenant_id ?? null,
     }
     : await resolveDevelopmentMockUser();
-  const fallbackUser = user && !resolvedUser.tenantId
+  const fallbackUser = user && resolvedUser && !resolvedUser.tenantId
     ? await resolveProfileUser(supabase, user)
     : null;
   const tenantId = resolvedUser?.tenantId || fallbackUser?.tenantId;
