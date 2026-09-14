@@ -2,60 +2,89 @@ import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals
 import { createClient } from '@supabase/supabase-js';
 import { EnglishCenterEnrollmentService } from '../services/enrollment.service';
 import { CreateEnglishEnrollmentInput, UpdateEnglishEnrollmentInput } from '../types/enrollment.types';
-
-// Mock Platform Enrollment Contract
-jest.mock('@/platform/education/contracts/enrollment.contract.impl', () => ({
-  EnrollmentContractImpl: jest.fn().mockImplementation(() => ({
-    enrollStudent: jest.fn().mockResolvedValue({
-      id: 'canonical-enrollment-id',
-      tenantId: 'test-tenant',
-      studentPartyId: 'test-student',
-      courseId: 'test-course',
-      status: 'pending',
-      enrolledAt: new Date().toISOString(),
-    }),
-    getEnrollment: jest.fn().mockResolvedValue({
-      id: 'canonical-enrollment-id',
-      tenantId: 'test-tenant',
-      studentPartyId: 'test-student',
-      courseId: 'test-course',
-      status: 'pending',
-      enrolledAt: new Date().toISOString(),
-    }),
-  })),
-}));
+import { IEducationEnrollmentContract } from '@/platform/education/contracts/enrollment.contract';
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+const describeIfSupabase = supabaseUrl && supabaseKey ? describe : describe.skip;
 
-describe('E2 — Enrollment Service', () => {
+describeIfSupabase('E2 — Enrollment Service', () => {
   let service: EnglishCenterEnrollmentService;
   let testTenantId: string;
   let testBranchId: string;
   let testStudentId: string;
+  let testCourseId: string;
   let testProgramId: string;
   let createdEnrollmentIds: string[] = [];
+  let canonicalEnrollmentId: string;
 
   beforeEach(async () => {
     const supabase = createClient(supabaseUrl, supabaseKey);
-    service = new EnglishCenterEnrollmentService(supabase);
 
-    // Setup test data
-    const { data: tenant } = await supabase.from('tenants').select('id').limit(1).single();
-    testTenantId = tenant?.id || '';
-
-    const { data: branch } = await supabase.from('org_units').select('id').eq('tenant_id', testTenantId).limit(1).single();
+    const { data: branch } = await supabase
+      .from('org_units')
+      .select('id, tenant_id')
+      .eq('is_active', true)
+      .limit(1)
+      .single();
     testBranchId = branch?.id || '';
+    testTenantId = branch?.tenant_id || '';
 
-    // Create test student (party)
-    const { data: party } = await supabase.from('parties').insert({
+    const { data: party } = await supabase.from('party_parties').insert({
       tenant_id: testTenantId,
       party_type: 'person',
-      metadata: { test: true },
+      display_name: `Test Student ${Date.now()}`,
     }).select().single();
     testStudentId = party?.id || '';
+    testCourseId = crypto.randomUUID();
+    canonicalEnrollmentId = crypto.randomUUID();
 
-    // Create test program
+    await supabase.from('edu_courses').insert({
+      id: testCourseId,
+      tenant_id: testTenantId,
+      course_code: `E2-${Date.now()}`,
+      title: 'E2 Test Canonical Course',
+      status: 'active',
+      max_students: 20,
+      current_enrollment: 0,
+      prerequisite_course_codes: [],
+    });
+
+    await supabase.from('edu_enrollments').insert({
+      id: canonicalEnrollmentId,
+      tenant_id: testTenantId,
+      student_party_id: testStudentId,
+      course_id: testCourseId,
+      status: 'pending',
+      request_id: `REQ-${Date.now()}`,
+    });
+
+    const mockEnrollmentContract: IEducationEnrollmentContract = {
+      enrollStudent: jest.fn(async (input) => ({
+        id: canonicalEnrollmentId,
+        tenantId: input.tenantId,
+        studentPartyId: input.studentPartyId,
+        courseId: input.courseId,
+        status: 'pending',
+        enrolledAt: new Date().toISOString(),
+      })),
+      getEnrollment: jest.fn(async (tenantId, enrollmentId) => {
+        if (tenantId !== testTenantId) {
+          return null;
+        }
+
+        return {
+          id: enrollmentId,
+          tenantId: testTenantId,
+          studentPartyId: testStudentId,
+          courseId: testCourseId,
+          status: 'pending',
+          enrolledAt: new Date().toISOString(),
+        };
+      }),
+    };
+    service = new EnglishCenterEnrollmentService(supabase, mockEnrollmentContract);
+
     const { data: program } = await supabase.from('english_center_programs').insert({
       tenant_id: testTenantId,
       name: 'Test Program',
@@ -76,7 +105,9 @@ describe('E2 — Enrollment Service', () => {
 
     // Cleanup test data
     if (testProgramId) await supabase.from('english_center_programs').delete().eq('id', testProgramId);
-    if (testStudentId) await supabase.from('parties').delete().eq('id', testStudentId);
+    if (canonicalEnrollmentId) await supabase.from('edu_enrollments').delete().eq('id', canonicalEnrollmentId);
+    if (testCourseId) await supabase.from('edu_courses').delete().eq('id', testCourseId);
+    if (testStudentId) await supabase.from('party_parties').delete().eq('id', testStudentId);
 
     createdEnrollmentIds = [];
   });
@@ -84,7 +115,7 @@ describe('E2 — Enrollment Service', () => {
   it('1/8 - should create enrollment with valid data', async () => {
     const input: CreateEnglishEnrollmentInput = {
       studentPartyId: testStudentId,
-      courseId: 'test-course-id',
+      courseId: testCourseId,
       programId: testProgramId,
       branchId: testBranchId,
       metadata: { source: 'test' },
@@ -105,7 +136,7 @@ describe('E2 — Enrollment Service', () => {
   it('2/8 - should retrieve enrollment by id', async () => {
     const input: CreateEnglishEnrollmentInput = {
       studentPartyId: testStudentId,
-      courseId: 'test-course-id',
+      courseId: testCourseId,
       programId: testProgramId,
       branchId: testBranchId,
     };
@@ -123,7 +154,7 @@ describe('E2 — Enrollment Service', () => {
   it('3/8 - should list enrollments with filters', async () => {
     const input: CreateEnglishEnrollmentInput = {
       studentPartyId: testStudentId,
-      courseId: 'test-course-id',
+      courseId: testCourseId,
       programId: testProgramId,
       branchId: testBranchId,
     };
@@ -143,7 +174,7 @@ describe('E2 — Enrollment Service', () => {
   it('4/8 - should update enrollment context', async () => {
     const input: CreateEnglishEnrollmentInput = {
       studentPartyId: testStudentId,
-      courseId: 'test-course-id',
+      courseId: testCourseId,
       programId: testProgramId,
       branchId: testBranchId,
     };
@@ -161,7 +192,7 @@ describe('E2 — Enrollment Service', () => {
   it('5/8 - should activate enrollment', async () => {
     const input: CreateEnglishEnrollmentInput = {
       studentPartyId: testStudentId,
-      courseId: 'test-course-id',
+      courseId: testCourseId,
       programId: testProgramId,
       branchId: testBranchId,
     };
@@ -178,7 +209,7 @@ describe('E2 — Enrollment Service', () => {
   it('6/8 - should enforce tenant isolation', async () => {
     const input: CreateEnglishEnrollmentInput = {
       studentPartyId: testStudentId,
-      courseId: 'test-course-id',
+      courseId: testCourseId,
       programId: testProgramId,
       branchId: testBranchId,
     };
@@ -195,7 +226,7 @@ describe('E2 — Enrollment Service', () => {
   it('7/8 - should enforce branch isolation', async () => {
     const input: CreateEnglishEnrollmentInput = {
       studentPartyId: testStudentId,
-      courseId: 'test-course-id',
+      courseId: testCourseId,
       programId: testProgramId,
       branchId: testBranchId,
     };

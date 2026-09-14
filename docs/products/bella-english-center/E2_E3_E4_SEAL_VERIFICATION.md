@@ -4,6 +4,23 @@
 **Date:** 2026-09-13  
 **Baseline:** main @ 5d563b7d
 
+> **Superseded on 2026-09-14:** E2/E3/E4 are now governed by
+> `E2_E3_E4_GOVERNANCE_ACCEPTANCE.md` and
+> `E2_E3_E4_BOUNDED_SEAL_REVIEW.md`.
+>
+> Current status:
+>
+> ```text
+> E2 - Enrollment                  BOUNDED VERIFIED + SEALED
+> E3 - Program/Course/Class        BOUNDED VERIFIED + SEALED
+> E4 - Teacher/Workforce           BOUNDED VERIFIED + SEALED
+> E5                               UNBLOCKED after commit, PR, CI, and main merge
+> ```
+>
+> This bounded seal accepts `DEBT-EDU-ARCH-01` and
+> `DEBT-MIG-HISTORY-01` as governed debt / accepted risk. It does not claim
+> full `education:verify` PASS or full migration-history integrity.
+
 ---
 
 ## E2 — ENROLLMENT MODULE

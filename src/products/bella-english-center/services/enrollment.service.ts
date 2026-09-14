@@ -5,6 +5,7 @@
 
 import { SupabaseClient } from '@supabase/supabase-js';
 import { EnrollmentContractImpl } from '@/platform/education/contracts/enrollment.contract.impl';
+import { IEducationEnrollmentContract } from '@/platform/education/contracts/enrollment.contract';
 import { EnglishCenterEnrollmentRepository } from '../repositories/enrollment.repository';
 import {
   CreateEnglishEnrollmentInput,
@@ -14,11 +15,14 @@ import {
 } from '../types/enrollment.types';
 
 export class EnglishCenterEnrollmentService {
-  private readonly enrollmentContract: EnrollmentContractImpl;
+  private readonly enrollmentContract: IEducationEnrollmentContract;
   private readonly repository: EnglishCenterEnrollmentRepository;
 
-  constructor(private readonly supabase: SupabaseClient) {
-    this.enrollmentContract = new EnrollmentContractImpl();
+  constructor(
+    private readonly supabase: SupabaseClient,
+    enrollmentContract?: IEducationEnrollmentContract
+  ) {
+    this.enrollmentContract = enrollmentContract ?? new EnrollmentContractImpl();
     this.repository = new EnglishCenterEnrollmentRepository(supabase);
   }
 

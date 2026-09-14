@@ -63,24 +63,24 @@ CREATE TABLE IF NOT EXISTS public.english_center_enrollments (
 -- ============================================================================
 
 -- Tenant isolation index (MANDATORY for all Product tables)
-CREATE INDEX idx_english_enrollments_tenant
+CREATE INDEX CONCURRENTLY idx_english_enrollments_tenant
   ON public.english_center_enrollments(tenant_id);
 
 -- Branch scope index (filter by branch)
-CREATE INDEX idx_english_enrollments_branch
+CREATE INDEX CONCURRENTLY idx_english_enrollments_branch
   ON public.english_center_enrollments(branch_id);
 
 -- Canonical enrollment lookup (enforces UNIQUE)
-CREATE INDEX idx_english_enrollments_canonical
+CREATE INDEX CONCURRENTLY idx_english_enrollments_canonical
   ON public.english_center_enrollments(canonical_enrollment_id);
 
 -- Program filter index
-CREATE INDEX idx_english_enrollments_program
+CREATE INDEX CONCURRENTLY idx_english_enrollments_program
   ON public.english_center_enrollments(program_id)
   WHERE program_id IS NOT NULL;
 
 -- Class filter index
-CREATE INDEX idx_english_enrollments_class
+CREATE INDEX CONCURRENTLY idx_english_enrollments_class
   ON public.english_center_enrollments(class_id)
   WHERE class_id IS NOT NULL;
 
@@ -90,24 +90,49 @@ CREATE INDEX idx_english_enrollments_class
 
 ALTER TABLE public.english_center_enrollments ENABLE ROW LEVEL SECURITY;
 
--- Policy: Tenant isolation (users can only access their tenant's enrollments)
-CREATE POLICY english_enrollments_tenant_isolation
-  ON public.english_center_enrollments
-  FOR ALL
-  USING (tenant_id = current_setting('app.current_tenant_id', TRUE)::UUID);
-
--- Policy: Branch scope isolation (users can only access branches they have access to)
-CREATE POLICY english_enrollments_branch_scope
+-- Policy: Tenant + branch isolation through Platform authorization projection
+CREATE POLICY english_enrollments_tenant_branch_isolation
   ON public.english_center_enrollments
   FOR ALL
   USING (
-    branch_id IN (
+    tenant_id = COALESCE(
+      public.get_auth_tenant_id(),
+      NULLIF(current_setting('app.current_tenant_id', TRUE), '')::UUID
+    )
+    AND branch_id IN (
       SELECT org_unit_id
       FROM public.user_org_unit_access
-      WHERE user_id = current_setting('app.current_user_id', TRUE)::UUID
-        AND tenant_id = current_setting('app.current_tenant_id', TRUE)::UUID
+      WHERE user_id = COALESCE(
+        auth.uid(),
+        NULLIF(current_setting('app.current_user_id', TRUE), '')::UUID
+      )
+        AND tenant_id = COALESCE(
+          public.get_auth_tenant_id(),
+          NULLIF(current_setting('app.current_tenant_id', TRUE), '')::UUID
+        )
+    )
+  )
+  WITH CHECK (
+    tenant_id = COALESCE(
+      public.get_auth_tenant_id(),
+      NULLIF(current_setting('app.current_tenant_id', TRUE), '')::UUID
+    )
+    AND branch_id IN (
+      SELECT org_unit_id
+      FROM public.user_org_unit_access
+      WHERE user_id = COALESCE(
+        auth.uid(),
+        NULLIF(current_setting('app.current_user_id', TRUE), '')::UUID
+      )
+        AND tenant_id = COALESCE(
+          public.get_auth_tenant_id(),
+          NULLIF(current_setting('app.current_tenant_id', TRUE), '')::UUID
+        )
     )
   );
+
+REVOKE ALL ON public.english_center_enrollments FROM anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.english_center_enrollments TO authenticated, service_role;
 
 -- ============================================================================
 -- TRIGGER: Updated timestamp

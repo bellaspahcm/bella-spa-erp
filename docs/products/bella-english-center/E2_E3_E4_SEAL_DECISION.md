@@ -3,6 +3,15 @@
 **Date:** 2026-09-13  
 **Context:** Test implementation for E2/E3/E4 verification
 
+> **Superseded on 2026-09-14:** Do not use this document to seal E2/E3/E4.
+> The documented-debt seal path was rejected after runtime investigation found
+> an Authorization Architecture Gap around branch-scoped access. Use
+> `E2_E3_E4_AUTHORIZATION_ARCHITECTURE_GAP.md`,
+> `E2_E3_E4_BRANCH_ACCESS_ARCHITECTURE_DECISION.md`,
+> `ARCHITECTURE_GATE_RESULT.md`,
+> `E2_E3_E4_EDUCATION_VERIFY_ATTRIBUTION.md`, and
+> `E2_E3_E4_BOUNDED_SEAL_REVIEW.md` as the current authority.
+
 ---
 
 ## SITUATION

@@ -9,8 +9,9 @@ import { CreateClassInput } from '../types/class.types';
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+const describeIfSupabase = supabaseUrl && supabaseKey ? describe : describe.skip;
 
-describe('E3 — Program/Course/Class Services', () => {
+describeIfSupabase('E3 — Program/Course/Class Services', () => {
   let programService: ProgramService;
   let courseService: CourseService;
   let classService: ClassService;
@@ -26,11 +27,14 @@ describe('E3 — Program/Course/Class Services', () => {
     courseService = new CourseService(supabase);
     classService = new ClassService(supabase);
 
-    const { data: tenant } = await supabase.from('tenants').select('id').limit(1).single();
-    testTenantId = tenant?.id || '';
-
-    const { data: branch } = await supabase.from('org_units').select('id').eq('tenant_id', testTenantId).limit(1).single();
+    const { data: branch } = await supabase
+      .from('org_units')
+      .select('id, tenant_id')
+      .eq('is_active', true)
+      .limit(1)
+      .single();
     testBranchId = branch?.id || '';
+    testTenantId = branch?.tenant_id || '';
   });
 
   afterEach(async () => {

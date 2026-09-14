@@ -5,8 +5,9 @@ import { CreateTeacherInput, UpdateTeacherInput } from '../types/teacher.types';
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+const describeIfSupabase = supabaseUrl && supabaseKey ? describe : describe.skip;
 
-describe('E4 — Teacher Service', () => {
+describeIfSupabase('E4 — Teacher Service', () => {
   let service: TeacherService;
   let testTenantId: string;
   let testBranchId: string;
@@ -17,16 +18,19 @@ describe('E4 — Teacher Service', () => {
     const supabase = createClient(supabaseUrl, supabaseKey);
     service = new TeacherService(supabase);
 
-    const { data: tenant } = await supabase.from('tenants').select('id').limit(1).single();
-    testTenantId = tenant?.id || '';
-
-    const { data: branch } = await supabase.from('org_units').select('id').eq('tenant_id', testTenantId).limit(1).single();
+    const { data: branch } = await supabase
+      .from('org_units')
+      .select('id, tenant_id')
+      .eq('is_active', true)
+      .limit(1)
+      .single();
     testBranchId = branch?.id || '';
+    testTenantId = branch?.tenant_id || '';
 
-    const { data: party } = await supabase.from('parties').insert({
+    const { data: party } = await supabase.from('party_parties').insert({
       tenant_id: testTenantId,
       party_type: 'person',
-      metadata: { test: true, role: 'teacher' },
+      display_name: `Test Teacher ${Date.now()}`,
     }).select().single();
     testPartyId = party?.id || '';
   });
@@ -38,7 +42,7 @@ describe('E4 — Teacher Service', () => {
       await supabase.from('english_center_teachers').delete().in('id', createdTeacherIds);
     }
     if (testPartyId) {
-      await supabase.from('parties').delete().eq('id', testPartyId);
+      await supabase.from('party_parties').delete().eq('id', testPartyId);
     }
 
     createdTeacherIds = [];

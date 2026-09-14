@@ -1,70 +1,69 @@
 # Bella English Center — Implementation Status
 
-**Last Updated:** 2026-09-13
+**Last Updated:** 2026-09-14
+**Canonical authority:** `E2_E3_E4_GOVERNANCE_ACCEPTANCE.md`
 
 ---
 
-## E2 — ENROLLMENT MODULE
+## E2 / E3 / E4 Canonical Status
 
-**Status:** 🟡 MERGED, PARTIAL SEAL
+```text
+E2 - Enrollment                  BOUNDED VERIFIED + SEALED
+E3 - Program/Course/Class        BOUNDED VERIFIED + SEALED
+E4 - Teacher/Workforce           BOUNDED VERIFIED + SEALED
 
-**Merged:** ✅ commit e55428d5  
-**Implementation:** ✅ 12 files (spec, migration, types, repo, service, API×3, UI×3, tests)  
-**Architecture:** ✅ Platform Enrollment Contract consumed, no Kernel bypass
+E5                               UNBLOCKED after commit, PR, CI, and main merge
+```
 
-**Residual Obligations:**
-- 🟡 Tests: 7/8 passing (1 mock issue, non-critical)
-- ⏳ Migration runtime verification
-- ⏳ Smoke test on canonical main
-- ⏳ Tenant/branch isolation proof
-
-**Decision:** Proceed to E3/E4, close residuals in parallel
+The E2/E3/E4 seal is bounded to English Center evidence. It does not claim full
+broader Education architecture compliance, full migration-history integrity, or
+full root TypeScript compliance.
 
 ---
 
-## E3 — PROGRAM / COURSE / CLASS MANAGEMENT
+## Accepted Evidence
 
-**Status:** ✅ MERGED
-
-**Merged:** ✅ commit 7e125ad7  
-**Implementation:** ✅ 18 files (spec, migration, types×3, repos×3, services×3, API×12)  
-**Architecture:** ✅ Product-level entities, no Platform dependency, RLS enforced
-
-**Scope Decision:** Backend capability complete. UI deferred (can add later if needed).
-
-**Seal Criteria Met:**
-- ✅ Migration (3 tables: programs, courses, classes)
-- ✅ Types, Repositories, Services
-- ✅ API (12 endpoints)
-- ✅ Architecture Guard PASS
-- ✅ Build PASS
-- ✅ Single scope (English Center only)
-
-**Status:** 🟢 SEALED (backend capability)
+```text
+Branch-access architecture       RESOLVED
+Platform projection              IMPLEMENTED
+Platform Org/People RLS repair   APPLIED
+E2/E3/E4 branch-aware RLS        APPLIED
+Runtime branch isolation         PASS
+Targeted tests                   33/33 PASS
+Platform Architecture Guard      PASS
+Education violations delta       0
+Attribution unknown              0
+Governance acceptance            ACCEPTED
+Changed-file TypeScript delta    0
+```
 
 ---
 
-## E4 — TEACHER & WORKFORCE
+## Governed Debt / Accepted Risk
 
-**Status:** ⏳ NEXT
+```text
+DEBT-EDU-ARCH-01
+  197 pre-existing Education direct-DB violations
+  Owner: Broader Bella Education / Preschool architecture remediation
+  Status: scoped out from English Center E2/E3/E4
+
+DEBT-MIG-HISTORY-01
+  Remote migration history unavailable; drift check not fully proven
+  Owner: Platform database governance / release infrastructure
+  Status: accepted as bounded infrastructure limitation, not PASS
+
+DEBT-TSC-ROOT-01
+  Root TypeScript has pre-existing diagnostics/timeouts outside changed E2/E3/E4 files
+  Owner: Platform / whole-repository TypeScript hardening
+  Status: scoped out from English Center E2/E3/E4, not PASS
+```
 
 ---
 
-## Summary
+## References
 
-| Phase | Implementation | Merged | Sealed | Notes |
-|-------|----------------|--------|--------|-------|
-| E2 | ✅ Complete | ✅ Yes | 🟡 Partial | 7/8 tests pass, runtime verification pending |
-| E3 | ✅ Complete | ✅ Yes | 🟢 Yes | Backend complete, UI optional |
-| E4 | ⏳ Next | - | - | Teacher/workforce management |
-
----
-
-## Architecture Compliance
-
-**All phases:**
-- ✅ Single scope (English Center only)
-- ✅ Platform contracts consumed (no Kernel bypass)
-- ✅ Additive migrations (CREATE only)
-- ✅ Tenant + branch isolation
-- ✅ No frozen Kernel modifications
+- `E2_E3_E4_GOVERNANCE_ACCEPTANCE.md`
+- `E2_E3_E4_BOUNDED_SEAL_REVIEW.md`
+- `E2_E3_E4_EDUCATION_VERIFY_ATTRIBUTION.md`
+- `E2_E3_E4_BRANCH_ACCESS_ARCHITECTURE_DECISION.md`
+- `ARCHITECTURE_GATE_RESULT.md`
