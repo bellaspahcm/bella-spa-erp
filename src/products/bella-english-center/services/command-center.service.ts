@@ -93,7 +93,7 @@ export class ChainCommandCenterService {
     tenantId: string,
     input: ChainCommandCenterInput
   ): Promise<CommandCenterBranch[]> {
-    const orgUnits = input.rootOrgUnitId !== undefined
+    const orgUnits = input.rootOrgUnitId
       ? (await this.contracts.orgUnits.getHierarchy(input.rootOrgUnitId, tenantId))
         .map((item) => item.unit)
       : await this.contracts.orgUnits.getOrgUnits({

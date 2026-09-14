@@ -10,6 +10,7 @@
 **E10 reconciliation baseline:** `origin/main@2105a81c`
 **RC closure branch baseline:** `origin/main@4b213e74`
 **RC closure merge baseline:** `origin/main@92da566a`
+**Post-RC validation baseline:** `origin/main@391b0ec5`
 
 ---
 
@@ -60,6 +61,12 @@ E2-E9 chain.
 RC Closure was opened from canonical `origin/main@4b213e74`, merged through
 PR #107, and smoke-tested on canonical `origin/main@92da566a`. It implements
 E6-E9 API/dashboard consumption surfaces and closes the E10 bounded RC hold.
+
+Post-RC Validation was opened from canonical `origin/main@391b0ec5`. It adds
+dedicated browser and real-database validation gates and found a runtime
+environment/schema proof gap in the Command Center path. This does not invalidate
+the bounded RC; it holds Field Verified RC until the dedicated environment gates
+pass.
 
 ---
 
@@ -156,6 +163,18 @@ RC closure canonical API smoke   4/4 PASS on origin/main@92da566a
 RC closure canonical regression  73/73 PASS on origin/main@92da566a
 RC closure canonical build       PASS on origin/main@92da566a
 RC closure final RC              BOUNDED RELEASE CANDIDATE
+Post-RC architecture gate        PASS / validation-only scope
+Post-RC RC API smoke             4/4 PASS
+Post-RC command center service   8/8 PASS
+Post-RC real DB validation       SKIPPED / no runnable DB URL, not PASS
+Post-RC browser validation       FAIL / runtime schema-grant gap found
+Post-RC lint                     PASS
+Post-RC build                    PASS
+Post-RC architecture guard       PASS
+Post-RC migration zero-downtime  PASS / no changed migrations
+Post-RC migration drift check    PASS / empty-remote drift skip
+Post-RC git diff --check         PASS
+Post-RC final decision           BOUNDED RC retained; Field Verified RC HELD
 ```
 
 ---
@@ -222,6 +241,22 @@ RC-BLOCKER-E10-RUNTIME-01
   Status: closed for bounded RC by canonical route-handler smoke, product
   regression, and production build on origin/main@92da566a; live browser/real
   database E2E remains not claimed unless run by a dedicated environment gate
+
+POST-RC-DB-SCHEMA-01
+  Post-RC browser validation found the Command Center runtime environment could
+  not see `english_center_class_sessions`; earlier local probes also exposed
+  missing later English Center RC tables in the same runtime family. The
+  corresponding migrations exist in the repository.
+  Owner: English Center release validation / staging database operations
+  Status: Field Verified RC blocker; apply canonical migrations and refresh
+  schema cache in a dedicated runtime environment, then rerun Post-RC gates
+
+POST-RC-ORGUNIT-GRANT-01
+  Post-RC browser validation found `permission denied for view
+  user_org_unit_access` during Command Center runtime fetching.
+  Owner: Platform authorization projection / staging database operations
+  Status: Field Verified RC blocker; verify view grants and authenticated DB
+  context, then rerun Post-RC gates
 ```
 
 ---
@@ -244,4 +279,6 @@ RC-BLOCKER-E10-RUNTIME-01
 - `E10_PRODUCT_RECONCILIATION_RC.md`
 - `RC_CLOSURE_ARCHITECTURE_GATE_RESULT.md`
 - `RC_CLOSURE_EVIDENCE.md`
+- `POST_RC_VALIDATION_ARCHITECTURE_GATE_RESULT.md`
+- `POST_RC_VALIDATION_EVIDENCE.md`
 - `E6_E10_ROADMAP_RECONCILIATION.md`

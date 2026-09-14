@@ -1,10 +1,76 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
+import { headers } from 'next/headers';
+import type { User } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
 
 export interface EnglishCenterApiContext {
   readonly supabase: ReturnType<typeof createClient>;
   readonly tenantId: string;
   readonly userId: string;
+}
+
+type EnglishCenterResolvedUser = {
+  readonly id: string;
+  readonly tenantId: string | null;
+};
+
+type EnglishCenterProfile = Pick<Database['public']['Tables']['users']['Row'], 'id' | 'tenant_id'>;
+
+function getSupabaseAdminUrl(): string {
+  return process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
+}
+
+function getSupabaseAdminKey(): string {
+  return process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+}
+
+async function resolveProfileUser(
+  supabase: ReturnType<typeof createClient>,
+  user: User,
+): Promise<EnglishCenterResolvedUser | null> {
+  const { data } = await supabase
+    .from('users')
+    .select('id, tenant_id')
+    .eq('id', user.id)
+    .maybeSingle<EnglishCenterProfile>();
+
+  if (data?.tenant_id) {
+    return { id: data.id, tenantId: data.tenant_id };
+  }
+
+  if (!user.email) return data ? { id: data.id, tenantId: data.tenant_id } : null;
+
+  const { data: emailProfile } = await supabase
+    .from('users')
+    .select('id, tenant_id')
+    .eq('email', user.email)
+    .maybeSingle<EnglishCenterProfile>();
+
+  return emailProfile ? { id: emailProfile.id, tenantId: emailProfile.tenant_id } : null;
+}
+
+async function resolveDevelopmentMockUser(): Promise<EnglishCenterResolvedUser | null> {
+  if (process.env.NODE_ENV !== 'development') return null;
+
+  const mockEmail = (await headers()).get('x-mock-user-email');
+  const adminUrl = getSupabaseAdminUrl();
+  const adminKey = getSupabaseAdminKey();
+
+  if (!mockEmail || !adminUrl || !adminKey) return null;
+
+  const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+  const adminClient = createSupabaseClient<Database>(adminUrl, adminKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  const { data } = await adminClient
+    .from('users')
+    .select('id, tenant_id')
+    .eq('email', mockEmail)
+    .maybeSingle<EnglishCenterProfile>();
+
+  return data ? { id: data.id, tenantId: data.tenant_id } : null;
 }
 
 export async function getEnglishCenterApiContext(): Promise<
@@ -17,20 +83,33 @@ export async function getEnglishCenterApiContext(): Promise<
     error: authError,
   } = await supabase.auth.getUser();
 
-  if (authError || !user) {
+  const resolvedUser = user
+    ? {
+      id: user.id,
+      tenantId: user.user_metadata?.tenant_id ?? null,
+    }
+    : await resolveDevelopmentMockUser();
+  const fallbackUser = user && resolvedUser && !resolvedUser.tenantId
+    ? await resolveProfileUser(supabase, user)
+    : null;
+  const tenantId = resolvedUser?.tenantId || fallbackUser?.tenantId;
+  const userId = resolvedUser?.id || fallbackUser?.id;
+
+  if ((authError || !user) && !resolvedUser) {
     return { response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
   }
-
-  const tenantId = user.user_metadata?.tenant_id;
   if (!tenantId) {
     return { response: NextResponse.json({ error: 'Tenant not found' }, { status: 400 }) };
+  }
+  if (!userId) {
+    return { response: NextResponse.json({ error: 'User not found' }, { status: 400 }) };
   }
 
   return {
     context: {
       supabase,
       tenantId,
-      userId: user.id,
+      userId,
     },
   };
 }
