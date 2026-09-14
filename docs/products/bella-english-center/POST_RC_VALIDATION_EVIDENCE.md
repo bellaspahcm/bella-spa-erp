@@ -3,6 +3,7 @@
 **Date:** 2026-09-15
 **Branch:** `codex/post-rc-validation-english-center`
 **Base:** `origin/main@391b0ec5`
+**Merge:** PR #109 -> `origin/main@62074058`
 **Status:** VALIDATION HARNESS ADDED / FIELD VERIFIED RC HELD
 
 ---
@@ -109,6 +110,7 @@ Captured runtime blockers:
 ```text
 permission denied for view user_org_unit_access
 PGRST205 Could not find table public.english_center_class_sessions
+PGRST205 Could not find table public.english_center_learning_progress
 command-center API probe returned 500 instead of 200
 ```
 
@@ -124,6 +126,48 @@ supabase/migrations/20260914190000_create_english_center_engagement.sql
 This means the current local/staging runtime used by the browser gate is not
 yet proven to be aligned with canonical migrations, schema cache, grants, and
 authenticated database context.
+
+---
+
+## Canonical-Main Smoke
+
+Executed after PR #109 merge from detached canonical
+`origin/main@62074058`.
+
+```text
+npm test -- src/app/api/english-center/__tests__/rc-closure-surface.test.ts \
+  src/products/bella-english-center/__tests__/command-center.service.test.ts \
+  src/app/api/english-center/__tests__/post-rc-real-db-validation.test.ts \
+  --runInBand
+  Test Suites: 1 skipped, 2 passed, 2 of 3 total
+  Tests:       1 skipped, 12 passed, 13 total
+  Reason: real DB validation skipped locally because no runnable DB URL exists
+
+npm run arch:guard
+  PASS
+
+git diff --check
+  PASS
+
+npm run build
+  PASS / collected English Center RC API routes and dashboard pages
+
+npm run e2e:english-center-post-rc
+  FAIL / expected Field Verified RC blocker remains
+```
+
+Canonical browser validation still renders the learning, tuition, engagement,
+and command-center page shells, but the command-center data path is blocked by:
+
+```text
+permission denied for view user_org_unit_access
+PGRST205 Could not find table public.english_center_learning_progress
+command-center API probe returned 500 instead of 200
+```
+
+This confirms PR #109 successfully installed the Post-RC gates on canonical
+main, and those gates continue to hold Field Verified RC until a dedicated
+runtime database is aligned and revalidated.
 
 ---
 
