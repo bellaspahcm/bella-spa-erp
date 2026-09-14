@@ -3,6 +3,7 @@
 **Last Updated:** 2026-09-14
 **Canonical authority:** `E2_E3_E4_GOVERNANCE_ACCEPTANCE.md`
 **E5 seal baseline:** `origin/main@af28f1a0`
+**E6 seal baseline:** `origin/main@a493ab88`
 
 ---
 
@@ -15,7 +16,9 @@ E4 - Teacher/Workforce           BOUNDED VERIFIED + SEALED
 
 E5 - Timetable/Room Scheduling   BOUNDED VERIFIED + SEALED
 
-E6+                              NOT OPENED
+E6 - Attendance/Learning Ops      BOUNDED VERIFIED + SEALED
+
+E7+                              NOT OPENED
 ```
 
 The E2/E3/E4 seal is bounded to English Center evidence. It does not claim full
@@ -25,8 +28,11 @@ full root TypeScript compliance.
 E5 is sealed after PR #94 merged to `main` under legitimate GitHub policy and
 canonical main smoke passed on `origin/main@d7f6e4ac`.
 
-E6+ is not opened. The E6-E10 roadmap has been reconciled as planning scope only;
-E6 implementation still requires an E6-specific architecture gate result.
+E6 is sealed after PR #98 merged to `main` under legitimate GitHub policy and
+canonical main smoke passed on `origin/main@a493ab88`.
+
+E7+ is not opened. E7 implementation requires its own architecture gate result
+from canonical main after E6 seal.
 
 ---
 
@@ -53,7 +59,18 @@ E5 unknown attribution           0
 E5 PR #94 merge                  MERGED: d7f6e4ac
 E5 canonical main smoke          PASS
 E6-E10 roadmap reconciliation    COMPLETE
-E6 implementation                NOT OPENED
+E6 architecture gate             PASS
+E6 service tests                 7/7 PASS
+E6 English Center regression     47/47 PASS
+E6 scoped TypeScript check       PASS: bounded baseline 162/162
+E6 migration zero-downtime       PASS
+E6 migration changed-check       PASS / empty-remote drift skip
+E6 architecture guard            PASS
+E6 education conformance         39/39 PASS
+E6 PR #98 merge                  MERGED: a493ab88
+E6 canonical main smoke          PASS
+E6 implementation                BOUNDED VERIFIED + SEALED
+E7 implementation                NOT OPENED
 ```
 
 ---
@@ -87,6 +104,12 @@ DEBT-REALDB-E2E-INFRA-01
   Owner: CI database infrastructure / real-db E2E reliability
   Status: passed on PR #94 final CI and canonical main smoke attribution remained
   not E5-introduced
+
+DEBT-TSC-BASELINE-ORDER-01
+  TypeScript diagnostic signatures can drift when TypeScript emits quoted union
+  literal members in a different order.
+  Owner: Platform governance / CI diagnostic comparator
+  Status: comparator normalized during PR #98; E6 product diagnostic delta was 0
 ```
 
 ---
@@ -99,4 +122,5 @@ DEBT-REALDB-E2E-INFRA-01
 - `E2_E3_E4_BRANCH_ACCESS_ARCHITECTURE_DECISION.md`
 - `ARCHITECTURE_GATE_RESULT.md`
 - `E5_BOUNDED_SEAL_REVIEW.md`
+- `E6_BOUNDED_SEAL_REVIEW.md`
 - `E6_E10_ROADMAP_RECONCILIATION.md`
