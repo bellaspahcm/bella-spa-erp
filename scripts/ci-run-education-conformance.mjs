@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { createClient } from '@supabase/supabase-js';
 import { config as loadEnv } from 'dotenv';
+import WebSocket from 'ws';
 
 loadEnv({ path: '.env.local', quiet: true });
 loadEnv({ quiet: true });
@@ -101,6 +102,9 @@ async function runPreflight() {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
+    },
+    realtime: {
+      transport: WebSocket,
     },
   });
 
