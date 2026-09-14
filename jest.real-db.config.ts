@@ -15,6 +15,7 @@ const config: Config = {
     '<rootDir>/src/__tests__/e2e-refund-full.test.ts',
     '<rootDir>/src/__tests__/e2e-accounting-gl-verification.test.ts',
     '<rootDir>/src/__tests__/e2e-payroll-month-close.test.ts',
+    '<rootDir>/src/app/api/english-center/__tests__/post-rc-real-db-validation.test.ts',
   ],
 }
 

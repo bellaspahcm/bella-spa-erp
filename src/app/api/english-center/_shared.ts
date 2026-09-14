@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
+import { getCurrentUser } from '@/services/user-actions';
 
 export interface EnglishCenterApiContext {
   readonly supabase: ReturnType<typeof createClient>;
@@ -17,20 +18,27 @@ export async function getEnglishCenterApiContext(): Promise<
     error: authError,
   } = await supabase.auth.getUser();
 
-  if (authError || !user) {
+  const fallbackUser = !user || !user.user_metadata?.tenant_id
+    ? await getCurrentUser()
+    : null;
+  const tenantId = user?.user_metadata?.tenant_id || fallbackUser?.tenant_id;
+  const userId = user?.id || fallbackUser?.id;
+
+  if ((authError || !user) && !fallbackUser) {
     return { response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
   }
-
-  const tenantId = user.user_metadata?.tenant_id;
   if (!tenantId) {
     return { response: NextResponse.json({ error: 'Tenant not found' }, { status: 400 }) };
+  }
+  if (!userId) {
+    return { response: NextResponse.json({ error: 'User not found' }, { status: 400 }) };
   }
 
   return {
     context: {
       supabase,
       tenantId,
-      userId: user.id,
+      userId,
     },
   };
 }

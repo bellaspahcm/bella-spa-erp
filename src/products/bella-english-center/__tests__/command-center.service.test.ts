@@ -254,6 +254,19 @@ describe('ChainCommandCenterService', () => {
     });
   });
 
+  it('uses active branch org units when no root org unit is requested', async () => {
+    const { service, orgUnits } = makeService();
+
+    await service.getDashboard(TENANT_ID, { asOf: AS_OF });
+
+    expect(orgUnits.getHierarchy).not.toHaveBeenCalled();
+    expect(orgUnits.getOrgUnits).toHaveBeenCalledWith({
+      tenantId: TENANT_ID,
+      unitType: 'branch',
+      isActive: true,
+    });
+  });
+
   it('filters requested branches after resolving Platform branch access', async () => {
     const { service } = makeService();
 
