@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { compareDiagnostics, parseDiagnostics } from './ci-compare-tsc-diagnostics.mjs';
 
 const baselineOutput = [
@@ -36,3 +37,31 @@ assert.equal(reduced.currentTotal, 1);
 assert.equal(reduced.added.length, 0);
 assert.equal(reduced.reduced.length, 1);
 console.log('PASS DEBT REDUCTION = ALLOW');
+
+const reviewedBaselines = JSON.parse(readFileSync('.github/ci/tsc-diagnostic-baselines.json', 'utf8'));
+for (const scope of ['education-affected', 'english-center-affected']) {
+  const reviewed = reviewedBaselines[scope]?.diagnostics;
+  assert.ok(reviewed, `${scope} must have a reviewed diagnostic baseline`);
+
+  const reviewedSame = compareDiagnostics(reviewed, reviewed);
+  assert.equal(reviewedSame.status, 'ALLOW');
+  assert.equal(reviewedSame.added.length, 0);
+
+  const reviewedWithNewError = {
+    ...reviewed,
+    [`synthetic/${scope}.ts|TS9999|Synthetic proof diagnostic for baseline guard.`]: 1,
+  };
+  const reviewedNewError = compareDiagnostics(reviewed, reviewedWithNewError);
+  assert.equal(reviewedNewError.status, 'BLOCK');
+  assert.equal(reviewedNewError.added.length, 1);
+
+  const [firstSignature, ...remainingSignatures] = Object.keys(reviewed);
+  assert.ok(firstSignature, `${scope} baseline must not be empty`);
+  const reviewedReduced = Object.fromEntries(remainingSignatures.map((signature) => [signature, reviewed[signature]]));
+  const reviewedDebtReduction = compareDiagnostics(reviewed, reviewedReduced);
+  assert.equal(reviewedDebtReduction.status, 'ALLOW');
+  assert.equal(reviewedDebtReduction.added.length, 0);
+  assert.ok(reviewedDebtReduction.currentTotal < reviewedDebtReduction.baselineTotal);
+
+  console.log(`PASS REVIEWED ${scope} SAME/+1/-1 POLICY`);
+}

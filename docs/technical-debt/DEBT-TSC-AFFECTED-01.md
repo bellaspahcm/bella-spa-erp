@@ -2,11 +2,11 @@
 
 ## Status
 
-OPEN - source-health baseline pending.
+OPEN - reviewed diagnostic baseline active.
 
 ## Finding
 
-Dependency-aware CI routing can select and execute the affected TypeScript graph, but the current affected graph is not clean. A local proof run of `typecheck:changed` for `english_center` entered the intended scoped config and returned non-zero TypeScript diagnostics.
+Dependency-aware CI routing can select and execute the affected TypeScript graph, but the current affected graph is not clean. Runtime CI selected `education-affected`, and local scoped runs reproduced non-zero diagnostics for both configs invoked by the affected runner.
 
 ## Owner
 
@@ -30,9 +30,16 @@ Where `N` is the reviewed baseline diagnostic count for the affected scope and `
 
 - Routing tests pass independently of source health.
 - The diagnostic comparator has tests for new diagnostic blocking, same-baseline allow, and debt-reduction allow.
+- Reviewed baseline date: 2026-09-14.
+- `education-affected`: 121 diagnostic signatures, 231 total diagnostic occurrences.
+- `english-center-affected`: 101 diagnostic signatures, 191 total diagnostic occurrences.
+- Ownership buckets observed in the reviewed baseline:
+  - Education Platform / Host / Decision Engine: primary debt concentration.
+  - Education app/API and Preschool product: affected product debt.
+  - English Center product and shared platform messaging/context/metadata/org-unit surfaces: affected product/platform debt.
 - No domain/source remediation is included in the CI hardening workstream.
 
 ## Closure Criteria
 
-- Review and commit a scoped TypeScript diagnostic baseline for each affected CI scope that still has source debt, or reduce that scope to zero diagnostics.
-- Run the scoped typecheck comparator in CI and confirm new diagnostics block while unchanged/reduced baseline debt behaves according to policy.
+- Reduce each affected CI scope to zero diagnostics.
+- Remove the reviewed baseline entries once the corresponding scopes are clean.
