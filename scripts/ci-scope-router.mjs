@@ -96,6 +96,7 @@ const ROOT_PLATFORM_PATTERN = /^(src\/(core|lib|services|shared|types|components
 const APP_CODE_PATTERN = /^(src\/|apps\/mobile\/|packages\/).*\.(ts|tsx|js|jsx|mts)$/;
 const ROOT_TYPECHECK_SURFACE_PATTERN = /^(src\/(core|lib|services|shared|types|components\/layout)\/|packages\/|tsconfig\.json$|next-env\.d\.ts$|next\.config\.|instrumentation|sentry\..*\.ts$|middleware\.ts$|package-lock\.json$)/;
 const TYPECHECK_CONFIG_PATTERN = /^tsconfig(\..+)?\.json$/;
+const DB_RUNTIME_SURFACE_PATTERN = /^(src\/(app|core|lib|modules|platform|products|services|shared)\/|supabase\/|database\/|prisma\/|migrations\/|.*\.sql$)/;
 const SECURITY_SCRIPT_PATTERN = /^scripts\/(audit-production|check-secret-leaks|check-ci-quality-env)\.mjs$/;
 
 function normalize(file) {
@@ -178,6 +179,7 @@ export function classifyFiles(files) {
   let hasAppCode = false;
   let hasRootTypecheckSurface = false;
   let hasTypecheckConfig = false;
+  let hasDbRuntimeSurface = false;
 
   for (const file of normalizedFiles) {
     hasCode ||= CODE_PATTERN.test(file);
@@ -192,6 +194,7 @@ export function classifyFiles(files) {
     hasAppCode ||= APP_CODE_PATTERN.test(file) && !TEST_PATTERN.test(file);
     hasRootTypecheckSurface ||= ROOT_TYPECHECK_SURFACE_PATTERN.test(file);
     hasTypecheckConfig ||= TYPECHECK_CONFIG_PATTERN.test(file);
+    hasDbRuntimeSurface ||= DB_RUNTIME_SURFACE_PATTERN.test(file);
 
     for (const [key, scope] of Object.entries(PRODUCT_SCOPES)) {
       if (matchesAny(file, scope.patterns)) {
@@ -246,7 +249,7 @@ export function classifyFiles(files) {
   const needsTests = (hasCode || hasTest) && !docsOnly;
   const needsBuild = (hasCode || hasDependencies || scopeLevel === 'platform') && !hasMigration && !docsOnly;
   const needsArchitectureGuard = hasCode && !docsOnly;
-  const needsRealDbE2e = hasMigration || (scopeLevel === 'platform' && hasCode);
+  const needsRealDbE2e = hasMigration || (scopeLevel === 'platform' && hasDbRuntimeSurface);
   const needsE2e = scopeLevel === 'platform' || products.size > 0 || hasDependencies;
   const needsMigrationGates = hasMigration;
   const needsApiDocs = hasApiDocs;
@@ -290,6 +293,7 @@ export function classifyFiles(files) {
     docs_changed: hasDocs,
     workflows_changed: hasWorkflow,
     core_changed: hasCore,
+    has_db_runtime_surface: hasDbRuntimeSurface,
     needs_typecheck: needsTypecheck,
     needs_tests: needsTests,
     needs_build: needsBuild,

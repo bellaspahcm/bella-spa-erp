@@ -96,6 +96,7 @@ const cases = [
       assert.equal(result.scope_level, 'platform');
       assert.equal(result.needs_typecheck, false);
       assert.equal(result.typecheck_mode, 'skip');
+      assert.equal(result.needs_real_db_e2e, false);
     },
   },
   {
@@ -106,7 +107,18 @@ const cases = [
       assert.equal(result.scope_level, 'os');
       assert.equal(result.needs_typecheck, true);
       assert.equal(result.typecheck_mode, 'affected');
+      assert.equal(result.needs_real_db_e2e, false);
       assertIncludes(result.affected_products, 'english_center', 'English Center should be affected by scoped Education config');
+    },
+  },
+  {
+    name: 'RUN real database E2E only for platform runtime DB surface',
+    files: ['src/services/database/transaction-boundary.ts'],
+    expect(result) {
+      assert.equal(result.scope_status, 'ALLOW');
+      assert.equal(result.scope_level, 'platform');
+      assert.equal(result.has_db_runtime_surface, true);
+      assert.equal(result.needs_real_db_e2e, true);
     },
   },
   {
