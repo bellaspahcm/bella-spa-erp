@@ -4,6 +4,7 @@
 **Canonical authority:** `E2_E3_E4_GOVERNANCE_ACCEPTANCE.md`
 **E5 seal baseline:** `origin/main@af28f1a0`
 **E6 seal baseline:** `origin/main@a493ab88`
+**E7 seal baseline:** `origin/main@364b624c`
 
 ---
 
@@ -18,7 +19,9 @@ E5 - Timetable/Room Scheduling   BOUNDED VERIFIED + SEALED
 
 E6 - Attendance/Learning Ops      BOUNDED VERIFIED + SEALED
 
-E7+                              NOT OPENED
+E7 - Tuition/Billing              BOUNDED VERIFIED + SEALED
+
+E8+                              NOT OPENED
 ```
 
 The E2/E3/E4 seal is bounded to English Center evidence. It does not claim full
@@ -31,8 +34,11 @@ canonical main smoke passed on `origin/main@d7f6e4ac`.
 E6 is sealed after PR #98 merged to `main` under legitimate GitHub policy and
 canonical main smoke passed on `origin/main@a493ab88`.
 
-E7+ is not opened. E7 implementation requires its own architecture gate result
-from canonical main after E6 seal.
+E7 is sealed after PR #100 merged to `main` under legitimate GitHub policy and
+canonical main smoke passed on `origin/main@364b624c`.
+
+E8+ is not opened. E8 implementation requires its own architecture gate result
+from canonical main after E7 seal.
 
 ---
 
@@ -70,7 +76,18 @@ E6 education conformance         39/39 PASS
 E6 PR #98 merge                  MERGED: a493ab88
 E6 canonical main smoke          PASS
 E6 implementation                BOUNDED VERIFIED + SEALED
-E7 implementation                NOT OPENED
+E7 architecture gate             PASS
+E7 service tests                 8/8 PASS
+E7 English Center regression     55/55 PASS
+E7 scoped TypeScript check       PASS: bounded baseline 162/162
+E7 migration zero-downtime       PASS
+E7 migration changed-check       PASS / empty-remote drift skip
+E7 architecture guard            PASS
+E7 education conformance         39/39 PASS
+E7 PR #100 merge                 MERGED: 364b624c
+E7 canonical main smoke          PASS
+E7 implementation                BOUNDED VERIFIED + SEALED
+E8 implementation                NOT OPENED
 ```
 
 ---
@@ -110,6 +127,12 @@ DEBT-TSC-BASELINE-ORDER-01
   literal members in a different order.
   Owner: Platform governance / CI diagnostic comparator
   Status: comparator normalized during PR #98; E6 product diagnostic delta was 0
+
+DEBT-REALDB-SMOKE-LATENCY-01
+  Canonical main smoke for E7 had one transient E2 enrollment beforeEach
+  Supabase setup timeout before the immediate rerun passed 55/55.
+  Owner: CI/database test infrastructure reliability
+  Status: not E7-introduced; PR #100 CI and canonical-main rerun passed
 ```
 
 ---
@@ -123,4 +146,5 @@ DEBT-TSC-BASELINE-ORDER-01
 - `ARCHITECTURE_GATE_RESULT.md`
 - `E5_BOUNDED_SEAL_REVIEW.md`
 - `E6_BOUNDED_SEAL_REVIEW.md`
+- `E7_BOUNDED_SEAL_REVIEW.md`
 - `E6_E10_ROADMAP_RECONCILIATION.md`
