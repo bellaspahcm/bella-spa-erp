@@ -32,7 +32,7 @@
     "security:secrets": "node scripts/check-secret-leaks.mjs",
     "test": "jest",
     "test:unit": "jest --testPathIgnorePatterns=integration",
-    "test:integration": "jest --testPathPattern=integration --runInBand",
+    "test:integration": "jest --testPathPatterns=integration --runInBand",
     "test:runtime:3a": "vitest run tests/unit/runtime",
     "test:runtime:3a:watch": "vitest tests/unit/runtime",
     "test:runtime:3a:coverage": "vitest run tests/unit/runtime --coverage",

@@ -20,12 +20,12 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
       
       - name: Install dependencies
@@ -40,7 +40,13 @@ jobs:
           NODE_ENV: test
       
       - name: Run integration tests
-        run: npm run test:integration
+        run: >
+          npx jest --runInBand --runTestsByPath
+          src/lib/decision-engine/__tests__/integration.test.ts
+          src/lib/decision-engine/registry/__tests__/PolicyRegistry.integration.test.ts
+          src/lib/decision-engine/providers/payroll/__tests__/payroll-provider.integration.test.ts
+          src/lib/decision-engine/providers/commission/__tests__/commission-provider.integration.test.ts
+          src/lib/decision-engine/providers/inventory/__tests__/inventory-provider.integration.test.ts
         if: github.event_name == 'pull_request'
         env:
           NODE_ENV: test
@@ -54,7 +60,7 @@ jobs:
         continue-on-error: true
       
       - name: Upload test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
           name: test-results
@@ -70,10 +76,27 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Check Vercel staging config
+        id: vercel_config
+        shell: bash
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          if [ -n "$VERCEL_TOKEN" ] && [ -n "$VERCEL_ORG_ID" ] && [ -n "$VERCEL_PROJECT_ID" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "Vercel staging deployment skipped: Vercel secrets are not configured for this repository."
+          fi
       
       - name: Deploy to Vercel Staging
-        uses: amondnet/vercel-action@v20
+        if: steps.vercel_config.outputs.configured == 'true'
+        uses: amondnet/vercel-action@2d78157ee070f28ff89dd4da74e0369fc26d3b34
+        id: deploy
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
@@ -81,12 +104,14 @@ jobs:
           scope: ${{ secrets.VERCEL_ORG_ID }}
       
       - name: Run smoke tests
+        if: steps.vercel_config.outputs.configured == 'true'
         run: npm run test:smoke -- --env=staging
         env:
           STAGING_URL: ${{ steps.deploy.outputs.preview-url }}
       
       - name: Comment PR with preview URL
-        uses: actions/github-script@v6
+        if: steps.vercel_config.outputs.configured == 'true'
+        uses: actions/github-script@00f12e3e20659f42342b1c0226afda7f7c042325
         with:
           script: |
             github.rest.issues.createComment({
@@ -104,10 +129,10 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       
       - name: Deploy to Vercel Production
-        uses: amondnet/vercel-action@v20
+        uses: amondnet/vercel-action@2d78157ee070f28ff89dd4da74e0369fc26d3b34
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
@@ -130,7 +155,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       
       - name: Notify Slack
-        uses: 8398a7/action-slack@v3
+        uses: 8398a7/action-slack@f3635935f58910a6d6951b73efe9037c960c8c04
         if: always()
         with:
           status: ${{ job.status }}

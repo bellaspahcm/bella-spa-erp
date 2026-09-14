@@ -31,9 +31,9 @@ CREATE TABLE IF NOT EXISTS public.english_center_programs (
   CONSTRAINT uq_program_code UNIQUE (tenant_id, code)
 );
 
-CREATE INDEX idx_programs_tenant ON public.english_center_programs(tenant_id);
-CREATE INDEX idx_programs_code ON public.english_center_programs(code);
-CREATE INDEX idx_programs_status ON public.english_center_programs(status) WHERE status = 'active';
+CREATE INDEX CONCURRENTLY idx_programs_tenant ON public.english_center_programs(tenant_id);
+CREATE INDEX CONCURRENTLY idx_programs_code ON public.english_center_programs(code);
+CREATE INDEX CONCURRENTLY idx_programs_status ON public.english_center_programs(status) WHERE status = 'active';
 
 -- ============================================================================
 -- TABLE: english_center_courses
@@ -58,9 +58,9 @@ CREATE TABLE IF NOT EXISTS public.english_center_courses (
   CONSTRAINT uq_course_code UNIQUE (tenant_id, program_id, code)
 );
 
-CREATE INDEX idx_courses_tenant ON public.english_center_courses(tenant_id);
-CREATE INDEX idx_courses_program ON public.english_center_courses(program_id);
-CREATE INDEX idx_courses_status ON public.english_center_courses(status) WHERE status = 'active';
+CREATE INDEX CONCURRENTLY idx_courses_tenant ON public.english_center_courses(tenant_id);
+CREATE INDEX CONCURRENTLY idx_courses_program ON public.english_center_courses(program_id);
+CREATE INDEX CONCURRENTLY idx_courses_status ON public.english_center_courses(status) WHERE status = 'active';
 
 -- ============================================================================
 -- TABLE: english_center_classes
@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS public.english_center_classes (
   name VARCHAR(200) NOT NULL,
   capacity INTEGER NOT NULL DEFAULT 20 CHECK (capacity > 0),
   enrolled_count INTEGER NOT NULL DEFAULT 0 CHECK (enrolled_count >= 0),
-  teacher_id UUID REFERENCES public.parties(id) ON DELETE SET NULL,
+  teacher_id UUID REFERENCES public.party_parties(id) ON DELETE SET NULL,
   start_date DATE,
   end_date DATE,
   schedule_days VARCHAR[],
@@ -92,12 +92,12 @@ CREATE TABLE IF NOT EXISTS public.english_center_classes (
   CONSTRAINT chk_dates CHECK (start_date IS NULL OR end_date IS NULL OR start_date <= end_date)
 );
 
-CREATE INDEX idx_classes_tenant ON public.english_center_classes(tenant_id);
-CREATE INDEX idx_classes_branch ON public.english_center_classes(branch_id);
-CREATE INDEX idx_classes_course ON public.english_center_classes(course_id);
-CREATE INDEX idx_classes_teacher ON public.english_center_classes(teacher_id) WHERE teacher_id IS NOT NULL;
-CREATE INDEX idx_classes_status ON public.english_center_classes(status);
-CREATE INDEX idx_classes_dates ON public.english_center_classes(start_date, end_date) WHERE status = 'active';
+CREATE INDEX CONCURRENTLY idx_classes_tenant ON public.english_center_classes(tenant_id);
+CREATE INDEX CONCURRENTLY idx_classes_branch ON public.english_center_classes(branch_id);
+CREATE INDEX CONCURRENTLY idx_classes_course ON public.english_center_classes(course_id);
+CREATE INDEX CONCURRENTLY idx_classes_teacher ON public.english_center_classes(teacher_id) WHERE teacher_id IS NOT NULL;
+CREATE INDEX CONCURRENTLY idx_classes_status ON public.english_center_classes(status);
+CREATE INDEX CONCURRENTLY idx_classes_dates ON public.english_center_classes(start_date, end_date) WHERE status = 'active';
 
 -- ============================================================================
 -- ROW-LEVEL SECURITY (RLS)
@@ -107,35 +107,160 @@ ALTER TABLE public.english_center_programs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.english_center_courses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.english_center_classes ENABLE ROW LEVEL SECURITY;
 
--- Programs: Tenant isolation
-CREATE POLICY programs_tenant_isolation
+-- Programs: Tenant + optional branch isolation through Platform authorization projection
+CREATE POLICY programs_tenant_branch_isolation
   ON public.english_center_programs
   FOR ALL
-  USING (tenant_id = current_setting('app.current_tenant_id', TRUE)::UUID);
+  USING (
+    tenant_id = COALESCE(
+      public.get_auth_tenant_id(),
+      NULLIF(current_setting('app.current_tenant_id', TRUE), '')::UUID
+    )
+    AND (
+      branch_id IS NULL
+      OR branch_id IN (
+        SELECT org_unit_id
+        FROM public.user_org_unit_access
+        WHERE user_id = COALESCE(
+          auth.uid(),
+          NULLIF(current_setting('app.current_user_id', TRUE), '')::UUID
+        )
+          AND tenant_id = COALESCE(
+            public.get_auth_tenant_id(),
+            NULLIF(current_setting('app.current_tenant_id', TRUE), '')::UUID
+          )
+      )
+    )
+  )
+  WITH CHECK (
+    tenant_id = COALESCE(
+      public.get_auth_tenant_id(),
+      NULLIF(current_setting('app.current_tenant_id', TRUE), '')::UUID
+    )
+    AND (
+      branch_id IS NULL
+      OR branch_id IN (
+        SELECT org_unit_id
+        FROM public.user_org_unit_access
+        WHERE user_id = COALESCE(
+          auth.uid(),
+          NULLIF(current_setting('app.current_user_id', TRUE), '')::UUID
+        )
+          AND tenant_id = COALESCE(
+            public.get_auth_tenant_id(),
+            NULLIF(current_setting('app.current_tenant_id', TRUE), '')::UUID
+          )
+      )
+    )
+  );
 
--- Courses: Tenant isolation
-CREATE POLICY courses_tenant_isolation
+-- Courses: Tenant + inherited program branch isolation
+CREATE POLICY courses_tenant_branch_isolation
   ON public.english_center_courses
   FOR ALL
-  USING (tenant_id = current_setting('app.current_tenant_id', TRUE)::UUID);
+  USING (
+    tenant_id = COALESCE(
+      public.get_auth_tenant_id(),
+      NULLIF(current_setting('app.current_tenant_id', TRUE), '')::UUID
+    )
+    AND EXISTS (
+      SELECT 1
+      FROM public.english_center_programs p
+      WHERE p.id = public.english_center_courses.program_id
+        AND p.tenant_id = public.english_center_courses.tenant_id
+        AND (
+          p.branch_id IS NULL
+          OR p.branch_id IN (
+            SELECT org_unit_id
+            FROM public.user_org_unit_access
+            WHERE user_id = COALESCE(
+              auth.uid(),
+              NULLIF(current_setting('app.current_user_id', TRUE), '')::UUID
+            )
+              AND tenant_id = COALESCE(
+                public.get_auth_tenant_id(),
+                NULLIF(current_setting('app.current_tenant_id', TRUE), '')::UUID
+              )
+          )
+        )
+    )
+  )
+  WITH CHECK (
+    tenant_id = COALESCE(
+      public.get_auth_tenant_id(),
+      NULLIF(current_setting('app.current_tenant_id', TRUE), '')::UUID
+    )
+    AND EXISTS (
+      SELECT 1
+      FROM public.english_center_programs p
+      WHERE p.id = public.english_center_courses.program_id
+        AND p.tenant_id = public.english_center_courses.tenant_id
+        AND (
+          p.branch_id IS NULL
+          OR p.branch_id IN (
+            SELECT org_unit_id
+            FROM public.user_org_unit_access
+            WHERE user_id = COALESCE(
+              auth.uid(),
+              NULLIF(current_setting('app.current_user_id', TRUE), '')::UUID
+            )
+              AND tenant_id = COALESCE(
+                public.get_auth_tenant_id(),
+                NULLIF(current_setting('app.current_tenant_id', TRUE), '')::UUID
+              )
+          )
+        )
+    )
+  );
 
 -- Classes: Tenant + branch scope isolation
-CREATE POLICY classes_tenant_isolation
-  ON public.english_center_classes
-  FOR ALL
-  USING (tenant_id = current_setting('app.current_tenant_id', TRUE)::UUID);
-
-CREATE POLICY classes_branch_scope
+CREATE POLICY classes_tenant_branch_isolation
   ON public.english_center_classes
   FOR ALL
   USING (
-    branch_id IN (
+    tenant_id = COALESCE(
+      public.get_auth_tenant_id(),
+      NULLIF(current_setting('app.current_tenant_id', TRUE), '')::UUID
+    )
+    AND branch_id IN (
       SELECT org_unit_id
       FROM public.user_org_unit_access
-      WHERE user_id = current_setting('app.current_user_id', TRUE)::UUID
-        AND tenant_id = current_setting('app.current_tenant_id', TRUE)::UUID
+      WHERE user_id = COALESCE(
+        auth.uid(),
+        NULLIF(current_setting('app.current_user_id', TRUE), '')::UUID
+      )
+        AND tenant_id = COALESCE(
+          public.get_auth_tenant_id(),
+          NULLIF(current_setting('app.current_tenant_id', TRUE), '')::UUID
+        )
+    )
+  )
+  WITH CHECK (
+    tenant_id = COALESCE(
+      public.get_auth_tenant_id(),
+      NULLIF(current_setting('app.current_tenant_id', TRUE), '')::UUID
+    )
+    AND branch_id IN (
+      SELECT org_unit_id
+      FROM public.user_org_unit_access
+      WHERE user_id = COALESCE(
+        auth.uid(),
+        NULLIF(current_setting('app.current_user_id', TRUE), '')::UUID
+      )
+        AND tenant_id = COALESCE(
+          public.get_auth_tenant_id(),
+          NULLIF(current_setting('app.current_tenant_id', TRUE), '')::UUID
+        )
     )
   );
+
+REVOKE ALL ON public.english_center_programs FROM anon;
+REVOKE ALL ON public.english_center_courses FROM anon;
+REVOKE ALL ON public.english_center_classes FROM anon;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.english_center_programs TO authenticated, service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.english_center_courses TO authenticated, service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.english_center_classes TO authenticated, service_role;
 
 -- ============================================================================
 -- TRIGGERS: Updated timestamp

@@ -8,7 +8,7 @@ BEGIN;
 CREATE TABLE IF NOT EXISTS public.english_center_teachers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
-  party_id UUID NOT NULL UNIQUE REFERENCES public.parties(id) ON DELETE CASCADE,
+  party_id UUID NOT NULL UNIQUE REFERENCES public.party_parties(id) ON DELETE CASCADE,
   employee_code VARCHAR(50),
   certifications JSONB DEFAULT '[]'::jsonb,
   specializations VARCHAR[],
@@ -33,11 +33,111 @@ CREATE TABLE IF NOT EXISTS public.english_center_teacher_branches (
 ALTER TABLE public.english_center_teachers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.english_center_teacher_branches ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY teachers_tenant_isolation ON public.english_center_teachers
-  FOR ALL USING (tenant_id = current_setting('app.current_tenant_id', TRUE)::UUID);
+CREATE POLICY teachers_branch_select ON public.english_center_teachers
+  FOR SELECT
+  USING (
+    tenant_id = COALESCE(
+      public.get_auth_tenant_id(),
+      NULLIF(current_setting('app.current_tenant_id', TRUE), '')::UUID
+    )
+    AND EXISTS (
+      SELECT 1
+      FROM public.english_center_teacher_branches tb
+      WHERE tb.teacher_id = public.english_center_teachers.id
+        AND tb.tenant_id = public.english_center_teachers.tenant_id
+        AND tb.status = 'active'
+        AND tb.branch_id IN (
+          SELECT org_unit_id
+          FROM public.user_org_unit_access
+          WHERE user_id = COALESCE(
+            auth.uid(),
+            NULLIF(current_setting('app.current_user_id', TRUE), '')::UUID
+          )
+            AND tenant_id = COALESCE(
+              public.get_auth_tenant_id(),
+              NULLIF(current_setting('app.current_tenant_id', TRUE), '')::UUID
+            )
+        )
+    )
+  );
 
-CREATE POLICY teacher_branches_tenant_isolation ON public.english_center_teacher_branches
-  FOR ALL USING (tenant_id = current_setting('app.current_tenant_id', TRUE)::UUID);
+CREATE POLICY teachers_tenant_write ON public.english_center_teachers
+  FOR INSERT
+  WITH CHECK (
+    tenant_id = COALESCE(
+      public.get_auth_tenant_id(),
+      NULLIF(current_setting('app.current_tenant_id', TRUE), '')::UUID
+    )
+  );
+
+CREATE POLICY teachers_tenant_update ON public.english_center_teachers
+  FOR UPDATE
+  USING (
+    tenant_id = COALESCE(
+      public.get_auth_tenant_id(),
+      NULLIF(current_setting('app.current_tenant_id', TRUE), '')::UUID
+    )
+  )
+  WITH CHECK (
+    tenant_id = COALESCE(
+      public.get_auth_tenant_id(),
+      NULLIF(current_setting('app.current_tenant_id', TRUE), '')::UUID
+    )
+  );
+
+CREATE POLICY teachers_tenant_delete ON public.english_center_teachers
+  FOR DELETE
+  USING (
+    tenant_id = COALESCE(
+      public.get_auth_tenant_id(),
+      NULLIF(current_setting('app.current_tenant_id', TRUE), '')::UUID
+    )
+  );
+
+CREATE POLICY teacher_branches_tenant_branch_isolation ON public.english_center_teacher_branches
+  FOR ALL
+  USING (
+    tenant_id = COALESCE(
+      public.get_auth_tenant_id(),
+      NULLIF(current_setting('app.current_tenant_id', TRUE), '')::UUID
+    )
+    AND branch_id IN (
+      SELECT org_unit_id
+      FROM public.user_org_unit_access
+      WHERE user_id = COALESCE(
+        auth.uid(),
+        NULLIF(current_setting('app.current_user_id', TRUE), '')::UUID
+      )
+        AND tenant_id = COALESCE(
+          public.get_auth_tenant_id(),
+          NULLIF(current_setting('app.current_tenant_id', TRUE), '')::UUID
+        )
+    )
+  )
+  WITH CHECK (
+    tenant_id = COALESCE(
+      public.get_auth_tenant_id(),
+      NULLIF(current_setting('app.current_tenant_id', TRUE), '')::UUID
+    )
+    AND branch_id IN (
+      SELECT org_unit_id
+      FROM public.user_org_unit_access
+      WHERE user_id = COALESCE(
+        auth.uid(),
+        NULLIF(current_setting('app.current_user_id', TRUE), '')::UUID
+      )
+        AND tenant_id = COALESCE(
+          public.get_auth_tenant_id(),
+          NULLIF(current_setting('app.current_tenant_id', TRUE), '')::UUID
+        )
+    )
+  );
+
+REVOKE ALL ON public.english_center_teachers FROM anon;
+REVOKE ALL ON public.english_center_teacher_branches FROM anon;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.english_center_teachers TO authenticated, service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.english_center_teacher_branches TO authenticated, service_role;
 
 CREATE TRIGGER trg_teachers_updated_at BEFORE UPDATE ON public.english_center_teachers
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
