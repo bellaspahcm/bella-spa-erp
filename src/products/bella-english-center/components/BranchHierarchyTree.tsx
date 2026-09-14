@@ -8,7 +8,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { OrgUnitHierarchy } from '@/platform';
+import type { OrgUnitHierarchy } from '@/platform/org-unit';
 
 interface BranchHierarchyTreeProps {
   tenantId: string;
@@ -20,15 +20,12 @@ interface BranchHierarchyTreeProps {
 interface TreeNodeProps {
   node: OrgUnitHierarchy;
   onSelect?: (branchId: string) => void;
-  level: number;
 }
 
-function TreeNode({ node, onSelect, level }: TreeNodeProps) {
-  const [expanded, setExpanded] = useState(level < 2);
-  const hasChildren = node.children && node.children.length > 0;
-  
-  const indent = `${level * 1.5}rem`;
-  const icon = node.unitType === 'company' ? '🏢' : node.unitType === 'region' ? '📍' : '🏫';
+function TreeNode({ node, onSelect }: TreeNodeProps) {
+  const unit = node.unit;
+  const indent = `${node.depth * 1.5}rem`;
+  const icon = unit.unitType === 'company' ? '🏢' : unit.unitType === 'region' ? '📍' : '🏫';
 
   return (
     <div>
@@ -36,39 +33,19 @@ function TreeNode({ node, onSelect, level }: TreeNodeProps) {
         className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 rounded cursor-pointer"
         style={{ paddingLeft: indent }}
         onClick={() => {
-          if (hasChildren) {
-            setExpanded(!expanded);
-          }
-          if (node.unitType === 'branch' && onSelect) {
-            onSelect(node.id);
+          if (unit.unitType === 'branch' && onSelect) {
+            onSelect(unit.id);
           }
         }}
       >
-        {hasChildren && (
-          <span className="text-gray-400 text-sm">
-            {expanded ? '▼' : '▶'}
-          </span>
-        )}
-        {!hasChildren && <span className="w-3" />}
+        <span className="w-3" />
         <span className="text-lg">{icon}</span>
-        <span className="font-medium">{node.name}</span>
-        <span className="text-sm text-gray-500">({node.code})</span>
-        {!node.isActive && (
+        <span className="font-medium">{unit.name}</span>
+        <span className="text-sm text-gray-500">({unit.code})</span>
+        {!unit.isActive && (
           <span className="text-xs bg-gray-200 px-2 py-0.5 rounded">Inactive</span>
         )}
       </div>
-      {expanded && hasChildren && (
-        <div>
-          {node.children!.map((child) => (
-            <TreeNode
-              key={child.id}
-              node={child}
-              onSelect={onSelect}
-              level={level + 1}
-            />
-          ))}
-        </div>
-      )}
     </div>
   );
 }
@@ -139,10 +116,9 @@ export function BranchHierarchyTree({
     <div className={`${className} border rounded-lg bg-white`}>
       {hierarchy.map((node) => (
         <TreeNode
-          key={node.id}
+          key={node.unit.id}
           node={node}
           onSelect={onSelectBranch}
-          level={0}
         />
       ))}
     </div>

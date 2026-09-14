@@ -17,16 +17,21 @@ import type {
   OrgUnitHierarchy,
   CreateOrgUnitInput,
   UpdateOrgUnitInput,
-} from '@/platform';
+} from '@/platform/org-unit';
+import type { IOrgUnitContract } from '@/platform/org-unit';
 
 // Lazy import to avoid build-time initialization
-let _orgUnitEngine: any = null;
-function getOrgUnitEngine() {
+let _orgUnitEngine: IOrgUnitContract | null = null;
+function getOrgUnitEngine(): IOrgUnitContract {
   if (!_orgUnitEngine) {
-    const platform = require('@/platform');
+    const platform = require('@/platform/org-unit') as { orgUnitEngine: IOrgUnitContract };
     _orgUnitEngine = platform.orgUnitEngine;
   }
   return _orgUnitEngine;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 // ============================================================================
@@ -116,9 +121,13 @@ export class EnglishBranchService {
     // Get existing branch to merge metadata
     const existing = await orgUnitEngine.getOrgUnit(branchId, tenantId);
     if (!existing) {
-      const { OrgUnitNotFoundError } = require('@/platform');
+      const { OrgUnitNotFoundError } = require('@/platform/org-unit') as typeof import('@/platform/org-unit');
       throw new OrgUnitNotFoundError(branchId);
     }
+
+    const existingOpeningHours = isRecord(existing.metadata.openingHours)
+      ? existing.metadata.openingHours
+      : {};
 
     const platformInput: UpdateOrgUnitInput = {
       name: input.name,
@@ -129,7 +138,7 @@ export class EnglishBranchService {
         email: input.email ?? existing.metadata?.email,
         capacity: input.capacity ?? existing.metadata?.capacity,
         openingHours: input.openingHours
-          ? { ...existing.metadata?.openingHours, ...input.openingHours }
+          ? { ...existingOpeningHours, ...input.openingHours }
           : existing.metadata?.openingHours,
       },
     };
@@ -211,7 +220,7 @@ export class EnglishBranchService {
     const branch = await orgUnitEngine.getOrgUnit(branchId, tenantId);
     
     if (!branch) {
-      const { OrgUnitNotFoundError } = require('@/platform');
+      const { OrgUnitNotFoundError } = require('@/platform/org-unit') as typeof import('@/platform/org-unit');
       throw new OrgUnitNotFoundError(branchId);
     }
 
