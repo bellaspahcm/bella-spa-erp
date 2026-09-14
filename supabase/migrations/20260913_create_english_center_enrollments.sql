@@ -34,11 +34,11 @@ CREATE TABLE IF NOT EXISTS public.english_center_enrollments (
 
   -- Program context (English program if defined)
   program_id UUID
-    REFERENCES public.english_programs(id) ON DELETE SET NULL,
+    REFERENCES public.english_center_programs(id) ON DELETE SET NULL,
 
   -- Class assignment (if student assigned to specific class)
   class_id UUID
-    REFERENCES public.english_classes(id) ON DELETE SET NULL,
+    REFERENCES public.english_center_classes(id) ON DELETE SET NULL,
 
   -- Intake/cohort identifier
   intake VARCHAR(100),
