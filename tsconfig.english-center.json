@@ -6,14 +6,14 @@
   },
   "include": [
     "next-env.d.ts",
-    "src/platform/education/**/*.ts",
-    "src/platform/education/**/*.tsx",
-    "src/products/bella-education/**/*.ts",
-    "src/products/bella-education/**/*.tsx",
-    "src/app/dashboard/education/**/*.ts",
-    "src/app/dashboard/education/**/*.tsx",
-    "src/app/api/education/**/*.ts",
-    "src/app/api/education/**/*.tsx"
+    "src/products/bella-english-center/**/*.ts",
+    "src/products/bella-english-center/**/*.tsx",
+    "src/app/dashboard/english-center/**/*.ts",
+    "src/app/dashboard/english-center/**/*.tsx",
+    "src/app/api/english-center/**/*.ts",
+    "src/app/api/english-center/**/*.tsx",
+    "src/platform/education/contracts/**/*.ts",
+    "src/platform/education/domain/**/*.ts"
   ],
   "exclude": [
     "node_modules",

@@ -11,7 +11,34 @@ permissions:
   contents: read
 
 jobs:
+  detect_changes:
+    name: Detect Changed Scope
+    runs-on: ubuntu-latest
+    outputs:
+      scope_level: ${{ steps.scope.outputs.scope_level }}
+      needs_build: ${{ steps.scope.outputs.needs_build }}
+      needs_e2e: ${{ steps.scope.outputs.needs_e2e }}
+      needs_real_db_e2e: ${{ steps.scope.outputs.needs_real_db_e2e }}
+      needs_api_docs: ${{ steps.scope.outputs.needs_api_docs }}
+      needs_dependency_security_deep: ${{ steps.scope.outputs.needs_dependency_security_deep }}
+      needs_security_lightweight: ${{ steps.scope.outputs.needs_security_lightweight }}
+      scope_message: ${{ steps.scope.outputs.scope_message }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Classify scope
+        id: scope
+        run: node scripts/ci-scope-router.mjs --fail-on-block
+
   quality-security:
+    needs: detect_changes
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
@@ -26,13 +53,25 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
           node-version: 24
           cache: npm
+
+      - name: Restore CI caches
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: |
+            .cache/tsbuildinfo
+            .jest-cache
+            .next/cache
+          key: ${{ runner.os }}-quality-${{ hashFiles('package-lock.json', 'tsconfig*.json', 'jest.config.*', 'next.config.*') }}-${{ github.ref_name }}
+          restore-keys: |
+            ${{ runner.os }}-quality-${{ hashFiles('package-lock.json', 'tsconfig*.json', 'jest.config.*', 'next.config.*') }}-
+            ${{ runner.os }}-quality-
 
       - name: Install dependencies
         run: npm ci
@@ -90,6 +129,7 @@ jobs:
           fi
 
       - name: Required CI environment config
+        if: needs.detect_changes.outputs.needs_build == 'true' || needs.detect_changes.outputs.needs_e2e == 'true' || needs.detect_changes.outputs.needs_real_db_e2e == 'true'
         run: npm run ci:env:check
 
       - name: Lint
@@ -113,60 +153,63 @@ jobs:
         run: echo "✅ API docs checks skipped - no API surface or API documentation changes"
 
       - name: Supabase migration drift check
-        if: steps.check-lint-needed.outputs.needs_db_checks == 'true'
+        if: needs.detect_changes.outputs.needs_real_db_e2e == 'true' && steps.check-lint-needed.outputs.needs_db_checks == 'true'
         run: npm run db:migration:check
 
       - name: Supabase RPC grant policy
-        if: steps.check-lint-needed.outputs.needs_db_checks == 'true'
+        if: needs.detect_changes.outputs.needs_real_db_e2e == 'true' && steps.check-lint-needed.outputs.needs_db_checks == 'true'
         run: npm run db:rpc-grants:check
 
       - name: Supabase data access smoke
-        if: steps.check-lint-needed.outputs.needs_db_checks == 'true'
+        if: needs.detect_changes.outputs.needs_real_db_e2e == 'true' && steps.check-lint-needed.outputs.needs_db_checks == 'true'
         run: npm run db:access:check
 
       - name: Supabase live RPC smoke
-        if: steps.check-lint-needed.outputs.needs_db_checks == 'true'
+        if: needs.detect_changes.outputs.needs_real_db_e2e == 'true' && steps.check-lint-needed.outputs.needs_db_checks == 'true'
         run: npm run db:rpc-smoke:check
 
       - name: Business data invariant guard
-        if: steps.check-lint-needed.outputs.needs_db_checks == 'true'
+        if: needs.detect_changes.outputs.needs_real_db_e2e == 'true' && steps.check-lint-needed.outputs.needs_db_checks == 'true'
         run: npm run db:business:check
 
       - name: Live DB checks skipped
-        if: steps.check-lint-needed.outputs.needs_db_checks == 'false'
+        if: needs.detect_changes.outputs.needs_real_db_e2e != 'true' || steps.check-lint-needed.outputs.needs_db_checks == 'false'
         run: echo "✅ Live DB checks skipped - no database, application, or DB-check changes"
 
       - name: Production build
+        if: needs.detect_changes.outputs.needs_build == 'true'
         run: npm run build
 
       - name: Critical regression tests
+        if: needs.detect_changes.outputs.scope_level == 'platform'
         run: npm run test:critical
 
       - name: Export actions regression tests
+        if: needs.detect_changes.outputs.scope_level == 'platform'
         run: npm test -- src/__tests__/export-actions.test.ts --runInBand
 
       - name: Dependency audit
-        if: steps.check-lint-needed.outputs.needs_security_checks == 'true'
+        if: needs.detect_changes.outputs.needs_dependency_security_deep == 'true' && steps.check-lint-needed.outputs.needs_security_checks == 'true'
         run: npm run security:audit
 
       - name: Secret and log leak guard
-        if: steps.check-lint-needed.outputs.needs_security_checks == 'true'
+        if: needs.detect_changes.outputs.needs_security_lightweight == 'true'
         run: npm run security:secrets
 
       - name: Log redaction tests
-        if: steps.check-lint-needed.outputs.needs_security_checks == 'true'
+        if: needs.detect_changes.outputs.needs_dependency_security_deep == 'true' && steps.check-lint-needed.outputs.needs_security_checks == 'true'
         run: npm test -- src/__tests__/log-redactor.test.ts --runInBand
 
       - name: Security checks skipped
-        if: steps.check-lint-needed.outputs.needs_security_checks == 'false'
+        if: needs.detect_changes.outputs.needs_security_lightweight != 'true'
         run: echo "✅ Security checks skipped - no dependency/security files changed"
 
       - name: Install Playwright Chromium
-        if: steps.check-lint-needed.outputs.needs_e2e_checks == 'true'
+        if: needs.detect_changes.outputs.needs_e2e == 'true' && steps.check-lint-needed.outputs.needs_e2e_checks == 'true'
         run: npx playwright install --with-deps chromium
 
       - name: Authenticated route smoke
-        if: steps.check-lint-needed.outputs.needs_e2e_checks == 'true'
+        if: needs.detect_changes.outputs.needs_e2e == 'true' && steps.check-lint-needed.outputs.needs_e2e_checks == 'true'
         timeout-minutes: 8
         run: npm run e2e:auth-smoke
         env:
@@ -176,7 +219,7 @@ jobs:
           E2E_VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.E2E_VERCEL_AUTOMATION_BYPASS_SECRET }}
 
       - name: Beauty operational UAT smoke
-        if: steps.check-lint-needed.outputs.needs_e2e_checks == 'true'
+        if: needs.detect_changes.outputs.scope_level == 'platform' && steps.check-lint-needed.outputs.needs_e2e_checks == 'true'
         timeout-minutes: 12
         run: npm run e2e:beauty-uat
         env:
@@ -186,7 +229,7 @@ jobs:
           E2E_VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.E2E_VERCEL_AUTOMATION_BYPASS_SECRET }}
 
       - name: Responsive visual smoke
-        if: steps.check-lint-needed.outputs.needs_e2e_checks == 'true'
+        if: needs.detect_changes.outputs.scope_level == 'platform' && steps.check-lint-needed.outputs.needs_e2e_checks == 'true'
         timeout-minutes: 35
         run: npm run e2e:visual
         env:
@@ -200,18 +243,18 @@ jobs:
           E2E_VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.E2E_VERCEL_AUTOMATION_BYPASS_SECRET }}
 
       - name: Assert responsive visual smoke results
-        if: steps.check-lint-needed.outputs.needs_e2e_checks == 'true'
+        if: needs.detect_changes.outputs.scope_level == 'platform' && steps.check-lint-needed.outputs.needs_e2e_checks == 'true'
         run: npm run e2e:visual:assert
         env:
           E2E_VISUAL_EXPECTED_TESTS: "30"
 
       - name: Browser smoke tests skipped
-        if: steps.check-lint-needed.outputs.needs_e2e_checks == 'false'
+        if: needs.detect_changes.outputs.needs_e2e != 'true' || steps.check-lint-needed.outputs.needs_e2e_checks == 'false'
         run: echo "✅ Browser smoke tests skipped - no app/e2e/package changes"
 
       - name: Upload Playwright report
         if: ${{ always() }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: responsive-visual-smoke-artifacts
           path: |
