@@ -2,14 +2,14 @@
 
 **Date:** 2026-09-14
 **Scope:** Bella English Center E5 - Timetable / Room Scheduling
-**Status:** BOUNDED SEAL ELIGIBLE / PR BLOCKED BY REQUIRED GATES
+**Status:** BOUNDED VERIFIED + SEALED
 
 ---
 
 ## Review Verdict
 
-E5 is implementation-complete and eligible for bounded seal review, but it is
-not yet sealed because PR #94 has not merged to `main`.
+E5 is implementation-complete and sealed after PR #94 merged to `main` under
+legitimate GitHub policy and canonical main smoke passed on `origin/main@d7f6e4ac`.
 
 This review does not convert broader Education baseline debt, root TypeScript
 baseline debt, or CI infrastructure failures into `PASS`.
@@ -17,7 +17,8 @@ baseline debt, or CI infrastructure failures into `PASS`.
 ```text
 Implementation                         COMPLETE
 Branch                                 codex/e5-timetable-room-scheduling
-PR                                     #94 OPEN
+PR                                     #94 MERGED
+Merge commit                           d7f6e4ac
 Local English Center tests             PASS: 40/40
 E5 service tests                       PASS: 7/7
 Migration check                        PASS
@@ -29,12 +30,13 @@ CI attribution                         COMPLETE
 Education Constitution Enforcement     PRE-EXISTING
 Type Check (changed)                   PRE-EXISTING BASELINE / E5 DELTA = 0
 Real Database Business E2E             INFRASTRUCTURE/FLAKY / UNRELATED TO E5
+Final PR CI                            PASS
 Introduced by E5                       0
 Unknown attribution                    0
 
-Merge                                  BLOCKED by required gates
-Smoke                                  NOT YET
-Seal                                   NOT YET
+Merge                                  COMPLETE
+Smoke                                  PASS
+Seal                                   COMPLETE
 ```
 
 ---
@@ -127,7 +129,7 @@ English Center scoped typecheck attribution
 ```text
 Classification: PRE-EXISTING
 Owner: Broader Bella Education / Preschool architecture remediation
-Blocking PR #94 merge: Yes, because the required GitHub gate is red
+Was blocking PR #94 merge: Yes, before CI policy hardening
 Blocking E5 bounded seal eligibility: No, after attribution
 ```
 
@@ -155,7 +157,7 @@ This is broader Education baseline debt, not an E5 timetable regression.
 ```text
 Classification: PRE-EXISTING BASELINE / E5 DELTA = 0
 Owner: Platform / whole-repository TypeScript hardening and CI baseline policy
-Blocking PR #94 merge: Yes, because the required GitHub gate is red
+Was blocking PR #94 merge: Yes, before CI policy hardening
 Blocking E5 bounded seal eligibility: No, after attribution
 ```
 
@@ -189,7 +191,7 @@ code.
 ```text
 Classification: INFRASTRUCTURE/FLAKY / UNRELATED TO E5
 Owner: CI database infrastructure / real-db E2E reliability
-Blocking PR #94 merge: Yes, because the required GitHub gate is red
+Was blocking PR #94 merge: Yes, before Real Database Business E2E rerun passed
 Blocking E5 bounded seal eligibility: No, after attribution
 ```
 
@@ -214,20 +216,20 @@ exercise E5 timetable paths.
 
 ---
 
-## Governance Decision Required
+## Governance Decision Applied
 
-The clean path is CI/governance policy hardening, not additional E5 product
-changes.
+The clean path was CI/governance policy hardening, not additional E5 product
+changes. PR #94 encoded the policy and merged after all required checks passed.
 
 ```text
 Required policy decision:
   Required gates should distinguish new regressions from known baseline debt
   and infrastructure failures.
 
-Preferred outcome:
+Implemented outcome:
   Encode attribution/baseline policy in CI.
   Rerun PR #94.
-  Merge only when GitHub policy permits a legitimate merge.
+  Merge only after GitHub policy permitted a legitimate merge.
 
 Avoid:
   Admin override, unless governance explicitly accepts it.
@@ -247,13 +249,47 @@ E5 may be marked `BOUNDED VERIFIED + SEALED` only after:
 [x] CI attribution complete
 [x] Introduced-by-E5 = 0
 [x] Unknown attribution = 0
-[ ] PR #94 merged to main by legitimate GitHub policy
-[ ] Canonical main smoke completed after merge
-[ ] Seal record updated after smoke
+[x] PR #94 merged to main by legitimate GitHub policy
+[x] Canonical main smoke completed after merge
+[x] Seal record updated after smoke
 ```
 
 Current seal state:
 
 ```text
-E5 - Timetable / Room Scheduling     BOUNDED SEAL ELIGIBLE, NOT SEALED
+E5 - Timetable / Room Scheduling     BOUNDED VERIFIED + SEALED
+```
+
+---
+
+## Canonical Main Smoke
+
+```text
+Merge commit:
+  origin/main@d7f6e4ac
+
+npx jest src/products/bella-english-center/__tests__ --runInBand
+  Test Suites: 5 passed, 5 total
+  Tests:       40 passed, 40 total
+
+npm run education:architecture:ci
+  Education direct database access baseline: 197
+  Education direct database access current: 197
+  Education architecture baseline policy: ALLOW
+
+npm run ci:education-conformance:test
+  PASS EDUCATION CONFORMANCE MISSING SCHEMA = ALLOW INFRASTRUCTURE
+  PASS EDUCATION CONFORMANCE SCHEMA OK = RUN TESTS
+  PASS EDUCATION CONFORMANCE UNKNOWN PREFLIGHT = BLOCK
+
+npm run education:conformance:ci
+  Education conformance CI preflight: RUN_CONFORMANCE
+  Education conformance CI reason: Education OS schema is available
+  Test Suites: 6 passed, 6 total
+  Tests:       39 passed, 39 total
+
+npm run db:migration:check
+  Local latest migration: 20260914120000
+  Remote latest migration: none
+  Migration drift check skipped for empty remote database
 ```

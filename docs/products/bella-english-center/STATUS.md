@@ -12,16 +12,15 @@ E2 - Enrollment                  BOUNDED VERIFIED + SEALED
 E3 - Program/Course/Class        BOUNDED VERIFIED + SEALED
 E4 - Teacher/Workforce           BOUNDED VERIFIED + SEALED
 
-E5 - Timetable/Room Scheduling   BOUNDED SEAL ELIGIBLE, NOT SEALED
+E5 - Timetable/Room Scheduling   BOUNDED VERIFIED + SEALED
 ```
 
 The E2/E3/E4 seal is bounded to English Center evidence. It does not claim full
 broader Education architecture compliance, full migration-history integrity, or
 full root TypeScript compliance.
 
-E5 is implementation-complete and attribution-clean, but it is not sealed until
-PR #94 merges to `main` under legitimate GitHub policy and canonical main smoke
-passes.
+E5 is sealed after PR #94 merged to `main` under legitimate GitHub policy and
+canonical main smoke passed on `origin/main@d7f6e4ac`.
 
 ---
 
@@ -45,6 +44,8 @@ E5 service tests                 7/7 PASS
 E5 CI attribution                COMPLETE
 E5 introduced violations         0
 E5 unknown attribution           0
+E5 PR #94 merge                  MERGED: d7f6e4ac
+E5 canonical main smoke          PASS
 ```
 
 ---
@@ -68,14 +69,16 @@ DEBT-TSC-ROOT-01
   Status: scoped out from English Center E2/E3/E4, not PASS
 
 DEBT-CI-POLICY-01
-  Required gates currently block product PRs on attributed baseline debt
+  Required gates now classify reviewed Education baseline debt and Education
+  conformance infrastructure schema gaps without weakening new-regression blocks
   Owner: Platform governance / CI policy
-  Status: blocks PR #94 merge, does not create E5 product-code debt
+  Status: policy hardened during PR #94, not E5 product-code debt
 
 DEBT-REALDB-E2E-INFRA-01
   Real Database Business E2E can fail on Gateway Timeout during setup
   Owner: CI database infrastructure / real-db E2E reliability
-  Status: blocks PR #94 merge when present, not E5-introduced
+  Status: passed on PR #94 final CI and canonical main smoke attribution remained
+  not E5-introduced
 ```
 
 ---
