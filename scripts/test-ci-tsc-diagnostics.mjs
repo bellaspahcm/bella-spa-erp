@@ -38,6 +38,19 @@ assert.equal(reduced.added.length, 0);
 assert.equal(reduced.reduced.length, 1);
 console.log('PASS DEBT REDUCTION = ALLOW');
 
+const unionOrderBaseline = parseDiagnostics(
+  "src/platform/education/contracts/enrollment.contract.impl.ts(40,7): error TS2322: Type 'string' is not assignable to type '\"cancelled\" | \"pending\" | \"completed\" | \"active\"'."
+);
+const unionOrderCurrent = parseDiagnostics(
+  "src/platform/education/contracts/enrollment.contract.impl.ts(40,7): error TS2322: Type 'string' is not assignable to type '\"active\" | \"completed\" | \"cancelled\" | \"pending\"'."
+);
+const unionOrderSame = compareDiagnostics(unionOrderBaseline, unionOrderCurrent);
+assert.equal(unionOrderSame.status, 'ALLOW');
+assert.equal(unionOrderSame.baselineTotal, 1);
+assert.equal(unionOrderSame.currentTotal, 1);
+assert.equal(unionOrderSame.added.length, 0);
+console.log('PASS UNION ORDER DRIFT = ALLOW');
+
 const reviewedBaselines = JSON.parse(readFileSync('.github/ci/tsc-diagnostic-baselines.json', 'utf8'));
 for (const scope of ['education-affected', 'english-center', 'english-center-affected']) {
   const reviewed = reviewedBaselines[scope]?.diagnostics;
