@@ -11,6 +11,7 @@
 **RC closure branch baseline:** `origin/main@4b213e74`
 **RC closure merge baseline:** `origin/main@92da566a`
 **Post-RC validation baseline:** `origin/main@391b0ec5`
+**Post-RC validation merge baseline:** `origin/main@62074058`
 
 ---
 
@@ -62,7 +63,8 @@ RC Closure was opened from canonical `origin/main@4b213e74`, merged through
 PR #107, and smoke-tested on canonical `origin/main@92da566a`. It implements
 E6-E9 API/dashboard consumption surfaces and closes the E10 bounded RC hold.
 
-Post-RC Validation was opened from canonical `origin/main@391b0ec5`. It adds
+Post-RC Validation was opened from canonical `origin/main@391b0ec5`, merged
+through PR #109, and smoke-tested on canonical `origin/main@62074058`. It adds
 dedicated browser and real-database validation gates and found a runtime
 environment/schema proof gap in the Command Center path. This does not invalidate
 the bounded RC; it holds Field Verified RC until the dedicated environment gates
@@ -174,6 +176,11 @@ Post-RC architecture guard       PASS
 Post-RC migration zero-downtime  PASS / no changed migrations
 Post-RC migration drift check    PASS / empty-remote drift skip
 Post-RC git diff --check         PASS
+Post-RC PR #109 merge            MERGED: 62074058
+Post-RC canonical API/service smoke 12 PASS / 1 real-DB skip on origin/main@62074058
+Post-RC canonical architecture guard PASS on origin/main@62074058
+Post-RC canonical build          PASS on origin/main@62074058
+Post-RC canonical browser gate   FAIL / runtime schema-grant blocker remains
 Post-RC final decision           BOUNDED RC retained; Field Verified RC HELD
 ```
 
@@ -244,9 +251,10 @@ RC-BLOCKER-E10-RUNTIME-01
 
 POST-RC-DB-SCHEMA-01
   Post-RC browser validation found the Command Center runtime environment could
-  not see `english_center_class_sessions`; earlier local probes also exposed
-  missing later English Center RC tables in the same runtime family. The
-  corresponding migrations exist in the repository.
+  not see `english_center_class_sessions` or
+  `english_center_learning_progress`; local probes also exposed missing later
+  English Center RC tables in the same runtime family. The corresponding
+  migrations exist in the repository.
   Owner: English Center release validation / staging database operations
   Status: Field Verified RC blocker; apply canonical migrations and refresh
   schema cache in a dedicated runtime environment, then rerun Post-RC gates
