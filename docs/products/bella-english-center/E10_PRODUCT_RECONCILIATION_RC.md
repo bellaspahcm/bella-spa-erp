@@ -5,6 +5,9 @@
 **Canonical base:** `origin/main@2105a81c`
 **Status:** RECONCILED / RC HELD
 
+**RC Closure update:** 2026-09-15 on `codex/rc-closure-english-center` from
+`origin/main@4b213e74`
+
 ---
 
 ## Decision
@@ -214,3 +217,36 @@ be completed with fresh evidence:
 
 E10 may be merged as a truthful reconciliation record, but it must not be used
 to label the product as RC until the exit criteria are closed.
+
+---
+
+## RC Closure Update - 2026-09-15
+
+The E10 UI/API consumption blocker has been addressed in the RC Closure branch.
+Fresh local evidence is recorded in `RC_CLOSURE_EVIDENCE.md`.
+
+```text
+E6 API/UI consumption                 IMPLEMENTED
+E7 API/UI consumption                 IMPLEMENTED
+E8 API/UI consumption                 IMPLEMENTED
+E9 API/UI consumption                 IMPLEMENTED
+
+RC closure API smoke                  4/4 PASS
+English Center regression + smoke     73/73 PASS
+Lint on RC closure files              PASS
+Architecture Guard                    PASS
+Education conformance                 39/39 PASS with 30s RLS timeout
+Migration zero-downtime               PASS / no changed migrations
+Migration drift check                 PASS / empty-remote drift skip
+git diff --check                      PASS
+
+Release Candidate                     PENDING PR + CANONICAL-MAIN SMOKE
+```
+
+The following gates remain intentionally not claimed as final RC evidence until
+after merge:
+
+```text
+[ ] Dependency-aware CI on PR
+[ ] Canonical origin/main smoke after merge
+```

@@ -1,6 +1,6 @@
 # Bella English Center — Implementation Status
 
-**Last Updated:** 2026-09-14
+**Last Updated:** 2026-09-15
 **Canonical authority:** `E2_E3_E4_GOVERNANCE_ACCEPTANCE.md`
 **E5 seal baseline:** `origin/main@af28f1a0`
 **E6 seal baseline:** `origin/main@a493ab88`
@@ -8,6 +8,7 @@
 **E8 seal baseline:** `origin/main@e4c085b0`
 **E9 seal baseline:** `origin/main@19b57f09`
 **E10 reconciliation baseline:** `origin/main@2105a81c`
+**RC closure branch baseline:** `origin/main@4b213e74`
 
 ---
 
@@ -28,7 +29,7 @@ E8 - Parent/Student Engagement    BOUNDED VERIFIED + SEALED
 
 E9 - Chain Command Center         BOUNDED VERIFIED + SEALED
 
-E10 - Product Reconciliation / RC RECONCILED / RC HELD
+E10 - Product Reconciliation / RC RECONCILED / RC CLOSURE IMPLEMENTED LOCALLY
 ```
 
 The E2/E3/E4 seal is bounded to English Center evidence. It does not claim full
@@ -54,6 +55,10 @@ E10 reconciliation is opened from canonical `origin/main@2105a81c`. Fresh gates
 passed, but RC is held because E10 found missing full UI/API consumption
 surfaces for E6-E9 and no full browser/live UI-to-DB smoke for the complete
 E2-E9 chain.
+
+RC Closure is opened from canonical `origin/main@4b213e74`. It implements E6-E9
+API/dashboard consumption surfaces and local smoke evidence. Final RC remains
+pending PR merge through dependency-aware CI and canonical-main smoke.
 
 ---
 
@@ -133,6 +138,19 @@ E10 architecture guard           PASS
 E10 education conformance        39/39 PASS
 E10 forbidden dependency grep    PASS / no hits
 E10 RC decision                  HELD
+RC closure architecture gate     PASS
+RC closure API smoke             4/4 PASS
+RC closure regression + smoke    73/73 PASS
+RC closure lint                  PASS
+RC closure architecture guard    PASS
+RC closure education conformance 39/39 PASS with 30s RLS timeout
+RC closure migration zero-downtime PASS / no changed migrations
+RC closure migration changed-check PASS / empty-remote drift skip
+RC closure git diff --check      PASS
+RC closure focused any scan      PASS / no hits
+RC closure focused forbidden scan PASS / no hits
+RC closure TypeScript changed    ATTEMPTED / no diagnostic before interruption
+RC closure final RC              PENDING PR + CANONICAL-MAIN SMOKE
 ```
 
 ---
@@ -190,13 +208,13 @@ RC-BLOCKER-E10-UIAPI-01
   not find matching UI/API consumption surfaces for attendance/learning,
   tuition/billing, engagement, and chain command center.
   Owner: English Center product surface
-  Status: blocks RC claim
+  Status: closed locally by RC Closure branch; pending PR/CI/canonical smoke
 
 RC-BLOCKER-E10-RUNTIME-01
   E10 did not execute a full browser/live UI-to-DB smoke across the complete
   E2-E9 product chain.
   Owner: English Center release validation
-  Status: blocks RC claim
+  Status: partially reduced by API smoke; canonical-main runtime smoke still pending
 ```
 
 ---
@@ -217,4 +235,6 @@ RC-BLOCKER-E10-RUNTIME-01
 - `E9_BOUNDED_SEAL_REVIEW.md`
 - `E10_ARCHITECTURE_GATE_RESULT.md`
 - `E10_PRODUCT_RECONCILIATION_RC.md`
+- `RC_CLOSURE_ARCHITECTURE_GATE_RESULT.md`
+- `RC_CLOSURE_EVIDENCE.md`
 - `E6_E10_ROADMAP_RECONCILIATION.md`
