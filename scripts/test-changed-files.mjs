@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 
 const CODE_FILE_PATTERN = /\.(ts|tsx|js|jsx)$/;
+const TEST_FILE_PATTERN = /\.(test|spec)\.(ts|tsx|js|jsx)$/;
 const EXCLUDED_PATTERNS = [
   /^scripts\//,
   /^\.github\//,
@@ -24,6 +25,10 @@ function gitOutput(args) {
 }
 
 function resolveChangedFiles() {
+  if (process.argv.length > 2) {
+    return process.argv.slice(2);
+  }
+
   const eventName = process.env.GITHUB_EVENT_NAME;
   const baseRef = process.env.GITHUB_BASE_REF;
 
@@ -50,12 +55,26 @@ function resolveChangedFiles() {
   return [];
 }
 
-const sourceFiles = resolveChangedFiles().filter((file) => (
+const changedFiles = resolveChangedFiles();
+const sourceFiles = changedFiles.filter((file) => (
   CODE_FILE_PATTERN.test(file)
   && !EXCLUDED_PATTERNS.some((pattern) => pattern.test(file))
 ));
+const testFiles = changedFiles.filter((file) => TEST_FILE_PATTERN.test(file));
 
 if (sourceFiles.length === 0) {
+  if (testFiles.length > 0) {
+    console.log(`Running ${testFiles.length} changed Jest test file(s):`);
+    for (const file of testFiles) {
+      console.log(`- ${file}`);
+    }
+
+    const jest = run('npx', ['jest', '--runInBand', ...testFiles], {
+      stdio: 'inherit',
+    });
+    process.exit(jest.status ?? 1);
+  }
+
   console.log('No changed application source files with related Jest coverage.');
   process.exit(0);
 }

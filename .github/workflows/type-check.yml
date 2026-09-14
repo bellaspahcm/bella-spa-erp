@@ -5,108 +5,81 @@ on:
     branches: [main, master]
   push:
     branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
-  typecheck:
+  detect_changes:
+    name: Detect Changed Scope
     runs-on: ubuntu-latest
     timeout-minutes: 35
-
+    outputs:
+      scope_status: ${{ steps.scope.outputs.scope_status }}
+      scope_level: ${{ steps.scope.outputs.scope_level }}
+      products: ${{ steps.scope.outputs.products }}
+      os: ${{ steps.scope.outputs.os }}
+      affected_products: ${{ steps.scope.outputs.affected_products }}
+      needs_typecheck: ${{ steps.scope.outputs.needs_typecheck }}
+      typecheck_mode: ${{ steps.scope.outputs.typecheck_mode }}
+      scope_message: ${{ steps.scope.outputs.scope_message }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: Check if root typecheck files changed
-        id: changes
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
-            CHANGED_FILES=$(git diff --name-only "origin/$GITHUB_BASE_REF"...HEAD)
-          else
-            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD 2>/dev/null || git ls-files)
-          fi
-
-          printf '%s\n' "$CHANGED_FILES"
-          printf '%s\n' "$CHANGED_FILES" > changed-files.txt
-
-          NEEDS_ROOT_TYPECHECK=false
-          while IFS= read -r file; do
-            [ -z "$file" ] && continue
-
-            case "$file" in
-              package.json|package-lock.json|tsconfig.json|next-env.d.ts|next.config.ts|instrumentation.ts|instrumentation-client.ts|sentry.*.ts)
-                NEEDS_ROOT_TYPECHECK=true
-                ;;
-              src/app/dashboard/real-estate/*|src/app/dashboard/real-estate/**/*|src/modules/real_estate/components/*|src/modules/real_estate/components/**/*|src/components/layout/sidebar.tsx)
-                ;;
-              src/__tests__/*|src/*/__tests__/*|src/**/*.test.ts|src/**/*.test.tsx|src/**/*.spec.ts|src/**/*.spec.tsx)
-                ;;
-              src/*.ts|src/*.tsx|src/**/*.ts|src/**/*.tsx|*.ts|*.tsx|*.mts)
-                NEEDS_ROOT_TYPECHECK=true
-                ;;
-            esac
-          done <<< "$CHANGED_FILES"
-
-          echo "needs_root_typecheck=$NEEDS_ROOT_TYPECHECK" >> "$GITHUB_OUTPUT"
-
-      - name: Setup Node.js
-        if: steps.changes.outputs.needs_root_typecheck == 'true'
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '24'
+          cache: npm
 
-      - name: Install dependencies
-        if: steps.changes.outputs.needs_root_typecheck == 'true'
-        run: npm ci --legacy-peer-deps
+      - name: Classify scope
+        id: scope
+        run: node scripts/ci-scope-router.mjs --fail-on-block
 
-      - name: Type check
-        if: steps.changes.outputs.needs_root_typecheck == 'true'
-        shell: bash
-        run: |
-          set +e
-          timeout 25m npm run type-check 2>&1 | tee typecheck.log
-          TYPECHECK_EXIT=${PIPESTATUS[0]}
-          set -e
+  typecheck:
+    name: Type Check (${{ needs.detect_changes.outputs.typecheck_mode }})
+    needs: detect_changes
+    if: needs.detect_changes.outputs.needs_typecheck == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI_SCOPE_TYPECHECK_MODE: ${{ needs.detect_changes.outputs.typecheck_mode }}
+      CI_SCOPE_PRODUCTS: ${{ needs.detect_changes.outputs.products }}
+      CI_SCOPE_OS: ${{ needs.detect_changes.outputs.os }}
+      CI_SCOPE_AFFECTED_PRODUCTS: ${{ needs.detect_changes.outputs.affected_products }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
-          if [ "$TYPECHECK_EXIT" -eq 0 ]; then
-            exit 0
-          fi
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
 
-          if [ "$TYPECHECK_EXIT" -eq 124 ]; then
-            echo "::warning::Root typecheck exceeded the bounded 25 minute CI budget. Treating as pre-existing root typecheck performance debt for this PR."
-            exit 0
-          fi
+      - name: Restore TypeScript cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .cache/tsbuildinfo
+            .next/cache
+          key: ${{ runner.os }}-ts-next-${{ hashFiles('package-lock.json', 'tsconfig*.json', 'next.config.*') }}-${{ github.ref_name }}
+          restore-keys: |
+            ${{ runner.os }}-ts-next-${{ hashFiles('package-lock.json', 'tsconfig*.json', 'next.config.*') }}-
+            ${{ runner.os }}-ts-next-
 
-          CHANGED_TS_FILES=$(grep -E '\.(ts|tsx|mts)$' changed-files.txt || true)
-          if [ -z "$CHANGED_TS_FILES" ]; then
-            echo "::warning::Root typecheck failed, but this PR changed no TypeScript source files. Treating as pre-existing baseline debt."
-            exit 0
-          fi
+      - run: npm ci
 
-          HAS_CHANGED_FILE_ERROR=false
-          while IFS= read -r file; do
-            [ -z "$file" ] && continue
-            if grep -F "$file(" typecheck.log >/dev/null; then
-              echo "::error::TypeScript diagnostics found in changed file: $file"
-              HAS_CHANGED_FILE_ERROR=true
-            fi
-          done <<< "$CHANGED_TS_FILES"
+      - name: Run dependency-aware typecheck
+        run: npm run typecheck:${{ needs.detect_changes.outputs.typecheck_mode }}
 
-          if [ "$HAS_CHANGED_FILE_ERROR" = "true" ]; then
-            exit "$TYPECHECK_EXIT"
-          fi
-
-          echo "::warning::Root typecheck failed, but no diagnostics were found in changed TypeScript files. Treating as pre-existing baseline debt."
-          exit 0
-
-      - name: Lint strict
-        if: steps.changes.outputs.needs_root_typecheck == 'true'
-        run: npm run lint:strict
-        continue-on-error: true
-
-      - name: Root typecheck skipped
-        if: steps.changes.outputs.needs_root_typecheck != 'true'
-        run: echo "Root typecheck skipped because this PR only changes files outside root tsconfig coverage."
+  skipped:
+    name: Type Check Skipped
+    needs: detect_changes
+    if: needs.detect_changes.outputs.needs_typecheck != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Typecheck skipped by dependency-aware CI: ${{ needs.detect_changes.outputs.scope_message }}"

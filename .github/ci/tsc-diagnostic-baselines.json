@@ -1,0 +1,4 @@
+{
+  "$schema": "./tsc-diagnostic-baselines.schema.json",
+  "comment": "Reviewed TypeScript diagnostic baselines by CI scope. Empty means non-zero diagnostics block until a scoped baseline is explicitly approved."
+}

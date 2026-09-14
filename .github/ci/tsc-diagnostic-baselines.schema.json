@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": {
+    "oneOf": [
+      { "type": "string" },
+      {
+        "type": "object",
+        "required": ["owner", "debtId", "diagnostics"],
+        "properties": {
+          "owner": { "type": "string" },
+          "debtId": { "type": "string" },
+          "reviewedAt": { "type": "string" },
+          "diagnostics": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    ]
+  }
+}

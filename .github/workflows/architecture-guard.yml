@@ -10,8 +10,30 @@ on:
     branches: [main, develop]
 
 jobs:
+  detect_changes:
+    name: Detect Changed Scope
+    runs-on: ubuntu-latest
+    outputs:
+      os: ${{ steps.scope.outputs.os }}
+      affected_products: ${{ steps.scope.outputs.affected_products }}
+      core_changed: ${{ steps.scope.outputs.core_changed }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Classify scope
+        id: scope
+        run: node scripts/ci-scope-router.mjs --fail-on-block
+
   architecture-compliance:
     name: Healthcare Constitution Enforcement
+    needs: detect_changes
     runs-on: ubuntu-latest
     
     steps:
@@ -89,7 +111,8 @@ jobs:
   education-compliance:
     name: Education Constitution Enforcement
     runs-on: ubuntu-latest
-    if: contains(github.event.pull_request.changed_files, 'src/platform/education') || contains(github.event.pull_request.changed_files, 'src/products/bella-education')
+    needs: detect_changes
+    if: contains(needs.detect_changes.outputs.os, 'education') || contains(needs.detect_changes.outputs.affected_products, 'education_preschool') || contains(needs.detect_changes.outputs.affected_products, 'english_center')
     
     steps:
       - name: Checkout code
@@ -113,7 +136,8 @@ jobs:
   core-freeze-guard:
     name: Core Freeze Verification
     runs-on: ubuntu-latest
-    if: contains(github.event.pull_request.changed_files, 'src/core')
+    needs: detect_changes
+    if: needs.detect_changes.outputs.core_changed == 'true'
     
     steps:
       - name: Checkout code
@@ -137,7 +161,7 @@ jobs:
   block-result:
     name: Architecture Guard Summary
     runs-on: ubuntu-latest
-    needs: [architecture-compliance]
+    needs: [detect_changes, architecture-compliance]
     if: failure()
     
     steps:
