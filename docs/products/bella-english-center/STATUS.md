@@ -7,6 +7,7 @@
 **E7 seal baseline:** `origin/main@364b624c`
 **E8 seal baseline:** `origin/main@e4c085b0`
 **E9 seal baseline:** `origin/main@19b57f09`
+**E10 reconciliation baseline:** `origin/main@2105a81c`
 
 ---
 
@@ -27,7 +28,7 @@ E8 - Parent/Student Engagement    BOUNDED VERIFIED + SEALED
 
 E9 - Chain Command Center         BOUNDED VERIFIED + SEALED
 
-E10                              NOT OPENED
+E10 - Product Reconciliation / RC RECONCILED / RC HELD
 ```
 
 The E2/E3/E4 seal is bounded to English Center evidence. It does not claim full
@@ -49,8 +50,10 @@ canonical main smoke passed on `origin/main@e4c085b0`.
 E9 is sealed after PR #104 merged to `main` under legitimate GitHub policy and
 canonical main smoke passed on `origin/main@19b57f09`.
 
-E10 is not opened. E10 implementation requires its own architecture gate result
-from canonical main after E9 seal.
+E10 reconciliation is opened from canonical `origin/main@2105a81c`. Fresh gates
+passed, but RC is held because E10 found missing full UI/API consumption
+surfaces for E6-E9 and no full browser/live UI-to-DB smoke for the complete
+E2-E9 chain.
 
 ---
 
@@ -121,7 +124,15 @@ E9 education conformance         39/39 PASS
 E9 PR #104 merge                 MERGED: 19b57f09
 E9 canonical main smoke          PASS
 E9 implementation                BOUNDED VERIFIED + SEALED
-E10 implementation               NOT OPENED
+E10 architecture gate            PASS
+E10 English Center regression    69/69 PASS
+E10 scoped TypeScript check      PASS: bounded baseline 162/162
+E10 migration zero-downtime      PASS / no changed migrations
+E10 migration changed-check      PASS / empty-remote drift skip
+E10 architecture guard           PASS
+E10 education conformance        39/39 PASS
+E10 forbidden dependency grep    PASS / no hits
+E10 RC decision                  HELD
 ```
 
 ---
@@ -173,6 +184,19 @@ DEBT-REALDB-E2E-GATEWAY-01
   existing accounting, order lifecycle, refund, and payroll real-db setup.
   Owner: CI/database test infrastructure reliability
   Status: not E8-introduced; failed jobs passed on rerun before merge
+
+RC-BLOCKER-E10-UIAPI-01
+  E6-E9 product services are implemented and regression-tested, but E10 did
+  not find matching UI/API consumption surfaces for attendance/learning,
+  tuition/billing, engagement, and chain command center.
+  Owner: English Center product surface
+  Status: blocks RC claim
+
+RC-BLOCKER-E10-RUNTIME-01
+  E10 did not execute a full browser/live UI-to-DB smoke across the complete
+  E2-E9 product chain.
+  Owner: English Center release validation
+  Status: blocks RC claim
 ```
 
 ---
@@ -191,4 +215,6 @@ DEBT-REALDB-E2E-GATEWAY-01
 - `E8_BOUNDED_SEAL_REVIEW.md`
 - `E9_ARCHITECTURE_GATE_RESULT.md`
 - `E9_BOUNDED_SEAL_REVIEW.md`
+- `E10_ARCHITECTURE_GATE_RESULT.md`
+- `E10_PRODUCT_RECONCILIATION_RC.md`
 - `E6_E10_ROADMAP_RECONCILIATION.md`
