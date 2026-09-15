@@ -27,13 +27,13 @@ This is sufficient to continue Product/UX validation. It is not sufficient to ma
 phase: H3 Product/UX Validation
 status: PARTIAL
 questions:
-  answered: 1
+  answered: 2
   total: 12
 use_cases:
   validated: 0
   total: 6
 boundaries:
-  professional_assignment: STRONG_SEPARATE_SIGNAL
+  professional_assignment: VERY_STRONG_SEPARATE_SIGNAL
   resource_allocation: UNRESOLVED
   professional_recommendation: UNRESOLVED
 contract_inventory:
@@ -42,7 +42,7 @@ contract_inventory:
   change_authorized: false
 phase2_status:
   can_close: false
-  reason: "Only Q1 answered; Q2-Q12 and UC1-UC6 still pending."
+  reason: "Q1-Q2 answered; Q3-Q12 and UC1-UC6 still pending."
 ```
 
 ---
@@ -91,11 +91,62 @@ However, Q1 alone does not authorize `VALIDATED_SEPARATE`. Q2 must establish whe
 
 ---
 
+## Q2 — Assignment History
+
+```yaml
+Q2:
+  question: "Is assignment history business-critical?"
+  answer: yes
+  evidence_type: PRODUCT_DOMAIN_REQUIREMENT
+  validation_strength: PROPOSED_BY_PRODUCT
+  evidence:
+    - "An appointment initially assigned to Stylist A can later move to Stylist B because A is absent, late, overloaded, or unavailable. The system needs both the previous and new assignment, not only the current stylist."
+    - "When a customer complains about a stylist change or service quality, the manager needs to trace who was originally assigned, who ultimately served the customer, when the change happened, and why it happened."
+    - "Reassignment history supports operations analysis: which stylists are frequently reassigned away from customers, who often receives replacement customers, why dispatch changes happen, and how volatile schedules are."
+    - "Assignment history may feed commission calculation, performance review, and dispute handling; storing only the current stylist loses the operational dispatch trail."
+  implication:
+    professional_assignment: VERY_STRONG_SEPARATE_SIGNAL
+  boundary_decision: NONE
+```
+
+### Operating Scenarios
+
+**Scenario 1 — Original and Final Assignee Differ**
+
+An appointment is initially assigned to Stylist A. Before service starts, the appointment is moved to Stylist B because A is absent, late, overloaded, or otherwise unavailable. Bella Haircut needs to preserve both the original assignment and the final service provider.
+
+**Scenario 2 — Customer Complaint or Service Quality Review**
+
+A customer complains that the stylist was changed or that service quality did not match expectation. The manager needs to review who was assigned first, who performed the service, when the change happened, who made the change, and the stated reason.
+
+**Scenario 3 — Operations Analytics and Compensation**
+
+Reassignment history can support operational analysis, commission calculation, performance review, and dispute handling. If only `current_stylist_id` is stored, the dispatch path is destroyed after each update.
+
+### Boundary Signal
+
+Q2 adds a durable history requirement to Professional Assignment:
+
+```text
+Appointment -> Stylist A -> Stylist B -> Stylist C
+```
+
+This is materially different from storing only:
+
+```text
+Appointment -> current_stylist_id = Stylist C
+```
+
+The requirement now includes time-based assignment data: who was assigned, when, who changed it, from whom, to whom, and why. This creates a very strong signal that Professional Assignment may own durable history independent of Appointment.
+
+However, Q1 + Q2 still do not authorize `VALIDATED_SEPARATE`. Q3 and UC1-UC4 must validate whether assignment has workflow/lifecycle behavior beyond history.
+
+---
+
 ## Pending Questions
 
-### Q2 — Assignment History
+### Q3 — Assignment Acceptance / Rejection
 
-Does Bella Haircut need to store assignment/reassignment history, or is the current stylist/barber enough?
+Can stylists/barbers reject an assignment, or are assignments always decided by the manager/system?
 
-Evidence should describe real operating needs, such as revenue reconciliation, commission dispute, customer complaint, service quality review, or manager accountability.
-
+Evidence should describe operating authority: professional autonomy, manager override, skill mismatch, customer preference mismatch, workload fairness, or policy for refusing unsuitable assignments.
