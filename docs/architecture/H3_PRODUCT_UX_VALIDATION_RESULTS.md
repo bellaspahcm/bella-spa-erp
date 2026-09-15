@@ -32,14 +32,14 @@ This is sufficient to continue Product/UX validation. It is not sufficient to ma
 phase: H3 Product/UX Validation
 status: PARTIAL
 questions:
-  answered: 5
+  answered: 6
   total: 12
 use_cases:
   validated: 4
   total: 6
 boundaries:
   professional_assignment: VERY_STRONG_SEPARATE_SIGNAL
-  resource_allocation: STRONG_SEPARATE_SIGNAL
+  resource_allocation: VERY_STRONG_SEPARATE_SIGNAL
   professional_recommendation: UNRESOLVED
 contract_inventory:
   h1_baseline: 8
@@ -47,7 +47,7 @@ contract_inventory:
   change_authorized: false
 phase2_status:
   can_close: false
-  reason: "Professional Assignment questions Q1-Q4 and UC1-UC4 answered at Product Domain Requirement level; Resource Allocation Q5 answered; BabyCare assignment audit and capability reconciliation complete; Q6-Q12 and UC5-UC6 still pending."
+  reason: "Professional Assignment questions Q1-Q4 and UC1-UC4 answered at Product Domain Requirement level; Resource Allocation Q5-Q6 answered; BabyCare assignment audit and capability reconciliation complete; Q7-Q12 and UC5-UC6 still pending."
 ```
 
 ---
@@ -878,6 +878,78 @@ Q5 creates a strong separate signal for Resource Allocation because resources ha
 
 ---
 
+## Q6 - Shared Constrained Equipment
+
+```yaml
+Q6:
+  question: "Do stylists/barbers share constrained equipment?"
+  answer: yes
+  evidence_type: PRODUCT_DOMAIN_REQUIREMENT
+  validation_strength: PROPOSED_BY_PRODUCT
+  evidence:
+    - "A branch can have more stylists than wash chairs, stations, or specialized equipment."
+    - "A stylist can be available while a required service step still cannot start because the required resource is occupied."
+    - "A service can use different resources by service segment instead of holding one resource for the full appointment."
+    - "Resource conflict must be checked independently from professional conflict."
+  operating_policy:
+    shared_resources: true
+    finite_capacity: true
+    resource_required_by_service_segment: true
+    independent_resource_conflict_check: true
+  implication:
+    resource_allocation: VERY_STRONG_SEPARATE_SIGNAL
+    segment_based_allocation: STRONG_SIGNAL
+  boundary_decision: NONE
+```
+
+### Segment-Based Resource Commitment
+
+Q6 connects directly to UC4. The same appointment can have one professional commitment timeline and a different resource commitment timeline.
+
+```text
+Perm / color appointment
+
+14:00        14:30        15:10        15:30       16:00
+|------------|-------------|------------|-----------|
+ APPLY        PROCESS       WASH         FINISH
+
+ Stylist A    Stylist free  Stylist A    Stylist A
+ Station 3    Station 3     Wash Chair 2 Station 3
+```
+
+This creates two parallel commitments:
+
+```text
+PROFESSIONAL COMMITMENT
+Appointment A
+  -> 14:00-14:30 Stylist A
+  -> 14:30-15:10 RELEASED
+  -> 15:10-15:30 Stylist A
+  -> 15:30-16:00 Stylist A
+
+RESOURCE COMMITMENT
+Appointment A
+  -> 14:00-15:10 Station 3
+  -> 15:10-15:30 Wash Chair 2
+  -> 15:30-16:00 Station 3
+```
+
+Service Segment describes what the work needs. Professional Assignment answers who performs the active work. Resource Allocation answers which finite resource is committed for each service segment.
+
+```text
+Service Segment -> work requirement
+Professional Assignment -> who performs it
+Resource Allocation -> which resource is used
+```
+
+### Boundary Signal
+
+Q6 makes Resource Allocation stronger than simple availability checking. The system must understand shared finite resources, segment-level resource requirements, and resource conflicts independent of professional availability.
+
+This still does not authorize `VALIDATED_SEPARATE`. Q7 must test whether resource changes or reallocations happen frequently enough to create a resource allocation lifecycle, or whether Resource Allocation remains primarily availability/capacity checking.
+
+---
+
 ## Pending Questions
 
 ### Professional Assignment Group Status
@@ -916,21 +988,27 @@ Q1-Q4 and UC1-UC4 form a very strong product requirement signal that Professiona
 ```yaml
 resource_allocation:
   Q5_resource_maintenance_window: regular
+  Q6_shared_constrained_equipment: yes
   planned_maintenance: REQUIRED
   adhoc_unavailability: REQUIRED
   availability_window_required: true
   conflict_detection_required: true
+  shared_resources: REQUIRED
+  finite_capacity: REQUIRED
+  resource_required_by_service_segment: REQUIRED
+  independent_resource_conflict_check: REQUIRED
+  segment_based_allocation: STRONG_SIGNAL
   automatic_reassignment: false
-  combined_signal: STRONG_SEPARATE_SIGNAL
+  combined_signal: VERY_STRONG_SEPARATE_SIGNAL
   evidence_strength: PROPOSED_BY_PRODUCT
   boundary_decision: NONE
 ```
 
-Q6 should validate whether stylists/barbers share constrained resources. This determines whether Resource Allocation only manages simple chairs/stations or must also manage shared constrained equipment.
+Q7 should validate whether chair, station, or equipment reallocation happens frequently, rarely, or never in actual salon operations. This determines whether Resource Allocation has an operational lifecycle or remains primarily availability and capacity checking.
 
-### Q6-Q12 — Resource Allocation and Recommendation
+### Q7-Q12 — Resource Allocation and Recommendation
 
-Q6-Q12 remain unanswered.
+Q7-Q12 remain unanswered.
 
 ### UC5-UC6 — Use Case Walkthroughs
 
