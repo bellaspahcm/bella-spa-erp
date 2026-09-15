@@ -27,7 +27,7 @@ This is sufficient to continue Product/UX validation. It is not sufficient to ma
 phase: H3 Product/UX Validation
 status: PARTIAL
 questions:
-  answered: 3
+  answered: 4
   total: 12
 use_cases:
   validated: 0
@@ -42,7 +42,7 @@ contract_inventory:
   change_authorized: false
 phase2_status:
   can_close: false
-  reason: "Q1, Q2, and Q4 answered; Q3, Q5-Q12, and UC1-UC6 still pending."
+  reason: "Professional Assignment questions Q1-Q4 answered at Product Domain Requirement level; Q5-Q12 and UC1-UC6 still pending."
 ```
 
 ---
@@ -143,6 +143,51 @@ However, Q1 + Q2 still do not authorize `VALIDATED_SEPARATE`. Q3 and UC1-UC4 mus
 
 ---
 
+## Q3 — Assignment Acceptance / Rejection
+
+```yaml
+Q3:
+  question: "Can stylists/barbers reject assignments?"
+  answer: controlled_rejection
+  evidence_type: PRODUCT_DOMAIN_REQUIREMENT
+  validation_strength: PROPOSED_BY_PRODUCT
+  evidence:
+    - "Stylists/barbers should not have unrestricted authority to refuse customers because branch operations and customer commitments still need manager control."
+    - "Stylists/barbers should be able to flag or reject unsuitable assignments for controlled reasons such as skill mismatch, service not supported, overload, health/safety concern, or customer-specific constraint."
+    - "A manager or authorized dispatcher can review the rejection reason, override when appropriate, or reassign the appointment to another suitable professional."
+    - "The system should preserve rejection reason, actor, timestamp, and follow-up assignment so the branch can distinguish valid operational rejection from refusal without acceptable reason."
+  operating_policy:
+    free_rejection_allowed: false
+    controlled_rejection_allowed: true
+    manager_override_allowed: true
+    rejection_reason_required: true
+    reassignment_required_when_rejection_accepted: true
+  implication:
+    professional_assignment: VERY_STRONG_SEPARATE_SIGNAL
+    assignment_status: REQUIRED
+    rejection_reason: REQUIRED
+    manager_override: REQUIRED
+    assignment_lifecycle: STRONG_SIGNAL
+  boundary_decision: NONE
+```
+
+### Operating Policy
+
+Q3 establishes controlled rejection, not unrestricted professional autonomy.
+
+Correct model:
+
+```text
+Manager/System proposes assignment
+  -> Professional may accept
+  -> Professional may reject with controlled reason
+  -> Manager may override or reassign
+```
+
+This means Assignment needs status and decision history, but the product requirement still does not authorize interface design or final boundary closure.
+
+---
+
 ## Q4 — Stylist/Barber No-Show Tracking
 
 ```yaml
@@ -205,11 +250,20 @@ This strengthens the signal that Professional Assignment may have lifecycle beha
 
 ## Pending Questions
 
-### Q3 — Assignment Acceptance / Rejection
+### Professional Assignment Group Status
 
-Can stylists/barbers reject an assignment, or are assignments always decided by the manager/system?
+```yaml
+professional_assignment:
+  Q1_reassignment_frequency: daily
+  Q2_assignment_history: required
+  Q3_acceptance_rejection: controlled_rejection
+  Q4_staff_no_show_impact: tracked
+  combined_signal: VERY_STRONG_SEPARATE_SIGNAL
+  evidence_strength: PROPOSED_BY_PRODUCT
+  boundary_decision: NONE
+```
 
-Evidence should describe operating authority: professional autonomy, manager override, skill mismatch, customer preference mismatch, workload fairness, or policy for refusing unsuitable assignments.
+Q1-Q4 form a strong product requirement signal that Professional Assignment is more than a simple appointment `stylist_id`. The next step is not contract design; it is UC1-UC4 walkthrough to test whether these requirements form a coherent workflow.
 
 ### Q5-Q12 — Resource Allocation and Recommendation
 
