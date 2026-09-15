@@ -8,6 +8,8 @@
 
 **BabyCare capability reconciliation:** `H3_BABYCARE_CAPABILITY_RECONCILIATION.md`
 
+**BabyCare financial reconciliation:** `H3_BABYCARE_FINANCIAL_RECONCILIATION.md`
+
 ---
 
 ## Evidence Classification
@@ -745,3 +747,25 @@ babycare_capability_reconciliation:
 ```
 
 UC4 should validate `Active Professional Segments`: whether professional double-booking checks should cover the whole appointment duration or only the time windows where the stylist is actively required.
+
+### Financial Reconciliation — BabyCare Evidence
+
+BabyCare financial reconciliation is recorded in `H3_BABYCARE_FINANCIAL_RECONCILIATION.md`.
+
+```yaml
+babycare_financial_reconciliation:
+  assignment_to_execution: IMPLEMENTED
+  execution_to_commission: IMPLEMENTED
+  reassignment_to_commission: IMPLEMENTED_BY_COMPLETED_BY_KTV_ID
+  commission_history: PARTIAL
+  commission_to_payroll: IMPLEMENTED
+  finance_source_of_truth: IMPLEMENTED_FOR_REVENUE_EXPENSE_SALARY_PAYMENT
+  accounting_posting: IMPLEMENTED_VIA_OUTBOX_AND_WORKER
+  ipayment_engine_represents_full_money_domain: false
+  haircut_contract_design_allowed: false
+  platform_promotion_allowed: false
+  contract_inventory_change_allowed: false
+  boundary_decision: NONE
+```
+
+Financial validation must not collapse Payment, Revenue, Commission, Payroll, Finance, and Accounting into one capability. Haircut still needs Product/UX validation before contract design.
