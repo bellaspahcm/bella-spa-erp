@@ -4,6 +4,7 @@
 **Branch:** `feat/haircut-h2-contract-extraction`  
 **Status:** READY FOR PRODUCT/UX SESSION  
 **Previous checkpoint:** `H2_CHECKPOINT_2026_09_15.md`  
+**Results worksheet:** `H3_PRODUCT_UX_VALIDATION_RESULTS.md`
 
 ---
 
