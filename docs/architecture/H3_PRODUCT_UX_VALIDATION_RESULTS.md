@@ -35,7 +35,7 @@ questions:
   answered: 8
   total: 12
 use_cases:
-  validated: 4
+  validated: 5
   total: 6
 boundaries:
   professional_assignment: VERY_STRONG_SEPARATE_SIGNAL
@@ -47,7 +47,7 @@ contract_inventory:
   change_authorized: false
 phase2_status:
   can_close: false
-  reason: "Professional Assignment questions Q1-Q4 and UC1-UC4 answered at Product Domain Requirement level; Resource Allocation Q5-Q8 answered; BabyCare assignment audit and capability reconciliation complete; Q9-Q12 and UC5-UC6 still pending."
+  reason: "Professional Assignment questions Q1-Q4 and UC1-UC4 answered at Product Domain Requirement level; Resource Allocation Q5-Q8 and UC5 answered; BabyCare assignment audit and capability reconciliation complete; UC6 and Q9-Q12 still pending."
 ```
 
 ---
@@ -1120,6 +1120,161 @@ This does not authorize contract design or `VALIDATED_SEPARATE`. UC5 must valida
 
 ---
 
+## UC5 - Chair/Station Double Booking
+
+```yaml
+UC5:
+  name: CHAIR_STATION_DOUBLE_BOOKING
+  valid_business_flow: yes
+  evidence_type: PRODUCT_DOMAIN_REQUIREMENT
+  validation_strength: PROPOSED_BY_PRODUCT
+  scenario:
+    resource: "Wash Chair #2"
+    condition: "Two service segments require exclusive use of the same resource during overlapping time."
+  workflow:
+    step_1:
+      action: RESOLVE_SEGMENT_RESOURCE_REQUIREMENT
+      owner: SERVICE_DEFINITION
+      description: "Determine what resource type or capacity the service segment requires."
+    step_2:
+      action: CHECK_RESOURCE_AVAILABILITY
+      owner: RESOURCE_ALLOCATION
+      description: "Check the resource commitment window for the relevant service segment."
+    step_3:
+      condition: EXCLUSIVE_RESOURCE_OVERLAP
+      result: HARD_CONFLICT
+      allocation_created: false
+    step_4:
+      action: GENERATE_FEASIBLE_ALTERNATIVES
+      alternatives:
+        - SAME_TIME_DIFFERENT_RESOURCE
+        - SHIFT_SEGMENT_TIME
+        - WAIT_FOR_RESOURCE
+        - SMART_WAITLIST_IF_APPOINTMENT_CANNOT_BE_FULFILLED
+  hard_conflict_policy:
+    exclusive_resource_overlap: BLOCK
+    manager_override: false
+  resource_model:
+    full_appointment_lock_required: false
+    segment_based_commitment: true
+    different_resource_per_segment: true
+    pooled_resources_supported: true
+    capacity_based_resources_supported: true
+  capacity_model:
+    capacity_one:
+      max_concurrent_allocations: 1
+      exclusive_overlap_is_hard_conflict: true
+    capacity_n:
+      max_concurrent_allocations: "resource.capacity"
+      hard_conflict_when: "concurrent allocation count exceeds capacity"
+    resource_pool:
+      allocation_rule: "any compatible resource in the pool can satisfy the segment requirement"
+  ownership:
+    appointment_scheduling:
+      owns:
+        - CUSTOMER_TIME_AND_SERVICE_FEASIBILITY
+    professional_assignment:
+      owns:
+        - PROFESSIONAL_ACTIVE_CAPACITY
+    resource_allocation:
+      owns:
+        - RESOURCE_SEGMENT_COMMITMENT
+        - RESOURCE_CAPACITY_CONFLICT
+        - RESOURCE_ALLOCATION_ALTERNATIVES
+    smart_waitlist:
+      participates_when:
+        - RESOURCE_CONFLICT_PREVENTS_APPOINTMENT_FULFILLMENT
+  implication:
+    resource_allocation: VERY_STRONG_SEPARATE_SIGNAL
+    segment_based_allocation: VERY_STRONG_EVIDENCE
+    independent_resource_conflict: VERY_STRONG_EVIDENCE
+    finite_capacity: REQUIRED
+    alternative_allocation: REQUIRED
+  boundary_decision: NONE
+```
+
+### Segment Conflict Example
+
+UC5 does not mean a resource is locked for the whole appointment when it is only needed for one segment.
+
+```text
+Appointment A
+14:00  CUT      Station #3
+14:30  PROCESS  Station #3
+15:10  WASH     Wash Chair #2
+
+Appointment B
+14:40  CUT      Station #5
+15:10  WASH     Wash Chair #2  -> CONFLICT
+```
+
+The conflict is on the resource commitment window:
+
+```text
+Wash Chair #2
+
+15:10 -------- 15:30
+████ Appointment A
+
+15:15 -------- 15:35
+████ Appointment B
+
+       overlap -> HARD CONFLICT
+```
+
+The system must not infer:
+
+```text
+Appointment A 14:00-16:00
+  -> Wash Chair #2 locked for 120 minutes
+```
+
+The correct model is segment-based commitment:
+
+```text
+Wash Chair #2 is committed only for the WASH segment window.
+```
+
+### Capacity Nuance
+
+`manager_override: false` applies to an exclusive hard conflict: one resource capacity unit cannot serve two customers at the same time. Resource Allocation must still be able to represent resources with different capacity shapes:
+
+```text
+Resource capacity = 1
+  -> at most 1 concurrent allocation
+
+Resource capacity = 3
+  -> at most 3 concurrent allocations
+
+Resource pool
+  -> any compatible resource in the pool can satisfy the segment
+```
+
+This avoids accidentally designing Haircut only for one-to-one physical chairs. A hard conflict occurs when the required concurrent allocation would exceed the resource or pool capacity.
+
+### Conflict Ownership
+
+UC5 separates three different meanings of "schedule conflict":
+
+```text
+Appointment Scheduling
+  -> is the customer/service/time request valid?
+
+Professional Assignment
+  -> does the stylist have enough active capacity?
+
+Resource Allocation
+  -> does the resource or resource pool have enough capacity for the segment?
+```
+
+The constraints are different and the owner is different, even when all are experienced by the salon as "double booking".
+
+### Boundary Signal
+
+UC5 provides very strong evidence for `segment_based_allocation`, `independent_resource_conflict`, `finite_capacity`, and `alternative_allocation`. It still does not authorize `VALIDATED_SEPARATE`; UC6 must test the other half of the lifecycle: an allocation is valid, then the resource becomes unavailable and the salon must recover.
+
+---
+
 ## Pending Questions
 
 ### Professional Assignment Group Status
@@ -1161,6 +1316,15 @@ resource_allocation:
   Q6_shared_constrained_equipment: yes
   Q7_resource_reassignment_frequency: frequent
   Q8_resource_bottleneck: yes
+  UC5:
+    segment_based_allocation: VERY_STRONG_EVIDENCE
+    independent_resource_conflict: VERY_STRONG_EVIDENCE
+    finite_capacity: REQUIRED
+    alternative_allocation: REQUIRED
+    hard_conflict:
+      condition: RESOURCE_CAPACITY_EXCEEDED
+      action: BLOCK
+      manager_override: false
   planned_maintenance: REQUIRED
   adhoc_unavailability: REQUIRED
   availability_window_required: true
@@ -1188,15 +1352,15 @@ resource_allocation:
   boundary_decision: NONE
 ```
 
-Q5-Q8 are complete at Product Domain Requirement level. UC5 should validate whether chair/station double booking creates a resource conflict model that is genuinely different from Professional Assignment conflict.
+Q5-Q8 and UC5 are complete at Product Domain Requirement level. UC6 should validate resource maintenance recovery: a resource allocation is valid, then the resource becomes unavailable and the salon must recover without losing allocation history.
 
 ### Q9-Q12 — Recommendation
 
 Q9-Q12 remain unanswered.
 
-### UC5-UC6 — Use Case Walkthroughs
+### UC6 — Use Case Walkthrough
 
-UC1, UC2, UC3, and UC4 are recorded. UC3 used the narrow BabyCare assignment audit and the four-path BabyCare capability reconciliation as cross-product evidence, without copying BabyCare storage or claiming final boundary. UC4 validates active professional segment semantics as a Product Domain Requirement.
+UC1, UC2, UC3, UC4, and UC5 are recorded. UC3 used the narrow BabyCare assignment audit and the four-path BabyCare capability reconciliation as cross-product evidence, without copying BabyCare storage or claiming final boundary. UC4 validates active professional segment semantics as a Product Domain Requirement. UC5 validates segment-based resource double booking.
 
 BabyCare audit result:
 
@@ -1221,7 +1385,7 @@ babycare_capability_reconciliation:
   contract_inventory_change_allowed: false
 ```
 
-UC5 and UC6 should validate Resource Allocation: whether chair/station/resource conflicts follow full appointment duration, service phases, shared resources, or product-specific room/station rules.
+UC6 should validate Resource Allocation recovery when a resource becomes unavailable after an allocation has already been created.
 
 ### Financial Domain Evidence — Legacy Business Invariants
 
