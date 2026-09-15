@@ -6,6 +6,8 @@
 **Validation packet:** `H3_PRODUCT_UX_VALIDATION_PACKET.md`  
 **BabyCare assignment audit:** `H3_BABYCARE_ASSIGNMENT_AUDIT.md`
 
+**BabyCare capability reconciliation:** `H3_BABYCARE_CAPABILITY_RECONCILIATION.md`
+
 ---
 
 ## Evidence Classification
@@ -43,7 +45,7 @@ contract_inventory:
   change_authorized: false
 phase2_status:
   can_close: false
-  reason: "Professional Assignment questions Q1-Q4 and UC1-UC2 answered at Product Domain Requirement level; BabyCare assignment audit complete; Q5-Q12 and UC3-UC6 still pending."
+  reason: "Professional Assignment questions Q1-Q4 and UC1-UC2 answered at Product Domain Requirement level; BabyCare assignment audit and capability reconciliation complete; Q5-Q12 and UC3-UC6 still pending."
 ```
 
 ---
@@ -512,6 +514,20 @@ babycare_has_assignment_evidence: true
 babycare_has_reassignment_evidence: true
 babycare_has_full_assignment_lifecycle: false
 platform_contract_claim_allowed: false
+```
+
+BabyCare capability reconciliation result:
+
+```yaml
+babycare_capability_reconciliation:
+  auto_recommendation: IMPLEMENTED
+  leave_reassignment: IMPLEMENTED
+  conflict: IMPLEMENTED_ACROSS_BOOKING_SESSION_RESOURCE_FLOWS
+  smart_waitlist: IMPLEMENTED_WITH_PARTIAL_TRIGGER_AND_ASSIGNMENT_LINKAGE
+  professional_accept_reject_lifecycle: NOT_FOUND
+  structured_assignment_history: PARTIAL
+  platform_contract_claim_allowed: false
+  contract_inventory_change_allowed: false
 ```
 
 UC3 should resume as a reconciliation use case: compare Haircut stylist unavailability with BabyCare leave-driven session reassignment, without copying BabyCare storage or claiming final boundary.

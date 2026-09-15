@@ -6,6 +6,8 @@
 **Scope:** BabyCare/Spa session assignment evidence only  
 **Purpose:** Check whether Bella already has assignment/reassignment behavior close to Haircut UC3 before continuing Haircut workflow validation.
 
+**Expanded reconciliation pass:** `H3_BABYCARE_CAPABILITY_RECONCILIATION.md`
+
 ---
 
 ## Guardrails
@@ -21,6 +23,8 @@ It does not:
 5. Change the H1 contract inventory.
 
 BabyCare is evidence for reconciliation, not a blueprint.
+
+Note: This audit was intentionally scoped to assignment/reassignment. A later H3 pass expands the evidence scope to recommendation, leave/reassignment, conflict, and smart waitlist in `H3_BABYCARE_CAPABILITY_RECONCILIATION.md`.
 
 ---
 
@@ -288,4 +292,3 @@ haircut_uc3_should_resume: true
 platform_contract_claim_allowed: false
 contract_inventory_change_allowed: false
 ```
-
