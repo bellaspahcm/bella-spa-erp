@@ -248,6 +248,8 @@ Denominator:                   8 (UNCHANGED)
 
 ### Status: ⏸️ BLOCKED
 
+**Validation Packet:** `H3_PRODUCT_UX_VALIDATION_PACKET.md`
+
 **Phase 2 Cannot Close Without:**
 - [ ] 12 validation questions answered (Product/UX)
 - [ ] 6 use cases validated (actual Haircut workflows)
@@ -435,10 +437,11 @@ Denominator:                   8 (UNCHANGED)
 **1. Schedule Product/UX Validation**
 - Duration: 1-2 hours
 - Participants: Product Owner, UX Designer, Business Analyst
-- Agenda: 6 use cases + 12 validation questions
+- Agenda: `H3_PRODUCT_UX_VALIDATION_PACKET.md` (6 use cases + 12 validation questions)
 - Output: Validated Haircut requirements
 
 **2. Document Validation Results**
+- Use `H3_PRODUCT_UX_VALIDATION_PACKET.md` as the answer/evidence worksheet
 - Update `H2_HAIRCUT_MINIMUM_DOMAIN_REQUIREMENTS.md`
 - Status: PROPOSED → VALIDATED
 - Record evidence for boundary decisions
