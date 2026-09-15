@@ -32,7 +32,7 @@ This is sufficient to continue Product/UX validation. It is not sufficient to ma
 phase: H3 Product/UX Validation
 status: PARTIAL
 questions:
-  answered: 10
+  answered: 11
   total: 12
 use_cases:
   validated: 6
@@ -47,7 +47,7 @@ contract_inventory:
   change_authorized: false
 phase2_status:
   can_close: false
-  reason: "Professional Assignment questions Q1-Q4 and UC1-UC4 answered at Product Domain Requirement level; Resource Allocation Q5-Q8 and UC5-UC6 answered; Professional Recommendation Q9-Q10 answered; BabyCare assignment audit and capability reconciliation complete; Q11-Q12 still pending."
+  reason: "Professional Assignment questions Q1-Q4 and UC1-UC4 answered at Product Domain Requirement level; Resource Allocation Q5-Q8 and UC5-UC6 answered; Professional Recommendation Q9-Q11 answered; BabyCare assignment audit and capability reconciliation complete; Q12 still pending."
 ```
 
 ---
@@ -1653,6 +1653,106 @@ This is a strong policy signal. However, even a deeper policy signal does not pr
 
 ---
 
+## Q11 - Manager Override Of Recommendation
+
+```yaml
+Q11:
+  question: "Can managers override professional recommendations?"
+  answer: always
+  evidence_type: PRODUCT_DOMAIN_REQUIREMENT
+  validation_strength: PROPOSED_BY_PRODUCT
+  evidence:
+    - "Recommendation is advisory decision support, not an operational command."
+    - "Manager may know real-world salon context that the system has not fully captured."
+    - "Manager may choose another candidate because of customer preference, operational balancing, or in-salon circumstances."
+    - "Override must not convert an ineligible professional into a valid assignment."
+  operating_policy:
+    manager_override_recommendation: true
+    override_requires_eligible_candidate: true
+    hard_constraint_override: false
+    manual_assignment_supported: true
+  decision_telemetry:
+    recommended_professional: OPTIONAL
+    selected_professional: REQUIRED_WHEN_ASSIGNMENT_CREATED
+    override_reason: OPTIONAL_OR_POLICY_REQUIRED
+    actor: REQUIRED_WHEN_OVERRIDE
+    timestamp: REQUIRED_WHEN_OVERRIDE
+  implication:
+    recommendation_role: ADVISORY
+    assignment_owns_final_persistence: true
+    recommendation_quality_feedback: POSSIBLE
+  boundary_decision: NONE
+```
+
+### Override Ranking, Not Eligibility
+
+Manager override applies to the ranked eligible candidates.
+
+```text
+Eligibility
+  -> [A, B, C]
+Ranking
+  -> A > B > C
+Recommendation
+  -> A
+Manager chooses
+  -> B
+Result
+  -> Assignment B is valid
+```
+
+Manager override must not bypass hard eligibility.
+
+```text
+Eligibility
+  -> [A, B, C]
+D
+  -> INELIGIBLE because required skill fails
+
+Manager chooses
+  -> D
+Result
+  -> BLOCK
+```
+
+This means the manager can override ranking, but cannot override physical or business impossibility.
+
+### Ownership Separation
+
+Q11 reinforces the separation between advice, decision, and durable assignment:
+
+```text
+Professional Recommendation
+  -> candidates and ranking
+
+Manager/System Policy
+  -> decision to accept, override, or assign manually
+
+Professional Assignment
+  -> durable assignment persistence
+```
+
+Recommendation does not own final assignment persistence even when its advice is accepted.
+
+### Decision Telemetry
+
+If managers frequently ignore recommendations, Bella may record telemetry to improve the recommendation policy:
+
+```text
+recommended: Stylist A
+selected:    Stylist B
+reason:      CUSTOMER_REQUEST
+actor:       Manager X
+```
+
+This telemetry can help evaluate recommendation quality. It still does not make Recommendation the owner of Assignment.
+
+### Boundary Signal
+
+Q11 confirms Recommendation is advisory decision support with override semantics. It strengthens the policy signal, but it does not prove persistence ownership or Platform ownership. Q12 must summarize complexity across Q9-Q11 before H3 classification.
+
+---
+
 ## Pending Questions
 
 ### Professional Assignment Group Status
@@ -1760,15 +1860,21 @@ professional_recommendation:
       vip_policy: true
       seniority: true
       continuity_of_service: true
+  Q11_manager_override: always
   recommendation_for_walk_in: REQUIRED
   automatic_final_assignment: CONDITIONAL
   manual_assignment_supported: true
   manager_override: true
+  override_requires_eligible_candidate: true
+  hard_constraint_override: false
   customer_preference_preserved: true
   dispatch_modes:
     - RECOMMEND_ONLY
     - AUTO_ASSIGN
     - MANUAL
+  recommendation_role: ADVISORY
+  assignment_owns_final_persistence: true
+  recommendation_quality_feedback: POSSIBLE
   recommendation_is_simple_helper: false
   recommendation_persistence_boundary: NOT_PROVEN
   platform_ownership: NOT_PROVEN
@@ -1777,11 +1883,11 @@ professional_recommendation:
   boundary_decision: NONE
 ```
 
-Q11 should validate human override behavior: whether manager/receptionist can override, when override is allowed, and whether override reason/history is required.
+Q12 should summarize Professional Recommendation complexity across walk-in dispatch, eligibility/ranking, manager override, and cross-product evidence before H3 classification.
 
-### Q11-Q12 — Recommendation
+### Q12 — Recommendation
 
-Q11-Q12 remain unanswered.
+Q12 remains unanswered.
 
 ### Use Case Walkthrough Status
 
@@ -1810,7 +1916,7 @@ babycare_capability_reconciliation:
   contract_inventory_change_allowed: false
 ```
 
-All 6 use cases are complete at Product Domain Requirement level. Professional Recommendation validation has Q9-Q10 recorded; the next validation step is Q11-Q12.
+All 6 use cases are complete at Product Domain Requirement level. Professional Recommendation validation has Q9-Q11 recorded; the next validation step is Q12.
 
 ### Financial Domain Evidence — Legacy Business Invariants
 
