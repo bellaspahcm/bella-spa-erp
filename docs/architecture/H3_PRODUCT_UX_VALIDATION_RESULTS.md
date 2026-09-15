@@ -32,7 +32,7 @@ This is sufficient to continue Product/UX validation. It is not sufficient to ma
 phase: H3 Product/UX Validation
 status: PARTIAL
 questions:
-  answered: 7
+  answered: 8
   total: 12
 use_cases:
   validated: 4
@@ -47,7 +47,7 @@ contract_inventory:
   change_authorized: false
 phase2_status:
   can_close: false
-  reason: "Professional Assignment questions Q1-Q4 and UC1-UC4 answered at Product Domain Requirement level; Resource Allocation Q5-Q7 answered; BabyCare assignment audit and capability reconciliation complete; Q8-Q12 and UC5-UC6 still pending."
+  reason: "Professional Assignment questions Q1-Q4 and UC1-UC4 answered at Product Domain Requirement level; Resource Allocation Q5-Q8 answered; BabyCare assignment audit and capability reconciliation complete; Q9-Q12 and UC5-UC6 still pending."
 ```
 
 ---
@@ -1025,6 +1025,101 @@ Q7 strengthens Resource Allocation from availability/capacity checking into an o
 
 ---
 
+## Q8 - Resource Capacity Bottleneck
+
+```yaml
+Q8:
+  question: "Are chairs/stations/resources a bottleneck compared with stylists?"
+  answer: yes
+  evidence_type: PRODUCT_DOMAIN_REQUIREMENT
+  validation_strength: PROPOSED_BY_PRODUCT
+  evidence:
+    - "A branch can have available stylists while wash chairs, cutting stations, or specialized equipment are insufficient for simultaneous service segments."
+    - "Appointment intake depends on both professional capacity and resource capacity."
+    - "An appointment can be feasible for stylist availability but infeasible for required resource availability."
+    - "The bottleneck can change by service mix; peak color or perm hours may overload wash chairs or equipment while stylists remain available."
+    - "Capacity planning must treat professional capacity and resource capacity as independent dimensions."
+  operating_policy:
+    resource_can_be_bottleneck: true
+    professional_can_be_bottleneck: true
+    bottleneck_is_service_dependent: true
+    resource_capacity_checked_independently: true
+  implication:
+    resource_allocation: VERY_STRONG_SEPARATE_SIGNAL
+    independent_capacity_dimension: STRONG_EVIDENCE
+  boundary_decision: NONE
+```
+
+### Capacity Feasibility
+
+Haircut appointment intake cannot be reduced to one question:
+
+```text
+Is a stylist available?
+  -> yes
+  -> accept appointment
+```
+
+The feasibility check must evaluate at least three dimensions:
+
+```text
+Appointment Request
+  -> service/time feasible?
+  -> professional feasible?
+  -> resource feasible?
+       -> appointment can be accepted
+```
+
+For example, a branch can have 8 stylists but only 3 wash chairs. At 15:00, if all 3 wash chairs are occupied, Stylist D may still be available while a new customer requiring a `WASH` segment at 15:00 is not feasible.
+
+```text
+Professional capacity = AVAILABLE
+Resource capacity     = FULL
+
+Result:
+  service segment is not feasible yet
+```
+
+At the same time, a simple `CUT` service could still be feasible if a cutting station and stylist are available. The bottleneck is service-dependent, not a single branch-wide capacity number.
+
+### Effective Capacity
+
+Haircut capacity should not be treated as:
+
+```text
+Salon capacity = number of stylists
+```
+
+The Product Domain Requirement is closer to:
+
+```text
+Effective capacity
+  = feasibility(
+      service segments,
+      professional capacity,
+      resource capacity,
+      time
+    )
+```
+
+### Boundary Signal
+
+Q5-Q8 complete the Resource Allocation question group at Product Domain Requirement level:
+
+```yaml
+resource_allocation_question_group:
+  Q5_resource_maintenance_window: regular
+  Q6_shared_constrained_equipment: yes
+  Q7_resource_reassignment_frequency: frequent
+  Q8_resource_bottleneck: yes
+  combined_signal: VERY_STRONG_SEPARATE_SIGNAL
+  boundary_decision: NONE
+```
+
+This does not authorize contract design or `VALIDATED_SEPARATE`. UC5 must validate chair/station double booking to test whether Resource Allocation conflict is genuinely different from Professional Assignment conflict, and UC6 must test end-to-end resource reallocation behavior.
+
+---
+
 ## Pending Questions
 
 ### Professional Assignment Group Status
@@ -1065,6 +1160,7 @@ resource_allocation:
   Q5_resource_maintenance_window: regular
   Q6_shared_constrained_equipment: yes
   Q7_resource_reassignment_frequency: frequent
+  Q8_resource_bottleneck: yes
   planned_maintenance: REQUIRED
   adhoc_unavailability: REQUIRED
   availability_window_required: true
@@ -1081,17 +1177,22 @@ resource_allocation:
   history_required: true
   resource_allocation_lifecycle: STRONG_SIGNAL
   resource_history: REQUIRED
+  resource_can_be_bottleneck: true
+  professional_can_be_bottleneck: true
+  bottleneck_is_service_dependent: true
+  resource_capacity_checked_independently: true
+  independent_capacity_dimension: STRONG_EVIDENCE
   automatic_reassignment: false
   combined_signal: VERY_STRONG_SEPARATE_SIGNAL
   evidence_strength: PROPOSED_BY_PRODUCT
   boundary_decision: NONE
 ```
 
-Q8 should validate whether constrained resources are a real operational bottleneck compared with stylist/barber availability.
+Q5-Q8 are complete at Product Domain Requirement level. UC5 should validate whether chair/station double booking creates a resource conflict model that is genuinely different from Professional Assignment conflict.
 
-### Q8-Q12 — Resource Allocation and Recommendation
+### Q9-Q12 — Recommendation
 
-Q8-Q12 remain unanswered.
+Q9-Q12 remain unanswered.
 
 ### UC5-UC6 — Use Case Walkthroughs
 
