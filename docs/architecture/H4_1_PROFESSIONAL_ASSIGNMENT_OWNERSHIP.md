@@ -6,7 +6,7 @@
 
 **Baseline:** `6b521ccd` — H3 Final Boundary Reconciliation
 
-**Status:** H4.1 PASS D COMPLETE — PRODUCER / CONSUMER OWNERSHIP TEST RECORDED
+**Status:** H4.1 PASS E COMPLETE — OWNERSHIP LAYER RESOLVED
 
 ---
 
@@ -24,7 +24,7 @@ h4_1_scope:
     - HAIRCUT_PRODUCT
     - BEAUTY_OS
     - PLATFORM
-  ownership: UNRESOLVED
+  ownership: BEAUTY_OS
   platform_promotion_authorized: false
   contract_design_authorized: false
   inventory_change_authorized: false
@@ -108,17 +108,17 @@ H4_1:
   babycare_matching_invariants: COMPLETE
   nail_projection_result: COMPLETE
   consumer_test: COMPLETE
-  semantic_overlap: TBD
-  semantic_divergence: TBD
+  semantic_overlap: STRONG_BEAUTY_DOMAIN_OVERLAP
+  semantic_divergence: NO_SEMANTIC_BREAK
 
   consumers:
-    appointment: TBD
-    workforce: TBD
-    commission: TBD
+    appointment: UPSTREAM_SERVICE_COMMITMENT_PRODUCER
+    workforce: UPSTREAM_AVAILABILITY_PRODUCER
+    commission: DOWNSTREAM_CONSUMER
 
   ownership:
-    verdict: UNRESOLVED
-    confidence: TBD
+    verdict: BEAUTY_OS
+    confidence: MEDIUM_HIGH
 
   platform_promotion_authorized: false
   contract_design_authorized: false
@@ -846,6 +846,221 @@ Pass D answers what Professional Assignment owns. It does not answer which layer
 
 ---
 
+## Step 5 — Semantic Divergence And Ownership Layer Resolution
+
+Pass E determines whether the frozen Professional Assignment semantics are Haircut-only, Beauty-domain, Platform-level, or still unresolved.
+
+It asks:
+
+```text
+Do the core invariants keep the same business meaning when Haircut stylist is replaced by BabyCare KTV/caregiver and projected Nail technician?
+```
+
+It does not ask:
+
+```text
+Can code be reused?
+```
+
+### Divergence Scale
+
+```yaml
+divergence_scale:
+  NONE:
+    meaning: "Same business semantic."
+  POLICY_VARIATION:
+    meaning: "Same capability, different configurable rule."
+  DOMAIN_EXTENSION:
+    meaning: "Common capability plus Beauty/product-specific behavior."
+  SEMANTIC_BREAK:
+    meaning: "Same abstraction would distort business meaning."
+```
+
+`POLICY_VARIATION` and `DOMAIN_EXTENSION` do not automatically prevent shared ownership. `SEMANTIC_BREAK` is the signal that a shared owner would be unsafe.
+
+### Semantic Divergence Matrix
+
+```yaml
+semantic_divergence_matrix:
+  service_commitment:
+    haircut: PROVEN_REQUIREMENT
+    babycare: MATCH
+    nail: PLAUSIBLE
+    divergence: NONE
+    material_break: false
+    interpretation: "A customer-facing service unit needing professional execution is common across the Beauty products assessed."
+
+  assignment_identity:
+    haircut: REQUIRED
+    babycare: PARTIAL
+    nail: PLAUSIBLE_WITH_VARIATION
+    divergence: DOMAIN_EXTENSION
+    material_break: false
+    interpretation: "The relationship exists across products, but Haircut requires more explicit durable identity than BabyCare currently implements."
+
+  assignment_lifecycle:
+    haircut: STRONG
+    babycare: PARTIAL
+    nail: PROJECTION_ONLY
+    divergence: DOMAIN_EXTENSION
+    material_break: false
+    interpretation: "Lifecycle is a valid shared semantic, while Haircut needs richer states than BabyCare currently proves."
+
+  accept_reject:
+    haircut: REQUIRED
+    babycare: NOT_FOUND
+    nail: UNKNOWN
+    divergence: DOMAIN_EXTENSION
+    material_break: false
+    interpretation: "Controlled accept/reject is best treated as a Haircut or Beauty policy extension, not as proof against shared ownership."
+
+  disruption:
+    haircut: REQUIRED
+    babycare: IMPLEMENTED_FOR_LEAVE
+    nail: PLAUSIBLE
+    divergence: POLICY_VARIATION
+    material_break: false
+    interpretation: "The common semantic is availability/operational disruption; specific triggers differ by product."
+
+  reassignment:
+    haircut: REQUIRED
+    babycare: IMPLEMENTED
+    nail: PLAUSIBLE
+    divergence: NONE
+    material_break: false
+    interpretation: "Replacement of one professional commitment with another preserves the same business meaning."
+
+  assignment_history:
+    haircut: REQUIRED
+    babycare: PARTIAL
+    nail: PLAUSIBLE_WITH_VARIATION
+    divergence: DOMAIN_EXTENSION
+    material_break: false
+    interpretation: "History is common as a need, but required structure and depth vary."
+
+  professional_conflict:
+    haircut: REQUIRED
+    babycare: IMPLEMENTED_WITH_DIFFERENT_MODEL
+    nail: PLAUSIBLE
+    divergence: POLICY_VARIATION
+    material_break: false
+    interpretation: "Professional capacity/conflict is common; Haircut active segment semantics are a richer product-specific policy."
+
+  actual_performer:
+    haircut: REQUIRED
+    babycare: IMPLEMENTED
+    nail: PLAUSIBLE
+    divergence: NONE
+    material_break: false
+    interpretation: "The final performer fact has the same meaning and is consumed by audit/commission style workflows."
+```
+
+### Divergence Result
+
+```yaml
+semantic_divergence_result:
+  frozen_invariants: 9
+  common_invariants:
+    - service_commitment
+    - reassignment
+    - actual_performer
+  policy_variations:
+    - disruption
+    - professional_conflict
+  domain_extensions:
+    - assignment_identity
+    - assignment_lifecycle
+    - accept_reject
+    - assignment_history
+  semantic_breaks: []
+  haircut_specific_core: []
+  independent_capability: PROVEN
+```
+
+Interpretation:
+
+No frozen invariant creates a `SEMANTIC_BREAK` across Haircut, BabyCare evidence, and Nail projection. The differences are better classified as policy variation or Beauty/product-specific extensions.
+
+### Ownership Ladder
+
+```yaml
+ownership_ladder:
+  haircut_product:
+    question: "Are semantics only valid inside Haircut?"
+    result: REJECTED
+    reason: "BabyCare implementation evidence and Nail projection both preserve the core relationship between professional and service commitment."
+
+  beauty_os:
+    question: "Are semantics stable across Beauty-domain products?"
+    result: PROVEN
+    reason: "Haircut validates the complete target semantics; BabyCare proves key implemented subsets; Nail projection shows no Haircut-specific semantic break."
+
+  platform:
+    question: "Is there evidence outside Beauty with the same ownership semantics?"
+    result: NOT_PROVEN
+    reason: "Current evidence is Haircut, BabyCare, and Nail projection, all within Beauty/service operations. No non-Beauty vertical has been reconciled here."
+```
+
+### H4.1 Ownership Verdict
+
+```yaml
+H4_1_pass_E:
+  semantic_divergence_test: COMPLETE
+
+  frozen_invariants: 9
+  common_invariants:
+    - service_commitment
+    - reassignment
+    - actual_performer
+  policy_variations:
+    - disruption
+    - professional_conflict
+  domain_extensions:
+    - assignment_identity
+    - assignment_lifecycle
+    - accept_reject
+    - assignment_history
+  semantic_breaks: []
+
+  independent_capability: PROVEN
+
+  ownership:
+    haircut_product: REJECTED
+    beauty_os: PROVEN
+    platform: NOT_PROVEN
+    verdict: BEAUTY_OS
+    confidence: MEDIUM_HIGH
+
+  rationale:
+    - "Professional Assignment owns independent business truth and history."
+    - "The core semantic survives Haircut, BabyCare evidence, and Nail projection without semantic break."
+    - "Differences are policy variations or domain extensions, not evidence against shared Beauty-domain ownership."
+    - "No non-Beauty vertical evidence has been reconciled, so Platform ownership is not proven."
+
+  platform_promotion_authorized: false
+  contract_design_authorized: false
+  inventory_change_authorized: false
+```
+
+Final H4.1 distinction:
+
+```text
+BEAUTY_OS ownership
+  != Platform promotion
+  != contract design authorization
+  != contract inventory change
+```
+
+The next H4 work should resolve ownership for the remaining H3 capabilities before contract inventory reconciliation:
+
+```text
+H4.2 Resource Allocation Ownership Resolution
+H4.3 Professional Recommendation Ownership Resolution
+then H5 Contract Inventory Reconciliation
+```
+
+---
+
 ## Next H4.1 Passes
 
 ```yaml
@@ -868,7 +1083,7 @@ next_passes:
       commission: DOWNSTREAM_CONSUMER
 
   semantic_divergence_test:
-    status: TBD
+    status: COMPLETE
     compare:
       - haircut_only_semantics
       - babycare_only_semantics
@@ -881,5 +1096,9 @@ next_passes:
       - BEAUTY_OS
       - PLATFORM
       - UNRESOLVED
-    current_value: UNRESOLVED
+    current_value: BEAUTY_OS
+    confidence: MEDIUM_HIGH
+    platform_promotion_authorized: false
+    contract_design_authorized: false
+    inventory_change_authorized: false
 ```
