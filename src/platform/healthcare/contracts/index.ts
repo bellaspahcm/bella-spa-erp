@@ -25,7 +25,6 @@ export * from './sterilization.contract';
 export * from './temporal-engine.contract';
 export * from './rule-governance.contract';
 export * from './clinical-audit.contract';
-export * from './waitlist-engine.contract';
 
 // Import contract metadata for registration
 import { BED_ENGINE_CONTRACT } from './bed-engine.contract';

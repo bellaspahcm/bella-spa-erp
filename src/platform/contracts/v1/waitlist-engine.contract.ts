@@ -668,8 +668,11 @@ export const WAITLIST_ENGINE_CONTRACT_METADATA = {
   /** Contract version (semantic versioning) */
   version: '1.0.0',
 
-  /** Owning kernel */
-  kernel: 'H2 Temporal',
+  /** Platform layer classification */
+  platform_layer: 'temporal',
+
+  /** Owning layer */
+  kernel: 'Platform Contracts',
 
   /** Kernel responsibility scope */
   kernel_responsibility: [
@@ -690,10 +693,10 @@ export const WAITLIST_ENGINE_CONTRACT_METADATA = {
 
   /** Known consumers */
   consumers: [
-    'Bella Spa (existing)',
-    'Bella Haircut (H2 extraction)',
-    'Bella Nail (future)',
-    'Bella Medical (future)',
+    'Healthcare vertical (Medical services)',
+    'Beauty vertical (Spa, Haircut, Nail)',
+    'Auto vertical (future)',
+    'Education vertical (future)',
   ],
 
   /** Data ownership */
