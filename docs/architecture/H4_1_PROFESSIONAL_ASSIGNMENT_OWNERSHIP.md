@@ -6,7 +6,7 @@
 
 **Baseline:** `6b521ccd` — H3 Final Boundary Reconciliation
 
-**Status:** H4.1 PASS B COMPLETE — BABYCARE SEMANTIC MAPPING RECORDED
+**Status:** H4.1 PASS C COMPLETE — NAIL PROJECTION RECORDED
 
 ---
 
@@ -106,7 +106,7 @@ H4_1:
 
   haircut_semantic_invariants: FROZEN
   babycare_matching_invariants: COMPLETE
-  nail_projection_result: TBD
+  nail_projection_result: COMPLETE
   semantic_overlap: TBD
   semantic_divergence: TBD
 
@@ -480,6 +480,159 @@ Therefore Pass B strengthens cross-product evidence but does not resolve ownersh
 
 ---
 
+## Step 3 — Nail Projection
+
+Pass C tests whether the frozen Haircut semantic invariants are plausible for Bella Nail operations. This is projection only.
+
+```yaml
+nail_projection_guardrails:
+  evidence_strength: PROJECTION_ONLY
+  use_frozen_haircut_invariants_only: true
+  add_new_nail_invariants: false
+  product_requirement_claim: false
+  implementation_evidence_claim: false
+  beauty_os_ownership_proven: false
+  platform_ownership_proven: false
+  platform_promotion_authorized: false
+  contract_design_authorized: false
+  inventory_change_authorized: false
+```
+
+Projection scale:
+
+```yaml
+projection_result_scale:
+  PLAUSIBLE: "The semantic appears likely to hold for Nail without material change."
+  PLAUSIBLE_WITH_VARIATION: "The semantic likely holds, but Nail may vary in granularity or operating policy."
+  HAIRCUT_SPECIFIC: "The semantic depends on Haircut-specific operations."
+  UNKNOWN: "Projection cannot reasonably assess this without Nail Product/UX or implementation evidence."
+```
+
+### Projection Matrix
+
+```yaml
+nail_projection_matrix:
+  SERVICE_COMMITMENT:
+    question: "Does a Nail service or service visit create a commitment that needs technician execution?"
+    projection_result: PLAUSIBLE
+    reasoning: "A Nail customer visit/service is likely a customer-facing service commitment needing technician work."
+    evidence_strength: PROJECTION_ONLY
+
+  PROFESSIONAL_ASSIGNMENT:
+    question: "Can a technician be assigned independently to a commitment?"
+    projection_result: PLAUSIBLE
+    reasoning: "Nail operations commonly require assigning a nail technician to a customer/service, but actual Bella Nail policy is not yet validated."
+    evidence_strength: PROJECTION_ONLY
+
+  ASSIGNMENT_IDENTITY:
+    question: "Does assignment mean more than a single booking.technician_id?"
+    projection_result: PLAUSIBLE_WITH_VARIATION
+    reasoning: "A single booking may contain multiple nail service commitments, each potentially handled by a different technician. This tests assignment identity beyond one booking-level technician field."
+    evidence_strength: PROJECTION_ONLY
+
+  ACCEPT_REJECT:
+    question: "Does a technician need controlled accept/reject?"
+    projection_result: UNKNOWN
+    reasoning: "Haircut requires controlled rejection, but Nail policy may be manager-dispatched without technician accept/reject. Product/UX validation is required."
+    evidence_strength: PROJECTION_ONLY
+
+  DISRUPTION:
+    question: "Can absence, lateness, skill mismatch, or operational change disrupt an assignment?"
+    projection_result: PLAUSIBLE
+    reasoning: "Technician absence, delay, or skill mismatch can plausibly disrupt a Nail service assignment."
+    evidence_strength: PROJECTION_ONLY
+
+  REASSIGNMENT:
+    question: "Can technician change without replacing the customer booking?"
+    projection_result: PLAUSIBLE
+    reasoning: "A Nail booking can plausibly continue while the technician changes, especially for absence or load balancing."
+    evidence_strength: PROJECTION_ONLY
+
+  ASSIGNMENT_HISTORY:
+    question: "Is original technician -> replacement technician -> reason likely needed?"
+    projection_result: PLAUSIBLE_WITH_VARIATION
+    reasoning: "History is likely useful for audit, customer dispute, and compensation, but required depth depends on Nail operating policy."
+    evidence_strength: PROJECTION_ONLY
+
+  PROFESSIONAL_CONFLICT:
+    question: "Does a technician have independent scheduling constraints?"
+    projection_result: PLAUSIBLE
+    reasoning: "A technician cannot perform overlapping active work beyond capacity; exact segment model may differ from Haircut."
+    evidence_strength: PROJECTION_ONLY
+
+  ACTUAL_PERFORMER:
+    question: "Does the final performer need to be known for commission or audit?"
+    projection_result: PLAUSIBLE
+    reasoning: "Nail compensation and service audit likely need the technician who actually performed the service."
+    evidence_strength: PROJECTION_ONLY
+```
+
+### Multi-Commitment Booking Projection
+
+Nail may stress-test whether a booking is the same as a service commitment:
+
+```text
+Booking
+  -> Service Commitment A -> Professional Assignment A
+  -> Service Commitment B -> Professional Assignment B
+  -> Service Commitment C -> Professional Assignment C
+```
+
+This projection argues against assuming:
+
+```text
+Booking -> technician_id
+```
+
+However, this is not yet a Bella Nail requirement. It remains projection until Nail Product/UX validation or implementation evidence exists.
+
+### Nail Projection Result
+
+```yaml
+nail_projection:
+  evidence_strength: PROJECTION_ONLY
+  frozen_invariants_tested: 9
+  plausible:
+    - SERVICE_COMMITMENT
+    - PROFESSIONAL_ASSIGNMENT
+    - DISRUPTION
+    - REASSIGNMENT
+    - PROFESSIONAL_CONFLICT
+    - ACTUAL_PERFORMER
+  plausible_with_variation:
+    - ASSIGNMENT_IDENTITY
+    - ASSIGNMENT_HISTORY
+  haircut_specific: []
+  unknown:
+    - ACCEPT_REJECT
+
+  cross_product_generality_signal: MODERATE_TO_STRONG_BEAUTY_DOMAIN_SIGNAL
+
+  ownership:
+    verdict: UNRESOLVED
+
+  beauty_os_ownership_proven: false
+  platform_ownership_proven: false
+  platform_promotion_authorized: false
+  contract_design_authorized: false
+  inventory_change_authorized: false
+```
+
+Interpretation:
+
+Haircut plus BabyCare implementation evidence plus Nail projection creates a stronger generality signal for the Beauty domain. It still does not prove Beauty OS ownership, and it certainly does not prove Platform ownership.
+
+```text
+Haircut validated
+  + BabyCare implementation evidence
+  + Nail projection
+  != automatic Platform ownership
+```
+
+The result first suggests a possible Beauty-domain abstraction, which must still pass consumer/producer and semantic divergence tests.
+
+---
+
 ## Next H4.1 Passes
 
 ```yaml
@@ -490,7 +643,7 @@ next_passes:
     not_purpose: "Copy BabyCare architecture, tables, or services."
 
   nail_projection:
-    status: TBD
+    status: COMPLETE
     purpose: "Test whether nail technician booking/service flow preserves the same invariant."
     evidence_strength: PROJECTION_ONLY
 
