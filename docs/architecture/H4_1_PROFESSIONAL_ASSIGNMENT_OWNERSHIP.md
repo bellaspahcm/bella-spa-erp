@@ -6,7 +6,7 @@
 
 **Baseline:** `6b521ccd` — H3 Final Boundary Reconciliation
 
-**Status:** H4.1 PASS C COMPLETE — NAIL PROJECTION RECORDED
+**Status:** H4.1 PASS D COMPLETE — PRODUCER / CONSUMER OWNERSHIP TEST RECORDED
 
 ---
 
@@ -107,6 +107,7 @@ H4_1:
   haircut_semantic_invariants: FROZEN
   babycare_matching_invariants: COMPLETE
   nail_projection_result: COMPLETE
+  consumer_test: COMPLETE
   semantic_overlap: TBD
   semantic_divergence: TBD
 
@@ -633,6 +634,218 @@ The result first suggests a possible Beauty-domain abstraction, which must still
 
 ---
 
+## Step 4 — Producer / Consumer Ownership Test
+
+Pass D tests who creates and owns each business fact. It does not decide the final layer yet.
+
+```yaml
+producer_consumer_guardrails:
+  ownership_layer: UNRESOLVED
+  beauty_os_ownership_proven: false
+  platform_ownership_proven: false
+  platform_promotion_authorized: false
+  contract_design_authorized: false
+  inventory_change_authorized: false
+```
+
+### Ownership Graph
+
+```text
+Workforce / Attendance
+  -> staff availability event
+       |
+       v
+Professional Assignment
+  -> assignment identity
+  -> lifecycle
+  -> reassignment
+  -> history
+  -> actual performer
+       |
+       +-> Appointment
+       +-> Commission
+       +-> Analytics
+       +-> Notification
+```
+
+The graph must not invert ownership:
+
+- Workforce/Attendance produces staff availability facts, but does not own assignment truth.
+- Appointment produces the customer/service commitment, but should not own professional assignment history merely because assignment references the appointment.
+- Recommendation produces candidate/ranking advice, but does not own final assignment.
+- Resource Allocation manages physical resources, not professional availability or performer truth.
+- Commission consumes actual performer and assignment history; it does not become source of truth for who performed.
+- Analytics and Notification are downstream consumers.
+
+### Producer / Consumer Matrix
+
+```yaml
+producer_consumer_matrix:
+  service_commitment:
+    producer: APPOINTMENT
+    professional_assignment_role: CONSUMER_AND_LINK_OWNER
+    professional_assignment_owns_fact: false
+    explanation: "Appointment owns the customer-facing service commitment; Assignment links a professional to that commitment."
+
+  staff_availability_event:
+    producer: WORKFORCE_ATTENDANCE
+    professional_assignment_role: CONSUMER_OF_AVAILABILITY_IMPACT
+    professional_assignment_owns_fact: false
+    explanation: "Workforce owns absence, leave, late arrival, and attendance facts; Assignment owns which commitments are affected."
+
+  recommendation_candidates:
+    producer: PROFESSIONAL_RECOMMENDATION
+    professional_assignment_role: CONSUMER_OF_SELECTED_DECISION
+    professional_assignment_owns_fact: false
+    explanation: "Recommendation owns candidate/ranking advice; Assignment owns only the chosen commitment relationship."
+
+  assignment_identity:
+    producer: PROFESSIONAL_ASSIGNMENT
+    professional_assignment_role: SOURCE_OF_TRUTH
+    professional_assignment_owns_fact: true
+    explanation: "The durable relationship between a professional and a service commitment belongs to Assignment."
+
+  assignment_lifecycle:
+    producer: PROFESSIONAL_ASSIGNMENT
+    professional_assignment_role: SOURCE_OF_TRUTH
+    professional_assignment_owns_fact: true
+    explanation: "States such as proposed, accepted, rejected, disrupted, and replaced describe the assignment relationship itself."
+
+  reassignment:
+    producer: PROFESSIONAL_ASSIGNMENT
+    professional_assignment_role: SOURCE_OF_TRUTH
+    professional_assignment_owns_fact: true
+    explanation: "Replacement of one professional commitment with another is Assignment impact, not Workforce, Appointment, or Commission truth."
+
+  assignment_history:
+    producer: PROFESSIONAL_ASSIGNMENT
+    professional_assignment_role: SOURCE_OF_TRUTH
+    professional_assignment_owns_fact: true
+    explanation: "Original professional, replacement professional, reason, actor, timestamp, and final performer are Assignment history facts."
+
+  actual_performer:
+    producer: PROFESSIONAL_ASSIGNMENT
+    professional_assignment_role: SOURCE_OF_TRUTH
+    professional_assignment_owns_fact: true
+    explanation: "The actual performer is the operational result of the assignment relationship and is consumed by commission, audit, and analytics."
+
+  resource_commitment:
+    producer: RESOURCE_ALLOCATION
+    professional_assignment_role: CONSUMER_OR_PEER_CONSTRAINT
+    professional_assignment_owns_fact: false
+    explanation: "Resource Allocation owns chair/station/equipment commitments and conflicts."
+
+  commission_entitlement:
+    producer: COMMISSION_COMPENSATION
+    professional_assignment_role: FACT_SUPPLIER
+    professional_assignment_owns_fact: false
+    explanation: "Commission computes compensation using actual performer/history facts, but it does not own those facts."
+
+  notification_message:
+    producer: NOTIFICATION
+    professional_assignment_role: EVENT_SOURCE_OR_CONTEXT
+    professional_assignment_owns_fact: false
+    explanation: "Notification informs people about assignment events; it does not own assignment truth."
+
+  analytics_metric:
+    producer: ANALYTICS
+    professional_assignment_role: FACT_SUPPLIER
+    professional_assignment_owns_fact: false
+    explanation: "Analytics aggregates assignment facts; it does not own the operational source of truth."
+```
+
+### Deletion Test
+
+Question:
+
+```text
+If Commission, Recommendation, or Workforce modules were absent,
+would Professional Assignment facts still need to exist for salon operations?
+```
+
+Result:
+
+```yaml
+deletion_test:
+  remove_commission:
+    assignment_identity_still_required: true
+    assignment_history_still_required: true
+    actual_performer_still_required: true
+    reason: "Operations, customer dispute, audit, and service accountability still need assignment truth even without compensation."
+
+  remove_recommendation:
+    assignment_identity_still_required: true
+    assignment_history_still_required: true
+    actual_performer_still_required: true
+    reason: "Managers can assign manually; the assignment relationship still exists without recommendation."
+
+  remove_workforce_attendance:
+    assignment_identity_still_required: true
+    assignment_history_still_required: true
+    actual_performer_still_required: true
+    reason: "Assignments still exist for normal operations, even if absence facts are entered manually or not integrated."
+
+  remove_appointment:
+    assignment_identity_still_required: false
+    reason: "Without a service commitment, there is no professional assignment target."
+
+  conclusion:
+    independent_assignment_ownership_signal: STRONG
+```
+
+Interpretation:
+
+Professional Assignment depends on a service commitment target, but it does not depend on Commission, Recommendation, or Workforce to justify its own facts. This supports independent ownership of assignment truth while preserving upstream/downstream ownership boundaries.
+
+### Pass D Result
+
+```yaml
+H4_1_pass_D:
+  producer_consumer_test: COMPLETE
+
+  upstream:
+    service_commitment:
+      producer: APPOINTMENT
+      assignment_relation: CONSUMER_AND_LINK_OWNER
+    workforce_attendance:
+      producer: WORKFORCE_ATTENDANCE
+      assignment_relation: CONSUMER_OF_AVAILABILITY_IMPACT
+    recommendation:
+      producer: PROFESSIONAL_RECOMMENDATION
+      assignment_relation: CONSUMER_OF_SELECTED_DECISION
+
+  capability_under_test:
+    professional_assignment:
+      owns_assignment_truth: true
+      owns_lifecycle: true
+      owns_reassignment: true
+      owns_history: true
+      owns_actual_performer: true
+      owns_workforce_absence: false
+      owns_appointment_lifecycle: false
+      owns_recommendation_ranking: false
+      owns_resource_allocation: false
+      owns_commission: false
+
+  downstream:
+    commission: CONSUMER_CANDIDATE
+    analytics: CONSUMER_CANDIDATE
+    notification: CONSUMER_CANDIDATE
+
+  independent_ownership_signal: STRONG
+
+  ownership_layer: UNRESOLVED
+  beauty_os_ownership_proven: false
+  platform_ownership_proven: false
+  platform_promotion_authorized: false
+  contract_design_authorized: false
+  inventory_change_authorized: false
+```
+
+Pass D answers what Professional Assignment owns. It does not answer which layer should own the capability. That remains for Pass E semantic divergence and ownership layer resolution.
+
+---
+
 ## Next H4.1 Passes
 
 ```yaml
@@ -648,11 +861,11 @@ next_passes:
     evidence_strength: PROJECTION_ONLY
 
   consumer_test:
-    status: TBD
+    status: COMPLETE
     consumers:
-      appointment: TBD
-      workforce: TBD
-      commission: TBD
+      appointment: UPSTREAM_SERVICE_COMMITMENT_PRODUCER
+      workforce: UPSTREAM_AVAILABILITY_PRODUCER
+      commission: DOWNSTREAM_CONSUMER
 
   semantic_divergence_test:
     status: TBD
