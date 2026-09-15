@@ -32,7 +32,7 @@ This is sufficient to continue Product/UX validation. It is not sufficient to ma
 phase: H3 Product/UX Validation
 status: PARTIAL
 questions:
-  answered: 8
+  answered: 9
   total: 12
 use_cases:
   validated: 6
@@ -40,14 +40,14 @@ use_cases:
 boundaries:
   professional_assignment: VERY_STRONG_SEPARATE_SIGNAL
   resource_allocation: VERY_STRONG_SEPARATE_SIGNAL
-  professional_recommendation: UNRESOLVED
+  professional_recommendation: REQUIRED_SIGNAL
 contract_inventory:
   h1_baseline: 8
   effective_count: TBD
   change_authorized: false
 phase2_status:
   can_close: false
-  reason: "Professional Assignment questions Q1-Q4 and UC1-UC4 answered at Product Domain Requirement level; Resource Allocation Q5-Q8 and UC5-UC6 answered; BabyCare assignment audit and capability reconciliation complete; Q9-Q12 still pending."
+  reason: "Professional Assignment questions Q1-Q4 and UC1-UC4 answered at Product Domain Requirement level; Resource Allocation Q5-Q8 and UC5-UC6 answered; Professional Recommendation Q9 answered; BabyCare assignment audit and capability reconciliation complete; Q10-Q12 still pending."
 ```
 
 ---
@@ -1444,6 +1444,102 @@ This is a very strong separate signal, but still not `VALIDATED_SEPARATE`. Bound
 
 ---
 
+## Q9 - Walk-In Professional Recommendation
+
+```yaml
+Q9:
+  question: "Are walk-in customers auto-assigned to stylists?"
+  answer: sometimes
+  evidence_type: PRODUCT_DOMAIN_REQUIREMENT
+  validation_strength: PROPOSED_BY_PRODUCT
+  cross_product_evidence:
+    babycare:
+      auto_recommendation: IMPLEMENTED
+      alternatives: IMPLEMENTED
+      admin_apply: IMPLEMENTED
+      manual_assignment: IMPLEMENTED
+      evidence_role: LEGACY_BUSINESS_AND_IMPLEMENTATION_EVIDENCE_ONLY
+  evidence:
+    - "Walk-in customers who do not choose a stylist can receive recommended available professionals."
+    - "Recommendation should not always become the final assignment automatically."
+    - "Manager or receptionist can accept the recommendation, choose another candidate, or assign manually."
+    - "Some operating policies can allow auto-assignment when conditions are clear and no conflict exists."
+    - "If the customer requests a specific stylist, customer preference must not be overwritten by auto-assignment."
+  operating_policy:
+    recommendation_for_walk_in: true
+    automatic_final_assignment: conditional
+    manual_assignment_supported: true
+    manager_override: true
+    customer_preference_preserved: true
+  dispatch_modes:
+    - RECOMMEND_ONLY
+    - AUTO_ASSIGN
+    - MANUAL
+  implication:
+    professional_recommendation: REQUIRED
+    professional_assignment: CONSUMER_OF_DECISION
+    recommendation_persistence_boundary: NOT_PROVEN
+  boundary_decision: NONE
+```
+
+### Recommendation Is Not Assignment
+
+Q9 confirms that Haircut needs professional recommendation behavior for walk-in flow, but recommendation must not be collapsed into assignment.
+
+```text
+Walk-in
+  -> service requirements
+  -> feasible professionals
+  -> recommendation
+     -> Stylist A
+     -> Stylist B
+     -> Stylist C
+  -> manager/system policy
+  -> create Professional Assignment
+```
+
+Recommendation answers:
+
+```text
+Who are good candidates?
+```
+
+Professional Assignment answers:
+
+```text
+Who is actually committed to the appointment?
+```
+
+### Dispatch Modes
+
+Q9 deliberately uses `sometimes`, not `always`, because Haircut should support multiple operating modes:
+
+```text
+RECOMMEND_ONLY
+  -> system proposes candidates
+  -> human decides
+
+AUTO_ASSIGN
+  -> policy allows system to choose and create assignment
+
+MANUAL
+  -> admin bypasses recommendation and assigns directly
+```
+
+Customer preference remains stronger than automatic assignment. If a walk-in requests a specific stylist, the recommendation flow may still check feasibility and alternatives, but it must not silently overwrite the preference.
+
+### Cross-Product Evidence
+
+BabyCare has legacy evidence for auto recommendation, alternatives, admin apply, and manual assignment. This means Haircut is not the first Bella product to discover this business need.
+
+However, BabyCare remains legacy business and implementation evidence only. Q9 does not authorize copying BabyCare recommendation code or declaring a Platform contract.
+
+### Boundary Signal
+
+Q9 establishes that Professional Recommendation is required as business behavior. It does not prove that Recommendation needs its own persistence boundary or Platform Contract. Q10 must validate ranking factors; that is where Recommendation may remain a simple helper or become a deeper policy engine.
+
+---
+
 ## Pending Questions
 
 ### Professional Assignment Group Status
@@ -1530,9 +1626,31 @@ resource_allocation:
 
 Q5-Q8 and UC5-UC6 are complete at Product Domain Requirement level. Resource Allocation now has a very strong separate signal, but it still does not authorize `VALIDATED_SEPARATE` or contract design.
 
-### Q9-Q12 — Recommendation
+### Professional Recommendation Group Status
 
-Q9-Q12 remain unanswered.
+```yaml
+professional_recommendation:
+  Q9_walk_in_auto_assignment: sometimes
+  recommendation_for_walk_in: REQUIRED
+  automatic_final_assignment: CONDITIONAL
+  manual_assignment_supported: true
+  manager_override: true
+  customer_preference_preserved: true
+  dispatch_modes:
+    - RECOMMEND_ONLY
+    - AUTO_ASSIGN
+    - MANUAL
+  recommendation_persistence_boundary: NOT_PROVEN
+  combined_signal: REQUIRED_SIGNAL
+  evidence_strength: PROPOSED_BY_PRODUCT
+  boundary_decision: NONE
+```
+
+Q10 should validate which ranking factors Haircut uses to order stylist/barber candidates. This will determine whether Professional Recommendation remains a simple helper or becomes a deeper policy engine.
+
+### Q10-Q12 — Recommendation
+
+Q10-Q12 remain unanswered.
 
 ### Use Case Walkthrough Status
 
@@ -1561,7 +1679,7 @@ babycare_capability_reconciliation:
   contract_inventory_change_allowed: false
 ```
 
-All 6 use cases are complete at Product Domain Requirement level. The next validation step is Q9-Q12 for Professional Recommendation.
+All 6 use cases are complete at Product Domain Requirement level. Professional Recommendation validation has started with Q9; the next validation step is Q10-Q12.
 
 ### Financial Domain Evidence — Legacy Business Invariants
 
