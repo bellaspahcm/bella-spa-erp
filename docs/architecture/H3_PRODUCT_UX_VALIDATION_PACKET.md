@@ -28,6 +28,26 @@ H2 produced a contract hypothesis, not a final platform design. The next step is
 
 ---
 
+## Evidence Quality Standard
+
+The 12 questions are not a theoretical survey. Each answer must be supported by an actual salon operating scenario, policy, exception case, or field workflow.
+
+Weak evidence:
+
+```text
+Q2 = yes
+```
+
+Acceptable evidence:
+
+```text
+Q2 = yes. When a stylist is changed because of sudden leave, the branch manager needs to know the originally assigned stylist and the final service provider to reconcile revenue, service quality, and performance review.
+```
+
+If the session can only produce abstract answers without operating examples, keep the requirement status as `PROPOSED` or mark the specific boundary `UNRESOLVED`.
+
+---
+
 ## Required Participants
 
 | Role | Required? | Reason |
@@ -54,6 +74,8 @@ By the end of the session, produce:
 
 If any core answer is missing, keep H2 Phase 2 open.
 
+Decision rules in this packet are decision aids, not automatic architecture generators. The final boundary decision must consider the question answers and the 6 use case walkthroughs together.
+
 ---
 
 ## Validation Questions
@@ -67,7 +89,7 @@ If any core answer is missing, keep H2 Phase 2 open.
 | Q3 | Can stylists/barbers reject assignments? | `yes`, `no`, `unknown` | Staff workflow or manager policy | `yes` suggests assignment lifecycle beyond simple FK |
 | Q4 | Are stylist/barber no-shows tracked per professional? | `yes`, `no`, `unknown` | Accountability/reporting requirement | `yes` suggests assignment event/history tracking |
 
-**Decision rule:** if Q1=`daily` or Q2=`yes` or Q3=`yes`, keep Professional Assignment as a separate boundary candidate. Otherwise, it may be absorbed into Appointment as an attribute, pending use case review.
+**Decision aid:** if Q1=`daily` or Q2=`yes` or Q3=`yes`, keep Professional Assignment as a separate boundary candidate. This is a strong signal, not an automatic decision; UC1-UC4 must still show whether assignment has a lifecycle/history beyond frequent appointment updates.
 
 ---
 
@@ -80,7 +102,7 @@ If any core answer is missing, keep H2 Phase 2 open.
 | Q7 | How often are chairs/stations reassigned? | `frequent`, `rare`, `never`, `unknown` | Manager exception scenarios | `frequent` suggests separate allocation lifecycle |
 | Q8 | Are chairs/stations a bottleneck compared with stylists? | `yes`, `no`, `unknown` | Capacity ratio or operational observation | `yes` strengthens resource allocation boundary |
 
-**Decision rule:** if Q5=`regular` or Q6=`yes` or Q7=`frequent`, keep Resource Allocation as a separate boundary candidate. Otherwise, it may be absorbed into Appointment as an attribute, pending use case review.
+**Decision aid:** if Q5=`regular` or Q6=`yes` or Q7=`frequent`, keep Resource Allocation as a separate boundary candidate. This is a strong signal, not an automatic decision; UC5-UC6 must still show whether resource behavior has lifecycle/availability semantics beyond appointment validation.
 
 ---
 
@@ -93,7 +115,7 @@ If any core answer is missing, keep H2 Phase 2 open.
 | Q11 | Can managers override recommendations? | `always`, `sometimes`, `never`, `unknown` | Manager authority policy | Override implies recommendation is advisory, not final assignment |
 | Q12 | How complex is recommendation logic? | `simple`, `moderate`, `complex`, `unknown` | Rule count and exception handling | `complex` may justify policy/service; not automatically Platform |
 
-**Decision rule:** recommendation is not a persistence boundary unless validated evidence shows it owns durable state or cross-vertical policy. Default classification remains helper/policy, not a contract.
+**Decision aid:** recommendation is not a persistence boundary unless validated evidence shows it owns durable state or cross-vertical policy. Default classification remains helper/policy, not a contract; complexity alone does not prove Platform ownership.
 
 ---
 
@@ -349,4 +371,3 @@ No validation answers have been recorded in this document yet. Therefore:
 - H2 Phase 2 remains open.
 - H2 Phase 3 remains blocked.
 - Contract inventory remains 8 as the unchanged H1 hypothesis.
-
