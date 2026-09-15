@@ -32,14 +32,14 @@ This is sufficient to continue Product/UX validation. It is not sufficient to ma
 phase: H3 Product/UX Validation
 status: PARTIAL
 questions:
-  answered: 4
+  answered: 5
   total: 12
 use_cases:
   validated: 4
   total: 6
 boundaries:
   professional_assignment: VERY_STRONG_SEPARATE_SIGNAL
-  resource_allocation: UNRESOLVED
+  resource_allocation: STRONG_SEPARATE_SIGNAL
   professional_recommendation: UNRESOLVED
 contract_inventory:
   h1_baseline: 8
@@ -47,7 +47,7 @@ contract_inventory:
   change_authorized: false
 phase2_status:
   can_close: false
-  reason: "Professional Assignment questions Q1-Q4 and UC1-UC4 answered at Product Domain Requirement level; BabyCare assignment audit and capability reconciliation complete; Q5-Q12 and UC5-UC6 still pending."
+  reason: "Professional Assignment questions Q1-Q4 and UC1-UC4 answered at Product Domain Requirement level; Resource Allocation Q5 answered; BabyCare assignment audit and capability reconciliation complete; Q6-Q12 and UC5-UC6 still pending."
 ```
 
 ---
@@ -816,6 +816,68 @@ This is a very strong separate signal for Professional Assignment and a separate
 
 ---
 
+## Q5 - Resource Maintenance Window
+
+```yaml
+Q5:
+  question: "Do chairs, wash chairs, stations, or service resources need time-windowed unavailability?"
+  answer: regular
+  evidence_type: PRODUCT_DOMAIN_REQUIREMENT
+  validation_strength: PROPOSED_BY_PRODUCT
+  evidence:
+    - "Chair, station, or equipment can be blocked on schedule for maintenance, deep cleaning, or technical inspection."
+    - "Resources can also become unavailable because of ad hoc damage or sudden operational issues."
+    - "During an unavailable window, the system must not allocate that resource to a new appointment or service segment."
+    - "Existing bookings that overlap a maintenance window must be detected so managers can handle them."
+  operating_policy:
+    planned_maintenance: true
+    adhoc_unavailability: true
+    availability_window_required: true
+    conflict_detection_required: true
+    automatic_reassignment: false
+  implication:
+    resource_allocation: STRONG_SEPARATE_SIGNAL
+  boundary_decision: NONE
+```
+
+### Resource Availability vs Allocation
+
+Maintenance is not the same concept as allocation. Maintenance changes whether a resource can be used during a time window; allocation is the commitment of that resource to an appointment or service segment.
+
+```text
+Resource
+  -> Availability
+     -> AVAILABLE
+     -> UNAVAILABLE
+        -> Maintenance / repair / deep cleaning
+
+Appointment or service segment
+  -> Resource Allocation
+     -> chair / wash chair / station / equipment
+```
+
+UC4 already established the operational split:
+
+```text
+Customer A is waiting during chemical processing
+
+Professional: RELEASED
+Resource:     OCCUPIED
+Appointment:  STILL_ACTIVE
+```
+
+Therefore Haircut must not collapse these three concepts:
+
+```text
+Professional availability != Resource availability != Appointment duration
+```
+
+### Boundary Signal
+
+Q5 creates a strong separate signal for Resource Allocation because resources have their own availability windows and conflict rules. However, this is still not a boundary decision. Q6 must validate whether stylists/barbers share constrained resources such as limited wash chairs, color stations, steamers, or other equipment.
+
+---
+
 ## Pending Questions
 
 ### Professional Assignment Group Status
@@ -847,11 +909,28 @@ professional_assignment:
   boundary_decision: NONE
 ```
 
-Q1-Q4 and UC1-UC4 form a very strong product requirement signal that Professional Assignment is more than a simple appointment `stylist_id`. The Professional Assignment group is complete at Product Domain Requirement level, but it still does not authorize `VALIDATED_SEPARATE` or contract design. The next step is Resource Allocation validation.
+Q1-Q4 and UC1-UC4 form a very strong product requirement signal that Professional Assignment is more than a simple appointment `stylist_id`. The Professional Assignment group is complete at Product Domain Requirement level, but it still does not authorize `VALIDATED_SEPARATE` or contract design. Resource Allocation validation has started with Q5.
 
-### Q5-Q12 — Resource Allocation and Recommendation
+### Resource Allocation Group Status
 
-Q5-Q12 remain unanswered.
+```yaml
+resource_allocation:
+  Q5_resource_maintenance_window: regular
+  planned_maintenance: REQUIRED
+  adhoc_unavailability: REQUIRED
+  availability_window_required: true
+  conflict_detection_required: true
+  automatic_reassignment: false
+  combined_signal: STRONG_SEPARATE_SIGNAL
+  evidence_strength: PROPOSED_BY_PRODUCT
+  boundary_decision: NONE
+```
+
+Q6 should validate whether stylists/barbers share constrained resources. This determines whether Resource Allocation only manages simple chairs/stations or must also manage shared constrained equipment.
+
+### Q6-Q12 — Resource Allocation and Recommendation
+
+Q6-Q12 remain unanswered.
 
 ### UC5-UC6 — Use Case Walkthroughs
 
