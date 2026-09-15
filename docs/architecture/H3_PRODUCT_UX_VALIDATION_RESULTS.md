@@ -30,7 +30,7 @@ questions:
   answered: 4
   total: 12
 use_cases:
-  validated: 0
+  validated: 1
   total: 6
 boundaries:
   professional_assignment: VERY_STRONG_SEPARATE_SIGNAL
@@ -42,7 +42,7 @@ contract_inventory:
   change_authorized: false
 phase2_status:
   can_close: false
-  reason: "Professional Assignment questions Q1-Q4 answered at Product Domain Requirement level; Q5-Q12 and UC1-UC6 still pending."
+  reason: "Professional Assignment questions Q1-Q4 and UC1 answered at Product Domain Requirement level; Q5-Q12 and UC2-UC6 still pending."
 ```
 
 ---
@@ -248,6 +248,115 @@ This strengthens the signal that Professional Assignment may have lifecycle beha
 
 ---
 
+## UC1 — Customer Books Without Stylist/Barber Selection
+
+```yaml
+UC1:
+  name: CUSTOMER_BOOKS_WITHOUT_STYLIST
+  valid_business_flow: yes
+  evidence_type: PRODUCT_DOMAIN_REQUIREMENT
+  validation_strength: PROPOSED_BY_PRODUCT
+  workflow:
+    step_1:
+      action: CREATE_APPOINTMENT
+      appointment_status: PENDING
+      professional_assignment: NONE
+      description: "Customer selects service, date/time, and required customer details. Stylist/barber selection is optional."
+    step_2:
+      action: CHECK_APPOINTMENT_FEASIBILITY
+      description: "System checks basic service feasibility for the selected time slot. Appointment feasibility does not mean a specific stylist has accepted the work."
+    step_3:
+      action: GENERATE_PROFESSIONAL_RECOMMENDATION
+      actor: SYSTEM
+      persistence_effect: NONE
+      description: "When no stylist is selected, the system generates suitable professional candidates from configured policy."
+      note: "Recommendation does not persist assignment."
+    step_4:
+      action: CREATE_ASSIGNMENT
+      assignment_status: PROPOSED
+      description: "A professional selected by recommendation or manager choice becomes a PROPOSED assignment."
+    step_5:
+      action: PROFESSIONAL_DECISION
+      possible_results:
+        - ACCEPTED
+        - REJECTED
+    step_6a:
+      condition: ACCEPTED
+      assignment_status: ACCEPTED
+      description: "Stylist/barber officially accepts the appointment assignment."
+    step_6b:
+      condition: REJECTED
+      assignment_status: REJECTED
+      requirements:
+        reason_required: true
+        history_preserved: true
+      next:
+        - MANAGER_REASSIGN
+        - SYSTEM_RECOMMEND_AGAIN
+      description: "Rejected assignment remains in history. Manager or system finds another professional."
+    step_7:
+      action: REASSIGN_IF_REQUIRED
+      assignment_status: PROPOSED
+      description: "Create a new proposed assignment for a replacement professional without overwriting the rejected assignment history."
+  appointment_lifecycle:
+    initial_status: PENDING
+    assignment_rejection_changes_appointment_status: false
+    description: "Appointment and Professional Assignment have independent lifecycles. Stylist rejection does not automatically cancel the appointment."
+  assignment_lifecycle:
+    primary_flow:
+      - PROPOSED
+      - ACCEPTED
+    rejection_flow:
+      - PROPOSED
+      - REJECTED
+      - REASSIGNED
+      - PROPOSED
+      - ACCEPTED
+  recommendation:
+    owns_assignment: false
+    persists_assignment: false
+    role: ADVISORY
+    manager_can_override: true
+  implication:
+    professional_assignment: VERY_STRONG_SEPARATE_SIGNAL
+    independent_lifecycle: STRONG_EVIDENCE
+    history_required: true
+    recommendation_separate_from_assignment: true
+  boundary_decision: NONE
+```
+
+### Concept Separation
+
+UC1 validates three separate concepts:
+
+```text
+APPOINTMENT
+Customer wants service at a time
+        |
+        v
+RECOMMENDATION
+System says A/B/C are suitable
+        |
+        v
+ASSIGNMENT
+A is proposed to serve the appointment
+        |
+        +-- ACCEPTED
+        +-- REJECTED -> find another professional
+```
+
+Recommendation is advisory. It does not own or persist assignment. A manager can override recommendation.
+
+### Appointment Policy Note
+
+Do not prematurely require Appointment to become `CONFIRMED` only after Assignment is `ACCEPTED`. Some salons may confirm the customer appointment first and dispatch the professional later. Appointment confirmation policy must remain a separate operating decision.
+
+### Boundary Signal
+
+UC1 strongly reinforces that Professional Assignment has its own lifecycle and history. It still does not authorize `VALIDATED_SEPARATE`; UC2-UC4 must test conflict, reassignment, and no-show paths.
+
+---
+
 ## Pending Questions
 
 ### Professional Assignment Group Status
@@ -269,6 +378,6 @@ Q1-Q4 form a strong product requirement signal that Professional Assignment is m
 
 Q5-Q12 remain unanswered.
 
-### UC1-UC6 — Use Case Walkthroughs
+### UC2-UC6 — Use Case Walkthroughs
 
-No use cases have been validated yet. UC1-UC4 should be used to test whether Q1, Q2, Q3, and Q4 form a coherent Professional Assignment lifecycle.
+UC1 is recorded. UC2-UC4 should continue testing whether Q1, Q2, Q3, and Q4 form a coherent Professional Assignment lifecycle.
