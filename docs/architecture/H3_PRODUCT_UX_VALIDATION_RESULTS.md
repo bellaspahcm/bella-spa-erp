@@ -32,7 +32,7 @@ This is sufficient to continue Product/UX validation. It is not sufficient to ma
 phase: H3 Product/UX Validation
 status: PARTIAL
 questions:
-  answered: 9
+  answered: 10
   total: 12
 use_cases:
   validated: 6
@@ -40,14 +40,14 @@ use_cases:
 boundaries:
   professional_assignment: VERY_STRONG_SEPARATE_SIGNAL
   resource_allocation: VERY_STRONG_SEPARATE_SIGNAL
-  professional_recommendation: REQUIRED_SIGNAL
+  professional_recommendation: STRONG_POLICY_SIGNAL
 contract_inventory:
   h1_baseline: 8
   effective_count: TBD
   change_authorized: false
 phase2_status:
   can_close: false
-  reason: "Professional Assignment questions Q1-Q4 and UC1-UC4 answered at Product Domain Requirement level; Resource Allocation Q5-Q8 and UC5-UC6 answered; Professional Recommendation Q9 answered; BabyCare assignment audit and capability reconciliation complete; Q10-Q12 still pending."
+  reason: "Professional Assignment questions Q1-Q4 and UC1-UC4 answered at Product Domain Requirement level; Resource Allocation Q5-Q8 and UC5-UC6 answered; Professional Recommendation Q9-Q10 answered; BabyCare assignment audit and capability reconciliation complete; Q11-Q12 still pending."
 ```
 
 ---
@@ -1540,6 +1540,119 @@ Q9 establishes that Professional Recommendation is required as business behavior
 
 ---
 
+## Q10 - Professional Recommendation Factors
+
+```yaml
+Q10:
+  question: "Which factors influence stylist/barber recommendation?"
+  answer:
+    - service
+    - availability
+    - workload
+    - skill
+    - rating
+    - history
+    - vip
+    - seniority
+    - continuity_of_service
+  evidence_type: PRODUCT_DOMAIN_REQUIREMENT
+  validation_strength: PROPOSED_BY_PRODUCT
+  hard_eligibility:
+    service_capability: true
+    required_skill: true
+    professional_availability: true
+    hard_conflict_free: true
+    branch_eligibility: true
+  ranking_factors:
+    workload_balance: true
+    skill_match: true
+    customer_history: true
+    customer_preference: true
+    rating: true
+    vip_policy: true
+    seniority: true
+    continuity_of_service: true
+  manual_only: false
+  implication:
+    professional_recommendation: STRONG_POLICY_SIGNAL
+    recommendation_is_simple_helper: false
+    platform_ownership: NOT_PROVEN
+  boundary_decision: NONE
+```
+
+### Eligibility Before Ranking
+
+Q10 splits recommendation into two stages:
+
+```text
+Eligibility -> who is allowed to receive this service?
+Ranking     -> among eligible candidates, who is the best fit?
+```
+
+Ranking score must not compensate for a hard eligibility failure.
+
+```text
+Stylist A
+  rating           +20
+  customer history +30
+  seniority        +10
+  total score       60
+
+Required skill: FAIL
+
+Result:
+  A = INELIGIBLE
+```
+
+The system must not produce:
+
+```text
+A has high score -> still recommend
+```
+
+The correct recommendation flow is:
+
+```text
+SERVICE REQUEST
+  -> HARD ELIGIBILITY
+     -> service capability
+     -> required skill
+     -> professional availability
+     -> hard conflict free
+     -> branch eligibility
+  -> FEASIBLE CANDIDATES
+  -> RANKING
+     -> workload balance
+     -> customer history
+     -> rating
+     -> VIP policy
+     -> preference
+     -> seniority
+     -> continuity of service
+  -> RECOMMENDATION
+  -> accept / override / manual
+  -> ASSIGNMENT
+```
+
+### Continuity Of Service
+
+`continuity_of_service` is a Haircut product factor added during validation. If a customer previously had color work with Stylist B and returns for follow-up care or correction, continuity may be a stronger signal than generic rating.
+
+This factor expands the Haircut product requirement. It does not change the H1/H2 contract inventory and does not authorize Platform ownership.
+
+### Boundary Signal
+
+Q10 shows that Professional Recommendation is not a simple `findAvailableStylist()` helper. It has at least two conceptual layers:
+
+```text
+Eligibility -> allowed candidates
+Ranking     -> ordered candidates
+```
+
+This is a strong policy signal. However, even a deeper policy signal does not prove Platform ownership, persistence boundary, or contract design. Q11 must validate human override behavior, and Q12 must summarize complexity before H3 can classify Recommendation as `HELPER`, `BEAUTY_POLICY`, or `PLATFORM_CANDIDATE`.
+
+---
+
 ## Pending Questions
 
 ### Professional Assignment Group Status
@@ -1631,6 +1744,22 @@ Q5-Q8 and UC5-UC6 are complete at Product Domain Requirement level. Resource All
 ```yaml
 professional_recommendation:
   Q9_walk_in_auto_assignment: sometimes
+  Q10_recommendation_factors:
+    hard_eligibility:
+      service_capability: true
+      required_skill: true
+      professional_availability: true
+      hard_conflict_free: true
+      branch_eligibility: true
+    ranking_factors:
+      workload_balance: true
+      skill_match: true
+      customer_history: true
+      customer_preference: true
+      rating: true
+      vip_policy: true
+      seniority: true
+      continuity_of_service: true
   recommendation_for_walk_in: REQUIRED
   automatic_final_assignment: CONDITIONAL
   manual_assignment_supported: true
@@ -1640,17 +1769,19 @@ professional_recommendation:
     - RECOMMEND_ONLY
     - AUTO_ASSIGN
     - MANUAL
+  recommendation_is_simple_helper: false
   recommendation_persistence_boundary: NOT_PROVEN
-  combined_signal: REQUIRED_SIGNAL
+  platform_ownership: NOT_PROVEN
+  combined_signal: STRONG_POLICY_SIGNAL
   evidence_strength: PROPOSED_BY_PRODUCT
   boundary_decision: NONE
 ```
 
-Q10 should validate which ranking factors Haircut uses to order stylist/barber candidates. This will determine whether Professional Recommendation remains a simple helper or becomes a deeper policy engine.
+Q11 should validate human override behavior: whether manager/receptionist can override, when override is allowed, and whether override reason/history is required.
 
-### Q10-Q12 — Recommendation
+### Q11-Q12 — Recommendation
 
-Q10-Q12 remain unanswered.
+Q11-Q12 remain unanswered.
 
 ### Use Case Walkthrough Status
 
@@ -1679,7 +1810,7 @@ babycare_capability_reconciliation:
   contract_inventory_change_allowed: false
 ```
 
-All 6 use cases are complete at Product Domain Requirement level. Professional Recommendation validation has started with Q9; the next validation step is Q10-Q12.
+All 6 use cases are complete at Product Domain Requirement level. Professional Recommendation validation has Q9-Q10 recorded; the next validation step is Q11-Q12.
 
 ### Financial Domain Evidence — Legacy Business Invariants
 
