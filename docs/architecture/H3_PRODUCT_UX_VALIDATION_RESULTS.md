@@ -35,7 +35,7 @@ questions:
   answered: 8
   total: 12
 use_cases:
-  validated: 5
+  validated: 6
   total: 6
 boundaries:
   professional_assignment: VERY_STRONG_SEPARATE_SIGNAL
@@ -47,7 +47,7 @@ contract_inventory:
   change_authorized: false
 phase2_status:
   can_close: false
-  reason: "Professional Assignment questions Q1-Q4 and UC1-UC4 answered at Product Domain Requirement level; Resource Allocation Q5-Q8 and UC5 answered; BabyCare assignment audit and capability reconciliation complete; UC6 and Q9-Q12 still pending."
+  reason: "Professional Assignment questions Q1-Q4 and UC1-UC4 answered at Product Domain Requirement level; Resource Allocation Q5-Q8 and UC5-UC6 answered; BabyCare assignment audit and capability reconciliation complete; Q9-Q12 still pending."
 ```
 
 ---
@@ -1275,6 +1275,175 @@ UC5 provides very strong evidence for `segment_based_allocation`, `independent_r
 
 ---
 
+## UC6 - Resource Becomes Unavailable
+
+```yaml
+UC6:
+  name: RESOURCE_BECOMES_UNAVAILABLE
+  valid_business_flow: yes
+  evidence_type: PRODUCT_DOMAIN_REQUIREMENT
+  validation_strength: PROPOSED_BY_PRODUCT
+  scenarios:
+    planned:
+      example: "Wash Chair #2 is scheduled for maintenance from 13:00 to 15:00."
+    adhoc:
+      example: "Wash Chair #2 breaks at 14:20 during operations."
+  workflow:
+    step_1:
+      action: MARK_RESOURCE_UNAVAILABLE
+      owner: RESOURCE_AVAILABILITY
+      description: "Resource is blocked for a time window or from the incident time."
+    step_2:
+      action: FIND_AFFECTED_ALLOCATIONS
+      owner: RESOURCE_ALLOCATION
+      description: "Find allocations whose resource commitment overlaps the unavailable window."
+    step_3:
+      action: CLASSIFY_IMPACT
+      owner: RESOURCE_ALLOCATION
+      results:
+        - FUTURE_ALLOCATION_AFFECTED
+        - CURRENT_ALLOCATION_AFFECTED
+        - NO_IMPACT
+    step_4:
+      action: FIND_REPLACEMENT_RESOURCE
+      owner: RESOURCE_ALLOCATION
+      description: "Find a same-type or compatible resource with available capacity."
+    step_5a:
+      condition: REPLACEMENT_FOUND
+      action: REALLOCATE
+      owner: RESOURCE_ALLOCATION
+      requirements:
+        preserve_history: true
+        reason_code: RESOURCE_UNAVAILABLE
+        actor_required: true
+        timestamp_required: true
+    step_5b:
+      condition: NO_REPLACEMENT
+      action: ESCALATE
+      alternatives:
+        - SHIFT_SERVICE_SEGMENT
+        - RESCHEDULE_APPOINTMENT
+        - SMART_WAITLIST
+        - MANUAL_MANAGER_RESOLUTION
+        - CANCEL_IF_NO_FEASIBLE_OPTION
+  automation_policy:
+    system_may_detect_impact: true
+    system_may_recommend_alternatives: true
+    system_auto_moves_entire_appointment: false
+  current_service_policy:
+    automatic_move: false
+    require_operational_confirmation: true
+    rationale: "The system cannot infer the customer's physical state from the schedule alone."
+  allocation_history:
+    durable: true
+    preserve:
+      - OLD_RESOURCE
+      - NEW_RESOURCE
+      - AFFECTED_SEGMENT
+      - REASON
+      - ACTOR
+      - TIMESTAMP
+      - ORIGINAL_ALLOCATION
+      - REPLACEMENT_ALLOCATION
+  ownership:
+    resource_availability:
+      owns:
+        - RESOURCE_UNAVAILABLE_EVENT
+        - MAINTENANCE_WINDOW
+        - OUT_OF_SERVICE_STATUS
+    resource_allocation:
+      owns:
+        - AFFECTED_ALLOCATION_DISCOVERY
+        - IMPACT_CLASSIFICATION
+        - REPLACEMENT_RESOURCE_SELECTION
+        - RESOURCE_REALLOCATION
+        - ALLOCATION_HISTORY
+    appointment:
+      owns:
+        - CUSTOMER_APPOINTMENT_LIFECYCLE
+    smart_waitlist:
+      participates_when:
+        - NO_REPLACEMENT_OR_FEASIBLE_TIME
+  implication:
+    resource_allocation: VERY_STRONG_SEPARATE_SIGNAL
+    resource_allocation_lifecycle: VERY_STRONG_EVIDENCE
+    resource_history: REQUIRED
+    resource_availability_dependency: CONFIRMED_CONCEPTUAL_BOUNDARY
+    smart_waitlist: CONDITIONAL_CONSUMER
+  boundary_decision: NONE
+```
+
+### Recovery Flow
+
+UC6 must not collapse resource availability events into appointment mutation. The correct recovery path is:
+
+```text
+Resource unavailable
+  -> detect affected allocations
+  -> find feasible alternatives
+  -> recommend options
+  -> manager/system policy decides
+  -> resource reallocation
+```
+
+The system should not jump straight to:
+
+```text
+Resource breaks
+  -> automatically move the whole appointment
+```
+
+For a resource currently being used by a customer, operational confirmation is required because the system cannot know the customer's physical state from schedule data alone.
+
+### Allocation History
+
+UC6 requires durable history for resource reallocation:
+
+```text
+Allocation #1
+  Wash Chair #2
+  15:00-15:20
+    -> RESOURCE_UNAVAILABLE
+    -> Allocation #2
+       Wash Chair #4
+       15:00-15:20
+```
+
+At minimum, the history must preserve:
+
+```text
+old resource
+new resource
+affected segment
+reason
+actor
+timestamp
+```
+
+### Symmetry With Professional Assignment
+
+UC6 mirrors the Professional Assignment disruption pattern while preserving ownership:
+
+```text
+STAFF_UNAVAILABLE
+  -> affected assignments
+  -> professional reassignment
+
+RESOURCE_UNAVAILABLE
+  -> affected allocations
+  -> resource reallocation
+```
+
+Workforce/Attendance does not own Professional Assignment. Resource Availability or Maintenance does not own Resource Allocation. They emit availability facts; assignment/allocation own the impact on commitments.
+
+### Boundary Signal
+
+UC6 completes Resource Allocation use-case validation at Product Domain Requirement level. Resource Allocation now has availability windows, finite shared capacity, segment-based commitments, reallocation frequency, bottleneck behavior, hard conflict handling, recovery behavior, and durable history.
+
+This is a very strong separate signal, but still not `VALIDATED_SEPARATE`. Boundary decisions remain blocked until all H3 questions are complete and H2 reconciliation is performed.
+
+---
+
 ## Pending Questions
 
 ### Professional Assignment Group Status
@@ -1325,6 +1494,13 @@ resource_allocation:
       condition: RESOURCE_CAPACITY_EXCEEDED
       action: BLOCK
       manager_override: false
+  UC6:
+    resource_allocation_lifecycle: VERY_STRONG_EVIDENCE
+    affected_allocation_discovery: REQUIRED
+    impact_classification: REQUIRED
+    resource_history: REQUIRED
+    resource_availability_dependency: CONFIRMED_CONCEPTUAL_BOUNDARY
+    smart_waitlist: CONDITIONAL_CONSUMER
   planned_maintenance: REQUIRED
   adhoc_unavailability: REQUIRED
   availability_window_required: true
@@ -1352,15 +1528,15 @@ resource_allocation:
   boundary_decision: NONE
 ```
 
-Q5-Q8 and UC5 are complete at Product Domain Requirement level. UC6 should validate resource maintenance recovery: a resource allocation is valid, then the resource becomes unavailable and the salon must recover without losing allocation history.
+Q5-Q8 and UC5-UC6 are complete at Product Domain Requirement level. Resource Allocation now has a very strong separate signal, but it still does not authorize `VALIDATED_SEPARATE` or contract design.
 
 ### Q9-Q12 — Recommendation
 
 Q9-Q12 remain unanswered.
 
-### UC6 — Use Case Walkthrough
+### Use Case Walkthrough Status
 
-UC1, UC2, UC3, UC4, and UC5 are recorded. UC3 used the narrow BabyCare assignment audit and the four-path BabyCare capability reconciliation as cross-product evidence, without copying BabyCare storage or claiming final boundary. UC4 validates active professional segment semantics as a Product Domain Requirement. UC5 validates segment-based resource double booking.
+UC1, UC2, UC3, UC4, UC5, and UC6 are recorded. UC3 used the narrow BabyCare assignment audit and the four-path BabyCare capability reconciliation as cross-product evidence, without copying BabyCare storage or claiming final boundary. UC4 validates active professional segment semantics as a Product Domain Requirement. UC5 validates segment-based resource double booking. UC6 validates resource unavailability recovery and allocation history.
 
 BabyCare audit result:
 
@@ -1385,7 +1561,7 @@ babycare_capability_reconciliation:
   contract_inventory_change_allowed: false
 ```
 
-UC6 should validate Resource Allocation recovery when a resource becomes unavailable after an allocation has already been created.
+All 6 use cases are complete at Product Domain Requirement level. The next validation step is Q9-Q12 for Professional Recommendation.
 
 ### Financial Domain Evidence — Legacy Business Invariants
 
