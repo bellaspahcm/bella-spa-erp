@@ -1,12 +1,12 @@
 # ADR-005: Service Inventory Source Decision
 
-**Status:** ✅ **APPROVED — INVESTIGATION FIRST**  
-**Date:** 2026-09-15  
-**Approved:** 2026-09-15 (H1 Final Gate Review)  
-**Decision Makers:** Architecture Council, Platform Team, Logistics Team  
-**Context:** H1 Architecture Gate - Service Inventory capability needs source decision (Logistics E7 vs custom)
+**Status:** ✅ **RESOLVED — BUILD DEDICATED ISERVICEINVENTORYENGINE**  
+**Investigation Date:** 2026-09-15  
+**Decision Date:** 2026-09-15  
+**Decision:** Build dedicated service catalog contract (DO NOT reuse E7 Logistics)  
+**Rationale:** 7-gate investigation confirmed semantic mismatch, E7 frozen, dedicated contract cheaper/faster
 
-**⚠️ IMPLEMENTATION BLOCKED:** Cannot begin implementation until Week 1 investigation completes (2-3 days) and decision made (E7 integration vs product-level extension).
+**Investigation:** `H2_CONTRACT_02_OWNERSHIP_INVESTIGATION.md`
 
 ---
 
@@ -1253,3 +1253,123 @@ export class HaircutBookingService {
 **Status:** 🟡 **PROPOSED**  
 **Next Review:** After E7 investigation (Week 1, Day 3) - final decision
 
+
+
+---
+
+## Investigation Results (2026-09-15)
+
+### 7-Gate Investigation Summary
+
+**Investigation Document:** `H2_CONTRACT_02_OWNERSHIP_INVESTIGATION.md`
+
+**Gate Results:**
+
+| Gate | Question | Result |
+|------|----------|--------|
+| 1 | Ownership boundary | ❌ Service ≠ Logistics |
+| 2 | Semantic fit | ❌ Service ≠ InventoryItem |
+| 3 | Invariant compatibility | ❌ E7 invariants don't apply to services |
+| 4 | E7 FROZEN status | ❌ Cannot modify without ACR |
+| 5 | Dependency direction | ⚠️ E7 contract possible but awkward |
+| 6 | Data ownership | ❌ E7 should not own service data |
+| 7 | Extension cost | ✅ Dedicated contract cheaper (5-7 days vs 10-15 days) |
+
+**Overall:** **7/7 gates indicate DO NOT reuse E7 Logistics**
+
+---
+
+### Key Findings
+
+**1. Semantic Mismatch:**
+- E7 InventoryItem = Physical goods with stock levels (shampoo, scissors, towels)
+- Service = Intangible offering with duration/price (haircut, facial, massage)
+- Overlap: Only name, description, category (basic metadata)
+- Mismatch: Stock levels, movements, expiration, traceability (E7 core invariants)
+
+**2. Invariant Incompatibility:**
+- E7 invariants: Quantity conservation, movement tracking, expiration, batch/lot traceability
+- Service invariants: Duration validation, branch availability, staff skills, package consistency
+- Services have NO stock levels, NO movements, NO expiration
+
+**3. E7 Frozen Status:**
+- E7.1, E7.2, E7.3 = SEALED (547 tests)
+- Modification requires ACR + unfreeze + 547 test updates
+- High risk, high cost
+
+**4. Data Ownership Conflict:**
+- E7 owns `inventory_item` table (physical goods domain)
+- Services should be owned by product vertical (Beauty/Healthcare), not Logistics
+- Storing services in E7 pollutes Logistics kernel with non-logistics data
+
+**5. Extension Cost:**
+- **Option A (E7 extension):** 10-15 days + ACR + high risk
+- **Option B (Dedicated contract):** 5-7 days + low risk + semantic clarity
+- **Verdict:** Dedicated contract is cheaper, faster, cleaner
+
+---
+
+### Final Decision
+
+**✅ BUILD DEDICATED ISERVICEINVENTORYENGINE CONTRACT**
+
+**Rationale:**
+- Services are semantically different from physical inventory
+- E7 core invariants do not apply to services
+- E7 is FROZEN (cannot modify without ACR)
+- Service catalog should be owned by product vertical, not Logistics
+- Dedicated contract is lower cost, lower risk, cleaner architecture
+
+**Implementation:**
+- Create `IServiceInventoryEngine` contract in `src/platform/contracts/v1/`
+- Define Service entity (name, duration, price, category, availability)
+- Implement service-specific methods (getService, listServices, createService, etc.)
+- Wire to Haircut/Spa/Nail products
+
+**Ownership:** Platform Contracts (cross-vertical capability)
+
+---
+
+## Consequences
+
+### Positive
+
+1. **✅ Semantic clarity:** Service catalog is clean, no E7 inventory pollution
+2. **✅ E7 integrity preserved:** Logistics kernel remains logistics-focused
+3. **✅ Lower cost:** 5-7 days vs 10-15 days (E7 extension)
+4. **✅ Lower risk:** No ACR, no frozen kernel modification, no 547 test regression
+5. **✅ Data ownership correct:** Product verticals own service definitions
+6. **✅ Extensibility:** Any vertical can use service catalog without Logistics dependency
+
+### Negative
+
+1. **⚠️ New capability implementation:** Need to build service catalog from scratch (not reuse E7)
+2. **⚠️ Duplicate concepts:** Service catalog has some overlapping concepts with E7 (name, category, price)
+
+**Mitigation:**
+- Overlapping concepts are minimal (basic metadata only)
+- Semantic clarity outweighs code reuse
+- Service catalog is simpler than E7 (no stock, movements, traceability)
+
+---
+
+## Related Decisions
+
+- **ADR-002:** Contract Extraction Strategy — Establishes incremental contract extraction
+- **ADR-003:** Beauty Services Platform Formalization — Defines vertical structure
+- **ADR-004:** Walk-in Queue Scope — Confirms product features vs kernel capabilities
+- **ADR-006:** Temporal Platform Layer — Establishes platform vs vertical classification
+
+---
+
+## Implementation Status
+
+**Investigation:** ✅ COMPLETE (2026-09-15)  
+**Decision:** ✅ APPROVED (Build dedicated IServiceInventoryEngine)  
+**Next:** Define contract interface → Extract Contract #2 → Wire to products
+
+---
+
+**ADR Version:** 2.0.0 (Investigation Results Added)  
+**Status:** RESOLVED  
+**Date:** 2026-09-15
