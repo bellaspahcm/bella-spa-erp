@@ -35,7 +35,7 @@ questions:
   answered: 4
   total: 12
 use_cases:
-  validated: 3
+  validated: 4
   total: 6
 boundaries:
   professional_assignment: VERY_STRONG_SEPARATE_SIGNAL
@@ -47,7 +47,7 @@ contract_inventory:
   change_authorized: false
 phase2_status:
   can_close: false
-  reason: "Professional Assignment questions Q1-Q4 and UC1-UC3 answered at Product Domain Requirement level; BabyCare assignment audit and capability reconciliation complete; Q5-Q12 and UC4-UC6 still pending."
+  reason: "Professional Assignment questions Q1-Q4 and UC1-UC4 answered at Product Domain Requirement level; BabyCare assignment audit and capability reconciliation complete; Q5-Q12 and UC5-UC6 still pending."
 ```
 
 ---
@@ -690,6 +690,132 @@ This is still not `VALIDATED_SEPARATE`. UC4 must test whether professional confl
 
 ---
 
+## UC4 - Stylist/Barber Double Booking With Active Professional Segments
+
+```yaml
+UC4:
+  name: STYLIST_DOUBLE_BOOKING_ACTIVE_PROFESSIONAL_SEGMENTS
+  valid_business_flow: yes
+  evidence_type: PRODUCT_DOMAIN_REQUIREMENT
+  validation_strength: PROPOSED_BY_PRODUCT
+  principle:
+    full_appointment_duration_blocks_professional: false
+    full_appointment_overlap_is_sufficient_for_professional_conflict: false
+    active_professional_segments_required: true
+  example:
+    service: PERM_OR_COLOR
+    appointment_duration_minutes: 120
+    segments:
+      - name: APPLY
+        type: ACTIVE_PROFESSIONAL
+        duration_minutes: 30
+        professional_occupied: true
+        resource_occupied: true
+      - name: PROCESS
+        type: PROCESSING_WAIT
+        duration_minutes: 40
+        professional_occupied: false
+        resource_occupied: true
+      - name: FINISH
+        type: ACTIVE_PROFESSIONAL
+        duration_minutes: 50
+        professional_occupied: true
+        resource_occupied: true
+  simple_service_example:
+    service: MENS_CUT
+    segments:
+      - name: CUT
+        type: ACTIVE_PROFESSIONAL
+        duration_minutes: 30
+        professional_occupied: true
+        resource_occupied: true
+  business_requirement:
+    stylist_can_serve_customer_b_while_customer_a_processing: true
+    condition: "Customer A segment does not require direct professional attention."
+  conflict_policy:
+    professional_conflict_basis: ACTIVE_PROFESSIONAL_SEGMENTS
+    hard_conflict:
+      condition: ACTIVE_PROFESSIONAL_SEGMENT_OVERLAP
+      action: BLOCK
+      manager_override: false
+    soft_conflict_examples:
+      - HIGH_ACTIVE_WORKLOAD
+      - SHORT_TRANSITION_BUFFER
+      - SKILL_PREFERENCE_MISMATCH
+  time_commitments:
+    appointment:
+      owns: SERVICE_TIME_FLOW
+      examples:
+        - TOTAL_CUSTOMER_VISIT_WINDOW
+        - SERVICE_PHASE_SEQUENCE
+    professional_assignment:
+      owns: PROFESSIONAL_ACTIVE_TIME_COMMITMENT
+      examples:
+        - ACTIVE_PROFESSIONAL_SEGMENT
+        - PROFESSIONAL_DOUBLE_BOOKING_CONFLICT
+    resource_allocation:
+      owns: RESOURCE_TIME_COMMITMENT
+      examples:
+        - CHAIR_OR_STATION_OCCUPIED_DURING_PROCESSING
+        - RESOURCE_DOUBLE_BOOKING_CONFLICT
+  implication:
+    professional_assignment: VERY_STRONG_SEPARATE_SIGNAL
+    resource_allocation: SEPARATE_SIGNAL
+    appointment_time_flow: REQUIRED
+    professional_availability_differs_from_resource_availability: true
+    conflict_engine_must_not_assume_full_duration_professional_occupancy: true
+  boundary_decision: NONE
+```
+
+### Operating Model
+
+Haircut services can contain service phases where the customer remains inside the appointment and the chair or station remains occupied, but the stylist/barber is released to perform active work for another customer.
+
+```text
+Perm / color appointment: 14:00 -> 16:00
+
+14:00-14:30  ACTIVE_PROFESSIONAL
+14:30-15:10  PROCESSING_WAIT
+15:10-16:00  ACTIVE_PROFESSIONAL
+```
+
+During `PROCESSING_WAIT`, the system must not mark the professional as busy for the full appointment duration if the phase does not require direct professional work. However, the resource may still be occupied. This establishes an important split:
+
+```text
+Professional availability != Resource availability
+```
+
+### Conflict Rule
+
+A professional double booking conflict is not proven by full appointment overlap alone. It is proven when active professional segments overlap.
+
+```text
+Appointment A: 14:00-16:00
+  Active: 14:00-14:30
+  Wait:   14:30-15:10
+  Active: 15:10-16:00
+
+Appointment B:
+  14:35-15:05 active stylist work -> allowed if other constraints pass
+  15:20-15:50 active stylist work -> hard conflict
+```
+
+If two active professional segments physically overlap for the same stylist/barber, the assignment must be blocked. Manager override is not allowed for this hard conflict because the professional cannot perform two direct-service segments at the same time.
+
+### Boundary Signal
+
+UC4 closes the Professional Assignment use-case group at Product Domain Requirement level. Q1-Q4 and UC1-UC4 now show that Haircut has at least three distinct time commitments:
+
+```text
+Appointment -> customer service flow and visit window
+Professional Assignment -> active professional time commitment
+Resource Allocation -> chair/station/resource time commitment
+```
+
+This is a very strong separate signal for Professional Assignment and a separate signal for Resource Allocation. It is still not a final boundary decision; it authorizes moving to Q5-Q8 and UC5-UC6 for Resource Allocation validation.
+
+---
+
 ## Pending Questions
 
 ### Professional Assignment Group Status
@@ -708,20 +834,28 @@ professional_assignment:
     reassignment_lifecycle: VERY_STRONG_EVIDENCE
     durable_history: REQUIRED
     bulk_operation: REQUIRED
+  UC4:
+    active_professional_segments: REQUIRED
+    full_appointment_overlap: NOT_SUFFICIENT_FOR_CONFLICT
+    hard_conflict:
+      condition: ACTIVE_SEGMENT_OVERLAP
+      action: BLOCK
+      manager_override: false
+    resource_allocation_signal: SEPARATE_SIGNAL
   combined_signal: VERY_STRONG_SEPARATE_SIGNAL
   evidence_strength: PROPOSED_BY_PRODUCT
   boundary_decision: NONE
 ```
 
-Q1-Q4 and UC1-UC3 form a very strong product requirement signal that Professional Assignment is more than a simple appointment `stylist_id`. The next step is not contract design; it is UC4 walkthrough to test active professional segments and double-booking semantics.
+Q1-Q4 and UC1-UC4 form a very strong product requirement signal that Professional Assignment is more than a simple appointment `stylist_id`. The Professional Assignment group is complete at Product Domain Requirement level, but it still does not authorize `VALIDATED_SEPARATE` or contract design. The next step is Resource Allocation validation.
 
 ### Q5-Q12 — Resource Allocation and Recommendation
 
 Q5-Q12 remain unanswered.
 
-### UC3-UC6 — Use Case Walkthroughs
+### UC5-UC6 — Use Case Walkthroughs
 
-UC1, UC2, and UC3 are recorded. UC3 used the narrow BabyCare assignment audit and the four-path BabyCare capability reconciliation as cross-product evidence, without copying BabyCare storage or claiming final boundary.
+UC1, UC2, UC3, and UC4 are recorded. UC3 used the narrow BabyCare assignment audit and the four-path BabyCare capability reconciliation as cross-product evidence, without copying BabyCare storage or claiming final boundary. UC4 validates active professional segment semantics as a Product Domain Requirement.
 
 BabyCare audit result:
 
@@ -746,7 +880,7 @@ babycare_capability_reconciliation:
   contract_inventory_change_allowed: false
 ```
 
-UC4 should validate `Active Professional Segments`: whether professional double-booking checks should cover the whole appointment duration or only the time windows where the stylist is actively required.
+UC5 and UC6 should validate Resource Allocation: whether chair/station/resource conflicts follow full appointment duration, service phases, shared resources, or product-specific room/station rules.
 
 ### Financial Domain Evidence — Legacy Business Invariants
 
