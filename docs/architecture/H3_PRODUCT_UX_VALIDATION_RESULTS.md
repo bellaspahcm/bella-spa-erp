@@ -30,7 +30,7 @@ questions:
   answered: 4
   total: 12
 use_cases:
-  validated: 1
+  validated: 2
   total: 6
 boundaries:
   professional_assignment: VERY_STRONG_SEPARATE_SIGNAL
@@ -42,7 +42,7 @@ contract_inventory:
   change_authorized: false
 phase2_status:
   can_close: false
-  reason: "Professional Assignment questions Q1-Q4 and UC1 answered at Product Domain Requirement level; Q5-Q12 and UC2-UC6 still pending."
+  reason: "Professional Assignment questions Q1-Q4 and UC1-UC2 answered at Product Domain Requirement level; Q5-Q12 and UC3-UC6 still pending."
 ```
 
 ---
@@ -357,6 +357,128 @@ UC1 strongly reinforces that Professional Assignment has its own lifecycle and h
 
 ---
 
+## UC2 — Customer Requests Busy Stylist/Barber
+
+```yaml
+UC2:
+  name: CUSTOMER_REQUESTS_BUSY_STYLIST
+  valid_business_flow: yes
+  evidence_type: PRODUCT_DOMAIN_REQUIREMENT
+  validation_strength: PROPOSED_BY_PRODUCT
+  scenario:
+    requested_time: "14:00"
+    requested_professional: "Stylist A"
+    condition: "Stylist A already has an incompatible overlapping assignment."
+  workflow:
+    step_1:
+      action: CHECK_APPOINTMENT_TIME
+      owner: APPOINTMENT_SCHEDULING
+      description: "Check whether the salon can receive an appointment at 14:00, independent of whether Stylist A is available."
+    step_2:
+      action: CHECK_PROFESSIONAL_AVAILABILITY
+      owner: PROFESSIONAL_ASSIGNMENT
+      result: CONFLICT
+      description: "Check whether Stylist A can accept the requested assignment window. Existing incompatible overlap creates conflict."
+    step_3:
+      action: DO_NOT_CREATE_INVALID_ASSIGNMENT
+      assignment_created: false
+      description: "Do not create a PROPOSED assignment for Stylist A when the system already knows it violates a hard conflict."
+    step_4:
+      action: PRESERVE_CUSTOMER_INTENT
+      description: "Do not automatically cancel the customer's booking intent only because Stylist A is unavailable."
+    step_5:
+      action: GENERATE_ALTERNATIVES
+      alternatives:
+        - SAME_TIME_DIFFERENT_PROFESSIONAL
+        - DIFFERENT_TIME_SAME_PROFESSIONAL
+        - WAITLIST_REQUESTED_PROFESSIONAL
+      description: "Suggest a different professional at the same time, a different time for Stylist A, or waitlist if the customer only wants Stylist A."
+  conflict_ownership:
+    appointment_scheduling:
+      owns:
+        - "Validity of appointment time"
+        - "Salon/business opening availability"
+        - "Appointment temporal lifecycle"
+    professional_assignment:
+      owns:
+        - "Professional availability for assignment"
+        - "Professional overlap detection"
+        - "Whether a professional can accept another assignment"
+    recommendation:
+      owns:
+        - "Ranking feasible alternatives"
+      does_not_own:
+        - "Conflict truth"
+        - "Assignment persistence"
+  hard_conflict_policy:
+    default: BLOCK_ASSIGNMENT
+    manager_override: false
+    rationale: "Two services that truly require the same stylist at the same time cannot become feasible by manager override."
+  appointment:
+    may_be_preserved: true
+    possible_status: PENDING
+    cancellation_required: false
+  assignment:
+    invalid_assignment_created: false
+    status_when_conflict_detected: NONE
+  recommendation:
+    suggest_alternative_professional: true
+    suggest_alternative_time: true
+    waitlist_option: true
+    advisory_only: true
+  implication:
+    professional_assignment: VERY_STRONG_SEPARATE_SIGNAL
+    professional_conflict_detection: ASSIGNMENT_OWNED
+    appointment_scheduling: DISTINCT_TEMPORAL_RESPONSIBILITY
+    recommendation: ADVISORY
+    waitlist_engine: POTENTIAL_CONSUMER
+  boundary_decision: NONE
+```
+
+### Conflict Handling
+
+UC2 separates customer booking intent from invalid assignment creation:
+
+```text
+Request Stylist A at 14:00
+        |
+        v
+Professional availability check
+        |
+        v
+Hard conflict
+        |
+        v
+Do not create Assignment
+        |
+        v
+Suggest alternatives or waitlist
+```
+
+Do not use `PROPOSED -> CONFLICTED` when the system already knows the proposed assignment is impossible. Do not use `REJECTED` either, because Stylist A did not reject; the system determined A is unavailable.
+
+### Hard vs Soft Conflict
+
+Hard conflicts should block assignment and should not be manager-overridable. Soft conflicts may be overridable, such as high workload warnings or too-short transition time. UC2 only establishes the hard-conflict policy.
+
+### Active Professional Segments
+
+Some future services may include periods where the professional is not actively required for the entire appointment window, such as chemical processing wait time. This means UC4 must test whether Professional Assignment needs active professional segments rather than treating the full appointment duration as fully blocking.
+
+### Boundary Signal
+
+UC2 reinforces three separate responsibilities:
+
+```text
+Appointment Scheduling -> can the salon receive an appointment at this time?
+Professional Assignment -> can this professional be assigned at this time?
+Recommendation -> what feasible alternative should be suggested?
+```
+
+This strongly reinforces assignment-owned professional conflict detection. It still does not authorize `VALIDATED_SEPARATE`; UC3-UC4 must test reassignment and double-booking paths.
+
+---
+
 ## Pending Questions
 
 ### Professional Assignment Group Status
@@ -378,6 +500,6 @@ Q1-Q4 form a strong product requirement signal that Professional Assignment is m
 
 Q5-Q12 remain unanswered.
 
-### UC2-UC6 — Use Case Walkthroughs
+### UC3-UC6 — Use Case Walkthroughs
 
-UC1 is recorded. UC2-UC4 should continue testing whether Q1, Q2, Q3, and Q4 form a coherent Professional Assignment lifecycle.
+UC1 and UC2 are recorded. UC3-UC4 should continue testing whether Q1, Q2, Q3, and Q4 form a coherent Professional Assignment lifecycle.
