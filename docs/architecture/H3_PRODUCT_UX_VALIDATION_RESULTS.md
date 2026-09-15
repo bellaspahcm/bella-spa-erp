@@ -8,7 +8,7 @@
 
 **BabyCare capability reconciliation:** `H3_BABYCARE_CAPABILITY_RECONCILIATION.md`
 
-**BabyCare financial reconciliation:** `H3_BABYCARE_FINANCIAL_RECONCILIATION.md`
+**Legacy financial domain evidence:** `H3_LEGACY_FINANCIAL_DOMAIN_EVIDENCE.md`
 
 ---
 
@@ -748,12 +748,12 @@ babycare_capability_reconciliation:
 
 UC4 should validate `Active Professional Segments`: whether professional double-booking checks should cover the whole appointment duration or only the time windows where the stylist is actively required.
 
-### Financial Reconciliation — BabyCare Evidence
+### Financial Domain Evidence — Legacy Business Invariants
 
-BabyCare financial reconciliation is recorded in `H3_BABYCARE_FINANCIAL_RECONCILIATION.md`.
+Legacy financial domain evidence is recorded in `H3_LEGACY_FINANCIAL_DOMAIN_EVIDENCE.md`.
 
 ```yaml
-babycare_financial_reconciliation:
+legacy_financial_domain_evidence:
   assignment_to_execution: IMPLEMENTED
   execution_to_commission: IMPLEMENTED
   reassignment_to_commission: IMPLEMENTED_BY_COMPLETED_BY_KTV_ID
@@ -768,4 +768,4 @@ babycare_financial_reconciliation:
   boundary_decision: NONE
 ```
 
-Financial validation must not collapse Payment, Revenue, Commission, Payroll, Finance, and Accounting into one capability. Haircut still needs Product/UX validation before contract design.
+Financial validation must not collapse Payment, Revenue, Commission, Payroll, Finance, and Accounting into one capability. BabyCare/Spa provide business evidence, not target Platform architecture. Haircut still needs Product/UX validation before contract design.

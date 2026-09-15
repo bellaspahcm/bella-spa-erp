@@ -1,34 +1,50 @@
-# H3 BabyCare Financial Reconciliation - Assignment to Accounting Evidence Pass
+# H3 Legacy Financial Domain Evidence - Assignment to Accounting Evidence Pass
 
 **Date:** 2026-09-16
 
 **Branch:** `feat/haircut-h2-contract-extraction`
 
-**Status:** RECONCILIATION COMPLETE
+**Status:** DOMAIN EVIDENCE PASS COMPLETE
 
-**Scope:** Read-only audit of the BabyCare/Beauty operational chain from assignment and actual service execution through commission, payroll, finance, and accounting.
+**Scope:** Read-only extraction of legacy business evidence from BabyCare/Beauty operational flows, from assignment and actual service execution through commission, payroll, finance, and accounting.
 
-**Purpose:** Determine what existing Bella implementation proves before Haircut defines financial requirements or contract boundaries.
+**Purpose:** Extract proven business invariants and legacy operational knowledge before Haircut defines financial requirements or contract boundaries.
 
 ---
 
 ## Guardrails
 
-This pass does not design Haircut Commission, Payroll, Finance, or Accounting contracts.
+This pass treats BabyCare/Beauty as legacy domain evidence, not target architecture.
 
-It does not:
+Purpose:
 
-1. Promote `IPaymentEngine` into a finance umbrella.
-2. Claim that Commission, Payroll, Finance, and Accounting are the same capability.
-3. Claim a Platform contract exists only because BabyCare/Beauty has implementation.
-4. Change the H1/H2 contract inventory.
-5. Copy BabyCare implementation shape into Haircut.
+1. Extract proven business invariants.
+2. Identify legacy operational knowledge.
+3. Identify cross-product signals.
+4. Separate business evidence from legacy implementation shape.
+5. Preserve Haircut as Platform-first product validation.
 
-Evidence from BabyCare is implementation evidence. Haircut still needs Product/UX validation before boundary decisions.
+Not purpose:
+
+1. Reuse legacy architecture.
+2. Reuse legacy tables.
+3. Reuse legacy services.
+4. Promote BabyCare code to Platform.
+5. Redesign BabyCare.
+6. Create Platform contracts.
+7. Change the H1/H2 contract inventory.
+
+BabyCare is an independent product built on older architecture. Haircut is a new Platform-first product. BabyCare/Spa provide business evidence only; they do not provide target Platform architecture.
 
 ```yaml
-babycare_financial_reconciliation:
+legacy_financial_domain_evidence:
   evidence_source: EXISTING_IMPLEMENTATION
+  outputs:
+    proven_business_invariants: []
+    legacy_implementation_observations: []
+    haircut_requirements_supported: []
+    beauty_shared_candidates: []
+    cross_vertical_candidates: []
   haircut_contract_design_allowed: false
   platform_promotion_allowed: false
   contract_inventory_change_allowed: false
@@ -55,7 +71,7 @@ evidence_scale:
 
 ## Executive Finding
 
-BabyCare/Beauty already contains a meaningful financial chain:
+Legacy BabyCare/Beauty already contains a meaningful financial chain:
 
 ```text
 Booking
@@ -79,7 +95,7 @@ Commission != Payroll
 Payroll != Accounting
 ```
 
-Current evidence supports this classification:
+Current legacy evidence supports this classification:
 
 ```yaml
 financial_chain:
@@ -92,8 +108,55 @@ financial_chain:
   accounting_posting: IMPLEMENTED_VIA_OUTBOX_AND_WORKER
   standalone_commission_ledger: NOT_FOUND
   standalone_payroll_contract: NOT_FOUND
-  haircuts_financial_boundary_decision: NONE
+  haircut_financial_boundary_decision: NONE
 ```
+
+This evidence may support future Haircut, Nail, Beauty-domain, or cross-vertical candidates, but it does not authorize copying legacy tables or services into Platform.
+
+---
+
+## Method Lock
+
+Correct relationship:
+
+```text
+BabyCare Legacy
+     |
+     | provides
+     v
+Business Evidence
+"What business actually happened?"
+     |
+     | does not provide
+     X
+Platform Architecture
+```
+
+Target flow:
+
+```text
+Legacy evidence
+  + Haircut requirement
+  + Nail projection
+        |
+        v
+Domain reconciliation
+        |
+        v
+Ownership boundary
+        |
+        v
+Contract candidate
+```
+
+Do not translate:
+
+```text
+BabyCare table X -> Platform table X
+BabyCare service Y -> Platform service Y
+```
+
+Extract only the invariants and signals, then design Haircut natively against validated Platform/Beauty contracts.
 
 ---
 
@@ -126,7 +189,7 @@ assignment_to_execution:
   evidence_strength: IMPLEMENTED
 ```
 
-Reconciliation:
+Domain evidence interpretation:
 
 BabyCare proves that Bella already distinguishes "who was assigned at booking level" from "who actually did this session." This is directly relevant to Haircut because commission should normally follow actual service execution, not only original assignment.
 
@@ -167,7 +230,7 @@ commission_basis:
   evidence_strength: IMPLEMENTED_WITH_MIXED_BASIS
 ```
 
-Reconciliation:
+Domain evidence interpretation:
 
 BabyCare/Beauty does not use a single commission basis. Some commission comes from booking/package session completion, while advanced commission comes from completed service items and product sales. Payment/revenue is present for accounting and revenue recognition, but commission entitlement is primarily tied to completed work and configured amounts, not purely cash receipt.
 
@@ -204,7 +267,7 @@ reassignment_to_commission:
   evidence_strength: IMPLEMENTED
 ```
 
-Reconciliation:
+Domain evidence interpretation:
 
 BabyCare gives strong evidence that commission follows the actual session performer. For Haircut, this argues against using only appointment-level `stylist_id` as commission truth.
 
@@ -246,7 +309,7 @@ commission_history:
   evidence_strength: PARTIAL
 ```
 
-Reconciliation:
+Domain evidence interpretation:
 
 BabyCare/Beauty has enough persisted values to prevent simple retroactive recalculation in many cases, but it does not prove a complete commission-history ledger with policy versions. Haircut should not assume changing commission policy later can be audited correctly unless this requirement is explicitly designed.
 
@@ -288,7 +351,7 @@ commission_to_payroll:
   evidence_strength: IMPLEMENTED
 ```
 
-Reconciliation:
+Domain evidence interpretation:
 
 BabyCare/Beauty proves commission is not merely a display value; it flows into payroll records. Finance is also broader than payroll because it owns revenue, expenses, salary payment confirmation, and accounting side effects.
 
@@ -325,7 +388,7 @@ finance_source_of_truth:
   evidence_strength: IMPLEMENTED
 ```
 
-Reconciliation:
+Domain evidence interpretation:
 
 `IPaymentEngine` cannot represent this full chain. Payment is one input into Finance. Finance tracks revenue, debt/receivable logic, expenses, salary payment status, discounts, refunds, and accounting metadata.
 
@@ -373,13 +436,13 @@ accounting_posting:
   evidence_strength: IMPLEMENTED_VIA_OUTBOX_AND_WORKER
 ```
 
-Reconciliation:
+Domain evidence interpretation:
 
 It is legitimate to call this Accounting evidence because double-entry ledger tables and posting logic exist. The session completion transaction itself does not directly post the journal; it enqueues outbox and relies on the accounting worker. That is a design choice, not absence of accounting.
 
 ---
 
-## Cross-Product Financial Matrix
+## Domain Evidence Matrix
 
 Legend:
 
@@ -389,7 +452,7 @@ Legend:
 - `PROPOSED_BY_PRODUCT`: Haircut requirement still needs Product/UX validation.
 - `H2_EVIDENCE_NOT_REAUDITED`: existing Spa/H2 evidence exists, but Spa was intentionally not re-audited in H3.
 
-| Capability | Spa | BabyCare/Beauty | Haircut | Reconciliation |
+| Signal | Spa | BabyCare/Beauty Legacy Evidence | Haircut | Evidence Interpretation |
 | --- | --- | --- | --- | --- |
 | Assignment vs Actual Execution | H2_EVIDENCE_NOT_REAUDITED | IMPLEMENTED | PROPOSED_BY_PRODUCT | Haircut should distinguish assigned stylist from actual service provider. |
 | Execution to Commission | H2_EVIDENCE_NOT_REAUDITED | IMPLEMENTED | PROPOSED_BY_PRODUCT | Commission follows completed sessions and actual performer. |
@@ -399,14 +462,14 @@ Legend:
 | Payroll / Salary Records | H2_EVIDENCE_NOT_REAUDITED | IMPLEMENTED | PROPOSED_BY_PRODUCT | Commission flows into salary records and salary lifecycle. |
 | Finance Source of Truth | H2_EVIDENCE_NOT_REAUDITED | IMPLEMENTED | PROPOSED_BY_PRODUCT | Finance includes revenue, expenses, discounts/refunds, and salary payment status. |
 | Accounting Posting | H2_EVIDENCE_NOT_REAUDITED | IMPLEMENTED_VIA_OUTBOX_AND_WORKER | PROPOSED_BY_PRODUCT | Accounting is real double-entry infrastructure, not merely finance labels. |
-| Standalone Commission Contract | H2_EVIDENCE_NOT_REAUDITED | NOT_FOUND | TBD | BabyCare evidence does not automatically authorize a new contract. |
+| Standalone Commission Contract | H2_EVIDENCE_NOT_REAUDITED | NOT_FOUND | TBD | Legacy evidence does not automatically authorize a new contract. |
 | Standalone Payroll Contract | H2_EVIDENCE_NOT_REAUDITED | NOT_FOUND | TBD | Payroll implementation exists, contract boundary remains unresolved. |
 
 ---
 
 ## Boundary Impact
 
-This pass changes the financial framing for Haircut:
+This domain evidence changes the financial framing for Haircut:
 
 ```text
 IPaymentEngine is not enough.
@@ -440,6 +503,7 @@ haircut_financial_scope:
   accounting_independent_capability_signal: IMPLEMENTED_EXISTING_INFRA
   haircut_requirement_status: NOT_VALIDATED
   contract_design_allowed: false
+  platform_promotion_allowed: false
   contract_inventory_change_allowed: false
   boundary_decision: NONE
 ```
@@ -460,7 +524,7 @@ Before Haircut financial contract design, H3 should answer:
 Until answered:
 
 ```yaml
-haircut_financial_reconciliation_status: READY_FOR_PRODUCT_VALIDATION
+haircut_financial_domain_evidence_status: READY_FOR_PRODUCT_VALIDATION
 haircut_contract_design_allowed: false
 platform_promotion_allowed: false
 boundary_decision: NONE
