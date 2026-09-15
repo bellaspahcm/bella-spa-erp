@@ -4,6 +4,7 @@
 **Branch:** `feat/haircut-h2-contract-extraction`  
 **Status:** PARTIAL  
 **Validation packet:** `H3_PRODUCT_UX_VALIDATION_PACKET.md`  
+**BabyCare assignment audit:** `H3_BABYCARE_ASSIGNMENT_AUDIT.md`
 
 ---
 
@@ -42,7 +43,7 @@ contract_inventory:
   change_authorized: false
 phase2_status:
   can_close: false
-  reason: "Professional Assignment questions Q1-Q4 and UC1-UC2 answered at Product Domain Requirement level; Q5-Q12 and UC3-UC6 still pending."
+  reason: "Professional Assignment questions Q1-Q4 and UC1-UC2 answered at Product Domain Requirement level; BabyCare assignment audit complete; Q5-Q12 and UC3-UC6 still pending."
 ```
 
 ---
@@ -502,4 +503,15 @@ Q5-Q12 remain unanswered.
 
 ### UC3-UC6 — Use Case Walkthroughs
 
-UC1 and UC2 are recorded. UC3-UC4 should continue testing whether Q1, Q2, Q3, and Q4 form a coherent Professional Assignment lifecycle.
+UC1 and UC2 are recorded. UC3 was paused for a narrow BabyCare assignment audit.
+
+BabyCare audit result:
+
+```yaml
+babycare_has_assignment_evidence: true
+babycare_has_reassignment_evidence: true
+babycare_has_full_assignment_lifecycle: false
+platform_contract_claim_allowed: false
+```
+
+UC3 should resume as a reconciliation use case: compare Haircut stylist unavailability with BabyCare leave-driven session reassignment, without copying BabyCare storage or claiming final boundary.
