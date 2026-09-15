@@ -6,7 +6,7 @@
 
 **Baseline:** `6b521ccd` — H3 Final Boundary Reconciliation
 
-**Status:** H4.1 STARTED — HAIRCUT SEMANTIC INVARIANT EXTRACTION
+**Status:** H4.1 PASS B COMPLETE — BABYCARE SEMANTIC MAPPING RECORDED
 
 ---
 
@@ -104,8 +104,8 @@ professional_assignment:
 H4_1:
   capability: PROFESSIONAL_ASSIGNMENT
 
-  haircut_semantic_invariants: IN_PROGRESS
-  babycare_matching_invariants: TBD
+  haircut_semantic_invariants: FROZEN
+  babycare_matching_invariants: COMPLETE
   nail_projection_result: TBD
   semantic_overlap: TBD
   semantic_divergence: TBD
@@ -268,12 +268,224 @@ At this point H4.1 has extracted Haircut invariants only. It has not yet used Ba
 
 ---
 
+## Step 2 — BabyCare Semantic Mapping
+
+Pass B maps BabyCare evidence only into the Haircut invariants frozen in Pass A. It does not add new invariants from BabyCare fields, tables, or services.
+
+```yaml
+babycare_mapping_guardrails:
+  map_only_to_frozen_haircut_invariants: true
+  add_new_invariant_from_babycare: false
+  architecture_shape_reused: false
+  platform_promotion_authorized: false
+  contract_design_authorized: false
+  inventory_change_authorized: false
+```
+
+Evidence scale:
+
+```yaml
+semantic_mapping_scale:
+  MATCH: "Business meaning is substantially equivalent."
+  PARTIAL: "Related business meaning exists, but lifecycle, history, or ownership is incomplete or indirect."
+  DIVERGENT: "Business behavior exists but means something materially different."
+  NOT_FOUND: "No confirming BabyCare evidence was found in the existing H3 audit/reconciliation docs."
+```
+
+### Mapping Matrix
+
+```yaml
+babycare_semantic_mapping:
+  service_commitment:
+    haircut_meaning: "A customer-facing unit of service that needs one or more professional commitments."
+    babycare_evidence:
+      booking: MATCH
+      session_log: MATCH
+    business_meaning_equivalence: "BabyCare booking/session represents a customer-facing service commitment requiring caregiver/KTV execution."
+    semantic_result: MATCH
+    architecture_shape_reused: false
+    ownership_implication: NONE
+
+  professional:
+    haircut_meaning: "A human service provider eligible to perform some or all required service work."
+    babycare_evidence:
+      ktv_or_caregiver: MATCH
+      availability_filtering: MATCH
+    business_meaning_equivalence: "BabyCare KTV/caregiver is the human service provider considered for assignment and execution."
+    semantic_result: MATCH
+    architecture_shape_reused: false
+    ownership_implication: NONE
+
+  assignment_identity:
+    haircut_meaning: "A durable relationship between service commitment or service segment and professional candidate or assignee."
+    babycare_evidence:
+      bookings_assigned_ktv_id: MATCH
+      session_logs_completed_by_ktv_id: MATCH
+      standalone_assignment_table: NOT_FOUND
+    business_meaning_equivalence: "BabyCare preserves booking-level primary assignment and session-level performer/substitute, but not as a standalone assignment identity."
+    semantic_result: PARTIAL
+    architecture_shape_reused: false
+    ownership_implication: NONE
+
+  assignment_status:
+    haircut_meaning: "The relationship has its own state, separate from customer appointment lifecycle."
+    babycare_evidence:
+      session_status_lifecycle: PARTIAL
+      proposed_status: NOT_FOUND
+      accepted_status: NOT_FOUND
+      rejected_status: NOT_FOUND
+      disrupted_status: NOT_FOUND
+    business_meaning_equivalence: "BabyCare has session lifecycle, but does not prove a dedicated assignment lifecycle."
+    semantic_result: PARTIAL
+    architecture_shape_reused: false
+    ownership_implication: NONE
+
+  professional_decision:
+    haircut_meaning: "Professional or operating policy can accept or reject a proposed commitment."
+    babycare_evidence:
+      explicit_accept: NOT_FOUND
+      explicit_reject: NOT_FOUND
+      controlled_rejection_reason: NOT_FOUND
+      implicit_accept_by_start_session: PARTIAL
+    business_meaning_equivalence: "BabyCare may imply acceptance when a session starts, but it does not prove controlled accept/reject semantics."
+    semantic_result: NOT_FOUND
+    architecture_shape_reused: false
+    ownership_implication: NONE
+
+  disruption:
+    haircut_meaning: "An accepted or planned professional commitment can be interrupted by unavailability, no-show, lateness, conflict, or operational change."
+    babycare_evidence:
+      staff_leave_source: MATCH
+      affected_session_lookup: MATCH
+      general_no_show_lifecycle: NOT_FOUND
+      late_arrival_lifecycle: NOT_FOUND
+    business_meaning_equivalence: "BabyCare proves leave-driven disruption of scheduled sessions, but not the full Haircut no-show/late-arrival disruption space."
+    semantic_result: PARTIAL
+    architecture_shape_reused: false
+    ownership_implication: NONE
+
+  reassignment:
+    haircut_meaning: "A disrupted or rejected professional commitment can be replaced by a new professional commitment without destroying the old record."
+    babycare_evidence:
+      leave_reassignment_input: MATCH
+      session_reassignment_update: MATCH
+      rollback_protection: MATCH
+      rejected_assignment_reassignment: NOT_FOUND
+    business_meaning_equivalence: "BabyCare proves replacement professional assignment for leave-affected sessions, with rollback safety."
+    semantic_result: MATCH
+    architecture_shape_reused: false
+    ownership_implication: NONE
+
+  assignment_history:
+    haircut_meaning: "Preserve original professional, replacement professional, reason, actor, timestamp, and final service provider when relevant."
+    babycare_evidence:
+      booking_primary_ktv: MATCH
+      session_actual_ktv: MATCH
+      leave_reassignment_note: PARTIAL
+      generic_audit_logging: PARTIAL
+      structured_history_chain: NOT_FOUND
+      structured_replacement_relationship: NOT_FOUND
+    business_meaning_equivalence: "BabyCare preserves enough facts to distinguish primary KTV from actual/substitute KTV, but not a structured assignment history chain."
+    semantic_result: PARTIAL
+    architecture_shape_reused: false
+    ownership_implication: NONE
+
+  professional_conflict:
+    haircut_meaning: "Professional availability is checked against professional work commitments, distinct from appointment and resource conflict."
+    babycare_evidence:
+      time_overlap_filter: MATCH
+      break_buffer_conflict: MATCH
+      daily_limit_conflict: MATCH
+      active_professional_segment_model: NOT_FOUND
+    business_meaning_equivalence: "BabyCare proves professional conflict filtering, but not Haircut's active professional segment model."
+    semantic_result: PARTIAL
+    architecture_shape_reused: false
+    ownership_implication: NONE
+
+  actual_performer:
+    haircut_meaning: "The professional who actually performs the service may differ from the originally assigned professional."
+    babycare_evidence:
+      bookings_assigned_ktv_id: MATCH
+      session_logs_completed_by_ktv_id: MATCH
+      commission_reads_completed_by_ktv_id: MATCH
+      salary_recalculation_by_completed_session_provider: MATCH
+    business_meaning_equivalence: "BabyCare distinguishes original booking KTV from session performer, and commission/salary consume actual completed-by provider."
+    semantic_result: MATCH
+    architecture_shape_reused: false
+    ownership_implication: NONE
+```
+
+### BabyCare Consumer Evidence
+
+Finance and Commission are consumer evidence, not ownership evidence.
+
+```text
+Professional Assignment / Session Performer Facts
+  -> original professional
+  -> reassignment/substitute professional
+  -> actual performer
+       |
+       v
+  Commission / Salary
+  consumes the fact
+  does not own the fact
+```
+
+```yaml
+babycare_commission_consumer_test:
+  assignment_to_execution: IMPLEMENTED
+  actual_performer_source: session_logs.completed_by_ktv_id
+  commission_reads_actual_performer: MATCH
+  commission_owns_assignment_truth: false
+  professional_assignment_history_durability_signal: STRONG_CONSUMER_SIGNAL
+  ownership_implication: "Commission strengthens durability need but does not own Professional Assignment."
+```
+
+### BabyCare Mapping Result
+
+```yaml
+babycare_mapping_result:
+  mapped_against_frozen_haircut_invariants: true
+  added_new_invariants_from_babycare: false
+  architecture_shape_reused: false
+
+  semantic_results:
+    match:
+      - service_commitment
+      - professional
+      - reassignment
+      - actual_performer
+    partial:
+      - assignment_identity
+      - assignment_status
+      - disruption
+      - assignment_history
+      - professional_conflict
+    divergent: []
+    not_found:
+      - professional_decision
+
+  overall_semantic_overlap: STRONG_PARTIAL
+  ownership_verdict: UNRESOLVED
+  platform_promotion_authorized: false
+  contract_design_authorized: false
+  inventory_change_authorized: false
+```
+
+Interpretation:
+
+BabyCare strongly supports that the professional-to-service-commitment relationship is not unique to Haircut. It also proves that actual performer facts are consumed by compensation workflows. However, BabyCare does not prove Haircut's full assignment lifecycle, controlled rejection, active segment model, or structured history chain.
+
+Therefore Pass B strengthens cross-product evidence but does not resolve ownership.
+
+---
+
 ## Next H4.1 Passes
 
 ```yaml
 next_passes:
   babycare_evidence_reconciliation:
-    status: TBD
+    status: COMPLETE
     purpose: "Compare BabyCare KTV/session/leave/substitute/commission behavior against Haircut semantic invariants."
     not_purpose: "Copy BabyCare architecture, tables, or services."
 
