@@ -8,3 +8,4 @@
 
 export * from './InboxReceiver';
 export * from './waitlist-engine.contract';
+export * from './service-catalog.contract';
