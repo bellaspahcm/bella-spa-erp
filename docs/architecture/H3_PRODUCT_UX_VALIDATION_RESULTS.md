@@ -32,7 +32,7 @@ This is sufficient to continue Product/UX validation. It is not sufficient to ma
 phase: H3 Product/UX Validation
 status: PARTIAL
 questions:
-  answered: 11
+  answered: 12
   total: 12
 use_cases:
   validated: 6
@@ -40,14 +40,14 @@ use_cases:
 boundaries:
   professional_assignment: VERY_STRONG_SEPARATE_SIGNAL
   resource_allocation: VERY_STRONG_SEPARATE_SIGNAL
-  professional_recommendation: STRONG_POLICY_SIGNAL
+  professional_recommendation: COMPLEX_POLICY_CAPABILITY
 contract_inventory:
   h1_baseline: 8
   effective_count: TBD
   change_authorized: false
 phase2_status:
   can_close: false
-  reason: "Professional Assignment questions Q1-Q4 and UC1-UC4 answered at Product Domain Requirement level; Resource Allocation Q5-Q8 and UC5-UC6 answered; Professional Recommendation Q9-Q11 answered; BabyCare assignment audit and capability reconciliation complete; Q12 still pending."
+  reason: "H3 validation input is complete: Q1-Q12 answered and UC1-UC6 validated at Product Domain Requirement level. Boundary decisions and H2 Phase 2 closure still require final boundary reconciliation."
 ```
 
 ---
@@ -1753,6 +1753,104 @@ Q11 confirms Recommendation is advisory decision support with override semantics
 
 ---
 
+## Q12 - Professional Recommendation Complexity
+
+```yaml
+Q12:
+  question: "How complex is recommendation logic?"
+  answer: complex
+  evidence_type: PRODUCT_DOMAIN_REQUIREMENT
+  validation_strength: PROPOSED_BY_PRODUCT
+  evidence:
+    - "Recommendation must run hard eligibility before ranking."
+    - "Hard eligibility includes service capability, required skill, professional availability, hard-conflict freedom, and branch eligibility."
+    - "Ranking uses independent factors: workload, skill match, customer history, preference, rating, VIP policy, seniority, and continuity of service."
+    - "Ranking score must not compensate for a hard constraint failure."
+    - "Recommendation supports RECOMMEND_ONLY, AUTO_ASSIGN, and MANUAL operating modes."
+    - "Manager can override ranking but cannot override hard eligibility."
+    - "Recommendation works with Professional Assignment but does not own final assignment persistence."
+    - "BabyCare provides cross-product implementation evidence for auto recommendation, alternatives, and admin/manual apply, but does not decide Haircut architecture."
+  complexity:
+    eligibility_layer: true
+    ranking_layer: true
+    multi_factor_policy: true
+    exception_handling: true
+    manager_override: true
+    customer_preference: true
+    operational_context: true
+    multiple_dispatch_modes: true
+  implication:
+    professional_recommendation: COMPLEX_POLICY_CAPABILITY
+    simple_helper: false
+    durable_persistence_boundary: NOT_PROVEN
+    platform_ownership: NOT_PROVEN
+  boundary_decision: NONE
+```
+
+### Complexity Is Not Ownership
+
+Q12 completes the Professional Recommendation question group, but complexity must not be over-interpreted.
+
+```text
+COMPLEX
+  != SEPARATE PERSISTENCE BOUNDARY
+  != PLATFORM CONTRACT
+```
+
+The current Haircut requirement shape is:
+
+```text
+Service Request
+  -> Eligibility
+  -> Feasible Candidates
+  -> Ranking / Policy
+  -> Recommendation
+  -> Human/System Decision
+  -> Professional Assignment
+```
+
+Recommendation computes advice and ordered candidates. The evidence recorded in Q9-Q12 does not prove that Recommendation owns durable business state in the same way Professional Assignment or Resource Allocation appear to own durable commitments and histories.
+
+### H3 Completion Guardrail
+
+After Q12, H3 has complete validation input:
+
+```yaml
+questions:
+  answered: 12
+  total: 12
+
+use_cases:
+  validated: 6
+  total: 6
+```
+
+This must not automatically set H3 to `VALIDATED` or mark H2 Phase 2 as closable.
+
+H3 now requires a final boundary reconciliation pass that places the evidence side by side:
+
+```text
+Professional Assignment
+  Q1-Q4 + UC1-UC4
+  -> VERY_STRONG_SEPARATE_SIGNAL
+
+Resource Allocation
+  Q5-Q8 + UC5-UC6
+  -> VERY_STRONG_SEPARATE_SIGNAL
+
+Professional Recommendation
+  Q9-Q12 + BabyCare evidence
+  -> COMPLEX_POLICY_CAPABILITY
+```
+
+Only that reconciliation pass may apply the Boundary Decision Rules and classify candidates as `VALIDATED_SEPARATE`, `VALIDATED_ABSORBED`, `HELPER`, `BEAUTY_POLICY`, `PLATFORM_CANDIDATE`, or `UNRESOLVED`.
+
+### Boundary Signal
+
+Q12 confirms Professional Recommendation is a complex policy capability, not a simple helper. It still does not prove durable persistence boundary or Platform ownership. Boundary decisions remain blocked until the final H3 boundary reconciliation.
+
+---
+
 ## Pending Questions
 
 ### Professional Assignment Group Status
@@ -1861,6 +1959,7 @@ professional_recommendation:
       seniority: true
       continuity_of_service: true
   Q11_manager_override: always
+  Q12_complexity: complex
   recommendation_for_walk_in: REQUIRED
   automatic_final_assignment: CONDITIONAL
   manual_assignment_supported: true
@@ -1876,18 +1975,32 @@ professional_recommendation:
   assignment_owns_final_persistence: true
   recommendation_quality_feedback: POSSIBLE
   recommendation_is_simple_helper: false
+  professional_recommendation_complexity: COMPLEX_POLICY_CAPABILITY
+  simple_helper: false
+  durable_persistence_boundary: NOT_PROVEN
   recommendation_persistence_boundary: NOT_PROVEN
   platform_ownership: NOT_PROVEN
-  combined_signal: STRONG_POLICY_SIGNAL
+  combined_signal: COMPLEX_POLICY_CAPABILITY
   evidence_strength: PROPOSED_BY_PRODUCT
   boundary_decision: NONE
 ```
 
-Q12 should summarize Professional Recommendation complexity across walk-in dispatch, eligibility/ranking, manager override, and cross-product evidence before H3 classification.
+Q9-Q12 are complete at Product Domain Requirement level. Professional Recommendation is a complex policy capability, but durable persistence boundary and Platform ownership remain not proven.
 
-### Q12 — Recommendation
+### H3 Input Status
 
-Q12 remains unanswered.
+```yaml
+h3_validation_input:
+  questions:
+    answered: 12
+    total: 12
+  use_cases:
+    validated: 6
+    total: 6
+  final_boundary_reconciliation_required: true
+  phase2_can_close: false
+  boundary_decision: NONE
+```
 
 ### Use Case Walkthrough Status
 
@@ -1916,7 +2029,7 @@ babycare_capability_reconciliation:
   contract_inventory_change_allowed: false
 ```
 
-All 6 use cases are complete at Product Domain Requirement level. Professional Recommendation validation has Q9-Q11 recorded; the next validation step is Q12.
+All 6 use cases and all 12 questions are complete at Product Domain Requirement level. The next validation step is H3 Final Boundary Reconciliation, not contract design.
 
 ### Financial Domain Evidence — Legacy Business Invariants
 
