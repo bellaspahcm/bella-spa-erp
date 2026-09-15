@@ -32,7 +32,7 @@ This is sufficient to continue Product/UX validation. It is not sufficient to ma
 phase: H3 Product/UX Validation
 status: PARTIAL
 questions:
-  answered: 6
+  answered: 7
   total: 12
 use_cases:
   validated: 4
@@ -47,7 +47,7 @@ contract_inventory:
   change_authorized: false
 phase2_status:
   can_close: false
-  reason: "Professional Assignment questions Q1-Q4 and UC1-UC4 answered at Product Domain Requirement level; Resource Allocation Q5-Q6 answered; BabyCare assignment audit and capability reconciliation complete; Q7-Q12 and UC5-UC6 still pending."
+  reason: "Professional Assignment questions Q1-Q4 and UC1-UC4 answered at Product Domain Requirement level; Resource Allocation Q5-Q7 answered; BabyCare assignment audit and capability reconciliation complete; Q8-Q12 and UC5-UC6 still pending."
 ```
 
 ---
@@ -950,6 +950,81 @@ This still does not authorize `VALIDATED_SEPARATE`. Q7 must test whether resourc
 
 ---
 
+## Q7 - Resource Reassignment Frequency
+
+```yaml
+Q7:
+  question: "How often are chairs/stations/resources reassigned?"
+  answer: frequent
+  evidence_type: PRODUCT_DOMAIN_REQUIREMENT
+  validation_strength: PROPOSED_BY_PRODUCT
+  evidence:
+    - "Chair or station may need to change when the assigned resource breaks or must be blocked urgently."
+    - "Manager may move a customer to another station to reduce waiting time or rebalance resource usage."
+    - "A service may move between resources by segment, such as cutting station -> wash chair -> cutting station."
+    - "If an earlier service runs long and keeps a resource longer than expected, the next appointment may need a replacement resource."
+    - "Resource changes must preserve the original resource, replacement resource, timestamp, reason, and actor when audit is required."
+  operating_policy:
+    resource_reassignment_allowed: true
+    in_day_reallocation: true
+    emergency_reallocation: true
+    segment_resource_change: true
+    reassignment_reason_required: true
+    history_required: true
+  implication:
+    resource_allocation: VERY_STRONG_SEPARATE_SIGNAL
+    resource_allocation_lifecycle: STRONG_SIGNAL
+    resource_history: REQUIRED
+  boundary_decision: NONE
+```
+
+### Planned Segment Allocation vs Operational Reallocation
+
+Q7 separates normal service design from operational exception handling.
+
+Planned segment allocation is part of the intended service flow:
+
+```text
+Service flow
+  -> Cutting Station #3
+  -> Wash Chair #2
+  -> Cutting Station #3
+```
+
+Operational reallocation happens after a resource commitment already exists:
+
+```text
+Wash segment
+  -> Wash Chair #2
+  -> CHAIR_OUT_OF_SERVICE
+  -> Wash Chair #4
+```
+
+Both cases are lost if the system only stores one `appointment.resource_id`. Planned segment allocation needs segment-level commitments. Operational reallocation needs history of the original resource, replacement resource, reason, actor, and time.
+
+### Symmetry With Professional Assignment
+
+Q7 creates a parallel with Professional Assignment without collapsing the two concepts:
+
+```text
+Professional Assignment
+  Stylist A -> unavailable -> Stylist B
+  Question: who performs?
+
+Resource Allocation
+  Chair 2 -> unavailable -> Chair 4
+  Question: what is used?
+
+Appointment
+  Same customer service commitment is preserved.
+```
+
+### Boundary Signal
+
+Q7 strengthens Resource Allocation from availability/capacity checking into an operational lifecycle signal. However, it still does not authorize `VALIDATED_SEPARATE`. Q8 must validate whether resources are a real capacity bottleneck relative to stylists/barbers, then UC5 and UC6 must test whether this lifecycle and conflict model stays coherent in end-to-end workflows.
+
+---
+
 ## Pending Questions
 
 ### Professional Assignment Group Status
@@ -989,6 +1064,7 @@ Q1-Q4 and UC1-UC4 form a very strong product requirement signal that Professiona
 resource_allocation:
   Q5_resource_maintenance_window: regular
   Q6_shared_constrained_equipment: yes
+  Q7_resource_reassignment_frequency: frequent
   planned_maintenance: REQUIRED
   adhoc_unavailability: REQUIRED
   availability_window_required: true
@@ -998,17 +1074,24 @@ resource_allocation:
   resource_required_by_service_segment: REQUIRED
   independent_resource_conflict_check: REQUIRED
   segment_based_allocation: STRONG_SIGNAL
+  resource_reassignment_allowed: true
+  in_day_reallocation: true
+  emergency_reallocation: true
+  reassignment_reason_required: true
+  history_required: true
+  resource_allocation_lifecycle: STRONG_SIGNAL
+  resource_history: REQUIRED
   automatic_reassignment: false
   combined_signal: VERY_STRONG_SEPARATE_SIGNAL
   evidence_strength: PROPOSED_BY_PRODUCT
   boundary_decision: NONE
 ```
 
-Q7 should validate whether chair, station, or equipment reallocation happens frequently, rarely, or never in actual salon operations. This determines whether Resource Allocation has an operational lifecycle or remains primarily availability and capacity checking.
+Q8 should validate whether constrained resources are a real operational bottleneck compared with stylist/barber availability.
 
-### Q7-Q12 — Resource Allocation and Recommendation
+### Q8-Q12 — Resource Allocation and Recommendation
 
-Q7-Q12 remain unanswered.
+Q8-Q12 remain unanswered.
 
 ### UC5-UC6 — Use Case Walkthroughs
 
