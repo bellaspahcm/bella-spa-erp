@@ -27,7 +27,7 @@ This is sufficient to continue Product/UX validation. It is not sufficient to ma
 phase: H3 Product/UX Validation
 status: PARTIAL
 questions:
-  answered: 2
+  answered: 3
   total: 12
 use_cases:
   validated: 0
@@ -42,7 +42,7 @@ contract_inventory:
   change_authorized: false
 phase2_status:
   can_close: false
-  reason: "Q1-Q2 answered; Q3-Q12 and UC1-UC6 still pending."
+  reason: "Q1, Q2, and Q4 answered; Q3, Q5-Q12, and UC1-UC6 still pending."
 ```
 
 ---
@@ -143,6 +143,66 @@ However, Q1 + Q2 still do not authorize `VALIDATED_SEPARATE`. Q3 and UC1-UC4 mus
 
 ---
 
+## Q4 — Stylist/Barber No-Show Tracking
+
+```yaml
+Q4:
+  question: "Are stylist/barber no-shows tracked/analyzed?"
+  answer: yes
+  evidence_type: PRODUCT_DOMAIN_REQUIREMENT
+  validation_strength: PROPOSED_BY_PRODUCT
+  evidence:
+    - "A stylist/barber assigned to an appointment is not present at service time; the system needs to record the affected assignment and support moving the customer to another professional."
+    - "Managers need to distinguish customer reassignment caused by staff no-show from reassignment caused by customer request, skill mismatch, overload, or proactive dispatch."
+    - "One staff no-show can affect multiple appointments in the same shift; the system should help identify impacted assignments for bulk handling."
+    - "Assignment history needs to show the affected appointment, original stylist, replacement stylist, reassignment time, and STAFF_NO_SHOW reason."
+    - "Staff no-show data may support operations review, but the source of truth for staff attendance should belong to Workforce/Attendance if that capability exists."
+  operating_policy:
+    track_staff_no_show: true
+    assignment_reason_code: STAFF_NO_SHOW
+    reassignment_required_when_possible: true
+    bulk_impact_possible: true
+    assignment_owns_staff_attendance: false
+  ownership_note:
+    workforce_attendance:
+      owns: "Staff presence, absence, late arrival, and shift attendance events."
+    professional_assignment:
+      owns: "Impact of attendance events on assignments and reassignment flow."
+    appointment:
+      owns: "Customer appointment lifecycle and service status."
+  implication:
+    professional_assignment: VERY_STRONG_SEPARATE_SIGNAL
+    assignment_history: REQUIRED
+    reassignment: REQUIRED
+    assignment_lifecycle: STRONG_SIGNAL
+    workforce_dependency: POSSIBLE
+  boundary_decision: NONE
+```
+
+### Ownership Boundary
+
+Q4 must not turn Professional Assignment into a staff attendance or workforce system.
+
+Correct ownership:
+
+```text
+Stylist no-show
+  -> Workforce/Attendance owns the staff attendance fact, if that capability exists
+  -> Professional Assignment owns the impact on affected assignments and reassignment
+  -> Appointment owns the customer appointment lifecycle
+```
+
+Example:
+
+```text
+Appointment #A001 remains CONFIRMED
+Assignment: Stylist A ACCEPTED -> STAFF_NO_SHOW -> Stylist B PROPOSED -> Stylist B ACCEPTED
+```
+
+This strengthens the signal that Professional Assignment may have lifecycle behavior, but it still does not authorize `VALIDATED_SEPARATE`. Q3 and UC1-UC4 must validate whether the lifecycle is coherent and required.
+
+---
+
 ## Pending Questions
 
 ### Q3 — Assignment Acceptance / Rejection
@@ -150,3 +210,11 @@ However, Q1 + Q2 still do not authorize `VALIDATED_SEPARATE`. Q3 and UC1-UC4 mus
 Can stylists/barbers reject an assignment, or are assignments always decided by the manager/system?
 
 Evidence should describe operating authority: professional autonomy, manager override, skill mismatch, customer preference mismatch, workload fairness, or policy for refusing unsuitable assignments.
+
+### Q5-Q12 — Resource Allocation and Recommendation
+
+Q5-Q12 remain unanswered.
+
+### UC1-UC6 — Use Case Walkthroughs
+
+No use cases have been validated yet. UC1-UC4 should be used to test whether Q1, Q2, Q3, and Q4 form a coherent Professional Assignment lifecycle.
