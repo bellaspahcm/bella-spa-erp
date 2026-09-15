@@ -821,7 +821,39 @@ interface IProfessionalMatching {
 
 ---
 
-**Document Version:** 1.0.0  
+**Document Version:** 1.1.0  
 **Date:** 2026-09-15  
-**Status:** ⏸️ **BLOCKED — HAIRCUT REQUIREMENTS NEEDED**  
-**Next:** Gather Haircut requirements → Complete domain reconciliation → Phase 3 target design
+**Status:** 🟡 **PARTIAL — PROPOSED REQUIREMENTS AVAILABLE, VALIDATION NEEDED**  
+**Next:** Validate 6 use cases with Product/UX → Complete domain reconciliation → Phase 3 target design
+
+---
+
+## Phase 2 Status Update (2026-09-15)
+
+**Progress:**
+- ✅ Appointment Lifecycle reconciled (independent capability confirmed)
+- 🟡 Haircut Minimum Domain Requirements proposed (6 use cases)
+- 🟡 Preliminary boundary assessment complete (TENTATIVE)
+- ⏸️ Product/UX validation pending
+
+**Proposed Requirements:** See `H2_HAIRCUT_MINIMUM_DOMAIN_REQUIREMENTS.md`
+
+**Preliminary Assessment (NOT SEALED):**
+1. Appointment Lifecycle: ✅ Independent capability (IAppointmentEngine)
+2. Professional Assignment: 🟡 LIKELY SEPARATE (IProfessionalAssignment) — pending validation
+3. Professional Recommendation: 🟡 Helper/Policy candidate (NOT sealed as helper service)
+4. Resource Allocation: 🟡 LIKELY SEPARATE (IResourceAllocation) — pending validation
+
+**Critical Distinction:**
+- **Capability** = system must have ability (e.g., recommend professional)
+- **Contract** = public boundary for capability (may or may not be contract)
+- **Implementation** = how Spa does it (AutoAssignmentProvider = helper)
+
+**Note:** Spa AutoAssignmentProvider proves "helper service implementation", NOT "recommendation must be helper service". Haircut may use shared policy/contract if business needs warrant.
+
+**Contract Denominator:** 8 (UNCHANGED until Phase 2 validation complete)
+
+**Document Version:** 1.1.0  
+**Date:** 2026-09-15  
+**Status:** 🟡 **PARTIAL — PROPOSED REQUIREMENTS AVAILABLE, VALIDATION NEEDED**  
+**Next:** Validate 6 use cases with Product/UX → Complete domain reconciliation → Phase 3 target design
