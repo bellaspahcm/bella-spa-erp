@@ -33,7 +33,7 @@ questions:
   answered: 4
   total: 12
 use_cases:
-  validated: 2
+  validated: 3
   total: 6
 boundaries:
   professional_assignment: VERY_STRONG_SEPARATE_SIGNAL
@@ -45,7 +45,7 @@ contract_inventory:
   change_authorized: false
 phase2_status:
   can_close: false
-  reason: "Professional Assignment questions Q1-Q4 and UC1-UC2 answered at Product Domain Requirement level; BabyCare assignment audit and capability reconciliation complete; Q5-Q12 and UC3-UC6 still pending."
+  reason: "Professional Assignment questions Q1-Q4 and UC1-UC3 answered at Product Domain Requirement level; BabyCare assignment audit and capability reconciliation complete; Q5-Q12 and UC4-UC6 still pending."
 ```
 
 ---
@@ -482,6 +482,212 @@ This strongly reinforces assignment-owned professional conflict detection. It st
 
 ---
 
+## UC3 - Stylist Sick / No-Show / Unavailable Reassignment
+
+```yaml
+UC3:
+  name: STYLIST_UNAVAILABLE_REASSIGNMENT
+  valid_business_flow: yes
+  evidence_type: PRODUCT_DOMAIN_REQUIREMENT
+  validation_strength: PROPOSED_BY_PRODUCT
+  cross_product_evidence:
+    babycare:
+      leave_reassignment: IMPLEMENTED
+      affected_session_lookup: IMPLEMENTED
+      replacement_assignment: IMPLEMENTED
+      rollback_protection: IMPLEMENTED
+      structured_assignment_history: PARTIAL
+      accept_reject_lifecycle: NOT_FOUND
+  trigger:
+    examples:
+      - SICK_LEAVE
+      - STAFF_NO_SHOW
+      - LATE_ARRIVAL
+      - EMERGENCY_UNAVAILABLE
+  workflow:
+    step_1:
+      action: RECORD_STAFF_UNAVAILABILITY
+      owner: WORKFORCE_ATTENDANCE
+      description: "Workforce/Attendance owns the fact that the stylist is absent, late, on approved leave, or otherwise unavailable."
+    step_2:
+      action: FIND_AFFECTED_ASSIGNMENTS
+      owner: PROFESSIONAL_ASSIGNMENT
+      description: "Find future active assignments affected by the professional's unavailable time window."
+    step_3:
+      action: DISRUPT_CURRENT_ASSIGNMENT
+      owner: PROFESSIONAL_ASSIGNMENT
+      previous_status: ACCEPTED
+      new_status: DISRUPTED
+      requirements:
+        preserve_original_assignment: true
+        reason_code_required: true
+        actor_required: true
+        timestamp_required: true
+    step_4:
+      action: FIND_REPLACEMENT
+      owner: PROFESSIONAL_RECOMMENDATION
+      role: ADVISORY
+      factors:
+        - SERVICE_SKILL
+        - AVAILABILITY
+        - ACTIVE_WORKLOAD
+        - TIME_CONFLICT
+        - RESOURCE_COMPATIBILITY
+      description: "Recommendation returns feasible replacement candidates but does not own assignment persistence."
+    step_5:
+      action: CREATE_REPLACEMENT_ASSIGNMENT
+      owner: PROFESSIONAL_ASSIGNMENT
+      status: PROPOSED
+      replacement_link_required: true
+      description: "Replacement is a new assignment rather than overwriting the original assignment."
+    step_6:
+      action: PROFESSIONAL_DECISION
+      possible_results:
+        - ACCEPTED
+        - REJECTED
+      rejection_requires_reason: true
+    step_7a:
+      condition: ACCEPTED
+      result:
+        replacement_assignment: ACCEPTED
+        appointment: PRESERVED
+    step_7b:
+      condition: REJECTED
+      result:
+        replacement_assignment: REJECTED
+        next:
+          - RECOMMEND_ANOTHER_PROFESSIONAL
+          - MANAGER_MANUAL_ASSIGNMENT
+    step_8:
+      condition: NO_FEASIBLE_REPLACEMENT
+      result:
+        appointment_cancelled_automatically: false
+        options:
+          - SMART_WAITLIST
+          - OFFER_DIFFERENT_TIME
+          - CUSTOMER_CONTACT_REQUIRED
+          - CUSTOMER_CANCEL_IF_DECLINED
+  bulk_reassignment:
+    required: true
+    rationale: "One stylist absence can affect multiple appointments in the same shift, so handling each appointment manually is insufficient for chain operations."
+  appointment_lifecycle:
+    independent: true
+    stylist_unavailable_automatically_cancels_appointment: false
+  assignment_history:
+    durable: true
+    preserve:
+      - ORIGINAL_PROFESSIONAL
+      - ORIGINAL_ASSIGNMENT_STATUS
+      - DISRUPTION_REASON
+      - DISRUPTION_TIME
+      - ACTOR
+      - REPLACEMENT_ASSIGNMENT
+      - REPLACEMENT_PROFESSIONAL
+      - FINAL_SERVICE_PROVIDER
+  ownership:
+    workforce_attendance:
+      owns:
+        - STAFF_ABSENCE
+        - LEAVE
+        - LATE_ARRIVAL
+        - ATTENDANCE_FACT
+    professional_assignment:
+      owns:
+        - AFFECTED_ASSIGNMENT_DISCOVERY
+        - ASSIGNMENT_DISRUPTION
+        - REASSIGNMENT
+        - REPLACEMENT_RELATIONSHIP
+        - ASSIGNMENT_HISTORY
+    professional_recommendation:
+      owns:
+        - REPLACEMENT_CANDIDATE_RANKING
+      does_not_own:
+        - ASSIGNMENT_STATE
+        - ASSIGNMENT_HISTORY
+    appointment:
+      owns:
+        - CUSTOMER_APPOINTMENT_LIFECYCLE
+    smart_waitlist:
+      participates_when:
+        - NO_REPLACEMENT_AVAILABLE
+        - CUSTOMER_ACCEPTS_WAITING
+  implication:
+    professional_assignment: VERY_STRONG_SEPARATE_SIGNAL
+    independent_lifecycle: VERY_STRONG_EVIDENCE
+    durable_history: REQUIRED
+    bulk_operations: REQUIRED
+    workforce_dependency: CONFIRMED_CONCEPTUAL_BOUNDARY
+    recommendation_dependency: CONFIRMED_CONCEPTUAL_BOUNDARY
+    smart_waitlist: CONDITIONAL_CONSUMER
+  boundary_decision: NONE
+```
+
+### Cross-Product Difference
+
+BabyCare currently proves this operational shape:
+
+```text
+KTV leave
+  -> find affected sessions
+  -> update completed_by_ktv_id
+  -> write note / notification
+  -> continue session
+```
+
+Haircut requires a deeper assignment lifecycle:
+
+```text
+Stylist A ACCEPTED
+  -> A sick / no-show / unavailable
+  -> Assignment A = DISRUPTED
+  -> preserve reason, actor, timestamp, and history
+  -> recommend B/C/D
+  -> Assignment B = PROPOSED
+  -> ACCEPTED or REJECTED
+```
+
+This means Haircut should not copy a simple mutation model such as:
+
+```sql
+UPDATE appointment
+SET stylist_id = B;
+```
+
+or even only:
+
+```sql
+UPDATE session
+SET professional_id = B;
+```
+
+Those shapes would destroy the dispatch trail required by Q2, Q3, Q4, and UC3.
+
+### Waitlist Role
+
+Smart Waitlist does not own reassignment. It participates only when the product cannot produce a feasible replacement or alternative time and the customer accepts waiting.
+
+```text
+Stylist A unavailable
+  -> replacement available?
+     -> yes: reassign
+     -> no: offer different time
+        -> no feasible/accepted time: Smart Waitlist or customer contact
+```
+
+### Boundary Signal
+
+UC3 adds very strong evidence that Professional Assignment has an independent reassignment lifecycle:
+
+- Staff absence belongs to Workforce/Attendance.
+- Affected assignment discovery and disruption belong to Professional Assignment.
+- Replacement ranking belongs to Professional Recommendation.
+- Appointment remains preserved unless the customer or business policy cancels it.
+- Smart Waitlist is a conditional consumer, not the reassignment owner.
+
+This is still not `VALIDATED_SEPARATE`. UC4 must test whether professional conflict is based on full appointment duration or active professional segments.
+
+---
+
 ## Pending Questions
 
 ### Professional Assignment Group Status
@@ -492,12 +698,20 @@ professional_assignment:
   Q2_assignment_history: required
   Q3_acceptance_rejection: controlled_rejection
   Q4_staff_no_show_impact: tracked
+  UC1:
+    independent_lifecycle: STRONG_EVIDENCE
+  UC2:
+    assignment_owned_conflict: STRONG_EVIDENCE
+  UC3:
+    reassignment_lifecycle: VERY_STRONG_EVIDENCE
+    durable_history: REQUIRED
+    bulk_operation: REQUIRED
   combined_signal: VERY_STRONG_SEPARATE_SIGNAL
   evidence_strength: PROPOSED_BY_PRODUCT
   boundary_decision: NONE
 ```
 
-Q1-Q4 form a strong product requirement signal that Professional Assignment is more than a simple appointment `stylist_id`. The next step is not contract design; it is UC1-UC4 walkthrough to test whether these requirements form a coherent workflow.
+Q1-Q4 and UC1-UC3 form a very strong product requirement signal that Professional Assignment is more than a simple appointment `stylist_id`. The next step is not contract design; it is UC4 walkthrough to test active professional segments and double-booking semantics.
 
 ### Q5-Q12 — Resource Allocation and Recommendation
 
@@ -505,7 +719,7 @@ Q5-Q12 remain unanswered.
 
 ### UC3-UC6 — Use Case Walkthroughs
 
-UC1 and UC2 are recorded. UC3 was paused for a narrow BabyCare assignment audit.
+UC1, UC2, and UC3 are recorded. UC3 used the narrow BabyCare assignment audit and the four-path BabyCare capability reconciliation as cross-product evidence, without copying BabyCare storage or claiming final boundary.
 
 BabyCare audit result:
 
@@ -530,4 +744,4 @@ babycare_capability_reconciliation:
   contract_inventory_change_allowed: false
 ```
 
-UC3 should resume as a reconciliation use case: compare Haircut stylist unavailability with BabyCare leave-driven session reassignment, without copying BabyCare storage or claiming final boundary.
+UC4 should validate `Active Professional Segments`: whether professional double-booking checks should cover the whole appointment duration or only the time windows where the stylist is actively required.
