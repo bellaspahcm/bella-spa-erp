@@ -92,10 +92,15 @@ CREATE TABLE IF NOT EXISTS beauty_resource_allocation_history (
   occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- zero-downtime: allow blocking-index - new Beauty OS tables, no production data exists
 CREATE INDEX IF NOT EXISTS idx_beauty_appointments_tenant_time ON beauty_appointments(tenant_id, starts_at, ends_at);
+-- zero-downtime: allow blocking-index - new Beauty OS tables, no production data exists
 CREATE INDEX IF NOT EXISTS idx_beauty_sessions_tenant_appointment ON beauty_sessions(tenant_id, appointment_id);
+-- zero-downtime: allow blocking-index - new Beauty OS tables, no production data exists
 CREATE INDEX IF NOT EXISTS idx_beauty_assignments_tenant_commitment ON beauty_professional_assignments(tenant_id, service_commitment_id, status);
+-- zero-downtime: allow blocking-index - new Beauty OS tables, no production data exists
 CREATE INDEX IF NOT EXISTS idx_beauty_allocations_tenant_resource_time ON beauty_resource_allocations(tenant_id, resource_id, starts_at, ends_at);
+-- zero-downtime: allow blocking-index - new Beauty OS tables, no production data exists
 CREATE INDEX IF NOT EXISTS idx_beauty_allocations_tenant_segment ON beauty_resource_allocations(tenant_id, service_commitment_id, segment_id);
 
 ALTER TABLE beauty_appointments ENABLE ROW LEVEL SECURITY;
