@@ -1,9 +1,8 @@
 # BELLA HAIRCUT — DEVELOPMENT PHASE COMPLETE
 
-**Status:** COMPLETE  
-**Final Commit:** c74d5085  
-**Completion Date:** 2026-09-16  
-**Duration:** H3 through H9 (architectural investment phase)
+**Final commit:** 10a8cf36  
+**Branch:** feat/haircut-h2-contract-extraction (synced)  
+**Status:** COMPLETE
 
 ---
 
@@ -47,8 +46,8 @@ Bella Haircut development complete with **H9 CLOSED @ 0cf39443**.
 **Application Layer (src/platform/beauty/application/):**
 - ✅ Haircut adapter implements 6 contracts
 - ✅ Service layer coordinates workflow
-- ✅ Persistence via existing tables (bookings, session_logs, booking_resources, waitlist)
-- ✅ No custom tables introduced
+- ✅ Persistence via 6 dedicated Beauty OS tables + extended packages/waitlist
+- ✅ Professional assignment + resource allocation patterns proven
 
 **Evidence:**
 - Application tests: 19/19 PASS
@@ -60,18 +59,25 @@ Bella Haircut development complete with **H9 CLOSED @ 0cf39443**.
 
 ---
 
-### Database Schema — ADDITIVE ONLY
+### Database Schema — BEAUTY OS DEDICATED PERSISTENCE
 
-**No custom Haircut tables.** Reused platform tables:
-- `bookings` — appointments
-- `packages` — service catalog (with `module_key = 'beauty_spa'`)
-- `booking_resources` — stylists as bookable resources
-- `session_logs` — session execution records
-- `waitlist` — capacity overflow management
-- `timeline_events` — audit trail
+**H8 Migration created 6 new Beauty OS tables** (additive only, no ALTER/DROP):
 
-**Migration:** Additive only (no ALTER, no DROP)  
-**RLS:** Enforced via `tenant_id` + `enabled_modules.beauty_spa`
+**Dedicated Build:**
+- `beauty_appointments` — appointment lifecycle (replaces bookings for Beauty)
+- `beauty_sessions` — session execution + actual performer tracking
+- `beauty_professional_assignments` — professional assignment + reassignment
+- `beauty_resource_allocations` — resource capacity management + conflict detection
+- `beauty_professional_assignment_history` — immutable assignment history
+- `beauty_resource_allocation_history` — immutable allocation history
+
+**Extend/Adapt:**
+- `packages` — service catalog extended with Beauty metadata (`module_key = 'beauty_spa'`)
+- `waitlist` — temporal queue extended with Beauty policy
+
+**Migration:** Additive only (no ALTER, no DROP on existing tables)  
+**RLS:** Enforced via `tenant_id` + tenant isolation policies  
+**Constraints:** Lifecycle transitions, history immutability, capacity conflict blocking
 
 ---
 
@@ -90,16 +96,27 @@ Bella Haircut development complete with **H9 CLOSED @ 0cf39443**.
 **Outcome:** IAppointment, IServiceCatalog, IAssignment, IAllocation, IWaitlist, ISession frozen
 
 ### H6: Persistence Mapping
-**Goal:** Map contracts to existing tables without schema changes  
-**Outcome:** Additive-only migration, RLS-enforced isolation
+**Goal:** Map contracts to durable/derived facts, ownership, canonical source of truth  
+**Outcome:** 
+- Appointment, Session, Professional Assignment, Resource Allocation → DEDICATED_BUILD
+- Service Catalog, Waitlist → EXTEND_ADAPT  
+- Actual performer canonical source: SESSION_TRACKING (single source of truth)
+- History immutability patterns defined
 
-### H7: Implementation Patterns
-**Goal:** Establish adapter + service patterns for product integration  
-**Outcome:** Haircut adapter implements all 6 contracts cleanly
+### H7: Schema Design (Logical)
+**Goal:** Define logical persistence model without creating migrations  
+**Outcome:**
+- 6 Beauty OS tables specified (appointments, sessions, assignments, allocations, + 2 history)
+- RLS boundaries, constraints, indexes defined
+- Legacy compatibility strategy (BabyCare tables remain separate)
 
-### H8: Runtime Verification
-**Goal:** Prove contracts work with real database  
-**Outcome:** Migration executed, runtime queries verified, disruption/recovery tested
+### H8: Runtime Verification + Migration Execution
+**Goal:** Create migration files, execute on DB, prove runtime correctness  
+**Outcome:**
+- Migration `20260916000000_beauty_os_h8_persistence.sql` created
+- 6 Beauty OS tables created with RLS policies
+- Runtime queries verified on controlled baseline
+- Disruption/recovery workflow tested
 
 ### H9: Integration & Regression
 **Goal:** End-to-end workflow + tenant isolation + no BabyCare disruption  
@@ -124,26 +141,37 @@ Bella Haircut development complete with **H9 CLOSED @ 0cf39443**.
 
 ---
 
-## FACTORY RULE — MARGINAL COST REDUCTION
+## FACTORY RULE — MARGINAL COST HYPOTHESIS
 
 **Document:** `BEAUTY_FACTORY_RULE.md` (commit c74d5085)
 
 **Principle:**
 ```
 HAIRCUT = XÂY KHUÔN (architecture cost unavoidable)
-NAIL / MASSAGE / FACIAL = DÙNG KHUÔN (marginal cost reduction 70-80%)
+NAIL / MASSAGE / FACIAL = DÙNG KHUÔN (marginal cost should reduce)
 ```
 
-**Nail development path:**
+**Hypothesis for Nail (NOT YET PROVEN):**
 1. Delta analysis (1-2 days) — what's different from Haircut?
-2. Reuse verification (2-3 days) — can 6 contracts accommodate Nail?
-3. Product skeleton generation (3-5 days) — copy Haircut template, apply deltas
+2. Reuse verification (2-3 days) — can 6 contracts + 6 tables accommodate Nail?
+3. Product skeleton generation (3-5 days) — extend Beauty OS, apply deltas
 4. Integration test + E2E (2-3 days) — reuse test patterns
-5. Deployment (1-2 days) — reuse migration patterns
+5. Deployment (1-2 days) — extend migration
 
-**Total: 9-15 days for Nail (vs 6+ weeks for Haircut)**
+**Target: 9-15 days for Nail (vs H3-H9 duration for Haircut)**
 
-**This is the entire purpose of platform investment.**
+**This is HYPOTHESIS until Nail proves it.** Factory advantage exists only if:
+- Nail reuses >80% of Beauty OS artifacts
+- Nail introduces <5% new contracts/tables
+- Nail timeline < 30% of Haircut
+
+**Metrics to measure after Nail:**
+- Actual development days
+- % capability reuse
+- # ACRs raised
+- # new migrations
+- # new contracts
+- Lines of new code vs generated/reused
 
 ---
 
@@ -179,8 +207,10 @@ NAIL / MASSAGE / FACIAL = DÙNG KHUÔN (marginal cost reduction 70-80%)
 ## COMMIT TRAIL
 
 ```
-c74d5085 ← HEAD (Factory Rule)
-│          docs(factory): Beauty Factory Rule — marginal cost reduction
+10a8cf36 ← HEAD (Haircut Development Complete)
+│          docs(haircut): development phase COMPLETE
+│
+c74d5085   docs(factory): Beauty Factory Rule — marginal cost hypothesis
 │
 0cf39443   docs(haircut): H9 closure — integration/regression verified
 │
@@ -204,9 +234,20 @@ c74d5085 ← HEAD (Factory Rule)
 ## DECISION: WHAT'S NEXT?
 
 ### Option A: Nail Development (Recommended)
-**Goal:** Prove Factory Rule with 70-80% cost reduction  
-**Timeline:** 2-3 weeks (vs 6+ weeks Haircut)  
-**Evidence needed:** Nail ships faster using frozen Beauty OS
+**Goal:** TEST Factory Rule hypothesis with real implementation  
+**Timeline:** Target 2-3 weeks (to be measured against Haircut baseline)  
+**Evidence needed:** Prove marginal cost reduction through actual metrics
+
+**Success if:**
+- Nail development < 30% of Haircut H3-H9 time
+- Nail reuses > 80% of Beauty OS (6 contracts + 6 tables + patterns)
+- Nail raises < 2 ACRs for capability gaps
+- Nail introduces < 2 new contracts or core tables
+
+**Failure if:**
+- Nail requires H3-H9 re-investigation
+- Nail creates parallel governance
+- Marginal cost stays constant
 
 ### Option B: Production Deployment (Haircut)
 **Goal:** Deploy Haircut to production environment  
