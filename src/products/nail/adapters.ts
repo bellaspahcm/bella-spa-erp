@@ -83,9 +83,9 @@ export class NailServiceCatalogAdapter {
   private toNailDefinition(service: Service): NailServiceDefinition {
     // Extract nail-specific metadata from packages.metadata jsonb
     const metadata: NailServiceMetadata = {
-      polishOptions: service.metadata?.polish_options,
-      nailArtTypes: service.metadata?.nail_art_types,
-      requiresHealthCheck: service.metadata?.requires_health_check ?? false,
+      polishOptions: (service.metadata?.polish_options as { colors: string[]; brands: string[] } | undefined),
+      nailArtTypes: (service.metadata?.nail_art_types as string[] | undefined),
+      requiresHealthCheck: (service.metadata?.requires_health_check as boolean | undefined) ?? false,
     };
 
     return {

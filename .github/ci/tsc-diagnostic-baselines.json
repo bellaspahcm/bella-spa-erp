@@ -323,5 +323,11 @@
       "src/platform/org-unit/org-unit.repository.ts|TS2345|Argument of type '\"get_org_unit_descendants\"' is not assignable to parameter of type '\"acc_balance_at\" | \"accounting_missing_required_fields\" | \"add_partner_document\" | \"apply_rating_bonus\" | \"auto_confirm_stale_salary_records\" | \"backfill_accounting_metadata\" | ... 100 more ... | \"validate_api_partner\"'.": 1,
       "src/platform/org-unit/org-unit.repository.ts|TS2345|Argument of type '\"get_org_unit_hierarchy\"' is not assignable to parameter of type '\"acc_balance_at\" | \"accounting_missing_required_fields\" | \"add_partner_document\" | \"apply_rating_bonus\" | \"auto_confirm_stale_salary_records\" | \"backfill_accounting_metadata\" | ... 100 more ... | \"validate_api_partner\"'.": 1
     }
+  },
+  "beauty-affected": {
+    "reviewedAt": "2026-09-16",
+    "diagnostics": {},
+    "debtId": "NONE",
+    "owner": "Platform / Beauty OS"
   }
 }

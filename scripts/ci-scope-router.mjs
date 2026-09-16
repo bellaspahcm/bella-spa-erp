@@ -57,6 +57,17 @@ const OS_SCOPES = {
     ],
     affectedProducts: ['education_preschool', 'english_center'],
   },
+  beauty: {
+    label: 'Beauty OS',
+    patterns: [
+      /^src\/platform\/beauty\//,
+      /^src\/products\/nail\//,
+      /^src\/app\/dashboard\/nail\//,
+      /^tsconfig\.beauty\.json$/,
+      /^docs\/products\/(haircut|nail)\//,
+    ],
+    affectedProducts: [],
+  },
   healthcare: {
     label: 'Healthcare OS',
     patterns: [
