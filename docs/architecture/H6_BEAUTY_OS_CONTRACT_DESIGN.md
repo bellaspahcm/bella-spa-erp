@@ -1,0 +1,479 @@
+# H6 — Beauty OS Bounded Contract Design
+
+**Status:** FROZEN — business contract boundaries only
+**Parent checkpoint:** H5.7 Final Contract Inventory Closure (a41fb6af)
+**Scope:** Define the six retained business contracts and their dependency direction.
+**Explicit non-scope:** No TypeScript interface, DTO, database table, schema, migration, ORM mapping, UI, implementation, or cross-vertical research.
+
+## H6 Stop Rule
+
+~~~~yaml
+H6_STOP_RULE:
+  contract_boundary_matches_H5: true
+  commands_queries_defined: true
+  invariants_expressed: true
+  ownership_leak: false
+  dependency_direction_valid: true
+  legacy_storage_leak: false
+  then:
+    contract_status: FROZEN
+    stop_design: true
+  do_not_enter:
+    - DATABASE_TABLE_DESIGN
+    - MIGRATION
+    - ORM_MAPPING
+    - UI
+    - IMPLEMENTATION
+    - CROSS_VERTICAL_RESEARCH
+~~~~
+
+The contract below is a business boundary. A TypeScript interface may later realize it, but H6 does not decide the physical interface shape.
+
+## Dependency Topology
+
+~~~~text
+Service Catalog kernel
+        ↓ service definition / segment requirements
+Appointment
+        ├── Professional Assignment
+        ├── Resource Allocation
+        └── Session Tracking
+                 ↓ actual execution
+Waitlist consumes feasibility from Appointment, Assignment, and Resource Allocation
+
+Professional Recommendation remains Beauty policy, not a retained contract.
+Commission / Finance / Accounting consume actual operational facts.
+~~~~
+
+## 1. Appointment
+
+~~~~yaml
+appointment_contract:
+  owner: BEAUTY_OS
+  disposition: DEDICATED_BUILD
+  owns:
+    - CUSTOMER_SERVICE_COMMITMENT_IDENTITY
+    - SERVICE_REFERENCE
+    - REQUESTED_TIME_CONTEXT
+    - CUSTOMER_AND_BRANCH_CONTEXT
+    - APPOINTMENT_LIFECYCLE
+    - APPOINTMENT_LEVEL_FEASIBILITY
+    - RESCHEDULE_AND_CANCELLATION_FACTS
+  inputs:
+    - CUSTOMER_REQUEST
+    - SERVICE_REFERENCE
+    - BRANCH_OPERATING_POLICY
+  outputs:
+    - APPOINTMENT_CREATED
+    - APPOINTMENT_STATUS
+    - APPOINTMENT_FEASIBILITY
+    - APPOINTMENT_RESCHEDULED
+    - APPOINTMENT_CANCELLED
+  commands:
+    - CREATE_APPOINTMENT
+    - CONFIRM_APPOINTMENT
+    - RESCHEDULE_APPOINTMENT
+    - CANCEL_APPOINTMENT
+  queries:
+    - GET_APPOINTMENT
+    - CHECK_APPOINTMENT_FEASIBILITY
+    - LIST_APPOINTMENTS_BY_TIME
+  invariants:
+    - CUSTOMER_AND_TENANT_CONTEXT_REQUIRED
+    - SERVICE_REFERENCE_REQUIRED
+    - VALID_TIME_CONTEXT_REQUIRED
+    - LIFECYCLE_TRANSITIONS_ARE_VALID
+    - RESCHEDULE_DOES_NOT_SILENTLY_OVERWRITE_HISTORY
+  business_errors:
+    - INVALID_APPOINTMENT_STATE
+    - SERVICE_NOT_BOOKABLE
+    - INVALID_TIME_CONTEXT
+    - APPOINTMENT_CONFLICT
+  depends_on:
+    - SERVICE_CATALOG
+    - BRANCH_OPERATING_POLICY
+  does_not_own:
+    - PROFESSIONAL_ASSIGNMENT
+    - RESOURCE_ALLOCATION
+    - SERVICE_EXECUTION
+    - WAITLIST_POSITION
+~~~~
+
+## 2. Session Tracking
+
+~~~~yaml
+session_tracking_contract:
+  owner: BEAUTY_OS
+  disposition: DEDICATED_BUILD
+  owns:
+    - EXECUTION_SESSION_IDENTITY
+    - APPOINTMENT_OR_COMMITMENT_REFERENCE
+    - EXECUTION_LIFECYCLE
+    - ACTUAL_START_AND_END
+    - ACTUAL_PERFORMER_REFERENCE
+    - SERVICE_OUTCOME
+    - EXECUTION_NOTES_AND_RESULT
+  inputs:
+    - APPOINTMENT_REFERENCE
+    - SERVICE_COMMITMENT
+    - PROFESSIONAL_ASSIGNMENT_REFERENCE
+    - RESOURCE_ALLOCATION_REFERENCE
+  outputs:
+    - SESSION_CREATED
+    - SESSION_STARTED
+    - SESSION_COMPLETED
+    - SESSION_CANCELLED
+    - ACTUAL_PERFORMER
+    - ACTUAL_SERVICE_OUTCOME
+  commands:
+    - CREATE_SESSION
+    - START_SESSION
+    - COMPLETE_SESSION
+    - CANCEL_SESSION
+    - RECORD_EXECUTION_OUTCOME
+  queries:
+    - GET_SESSION
+    - GET_EXECUTION_STATUS
+    - GET_ACTUAL_PERFORMER
+    - GET_SERVICE_OUTCOME
+  invariants:
+    - EXECUTION_REFERENCE_REQUIRED
+    - EXECUTION_LIFECYCLE_TRANSITIONS_ARE_VALID
+    - ACTUAL_TIMES_ARE_ORDERED
+    - ACTUAL_PERFORMER_IS_NOT_INVENTED_FROM_ASSIGNMENT
+    - COMPLETION_REQUIRES_VALID_EXECUTION_STATE
+  business_errors:
+    - INVALID_SESSION_STATE
+    - SESSION_REFERENCE_NOT_FOUND
+    - INVALID_EXECUTION_TIME
+    - COMPLETION_NOT_ALLOWED
+  depends_on:
+    - APPOINTMENT
+    - PROFESSIONAL_ASSIGNMENT
+    - RESOURCE_ALLOCATION
+  does_not_own:
+    - APPOINTMENT_LIFECYCLE
+    - PROFESSIONAL_ASSIGNMENT
+    - RESOURCE_ALLOCATION
+    - COMMISSION_CALCULATION
+~~~~
+
+## 3. Professional Assignment
+
+~~~~yaml
+professional_assignment_contract:
+  owner: BEAUTY_OS
+  disposition: DEDICATED_BUILD
+  owns:
+    - ASSIGNMENT_IDENTITY
+    - PROFESSIONAL_TO_SERVICE_COMMITMENT
+    - ASSIGNMENT_LIFECYCLE
+    - ACCEPT_REJECT_DECISION
+    - DISRUPTION
+    - REASSIGNMENT
+    - ASSIGNMENT_HISTORY
+    - ACTUAL_PERFORMER_RELATIONSHIP
+    - PROFESSIONAL_CONFLICT
+  inputs:
+    - SERVICE_COMMITMENT
+    - PROFESSIONAL_ELIGIBILITY
+    - PROFESSIONAL_AVAILABILITY
+    - WORKFORCE_UNAVAILABLE_EVENT
+  outputs:
+    - ASSIGNMENT_PROPOSED
+    - ASSIGNMENT_ACCEPTED
+    - ASSIGNMENT_REJECTED
+    - ASSIGNMENT_DISRUPTED
+    - REPLACEMENT_ASSIGNMENT_CREATED
+    - ASSIGNMENT_HISTORY
+    - ASSIGNMENT_CONFLICT
+  commands:
+    - PROPOSE_ASSIGNMENT
+    - ACCEPT_ASSIGNMENT
+    - REJECT_ASSIGNMENT
+    - DISRUPT_ASSIGNMENT
+    - REASSIGN_PROFESSIONAL
+  queries:
+    - GET_CURRENT_ASSIGNMENT
+    - GET_ASSIGNMENT_HISTORY
+    - FIND_AFFECTED_ASSIGNMENTS
+    - CHECK_PROFESSIONAL_CONFLICT
+  invariants:
+    - ORIGINAL_ASSIGNMENT_IS_NOT_ERASED
+    - REJECTION_REQUIRES_REASON
+    - DISRUPTION_REQUIRES_REASON_AND_ACTOR
+    - REPLACEMENT_LINK_IS_PRESERVED
+    - PROFESSIONAL_CONFLICT_IS_HARD_FOR_ACTIVE_OVERLAP
+    - ACTUAL_PERFORMER_IS_DERIVED_FROM_EXECUTION_FACT
+  business_errors:
+    - PROFESSIONAL_NOT_ELIGIBLE
+    - ASSIGNMENT_CONFLICT
+    - INVALID_ASSIGNMENT_STATE
+    - REJECTION_REASON_REQUIRED
+    - NO_FEASIBLE_PROFESSIONAL
+  depends_on:
+    - APPOINTMENT
+    - WORKFORCE_ATTENDANCE
+    - PROFESSIONAL_RECOMMENDATION_POLICY
+  does_not_own:
+    - WORKFORCE_ATTENDANCE_FACT
+    - APPOINTMENT_LIFECYCLE
+    - RESOURCE_ALLOCATION
+    - RECOMMENDATION_RANKING
+    - COMMISSION
+~~~~
+
+## 4. Resource Allocation
+
+~~~~yaml
+resource_allocation_contract:
+  owner: BEAUTY_OS
+  disposition: DEDICATED_BUILD
+  owns:
+    - ALLOCATION_IDENTITY
+    - SEGMENT_RESOURCE_COMMITMENT
+    - TEMPORAL_INTERVAL
+    - CAPACITY_CONSUMPTION
+    - CAPACITY_CONFLICT
+    - REALLOCATION
+    - ALLOCATION_HISTORY
+    - ACTUAL_RESOURCE_USED
+    - AFFECTED_ALLOCATION_DISCOVERY
+  inputs:
+    - SERVICE_SEGMENT_FLOW
+    - RESOURCE_TYPE_REQUIREMENT
+    - RESOURCE_COMPATIBILITY_RULE
+    - RESOURCE_AVAILABLE
+    - RESOURCE_UNAVAILABLE_EVENT
+    - SERVICE_COMMITMENT
+    - REQUESTED_TIME_CONTEXT
+  outputs:
+    - ALLOCATION_RESULT
+    - ALLOCATION_FEASIBILITY
+    - RESOURCE_CONFLICT
+    - AFFECTED_ALLOCATIONS
+    - REALLOCATION_FACT
+    - DURABLE_ALLOCATION_HISTORY
+    - ACTUAL_RESOURCE_USAGE
+  commands:
+    - CREATE_ALLOCATION
+    - RELEASE_ALLOCATION
+    - REALLOCATE_RESOURCE
+    - RECORD_ACTUAL_RESOURCE_USED
+    - RESOLVE_RESOURCE_DISRUPTION
+  queries:
+    - GET_ALLOCATION
+    - CHECK_SEGMENT_FEASIBILITY
+    - FIND_RESOURCE_CONFLICT
+    - FIND_AFFECTED_ALLOCATIONS
+    - GET_ALLOCATION_HISTORY
+  invariants:
+    - ALLOCATION_HAS_SERVICE_SEGMENT_AND_RESOURCE
+    - INTERVALS_USE_VALID_ORDERED_TIME
+    - CAPACITY_CONSUMPTION_CANNOT_EXCEED_CAPACITY
+    - EXCLUSIVE_OVERLAP_IS_HARD_CONFLICT
+    - ORIGINAL_ALLOCATION_IS_NOT_ERASED
+    - REALLOCATION_PRESERVES_REASON_ACTOR_AND_TIME
+    - UNAVAILABLE_RESOURCE_CANNOT_RECEIVE_NEW_ALLOCATION
+  business_errors:
+    - RESOURCE_NOT_COMPATIBLE
+    - RESOURCE_UNAVAILABLE
+    - RESOURCE_CAPACITY_CONFLICT
+    - INVALID_ALLOCATION_INTERVAL
+    - ALLOCATION_NOT_FOUND
+    - NO_FEASIBLE_RESOURCE
+  depends_on:
+    - SERVICE_CATALOG
+    - APPOINTMENT
+    - RESOURCE_AVAILABILITY_MAINTENANCE
+  does_not_own:
+    - RESOURCE_MASTER
+    - RESOURCE_MAINTENANCE
+    - APPOINTMENT_LIFECYCLE
+    - PROFESSIONAL_ASSIGNMENT
+    - WAITLIST
+    - FINANCE
+~~~~
+
+## 5. Service Catalog
+
+~~~~yaml
+service_catalog_contract:
+  owner: PLATFORM_KERNEL_PLUS_BEAUTY_EXTENSION
+  disposition: EXTEND_ADAPT
+  kernel_owns:
+    - SERVICE_IDENTITY
+    - SERVICE_DEFINITION
+    - SERVICE_DURATION
+    - SERVICE_CLASSIFICATION
+    - BRANCH_AVAILABILITY
+    - REQUIRED_CAPABILITY_REFERENCE
+    - SERVICE_LIFECYCLE
+  beauty_extension_owns:
+    - BEAUTY_PRICING_POLICY
+    - BEAUTY_SERVICE_PRESENTATION
+    - BEAUTY_COMPENSATION_REFERENCE
+  inputs:
+    - SERVICE_CREATE_REQUEST
+    - BRANCH_POLICY
+    - BEAUTY_SERVICE_POLICY
+  outputs:
+    - SERVICE_DEFINED
+    - SERVICE_UPDATED
+    - SERVICE_ARCHIVED
+    - SERVICE_REQUIREMENTS
+    - SERVICE_AVAILABILITY
+  commands:
+    - DEFINE_SERVICE
+    - UPDATE_SERVICE
+    - ARCHIVE_SERVICE
+    - CONFIGURE_BEAUTY_SERVICE_POLICY
+  queries:
+    - GET_SERVICE
+    - GET_SERVICE_REQUIREMENTS
+    - CHECK_SERVICE_AVAILABILITY
+    - LIST_SERVICES
+  invariants:
+    - SERVICE_IDENTITY_IS_TENANT_SCOPED
+    - ACTIVE_SERVICE_HAS_VALID_DURATION
+    - SERVICE_REQUIREMENTS_ARE_EXPLICIT
+    - ARCHIVED_SERVICE_IS_NOT_BOOKABLE
+    - BEAUTY_COMPENSATION_REFERENCE_DOES_NOT_BECOME_COMMISSION_TRUTH
+  business_errors:
+    - SERVICE_NOT_FOUND
+    - INVALID_SERVICE_DEFINITION
+    - SERVICE_NOT_AVAILABLE_AT_BRANCH
+    - SERVICE_ALREADY_ARCHIVED
+  depends_on:
+    - TENANT_AND_BRANCH_CONTEXT
+  does_not_own:
+    - RESOURCE_ALLOCATION
+    - PROFESSIONAL_ASSIGNMENT
+    - COMMISSION_CALCULATION
+    - PAYMENT
+    - ACCOUNTING
+~~~~
+
+## 6. Waitlist
+
+~~~~yaml
+waitlist_contract:
+  owner: PLATFORM_TEMPORAL_PLUS_BEAUTY_POLICY
+  disposition: EXTEND_ADAPT
+  kernel_owns:
+    - WAITLIST_ENTRY_IDENTITY
+    - QUEUE_STATUS_LIFECYCLE
+    - POSITION_OR_ORDER
+    - PREFERRED_TIME_CONTEXT
+    - SLOT_RESERVATION_OR_CONVERSION
+    - EXPIRY_AND_CANCELLATION
+  beauty_policy_owns:
+    - BEAUTY_QUEUE_PRIORITY_POLICY
+    - PROFESSIONAL_PREFERENCE_POLICY
+    - RESOURCE_FEASIBILITY_POLICY
+  inputs:
+    - CUSTOMER_WAIT_REQUEST
+    - SERVICE_REFERENCE
+    - PREFERRED_TIME_CONTEXT
+    - FEASIBILITY_RESULT
+    - BEAUTY_QUEUE_POLICY
+  outputs:
+    - WAITLIST_ENTRY_CREATED
+    - WAITLIST_POSITION
+    - CUSTOMER_NOTIFIED
+    - SLOT_RESERVED
+    - ENTRY_CONVERTED
+    - ENTRY_CANCELLED_OR_EXPIRED
+  commands:
+    - ADD_TO_WAITLIST
+    - NOTIFY_WAITLIST_ENTRY
+    - RESERVE_WAITLIST_SLOT
+    - CONVERT_WAITLIST_ENTRY
+    - CANCEL_WAITLIST_ENTRY
+    - EXPIRE_WAITLIST_ENTRY
+  queries:
+    - GET_WAITLIST_ENTRY
+    - LIST_WAITLIST_BY_SERVICE_AND_TIME
+    - GET_QUEUE_POSITION
+    - FIND_ELIGIBLE_WAITLIST_ENTRIES
+  invariants:
+    - ENTRY_IS_TENANT_SCOPED
+    - ACTIVE_ENTRY_HAS_VALID_SERVICE_AND_TIME
+    - STATUS_TRANSITIONS_ARE_VALID
+    - POSITION_OR_ORDER_IS_UNAMBIGUOUS
+    - CONVERSION_REFERENCES_A_VALID_APPOINTMENT
+    - POLICY_CANNOT_OVERRIDE_APPOINTMENT_OR_RESOURCE_FEASIBILITY
+  business_errors:
+    - DUPLICATE_ACTIVE_ENTRY
+    - INVALID_WAITLIST_STATE
+    - NO_FEASIBLE_SLOT
+    - RESERVATION_EXPIRED
+    - CONVERSION_NOT_ALLOWED
+  depends_on:
+    - SERVICE_CATALOG
+    - APPOINTMENT
+    - PROFESSIONAL_ASSIGNMENT
+    - RESOURCE_ALLOCATION
+  does_not_own:
+    - APPOINTMENT_LIFECYCLE
+    - PROFESSIONAL_ASSIGNMENT
+    - RESOURCE_ALLOCATION
+    - RECOMMENDATION_RANKING_TRUTH
+    - CUSTOMER_NOTIFICATION_TRANSPORT
+~~~~
+
+## Dependency Direction Check
+
+~~~~yaml
+dependency_direction:
+  service_catalog_to_appointment: VALID
+  appointment_to_assignment: VALID
+  appointment_to_resource_allocation: VALID
+  assignment_to_workforce: VALID
+  resource_allocation_to_availability: VALID
+  waitlist_to_feasibility_consumers: VALID
+  commission_to_actual_operational_facts: DOWNSTREAM_ONLY
+  finance_to_assignment_or_allocation_truth: FORBIDDEN
+  legacy_storage_to_contract_shape: FORBIDDEN
+  ownership_leaks: NONE
+~~~~
+
+## H6 Result
+
+~~~~yaml
+H6_result:
+  contract_boundaries_from_H5: PRESERVED
+  contracts_designed: 6
+  dedicated_build:
+    - APPOINTMENT
+    - SESSION_TRACKING
+    - PROFESSIONAL_ASSIGNMENT
+    - RESOURCE_ALLOCATION
+  extend_adapt:
+    - SERVICE_CATALOG
+    - WAITLIST
+  absorbed:
+    - SERVICE_HISTORY
+    - DOMAIN_EVENTS
+  commands_queries_defined: true
+  invariants_expressed: true
+  ownership_leak: false
+  dependency_direction_valid: true
+  legacy_storage_leak: false
+  contract_status: FROZEN
+  schema_design_authorized: false
+  migration_design_authorized: false
+  implementation_authorized: false
+~~~~
+
+H6 freezes business contract boundaries only. The next phase may investigate persistence mapping, but it must not reinterpret the six contracts through existing tables or create schema by copying legacy storage.
+
+## Next Gate
+
+~~~~text
+H6 Contract Design                    COMPLETE / FROZEN
+             ↓
+H7 Persistence / Schema Design        NEXT
+             ↓
+H8 Implementation                     GATED
+~~~~
