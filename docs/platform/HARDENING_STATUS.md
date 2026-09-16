@@ -212,49 +212,140 @@ Overall: ████░░░░░░░░░░ 30%
 
 ---
 
-## **Next Actions (Prioritized)**
+## **Next Actions (REVISED PRIORITY)**
 
-### **Immediate (This Session)**
+**Strategic Principle:** Prove living system stable BEFORE cleaning history.
 
-1. **P0-M2: Manual Migration Classification**
-   - Review P0_M1_MIGRATION_CENSUS.csv
-   - Classify 446 migrations as A/B/C/D
-   - Determine clean-build blockers
-   - Decision gate: Repair vs Baseline vs Hybrid
+### **IMMEDIATE PRIORITY: P2-R1.2 (Regression Census)**
 
-2. **P2-R1.2: Run BabyCare Regression Tests** (parallel)
-   - Execute selective module tests
-   - Record PASS/FAIL/SKIP/BLOCKED counts
-   - Resolve 321 = PASS + FAIL + SKIP + BLOCKED
+**Why First:**
+- Migration history affects NEW deployments/recovery
+- Regression affects CURRENT system stability
+- 289/321 PASS leaves 32 tests unclassified
+- Direct production impact assessment
 
-### **Short-Term (Next 1-2 Days)**
+**Action:**
+```bash
+# Financial (production-critical)
+npm test -- --testPathPattern="(accounting|salary|finance)" --verbose
 
-3. **P0-M3: Execute Decision**
-   - If Repair: Fix clean-build blockers sequentially
-   - If Baseline: Generate from E2E (requires Production verification)
-   - If Hybrid: Baseline + keep recent migrations
+# Booking Engine (production-critical)
+npm run test:booking-engine --verbose
 
-4. **P2-R1.3: Classify Failures**
-   - F1 (critical) → fix immediately
-   - F2-F5 → document + prioritize
+# Session/Customer (production-critical)
+npm test -- --testPathPattern="(session|customer)" --verbose
+```
 
-### **Medium-Term (Next Week)**
+**Goal:** Resolve 321 = PASS + FAIL + SKIP + BLOCKED  
+**Estimate:** 1-2 hours execution + classification
 
-5. **P0: Verify Clean-Build**
-   - Empty DB → migrations/baseline → current schema
-   - Structural equivalence test
-   - Success criteria achieved
+### **SECOND PRIORITY: P2-R1.3 → R2 (Fix Critical Failures)**
 
-6. **P2-R2/R3: Stabilization**
-   - Fix F1 to 0
-   - Fix or document F2
-   - Stabilize/skip F3-F5 with reasons
+**After R1.2 identifies failures:**
+1. Classify: F1 (critical) / F2 (feature) / F3 (flaky) / F4 (expected) / F5 (blocked)
+2. Fix F1 (critical) to 0 immediately
+3. Document F2-F5 with clear reasons
 
-### **Later (After P0 + P2 Stable)**
+**Goal:** BabyCare regression GREEN for production-critical paths  
+**Estimate:** 2-3 days (depends on F1 count)
 
-7. **P1-T1: TypeScript Census**
-8. **P1-T2/T3: Scoped Cleanup + Lock**
-9. **P3-C1/C2/C3: CI Scope Routing**
+### **THIRD PRIORITY: P1-T1 → T3 (TypeScript Governance)**
+
+**Why Before P0:**
+- Type safety affects CURRENT code quality
+- No-new-debt enforcement prevents future accumulation
+- Scoped cleanup (Platform + Active Products) manageable
+
+**Phases:**
+1. T1: Census (scope/type/age)
+2. T2: Classify (Priority 1-4)
+3. T3: Scoped cleanup + lock
+
+**Goal:** New code strict, Platform APIs clean, legacy documented  
+**Estimate:** 5-7 days
+
+### **FOURTH PRIORITY: P0-M2 REVISED (Active Schema Only)**
+
+**Strategic Change:** Do NOT classify all 446 migrations manually.
+
+**New Approach:**
+1. **Extract ACTIVE schema** (70 E2E tables)
+2. **Trace backwards:** Which migrations created/modified these tables?
+3. **Classify ONLY relevant migrations** (~100-150 files estimated)
+4. **Ignore historical:** 261 CREATE refs not in E2E stay archived as-is
+
+**Goal:** Harden ACTIVE schema path, not entire history  
+**Estimate:** 2-3 days (focused scope)
+
+### **FIFTH PRIORITY: P0-M3 (Active Schema Stabilization)**
+
+**Options:**
+- **Option A:** Baseline from E2E (current tables only)
+- **Option B:** Selective repair (fix migrations for 70 active tables)
+- **Option C:** Hybrid (baseline + keep recent migrations)
+
+**Goal:** Empty DB → ACTIVE schema reproducible  
+**Note:** Historical tables (dropped/renamed) stay in Git for forensics, not in active path
+
+### **SIXTH PRIORITY: P3-C1 → C3 (CI Scope Routing)**
+
+**After P1 + P2 stable:**
+- Scoped workflows prevent false cross-module blocks
+- Test execution faster (skip unrelated modules)
+
+**Estimate:** 3-5 days
+
+---
+
+## **REVISED SEQUENCE**
+
+```text
+Week 1:
+├─ P2-R1.2: BabyCare regression census (1-2 days)
+├─ P2-R1.3 → R2: Fix critical failures (2-3 days)
+└─ P1-T1: TypeScript census (parallel, 1 day)
+
+Week 2:
+├─ P1-T2 → T3: TypeScript scoped cleanup + lock (4-5 days)
+└─ P2-R3: Document remaining failures (parallel, 1-2 days)
+
+Week 3:
+├─ P0-M2: Active schema migration trace (2-3 days)
+├─ P0-M3: Active schema stabilization (2-3 days)
+└─ P3-C1: CI census (parallel, 1 day)
+
+Week 4:
+├─ P3-C2 → C3: CI scope routing (2-3 days)
+└─ Integration verification + documentation (2 days)
+```
+
+**Rationale:** Living system (P2 regression + P1 types) stabilized Week 1-2, then infrastructure (P0 migration + P3 CI) hardened Week 3-4.
+
+---
+
+## **P0 Approach Change**
+
+**OLD (rejected):** Manual classification of all 446 migrations
+
+**NEW (approved):**
+
+```text
+ACTIVE SCHEMA (70 tables in E2E)
+        ↓
+Trace relevant migrations
+        ↓
+~100-150 migrations relevant
+        ↓
+Classify + stabilize ONLY these
+        ↓
+Historical 261 refs → archived in Git, not active path
+```
+
+**Benefits:**
+- Focus on operational value
+- Avoid "Git archaeology" time sink
+- Historical evidence preserved but not blocking
+- Faster to Factory reopening
 
 ---
 

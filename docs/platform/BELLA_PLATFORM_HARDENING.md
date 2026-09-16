@@ -508,15 +508,14 @@ P3 (CI Routing)  ← Scoped tests need clean type boundaries
 ```
 
 **Recommended Sequence:**
-1. **P0 Phase M1** (Migration Census) - 2 days
-2. **P2 Phase R1** (Regression Census) - 2 days (parallel with M1)
-3. **P0 Phase M2-M3** (Migration Decision + Fix) - 5-10 days
-4. **P1 Phase T1-T2** (TypeScript Census + Classify) - 3 days
-5. **P2 Phase R2-R3** (Regression Fix + Document) - 5 days
-6. **P1 Phase T3** (TypeScript Lock) - 3 days
-7. **P3 Phase C1-C3** (CI Routing) - 3 days
+1. **P2-R1 → R3** (Regression census + stabilization) — 1-2 weeks
+2. **P1-T1 → T3** (TypeScript census + governance) — 1 week (parallel with P2-R3)
+3. **P0-M2 → M3** (Active schema only, not full 446 migrations) — 3-5 days
+4. **P3-C1 → C3** (CI routing) — 3 days
 
-**Total Estimated Duration:** 4-5 weeks (with parallelization)
+**Total Estimated Duration:** 3-4 weeks (with parallelization)
+
+**Strategic Rationale:** Stabilize living system (P2+P1) BEFORE hardening deployment infrastructure (P0+P3).
 
 ---
 

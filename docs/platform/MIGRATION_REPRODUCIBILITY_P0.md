@@ -24,7 +24,70 @@ See: `docs/platform/BELLA_PLATFORM_HARDENING.md` for full 4-workstream strategy.
 
 ---
 
-## **Phase M1: Migration Census (NEXT STEP)**
+## **Phase M1: Migration Census ✅ COMPLETE**
+
+**Census Executed:** 2026-09-16  
+**Results:** 446/459 migrations parsed
+
+**Key Findings:**
+- Ownership: 68.6% Legacy/Unknown (306 migrations)
+- 53 placeholder migrations (11.9% - local/remote drift)
+- Actions: ALTER (204), UPDATE (201), CREATE TABLE (144)
+- Top modified: tenants (17x), session_logs (12x), revenue (10x)
+
+**Deliverables:**
+- P0_M1_MIGRATION_CENSUS.csv (full matrix)
+- P0_M1_CENSUS_OUTPUT.txt (console output)
+- Tooling: `npm run census:migrations`
+
+---
+
+## **Phase M2: Active Schema Classification (REVISED APPROACH)**
+
+**Strategic Change:** Do NOT manually classify all 446 migrations.
+
+**Old Approach (Rejected):** Review 446 migrations → A/B/C/D classification
+
+**New Approach (Approved):**
+
+```text
+Step 1: Extract ACTIVE schema
+├─ 70 tables currently in E2E
+└─ These are the tables that MUST work
+
+Step 2: Trace backwards
+├─ Which migrations created these 70 tables?
+├─ Which migrations modified these 70 tables?
+└─ Estimated: ~100-150 relevant migrations (not 446)
+
+Step 3: Classify ONLY relevant migrations
+├─ Category A: Creates/modifies active table (must preserve)
+├─ Category C: References active table but broken (must fix)
+└─ Historical: 261 CREATE refs not in E2E → archive as-is
+
+Step 4: Ignore archaeology
+├─ Historical tables (dropped/renamed) stay in Git
+├─ Placeholder migrations stay documented
+└─ Focus: operational value, not perfect history
+```
+
+**Rationale:**
+- Living system stability > perfect Git history
+- 70 active tables >> 446 historical references
+- Avoid "Git archaeology" time sink
+- Historical evidence preserved but not blocking
+
+**Decision Gate After M2:** 
+- **Baseline** from 70 active tables (E2E) — clean start
+- **Selective Repair** ~100-150 relevant migrations only
+- **Hybrid** baseline + recent migrations (6 months)
+
+**Priority:** FOURTH (after P2-R1/R2 and P1-T1/T3)  
+**Rationale:** Living system (regression + types) first, history second
+
+---
+
+## **Phase M1: Migration Census (PREVIOUS - COMPLETED)**
 
 **Objective:** Classify all 458 migrations before deciding repair strategy.
 
