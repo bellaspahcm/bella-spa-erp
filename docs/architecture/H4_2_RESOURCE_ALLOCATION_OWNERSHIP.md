@@ -1099,6 +1099,91 @@ Pass E does not authorize a Platform verdict. Healthcare is the strongest non-Be
 
 ---
 
+## Pass F — Semantic Divergence and Ownership Resolution
+
+Pass F reconciles the frozen Haircut semantics, BabyCare mapping, Nail projection, producer/consumer test, and cross-vertical probe. The question is ownership layer, not whether every vertical has the same implementation maturity.
+
+```yaml
+H4_2_pass_F:
+  independent_capability: PROVEN
+
+  haircut_product_test:
+    capability_required_by_haircut: true
+    independent_capability: true
+    equivalent_beauty_semantics_exist_elsewhere: true
+    haircut_specific_semantic_break: false
+    result: REJECTED
+    rationale: "Haircut needs the capability, but BabyCare has strong partial semantic overlap and no material within-Beauty break. Haircut's greater maturity requirement is an extension, not Haircut-only meaning."
+
+  beauty_os_test:
+    stable_beauty_semantics: true
+    beauty_products_with_evidence:
+      haircut: PRODUCT_VALIDATED
+      babycare: STRONG_PARTIAL_IMPLEMENTATION_EVIDENCE
+      nail: PROJECTION_ONLY
+    semantic_kernel:
+      - RESOURCE_IDENTITY
+      - AVAILABILITY_CONSTRAINT
+      - FINITE_CAPACITY
+      - CAPACITY_CONFLICT
+      - RESOURCE_COMMITMENT
+    variations:
+      - "Haircut requires service-segment commitments, resource pools, and mature reallocation/history workflows."
+      - "BabyCare currently proves a narrower session/resource conflict path."
+      - "Nail remains a plausibility projection, not implementation evidence."
+    within_beauty_semantic_break: false
+    result: PROVEN
+    rationale: "The common business meaning survives between Haircut and BabyCare; the observed differences are maturity and policy variations, not a semantic break. Nail adds supporting generality only."
+
+  platform_test:
+    cross_vertical_pattern_exists: true
+    stable_commitment_semantics: false
+    material_semantic_divergence: true
+    cross_vertical_signal: WEAK_TO_MODERATE
+    platform_candidate: PLAUSIBLE_BUT_UNPROVEN
+    result: NOT_PROVEN
+    rationale: "Healthcare has the strongest non-Beauty match, but Education's capacity/assignment constraints and Logistics' inventory/route allocation use materially different commitment units."
+
+  unresolved_test:
+    evidence_still_indistinguishable_after_layer_tests: false
+    result: REJECTED
+    rationale: "Evidence is sufficient to reject Haircut-only ownership, establish Beauty-domain ownership, and withhold Platform promotion. Lack of Platform proof does not leave the owner unresolved."
+
+  semantic_divergence:
+    within_beauty:
+      classification: DOMAIN_EXTENSION
+      material_break: false
+      detail: "Beauty products share resource-to-service commitment semantics; service segmentation, pool behavior, and operational recovery depth vary by product."
+    cross_vertical:
+      healthcare:
+        classification: DOMAIN_EXTENSION
+        material_break: false
+        detail: "Clinical resource allocation shares constrained identity, availability, temporal commitment, and conflict semantics, with domain-specific safety and lifecycle rules."
+      education:
+        classification: SEMANTIC_BREAK
+        material_break: true
+        detail: "Observed enrollment and teacher-assignment constraints do not establish physical resource-to-activity allocation."
+      logistics:
+        classification: SEMANTIC_BREAK
+        material_break: true
+        detail: "Observed inventory quantity and shipment-route allocations use different commitment units from service-segment resource occupancy."
+
+  ownership:
+    verdict: BEAUTY_OS
+    confidence: MEDIUM
+    rationale: "Resource Allocation is independently owned, not Haircut-specific, and semantically stable across Haircut and BabyCare. Cross-vertical evidence is insufficient for Platform ownership, while Nail remains projection-only."
+
+  platform_promotion_authorized: false
+  contract_design_authorized: false
+  inventory_change_authorized: false
+```
+
+The ownership result is `BEAUTY_OS`, not because Beauty has the most code reuse, but because the business meaning of a constrained resource committed to a Beauty service survives across Haircut and BabyCare without a material semantic break. Haircut-specific maturity requirements remain Beauty policy or implementation extensions. Healthcare supplies a useful neighboring pattern, but Education and Logistics prevent a Platform ownership claim under the current evidence.
+
+H4.2 is now closed for ownership resolution. This closure does not design `IResourceAllocation`, DTOs, schemas, migrations, or alter the H1 contract inventory; those activities remain gated to the next phase.
+
+---
+
 ## Pending Passes
 
 ```yaml
@@ -1135,7 +1220,13 @@ H4_2_pending:
     rule_followed: "Probed all nine frozen invariants by business meaning and recorded evidence strength separately from verdict."
 
   pass_F_semantic_divergence_and_ownership:
-    status: PENDING
+    status: COMPLETE
+    ownership: BEAUTY_OS
+    confidence: MEDIUM
+    platform_promotion_authorized: false
+    contract_design_authorized: false
+    inventory_change_authorized: false
+    rule_followed: "Resolved layer only after semantic divergence reconciliation. Platform requires stable business meaning outside Beauty."
     allowed_verdicts:
       - HAIRCUT_PRODUCT
       - BEAUTY_OS
@@ -1149,14 +1240,15 @@ H4_2_pending:
 
 ```yaml
 checkpoint:
-  h4_2_status: PASS_E_COMPLETE
+  h4_2_status: CLOSED
   haircut_resource_allocation_invariants: FROZEN
   babycare_mapping: COMPLETE
   nail_projection: COMPLETE_PROJECTION_ONLY
   producer_consumer_test: COMPLETE
   cross_vertical_probe: COMPLETE
-  semantic_divergence: PENDING
-  ownership: UNRESOLVED
+  semantic_divergence: COMPLETE
+  ownership: BEAUTY_OS
+  ownership_confidence: MEDIUM
   platform_promotion_authorized: false
   contract_design_authorized: false
   inventory_change_authorized: false
@@ -1165,7 +1257,7 @@ checkpoint:
 Next step:
 
 ```text
-H4.2 Pass F — Semantic Divergence and Ownership Resolution
+H4.2 CLOSED — Ownership resolved to Beauty OS
 ```
 
-Pass F must reconcile Beauty evidence with the cross-vertical divergence matrix before choosing `HAIRCUT_PRODUCT`, `BEAUTY_OS`, `PLATFORM`, or `UNRESOLVED`.
+Next phase: contract investigation and inventory reconciliation. No interface, schema, migration, or contract design is authorized in this H4.2 closure checkpoint.
