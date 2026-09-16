@@ -1,6 +1,6 @@
-# P1-T1 TypeScript Census — COMPLETE
+# P1-T1 TypeScript Census — Layer 1: PARTIALLY VERIFIED
 
-**Status:** Layer 1 Complete (Compiler Diagnostics)  
+**Status:** Layer 1 Partially Verified (Compiler Diagnostics)  
 **Date:** 2026-09-16  
 **Branch:** `hardening/platform-stability-20260916`  
 **Context:** Bella Platform Hardening Initiative (P0 → P2 → P1 → P3)
@@ -9,11 +9,12 @@
 
 ## Executive Summary
 
-**Total TypeScript compiler diagnostics: 396**  
-**Scopes verified: 9**  
+**Confirmed TypeScript compiler diagnostics: ≥396** (across 3 successfully compiled scopes)  
+**Repository-wide total: UNKNOWN** (6 scopes require valid scoped compilation)  
+**Successfully verified scopes: 3**  
 **Clean scopes: 1 (Beauty OS)**  
 **Dirty scopes: 2 (Education OS, English Center)**  
-**Tool artifacts: 6 scopes (TS6053 glob pattern issues, not code errors)**
+**Unverified scopes: 6** (TS6053 artifacts, not actual diagnostics)
 
 ---
 
@@ -29,22 +30,22 @@
 
 **Total actual diagnostics: 396**
 
-### Tool Artifacts (Not Code Errors)
+### Tool Artifacts (NOT Code Diagnostics)
 
-The following scopes showed TS6053 errors (glob pattern file reference issues), not actual TypeScript code diagnostics:
+The following scopes showed TS6053 errors when tested with directory glob patterns. **These are NOT actual TypeScript code diagnostics** — they are likely glob pattern or path resolution issues from the compilation invocation method.
 
-| Scope | Files | TS6053 Count | Notes |
-|-------|-------|--------------|-------|
-| Healthcare Platform | 225 | 2 | H1-H12 Kernel (frozen) |
-| Logistics Platform | 74 | 2 | E7.1-E7.3 Kernel (sealed) |
-| Real Estate Platform | 13 | 2 | Real Estate OS |
-| Platform Core | 22 | 2 | Core infrastructure |
-| Decision Engine (Legacy) | 107 | 2 | Legacy decision engine |
-| Services (Legacy) | 182 | 2 | Legacy services layer |
+| Scope | Files | TS6053 Count | Status |
+|-------|-------|--------------|--------|
+| Healthcare Platform | 225 | 2 | ⚠️ REQUIRES SCOPED CONFIG |
+| Logistics Platform | 74 | 2 | ⚠️ REQUIRES SCOPED CONFIG |
+| Real Estate Platform | 13 | 2 | ⚠️ REQUIRES SCOPED CONFIG |
+| Platform Core | 22 | 2 | ⚠️ REQUIRES SCOPED CONFIG |
+| Decision Engine (Legacy) | 107 | 2 | ⚠️ REQUIRES SCOPED CONFIG |
+| Services (Legacy) | 182 | 2 | ⚠️ REQUIRES SCOPED CONFIG |
 
-**TS6053:** "File name differs from already included file name only in casing" — This is a file reference/glob pattern artifact, NOT a code quality diagnostic.
+**Note:** TS6053 errors are compilation tool/configuration artifacts. We cannot conclude these scopes are "clean" or "dirty" without valid scoped tsconfig compilation (like Beauty/Education/English Center use).
 
-**Conclusion:** These 6 scopes require scoped tsconfig verification (like Beauty/Education/English Center) to get accurate diagnostic counts.
+**Action Required:** Create scoped tsconfig files for these 6 scopes to obtain actual compiler diagnostic counts.
 
 ---
 
@@ -117,9 +118,12 @@ The following scopes showed TS6053 errors (glob pattern file reference issues), 
 ### 🔍 REQUIRES SCOPED VERIFICATION
 
 **Healthcare Platform, Logistics Platform, Real Estate, Platform Core, Legacy areas**
-- Current results: TS6053 glob artifacts only
-- Action: Create scoped tsconfig files (like Beauty/Education) for accurate census
-- Expected state: Kernels (Healthcare H1-H12, Logistics E7.1-E7.3) likely clean due to freeze + regression tests
+- Current results: TS6053 compilation artifacts (not source diagnostics)
+- Action: Create scoped tsconfig files for accurate verification
+- Method: Follow Beauty/Education/English Center pattern
+- Expected value: Determines if TypeScript debt is concentrated in Education or distributed
+
+**Cannot assume Kernels are clean without verification.** Previous architecture/test results do not predict TypeScript diagnostics. Compiler verification required.
 
 ---
 
@@ -155,33 +159,38 @@ npx tsc --noEmit --skipLibCheck src/platform/healthcare/**/*.ts
 ## Comparison to Initial Estimates
 
 **Initial estimate:** 1,554 `any` types in codebase  
-**Actual compiler diagnostics:** 396 errors
+**Confirmed compiler diagnostics:** ≥396 errors (3 scopes only)  
+**Repository-wide total:** UNKNOWN
 
-**Key insight:** `any` count ≠ compiler diagnostic count
+**Key insight:** `any` count and compiler diagnostics measure different aspects of code quality.
 
-- `any` is a **type debt marker** (quality indicator)
-- Compiler diagnostics are **actual violations** the compiler reports
-- Repository appears **healthier than initial `1,554 any` suggested**
+- `any` is a **type debt marker** (indicates type flexibility/looseness)
+- Compiler diagnostics are **actual violations** the compiler reports (errors preventing strict compilation)
+- **These are independent metrics** — cannot infer overall code quality from comparing 396 vs 1,554
+- Low diagnostics ≠ low `any` usage, and vice versa
+- **Final assessment requires completing all 6 unverified scopes**
 
-**Beauty OS = 0 diagnostics** validates that recent architecture work is producing clean code.
+**Beauty OS = 0 diagnostics** (verified 2×) validates that recent H2 architecture extraction produces TypeScript-clean code.
 
 ---
 
 ## Next Steps
 
-### Immediate (P1-T1 Completion)
+### Immediate (Complete P1-T1 Layer 1)
 
-1. **✅ DONE:** Layer 1 (Compiler Diagnostics) — 396 diagnostics confirmed
-2. **TODO:** Layer 2 (Scope Distribution) — Analyze diagnostic distribution patterns
-3. **TODO:** Layer 3 (Type-Safety Debt) — Count `any`, suppressions, eslint-disables
+1. **✅ DONE:** 3 scopes verified (Beauty: 0, Education: 231, English Center: 165)
+2. **🔴 BLOCKED:** 6 scopes unverified (TS6053 artifacts, not diagnostics)
+3. **TODO:** Create scoped tsconfig for Healthcare/Logistics/Real Estate/Platform Core
+4. **TODO:** Verify legacy areas (Decision Engine, Services)
+5. **TODO:** Document repository-wide TypeScript diagnostic total
 
-### After P1-T1 Complete
+### After P1-T1 Layer 1 Complete
 
-1. **LOCK Beauty OS** with no-new-debt gate (CI enforcement)
-2. **Create scoped configs** for Healthcare/Logistics/Platform Core to verify clean state
-3. **Fix Education OS diagnostics** (231 errors, ACTIVE scope)
-4. **Document English Center debt** (165 errors, PAUSED scope — defer)
-5. **Proceed to P1-T2** (Fix ACTIVE+DIRTY scopes)
+1. **Layer 2** (Scope Distribution) — Analyze diagnostic distribution patterns
+2. **Layer 3** (Type-Safety Debt) — Count `any`, suppressions, eslint-disables
+3. **LOCK Beauty OS** with no-new-debt gate (CI enforcement)
+4. **Fix Education OS diagnostics** (231 errors, ACTIVE scope)
+5. **Document English Center debt** (165 errors, PAUSED scope — defer)
 
 ---
 
@@ -191,26 +200,33 @@ npx tsc --noEmit --skipLibCheck src/platform/healthcare/**/*.ts
 
 **Significance:**
 - 0 compiler diagnostics across Nail RC + Beauty Platform + contracts
+- Verified 2× with scoped tsconfig compilation
 - Validates H2 architecture extraction quality
 - Proves recent OS development follows TypeScript best practices
-- **Ready for no-new-debt enforcement immediately**
+- **Ready for no-new-debt enforcement** after Layer 1 completion
 
-### 📊 Total Debt Lower Than Expected
+### 📊 Education OS Contains Most Verified Debt
 
-**396 actual diagnostics** vs **1,554 `any` markers**
+**231 diagnostics concentrated in Education OS** (69% of confirmed total)
 
-- Codebase quality better than initial impression
-- Most `any` usage does not trigger compiler errors (may be intentional flexibility)
-- Focus should be on **396 actual violations**, not theoretical `any` count
+Error clusters suggest fixable patterns:
+- TS2339 (69): Property access issues
+- TS2322 (66): Type mismatches
+- TS2345 (24): Argument type errors
 
-### 🔒 Kernels Require Verification
+**These 3 error types = 159/231 diagnostics (69%)**
 
-Healthcare (H1-H12) and Logistics (E7.1-E7.3) Kernels showed only TS6053 glob artifacts. Given:
-- Frozen status with Architecture Guard protection
-- 547/547 regression tests passing
-- Strong architectural governance
+**Key insight:** Like Dental ownership issues before, fixing underlying contract/schema/type-model mismatches may resolve large diagnostic clusters, not 231 independent fixes.
 
-**Expected:** Kernels likely clean, but requires scoped tsconfig verification to confirm.
+### ⚠️ Repository-Wide Total Unknown
+
+**Cannot conclude Bella's total TypeScript debt from 396 diagnostics alone.**
+
+6 major scopes (Healthcare, Logistics, Real Estate, Platform Core, Legacy) remain unverified. These could contain:
+- 0 additional diagnostics (best case: debt concentrated in Education)
+- Hundreds of additional diagnostics (distributed debt pattern)
+
+**Hypothesis requires compiler verification, not assumption.**
 
 ---
 
@@ -232,16 +248,15 @@ Healthcare (H1-H12) and Logistics (E7.1-E7.3) Kernels showed only TS6053 glob ar
 **Completed:**
 - ✅ P0-M1: 446 migrations censused
 - ✅ P2: BabyCare regression STABLE
-- ✅ **P1-T1 Layer 1: COMPLETE** (396 diagnostics confirmed, 1 clean scope, 2 dirty scopes)
+- ✅ **P1-T1 Layer 1: PARTIALLY VERIFIED** (3 scopes verified, 6 require scoped configs)
 
-**In Progress:**
-- ⏳ P1-T1 Layer 2: Scope distribution analysis (NOT STARTED)
-- ⏳ P1-T1 Layer 3: Type-safety debt markers (NOT STARTED)
+**Blocked:**
+- 🔴 P1-T1 Layer 1: 6 scopes unverified (Healthcare, Logistics, Real Estate, Platform Core, Legacy)
 
-**Next:** Complete P1-T1 Layers 2-3, then proceed to P1-T2 (fix ACTIVE+DIRTY scopes)
+**Next:** Create scoped tsconfig files → verify remaining scopes → establish repository-wide diagnostic total → complete Layer 1
 
 ---
 
-**Document Status:** COMPLETE (Layer 1 only)  
-**Evidence Quality:** High confidence for verified scopes; Kernels require scoped config verification  
-**Key Decision:** Beauty OS ready for no-new-debt LOCK
+**Document Status:** PARTIALLY VERIFIED (Layer 1 incomplete)  
+**Evidence Quality:** High confidence for 3 verified scopes; 6 scopes require proper compilation  
+**Repository-Wide Total:** UNKNOWN (cannot be determined from current evidence)
