@@ -105,21 +105,37 @@ ALTER TABLE beauty_resource_allocations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE beauty_professional_assignment_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE beauty_resource_allocation_history ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY beauty_appointments_tenant_isolation ON beauty_appointments FOR ALL TO authenticated
-  USING (is_hq_super_admin() OR tenant_id = get_auth_tenant_id())
-  WITH CHECK (is_hq_super_admin() OR tenant_id = get_auth_tenant_id());
-CREATE POLICY beauty_sessions_tenant_isolation ON beauty_sessions FOR ALL TO authenticated
-  USING (is_hq_super_admin() OR tenant_id = get_auth_tenant_id())
-  WITH CHECK (is_hq_super_admin() OR tenant_id = get_auth_tenant_id());
-CREATE POLICY beauty_assignments_tenant_isolation ON beauty_professional_assignments FOR ALL TO authenticated
-  USING (is_hq_super_admin() OR tenant_id = get_auth_tenant_id())
-  WITH CHECK (is_hq_super_admin() OR tenant_id = get_auth_tenant_id());
-CREATE POLICY beauty_allocations_tenant_isolation ON beauty_resource_allocations FOR ALL TO authenticated
-  USING (is_hq_super_admin() OR tenant_id = get_auth_tenant_id())
-  WITH CHECK (is_hq_super_admin() OR tenant_id = get_auth_tenant_id());
-CREATE POLICY beauty_assignment_history_tenant_isolation ON beauty_professional_assignment_history FOR ALL TO authenticated
-  USING (is_hq_super_admin() OR tenant_id = get_auth_tenant_id())
-  WITH CHECK (is_hq_super_admin() OR tenant_id = get_auth_tenant_id());
-CREATE POLICY beauty_allocation_history_tenant_isolation ON beauty_resource_allocation_history FOR ALL TO authenticated
-  USING (is_hq_super_admin() OR tenant_id = get_auth_tenant_id())
-  WITH CHECK (is_hq_super_admin() OR tenant_id = get_auth_tenant_id());
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'beauty_appointments' AND policyname = 'beauty_appointments_tenant_isolation') THEN
+    CREATE POLICY beauty_appointments_tenant_isolation ON beauty_appointments FOR ALL TO authenticated
+      USING (is_hq_super_admin() OR tenant_id = get_auth_tenant_id())
+      WITH CHECK (is_hq_super_admin() OR tenant_id = get_auth_tenant_id());
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'beauty_sessions' AND policyname = 'beauty_sessions_tenant_isolation') THEN
+    CREATE POLICY beauty_sessions_tenant_isolation ON beauty_sessions FOR ALL TO authenticated
+      USING (is_hq_super_admin() OR tenant_id = get_auth_tenant_id())
+      WITH CHECK (is_hq_super_admin() OR tenant_id = get_auth_tenant_id());
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'beauty_professional_assignments' AND policyname = 'beauty_assignments_tenant_isolation') THEN
+    CREATE POLICY beauty_assignments_tenant_isolation ON beauty_professional_assignments FOR ALL TO authenticated
+      USING (is_hq_super_admin() OR tenant_id = get_auth_tenant_id())
+      WITH CHECK (is_hq_super_admin() OR tenant_id = get_auth_tenant_id());
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'beauty_resource_allocations' AND policyname = 'beauty_allocations_tenant_isolation') THEN
+    CREATE POLICY beauty_allocations_tenant_isolation ON beauty_resource_allocations FOR ALL TO authenticated
+      USING (is_hq_super_admin() OR tenant_id = get_auth_tenant_id())
+      WITH CHECK (is_hq_super_admin() OR tenant_id = get_auth_tenant_id());
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'beauty_professional_assignment_history' AND policyname = 'beauty_assignment_history_tenant_isolation') THEN
+    CREATE POLICY beauty_assignment_history_tenant_isolation ON beauty_professional_assignment_history FOR ALL TO authenticated
+      USING (is_hq_super_admin() OR tenant_id = get_auth_tenant_id())
+      WITH CHECK (is_hq_super_admin() OR tenant_id = get_auth_tenant_id());
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'beauty_resource_allocation_history' AND policyname = 'beauty_allocation_history_tenant_isolation') THEN
+    CREATE POLICY beauty_allocation_history_tenant_isolation ON beauty_resource_allocation_history FOR ALL TO authenticated
+      USING (is_hq_super_admin() OR tenant_id = get_auth_tenant_id())
+      WITH CHECK (is_hq_super_admin() OR tenant_id = get_auth_tenant_id());
+  END IF;
+END
+$$;

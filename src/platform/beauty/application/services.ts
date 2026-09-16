@@ -123,7 +123,10 @@ export class ResourceAllocationService {
   public async allocate(command: AllocateResourceCommand): Promise<ResourceAllocationRecord> {
     const capacity = await this.availability.getWindow({ tenantId: command.tenantId, resourceId: command.resourceId, interval: command.interval });
     const active = await this.repository.listActive({ tenantId: command.tenantId, resourceId: command.resourceId });
-    if (active.some((existing) => intervalsOverlap(existing.interval, command.interval))) {
+    const overlappingCapacity = active
+      .filter((existing) => intervalsOverlap(existing.interval, command.interval))
+      .reduce((total, existing) => total + existing.capacityUnits, 0);
+    if (overlappingCapacity + command.capacityUnits > capacity.capacityUnits) {
       throw new BeautyApplicationError('RESOURCE_CAPACITY_CONFLICT', 'Resource commitment overlaps an active allocation.');
     }
     const allocation: ResourceAllocationRecord = {
