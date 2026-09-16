@@ -25,6 +25,8 @@
     "db:migration:check": "node scripts/check-supabase-migrations.cjs",
     "db:migration:zero-downtime": "node scripts/check-zero-downtime-migrations.cjs",
     "census:migrations": "ts-node scripts/census-migrations.ts",
+    "census:regression": "ts-node scripts/census-regression.ts",
+    "census:regression:run": "jest --testPathPattern=\"(booking|session|customer|package|salary|finance|ktv|revenue|expense)\" --json --outputFile=test-results.json --runInBand",
     "demo:beauty": "node scripts/beauty-demo-tenant.cjs",
     "demo:auto": "node scripts/auto-demo-tenant.cjs",
     "cron:accounting:smoke": "node scripts/check-accounting-worker-cron-smoke.cjs",
