@@ -313,8 +313,7 @@ function main() {
   console.log('\nSee: docs/platform/BELLA_PLATFORM_HARDENING.md (P0 Phase M2)');
 }
 
-if (require.main === module) {
-  main();
-}
+// Run census if executed directly
+main();
 
 export { parseMigration, inferOwnership, extractActions, extractObjects, extractDependencies };
