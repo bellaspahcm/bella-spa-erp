@@ -1,0 +1,8 @@
+Scope,Path,Diagnostics,Verified,Notes,Top Error Codes
+"Healthcare Platform","src/platform/healthcare",2,true,"H1-H12 Kernel (frozen)","TS6053: 2"
+"Logistics Platform","src/platform/logistics",2,true,"E7.1-E7.3 Kernel (sealed)","TS6053: 2"
+"Real Estate Platform","src/platform/real-estate",2,true,"Real Estate OS","TS6053: 2"
+"Platform Core","src/platform/core",2,true,"Core platform infrastructure","TS6053: 2"
+"BabyCare Product","src/services/booking",0,false,"Directory not found",""
+"Decision Engine (Legacy)","src/lib/decision-engine",2,true,"Legacy decision engine","TS6053: 2"
+"Services (Legacy)","src/services",2,true,"Legacy services layer","TS6053: 2"
