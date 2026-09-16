@@ -7,16 +7,20 @@
 
 ---
 
-## FACTORY HYPOTHESIS
+## FACTORY HYPOTHESIS (TO BE PROVEN)
 
-Nail should achieve **< 30% of Haircut time** by reusing frozen Beauty OS foundation.
+**Claim:** Nail development significantly faster than Haircut due to Beauty OS reuse.
 
-**Target metrics:**
-- Development time: < 30% of Haircut
-- Contract reuse: > 95%
-- Table reuse: 100%
-- ACRs raised: 0
-- Schema changes: 0
+**NOT pre-determined:** "<30% time" or "<8 days" are ESTIMATES, not proven targets.  
+Actual metrics will be measured empirically upon Nail completion.
+
+**Success indicators (to be measured):**
+- Elapsed time: significantly less than Haircut H3-H9
+- Contracts created: 0 (100% reuse)
+- Tables created: 0 (100% reuse)
+- ACRs raised: 0 (no capability gaps)
+- Schema migrations: 0 (metadata only)
+- Semantic gaps: 0 (Beauty OS expressive enough)
 
 ---
 
@@ -70,49 +74,78 @@ Nail should achieve **< 30% of Haircut time** by reusing frozen Beauty OS founda
 
 ---
 
-## MEASUREMENT CRITERIA
+## EMPIRICAL METRICS (COLLECTED UPON COMPLETION)
 
-**Time-based:**
-- [ ] Total days < 8 days (vs Haircut H3-H9 baseline)
-- [ ] Each step < 2 days (no step requires week-long investigation)
+**Quantitative:**
+- [ ] Elapsed calendar days (start: 2026-09-16)
+- [ ] Active development days (exclude waiting/blocked time if measurable)
+- [ ] Lines of code: new vs copied/generated
+- [ ] Test reuse percentage
+- [ ] Contracts created: target 0
+- [ ] Tables created: target 0
+- [ ] Schema migrations: target 0
+- [ ] ACRs raised: target 0
 
-**Reuse-based:**
-- [ ] Contracts reused: 6/6 (100%)
-- [ ] Tables reused: 6/6 (100%)
-- [ ] Test patterns reused: > 80%
-- [ ] Code generated/copied: > 70%
+**Qualitative:**
+- [ ] Semantic gaps encountered (Beauty OS couldn't express Nail capability)
+- [ ] Extension points used (metadata, config, business logic)
+- [ ] H3-H9 governance required? (YES/NO)
 
-**Governance-based:**
-- [ ] ACRs raised: 0
-- [ ] Schema migrations: 0
-- [ ] H3-H9 repetition: NO
+**Comparison baseline:**
+- Haircut H3-H9: architecture investment phase (weeks-scale)
+- Haircut contracts: 6 created
+- Haircut tables: 6 created
+- Haircut ACRs: N/A (first product)
 
----
-
-## SUCCESS THRESHOLD
-
-**Nail proves Factory if:**
-1. ✅ Time < 30% of Haircut
-2. ✅ No architectural re-investigation
-3. ✅ No new contracts/tables
-4. ✅ All tests pass (adapters, integration, E2E)
-
-**Factory fails if:**
-- ❌ Time comparable to Haircut
-- ❌ ACR required for basic capabilities
-- ❌ New contracts/tables needed
-- ❌ H3-H9 governance repeated
+**Factory proof requires:**
+1. Nail time << Haircut time (quantitative)
+2. Nail contracts = 0 new (reuse proof)
+3. Nail tables = 0 new (persistence reuse)
+4. No H3-H9 repetition (process proof)
 
 ---
 
-## REAL-TIME STATUS
+## OPERATING PRINCIPLE — SEMANTIC GAP DRIVEN
 
-**Current:** Day 1 COMPLETE  
-**Elapsed:** 1 day  
-**Remaining estimate:** 4-7 days  
-**On track:** ✅ YES
+**Governance is triggered ONLY by actual semantic gaps, not by schedule.**
 
-**Next checkpoint:** Integration tests (Day 2)
+**Continue without governance if:**
+- ✅ 6 frozen contracts express Nail capabilities
+- ✅ 6 Beauty OS tables accommodate Nail persistence
+- ✅ Extensions fit within metadata/config/business logic
+- ✅ Tests pass without contract/schema changes
+
+**Stop and raise ACR only if:**
+- ❌ Beauty OS cannot express a required Nail capability (semantic gap)
+- ❌ Performance/security issue requires architectural change
+- ❌ Compliance/regulatory requirement not covered
+
+**Do NOT create governance for:**
+- ✅ Domain terminology differences (technician vs stylist)
+- ✅ Metadata extensions (polish options, nail art)
+- ✅ Business logic variations (capacity N, multi-resource)
+- ✅ UI/UX differences
+
+**Day 2 guidance:**
+Integration tests should proceed immediately. Only stop if code/tests reveal Beauty OS cannot handle Nail workflow.
+
+## DAY 1 SIGNIFICANCE (2026-09-16)
+
+**Not just "7/7 tests pass" — structural proof:**
+
+✅ **Nail created skeleton without new contracts**  
+✅ **Nail created skeleton without new tables**  
+✅ **Nail created skeleton without schema changes**  
+✅ **Nail created skeleton without ACR**
+
+**This is what Beauty OS was built to achieve.**
+
+Haircut paid the architecture cost (weeks, 6 contracts, 6 tables, H3-H9 governance).  
+Nail begins benefiting from that investment (Day 1 complete with 0 architectural debt).
+
+**The Factory hypothesis has first empirical evidence: reuse is possible.**
+
+Remaining work: prove reuse is also SUFFICIENT (integration + E2E).
 
 ---
 
