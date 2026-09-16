@@ -109,7 +109,7 @@ Technician starts session → Health check → Polish applied → Nail art → C
 
 ---
 
-### 4. Multi-Resource Allocation (Pedicure)
+### 4. Multi-Resource Allocation (Pedicure) — CRITICAL TEST
 ```
 Pedicure service → Requires station + foot spa → Allocate both
 ```
@@ -117,7 +117,15 @@ Pedicure service → Requires station + foot spa → Allocate both
 **Contracts used:**
 - IResourceAllocation (allocate 2x with same service_commitment_id)
 
-**Expected:** Two allocations created. No schema change.
+**Why critical:** Tests whether Resource Allocation contract is truly general-purpose or just Haircut-specific.
+
+**Expected:** 
+- Two allocations created with same `service_commitment_id`
+- Capacity/conflict checks work for both resources
+- Resource reallocation handles multi-resource scenarios
+- No contract modification needed
+
+**This is strong evidence for Beauty OS generality.**
 
 **If fails:** Classify → fix/extend/gap
 
@@ -164,10 +172,11 @@ Original tech unavailable → Reassign to different tech → History preserved
 - [ ] All 5 workflows complete end-to-end
 - [ ] No contract modifications needed
 - [ ] No table schema changes needed
-- [ ] Extensions fit within metadata/config/logic
-- [ ] Tests reuse Haircut patterns (>80%)
+- [ ] Extensions fit within metadata/config/logic only
 
-**Then:** Day 2 COMPLETE. Proceed to Day 3 (migration + E2E).
+**Test reuse metric:** Measure actual % (target >80% as indicator, not requirement)
+
+**Then:** Day 2 COMPLETE. Proceed to browser/E2E + Factory measurement.
 
 **If semantic gap found:**
 - Document gap with evidence (which workflow, which contract, why insufficient)
@@ -176,15 +185,25 @@ Original tech unavailable → Reassign to different tech → History preserved
 
 ---
 
+## DAY 2 → DAY 3 PATH
+
+**If 5 workflows PASS:**
+- ✅ Skip architecture phase
+- ✅ Go directly to: Browser/E2E product verification + Factory metrics measurement
+- ✅ Goal: Ship Nail using existing foundation, not study foundation
+
+**NOT recommended:**
+- ❌ Create Day 3 architecture phase
+- ❌ Additional governance checkpoints
+- ❌ Re-verify contracts already proven
+
+---
+
 ## EXPECTED RESULT
 
-**High probability:** Integration passes with 0 gaps.
+Delta Scan suggested 100% coverage. Day 2 tests will prove or disprove empirically.
 
-**Why:** Delta Scan (Day 1) already verified 100% Beauty OS coverage. Integration tests just prove it empirically.
-
-**If gap found:** Unlikely but possible. Then Architecture Council reviews whether:
-- Gap is real (Beauty OS limitation)
-- Gap is apparent (implementation issue)
+**No probability claims.** Results speak for themselves.
 
 ---
 
