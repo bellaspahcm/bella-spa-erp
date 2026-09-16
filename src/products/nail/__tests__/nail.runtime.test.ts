@@ -8,7 +8,7 @@
  * 
  * Verifies:
  * 1. Nail workflows persist to beauty_* tables correctly
- * 2. Nail metadata maps to/from jsonb fields
+ * 2. Nail metadata maps to/from the Beauty OS session outcome field
  * 3. Tenant isolation at Nail product boundary
  * 4. 3 critical journeys with real data
  * 
@@ -26,25 +26,33 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 describe('Nail Runtime DB Verification', () => {
+  jest.setTimeout(60000);
+
   let supabase: ReturnType<typeof createClient<Database>>;
-  const TEST_TENANT_ID = 'tenant-nail-test';
-  
-  // Test data IDs (will be created/cleaned)
+  const TEST_TENANT_ID = '00000000-0000-4000-8000-00000000a101';
+  const TEST_TENANT_2_ID = '00000000-0000-4000-8000-00000000a102';
+
   const testIds = {
-    customerId: '',
-    serviceId: '',
-    branchId: '',
-    technicianId: '',
-    stationId: '',
-    footSpaId: '',
+    customerId: '00000000-0000-4000-8000-00000000b101',
+    customer2Id: '00000000-0000-4000-8000-00000000b102',
+    servicePedicureId: '00000000-0000-4000-8000-00000000c101',
+    serviceManicureId: '00000000-0000-4000-8000-00000000c102',
+    branchId: '00000000-0000-4000-8000-00000000d101',
+    branch2Id: '00000000-0000-4000-8000-00000000d102',
+    technicianId: '00000000-0000-4000-8000-00000000e101',
+    technician2Id: '00000000-0000-4000-8000-00000000e102',
+    stationId: '00000000-0000-4000-8000-00000000f101',
+    footSpaId: '00000000-0000-4000-8000-00000000f102',
+    segmentPedicureId: '00000000-0000-4000-8000-000000001101',
+    actorId: '00000000-0000-4000-8000-000000002101',
   };
 
   beforeAll(async () => {
-    jest.setTimeout(60000);
     supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
     // Cleanup any existing test data
     await cleanup();
+    await seedFixtures();
   });
 
   afterAll(async () => {
@@ -55,9 +63,53 @@ describe('Nail Runtime DB Verification', () => {
   async function cleanup() {
     // Delete in reverse dependency order
     await supabase.from('beauty_sessions').delete().eq('tenant_id', TEST_TENANT_ID);
+    await supabase.from('beauty_sessions').delete().eq('tenant_id', TEST_TENANT_2_ID);
     await supabase.from('beauty_resource_allocations').delete().eq('tenant_id', TEST_TENANT_ID);
+    await supabase.from('beauty_resource_allocations').delete().eq('tenant_id', TEST_TENANT_2_ID);
     await supabase.from('beauty_professional_assignments').delete().eq('tenant_id', TEST_TENANT_ID);
+    await supabase.from('beauty_professional_assignments').delete().eq('tenant_id', TEST_TENANT_2_ID);
     await supabase.from('beauty_appointments').delete().eq('tenant_id', TEST_TENANT_ID);
+    await supabase.from('beauty_appointments').delete().eq('tenant_id', TEST_TENANT_2_ID);
+    await supabase.from('customers').delete().eq('tenant_id', TEST_TENANT_ID);
+    await supabase.from('customers').delete().eq('tenant_id', TEST_TENANT_2_ID);
+    await supabase.from('tenants').delete().eq('id', TEST_TENANT_ID);
+    await supabase.from('tenants').delete().eq('id', TEST_TENANT_2_ID);
+  }
+
+  async function seedFixtures() {
+    const { error: tenantError } = await supabase.from('tenants').insert([
+      {
+        id: TEST_TENANT_ID,
+        name: 'E2E Nail Tenant A',
+        status: 'active',
+        enabled_modules: { beauty_spa: true, babycare: false },
+      },
+      {
+        id: TEST_TENANT_2_ID,
+        name: 'E2E Nail Tenant B',
+        status: 'active',
+        enabled_modules: { beauty_spa: true, babycare: false },
+      },
+    ]);
+    expect(tenantError).toBeNull();
+
+    const { error: customerError } = await supabase.from('customers').insert([
+      {
+        id: testIds.customerId,
+        tenant_id: TEST_TENANT_ID,
+        phone: '0900000101',
+        name_mother: 'Nail Runtime Customer A',
+        status: 'active',
+      },
+      {
+        id: testIds.customer2Id,
+        tenant_id: TEST_TENANT_2_ID,
+        phone: '0900000102',
+        name_mother: 'Nail Runtime Customer B',
+        status: 'active',
+      },
+    ]);
+    expect(customerError).toBeNull();
   }
 
   // ============================================================================
@@ -66,8 +118,8 @@ describe('Nail Runtime DB Verification', () => {
 
   describe('Journey #1: Multi-Resource Booking', () => {
     it('persists pedicure booking with station + foot spa allocations', async () => {
-      const appointmentId = `appt-nail-${Date.now()}`;
-      const commitmentId = `commit-nail-${Date.now()}`;
+      const appointmentId = '00000000-0000-4000-8000-000000003101';
+      const commitmentId = '00000000-0000-4000-8000-000000004101';
       const startTime = new Date().toISOString();
       const endTime = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 
@@ -77,9 +129,9 @@ describe('Nail Runtime DB Verification', () => {
         .insert({
           id: appointmentId,
           tenant_id: TEST_TENANT_ID,
-          branch_id: 'branch-nail-1',
-          customer_id: 'customer-alice',
-          service_id: 'service-pedicure',
+          branch_id: testIds.branchId,
+          customer_id: testIds.customerId,
+          service_id: testIds.servicePedicureId,
           status: 'PENDING',
           starts_at: startTime,
           ends_at: endTime,
@@ -95,30 +147,30 @@ describe('Nail Runtime DB Verification', () => {
       const { data: assignment, error: assignError } = await supabase
         .from('beauty_professional_assignments')
         .insert({
-          id: `assign-${Date.now()}`,
+          id: '00000000-0000-4000-8000-000000005101',
           tenant_id: TEST_TENANT_ID,
           service_commitment_id: commitmentId,
-          professional_id: 'tech-bob',
+          professional_id: testIds.technicianId,
           status: 'ACCEPTED',
           proposed_at: new Date().toISOString(),
           decided_at: new Date().toISOString(),
-          decided_by: 'system',
+          actor_id: testIds.actorId,
         })
         .select()
         .single();
 
       expect(assignError).toBeNull();
-      expect(assignment?.professional_id).toBe('tech-bob');
+      expect(assignment?.professional_id).toBe(testIds.technicianId);
 
       // Step 3: Allocate station
       const { data: stationAlloc, error: stationError } = await supabase
         .from('beauty_resource_allocations')
         .insert({
-          id: `alloc-station-${Date.now()}`,
+          id: '00000000-0000-4000-8000-000000006101',
           tenant_id: TEST_TENANT_ID,
           service_commitment_id: commitmentId,
-          segment_id: 'segment-pedicure',
-          resource_id: 'station-1',
+          segment_id: testIds.segmentPedicureId,
+          resource_id: testIds.stationId,
           starts_at: startTime,
           ends_at: endTime,
           capacity_units: 1,
@@ -128,17 +180,17 @@ describe('Nail Runtime DB Verification', () => {
         .single();
 
       expect(stationError).toBeNull();
-      expect(stationAlloc?.resource_id).toBe('station-1');
+      expect(stationAlloc?.resource_id).toBe(testIds.stationId);
 
       // Step 4: Allocate foot spa (MULTI-RESOURCE)
       const { data: spaAlloc, error: spaError } = await supabase
         .from('beauty_resource_allocations')
         .insert({
-          id: `alloc-spa-${Date.now()}`,
+          id: '00000000-0000-4000-8000-000000006102',
           tenant_id: TEST_TENANT_ID,
           service_commitment_id: commitmentId, // Same commitment ID
-          segment_id: 'segment-pedicure',
-          resource_id: 'foot-spa-1',
+          segment_id: testIds.segmentPedicureId,
+          resource_id: testIds.footSpaId,
           starts_at: startTime,
           ends_at: endTime,
           capacity_units: 1,
@@ -148,7 +200,7 @@ describe('Nail Runtime DB Verification', () => {
         .single();
 
       expect(spaError).toBeNull();
-      expect(spaAlloc?.resource_id).toBe('foot-spa-1');
+      expect(spaAlloc?.resource_id).toBe(testIds.footSpaId);
 
       // Verify: Both allocations link to same commitment
       expect(stationAlloc?.service_commitment_id).toBe(commitmentId);
@@ -165,18 +217,20 @@ describe('Nail Runtime DB Verification', () => {
   // ============================================================================
 
   describe('Journey #2: Session with Nail Metadata', () => {
-    it('persists session with nail-specific outcome in jsonb', async () => {
-      const sessionId = `session-nail-${Date.now()}`;
-      const appointmentId = `appt-nail-session-${Date.now()}`;
-      const commitmentId = `commit-nail-session-${Date.now()}`;
+    it('persists session with nail-specific outcome metadata', async () => {
+      const sessionId = '00000000-0000-4000-8000-000000007101';
+      const appointmentId = '00000000-0000-4000-8000-000000003102';
+      const commitmentId = '00000000-0000-4000-8000-000000004102';
+      const actualStartAt = new Date();
+      const actualEndAt = new Date(actualStartAt.getTime() + 45 * 60 * 1000);
 
       // Create appointment first
       await supabase.from('beauty_appointments').insert({
         id: appointmentId,
         tenant_id: TEST_TENANT_ID,
-        branch_id: 'branch-1',
-        customer_id: 'customer-charlie',
-        service_id: 'service-manicure',
+        branch_id: testIds.branchId,
+        customer_id: testIds.customerId,
+        service_id: testIds.serviceManicureId,
         status: 'PENDING',
         starts_at: new Date().toISOString(),
         ends_at: new Date(Date.now() + 45 * 60 * 1000).toISOString(),
@@ -206,10 +260,10 @@ describe('Nail Runtime DB Verification', () => {
           appointment_id: appointmentId,
           service_commitment_id: commitmentId,
           status: 'COMPLETED',
-          actual_start_at: new Date().toISOString(),
-          actual_end_at: new Date().toISOString(),
-          actual_performer_id: 'tech-dana',
-          outcome: nailOutcome, // Nail metadata in jsonb
+          actual_start_at: actualStartAt.toISOString(),
+          actual_end_at: actualEndAt.toISOString(),
+          actual_performer_id: testIds.technician2Id,
+          outcome: JSON.stringify(nailOutcome),
         })
         .select()
         .single();
@@ -217,11 +271,11 @@ describe('Nail Runtime DB Verification', () => {
       expect(sessionError).toBeNull();
       expect(session).toBeTruthy();
       expect(session?.status).toBe('COMPLETED');
-      expect(session?.actual_performer_id).toBe('tech-dana');
+      expect(session?.actual_performer_id).toBe(testIds.technician2Id);
 
       // Verify: Nail metadata persisted correctly
       expect(session?.outcome).toBeTruthy();
-      const retrievedOutcome = session?.outcome as typeof nailOutcome;
+      const retrievedOutcome = JSON.parse(session?.outcome as string) as typeof nailOutcome;
       expect(retrievedOutcome.polishUsed?.color).toBe('Rose Gold');
       expect(retrievedOutcome.polishUsed?.brand).toBe('OPI');
       expect(retrievedOutcome.nailArtCompleted).toBe(true);
@@ -229,7 +283,7 @@ describe('Nail Runtime DB Verification', () => {
       expect(retrievedOutcome.photos?.beforeUrls).toHaveLength(1);
 
       // ✅ VERIFIED: Nail metadata persists to beauty_sessions.outcome
-      // ✅ VERIFIED: jsonb field correctly stores/retrieves Nail data
+      // ✅ VERIFIED: Serialized metadata correctly stores/retrieves Nail data
       // ✅ VERIFIED: No schema changes needed for Nail-specific data
     });
   });
@@ -240,20 +294,20 @@ describe('Nail Runtime DB Verification', () => {
 
   describe('Journey #3: Tenant Isolation', () => {
     it('enforces RLS policies for Nail product paths', async () => {
-      const tenant1 = `${TEST_TENANT_ID}-1`;
-      const tenant2 = `${TEST_TENANT_ID}-2`;
+      const tenant1 = TEST_TENANT_ID;
+      const tenant2 = TEST_TENANT_2_ID;
 
       // Create appointments for two different tenants
-      const appt1Id = `appt-tenant1-${Date.now()}`;
-      const appt2Id = `appt-tenant2-${Date.now()}`;
+      const appt1Id = '00000000-0000-4000-8000-000000003103';
+      const appt2Id = '00000000-0000-4000-8000-000000003104';
 
       await supabase.from('beauty_appointments').insert([
         {
           id: appt1Id,
           tenant_id: tenant1,
-          branch_id: 'branch-1',
-          customer_id: 'customer-1',
-          service_id: 'service-1',
+          branch_id: testIds.branchId,
+          customer_id: testIds.customerId,
+          service_id: testIds.serviceManicureId,
           status: 'PENDING',
           starts_at: new Date().toISOString(),
           ends_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
@@ -261,9 +315,9 @@ describe('Nail Runtime DB Verification', () => {
         {
           id: appt2Id,
           tenant_id: tenant2,
-          branch_id: 'branch-2',
-          customer_id: 'customer-2',
-          service_id: 'service-2',
+          branch_id: testIds.branch2Id,
+          customer_id: testIds.customer2Id,
+          service_id: testIds.serviceManicureId,
           status: 'PENDING',
           starts_at: new Date().toISOString(),
           ends_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
@@ -330,4 +384,3 @@ describe('Nail Runtime DB Verification', () => {
     });
   });
 });
-

@@ -1,8 +1,11 @@
-# NAIL H8 DEPLOYMENT — DECISION REQUIRED
+# NAIL H8 DEPLOYMENT — DECISION RESOLVED FOR E2E
 
 **Checkpoint:** 71218dc3  
-**Blocker:** Beauty OS H8 migration not deployed  
-**Status:** ⚠️ **AWAITING DEPLOYMENT DECISION**
+**Blocker:** Beauty OS H8 migration not deployed to runtime test target
+**Status:** ✅ **RESOLVED ON E2E PROJECT**
+
+> Superseded by `docs/products/nail/NAIL_RC_RUNTIME_VERIFIED.md`.
+> Production deployment remains not run.
 
 ---
 
@@ -193,7 +196,6 @@ npm test
 
 ---
 
-**Current status:** Awaiting decision @ 71218dc3  
+**Current status:** E2E runtime verification PASS
 **Nail Factory Proof:** ✅ COMPLETE (unaffected by decision)  
-**Nail Product RC:** ⏸️ PENDING (deployment decision)
-
+**Nail Product RC:** ⏭️ Continue to browser/UI/product evidence if required

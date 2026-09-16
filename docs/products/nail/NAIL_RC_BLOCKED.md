@@ -1,8 +1,11 @@
-# NAIL RC VERIFICATION — BLOCKED
+# NAIL RC VERIFICATION — BLOCKER RESOLVED
 
 **Date:** 2026-09-16  
 **Checkpoint:** 194c2f95 (Factory Proof complete)  
-**Status:** ⚠️ **BLOCKED ON INFRASTRUCTURE**
+**Status:** ✅ **RUNTIME DB VERIFIED AFTER E2E CREDENTIAL UPDATE**
+
+> Superseded by `docs/products/nail/NAIL_RC_RUNTIME_VERIFIED.md`.
+> This document is retained as blocker history.
 
 ---
 
@@ -170,8 +173,9 @@ Not Nail code issue. Not semantic gap. External dependency.
 
 ---
 
-**Decision required:** Deploy H8 now or defer Nail RC?
+**Resolution:** E2E Supabase project `bmnbqbcdbuklhopfbopv` now has Beauty OS H8 tables available and valid credentials in local `.env.e2e`.
 
-**Current checkpoint:** 194c2f95  
-**Runtime test file:** `src/products/nail/__tests__/nail.runtime.test.ts` (ready to run after H8 deployment)
+Runtime evidence is recorded in `docs/products/nail/NAIL_RC_RUNTIME_VERIFIED.md`.
 
+**Current checkpoint:** 194c2f95
+**Runtime test file:** `src/products/nail/__tests__/nail.runtime.test.ts`
