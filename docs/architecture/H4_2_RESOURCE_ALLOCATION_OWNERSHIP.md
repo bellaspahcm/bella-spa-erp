@@ -475,13 +475,269 @@ H4_2_pass_A:
 
 ---
 
+## Pass B — BabyCare Resource Allocation Semantic Mapping
+
+Pass B maps BabyCare/Beauty legacy evidence into the nine frozen Haircut invariants. It does not import BabyCare storage shape into Haircut and it does not add new invariants from legacy code.
+
+```yaml
+H4_2_pass_B:
+  source: BABYCARE_BEAUTY_LEGACY
+  evidence_role: BUSINESS_AND_IMPLEMENTATION_EVIDENCE_ONLY
+  architecture_shape_reused: false
+  new_invariants_added: false
+  ownership_implication: NONE
+  ownership: UNRESOLVED
+  platform_promotion_authorized: false
+  contract_design_authorized: false
+  inventory_change_authorized: false
+```
+
+### Evidence Sources
+
+```yaml
+babycare_resource_evidence_sources:
+  schema:
+    - "supabase/migrations/20260608110000_create_beauty_spa_phase2_foundation.sql"
+    - "supabase/migrations/20260611130000_add_session_booking_resource.sql"
+
+  guard:
+    - "src/core/services/order/booking-resource-schedule-guard.ts"
+
+  session_flows:
+    - "src/core/services/order/create-session-log-action.ts"
+    - "src/core/services/order/update-session-log-action.ts"
+    - "src/core/services/order/reschedule-session-action.ts"
+
+  regression_tests:
+    - "src/__tests__/booking-resource-schedule-guard.test.ts"
+    - "src/__tests__/beauty-spa-phase2-schema.test.ts"
+
+  prior_h3_reconciliation:
+    - "docs/architecture/H3_BABYCARE_CAPABILITY_RECONCILIATION.md"
+```
+
+### Semantic Layers
+
+BabyCare/Beauty evidence separates three concepts, but not with the same depth Haircut is proposing.
+
+```text
+Resource Availability
+  "Can this resource be used?"
+        |
+        v
+Resource Allocation
+  "Which session currently references this resource at this date/time?"
+        |
+        v
+Service / Session
+  "Which customer service occurrence is happening?"
+```
+
+The important caution:
+
+```text
+resource conflict != resource reallocation lifecycle
+```
+
+BabyCare/Beauty proves scheduling conflict behavior. It does not prove the full Haircut lifecycle for reallocation, history, and impact discovery.
+
+### Invariant Mapping
+
+```yaml
+invariant_mapping:
+  resource_identity:
+    result: MATCH
+    business_meaning_equivalent: true
+    evidence:
+      - "`booking_resources` stores tenant-scoped schedulable resources."
+      - "Resource type covers bed, room, machine, chair, and other."
+      - "Resource status covers available, in_use, maintenance, and inactive."
+    limitation: "This is Beauty/Spa resource identity evidence, not a target architecture model."
+    architecture_shape_reused: false
+
+  finite_capacity:
+    result: PARTIAL
+    business_meaning_equivalent: true
+    evidence:
+      - "`booking_resources.capacity` exists with a bounded check from 1 to 20."
+      - "The resource business rule normalizes capacity into the resource payload."
+    limitation:
+      - "The current resource schedule guard checks duplicate active sessions for the same resource/date/time."
+      - "It does not prove capacity-n scheduling enforcement where multiple concurrent allocations are allowed until capacity is exceeded."
+    architecture_shape_reused: false
+
+  service_segment_commitment:
+    result: PARTIAL
+    business_meaning_equivalent: true
+    evidence:
+      - "`session_logs.booking_resource_id` links a resource to an individual session instead of the whole booking."
+      - "Schema regression tests explicitly guard that resources link to session logs and not to the bookings table."
+    limitation:
+      - "BabyCare/Beauty session-level allocation is more granular than whole booking allocation."
+      - "It does not prove Haircut-style service segment allocation inside a single appointment flow, such as APPLY -> PROCESS -> WASH -> FINISH."
+    architecture_shape_reused: false
+
+  temporal_allocation:
+    result: PARTIAL
+    business_meaning_equivalent: true
+    evidence:
+      - "Resource conflict checks use `assigned_date` and `assigned_time` on `session_logs`."
+      - "Create, update, and reschedule session flows run `validateBookingResourceSchedule` before persistence."
+    limitation:
+      - "BabyCare/Beauty evidence proves date/time allocation points."
+      - "It does not prove start/end duration windows or overlapping interval conflict detection."
+    architecture_shape_reused: false
+
+  availability_constraint:
+    result: MATCH
+    business_meaning_equivalent: true
+    evidence:
+      - "`validateBookingResourceSchedule` reads the selected `booking_resources` row before conflict lookup."
+      - "Statuses outside available/in_use are blocked before checking conflicts."
+      - "Regression tests cover blocking a maintenance resource before conflict checks."
+    limitation:
+      - "Availability is implemented as current status, not a full time-windowed maintenance calendar."
+    architecture_shape_reused: false
+
+  capacity_conflict:
+    result: PARTIAL
+    business_meaning_equivalent: true
+    evidence:
+      - "`validateBookingResourceSchedule` blocks active session conflicts for the same tenant, resource, date, and time."
+      - "Active statuses considered by the guard are scheduled and in_progress."
+      - "The guard excludes the current session during update."
+    limitation:
+      - "This proves exclusive same-slot conflict detection."
+      - "It does not prove capacity-n conflict rules, resource pool assignment, service segment duration overlap, or alternative allocation generation."
+    architecture_shape_reused: false
+
+  reallocation:
+    result: PARTIAL
+    business_meaning_equivalent: true
+    evidence:
+      - "Update session flow validates the new or existing `booking_resource_id` before updating `session_logs`."
+      - "Reschedule flow preserves and validates each future session's `booking_resource_id` against the new date/time."
+    limitation:
+      - "BabyCare/Beauty proves resource assignment can be changed through session update paths."
+      - "It does not prove a dedicated resource reallocation lifecycle with disruption, replacement, reason, actor, and operational confirmation."
+    architecture_shape_reused: false
+
+  allocation_history:
+    result: PARTIAL
+    business_meaning_equivalent: true
+    evidence:
+      - "Resource CRUD actions record audit logs for `booking_resources` create/update/delete."
+      - "Session update paths persist the final `booking_resource_id` on `session_logs`."
+    limitation:
+      - "Audit around resource master-data changes is not the same as allocation history."
+      - "No evidence was found for an allocation history chain preserving old resource, new resource, affected session/segment, reason, actor, timestamp, original allocation, and replacement allocation."
+    architecture_shape_reused: false
+
+  affected_allocation_discovery:
+    result: NOT_FOUND
+    business_meaning_equivalent: false
+    evidence:
+      - "Existing guards detect conflict during create, update, or reschedule."
+    limitation:
+      - "No evidence was found that changing a resource to maintenance/inactive discovers future or current sessions affected by that resource unavailability."
+      - "No evidence was found for bulk impact classification such as FUTURE_ALLOCATION_AFFECTED, CURRENT_ALLOCATION_AFFECTED, or NO_IMPACT."
+    architecture_shape_reused: false
+```
+
+### Smart Waitlist Note
+
+Smart Waitlist has resource preference fields, but this is consumer evidence only.
+
+```yaml
+smart_waitlist_resource_evidence:
+  preferred_resource_id: CONSUMER_SIGNAL
+  proves_resource_allocation_ownership: false
+  proves_resource_lifecycle: false
+  proves_reallocation_history: false
+```
+
+Correct interpretation:
+
+```text
+Resource Allocation / Availability
+          |
+       conflict
+          v
+Smart Waitlist
+```
+
+Not:
+
+```text
+Smart Waitlist owns Resource Allocation
+```
+
+### Pass B Summary
+
+```yaml
+H4_2_pass_B_summary:
+  frozen_invariants_tested: 9
+
+  match:
+    count: 2
+    invariants:
+      - RESOURCE_IDENTITY
+      - AVAILABILITY_CONSTRAINT
+
+  partial:
+    count: 6
+    invariants:
+      - FINITE_CAPACITY
+      - SERVICE_SEGMENT_COMMITMENT
+      - TEMPORAL_ALLOCATION
+      - CAPACITY_CONFLICT
+      - REALLOCATION
+      - ALLOCATION_HISTORY
+
+  divergent:
+    count: 0
+    invariants: []
+
+  not_found:
+    count: 1
+    invariants:
+      - AFFECTED_ALLOCATION_DISCOVERY
+
+  semantic_overlap: STRONG_PARTIAL
+  semantic_divergence: NO_SEMANTIC_BREAK_FOUND
+  common_semantic_kernel:
+    - RESOURCE_IDENTITY
+    - RESOURCE_AVAILABILITY_STATUS
+    - SESSION_LEVEL_RESOURCE_REFERENCE
+    - EXCLUSIVE_SAME_SLOT_RESOURCE_CONFLICT
+
+  haircut_maturity_beyond_babycare:
+    - SERVICE_SEGMENT_DURATION_COMMITMENT
+    - CAPACITY_N_ENFORCEMENT
+    - RESOURCE_POOL_ALLOCATION
+    - REALLOCATION_LIFECYCLE
+    - ALLOCATION_HISTORY_CHAIN
+    - AFFECTED_ALLOCATION_DISCOVERY
+
+  ownership_implication: NONE
+  ownership: UNRESOLVED
+  platform_promotion_authorized: false
+  contract_design_authorized: false
+  inventory_change_authorized: false
+```
+
+Pass B strengthens the conclusion that Bella already has real Beauty-domain resource scheduling and conflict evidence. It also shows that Haircut is asking for a more mature Resource Allocation capability than the current BabyCare/Beauty legacy implementation proves.
+
+---
+
 ## Pending Passes
 
 ```yaml
 H4_2_pending:
   pass_B_babycare_semantic_mapping:
-    status: PENDING
-    rule: "Map BabyCare only to frozen Haircut invariants. Do not add new invariants from BabyCare legacy."
+    status: COMPLETE
+    semantic_overlap: STRONG_PARTIAL
+    rule_followed: "Mapped BabyCare/Beauty only to frozen Haircut invariants. No new invariant was added from legacy."
 
   pass_C_nail_projection:
     status: PENDING
@@ -515,9 +771,9 @@ H4_2_pending:
 
 ```yaml
 checkpoint:
-  h4_2_status: PASS_A_COMPLETE
+  h4_2_status: PASS_B_COMPLETE
   haircut_resource_allocation_invariants: FROZEN
-  babycare_mapping: PENDING
+  babycare_mapping: COMPLETE
   nail_projection: PENDING
   producer_consumer_test: PENDING
   cross_vertical_probe: PENDING
@@ -531,7 +787,7 @@ checkpoint:
 Next step:
 
 ```text
-H4.2 Pass B — BabyCare Resource Allocation Semantic Mapping
+H4.2 Pass C — Nail Resource Allocation Projection
 ```
 
-Pass B must map BabyCare to the nine frozen Haircut invariants and must not import BabyCare legacy architecture as the target design.
+Pass C must keep `PROJECTION_ONLY` evidence strength and must not treat Nail plausibility as implementation evidence.
