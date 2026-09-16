@@ -1,0 +1,189 @@
+
+> bella-spa-erp@0.1.0 census:migrations
+> ts-node scripts/census-migrations.ts
+
+(node:24696) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to D:\Antigravity\Projects\BELLA SPA ERP\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+P0 PHASE M1: MIGRATION CENSUS
+ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+
+Total migrations found: 459
+
+Error parsing 20260820_r4_3_gate_tokens.sql: Error: Invalid migration filename: 20260820_r4_3_gate_tokens.sql
+    at parseMigration (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:65:1)
+    at main (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:277:8)
+    at file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:317:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:430:25)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async node:internal/modules/esm/loader:639:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Error parsing 20260820_r4_4_monitoring_audit.sql: Error: Invalid migration filename: 20260820_r4_4_monitoring_audit.sql
+    at parseMigration (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:65:1)
+    at main (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:277:8)
+    at file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:317:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:430:25)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async node:internal/modules/esm/loader:639:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Error parsing 20260820_r4_approval_contract.sql: Error: Invalid migration filename: 20260820_r4_approval_contract.sql
+    at parseMigration (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:65:1)
+    at main (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:277:8)
+    at file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:317:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:430:25)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async node:internal/modules/esm/loader:639:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Error parsing 20260821_create_accessorial_rates_table.sql: Error: Invalid migration filename: 20260821_create_accessorial_rates_table.sql
+    at parseMigration (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:65:1)
+    at main (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:277:8)
+    at file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:317:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:430:25)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async node:internal/modules/esm/loader:639:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Error parsing 20260821_create_carrier_rates_table.sql: Error: Invalid migration filename: 20260821_create_carrier_rates_table.sql
+    at parseMigration (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:65:1)
+    at main (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:277:8)
+    at file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:317:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:430:25)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async node:internal/modules/esm/loader:639:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Error parsing 20260821_create_discrepancies_table.sql: Error: Invalid migration filename: 20260821_create_discrepancies_table.sql
+    at parseMigration (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:65:1)
+    at main (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:277:8)
+    at file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:317:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:430:25)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async node:internal/modules/esm/loader:639:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Error parsing 20260821_create_freight_audit_tables.sql: Error: Invalid migration filename: 20260821_create_freight_audit_tables.sql
+    at parseMigration (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:65:1)
+    at main (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:277:8)
+    at file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:317:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:430:25)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async node:internal/modules/esm/loader:639:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Error parsing 20260913_create_english_center_enrollments.sql: Error: Invalid migration filename: 20260913_create_english_center_enrollments.sql
+    at parseMigration (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:65:1)
+    at main (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:277:8)
+    at file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:317:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:430:25)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async node:internal/modules/esm/loader:639:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Error parsing 20260913_create_english_center_program_course_class.sql: Error: Invalid migration filename: 20260913_create_english_center_program_course_class.sql
+    at parseMigration (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:65:1)
+    at main (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:277:8)
+    at file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:317:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:430:25)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async node:internal/modules/esm/loader:639:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Error parsing 20260913_create_english_center_teachers.sql: Error: Invalid migration filename: 20260913_create_english_center_teachers.sql
+    at parseMigration (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:65:1)
+    at main (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:277:8)
+    at file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:317:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:430:25)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async node:internal/modules/esm/loader:639:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Error parsing 20260914_create_user_org_unit_access_projection.sql: Error: Invalid migration filename: 20260914_create_user_org_unit_access_projection.sql
+    at parseMigration (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:65:1)
+    at main (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:277:8)
+    at file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:317:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:430:25)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async node:internal/modules/esm/loader:639:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Error parsing 20260914_repair_english_center_branch_rls.sql: Error: Invalid migration filename: 20260914_repair_english_center_branch_rls.sql
+    at parseMigration (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:65:1)
+    at main (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:277:8)
+    at file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:317:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:430:25)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async node:internal/modules/esm/loader:639:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Error parsing 20260914_repair_platform_org_people_rls.sql: Error: Invalid migration filename: 20260914_repair_platform_org_people_rls.sql
+    at parseMigration (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:65:1)
+    at main (file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:277:8)
+    at file:///D:/Antigravity/Projects/BELLA%20SPA%20ERP/scripts/census-migrations.ts:317:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:430:25)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async node:internal/modules/esm/loader:639:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+OWNERSHIP BREAKDOWN
+ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+
+Legacy/Unknown             306 (68.6%)
+Healthcare OS               38 (8.5%)
+Spa/BabyCare                29 (6.5%)
+Education OS                27 (6.1%)
+Platform/Core               24 (5.4%)
+Real Estate                 10 (2.2%)
+Logistics OS                 7 (1.6%)
+Beauty OS                    5 (1.1%)
+
+ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+ACTION TYPE BREAKDOWN
+ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+
+ALTER TABLE                204
+UPDATE                     201
+GRANT                      165
+CREATE INDEX               162
+CREATE POLICY              148
+CREATE TABLE               144
+ENABLE ROW LEVEL SECURITY  133
+INSERT INTO                 91
+REVOKE                      46
+DROP FUNCTION               19
+CREATE EXTENSION            13
+DROP TABLE                  10
+DELETE FROM                 10
+CREATE TYPE                  9
+DROP INDEX                   6
+
+ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+TOP 20 MODIFIED OBJECTS
+ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+
+tenants                               17
+session_logs                          12
+revenue                               10
+users                                  9
+bookings                               9
+salary_records                         8
+customers                              7
+expenses                               7
+real_estate_products                   7
+hc_encounters                          7
+packages                               6
+real_estate_projects                   5
+accounting_outbox                      4
+students                               4
+re_reservations                        4
+re_commission_ledger                   4
+re_documents                           4
+hc_clinical_orders                     4
+chat_messages                          3
+membership_records                     3
+
+ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+CENSUS COMPLETE
+ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+
+Detailed report exported: D:\Antigravity\Projects\BELLA SPA ERP\docs\platform\P0_M1_MIGRATION_CENSUS.csv
+
+Next steps:
+1. Review census data in CSV
+2. Classify migrations as Active/Historical/Orphaned/Unknown
+3. Determine clean-build blockers
+4. Decision gate: Selective repair / Baseline / Hybrid
+
+See: docs/platform/BELLA_PLATFORM_HARDENING.md (P0 Phase M2)
