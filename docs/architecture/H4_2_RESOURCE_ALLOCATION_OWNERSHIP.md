@@ -730,6 +730,82 @@ Pass B strengthens the conclusion that Bella already has real Beauty-domain reso
 
 ---
 
+## Pass C — Nail Resource Allocation Projection
+
+Pass C projects the nine frozen Haircut Resource Allocation invariants onto Bella Nail. This is a semantic plausibility test only. Nail has no implementation evidence in scope here, so none of the results upgrades the evidence strength or authorizes ownership, contract, or inventory decisions.
+
+```yaml
+H4_2_pass_C:
+  source: NAIL_PROJECTION
+  evidence_strength: PROJECTION_ONLY
+  rules:
+    frozen_invariants_only: true
+    new_invariants_allowed: false
+    implementation_claim_allowed: false
+    field_observed: false
+    ownership_implication: NONE
+
+  invariant_mapping:
+    resource_identity:
+      result: PLAUSIBLE
+      rationale: "Nail can plausibly operate on independently identified stations, pedicure chairs, or equipment."
+    finite_capacity:
+      result: PLAUSIBLE_WITH_VARIATION
+      rationale: "Capacity may be expressed as one exclusive station, a pooled set of chairs, or limited concurrent equipment slots."
+    service_segment_commitment:
+      result: PLAUSIBLE_WITH_VARIATION
+      rationale: "A Nail service may require different resources for preparation, treatment, curing, or finishing segments; the exact segmentation remains unvalidated."
+    temporal_allocation:
+      result: PLAUSIBLE
+      rationale: "A resource commitment can plausibly be tied to a service segment and a scheduled time window."
+    availability_constraint:
+      result: PLAUSIBLE
+      rationale: "Maintenance, cleaning, setup, or an operational outage can plausibly make a Nail resource unavailable for new work."
+    capacity_conflict:
+      result: PLAUSIBLE
+      rationale: "A technician may be available while a required station, chair, or device has no feasible capacity for the segment."
+    reallocation:
+      result: PLAUSIBLE_WITH_VARIATION
+      rationale: "A valid allocation may plausibly move to a compatible station or chair, subject to the physical state of the service and operating policy."
+    allocation_history:
+      result: PLAUSIBLE_WITH_VARIATION
+      rationale: "Nail operations may need old/new resource, affected segment, reason, actor, and time, but the required audit depth is not product-validated."
+    affected_allocation_discovery:
+      result: UNKNOWN
+      rationale: "It is plausible that an outage would require finding affected segments, but no Nail product or field evidence confirms the workflow."
+
+  projection_scenarios:
+    technician_changes_resource_between_segments:
+      result: PLAUSIBLE_WITH_VARIATION
+      description: "One technician may use a Nail station for one segment and a pedicure chair or compatible device for another."
+    professional_available_resource_full:
+      result: PLAUSIBLE
+      description: "A service segment remains infeasible when the technician is available but the required resource has no capacity."
+    resource_unavailable_after_allocation:
+      result: UNKNOWN
+      description: "A resource outage may require affected-allocation discovery and controlled reallocation, but Nail evidence is not available."
+
+  summary:
+    frozen_invariants_tested: 9
+    plausible: 4
+    plausible_with_variation: 4
+    unknown: 1
+    nail_specific_break: 0
+    semantic_break_found: false
+    cross_product_generality_signal: PROJECTION_SUPPORTS_BEAUTY_GENERALITY
+
+  ownership: UNRESOLVED
+  beauty_os_ownership_proven: false
+  platform_ownership_proven: false
+  platform_promotion_authorized: false
+  contract_design_authorized: false
+  inventory_change_authorized: false
+```
+
+The projection supports a Beauty-domain generality signal without proving Beauty OS ownership. It also does not prove that Nail has the same operational maturity as Haircut: resource outage impact discovery, reallocation policy, and audit depth remain unknown until Product/UX or implementation evidence exists.
+
+---
+
 ## Pending Passes
 
 ```yaml
@@ -740,9 +816,10 @@ H4_2_pending:
     rule_followed: "Mapped BabyCare/Beauty only to frozen Haircut invariants. No new invariant was added from legacy."
 
   pass_C_nail_projection:
-    status: PENDING
+    status: COMPLETE
     evidence_strength: PROJECTION_ONLY
-    rule: "Use Nail only to test plausibility and variation inside Beauty. Do not treat it as implementation evidence."
+    result: "4 PLAUSIBLE, 4 PLAUSIBLE_WITH_VARIATION, 1 UNKNOWN, 0 NAIL_SPECIFIC_BREAK"
+    rule_followed: "Tested only the nine frozen Haircut invariants. No Nail implementation claim or new invariant was added."
 
   pass_D_producer_consumer_ownership:
     status: PENDING
@@ -771,10 +848,10 @@ H4_2_pending:
 
 ```yaml
 checkpoint:
-  h4_2_status: PASS_B_COMPLETE
+  h4_2_status: PASS_C_COMPLETE
   haircut_resource_allocation_invariants: FROZEN
   babycare_mapping: COMPLETE
-  nail_projection: PENDING
+  nail_projection: COMPLETE_PROJECTION_ONLY
   producer_consumer_test: PENDING
   cross_vertical_probe: PENDING
   semantic_divergence: PENDING
