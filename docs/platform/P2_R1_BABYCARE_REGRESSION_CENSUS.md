@@ -127,65 +127,81 @@ Identified BabyCare test files by pattern matching:
 
 **Challenge:** 321 tests ≠ direct file count (tests are in describe blocks)
 
-### **Phase R1.2: Baseline Test Run**
+## **Phase R1.2: Baseline Test Run (READY)**
 
-**Option A: Run all BabyCare tests**
+**CRITICAL:** Identify canonical test suite BEFORE running.
+
+### **Canonical 321 Test Suite Identified**
+
+**Source:** `docs/deployment/BABYCARE_REGRESSION_EVIDENCE.md` (Gate 1, 2026-09-16)
+
+**Original Command:**
 ```bash
-npm run census:regression:run
+npm test -- --testPathPatterns="booking.*\.test\.ts"
 ```
 
-Runs tests matching patterns:
-- booking, session, customer, package
-- salary, finance
-- ktv, revenue, expense
-
-**Option B: Run by module (selective)**
-```bash
-# Booking Engine
-npm run test:booking-engine
-
-# Financial (critical path)
-npm test -- --testPathPattern="(accounting|salary|finance)"
-
-# Session/Customer
-npm test -- --testPathPattern="(session|customer)"
+**Original Results:**
+```text
+Test Suites: 24 passed, 2 failed, 1 skipped, 27 total
+Tests:       289 passed, 32 skipped, 321 total
+Time:        51.329s
 ```
 
-**Option C: Full suite with JSON output**
+**Breakdown:**
+- **PASS:** 289 (90.0%)
+- **SKIP:** 32 (10.0%)
+- **FAIL:** 2 test suites (test infrastructure issues, NOT regression)
+
+**Critical Clarification:**
+- "32 remainder" = 32 SKIPPED (not failed)
+- 2 FAIL were non-regression (test bug + Healthcare infra gap)
+- BabyCare booking logic: NO REGRESSION DETECTED
+
+### **R1.2 Execution Strategy**
+
+**Goal:** Re-run SAME canonical suite, classify current state.
+
+**Command (identical to original):**
 ```bash
-npm test -- --json --outputFile=test-results.json
+npm test -- --testPathPatterns="booking.*\.test\.ts" --verbose
 ```
 
-Then parse JSON for BabyCare-specific tests.
+**Expected Classification:**
 
-### **Phase R1.3: Result Classification**
+```text
+321 tests
+├── PASS: Should match or exceed 289
+├── SKIP: Document reasons (32 baseline)
+├── FAIL: Classify each
+│   ├── F1: Critical regression (BabyCare logic broken)
+│   ├── F2: Feature regression (non-critical)
+│   ├── F3: Flaky test (timing/environment)
+│   ├── F4: Expected (test bug, infrastructure gap)
+│   └── F5: Blocked (missing prerequisite)
+└── Total: Must equal 321
+```
 
-For each test result, determine:
+**Rules:**
+1. ✅ DO: Run identical command to original baseline
+2. ✅ DO: Classify FAIL vs SKIP accurately
+3. ✅ DO: Distinguish regression from existing debt
+4. ❌ DO NOT: Assume 32 remainder = 32 failures (they were skips)
+5. ❌ DO NOT: Fix immediately on seeing FAIL (classify first)
 
-**Category F1: CRITICAL REGRESSION**
-- Production-critical path broken
-- Data integrity risk
-- **Action:** FIX IMMEDIATELY
+### **After R1.2: Create BabyCare Regression Manifest v1**
 
-**Category F2: FEATURE REGRESSION**
-- Non-critical feature broken
-- User-facing but not blocking
-- **Action:** FIX or DOCUMENT
+If suite has changed since original run:
+- Document delta (tests added/removed)
+- Establish NEW canonical baseline
+- Version it: "BabyCare Regression Manifest v1"
+- Future runs compare against THIS baseline
 
-**Category F3: FLAKY TEST**
-- Passes sometimes, fails sometimes
-- Timing/environment dependency
-- **Action:** STABILIZE or SKIP with reason
-
-**Category F4: EXPECTED FAILURE**
-- Test for unimplemented feature
-- Test for deprecated functionality
-- **Action:** SKIP with documentation
-
-**Category F5: BLOCKED**
-- Requires infrastructure (DB, API)
-- Requires credentials/permissions
-- **Action:** DOCUMENT prerequisites
+**Deliverables:**
+- [ ] Test execution log (full verbose output)
+- [ ] PASS/SKIP/FAIL breakdown (exact counts)
+- [ ] Classification matrix (each failure → F1/F2/F3/F4/F5)
+- [ ] Regression vs Debt determination
+- [ ] BabyCare Regression Manifest v1.csv
 
 ---
 
