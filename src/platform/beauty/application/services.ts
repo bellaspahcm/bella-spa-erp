@@ -171,6 +171,12 @@ export interface ReallocateResourceCommand {
   reason: string;
 }
 
+export interface FindAffectedAllocationsCommand {
+  tenantId: string;
+  resourceId: string;
+  unavailableInterval: ResourceAllocationRecord['interval'];
+}
+
 export class ResourceAllocationService {
   public constructor(
     private readonly repository: ResourceAllocationRepository,
@@ -268,6 +274,11 @@ export class ResourceAllocationService {
       occurredAt: this.clock.now(),
     });
     return created;
+  }
+
+  public async findAffectedAllocations(command: FindAffectedAllocationsCommand): Promise<ResourceAllocationRecord[]> {
+    const active = await this.repository.listActive({ tenantId: command.tenantId, resourceId: command.resourceId });
+    return active.filter((allocation) => intervalsOverlap(allocation.interval, command.unavailableInterval));
   }
 }
 

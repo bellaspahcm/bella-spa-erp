@@ -117,6 +117,35 @@ describe('Beauty OS H8 application services', () => {
     expect(history[0]).toMatchObject({ allocationId: 'existing-allocation-1', replacementAllocationId: replacement.id, oldResourceId: 'wash-chair-1', newResourceId: 'wash-chair-2' });
   });
 
+  it('finds only active allocations affected by a resource unavailable window', async () => {
+    const allocations: ResourceAllocationRecord[] = [
+      {
+        id: 'allocation-before', tenantId: 'tenant-1', serviceCommitmentId: 'commitment-1', segmentId: 'segment-1', resourceId: 'chair-1',
+        interval: { startsAt: '2026-09-16T09:00:00.000Z', endsAt: '2026-09-16T10:00:00.000Z' }, capacityUnits: 1, status: 'ACTIVE', replacementForId: null, reason: null, actorId: null,
+      },
+      {
+        id: 'allocation-affected', tenantId: 'tenant-1', serviceCommitmentId: 'commitment-2', segmentId: 'segment-2', resourceId: 'chair-1',
+        interval: { startsAt: '2026-09-16T10:15:00.000Z', endsAt: '2026-09-16T10:45:00.000Z' }, capacityUnits: 1, status: 'ACTIVE', replacementForId: null, reason: null, actorId: null,
+      },
+    ];
+    const repository: ResourceAllocationRepository = {
+      create: async (value) => value,
+      update: async (value) => value,
+      appendHistory: async (value) => value,
+      listActive: async () => allocations,
+    };
+    const availability: ResourceAvailabilityPort = {
+      getWindow: async (scope): Promise<ResourceCapacityWindow> => ({ tenantId: scope.tenantId, resourceId: scope.resourceId, interval: scope.interval, capacityUnits: 1, unavailable: false }),
+    };
+    const service = new ResourceAllocationService(repository, availability, new TestIds(), new TestClock());
+    const affected = await service.findAffectedAllocations({
+      tenantId: 'tenant-1',
+      resourceId: 'chair-1',
+      unavailableInterval: { startsAt: '2026-09-16T10:00:00.000Z', endsAt: '2026-09-16T10:30:00.000Z' },
+    });
+    expect(affected.map((allocation) => allocation.id)).toEqual(['allocation-affected']);
+  });
+
   it('records the actual performer on session start and preserves it through completion', async () => {
     const session: SessionRecord = { id: 'session-1', tenantId: 'tenant-1', appointmentId: 'appointment-1', serviceCommitmentId: 'commitment-1', status: 'PLANNED', actualStartAt: null, actualEndAt: null, actualPerformerId: null, outcome: null };
     let saved = session;
