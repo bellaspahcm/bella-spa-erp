@@ -919,6 +919,186 @@ Pass D proves independent capability ownership at the business-semantic level on
 
 ---
 
+## Pass E — Cross-Vertical Resource Allocation Probe
+
+Pass E probes the nine frozen Haircut invariants in Healthcare, Education, and Logistics. The probe compares business meaning, not the presence of a table or a field named `resource`, `allocation`, `room`, or `capacity`.
+
+Evidence strength is recorded independently from the semantic verdict:
+
+```yaml
+evidence_strength:
+  - IMPLEMENTED_AND_VERIFIED
+  - IMPLEMENTED_NOT_VERIFIED
+  - DOCUMENTED_DESIGN
+  - PROJECTION_ONLY
+  - NOT_FOUND
+```
+
+### Healthcare
+
+Healthcare has direct implementation evidence for several constrained clinical resources. A bed has tenant/ward identity, status, one active occupancy, assigned time, and explicit transfer behavior (`src/platform/healthcare/engines/bed-engine/domain/bed.entity.ts:6-9`, `src/platform/healthcare/engines/bed-engine/domain/bed.entity.ts:37-49`, `src/platform/healthcare/engines/bed-engine/domain/bed.entity.ts:98-134`). Emergency bays also have availability, occupancy, maintenance, release, and optimistic versioning (`src/platform/healthcare/engines/emergency-engine/domain/emergency-bay.resource.ts:1-17`, `src/platform/healthcare/engines/emergency-engine/domain/emergency-bay.resource.ts:70-119`). OR schedules use an operating-room identity and PostgreSQL time-range overlap checks (`src/platform/healthcare/engines/or-engine/or-engine.service.ts:76-109`, `src/platform/healthcare/engines/or-engine/or-engine.service.ts:372-388`).
+
+```yaml
+healthcare:
+  resource_identity:
+    result: MATCH
+    evidence_strength: IMPLEMENTED_AND_VERIFIED
+    rationale: "Beds, emergency bays, operating rooms, and equipment are independently identified operational resources."
+  finite_capacity:
+    result: MATCH
+    evidence_strength: IMPLEMENTED_AND_VERIFIED
+    rationale: "Bed/bay occupancy is exclusive and concurrency tests protect one active occupant; this is a capacity-one implementation."
+  service_segment_commitment:
+    result: PARTIAL
+    evidence_strength: IMPLEMENTED_NOT_VERIFIED
+    rationale: "OR equipment usage and schedules attach to clinical cases or procedures, but Haircut-style internal service segments are not established across Healthcare."
+  temporal_allocation:
+    result: MATCH
+    evidence_strength: IMPLEMENTED_AND_VERIFIED
+    rationale: "OR schedules use time ranges and overlap checks; bed occupancy records assignment time, though the bed model is not an interval model."
+  availability_constraint:
+    result: MATCH
+    evidence_strength: IMPLEMENTED_AND_VERIFIED
+    rationale: "Unavailable, occupied, reserved, maintenance, cleaning, and sterile-hold states prevent or constrain allocation."
+  capacity_conflict:
+    result: MATCH
+    evidence_strength: IMPLEMENTED_AND_VERIFIED
+    rationale: "Bed and emergency-bay concurrency tests prove atomic rejection of competing allocations; OR schedules query overlapping active ranges."
+  reallocation:
+    result: PARTIAL
+    evidence_strength: IMPLEMENTED_NOT_VERIFIED
+    rationale: "Bed transfer releases the source and creates occupancy on the target, but a cross-resource reallocation lifecycle is not shown for every resource type."
+  allocation_history:
+    result: PARTIAL
+    evidence_strength: IMPLEMENTED_NOT_VERIFIED
+    rationale: "Transfer events and assigned timestamps exist, but a unified old/new resource chain with reason, actor, affected segment, and audit history is not established."
+  affected_allocation_discovery:
+    result: NOT_FOUND
+    evidence_strength: NOT_FOUND
+    rationale: "The inspected evidence proves allocation conflict checks, not a maintenance event that discovers all affected future allocations for bulk resolution."
+```
+
+### Education
+
+Education evidence proves bounded course enrollment capacity and teacher-to-course/classroom assignment conflicts, not physical classroom or equipment allocation. The Education constitution explicitly excludes timetabling and classroom layout planning from the kernel (`docs/architecture/EDUCATION_VERTICAL_CODING_CONSTITUTION.md:46`). Teacher assignment persists an assignment identity and checks active lead-teacher conflicts by course and academic year (`src/platform/education/contracts/teacher-assignment.contract.impl.ts:61-104`, `src/platform/education/contracts/teacher-assignment.contract.impl.ts:127-166`). Course capacity concerns enrollment counts, which is a different commitment unit.
+
+```yaml
+education:
+  resource_identity:
+    result: NOT_FOUND
+    evidence_strength: NOT_FOUND
+    rationale: "No implemented physical classroom, facility, or equipment allocation capability was found in the inspected Education scope."
+  finite_capacity:
+    result: DIVERGENT
+    evidence_strength: IMPLEMENTED_AND_VERIFIED
+    rationale: "Course max_students is learner enrollment capacity, not finite capacity of a resource committed to an activity time window."
+  service_segment_commitment:
+    result: NOT_FOUND
+    evidence_strength: NOT_FOUND
+    rationale: "Attendance/session dates exist, but no resource commitment per class activity segment was found."
+  temporal_allocation:
+    result: NOT_FOUND
+    evidence_strength: NOT_FOUND
+    rationale: "Teacher assignment has effective dates, but no physical-resource allocation window was found."
+  availability_constraint:
+    result: NOT_FOUND
+    evidence_strength: NOT_FOUND
+    rationale: "Teacher assignment availability/conflict is not evidence that a classroom or equipment resource is unavailable."
+  capacity_conflict:
+    result: DIVERGENT
+    evidence_strength: IMPLEMENTED_AND_VERIFIED
+    rationale: "Enrollment and lead-teacher conflicts are real constraints, but their business meaning is not resource capacity conflict."
+  reallocation:
+    result: NOT_FOUND
+    evidence_strength: NOT_FOUND
+    rationale: "Teacher assignment termination is not evidence of reallocating a physical resource between activity segments."
+  allocation_history:
+    result: NOT_FOUND
+    evidence_strength: NOT_FOUND
+    rationale: "Assignment effective dates do not establish old/new physical resource allocation history."
+  affected_allocation_discovery:
+    result: NOT_FOUND
+    evidence_strength: NOT_FOUND
+    rationale: "No maintenance or facility outage workflow was found that discovers affected allocations."
+```
+
+### Logistics
+
+Logistics has implemented allocation semantics for inventory quantity and route/shipment assignment. Inventory allocation records item, location, quantity, purpose, reference, actor, status, creation, release, and expiry (`src/platform/logistics/contracts/inventory.contract.ts:238-285`), and validates available quantity before reservation (`src/platform/logistics/contracts/inventory.contract.ts:290-306`). Route management can validate weight/volume and reassign a shipment between routes with reason and actor (`src/platform/logistics/contracts/route-management.contract.ts:65-86`, `src/platform/logistics/contracts/route-management.contract.ts:136-151`, `src/platform/logistics/contracts/route-management.contract.ts:649-657`). These are real allocation-like capabilities, but their commitment units are inventory quantity and shipment-to-route membership, not a physical resource held by service segments in a time window.
+
+```yaml
+logistics:
+  resource_identity:
+    result: DIVERGENT
+    evidence_strength: IMPLEMENTED_AND_VERIFIED
+    rationale: "Items, locations, vehicles, and routes are identified, but they are inventory or transport entities with different allocation semantics from salon resources."
+  finite_capacity:
+    result: DIVERGENT
+    evidence_strength: IMPLEMENTED_AND_VERIFIED
+    rationale: "Inventory quantity and route weight/volume limits are finite, but they are not concurrent physical-resource capacity for a service segment."
+  service_segment_commitment:
+    result: DIVERGENT
+    evidence_strength: IMPLEMENTED_AND_VERIFIED
+    rationale: "The commitment is to an order/reference, inventory quantity, shipment, waypoint, or route rather than a service segment requiring a resource."
+  temporal_allocation:
+    result: PARTIAL
+    evidence_strength: IMPLEMENTED_AND_VERIFIED
+    rationale: "Inventory supports expiry and shipments have planned/actual dates, but the inspected evidence does not establish resource occupancy intervals with overlap semantics."
+  availability_constraint:
+    result: PARTIAL
+    evidence_strength: IMPLEMENTED_AND_VERIFIED
+    rationale: "Inventory status and available quantity constrain reservation, but availability does not have the same physical-resource meaning as a salon station or clinical bed."
+  capacity_conflict:
+    result: PARTIAL
+    evidence_strength: IMPLEMENTED_AND_VERIFIED
+    rationale: "Quantity and route capacity violations are enforced, but no equivalent time-window resource conflict was found."
+  reallocation:
+    result: PARTIAL
+    evidence_strength: IMPLEMENTED_AND_VERIFIED
+    rationale: "Inventory release/re-reservation and shipment route reassignment exist, but they reassign different commitment units and do not prove Haircut-style resource replacement."
+  allocation_history:
+    result: PARTIAL
+    evidence_strength: IMPLEMENTED_AND_VERIFIED
+    rationale: "Allocation records preserve status, actor, created/released/expiry times and reference, but not an old-resource/new-resource segment chain."
+  affected_allocation_discovery:
+    result: NOT_FOUND
+    evidence_strength: NOT_FOUND
+    rationale: "No inspected workflow discovers all time-overlapping resource allocations after a physical resource becomes unavailable."
+```
+
+### Cross-Vertical Summary
+
+```yaml
+H4_2_pass_E:
+  source: CROSS_VERTICAL_PROBE
+  evidence_role: BUSINESS_AND_IMPLEMENTATION_EVIDENCE_ONLY
+  frozen_invariants_tested: 9
+  verticals_tested:
+    - HEALTHCARE
+    - EDUCATION
+    - LOGISTICS
+  evidence_vocabulary_guard: PASS
+  semantic_equivalence_guard: PASS
+  findings:
+    healthcare: "Strong resource allocation evidence, with partial maturity for segment/reallocation/history and no affected-allocation discovery evidence."
+    education: "No physical-resource allocation capability found; capacity/conflict evidence is materially divergent."
+    logistics: "Allocation capabilities exist, but inventory and route commitment semantics are materially different from Haircut resource allocation."
+  cross_vertical_generality:
+    signal: WEAK_TO_MODERATE
+    common_semantic_kernel: "Independent resource identity, availability gating, finite constraint, and conflict prevention appear in some verticals but not with one stable commitment meaning."
+    material_semantic_divergence: true
+    platform_candidate: PLAUSIBLE_BUT_UNPROVEN
+    platform_ownership_proven: false
+  ownership: UNRESOLVED
+  platform_promotion_authorized: false
+  contract_design_authorized: false
+  inventory_change_authorized: false
+```
+
+Pass E does not authorize a Platform verdict. Healthcare is the strongest non-Beauty match, but Education lacks the physical-resource capability in scope and Logistics uses materially different allocation units. The evidence currently supports a cross-vertical generality signal only at a broad pattern level; semantic ownership still requires Pass F.
+
+---
+
 ## Pending Passes
 
 ```yaml
@@ -942,12 +1122,17 @@ H4_2_pending:
     rule_followed: "Separated input producers, allocation truth, downstream consumers, and deletion-test results."
 
   pass_E_cross_vertical_probe:
-    status: PENDING
+    status: COMPLETE
+    evidence_strength: IMPLEMENTED_AND_VERIFIED_PLUS_IMPLEMENTED_NOT_VERIFIED
+    result: "Healthcare strong partial; Education divergent/not found; Logistics partial/divergent"
+    cross_vertical_generality_signal: WEAK_TO_MODERATE
+    platform_candidate: PLAUSIBLE_BUT_UNPROVEN
+    platform_ownership_proven: false
     candidate_verticals:
       - HEALTHCARE
       - EDUCATION
       - LOGISTICS
-    rule: "Probe semantic invariants, not resource vocabulary. Platform ownership requires semantic equivalence outside Beauty."
+    rule_followed: "Probed all nine frozen invariants by business meaning and recorded evidence strength separately from verdict."
 
   pass_F_semantic_divergence_and_ownership:
     status: PENDING
@@ -964,12 +1149,12 @@ H4_2_pending:
 
 ```yaml
 checkpoint:
-  h4_2_status: PASS_D_COMPLETE
+  h4_2_status: PASS_E_COMPLETE
   haircut_resource_allocation_invariants: FROZEN
   babycare_mapping: COMPLETE
   nail_projection: COMPLETE_PROJECTION_ONLY
   producer_consumer_test: COMPLETE
-  cross_vertical_probe: PENDING
+  cross_vertical_probe: COMPLETE
   semantic_divergence: PENDING
   ownership: UNRESOLVED
   platform_promotion_authorized: false
@@ -980,7 +1165,7 @@ checkpoint:
 Next step:
 
 ```text
-H4.2 Pass E — Cross-Vertical Resource Allocation Probe
+H4.2 Pass F — Semantic Divergence and Ownership Resolution
 ```
 
-Pass E must compare semantic invariants outside Beauty. Platform ownership requires equivalent business meaning, not merely a shared `resource` label.
+Pass F must reconcile Beauty evidence with the cross-vertical divergence matrix before choosing `HAIRCUT_PRODUCT`, `BEAUTY_OS`, `PLATFORM`, or `UNRESOLVED`.
