@@ -98,103 +98,153 @@
 
 ---
 
-### Option C: Evidence Inheritance (RECOMMENDED)
+### Option C: Bounded RC Verification
 
-**Nail RC Definition:** Validated through Beauty OS boundary
+**Nail RC Definition:** Product-ready with inherited foundation + Nail-specific evidence
 
 **Logic:**
 
 ```
-IF Beauty OS H8 already validated:
-   - Database persistence patterns
-   - RLS tenant isolation
-   - Runtime constraints
-   - Migration integrity
+Beauty OS H8 provides FOUNDATION evidence:
+   - Database persistence patterns      ✅
+   - RLS tenant isolation               ✅
+   - Runtime constraints                ✅
+   - Migration integrity                ✅
 
-AND Nail creates:
-   - 0 new tables
-   - 0 new schemas
-   - 0 new migrations
-   - 0 new persistence patterns
+Nail INHERITS foundation because:
+   - 0 new tables created
+   - 0 new schemas created
+   - 0 new migrations needed
+   - Uses same beauty_* persistence layer
 
-THEN Nail inherits those validations by boundary.
+Nail MUST PROVE product-specific:
+   - Nail workflows persist correctly to real DB
+   - Nail metadata maps to/from database correctly
+   - Tenant isolation works for Nail product paths
+   - Critical user journeys work with real data
+   - (Optional) Browser UI renders Nail workflows
 ```
 
 **Evidence to add:**
-1. **Spot-check:** Single Nail workflow against real DB (not full suite)
-2. **RLS inheritance:** Document that Nail uses same `beauty_*` tables already validated
-3. **Critical path only:** Multi-resource allocation with real DB
+1. **Runtime DB verification:** Nail workflows against real database (not full suite, critical paths only)
+2. **Metadata persistence:** Nail-specific jsonb data reads/writes correctly
+3. **Tenant isolation:** Nail product paths respect RLS (inherit Beauty OS, verify boundary)
+4. **Critical user journeys:** 3 E2E flows with real DB (not in-memory mocks)
+5. **(Optional) Browser verification:** If UI exists, verify 3 journeys render
 
 **Value:**
-- Minimal effort (~2-4 hours)
-- Reuses existing Beauty OS proofs
-- Avoids redundant testing
-- Nail becomes RC candidate
+- Inherits Beauty OS foundation proofs (don't re-test schema/RLS design)
+- Validates Nail product works with real data
+- Bounded scope (critical paths only, not exhaustive)
+- Nail becomes deployable RC
 
 **Limitation:**
-- Assumes Beauty OS H8 validation is complete
-- Requires documented evidence inheritance
-- Spot-check may find edge cases
+- Requires Beauty OS H8 evidence is complete
+- Nail must provide product-specific proof (can't inherit everything)
+- May discover integration issues
 
-**Effort estimate:** 4 hours
-- Real DB spot-check test: 2 hours
-- Evidence inheritance doc: 1 hour
-- Critical path verification: 1 hour
+**Effort estimate:** 1 day (if UI exists), 4-6 hours (if backend only)
+- Runtime DB tests (critical paths): 2-3 hours
+- Metadata/mapping verification: 1-2 hours
+- Tenant isolation boundary check: 1 hour
+- Browser verification (optional): 4-6 hours
 
 ---
 
 ## RECOMMENDATION
 
-**Choose Option C: Evidence Inheritance**
+**Separate Factory Proof from Product RC**
 
-**Rationale:**
-
-1. **Nail created 0 new persistence**
-   - No new tables to validate
-   - No new schemas to test
-   - No new RLS policies needed
-
-2. **Beauty OS H8 already validated**
-   - `beauty_appointments` persistence: ✅
-   - `beauty_sessions` persistence: ✅
-   - `beauty_resource_allocations` persistence: ✅
-   - RLS tenant isolation: ✅
-   - History tables: ✅
-
-3. **Nail only adds metadata**
-   - Service metadata: `packages.metadata` jsonb
-   - Session outcome: `beauty_sessions.outcome` jsonb
-   - Both are extension points, not new schema
-
-4. **Factory efficiency principle**
-   - Don't re-test what Beauty OS already proved
-   - Validate inheritance boundary
-   - Spot-check critical path
-
-**Implementation:**
+**Current state @ b230655c:**
 
 ```text
-1. Create single runtime DB test (multi-resource workflow)
-2. Document RLS inheritance from Beauty OS H8
-3. Verify metadata persists correctly
-4. Nail RC candidate if spot-check PASS
+FACTORY PROOF:                      ✅ COMPLETE
+- Architecture reuse validated
+- 0 new contracts/tables/schemas
+- 5/5 integration + 3/3 E2E PASS
+- Governance reduction proven
+
+PRODUCT RC:                         ⏳ NOT YET
+- Runtime DB verification needed
+- Nail metadata persistence needed
+- Tenant isolation boundary check needed
+- (Optional) Browser UI verification
 ```
 
-**Expected outcome:** Nail RC candidate in 4 hours vs 1-2 days full validation.
+**Decision depends on Nail's purpose:**
+
+### If purpose = Factory Proof only
+**Action:** COMPLETE @ b230655c (no further work)
+
+**Value:**
+- Strong evidence for Software Factory hypothesis
+- Pattern for future Beauty products
+- Proof of architecture investment payoff
+- Marginal cost reduction demonstrated
+
+**Next:** Apply pattern to Massage/Facial/Spa
 
 ---
 
-## RC READINESS CRITERIA (Option C)
+### If purpose = Release Candidate product
+**Action:** Option C (Bounded RC Verification)
+
+**Rationale:**
+1. **Don't repeat H3-H9** (architecture already proven)
+2. **Inherit Beauty OS foundation** (schema, RLS design validated)
+3. **Prove Nail-specific runtime** (workflows with real data)
+4. **Bounded scope** (critical paths only, not exhaustive)
+
+**Not "evidence inheritance for speed"** — this is **product verification with inherited foundation**.
+
+**Effort:** 4-6 hours (backend) or 1 day (with UI)
+
+**Evidence required:**
+- [ ] Nail workflows persist to real DB correctly
+- [ ] Nail metadata maps to/from jsonb correctly
+- [ ] Tenant isolation verified at Nail product boundary
+- [ ] 3 critical user journeys with real data
+- [ ] (Optional) Browser UI renders journeys
+
+**Then:** Nail RC candidate
+
+---
+
+**Key distinction:**
+
+> **Factory Proof (done):** Beauty OS reduces architecture work for product #2  
+> **Product RC (pending):** Nail is ready to deploy to customers
+
+These are different questions. Factory Proof is valuable standalone.
+
+---
+
+## RC READINESS CRITERIA
+
+**If pursuing Product RC (Option C):**
 
 **Required evidence:**
 
 - [x] Architecture reuse validated (f70d0bbb)
 - [x] 0 new contracts/tables/schemas (f70d0bbb)
-- [ ] Runtime DB spot-check (critical path)
-- [ ] RLS inheritance documented
-- [ ] Metadata persistence verified
+- [x] Service orchestration works (3/3 E2E in-memory)
+- [ ] **Nail workflows persist to real DB** (critical paths)
+- [ ] **Nail metadata persists correctly** (jsonb fields)
+- [ ] **Tenant isolation verified** (Nail product boundary)
+- [ ] **3 critical journeys with real data** (not mocks)
+- [ ] **(Optional) Browser UI verification** (if applicable)
+
+**Important:** Don't repeat H3-H9. Inherit Beauty OS foundation. Prove Nail-specific runtime only.
 
 **Then:** Nail RC candidate
+
+---
+
+**If Factory Proof only:**
+
+- [x] All criteria met @ b230655c
+
+**Then:** Factory Proof complete (no RC needed)
 
 ---
 
@@ -224,25 +274,48 @@ Nail can remain as **"Factory Proof Validated"** without RC status.
 
 > **"What is Nail's purpose in Bella roadmap?"**
 
-**A. Factory Proof:**
-- Validate Beauty OS reuse
-- Establish pattern for future products
-- Prove architecture efficiency
+**A. Factory Proof (COMPLETE):**
+- Validate Beauty OS reuse ✅
+- Establish pattern for future products ✅
+- Prove architecture efficiency ✅
+- Demonstrate marginal cost reduction ✅
 
-→ **Current state sufficient (f70d0bbb)**
+→ **Current state sufficient @ b230655c**  
+→ **Value delivered:** Strong evidence for Software Factory hypothesis  
+→ **Next:** Apply pattern to Massage/Facial/Spa
 
-**B. Deployable Product:**
+---
+
+**B. Deployable Product (NOT YET):**
 - Generate revenue from nail services
 - Serve real customers
 - Complete product portfolio
 
-→ **Add runtime verification (Option C recommended)**
+→ **Add Bounded RC Verification (Option C)**  
+→ **Effort:** 4-6 hours (backend) or 1 day (with UI)  
+→ **Scope:** Runtime DB + metadata + tenant boundary + critical paths  
+→ **Inherit:** Beauty OS H8 foundation proofs (don't repeat)
+
+---
 
 **C. Deferred:**
 - Focus on other priorities (Haircut production, BabyCare)
-- Nail proof captured, RC later
+- Factory Proof captured, RC later when needed
 
-→ **No immediate action needed**
+→ **No immediate action**  
+→ **Value preserved:** Factory evidence remains valid
+
+---
+
+**Key insight:**
+
+> **Factory Proof ≠ Product RC**
+
+These answer different questions:
+- Factory Proof: "Does Beauty OS reduce architecture work?" → **YES @ b230655c**
+- Product RC: "Is Nail ready for customers?" → **Needs runtime verification**
+
+Factory Proof is valuable standalone. RC is optional next step if business requires deployable Nail product.
 
 ---
 
