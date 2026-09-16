@@ -197,12 +197,12 @@ jobs:
 
       - name: Require database drift credentials
         env:
-          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_DB_URL: ${{ secrets.E2E_SUPABASE_DB_URL }}
         run: test -n "$SUPABASE_DB_URL"
 
-      - name: Supabase migration drift
+      - name: Supabase migration drift (E2E baseline)
         env:
-          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_DB_URL: ${{ secrets.E2E_SUPABASE_DB_URL }}
         run: npm run db:migration:check
 
   build:

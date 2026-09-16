@@ -179,7 +179,13 @@ async function cleanupTenantData(tenantId: string | null, ids: {
     ids.customerId
       ? ["customer", client.from("customers").delete().eq("id", ids.customerId)]
       : ["customer", Promise.resolve({ data: null, error: null })],
-    ["tenant", client.from("tenants").delete().eq("id", tenantId)],
+    // Skip timeline_events delete (DO INSTEAD NOTHING rule blocks DELETE)
+    // Tombstone tenant instead of delete to satisfy FK constraints
+    ["tenant tombstone", client.from("tenants").update({
+      name: `CLEANED-E2E-${tenantId}`,
+      status: "suspended",
+      enabled_modules: { babycare: false, beauty_spa: false },
+    }).eq("id", tenantId)],
   ];
 
   for (const [label, query] of cleanupSteps) {

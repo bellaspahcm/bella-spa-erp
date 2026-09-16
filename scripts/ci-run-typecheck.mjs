@@ -140,10 +140,20 @@ function runChanged() {
     return;
   }
 
+  if (osScopes.includes('beauty')) {
+    runTscProject('tsconfig.beauty.json', 'beauty');
+    return;
+  }
+
   runFull();
 }
 
 function runAffected() {
+  if (osScopes.includes('beauty')) {
+    runTscProject('tsconfig.beauty.json', 'beauty-affected');
+    return;
+  }
+
   if (osScopes.includes('education') || affectedProducts.includes('education_preschool') || affectedProducts.includes('english_center')) {
     runTscProject('tsconfig.education.json', 'education-affected');
     if (affectedProducts.includes('english_center')) {

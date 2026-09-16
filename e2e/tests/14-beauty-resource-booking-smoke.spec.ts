@@ -110,9 +110,15 @@ test.describe("Beauty Spa resource booking smoke", () => {
         ids.userIds.length
           ? ["users", client.from("users").delete().in("id", ids.userIds)]
           : ["users", Promise.resolve({ data: null, error: null })],
+        // Skip timeline_events delete (DO INSTEAD NOTHING rule blocks DELETE)
+        // Tombstone tenant instead of delete to satisfy FK constraints
         ids.tenantId
-          ? ["tenant", client.from("tenants").delete().eq("id", ids.tenantId)]
-          : ["tenant", Promise.resolve({ data: null, error: null })],
+          ? ["tenant tombstone", client.from("tenants").update({
+            name: `CLEANED-E2E-${ids.tenantId}`,
+            status: "suspended",
+            enabled_modules: { babycare: false, beauty_spa: false },
+          }).eq("id", ids.tenantId)]
+          : ["tenant tombstone", Promise.resolve({ data: null, error: null })],
       ];
 
       const errors: string[] = [];

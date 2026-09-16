@@ -1,0 +1,33 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "next-env.d.ts",
+    "src/platform/beauty/**/*.ts",
+    "src/platform/beauty/**/*.tsx",
+    "src/platform/contracts/v1/service-catalog.contract.ts",
+    "src/platform/contracts/v1/waitlist-engine.contract.ts",
+    "src/products/nail/**/*.ts",
+    "src/products/nail/**/*.tsx",
+    "src/app/dashboard/nail/**/*.ts",
+    "src/app/dashboard/nail/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    "src/platform/host",
+    "src/platform/healthcare",
+    "src/platform/education",
+    "src/platform/logistics",
+    "src/platform/real-estate",
+    "src/services",
+    "**/__tests__",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
+  ]
+}
