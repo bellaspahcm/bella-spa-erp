@@ -21,25 +21,28 @@ ALTER TABLE public.chat_messages ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users can view chat messages for their tenant"
     ON public.chat_messages FOR SELECT
-    USING (tenant_id = (SELECT tenant_id FROM public.profiles WHERE id = auth.uid()));
+    USING (tenant_id = (SELECT tenant_id FROM public.users WHERE id = auth.uid()));
 
 CREATE POLICY "Users can insert chat messages for their tenant"
     ON public.chat_messages FOR INSERT
-    WITH CHECK (tenant_id = (SELECT tenant_id FROM public.profiles WHERE id = auth.uid()));
+    WITH CHECK (tenant_id = (SELECT tenant_id FROM public.users WHERE id = auth.uid()));
 
 -- 2. Loại bỏ các giá trị tenant_id mặc định bị gán cứng
-ALTER TABLE public.profiles ALTER COLUMN tenant_id DROP DEFAULT;
-ALTER TABLE public.employees ALTER COLUMN tenant_id DROP DEFAULT;
+-- Note: The following tables exist in initial schema
 ALTER TABLE public.customers ALTER COLUMN tenant_id DROP DEFAULT;
-ALTER TABLE public.projects ALTER COLUMN tenant_id DROP DEFAULT;
-ALTER TABLE public.units ALTER COLUMN tenant_id DROP DEFAULT;
 ALTER TABLE public.bookings ALTER COLUMN tenant_id DROP DEFAULT;
-ALTER TABLE public.sale_contracts ALTER COLUMN tenant_id DROP DEFAULT;
 ALTER TABLE public.expenses ALTER COLUMN tenant_id DROP DEFAULT;
 ALTER TABLE public.users ALTER COLUMN tenant_id DROP DEFAULT;
 ALTER TABLE public.salary_records ALTER COLUMN tenant_id DROP DEFAULT;
 ALTER TABLE public.session_logs ALTER COLUMN tenant_id DROP DEFAULT;
 ALTER TABLE public.revenue ALTER COLUMN tenant_id DROP DEFAULT;
+
+-- Removed dead references (tables never created):
+-- - public.profiles (never existed, was legacy reference)
+-- - public.employees (never created)
+-- - public.projects (never created)
+-- - public.units (never created)
+-- - public.sale_contracts (never created)
 
 -- 3. Hàm RPC: get_dashboard_summary
 CREATE OR REPLACE FUNCTION public.get_dashboard_summary(
