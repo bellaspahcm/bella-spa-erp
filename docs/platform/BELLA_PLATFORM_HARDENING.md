@@ -151,36 +151,44 @@ diff test.sql e2e.sql  # Acceptable differences documented
 
 ### **P1: TypeScript Debt Governance**
 
-**Current Status:** ⏸️ NOT STARTED
+**Current Status:** ✅ **T1 Layer 1 COMPLETE** — Compiler diagnostics measured
 
 **Approach:** Census by scope, fix selectively, lock with no-new-debt.
 
-**Phase T1: TypeScript Census**
+**Phase T1: TypeScript Census** ✅ **LAYER 1 COMPLETE**
+
 ```bash
-# Full diagnostic by scope
+# Scoped diagnostic census
 npm run typescript:census
 
-Output:
-├─ Total errors: 2,847
-├─ By severity: Error (1,203), Warning (1,644)
-├─ By scope:
-│   ├─ Platform (Healthcare OS): 312 errors
-│   ├─ Platform (Education OS): 189 errors
-│   ├─ Platform (Logistics OS): 145 errors
-│   ├─ Product (BabyCare): 234 errors
-│   ├─ Product (Beauty): 89 errors
-│   ├─ Product (Haircut): 67 errors
-│   ├─ Product (Nail): 45 errors
-│   ├─ Shared/Legacy: 1,766 errors
-├─ By type:
-│   ├─ any (892)
-│   ├─ implicit any (445)
-│   ├─ @ts-ignore (234)
-│   ├─ Type assertion (178)
-│   ├─ Missing return type (567)
-│   └─ Other (531)
-└─ By file age: <3 months (234), 3-6 months (567), >6 months (2,046)
+ACTUAL RESULTS (2026-09-16):
+├─ Total compiler diagnostics: 396
+├─ Verified scopes: 9
+├─ Clean scopes: 1 (Beauty OS)
+├─ Dirty scopes: 2 (Education OS, English Center)
+│
+├─ By scope (Layer 1: Compiler Diagnostics):
+│   ├─ Beauty OS: 0 ✅ CLEAN → READY FOR LOCK
+│   ├─ Education OS: 231 ⚠️ ACTIVE + DIRTY → FIX
+│   ├─ English Center: 165 ⏸️ PAUSED + DIRTY → DEFER
+│   ├─ Healthcare Platform: TBD (requires scoped config)
+│   ├─ Logistics Platform: TBD (requires scoped config)
+│   ├─ Platform Core: TBD (requires scoped config)
+│   └─ Legacy areas: TBD (requires scoped config)
+│
+├─ Top error types (Education OS):
+│   ├─ TS2339: Property does not exist (69)
+│   ├─ TS2322: Type not assignable (66)
+│   ├─ TS2345: Argument not assignable (24)
+│   ├─ TS18047: Possibly null/undefined (14)
+│   └─ TS2363: Arithmetic type violation (10)
+│
+└─ Key insight: 396 actual diagnostics << 1,554 'any' markers
+    → Codebase healthier than initial estimates
+    → 'any' count ≠ compiler error count
 ```
+
+**Evidence:** `docs/platform/P1_T1_TYPESCRIPT_CENSUS_COMPLETE.md`
 
 **Phase T2: Classify by Actionability**
 
