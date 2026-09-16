@@ -37,10 +37,13 @@ describe('Bella Haircut H8 golden operational workflow', () => {
     const assignmentRepository: ProfessionalAssignmentRepository = {
       create: async (value) => { assignment = value; return value; },
       update: async (value) => { assignment = value; return value; },
+      appendHistory: async (value) => value,
       listActive: async () => [],
     };
     const allocationRepository: ResourceAllocationRepository = {
       create: async (value) => { allocation.push(value); return value; },
+      update: async (value) => value,
+      appendHistory: async (value) => value,
       listActive: async () => [],
     };
     const availability: ResourceAvailabilityPort = {

@@ -1,6 +1,8 @@
 import {
   AppointmentRecord,
+  ProfessionalAssignmentHistoryRecord,
   ProfessionalAssignmentRecord,
+  ResourceAllocationHistoryRecord,
   ResourceAllocationRecord,
   ResourceCapacityWindow,
   SessionRecord,
@@ -16,11 +18,14 @@ export interface AppointmentRepository {
 export interface ProfessionalAssignmentRepository {
   create(assignment: ProfessionalAssignmentRecord): Promise<ProfessionalAssignmentRecord>;
   update(assignment: ProfessionalAssignmentRecord): Promise<ProfessionalAssignmentRecord>;
+  appendHistory(history: ProfessionalAssignmentHistoryRecord): Promise<ProfessionalAssignmentHistoryRecord>;
   listActive(scope: TenantScoped & { serviceCommitmentId: string }): Promise<ProfessionalAssignmentRecord[]>;
 }
 
 export interface ResourceAllocationRepository {
   create(allocation: ResourceAllocationRecord): Promise<ResourceAllocationRecord>;
+  update(allocation: ResourceAllocationRecord): Promise<ResourceAllocationRecord>;
+  appendHistory(history: ResourceAllocationHistoryRecord): Promise<ResourceAllocationHistoryRecord>;
   listActive(scope: TenantScoped & { resourceId: string }): Promise<ResourceAllocationRecord[]>;
 }
 

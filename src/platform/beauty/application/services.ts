@@ -59,6 +59,13 @@ export interface ProposeAssignmentCommand {
   professionalId: string;
 }
 
+export interface ReplaceAssignmentCommand {
+  assignment: ProfessionalAssignmentRecord;
+  replacementProfessionalId: string;
+  actorId: string;
+  reason: string;
+}
+
 export class ProfessionalAssignmentService {
   public constructor(
     private readonly repository: ProfessionalAssignmentRepository,
@@ -101,6 +108,51 @@ export class ProfessionalAssignmentService {
     if (violations.length > 0) throw new BeautyApplicationError(violations[0], 'Assignment decision violates a frozen invariant.');
     return this.repository.update(next);
   }
+
+  public async disruptAndReplace(command: ReplaceAssignmentCommand): Promise<ProfessionalAssignmentRecord> {
+    if (command.assignment.status !== 'ACCEPTED') {
+      throw new BeautyApplicationError('INVALID_ASSIGNMENT_STATE', 'Only accepted assignments can be disrupted for replacement.');
+    }
+    const disruptedAt = this.clock.now();
+    const disrupted: ProfessionalAssignmentRecord = {
+      ...command.assignment,
+      status: 'DISRUPTED',
+      reason: command.reason,
+      actorId: command.actorId,
+      decidedAt: disruptedAt,
+    };
+    const disruptedViolations = validateAssignmentChange(disrupted);
+    if (disruptedViolations.length > 0) throw new BeautyApplicationError(disruptedViolations[0], 'Assignment disruption violates a frozen invariant.');
+    await this.repository.update(disrupted);
+
+    const replacement: ProfessionalAssignmentRecord = {
+      id: this.ids.next('assignment'),
+      tenantId: command.assignment.tenantId,
+      serviceCommitmentId: command.assignment.serviceCommitmentId,
+      professionalId: command.replacementProfessionalId,
+      status: 'PROPOSED',
+      replacementForId: command.assignment.id,
+      reason: null,
+      actorId: null,
+      proposedAt: this.clock.now(),
+      decidedAt: null,
+    };
+    const replacementViolations = validateAssignmentChange(replacement);
+    if (replacementViolations.length > 0) throw new BeautyApplicationError(replacementViolations[0], 'Replacement assignment violates a frozen invariant.');
+    const created = await this.repository.create(replacement);
+    await this.repository.appendHistory({
+      id: this.ids.next('assignment-history'),
+      tenantId: command.assignment.tenantId,
+      assignmentId: command.assignment.id,
+      fromProfessionalId: command.assignment.professionalId,
+      toProfessionalId: command.replacementProfessionalId,
+      eventType: 'DISRUPTED_REPLACED',
+      reason: command.reason,
+      actorId: command.actorId,
+      occurredAt: disruptedAt,
+    });
+    return created;
+  }
 }
 
 export interface AllocateResourceCommand {
@@ -110,6 +162,13 @@ export interface AllocateResourceCommand {
   resourceId: string;
   interval: ResourceAllocationRecord['interval'];
   capacityUnits: number;
+}
+
+export interface ReallocateResourceCommand {
+  allocation: ResourceAllocationRecord;
+  replacementResourceId: string;
+  actorId: string;
+  reason: string;
 }
 
 export class ResourceAllocationService {
@@ -145,6 +204,70 @@ export class ResourceAllocationService {
     const violations = validateAllocation(allocation, capacity);
     if (violations.length > 0) throw new BeautyApplicationError(violations[0], 'Resource allocation violates a frozen invariant.');
     return this.repository.create(allocation);
+  }
+
+  public async reallocate(command: ReallocateResourceCommand): Promise<ResourceAllocationRecord> {
+    if (command.allocation.status !== 'ACTIVE' && command.allocation.status !== 'PROPOSED') {
+      throw new BeautyApplicationError('INVALID_ALLOCATION_STATE', 'Only proposed or active allocations can be reallocated.');
+    }
+    if (command.replacementResourceId === command.allocation.resourceId) {
+      throw new BeautyApplicationError('INVALID_REPLACEMENT_RESOURCE', 'Replacement resource must differ from the disrupted resource.');
+    }
+    const capacity = await this.availability.getWindow({
+      tenantId: command.allocation.tenantId,
+      resourceId: command.replacementResourceId,
+      interval: command.allocation.interval,
+    });
+    const active = await this.repository.listActive({ tenantId: command.allocation.tenantId, resourceId: command.replacementResourceId });
+    const overlappingCapacity = active
+      .filter((existing) => intervalsOverlap(existing.interval, command.allocation.interval))
+      .reduce((total, existing) => total + existing.capacityUnits, 0);
+    if (overlappingCapacity + command.allocation.capacityUnits > capacity.capacityUnits) {
+      throw new BeautyApplicationError('RESOURCE_CAPACITY_CONFLICT', 'Replacement resource capacity is exhausted.');
+    }
+
+    const disrupted: ResourceAllocationRecord = {
+      ...command.allocation,
+      status: 'DISRUPTED',
+      reason: command.reason,
+      actorId: command.actorId,
+    };
+    const disruptedViolations = validateAllocation(disrupted, {
+      tenantId: command.allocation.tenantId,
+      resourceId: command.allocation.resourceId,
+      interval: command.allocation.interval,
+      capacityUnits: Math.max(command.allocation.capacityUnits, 1),
+      unavailable: false,
+    });
+    if (disruptedViolations.length > 0) throw new BeautyApplicationError(disruptedViolations[0], 'Resource disruption violates a frozen invariant.');
+    await this.repository.update(disrupted);
+
+    const replacement: ResourceAllocationRecord = {
+      ...command.allocation,
+      id: this.ids.next('allocation'),
+      resourceId: command.replacementResourceId,
+      status: 'PROPOSED',
+      replacementForId: command.allocation.id,
+      reason: null,
+      actorId: null,
+    };
+    const replacementViolations = validateAllocation(replacement, capacity);
+    if (replacementViolations.length > 0) throw new BeautyApplicationError(replacementViolations[0], 'Replacement allocation violates a frozen invariant.');
+    const created = await this.repository.create(replacement);
+    await this.repository.appendHistory({
+      id: this.ids.next('allocation-history'),
+      tenantId: command.allocation.tenantId,
+      allocationId: command.allocation.id,
+      replacementAllocationId: created.id,
+      oldResourceId: command.allocation.resourceId,
+      newResourceId: command.replacementResourceId,
+      segmentId: command.allocation.segmentId,
+      eventType: 'RESOURCE_REALLOCATED',
+      reason: command.reason,
+      actorId: command.actorId,
+      occurredAt: this.clock.now(),
+    });
+    return created;
   }
 }
 

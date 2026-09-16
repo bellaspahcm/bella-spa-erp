@@ -32,6 +32,17 @@ export interface ProfessionalAssignmentRecord extends TenantScoped {
   decidedAt: string | null;
 }
 
+export interface ProfessionalAssignmentHistoryRecord extends TenantScoped {
+  id: string;
+  assignmentId: string;
+  fromProfessionalId: string | null;
+  toProfessionalId: string;
+  eventType: string;
+  reason: string;
+  actorId: string;
+  occurredAt: string;
+}
+
 export interface ResourceAllocationRecord extends TenantScoped {
   id: string;
   serviceCommitmentId: string;
@@ -43,6 +54,19 @@ export interface ResourceAllocationRecord extends TenantScoped {
   replacementForId: string | null;
   reason: string | null;
   actorId: string | null;
+}
+
+export interface ResourceAllocationHistoryRecord extends TenantScoped {
+  id: string;
+  allocationId: string;
+  replacementAllocationId: string | null;
+  oldResourceId: string | null;
+  newResourceId: string;
+  segmentId: string;
+  eventType: string;
+  reason: string;
+  actorId: string;
+  occurredAt: string;
 }
 
 export interface SessionRecord extends TenantScoped {
