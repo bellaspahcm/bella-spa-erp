@@ -123,15 +123,23 @@
 - 0 schema changes
 
 **Significance:**
-This test proves `IResourceAllocation` is **truly general-purpose**, not Haircut-specific.
+This test proves `IResourceAllocation` **cross-product reuse within Beauty OS**.
+
+Evidence:
+- Haircut: chair allocation (single resource)
+- Nail: station + foot spa allocation (multi-resource)
+- Contract unchanged between products
+- Schema unchanged between products
 
 The contract supports:
-- Multiple resource types (station, foot spa, any future resource)
+- Multiple resource types (chair, station, foot spa)
 - Multiple allocations per service (via shared service_commitment_id)
 - Capacity/conflict checking per resource
 - Resource reallocation
 
-**Beauty OS generality confirmed.**
+**Cross-product reuse proven for Haircut + Nail.**
+
+When Massage/Facial reuse this contract, generality claim will strengthen further.
 
 ---
 
@@ -202,7 +210,20 @@ All 5 workflows completed successfully using:
 
 ## TEST REUSE ANALYSIS
 
-**Test pattern reuse:** ~85%
+**Test pattern reuse:** ~85% (measurement method pending)
+
+**Note on measurement:**
+Current estimate based on:
+- Test infrastructure: 100% reused (WorkflowIds, WorkflowClock, repository mocks)
+- Test structure: 100% reused (setup → execute → assert)
+- Workflow-specific logic: varied (Nail multi-resource is new)
+
+**Formal measurement requires:**
+- Define denominator: test cases, LOC, or test patterns?
+- Count exact reuse vs new code
+- Establish baseline from Haircut
+
+**For now: qualitative assessment = "substantial reuse with workflow-specific deltas"**
 
 **Reused from Haircut:**
 - Test infrastructure (WorkflowIds, WorkflowClock)
@@ -215,7 +236,7 @@ All 5 workflows completed successfully using:
 - Metadata assertions (nail-specific outcome)
 - Multi-resource allocation test (new workflow, not in Haircut)
 
-**Note:** Lower than 100% reuse is expected. Nail has different workflows (multi-resource), but test structure remains identical. This is **not** a Factory failure — contracts/schema unchanged.
+**Important:** Lower than 100% reuse is expected. Nail has different workflows (multi-resource), but test structure remains identical. This is **not** a Factory failure — contracts/schema unchanged is the true metric.
 
 ---
 
@@ -230,15 +251,22 @@ All 5 workflows completed successfully using:
 - ✅ 0 ACR required
 - ✅ 0 semantic gaps found
 - ✅ Extensions fit within metadata/config
-- ✅ Critical test (multi-resource) proves contract generality
+- ✅ Critical test (multi-resource) proves cross-product reuse
 
 **Factory Rule validated:**
 Nail **did not** repeat Haircut H3-H9 governance. Nail **reused** frozen Beauty OS foundation.
 
+**Significance:**
+When E2E completes with same metrics (0 new contracts/schema/ACR), this becomes strong evidence:
+
+> **Haircut paid upfront architecture cost. Nail is first proof that Beauty OS reduces marginal architecture work for product #2.**
+
+That's when Bella Software Factory starts showing value: **not because AI codes faster, but because AI no longer re-decides architecture for each product.**
+
 **Next step:**
 Skip Day 3 architecture phase (not needed). Proceed directly to:
-1. Browser/E2E product verification
-2. Factory metrics measurement
+1. Browser/E2E product verification (representative user journeys only)
+2. Factory metrics measurement (elapsed time, reuse %, cost reduction)
 3. Ship Nail using existing foundation
 
 ---
