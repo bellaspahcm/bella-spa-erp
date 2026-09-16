@@ -105,6 +105,13 @@ ALTER TABLE beauty_resource_allocations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE beauty_professional_assignment_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE beauty_resource_allocation_history ENABLE ROW LEVEL SECURITY;
 
+GRANT SELECT, INSERT, UPDATE, DELETE ON beauty_appointments TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON beauty_sessions TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON beauty_professional_assignments TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON beauty_resource_allocations TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON beauty_professional_assignment_history TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON beauty_resource_allocation_history TO authenticated;
+
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'beauty_appointments' AND policyname = 'beauty_appointments_tenant_isolation') THEN
