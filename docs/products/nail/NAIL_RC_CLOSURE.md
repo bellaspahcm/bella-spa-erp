@@ -15,7 +15,39 @@ Bella Nail Product has successfully completed Release Candidate verification thr
 4. ✅ Zero semantic gaps
 5. ✅ Zero new contracts/tables/migrations
 
-**Bella Nail is the second product on Beauty OS and the first Factory Proof from Haircut → Nail.**
+**Bella Nail is the first product to complete full Product RC verification (Factory Proof + Browser UI Evidence) on Beauty OS.**
+
+**Note:** Haircut reached Development Complete / Integration Verified but did not complete a formal Product RC closure with browser/UI evidence equivalent to this verification.
+
+---
+
+## Product Portfolio Status (2026-09-16)
+
+### Beauty OS (Platform)
+- **Status:** ✅ FROZEN
+- **Contracts:** 6 (H1-H6)
+- **Runtime Verification:** ✅ H8 closed
+- **Regression Suite:** ✅ H9 closed (52/52 suites)
+- **Production:** BabyCare live on `lvnvkpyxtuilhrabtlwv`
+
+### Bella Haircut
+- **Development:** ✅ COMPLETE
+- **H8 Runtime:** ✅ CLOSED (persistence + RLS + tenant isolation)
+- **H9 Integration:** ✅ CLOSED (19/19 application tests)
+- **E2E UAT:** ✅ 4/4 PASS
+- **Product RC:** 🟡 NOT CLOSED (browser/UI evidence not formally verified)
+- **Known Gaps:** BabyCare regression SKIPPED (documented in H9 closure)
+- **Production:** ⏸️ NOT DEPLOYED
+
+### Bella Nail
+- **Factory Proof:** ✅ COMPLETE (0 contracts, 0 tables, 0 semantic gaps)
+- **Integration Tests:** ✅ 5/5 PASS
+- **Service E2E:** ✅ 3/3 PASS
+- **Browser E2E:** ✅ 3/3 PASS
+- **Product RC:** ✅ VERIFIED (first product with full RC closure)
+- **Production:** ⏸️ NOT DEPLOYED
+
+**Key Observation:** Nail completed formal Product RC before Haircut despite being the second product, because Nail included bounded browser/UI verification as part of RC criteria.
 
 ---
 
