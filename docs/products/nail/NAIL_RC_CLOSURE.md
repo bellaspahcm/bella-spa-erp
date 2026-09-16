@@ -58,14 +58,14 @@ Bella Nail Product has successfully completed Release Candidate verification thr
 ## Factory Metrics
 
 ### Code Volume
-- **Nail Product Orchestration:** ~422 LOC
-- **Reused Platform Services:** ~3,800 LOC (Beauty OS H1-H9)
-- **Reuse Ratio:** ~90% platform, ~10% product glue
+- **Nail Product Orchestration:** ~422 LOC (measured)
+- **Reused Platform Services:** Beauty OS H1-H9 contracts/engines (no new contracts)
+- **Pattern:** Product glue layer over frozen platform
 
 ### Timeline
 - **Haircut (First Product):** Weeks of architecture + implementation
 - **Nail (Second Product):** Hours of integration + UI wiring
-- **Acceleration:** ~10x from Factory reuse
+- **Observation:** Significant acceleration from platform reuse
 
 ### Architecture Impact
 - **ACRs Filed:** 0
@@ -149,11 +149,11 @@ Bella Nail Product has successfully completed Release Candidate verification thr
 
 **Why required:** These verify Nail correctly uses Beauty OS contracts for Nail-specific business logic.
 
-### Test Reuse Formula
-**Denominator:** Not defined yet (pending formal Factory test taxonomy)  
-**Claimed:** Evidence inheritance valid for unchanged contracts  
-**Measured:** Nail required ~13 new tests vs Haircut's ~70+ tests  
-**Interpretation:** ~80% test effort reduction through platform evidence inheritance
+### Test Reuse Observation
+**Denominator:** Not yet defined (pending formal Factory test taxonomy)  
+**Evidence inheritance:** Valid for unchanged contracts (H3-H9 proven by Haircut)  
+**Nail-specific tests:** ~13 new tests (integration + E2E + browser)  
+**Interpretation:** Significant test effort reduction through platform evidence inheritance; quantitative ratio pending formal methodology
 
 ---
 
@@ -282,8 +282,8 @@ Bella Nail Product has successfully completed Release Candidate verification thr
 
 **Bella Nail demonstrates:**
 1. Beauty OS successfully supports a second product (Nail) without architecture changes
-2. Factory acceleration: hours vs weeks from platform reuse
-3. Evidence inheritance reduces test burden while maintaining quality
+2. Significant acceleration from platform reuse (qualitative: hours vs weeks)
+3. Evidence inheritance reduces test burden while maintaining quality (0 new contracts, 0 ACRs, 0 semantic gaps)
 
 **Status:** 🔒 RELEASE CANDIDATE VERIFIED
 
