@@ -806,6 +806,119 @@ The projection supports a Beauty-domain generality signal without proving Beauty
 
 ---
 
+## Pass D — Producer / Consumer Ownership Test
+
+Pass D identifies who supplies inputs to Resource Allocation, who owns allocation truth, and which capabilities consume the result. It does not resolve the ownership layer.
+
+```yaml
+H4_2_pass_D:
+  capability: RESOURCE_ALLOCATION
+  test: PRODUCER_CONSUMER_OWNERSHIP
+
+  input_producers:
+    service_definition:
+      produces:
+        - SERVICE_SEGMENT_FLOW
+        - RESOURCE_TYPE_REQUIREMENT
+        - RESOURCE_COMPATIBILITY_RULE
+      owns_allocation: false
+
+    resource_availability_maintenance:
+      produces:
+        - RESOURCE_AVAILABLE
+        - RESOURCE_UNAVAILABLE
+        - MAINTENANCE_WINDOW
+        - OUT_OF_SERVICE_EVENT
+      owns_allocation: false
+
+    appointment_service_workflow:
+      produces:
+        - SERVICE_COMMITMENT
+        - REQUESTED_TIME_CONTEXT
+      owns_allocation: false
+
+  allocation_owner_candidate:
+    resource_allocation:
+      produces:
+        - RESOURCE_ALLOCATION_IDENTITY
+        - RESOURCE_TO_SEGMENT_COMMITMENT
+        - RESOURCE_COMMITMENT_WINDOW
+        - CAPACITY_CONSUMPTION
+        - CAPACITY_CONFLICT
+        - AFFECTED_ALLOCATION_DISCOVERY
+        - REALLOCATION
+        - ALLOCATION_HISTORY
+        - ACTUAL_RESOURCE_USED
+
+  consumers:
+    appointment_service_workflow:
+      consumes:
+        - ALLOCATION_FEASIBILITY
+        - RESOURCE_CONFLICT
+        - RESOURCE_DISRUPTION_IMPACT
+
+    smart_waitlist:
+      consumes:
+        - RESOURCE_FEASIBILITY
+        - RESOURCE_CONFLICT
+
+    operations_dispatch:
+      consumes:
+        - CURRENT_ALLOCATION
+        - AFFECTED_ALLOCATIONS
+        - REALLOCATION_OPTIONS
+
+    analytics:
+      consumes:
+        - ALLOCATION_HISTORY
+        - RESOURCE_UTILIZATION
+
+    finance_costing:
+      consumes:
+        - ACTUAL_RESOURCE_USAGE
+      owns_allocation: false
+
+  deletion_test:
+    without_smart_waitlist: SURVIVES
+    without_analytics: SURVIVES
+    without_finance_costing: SURVIVES
+    without_recommendation: SURVIVES
+    without_professional_assignment: SURVIVES
+    without_resource_availability_maintenance: SURVIVES_WITHOUT_AVAILABILITY_INPUT
+    without_service_definition: SURVIVES_WITHOUT_RESOURCE_REQUIREMENT_INPUT
+
+  ownership_finding:
+    independent_capability: PROVEN
+    owns:
+      resource_commitment_truth: true
+      capacity_consumption_truth: true
+      resource_conflict_truth: true
+      reallocation_truth: true
+      allocation_history: true
+    depends_on:
+      service_definition: true
+      resource_availability_maintenance: true
+      service_commitment: true
+    independent_ownership_signal: STRONG
+
+  semantic_separation:
+    resource_master_and_availability: "What the resource is and whether it can be used."
+    resource_allocation: "Which commitment consumes which resource capacity during which window."
+    service_workflow: "Which service step the customer is currently receiving."
+    actual_resource_used: "Observed allocation outcome, not asset or facility ownership."
+
+  ownership_layer: UNRESOLVED
+  platform_promotion_authorized: false
+  contract_design_authorized: false
+  inventory_change_authorized: false
+```
+
+The deletion test shows that Resource Allocation remains necessary without Waitlist, Analytics, Finance, Recommendation, or Professional Assignment. Removing Availability/Maintenance or Service Definition removes an input constraint, not the allocation capability itself. `Resource exists`, `Resource is available`, `Resource is allocated`, and `Resource was actually used` remain distinct facts.
+
+Pass D proves independent capability ownership at the business-semantic level only. It does not prove Beauty OS or Platform ownership, and it does not authorize contract design.
+
+---
+
 ## Pending Passes
 
 ```yaml
@@ -822,8 +935,11 @@ H4_2_pending:
     rule_followed: "Tested only the nine frozen Haircut invariants. No Nail implementation claim or new invariant was added."
 
   pass_D_producer_consumer_ownership:
-    status: PENDING
-    rule: "Identify who produces availability/resource requirements and who consumes allocation truth."
+    status: COMPLETE
+    independent_capability: PROVEN
+    independent_ownership_signal: STRONG
+    ownership_layer: UNRESOLVED
+    rule_followed: "Separated input producers, allocation truth, downstream consumers, and deletion-test results."
 
   pass_E_cross_vertical_probe:
     status: PENDING
@@ -848,11 +964,11 @@ H4_2_pending:
 
 ```yaml
 checkpoint:
-  h4_2_status: PASS_C_COMPLETE
+  h4_2_status: PASS_D_COMPLETE
   haircut_resource_allocation_invariants: FROZEN
   babycare_mapping: COMPLETE
   nail_projection: COMPLETE_PROJECTION_ONLY
-  producer_consumer_test: PENDING
+  producer_consumer_test: COMPLETE
   cross_vertical_probe: PENDING
   semantic_divergence: PENDING
   ownership: UNRESOLVED
@@ -864,7 +980,7 @@ checkpoint:
 Next step:
 
 ```text
-H4.2 Pass C — Nail Resource Allocation Projection
+H4.2 Pass E — Cross-Vertical Resource Allocation Probe
 ```
 
-Pass C must keep `PROJECTION_ONLY` evidence strength and must not treat Nail plausibility as implementation evidence.
+Pass E must compare semantic invariants outside Beauty. Platform ownership requires equivalent business meaning, not merely a shared `resource` label.
