@@ -9,9 +9,28 @@
 ## Executive Summary
 
 **Successfully verified scopes: 6/9**  
-**Blocked by compilation infrastructure: 3/9**  
+**Unmeasured due to compilation timeout: 3/9**  
 **Confirmed diagnostics: 610**  
-**Repository minimum: ≥610** (actual total unknown due to blocked scopes)
+**Repository total: UNKNOWN** (3 scopes unmeasured)  
+**Repository minimum: ≥610**
+
+**Status:** 🔒 **CLOSED WITH EXCEPTIONS** (EXC-P1T1-01)
+
+---
+
+## Exception: EXC-P1T1-01 — Large-Scope TypeScript Compilation Timeout
+
+**Affected scopes:** Logistics Platform, Services (Legacy), Decision Engine  
+**Root cause:** UNDETERMINED  
+**Impact:** Cannot establish complete repository-wide TypeScript diagnostic count
+
+**Evidence:**
+- Full-scope compilation times out (>2-3 minutes)
+- Individual subdirectories compile successfully
+- Suggests type resolution performance issue with combined scope
+- Cannot determine if source code complexity or tooling limitation without further investigation
+
+**Decision:** Document as known exception. Proceed with hardening based on 6 verified scopes. Timeout investigation deferred to future dedicated session.
 
 ---
 
@@ -36,7 +55,7 @@
 
 ### Logistics Platform
 
-**Status:** ❌ BLOCKED  
+**Status:** ❌ UNMEASURED (EXC-P1T1-01)  
 **Issue:** TypeScript compilation timeout (>3 minutes)  
 **Files:** 55 TypeScript files (excluding tests)  
 **Config:** tsconfig.logistics.json created but unusable
@@ -44,12 +63,13 @@
 **Investigation findings:**
 - Individual subdirectories compile successfully
 - Combined scoped config times out immediately
-- Suggests circular type dependencies or complex type resolution
+- **Root cause: UNDETERMINED**
+- Could be: circular type dependencies, complex type resolution, source code complexity, or tooling limitation
 - Not related to file count
 
 **Runtime status:** ✅ CORRECT (547/547 E7.1-E7.3 regression tests PASS)
 
-**Decision:** Cannot measure via standard tooling. Requires dedicated type resolution investigation.
+**Decision:** Cannot measure via standard tooling. Exception documented as EXC-P1T1-01.
 
 **Evidence:** See `docs/platform/P1_T1_LOGISTICS_TIMEOUT_INVESTIGATION.md`
 
@@ -57,27 +77,28 @@
 
 ### Legacy Services
 
-**Status:** ❌ BLOCKED  
+**Status:** ❌ UNMEASURED (EXC-P1T1-01)  
 **Issue:** TypeScript compilation timeout (>2 minutes)  
-**Files:** 158 TypeScript files in `src/services` (excluding tests, excluding BabyCare tests)  
+**Files:** 158 TypeScript files in `src/services` (excluding tests)  
 **Config:** tsconfig.legacy-services.json created but unusable
 
 **Investigation findings:**
 - Similar timeout pattern to Logistics
 - Legacy code predating OS extraction
-- Complex interdependencies likely causing type resolution issues
+- **Root cause: UNDETERMINED**
+- Likely complex interdependencies, but requires investigation to confirm
 
-**Decision:** Cannot measure via standard tooling.
+**Decision:** Cannot measure via standard tooling. Exception documented as EXC-P1T1-01.
 
 ---
 
 ### Decision Engine (Legacy)
 
-**Status:** ❌ BLOCKED (included in Legacy Services config)  
+**Status:** ❌ UNMEASURED (EXC-P1T1-01)  
 **Issue:** Part of Legacy Services timeout  
 **Files:** 107 TypeScript files in `src/lib/decision-engine`
 
-**Decision:** Cannot measure separately from Services.
+**Decision:** Cannot measure separately from Services. Exception documented as EXC-P1T1-01.
 
 ---
 
@@ -91,10 +112,10 @@
 - Compiler runs successfully
 - Diagnostic counts verified
 
-**Blocked measurements: 3 scopes**
+**Unmeasured: 3 scopes**
 - Logistics Platform, Services, Decision Engine
-- Compilation infrastructure limitations
-- Not source code measurement issues
+- Compilation timeout prevents measurement
+- Root cause undetermined (could be source complexity, type resolution, or tooling)
 - Would require dedicated investigation to resolve
 
 ### Closure Criteria
@@ -107,7 +128,7 @@
 - ✅ Recent architecture work (Beauty) confirmed clean
 - ✅ Healthcare Kernel type debt discovered and documented
 - ✅ Education OS type debt quantified
-- ✅ Debt distribution pattern revealed (concentrated, not uniform)
+- ✅ Debt distribution pattern revealed within verified scopes
 
 **Not achieved:**
 - ❌ Logistics Platform diagnostic count
@@ -116,11 +137,13 @@
 - ❌ Complete repository-wide total
 
 **Blocker assessment:**
-- Blocked scopes represent compilation infrastructure challenges
-- Not addressable within P1-T1 census scope
-- Require dedicated technical investigation
+- 3 scopes experience compilation timeout
+- Root cause undetermined (requires investigation beyond census scope)
+- Cannot be resolved without dedicated technical investigation
 
-**Decision:** **CLOSE P1-T1 LAYER 1** with documented limitations.
+**Decision:** **CLOSE P1-T1 LAYER 1 WITH EXCEPTIONS**
+
+Documented as **EXC-P1T1-01** — 3 scopes unmeasured due to compilation timeout, root cause undetermined. Census provides sufficient data for 6 critical scopes to proceed with hardening. Timeout investigation deferred.
 
 ---
 
@@ -138,12 +161,20 @@ English Center    165   ⏸️ PAUSED + TYPE-DIRTY
 ──────────────────────
 SUBTOTAL          610   (6 verified scopes)
 
-Logistics           ?   🔴 BLOCKED (timeout)
-Services/Legacy     ?   🔴 BLOCKED (timeout)
-Decision Engine     ?   🔴 BLOCKED (timeout)
+Logistics           ?   ❌ UNMEASURED (EXC-P1T1-01: timeout)
+Services/Legacy     ?   ❌ UNMEASURED (EXC-P1T1-01: timeout)
+Decision Engine     ?   ❌ UNMEASURED (EXC-P1T1-01: timeout)
 ──────────────────────
-REPOSITORY      ≥610   (actual total unknown)
+REPOSITORY      ≥610   (exact total unknown; 3 scopes unmeasured)
 ```
+
+### Exception: EXC-P1T1-01
+
+**Title:** Large-Scope TypeScript Compilation Timeout  
+**Affected:** Logistics, Services, Decision Engine  
+**Root cause:** UNDETERMINED  
+**Impact:** Repository-wide diagnostic total cannot be established  
+**Resolution:** Deferred to future investigation; does not block hardening progress
 
 ### Debt Distribution (Verified Scopes Only)
 
@@ -212,16 +243,22 @@ Hypothesis: Like Dental ownership fixes, addressing root contract/schema/type-mo
 
 ---
 
-### 4. Compilation Infrastructure Limitations Discovered
+### 4. Compilation Timeout Prevents Complete Census
 
-**Three scopes blocked by TypeScript compilation timeouts:**
+**Three scopes unmeasured due to TypeScript compilation timeouts:**
 - Logistics Platform (55 files)
 - Services (158 files)
 - Decision Engine (107 files)
 
-**Pattern:** Larger scoped compilations with complex inter-module dependencies hit type resolution performance issues.
+**Pattern:** Large-scope compilations with complex inter-module dependencies timeout before completion.
 
-**Not a source code quality measurement issue** - these are tooling/infrastructure challenges that would require dedicated investigation to resolve.
+**Root cause:** UNDETERMINED
+- Could be source code complexity (circular types, complex inference)
+- Could be type resolution performance (path mapping, module resolution)
+- Could be tooling limitation
+- Requires dedicated investigation to determine
+
+**Documented as EXC-P1T1-01** — Does not block hardening progress for verified scopes.
 
 ---
 
@@ -287,17 +324,14 @@ Implementation:
 
 ---
 
-### Priority 4: Investigate Blocked Scopes (Future)
+### Priority 4: Investigate Timeout Exception (Future — EXC-P1T1-01)
 
-**Logistics Platform timeout**
+**Logistics Platform / Services / Decision Engine timeout**
 - Dedicated investigation session required
+- Determine root cause: source complexity vs tooling limitation
 - Module graph analysis
-- Potential architecture refactoring target
-
-**Legacy Services/Decision Engine**
-- Part of pre-OS architecture
-- May benefit from modernization/cleanup
-- Lower priority (not actively developed)
+- May require architecture refactoring or tooling improvement
+- **Does not block current hardening progress**
 
 ---
 
@@ -345,23 +379,24 @@ Implementation:
 
 ## Conclusion
 
-**P1-T1 Layer 1 TypeScript Census is CLOSED with the following status:**
+**P1-T1 Layer 1 TypeScript Census is CLOSED WITH EXCEPTIONS:**
 
 ✅ **Successfully measured: 610 diagnostics across 6 critical scopes**  
 ✅ **Platform foundation confirmed clean** (Core + Beauty)  
 ✅ **Healthcare type debt discovered** (211, runtime correct)  
 ✅ **Education type debt quantified** (231, cluster patterns identified)  
-✅ **Debt distribution revealed** (concentrated in 3 scopes, not uniform)  
+✅ **Debt distribution revealed within verified scopes** (concentrated in 3 scopes)  
 ✅ **Zone Policy established** (Production Safety vs Pre-production Hardening)
 
-⚠️ **Blocked by infrastructure: 3 scopes** (Logistics, Services, Decision Engine)  
-⚠️ **Repository-wide total unknown** (≥610, actual higher)
+❌ **Exception EXC-P1T1-01: 3 scopes unmeasured** (Logistics, Services, Decision Engine)  
+❌ **Root cause: UNDETERMINED** (compilation timeout, requires investigation)  
+❌ **Repository-wide total: UNKNOWN** (≥610, exact number unmeasured)
 
-**Decision:** Proceed to cleanup phase with high-confidence measurements. Blocked scopes can be investigated separately if needed but do not block hardening progress.
+**Controlled debt approach:** Document what is unknown. Exception EXC-P1T1-01 does not block hardening progress for verified scopes.
 
-**The census achieved its primary goal:** Establish baseline TypeScript quality for active/recent code and identify cleanup priorities.
+**Decision:** Proceed to cleanup phase. Investigation of EXC-P1T1-01 deferred to future dedicated session.
 
 ---
 
-**Status:** 🔒 **P1-T1 LAYER 1 CLOSED**  
-**Next phase:** Governance (lock clean scopes) + Pre-production Hardening (fix verified type debt)
+**Status:** 🔒 **P1-T1 LAYER 1 CLOSED WITH EXCEPTIONS**  
+**Next phase:** Lock clean scopes (Core + Beauty) → Real Estate pilot (3 diagnostics) → Education hardening (231) → Healthcare hardening (211)
