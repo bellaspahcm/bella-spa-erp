@@ -226,9 +226,10 @@ export class SupabaseSurgeryRepository extends BaseSupabaseRepositoryPrimitive i
     return { orOverlaps, surgeonOverlaps };
   }
 
-  private handleError(error: Record<string, unknown>): never {
-    const code = String(error.code || '');
-    const message = String(error.message || '');
+  private handleError(error: Record<string, unknown> | { message: string; code?: string }): never {
+    const errorObj = error as Record<string, unknown>;
+    const code = String(errorObj.code || '');
+    const message = String(errorObj.message || '');
 
     if (code === '23P01') {
       if (message.includes('exclude_or_overlap')) {
