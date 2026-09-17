@@ -1,0 +1,115 @@
+name: TypeScript Clean Scope Gate
+
+# NO-NEW-DEBT ENFORCEMENT
+# Protects Platform Core and Beauty OS from TypeScript regressions
+# These scopes achieved 0 diagnostics in P1-T1 Layer 1 Census
+
+on:
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'src/platform/core/**'
+      - 'src/platform/beauty/**'
+      - 'src/products/nail/**'
+      - 'tsconfig.platform-core.json'
+      - 'tsconfig.beauty.json'
+  push:
+    branches: [main, master]
+    paths:
+      - 'src/platform/core/**'
+      - 'src/platform/beauty/**'
+      - 'src/products/nail/**'
+      - 'tsconfig.platform-core.json'
+      - 'tsconfig.beauty.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  platform-core-gate:
+    name: Platform Core — No New Debt
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript Check — Platform Core
+        run: npx tsc --project tsconfig.platform-core.json --noEmit
+
+      - name: Verify Zero Diagnostics
+        run: |
+          ERRORS=$(npx tsc --project tsconfig.platform-core.json --noEmit 2>&1 | grep -c "error TS" || echo "0")
+          if [ "$ERRORS" != "0" ]; then
+            echo "❌ Platform Core has $ERRORS TypeScript diagnostics"
+            echo "Baseline: 0 diagnostics (P1-T1 Layer 1)"
+            echo "NO NEW DEBT ALLOWED"
+            exit 1
+          fi
+          echo "✅ Platform Core: 0 diagnostics (clean)"
+
+  beauty-os-gate:
+    name: Beauty OS — No New Debt
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript Check — Beauty OS
+        run: npx tsc --project tsconfig.beauty.json --noEmit
+
+      - name: Verify Zero Diagnostics
+        run: |
+          ERRORS=$(npx tsc --project tsconfig.beauty.json --noEmit 2>&1 | grep -c "error TS" || echo "0")
+          if [ "$ERRORS" != "0" ]; then
+            echo "❌ Beauty OS has $ERRORS TypeScript diagnostics"
+            echo "Baseline: 0 diagnostics (P1-T1 Layer 1)"
+            echo "NO NEW DEBT ALLOWED"
+            exit 1
+          fi
+          echo "✅ Beauty OS: 0 diagnostics (clean)"
+
+  summary:
+    name: Clean Scope Gate Summary
+    needs: [platform-core-gate, beauty-os-gate]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Report Status
+        run: |
+          echo "## TypeScript Clean Scope Gate"
+          echo ""
+          echo "### Platform Core"
+          echo "Status: ${{ needs.platform-core-gate.result }}"
+          echo "Baseline: 0 diagnostics"
+          echo ""
+          echo "### Beauty OS"
+          echo "Status: ${{ needs.beauty-os-gate.result }}"
+          echo "Baseline: 0 diagnostics"
+          echo ""
+          echo "---"
+          echo "P1-T1 Layer 1 Census: CLOSED WITH EXCEPTIONS"
+          echo "Reference: docs/platform/P1_T1_LAYER_1_FINAL_CENSUS.md"
+
+      - name: Check Overall Status
+        if: needs.platform-core-gate.result != 'success' || needs.beauty-os-gate.result != 'success'
+        run: |
+          echo "❌ Clean scope gate failed"
+          echo "One or more scopes have introduced TypeScript regressions"
+          exit 1
