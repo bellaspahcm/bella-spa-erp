@@ -15,7 +15,7 @@
  * - DO NOT rollback DB (no fake business logic in event handler)
  */
 
-import type { OrderType, OrderStatus, OrderPriority } from '../domain/clinical-order.entity';
+import type { OrderType, OrderStatus, OrderPriority } from '../contracts/order-engine.contract';
 
 /**
  * Base event structure for all order events
