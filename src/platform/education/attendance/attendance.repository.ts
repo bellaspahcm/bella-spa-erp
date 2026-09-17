@@ -7,7 +7,7 @@
 
 import { createServerClient } from '@/lib/supabase-server';
 import type { Attendance, AttendanceFilters } from '../shared-kernel/attendance-types';
-import type { Database } from '@/types/database.types';
+import type { Database, Json } from '@/types/database.types';
 
 type AttendanceRow = Database['public']['Tables']['attendances']['Row'];
 type AttendanceInsert = Database['public']['Tables']['attendances']['Insert'];
@@ -57,7 +57,7 @@ export class SupabaseAttendanceRepository implements IAttendanceRepository {
       excuse_document_url: attendance.excuseDocumentUrl,
       verified_by: attendance.verifiedBy,
       verified_at: attendance.verifiedAt,
-      metadata: attendance.metadata,
+      metadata: attendance.metadata as Json | undefined,
       created_by: attendance.createdBy,
     };
 
@@ -89,7 +89,7 @@ export class SupabaseAttendanceRepository implements IAttendanceRepository {
       excuse_document_url: updates.excuseDocumentUrl,
       verified_by: updates.verifiedBy,
       verified_at: updates.verifiedAt,
-      metadata: updates.metadata,
+      metadata: updates.metadata as Json | undefined,
       updated_by: updates.updatedBy,
     };
 
