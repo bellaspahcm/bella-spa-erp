@@ -3,6 +3,7 @@
  */
 
 import { createClient } from '@/lib/supabase-server';
+import type { Json } from '@/types/database.types';
 import {
   Enrollment,
   EnrollmentsTableInsert,
@@ -27,7 +28,7 @@ export class EnrollmentRepository {
       grade_status: enrollment.gradeStatus,
       credits_earned: enrollment.creditsEarned ?? null,
       attendance_percentage: enrollment.attendancePercentage ?? null,
-      metadata: enrollment.metadata ?? null,
+      metadata: (enrollment.metadata ?? null) as Json,
       created_at: enrollment.createdAt,
       updated_at: enrollment.updatedAt,
       created_by: enrollment.createdBy ?? null,
@@ -117,7 +118,7 @@ export class EnrollmentRepository {
         grade_status: enrollment.gradeStatus,
         credits_earned: enrollment.creditsEarned ?? null,
         attendance_percentage: enrollment.attendancePercentage ?? null,
-        metadata: enrollment.metadata ?? null,
+        metadata: (enrollment.metadata ?? null) as Json,
         updated_at: enrollment.updatedAt,
         updated_by: enrollment.updatedBy ?? null,
       })
