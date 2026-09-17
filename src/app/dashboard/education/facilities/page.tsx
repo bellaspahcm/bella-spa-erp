@@ -76,7 +76,7 @@ export default function FacilitiesPage() {
   const exceptionService = new CommunicationExceptionService(commRepo);
   const bridge = new FacilitiesProjectionBridge(commRepo, exceptionService);
   const inspectionService = new SafetyInspectionService(facRepo, zoneService, bridge);
-  const maintenanceService = new MaintenanceJobService(facRepo, zoneService, bridge);
+  const maintenanceService = new MaintenanceJobService(facRepo);
 
   const loadData = async () => {
     setLoading(true);
