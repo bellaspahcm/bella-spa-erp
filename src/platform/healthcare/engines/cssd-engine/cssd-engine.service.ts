@@ -366,7 +366,7 @@ export class CssdEngineService implements CssdEngineContract {
         aggregateType: 'encounter', // generic base
         payload: {
           cssdCycleId: cycle.id,
-          cycleNumber: cycle.cycleNumber,
+          cycleNumber: cycle.cycle_number,
           indicatorResult: cycle.indicator_result,
         },
       });
@@ -697,7 +697,7 @@ export class CssdEngineService implements CssdEngineContract {
           cycleNumber: cyc?.cycle_number || '',
           startedAt: cyc?.started_at || '',
           completedAt: cyc?.completed_at || null,
-          indicatorResult: cyc?.indicator_result || null,
+          indicatorResult: (cyc?.indicator_result as 'pass' | 'fail' | 'pending' | null) || null,
           usedAt: row.used_at,
           returnedAt: row.returned_at,
         };
