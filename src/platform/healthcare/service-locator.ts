@@ -38,6 +38,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
 
 // Import all contract types (NOT engine implementations)
 import type { BedEngineContract } from './contracts/bed-engine.contract';
@@ -142,7 +143,7 @@ const serviceCache = new Map<ServiceKey, unknown>();
  */
 export function getHealthcareService<T extends HealthcareServiceMap[ServiceKey]>(
   serviceName: ServiceKey,
-  supabase: SupabaseClient
+  supabase: SupabaseClient<Database>
 ): T {
   // Check cache first
   if (serviceCache.has(serviceName)) {

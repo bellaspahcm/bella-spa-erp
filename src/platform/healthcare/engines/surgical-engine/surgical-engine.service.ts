@@ -8,6 +8,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
 import type {
   SurgicalEngineContract,
   CreateSurgicalCaseRequest,
@@ -45,7 +46,7 @@ export class SurgicalEngineService implements SurgicalEngineContract {
   private readonly sterilizationContract: ISterilizationContract;
 
   constructor(
-    private readonly supabase: SupabaseClient<Record<string, unknown>>,
+    private readonly supabase: SupabaseClient<Database>,
     repo?: ISurgeryRepository,
     sterilizationContract?: ISterilizationContract
   ) {

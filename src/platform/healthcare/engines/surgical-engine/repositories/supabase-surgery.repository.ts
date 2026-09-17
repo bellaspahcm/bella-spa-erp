@@ -10,6 +10,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
 import { BaseSupabaseRepositoryPrimitive } from '../../../../core/repository/base-supabase-repository.primitive';
 import { SurgicalCase, SurgicalCaseStatus } from '../domain/surgical-case.entity';
 import { ISurgeryRepository } from './surgery-repository.interface';
@@ -22,7 +23,7 @@ export class SurgicalResourceConflictError extends Error {
 }
 
 export class SupabaseSurgeryRepository extends BaseSupabaseRepositoryPrimitive implements ISurgeryRepository {
-  constructor(private readonly supabase: SupabaseClient<Record<string, unknown>>) {
+  constructor(private readonly supabase: SupabaseClient<Database>) {
     super();
   }
 
