@@ -28,7 +28,7 @@ export interface OverrideRequest {
   readonly auditEvidence: string;
 }
 
-export interface EnrollStudentInput {
+export interface EducationEngineEnrollInput {
   tenantId: string;
   studentPartyId: string;
   courseId: string;
@@ -61,7 +61,7 @@ export class EducationEngineService {
     private readonly workflowRegistry: IWorkflowRegistryContract = new WorkflowRegistryContractImpl()
   ) {}
 
-  public async enrollStudent(input: EnrollStudentInput): Promise<EnrollStudentResult> {
+  public async enrollStudent(input: EducationEngineEnrollInput): Promise<EnrollStudentResult> {
     if (!input.tenantId) throw new Error('tenantId is required');
     if (!input.studentPartyId) throw new Error('studentPartyId is required');
     if (!input.courseId) throw new Error('courseId is required');
