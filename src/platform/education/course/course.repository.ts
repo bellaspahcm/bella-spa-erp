@@ -15,11 +15,25 @@
 
 import { createClient } from '@/lib/supabase-server';
 import type { Database } from '@/types/database.types';
-import { Course, CourseFilters } from '../shared-kernel/course-types';
+import { Course, CourseFilters, CourseLevel } from '../shared-kernel/course-types';
 
 type CoursesTableRow = Database['public']['Tables']['courses']['Row'];
 type CoursesTableInsert = Database['public']['Tables']['courses']['Insert'];
 type CoursesTableUpdate = Database['public']['Tables']['courses']['Update'];
+
+/**
+ * Metadata structure stored in courses.metadata JSONB field
+ * Maps to Course domain fields that aren't in table columns
+ */
+interface CourseMetadata {
+  current_enrollment?: number;
+  max_students?: number;
+  min_students?: number;
+  prerequisite_course_ids?: string[];
+  start_date?: string;
+  end_date?: string;
+  level?: CourseLevel;
+}
 
 export class CourseRepository {
   /**
@@ -218,7 +232,7 @@ export class CourseRepository {
    * Map database row to domain model
    */
   private static mapRowToDomain(row: CoursesTableRow): Course {
-    const meta = (row.metadata || {}) as Record<string, unknown>;
+    const meta = (row.metadata || {}) as CourseMetadata;
     return {
       courseId: row.course_id,
       tenantId: row.tenant_id,
@@ -229,12 +243,12 @@ export class CourseRepository {
       durationWeeks: row.duration_weeks ?? undefined,
       status: row.status as Course['status'],
       currentEnrollment: meta.current_enrollment ?? 0,
-      maxStudents: meta.max_students ?? undefined,
-      minStudents: meta.min_students ?? undefined,
+      maxStudents: meta.max_students,
+      minStudents: meta.min_students,
       prerequisiteCourseIds: meta.prerequisite_course_ids ?? [],
-      startDate: meta.start_date ?? undefined,
-      endDate: meta.end_date ?? undefined,
-      level: meta.level ?? undefined,
+      startDate: meta.start_date,
+      endDate: meta.end_date,
+      level: meta.level,
       metadata: row.metadata as Record<string, unknown> | undefined,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
