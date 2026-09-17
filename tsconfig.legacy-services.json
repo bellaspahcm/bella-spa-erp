@@ -7,16 +7,15 @@
   },
   "include": [
     "next-env.d.ts",
-    "src/platform/logistics/**/*.ts",
-    "src/platform/logistics/**/*.tsx"
+    "src/services/**/*.ts",
+    "src/services/**/*.tsx",
+    "src/lib/decision-engine/**/*.ts",
+    "src/lib/decision-engine/**/*.tsx"
   ],
   "exclude": [
     "node_modules",
     ".next",
-    "src/platform/beauty",
-    "src/platform/education",
-    "src/platform/healthcare",
-    "src/platform/real-estate",
+    "src/platform",
     "src/products",
     "**/__tests__",
     "**/*.test.ts",
