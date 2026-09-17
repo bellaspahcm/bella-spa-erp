@@ -337,8 +337,10 @@ Distribution:
 - Beauty OS: 0 (0%)
 
 **Key insight:**
-- **Debt is NOT uniformly distributed**
-- **Debt concentrated in 3 scopes: Healthcare (211), Education (231), English Center (165)**
+- **Debt is NOT uniformly distributed** across verified scopes
+- **607/610 confirmed diagnostics (99.5%) concentrated in Healthcare (211), Education (231), English Center (165)**
+- This concentration applies to the **six currently verified scopes only**
+- **Repository-wide debt distribution unknown** until Logistics and Legacy measured
 - **Platform foundation (Core) is clean**
 - **Recent architecture work (Beauty) produces clean code**
 

@@ -110,8 +110,9 @@ FACTORY
 | Beauty OS | 0 | 0% | CLEAN ✅ |
 
 **Key Insights:**
-- **Debt is NOT uniformly distributed**
-- **99.5% of debt concentrated in 3 scopes** (607/610)
+- **Debt is NOT uniformly distributed across verified scopes**
+- **607/610 confirmed diagnostics (99.5%) concentrated in Healthcare (211), Education (231), English Center (165)** within the six currently verified scopes
+- **Repository-wide concentration unknown** until Logistics and Legacy measured
 - **Platform foundation (Core) is clean**
 - **Recent architecture work (Beauty) produces clean code**
 
@@ -438,7 +439,7 @@ Total verified: 610
 - 6 scopes verified: 610 total diagnostics confirmed
 - Healthcare Kernel type debt discovered (211 diagnostics, runtime behavior ✅ correct)
 - 2 clean scopes identified for no-new-debt lock (Platform Core, Beauty OS)
-- Debt distribution pattern revealed (99.5% concentrated in 3 scopes)
+- Debt distribution pattern revealed: 607/610 (99.5%) concentrated in Healthcare, Education, English Center within verified scopes; repository-wide pattern unknown until census complete
 - **Separated runtime stability from type safety** (independent quality dimensions)
 - Architecture decision requirement identified (requires complete census first)
 
