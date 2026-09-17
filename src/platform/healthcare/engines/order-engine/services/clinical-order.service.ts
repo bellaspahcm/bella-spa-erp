@@ -14,7 +14,7 @@
  */
 
 import type { ClinicalOrder } from '../domain/clinical-order.entity';
-import type { OrderType, OrderStatus, OrderPriority } from '../../../contracts/order-engine.contract';
+import type { OrderType, OrderStatus, OrderPriority, OrderDetails } from '../../../contracts/order-engine.contract';
 import { ClinicalOrder as ClinicalOrderEntity } from '../domain/clinical-order.entity';
 import type { IOrderRepository } from '../repositories/order-repository.interface';
 import { IdempotencyConflictError } from '../repositories/order-repository.interface';
@@ -30,7 +30,7 @@ export interface CreateOrderRequest {
   readonly orderType: OrderType;
   readonly priority: OrderPriority;
   readonly orderedBy: string;
-  readonly orderDetails: Record<string, unknown>;
+  readonly orderDetails: OrderDetails;
   readonly requestId?: string;  // For idempotency
 }
 

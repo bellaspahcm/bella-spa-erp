@@ -110,6 +110,13 @@ export interface GenericOrderDetails {
   [key: string]: string | number | boolean | undefined;
 }
 
+/** Union type for all order detail variants */
+export type OrderDetails =
+  | MedicationOrderDetails
+  | LabOrderDetails
+  | ImagingOrderDetails
+  | GenericOrderDetails;
+
 /** CDS override record (immutable audit) */
 export interface CdsOverrideRecord {
   id: string;
