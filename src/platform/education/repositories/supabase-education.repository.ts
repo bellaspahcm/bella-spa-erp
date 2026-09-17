@@ -63,8 +63,8 @@ export class SupabaseEducationRepository extends BaseSupabaseRepositoryPrimitive
       title: data.title,
       status: data.status,
       maxStudents: data.max_students,
-      currentEnrollment: data.current_enrollment,
-      prerequisiteCourseCodes: data.prerequisite_course_codes,
+      currentEnrollment: data.current_enrollment ?? 0,
+      prerequisiteCourseCodes: data.prerequisite_course_codes ?? undefined,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at),
     });
@@ -201,8 +201,8 @@ export class SupabaseEducationRepository extends BaseSupabaseRepositoryPrimitive
       title: data.title,
       status: data.status,
       maxStudents: data.max_students,
-      currentEnrollment: data.current_enrollment,
-      prerequisiteCourseCodes: data.prerequisite_course_codes,
+      currentEnrollment: data.current_enrollment ?? 0,
+      prerequisiteCourseCodes: data.prerequisite_course_codes ?? undefined,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at),
     });
