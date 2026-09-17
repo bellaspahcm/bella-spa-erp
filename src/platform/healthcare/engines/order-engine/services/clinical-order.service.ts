@@ -13,9 +13,10 @@
  * - No fake rollback via event handlers
  */
 
-import type { ClinicalOrder, OrderType, OrderStatus, OrderPriority } from '../domain/clinical-order.entity';
+import type { ClinicalOrder } from '../domain/clinical-order.entity';
+import type { OrderType, OrderStatus, OrderPriority } from '../contracts/order-engine.contract';
 import { ClinicalOrder as ClinicalOrderEntity } from '../domain/clinical-order.entity';
-import type { OrderRepository } from '../repositories/order-repository.interface';
+import type { IOrderRepository } from '../repositories/order-repository.interface';
 import { IdempotencyConflictError } from '../repositories/order-repository.interface';
 import type { EncounterReader } from '../contracts/encounter-reader.interface';
 import { EncounterNotFoundError } from '../contracts/encounter-reader.interface';
