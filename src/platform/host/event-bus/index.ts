@@ -6,7 +6,10 @@
 export * from './types';
 export * from './event-bus.service';
 export * from './memory-adapter';
-export * from './initialize';
+// NOTE: initialize is NOT exported here to prevent transitive imports
+// of domain-specific event wirings (Healthcare, Education, etc.)
+// App initialization should import initialize.ts directly if needed.
+// export * from './initialize';  // REMOVED - pulls Healthcare wirings into all consumers
 
 // Re-export singleton
 export { eventBus } from './event-bus.service';
