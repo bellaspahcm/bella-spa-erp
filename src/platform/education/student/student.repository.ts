@@ -12,6 +12,7 @@
  */
 
 import { createClient } from '@/lib/supabase-server';
+import type { Json } from '@/types/database.types';
 import { Student, StudentsTableInsert, StudentsTableUpdate, StudentsTableRow } from '../shared-kernel/types';
 
 export class StudentRepository {
@@ -42,7 +43,7 @@ export class StudentRepository {
         emergency_contact_name: student.emergencyContactName ?? null,
         emergency_contact_phone: student.emergencyContactPhone ?? null,
         emergency_contact_relationship: student.emergencyContactRelationship ?? null,
-        metadata: student.metadata ?? null,
+        metadata: (student.metadata ?? null) as Json,
         created_at: student.createdAt,
         updated_at: student.updatedAt,
         created_by: student.createdBy ?? null,
@@ -192,7 +193,7 @@ export class StudentRepository {
         emergency_contact_name: student.emergencyContactName ?? null,
         emergency_contact_phone: student.emergencyContactPhone ?? null,
         emergency_contact_relationship: student.emergencyContactRelationship ?? null,
-        metadata: student.metadata ?? null,
+        metadata: (student.metadata ?? null) as Json,
         updated_at: student.updatedAt,
         updated_by: student.updatedBy ?? null,
       })
