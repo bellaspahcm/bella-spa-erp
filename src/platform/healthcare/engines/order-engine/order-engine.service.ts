@@ -724,7 +724,7 @@ export class OrderEngineService implements OrderEngineContract {
     return data?.response_data as T ?? null;
   }
 
-  private async storeIdempotency<T extends Record<string, unknown>>(
+  private async storeIdempotency<T>(
     requestId: string,
     result: T
   ): Promise<void> {
