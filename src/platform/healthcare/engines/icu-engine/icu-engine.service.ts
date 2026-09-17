@@ -13,7 +13,7 @@
  * @module platform/healthcare/engines/icu-engine
  */
 
-import type { EngineResponse } from '../shared-kernel/types';
+import type { EngineResponse } from '../../shared-kernel/types';
 import { IcuStay } from './domain/icu-stay.entity';
 import { VentilatorSession, VentilatorSafetyViolationError } from './domain/ventilator-session.entity';
 import { SofaScoringStrategy } from './domain/scoring/sofa-scoring.strategy';
@@ -31,6 +31,7 @@ import type {
   TransitionIcuStatusRequest,
   IcuStayDTO,
 } from './contracts/icu-engine.contract';
+import type { ScoringResult } from './domain/scoring/scoring-strategy.interface';
 import { ICU_EVENT_TYPES } from './events/icu.events';
 import { eventBus } from '@/platform/host/event-bus';
 
