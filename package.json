@@ -60,6 +60,7 @@
     "arch:guard:verbose": "npx tsx scripts/architecture/architecture-guard.ts --verbose",
     "arch:guard:hashes": "npx tsx scripts/architecture/architecture-guard.ts --check-hashes",
     "logistics:verify": "npm run arch:guard && npm test -- src/platform/logistics/domain",
+    "gate:education-no-new-debt": "npx tsx scripts/gates/education-no-new-debt.ts",
     "worker:finance-outbox": "npx tsx src/platform/integration-hub/finance-outbox-worker.cli.ts",
     "test:n1": "npx tsx scripts/test-n1-failure-isolation.ts",
     "realestate:architecture": "jest src/products/bella-land/__tests__/bella-land-architecture.test.ts --runInBand",
