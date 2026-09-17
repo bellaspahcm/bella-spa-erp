@@ -8,15 +8,15 @@
 
 ## Executive Summary
 
-**Ground Truth Established:** First complete TypeScript census across all Bella scopes with consistent methodology.
+**Ground Truth Established:** TypeScript census across all measurable Bella scopes with consistent methodology.
 
 **Key Findings:**
 - **6 scopes CLEAN + LOCKED:** Education, Platform Core, Beauty, Real Estate, Platform Host (shared), Payroll (shared)
 - **1 scope DIRTY:** Healthcare (211 diagnostics)
 - **1 scope MINOR:** English Center (4 diagnostics, Platform Host-owned)
-- **3 scopes TIMEOUT:** Logistics, Legacy Services, Main tsconfig
+- **3 scopes UNKNOWN:** Logistics (timeout), Legacy Services (timeout), Main tsconfig (timeout)
 
-**P1 cannot be declared complete until Healthcare 211 → 0.**
+**P1 incomplete:** Healthcare 211 is largest known blocker. Timeout scopes status unknown.
 
 ---
 
@@ -93,6 +93,8 @@
 - Should be fixed in Platform Host scope
 - English Center product code is clean
 - Low priority (4 errors, non-blocking)
+
+**Governance finding:** Platform Host gate currently enforces 0 diagnostics in `tsconfig.education.json` Platform Host-owned files, but does NOT cover Platform Host files pulled into `tsconfig.english-center.json`. Gate coverage narrower than ownership scope.
 
 ---
 
@@ -187,13 +189,15 @@ Status: P1 INCOMPLETE
 - [x] No-New-Debt gates implemented and passing
 
 ### Remaining ❌
-- [ ] Healthcare: 211 → 0
-- [ ] English Center Platform Host errors: 4 → 0 (or assign to Platform Host scope)
-- [ ] Logistics: Measure or scope-split
-- [ ] Legacy Services: Measure or defer
-- [ ] Main tsconfig: Not a blocker (entire repo)
+- [ ] Healthcare: 211 → 0 (largest known blocker)
+- [ ] English Center Platform Host errors: 4 → 0 (shared ownership gap)
+- [ ] Logistics: UNKNOWN - timeout (must measure or document boundary)
+- [ ] Legacy Services: UNKNOWN - timeout (must measure or document boundary)
+- [ ] Main tsconfig: UNKNOWN - timeout (entire repo)
 
-**Blocker:** Healthcare 211 diagnostics prevent P1 COMPLETE declaration.
+**Blockers:** 
+1. Healthcare 211 diagnostics (proven dirty)
+2. UNKNOWN status of 3 timeout scopes (unmeasured ≠ clean)
 
 ---
 
@@ -226,9 +230,10 @@ Status: P1 INCOMPLETE
 ### Deferred: Timeout Scopes
 
 **Logistics, Legacy Services, Main tsconfig:**
-- Defer until post-P1 or when compiler performance improves
-- Consider incremental compilation or scope splitting
-- Not blockers for P1 completion
+- Cannot declare P1 complete while status UNKNOWN
+- Must either: measure successfully, split scope, or document evidence boundary
+- "Cannot measure" ≠ "zero diagnostics"
+- Options: incremental compilation, scope splitting, or explicit P1 boundary exclusion with justification
 
 ---
 
@@ -273,22 +278,25 @@ Status: P1 INCOMPLETE
 
 ## Conclusion
 
-**P1 Status:** INCOMPLETE (Healthcare 211 blocking)
+**P1 Status:** INCOMPLETE
 
 **What was achieved:**
 - Education compiler: Full cleanup (127 → 0)
 - 6 scopes locked at 0 with gates
 - Methodology proven across 3 major cleanup tasks
-- Ground truth established for entire Bella codebase
+- Ground truth established for **measurable scopes**
 
 **What remains:**
-- Healthcare: 211 diagnostics (primary blocker)
-- English Center: 4 diagnostics (minor, Platform Host-owned)
-- Timeout scopes: Deferred measurement
+- Healthcare: 211 diagnostics (largest known blocker)
+- Org Unit / English Center: 4 diagnostics (Platform Host ownership gap)
+- Logistics, Legacy Services, Main: UNKNOWN (timeout = unmeasured, not clean)
 
 **Next milestone:**
 - P1-T5: Healthcare Hardening (211 → 0)
-- Upon completion: P1 COMPLETE declaration
+- Then: Resolve UNKNOWN status or document P1 boundary
+- P1 COMPLETE only when all scopes are CLEAN or explicitly excluded with justification
+
+**Important:** TIMEOUT ≠ CLEAN. Cannot declare P1 complete while 3 scopes unmeasured.
 
 **Current checkpoint:** `28c5c319`
 
