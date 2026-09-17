@@ -30,15 +30,15 @@ P2 — REGRESSION
 P1 — TYPESCRIPT  
 ████████████████░░░░░░░░░░░░░░░
 🟡 Layer 1: 6/9 scopes verified
-≥1,010 diagnostics confirmed
+610 diagnostics confirmed
 
 Verified:
 ├─ Platform Core       0  ✅ CLEAN
 ├─ Beauty OS           0  ✅ CLEAN
-├─ Real Estate         3  ⚠️  MINIMAL
-├─ Healthcare        211  ⚠️  DIRTY (FROZEN KERNEL)
-├─ Education         231  ⚠️  DIRTY (ACTIVE)
-└─ English Center    165  ⚠️  DIRTY (PAUSED)
+├─ Real Estate         3  🟡 MINIMAL
+├─ Healthcare        211  🟠 FROZEN + TYPE-DIRTY
+├─ Education         231  🟠 ACTIVE + TYPE-DIRTY
+└─ English Center    165  ⏸️ PAUSED + TYPE-DIRTY
 
 Blocked:
 └─ Logistics          ?  🔴 Compilation timeout
@@ -82,6 +82,9 @@ FACTORY
 **Implication:**
 - Kernel freeze protects **behavior**, not **type safety**
 - Type debt exists in frozen, regression-tested code
+- **Runtime behavior is correct** (52/52 tests pass)
+- **Type safety has debt** (211 compiler diagnostics)
+- These are **independent quality dimensions**
 - Cannot fix without unfreezing or exception process
 
 **Architecture Decision Required:**
@@ -93,13 +96,15 @@ FACTORY
 
 ### 2. TypeScript Debt Distribution
 
-**Total verified: 610 diagnostics across 6 scopes**
+**Total confirmed: 610 diagnostics across 6 verified scopes**
+
+**Repository-wide total: ≥610** (Logistics + Legacy areas unverified)
 
 | Scope | Diagnostics | % of Total | Classification |
 |-------|-------------|------------|----------------|
-| Education OS | 231 | 38% | ACTIVE + DIRTY |
-| Healthcare Platform | 211 | 35% | FROZEN + DIRTY |
-| English Center | 165 | 27% | PAUSED + DIRTY |
+| Education OS | 231 | 38% | ACTIVE + TYPE-DIRTY |
+| Healthcare Platform | 211 | 35% | FROZEN + TYPE-DIRTY |
+| English Center | 165 | 27% | PAUSED + TYPE-DIRTY |
 | Real Estate | 3 | <1% | MINIMAL |
 | Platform Core | 0 | 0% | CLEAN ✅ |
 | Beauty OS | 0 | 0% | CLEAN ✅ |
@@ -111,9 +116,11 @@ FACTORY
 - **Recent architecture work (Beauty) produces clean code**
 
 **This changes priority assessment:**
-- Healthcare (211): Architectural debt in frozen Kernel
-- Education (231): Active development debt (needs fixing)
-- English Center (165): Dormant product debt (defer)
+- Healthcare (211): Type debt in frozen Kernel (runtime behavior ✅ correct via tests)
+- Education (231): Type debt in active development (needs fixing)
+- English Center (165): Type debt in dormant product (defer)
+
+**Critical distinction:** Healthcare's 211 diagnostics do NOT indicate broken runtime behavior. Regression tests pass. This is type safety debt, not functional regression.
 
 ---
 
@@ -181,6 +188,15 @@ FACTORY
 
 ---
 
+### Repository-Wide Total
+
+**Confirmed:** 610 diagnostics (6 verified scopes)  
+**Unverified:** Logistics + Decision Engine + Services  
+**Repository minimum:** ≥610 diagnostics  
+**Actual total:** UNKNOWN (census incomplete)
+
+---
+
 ## Architectural Implications
 
 ### Healthcare Kernel Freeze Policy
@@ -243,17 +259,48 @@ FACTORY
 
 ---
 
-### P2: Architecture Decision (Healthcare Kernel)
+### P2: Complete Census FIRST (Before Addressing Healthcare)
+
+**Priority:** Finish P1-T1 Layer 1 before making Healthcare decisions
+
+**Actions:**
+1. Investigate Logistics compilation timeout
+2. Measure Legacy areas (Decision Engine, Services)
+3. Document complete repository-wide total
+4. **Then** analyze Healthcare 211 diagnostics by cluster pattern
+
+**Rationale:** Healthcare decision requires full context. Cannot prioritize without knowing total TypeScript debt distribution.
+
+---
+
+### P3: Architecture Decision (Healthcare Kernel) — AFTER CENSUS
 
 **Decision Required:** How to address 211 diagnostics in frozen H1-H12 Kernel?
 
-**Impact Assessment:**
-- Kernel is production-critical (Healthcare + Logistics depend on it)
-- 52/52 tests pass (runtime correct despite type debt)
-- Type debt prevents strict TypeScript compilation
-- Fixing requires unfreezing or exception process
+**Analysis Required BEFORE decision:**
+- Cluster 211 diagnostics by: error code → file → ownership → public contract vs internal
+- Determine if pattern matches Dental (few root causes cascading)
+- Assess bounded type-hardening exception feasibility
 
-**Timeline:** Requires Architecture Council decision before action
+**Options (to be evaluated after clustering analysis):**
+
+**Option A:** Bounded Type-Hardening Exception
+- Allow type-only fixes in frozen code
+- Require: no behavioral changes, strict test validation
+- Scope: specific error clusters only
+- Maintain functional freeze, fix type safety
+
+**Option B:** Temporary ACR for Type Cleanup
+- Create Architecture Change Request to unfreeze temporarily
+- Fix 211 diagnostics with full regression validation
+- Re-freeze after type cleanup complete
+
+**Option C:** Document as Accepted Architectural Debt
+- Accept that frozen = behavior frozen, type debt remains
+- Document 211 diagnostics as known technical debt
+- No remediation until major Kernel version
+
+**Timeline:** Decision requires Architecture Council + complete census data
 
 ---
 
@@ -328,7 +375,7 @@ FACTORY
 
 ```
 P1-T1 Status: PARTIALLY VERIFIED
-Confirmed diagnostics: ≥396 (3 scopes)
+Confirmed diagnostics: 396 (3 scopes: Beauty 0, Education 231, English Center 165)
 Repository-wide total: UNKNOWN
 Hypothesis: Kernels likely clean due to tests passing
 ```
@@ -337,23 +384,32 @@ Hypothesis: Kernels likely clean due to tests passing
 
 ```
 P1-T1 Status: 6/9 SCOPES VERIFIED
-Confirmed diagnostics: ≥1,010 (6 scopes verified + unknowns)
-Repository-wide total: STILL UNKNOWN (Logistics + Legacy)
+Confirmed diagnostics: 610 (6 scopes verified)
+Repository-wide total: ≥610 (Logistics + Legacy unverified)
 
 CRITICAL FINDING:
-Healthcare H1-H12 Kernel: 211 diagnostics
-Proves: Regression tests ≠ TypeScript cleanliness
+Healthcare H1-H12 Kernel: 211 type diagnostics
+Runtime behavior: ✅ CORRECT (52/52 tests pass)
+Type safety: ⚠️ DEBT (211 compiler diagnostics)
+
+Proves: Regression tests ≠ TypeScript type safety
+(Two independent quality dimensions)
 
 Debt distribution:
-- Healthcare: 211 (frozen Kernel)
-- Education: 231 (active)
-- English Center: 165 (paused)
+- Healthcare: 211 (frozen Kernel, runtime ✅, types ⚠️)
+- Education: 231 (active development)
+- English Center: 165 (paused product)
 - Platform Core: 0 ✅
 - Beauty OS: 0 ✅
-- Real Estate: 3
+- Real Estate: 3 🟡
+─────────────────────
+Total verified: 610
 ```
 
-**Key Change:** Healthcare Kernel hypothesis **disproven** by compiler evidence.
+**Key Changes:** 
+1. Healthcare Kernel hypothesis **refined** (not "disproven"): runtime correct, type debt exists
+2. Confirmed 610 diagnostics across 6 scopes (not 1,010)
+3. Revealed separation between runtime stability and type safety
 
 ---
 
@@ -379,13 +435,16 @@ Debt distribution:
 
 **Time Investment:** ~4 hours (P1-T1 scoped verification)  
 **Value Delivered:**
-- 6 scopes verified (Platform Core, Beauty, Real Estate, Healthcare, Education, English Center)
-- Healthcare Kernel type debt discovered (211 diagnostics)
-- 2 clean scopes identified for no-new-debt lock
-- Debt distribution pattern revealed (concentrated, not uniform)
-- Architecture decision requirement identified
+- 6 scopes verified: 610 total diagnostics confirmed
+- Healthcare Kernel type debt discovered (211 diagnostics, runtime behavior ✅ correct)
+- 2 clean scopes identified for no-new-debt lock (Platform Core, Beauty OS)
+- Debt distribution pattern revealed (99.5% concentrated in 3 scopes)
+- **Separated runtime stability from type safety** (independent quality dimensions)
+- Architecture decision requirement identified (requires complete census first)
 
-**Evidence Quality:** High confidence for 6 verified scopes, requires architecture decision for Healthcare Kernel debt remediation path.
+**Evidence Quality:** High confidence for 6 verified scopes. Healthcare finding is critical: proves regression tests and TypeScript compilation measure different aspects of code quality.
+
+**Key Insight:** Bella hardening successfully separating "seems stable" into measurable dimensions: runtime behavior, architecture integrity, type safety.
 
 ---
 
