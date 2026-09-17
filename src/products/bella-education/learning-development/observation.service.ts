@@ -309,7 +309,7 @@ export class ObservationService {
         .single();
 
       if (stErr || !obsSt) {
-        throw new Error(`AMENDMENT_STUDENT_ATTACH_FAILED: ${stErr.message}`);
+        throw new Error(`AMENDMENT_STUDENT_ATTACH_FAILED: ${stErr?.message}`);
       }
       createdStudents.push(obsSt as IObservationStudent);
     }
