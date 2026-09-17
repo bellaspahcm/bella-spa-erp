@@ -181,7 +181,7 @@ status: data.status as EnrollmentStatus,
 1. ✅ Database CHECK constraint guarantees valid values
 2. ✅ Domain type exactly matches constraint
 3. ✅ No constraint modifications in migration history
-4. ✅ Type assertion reflects database reality, not wishful thinking
+4. ✅ **Type assertion được chứng minh phù hợp với ràng buộc DB hiện tại**
 
 ---
 

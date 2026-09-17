@@ -10,8 +10,8 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
 import { BaseSupabaseRepositoryPrimitive } from '../../core/repository';
-import { Course } from '../domain/course.entity';
-import { Enrollment } from '../domain/enrollment.entity';
+import { Course, CourseStatus } from '../domain/course.entity';
+import { Enrollment, EnrollmentStatus } from '../domain/enrollment.entity';
 import { IEducationRepository } from './education-repository.interface';
 
 export class SupabaseEducationRepository extends BaseSupabaseRepositoryPrimitive implements IEducationRepository {
@@ -61,7 +61,7 @@ export class SupabaseEducationRepository extends BaseSupabaseRepositoryPrimitive
       tenantId: data.tenant_id,
       courseCode: data.course_code,
       title: data.title,
-      status: data.status,
+      status: data.status as CourseStatus,
       maxStudents: data.max_students,
       currentEnrollment: data.current_enrollment ?? 0,
       prerequisiteCourseCodes: data.prerequisite_course_codes ?? undefined,
@@ -111,7 +111,7 @@ export class SupabaseEducationRepository extends BaseSupabaseRepositoryPrimitive
       tenantId: data.tenant_id,
       studentPartyId: data.student_party_id,
       courseId: data.course_id,
-      status: data.status,
+      status: data.status as EnrollmentStatus,
       requestId: data.request_id,
       enrolledAt: new Date(data.enrolled_at),
       createdAt: new Date(data.created_at),
@@ -143,7 +143,7 @@ export class SupabaseEducationRepository extends BaseSupabaseRepositoryPrimitive
       tenantId: data.tenant_id,
       studentPartyId: data.student_party_id,
       courseId: data.course_id,
-      status: data.status,
+      status: data.status as EnrollmentStatus,
       requestId: data.request_id,
       enrolledAt: new Date(data.enrolled_at),
       createdAt: new Date(data.created_at),
@@ -199,7 +199,7 @@ export class SupabaseEducationRepository extends BaseSupabaseRepositoryPrimitive
       tenantId: data.tenant_id,
       courseCode: data.course_code,
       title: data.title,
-      status: data.status,
+      status: data.status as CourseStatus,
       maxStudents: data.max_students,
       currentEnrollment: data.current_enrollment ?? 0,
       prerequisiteCourseCodes: data.prerequisite_course_codes ?? undefined,
