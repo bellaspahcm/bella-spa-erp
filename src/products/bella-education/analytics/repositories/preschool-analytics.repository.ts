@@ -16,7 +16,7 @@ export class PreschoolAnalyticsRepository {
     // Primary student table in Education Platform is `students`
     let { data: students } = await this.supabase
       .from('students')
-      .select('student_id, academic_status, metadata')
+      .select('student_id, academic_status, classroom_id, metadata')
       .eq('tenant_id', tenantId)
       .in('academic_status', ['enrolled', 'ENROLLED']);
 
