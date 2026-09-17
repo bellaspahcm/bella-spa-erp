@@ -8,7 +8,7 @@
  */
 
 import { EventBusPort } from '../core/events';
-import { Enrollment } from './domain/enrollment.entity';
+import { Enrollment, EnrollmentStatus } from './domain/enrollment.entity';
 import { IEducationRepository } from './repositories/education-repository.interface';
 import { IEducationRuleGovernancePort } from './ports/rule-governance.port';
 import { IPolicyRegistryContract } from './contracts/policy-registry.contract';
@@ -77,7 +77,7 @@ export class EducationEngineService {
     let maxCredits = 24; // Standard fallback
     try {
       const policyVal = await this.policyRegistry.getPolicy<{value: string | number}>(input.tenantId, 'education.max_credits', input.tenantId);
-      if (policyVal.value === 'unlimited') {
+      if (typeof policyVal.value === 'string' && policyVal.value === 'unlimited') {
         maxCredits = 999999;
       } else {
         maxCredits = Number(policyVal.value);
@@ -194,10 +194,10 @@ export class EducationEngineService {
     }
 
     // 6. Resolve initial FSM state dynamically from Workflow Registry
-    let targetStatus = 'active';
+    let targetStatus: EnrollmentStatus = 'active';
     try {
       const workflow = await this.workflowRegistry.getWorkflow(input.tenantId, 'student_enrollment', input.tenantId);
-      targetStatus = workflow.initialState;
+      targetStatus = workflow.initialState as EnrollmentStatus;
     } catch {
       // Fallback to active
     }
@@ -215,8 +215,8 @@ export class EducationEngineService {
         updatedAt: new Date(),
       });
       await this.repository.saveEnrollment(updatedEnrollment);
-      // Type-safe status update via object spread
-      enrollment = { ...enrollment, status: targetStatus };
+      // Update local reference after save
+      enrollment = updatedEnrollment;
     }
 
     // 7. Event-After-Persistence event publication
