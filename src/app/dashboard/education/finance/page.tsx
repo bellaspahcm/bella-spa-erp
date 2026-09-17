@@ -193,7 +193,7 @@ export default function FinancePage() {
     setLoading(true);
     try {
       const issued = await issuanceService.issueInvoice(DEFAULT_TENANT_ID, invoiceId);
-      setActionMessage(`Đã phát hành hóa đơn ${issued.invoiceNumber} (DRAFT ➔ ISSUED). SHA-256 fingerprint: ${issued.sha256Fingerprint?.substring(0, 16)}...`);
+      setActionMessage(`Đã phát hành hóa đơn ${issued.invoiceNumber} (DRAFT ➔ ISSUED). SHA-256 fingerprint: ${issued.sha256Checksum?.substring(0, 16)}...`);
       await loadData();
     } catch (err: any) {
       setActionMessage(`Lỗi phát hành: ${err.message}`);
@@ -681,9 +681,9 @@ export default function FinancePage() {
                       <div key={p.id} className="p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/50 flex items-center justify-between text-xs">
                         <div>
                           <p className="font-extrabold text-gray-900 dark:text-white">
-                            {Number(p.amount).toLocaleString('vi-VN')} VNĐ ({p.payment_method})
+                            {Number(p.amount).toLocaleString('vi-VN')} VNĐ ({p.paymentMethod})
                           </p>
-                          <p className="text-[10px] text-gray-400 mt-0.5">Mã GD: {p.id.substring(0, 12)}... • Thời gian: {new Date(p.created_at).toLocaleString('vi-VN')}</p>
+                          <p className="text-[10px] text-gray-400 mt-0.5">Mã GD: {p.id.substring(0, 12)}... • Thời gian: {p.createdAt ? new Date(p.createdAt).toLocaleString('vi-VN') : 'N/A'}</p>
                         </div>
                         <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950 px-3 py-1 rounded-full">
                           Đã Thu
@@ -771,7 +771,7 @@ export default function FinancePage() {
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 text-xs space-y-2" data-testid="parent-receipt-fingerprint">
               <p className="text-gray-500 font-bold">Mã Dấu Vân Tay Biên Lai (SHA-256 Canonical Snapshot):</p>
               <code className="block p-2.5 rounded-xl bg-slate-200 dark:bg-slate-950 text-emerald-600 dark:text-emerald-400 font-mono text-[11px] break-all">
-                {invoices[0]?.sha256Fingerprint || 'a4f891b2c3d4e5f67890123456789abcdef0123456789abcdef0123456789abc'}
+                {invoices[0]?.sha256Checksum || 'a4f891b2c3d4e5f67890123456789abcdef0123456789abcdef0123456789abc'}
               </code>
             </div>
           </div>
