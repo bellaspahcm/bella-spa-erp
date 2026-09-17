@@ -23,33 +23,31 @@ export class StudentRepository {
     const supabase = await createClient();
 
     // Map domain model to database row
-    const row: StudentsTableInsert = {
-      student_id: student.studentId,
-      tenant_id: student.tenantId,
-      person_id: student.personId,
-      student_code: student.studentCode,
-      academic_status: student.academicStatus,
-      enrollment_type: student.enrollmentType,
-      program_id: student.programId,
-      enrollment_date: student.enrollmentDate,
-      expected_graduation_date: student.expectedGraduationDate ?? null,
-      actual_graduation_date: student.actualGraduationDate ?? null,
-      current_level: student.currentLevel ?? null,
-      gpa: student.gpa ?? null,
-      total_credits: student.totalCredits ?? null,
-      emergency_contact_name: student.emergencyContactName ?? null,
-      emergency_contact_phone: student.emergencyContactPhone ?? null,
-      emergency_contact_relationship: student.emergencyContactRelationship ?? null,
-      metadata: student.metadata ?? null,
-      created_at: student.createdAt,
-      updated_at: student.updatedAt,
-      created_by: student.createdBy ?? null,
-      updated_by: student.updatedBy ?? null,
-    };
-
     const { data, error } = await supabase
       .from('students')
-      .insert(row)
+      .insert({
+        student_id: student.studentId,
+        tenant_id: student.tenantId,
+        person_id: student.personId,
+        student_code: student.studentCode,
+        academic_status: student.academicStatus,
+        enrollment_type: student.enrollmentType,
+        program_id: student.programId,
+        enrollment_date: student.enrollmentDate,
+        expected_graduation_date: student.expectedGraduationDate ?? null,
+        actual_graduation_date: student.actualGraduationDate ?? null,
+        current_level: student.currentLevel ?? null,
+        gpa: student.gpa ?? null,
+        total_credits: student.totalCredits ?? null,
+        emergency_contact_name: student.emergencyContactName ?? null,
+        emergency_contact_phone: student.emergencyContactPhone ?? null,
+        emergency_contact_relationship: student.emergencyContactRelationship ?? null,
+        metadata: student.metadata ?? null,
+        created_at: student.createdAt,
+        updated_at: student.updatedAt,
+        created_by: student.createdBy ?? null,
+        updated_by: student.updatedBy ?? null,
+      })
       .select()
       .single();
 
@@ -180,27 +178,24 @@ export class StudentRepository {
   static async update(student: Student): Promise<Student> {
     const supabase = await createClient();
 
-    // Map domain model to database update
-    const updateData: StudentsTableUpdate = {
-      academic_status: student.academicStatus,
-      enrollment_type: student.enrollmentType,
-      program_id: student.programId,
-      expected_graduation_date: student.expectedGraduationDate ?? null,
-      actual_graduation_date: student.actualGraduationDate ?? null,
-      current_level: student.currentLevel ?? null,
-      gpa: student.gpa ?? null,
-      total_credits: student.totalCredits ?? null,
-      emergency_contact_name: student.emergencyContactName ?? null,
-      emergency_contact_phone: student.emergencyContactPhone ?? null,
-      emergency_contact_relationship: student.emergencyContactRelationship ?? null,
-      metadata: student.metadata ?? null,
-      updated_at: student.updatedAt,
-      updated_by: student.updatedBy ?? null,
-    };
-
     const { data, error } = await supabase
       .from('students')
-      .update(updateData)
+      .update({
+        academic_status: student.academicStatus,
+        enrollment_type: student.enrollmentType,
+        program_id: student.programId,
+        expected_graduation_date: student.expectedGraduationDate ?? null,
+        actual_graduation_date: student.actualGraduationDate ?? null,
+        current_level: student.currentLevel ?? null,
+        gpa: student.gpa ?? null,
+        total_credits: student.totalCredits ?? null,
+        emergency_contact_name: student.emergencyContactName ?? null,
+        emergency_contact_phone: student.emergencyContactPhone ?? null,
+        emergency_contact_relationship: student.emergencyContactRelationship ?? null,
+        metadata: student.metadata ?? null,
+        updated_at: student.updatedAt,
+        updated_by: student.updatedBy ?? null,
+      })
       .eq('student_id', student.studentId)
       .eq('tenant_id', student.tenantId)
       .select()
