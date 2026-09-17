@@ -11,16 +11,20 @@ on:
       - 'src/platform/core/**'
       - 'src/platform/beauty/**'
       - 'src/products/nail/**'
+      - 'src/platform/real-estate/**'
       - 'tsconfig.platform-core.json'
       - 'tsconfig.beauty.json'
+      - 'tsconfig.real-estate.json'
   push:
     branches: [main, master]
     paths:
       - 'src/platform/core/**'
       - 'src/platform/beauty/**'
       - 'src/products/nail/**'
+      - 'src/platform/real-estate/**'
       - 'tsconfig.platform-core.json'
       - 'tsconfig.beauty.json'
+      - 'tsconfig.real-estate.json'
   workflow_dispatch:
 
 permissions:
@@ -85,9 +89,38 @@ jobs:
           fi
           echo "✅ Beauty OS: 0 diagnostics (clean)"
 
+  real-estate-gate:
+    name: Real Estate — No New Debt
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript Check — Real Estate
+        run: npx tsc --project tsconfig.real-estate.json --noEmit
+
+      - name: Verify Zero Diagnostics
+        run: |
+          ERRORS=$(npx tsc --project tsconfig.real-estate.json --noEmit 2>&1 | grep -c "error TS" || echo "0")
+          if [ "$ERRORS" != "0" ]; then
+            echo "❌ Real Estate has $ERRORS TypeScript diagnostics"
+            echo "Baseline: 0 diagnostics (P1-T2 Step 2)"
+            echo "NO NEW DEBT ALLOWED"
+            exit 1
+          fi
+          echo "✅ Real Estate: 0 diagnostics (clean)"
+
   summary:
     name: Clean Scope Gate Summary
-    needs: [platform-core-gate, beauty-os-gate]
+    needs: [platform-core-gate, beauty-os-gate, real-estate-gate]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -103,12 +136,16 @@ jobs:
           echo "Status: ${{ needs.beauty-os-gate.result }}"
           echo "Baseline: 0 diagnostics"
           echo ""
+          echo "### Real Estate"
+          echo "Status: ${{ needs.real-estate-gate.result }}"
+          echo "Baseline: 0 diagnostics"
+          echo ""
           echo "---"
-          echo "P1-T1 Layer 1 Census: CLOSED WITH EXCEPTIONS"
-          echo "Reference: docs/platform/P1_T1_LAYER_1_FINAL_CENSUS.md"
+          echo "P1-T2 Step 2 Complete: Real Estate Pilot Success"
+          echo "Reference: docs/platform/P1_T2_STEP2_REAL_ESTATE_REGRESSION_BASELINE.md"
 
       - name: Check Overall Status
-        if: needs.platform-core-gate.result != 'success' || needs.beauty-os-gate.result != 'success'
+        if: needs.platform-core-gate.result != 'success' || needs.beauty-os-gate.result != 'success' || needs.real-estate-gate.result != 'success'
         run: |
           echo "❌ Clean scope gate failed"
           echo "One or more scopes have introduced TypeScript regressions"

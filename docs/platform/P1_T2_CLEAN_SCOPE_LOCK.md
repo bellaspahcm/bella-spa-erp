@@ -139,7 +139,7 @@ Exceptions require:
 
 **tsconfig:** `tsconfig.platform-core.json`
 
-**Lock status:** 🔒 LOCKED (this commit)
+**Lock status:** 🔒 LOCKED (P1-T2 Step 1)
 
 ---
 
@@ -153,7 +153,29 @@ Exceptions require:
 
 **tsconfig:** `tsconfig.beauty.json`
 
-**Lock status:** 🔒 LOCKED (this commit)
+**Lock status:** 🔒 LOCKED (P1-T2 Step 1)
+
+---
+
+### Real Estate (0 diagnostics)
+
+**Includes:**
+- Real Estate platform layer
+- Property management
+- Reservation engine
+- Contract management
+- Commission ledger
+
+**tsconfig:** `tsconfig.real-estate.json`
+
+**Lock status:** 🔒 LOCKED (P1-T2 Step 2)
+
+**Pilot workflow:**
+- Baseline: 3 diagnostics
+- Root causes: 2
+- Bounded fixes: 2
+- Result: 0 diagnostics
+- Evidence: `docs/platform/P1_T2_STEP2_REAL_ESTATE_REGRESSION_BASELINE.md`
 
 ---
 
@@ -161,17 +183,19 @@ Exceptions require:
 
 **Candidate scopes for lock after cleanup:**
 
-1. **Real Estate** (3 diagnostics)
-   - After: Pilot cleanup (P1-T2 next step)
-   - Add to gate when: 0 diagnostics achieved
-
-2. **Education OS** (231 diagnostics)
+1. **Education OS** (231 diagnostics)
+   - Status: ⏳ NEXT (cluster analysis)
    - After: Cluster-based hardening
    - Add to gate when: 0 diagnostics achieved
 
-3. **Healthcare Platform** (211 diagnostics)
+2. **Healthcare Platform** (211 diagnostics)
+   - Status: ⏳ DEFERRED
    - After: Bounded hardening window
    - Add to gate when: 0 diagnostics achieved
+
+3. **English Center** (165 diagnostics)
+   - Status: ⏸️ PAUSED (product paused)
+   - Defer until product resumes
 
 **Process for adding scopes:**
 1. Achieve 0 diagnostics baseline
@@ -179,6 +203,9 @@ Exceptions require:
 3. Add job to `typescript-clean-scope-gate.yml`
 4. Update this document
 5. Commit with evidence
+
+**Proven workflow (Real Estate pilot):**
+- Baseline capture → root cause clustering → bounded fixes → compiler verification → regression validation → lock
 
 ---
 
@@ -243,9 +270,10 @@ Exceptions require:
 ## Status
 
 **Platform Core:** 🔒 LOCKED at 0 diagnostics  
-**Beauty OS:** 🔒 LOCKED at 0 diagnostics
+**Beauty OS:** 🔒 LOCKED at 0 diagnostics  
+**Real Estate:** 🔒 LOCKED at 0 diagnostics (P1-T2 Step 2)
 
-**Next:** Real Estate cleanup pilot (3 diagnostics → 0 → lock)
+**Next:** Education OS cluster analysis (231 diagnostics)
 
 ---
 
