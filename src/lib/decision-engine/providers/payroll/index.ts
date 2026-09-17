@@ -19,6 +19,25 @@ export type {
   ProviderEvaluationOptions,
   ProviderCategory,
   GateEvaluationResult,
+  // Typed param interfaces
+  KPIThresholdParams,
+  KPILinearParams,
+  KPITierParams,
+  AttendanceLateDeductionParams,
+  AttendanceAbsentDeductionParams,
+  AttendanceCombinedParams,
+  RatingThresholdParams,
+  RatingLinearParams,
+  RatingTierParams,
+  CommissionFixedParams,
+  CommissionTierParams,
+  CommissionPercentageParams,
+  CommissionServiceParams,
+  // Typed config unions
+  KPIConfig,
+  AttendanceConfig,
+  RatingConfig,
+  CommissionConfig,
 } from './types';
 
 // Rules
