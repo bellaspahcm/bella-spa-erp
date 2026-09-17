@@ -6,20 +6,23 @@
  * @see docs/implementation/F5_6_C7_H1_IMPLEMENTATION_GUIDE.md
  */
 
-import { FinanceEventPublisher } from '../../integration-hub/finance-event-publisher';
+import { FinanceOutboxWriter } from '../../integration-hub/finance-outbox-writer';
 import { HospitalFinanceAdapter } from './hospital-finance-adapter';
+import { createServerClient } from '@/lib/supabase-server';
 
 /**
  * Initialize Hospital Finance Adapter
  */
 function initializeAdapter(): HospitalFinanceAdapter {
-  const publisher = new FinanceEventPublisher({
-    financeOsEndpoint: process.env.FINANCE_OS_ENDPOINT || 'http://localhost:3000/api/finance',
+  const supabase = createServerClient();
+  
+  const outboxWriter = new FinanceOutboxWriter(supabase, {
     sourceSystem: 'HOSPITAL_OS',
     sourceVersion: '1.0.0',
+    maxRetries: 5,
   });
   
-  return new HospitalFinanceAdapter(publisher);
+  return new HospitalFinanceAdapter(supabase, outboxWriter);
 }
 
 /**
@@ -265,7 +268,8 @@ export async function exampleCompletePatientFlow() {
     amount: '500000',
     currency: 'VND',
   });
-  console.log('  → Transaction:', serviceResult.transaction_id);
+  console.log('  → Outbox ID:', serviceResult.outboxId);
+  console.log('  → Event ID:', serviceResult.eventId);
   
   // Step 2: Medication dispensed
   console.log('\nStep 2: Medication dispensed');
@@ -280,7 +284,8 @@ export async function exampleCompletePatientFlow() {
     patientId: 'PAT-999',
     encounterId: 'ENC-999',
   });
-  console.log('  → Transaction:', medicationResult.transaction_id);
+  console.log('  → Outbox ID:', medicationResult.outboxId);
+  console.log('  → Event ID:', medicationResult.eventId);
   
   // Step 3: Patient pays
   console.log('\nStep 3: Patient payment');
@@ -291,13 +296,15 @@ export async function exampleCompletePatientFlow() {
     amount: '650000', // Service + Medication
     currency: 'VND',
   });
-  console.log('  → Transaction:', paymentResult.transaction_id);
+  console.log('  → Outbox ID:', paymentResult.outboxId);
+  console.log('  → Event ID:', paymentResult.eventId);
   
   console.log('\n=== Flow Complete ===');
-  console.log('Financial Transactions Created:', 3);
+  console.log('Events queued in outbox:', 3);
   console.log('  1. Revenue + AR (Service)');
   console.log('  2. COGS + Inventory (Medication)');
   console.log('  3. Cash + AR Settlement (Payment)');
+  console.log('\nNote: Actual transactions will be created when outbox worker processes these events.');
 }
 
 /**
@@ -323,24 +330,24 @@ export async function exampleIdempotencyTest() {
   // Attempt 1
   console.log('Attempt 1: Publishing event...');
   const result1 = await adapter.publishPatientServiceCompleted(eventParams);
-  console.log('  Status:', result1.status);
-  console.log('  Transaction:', result1.transaction_id);
+  console.log('  Outbox ID:', result1.outboxId);
+  console.log('  Event ID:', result1.eventId);
   
   // Attempt 2 (retry)
   console.log('\nAttempt 2: Publishing same event...');
   const result2 = await adapter.publishPatientServiceCompleted(eventParams);
-  console.log('  Status:', result2.status);
-  console.log('  Transaction:', result2.transaction_id);
+  console.log('  Outbox ID:', result2.outboxId);
+  console.log('  Event ID:', result2.eventId);
   
   // Attempt 3 (retry)
   console.log('\nAttempt 3: Publishing same event...');
   const result3 = await adapter.publishPatientServiceCompleted(eventParams);
-  console.log('  Status:', result3.status);
-  console.log('  Transaction:', result3.transaction_id);
+  console.log('  Outbox ID:', result3.outboxId);
+  console.log('  Event ID:', result3.eventId);
   
   console.log('\n=== Result ===');
-  console.log('All 3 attempts return same transaction:', result1.transaction_id === result2.transaction_id && result2.transaction_id === result3.transaction_id);
-  console.log('Status changed from CREATED → ALREADY_PROCESSED:', result1.status === 'CREATED' && result2.status === 'ALREADY_PROCESSED');
+  console.log('All 3 attempts use same idempotency key:', result1.idempotencyKey === result2.idempotencyKey && result2.idempotencyKey === result3.idempotencyKey);
+  console.log('\nNote: Outbox pattern queues events. Worker will process only once due to idempotency.');
 }
 
 // Run examples (for testing)
