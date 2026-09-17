@@ -1,0 +1,5 @@
+Scope,Config,Diagnostics,Verified,Notes,Top Error Codes
+"Healthcare Platform","tsconfig.healthcare.json",211,true,"H1-H12 Kernel (frozen)","TS2339: 59; TS2322: 43; TS2484: 24; TS2345: 19; TS2307: 18"
+"Logistics Platform","tsconfig.logistics.json",0,false,"Compilation timeout (>3min)","Requires investigation"
+"Real Estate Platform","tsconfig.real-estate.json",3,true,"Real Estate OS",""
+"Platform Core","tsconfig.platform-core.json",0,true,"Core infrastructure",""
