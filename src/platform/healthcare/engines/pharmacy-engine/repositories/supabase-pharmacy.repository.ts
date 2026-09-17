@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database.types';
+import type { Database, Json } from '@/types/database.types';
 import {
   Prescription,
   MAREntry,
@@ -18,6 +18,8 @@ import {
 } from './pharmacy-repository.interface';
 
 type PrescriptionRow = Database['public']['Tables']['hc_prescriptions']['Row'];
+type PrescriptionInsert = Database['public']['Tables']['hc_prescriptions']['Insert'];
+type PrescriptionUpdate = Database['public']['Tables']['hc_prescriptions']['Update'];
 type MARRow = Database['public']['Tables']['hc_medication_administration_records']['Row'];
 
 export class SupabasePharmacyRepository implements IPharmacyRepository {
@@ -42,15 +44,22 @@ export class SupabasePharmacyRepository implements IPharmacyRepository {
       isHighAlert: prescription.isHighAlert,
     };
 
-    const dbPayload = {
-      id: prescription.id,
+    // Serialize drugs to JSON-compatible format
+    const drugsJson: Json = prescription.drugs.map(d => ({
+      code: d.code,
+      name: d.name,
+      dose: d.dose,
+      frequency: d.frequency,
+      durationDays: d.durationDays,
+    }));
+
+    const basePayload = {
       tenant_id: prescription.tenantId,
       encounter_id: prescription.encounterId,
       patient_party_id: prescription.patientPartyId,
       doctor_party_id: prescription.doctorPartyId,
       clinical_order_id: prescription.clinicalOrderId,
-      // Map to JSON-serializable array structure
-      drugs: prescription.drugs as unknown as Record<string, unknown>[],
+      drugs: drugsJson,
       diagnosis: prescription.diagnosis ?? null,
       notes: `METADATA:${JSON.stringify(notesPayload)}`,
       status: prescription.status.toLowerCase(),
@@ -62,10 +71,15 @@ export class SupabasePharmacyRepository implements IPharmacyRepository {
     };
 
     if (!existing) {
-      // Perform INSERT
+      // Perform INSERT - explicitly type for Insert
+      const insertPayload: PrescriptionInsert = {
+        ...basePayload,
+        id: prescription.id,
+      };
+
       const { error } = await this.supabase
         .from(this.PRESCRIPTIONS_TABLE)
-        .insert(dbPayload);
+        .insert(insertPayload);
 
       if (error) {
         if (error.code === '23505') {
@@ -79,9 +93,15 @@ export class SupabasePharmacyRepository implements IPharmacyRepository {
       // Perform UPDATE with Optimistic Locking check on previous version
       const lockVersion = expectedVersion !== undefined ? expectedVersion : prescription.version - 1;
 
+      // Explicitly type for Update - include id for filtering context
+      const updatePayload: PrescriptionUpdate = {
+        ...basePayload,
+        id: prescription.id,
+      };
+
       const { data, error } = await this.supabase
         .from(this.PRESCRIPTIONS_TABLE)
-        .update(dbPayload)
+        .update(updatePayload)
         .eq('tenant_id', prescription.tenantId)
         .eq('id', prescription.id)
         .eq('version', lockVersion)
