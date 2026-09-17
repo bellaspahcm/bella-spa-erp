@@ -9,8 +9,8 @@
 
 ## Executive Summary
 
-**Confirmed TypeScript compiler diagnostics: ≥1,010** (7 scopes verified)  
-**Repository-wide total: STILL UNKNOWN** (Logistics timeout, Legacy unverified)  
+**Confirmed TypeScript compiler diagnostics: 610** (7 scopes verified)  
+**Repository-wide total: ≥610** (Logistics timeout, Legacy unverified)  
 **Successfully verified scopes: 7**  
 **Clean scopes: 2 (Beauty OS, Platform Core)**  
 **Dirty scopes: 5 (Healthcare 211, Education 231, English Center 165, Real Estate 3)**  
@@ -38,18 +38,18 @@ This proves: **Regression tests passing ≠ TypeScript clean**
 
 ### Successfully Verified Scopes (Scoped tsconfig compilation)
 
-| Scope | Diagnostics | Top Errors | Config | Status |
-|-------|-------------|------------|--------|--------|
+| Scope | Diagnostics | Top Errors | Config | Classification |
+|-------|-------------|------------|--------|----------------|
 | **Platform Core** | **0** | — | tsconfig.platform-core.json | ✅ CLEAN |
 | **Beauty OS** | **0** | — | tsconfig.beauty.json | ✅ CLEAN |
-| Real Estate Platform | 3 | — | tsconfig.real-estate.json | ⚠️ MINIMAL |
-| **Healthcare Platform** | **211** | TS2339 (59), TS2322 (43), TS2484 (24) | tsconfig.healthcare.json | ⚠️ DIRTY |
-| Education OS | 231 | TS2339 (69), TS2322 (66), TS2345 (24) | tsconfig.education.json | ⚠️ DIRTY |
-| English Center | 165 | TS2322 (58), TS2339 (58), TS2345 (18) | tsconfig.english-center.json | ⚠️ DIRTY |
+| Real Estate Platform | 3 | — | tsconfig.real-estate.json | 🟡 MINIMAL |
+| **Healthcare Platform** | **211** | TS2339 (59), TS2322 (43), TS2484 (24) | tsconfig.healthcare.json | 🟠 FROZEN + TYPE-DIRTY |
+| Education OS | 231 | TS2339 (69), TS2322 (66), TS2345 (24) | tsconfig.education.json | 🟠 ACTIVE + TYPE-DIRTY |
+| English Center | 165 | TS2322 (58), TS2339 (58), TS2345 (18) | tsconfig.english-center.json | ⏸️ PAUSED + TYPE-DIRTY |
 
 **Total verified diagnostics: 610** (across 6 scopes)
 
-**Minimum confirmed repository-wide: ≥1,010** (610 + unknown Logistics + unknown Legacy)
+**Repository minimum: ≥610** (Logistics + Legacy unverified)
 
 ### Blocked Scopes
 
@@ -374,22 +374,26 @@ Distribution:
 - ⏳ Legacy areas: Decision Engine, Services (not yet measured)
 
 **Confirmed:**
-- **≥1,010 diagnostics** (610 verified + unknown Logistics + unknown Legacy)
+- **610 diagnostics** across 6 verified scopes
+- **Repository minimum: ≥610** (Logistics + Legacy unverified)
 - 2 CLEAN scopes (Platform Core, Beauty OS)
-- 4 DIRTY scopes (Healthcare 211, Education 231, English Center 165, Real Estate 3)
+- 4 TYPE-DIRTY scopes (Healthcare 211, Education 231, English Center 165, Real Estate 3)
 
 **Critical Discovery:**
-- Healthcare H1-H12 Kernel: 211 diagnostics despite 52/52 tests passing
-- Proves: Regression tests ≠ TypeScript cleanliness
+- Healthcare H1-H12 Kernel: 211 type diagnostics
+- Runtime behavior: ✅ CORRECT (52/52 tests pass)
+- Type safety: ⚠️ DEBT (211 compiler diagnostics)
+- Proves: **Runtime correctness and type safety are independent quality dimensions**
 
 **Next:** 
-1. Investigate Logistics compilation timeout
-2. Measure Legacy areas
-3. Address Healthcare Kernel type debt (Architecture Decision Required)
+1. Complete census (Logistics + Legacy)
+2. Cluster Healthcare 211 diagnostics (pattern analysis)
+3. Cluster Education 231 diagnostics (root cause identification)
 4. Lock Platform Core + Beauty OS with no-new-debt gates
+5. Architecture decision on Healthcare (after clustering complete)
 
 ---
 
 **Document Status:** SCOPED VERIFICATION UPDATE (6/9 scopes complete)  
-**Evidence Quality:** High confidence for verified scopes; Healthcare finding is critical  
-**Repository-Wide Total:** ≥1,010 diagnostics (incomplete census)
+**Evidence Quality:** High confidence for verified scopes; Healthcare reveals type debt in runtime-correct frozen code  
+**Repository-Wide Total:** ≥610 diagnostics (incomplete census, Logistics + Legacy pending)
