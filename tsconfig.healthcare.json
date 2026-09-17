@@ -1,0 +1,26 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "next-env.d.ts",
+    "src/platform/healthcare/**/*.ts",
+    "src/platform/healthcare/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    "src/platform/beauty",
+    "src/platform/education",
+    "src/platform/logistics",
+    "src/platform/real-estate",
+    "src/products",
+    "**/__tests__",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
+  ]
+}
