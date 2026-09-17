@@ -32,8 +32,18 @@ import { SupabaseSurgeryRepository } from './repositories/supabase-surgery.repos
 class DefaultSterilizationContract implements ISterilizationContract {
   readonly engineName = 'sterilization-contract';
   readonly engineVersion = '1.0.0';
-  async isSterile(): Promise<boolean> {
+  readonly contractVersion = '1.0.0';
+  
+  async isSterile(_tenantId: string, _tokenId: string): Promise<boolean> {
     return true;
+  }
+  
+  async healthCheck(): Promise<EngineHealthStatus> {
+    return {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      checks: {},
+    };
   }
 }
 
