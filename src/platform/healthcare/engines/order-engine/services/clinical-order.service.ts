@@ -14,7 +14,7 @@
  */
 
 import type { ClinicalOrder } from '../domain/clinical-order.entity';
-import type { OrderType, OrderStatus, OrderPriority } from '../contracts/order-engine.contract';
+import type { OrderType, OrderStatus, OrderPriority } from '../../../contracts/order-engine.contract';
 import { ClinicalOrder as ClinicalOrderEntity } from '../domain/clinical-order.entity';
 import type { IOrderRepository } from '../repositories/order-repository.interface';
 import { IdempotencyConflictError } from '../repositories/order-repository.interface';
@@ -58,7 +58,7 @@ export interface OrderServiceResult<T = ClinicalOrder> {
 
 export class ClinicalOrderService {
   constructor(
-    private readonly orderRepository: OrderRepository,
+    private readonly orderRepository: IOrderRepository,
     private readonly encounterReader: EncounterReader,
     private readonly eventBus: EventBus,
   ) {}
