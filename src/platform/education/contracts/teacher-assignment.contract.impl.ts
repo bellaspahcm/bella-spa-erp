@@ -34,17 +34,17 @@ interface DBTeacherAssignmentRow {
 }
 
 export class TeacherAssignmentContractImpl implements ITeacherAssignmentContract {
-  private clientPromise?: Promise<SupabaseClient<Record<string, unknown>>>;
+  private clientPromise?: Promise<SupabaseClient>;
 
-  constructor(supabaseClient?: SupabaseClient<Record<string, unknown>>) {
+  constructor(supabaseClient?: SupabaseClient) {
     if (supabaseClient) {
       this.clientPromise = Promise.resolve(supabaseClient);
     }
   }
 
-  private async getClient(): Promise<SupabaseClient<Record<string, unknown>>> {
+  private async getClient(): Promise<SupabaseClient> {
     if (!this.clientPromise) {
-      this.clientPromise = createClient();
+      this.clientPromise = Promise.resolve(createClient());
     }
     return this.clientPromise;
   }
