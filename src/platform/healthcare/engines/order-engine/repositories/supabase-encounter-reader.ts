@@ -4,7 +4,7 @@ import type {
   EncounterSnapshot,
 } from '../contracts/encounter-reader.interface';
 import { EncounterNotFoundError } from '../contracts/encounter-reader.interface';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database.types';
 
 type EncounterRow = Database['public']['Tables']['hc_encounters']['Row'];
 
