@@ -34,7 +34,7 @@ describe('ItemDomain', () => {
         const result = ItemDomain.create(validItemProps);
         
         expect(result.isSuccess).toBe(true);
-        expect(result.value?.skuCode).toBe('SKU-001');
+        expect(result.value?.skuCode.value).toBe('SKU-001');
       });
 
       it('fails when SKU code missing', () => {
@@ -65,7 +65,7 @@ describe('ItemDomain', () => {
         });
         
         expect(result.isSuccess).toBe(true);
-        expect(result.value?.skuCode).toBe('SKU-002');
+        expect(result.value?.skuCode.value).toBe('SKU-002');
       });
     });
 
@@ -179,7 +179,7 @@ describe('ItemDomain', () => {
         const result = ItemDomain.create(validItemProps);
         
         expect(result.isSuccess).toBe(true);
-        expect(result.value?.weightKg).toBeNull();
+        expect(result.value?.weightKg).toBeUndefined();
       });
 
       it('fails with negative weight', () => {
@@ -219,7 +219,7 @@ describe('ItemDomain', () => {
         const result = ItemDomain.create(validItemProps);
         
         expect(result.isSuccess).toBe(true);
-        expect(result.value?.standardCost).toBeNull();
+        expect(result.value?.standardCost).toBeUndefined();
       });
 
       it('fails with negative cost', () => {
@@ -295,7 +295,7 @@ describe('ItemDomain', () => {
       it('succeeds with valid dimensions', () => {
         const result = ItemDomain.create({
           ...validItemProps,
-          dimensionsJson: {
+          dimensions: {
             length: 10,
             width: 5,
             height: 3,
@@ -304,7 +304,7 @@ describe('ItemDomain', () => {
         });
         
         expect(result.isSuccess).toBe(true);
-        expect(result.value?.dimensionsJson).toEqual({
+        expect(result.value?.dimensions).toEqual({
           length: 10,
           width: 5,
           height: 3,
@@ -315,7 +315,7 @@ describe('ItemDomain', () => {
       it('succeeds with zero dimensions', () => {
         const result = ItemDomain.create({
           ...validItemProps,
-          dimensionsJson: {
+          dimensions: {
             length: 0,
             width: 0,
             height: 0,
@@ -328,7 +328,7 @@ describe('ItemDomain', () => {
       it('fails with negative length', () => {
         const result = ItemDomain.create({
           ...validItemProps,
-          dimensionsJson: {
+          dimensions: {
             length: -10,
             width: 5,
             height: 3,
@@ -343,7 +343,7 @@ describe('ItemDomain', () => {
       it('fails with negative width', () => {
         const result = ItemDomain.create({
           ...validItemProps,
-          dimensionsJson: {
+          dimensions: {
             length: 10,
             width: -5,
             height: 3,
@@ -357,7 +357,7 @@ describe('ItemDomain', () => {
       it('fails with negative height', () => {
         const result = ItemDomain.create({
           ...validItemProps,
-          dimensionsJson: {
+          dimensions: {
             length: 10,
             width: 5,
             height: -3,
@@ -521,49 +521,48 @@ describe('ItemDomain', () => {
 
   describe('requiresLotTracking()', () => {
     it('returns true when lotTracked enabled', () => {
-      const item = { ...validItemProps, lotTracked: true } as Item;
-      expect(ItemDomain.requiresLotTracking(item)).toBe(true);
+      const result = ItemDomain.create({ ...validItemProps, lotTracked: true });
+      expect(ItemDomain.requiresLotTracking(result.value!)).toBe(true);
     });
 
     it('returns true when serialTracked enabled (implies lot)', () => {
-      const item = { ...validItemProps, lotTracked: true, serialTracked: true } as Item;
-      expect(ItemDomain.requiresLotTracking(item)).toBe(true);
+      const result = ItemDomain.create({ ...validItemProps, lotTracked: true, serialTracked: true });
+      expect(ItemDomain.requiresLotTracking(result.value!)).toBe(true);
     });
 
     it('returns true when expiryTracked enabled', () => {
-      const item = { ...validItemProps, expiryTracked: true } as Item;
-      expect(ItemDomain.requiresLotTracking(item)).toBe(true);
+      const result = ItemDomain.create({ ...validItemProps, expiryTracked: true });
+      expect(ItemDomain.requiresLotTracking(result.value!)).toBe(true);
     });
 
     it('returns false when no tracking enabled', () => {
-      const item = { ...validItemProps, lotTracked: false, serialTracked: false, expiryTracked: false } as Item;
-      expect(ItemDomain.requiresLotTracking(item)).toBe(false);
+      const result = ItemDomain.create({ ...validItemProps, lotTracked: false, serialTracked: false, expiryTracked: false });
+      expect(ItemDomain.requiresLotTracking(result.value!)).toBe(false);
     });
   });
 
   describe('calculateVolume()', () => {
     it('calculates volume correctly', () => {
-      const item = {
+      const result = ItemDomain.create({
         ...validItemProps,
-        dimensionsJson: { length: 10, width: 5, height: 2 },
-      } as Item;
+        dimensions: { length: 10, width: 5, height: 2, unit: 'CM' },
+      });
       
-      const volume = ItemDomain.calculateVolume(item);
+      const volume = ItemDomain.calculateVolume(result.value!);
       expect(volume).toBe(100);
     });
 
-    it('returns null when dimensions missing', () => {
-      const item = { ...validItemProps, dimensionsJson: null } as Item;
-      expect(ItemDomain.calculateVolume(item)).toBeNull();
+    it('returns undefined when dimensions missing', () => {
+      const result = ItemDomain.create(validItemProps);
+      expect(ItemDomain.calculateVolume(result.value!)).toBeUndefined();
     });
 
-    it('returns null when dimensions incomplete', () => {
-      const item = {
+    it('returns undefined when dimensions incomplete', () => {
+      const result = ItemDomain.create({
         ...validItemProps,
-        dimensionsJson: { length: 10, width: 5 },
-      } as Item;
-      
-      expect(ItemDomain.calculateVolume(item)).toBeNull();
+        dimensions: { length: 10, width: 5 } as any,
+      });
+      expect(ItemDomain.calculateVolume(result.value!)).toBeUndefined();
     });
   });
 });
