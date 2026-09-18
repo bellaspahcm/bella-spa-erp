@@ -47,17 +47,8 @@ jobs:
         run: npm ci
 
       - name: TypeScript Check — Platform Core
-        run: npx tsc --project tsconfig.platform-core.json --noEmit
-
-      - name: Verify Zero Diagnostics
         run: |
-          ERRORS=$(npx tsc --project tsconfig.platform-core.json --noEmit 2>&1 | grep -c "error TS" || echo "0")
-          if [ "$ERRORS" != "0" ]; then
-            echo "❌ Platform Core has $ERRORS TypeScript diagnostics"
-            echo "Baseline: 0 diagnostics (P1-T1 Layer 1)"
-            echo "NO NEW DEBT ALLOWED"
-            exit 1
-          fi
+          npx tsc --project tsconfig.platform-core.json --noEmit
           echo "✅ Platform Core: 0 diagnostics (clean)"
 
   beauty-os-gate:
@@ -76,17 +67,8 @@ jobs:
         run: npm ci
 
       - name: TypeScript Check — Beauty OS
-        run: npx tsc --project tsconfig.beauty.json --noEmit
-
-      - name: Verify Zero Diagnostics
         run: |
-          ERRORS=$(npx tsc --project tsconfig.beauty.json --noEmit 2>&1 | grep -c "error TS" || echo "0")
-          if [ "$ERRORS" != "0" ]; then
-            echo "❌ Beauty OS has $ERRORS TypeScript diagnostics"
-            echo "Baseline: 0 diagnostics (P1-T1 Layer 1)"
-            echo "NO NEW DEBT ALLOWED"
-            exit 1
-          fi
+          npx tsc --project tsconfig.beauty.json --noEmit
           echo "✅ Beauty OS: 0 diagnostics (clean)"
 
   real-estate-gate:
@@ -105,17 +87,8 @@ jobs:
         run: npm ci
 
       - name: TypeScript Check — Real Estate
-        run: npx tsc --project tsconfig.real-estate.json --noEmit
-
-      - name: Verify Zero Diagnostics
         run: |
-          ERRORS=$(npx tsc --project tsconfig.real-estate.json --noEmit 2>&1 | grep -c "error TS" || echo "0")
-          if [ "$ERRORS" != "0" ]; then
-            echo "❌ Real Estate has $ERRORS TypeScript diagnostics"
-            echo "Baseline: 0 diagnostics (P1-T2 Step 2)"
-            echo "NO NEW DEBT ALLOWED"
-            exit 1
-          fi
+          npx tsc --project tsconfig.real-estate.json --noEmit
           echo "✅ Real Estate: 0 diagnostics (clean)"
 
   summary:
