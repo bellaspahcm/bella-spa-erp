@@ -56,8 +56,8 @@ export class LocationDomain {
     }
 
     // Address validation (if provided)
-    if (props.addressJson) {
-      const addressResult = this.validateAddress(props.addressJson);
+    if (props.address) {
+      const addressResult = this.validateAddress(props.address);
       if (addressResult.isFailure) {
         return addressResult as Result<Location>;
       }
@@ -66,15 +66,15 @@ export class LocationDomain {
     const now = new Date();
 
     const location: Location = {
-      id: props.id || crypto.randomUUID(),
+      id: { value: props.id || crypto.randomUUID() },
       tenantId: props.tenantId,
-      locationCode: props.locationCode.trim(),
+      locationCode: { value: props.locationCode.trim() },
       locationName: props.locationName.trim(),
       locationType: props.locationType,
       
-      parentLocationId: props.parentLocationId || null,
+      parentLocationId: props.parentLocationId ? { value: props.parentLocationId } : undefined,
       
-      addressJson: props.addressJson || null,
+      address: props.address,
       
       status: props.status || 'ACTIVE',
       
@@ -107,7 +107,7 @@ export class LocationDomain {
     }
 
     // Prevent self-parenting
-    if (updates.parentLocationId === existingLocation.id) {
+    if (updates.parentLocationId && updates.parentLocationId === existingLocation.id.value) {
       return Result.fail(
         'Location cannot be its own parent',
         'LOCATION_CANNOT_BE_SELF_PARENT'
@@ -115,8 +115,8 @@ export class LocationDomain {
     }
 
     // Address validation
-    if (updates.addressJson) {
-      const addressResult = this.validateAddress(updates.addressJson);
+    if (updates.address) {
+      const addressResult = this.validateAddress(updates.address);
       if (addressResult.isFailure) {
         return addressResult as Result<Location>;
       }
@@ -126,6 +126,9 @@ export class LocationDomain {
       ...existingLocation,
       ...updates,
       locationName: updates.locationName?.trim() || existingLocation.locationName,
+      parentLocationId: updates.parentLocationId !== undefined
+        ? (updates.parentLocationId ? { value: updates.parentLocationId } : undefined)
+        : existingLocation.parentLocationId,
       updatedAt: new Date(),
     };
 
@@ -251,7 +254,7 @@ export class LocationDomain {
    * Check if location has parent (is child)
    */
   static hasParent(location: Location): boolean {
-    return location.parentLocationId !== null;
+    return location.parentLocationId !== undefined;
   }
 
   /**
@@ -261,11 +264,11 @@ export class LocationDomain {
    * May move to API/presentation layer if tests show no domain-level need.
    * Do not treat this as a Logistics OS primitive.
    */
-  static getFormattedAddress(location: Location): string | null {
-    if (!location.addressJson) return null;
+  static getFormattedAddress(location: Location): string | undefined {
+    if (!location.address) return undefined;
 
     const parts: string[] = [];
-    const address = location.addressJson;
+    const address = location.address;
 
     if (address.street) parts.push(address.street as string);
     if (address.city) parts.push(address.city as string);
@@ -273,7 +276,7 @@ export class LocationDomain {
     if (address.postalCode) parts.push(address.postalCode as string);
     if (address.country) parts.push(address.country as string);
 
-    return parts.length > 0 ? parts.join(', ') : null;
+    return parts.length > 0 ? parts.join(', ') : undefined;
   }
 
   // ========================================================================
