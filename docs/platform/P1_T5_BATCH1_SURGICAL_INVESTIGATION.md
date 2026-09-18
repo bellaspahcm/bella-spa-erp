@@ -331,3 +331,224 @@ Ready for execution:   YES ✅
 **Investigation Status:** COMPLETE  
 **Fix Approved:** YES (pending execution)  
 **Expected Impact:** -33 diagnostics
+
+
+---
+
+## EXECUTION V3: PRESERVE DATABASE GENERIC (SUCCESS) ✅
+
+**Commit:** `7764fe6a`  
+**Status:** CLOSED — Batch 1 complete  
+**Healthcare Compiler:** 132 → 103 (-29 total from baseline)  
+**Surgical Diagnostics:** 33 → 4 (-29)
+
+### Changes Applied
+
+**1. Service Locator Contract Fix**
+```typescript
+// src/platform/healthcare/service-locator.ts
+
+import type { Database } from '@/types/database.types';
+
+export function getHealthcareService<T>(
+  serviceName: ServiceKey,
+  supabase: SupabaseClient<Database>  // ← was SupabaseClient
+): T
+```
+
+**2. Surgical Engine Service Constructor**
+```typescript
+// src/platform/healthcare/engines/surgical-engine/surgical-engine.service.ts
+
+import type { Database } from '@/types/database.types';
+
+constructor(
+  private readonly supabase: SupabaseClient<Database>,  // ← was Record<string, unknown>
+  repo?: ISurgeryRepository,
+  sterilizationContract?: ISterilizationContract
+)
+```
+
+**3. Repository (from v2)**
+```typescript
+// src/platform/healthcare/engines/surgical-engine/repositories/supabase-surgery.repository.ts
+
+import type { Database } from '@/types/database.types';
+
+constructor(supabase: SupabaseClient<Database>)
+```
+
+### Compiler Evidence
+
+```text
+Official baseline: 132
+Before v3:         125  (v2 partial)
+After v3:          103  (-22 from v2, -29 from baseline)
+
+Surgical breakdown:
+Repository:        10 → 2    (-8 in v2)
+Service:           23 → 2    (-21 in v3)
+Total Surgical:    33 → 4    (-29)
+
+Other engines: 0 new diagnostics (no cascade)
+```
+
+### Surgical Residual (4 diagnostics)
+
+**Repository (2):**
+```
+supabase-surgery.repository.ts(81,26): Argument of type 'PostgrestError' 
+  is not assignable to parameter of type 'Record<string, unknown>'.
+
+supabase-surgery.repository.ts(99,26): Argument of type 'PostgrestError' 
+  is not assignable to parameter of type 'Record<string, unknown>'.
+```
+**Category:** Known pattern (PostgrestError serialization)  
+**Scope:** Repository error handling only
+
+**Service (2):**
+```
+surgical-engine.service.ts(32,7): Class 'DefaultSterilizationContract' 
+  incorrectly implements interface 'ISterilizationContract'.
+
+surgical-engine.service.ts(54,5): Type 'DefaultSterilizationContract | 
+  ISterilizationContract' is not assignable to type 'ISterilizationContract'.
+```
+**Category:** Interface implementation mismatch  
+**Scope:** CSSD integration contract
+
+### Gates Verification
+
+```text
+✅ Architecture Guard:   PASS (0 violations)
+✅ Kernel Regression:    504/504 tests
+✅ Architecture Tests:   9/9
+✅ Conformance Gates:    7/7
+✅ Total Test Suites:    52/52
+```
+
+### Type Chain Proven
+
+```text
+BEFORE v3:
+createClient<Database>()
+    ↓ typed ✅
+getHealthcareService(supabase: SupabaseClient)     ← FIRST TYPE LOSS
+    ↓ widened to Record<string, unknown> ❌
+SurgicalEngineService(SupabaseClient<Record<...>>) ← propagated
+    ↓
+SupabaseSurgeryRepository(SupabaseClient<Database>) ← mismatch
+    ↓
+.from('hc_surgical_cases')                          → never
+
+AFTER v3:
+createClient<Database>()
+    ↓ typed ✅
+getHealthcareService(supabase: SupabaseClient<Database>) ✅
+    ↓ preserved ✅
+SurgicalEngineService(SupabaseClient<Database>)     ✅
+    ↓
+SupabaseSurgeryRepository(SupabaseClient<Database>) ✅
+    ↓
+.from('hc_surgical_cases')                          → typed rows ✅
+```
+
+### Impact Analysis
+
+**Scope of Changes:**
+- 1 shared contract (service-locator.ts)
+- 1 engine service constructor
+- 1 repository constructor (from v2)
+- Total: 3 files, 6 insertions, 3 deletions
+
+**Other Engines Affected:** NONE  
+All 16 other Healthcare engines continue using untyped `SupabaseClient` parameter in their constructors. TypeScript allows this because `SupabaseClient<Database>` is assignable to `SupabaseClient` (generic covariance).
+
+**Breaking Change Assessment:** NONE  
+Existing engine implementations remain compatible. The service locator now provides stronger typing to consumers without requiring immediate changes to all engines.
+
+### Architecture Lesson
+
+**Root Cause Classification:**  
+Contract boundary type loss, not engine-specific bug.
+
+**Key Finding:**  
+Bella implemented typed client creation correctly at infrastructure layer:
+```typescript
+// src/lib/supabase-server.ts:24
+export const createServerClient = (): SupabaseClient<Database> => { ... }
+
+// src/lib/supabase-client.ts:13
+export const createClient = (): SupabaseClient<Database> => { ... }
+```
+
+But lost the generic at the Service Locator public contract, causing type widening for all consumers.
+
+**Fix Strategy Validated:**  
+Preserve canonical Database generic at shared service boundaries rather than creating engine-specific adapters or type casts.
+
+**Future Factory Rule:**  
+> Canonical infrastructure generics (Database, Schema) MUST NOT be widened when passing through shared service boundaries. Service contracts must preserve or constrain, never relax, upstream types.
+
+### Execution Decision Log
+
+**v1 (rejected):** `132 → 132` (no effect)  
+- Created `SurgicalDatabase` minimal type
+- Cast client with `as unknown as`
+- **Failure reason:** Cast too late; tables already in Database
+
+**v2 (partial success):** `132 → 125` (-7)  
+- Added `Database` import to repository
+- Fixed 10 repository diagnostics
+- **Limitation:** Service boundary still untyped
+
+**v3 (success):** `125 → 103` (-22), total `132 → 103` (-29)  
+- Fixed service locator contract
+- Updated engine service constructor
+- **Result:** Type preserved through entire chain
+
+### Batch 1 Status
+
+```text
+BATCH 1: COMPLETE ✅
+
+Target:   Surgical Engine (33 diagnostics)
+Achieved: 29/33 resolved (-88%)
+Residual: 4 diagnostics (classified, out of scope)
+
+Healthcare Total: 132 → 103 (-29)
+Surgical Impact:  33 → 4 (-29)
+Other Engines:    99 → 99 (unchanged)
+
+Time: 3 investigation cycles + 3 execution attempts
+Commits: 3 (investigation doc, re-investigation, execution v3)
+```
+
+### Next Steps
+
+**Immediate:**
+- Batch 1 = CLOSED
+- Update P1-T5 master document with v3 results
+- Reclassify Healthcare baseline: 103 diagnostics
+
+**Residual Classification:**
+
+4 diagnostics remain in Surgical cluster - classified but not resolved in Batch 1:
+
+- 2 PostgrestError (repository error handling pattern)
+- 2 DefaultSterilizationContract interface mismatch (CSSD integration)
+
+**Status:** Residual identified, deferred to future pass  
+**Reason:** Different root cause from type boundary issue  
+**Scope Decision:** Requires separate investigation
+
+**Future Batches:**
+Surgical 4 residual NOT included in future batch counts.  
+Next batch will target different engine cluster from remaining 99 Healthcare diagnostics after re-census.
+
+---
+
+**EVIDENCE TIMESTAMP:** 2026-09-16T23:45:00+07:00  
+**COMPILER VERIFICATION:** healthcare-v3-full.txt  
+**COMMIT HASH:** `7764fe6a`  
+**GATES STATUS:** ✅ 52/52
