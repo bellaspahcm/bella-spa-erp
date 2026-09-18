@@ -63,27 +63,27 @@ export class TraceabilityDomain {
     const now = new Date();
 
     const traceability: Traceability = {
-      id: props.id || crypto.randomUUID(),
+      id: { value: props.id || crypto.randomUUID() },
       tenantId: props.tenantId,
-      itemId: props.itemId,
+      itemId: { value: props.itemId },
       
-      lotNumber: props.lotNumber || null,
-      serialNumber: props.serialNumber || null,
+      lotNumber: props.lotNumber ? { value: props.lotNumber } : undefined,
+      serialNumber: props.serialNumber ? { value: props.serialNumber } : undefined,
       
-      manufacturedDate: props.manufacturedDate || null,
-      expiryDate: props.expiryDate || null,
-      receivedDate: props.receivedDate,
+      manufacturedDate: props.manufacturedDate,
+      expiryDate: props.expiryDate,
+      receivedDate: props.receivedDate!,
       
-      supplierId: props.supplierId || null,
-      supplierName: props.supplierName || null,
-      supplierLotNumber: props.supplierLotNumber || null,
+      supplierId: props.supplierId,
+      supplierName: props.supplierName,
+      supplierLotNumber: props.supplierLotNumber,
       
       custodyEvents: props.custodyEvents || [],
       
       complianceStatus: props.complianceStatus || 'COMPLIANT',
       recallStatus: props.recallStatus || 'NONE',
-      recallReason: null,
-      recallDate: null,
+      recallReason: undefined,
+      recallDate: undefined,
       
       createdAt: now,
       updatedAt: now,

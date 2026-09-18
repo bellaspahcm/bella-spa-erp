@@ -20,10 +20,9 @@
 import {
   InventoryMovement,
   MovementId,
-  CustodyEvent,
 } from '../movement.types';
 import { LotNumber, SerialNumber } from '../inventory.types';
-import { TraceabilityRecord } from '../traceability.types';
+import { TraceabilityRecord, CustodyEvent } from '../traceability.types';
 
 /**
  * Lineage Query Options
@@ -117,27 +116,27 @@ export function generateCustodyEvent(
   const { movement, userId } = context;
   
   // Map movement type to custody action
-  const action = mapMovementTypeToCustodyAction(movement.movement_type);
+  const action = mapMovementTypeToCustodyAction(movement.movementType);
   
   // Determine location (prefer destination for inbound, source for outbound)
   const locationId = movement.direction === 'INBOUND'
-    ? movement.to_location_id?.value
-    : movement.from_location_id?.value;
+    ? movement.toLocationId?.value
+    : movement.fromLocationId?.value;
   
   const locationType = movement.direction === 'INBOUND'
-    ? movement.to_location_type
-    : movement.from_location_type;
+    ? movement.toLocationType
+    : movement.fromLocationType;
   
   if (!locationId || !locationType) {
     throw new Error('Cannot generate custody event: location missing');
   }
   
   return {
-    timestamp: movement.movement_date,
-    location_id: locationId,
-    location_type: locationType,
+    timestamp: movement.movementDate,
+    locationId: locationId,
+    locationType: locationType,
     action,
-    user_id: userId || movement.created_by,
+    userId: userId || movement.createdBy,
     notes: movement.notes,
   };
 }
@@ -215,11 +214,11 @@ export function traceUpstream(
   let maxDepthExceeded = false;
   
   // Filter tenant-isolated movements
-  const tenantMovements = movements.filter(m => m.tenant_id === tenantId);
+  const tenantMovements = movements.filter(m => m.tenantId === tenantId);
   
   // Find movements with this lot number
   let currentLotMovements = tenantMovements.filter(
-    m => m.lot_number?.value === lotNumber.value && m.status === 'COMPLETED'
+    m => m.lotNumber?.value === lotNumber.value && m.status === 'COMPLETED'
   );
   
   while (currentLotMovements.length > 0 && currentDepth < options.maxDepth) {
@@ -242,11 +241,11 @@ export function traceUpstream(
       result.push(movement);
       
       // Trace further upstream
-      if (movement.from_location_id) {
+      if (movement.fromLocationId) {
         const upstream = tenantMovements.filter(
           m =>
-            m.to_location_id?.value === movement.from_location_id?.value &&
-            m.lot_number?.value === lotNumber.value &&
+            m.toLocationId?.value === movement.fromLocationId?.value &&
+            m.lotNumber?.value === lotNumber.value &&
             m.status === 'COMPLETED' &&
             !visited.has(m.id.value)
         );
@@ -311,14 +310,14 @@ export function traceDownstream(
   let maxDepthExceeded = false;
   
   // Filter tenant-isolated movements
-  const tenantMovements = movements.filter(m => m.tenant_id === tenantId);
+  const tenantMovements = movements.filter(m => m.tenantId === tenantId);
   
   // Find origin movements (RECEIPT, no from_location)
   let currentLotMovements = tenantMovements.filter(
     m =>
-      m.lot_number?.value === lotNumber.value &&
+      m.lotNumber?.value === lotNumber.value &&
       m.status === 'COMPLETED' &&
-      !m.from_location_id
+      !m.fromLocationId
   );
   
   while (currentLotMovements.length > 0 && currentDepth < options.maxDepth) {
@@ -341,11 +340,11 @@ export function traceDownstream(
       result.push(movement);
       
       // Trace further downstream
-      if (movement.to_location_id) {
+      if (movement.toLocationId) {
         const downstream = tenantMovements.filter(
           m =>
-            m.from_location_id?.value === movement.to_location_id?.value &&
-            m.lot_number?.value === lotNumber.value &&
+            m.fromLocationId?.value === movement.toLocationId?.value &&
+            m.lotNumber?.value === lotNumber.value &&
             m.status === 'COMPLETED' &&
             !visited.has(m.id.value)
         );
@@ -402,11 +401,11 @@ export function getLotHistory(
   return movements
     .filter(
       m =>
-        m.tenant_id === tenantId &&
-        m.lot_number?.value === lotNumber.value &&
+        m.tenantId === tenantId &&
+        m.lotNumber?.value === lotNumber.value &&
         m.status === 'COMPLETED'
     )
-    .sort((a, b) => a.movement_date.getTime() - b.movement_date.getTime());
+    .sort((a, b) => a.movementDate.getTime() - b.movementDate.getTime());
 }
 
 /**
@@ -431,11 +430,11 @@ export function getSerialHistory(
   return movements
     .filter(
       m =>
-        m.tenant_id === tenantId &&
-        m.serial_number?.value === serialNumber.value &&
+        m.tenantId === tenantId &&
+        m.serialNumber?.value === serialNumber.value &&
         m.status === 'COMPLETED'
     )
-    .sort((a, b) => a.movement_date.getTime() - b.movement_date.getTime());
+    .sort((a, b) => a.movementDate.getTime() - b.movementDate.getTime());
 }
 
 /**
@@ -499,7 +498,7 @@ export function validateTraceabilityChain(
   
   // Sort chronologically
   const sorted = [...movements].sort(
-    (a, b) => a.movement_date.getTime() - b.movement_date.getTime()
+    (a, b) => a.movementDate.getTime() - b.movementDate.getTime()
   );
   
   // Check for gaps (destination of movement N ≠ source of movement N+1)
@@ -508,14 +507,14 @@ export function validateTraceabilityChain(
     const next = sorted[i + 1];
     
     if (
-      current.to_location_id &&
-      next.from_location_id &&
-      current.to_location_id.value !== next.from_location_id.value
+      current.toLocationId &&
+      next.fromLocationId &&
+      current.toLocationId.value !== next.fromLocationId.value
     ) {
       gaps.push({
         afterMovement: current.id,
-        expectedLocation: current.to_location_id.value,
-        reason: `Gap detected: movement ${current.id.value} ends at ${current.to_location_id.value}, but next movement ${next.id.value} starts at ${next.from_location_id.value}`,
+        expectedLocation: current.toLocationId.value,
+        reason: `Gap detected: movement ${current.id.value} ends at ${current.toLocationId.value}, but next movement ${next.id.value} starts at ${next.fromLocationId.value}`,
       });
     }
   }
@@ -528,8 +527,8 @@ export function validateTraceabilityChain(
     overlaps,
     metadata: {
       totalMovements: movements.length,
-      startDate: sorted[0].movement_date,
-      endDate: sorted[sorted.length - 1].movement_date,
+      startDate: sorted[0].movementDate,
+      endDate: sorted[sorted.length - 1].movementDate,
     },
   };
 }

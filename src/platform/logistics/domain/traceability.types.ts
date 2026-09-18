@@ -38,11 +38,11 @@ export interface SupplierReference {
  */
 export interface CustodyEvent {
   timestamp: Date;
-  location_id: string;
-  location_type: LocationType;
-  action: 'RECEIVED' | 'MOVED' | 'QUARANTINED' | 'RELEASED' | 'SHIPPED' | 'DAMAGED' | 'DESTROYED';
-  user_id?: string;
-  notes?: string;
+  locationId: string;
+  locationType: LocationType | null;
+  action: string;
+  userId?: string | null;
+  notes?: string | null;
 }
 
 /**
@@ -68,47 +68,72 @@ export type ComplianceStatus =
  */
 export interface TraceabilityRecord {
   id: TraceabilityId;
-  tenant_id: string;
-  item_id: ItemId;
+  tenantId: string;
+  itemId: ItemId;
   
   // Identifiers
-  lot_number?: LotNumber;
-  serial_number?: SerialNumber;
+  lotNumber?: LotNumber;
+  serialNumber?: SerialNumber;
   
   // Lifecycle
-  manufactured_date?: Date;
-  expiry_date?: Date;
-  received_date: Date;
+  manufacturedDate?: Date;
+  expiryDate?: Date;
+  receivedDate: Date;
   
   // Origin
-  supplier?: SupplierReference;
+  supplierId?: string;
+  supplierName?: string;
+  supplierLotNumber?: string;
   
   // Chain of custody
-  custody_events: CustodyEvent[];
+  custodyEvents: CustodyEvent[];
   
   // Compliance
-  compliance_status: ComplianceStatus;
-  recall_status: RecallStatus;
-  recall_reason?: string;
-  recall_date?: Date;
+  complianceStatus: ComplianceStatus;
+  recallStatus: RecallStatus;
+  recallReason?: string;
+  recallDate?: Date;
   
   // Audit
-  created_at: Date;
-  updated_at: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
+
+/**
+ * Traceability (alias for TraceabilityRecord)
+ */
+export type Traceability = TraceabilityRecord;
 
 /**
  * Create Traceability Props
  */
 export interface CreateTraceabilityProps {
-  tenant_id: string;
-  item_id: string;
-  lot_number?: string;
-  serial_number?: string;
-  manufactured_date?: Date;
-  expiry_date?: Date;
-  received_date?: Date;
-  supplier?: SupplierReference;
+  id?: string;
+  tenantId: string;
+  itemId: string;
+  lotNumber?: string;
+  serialNumber?: string;
+  manufacturedDate?: Date;
+  expiryDate?: Date;
+  receivedDate?: Date;
+  supplierId?: string;
+  supplierName?: string;
+  supplierLotNumber?: string;
+  custodyEvents?: CustodyEvent[];
+  complianceStatus?: ComplianceStatus;
+  recallStatus?: RecallStatus;
+}
+
+/**
+ * Add Custody Event Props
+ */
+export interface AddCustodyEventProps {
+  locationId: string;
+  locationType?: LocationType;
+  action: string;
+  userId?: string;
+  notes?: string;
+  timestamp?: Date;
 }
 
 /**
