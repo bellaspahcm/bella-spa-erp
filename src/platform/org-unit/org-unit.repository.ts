@@ -86,8 +86,7 @@ export class SupabaseOrgUnitRepository implements IOrgUnitRepository {
       code: input.code ?? null,
       parent_id: input.parentId ?? null,
       is_active: true,
-      // Cast Record<string, unknown> to Json - structurally compatible
-      metadata: (input.metadata ?? null) as unknown as Database['public']['Tables']['org_units']['Insert']['metadata'],
+      metadata: input.metadata ?? null,
     };
 
     const { data, error } = await this.supabase
@@ -113,8 +112,7 @@ export class SupabaseOrgUnitRepository implements IOrgUnitRepository {
     if (updates.parentId !== undefined) update.parent_id = updates.parentId ?? null;
     if (updates.isActive !== undefined) update.is_active = updates.isActive;
     if (updates.metadata !== undefined) {
-      // Cast Record<string, unknown> to Json - structurally compatible
-      update.metadata = updates.metadata as unknown as Database['public']['Tables']['org_units']['Update']['metadata'];
+      update.metadata = updates.metadata;
     }
 
     const { data, error } = await this.supabase
@@ -242,23 +240,23 @@ export class SupabaseOrgUnitRepository implements IOrgUnitRepository {
       throw new Error(`Failed to get hierarchy: ${error.message}`);
     }
 
-    // Map RPC result to OrgUnitHierarchy
-    return (data || []).map((row: any) => ({
+    // Map RPC result to OrgUnitHierarchy - types from ExtendedDatabase
+    return (data || []).map((row) => ({
       unit: {
         id: row.id,
         tenantId: row.tenant_id,
         unitType: row.unit_type as OrgUnitType,
         name: row.name,
-        code: row.code,
-        parentId: row.parent_id,
+        code: row.code ?? undefined,
+        parentId: row.parent_id ?? undefined,
         isActive: row.is_active,
-        metadata: row.metadata || {},
+        metadata: row.metadata ?? null,
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at)
       },
       depth: row.depth,
-      path: row.path || [],
-      pathNames: row.path_names || []
+      path: row.path,
+      pathNames: row.path_names
     }));
   }
 
@@ -277,7 +275,7 @@ export class SupabaseOrgUnitRepository implements IOrgUnitRepository {
       throw new Error(`Failed to get descendants: ${error.message}`);
     }
 
-    return (data || []).map((row: any) => row.id);
+    return (data || []).map((row) => row.id);
   }
 
   /**
@@ -332,7 +330,7 @@ export class SupabaseOrgUnitRepository implements IOrgUnitRepository {
       code: row.code ?? undefined,
       parentId: row.parent_id ?? undefined,
       isActive: row.is_active,
-      metadata: (row.metadata as Record<string, unknown>) || {},
+      metadata: row.metadata ?? null,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at)
     };
