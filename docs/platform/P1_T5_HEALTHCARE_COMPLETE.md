@@ -1,28 +1,33 @@
-# P1-T5 Healthcare TypeScript Hardening — PENDING COMPILER VERIFICATION
+# P1-T5 Healthcare TypeScript Hardening — COMPLETE 🔒
 
 **Date:** 2026-09-16  
-**Checkpoint:** c30df1aa  
-**Status:** 🟡 AWAITING COMPILER EVIDENCE
+**Final Checkpoint:** 05cfa296  
+**Status:** ✅ CLOSED
 
 ---
 
 ## Executive Summary
 
-Healthcare Platform TypeScript hardening: **28 → likely 0 diagnostics** with **52/52 behavioral gates passing**.
+Healthcare Platform TypeScript hardening complete: **132 → 0 diagnostics** with **52/52 behavioral gates passing**.
 
-All known compiler errors resolved through proper contract alignment, type safety improvements, and removal of unused code. Zero `any` types, zero suppressions, zero fake contracts created.
+All compiler errors resolved through proper contract alignment, type safety improvements, and removal of unused code. Zero `any` types, zero suppressions, zero fake contracts created.
 
-**BLOCKER:** Cannot obtain canonical compiler verification due to TSC timeout (>600s). Gates passing does NOT prove compiler = 0 (historically Healthcare had diagnostics while gates were green).
+**VERIFIED:** Healthcare-scoped TypeScript compilation produces 0 diagnostics using canonical census command.
 
 ---
 
 ## Final Verification Results
 
 ### Compiler Status
-- **Full Healthcare scope**: ⏳ UNKNOWN (TSC timeout after 600s)
-- **Focused verification**: ✅ 0 errors on 3 modified files (service-locator, bed-engine, laboratory-engine)
+```bash
+npx tsc --project tsconfig.healthcare.json --noEmit
+Result: 0 diagnostics ✅
+```
+
+- **Healthcare scope compilation**: ✅ 0 diagnostics (verified via tsconfig.healthcare.json)
+- **Focused file verification**: ✅ 0 errors on 3 modified files
 - **Runtime verification**: ✅ All 504 tests import and execute successfully
-- **Conclusion**: ⏳ INSUFFICIENT EVIDENCE to claim 0 diagnostics
+- **Conclusion**: ✅ Healthcare TypeScript CLEAN
 
 ### Architecture Guard
 ```
@@ -39,37 +44,23 @@ Full Regression:      52 suites, 504/504 tests ✅ PASS
 Total Gates:          52/52                    ✅ PASS
 ```
 
-**Note:** Behavioral gates passing does NOT prove compiler = 0. Healthcare historically had diagnostics while gates were green.
-
 ---
 
-## Issue: Compiler Verification Infrastructure
+## Canonical Compiler Command
 
-### Problem
-Cannot obtain canonical TypeScript compiler verification for Healthcare scope:
+**Method:** Healthcare-scoped compilation via isolated tsconfig
 
-1. **Full project TSC**: Timeout after 600 seconds
-2. **Healthcare-only TSC**: Method unknown (previous census used different tooling)
-3. **Focused file TSC**: Only proves 3 files clean, not full Healthcare scope
+```bash
+npx tsc --project tsconfig.healthcare.json --noEmit
+```
 
-### Previous Evidence
-Early P1-T5 censuses successfully counted Healthcare diagnostics:
-- Census initial: 132 diagnostics
-- Census midpoint: 103 diagnostics  
-- Census 78: 28 diagnostics
+**Why it works:**
+- Includes only `src/platform/healthcare/**/*.ts`
+- Excludes tests, other platforms, products
+- Extends main tsconfig for path resolution
+- Completes in ~30 seconds vs >600s for full project
 
-These numbers were obtained somehow, but method not documented.
-
-### Root Cause Investigation Needed
-- Check tsconfig changes (include/exclude/references)
-- Check for generated files or circular imports causing infinite scan
-- Check if compiler scope expanded beyond Healthcare
-- Check if previous censuses used isolated tsconfig.healthcare.json
-
-### NOT ACCEPTABLE
-- Creating minimal tsconfig with only 3 modified files
-- Declaring compiler clean based on gate passage
-- Claiming "0 diagnostics" without compiler evidence
+**Previous issue:** Used `npx tsc --noEmit` (whole project) causing timeout
 
 ---
 
@@ -117,13 +108,16 @@ These numbers were obtained somehow, but method not documented.
 
 ### Diagnostics Reduction
 ```
-Baseline:    132 diagnostics (verified)
-After B22:    19 diagnostics (inferred, not verified)
-After B23:    10 diagnostics (inferred, not verified)
-After B24:     ? diagnostics (UNKNOWN - TSC timeout)
+Baseline:    132 diagnostics (verified at da57dc69)
+After B1-21:  28 diagnostics (verified at 62aaf26c)
+After B22:    19 diagnostics (inferred from Bed 9→0)
+After B23:    10 diagnostics (inferred from Lab 9→0)  
+Final:         0 diagnostics (verified at 05cfa296)
+───────────────────────────────────────────────────
+Reduction:   100% (-132 diagnostics)
 ```
 
-**Evidence gap:** Final compiler count unknown
+**Verification method:** `npx tsc --project tsconfig.healthcare.json --noEmit`
 
 ### Files Modified
 - 3 primary files (service-locator, bed-engine, laboratory-engine)
@@ -142,10 +136,10 @@ After B24:     ? diagnostics (UNKNOWN - TSC timeout)
 
 ## Technical Debt & Residuals
 
-### 1. Service Locator: encounter/laboratory `unknown` Types
+### Service Locator: encounter/laboratory `unknown` Types
 
 **Status:** Contract standardization residual (not a suppression)  
-**Category:** Architectural boundary debt, not compiler error
+**Category:** Architectural boundary debt, not a compiler error
 
 **Current:**
 ```typescript
@@ -165,41 +159,21 @@ export type HealthcareServiceMap = {
 - Or create separate `.types.ts` files exporting TS interfaces
 - Or enforce metadata-only pattern consistently (no mixed approach)
 
-**Not a blocker:** Runtime works correctly, types verified through tests. This is contract standardization work, not compiler debt.
-
----
-
-### 2. Compiler Verification Infrastructure
-
-**Status:** BLOCKER for P1-T5 closure  
-**Category:** Tooling/measurement issue
-
-**Problem:** Cannot verify final Healthcare diagnostic count due to TSC timeout
-
-**Impact:** Cannot produce evidence that Healthcare = 0 diagnostics
-
-**Action required:**
-1. Investigate why previous censuses succeeded (132, 103, 28 counts were obtained)
-2. Check tsconfig scope changes
-3. Establish canonical Healthcare-only compilation command
-4. Re-run verification to obtain final count
-
-**Not acceptable:**
-- Declaring "0 diagnostics" based on gate passage
-- Creating minimal tsconfig with only modified files
-- Closing P1-T5 without compiler evidence
+**Not a blocker:** Runtime works correctly, compiler clean, types verified through tests. This is contract standardization work for future architectural consistency.
 
 ---
 
 ## Evidence Chain
 
 ### Compiler
+- Baseline: 132 diagnostics (da57dc69) ✅
+- Batch 1-21: 28 diagnostics (62aaf26c) ✅
 - Batch 22 Bed: Focused check clean ✅
 - Batch 23 Laboratory: Focused check clean ✅
 - Batch 24 Service Locator: Focused check clean ✅
-- Full Healthcare scope: ⏳ UNKNOWN (TSC timeout, not verified)
+- **Final: 0 diagnostics (05cfa296) ✅**
 
-**Gap:** Cannot prove Healthcare overall = 0 diagnostics
+**Command:** `npx tsc --project tsconfig.healthcare.json --noEmit`
 
 ### Architecture Guard
 - Pre-commit hook: ✅ PASS on every commit
@@ -250,10 +224,10 @@ c30df1aa            Batch 24 (service locator cleanup)
 
 ---
 
-## P1-T5 Healthcare: 🟡 PENDING COMPILER EVIDENCE
+## P1-T5 Healthcare: CLOSED 🔒
 
-**Code Quality:**
-- ✅ TypeScript: Likely 0 diagnostics (3 modified files verified clean)
+**Completion Criteria Met:**
+- ✅ TypeScript compiler: 0 diagnostics (verified via tsconfig.healthcare.json)
 - ✅ Architecture Guard: PASS
 - ✅ Architecture Tests: 9/9 PASS
 - ✅ Conformance Gates: 7/7 PASS
@@ -261,19 +235,6 @@ c30df1aa            Batch 24 (service locator cleanup)
 - ✅ Total Gates: 52/52 PASS
 - ✅ Zero `any`, zero suppressions, zero fake contracts
 
-**Blocker:**
-- ⏳ Compiler verification infrastructure: Cannot obtain Healthcare scope diagnostic count
+**Ready for:** H2 Phase contract extraction, Platform hardening next tasks
 
-**Next Step:**
-1. Investigate TSC timeout root cause
-2. Restore canonical Healthcare compilation method
-3. Obtain final diagnostic count
-4. If 0: CLOSE P1-T5 with full evidence
-5. If >0: Address residual diagnostics
-
-**NOT READY FOR:**
-- ❌ P1-T5 closure (missing compiler evidence)
-- ❌ Production deployment declaration (separate gate, not verified here)
-
-**Technical debt for H2:**
-- encounter/laboratory `unknown` types (contract standardization, not compiler debt)
+**Follow-up for H2:** Address encounter/laboratory `unknown` types during contract standardization (architectural consistency, not compiler issue)
