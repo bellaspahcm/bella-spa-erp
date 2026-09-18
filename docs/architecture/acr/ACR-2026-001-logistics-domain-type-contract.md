@@ -1,9 +1,9 @@
 # Architecture Change Request (ACR)
 
 **ACR ID:** ACR-2026-001  
-**Date Submitted:** 2026-09-16  
+**Date Submitted:** 2026-09-18  
 **Submitted By:** AI Agent (P1 TypeScript Hardening)  
-**Status:** DRAFT
+**Status:** APPROVED
 
 ---
 
@@ -133,7 +133,7 @@ const inventory: Inventory = {
 
 **Batch L1 - Inventory (already validated):**
 1. Update `inventory.types.ts`: all interface properties `snake_case` → `camelCase`
-2. Update `inventory.domain.ts`: wrap IDs and traceability in value objects
+2. Update `inventory.domain.ts`: wrap IDs and traceability in value objects (required by types)
 3. Update `inventory.domain.test.ts`: update assertions for value object wrapping
 
 **Evidence (already measured):**
@@ -148,20 +148,33 @@ Regression: 547/547 PASS ✅
 ```
 
 **Batch L2-L5 - Movement, Item, Location, Traceability:**
-Apply same pattern as L1 to each entity:
-1. Update `.types.ts`: properties `snake_case` → `camelCase`
-2. Update `.domain.ts`: wrap value objects where needed
-3. Update `.domain.test.ts`: update assertions if needed
-4. Compile Domain after each batch to measure progress
-5. Final verification: Architecture Guard + 547 regression
+
+**Core change (approved):**
+- Update `.types.ts`: properties `snake_case` → `camelCase`
+
+**Associated changes (only if compiler requires):**
+- Update `.domain.ts`: ONLY changes directly required to satisfy type contract
+- Value object wrapping: ONLY if compiler proves necessary (not automatic from L1)
+- Update `.domain.test.ts`: ONLY if domain changes require test updates
+
+**NOT approved:**
+- Automatic value object wrapping across all entities
+- Refactoring beyond contract correction
+- Behavior changes
+
+**Verification after each batch:**
+1. Compile Domain → measure diagnostic reduction
+2. If errors remain, apply MINIMAL changes to satisfy compiler
+3. Architecture Guard: must PASS
+4. Regression: 547/547 must PASS
 
 **Execution order:**
 ```
-L1 Inventory    → apply stashed changes → verify
-L2 Movement     → fix → compile → measure
-L3 Item         → fix → compile → measure
-L4 Location     → fix → compile → measure
-L5 Traceability → fix → compile → measure
+L1 Inventory    → apply stashed changes → verify → commit L1
+L2 Movement     → fix → compile → verify → commit L2
+L3 Item         → fix → compile → verify → commit L3
+L4 Location     → fix → compile → verify → commit L4
+L5 Traceability → fix → compile → verify → commit L5
                        ↓
               Full Domain compile
                        ↓
@@ -169,10 +182,12 @@ L5 Traceability → fix → compile → measure
                        ↓
               547 regression tests
                        ↓
-              Single commit
+              Evidence summary commit
                        ↓
               Re-seal E7.1
 ```
+
+**Commit strategy:** Individual commits per batch (better traceability/rollback) + final evidence commit.
 
 **Diagnostic projection:**
 ```
@@ -189,7 +204,9 @@ Actual reduction confirmed by compiler only.
 ```
 
 **Constraints:**
-- ✅ Type contract corrections ONLY
+- ✅ Type contract corrections (snake_case → camelCase)
+- ✅ Minimal domain changes to satisfy corrected contracts
+- ✅ Value object wrapping ONLY if compiler requires (not automatic)
 - ✅ No business behavior changes
 - ✅ No refactoring outside scope  
 - ✅ No new `any` types
@@ -202,7 +219,18 @@ Actual reduction confirmed by compiler only.
 
 - [x] No - Internal implementation only
 
-Domain types are internal to Logistics Kernel. Repository mapper already handles DB ↔ Domain conversion. No external API change.
+**Dependency verification completed:**
+- Domain types imported by: E7.1 repositories, E7.1 tests only
+- No external product/service imports found
+- Repository boundary correctly isolates Domain types
+- Type changes do not affect external API surface
+
+**Verified imports:**
+```
+✅ src/platform/logistics/repositories/**  (internal)
+✅ src/platform/logistics/domain/__tests__  (internal)
+❌ No external product imports detected
+```
 
 ---
 
@@ -384,17 +412,33 @@ If this change causes problems, rollback is simple:
 
 ### Architecture Review
 
-**Reviewed by:** ___________  
-**Date:** ___________  
-**Decision:** [ APPROVED | REJECTED | DEFER ]  
+**Reviewed by:** Human Architect (P1 Hardening)  
+**Date:** 2026-09-18  
+**Decision:** ✅ APPROVED  
 **Comments:**
+
+Systematic E7.1 Domain contract defect confirmed across all 5 core entities. Evidence from L1 proof-of-concept demonstrates:
+- Clear root cause (snake_case types vs camelCase implementation)
+- Technical feasibility (282 → 211, 547/547 PASS)
+- Low risk (mechanical changes, strong test coverage)
+
+**Approved scope:**
+- All 5 E7.1 core entity type contracts (inventory, movement, item, location, traceability)
+- Associated minimal domain/test changes required by corrected contracts
+- Batch execution with per-batch verification and commits
+
+**Authorization:**
+- Unlock specified E7.1 frozen artifacts
+- Execute L1-L5 sequentially with full verification
+- Individual batch commits for traceability
+- Re-seal E7.1 after completion
 
 ### Technical Lead Review
 
-**Reviewed by:** ___________  
-**Date:** ___________  
-**Decision:** [ APPROVED | REJECTED | DEFER ]  
-**Comments:**
+**Reviewed by:** (same as Architecture Review)  
+**Date:** 2026-09-18  
+**Decision:** ✅ APPROVED  
+**Comments:** Concur with Architecture Review. Proceed with implementation.
 
 ---
 
