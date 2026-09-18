@@ -29,17 +29,40 @@ jobs:
       - name: Fetch main branch
         run: git fetch origin main:main
       
+      - name: Check if baseline exists
+        id: baseline_check
+        run: |
+          if [ -f .github/ci/baselines/main.json ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "✅ Baseline found"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "⚠️  Baseline not found (bootstrap scenario)"
+          fi
+      
       - name: Run baseline comparison
+        if: steps.baseline_check.outputs.exists == 'true'
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha || 'main' }}
           PR_HEAD_SHA: ${{ github.sha }}
           PR_TARGET_BRANCH: ${{ github.base_ref || 'main' }}
           BASELINE_PATH: .github/ci/baselines/main.json
         run: |
-          node scripts/ci/baseline/compare-with-baseline.ts \
+          npx tsx scripts/ci/baseline/compare-with-baseline.ts \
             --baseline $BASELINE_PATH \
             --pr-base $PR_BASE_SHA \
             --pr-head $PR_HEAD_SHA
+      
+      - name: Skip baseline check (bootstrap)
+        if: steps.baseline_check.outputs.exists == 'false'
+        run: |
+          echo "⚠️  BOOTSTRAP SCENARIO"
+          echo "Baseline file not found: .github/ci/baselines/main.json"
+          echo ""
+          echo "This is expected for infrastructure PR #117 before baseline generation."
+          echo "Baseline will be generated immediately after infrastructure merge."
+          echo ""
+          echo "✅ Skipping baseline comparison (documented bootstrap exception)"
       
       - name: Upload comparison report
         if: always()
