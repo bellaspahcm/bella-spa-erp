@@ -38,15 +38,15 @@ import type { LotNumber, SerialNumber } from '../../inventory.types';
 function createMovement(overrides: Partial<InventoryMovement>): InventoryMovement {
   return {
     id: { value: 'mov-1' },
-    movement_number: { value: 'MOV-001' },
-    tenant_id: 'tenant-a',
-    movement_date: new Date('2024-01-01'),
-    created_at: new Date('2024-01-01'),
-    movement_type: 'RECEIPT',
+    movementNumber: { value: 'MOV-001' },
+    tenantId: 'tenant-a',
+    movementDate: new Date('2024-01-01'),
+    createdAt: new Date('2024-01-01'),
+    movementType: 'RECEIPT',
     direction: 'INBOUND',
-    item_id: { value: 'item-1' },
+    itemId: { value: 'item-1' },
     quantity: 100,
-    unit_of_measure: 'EA',
+    unitOfMeasure: 'EA',
     status: 'COMPLETED',
     ...overrides,
   };
@@ -57,48 +57,48 @@ function createMovement(overrides: Partial<InventoryMovement>): InventoryMovemen
 describe('generateCustodyEvent', () => {
   it('should generate custody event from RECEIPT movement', () => {
     const movement = createMovement({
-      movement_type: 'RECEIPT',
+      movementType: 'RECEIPT',
       direction: 'INBOUND',
-      to_location_id: { value: 'WH-001' },
-      to_location_type: 'WAREHOUSE',
-      movement_date: new Date('2024-01-15T10:00:00Z'),
-      created_by: 'user-1',
+      toLocationId: { value: 'WH-001' },
+      toLocationType: 'WAREHOUSE',
+      movementDate: new Date('2024-01-15T10:00:00Z'),
+      createdBy: 'user-1',
       notes: 'Supplier delivery',
     });
 
     const event = generateCustodyEvent({ movement });
 
-    expect(event.timestamp).toEqual(movement.movement_date);
-    expect(event.location_id).toBe('WH-001');
-    expect(event.location_type).toBe('WAREHOUSE');
+    expect(event.timestamp).toEqual(movement.movementDate);
+    expect(event.locationId).toBe('WH-001');
+    expect(event.locationType).toBe('WAREHOUSE');
     expect(event.action).toBe('RECEIVED');
-    expect(event.user_id).toBe('user-1');
+    expect(event.userId).toBe('user-1');
     expect(event.notes).toBe('Supplier delivery');
   });
 
   it('should generate custody event from SHIPMENT movement', () => {
     const movement = createMovement({
-      movement_type: 'SHIPMENT',
+      movementType: 'SHIPMENT',
       direction: 'OUTBOUND',
-      from_location_id: { value: 'WH-001' },
-      from_location_type: 'WAREHOUSE',
-      movement_date: new Date('2024-02-01T14:30:00Z'),
-      created_by: 'user-2',
+      fromLocationId: { value: 'WH-001' },
+      fromLocationType: 'WAREHOUSE',
+      movementDate: new Date('2024-02-01T14:30:00Z'),
+      createdBy: 'user-2',
     });
 
     const event = generateCustodyEvent({ movement });
 
     expect(event.action).toBe('SHIPPED');
-    expect(event.location_id).toBe('WH-001');
-    expect(event.location_type).toBe('WAREHOUSE');
+    expect(event.locationId).toBe('WH-001');
+    expect(event.locationType).toBe('WAREHOUSE');
   });
 
   it('should generate custody event from DAMAGE movement', () => {
     const movement = createMovement({
-      movement_type: 'DAMAGE',
+      movementType: 'DAMAGE',
       direction: 'OUTBOUND',
-      from_location_id: { value: 'WH-001' },
-      from_location_type: 'WAREHOUSE',
+      fromLocationId: { value: 'WH-001' },
+      fromLocationType: 'WAREHOUSE',
     });
 
     const event = generateCustodyEvent({ movement });
@@ -108,9 +108,9 @@ describe('generateCustodyEvent', () => {
 
   it('should use provided userId over movement created_by', () => {
     const movement = createMovement({
-      created_by: 'user-1',
-      to_location_id: { value: 'WH-001' },
-      to_location_type: 'WAREHOUSE',
+      createdBy: 'user-1',
+      toLocationId: { value: 'WH-001' },
+      toLocationType: 'WAREHOUSE',
     });
 
     const event = generateCustodyEvent({
@@ -118,13 +118,13 @@ describe('generateCustodyEvent', () => {
       userId: 'user-override',
     });
 
-    expect(event.user_id).toBe('user-override');
+    expect(event.userId).toBe('user-override');
   });
 
   it('should throw if location is missing', () => {
     const movement = createMovement({
-      to_location_id: undefined,
-      to_location_type: undefined,
+      toLocationId: undefined,
+      toLocationType: undefined,
     });
 
     expect(() => generateCustodyEvent({ movement })).toThrow(
@@ -134,19 +134,19 @@ describe('generateCustodyEvent', () => {
 
   it('[INVARIANT #16] should not mutate input movement', () => {
     const movement = createMovement({
-      to_location_id: { value: 'WH-001' },
-      to_location_type: 'WAREHOUSE',
+      toLocationId: { value: 'WH-001' },
+      toLocationType: 'WAREHOUSE',
     });
     const originalId = movement.id.value;
     const originalQuantity = movement.quantity;
-    const originalDate = movement.movement_date.getTime();
+    const originalDate = movement.movementDate.getTime();
 
     generateCustodyEvent({ movement });
 
     // Verify key properties unchanged
     expect(movement.id.value).toBe(originalId);
     expect(movement.quantity).toBe(originalQuantity);
-    expect(movement.movement_date.getTime()).toBe(originalDate);
+    expect(movement.movementDate.getTime()).toBe(originalDate);
   });
 });
 
@@ -160,27 +160,27 @@ describe('traceUpstream', () => {
     const movements: InventoryMovement[] = [
       createMovement({
         id: { value: 'mov-1' },
-        movement_type: 'RECEIPT',
-        from_location_id: undefined,
-        to_location_id: { value: 'WH-001' },
-        lot_number: lotNumber,
-        movement_date: new Date('2024-01-01'),
+        movementType: 'RECEIPT',
+        fromLocationId: undefined,
+        toLocationId: { value: 'WH-001' },
+        lotNumber: lotNumber,
+        movementDate: new Date('2024-01-01'),
       }),
       createMovement({
         id: { value: 'mov-2' },
-        movement_type: 'TRANSFER_OUT',
-        from_location_id: { value: 'WH-001' },
-        to_location_id: { value: 'WH-002' },
-        lot_number: lotNumber,
-        movement_date: new Date('2024-01-02'),
+        movementType: 'TRANSFER_OUT',
+        fromLocationId: { value: 'WH-001' },
+        toLocationId: { value: 'WH-002' },
+        lotNumber: lotNumber,
+        movementDate: new Date('2024-01-02'),
       }),
       createMovement({
         id: { value: 'mov-3' },
-        movement_type: 'SHIPMENT',
-        from_location_id: { value: 'WH-002' },
-        to_location_id: undefined,
-        lot_number: lotNumber,
-        movement_date: new Date('2024-01-03'),
+        movementType: 'SHIPMENT',
+        fromLocationId: { value: 'WH-002' },
+        toLocationId: undefined,
+        lotNumber: lotNumber,
+        movementDate: new Date('2024-01-03'),
       }),
     ];
 
@@ -198,20 +198,20 @@ describe('traceUpstream', () => {
     const movements: InventoryMovement[] = [
       createMovement({
         id: { value: 'mov-1' },
-        tenant_id: 'tenant-a',
-        lot_number: lotNumber,
+        tenantId: 'tenant-a',
+        lotNumber: lotNumber,
       }),
       createMovement({
         id: { value: 'mov-2' },
-        tenant_id: 'tenant-b',
-        lot_number: lotNumber,
+        tenantId: 'tenant-b',
+        lotNumber: lotNumber,
       }),
     ];
 
     const result = traceUpstream('tenant-a', lotNumber, movements, options);
 
     expect(result.movements.length).toBe(1);
-    expect(result.movements[0].tenant_id).toBe('tenant-a');
+    expect(result.movements[0].tenantId).toBe('tenant-a');
   });
 
   it('[INVARIANT #13] should detect cycles without crashing', () => {
@@ -220,15 +220,15 @@ describe('traceUpstream', () => {
     // Create circular reference (impossible in practice, but test resilience)
     const mov1 = createMovement({
       id: { value: 'mov-1' },
-      from_location_id: { value: 'WH-002' },
-      to_location_id: { value: 'WH-001' },
-      lot_number: lotNumber,
+      fromLocationId: { value: 'WH-002' },
+      toLocationId: { value: 'WH-001' },
+      lotNumber: lotNumber,
     });
     const mov2 = createMovement({
       id: { value: 'mov-2' },
-      from_location_id: { value: 'WH-001' },
-      to_location_id: { value: 'WH-002' },
-      lot_number: lotNumber,
+      fromLocationId: { value: 'WH-001' },
+      toLocationId: { value: 'WH-002' },
+      lotNumber: lotNumber,
     });
 
     const movements = [mov1, mov2];
@@ -249,10 +249,10 @@ describe('traceUpstream', () => {
       movements.push(
         createMovement({
           id: { value: `mov-${i}` },
-          from_location_id: i > 0 ? { value: `WH-${i}` } : undefined,
-          to_location_id: { value: `WH-${i + 1}` },
-          lot_number: lotNumber,
-          movement_date: new Date(`2024-01-${String(i + 1).padStart(2, '0')}`),
+          fromLocationId: i > 0 ? { value: `WH-${i}` } : undefined,
+          toLocationId: { value: `WH-${i + 1}` },
+          lotNumber: lotNumber,
+          movementDate: new Date(`2024-01-${String(i + 1).padStart(2, '0')}`),
         })
       );
     }
@@ -262,10 +262,10 @@ describe('traceUpstream', () => {
       movements.push(
         createMovement({
           id: { value: `mov-back-${i}` },
-          from_location_id: { value: `WH-${i}` },
-          to_location_id: { value: `WH-${i - 1}` },
-          lot_number: lotNumber,
-          movement_date: new Date(`2024-02-${String(i + 1).padStart(2, '0')}`),
+          fromLocationId: { value: `WH-${i}` },
+          toLocationId: { value: `WH-${i - 1}` },
+          lotNumber: lotNumber,
+          movementDate: new Date(`2024-02-${String(i + 1).padStart(2, '0')}`),
         })
       );
     }
@@ -285,8 +285,8 @@ describe('traceUpstream', () => {
     const lotNumber: LotNumber = { value: 'LOT-001' };
     const movements: InventoryMovement[] = [
       createMovement({
-        lot_number: lotNumber,
-        to_location_id: { value: 'WH-001' },
+        lotNumber: lotNumber,
+        toLocationId: { value: 'WH-001' },
       }),
     ];
     const originalLength = movements.length;
@@ -319,17 +319,17 @@ describe('traceUpstream', () => {
     const movements: InventoryMovement[] = [
       createMovement({
         id: { value: 'mov-1' },
-        lot_number: lotNumber,
+        lotNumber: lotNumber,
         status: 'COMPLETED',
       }),
       createMovement({
         id: { value: 'mov-2' },
-        lot_number: lotNumber,
+        lotNumber: lotNumber,
         status: 'PENDING',
       }),
       createMovement({
         id: { value: 'mov-3' },
-        lot_number: lotNumber,
+        lotNumber: lotNumber,
         status: 'CANCELLED',
       }),
     ];
@@ -351,19 +351,19 @@ describe('traceDownstream', () => {
     const movements: InventoryMovement[] = [
       createMovement({
         id: { value: 'mov-1' },
-        movement_type: 'RECEIPT',
-        from_location_id: undefined, // Origin
-        to_location_id: { value: 'WH-001' },
-        lot_number: lotNumber,
-        movement_date: new Date('2024-01-01'),
+        movementType: 'RECEIPT',
+        fromLocationId: undefined, // Origin
+        toLocationId: { value: 'WH-001' },
+        lotNumber: lotNumber,
+        movementDate: new Date('2024-01-01'),
       }),
       createMovement({
         id: { value: 'mov-2' },
-        movement_type: 'TRANSFER_OUT',
-        from_location_id: { value: 'WH-001' },
-        to_location_id: { value: 'WH-002' },
-        lot_number: lotNumber,
-        movement_date: new Date('2024-01-02'),
+        movementType: 'TRANSFER_OUT',
+        fromLocationId: { value: 'WH-001' },
+        toLocationId: { value: 'WH-002' },
+        lotNumber: lotNumber,
+        movementDate: new Date('2024-01-02'),
       }),
     ];
 
@@ -379,24 +379,24 @@ describe('traceDownstream', () => {
     const movements: InventoryMovement[] = [
       createMovement({
         id: { value: 'mov-1' },
-        tenant_id: 'tenant-a',
-        from_location_id: undefined,
-        to_location_id: { value: 'WH-001' },
-        lot_number: lotNumber,
+        tenantId: 'tenant-a',
+        fromLocationId: undefined,
+        toLocationId: { value: 'WH-001' },
+        lotNumber: lotNumber,
       }),
       createMovement({
         id: { value: 'mov-2' },
-        tenant_id: 'tenant-b',
-        from_location_id: undefined,
-        to_location_id: { value: 'WH-001' },
-        lot_number: lotNumber,
+        tenantId: 'tenant-b',
+        fromLocationId: undefined,
+        toLocationId: { value: 'WH-001' },
+        lotNumber: lotNumber,
       }),
     ];
 
     const result = traceDownstream('tenant-a', lotNumber, movements, options);
 
     expect(result.movements.length).toBe(1);
-    expect(result.movements[0].tenant_id).toBe('tenant-a');
+    expect(result.movements[0].tenantId).toBe('tenant-a');
   });
 
   it('[INVARIANT #15] should respect depth limit', () => {
@@ -407,9 +407,9 @@ describe('traceDownstream', () => {
     movements.push(
       createMovement({
         id: { value: 'mov-0' },
-        from_location_id: undefined,
-        to_location_id: { value: 'WH-0' },
-        lot_number: lotNumber,
+        fromLocationId: undefined,
+        toLocationId: { value: 'WH-0' },
+        lotNumber: lotNumber,
       })
     );
 
@@ -418,9 +418,9 @@ describe('traceDownstream', () => {
       movements.push(
         createMovement({
           id: { value: `mov-${i}` },
-          from_location_id: { value: `WH-${i - 1}` },
-          to_location_id: { value: `WH-${i}` },
-          lot_number: lotNumber,
+          fromLocationId: { value: `WH-${i - 1}` },
+          toLocationId: { value: `WH-${i}` },
+          lotNumber: lotNumber,
         })
       );
     }
@@ -437,9 +437,9 @@ describe('traceDownstream', () => {
     const lotNumber: LotNumber = { value: 'LOT-001' };
     const movements: InventoryMovement[] = [
       createMovement({
-        from_location_id: undefined,
-        to_location_id: { value: 'WH-001' },
-        lot_number: lotNumber,
+        fromLocationId: undefined,
+        toLocationId: { value: 'WH-001' },
+        lotNumber: lotNumber,
       }),
     ];
     const originalLength = movements.length;
@@ -460,18 +460,18 @@ describe('getLotHistory', () => {
     const movements: InventoryMovement[] = [
       createMovement({
         id: { value: 'mov-3' },
-        lot_number: lotNumber,
-        movement_date: new Date('2024-01-03'),
+        lotNumber: lotNumber,
+        movementDate: new Date('2024-01-03'),
       }),
       createMovement({
         id: { value: 'mov-1' },
-        lot_number: lotNumber,
-        movement_date: new Date('2024-01-01'),
+        lotNumber: lotNumber,
+        movementDate: new Date('2024-01-01'),
       }),
       createMovement({
         id: { value: 'mov-2' },
-        lot_number: lotNumber,
-        movement_date: new Date('2024-01-02'),
+        lotNumber: lotNumber,
+        movementDate: new Date('2024-01-02'),
       }),
     ];
 
@@ -488,27 +488,27 @@ describe('getLotHistory', () => {
     const movements: InventoryMovement[] = [
       createMovement({
         id: { value: 'mov-1' },
-        tenant_id: 'tenant-a',
-        lot_number: lotNumber,
+        tenantId: 'tenant-a',
+        lotNumber: lotNumber,
       }),
       createMovement({
         id: { value: 'mov-2' },
-        tenant_id: 'tenant-b',
-        lot_number: lotNumber,
+        tenantId: 'tenant-b',
+        lotNumber: lotNumber,
       }),
     ];
 
     const history = getLotHistory('tenant-a', lotNumber, movements);
 
     expect(history.length).toBe(1);
-    expect(history[0].tenant_id).toBe('tenant-a');
+    expect(history[0].tenantId).toBe('tenant-a');
   });
 
   it('should only include COMPLETED movements', () => {
     const lotNumber: LotNumber = { value: 'LOT-001' };
     const movements: InventoryMovement[] = [
-      createMovement({ lot_number: lotNumber, status: 'COMPLETED' }),
-      createMovement({ lot_number: lotNumber, status: 'PENDING' }),
+      createMovement({ lotNumber: lotNumber, status: 'COMPLETED' }),
+      createMovement({ lotNumber: lotNumber, status: 'PENDING' }),
     ];
 
     const history = getLotHistory('tenant-a', lotNumber, movements);
@@ -520,7 +520,7 @@ describe('getLotHistory', () => {
   it('[INVARIANT #16] should not mutate input movements', () => {
     const lotNumber: LotNumber = { value: 'LOT-001' };
     const movements: InventoryMovement[] = [
-      createMovement({ lot_number: lotNumber }),
+      createMovement({ lotNumber: lotNumber }),
     ];
     const originalLength = movements.length;
     const originalId = movements[0].id.value;
@@ -540,13 +540,13 @@ describe('getSerialHistory', () => {
     const movements: InventoryMovement[] = [
       createMovement({
         id: { value: 'mov-2' },
-        serial_number: serialNumber,
-        movement_date: new Date('2024-01-02'),
+        serialNumber: serialNumber,
+        movementDate: new Date('2024-01-02'),
       }),
       createMovement({
         id: { value: 'mov-1' },
-        serial_number: serialNumber,
-        movement_date: new Date('2024-01-01'),
+        serialNumber: serialNumber,
+        movementDate: new Date('2024-01-01'),
       }),
     ];
 
@@ -561,25 +561,25 @@ describe('getSerialHistory', () => {
     const serialNumber: SerialNumber = { value: 'SN-12345' };
     const movements: InventoryMovement[] = [
       createMovement({
-        tenant_id: 'tenant-a',
-        serial_number: serialNumber,
+        tenantId: 'tenant-a',
+        serialNumber: serialNumber,
       }),
       createMovement({
-        tenant_id: 'tenant-b',
-        serial_number: serialNumber,
+        tenantId: 'tenant-b',
+        serialNumber: serialNumber,
       }),
     ];
 
     const history = getSerialHistory('tenant-a', serialNumber, movements);
 
     expect(history.length).toBe(1);
-    expect(history[0].tenant_id).toBe('tenant-a');
+    expect(history[0].tenantId).toBe('tenant-a');
   });
 
   it('[INVARIANT #16] should not mutate input movements', () => {
     const serialNumber: SerialNumber = { value: 'SN-12345' };
     const movements: InventoryMovement[] = [
-      createMovement({ serial_number: serialNumber }),
+      createMovement({ serialNumber: serialNumber }),
     ];
     const originalLength = movements.length;
     const originalId = movements[0].id.value;
@@ -598,15 +598,15 @@ describe('validateTraceabilityChain', () => {
     const movements: InventoryMovement[] = [
       createMovement({
         id: { value: 'mov-1' },
-        from_location_id: undefined,
-        to_location_id: { value: 'WH-001' },
-        movement_date: new Date('2024-01-01'),
+        fromLocationId: undefined,
+        toLocationId: { value: 'WH-001' },
+        movementDate: new Date('2024-01-01'),
       }),
       createMovement({
         id: { value: 'mov-2' },
-        from_location_id: { value: 'WH-001' },
-        to_location_id: { value: 'WH-002' },
-        movement_date: new Date('2024-01-02'),
+        fromLocationId: { value: 'WH-001' },
+        toLocationId: { value: 'WH-002' },
+        movementDate: new Date('2024-01-02'),
       }),
     ];
 
@@ -621,15 +621,15 @@ describe('validateTraceabilityChain', () => {
     const movements: InventoryMovement[] = [
       createMovement({
         id: { value: 'mov-1' },
-        from_location_id: undefined,
-        to_location_id: { value: 'WH-001' },
-        movement_date: new Date('2024-01-01'),
+        fromLocationId: undefined,
+        toLocationId: { value: 'WH-001' },
+        movementDate: new Date('2024-01-01'),
       }),
       createMovement({
         id: { value: 'mov-2' },
-        from_location_id: { value: 'WH-999' }, // Gap! Should be WH-001
-        to_location_id: { value: 'WH-002' },
-        movement_date: new Date('2024-01-02'),
+        fromLocationId: { value: 'WH-999' }, // Gap! Should be WH-001
+        toLocationId: { value: 'WH-002' },
+        movementDate: new Date('2024-01-02'),
       }),
     ];
 
@@ -653,15 +653,15 @@ describe('validateTraceabilityChain', () => {
     const movements: InventoryMovement[] = [
       createMovement({
         id: { value: 'mov-2' },
-        from_location_id: { value: 'WH-001' },
-        to_location_id: { value: 'WH-002' },
-        movement_date: new Date('2024-01-02'),
+        fromLocationId: { value: 'WH-001' },
+        toLocationId: { value: 'WH-002' },
+        movementDate: new Date('2024-01-02'),
       }),
       createMovement({
         id: { value: 'mov-1' },
-        from_location_id: undefined,
-        to_location_id: { value: 'WH-001' },
-        movement_date: new Date('2024-01-01'),
+        fromLocationId: undefined,
+        toLocationId: { value: 'WH-001' },
+        movementDate: new Date('2024-01-01'),
       }),
     ];
 
@@ -674,7 +674,7 @@ describe('validateTraceabilityChain', () => {
   it('[INVARIANT #16] should not mutate input movements', () => {
     const movements: InventoryMovement[] = [
       createMovement({
-        to_location_id: { value: 'WH-001' },
+        toLocationId: { value: 'WH-001' },
       }),
     ];
     const originalLength = movements.length;
