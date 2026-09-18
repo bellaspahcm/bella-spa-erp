@@ -172,8 +172,8 @@ describe('InventoryDomain', () => {
         });
         
         expect(result.isSuccess).toBe(true);
-        expect(result.value?.lotNumber).toBe('LOT-001');
-        expect(result.value?.serialNumber).toBe('SN-001');
+        expect(result.value?.lotNumber?.value).toBe('LOT-001');
+        expect(result.value?.serialNumber?.value).toBe('SN-001');
       });
 
       it('succeeds with only lot number', () => {
@@ -183,16 +183,16 @@ describe('InventoryDomain', () => {
         });
         
         expect(result.isSuccess).toBe(true);
-        expect(result.value?.lotNumber).toBe('LOT-001');
-        expect(result.value?.serialNumber).toBeNull();
+        expect(result.value?.lotNumber?.value).toBe('LOT-001');
+        expect(result.value?.serialNumber).toBeUndefined();
       });
 
       it('succeeds with neither lot nor serial', () => {
         const result = InventoryDomain.create(validInventoryProps);
         
         expect(result.isSuccess).toBe(true);
-        expect(result.value?.lotNumber).toBeNull();
-        expect(result.value?.serialNumber).toBeNull();
+        expect(result.value?.lotNumber).toBeUndefined();
+        expect(result.value?.serialNumber).toBeUndefined();
       });
 
       it('fails with serial number but no lot number', () => {

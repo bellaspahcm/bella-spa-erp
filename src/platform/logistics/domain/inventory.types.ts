@@ -123,37 +123,37 @@ export interface Inventory {
   id: InventoryId;
   
   /** Tenant ID (P0 Gate - tenant isolation) */
-  tenant_id: string;
+  tenantId: string;
   
   /** Item reference */
-  item_id: ItemId;
+  itemId: ItemId;
   
   // ========== Location ==========
   /** Generic location identifier */
-  location_id: LocationId;
+  locationId: LocationId;
   
   /** Location type (for filtering/reporting) */
-  location_type: LocationType;
+  locationType: LocationType;
   
   // ========== Quantity ==========
   /** Physical quantity on hand */
-  quantity_on_hand: number;
+  quantityOnHand: number;
   
   /** Reserved quantity (soft allocation) */
-  quantity_reserved: number;
+  quantityReserved: number;
   
   /** Available quantity (computed: on_hand - reserved) */
-  quantity_available: number;
+  quantityAvailable: number;
   
   // ========== Traceability ==========
   /** Lot/batch number (if item.lot_tracked = true) */
-  lot_number?: LotNumber;
+  lotNumber?: LotNumber;
   
   /** Serial number (if item.serial_tracked = true) */
-  serial_number?: SerialNumber;
+  serialNumber?: SerialNumber;
   
   /** Expiry date (if item.expiry_tracked = true) */
-  expiry_date?: Date;
+  expiryDate?: Date;
   
   // ========== Status ==========
   /** Current inventory status */
@@ -161,10 +161,10 @@ export interface Inventory {
   
   // ========== Audit ==========
   /** Creation timestamp */
-  created_at: Date;
+  createdAt: Date;
   
   /** Last update timestamp */
-  updated_at: Date;
+  updatedAt: Date;
 }
 
 /**
@@ -173,14 +173,16 @@ export interface Inventory {
  * Input for creating a new inventory record
  */
 export interface CreateInventoryProps {
-  tenant_id: string;
-  item_id: string;
-  location_id: string;
-  location_type: LocationType;
-  quantity_on_hand: number;
-  lot_number?: string;
-  serial_number?: string;
-  expiry_date?: Date;
+  id?: string;
+  tenantId: string;
+  itemId: string;
+  locationId: string;
+  locationType: LocationType;
+  quantityOnHand: number;
+  quantityReserved?: number;
+  lotNumber?: string;
+  serialNumber?: string;
+  expiryDate?: Date;
   status?: InventoryStatus;
 }
 
@@ -190,8 +192,11 @@ export interface CreateInventoryProps {
  * Input for updating inventory quantities
  */
 export interface UpdateInventoryQuantityProps {
-  /** Change to on-hand quantity (can be negative) */
-  quantity_delta: number;
+  /** New on-hand quantity */
+  quantityOnHand: number;
+  
+  /** New reserved quantity (optional) */
+  quantityReserved?: number;
   
   /** Reason for adjustment */
   reason?: string;
@@ -207,10 +212,10 @@ export interface ReserveInventoryProps {
   quantity: number;
   
   /** Reference to order/allocation */
-  reference_id: string;
+  referenceId: string;
   
   /** Reference type (e.g., "ORDER", "TRANSFER") */
-  reference_type: string;
+  referenceType: string;
 }
 
 /**
@@ -233,32 +238,32 @@ export interface ReleaseReservationProps {
  */
 export interface InventoryFilters {
   /** Filter by item */
-  item_id?: string | string[];
+  itemId?: string | string[];
   
   /** Filter by location */
-  location_id?: string | string[];
+  locationId?: string | string[];
   
   /** Filter by location type */
-  location_type?: LocationType | LocationType[];
+  locationType?: LocationType | LocationType[];
   
   /** Filter by status */
   status?: InventoryStatus | InventoryStatus[];
   
   /** Filter by lot number */
-  lot_number?: string;
+  lotNumber?: string;
   
   /** Filter by serial number */
-  serial_number?: string;
+  serialNumber?: string;
   
   /** Filter expiry date range */
-  expiry_before?: Date;
-  expiry_after?: Date;
+  expiryBefore?: Date;
+  expiryAfter?: Date;
   
   /** Filter by availability */
-  only_available?: boolean; // quantity_available > 0
+  onlyAvailable?: boolean; // quantity_available > 0
   
   /** Filter by minimum quantity */
-  min_quantity?: number;
+  minQuantity?: number;
 }
 
 /**
@@ -267,20 +272,20 @@ export interface InventoryFilters {
  * Aggregated view of inventory across locations
  */
 export interface InventoryBalanceSummary {
-  tenant_id: string;
-  item_id: string;
-  total_on_hand: number;
-  total_reserved: number;
-  total_available: number;
-  location_count: number; // Number of locations with inventory
-  by_location: Array<{
-    location_id: string;
-    location_type: LocationType;
-    quantity_on_hand: number;
-    quantity_reserved: number;
-    quantity_available: number;
+  tenantId: string;
+  itemId: string;
+  totalOnHand: number;
+  totalReserved: number;
+  totalAvailable: number;
+  locationCount: number; // Number of locations with inventory
+  byLocation: Array<{
+    locationId: string;
+    locationType: LocationType;
+    quantityOnHand: number;
+    quantityReserved: number;
+    quantityAvailable: number;
   }>;
-  by_status: Array<{
+  byStatus: Array<{
     status: InventoryStatus;
     quantity: number;
   }>;
