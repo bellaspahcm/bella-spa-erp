@@ -45,56 +45,34 @@ import type { BedEngineContract } from './contracts/bed-engine.contract';
 import type { CdsEngineContract } from './contracts/cds-engine.contract';
 import type { NursingEngineContract } from './contracts/nursing-engine.contract';
 import type { OrderEngineContract } from './contracts/order-engine.contract';
-import type { AdmissionEngineContract } from './contracts/admission-engine.contract';
 import type { PharmacyEngineContract } from './contracts/pharmacy-engine.contract';
-import type { EncounterEngineContract } from './contracts/encounter-engine.contract';
-import type { ClinicalEngineContract } from './contracts/clinical-engine.contract';
-import type { BillingEngineContract } from './contracts/billing-engine.contract';
-import type { InsuranceEngineContract } from './contracts/insurance-engine.contract';
-import type { SchedulingEngineContract } from './contracts/scheduling-engine.contract';
-import type { QueueEngineContract } from './contracts/queue-engine.contract';
-import type { LaboratoryEngineContract } from './contracts/laboratory-engine.contract';
-import type { ImagingEngineContract } from './contracts/imaging-engine.contract';
 import type { OREngineContract } from './contracts/or-engine.contract';
 import type { SurgicalEngineContract } from './contracts/surgical-engine.contract';
 import type { AnesthesiaEngineContract } from './contracts/anesthesia-engine.contract';
-import type { MPIEngineContract } from './contracts/mpi-engine.contract';
 
 /**
  * Healthcare Service Map
  * 
  * Maps service names to their contract types.
- * Add new engines here as they are created.
+ * Only includes operational engines with implemented contracts.
+ * 
+ * Note: encounter-engine and laboratory-engine exist but use metadata-only contracts
+ * (no exported TypeScript interfaces). Access via service locator returns unknown type.
  */
 export type HealthcareServiceMap = {
-  // Core Clinical Engines (H1-H12 from original Kernel)
-  'admission-engine': AdmissionEngineContract;
+  // Operational Healthcare Engines with TypeScript contracts
   'bed-engine': BedEngineContract;
-  'billing-engine': BillingEngineContract;
   'cds-engine': CdsEngineContract;
-  'clinical-engine': ClinicalEngineContract;
-  'encounter-engine': EncounterEngineContract;
-  'insurance-engine': InsuranceEngineContract;
   'nursing-engine': NursingEngineContract;
   'order-engine': OrderEngineContract;
   'pharmacy-engine': PharmacyEngineContract;
-  'mpi-engine': MPIEngineContract;
-  
-  // Additional Clinical Engines (H13+)
-  'laboratory-engine': LaboratoryEngineContract;
-  'imaging-engine': ImagingEngineContract;
-  'scheduling-engine': SchedulingEngineContract;
-  'queue-engine': QueueEngineContract;
   'or-engine': OREngineContract;
   'surgical-engine': SurgicalEngineContract;
   'anesthesia-engine': AnesthesiaEngineContract;
   
-  // Add new engines here as needed
-  // 'cssd-engine': CssdEngineContract;
-  // 'emergency-engine': EmergencyEngineContract;
-  // 'icu-engine': IcuEngineContract;
-  // 'pacu-engine': PacuEngineContract;
-  // ... etc
+  // Metadata-only contracts (runtime available, no TS type)
+  'encounter-engine': unknown;
+  'laboratory-engine': unknown;
 };
 
 /**
@@ -154,41 +132,21 @@ export function getHealthcareService<T extends HealthcareServiceMap[ServiceKey]>
   let serviceInstance: unknown;
 
   switch (serviceName) {
-    case 'admission-engine': {
-      const { AdmissionEngineService } = require('./engines/admission-engine');
-      serviceInstance = new AdmissionEngineService(supabase);
-      break;
-    }
     case 'bed-engine': {
       const { BedEngineService } = require('./engines/bed-engine');
       serviceInstance = new BedEngineService(supabase);
       break;
     }
-    // case 'billing-engine': {
-    //   const { BillingEngineService } = require('./engines/billing-engine');
-    //   serviceInstance = new BillingEngineService(supabase);
-    //   break;
-    // }
     case 'cds-engine': {
       const { CdsEngineService } = require('./engines/cds-engine');
       serviceInstance = new CdsEngineService(supabase);
       break;
     }
-    // case 'clinical-engine': {
-    //   const { ClinicalEngineService } = require('./engines/clinical-engine');
-    //   serviceInstance = new ClinicalEngineService(supabase);
-    //   break;
-    // }
     case 'encounter-engine': {
       const { EncounterEngineService } = require('./engines/encounter-engine');
       serviceInstance = new EncounterEngineService(supabase);
       break;
     }
-    // case 'insurance-engine': {
-    //   const { InsuranceEngineService } = require('./engines/insurance-engine');
-    //   serviceInstance = new InsuranceEngineService(supabase);
-    //   break;
-    // }
     case 'nursing-engine': {
       const { NursingEngineService } = require('./engines/nursing-engine');
       serviceInstance = new NursingEngineService(supabase);
@@ -204,31 +162,11 @@ export function getHealthcareService<T extends HealthcareServiceMap[ServiceKey]>
       serviceInstance = new PharmacyEngineService(supabase);
       break;
     }
-    // case 'mpi-engine': {
-    //   const { MPIEngineService } = require('./engines/mpi-engine');
-    //   serviceInstance = new MPIEngineService(supabase);
-    //   break;
-    // }
     case 'laboratory-engine': {
       const { LaboratoryEngineService } = require('./engines/laboratory-engine');
       serviceInstance = new LaboratoryEngineService(supabase);
       break;
     }
-    // case 'imaging-engine': {
-    //   const { ImagingEngineService } = require('./engines/imaging-engine');
-    //   serviceInstance = new ImagingEngineService(supabase);
-    //   break;
-    // }
-    // case 'scheduling-engine': {
-    //   const { SchedulingEngineService } = require('./engines/scheduling-engine');
-    //   serviceInstance = new SchedulingEngineService(supabase);
-    //   break;
-    // }
-    // case 'queue-engine': {
-    //   const { QueueEngineService } = require('./engines/queue-engine');
-    //   serviceInstance = new QueueEngineService(supabase);
-    //   break;
-    // }
     case 'or-engine': {
       const { OREngineService } = require('./engines/or-engine');
       serviceInstance = new OREngineService(supabase);
@@ -247,7 +185,7 @@ export function getHealthcareService<T extends HealthcareServiceMap[ServiceKey]>
     default: {
       throw new Error(
         `Healthcare service '${serviceName}' not found. ` +
-        `Available services: ${Object.keys(serviceCache).join(', ')}`
+        `Available services: ${Array.from(serviceCache.keys()).join(', ')}`
       );
     }
   }
