@@ -20,15 +20,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
         with:
           ref: ${{ inputs.commit_sha || github.sha }}
           fetch-depth: 0
 
       - name: Verify checkout SHA
         id: verify_sha
+        env:
+          REQUESTED_SHA: ${{ inputs.commit_sha || github.sha }}
         run: |
-          REQUESTED_SHA="${{ inputs.commit_sha || github.sha }}"
           ACTUAL_SHA=$(git rev-parse HEAD)
           
           echo "Requested SHA: $REQUESTED_SHA"
@@ -53,6 +54,8 @@ jobs:
         run: npm ci
 
       - name: Collect TypeScript diagnostics
+        env:
+          COMMIT_SHA: ${{ inputs.commit_sha || github.sha }}
         run: |
           echo "Running TypeScript compiler..."
           npx tsc --noEmit --pretty false > typescript-output.txt 2>&1 || true
@@ -64,7 +67,7 @@ jobs:
           # Create metadata
           cat > typescript-metadata.json <<EOF
           {
-            "commit": "${{ inputs.commit_sha || github.sha }}",
+            "commit": "$COMMIT_SHA",
             "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
             "diagnostic_count": $DIAGNOSTIC_COUNT,
             "runner_os": "${{ runner.os }}"
@@ -73,6 +76,8 @@ jobs:
         continue-on-error: true
 
       - name: Collect ESLint diagnostics
+        env:
+          COMMIT_SHA: ${{ inputs.commit_sha || github.sha }}
         run: |
           echo "Running ESLint..."
           # Use compact format and redirect to file to avoid buffer issues
@@ -85,7 +90,7 @@ jobs:
             
             cat > eslint-metadata.json <<EOF
           {
-            "commit": "${{ inputs.commit_sha || github.sha }}",
+            "commit": "$COMMIT_SHA",
             "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
             "finding_count": $FINDING_COUNT,
             "runner_os": "${{ runner.os }}",
@@ -96,7 +101,7 @@ jobs:
             echo "ERROR: ESLint output is not valid JSON"
             cat > eslint-metadata.json <<EOF
           {
-            "commit": "${{ inputs.commit_sha || github.sha }}",
+            "commit": "$COMMIT_SHA",
             "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
             "runner_os": "${{ runner.os }}",
             "json_valid": false,
@@ -107,6 +112,8 @@ jobs:
         continue-on-error: true
 
       - name: Collect Jest diagnostics
+        env:
+          COMMIT_SHA: ${{ inputs.commit_sha || github.sha }}
         run: |
           echo "Running Jest..."
           npx jest --json --testPathPattern="src/" > jest-output.json 2>&1 || true
@@ -118,7 +125,7 @@ jobs:
             
             cat > jest-metadata.json <<EOF
           {
-            "commit": "${{ inputs.commit_sha || github.sha }}",
+            "commit": "$COMMIT_SHA",
             "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
             "failed_test_count": $FAILED_COUNT,
             "runner_os": "${{ runner.os }}",
@@ -129,7 +136,7 @@ jobs:
             echo "ERROR: Jest output missing testResults"
             cat > jest-metadata.json <<EOF
           {
-            "commit": "${{ inputs.commit_sha || github.sha }}",
+            "commit": "$COMMIT_SHA",
             "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
             "runner_os": "${{ runner.os }}",
             "json_valid": false,
@@ -140,6 +147,8 @@ jobs:
         continue-on-error: true
 
       - name: Collect Migration diagnostics
+        env:
+          COMMIT_SHA: ${{ inputs.commit_sha || github.sha }}
         run: |
           echo "Running migration check..."
           if [ -f "scripts/migrations/zero-downtime-check.js" ]; then
@@ -147,7 +156,7 @@ jobs:
             
             cat > migration-metadata.json <<EOF
           {
-            "commit": "${{ inputs.commit_sha || github.sha }}",
+            "commit": "$COMMIT_SHA",
             "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
             "runner_os": "${{ runner.os }}",
             "check_exists": true
@@ -157,7 +166,7 @@ jobs:
             echo "Migration check script not found"
             cat > migration-metadata.json <<EOF
           {
-            "commit": "${{ inputs.commit_sha || github.sha }}",
+            "commit": "$COMMIT_SHA",
             "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
             "runner_os": "${{ runner.os }}",
             "check_exists": false
@@ -167,19 +176,25 @@ jobs:
         continue-on-error: true
 
       - name: Create collection summary
+        env:
+          WORKFLOW_RUN_ID: ${{ github.run_id }}
+          WORKFLOW_RUN_NUMBER: ${{ github.run_number }}
+          REQUESTED_COMMIT: ${{ inputs.commit_sha || github.sha }}
+          BRANCH: ${{ github.ref_name }}
+          RUNNER_OS: ${{ runner.os }}
         run: |
           ACTUAL_SHA="${{ steps.verify_sha.outputs.actual_sha }}"
           
           cat > collection-summary.json <<EOF
           {
-            "workflow_run_id": "${{ github.run_id }}",
-            "workflow_run_number": "${{ github.run_number }}",
-            "requested_commit": "${{ inputs.commit_sha || github.sha }}",
+            "workflow_run_id": "$WORKFLOW_RUN_ID",
+            "workflow_run_number": "$WORKFLOW_RUN_NUMBER",
+            "requested_commit": "$REQUESTED_COMMIT",
             "actual_commit": "$ACTUAL_SHA",
             "commit_verified": true,
-            "branch": "${{ github.ref_name }}",
+            "branch": "$BRANCH",
             "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-            "runner_os": "${{ runner.os }}",
+            "runner_os": "$RUNNER_OS",
             "artifacts": {
               "typescript": $(test -f typescript-output.txt && echo "true" || echo "false"),
               "eslint": $(test -f eslint-output.json && echo "true" || echo "false"),
@@ -193,7 +208,7 @@ jobs:
           cat collection-summary.json | jq .
 
       - name: Upload baseline artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874  # v4.4.0
         with:
           name: baseline-artifacts-${{ inputs.commit_sha || github.sha }}
           path: |
@@ -210,15 +225,20 @@ jobs:
           if-no-files-found: warn
 
       - name: Display artifact info
+        env:
+          COMMIT_SHA: ${{ steps.verify_sha.outputs.actual_sha }}
+          BRANCH: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
         run: |
           echo "✅ Baseline artifacts collected"
           echo ""
-          echo "Commit: ${{ steps.verify_sha.outputs.actual_sha }}"
-          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: $COMMIT_SHA"
+          echo "Branch: $BRANCH"
           echo "Provenance verified: ✅"
           echo ""
           echo "File sizes:"
           ls -lh *-output.* *-metadata.json collection-summary.json 2>/dev/null || true
           echo ""
           echo "Download artifacts from:"
-          echo "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "https://github.com/$REPO/actions/runs/$RUN_ID"
