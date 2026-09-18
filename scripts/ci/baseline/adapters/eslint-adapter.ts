@@ -41,10 +41,16 @@ interface ESLintMessage {
  * Parse ESLint JSON output
  */
 export function parseESLintJSON(jsonOutput: string): ESLintResult[] {
+  if (!jsonOutput || jsonOutput.trim() === '') {
+    return [];
+  }
   try {
     return JSON.parse(jsonOutput) as ESLintResult[];
   } catch (error) {
     console.error('Failed to parse ESLint JSON:', error);
+    console.error('JSON output length:', jsonOutput.length);
+    console.error('First 200 chars:', jsonOutput.substring(0, 200));
+    console.error('Last 200 chars:', jsonOutput.substring(Math.max(0, jsonOutput.length - 200)));
     return [];
   }
 }

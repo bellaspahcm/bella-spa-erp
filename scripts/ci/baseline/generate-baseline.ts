@@ -25,38 +25,48 @@ import { adaptMigrationOutput, getPRContext } from './adapters/migration-adapter
 
 /**
  * Run TypeScript compiler and capture output
+ * WORKAROUND: On large projects, tsc may timeout.
+ * In that case, generate baseline from CI artifacts instead.
  */
-function runTypeScriptCheck(): string {
+function runTypeScriptCheck(): string | null {
   console.log('Running TypeScript check...');
-  try {
-    execSync('npx tsc --noEmit', { encoding: 'utf-8', stdio: 'pipe' });
-    return '';  // No errors
-  } catch (error: any) {
-    return error.stderr || error.stdout || '';
-  }
+  console.log('ERROR: TypeScript collection not implemented for large projects.');
+  console.log('       Must use CI artifacts or scope-based collection.');
+  console.log('');
+  console.log('FAIL-CLOSED: Returning null to prevent 0-finding misinterpretation.');
+  return null;  // COLLECTION FAILED - must not become empty array
 }
 
 /**
  * Run ESLint and capture JSON output
  */
-function runESLintCheck(): string {
+function runESLintCheck(): string | null {
   console.log('Running ESLint check...');
   try {
     const output = execSync(
       'npx eslint . --format json',
-      { encoding: 'utf-8', stdio: 'pipe' }
+      { encoding: 'utf-8', stdio: 'pipe', maxBuffer: 50 * 1024 * 1024 }  // 50MB buffer
     );
     return output;
   } catch (error: any) {
     // ESLint outputs JSON even on failure (in stdout)
-    return error.stdout || '[]';
+    const output = error.stdout || '';
+    // Verify output is valid JSON before returning
+    try {
+      JSON.parse(output);
+      return output;
+    } catch (parseError) {
+      console.error('ESLint output is not valid JSON');
+      console.error('FAIL-CLOSED: Returning null to prevent 0-finding misinterpretation.');
+      return null;  // COLLECTION FAILED
+    }
   }
 }
 
 /**
  * Run Jest and capture JSON output
  */
-function runJestCheck(): string {
+function runJestCheck(): string | null {
   console.log('Running Jest check...');
   try {
     const output = execSync(
@@ -66,7 +76,21 @@ function runJestCheck(): string {
     return output;
   } catch (error: any) {
     // Jest outputs JSON even on failure
-    return error.stdout || '{}';
+    const output = error.stdout || '';
+    // Verify output is valid JSON with testResults before returning
+    try {
+      const result = JSON.parse(output);
+      if (!Array.isArray(result.testResults)) {
+        console.error('Jest output missing testResults array');
+        console.error('FAIL-CLOSED: Returning null to prevent 0-finding misinterpretation.');
+        return null;  // COLLECTION FAILED
+      }
+      return output;
+    } catch (parseError) {
+      console.error('Jest output is not valid JSON');
+      console.error('FAIL-CLOSED: Returning null to prevent 0-finding misinterpretation.');
+      return null;  // COLLECTION FAILED
+    }
   }
 }
 
@@ -108,11 +132,38 @@ export async function generateBaseline(outputPath?: string): Promise<Baseline> {
   const jestOutput = runJestCheck();
   const migrationOutput = runMigrationCheck();
   
+  // Fail-closed: If any critical collector failed, BLOCK baseline generation
+  const collectionFailures: string[] = [];
+  if (tscOutput === null) collectionFailures.push('TypeScript');
+  if (eslintOutput === null) collectionFailures.push('ESLint');
+  if (jestOutput === null) collectionFailures.push('Jest');
+  
+  if (collectionFailures.length > 0) {
+    console.error('');
+    console.error('='.repeat(80));
+    console.error('BASELINE GENERATION FAILED');
+    console.error('='.repeat(80));
+    console.error('');
+    console.error('The following collectors failed to produce valid output:');
+    collectionFailures.forEach(name => console.error(`  - ${name}`));
+    console.error('');
+    console.error('GOVERNANCE PRINCIPLE:');
+    console.error('  Collector failure MUST NOT become zero findings.');
+    console.error('  No evidence ≠ No violations.');
+    console.error('');
+    console.error('RESOLUTION:');
+    console.error('  1. Use CI artifacts with proven output');
+    console.error('  2. Implement scope-based collection');
+    console.error('  3. Fix collector timeout/buffer issues');
+    console.error('');
+    throw new Error(`Baseline collection failed: ${collectionFailures.join(', ')}`);
+  }
+  
   // Convert to findings
   console.log('Converting to stable fingerprints...');
-  const tsFindings = adaptTypeScriptOutput(tscOutput);
-  const eslintFindings = adaptESLintOutput(eslintOutput);
-  const jestFindings = adaptJestOutput(jestOutput);
+  const tsFindings = adaptTypeScriptOutput(tscOutput!);
+  const eslintFindings = adaptESLintOutput(eslintOutput!);
+  const jestFindings = adaptJestOutput(jestOutput!);
   
   // For migrations, use empty baseline (first generation)
   const prContext = getPRContext();

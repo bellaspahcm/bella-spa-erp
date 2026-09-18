@@ -47,8 +47,27 @@ interface JestAssertion {
  * Parse Jest JSON output
  */
 export function parseJestJSON(jsonOutput: string): JestResult {
+  if (!jsonOutput || jsonOutput.trim() === '') {
+    return {
+      testResults: [],
+      numFailedTests: 0,
+      numPassedTests: 0,
+      success: true
+    };
+  }
   try {
-    return JSON.parse(jsonOutput) as JestResult;
+    const result = JSON.parse(jsonOutput) as JestResult;
+    // Ensure testResults is an array
+    if (!Array.isArray(result.testResults)) {
+      console.error('Jest JSON missing testResults array');
+      return {
+        testResults: [],
+        numFailedTests: 0,
+        numPassedTests: 0,
+        success: true
+      };
+    }
+    return result;
   } catch (error) {
     console.error('Failed to parse Jest JSON:', error);
     return {
