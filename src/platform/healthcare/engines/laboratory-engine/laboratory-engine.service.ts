@@ -1,15 +1,15 @@
 import type { ILaboratoryEngine } from '../../contracts/laboratory-engine.contract';
 import type { ILaboratoryRepository } from './repositories/laboratory-repository.interface';
-import type { EventBus } from '../order-engine/contracts/event-bus.interface';
+import { eventBus } from '@/platform/host/event-bus';
 import { LabOrder } from './domain/lab-order.entity';
 import { TEST_DEFINITIONS, type TestDefinition } from './domain/test-definition';
+import type { LabDomainEvent } from './events/laboratory.events';
 
 import { ConcurrencyViolationError } from './repositories/laboratory-repository.interface';
 
 export class LaboratoryEngineService implements ILaboratoryEngine {
   constructor(
-    private readonly repository: ILaboratoryRepository,
-    private readonly eventBus: EventBus
+    private readonly repository: ILaboratoryRepository
   ) {}
 
   public async collectSpecimen(
@@ -26,7 +26,7 @@ export class LaboratoryEngineService implements ILaboratoryEngine {
     await this.repository.save(labOrder);
 
     // Event-after-persistence
-    await this.eventBus.publish({
+    const event: LabDomainEvent = {
       eventType: 'SpecimenCollected',
       tenantId,
       aggregateId: labOrderId,
@@ -38,6 +38,11 @@ export class LaboratoryEngineService implements ILaboratoryEngine {
         tubeColor,
         collectedAt: labOrder.specimen?.collectedAt?.toISOString() || new Date().toISOString(),
       },
+    };
+    await eventBus.publish({
+      ...event,
+      aggregateType: 'LabOrder',
+      eventVersion: '1.0.0',
     });
 
     return labOrder;
@@ -107,7 +112,7 @@ export class LaboratoryEngineService implements ILaboratoryEngine {
 
     // 2. Publish domain events ONLY after successful commit (Event-after-persistence rule)
     if (labOrder.result) {
-      await this.eventBus.publish({
+      const verifiedEvent: LabDomainEvent = {
         eventType: 'ResultVerified',
         tenantId,
         aggregateId: labOrderId,
@@ -125,11 +130,16 @@ export class LaboratoryEngineService implements ILaboratoryEngine {
           verifiedBy,
           verifiedAt: labOrder.result.verifiedAt?.toISOString() || new Date().toISOString(),
         },
+      };
+      await eventBus.publish({
+        ...verifiedEvent,
+        aggregateType: 'LabOrder',
+        eventVersion: '1.0.0',
       });
 
       // Escalation trigger check (Safety-state escalation)
       if (labOrder.result.isPanicValue && labOrder.escalationRequired) {
-        await this.eventBus.publish({
+        const escalationEvent: LabDomainEvent = {
           eventType: 'CriticalResultEscalated',
           tenantId,
           aggregateId: labOrderId,
@@ -145,6 +155,11 @@ export class LaboratoryEngineService implements ILaboratoryEngine {
             verifiedAt: labOrder.result.verifiedAt?.toISOString() || new Date().toISOString(),
             escalationRequired: true,
           },
+        };
+        await eventBus.publish({
+          ...escalationEvent,
+          aggregateType: 'LabOrder',
+          eventVersion: '1.0.0',
         });
       }
     }
