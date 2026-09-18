@@ -1,154 +1,315 @@
-# Bootstrap Scenario — PR #117 Infrastructure
+# Bootstrap Scenario — Infrastructure PR #117
 
+**Status:** ✅ BOOTSTRAP LOGIC VERIFIED  
 **Date:** 2026-09-18  
-**PR:** #117 (Infrastructure)  
-**Status:** BOOTSTRAP CIRCULARITY DETECTED
+**Commit:** 822139b3
 
 ---
 
-## Problem Statement
+## Context
 
-Infrastructure PR #117 encounters circular dependency:
+Infrastructure PR #117 introduces Identity-Aware No-New-Debt Baseline System, which requires a baseline file (`.github/ci/baselines/main.json`) to operate. However:
 
-```
-Infrastructure PR → needs baseline → to pass new CI workflow
-Baseline generation → needs infrastructure merged → to exist
-CIRCULAR DEPENDENCY
-```
+- **Circular dependency:** Baseline file can only be generated AFTER infrastructure is merged to `main`
+- **Bootstrap problem:** Infrastructure PR cannot have baseline file during its own CI run
 
 ---
 
-## Actual CI Results (PR #117)
+## Bootstrap Fix
 
-**Run URL:** https://github.com/bellaspahcm/bella-spa-erp/actions/runs/35344076083
+**File:** `.github/workflows/baseline-no-new-debt.yml`  
+**Commit:** 822139b3
 
-**Failures (7):**
-```
-❌ Identity-Aware No-New-Debt Baseline (NEW WORKFLOW)
-❌ CI - Quality Gates / Affected Unit and Integration Tests
-❌ CI - Quality Gates / All Required Gates Passed
-❌ CI - Quality Gates / Changed-file Lint
-❌ Real Estate Module - CI/CD / Code Quality & Security
-❌ CI - Quality Gates / Migration Gates  
-❌ Decision Engine Deploy / Test Decision Engine
-```
-
-**Root Causes:**
-
-### 1. New Workflow Failure (Identity-Aware Baseline)
-
-```
-TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts"
-Location: scripts/ci/baseline/compare-with-baseline.ts
-```
-
-**Issue A:** Node.js cannot run TypeScript directly  
-**Issue B:** Baseline file doesn't exist yet (`.github/ci/baselines/main.json`)
-
-### 2. Historical Failures (Same as PR #116)
-
-Same 6 failures affecting PR #116 also affect Infrastructure PR:
-- Type checks, lint, tests, migrations (pre-existing debt)
-
----
-
-## Bootstrap Solutions
-
-### Solution A: Skip Baseline Check if Baseline Missing
-
-Update `.github/workflows/baseline-no-new-debt.yml`:
+### Implementation
 
 ```yaml
 - name: Check if baseline exists
   id: baseline_check
   run: |
-    if [ -f .github/ci/baselines/main.json ]; then
-      echo "exists=true" >> $GITHUB_OUTPUT
-    else
+    if [ ! -f "$BASELINE_FILE" ]; then
       echo "exists=false" >> $GITHUB_OUTPUT
+      echo "🔸️  Baseline not found (bootstrap scenario)"
+    else
+      echo "exists=true" >> $GITHUB_OUTPUT
     fi
+
+- name: Skip baseline check (bootstrap)
+  if: steps.baseline_check.outputs.exists == 'false'
+  run: |
+    echo "🔸️  BOOTSTRAP SCENARIO"
+    echo "Baseline file not found: .github/ci/baselines/main.json"
+    echo ""
+    echo "This is expected for infrastructure PR #117 before baseline generation."
+    echo "Baseline will be generated immediately after infrastructure merge."
+    echo ""
+    echo "✓ Skipping baseline comparison (documented bootstrap exception)"
 
 - name: Run baseline comparison
   if: steps.baseline_check.outputs.exists == 'true'
   run: |
-    npx tsx scripts/ci/baseline/compare-with-baseline.ts ...
-    
-- name: Skip baseline (bootstrap)
-  if: steps.baseline_check.outputs.exists == 'false'
-  run: |
-    echo "⚠️  Baseline not found - skipping check (bootstrap scenario)"
-    echo "This is expected for infrastructure PR before baseline generation"
+    npx tsx scripts/ci/baseline/compare-with-baseline.ts \
+      --baseline "$BASELINE_FILE" \
+      --pr-base "${{ github.event.pull_request.base.sha }}" \
+      --pr-head "${{ github.event.pull_request.head.sha }}"
 ```
 
-### Solution B: Compile TypeScript or Use tsx
+### Key Principles
+
+1. **Explicit detection:** Check baseline existence, don't assume
+2. **Documented skip:** Log clear message explaining bootstrap scenario
+3. **NO silent bypass:** Evidence in CI log that bootstrap path was taken
+4. **One-time only:** Only Infrastructure PR #117 should trigger this path
+
+---
+
+## CI Evidence
+
+**PR #117:** https://github.com/bellaspahcm/bella-spa-erp/pull/117  
+**Workflow Run:** https://github.com/bellaspahcm/bella-spa-erp/actions/runs/35344520581
+
+### Result
+
+```
+✅ Identity-Aware No-New-Debt Baseline: SUCCESS (48s)
+
+Log output:
+🔸️ BOOTSTRAP SCENARIO
+Baseline file not found: .github/ci/baselines/main.json
+
+This is expected for infrastructure PR #117 before baseline generation.
+Baseline will be generated immediately after infrastructure merge.
+
+✓ Skipping baseline comparison (documented bootstrap exception)
+```
+
+### Other CI Results (PR #117)
+
+**Total:** 47 checks  
+**Status:** 29 ✅ | 4 ❌ | 11 skipped | 3 pending
+
+**Failures (pattern matching PR #116):**
+```
+❌ CI - Quality Gates / Affected Unit and Integration Tests  
+   → Same failure pattern as PR #116 (Payroll failures)
+   
+❌ Real Estate Module - CI/CD / Code Quality & Security  
+   → CASCADE from unit test failures
+   
+❌ CI - Quality Gates / Migration Gates  
+   → Same failure pattern as PR #116 (20260511500000 blocking-index violation)
+   
+❌ Decision Engine Deploy / Test Decision Engine  
+   → Same failure pattern as PR #116 (Payroll Provider Expected: 150000, Received: 200000)
+```
+
+**Observation:** Same 4 failures affect BOTH PR #116 (Logistics) and PR #117 (Infrastructure). Manual evidence supports PRE-EXISTING classification, but machine-proven attribution requires canonical baseline + comparison run.
+
+---
+
+## Post-Merge Protocol
+
+After Infrastructure PR #117 merges to `main`:
+
+### Step 1: Checkout Clean Main
+
+```bash
+git checkout main
+git pull origin main
+git log -1 --oneline  # Record exact SHA
+```
+
+**Record:**
+```
+baseline_source_branch = main
+baseline_source_commit = <SHA>
+generated_at           = <timestamp>
+generator_version      = <version/commit>
+```
+
+### Step 2: Generate Canonical Baseline
+
+```bash
+node scripts/ci/baseline/generate-baseline.ts \
+  --output .github/ci/baselines/main.json
+```
+
+### Step 3: Review Baseline
+
+```bash
+# Check finding counts by adapter
+cat .github/ci/baselines/main.json | jq '.findings | group_by(.adapter) | map({adapter: .[0].adapter, count: length})'
+
+# Verify provenance metadata
+cat .github/ci/baselines/main.json | jq '{baseline_source_branch, baseline_source_commit, generated_at, generator_version}'
+```
+
+### Step 4: Commit + Freeze
+
+```bash
+git add .github/ci/baselines/main.json
+git commit -m "chore(ci): Generate canonical baseline from clean main
+
+Provenance:
+- Branch: main
+- Commit: <SHA>
+- Generated: <timestamp>
+- Generator: <version>
+
+This baseline describes historical debt on main as of <date>.
+Baseline MUST NOT be regenerated to mask new findings.
+Ratchet governance: scripts/ci/baseline/ratchet-governance.ts"
+
+git push origin main
+```
+
+### Step 5: Rebase PR #116
+
+```bash
+git checkout platform/logistics-p1-typescript-hardening
+git rebase main
+```
+
+### Step 6: Local Verification
+
+```bash
+node scripts/ci/baseline/compare-with-baseline.ts \
+  --baseline .github/ci/baselines/main.json \
+  --pr-base main \
+  --pr-head HEAD
+```
+
+**Expected:**
+```
+NEW = 0 (Logistics introduces NO violations beyond baseline)
+RESOLVED = ? (if Logistics fixed any historical findings)
+```
+
+**If NEW > 0:**
+- ❌ STOP immediately
+- Investigate each NEW finding
+- Fix code OR prove fingerprint/policy implementation bug
+- DO NOT regenerate baseline to make NEW = 0
+
+### Step 7: Push + CI
+
+```bash
+git push origin platform/logistics-p1-typescript-hardening --force-with-lease
+```
+
+CI will now run with baseline system active. Monitor:
+```
+✅ Identity-Aware No-New-Debt Baseline
+   → Should show: "Baseline found, running comparison"
+   → Should show: "NEW = 0"
+   → Should show: "✓ No new violations"
+```
+
+### Step 8: Merge PR #116
+
+Only if:
+- `NEW = 0` proven by CI
+- All other gates PASS OR proven to be historical debt
+
+Post-merge verification:
+```bash
+git checkout main
+git pull origin main
+
+npx tsc --noEmit --project tsconfig.logistics-domain.json
+# Expected: 0 diagnostics
+
+npm test -- src/platform/logistics/domain
+# Expected: 547/547 PASS
+
+echo "✅ LOGISTICS P1 MAIN SEALED"
+```
+
+---
+
+## Governance
+
+### Critical Rules
+
+1. **Baseline describes main's debt, NOT exemption list for new debt**
+2. **NEW > 0 → Fix code, NOT regenerate baseline**
+3. **PR #116 must remain unchanged during Infrastructure PR review**
+4. **No baseline regeneration to achieve NEW = 0**
+
+### Bootstrap Exception Closure (MANDATORY)
+
+After canonical baseline is committed to `main`, bootstrap exception MUST be explicitly closed:
+
+**File:** `.github/workflows/baseline-no-new-debt.yml`
 
 ```yaml
-- name: Run baseline comparison
+- name: Check if baseline exists
+  id: baseline_check
   run: |
-    npx tsx scripts/ci/baseline/compare-with-baseline.ts \
-      --baseline $BASELINE_PATH \
-      --pr-base $PR_BASE_SHA \
-      --pr-head $PR_HEAD_SHA
+    if [ ! -f "$BASELINE_FILE" ]; then
+-     echo "exists=false" >> $GITHUB_OUTPUT
+-     echo "🔸️  Baseline not found (bootstrap scenario)"
++     echo "❌ BASELINE MISSING"
++     echo "Baseline file required: .github/ci/baselines/main.json"
++     echo "Bootstrap period closed. This is a CI configuration error."
++     exit 1
+    else
+      echo "exists=true" >> $GITHUB_OUTPUT
+    fi
+
+- name: Skip baseline check (bootstrap)
+- if: steps.baseline_check.outputs.exists == 'false'
+- run: |
+-   echo "🔸️  BOOTSTRAP SCENARIO"
+-   [... bootstrap message ...]
++ # REMOVED - Bootstrap period closed after baseline generation
+```
+
+**Why mandatory:**
+
+Without explicit closure, system maintains a **false-green path**: any PR that accidentally lacks baseline would pass. This violates the core principle that baseline comparison is NOT optional.
+
+**Verification after closure:**
+
+```bash
+# Simulate missing baseline
+mv .github/ci/baselines/main.json .github/ci/baselines/main.json.backup
+
+# CI should FAIL with clear error
+# NOT skip with "bootstrap scenario"
 ```
 
 ---
 
-## Governance Decision Required
+## Verification Checkpoint
 
-**Option 1: Conditional Skip (Recommended)**
-- Skip baseline check if baseline file missing
-- Document as bootstrap scenario
-- Merge infrastructure PR with evidence
-- Generate baseline immediately after merge
+**Status:** BOOTSTRAP EXECUTION VERIFIED ON CI
 
-**Option 2: Pre-generate Empty Baseline**
-- Create minimal baseline on infrastructure branch
-- Commit it with infrastructure
-- Real baseline regenerated after merge
+```
+PR #117 — SHA 822139b3
 
-**Option 3: Manual Waiver**
-- Human architect approves infrastructure PR
-- Override required check
-- Document as one-time bootstrap exception
+Identity-Aware workflow       ✅ CI VERIFIED
+TypeScript execution via tsx  ✅ VERIFIED
+Missing-baseline detection    ✅ VERIFIED
+Bootstrap exception path      ✅ VERIFIED
+Documented skip execution     ✅ VERIFIED
 
----
+Baseline comparison on CI     ⏳ NOT YET VERIFIED (requires canonical baseline)
+Canonical baseline            ⏳ NOT CREATED
+Machine-proven attribution    ⏳ NOT PROVEN
+Full PR #117 CI               ⏳ 3 CHECKS PENDING
+```
 
-## Recommended Path
+**Evidence-based conclusion:**
 
-1. **Fix TypeScript execution** (use `tsx`)
-2. **Add conditional skip** for missing baseline
-3. **Document bootstrap** in PR description
-4. **Merge with evidence** (not bypass)
-5. **Generate baseline immediately** after merge
-6. **Never need bootstrap again** (baseline exists for all future PRs)
+> Identity-Aware Infrastructure has been proven locally (15/15 scenarios) and bootstrap execution has been proven on GitHub CI. Baseline comparison on CI and machine attribution of historical debt are NOT YET PROVEN.
 
----
-
-## Evidence-Based Decision
-
-This is NOT "bypass CI because we want to."
-
-This IS "infrastructure PR cannot use infrastructure that doesn't exist yet, handled with explicit bootstrap logic."
-
-Key difference:
-- ✅ Conditional skip WITH evidence
-- ✅ One-time bootstrap scenario
-- ✅ Documented in governance
-- ❌ NOT silent bypass
-- ❌ NOT permanent exemption
+**Next:**
+1. Await 3 pending checks completion
+2. Document final CI snapshot @ SHA 822139b3
+3. Human review PR #117
+4. If approved: Merge → Generate canonical baseline → Close bootstrap path
 
 ---
 
-## Next Steps
-
-1. Fix workflow (tsx + conditional skip)
-2. Push fix to PR #117 branch
-3. Wait for CI re-run
-4. Review with bootstrap context
-5. Merge infrastructure
-6. Generate baseline from clean main
-7. System operational for all future PRs
-
----
-
-**Status:** AWAITING WORKFLOW FIX
+**Authority:** Identity-Aware No-New-Debt Baseline System  
+**Reference:** `docs/platform/IDENTITY_AWARE_BASELINE_DEPLOYMENT.md`
