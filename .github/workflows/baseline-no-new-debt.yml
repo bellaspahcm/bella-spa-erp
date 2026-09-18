@@ -1,0 +1,50 @@
+name: Identity-Aware No-New-Debt Baseline
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  baseline-check:
+    name: Baseline Comparison
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for merge-base
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Fetch main branch
+        run: git fetch origin main:main
+      
+      - name: Run baseline comparison
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha || 'main' }}
+          PR_HEAD_SHA: ${{ github.sha }}
+          PR_TARGET_BRANCH: ${{ github.base_ref || 'main' }}
+          BASELINE_PATH: .github/ci/baselines/main.json
+        run: |
+          node scripts/ci/baseline/compare-with-baseline.ts \
+            --baseline $BASELINE_PATH \
+            --pr-base $PR_BASE_SHA \
+            --pr-head $PR_HEAD_SHA
+      
+      - name: Upload comparison report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: baseline-comparison-report
+          path: baseline-comparison-report.txt
+          retention-days: 30
