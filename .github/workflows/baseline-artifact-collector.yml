@@ -1,0 +1,200 @@
+name: Baseline Artifact Collector
+
+# This workflow collects diagnostic artifacts for baseline generation
+# Output: Machine-readable JSON files for TypeScript, ESLint, Jest, Migration checks
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: 'Commit SHA to collect artifacts from'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  collect:
+    name: Collect Baseline Artifacts
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.commit_sha || github.sha }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Collect TypeScript diagnostics
+        run: |
+          echo "Running TypeScript compiler..."
+          npx tsc --noEmit --pretty false > typescript-output.txt 2>&1 || true
+          
+          # Count diagnostics
+          DIAGNOSTIC_COUNT=$(grep -c "error TS" typescript-output.txt || echo "0")
+          echo "TypeScript diagnostics found: $DIAGNOSTIC_COUNT"
+          
+          # Create metadata
+          cat > typescript-metadata.json <<EOF
+          {
+            "commit": "${{ inputs.commit_sha || github.sha }}",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "diagnostic_count": $DIAGNOSTIC_COUNT,
+            "runner_os": "${{ runner.os }}"
+          }
+          EOF
+        continue-on-error: true
+
+      - name: Collect ESLint diagnostics
+        run: |
+          echo "Running ESLint..."
+          # Use compact format and redirect to file to avoid buffer issues
+          npx eslint . --format json --output-file eslint-output.json || true
+          
+          # Verify JSON is valid
+          if jq empty eslint-output.json 2>/dev/null; then
+            FINDING_COUNT=$(jq '[.[] | .messages | length] | add // 0' eslint-output.json)
+            echo "ESLint findings: $FINDING_COUNT"
+            
+            cat > eslint-metadata.json <<EOF
+          {
+            "commit": "${{ inputs.commit_sha || github.sha }}",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "finding_count": $FINDING_COUNT,
+            "runner_os": "${{ runner.os }}",
+            "json_valid": true
+          }
+          EOF
+          else
+            echo "ERROR: ESLint output is not valid JSON"
+            cat > eslint-metadata.json <<EOF
+          {
+            "commit": "${{ inputs.commit_sha || github.sha }}",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "runner_os": "${{ runner.os }}",
+            "json_valid": false,
+            "error": "Invalid JSON output"
+          }
+          EOF
+          fi
+        continue-on-error: true
+
+      - name: Collect Jest diagnostics
+        run: |
+          echo "Running Jest..."
+          npx jest --json --testPathPattern="src/" > jest-output.json 2>&1 || true
+          
+          # Verify JSON structure
+          if jq -e '.testResults' jest-output.json > /dev/null 2>&1; then
+            FAILED_COUNT=$(jq '.numFailedTests // 0' jest-output.json)
+            echo "Jest failed tests: $FAILED_COUNT"
+            
+            cat > jest-metadata.json <<EOF
+          {
+            "commit": "${{ inputs.commit_sha || github.sha }}",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "failed_test_count": $FAILED_COUNT,
+            "runner_os": "${{ runner.os }}",
+            "json_valid": true
+          }
+          EOF
+          else
+            echo "ERROR: Jest output missing testResults"
+            cat > jest-metadata.json <<EOF
+          {
+            "commit": "${{ inputs.commit_sha || github.sha }}",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "runner_os": "${{ runner.os }}",
+            "json_valid": false,
+            "error": "Missing testResults array"
+          }
+          EOF
+          fi
+        continue-on-error: true
+
+      - name: Collect Migration diagnostics
+        run: |
+          echo "Running migration check..."
+          if [ -f "scripts/migrations/zero-downtime-check.js" ]; then
+            node scripts/migrations/zero-downtime-check.js > migration-output.txt 2>&1 || true
+            
+            cat > migration-metadata.json <<EOF
+          {
+            "commit": "${{ inputs.commit_sha || github.sha }}",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "runner_os": "${{ runner.os }}",
+            "check_exists": true
+          }
+          EOF
+          else
+            echo "Migration check script not found"
+            cat > migration-metadata.json <<EOF
+          {
+            "commit": "${{ inputs.commit_sha || github.sha }}",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "runner_os": "${{ runner.os }}",
+            "check_exists": false
+          }
+          EOF
+          fi
+        continue-on-error: true
+
+      - name: Create collection summary
+        run: |
+          cat > collection-summary.json <<EOF
+          {
+            "workflow_run_id": "${{ github.run_id }}",
+            "workflow_run_number": "${{ github.run_number }}",
+            "commit": "${{ inputs.commit_sha || github.sha }}",
+            "branch": "${{ github.ref_name }}",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "runner_os": "${{ runner.os }}",
+            "artifacts": {
+              "typescript": $(test -f typescript-output.txt && echo "true" || echo "false"),
+              "eslint": $(test -f eslint-output.json && echo "true" || echo "false"),
+              "jest": $(test -f jest-output.json && echo "true" || echo "false"),
+              "migration": $(test -f migration-output.txt && echo "true" || echo "false")
+            }
+          }
+          EOF
+          
+          echo "Collection Summary:"
+          cat collection-summary.json | jq .
+
+      - name: Upload baseline artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: baseline-artifacts-${{ inputs.commit_sha || github.sha }}
+          path: |
+            typescript-output.txt
+            typescript-metadata.json
+            eslint-output.json
+            eslint-metadata.json
+            jest-output.json
+            jest-metadata.json
+            migration-output.txt
+            migration-metadata.json
+            collection-summary.json
+          retention-days: 90
+          if-no-files-found: warn
+
+      - name: Display artifact info
+        run: |
+          echo "✅ Baseline artifacts collected"
+          echo ""
+          echo "Commit: ${{ inputs.commit_sha || github.sha }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo ""
+          echo "File sizes:"
+          ls -lh *-output.* *-metadata.json collection-summary.json 2>/dev/null || true
+          echo ""
+          echo "Download artifacts from:"
+          echo "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
