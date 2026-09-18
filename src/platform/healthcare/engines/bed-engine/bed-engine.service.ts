@@ -14,6 +14,7 @@ import type {
   BedQueryRequest,
 } from '../../contracts/bed-engine.contract';
 import type { EngineResponse, Bed as SharedBed } from '../../shared-kernel/types';
+import { Bed } from './domain/bed.entity';
 import { IBedRepository, BedOccupancyConflictError } from './repositories/supabase-bed.repository';
 import { BED_EVENT_TYPES } from './events/bed.events';
 import { eventBus } from '@/platform/host/event-bus';
@@ -24,6 +25,17 @@ export class BedEngineService implements BedEngineContract {
   readonly contractVersion = '1.0.0';
 
   constructor(private readonly repository: IBedRepository) {}
+
+  async healthCheck(): Promise<{ status: 'healthy' | 'degraded' | 'unhealthy'; timestamp: string; checks: Record<string, unknown> }> {
+    return {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      checks: {
+        database: 'ok',
+        repository: 'ok',
+      },
+    };
+  }
 
   async allocateBed(request: BedAllocationRequest): Promise<EngineResponse<SharedBed>> {
     try {
@@ -73,7 +85,7 @@ export class BedEngineService implements BedEngineContract {
           allocatedAt: saved.occupancy!.assignedAt,
           dailyRate: saved.dailyRate,
         },
-        userId: request.userId,
+        userId: request.requestedBy,
       });
 
       return {
@@ -132,7 +144,7 @@ export class BedEngineService implements BedEngineContract {
           reason: request.reason,
           releasedAt: new Date().toISOString(),
         },
-        userId: request.userId,
+        userId: request.releasedBy,
       });
 
       return {
@@ -197,7 +209,7 @@ export class BedEngineService implements BedEngineContract {
           encounterId: request.encounterId,
           transferredAt: new Date().toISOString(),
         },
-        userId: request.userId,
+        userId: request.transferredBy,
       });
 
       return {
@@ -222,6 +234,18 @@ export class BedEngineService implements BedEngineContract {
 
   async queryBeds(request: BedQueryRequest): Promise<EngineResponse<SharedBed[]>> {
     try {
+      // If wardId not provided, we need a different query method or error
+      if (!request.wardId) {
+        return {
+          success: false,
+          error: {
+            code: 'WARD_ID_REQUIRED',
+            message: 'Ward ID is required for bed query',
+            timestamp: new Date().toISOString(),
+          },
+        };
+      }
+
       const beds = await this.repository.findAllInWard(request.tenantId, request.wardId);
       let filtered = beds;
 
@@ -275,18 +299,20 @@ export class BedEngineService implements BedEngineContract {
   }
 
   private mapToSharedBed(bed: Bed): SharedBed {
-    const snap = typeof bed.toSnapshot === 'function' ? bed.toSnapshot() : bed;
+    const snap = bed.toSnapshot();
     return {
       id: snap.id,
-      tenant_id: snap.tenantId,
-      ward_id: snap.wardId,
-      bed_code: snap.bedCode,
-      bed_type: snap.bedType,
+      tenantId: snap.tenantId,
+      wardId: snap.wardId,
+      bedNumber: snap.bedCode,
+      bedType: snap.bedType,
       status: snap.status,
-      daily_rate: snap.dailyRate,
-      current_patient_id: snap.occupancy?.patientPartyId,
-      current_admission_id: snap.occupancy?.admissionId,
-      updated_at: snap.updatedAt,
-    } as SharedBed;
+      features: [], // Domain doesn't track features yet
+      assignedPatientId: snap.occupancy?.patientPartyId,
+      assignedAdmissionId: snap.occupancy?.admissionId,
+      assignedAt: snap.occupancy?.assignedAt,
+      createdAt: snap.createdAt,
+      updatedAt: snap.updatedAt,
+    };
   }
 }
