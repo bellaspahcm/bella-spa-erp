@@ -182,6 +182,42 @@ export interface PolicyDefinition {
 }
 
 /**
+ * Baseline provenance (traceability)
+ */
+export interface BaselineProvenance {
+  /**
+   * Source branch baseline was generated from
+   */
+  source_branch: string;
+  
+  /**
+   * Source commit (must match baseline.commit)
+   */
+  source_commit: string;
+  
+  /**
+   * CI workflow run that collected artifacts
+   */
+  workflow_run_id: string;
+  workflow_run_number: number;
+  
+  /**
+   * When artifacts were collected
+   */
+  collection_timestamp: string; // ISO timestamp
+  
+  /**
+   * Runner OS (affects tool behavior/output)
+   */
+  runner_os: string;
+  
+  /**
+   * Generator version (for reproducibility)
+   */
+  generator_version: string;
+}
+
+/**
  * Complete baseline file structure
  */
 export interface Baseline {
@@ -199,6 +235,11 @@ export interface Baseline {
    * Git commit this baseline represents
    */
   commit: string;
+  
+  /**
+   * Provenance tracking (CRITICAL for governance)
+   */
+  provenance?: BaselineProvenance;
   
   /**
    * Scopes (TypeScript, ESLint, Jest, Migration)

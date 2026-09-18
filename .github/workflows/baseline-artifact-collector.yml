@@ -25,6 +25,25 @@ jobs:
           ref: ${{ inputs.commit_sha || github.sha }}
           fetch-depth: 0
 
+      - name: Verify checkout SHA
+        id: verify_sha
+        run: |
+          REQUESTED_SHA="${{ inputs.commit_sha || github.sha }}"
+          ACTUAL_SHA=$(git rev-parse HEAD)
+          
+          echo "Requested SHA: $REQUESTED_SHA"
+          echo "Actual SHA:    $ACTUAL_SHA"
+          
+          if [ "$REQUESTED_SHA" != "$ACTUAL_SHA" ]; then
+            echo "❌ ERROR: SHA mismatch"
+            echo "   Requested: $REQUESTED_SHA"
+            echo "   Checked out: $ACTUAL_SHA"
+            exit 1
+          fi
+          
+          echo "✅ SHA verified: $ACTUAL_SHA"
+          echo "actual_sha=$ACTUAL_SHA" >> $GITHUB_OUTPUT
+
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -149,11 +168,15 @@ jobs:
 
       - name: Create collection summary
         run: |
+          ACTUAL_SHA="${{ steps.verify_sha.outputs.actual_sha }}"
+          
           cat > collection-summary.json <<EOF
           {
             "workflow_run_id": "${{ github.run_id }}",
             "workflow_run_number": "${{ github.run_number }}",
-            "commit": "${{ inputs.commit_sha || github.sha }}",
+            "requested_commit": "${{ inputs.commit_sha || github.sha }}",
+            "actual_commit": "$ACTUAL_SHA",
+            "commit_verified": true,
             "branch": "${{ github.ref_name }}",
             "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
             "runner_os": "${{ runner.os }}",
@@ -190,8 +213,9 @@ jobs:
         run: |
           echo "✅ Baseline artifacts collected"
           echo ""
-          echo "Commit: ${{ inputs.commit_sha || github.sha }}"
+          echo "Commit: ${{ steps.verify_sha.outputs.actual_sha }}"
           echo "Branch: ${{ github.ref_name }}"
+          echo "Provenance verified: ✅"
           echo ""
           echo "File sizes:"
           ls -lh *-output.* *-metadata.json collection-summary.json 2>/dev/null || true
