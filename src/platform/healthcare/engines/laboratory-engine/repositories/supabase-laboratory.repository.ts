@@ -6,6 +6,7 @@ import { ILaboratoryRepository, ConcurrencyViolationError } from './laboratory-r
 import type { Database } from '@/types/database.types';
 
 type LabOrderRow = Database['public']['Tables']['hc_lab_orders']['Row'];
+type LabOrderInsert = Database['public']['Tables']['hc_lab_orders']['Insert'];
 
 export class SupabaseLaboratoryRepository implements ILaboratoryRepository {
   private readonly TABLE = 'hc_lab_orders';
@@ -63,7 +64,7 @@ export class SupabaseLaboratoryRepository implements ILaboratoryRepository {
       // 2. Perform insert
       const { error: insertError } = await this.supabase
         .from(this.TABLE)
-        .insert(dbRow);
+        .insert(dbRow as LabOrderInsert);
 
       if (insertError) {
         throw insertError;
@@ -170,7 +171,7 @@ export class SupabaseLaboratoryRepository implements ILaboratoryRepository {
       specimen,
       result,
       version: row.verified_at ? 2 : 1,
-      escalationRequired: row.is_panic_value && !row.doctor_notified,
+      escalationRequired: (row.is_panic_value ?? false) && !(row.doctor_notified ?? false),
       acknowledgedBy: row.doctor_notified ? (row.verified_by || 'system') : undefined,
       acknowledgedAt: row.doctor_notified_time ? new Date(row.doctor_notified_time) : undefined,
     });
