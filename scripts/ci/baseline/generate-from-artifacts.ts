@@ -90,7 +90,8 @@ function loadCollectionSummary(artifactsDir: string): CollectionSummary {
 function loadArtifact(
   artifactsDir: string,
   name: string,
-  expectedCommit: string
+  expectedCommit: string,
+  expectedTimestamp?: string
 ): { output: string; metadata: ArtifactMetadata } {
   const outputPath = path.join(artifactsDir, `${name}-output.txt`);
   const jsonPath = path.join(artifactsDir, `${name}-output.json`);
@@ -113,11 +114,22 @@ function loadArtifact(
   
   const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf-8')) as ArtifactMetadata;
   
+  // I1: Commit validation
   if (metadata.commit !== expectedCommit) {
     throw new Error(
       `${name} artifact commit mismatch:\n` +
       `  Expected: ${expectedCommit}\n` +
       `  Actual:   ${metadata.commit}`
+    );
+  }
+  
+  // I4: Collection integrity - prevent mixed artifacts from different runs
+  if (expectedTimestamp && metadata.timestamp !== expectedTimestamp) {
+    throw new Error(
+      `${name} artifact timestamp mismatch (mixed collection detected):\n` +
+      `  Expected: ${expectedTimestamp}\n` +
+      `  Actual:   ${metadata.timestamp}\n` +
+      `  GOVERNANCE: All artifacts must come from the same collection run.`
     );
   }
   
@@ -142,11 +154,19 @@ export async function generateFromArtifacts(
   
   // 2. Load artifacts with provenance validation
   console.log('Loading artifacts...');
+  
+  // Load first artifact to establish canonical collection timestamp
   const typescript = loadArtifact(artifactsDir, 'typescript', canonicalCommit);
-  const eslint = loadArtifact(artifactsDir, 'eslint', canonicalCommit);
-  const jest = loadArtifact(artifactsDir, 'jest', canonicalCommit);
-  const migration = loadArtifact(artifactsDir, 'migration', canonicalCommit);
+  const canonicalTimestamp = typescript.metadata.timestamp;
+  console.log(`Collection timestamp: ${canonicalTimestamp}`);
+  
+  // Load remaining artifacts with collection integrity check
+  const eslint = loadArtifact(artifactsDir, 'eslint', canonicalCommit, canonicalTimestamp);
+  const jest = loadArtifact(artifactsDir, 'jest', canonicalCommit, canonicalTimestamp);
+  const migration = loadArtifact(artifactsDir, 'migration', canonicalCommit, canonicalTimestamp);
+  
   console.log('✅ All artifacts loaded with verified provenance');
+  console.log('✅ Collection integrity verified (same run)');
   console.log('');
   
   // 3. Convert to findings

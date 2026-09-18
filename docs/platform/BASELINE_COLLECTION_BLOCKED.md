@@ -92,62 +92,80 @@ Identity-Aware Baseline System
 
 ## Resolution Options
 
-### Option A: Use CI Artifacts (RECOMMENDED)
+### Option C: CI-Derived Artifacts (SELECTED)
 
-GitHub Actions `Type Check` workflow @ main `24bf975c` shows **SUCCESS**.
+**Status:** ✅ IMPLEMENTED, ⏳ RUNTIME PROOF PENDING
 
-```bash
-gh run list --workflow="Type Check" --branch=main --limit=1
-# Run 35352896893: SUCCESS @ 24bf975c
+GitHub Actions workflow collects machine-readable artifacts on Ubuntu (fast tsc).
+
+**Implementation:**
+- Workflow: `.github/workflows/baseline-artifact-collector.yml`
+- Generator: `scripts/ci/baseline/generate-from-artifacts.ts`
+- Determinism verifier: `scripts/ci/baseline/verify-determinism.ts`
+
+**Invariants Enforced:**
+
+```
+I1 — COLLECTION INTEGRITY
+  requested_commit == actual_commit
+  commit_verified == true
+  Enforced: Workflow SHA verification step
+
+I2 — GENERATION PROVENANCE
+  baseline.provenance.source_commit == actual_commit
+  All artifacts from same collection/run
+  Collector FAILED → generation FAIL
+  Enforced: generate-from-artifacts.ts validation
+
+I3 — SEMANTIC DETERMINISM
+  same artifacts + same generator version
+  → same normalized findings/fingerprints
+  Enforced: verify-determinism.ts
+
+I4 — NO MIXED ARTIFACTS
+  All artifacts must have same collection_timestamp
+  Prevents "Frankenstein baseline" from mixed runs
+  Enforced: generate-from-artifacts.ts timestamp check
 ```
 
-**Problem:** SUCCESS means 0 errors, but we need the actual diagnostic output to create fingerprints.
+**Closure Sequence:**
 
-**Sub-options:**
-- A1: Check if CI caches TypeScript output even on success
-- A2: Force CI run with `--listFilesOnly` or diagnostic mode
-- A3: Temporarily inject diagnostic collection into CI workflow
+```
+1. Merge PR #119 (artifact collector + provenance validation)
+2. Record new main SHA (post-merge)
+3. Trigger baseline-artifact-collector workflow @ new main SHA
+4. Download artifacts from workflow run
+5. Run generate-from-artifacts.ts
+   → Validates I1, I2, I4
+   → Generates baseline with provenance
+6. Review baseline counts + provenance
+7. Run verify-determinism.ts (twice on same artifacts)
+   → Validates I3
+8. Commit baseline to .github/ci/baselines/main.json
+9. Close bootstrap mode (baseline missing → exit 1)
+10. Create test PR (trivial change)
+11. Verify end-to-end: bootstrap OFF, real comparison, NEW=0
+12. If test PR PASS → Mark system PROVEN
+13. Unblock PR #116 for re-run with real baseline
 
-### Option B: Scope-Based Collection
-
-Break collection into smaller scopes that don't timeout:
-
-```typescript
-// Collect by subsystem
-const scopes = [
-  'src/platform/healthcare/**/*.ts',
-  'src/platform/logistics/**/*.ts',
-  'src/platform/education/**/*.ts',
-  'src/products/**/*.ts'
-];
-
-for (const scope of scopes) {
-  const output = execSync(`npx tsc --noEmit --project tsconfig.${scope}.json`);
-  findings.push(...adapt(output));
-}
+CRITICAL: #116 remains BLOCKED until step 12 completes
 ```
 
-**Complexity:** Requires tsconfig splitting, may miss cross-scope issues.
+**Runtime Proof Gates:**
 
-### Option C: Linux Environment
+- [ ] PR #119 merged to main
+- [ ] Artifact collector workflow executed successfully
+- [ ] All 4 artifacts collected (TypeScript, ESLint, Jest, Migration)
+- [ ] Provenance validation PASS (I1)
+- [ ] Baseline generation PASS (I2)
+- [ ] Collection integrity verified (I4)
+- [ ] Semantic determinism verified (I3)
+- [ ] Baseline committed to main
+- [ ] Bootstrap mode closed
+- [ ] Test PR end-to-end PASS
+- [ ] System status: IMPLEMENTED → PROVEN
 
-Run baseline generation on Linux where `tsc` performance is better:
-
-```bash
-# On Linux CI or WSL
-time npx tsc --noEmit  # Likely < 1 minute
-```
-
-**Note:** Must ensure same tsconfig/dependencies as Windows production environment.
-
-### Option D: Accept Zero Baseline (REJECTED)
-
-**ABSOLUTELY NOT.** This violates the core governance principle.
-
-Accepting `TypeScript: 0 findings` when collector failed would mean:
-- PR #116's 282 fixes would appear as 282 NEW violations (false positive regression)
-- No-new-debt policy becomes meaningless
-- Baseline serves no purpose
+Until all gates PASS, Identity-Aware Baseline System is **IMPLEMENTED but NOT PROVEN**.
 
 ## Decision Required
 
