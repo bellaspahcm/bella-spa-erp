@@ -126,7 +126,7 @@ describe('E7.2 Inventory Coordination', () => {
       expect(result.error).toContain('Failed to reserve inventory');
 
       // Verify NO movement created (only checked via absence of success)
-      expect(result.value).toBeFalsy(); // null or undefined on failure
+      expect(result.value).toBeNull(); // Result.fail() contract: value is null
     });
 
     it('should fail entire operation if inventory status invalid', () => {
@@ -145,7 +145,7 @@ describe('E7.2 Inventory Coordination', () => {
       expect(result.error).toContain('Failed to reserve inventory');
 
       // No movement created
-      expect(result.value).toBeFalsy(); // null or undefined on failure
+      expect(result.value).toBeNull(); // Result.fail() contract: value is null
     });
 
     it('should fail if quantity is invalid (zero)', () => {
@@ -161,7 +161,7 @@ describe('E7.2 Inventory Coordination', () => {
       expect(result.errorCode).toBe('INVENTORY_RESERVE_QUANTITY_INVALID');
 
       // No movement created
-      expect(result.value).toBeFalsy(); // null or undefined on failure
+      expect(result.value).toBeNull(); // Result.fail() contract: value is null
     });
   });
 
@@ -206,7 +206,7 @@ describe('E7.2 Inventory Coordination', () => {
       expect(result.errorCode).toBe('INVENTORY_INVALID_STATUS_FOR_SHIP');
 
       // No movement created
-      expect(result.value).toBeFalsy(); // null or undefined on failure
+      expect(result.value).toBeNull(); // Result.fail() contract: value is null
     });
   });
 
@@ -253,7 +253,7 @@ describe('E7.2 Inventory Coordination', () => {
       expect(result.errorCode).toBe('INVENTORY_CANCEL_EXCEEDS_RESERVED');
 
       // No movement created
-      expect(result.value).toBeFalsy(); // null or undefined on failure
+      expect(result.value).toBeNull(); // Result.fail() contract: value is null
     });
   });
 
