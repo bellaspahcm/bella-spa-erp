@@ -9,7 +9,7 @@
 
 ## Summary
 
-Correct Domain type contract in Logistics E7.1 Domain Kernel to align with canonical Domain/Repository pattern: Domain entities should use `camelCase` properties, not `snake_case`.
+Correct systematic Domain type contract defect in Logistics E7.1 Domain Kernel affecting all 5 core entities (inventory, movement, item, location, traceability). Domain type definitions incorrectly use `snake_case` while implementations and repository mappers correctly use `camelCase`.
 
 ---
 
@@ -24,23 +24,33 @@ Correct Domain type contract in Logistics E7.1 Domain Kernel to align with canon
 
 ## Affected Artifacts
 
-Minimum scope (Batch L1 - Inventory only):
+**Systematic defect scope (all 5 E7.1 core entities):**
 
 ```
 src/platform/logistics/domain/inventory.types.ts
 src/platform/logistics/domain/inventory.domain.ts
 src/platform/logistics/domain/__tests__/inventory.domain.test.ts
-```
 
-Potential expansion scope (if same defect found in investigation):
-
-```
 src/platform/logistics/domain/movement.types.ts
+src/platform/logistics/domain/movement.domain.ts
+src/platform/logistics/domain/__tests__/movement.domain.test.ts
+
 src/platform/logistics/domain/item.types.ts
+src/platform/logistics/domain/item.domain.ts
+src/platform/logistics/domain/__tests__/item.domain.test.ts
+
 src/platform/logistics/domain/location.types.ts
+src/platform/logistics/domain/location.domain.ts
+src/platform/logistics/domain/__tests__/location.domain.test.ts
+
 src/platform/logistics/domain/traceability.types.ts
-(and corresponding .domain.ts files)
+src/platform/logistics/domain/traceability.domain.ts
+src/platform/logistics/domain/__tests__/traceability.domain.test.ts
 ```
+
+**NOT in scope:**
+- `index.ts` (barrel exports) - not frozen, will fix separately after source contracts corrected
+- Other domain files not exhibiting this pattern
 
 ---
 
@@ -52,9 +62,25 @@ P1 TypeScript Hardening initiative requires zero compiler diagnostics across Pla
 
 ### Technical Context
 
-**Defect:** Domain type definitions use `snake_case` (e.g., `tenant_id`, `quantity_on_hand`) but:
-- Domain implementation code uses `camelCase` (e.g., `tenantId`, `quantityOnHand`)
-- Repository mapper expects `camelCase` from Domain and handles `snake_case ↔ camelCase` conversion
+**Defect:** ALL 5 E7.1 Domain core entities have type definitions using `snake_case` but:
+- Domain implementation code uses `camelCase` 
+- Repository mappers expect `camelCase` from Domain and handle `snake_case ↔ camelCase` conversion
+
+**Diagnostic distribution:**
+```
+Total Domain baseline: 282 diagnostics
+
+Concentrated in 5 core entities: 222/282 (79%)
+- inventory:      64 diagnostics
+- movement:       58 diagnostics  
+- item:           49 diagnostics
+- location:       26 diagnostics
+- traceability:   25 diagnostics
+
+All 5 confirmed with TS2551 errors suggesting snake_case alternatives
+```
+
+**Root cause:** Systematic architectural defect - E7.1 was frozen/sealed with incorrect naming convention in type contracts, contradicting both implementation and repository boundary design.
 
 **Canonical pattern:**
 ```
@@ -103,42 +129,74 @@ const inventory: Inventory = {
 
 ### Implementation Plan
 
-**Batch L1 (Inventory - already validated):**
+**Systematic correction across 5 E7.1 core entities:**
 
-1. Update `inventory.types.ts`:
-   - `Inventory` interface: all properties `snake_case` → `camelCase`
-   - `CreateInventoryProps`: all properties → `camelCase`
-   - `UpdateInventoryQuantityProps`: `quantity_delta` → `quantityDelta`, add `quantityOnHand`, `quantityReserved`
-   - `ReserveInventoryProps`: `reference_id` → `referenceId`, `reference_type` → `referenceType`
-   - `InventoryFilters`: all properties → `camelCase`
-   - `InventoryBalanceSummary`: all properties → `camelCase`
-
-2. Update `inventory.domain.ts`:
-   - Wrap `ItemId`, `LocationId`, `LotNumber`, `SerialNumber` in value objects (`{ value: string }`)
-   - Update `undefined` vs `null` handling to match type definitions
-
-3. Update `inventory.domain.test.ts`:
-   - Change assertions from `.lotNumber` to `.lotNumber?.value`
-   - Change `.toBeNull()` to `.toBeUndefined()` where appropriate
+**Batch L1 - Inventory (already validated):**
+1. Update `inventory.types.ts`: all interface properties `snake_case` → `camelCase`
+2. Update `inventory.domain.ts`: wrap IDs and traceability in value objects
+3. Update `inventory.domain.test.ts`: update assertions for value object wrapping
 
 **Evidence (already measured):**
 ```
 Before:  282 diagnostics
-After:   211 diagnostics
+After:   211 diagnostics  
 Reduction: 71 (25%)
 
 inventory.domain.ts: 64 → 0 ✅
 Architecture Guard: PASS ✅
 Regression: 547/547 PASS ✅
-No new any types ✅
-No suppressions ✅
-No as unknown as casts ✅
 ```
 
-**Future batches (if evidence supports):**
-- Batch L2: `movement.types.ts` + `movement.domain.ts` (58 diagnostics)
-- Batch L3: `item.types.ts` + `item.domain.ts` (49 diagnostics)
-- Batch L4: `location.types.ts` + others (remaining diagnostics)
+**Batch L2-L5 - Movement, Item, Location, Traceability:**
+Apply same pattern as L1 to each entity:
+1. Update `.types.ts`: properties `snake_case` → `camelCase`
+2. Update `.domain.ts`: wrap value objects where needed
+3. Update `.domain.test.ts`: update assertions if needed
+4. Compile Domain after each batch to measure progress
+5. Final verification: Architecture Guard + 547 regression
+
+**Execution order:**
+```
+L1 Inventory    → apply stashed changes → verify
+L2 Movement     → fix → compile → measure
+L3 Item         → fix → compile → measure
+L4 Location     → fix → compile → measure
+L5 Traceability → fix → compile → measure
+                       ↓
+              Full Domain compile
+                       ↓
+              Architecture Guard
+                       ↓
+              547 regression tests
+                       ↓
+              Single commit
+                       ↓
+              Re-seal E7.1
+```
+
+**Diagnostic projection:**
+```
+Baseline: 282
+
+222/282 concentrated in 5 core entities
+L1 proven: 64 → 0 (Inventory)
+
+Expected pattern (NOT guaranteed):
+Movement, item, location, traceability 
+may follow similar reduction when fixed.
+
+Actual reduction confirmed by compiler only.
+```
+
+**Constraints:**
+- ✅ Type contract corrections ONLY
+- ✅ No business behavior changes
+- ✅ No refactoring outside scope  
+- ✅ No new `any` types
+- ✅ No new `as unknown as` casts
+- ✅ No new suppressions
+- ❌ No DB schema changes
+- ❌ No persistence convention changes
 
 ### API Impact
 
@@ -153,16 +211,22 @@ Domain types are internal to Logistics Kernel. Repository mapper already handles
 ### Blast Radius
 
 **Direct consumers:** 
-- E7.1 Domain Kernel internal files only
-- Repository mapper already expects `camelCase` (no change needed)
-- Tests need assertion updates (value object wrapping)
+- E7.1 Domain Kernel internal files (5 entities + tests)
+- Repository mappers already expect `camelCase` (no change needed)
+- Tests need assertion updates for value object wrapping
 
 **Indirect consumers:** 
-- None (Domain types are internal)
+- None (Domain types are internal to E7.1)
 
 **Test impact:** 
-- 3 test assertions updated (Batch L1)
-- 547 tests PASS after changes
+- L1: 3 test assertions updated (inventory)
+- L2-L5: May need similar assertion updates
+- 547 total tests must PASS
+
+**Diagnostic impact:**
+- 222/282 diagnostics concentrated in affected files
+- L1 proven: 64 → 0
+- L2-L5: Actual reduction measured by compiler
 
 ### Migration Path
 
@@ -224,21 +288,42 @@ No migration needed. This is a correction of internal type contract to match exi
 ### Regression Testing
 
 - [x] All existing tests must pass (547/547 for Logistics)
-- [x] Test assertions updated for value object wrapping
-- [x] Architecture Guard PASS
+- [x] Test assertions updated for value object wrapping where needed
+- [x] Architecture Guard PASS (validates E7.1-E7.3 integrity)
+- [x] Compile verification after each batch
 
 ### Test Plan
 
-**Already validated (Batch L1):**
-1. ✅ Compile Logistics Domain: 282 → 211
-2. ✅ inventory.domain.ts specific: 64 → 0
-3. ✅ Architecture Guard: PASS
-4. ✅ Logistics regression: 547/547 PASS
-5. ✅ No new `any` types
-6. ✅ No new suppressions
-7. ✅ No `as unknown as` casts
+**Batch-by-batch verification (L1 already complete):**
 
-**Future batches:** Same verification for each domain file.
+1. ✅ **L1 Inventory:**
+   - Compile Domain: 282 → 211
+   - inventory.domain.ts: 64 → 0
+   - Architecture Guard: PASS
+   - Logistics regression: 547/547 PASS
+   - No new `any`, suppressions, or unsafe casts
+
+2. **L2 Movement:**
+   - Fix movement.types.ts + movement.domain.ts
+   - Compile Domain → measure diagnostic reduction
+   - Architecture Guard: must PASS
+   - Regression: 547/547 must PASS
+
+3. **L3 Item:**
+   - Same pattern as L2
+
+4. **L4 Location:**
+   - Same pattern as L2
+
+5. **L5 Traceability:**
+   - Same pattern as L2
+
+6. **Final verification:**
+   - Full Domain compile
+   - Measure total: 282 → actual (compiler determines)
+   - Architecture Guard: PASS
+   - Logistics regression: 547/547 PASS
+   - Code quality: zero new suppressions/unsafe casts
 
 ---
 
@@ -256,15 +341,16 @@ Which documentation will need updates?
 
 ## Timeline
 
-**Estimated Duration:** 1-2 days (Batch L1 already complete, pending approval)
+**Estimated Duration:** 1-2 days (L1 complete, L2-L5 follow proven pattern)
 
 **Milestones:**
-- Day 1: ACR review & approval
-- Day 1: Unlock E7.1 inventory artifacts
-- Day 1: Apply Batch L1 changes (already validated)
-- Day 1: Final verification & commit
-- Day 1: Update baseline, re-seal E7.1
-- Day 2: Evaluate remaining 211 diagnostics for future batches
+- Day 1 AM: ACR review & approval
+- Day 1 AM: Unlock E7.1 artifacts (all 5 entities)
+- Day 1 PM: Execute L1-L5 batches with verification
+- Day 1 PM: Final Architecture Guard + regression
+- Day 1 PM: Single commit with full evidence
+- Day 1 PM: Update baseline, re-seal E7.1
+- Day 2: Address remaining diagnostics (barrel exports, non-frozen)
 
 ---
 
@@ -274,11 +360,11 @@ Does this change depend on or block other work?
 
 **Depends on:**
 - ACR approval
-- E7.1 unlock for inventory artifacts
+- E7.1 unlock for all 5 core entity artifacts
 
 **Blocks:**
 - P1 TypeScript Hardening completion
-- Logistics remaining diagnostic resolution (211 remaining)
+- Logistics diagnostic resolution (222/282 concentrated in affected entities)
 
 ---
 
@@ -324,22 +410,78 @@ If this change causes problems, rollback is simple:
 
 ## Evidence Summary
 
-**Pre-change state:**
-- Logistics Domain: 282 diagnostics
-- inventory.domain.ts: 64 diagnostics
-- Root cause: snake_case type definitions vs camelCase implementation
+**Systematic defect confirmed:**
+```
+Investigation: 5/5 E7.1 Domain entities affected
+Pattern: snake_case types vs camelCase implementation
+Diagnostic concentration: 222/282 (79%) in 5 entities
 
-**Post-change validation (Batch L1):**
-- Logistics Domain: 211 diagnostics (-71, 25% reduction)
-- inventory.domain.ts: 0 diagnostics (-64, 100% reduction)
-- Architecture Guard: PASS
-- Logistics regression: 547/547 PASS
-- Code quality: No new `any`, no suppressions, no unsafe casts
-- Freeze Gate: BLOCKED (expected - awaiting ACR approval)
+Entity diagnostics:
+- inventory:      64 ✅ L1 PROVEN (64 → 0)
+- movement:       58 ✅ PATTERN CONFIRMED
+- item:           49 ✅ PATTERN CONFIRMED
+- location:       26 ✅ PATTERN CONFIRMED
+- traceability:   25 ✅ PATTERN CONFIRMED
+```
 
-**Remaining work:**
-- 211 diagnostics (barrel exports + other domains)
-- Will investigate after Batch L1 approved
+**L1 proof-of-concept (Inventory):**
+```
+Changes applied (in stash):
+- inventory.types.ts: 14 properties snake→camel
+- inventory.domain.ts: value object wrapping
+- inventory.domain.test.ts: 3 assertions updated
+
+Results:
+- Domain compile: 282 → 211 ✅
+- inventory.domain.ts: 64 → 0 ✅ (100% clean)
+- Architecture Guard: PASS ✅
+- Logistics regression: 547/547 PASS ✅
+- Code quality: No new any/suppressions/unsafe casts ✅
+- Freeze Gate: BLOCKED (expected - awaiting ACR) ✅
+```
+
+**L2-L5 evidence:**
+```
+Read-only investigation confirmed:
+- All 4 entities show TS2551 errors with snake_case suggestions
+- Same defect pattern as L1
+- Estimated total impact: 222/282 diagnostics
+- Actual reduction: confirmed by compiler after implementation
+```
+
+**Rationale for systematic approach:**
+```
+✅ Single governance cycle (not 5 separate ACRs)
+✅ L1 pattern already proven with full verification
+✅ All entities have identical architectural defect
+✅ Comprehensive solution addresses root cause
+✅ Efficient use of Architecture Review time
+```
+
+**Remaining work post-ACR:**
+```
+- Barrel exports (index.ts): 26 errors, NOT frozen
+- Misc diagnostics: ~34 estimated
+- Will address after source contracts corrected
+```
+
+---
+
+## Architectural Lesson
+
+**Pre-Freeze Gate Observation:**
+
+E7.1 was frozen/sealed with Domain implementations and type contracts using **two different naming conventions** (implementation: camelCase, types: snake_case). Freeze Gate correctly blocked modification attempt, but defect existed before sealing.
+
+**Root cause:** No architectural contract validation gate enforced **before freeze** to detect:
+- Type contract vs implementation naming mismatches
+- Domain convention vs persistence convention leakage
+- Repository boundary contract violations
+
+**Recommendation for post-P1:**
+Add pre-freeze validation that enforces Domain layer uses idiomatic TypeScript naming (camelCase), regardless of database convention, and that type contracts match implementation.
+
+This is **NOT blocking P1** - issue was already frozen. But should be addressed in future freeze procedures to prevent sealing defects into "production baseline."
 
 ---
 
