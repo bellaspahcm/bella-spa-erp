@@ -1,0 +1,26 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "skipLibCheck": true,
+    "incremental": false
+  },
+  "include": [
+    "next-env.d.ts",
+    "src/services/**/*.ts",
+    "src/services/**/*.tsx",
+    "src/lib/decision-engine/**/*.ts",
+    "src/lib/decision-engine/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    "src/platform",
+    "src/products",
+    "**/__tests__",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
+  ]
+}

@@ -68,19 +68,19 @@ export class InventoryDomain {
     const now = new Date();
 
     const inventory: Inventory = {
-      id: props.id || crypto.randomUUID(),
+      id: { value: props.id || crypto.randomUUID() },
       tenantId: props.tenantId,
-      itemId: props.itemId,
-      locationId: props.locationId,
+      itemId: { value: props.itemId },
+      locationId: { value: props.locationId },
       locationType: props.locationType,
       
       quantityOnHand: props.quantityOnHand,
       quantityReserved,
       quantityAvailable: props.quantityOnHand - quantityReserved,
       
-      lotNumber: props.lotNumber || null,
-      serialNumber: props.serialNumber || null,
-      expiryDate: props.expiryDate || null,
+      lotNumber: props.lotNumber ? { value: props.lotNumber } : undefined,
+      serialNumber: props.serialNumber ? { value: props.serialNumber } : undefined,
+      expiryDate: props.expiryDate || undefined,
       
       status: props.status || 'AVAILABLE',
       

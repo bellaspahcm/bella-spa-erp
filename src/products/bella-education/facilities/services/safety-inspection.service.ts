@@ -8,6 +8,7 @@
 
 import { PreschoolFacilitiesRepository } from '../repositories/preschool-facilities.repository';
 import { FacilityZoneService } from './facility-zone.service';
+import { FacilitiesProjectionBridge } from '../bridges/facilities-projection.bridge';
 import { 
   InspectionSchedule, 
   InspectionLog, 

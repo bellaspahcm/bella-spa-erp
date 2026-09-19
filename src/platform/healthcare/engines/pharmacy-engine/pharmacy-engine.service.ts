@@ -22,6 +22,8 @@ import { eventBus } from '@/platform/host/event-bus';
 import type { IDecisionContract } from '../../contracts/cds-engine.contract';
 import { SupabasePharmacyRepository } from './repositories/supabase-pharmacy.repository';
 import { Prescription, MAREntry, type PrescriptionStatus } from './domain/prescription.entity';
+
+type PrescriptionRow = Database['public']['Tables']['hc_prescriptions']['Row'];
 import {
   AllergyPolicy,
   InteractionPolicy,

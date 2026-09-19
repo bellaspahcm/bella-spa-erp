@@ -53,7 +53,7 @@ describe('MovementDomain', () => {
       const result = MovementDomain.create(props);
 
       expect(result.isSuccess).toBe(true);
-      expect(result.value?.movementNumber).toBe('MOV-001');
+      expect(result.value?.movementNumber.value).toBe('MOV-001');
     });
   });
 
@@ -194,7 +194,7 @@ describe('MovementDomain', () => {
       const result = MovementDomain.create(props);
 
       expect(result.isSuccess).toBe(true);
-      expect(result.value?.toLocationId).toBe('loc-1');
+      expect(result.value?.toLocationId?.value).toBe('loc-1');
     });
   });
 
@@ -225,7 +225,7 @@ describe('MovementDomain', () => {
       const result = MovementDomain.create(props);
 
       expect(result.isSuccess).toBe(true);
-      expect(result.value?.fromLocationId).toBe('loc-1');
+      expect(result.value?.fromLocationId?.value).toBe('loc-1');
     });
   });
 
@@ -270,8 +270,8 @@ describe('MovementDomain', () => {
       const result = MovementDomain.create(props);
 
       expect(result.isSuccess).toBe(true);
-      expect(result.value?.fromLocationId).toBe('loc-1');
-      expect(result.value?.toLocationId).toBe('loc-2');
+      expect(result.value?.fromLocationId?.value).toBe('loc-1');
+      expect(result.value?.toLocationId?.value).toBe('loc-2');
     });
   });
 
@@ -336,7 +336,7 @@ describe('MovementDomain', () => {
       const result = MovementDomain.create(props);
 
       expect(result.isSuccess).toBe(true);
-      expect(result.value?.unitCost).toBeNull();
+      expect(result.value?.unitCost).toBeUndefined();
     });
   });
 
@@ -437,8 +437,8 @@ describe('MovementDomain', () => {
       const result = MovementDomain.create(props);
 
       expect(result.isSuccess).toBe(true);
-      expect(result.value?.serialNumber).toBe('SN-001');
-      expect(result.value?.lotNumber).toBe('LOT-001');
+      expect(result.value?.serialNumber?.value).toBe('SN-001');
+      expect(result.value?.lotNumber?.value).toBe('LOT-001');
     });
 
     it('should succeed if lot number without serial number', () => {
@@ -450,8 +450,8 @@ describe('MovementDomain', () => {
       const result = MovementDomain.create(props);
 
       expect(result.isSuccess).toBe(true);
-      expect(result.value?.lotNumber).toBe('LOT-001');
-      expect(result.value?.serialNumber).toBeNull();
+      expect(result.value?.lotNumber?.value).toBe('LOT-001');
+      expect(result.value?.serialNumber).toBeUndefined();
     });
   });
 
@@ -722,7 +722,7 @@ describe('MovementDomain', () => {
       const movement = createResult.value!;
       const totalCost = MovementDomain.calculateTotalCost(movement);
 
-      expect(totalCost).toBeNull();
+      expect(totalCost).toBeUndefined();
     });
 
     it('should handle fractional quantities', () => {
@@ -1010,7 +1010,7 @@ describe('MovementDomain', () => {
       });
 
       expect(result.isSuccess).toBe(true);
-      expect(result.value?.completedAt).toBeNull();
+      expect(result.value?.completedAt).toBeUndefined();
     });
   });
 

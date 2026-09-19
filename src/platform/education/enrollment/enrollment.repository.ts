@@ -3,6 +3,7 @@
  */
 
 import { createClient } from '@/lib/supabase-server';
+import type { Json } from '@/types/database.types';
 import {
   Enrollment,
   EnrollmentsTableInsert,
@@ -14,7 +15,7 @@ export class EnrollmentRepository {
   static async create(enrollment: Enrollment): Promise<Enrollment> {
     const supabase = await createClient();
 
-    const row: EnrollmentsTableInsert = {
+    const { data, error } = await supabase.from('enrollments').insert({
       enrollment_id: enrollment.enrollmentId,
       tenant_id: enrollment.tenantId,
       student_id: enrollment.studentId,
@@ -27,14 +28,12 @@ export class EnrollmentRepository {
       grade_status: enrollment.gradeStatus,
       credits_earned: enrollment.creditsEarned ?? null,
       attendance_percentage: enrollment.attendancePercentage ?? null,
-      metadata: enrollment.metadata ?? null,
+      metadata: (enrollment.metadata ?? null) as Json,
       created_at: enrollment.createdAt,
       updated_at: enrollment.updatedAt,
       created_by: enrollment.createdBy ?? null,
       updated_by: enrollment.updatedBy ?? null,
-    };
-
-    const { data, error } = await supabase.from('enrollments').insert(row).select().single();
+    }).select().single();
 
     if (error) {
       if (error.code === '23503') {
@@ -109,22 +108,20 @@ export class EnrollmentRepository {
   static async update(enrollment: Enrollment): Promise<Enrollment> {
     const supabase = await createClient();
 
-    const updateData: EnrollmentsTableUpdate = {
-      status: enrollment.status,
-      completion_date: enrollment.completionDate ?? null,
-      grade: enrollment.grade ?? null,
-      grade_points: enrollment.gradePoints ?? null,
-      grade_status: enrollment.gradeStatus,
-      credits_earned: enrollment.creditsEarned ?? null,
-      attendance_percentage: enrollment.attendancePercentage ?? null,
-      metadata: enrollment.metadata ?? null,
-      updated_at: enrollment.updatedAt,
-      updated_by: enrollment.updatedBy ?? null,
-    };
-
     const { data, error } = await supabase
       .from('enrollments')
-      .update(updateData)
+      .update({
+        status: enrollment.status,
+        completion_date: enrollment.completionDate ?? null,
+        grade: enrollment.grade ?? null,
+        grade_points: enrollment.gradePoints ?? null,
+        grade_status: enrollment.gradeStatus,
+        credits_earned: enrollment.creditsEarned ?? null,
+        attendance_percentage: enrollment.attendancePercentage ?? null,
+        metadata: (enrollment.metadata ?? null) as Json,
+        updated_at: enrollment.updatedAt,
+        updated_by: enrollment.updatedBy ?? null,
+      })
       .eq('enrollment_id', enrollment.enrollmentId)
       .eq('tenant_id', enrollment.tenantId)
       .select()

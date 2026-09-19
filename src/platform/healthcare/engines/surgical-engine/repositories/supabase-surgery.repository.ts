@@ -10,6 +10,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
 import { BaseSupabaseRepositoryPrimitive } from '../../../../core/repository/base-supabase-repository.primitive';
 import { SurgicalCase, SurgicalCaseStatus } from '../domain/surgical-case.entity';
 import { ISurgeryRepository } from './surgery-repository.interface';
@@ -22,7 +23,7 @@ export class SurgicalResourceConflictError extends Error {
 }
 
 export class SupabaseSurgeryRepository extends BaseSupabaseRepositoryPrimitive implements ISurgeryRepository {
-  constructor(private readonly supabase: SupabaseClient<Record<string, unknown>>) {
+  constructor(private readonly supabase: SupabaseClient<Database>) {
     super();
   }
 
@@ -225,9 +226,10 @@ export class SupabaseSurgeryRepository extends BaseSupabaseRepositoryPrimitive i
     return { orOverlaps, surgeonOverlaps };
   }
 
-  private handleError(error: Record<string, unknown>): never {
-    const code = String(error.code || '');
-    const message = String(error.message || '');
+  private handleError(error: Record<string, unknown> | { message: string; code?: string }): never {
+    const errorObj = error as Record<string, unknown>;
+    const code = String(errorObj.code || '');
+    const message = String(errorObj.message || '');
 
     if (code === '23P01') {
       if (message.includes('exclude_or_overlap')) {

@@ -218,13 +218,13 @@ describe('Real Estate Kernel & Accounting Kernel — Integration Tests', () => {
 
       expect(res.success).toBe(true);
       expect(res.reservationId).toBeDefined();
-      expect(mockProductsDb[0].status).toBe('held');
+      expect(mockProductsDb[0].status).toBe('booked'); // Domain 'held' maps to DB 'booked'
       expect(mockProductsDb[0].owner_name).toBe('cust-1');
       expect(mockReservationsDb.length).toBe(1);
     });
 
     test('Should release active hold successfully', async () => {
-      mockProductsDb[0].status = 'held';
+      mockProductsDb[0].status = 'booked'; // DB state (domain 'held' persists as 'booked')
       mockProductsDb[0].owner_name = 'cust-1';
       // Seed a reservation in mock DB
       mockReservationsDb.push({
@@ -250,7 +250,7 @@ describe('Real Estate Kernel & Accounting Kernel — Integration Tests', () => {
 
   describe('Property Contract & Ledger Posting Integration', () => {
     test('Should sign contract, update inventory status, and post balanced journal entries', async () => {
-      mockProductsDb[0].status = 'held';
+      mockProductsDb[0].status = 'booked'; // DB state (domain 'held' persists as 'booked')
       mockProductsDb[0].owner_name = 'cust-1';
 
       const accountingService = new AccountingService(mockSupabase);

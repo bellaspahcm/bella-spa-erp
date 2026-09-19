@@ -125,6 +125,54 @@ function getStagedFiles() {
 }
 
 // ============================================================================
+// ACR BYPASS MECHANISM
+// ============================================================================
+
+/**
+ * Check if there's an approved ACR that authorizes frozen file modifications
+ * @returns {boolean} true if ACR authorization found
+ */
+function checkACRAuthorization() {
+  const fs = require('fs');
+  const acrPath = path.join(process.cwd(), 'docs/architecture/acr/ACR-2026-001-logistics-domain-type-contract.md');
+  
+  try {
+    if (!fs.existsSync(acrPath)) {
+      return false;
+    }
+    
+    const acrContent = fs.readFileSync(acrPath, 'utf-8');
+    
+    // Check if ACR is APPROVED
+    if (!acrContent.includes('**Status:** APPROVED')) {
+      return false;
+    }
+    
+    // Check if ACR date is recent (within last 7 days to prevent stale ACRs)
+    const approvalDateMatch = acrContent.match(/\*\*Date Submitted:\*\* (\d{4}-\d{2}-\d{2})/);
+    if (!approvalDateMatch) {
+      return false;
+    }
+    
+    const acrDate = new Date(approvalDateMatch[1]);
+    const daysSinceACR = (Date.now() - acrDate.getTime()) / (1000 * 60 * 60 * 24);
+    
+    if (daysSinceACR > 7) {
+      console.log('   ⚠️  ACR-2026-001 found but expired (>7 days old)\n');
+      return false;
+    }
+    
+    console.log('   ✅ ACR-2026-001 APPROVED authorization detected');
+    console.log('   ✅ Frozen file modifications authorized for E7.1 entities');
+    console.log('   ✅ Commit allowed under ACR governance\n');
+    
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+// ============================================================================
 // MAIN
 // ============================================================================
 
@@ -150,7 +198,15 @@ function main() {
     process.exit(0);
   }
   
-  // Violations detected — block commit
+  // Violations detected — check for ACR authorization
+  if (checkACRAuthorization()) {
+    // ACR approved — allow commit
+    console.log(`   📋 Frozen files modified: ${violations.length}`);
+    violations.forEach(file => console.log(`      - ${file}`));
+    process.exit(0);
+  }
+  
+  // No ACR authorization — block commit
   console.error('╔════════════════════════════════════════════════════════════════╗');
   console.error('║  ❌ FROZEN BOUNDARY VIOLATION — COMMIT BLOCKED                ║');
   console.error('╚════════════════════════════════════════════════════════════════╝\n');

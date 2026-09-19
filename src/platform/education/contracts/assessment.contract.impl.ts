@@ -1,5 +1,6 @@
 import { IEducationAssessmentContract, RecordScoreInput, EducationAssessmentDTO } from './assessment.contract';
 import { AssessmentService } from '../assessment/assessment.service';
+import { AssessmentType } from '../assessment/assessment.types';
 import { EnrollmentService } from '../enrollment/enrollment.service';
 import { createClient } from '@/lib/supabase-server';
 
@@ -14,16 +15,26 @@ export class AssessmentContractImpl implements IEducationAssessmentContract {
     const supabase = await createClient();
     const service = new AssessmentService(supabase);
 
+    // Map contract scoreType to domain AssessmentType
+    const mapScoreType = (scoreType: 'quiz' | 'midterm' | 'final' | 'homework'): AssessmentType => {
+      switch (scoreType) {
+        case 'quiz': return 'quiz';
+        case 'midterm': return 'exam';
+        case 'final': return 'exam';
+        case 'homework': return 'assignment';
+      }
+    };
+
     // 2. Find or create assessment definition for the course
     const assessments = await service.getAssessmentsByCoruse(enrollment.courseId, input.tenantId);
-    let assessment = assessments.find(a => a.type === input.scoreType);
+    let assessment = assessments.find(a => a.type === mapScoreType(input.scoreType));
     if (!assessment) {
       assessment = await service.createAssessment({
         tenantId: input.tenantId,
         courseId: enrollment.courseId,
         assessmentCode: `ASM-${enrollment.courseId.slice(0, 8)}-${input.scoreType.toUpperCase()}`,
         title: `${input.scoreType.toUpperCase()} for course`,
-        type: input.scoreType,
+        type: mapScoreType(input.scoreType),
         maxScore: 100,
         passingScore: 50,
         weight: input.weight,
@@ -38,6 +49,7 @@ export class AssessmentContractImpl implements IEducationAssessmentContract {
       tenantId: input.tenantId,
       assessmentId: assessment.assessmentId,
       studentId: enrollment.studentId,
+      createdBy: '00000000-0000-0000-0000-000000000001',
     });
 
     // submit result
@@ -46,6 +58,7 @@ export class AssessmentContractImpl implements IEducationAssessmentContract {
     // grade it
     result = await service.gradeAssessmentResult(result.resultId, input.tenantId, {
       score: input.grade,
+      grade: input.grade >= 50 ? 'Pass' : 'Fail',
       feedback: 'Graded by contract implementation',
       gradedBy: '00000000-0000-0000-0000-000000000001',
     });
@@ -67,6 +80,16 @@ export class AssessmentContractImpl implements IEducationAssessmentContract {
       return [];
     }
 
+    // Reverse map domain AssessmentType to contract scoreType
+    const mapToScoreType = (type: AssessmentType): 'quiz' | 'midterm' | 'final' | 'homework' | null => {
+      switch (type) {
+        case 'quiz': return 'quiz';
+        case 'exam': return 'final'; // exam could be midterm or final, defaulting to final
+        case 'assignment': return 'homework';
+        default: return null; // project, presentation not in contract
+      }
+    };
+
     const supabase = await createClient();
     const service = new AssessmentService(supabase);
 
@@ -76,15 +99,18 @@ export class AssessmentContractImpl implements IEducationAssessmentContract {
     for (const res of results) {
       const asm = await service.getAssessment(res.assessmentId, tenantId);
       if (asm && asm.courseId === enrollment.courseId) {
-        scores.push({
-          id: res.resultId,
-          tenantId: res.tenantId,
-          enrollmentId: enrollmentId,
-          scoreType: asm.type as 'quiz' | 'midterm' | 'final' | 'homework',
-          grade: res.score ?? 0,
-          weight: asm.weight,
-          occurredAt: res.createdAt.toISOString(),
-        });
+        const scoreType = mapToScoreType(asm.type);
+        if (scoreType) {
+          scores.push({
+            id: res.resultId,
+            tenantId: res.tenantId,
+            enrollmentId: enrollmentId,
+            scoreType: scoreType,
+            grade: res.score ?? 0,
+            weight: asm.weight,
+            occurredAt: res.createdAt.toISOString(),
+          });
+        }
       }
     }
 

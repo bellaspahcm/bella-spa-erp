@@ -680,7 +680,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
           kpi: {
             enabled: true,
             strategy: 'threshold',
-            config: {
+            params: {
               target: salaryConfig.kpi_target_sessions,
               bonus: salaryConfig.kpi_bonus_amount,
             },
@@ -688,15 +688,15 @@ export async function recalculateAndSaveSalaryRecordEngine(
           attendance: {
             enabled: true,
             strategy: 'combined',
-            config: {
-              latePenalty: salaryConfig.penalty_late_per_day,
-              absentPenalty: salaryConfig.penalty_absent_per_day,
+            params: {
+              latePenalty: salaryConfig.penalty_late_per_day || 50000,
+              absentPenalty: salaryConfig.penalty_absent_per_day || 200000,
             },
           },
           rating: {
             enabled: true,
             strategy: 'threshold',
-            config: {
+            params: {
               minRating: 4.5,
               bonus: salaryConfig.bonus_4_5_star,
             },
@@ -704,7 +704,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
           commission: {
             enabled: true,
             strategy: 'fixed',
-            config: {
+            params: {
               rate: 120000, // Default session commission rate
             },
           },

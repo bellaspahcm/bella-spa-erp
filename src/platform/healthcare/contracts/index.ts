@@ -16,7 +16,7 @@ export * from './anesthesia-engine.contract';
 export * from './cssd-engine.contract';
 export * from './pacu-engine.contract';
 export * from './or-readiness-engine.contract';
-export * from './icu-engine.contract';
+export * from '../engines/icu-engine/contracts/icu-engine.contract';
 export * from './emergency-engine.contract';
 export * from './blood-bank-engine.contract';
 export * from './cds-engine.contract';

@@ -37,7 +37,13 @@ export async function bootstrapUnifiedPlatform(options: PlatformBootstrapOptions
   console.log('[MetaPlatform] Healthcare OS registered successfully.');
 
   // 3. Education OS Registration
-  const educationRepo = new SupabaseEducationRepository(options.supabaseClient);
+  // Note: Type assertion required due to TS inference issue with SupabaseClient generics.
+  // Both caller (PlatformBootstrapOptions) and callee (SupabaseEducationRepository)
+  // use SupabaseClient<Record<string, unknown>>, but compiler infers Database type
+  // from other education modules. This is safe as the types are structurally compatible.
+  const educationRepo = new SupabaseEducationRepository(
+    options.supabaseClient as SupabaseClient<Record<string, unknown>>
+  );
   const educationService = new EducationEngineService(educationRepo, eventBus);
   registerEducationEngine(contractRegistry, educationService);
   console.log('[MetaPlatform] Education OS registered successfully.');

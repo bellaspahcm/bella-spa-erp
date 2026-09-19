@@ -269,34 +269,3 @@ export interface ContractRetiredEvent {
     version: string;
   };
 }
-
-// ============================================================================
-// Exports
-// ============================================================================
-
-export type {
-  ContractMetadata,
-  ContractType,
-  ContractStatus,
-  EndpointDefinition,
-  HttpMethod,
-  SchemaReference,
-  ErrorSchemaDefinition,
-  AuthenticationRequirement,
-  RateLimitConfig,
-  EventDefinition,
-  RetryPolicy,
-  EventExample,
-  SchemaDefinition,
-  JSONSchema,
-  JSONSchemaType,
-  ContractDependency,
-  DeprecationInfo,
-  ValidationResult,
-  ValidationError,
-  ValidationWarning,
-  ContractQueryFilter,
-  ContractRegisteredEvent,
-  ContractDeprecatedEvent,
-  ContractRetiredEvent,
-};

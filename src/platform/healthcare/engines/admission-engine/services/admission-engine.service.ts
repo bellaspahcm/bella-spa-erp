@@ -19,7 +19,7 @@ import type {
   AdmissionDTO,
 } from '../contracts/admission-engine.contract';
 import type { IEncounterReader } from '../contracts/encounter-reader.interface';
-import type { EngineResponse } from '../../shared-kernel/types';
+import type { EngineResponse } from '../../../shared-kernel/types';
 import { InpatientAdmission } from '../domain/inpatient-admission.entity';
 import { IAdmissionRepository } from '../repositories/supabase-admission.repository';
 import { ADMISSION_EVENT_TYPES } from '../events/admission.events';

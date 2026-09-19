@@ -18,6 +18,37 @@ import type {
   OrgUnitHierarchy
 } from './index';
 
+// Extend Database type to include org_unit RPC functions
+// These functions exist in DB but not yet in generated types
+type ExtendedDatabase = Database & {
+  public: Database['public'] & {
+    Functions: Database['public']['Functions'] & {
+      get_org_unit_hierarchy: {
+        Args: { p_root_id: string | null; p_tenant_id: string };
+        Returns: Array<{
+          id: string;
+          tenant_id: string;
+          unit_type: string;
+          name: string;
+          code: string | null;
+          parent_id: string | null;
+          is_active: boolean;
+          metadata: Database['public']['Tables']['org_units']['Row']['metadata'];
+          created_at: string;
+          updated_at: string;
+          depth: number;
+          path: string[];
+          path_names: string[];
+        }>;
+      };
+      get_org_unit_descendants: {
+        Args: { p_unit_id: string; p_tenant_id: string };
+        Returns: Array<{ id: string }>;
+      };
+    };
+  };
+};
+
 type OrgUnitsRow = Database['public']['Tables']['org_units']['Row'];
 type OrgUnitsInsert = Database['public']['Tables']['org_units']['Insert'];
 type OrgUnitsUpdate = Database['public']['Tables']['org_units']['Update'];
@@ -42,7 +73,7 @@ export interface IOrgUnitRepository {
  * Supabase Org Unit Repository
  */
 export class SupabaseOrgUnitRepository implements IOrgUnitRepository {
-  constructor(private supabase: SupabaseClient<Database>) {}
+  constructor(private supabase: SupabaseClient<ExtendedDatabase>) {}
 
   /**
    * Create organization unit
@@ -55,7 +86,7 @@ export class SupabaseOrgUnitRepository implements IOrgUnitRepository {
       code: input.code ?? null,
       parent_id: input.parentId ?? null,
       is_active: true,
-      metadata: input.metadata ?? {},
+      metadata: input.metadata ?? null,
     };
 
     const { data, error } = await this.supabase
@@ -80,7 +111,9 @@ export class SupabaseOrgUnitRepository implements IOrgUnitRepository {
     if (updates.code !== undefined) update.code = updates.code ?? null;
     if (updates.parentId !== undefined) update.parent_id = updates.parentId ?? null;
     if (updates.isActive !== undefined) update.is_active = updates.isActive;
-    if (updates.metadata !== undefined) update.metadata = updates.metadata;
+    if (updates.metadata !== undefined) {
+      update.metadata = updates.metadata;
+    }
 
     const { data, error } = await this.supabase
       .from('org_units')
@@ -207,23 +240,23 @@ export class SupabaseOrgUnitRepository implements IOrgUnitRepository {
       throw new Error(`Failed to get hierarchy: ${error.message}`);
     }
 
-    // Map RPC result to OrgUnitHierarchy
-    return (data || []).map((row: any) => ({
+    // Map RPC result to OrgUnitHierarchy - types from ExtendedDatabase
+    return (data || []).map((row) => ({
       unit: {
         id: row.id,
         tenantId: row.tenant_id,
         unitType: row.unit_type as OrgUnitType,
         name: row.name,
-        code: row.code,
-        parentId: row.parent_id,
+        code: row.code ?? undefined,
+        parentId: row.parent_id ?? undefined,
         isActive: row.is_active,
-        metadata: row.metadata || {},
+        metadata: row.metadata ?? null,
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at)
       },
       depth: row.depth,
-      path: row.path || [],
-      pathNames: row.path_names || []
+      path: row.path,
+      pathNames: row.path_names
     }));
   }
 
@@ -242,7 +275,7 @@ export class SupabaseOrgUnitRepository implements IOrgUnitRepository {
       throw new Error(`Failed to get descendants: ${error.message}`);
     }
 
-    return (data || []).map((row: any) => row.id);
+    return (data || []).map((row) => row.id);
   }
 
   /**
@@ -297,7 +330,7 @@ export class SupabaseOrgUnitRepository implements IOrgUnitRepository {
       code: row.code ?? undefined,
       parentId: row.parent_id ?? undefined,
       isActive: row.is_active,
-      metadata: (row.metadata as Record<string, unknown>) || {},
+      metadata: row.metadata ?? null,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at)
     };
@@ -313,7 +346,7 @@ export function createOrgUnitRepository(): IOrgUnitRepository {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
   
-  const supabase = createClient<Database>(supabaseUrl, supabaseKey);
+  const supabase = createClient<ExtendedDatabase>(supabaseUrl, supabaseKey);
   
   return new SupabaseOrgUnitRepository(supabase);
 }

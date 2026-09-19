@@ -334,7 +334,7 @@ export class AssessmentRepository {
       status: row.status as Assessment['status'],
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
-      createdBy: row.created_by,
+      createdBy: row.created_by ?? '',
     };
   }
 
