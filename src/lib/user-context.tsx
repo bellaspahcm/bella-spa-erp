@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { getCachedCurrentUser, getCachedTenantSettings } from '@/lib/dashboard-client-context';
+import { productResolver } from '@/platform/registry/product-resolver';
+import type { ProductDefinition } from '@/platform/registry/product-registry';
 
 type CurrentUserResult = Awaited<ReturnType<typeof getCachedCurrentUser>>;
 type TenantSettingsResult = Awaited<ReturnType<typeof getCachedTenantSettings>>;
@@ -10,6 +12,7 @@ interface UserContextType {
   user: CurrentUserResult;
   userRole: string | null;
   tenantSettings: TenantSettingsResult;
+  product: ProductDefinition | null;
   isLoading: boolean;
 }
 
@@ -19,6 +22,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<CurrentUserResult>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [tenantSettings, setTenantSettings] = useState<TenantSettingsResult>(null);
+  const [product, setProduct] = useState<ProductDefinition | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -34,6 +38,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           setUserRole(userData.role?.toLowerCase() || null);
         }
         setTenantSettings(tenantData);
+
+        // Resolve product identity if tenant has product_key
+        if (tenantData?.product_key) {
+          const resolved = productResolver.tryResolve({
+            id: tenantData.id,
+            product_key: tenantData.product_key
+          });
+          setProduct(resolved?.product ?? null);
+        } else {
+          setProduct(null);
+        }
       } catch (error) {
         console.error('[UserProvider] Error loading user context data:', error);
       } finally {
@@ -44,7 +59,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <UserContext.Provider value={{ user, userRole, tenantSettings, isLoading }}>
+    <UserContext.Provider value={{ user, userRole, tenantSettings, product, isLoading }}>
       {children}
     </UserContext.Provider>
   );
