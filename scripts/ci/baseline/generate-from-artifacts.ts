@@ -128,6 +128,17 @@ function loadArtifact(
   // Validation relies on workflow_run_id in collection-summary.json instead.
   // Timestamp check removed to support sequential collection workflow.
   
+  // FAIL-CLOSED: Invalid artifacts must block generation
+  if (metadata.json_valid === false) {
+    throw new Error(
+      `${name} artifact is invalid (json_valid: false):\n` +
+      `  File: ${artifactPath}\n` +
+      `  Error: ${(metadata as any).error || 'Unknown parse error'}\n` +
+      `  GOVERNANCE: Collector/parser failure MUST NOT become zero findings.\n` +
+      `  Fix the collector or parser before generating baseline.`
+    );
+  }
+  
   return { output, metadata };
 }
 

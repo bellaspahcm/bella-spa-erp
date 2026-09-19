@@ -116,7 +116,7 @@ jobs:
           COMMIT_SHA: ${{ inputs.commit_sha || github.sha }}
         run: |
           echo "Running Jest..."
-          npx jest --json --testPathPattern="src/" > jest-output.json 2>&1 || true
+          npx jest --json --testPathPatterns="src/" > jest-output.json 2>&1 || true
           
           # Verify JSON structure
           if jq -e '.testResults' jest-output.json > /dev/null 2>&1; then
