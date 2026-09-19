@@ -262,29 +262,7 @@ function clearTenantBrandRuntimeCache() {
 
 function resolveTenantBrandDisplay(settings: Awaited<ReturnType<typeof getCachedTenantSettings>>): TenantBrandDisplay {
   if (!settings) {
-    if (typeof window !== 'undefined') {
-      const path = window.location.pathname;
-      if (path.startsWith('/dashboard/hospital') || path.startsWith('/dashboard/medical') || path.startsWith('/dashboard/healthcare') || path.startsWith('/dashboard/dental')) {
-        return resolveTenantBrandIdentity({
-          enabledModules: { bella_healthcare: true },
-          tenantName: path.includes('dental') ? 'Bella Dental Clinic' : 'Bella Medical Clinic',
-          surface: 'app',
-        });
-      } else if (path.startsWith('/dashboard/real-estate')) {
-        return resolveTenantBrandIdentity({
-          enabledModules: { real_estate: true },
-          tenantName: 'Bella Land',
-          surface: 'app',
-        });
-      } else if (path.startsWith('/dashboard/bella-auto')) {
-        return resolveTenantBrandIdentity({
-          enabledModules: { bella_auto: true },
-          tenantName: 'Bella Auto',
-          surface: 'app',
-        });
-      }
-    }
-    return DEFAULT_SIDEBAR_BRAND;
+    return NEUTRAL_SIDEBAR_BRAND;
   }
 
   return resolveTenantBrandIdentity({
@@ -1014,11 +992,7 @@ export function Sidebar() {
                     </span>
                   )}
                 </h2>
-                <span className={cn(
-                  "text-[8px] font-extrabold uppercase tracking-[0.25em] block mt-0.5 opacity-80 beauty-erp-brand-subtitle"
-                )}>
-                  {tenantBrand.subtitle}
-                </span>
+                {/* Subtitle hidden to prevent cross-vertical identity leaks */}
               </div>
             </Link>
           )}
@@ -1216,7 +1190,7 @@ export function Sidebar() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate leading-tight beauty-erp-profile-name">
-                  {user?.full_name || 'Admin Preschool'}
+                  {user?.full_name || 'Tài khoản'}
                 </p>
                 <p className="text-[8.5px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-[0.08em] mt-0.5 beauty-erp-profile-role">
                   {roleLabel}
