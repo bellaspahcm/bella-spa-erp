@@ -25,6 +25,8 @@ import {
   HoldReceiptResult,
   ReleaseHoldInput,
   ReleaseHoldResult,
+  ListReceiptsInput,
+  ListReceiptsResult,
 } from '../shared-kernel/types/warehouse.types';
 import {
   validateCreateReceipt,

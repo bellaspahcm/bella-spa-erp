@@ -281,7 +281,7 @@ export default function PatientQueuePage() {
                 <PremiumSelect
                   options={STATION_OPTIONS}
                   value={newTicket.station}
-                  onChange={(val) => setNewTicket({ ...newTicket, station: val as unknown })}
+                  onChange={(val) => setNewTicket({ ...newTicket, station: val as QueueItem['station'] })}
                   buttonClassName="px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 font-bold text-slate-900 dark:text-white text-xs h-10"
                 />
               </div>
