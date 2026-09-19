@@ -387,5 +387,34 @@ const bellaHaircutProduct: ProductDefinition = {
   navigationProfile: 'haircut'
 };
 
-// Register pilot product
+/**
+ * Bella Mommy Baby Care Product Definition.
+ * 
+ * @remarks
+ * **Production Tenant**: Bella Spa Headquarter
+ * - Tenant ID: 0e66365b-42b0-420e-acca-f7d7692e125e
+ * - Active Users: 13
+ * - Total Bookings: 8
+ * - Status: Production (active since 2026-05-12)
+ * 
+ * **Module Dependency**:
+ * - Requires `babycare` module for baby care services
+ * 
+ * **Service Specialization**:
+ * - Focuses on baby care, infant swimming, baby spa services
+ * - Standard navigation (uses default dashboard routes)
+ * 
+ * @see docs/architecture/B1_BABYCARE_PRODUCTION_AUDIT.md
+ */
+const bellaBabycareProduct: ProductDefinition = {
+  productKey: 'bella_babycare',
+  displayName: 'Bella Mommy Baby Care',
+  requiredModules: ['babycare'],
+  serviceProfile: 'babycare',
+  defaultRoute: '/dashboard',
+  navigationProfile: 'babycare'
+};
+
+// Register products
 productRegistry.register(bellaHaircutProduct);
+productRegistry.register(bellaBabycareProduct);

@@ -84,6 +84,38 @@ describe('UserProvider Product Resolution', () => {
       expect(screen.getByTestId('role')).toHaveTextContent('admin');
       expect(screen.getByTestId('tenant')).toHaveTextContent('tenant-haircut');
     });
+
+    it('should resolve product when product_key=bella_babycare (B3.1 UI Identity Proof)', async () => {
+      mockGetCachedCurrentUser.mockResolvedValue({
+        id: 'user-babycare',
+        role: 'ADMIN',
+      } as any);
+
+      mockGetCachedTenantSettings.mockResolvedValue({
+        id: '0e66365b-42b0-420e-acca-f7d7692e125e',
+        product_key: 'bella_babycare',
+        name: 'Bella Spa Headquarter',
+      } as any);
+
+      render(
+        <UserProvider>
+          <TestConsumer />
+        </UserProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('loading')).toHaveTextContent('ready');
+      });
+
+      // CRITICAL: Product should resolve to "Bella Mommy Baby Care"
+      expect(screen.getByTestId('product')).toHaveTextContent('bella_babycare');
+      expect(screen.getByTestId('product-display')).toHaveTextContent('Bella Mommy Baby Care');
+
+      // Existing behavior unchanged
+      expect(screen.getByTestId('user')).toHaveTextContent('user-babycare');
+      expect(screen.getByTestId('role')).toHaveTextContent('admin');
+      expect(screen.getByTestId('tenant')).toHaveTextContent('0e66365b-42b0-420e-acca-f7d7692e125e');
+    });
   });
 
   describe('Product Resolution Null Cases', () => {
