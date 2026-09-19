@@ -19,20 +19,13 @@
 
 ## All Findings Status
 
-### ✅ RESOLVED (Verified)
+### ✅ RESOLVED (CI Verified)
 
 **#1 - queue/page.tsx:284**
 - Issue: Unsafe `as unknown` cast
 - Fix: Changed to `as QueueItem['station']`
 - Commit: a6198f9a
-- Verified: CI (NEW 3→1)
-
-**#2 - bootstrap.ts:40** ← **CORRECTED @ 016e0f35**
-- Issue: SupabaseClient type contract mismatch
-- Initial fix: Type assertion @ 311d0de6 ❌
-- **Proper fix: Type ownership alignment @ 016e0f35** ✅
-- Classification: TYPE_CONTRACT_MISMATCH (not FALSE_POSITIVE)
-- Verified: Test 4/4 PASS, awaiting CI confirmation
+- Verified: ✅ CI (NEW 3→1)
 
 **#3-9 - Logistics Repositories (7 findings)**
 - Issue: Repository returns `| null`, domain expects `| undefined`
@@ -40,13 +33,23 @@
 - Classification: INDIRECT_REGRESSION
 - Fix: 7 boundary mappings changed `null` → `undefined`
 - Commit: 3e0be3b2
-- Verified: CI (NEW 10→3)
+- Verified: ✅ CI (NEW 10→3)
 
 **#10 - receipt.service.ts:1087**
 - Issue: Missing imports `ListReceiptsInput`, `ListReceiptsResult`
 - Fix: Added imports from shared-kernel
 - Commit: a6198f9a
-- Verified: CI (NEW 3→1)
+- Verified: ✅ CI (NEW 3→1)
+
+### 🔧 PROPER FIX APPLIED (Awaiting CI Verification)
+
+**#2 - bootstrap.ts:40** ← **CORRECTED @ 016e0f35**
+- Issue: SupabaseClient type contract mismatch
+- Initial approach: Type assertion @ 311d0de6 ❌ (masked issue)
+- **Proper fix: Type ownership alignment @ 016e0f35** ✅
+- Classification: TYPE_CONTRACT_MISMATCH (not FALSE_POSITIVE)
+- Verified: ✅ Test 4/4 PASS
+- CI verification: ⏳ PENDING
 
 ---
 
@@ -103,17 +106,17 @@ new SupabaseEducationRepository(options.supabaseClient)  // ✅
 
 **Expected @ 016e0f35:**
 ```
-NEW violations: 0
-Gate: ✅ PASS
+NEW violations: 0 (projected)
+Gate: Expected PASS
 ```
 
 **Reasoning:**
-- 311d0de6: NEW=0 (assertion silenced error)
-- 016e0f35: NEW=0 (proper fix, no violation)
-- Net change: Assertion removal + proper fix = same compiler state
-- But correctness: WRONG → CORRECT
+- Assertion removal + proper fix = net zero violations
+- But correctness: assertion workaround → proper contract alignment
+- Test verification: ✅ PASS (4/4)
+- Compiler state: Expected clean
 
-**Awaiting:** CI baseline comparator confirmation
+**Status:** ⏳ Awaiting CI baseline comparator authoritative confirmation
 
 ---
 
@@ -187,8 +190,8 @@ Gate: ✅ PASS
 
 ---
 
-**Status:** ✅ ALL FINDINGS PROPERLY RESOLVED  
+**Status:** 🔧 ALL FINDINGS FIXED — AWAITING CI VERIFICATION  
 **Commit:** 016e0f35  
 **NEW (projected):** 0  
-**Gate:** ✅ Expected PASS  
-**Next:** CI baseline comparator verification
+**Gate:** Expected PASS (⏳ awaiting comparator)  
+**Next:** CI baseline comparator authoritative verification

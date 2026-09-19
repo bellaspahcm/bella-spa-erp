@@ -129,21 +129,21 @@ Time: 8.558s
 
 ## TypeScript NEW Count Projection
 
-**311d0de6 state:**
-```
-NEW = 0 (assertion silenced the error)
-```
-
 **016e0f35 expected:**
 ```
-NEW = 0 (proper fix, no violation)
+NEW = 0 (projected - awaiting CI comparator)
 ```
 
-**Net change:** 0 → 0 (assertion removal + proper fix = same compiler state)
+**Reasoning:**
+- Assertion removal: Would expose 1 error
+- Proper fix: Resolves that same error
+- Net change: 0 (assertion workaround → proper contract = same compiler state)
 
-**But correctness improved:**
-- 311d0de6: Compiler silent, contract wrong
-- 016e0f35: Compiler silent, contract correct
+**Correctness:**
+- 311d0de6: Compiler silent via assertion, contract mismatched
+- 016e0f35: Compiler silent via proper fix, contract aligned
+
+**Status:** ⏳ Awaiting CI baseline comparator authoritative confirmation
 
 ---
 
