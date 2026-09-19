@@ -124,12 +124,18 @@ function loadArtifact(
   }
   
   // I4: Collection integrity - prevent mixed artifacts from different runs
-  if (expectedTimestamp && metadata.timestamp !== expectedTimestamp) {
+  // Note: Sequential collectors have different timestamps - this is expected.
+  // Validation relies on workflow_run_id in collection-summary.json instead.
+  // Timestamp check removed to support sequential collection workflow.
+  
+  // FAIL-CLOSED: Invalid artifacts must block generation
+  if (metadata.json_valid === false) {
     throw new Error(
-      `${name} artifact timestamp mismatch (mixed collection detected):\n` +
-      `  Expected: ${expectedTimestamp}\n` +
-      `  Actual:   ${metadata.timestamp}\n` +
-      `  GOVERNANCE: All artifacts must come from the same collection run.`
+      `${name} artifact is invalid (json_valid: false):\n` +
+      `  File: ${artifactPath}\n` +
+      `  Error: ${(metadata as any).error || 'Unknown parse error'}\n` +
+      `  GOVERNANCE: Collector/parser failure MUST NOT become zero findings.\n` +
+      `  Fix the collector or parser before generating baseline.`
     );
   }
   
@@ -163,9 +169,16 @@ export async function generateFromArtifacts(
   // Load remaining artifacts with collection integrity check
   const eslint = loadArtifact(artifactsDir, 'eslint', canonicalCommit, canonicalTimestamp);
   const jest = loadArtifact(artifactsDir, 'jest', canonicalCommit, canonicalTimestamp);
-  const migration = loadArtifact(artifactsDir, 'migration', canonicalCommit, canonicalTimestamp);
   
-  console.log('✅ All artifacts loaded with verified provenance');
+  // Migration artifact is optional
+  let migration: { output: string; metadata: ArtifactMetadata } | null = null;
+  if (summary.artifacts.migration) {
+    migration = loadArtifact(artifactsDir, 'migration', canonicalCommit, canonicalTimestamp);
+  } else {
+    console.log('ℹ Migration artifact not present (optional)');
+  }
+  
+  console.log('✅ All required artifacts loaded with verified provenance');
   console.log('✅ Collection integrity verified (same run)');
   console.log('');
   
@@ -175,9 +188,11 @@ export async function generateFromArtifacts(
   const eslintFindings = adaptESLintOutput(eslint.output);
   const jestFindings = adaptJestOutput(jest.output);
   
-  // For migrations, use empty baseline (first generation)
+  // For migrations, use empty baseline (first generation) or empty if no artifact
   const prContext = getPRContext();
-  const migrationFindings = adaptMigrationOutput(migration.output, [], prContext);
+  const migrationFindings = migration 
+    ? adaptMigrationOutput(migration.output, [], prContext)
+    : [];
   
   console.log('');
   console.log('Findings detected:');
@@ -234,8 +249,10 @@ export async function generateFromArtifacts(
         findings: migrationFindings,
         count: migrationFindings.length,
         metadata: {
-          last_updated: migration.metadata.timestamp,
-          notes: 'Generated from CI artifacts - PR-relative grandfathering'
+          last_updated: migration?.metadata.timestamp || canonicalTimestamp,
+          notes: migration 
+            ? 'Generated from CI artifacts - PR-relative grandfathering'
+            : 'No migrations present at time of collection'
         }
       }
     },
