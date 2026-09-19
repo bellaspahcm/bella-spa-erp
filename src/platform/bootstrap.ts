@@ -8,13 +8,14 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
 import { CoreContractRegistry, MemoryEventBusAdapter, PlatformContractRegistry } from './core';
 import { EducationEngineService, registerEducationEngine, SupabaseEducationRepository } from './education';
 import { ContractRegistryService } from './host/contract-registry/contract-registry.service';
 import { bootstrapHealthcarePlatform } from './healthcare/healthcare-platform.bootstrap';
 
 export interface PlatformBootstrapOptions {
-  supabaseClient: SupabaseClient<Record<string, unknown>>;
+  supabaseClient: SupabaseClient<Database>;
   contractRegistry?: PlatformContractRegistry;
   eventBus?: MemoryEventBusAdapter;
 }
@@ -37,13 +38,7 @@ export async function bootstrapUnifiedPlatform(options: PlatformBootstrapOptions
   console.log('[MetaPlatform] Healthcare OS registered successfully.');
 
   // 3. Education OS Registration
-  // Note: Type assertion required due to TS inference issue with SupabaseClient generics.
-  // Both caller (PlatformBootstrapOptions) and callee (SupabaseEducationRepository)
-  // use SupabaseClient<Record<string, unknown>>, but compiler infers Database type
-  // from other education modules. This is safe as the types are structurally compatible.
-  const educationRepo = new SupabaseEducationRepository(
-    options.supabaseClient as SupabaseClient<Record<string, unknown>>
-  );
+  const educationRepo = new SupabaseEducationRepository(options.supabaseClient);
   const educationService = new EducationEngineService(educationRepo, eventBus);
   registerEducationEngine(contractRegistry, educationService);
   console.log('[MetaPlatform] Education OS registered successfully.');
