@@ -75,26 +75,29 @@ new SupabaseEducationRepository(options.supabaseClient)  // ✅
 
 ## Next Steps
 
-1. ⏳ **CI Baseline Comparator @ 016e0f35**
+1. ⏳ **CI Baseline Comparator @ 6b3f62d2 (HEAD)**
    - Expected: NEW = 0
    - If confirmed: Close TypeScript no-new-debt gate ✅
+   - Note: Run on full HEAD (including docs), not just code fix commit
 
 2. ⏳ **Test Failures Attribution**
-   - Logistics: 11 FAIL / 551 PASS
+   - Logistics: 11 FAIL / 551 PASS (if still present)
    - Determine: Pre-existing vs PR regression
    - Document findings
+   - Do NOT assume pre-existing without evidence
 
 3. ⏳ **PR Scope Audit**
    - Verify: Changes match "Logistics P1 Hardening" scope
    - Check: No unrelated changes included
    - Review: Commit history for mis-targeted commits
+   - Prior evidence suggests scope misalignment possible
 
 4. ⏳ **Final Merge Decision**
    - Criteria:
-     - TypeScript NEW = 0 ✅ (pending verification)
-     - Test regressions = 0 (to be determined)
-     - Scope alignment = verified (to be confirmed)
-   - Only proceed when all criteria met
+     - TypeScript NEW = 0 ✅ (pending CI @ 6b3f62d2)
+     - Test regressions = 0 (to be verified)
+     - Scope alignment = verified (to be audited)
+   - Only proceed when ALL criteria met with evidence
 
 ---
 
@@ -121,6 +124,7 @@ new SupabaseEducationRepository(options.supabaseClient)  // ✅
    - 311d0de6: NEW=0 via assertion (wrong contract)
    - 016e0f35: Expected NEW=0 via proper fix (correct contract)
    - Verification must check contract ownership, not just compiler state
+   - **Governance note:** "Diagnostic disappeared" is NOT completion criteria
 
 2. **FALSE_POSITIVE classification requires proof**
    - Commit message claimed caller/callee both use generic type
@@ -131,11 +135,13 @@ new SupabaseEducationRepository(options.supabaseClient)  // ✅
    - Used when type system limitations prevent correct expression
    - NOT for silencing contract mismatches
    - Proper fix: Align contracts at source
+   - **Governance note:** Contract must be correct without assertion masking mismatch
 
 4. **Evidence boundaries matter**
    - Local test: PASS ✅
    - CI comparator: Authoritative ⏳
    - Don't claim "RESOLVED" until CI confirms
+   - HEAD reference: Full commit (6b3f62d2), not just code fix
 
 ---
 
