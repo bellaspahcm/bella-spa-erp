@@ -39,7 +39,7 @@ export class SupabaseClinicalOrderReader implements IClinicalOrderReader {
       encounterId: data.encounter_id,
       patientId: data.encounter_id, // Map encounter_id as patientId in schema
       orderType: data.order_type,
-      status: data.status,
+      status: data.order_status,
       priority: data.priority || 'routine',
       testItems: testItems.length > 0 ? testItems : undefined,
     };

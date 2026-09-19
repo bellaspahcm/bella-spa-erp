@@ -29,6 +29,10 @@ import { PayrollProvider } from '@/lib/decision-engine/providers/payroll';
 import type {
   PayrollDecisionInput,
   PayrollDecisionOutput,
+  KPIConfig,
+  AttendanceConfig,
+  RatingConfig,
+  CommissionConfig,
 } from '@/lib/decision-engine/providers/payroll';
 import type { Database } from '@/types/database.types';
 
@@ -79,26 +83,10 @@ export interface SalaryCalculationContext {
   
   /** Tenant payroll configuration */
   config: {
-    kpi?: {
-      enabled: boolean;
-      strategy: 'threshold' | 'linear' | 'tier';
-      config: Record<string, unknown>;
-    };
-    attendance?: {
-      enabled: boolean;
-      strategy: 'late_deduction' | 'absent_deduction' | 'combined';
-      config: Record<string, unknown>;
-    };
-    rating?: {
-      enabled: boolean;
-      strategy: 'threshold' | 'linear' | 'tier';
-      config: Record<string, unknown>;
-    };
-    commission?: {
-      enabled: boolean;
-      strategy: 'fixed' | 'tier' | 'percentage' | 'service';
-      config: Record<string, unknown>;
-    };
+    kpi?: KPIConfig;
+    attendance?: AttendanceConfig;
+    rating?: RatingConfig;
+    commission?: CommissionConfig;
   };
 }
 
@@ -179,37 +167,8 @@ export class PayrollProviderAdapter {
         yearsOfService: this.calculateYearsOfService(context.employee.hired_date || null),
       },
       
-      // Map config (already in correct format)
-      config: {
-        kpi: context.config.kpi
-          ? {
-              enabled: context.config.kpi.enabled,
-              strategy: context.config.kpi.strategy,
-              params: context.config.kpi.config,
-            }
-          : undefined,
-        attendance: context.config.attendance
-          ? {
-              enabled: context.config.attendance.enabled,
-              strategy: context.config.attendance.strategy,
-              params: context.config.attendance.config,
-            }
-          : undefined,
-        rating: context.config.rating
-          ? {
-              enabled: context.config.rating.enabled,
-              strategy: context.config.rating.strategy,
-              params: context.config.rating.config,
-            }
-          : undefined,
-        commission: context.config.commission
-          ? {
-              enabled: context.config.commission.enabled,
-              strategy: context.config.commission.strategy,
-              params: context.config.commission.config,
-            }
-          : undefined,
-      },
+      // Map config (pass through - already typed correctly)
+      config: context.config,
     };
   }
 

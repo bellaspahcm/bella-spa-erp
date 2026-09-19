@@ -11,6 +11,62 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { PropertyUnit, PropertyUnitStatus } from '../domain/property-unit.entity';
 import type { Database } from '@/types/database.types';
 
+/**
+ * Maps database re_product_status enum to domain PropertyUnitStatus.
+ * 
+ * Inverse of mapDomainStatusToDb - reconstructs domain state from database.
+ */
+function mapDbStatusToDomain(
+  dbStatus: 'available' | 'booked' | 'deposited' | 'contracted' | 'paid' | 'handed_over' | 'cancelled'
+): PropertyUnitStatus {
+  switch (dbStatus) {
+    case 'booked':
+      return 'held';  // Database booked maps back to domain held
+    case 'handed_over':
+      return 'completed';  // Database handed_over maps to domain completed
+    // Direct mappings
+    case 'available':
+    case 'deposited':
+    case 'contracted':
+      return dbStatus;
+    case 'paid':
+    case 'cancelled':
+      // These database states don't have domain equivalents yet
+      // Map to closest semantic match
+      return dbStatus === 'paid' ? 'deposited' : 'available';
+    default:
+      const _exhaustive: never = dbStatus;
+      throw new Error(`Unknown database status: ${_exhaustive}`);
+  }
+}
+
+/**
+ * Maps domain PropertyUnitStatus to database re_product_status enum.
+ * 
+ * Domain model uses richer state machine; database uses operational states.
+ * This mapping preserves domain logic while conforming to database constraints.
+ */
+function mapDomainStatusToDb(
+  domainStatus: PropertyUnitStatus
+): 'available' | 'booked' | 'deposited' | 'contracted' | 'paid' | 'handed_over' | 'cancelled' {
+  switch (domainStatus) {
+    case 'held':
+      return 'booked';  // Temporary reservation maps to booked
+    case 'completed':
+      return 'handed_over';  // Final handover state
+    // Direct mappings (domain matches database)
+    case 'available':
+    case 'booked':
+    case 'deposited':
+    case 'contracted':
+      return domainStatus;
+    default:
+      // Exhaustive check - TypeScript will error if we miss a status
+      const _exhaustive: never = domainStatus;
+      throw new Error(`Unknown domain status: ${_exhaustive}`);
+  }
+}
+
 export class PropertyUnitRepository {
   /**
    * Loads a PropertyUnit by ID and Tenant ID.
@@ -37,7 +93,7 @@ export class PropertyUnitRepository {
       unitCode: (data as any).unit_code || data.product_code || '',
       area: Number(data.area || 0),
       unitPrice: Number(data.unit_price || 0),
-      status: (data.status as PropertyUnitStatus) || 'available',
+      status: mapDbStatusToDomain(data.status as any) || 'available',
       ownerName: data.owner_name || null
     });
   }
@@ -46,10 +102,13 @@ export class PropertyUnitRepository {
    * Saves the state of a PropertyUnit back to the database.
    */
   async save(supabase: SupabaseClient<Database>, unit: PropertyUnit): Promise<void> {
+    // Map domain status to database enum
+    const dbStatus = mapDomainStatusToDb(unit.status);
+
     const { error } = await supabase
       .from('real_estate_products')
       .update({
-        status: unit.status,
+        status: dbStatus,
         owner_name: unit.ownerName,
         updated_at: new Date().toISOString()
       })
@@ -85,7 +144,7 @@ export class PropertyUnitRepository {
       unitCode: (item as any).unit_code || item.product_code || '',
       area: Number(item.area || 0),
       unitPrice: Number(item.unit_price || 0),
-      status: (item.status as PropertyUnitStatus) || 'available',
+      status: mapDbStatusToDomain(item.status as any) || 'available',
       ownerName: item.owner_name || null
     }));
   }

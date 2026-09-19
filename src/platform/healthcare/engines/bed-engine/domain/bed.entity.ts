@@ -12,7 +12,7 @@
  */
 
 export type BedStatus = 'available' | 'occupied' | 'reserved' | 'cleaning' | 'maintenance';
-export type BedType = 'standard' | 'vip' | 'icu' | 'isolation' | 'pediatric' | 'regular';
+export type BedType = 'standard' | 'icu' | 'isolation' | 'maternity' | 'pediatric' | 'psychiatric';
 
 export interface BedOccupancyProps {
   admissionId: string;
@@ -121,14 +121,15 @@ export class Bed {
     this.props.updatedAt = timestamp;
   }
 
-  public release(reason: 'discharge' | 'transfer' | 'manual', now?: string): void {
+  public release(reason: 'discharge' | 'transfer' | 'death' | 'other' | 'manual', now?: string): void {
     if (this.props.status !== 'occupied') {
       throw new Error(`Bed ${this.props.bedCode} (${this.props.id}) is not occupied. Current status: ${this.props.status}`);
     }
 
     const timestamp = now || new Date().toISOString();
     this.props.occupancy = undefined;
-    this.props.status = reason === 'discharge' || reason === 'transfer' ? 'cleaning' : 'available';
+    // Discharge, transfer, or death → cleaning; other/manual → available
+    this.props.status = (reason === 'discharge' || reason === 'transfer' || reason === 'death') ? 'cleaning' : 'available';
     this.props.version += 1;
     this.props.updatedAt = timestamp;
   }

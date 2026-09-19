@@ -8,7 +8,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { InpatientAdmission, AdmissionStateProps } from '../domain/inpatient-admission.entity';
+import { InpatientAdmission, AdmissionStateProps, type AdmissionStatus } from '../domain/inpatient-admission.entity';
 
 export interface IAdmissionRepository {
   save(admission: InpatientAdmission): Promise<InpatientAdmission>;

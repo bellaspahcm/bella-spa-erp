@@ -22,6 +22,7 @@ import {
   FileText,
   Heart,
   Calendar,
+  CalendarCheck,
   Sparkles,
   ChevronRight,
   ChevronDown,

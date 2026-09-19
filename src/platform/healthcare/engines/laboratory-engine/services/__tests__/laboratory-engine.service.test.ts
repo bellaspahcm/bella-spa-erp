@@ -1,11 +1,17 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { randomUUID } from 'crypto';
 import { LaboratoryEngineService } from '../../laboratory-engine.service';
 import { LabOrder } from '../../domain/lab-order.entity';
 import { LabResult } from '../../domain/lab-result.entity';
 import { TEST_DEFINITIONS } from '../../domain/test-definition';
 import { ConcurrencyViolationError } from '../../repositories/laboratory-repository.interface';
-import { InMemoryEventBus } from '../../../order-engine/contracts/event-bus.interface';
-import { randomUUID } from 'crypto';
+import { eventBus } from '@/platform/host/event-bus';
+
+// Spy on the real eventBus.publish method
+const publishSpy = jest.spyOn(eventBus, 'publish').mockResolvedValue({ success: true });
+
+const getPublishedEvents = () => publishSpy.mock.calls.map(call => call[0]);
+const clearPublishedEvents = () => publishSpy.mockClear();
 
 class MockLabRepository {
   public findById = jest.fn<any>();
@@ -15,16 +21,15 @@ class MockLabRepository {
 
 describe('LaboratoryEngineService Unit Tests', () => {
   let repository: MockLabRepository;
-  let eventBus: InMemoryEventBus;
   let service: LaboratoryEngineService;
 
   const tenantId = randomUUID();
   const labOrderId = randomUUID();
 
   beforeEach(() => {
+    clearPublishedEvents();
     repository = new MockLabRepository();
-    eventBus = new InMemoryEventBus();
-    service = new LaboratoryEngineService(repository as any, eventBus);
+    service = new LaboratoryEngineService(repository as any);
   });
 
   it('should successfully record results and verify results, publishing appropriate events', async () => {
@@ -55,7 +60,7 @@ describe('LaboratoryEngineService Unit Tests', () => {
     expect(verifiedOrder.safetyState).toBe('NORMAL');
 
     // Verify events published
-    const events = eventBus.getPublishedEvents();
+    const events = getPublishedEvents();
     expect(events.length).toBe(1);
     expect(events[0].eventType).toBe('ResultVerified');
     expect(events[0].aggregateId).toBe(labOrderId);
@@ -86,7 +91,7 @@ describe('LaboratoryEngineService Unit Tests', () => {
     expect(order.safetyState).toBe('ESCALATION_REQUIRED');
 
     // Both ResultVerified and CriticalResultEscalated should be published
-    const events = eventBus.getPublishedEvents();
+    const events = getPublishedEvents();
     expect(events.length).toBe(2);
     expect(events[0].eventType).toBe('ResultVerified');
     expect(events[1].eventType).toBe('CriticalResultEscalated');
@@ -120,7 +125,7 @@ describe('LaboratoryEngineService Unit Tests', () => {
     await expect(service.verifyResult(tenantId, labOrderId, 'tech-1')).rejects.toThrow('Database unique constraint or network error');
 
     // ZERO events should be published (Event-after-persistence rule)
-    const events = eventBus.getPublishedEvents();
+    const events = getPublishedEvents();
     expect(events.length).toBe(0);
   });
 });

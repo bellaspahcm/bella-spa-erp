@@ -8,7 +8,7 @@
  * @module platform/healthcare/engines/icu-engine/contracts
  */
 
-import type { EngineResponse } from '../../shared-kernel/types';
+import type { EngineResponse } from '../../../shared-kernel/types';
 import type { VentilatorSettings, VentilatorSafetyRules } from '../domain/ventilator-session.entity';
 import type { VitalSignsInput, LabResultsInput, ClinicalInput, ScoringResult } from '../domain/scoring/scoring-strategy.interface';
 

@@ -32,7 +32,7 @@ describe('E7.3 Phase 2 — Generic Rules', () => {
         quantityOnHand: 100,
         quantityReserved: 0,
         quantityAvailable: 100,
-        expiry_date: new Date('2026-12-31'),
+        expiryDate: new Date('2026-12-31'),
         status: 'AVAILABLE',
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -59,7 +59,7 @@ describe('E7.3 Phase 2 — Generic Rules', () => {
         quantityOnHand: 100,
         quantityReserved: 0,
         quantityAvailable: 100,
-        expiry_date: new Date('2026-08-20'),
+        expiryDate: new Date('2026-08-20'),
         status: 'AVAILABLE',
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -90,7 +90,7 @@ describe('E7.3 Phase 2 — Generic Rules', () => {
         quantityOnHand: 100,
         quantityReserved: 0,
         quantityAvailable: 100,
-        expiry_date: null,
+        expiryDate: null,
         status: 'AVAILABLE',
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -102,7 +102,7 @@ describe('E7.3 Phase 2 — Generic Rules', () => {
 
       // Assert
       expect(result.status).toBe('PASS');
-      expect(result.evidence.output.reason).toBe('no_expiry_date');
+      expect(result.evidence.output.reason).toBe('no_expiryDate');
     });
 
     it('should NOT mutate inventory (Invariant 1)', () => {
@@ -116,7 +116,7 @@ describe('E7.3 Phase 2 — Generic Rules', () => {
         quantityOnHand: 100,
         quantityReserved: 0,
         quantityAvailable: 100,
-        expiry_date: new Date('2026-08-20'),
+        expiryDate: new Date('2026-08-20'),
         status: 'AVAILABLE',
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -130,7 +130,7 @@ describe('E7.3 Phase 2 — Generic Rules', () => {
       // Assert
       expect(inventory).toEqual(originalInventory);
       expect(inventory.status).toBe('AVAILABLE');
-      expect(inventory.expiry_date).toEqual(originalInventory.expiry_date);
+      expect(inventory.expiryDate).toEqual(originalInventory.expiryDate);
     });
   });
 
@@ -549,7 +549,7 @@ describe('E7.3 Phase 2 — Generic Rules', () => {
         quantityOnHand: 100,
         quantityReserved: 0,
         quantityAvailable: 100,
-        expiry_date: new Date('2026-08-20'),
+        expiryDate: new Date('2026-08-20'),
         status: 'AVAILABLE',
         createdAt: new Date(),
         updatedAt: new Date(),

@@ -38,6 +38,9 @@ export async function bootstrapHealthcarePlatform(
     // ===========================
     // Register Pharmacy Engine
     // ===========================
+    if (!contractRegistry) {
+      throw new Error('[HealthcarePlatform] ContractRegistryService not found');
+    }
     await registerPharmacyEngine(contractRegistry);
 
     console.log('[HealthcarePlatform] Bootstrap complete ✅');

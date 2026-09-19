@@ -4,7 +4,7 @@ import { SupabaseOrderRepository } from './repositories/supabase-order-repositor
 import { SupabaseEncounterReader } from './repositories/supabase-encounter-reader';
 import { HostEventBusBridge } from './contracts/host-event-bus-bridge';
 import { eventBus as hostEventBus } from '@/platform/host/event-bus/event-bus.service';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database.types';
 
 /**
  * Factory pattern ensures:

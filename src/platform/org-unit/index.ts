@@ -17,6 +17,8 @@
  * @since 2026-09-12
  */
 
+import type { Json } from '@/types/supabase-generated';
+
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
 // ═══════════════════════════════════════════════════════════════════════════
@@ -54,7 +56,7 @@ export interface OrgUnit {
   readonly code?: string;
   readonly parentId?: string;
   readonly isActive: boolean;
-  readonly metadata: Record<string, unknown>;
+  readonly metadata: Json;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }
@@ -68,7 +70,7 @@ export interface CreateOrgUnitInput {
   readonly name: string;
   readonly code?: string;
   readonly parentId?: string;
-  readonly metadata?: Record<string, unknown>;
+  readonly metadata?: Json;
 }
 
 /**
@@ -79,7 +81,7 @@ export interface UpdateOrgUnitInput {
   readonly code?: string;
   readonly parentId?: string;
   readonly isActive?: boolean;
-  readonly metadata?: Record<string, unknown>;
+  readonly metadata?: Json;
 }
 
 /**

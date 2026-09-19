@@ -8,13 +8,14 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
 import { CoreContractRegistry, MemoryEventBusAdapter, PlatformContractRegistry } from './core';
 import { EducationEngineService, registerEducationEngine, SupabaseEducationRepository } from './education';
 import { ContractRegistryService } from './host/contract-registry/contract-registry.service';
 import { bootstrapHealthcarePlatform } from './healthcare/healthcare-platform.bootstrap';
 
 export interface PlatformBootstrapOptions {
-  supabaseClient: SupabaseClient<Record<string, unknown>>;
+  supabaseClient: SupabaseClient<Database>;
   contractRegistry?: PlatformContractRegistry;
   eventBus?: MemoryEventBusAdapter;
 }

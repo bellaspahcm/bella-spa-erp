@@ -10,6 +10,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { createClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
 import { bootstrapUnifiedPlatform } from '../bootstrap';
 
 describe('Meta-Platform — Architecture Boundary Verification', () => {
@@ -82,7 +83,7 @@ describe('Meta-Platform — Architecture Boundary Verification', () => {
   });
 
   it('should bootstrap Healthcare OS and Education OS side-by-side cleanly on unified platform bootstrapper', async () => {
-    const dummySupabase = createClient('https://example.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy');
+    const dummySupabase = createClient<Database>('https://example.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy');
     
     const container = await bootstrapUnifiedPlatform({ supabaseClient: dummySupabase });
 
