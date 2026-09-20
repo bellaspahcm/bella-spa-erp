@@ -102,6 +102,8 @@ type SalaryAdjustment = {
   amount: number;
   category: string;
   reason: string;
+};
+
 type ExpectedSalary = {
   ktvId: string;
   totalSessions: number;
