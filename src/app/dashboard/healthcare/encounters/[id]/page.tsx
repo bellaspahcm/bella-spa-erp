@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { ClinicalContextProvider, ClinicalContextType, PatientContext, EncounterContext } from '../../components/ClinicalContext';
+import { ClinicalContextProvider, ClinicalContextType, PatientContext, EncounterContext, WorkspaceManifest } from '../../components/ClinicalContext';
 import { MedicalClinicManifest, DentalClinicManifest, ProductManifest } from '../../components/clinical-manifest';
 import { WorkspaceComponentRegistry } from '../../components/workspace-engine';
 import { getEncounterByIdAction, getAllPatientProfilesAction, updateEncounterStatusAction } from '@/services/healthcare/healthcare-actions';
@@ -249,7 +249,7 @@ export default function ClinicalWorkspaceEnginePage() {
     facility,
     branch,
     permissions,
-    manifest: manifest.workspace,
+    manifest: manifest.workspace as unknown as WorkspaceManifest,
     capabilities,
     refreshData: loadData,
   };

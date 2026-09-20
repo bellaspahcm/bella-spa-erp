@@ -65,6 +65,10 @@ function loadCollectionSummary(artifactsDir: string): CollectionSummary {
   if (!summary.commit_verified) {
     throw new Error('Collection summary indicates commit verification failed');
   }
+
+  if ((summary as any).collector_status && (summary as any).collector_status !== 'complete') {
+    throw new Error('Collection summary indicates collector execution failed');
+  }
   
   if (summary.requested_commit !== summary.actual_commit) {
     throw new Error(
@@ -128,11 +132,20 @@ function loadArtifact(
   // Validation relies on workflow_run_id in collection-summary.json instead.
   // Timestamp check removed to support sequential collection workflow.
   
+  // FAIL-CLOSED: Check collector_status
+  if ((metadata as any).collector_status && (metadata as any).collector_status !== 'complete') {
+    throw new Error(
+      `${name} artifact collection status is '${(metadata as any).collector_status}':\n` +
+      `  Error: ${(metadata as any).error || 'Collector execution was not complete'}`
+    );
+  }
+
   // FAIL-CLOSED: Invalid artifacts must block generation
   if (metadata.json_valid === false) {
+    const targetFile = fs.existsSync(jsonPath) ? jsonPath : outputPath;
     throw new Error(
       `${name} artifact is invalid (json_valid: false):\n` +
-      `  File: ${artifactPath}\n` +
+      `  File: ${targetFile}\n` +
       `  Error: ${(metadata as any).error || 'Unknown parse error'}\n` +
       `  GOVERNANCE: Collector/parser failure MUST NOT become zero findings.\n` +
       `  Fix the collector or parser before generating baseline.`

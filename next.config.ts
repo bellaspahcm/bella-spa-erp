@@ -73,8 +73,6 @@ const nextConfig: NextConfig = {
   // already optimized by default in Next 16; framer-motion is not, so add it.
   experimental: {
     optimizePackageImports: ['framer-motion'],
-    // Turbopack for faster builds (Next.js 16+)
-    turbo: {},
   },
   async headers() {
     return [

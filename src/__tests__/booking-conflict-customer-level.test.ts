@@ -29,6 +29,8 @@ type BookingRow = Database['public']['Tables']['bookings']['Row'];
 type CustomerRow = Database['public']['Tables']['customers']['Row'];
 
 // Mock Supabase client
+// NOTE: Cannot reference this in jest.mock() factory directly (TDZ issue - jest.mock is hoisted).
+// The mock factory below uses jest.fn() stubs; beforeEach wires them to this object.
 const mockSupabase = {
   from: jest.fn(),
   rpc: jest.fn().mockResolvedValue({ data: null, error: null }),
@@ -132,8 +134,10 @@ class MockQueryBuilder {
 }
 
 // Mock imports
+// IMPORTANT: jest.mock() is hoisted — cannot reference `mockSupabase` here (TDZ).
+// We register a stub factory and then update the resolved value in beforeEach.
 jest.mock('@/lib/supabase-server', () => ({
-  createClient: jest.fn().mockResolvedValue(mockSupabase),
+  createClient: jest.fn(),
 }));
 
 jest.mock('@/services/audit-actions', () => ({
@@ -167,6 +171,9 @@ jest.mock('@sentry/nextjs', () => ({ captureException: jest.fn() }), { virtual: 
 
 describe('Customer-Level Booking Conflict Detection', () => {
   beforeEach(() => {
+    // Clear all mocks first, then re-wire (order matters!)
+    jest.clearAllMocks();
+
     // Reset mock store
     mockStore.customers = [];
     mockStore.bookings = [];
@@ -200,12 +207,22 @@ describe('Customer-Level Booking Conflict Detection', () => {
     };
     mockStore.users.push(testUser);
 
-    // Mock Supabase from() to return query builders
+    // Wire supabase-server mock to return mockSupabase.
+    // Must be done in beforeEach (not in jest.mock factory) to avoid TDZ.
+    const supabaseServerMock = jest.requireMock('@/lib/supabase-server') as {
+      createClient: jest.Mock;
+    };
+    supabaseServerMock.createClient.mockResolvedValue(mockSupabase);
+
+    // Wire mockSupabase.from and auth after clearAllMocks
+    mockSupabase.rpc.mockResolvedValue({ data: null, error: null });
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: 'user-1' } },
+      error: null,
+    });
     mockSupabase.from.mockImplementation((table: string) => {
       return new MockQueryBuilder(table);
     });
-
-    jest.clearAllMocks();
   });
 
   // ============================================================================
