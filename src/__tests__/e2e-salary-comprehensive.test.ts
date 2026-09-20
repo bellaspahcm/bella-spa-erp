@@ -102,8 +102,6 @@ type SalaryAdjustment = {
   amount: number;
   category: string;
   reason: string;
-};
-
 type ExpectedSalary = {
   ktvId: string;
   totalSessions: number;
@@ -115,7 +113,13 @@ type ExpectedSalary = {
   totalSalary: number;
 };
 
-describe('E2E Comprehensive Salary System Test', () => {
+const HAS_SUPABASE_CREDENTIALS = Boolean(
+  (process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL) &&
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+const describeIntegration = HAS_SUPABASE_CREDENTIALS ? describe : describe.skip;
+
+describeIntegration('E2E Comprehensive Salary System Test', () => {
   const TENANT_ID = 'test-tenant-e2e-salary';
   const MONTH_YEAR = '2026-06-01';
   
