@@ -40,7 +40,12 @@ jobs:
             echo "⚠️  Baseline not found (bootstrap scenario)"
           fi
       
-      - name: Run baseline comparison
+      - name: Collect diagnostic artifacts (Single Producer)
+        if: steps.baseline_check.outputs.exists == 'true'
+        run: |
+          npx tsx scripts/ci/baseline/collect-artifacts.ts --out-dir ./artifacts
+
+      - name: Run pure baseline comparison
         if: steps.baseline_check.outputs.exists == 'true'
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha || 'main' }}
@@ -50,6 +55,7 @@ jobs:
         run: |
           npx tsx scripts/ci/baseline/compare-with-baseline.ts \
             --baseline $BASELINE_PATH \
+            --artifacts-dir ./artifacts \
             --pr-base $PR_BASE_SHA \
             --pr-head $PR_HEAD_SHA
       

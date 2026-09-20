@@ -46,12 +46,15 @@ export function parseESLintJSON(jsonOutput: string): ESLintResult[] {
   }
   try {
     return JSON.parse(jsonOutput) as ESLintResult[];
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to parse ESLint JSON:', error);
     console.error('JSON output length:', jsonOutput.length);
     console.error('First 200 chars:', jsonOutput.substring(0, 200));
     console.error('Last 200 chars:', jsonOutput.substring(Math.max(0, jsonOutput.length - 200)));
-    return [];
+    throw new Error(
+      `FAIL-CLOSED: ESLint output is invalid or truncated JSON (${error?.message || error}). ` +
+      `GOVERNANCE: Parser failure MUST NOT become 0 findings.`
+    );
   }
 }
 
