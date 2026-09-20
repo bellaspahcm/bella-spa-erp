@@ -431,6 +431,41 @@ describe('ProductRegistry', () => {
     });
   });
 
+  describe('BabyCare Product Registration', () => {
+    it('should register bella_babycare product', () => {
+      const product = createTestProduct('bella_babycare', 'Bella Mommy Baby Care');
+
+      expect(() => productRegistry.register(product)).not.toThrow();
+      expect(productRegistry.has('bella_babycare')).toBe(true);
+    });
+
+    it('should retrieve bella_babycare with correct display name', () => {
+      const product = createTestProduct('bella_babycare', 'Bella Mommy Baby Care');
+      productRegistry.register(product);
+
+      const retrieved = productRegistry.get('bella_babycare');
+
+      expect(retrieved).toBeDefined();
+      expect(retrieved?.productKey).toBe('bella_babycare');
+      expect(retrieved?.displayName).toBe('Bella Mommy Baby Care');
+    });
+
+    it('should support multiple products (haircut + babycare)', () => {
+      const haircut = createTestProduct('bella_haircut', 'Bella Haircut Shop');
+      const babycare = createTestProduct('bella_babycare', 'Bella Mommy Baby Care');
+
+      productRegistry.register(haircut);
+      productRegistry.register(babycare);
+
+      expect(productRegistry.has('bella_haircut')).toBe(true);
+      expect(productRegistry.has('bella_babycare')).toBe(true);
+      
+      const allKeys = productRegistry.getAllProductKeys();
+      expect(allKeys).toContain('bella_haircut');
+      expect(allKeys).toContain('bella_babycare');
+    });
+  });
+
   describe('Error Message Quality', () => {
     it('should provide clear error message for duplicate product', () => {
       const product1 = createTestProduct('test_product', 'First');

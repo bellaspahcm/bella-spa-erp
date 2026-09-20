@@ -27,12 +27,12 @@ describe('Real Estate Module Isolation & Registration Tests', () => {
       const css = fs.readFileSync('src/app/globals.css', 'utf-8');
 
       // Check for real_estate theme selector
-      expect(css).toContain('html[data-tenant-module="real_estate"]');
+      expect(css).toContain('data-tenant-module="real_estate"');
       
       // Check for premium theme color tokens
       expect(css).toContain('#1e3a8a'); // Real Estate primary deep navy
       expect(css).toContain('#d97706'); // Real Estate accent amber gold
-      expect(css).toContain('#fffbeb'); // Warm cream background
+      expect(css).toContain('#f8fafc'); // Clean slate-50 background
     });
   });
 

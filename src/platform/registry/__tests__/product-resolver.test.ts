@@ -379,4 +379,49 @@ describe('ProductResolver', () => {
       expect(resolved.tenant.id).toBeDefined(); // tenant context
     });
   });
+
+  describe('BabyCare Product Resolution', () => {
+    it('should resolve bella_babycare for production tenant', () => {
+      const babycare = createTestProduct('bella_babycare');
+      productRegistry.register(babycare);
+
+      // Production tenant: Bella Spa Headquarter
+      const tenant = createMockTenant('0e66365b-42b0-420e-acca-f7d7692e125e', 'bella_babycare');
+      const resolved = productResolver.resolve(tenant);
+
+      expect(resolved.product).toBe(babycare);
+      expect(resolved.product.productKey).toBe('bella_babycare');
+      expect(resolved.product.displayName).toBe('Test bella_babycare');
+    });
+
+    it('should resolve both haircut and babycare correctly', () => {
+      const haircut = createTestProduct('bella_haircut');
+      const babycare = createTestProduct('bella_babycare');
+      productRegistry.register(haircut);
+      productRegistry.register(babycare);
+
+      const haircutTenant = createMockTenant('tenant-haircut', 'bella_haircut');
+      const babycareTenant = createMockTenant('tenant-babycare', 'bella_babycare');
+
+      const resolvedHaircut = productResolver.resolve(haircutTenant);
+      const resolvedBabycare = productResolver.resolve(babycareTenant);
+
+      expect(resolvedHaircut.product.productKey).toBe('bella_haircut');
+      expect(resolvedBabycare.product.productKey).toBe('bella_babycare');
+    });
+
+    it('should return undefined for tenant without product_key (babycare NOT auto-inferred)', () => {
+      const babycare = createTestProduct('bella_babycare');
+      productRegistry.register(babycare);
+
+      // Tenant with enabled_modules but NO product_key
+      const tenant = createMockTenant('tenant-id', null);
+
+      const resolved = productResolver.tryResolve(tenant);
+
+      // Product Identity requires EXPLICIT product_key
+      // enabled_modules.babycare does NOT auto-infer product=bella_babycare
+      expect(resolved).toBeUndefined();
+    });
+  });
 });

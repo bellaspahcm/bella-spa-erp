@@ -40,10 +40,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         setTenantSettings(tenantData);
 
         // Resolve product identity if tenant has product_key
-        if (tenantData?.product_key) {
+        const productKey = (tenantData as { product_key?: string | null })?.product_key;
+        if (productKey && tenantData) {
           const resolved = productResolver.tryResolve({
             id: tenantData.id,
-            product_key: tenantData.product_key
+            product_key: productKey
           });
           setProduct(resolved?.product ?? null);
         } else {

@@ -54,11 +54,13 @@ import {
 import { createBookingWithValidation } from '@/modules/bookings/actions/session-log-actions';
 import { checkBookingCapacity, autoAssignKtv } from '@/services/booking-decision.service';
 
-// ============================================================================
-// TEST SUITE SETUP
-// ============================================================================
+const HAS_SUPABASE_CREDENTIALS = Boolean(
+  (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL) &&
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+const describeIntegration = HAS_SUPABASE_CREDENTIALS ? describe : describe.skip;
 
-describe('Booking Flow Integration Tests', () => {
+describeIntegration('Booking Flow Integration Tests', () => {
   // Setup: Seed database before all tests
   beforeAll(async () => {
     console.log('\n========================================');

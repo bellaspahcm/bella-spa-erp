@@ -68,6 +68,8 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
+  applyThemeTokensToRoot,
+  resolveDynamicThemeTokens,
   resolveTenantBrandIdentity,
   type ResolvedTenantBrandIdentity,
 } from '@/lib/business-rules/tenant-modules';
@@ -289,10 +291,9 @@ function applyTenantBrandRuntime(brand: TenantBrandDisplay) {
     root.style.removeProperty(token);
   }
 
-  root.style.setProperty('--primary', brand.primaryColor);
-  root.style.setProperty('--primary-hover', brand.primaryHoverColor);
-  root.style.setProperty('--accent', brand.accentColor);
-  root.style.setProperty('--ring', brand.primaryColor);
+  const tokens = resolveDynamicThemeTokens(brand);
+  applyThemeTokensToRoot(tokens);
+
   // Inject tenant heading font: 'serif' → Playfair Display, 'sans' → Geist
   root.style.setProperty(
     '--font-heading',
@@ -936,7 +937,7 @@ export function Sidebar() {
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className={cn(
-          "flex-1 bg-white dark:bg-[#15171e] rounded-[2.25rem] border border-slate-200/90 dark:border-slate-800/90 flex flex-col overflow-hidden shadow-2xs relative",
+          "flex-1 beauty-erp-sidebar-inner rounded-[2.25rem] flex flex-col overflow-hidden shadow-2xs relative",
           isBellaEducationShell && "border-rose-200/60 dark:border-rose-950/60"
         )}>
         {/* Soft decorative light glows */}

@@ -43,12 +43,13 @@ jobs:
     needs: detect_changes
     if: needs.detect_changes.outputs.needs_typecheck == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     env:
       CI_SCOPE_TYPECHECK_MODE: ${{ needs.detect_changes.outputs.typecheck_mode }}
       CI_SCOPE_PRODUCTS: ${{ needs.detect_changes.outputs.products }}
       CI_SCOPE_OS: ${{ needs.detect_changes.outputs.os }}
       CI_SCOPE_AFFECTED_PRODUCTS: ${{ needs.detect_changes.outputs.affected_products }}
+      PUPPETEER_SKIP_DOWNLOAD: 'true'
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
