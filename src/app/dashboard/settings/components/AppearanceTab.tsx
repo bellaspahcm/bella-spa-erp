@@ -51,6 +51,8 @@ const brandPresetOptions: Array<{
   description: string;
   primaryColor: string;
   accentColor: string;
+  swatchBg: string;
+  swatchPrimary: string;
 }> = [
   {
     value: 'slate_minimal',
@@ -58,6 +60,8 @@ const brandPresetOptions: Array<{
     description: 'Trắng - Xám hiện đại, tinh tế, đồng bộ hoàn hảo với giao diện viewport.',
     primaryColor: '#334155',
     accentColor: '#64748B',
+    swatchBg: '#FFFFFF',
+    swatchPrimary: '#334155',
   },
   {
     value: 'ocean_clean',
@@ -65,6 +69,8 @@ const brandPresetOptions: Array<{
     description: 'Xanh dương chuyên nghiệp, tin cậy, phù hợp Dịch vụ vệ sinh.',
     primaryColor: '#1E40AF',
     accentColor: '#3B82F6',
+    swatchBg: '#1E40AF',
+    swatchPrimary: '#3B82F6',
   },
   {
     value: 'jade_wellness',
@@ -72,6 +78,8 @@ const brandPresetOptions: Array<{
     description: 'Xanh ngọc sang trọng, thanh lịch, phù hợp Beauty Spa.',
     primaryColor: '#074E44',
     accentColor: '#C8A97A',
+    swatchBg: '#074E44',
+    swatchPrimary: '#C8A97A',
   },
   {
     value: 'luxury_navy',
@@ -79,6 +87,8 @@ const brandPresetOptions: Array<{
     description: 'Xanh navy quý phái, đẳng cấp, phù hợp Quản lý Bất động sản.',
     primaryColor: '#1E3A8A',
     accentColor: '#D97706',
+    swatchBg: '#1E3A8A',
+    swatchPrimary: '#D97706',
   },
   {
     value: 'graphite_luxe',
@@ -86,6 +96,8 @@ const brandPresetOptions: Array<{
     description: 'Đen xám kim loại, hiện đại, dành cho trung tâm đào tạo & văn phòng.',
     primaryColor: '#18181B',
     accentColor: '#64748B',
+    swatchBg: '#18181B',
+    swatchPrimary: '#64748B',
   },
   {
     value: 'bella_rose',
@@ -93,6 +105,8 @@ const brandPresetOptions: Array<{
     description: 'Hồng êm dịu, ấm áp, nguyên bản cho dịch vụ Mẹ & Bé.',
     primaryColor: '#A91555',
     accentColor: '#F8A5C2',
+    swatchBg: '#FFF0F3',
+    swatchPrimary: '#A91555',
   },
 ];
 
@@ -572,26 +586,34 @@ export default function AppearanceTab() {
                         className={cn(
                           'rounded-2xl p-4 text-left transition-all duration-200',
                           isActive
-                            ? 'bella-settings-preset-active border border-primary/40 bg-primary/[0.04] shadow-sm'
-                            : 'border border-slate-100 bg-slate-50 text-slate-600 hover:border-slate-200 hover:bg-white',
+                            ? 'bella-settings-preset-active border-2 border-primary bg-primary/[0.05] dark:bg-primary/20 shadow-md ring-2 ring-primary/20'
+                            : 'border border-slate-200/80 bg-slate-50/80 text-slate-700 hover:border-slate-300 hover:bg-white dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-200 dark:hover:bg-slate-800',
                         )}
                       >
-                        <div className="mb-3 flex items-center gap-2">
-                          {/* Decorative color dots — inline border intentional as these are visual swatches, not text */}
-                          <span
-                            className="h-7 w-7 shrink-0 rounded-xl shadow-sm"
-                            style={{ backgroundColor: preset.primaryColor, border: '2px solid white' }}
-                          />
-                          <span
-                            className="h-7 w-7 shrink-0 rounded-xl shadow-sm"
-                            style={{ backgroundColor: preset.accentColor, border: '2px solid white' }}
-                          />
+                        <div className="mb-3 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {/* Base / Background Swatch */}
+                            <span
+                              className="h-7 w-7 shrink-0 rounded-xl shadow-sm border border-slate-300 dark:border-slate-600"
+                              style={{ backgroundColor: preset.swatchBg }}
+                              title="Màu nền giao diện"
+                            />
+                            {/* Primary / Accent Swatch */}
+                            <span
+                              className="h-7 w-7 shrink-0 rounded-xl shadow-sm border border-slate-300 dark:border-slate-600"
+                              style={{ backgroundColor: preset.swatchPrimary }}
+                              title="Màu chính & điểm nhấn"
+                            />
+                          </div>
                           {isActive && (
-                            <CheckCircle2 className="ml-auto h-4 w-4 shrink-0 text-primary" />
+                            <span className="flex items-center gap-1 rounded-full bg-primary/10 dark:bg-primary/30 px-2.5 py-1 text-[11px] font-black text-primary">
+                              <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                              Đang dùng
+                            </span>
                           )}
                         </div>
-                        <p className="text-sm font-black text-slate-900">{preset.label}</p>
-                        <p className="mt-1 text-xs font-bold leading-relaxed text-slate-500">{preset.description}</p>
+                        <p className="text-sm font-black text-slate-900 dark:text-slate-100">{preset.label}</p>
+                        <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-600 dark:text-slate-300">{preset.description}</p>
                       </button>
                     );
                   })}
