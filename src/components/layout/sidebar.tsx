@@ -669,7 +669,8 @@ export function Sidebar() {
         
         // Apply Product Identity if no custom brand configured
         // Business Rule: CUSTOM BRAND > PRODUCT IDENTITY > NEUTRAL
-        const customBrandName = settings?.brand_theme?.brandName?.trim();
+        const brandThemeObj = settings?.brand_theme as Record<string, unknown> | null | undefined;
+        const customBrandName = typeof brandThemeObj?.brandName === 'string' ? brandThemeObj.brandName.trim() : undefined;
         if (!customBrandName && product?.displayName) {
           resolvedBrand.displayName = product.displayName;
           
