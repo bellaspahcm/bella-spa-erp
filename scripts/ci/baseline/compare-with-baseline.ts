@@ -20,6 +20,7 @@ import path from 'path';
 import { Baseline, PRContext } from './schema';
 import { generateFromArtifacts } from './generate-from-artifacts';
 import { compareBaseline, computeOverallVerdict, generateReport } from './comparator';
+import { normalizeBaseline } from './fingerprint';
 
 /**
  * Pure Baseline Comparator main entry point
@@ -47,7 +48,8 @@ async function main() {
     process.exit(2);
   }
   
-  const baseline: Baseline = JSON.parse(fs.readFileSync(baselinePath, 'utf-8'));
+  const rawBaseline: Baseline = JSON.parse(fs.readFileSync(baselinePath, 'utf-8'));
+  const baseline: Baseline = normalizeBaseline(rawBaseline);
   
   console.log('='.repeat(80));
   console.log('PURE BASELINE COMPARATOR (SINGLE PRODUCER + FAIL-CLOSED)');

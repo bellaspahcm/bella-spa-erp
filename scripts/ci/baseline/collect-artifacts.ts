@@ -14,13 +14,21 @@ import { execSync } from 'child_process';
 
 interface Options {
   outDir: string;
+  typescriptOutput?: string;
+  eslintOutput?: string;
 }
 
 function parseArgs(): Options {
   const args = process.argv.slice(2);
   const outDirIdx = args.indexOf('--out-dir');
+  const tsIdx = args.indexOf('--typescript-output');
+  const eslintIdx = args.indexOf('--eslint-output');
+
   const outDir = outDirIdx !== -1 ? args[outDirIdx + 1] : './artifacts';
-  return { outDir };
+  const typescriptOutput = tsIdx !== -1 ? args[tsIdx + 1] : undefined;
+  const eslintOutput = eslintIdx !== -1 ? args[eslintIdx + 1] : undefined;
+
+  return { outDir, typescriptOutput, eslintOutput };
 }
 
 function getCommitSHA(): string {
@@ -64,19 +72,29 @@ async function main() {
   let tsStatus: 'complete' | 'failed' = 'complete';
   let tsError: string | undefined;
 
-  try {
-    const res = execSync('npx tsc --noEmit --pretty false', {
-      encoding: 'utf-8',
-      stdio: 'pipe',
-      maxBuffer: 100 * 1024 * 1024 // 100MB
-    });
-    tscOutput = res || '';
-  } catch (err: any) {
-    if (err.signal || err.code === 'ENOENT' || err.code === 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER') {
+  if (options.typescriptOutput && fs.existsSync(options.typescriptOutput)) {
+    console.log(`ℹ Reusing explicit pre-collected TypeScript output from: ${options.typescriptOutput}`);
+    try {
+      tscOutput = fs.readFileSync(options.typescriptOutput, 'utf-8');
+    } catch (err: any) {
       tsStatus = 'failed';
-      tsError = `TypeScript execution crash: ${err.signal || err.code || err.message}`;
-    } else {
-      tscOutput = (err.stdout || '') + (err.stderr || '');
+      tsError = `Failed to read explicit TypeScript output file: ${err.message}`;
+    }
+  } else {
+    try {
+      const res = execSync('npx tsc --noEmit --pretty false', {
+        encoding: 'utf-8',
+        stdio: 'pipe',
+        maxBuffer: 100 * 1024 * 1024 // 100MB
+      });
+      tscOutput = res || '';
+    } catch (err: any) {
+      if (err.signal || err.code === 'ENOENT' || err.code === 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER') {
+        tsStatus = 'failed';
+        tsError = `TypeScript execution crash: ${err.signal || err.code || err.message}`;
+      } else {
+        tscOutput = (err.stdout || '') + (err.stderr || '');
+      }
     }
   }
 
@@ -110,19 +128,30 @@ async function main() {
   let eslintFindingCount = 0;
   let eslintParseError: string | undefined;
 
-  try {
-    // Write ESLint JSON directly to output file to avoid process stdout buffer limits
-    execSync(`npx eslint . --format json --output-file "${eslintOutputFile}"`, {
-      encoding: 'utf-8',
-      stdio: 'pipe',
-      maxBuffer: 100 * 1024 * 1024
-    });
-  } catch (err: any) {
-    if (err.signal || err.code === 'ENOENT' || err.code === 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER') {
+  if (options.eslintOutput && fs.existsSync(options.eslintOutput)) {
+    console.log(`ℹ Reusing explicit pre-collected ESLint output from: ${options.eslintOutput}`);
+    try {
+      const content = fs.readFileSync(options.eslintOutput, 'utf-8');
+      fs.writeFileSync(eslintOutputFile, content, 'utf-8');
+    } catch (err: any) {
       eslintStatus = 'failed';
-      eslintParseError = `ESLint execution crash: ${err.signal || err.code || err.message}`;
+      eslintParseError = `Failed to read explicit ESLint output file: ${err.message}`;
     }
-    // Note: ESLint exits with code 1 if lint errors are found, but --output-file still writes the file.
+  } else {
+    try {
+      // Write ESLint JSON directly to output file to avoid process stdout buffer limits
+      execSync(`npx eslint . --format json --output-file "${eslintOutputFile}"`, {
+        encoding: 'utf-8',
+        stdio: 'pipe',
+        maxBuffer: 100 * 1024 * 1024
+      });
+    } catch (err: any) {
+      if (err.signal || err.code === 'ENOENT' || err.code === 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER') {
+        eslintStatus = 'failed';
+        eslintParseError = `ESLint execution crash: ${err.signal || err.code || err.message}`;
+      }
+      // Note: ESLint exits with code 1 if lint errors are found, but --output-file still writes the file.
+    }
   }
 
   let eslintOutput = '';

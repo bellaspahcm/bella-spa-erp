@@ -259,3 +259,17 @@ export function completeFinding(
     fingerprint: generateFingerprint(normalizedPartial)
   };
 }
+
+/**
+ * Normalize all findings in a loaded baseline in-memory
+ */
+export function normalizeBaseline(baseline: any): any {
+  const normalized = JSON.parse(JSON.stringify(baseline));
+  for (const scopeConfig of Object.values(normalized.scopes || {})) {
+    const sc = scopeConfig as any;
+    if (sc && Array.isArray(sc.findings)) {
+      sc.findings = sc.findings.map((f: any) => completeFinding(f));
+    }
+  }
+  return normalized;
+}
