@@ -87,9 +87,9 @@ describe('Configuration-Driven Dynamic Theme Engine (Unknown Module & Future-Pro
     it('handles empty brandTheme {} gracefully without crashing or returning undefined tokens', () => {
       const defaultTokens = resolveDynamicThemeTokens({});
 
-      expect(defaultTokens.primary).toMatch(/^#[0-9A-FA-F]{6}$/);
-      expect(defaultTokens.accent).toMatch(/^#[0-9A-FA-F]{6}$/);
-      expect(defaultTokens.primaryForeground).toMatch(/^#[0-9A-FA-F]{6}$/);
+      expect(defaultTokens.primary).toMatch(/^#[0-9A-Fa-f]{6}$/);
+      expect(defaultTokens.accent).toMatch(/^#[0-9A-Fa-f]{6}$/);
+      expect(defaultTokens.primaryForeground).toMatch(/^#[0-9A-Fa-f]{6}$/);
       expect(defaultTokens.sidebarBg).toBeDefined();
       expect(defaultTokens.sidebarInnerBg).toBeDefined();
       expect(defaultTokens.sidebarFg).toBeDefined();
@@ -103,8 +103,8 @@ describe('Configuration-Driven Dynamic Theme Engine (Unknown Module & Future-Pro
 
       presets.forEach((preset) => {
         const tokens = resolveDynamicThemeTokens({ stylePreset: preset });
-        expect(tokens.primary).toMatch(/^#[0-9A-FA-F]{6}$/);
-        expect(tokens.accent).toMatch(/^#[0-9A-FA-F]{6}$/);
+        expect(tokens.primary).toMatch(/^#[0-9A-Fa-f]{6}$/);
+        expect(tokens.accent).toMatch(/^#[0-9A-Fa-f]{6}$/);
         expect(tokens.sidebarBg).toBeDefined();
         expect(tokens.sidebarInnerBg).toBeDefined();
         expect(tokens.sidebarFg).toBeDefined();
