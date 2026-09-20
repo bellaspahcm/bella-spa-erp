@@ -81,6 +81,7 @@ import {
   getCachedCurrentUser,
   getCachedTenantSettings,
 } from '@/lib/dashboard-client-context';
+import { useUser } from '@/lib/user-context';
 import { createPageRefreshEvent } from '@/lib/page-refresh';
 import ThemeToggle from '@/components/common/ThemeToggle';
 import { TenantBrandLogo } from '@/components/common/TenantBrandLogo';
@@ -627,6 +628,7 @@ export function Sidebar() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const isDashboardHome = pathname?.replace(/\/+$/, '') === '/dashboard';
+  const { product } = useUser(); // Product Identity from UserProvider
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [rolePermissions, setRolePermissions] = useState<RolePermissions | null>(null);
   const [tenantBrand, setTenantBrand] = useState<TenantBrandDisplay>(NEUTRAL_SIDEBAR_BRAND);
@@ -662,7 +664,22 @@ export function Sidebar() {
       let settings: Awaited<ReturnType<typeof getCachedTenantSettings>> = null;
       try {
         settings = await getCachedTenantSettings();
+        
         const resolvedBrand = resolveTenantBrandDisplay(settings);
+        
+        // Apply Product Identity if no custom brand configured
+        // Business Rule: CUSTOM BRAND > PRODUCT IDENTITY > NEUTRAL
+        const brandThemeObj = settings?.brand_theme as Record<string, unknown> | null | undefined;
+        const customBrandName = typeof brandThemeObj?.brandName === 'string' ? brandThemeObj.brandName.trim() : undefined;
+        if (!customBrandName && product?.displayName) {
+          resolvedBrand.displayName = product.displayName;
+          
+          // Apply product subtitle if available
+          if (product.subtitle) {
+            resolvedBrand.subtitle = product.subtitle;
+          }
+        }
+        
         setTenantBrand(resolvedBrand);
         setIsTenantBrandResolved(true);
         writeCachedTenantBrand(userData?.tenant_id, resolvedBrand);
@@ -682,7 +699,7 @@ export function Sidebar() {
       }
     };
     fetchData();
-  }, []);
+  }, [product]);  // Re-run when product loads
 
   useEffect(() => {
     if (!isTenantBrandResolved) return;

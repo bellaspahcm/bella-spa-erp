@@ -260,12 +260,15 @@ describe('platform rule engines', () => {
       menuStyle: 'comfortable',
       fontHeading: 'serif',
     });
+    // PR #124: Brand Identity Priority is CUSTOM BRAND > PRODUCT IDENTITY > NEUTRAL
+    // resolveTenantBrandIdentity now returns neutral fallback 'Hệ thống' when no custom brand is set.
+    // Product Identity (displayName from ProductRegistry) is applied by consumer (Sidebar/UserProvider).
     expect(resolveTenantBrandIdentity({
       enabledModules: { babycare: false, beauty_spa: true, student_training: true, industrial_cleaning: false },
       brandTheme: null,
       surface: 'app',
     })).toMatchObject({
-      displayName: 'Beauty Spa',
+      displayName: 'Hệ thống',
       logoUrl: '',
       primaryColor: '#074E44',
       isBeautySpa: true,
@@ -275,7 +278,7 @@ describe('platform rule engines', () => {
       brandTheme: null,
       surface: 'app',
     })).toMatchObject({
-      displayName: 'Bella Spa',
+      displayName: 'Hệ thống',
       logoUrl: '/logo.png',
       primaryColor: '#A91555',
       isBeautySpa: false,

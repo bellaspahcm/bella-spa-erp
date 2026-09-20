@@ -77,6 +77,18 @@ export interface ProductDefinition {
   readonly displayName: string;
 
   /**
+   * Product subtitle / tagline for UI display.
+   * Brief description shown below product name in branding.
+   * 
+   * @remarks
+   * Optional field. If not provided, sidebar will use neutral subtitle.
+   * Should describe what the product manages, NOT the OS capability underneath.
+   * 
+   * @example 'Haircut Shop Management', 'Mommy & Baby Care Management'
+   */
+  readonly subtitle?: string;
+
+  /**
    * Required OS capability modules.
    * Product cannot function without these modules enabled.
    * 
@@ -381,6 +393,7 @@ export const productRegistry = new ProductRegistry();
 const bellaHaircutProduct: ProductDefinition = {
   productKey: 'bella_haircut',
   displayName: 'Bella Haircut Shop',
+  subtitle: 'Haircut Shop Management',
   requiredModules: ['beauty_spa'],
   serviceProfile: 'haircut',
   defaultRoute: '/dashboard',
@@ -409,6 +422,7 @@ const bellaHaircutProduct: ProductDefinition = {
 const bellaBabycareProduct: ProductDefinition = {
   productKey: 'bella_babycare',
   displayName: 'Bella Mommy Baby Care',
+  subtitle: 'Mommy & Baby Care Management',
   requiredModules: ['babycare'],
   serviceProfile: 'babycare',
   defaultRoute: '/dashboard',

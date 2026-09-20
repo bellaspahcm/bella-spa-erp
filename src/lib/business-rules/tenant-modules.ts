@@ -551,22 +551,16 @@ export function resolveTenantBrandIdentity(input: {
      Boolean((input.enabledModules as Record<string, unknown> | null)?.product === 'dental') ||
      (input.tenantName && /dental|nha khoa/i.test(input.tenantName)));
 
-  const defaultDisplayName = 
-    moduleKey === 'bella_healthcare' ? (isDental ? 'Bella Dental Clinic' : 'Bella Medical Clinic') :
-    moduleKey === 'bella_education' ? 'Bella Preschool' :
-    moduleKey === 'bella_auto' ? 'Bella Auto' :
-    moduleKey === 'beauty_spa' ? 'Beauty Spa' :
-    moduleKey === 'industrial_cleaning' ? 'Industrial Cleaning' :
-    moduleKey === 'real_estate' ? 'Bella Land' :
-    'Bella Spa';
+  // Brand Identity Priority: CUSTOM BRAND > PRODUCT IDENTITY > NEUTRAL
+  // Product Identity will be applied by consumer from UserProvider.product
   const baseDisplayName =
     theme.brandName ||
     (input.surface === 'portal' ? theme.portalDisplayName : '') ||
     (input.surface === 'invoice' ? theme.invoiceDisplayName : '') ||
-    tenantName ||
-    defaultDisplayName;
-  const portalDisplayName = theme.portalDisplayName || theme.brandName || tenantName || defaultDisplayName;
-  const invoiceDisplayName = theme.invoiceDisplayName || theme.brandName || tenantName || defaultDisplayName;
+    'Hệ thống';  // Neutral fallback, NO module-based inference
+    
+  const portalDisplayName = theme.portalDisplayName || theme.brandName || 'Hệ thống';
+  const invoiceDisplayName = theme.invoiceDisplayName || theme.brandName || 'Hệ thống';
   const displayName =
     input.surface === 'portal'
       ? portalDisplayName
@@ -584,17 +578,7 @@ export function resolveTenantBrandIdentity(input: {
     portalDisplayName,
     invoiceDisplayName,
     logoUrl: explicitLogoUrl || theme.logoUrl || (moduleKey === 'babycare' ? '/logo.png' : ''),
-    subtitle: 
-      moduleKey === 'bella_healthcare' ? (
-        isHospitalInpatient ? 'General Hospital Management' :
-        isDental ? 'Clinical Management' : 'Medical Clinic EMR Platform'
-      ) :
-      moduleKey === 'bella_education' ? 'Preschool & Education ERP' :
-      moduleKey === 'bella_auto' ? 'Automotive Management' :
-      moduleKey === 'beauty_spa' ? 'Beauty Spa ERP' :
-      moduleKey === 'industrial_cleaning' ? 'Industrial Cleaning ERP' :
-      moduleKey === 'real_estate' ? 'Real Estate Management' :
-      'Management System',
+    subtitle: 'Management System',  // Neutral fallback, product subtitle will override
     primaryHoverColor: darkenHexColor(theme.primaryColor),
     monogram: buildMonogram(displayName),
     isBeautySpa: moduleKey === 'beauty_spa',
