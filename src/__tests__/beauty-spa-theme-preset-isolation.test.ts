@@ -96,5 +96,22 @@ describe('beauty_spa and haircut theme preset isolation & CSS ownership (Pass 1 
       );
       expect(unscopedBeautyNavActive).toBeNull();
     });
+
+    it('scopes industrial_cleaning and real_estate default CSS variables behind :not([data-tenant-brand-preset])', () => {
+      expect(globalStyles).toContain('html:not([data-tenant-brand-preset])[data-tenant-module="industrial_cleaning"]');
+      expect(globalStyles).not.toMatch(/^html\[data-tenant-module="industrial_cleaning"\]\s*\{[^}]*--primary:/m);
+
+      expect(globalStyles).toContain('html:not([data-tenant-brand-preset])[data-tenant-module="real_estate"]');
+      expect(globalStyles).not.toMatch(/^html\[data-tenant-module="real_estate"\]\s*\{[^}]*--primary:/m);
+    });
+
+    it('enforces that ALL business module default --primary override blocks are scoped with :not([data-tenant-brand-preset])', () => {
+      // Catch any future developer adding a new module without :not([data-tenant-brand-preset])
+      // Excludes 'pending' which is platform fallback before tenant hydration
+      const unscopedBusinessModulePrimaryDefinitions = globalStyles.match(
+        /^html\[data-tenant-module="(?!pending")[a-z0-9_]+"\]\s*\{[^}]*--primary:/gm,
+      );
+      expect(unscopedBusinessModulePrimaryDefinitions).toBeNull();
+    });
   });
 });
