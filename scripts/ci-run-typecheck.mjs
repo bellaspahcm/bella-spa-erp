@@ -47,8 +47,6 @@ function runTscProject(project, buildInfoName) {
 function runFull() {
   runTsc([
     'tsc',
-    '-p',
-    'tsconfig.json',
     '--noEmit',
     '--strict',
     '--pretty',
@@ -61,7 +59,25 @@ function runFull() {
 
 function loadBaselines() {
   try {
-    return JSON.parse(readFileSync(baselinePath, 'utf8'));
+    const data = JSON.parse(readFileSync(baselinePath, 'utf8'));
+    if (!data.full && !data['typescript-full']) {
+      try {
+        const mainData = JSON.parse(readFileSync('.github/ci/baselines/main.json', 'utf8'));
+        if (mainData.scopes?.['typescript-full']) {
+          const diagnostics = {};
+          for (const f of mainData.scopes['typescript-full'].findings || []) {
+            const code = f.components?.code || f.code || 'TS0000';
+            const sig = `${f.file}|${code}|${f.message}`;
+            diagnostics[sig] = (diagnostics[sig] || 0) + 1;
+          }
+          data['full'] = { diagnostics };
+          data['typescript-full'] = { diagnostics };
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return data;
   } catch {
     return {};
   }

@@ -71,8 +71,6 @@ const nextConfig: NextConfig = {
   transpilePackages: ['@bella/shared'],
   // Tree-shake heavy barrel imports. lucide-react / date-fns / recharts are
   // already optimized by default in Next 16; framer-motion is not, so add it.
-  // Turbopack config (Next.js 15+)
-  turbo: {},
   experimental: {
     optimizePackageImports: ['framer-motion'],
   },
