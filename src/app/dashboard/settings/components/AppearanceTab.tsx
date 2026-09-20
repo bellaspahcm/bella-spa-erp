@@ -21,6 +21,7 @@ import {
   applyThemeTokensToRoot,
   getDefaultTenantBrandThemeForModule,
   getDefaultTenantModuleKey,
+  hexToRelativeLuminance,
   normalizeEnabledModules,
   normalizeTenantBrandThemeForModule,
   resolveDynamicThemeTokens,
@@ -477,10 +478,14 @@ export default function AppearanceTab() {
             type="button"
             onClick={handleSaveTenantConfig}
             disabled={isLoadingTenantConfig || isSavingTenantConfig}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-3 text-sm font-black uppercase tracking-wider text-white shadow-md transition hover:bg-primary-hover active:scale-95 disabled:opacity-50"
+            style={{
+              backgroundColor: brandTheme.primaryColor || 'var(--primary)',
+              color: hexToRelativeLuminance(brandTheme.primaryColor || '#074E44') < 0.45 ? '#FFFFFF' : '#0F172A',
+            }}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-black uppercase tracking-wider shadow-md transition hover:opacity-90 active:scale-95 disabled:opacity-50"
           >
-            {isSavingTenantConfig ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Lưu cấu hình
+            {isSavingTenantConfig ? <Loader2 className="h-4 w-4 animate-spin text-current" /> : <Save className="h-4 w-4 text-current" />}
+            <span className="text-current font-black">Lưu cấu hình</span>
           </button>
         </div>
 
