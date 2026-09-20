@@ -1204,11 +1204,40 @@ html[data-tenant-module="pending"] [class*="to-pink-"] {
 }
 
 /* =========================================================================
-   DYNAMIC BRAND PRESET SIDEBAR OVERRIDES (WCAG 2.1 AA Compliant)
-   Dynamically styles the sidebar according to the selected brand preset
+   DYNAMIC BRAND PRESET OVERRIDES (WCAG 2.1 AA Compliant)
+   Dynamically styles root CSS variables, viewport accents, and the sidebar 
+   according to the selected brand preset.
    ========================================================================= */
 
-/* 1. JADE WELLNESS (Pure Emerald Green #074E44 / #C8A97A Warm Gold - Pure Jade, No Navy Blue) */
+/* Systemic Dynamic Sidebar Engine (Zero-Hardcode Systemic Inheritance) */
+html .beauty-erp-sidebar {
+  background: var(--sidebar-bg, #f8fafc) !important;
+  color: var(--sidebar-fg, #0f172a) !important;
+  border-color: var(--sidebar-border, rgba(0, 0, 0, 0.1)) !important;
+}
+
+html .beauty-erp-sidebar-inner,
+html .beauty-erp-sidebar > div {
+  background: var(--sidebar-inner-bg, rgba(255, 255, 255, 0.8)) !important;
+  border: 1px solid var(--sidebar-border, rgba(0, 0, 0, 0.1)) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+html .beauty-erp-nav-header,
+html .beauty-erp-brand-subtitle {
+  color: var(--sidebar-muted, #64748b) !important;
+}
+
+/* 1. JADE WELLNESS (Pure Emerald Green #074E44 / #C8A97A Warm Gold) */
+html[data-tenant-brand-preset="jade_wellness"] {
+  --primary: #074E44 !important;
+  --primary-hover: #03211D !important;
+  --primary-foreground: #FFFFFF !important;
+  --accent: #C8A97A !important;
+  --accent-foreground: #03211D !important;
+  --ring: #074E44 !important;
+}
+
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-sidebar,
 html[data-tenant-brand-preset="jade_wellness"] aside.beauty-erp-sidebar,
 html[data-tenant-brand-preset="jade_wellness"] aside[class*="bg-"] {
@@ -1216,6 +1245,11 @@ html[data-tenant-brand-preset="jade_wellness"] aside[class*="bg-"] {
   border-color: rgba(200, 169, 122, 0.34) !important;
   box-shadow: 16px 0 44px rgba(4, 42, 37, 0.28) !important;
   color: #f8f6f2 !important;
+}
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-sidebar > div {
+  background: rgba(3, 33, 29, 0.65) !important;
+  border-color: rgba(200, 169, 122, 0.28) !important;
+  backdrop-filter: blur(12px) !important;
 }
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-logo-mark {
   background: linear-gradient(145deg, #074e44 0%, #03211d 100%) !important;

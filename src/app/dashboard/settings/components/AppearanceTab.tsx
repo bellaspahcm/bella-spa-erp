@@ -18,10 +18,12 @@ import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
 import {
   DEFAULT_ENABLED_MODULES,
   DEFAULT_TENANT_BRAND_THEME,
+  applyThemeTokensToRoot,
   getDefaultTenantBrandThemeForModule,
   getDefaultTenantModuleKey,
   normalizeEnabledModules,
   normalizeTenantBrandThemeForModule,
+  resolveDynamicThemeTokens,
   resolveTenantBrandIdentity,
   type TenantBrandButtonStyle,
   type TenantBrandMenuStyle,
@@ -160,10 +162,8 @@ function applyBrandThemePreview(input: {
   root.dataset.tenantBrandMenu = brand.menuStyle;
   root.dataset.tenantBrandRadius = brand.radiusStyle;
   root.dataset.tenantBrandPreset = brand.stylePreset || (brand.primaryColor === '#074E44' ? 'jade_wellness' : brand.primaryColor === '#1E3A8A' ? 'luxury_navy' : brand.primaryColor === '#1E40AF' ? 'ocean_clean' : brand.primaryColor === '#18181B' ? 'graphite_luxe' : 'bella_rose');
-  root.style.setProperty('--primary', brand.primaryColor);
-  root.style.setProperty('--primary-hover', brand.primaryHoverColor);
-  root.style.setProperty('--accent', brand.accentColor);
-  root.style.setProperty('--ring', brand.primaryColor);
+  const tokens = resolveDynamicThemeTokens(brand);
+  applyThemeTokensToRoot(tokens);
   themeMeta?.setAttribute('content', brand.primaryColor);
 
   if (!input.persist || !input.tenantId) return;
