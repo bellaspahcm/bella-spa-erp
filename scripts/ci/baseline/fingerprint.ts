@@ -186,10 +186,22 @@ export function generateASTContextHash(
  * Normalize file path for cross-platform consistency
  */
 function normalizeFilePath(file: string): string {
-  return file
+  let normalized = file
     .replace(/\\/g, '/')           // Windows backslash → forward slash
-    .replace(/^\.\//, '')          // Remove leading ./
-    .toLowerCase();
+    .replace(/^\.\//, '');          // Remove leading ./
+
+  // Strip absolute path prefixes to keep relative repository path
+  const lower = normalized.toLowerCase();
+  const markers = ['bella-spa-erp/', 'bella spa erp/'];
+  for (const marker of markers) {
+    const lastIdx = lower.lastIndexOf(marker);
+    if (lastIdx !== -1) {
+      normalized = normalized.substring(lastIdx + marker.length);
+      break;
+    }
+  }
+
+  return normalized;
 }
 
 /**
@@ -237,8 +249,27 @@ function hash(input: string): string {
 export function completeFinding(
   partial: Omit<FindingIdentity, 'fingerprint'>
 ): FindingIdentity {
-  return {
+  const normalizedFile = normalizeFilePath(partial.file);
+  const normalizedPartial = {
     ...partial,
-    fingerprint: generateFingerprint(partial)
+    file: normalizedFile
   };
+  return {
+    ...normalizedPartial,
+    fingerprint: generateFingerprint(normalizedPartial)
+  };
+}
+
+/**
+ * Normalize all findings in a loaded baseline in-memory
+ */
+export function normalizeBaseline(baseline: any): any {
+  const normalized = JSON.parse(JSON.stringify(baseline));
+  for (const scopeConfig of Object.values(normalized.scopes || {})) {
+    const sc = scopeConfig as any;
+    if (sc && Array.isArray(sc.findings)) {
+      sc.findings = sc.findings.map((f: any) => completeFinding(f));
+    }
+  }
+  return normalized;
 }
