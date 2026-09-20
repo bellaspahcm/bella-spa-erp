@@ -76,6 +76,14 @@ jobs:
       - name: Run dependency-aware typecheck
         run: npm run typecheck:${{ needs.detect_changes.outputs.typecheck_mode }}
 
+      - name: Upload TypeScript diagnostics artifact
+        if: ${{ always() && hashFiles('.cache/tsbuildinfo/full.diagnostics.txt') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: typescript-full-diagnostics
+          path: .cache/tsbuildinfo/full.diagnostics.txt
+          retention-days: 1
+
   skipped:
     name: Type Check Skipped
     needs: detect_changes

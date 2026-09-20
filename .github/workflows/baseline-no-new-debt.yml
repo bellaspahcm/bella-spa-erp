@@ -40,10 +40,23 @@ jobs:
             echo "⚠️  Baseline not found (bootstrap scenario)"
           fi
       
+      - name: Download pre-collected TypeScript diagnostics
+        if: steps.baseline_check.outputs.exists == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: typescript-full-diagnostics
+          path: .cache/tsbuildinfo
+        continue-on-error: true
+
       - name: Collect diagnostic artifacts (Single Producer)
         if: steps.baseline_check.outputs.exists == 'true'
         run: |
-          npx tsx scripts/ci/baseline/collect-artifacts.ts --out-dir ./artifacts
+          TS_ARG=""
+          if [ -f .cache/tsbuildinfo/full.diagnostics.txt ]; then
+            TS_ARG="--typescript-output .cache/tsbuildinfo/full.diagnostics.txt"
+            echo "✅ Using pre-collected TypeScript diagnostics from artifact"
+          fi
+          npx tsx scripts/ci/baseline/collect-artifacts.ts --out-dir ./artifacts $TS_ARG
 
       - name: Run pure baseline comparison
         if: steps.baseline_check.outputs.exists == 'true'
