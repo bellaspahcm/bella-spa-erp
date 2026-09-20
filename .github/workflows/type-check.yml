@@ -43,7 +43,7 @@ jobs:
     needs: detect_changes
     if: needs.detect_changes.outputs.needs_typecheck == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     env:
       CI_SCOPE_TYPECHECK_MODE: ${{ needs.detect_changes.outputs.typecheck_mode }}
       CI_SCOPE_PRODUCTS: ${{ needs.detect_changes.outputs.products }}

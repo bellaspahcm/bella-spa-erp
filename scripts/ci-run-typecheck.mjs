@@ -47,6 +47,8 @@ function runTscProject(project, buildInfoName) {
 function runFull() {
   runTsc([
     'tsc',
+    '-p',
+    'tsconfig.json',
     '--noEmit',
     '--strict',
     '--pretty',
