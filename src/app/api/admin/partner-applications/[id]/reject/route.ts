@@ -89,20 +89,20 @@ export async function POST(
     }
 
     // 5. Update application status to rejected
-    const { data: updatedApp, error: updateError } = await supabase
-      .from('partner_applications')
+    const { data: updatedApp, error: updateError } = await (supabase
+      .from('partner_applications' as any)
       .update({
-        status: 'rejected' as const,
+        status: 'rejected',
         rejected_at: new Date().toISOString(),
         rejected_by: user.id,
         rejection_reason: reason.trim(),
         rejection_category: category || 'other',
         updated_at: new Date().toISOString(),
         updated_by: user.id,
-      })
+      } as any)
       .eq('id', params.id)
       .select()
-      .single();
+      .single() as any);
 
     if (updateError) {
       console.error('Failed to update application:', updateError);
@@ -113,18 +113,18 @@ export async function POST(
     }
 
     // 6. Log rejection action
-    const { error: logError } = await supabase
-      .from('partner_application_logs')
+    const { error: logError } = await (supabase
+      .from('partner_application_logs' as any)
       .insert({
         application_id: params.id,
-        action: 'rejected' as const,
+        action: 'rejected',
         action_description: `Application rejected: ${reason}`,
         performed_by: user.id,
         performed_by_role: 'admin',
         old_status: application.status,
-        new_status: 'rejected' as const,
+        new_status: 'rejected',
         metadata: { reason, category },
-      });
+      } as any) as any);
 
     if (logError) {
       console.error('Failed to log rejection:', logError);
