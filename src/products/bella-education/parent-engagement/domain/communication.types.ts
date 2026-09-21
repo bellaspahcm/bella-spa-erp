@@ -45,7 +45,9 @@ export type ExceptionType =
   | 'OVERDUE_CONSENT'
   | 'DELIVERY_FAILED'
   | 'CONSENT_DECLINED'
-  | 'STAFFING_SHORTAGE_SLA';
+  | 'STAFFING_SHORTAGE_SLA'
+  | 'SAFETY_DEFECT'
+  | 'OVERDUE_INSPECTION';
 
 export type ExceptionStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'BYPASSED';
 

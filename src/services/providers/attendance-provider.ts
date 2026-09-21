@@ -103,9 +103,10 @@ export class AttendanceProvider implements PayrollProvider<SalaryComponent> {
 
     // Check if override amount provided
     if (options?.applyOverrides && overrides?.attendanceDeduction !== undefined) {
+      const overrideAmount = typeof overrides.attendanceDeduction === 'number' ? overrides.attendanceDeduction : undefined;
       return createSalaryComponent('attendance-deduction', {
         eligible: true,
-        amount: overrides.attendanceDeduction,
+        amount: overrideAmount,
         reason: 'Manual override applied',
         metadata: {
           override: true,

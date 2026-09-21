@@ -17,7 +17,6 @@
  * 12. Cross-Tenant Isolation (Tenant B cannot read/modify Tenant A's facilities)
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
 import { PreschoolFacilitiesRepository } from '@/products/bella-education/facilities/repositories/preschool-facilities.repository';
 import { FacilityZoneService } from '@/products/bella-education/facilities/services/facility-zone.service';

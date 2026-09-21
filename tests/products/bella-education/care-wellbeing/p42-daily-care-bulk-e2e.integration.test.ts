@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { DailyCareService } from "@/products/bella-education/care-wellbeing/daily-care/daily-care.service";
 

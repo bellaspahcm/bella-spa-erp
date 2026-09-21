@@ -16,7 +16,6 @@
  * 12. Cross-Tenant Mismatch Hard Block
  */
 
-import { describe, test, expect, beforeEach } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
 import { PreschoolFinanceRepository } from '../../../../src/products/bella-education/finance/repositories/preschool-finance.repository';
 import { TuitionBillingService } from '../../../../src/products/bella-education/finance/services/tuition-billing.service';
@@ -33,7 +32,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-describe('P7.2 Finance Communication & Collection Lifecycle Integration Suite', { timeout: 20000 }, () => {
+describe('P7.2 Finance Communication & Collection Lifecycle Integration Suite', () => {
   let finRepo: PreschoolFinanceRepository;
   let billingService: TuitionBillingService;
   let issuanceService: InvoiceIssuanceService;
@@ -101,7 +100,7 @@ describe('P7.2 Finance Communication & Collection Lifecycle Integration Suite', 
     });
 
     billingPeriodId = period.id;
-  });
+  }, 30_000);
 
   const createTestStudent = async (tenantId: string = tenantA, parentId: string = parentPartyId) => {
     const studentId = crypto.randomUUID();

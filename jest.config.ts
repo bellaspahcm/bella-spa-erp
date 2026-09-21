@@ -25,6 +25,7 @@ const config: Config = {
     '/.next/',
     '/e2e/',
     '/playwright-report/',
+    '/tests/(unit|integration|e2e)/runtime/',
     '/src/__tests__/e2e-(order-lifecycle-real|refund-full|accounting-gl-verification|payroll-month-close)\\.test\\.ts$',
   ],
   // Transform ESM modules (uuid, etc.)

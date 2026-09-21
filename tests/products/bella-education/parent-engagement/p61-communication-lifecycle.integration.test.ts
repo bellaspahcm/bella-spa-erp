@@ -3,7 +3,6 @@
 // File: tests/products/bella-education/parent-engagement/p61-communication-lifecycle.integration.test.ts
 // ============================================================================
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
 import {
   ParentCommunicationRepository,

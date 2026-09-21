@@ -8,13 +8,32 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
 import { BaseSupabaseRepositoryPrimitive } from '../../core/repository';
-import { Course } from '../domain/course.entity';
-import { Enrollment } from '../domain/enrollment.entity';
+import { Course, CourseStatus } from '../domain/course.entity';
+import { Enrollment, EnrollmentStatus } from '../domain/enrollment.entity';
 import { IEducationRepository } from './education-repository.interface';
 
+/**
+ * RPC Contract: edu_enroll_student_v3
+ * 
+ * Source: supabase/migrations/20260813000040_create_enrollment_transaction_rpc.sql
+ * All 4 return branches return identical structure via json_build_object.
+ * 
+ * Structure proven consistent across:
+ * - Branch 1: Pre-lock duplicate check (line 61)
+ * - Branch 2: Post-lock duplicate recheck (line 78)
+ * - Branch 3: INSERT conflict occurred (line 98)
+ * - Branch 4: Successful new enrollment (line 109)
+ */
+interface EduEnrollStudentV3Result {
+  success: boolean;
+  enrollment_id: string;
+  is_duplicate: boolean;
+}
+
 export class SupabaseEducationRepository extends BaseSupabaseRepositoryPrimitive implements IEducationRepository {
-  constructor(private readonly supabase: SupabaseClient<Record<string, unknown>>) {
+  constructor(private readonly supabase: SupabaseClient<Database>) {
     super();
   }
 
@@ -60,10 +79,10 @@ export class SupabaseEducationRepository extends BaseSupabaseRepositoryPrimitive
       tenantId: data.tenant_id,
       courseCode: data.course_code,
       title: data.title,
-      status: data.status,
+      status: data.status as CourseStatus,
       maxStudents: data.max_students,
-      currentEnrollment: data.current_enrollment,
-      prerequisiteCourseCodes: data.prerequisite_course_codes,
+      currentEnrollment: data.current_enrollment ?? 0,
+      prerequisiteCourseCodes: data.prerequisite_course_codes ?? undefined,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at),
     });
@@ -110,7 +129,7 @@ export class SupabaseEducationRepository extends BaseSupabaseRepositoryPrimitive
       tenantId: data.tenant_id,
       studentPartyId: data.student_party_id,
       courseId: data.course_id,
-      status: data.status,
+      status: data.status as EnrollmentStatus,
       requestId: data.request_id,
       enrolledAt: new Date(data.enrolled_at),
       createdAt: new Date(data.created_at),
@@ -142,7 +161,7 @@ export class SupabaseEducationRepository extends BaseSupabaseRepositoryPrimitive
       tenantId: data.tenant_id,
       studentPartyId: data.student_party_id,
       courseId: data.course_id,
-      status: data.status,
+      status: data.status as EnrollmentStatus,
       requestId: data.request_id,
       enrolledAt: new Date(data.enrolled_at),
       createdAt: new Date(data.created_at),
@@ -198,10 +217,10 @@ export class SupabaseEducationRepository extends BaseSupabaseRepositoryPrimitive
       tenantId: data.tenant_id,
       courseCode: data.course_code,
       title: data.title,
-      status: data.status,
+      status: data.status as CourseStatus,
       maxStudents: data.max_students,
-      currentEnrollment: data.current_enrollment,
-      prerequisiteCourseCodes: data.prerequisite_course_codes,
+      currentEnrollment: data.current_enrollment ?? 0,
+      prerequisiteCourseCodes: data.prerequisite_course_codes ?? undefined,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at),
     });
@@ -279,9 +298,23 @@ export class SupabaseEducationRepository extends BaseSupabaseRepositoryPrimitive
       throw this.mapDatabaseError(error, `RPC edu_enroll_student_v3 failed: ${error.message}`);
     }
 
+    // Handle unexpected null (should not occur based on SQL contract, but RPC signature allows it)
+    if (!data) {
+      throw new Error('RPC edu_enroll_student_v3 returned null unexpectedly');
+    }
+
+    // Type assertion: structure proven consistent across all 4 SQL return branches
+    // See: supabase/migrations/20260813000040_create_enrollment_transaction_rpc.sql
+    // Runtime check narrows Json union, then assert to specific structure
+    if (typeof data !== 'object' || Array.isArray(data)) {
+      throw new Error('RPC edu_enroll_student_v3 returned unexpected type');
+    }
+
+    const result = data as unknown as EduEnrollStudentV3Result;
+
     return {
-      isDuplicate: data.is_duplicate,
-      enrollmentId: data.enrollment_id,
+      isDuplicate: result.is_duplicate,
+      enrollmentId: result.enrollment_id,
     };
   }
 }

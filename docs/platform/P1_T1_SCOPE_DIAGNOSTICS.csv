@@ -1,0 +1,4 @@
+Scope,Diagnostics,Status,Notes,Top Error Codes
+"Beauty OS",0,CLEAN,"Active product (Nail RC + contracts)",""
+"Education OS",231,DIRTY,"Active OS","TS2339: 69; TS2322: 66; TS2345: 24; TS18047: 14; TS2363: 10"
+"English Center",165,DIRTY,"Paused product","TS2322: 58; TS2339: 58; TS2345: 18; TS18047: 13; TS2367: 4"

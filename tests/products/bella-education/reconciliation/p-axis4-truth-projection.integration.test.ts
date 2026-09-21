@@ -10,7 +10,6 @@
  * 5. Cross-Tenant Reconciliation Isolation: Tenant A reconciliation events NEVER alter Tenant B executive projections.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
 import { PreschoolAnalyticsRepository } from '../../../../src/products/bella-education/analytics/repositories/preschool-analytics.repository';
 import { PreschoolAnalyticsService } from '../../../../src/products/bella-education/analytics/services/preschool-analytics.service';

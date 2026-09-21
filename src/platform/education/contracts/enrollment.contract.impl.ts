@@ -1,17 +1,46 @@
 import { IEducationEnrollmentContract, EnrollStudentInput, EducationEnrollmentDTO } from './enrollment.contract';
-import { EducationEngineService } from '../education-engine.service';
+import { EducationEngineService, OverrideRequest } from '../education-engine.service';
 import { SupabaseEducationRepository } from '../repositories/supabase-education.repository';
 import { createClient } from '@/lib/supabase-server';
 import { eventBus } from '@/platform/host/event-bus';
+import { EventBusPort, DomainEventEnvelope } from '@/platform/core/events/types';
+
+/**
+ * Adapter: EventBusService → EventBusPort
+ * Maps Platform Host EventBusService to Core EventBusPort abstraction
+ */
+class EventBusServiceAdapter implements EventBusPort {
+  async publish<T = unknown>(event: DomainEventEnvelope<T>): Promise<void> {
+    await eventBus.publish({
+      eventType: event.eventType,
+      eventVersion: event.eventVersion,
+      tenantId: event.tenantId,
+      aggregateId: event.aggregateId,
+      aggregateType: event.aggregateType,
+      payload: event.payload,
+      userId: event.userId,
+      correlationId: event.correlationId,
+      causationId: event.causationId,
+    });
+  }
+
+  subscribe<T = unknown>(eventType: string, handler: (event: DomainEventEnvelope<T>) => Promise<void> | void): () => void {
+    return eventBus.subscribe(eventType, handler);
+  }
+
+  clear(): void {
+    // EventBusService doesn't expose clear, no-op for now
+  }
+}
 
 export class EnrollmentContractImpl implements IEducationEnrollmentContract {
   public async enrollStudent(input: EnrollStudentInput): Promise<EducationEnrollmentDTO> {
     const supabase = createClient();
     const repository = new SupabaseEducationRepository(supabase);
-    // Note: The eventBus conforms to EventBusPort - type assertion safe here
-    const service = new EducationEngineService(repository, eventBus);
+    const eventBusAdapter = new EventBusServiceAdapter();
+    const service = new EducationEngineService(repository, eventBusAdapter);
 
-    let overrideRequest = (input as EnrollStudentInput & {overrideRequest?: unknown}).overrideRequest;
+    let overrideRequest: OverrideRequest | undefined = (input as EnrollStudentInput & {overrideRequest?: unknown}).overrideRequest as OverrideRequest | undefined;
     if (!overrideRequest && input.overrideJustification) {
       try {
         overrideRequest = JSON.parse(input.overrideJustification);
@@ -37,7 +66,7 @@ export class EnrollmentContractImpl implements IEducationEnrollmentContract {
       tenantId: result.enrollment.tenantId,
       studentPartyId: result.enrollment.studentPartyId,
       courseId: result.enrollment.courseId,
-      status: result.enrollment.status,
+      status: result.enrollment.status as 'pending' | 'active' | 'completed' | 'cancelled',
       enrolledAt: result.enrollment.enrolledAt,
     };
   }
@@ -55,7 +84,7 @@ export class EnrollmentContractImpl implements IEducationEnrollmentContract {
       tenantId: enrollment.tenantId,
       studentPartyId: enrollment.studentPartyId,
       courseId: enrollment.courseId,
-      status: enrollment.status,
+      status: enrollment.status as 'pending' | 'active' | 'completed' | 'cancelled',
       enrolledAt: enrollment.enrolledAt.toISOString(),
     };
   }

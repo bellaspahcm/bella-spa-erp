@@ -8,7 +8,6 @@
  * 4. Contract semantic drift fixed
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createClient } from '@/lib/supabase-server';
 import { StudentService } from '@/platform/education/student/student.service';
 import { PartyRepository } from '@/platform/host/party/party.repository';

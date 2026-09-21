@@ -21,9 +21,10 @@ export class HostEventBusBridge implements EventBus {
           break;
         default:
           // Fallback or throw if unrecognized
+          const exhaustiveCheck: never = event;
           return {
             success: false,
-            error: `Unsupported event type: ${event.eventType}`,
+            error: `Unsupported event type: ${(exhaustiveCheck as OrderEvent).eventType}`,
           };
       }
 
@@ -34,8 +35,6 @@ export class HostEventBusBridge implements EventBus {
         aggregateId: event.aggregateId,
         aggregateType: event.aggregateType,
         payload: event.payload,
-        correlationId: event.correlationId,
-        causationId: event.causationId,
       });
 
       return {
@@ -52,5 +51,11 @@ export class HostEventBusBridge implements EventBus {
 
   async publishBatch(events: OrderEvent[]): Promise<EventPublishResult[]> {
     return Promise.all(events.map(event => this.publish(event)));
+  }
+
+  subscribe(_eventType: string, _handler: (event: OrderEvent) => Promise<void>): void {
+    // Host EventBus subscription is managed separately
+    // This bridge only handles publish direction
+    throw new Error('Subscribe not supported on HostEventBusBridge - use Host EventBus directly');
   }
 }

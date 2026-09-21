@@ -51,10 +51,8 @@ export class ReservationService implements IReservationContract {
         product_id: params.productId,
         user_id: params.userId,
         customer_id: params.customerId,
-        duration_minutes: params.durationMinutes,
         status: 'active' as any,
-        expires_at: expiresAt,
-        deposit_amount: 0 // Default to zero before actual deposit payment
+        expires_at: expiresAt
       })
       .select('id')
       .single();

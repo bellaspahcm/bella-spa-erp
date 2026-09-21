@@ -7,6 +7,125 @@
  * @module decision-engine/providers/payroll
  */
 
+// ============================================================================
+// Typed Configuration Parameters (Strategy-Specific)
+// ============================================================================
+
+/**
+ * KPI Strategy Parameters
+ */
+export interface KPIThresholdParams {
+  target: number;
+  bonus: number;
+}
+
+export interface KPILinearParams {
+  baseline: number;
+  bonusPerSession: number;
+}
+
+export interface KPITierParams {
+  tiers: Array<{
+    min: number;
+    max: number;
+    bonus: number;
+  }>;
+}
+
+/**
+ * Attendance Strategy Parameters
+ */
+export interface AttendanceLateDeductionParams {
+  latePenalty: number;
+  absentPenalty?: number; // Optional for late_deduction only
+}
+
+export interface AttendanceAbsentDeductionParams {
+  absentPenalty: number;
+  latePenalty?: number; // Optional for absent_deduction only
+}
+
+export interface AttendanceCombinedParams {
+  latePenalty: number;
+  absentPenalty: number;
+}
+
+/**
+ * Rating Strategy Parameters
+ */
+export interface RatingThresholdParams {
+  minRating: number;
+  bonus: number;
+}
+
+export interface RatingLinearParams {
+  baseline: number;
+  bonusPerPoint: number;
+  maxBonus?: number; // Optional max bonus
+  cap?: number; // Optional max bonus (alias)
+}
+
+export interface RatingTierParams {
+  tiers: Array<{
+    min: number;
+    max: number;
+    bonus: number;
+  }>;
+}
+
+/**
+ * Commission Strategy Parameters
+ */
+export interface CommissionFixedParams {
+  rate: number;
+  minSessions?: number; // Optional gate threshold
+}
+
+export interface CommissionTierParams {
+  tiers: Array<{
+    min: number;
+    max: number;
+    rate: number;
+  }>;
+}
+
+export interface CommissionPercentageParams {
+  percentage: number;
+}
+
+export interface CommissionServiceParams {
+  serviceRates: Record<string, number>; // { 'Massage': 120000, 'Facial': 150000 }
+}
+
+// ============================================================================
+// Typed Config Unions (Discriminated by Strategy)
+// ============================================================================
+
+export type KPIConfig =
+  | { enabled: boolean; strategy: 'threshold'; params: KPIThresholdParams }
+  | { enabled: boolean; strategy: 'linear'; params: KPILinearParams }
+  | { enabled: boolean; strategy: 'tier'; params: KPITierParams };
+
+export type AttendanceConfig =
+  | { enabled: boolean; strategy: 'late_deduction'; params: AttendanceLateDeductionParams }
+  | { enabled: boolean; strategy: 'absent_deduction'; params: AttendanceAbsentDeductionParams }
+  | { enabled: boolean; strategy: 'combined'; params: AttendanceCombinedParams };
+
+export type RatingConfig =
+  | { enabled: boolean; strategy: 'threshold'; params: RatingThresholdParams }
+  | { enabled: boolean; strategy: 'linear'; params: RatingLinearParams }
+  | { enabled: boolean; strategy: 'tier'; params: RatingTierParams };
+
+export type CommissionConfig =
+  | { enabled: boolean; strategy: 'fixed'; params: CommissionFixedParams }
+  | { enabled: boolean; strategy: 'tier'; params: CommissionTierParams }
+  | { enabled: boolean; strategy: 'percentage'; params: CommissionPercentageParams }
+  | { enabled: boolean; strategy: 'service'; params: CommissionServiceParams };
+
+// ============================================================================
+// Payroll Decision Input
+// ============================================================================
+
 /**
  * Payroll decision input (Knowledge)
  * 
@@ -56,26 +175,10 @@ export interface PayrollDecisionInput {
 
   /** Provider configurations (from tenant config) */
   config?: {
-    kpi?: {
-      enabled: boolean;
-      strategy: 'threshold' | 'linear' | 'tier';
-      params: Record<string, unknown>;
-    };
-    attendance?: {
-      enabled: boolean;
-      strategy: 'late_deduction' | 'absent_deduction' | 'combined';
-      params: Record<string, unknown>;
-    };
-    rating?: {
-      enabled: boolean;
-      strategy: 'threshold' | 'linear' | 'tier';
-      params: Record<string, unknown>;
-    };
-    commission?: {
-      enabled: boolean;
-      strategy: 'fixed' | 'tier' | 'percentage' | 'service';
-      params: Record<string, unknown>;
-    };
+    kpi?: KPIConfig;
+    attendance?: AttendanceConfig;
+    rating?: RatingConfig;
+    commission?: CommissionConfig;
   };
 
   /** Additional metadata */

@@ -100,8 +100,6 @@ export class RuleEngineService implements IRuleGovernanceContract {
       // Event-After-Persistence
       await eventBus.publish({
         eventType: 'hos.rule.draft_created.v1',
-        eventId: crypto.randomUUID(),
-        timestamp: new Date().toISOString(),
         tenantId: record.tenantId,
         aggregateId: record.id,
         aggregateType: 'GovernedRule',
@@ -295,8 +293,6 @@ export class RuleEngineService implements IRuleGovernanceContract {
       // Event-After-Persistence
       await eventBus.publish({
         eventType: 'hos.rule.activated.v1',
-        eventId: crypto.randomUUID(),
-        timestamp: new Date().toISOString(),
         tenantId: record.tenantId,
         aggregateId: record.id,
         aggregateType: 'GovernedRule',
@@ -457,7 +453,7 @@ export class RuleEngineService implements IRuleGovernanceContract {
   private async getRuleById(
     tenantId: string,
     ruleId: string
-  ): Promise<GovernedRuleParams | null> {
+  ): Promise<IGovernedRuleRecord | null> {
     const { data, error } = await this.supabase
       .from('hc_governed_clinical_rules')
       .select('*')

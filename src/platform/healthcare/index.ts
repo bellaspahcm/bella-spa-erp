@@ -65,8 +65,50 @@ export * from './contracts';
  * Healthcare Shared Kernel
  * 
  * Shared types, DTOs, and domain events used across Healthcare products.
+ * Note: ClinicalOrder, OrderType, OrderStatus, OrderPriority exported from contracts
  */
-export * from './shared-kernel';
+export type {
+  EngineResponse,
+  EngineError,
+  EngineResponseMetadata,
+  Encounter,
+  EncounterType,
+  EncounterClass,
+  EncounterStatus,
+  Diagnosis,
+  Patient,
+  PatientIdentifier,
+  PatientContact,
+  Address,
+  InsuranceInfo,
+  EmergencyContact,
+  ClinicalResult,
+  Medication,
+  MedicationForm,
+  RouteOfAdministration,
+  MedicationOrder,
+  MedicationOrderStatus,
+  Dosage,
+  Bed,
+  BedType,
+  BedStatus,
+  BedFeature,
+  Ward,
+  WardType,
+  VitalSigns,
+  VitalValue,
+  BloodPressure,
+  ConsciousnessLevel,
+  NursingNote,
+  NursingNoteType,
+  BillingItem,
+  BillingItemType,
+  BillingStatus,
+  EngineContract,
+  EngineHealthStatus,
+  DomainEvent,
+  EventMetadata,
+} from './shared-kernel';
 
 // ===================================================================
 // INTERNAL: Engine Implementations (NOT exported)

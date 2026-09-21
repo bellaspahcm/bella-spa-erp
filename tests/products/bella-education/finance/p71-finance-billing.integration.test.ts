@@ -16,7 +16,6 @@
  * 12. Audit Evidence Preservation (NO CASCADE DELETE)
  */
 
-import { describe, test, expect, beforeEach } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
 import { PreschoolFinanceRepository } from '../../../../src/products/bella-education/finance/repositories/preschool-finance.repository';
 import { TuitionBillingService } from '../../../../src/products/bella-education/finance/services/tuition-billing.service';
@@ -36,7 +35,7 @@ const parentPartyId = '00000000-0000-0000-0000-000000000004';
 
 const getStudentId = () => crypto.randomUUID();
 
-describe('P7.1 Preschool Finance & Billing Engine 12-Invariant Integration Suite', { timeout: 30000 }, () => {
+describe('P7.1 Preschool Finance & Billing Engine 12-Invariant Integration Suite', () => {
   let repo: PreschoolFinanceRepository;
   let billingService: TuitionBillingService;
   let issuanceService: InvoiceIssuanceService;
@@ -78,7 +77,7 @@ describe('P7.1 Preschool Finance & Billing Engine 12-Invariant Integration Suite
     });
 
     billingPeriodId = period.id;
-  });
+  }, 30_000);
 
   test('Invariant 1: Multi-Tenant RLS Isolation — prevents Tenant B from accessing Tenant A invoice', async () => {
     const studentId = getStudentId();

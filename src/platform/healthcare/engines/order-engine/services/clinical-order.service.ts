@@ -13,9 +13,10 @@
  * - No fake rollback via event handlers
  */
 
-import type { ClinicalOrder, OrderType, OrderStatus, OrderPriority } from '../domain/clinical-order.entity';
+import type { ClinicalOrder } from '../domain/clinical-order.entity';
+import type { OrderType, OrderStatus, OrderPriority, OrderDetails } from '../../../contracts/order-engine.contract';
 import { ClinicalOrder as ClinicalOrderEntity } from '../domain/clinical-order.entity';
-import type { OrderRepository } from '../repositories/order-repository.interface';
+import type { IOrderRepository } from '../repositories/order-repository.interface';
 import { IdempotencyConflictError } from '../repositories/order-repository.interface';
 import type { EncounterReader } from '../contracts/encounter-reader.interface';
 import { EncounterNotFoundError } from '../contracts/encounter-reader.interface';
@@ -29,7 +30,7 @@ export interface CreateOrderRequest {
   readonly orderType: OrderType;
   readonly priority: OrderPriority;
   readonly orderedBy: string;
-  readonly orderDetails: Record<string, unknown>;
+  readonly orderDetails: OrderDetails;
   readonly requestId?: string;  // For idempotency
 }
 
@@ -57,7 +58,7 @@ export interface OrderServiceResult<T = ClinicalOrder> {
 
 export class ClinicalOrderService {
   constructor(
-    private readonly orderRepository: OrderRepository,
+    private readonly orderRepository: IOrderRepository,
     private readonly encounterReader: EncounterReader,
     private readonly eventBus: EventBus,
   ) {}

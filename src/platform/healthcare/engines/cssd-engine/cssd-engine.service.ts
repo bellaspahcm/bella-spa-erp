@@ -7,6 +7,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
 import type {
   CssdEngineContract,
   RegisterEquipmentRequest,
@@ -27,7 +28,7 @@ export class CssdEngineService implements CssdEngineContract {
   readonly engineVersion = '1.0.0';
   readonly contractVersion = '1.0.0';
 
-  constructor(private readonly supabase: SupabaseClient) {}
+  constructor(private readonly supabase: SupabaseClient<Database>) {}
 
   async registerEquipment(request: RegisterEquipmentRequest): Promise<EngineResponse<Equipment>> {
     try {
@@ -365,7 +366,7 @@ export class CssdEngineService implements CssdEngineContract {
         aggregateType: 'encounter', // generic base
         payload: {
           cssdCycleId: cycle.id,
-          cycleNumber: cycle.cycleNumber,
+          cycleNumber: cycle.cycle_number,
           indicatorResult: cycle.indicator_result,
         },
       });
@@ -685,7 +686,7 @@ export class CssdEngineService implements CssdEngineContract {
         };
       }
 
-      const report: TraceabilityReport[] = (data || []).map((row: Record<string, unknown>) => {
+      const report: TraceabilityReport[] = (data || []).map((row) => {
         const eq = row.hc_equipment;
         const cyc = row.hc_cssd_cycles;
         return {
@@ -696,7 +697,7 @@ export class CssdEngineService implements CssdEngineContract {
           cycleNumber: cyc?.cycle_number || '',
           startedAt: cyc?.started_at || '',
           completedAt: cyc?.completed_at || null,
-          indicatorResult: cyc?.indicator_result || null,
+          indicatorResult: (cyc?.indicator_result as 'pass' | 'fail' | 'pending' | null) || null,
           usedAt: row.used_at,
           returnedAt: row.returned_at,
         };

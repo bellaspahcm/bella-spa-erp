@@ -16,7 +16,6 @@
  * 12. Audit Evidence Preservation (NO CASCADE DELETE) — prevents deletion of leave requests with active substitutions
  */
 
-import { describe, test, expect, beforeEach } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
 import { PreschoolSchedulingRepository } from '../../../../src/products/bella-education/scheduling/repositories/preschool-scheduling.repository';
 import { StaffRosterService } from '../../../../src/products/bella-education/scheduling/services/staff-roster.service';
@@ -38,7 +37,7 @@ const staffCaregiver1 = '00000000-0000-0000-0000-000000000083';
 const managerPartyId = '00000000-0000-0000-0000-000000000003';
 const classIdA1 = '00000000-0000-0000-0000-000000000091';
 
-describe('P8.2 Leave Processing, Substitution & Reuse Candidate #2 Suite', { timeout: 30000 }, () => {
+describe('P8.2 Leave Processing, Substitution & Reuse Candidate #2 Suite', () => {
   let repo: PreschoolSchedulingRepository;
   let rosterService: StaffRosterService;
   let complianceService: RatioComplianceService;
@@ -70,7 +69,7 @@ describe('P8.2 Leave Processing, Substitution & Reuse Candidate #2 Suite', { tim
       endTime: '11:30:00',
     });
     morningShiftId = morning.id;
-  });
+  }, 30_000);
 
   test('Invariant 1: Leave Request Application Lifecycle', async () => {
     const leave = await leaveService.applyForLeave({

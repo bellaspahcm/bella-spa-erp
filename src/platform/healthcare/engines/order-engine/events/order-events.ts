@@ -15,7 +15,7 @@
  * - DO NOT rollback DB (no fake business logic in event handler)
  */
 
-import type { OrderType, OrderStatus, OrderPriority } from '../domain/clinical-order.entity';
+import type { OrderType, OrderStatus, OrderPriority, OrderDetails } from '../../../contracts/order-engine.contract';
 
 /**
  * Base event structure for all order events
@@ -45,7 +45,7 @@ export interface OrderCreatedEvent extends OrderDomainEvent {
     readonly priority: OrderPriority;
     readonly orderedBy: string;
     readonly orderedAt: Date;
-    readonly orderDetails: Record<string, unknown>;
+    readonly orderDetails: OrderDetails;
     readonly requestId?: string;  // For idempotency tracking
   };
 }

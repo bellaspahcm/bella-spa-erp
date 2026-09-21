@@ -125,22 +125,30 @@ export class EnglishBranchService {
       throw new OrgUnitNotFoundError(branchId);
     }
 
-    const existingOpeningHours = isRecord(existing.metadata.openingHours)
-      ? existing.metadata.openingHours
+    // Type guard for metadata object - Json can be an object
+    const existingMeta = existing.metadata && typeof existing.metadata === 'object' && !Array.isArray(existing.metadata)
+      ? existing.metadata as Record<string, unknown>
       : {};
+
+    const existingOpeningHours = isRecord(existingMeta.openingHours)
+      ? existingMeta.openingHours
+      : {};
+
+    // Helper to convert Record<string, unknown> to Json safely
+    const toJson = (obj: Record<string, unknown>): import('@/types/supabase-generated').Json => obj as import('@/types/supabase-generated').Json;
 
     const platformInput: UpdateOrgUnitInput = {
       name: input.name,
-      metadata: {
-        ...existing.metadata,
-        address: input.address ?? existing.metadata?.address,
-        phone: input.phone ?? existing.metadata?.phone,
-        email: input.email ?? existing.metadata?.email,
-        capacity: input.capacity ?? existing.metadata?.capacity,
+      metadata: toJson({
+        ...existingMeta,
+        address: input.address ?? existingMeta.address,
+        phone: input.phone ?? existingMeta.phone,
+        email: input.email ?? existingMeta.email,
+        capacity: input.capacity ?? existingMeta.capacity,
         openingHours: input.openingHours
           ? { ...existingOpeningHours, ...input.openingHours }
-          : existing.metadata?.openingHours,
-      },
+          : existingMeta.openingHours,
+      }),
     };
 
     return orgUnitEngine.updateOrgUnit(branchId, tenantId, platformInput);

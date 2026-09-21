@@ -67,9 +67,9 @@ describe('🔒 Cross-Tenant Isolation (Gate 0 Adversarial Test)', () => {
         .from('hc_master_patient_index')
         .insert({
           tenant_id: tenantA,
-          given_name: 'Patient',
-          family_name: 'A',
-          date_of_birth: '1990-01-01',
+          mrn_code: 'MRN-A-001',
+          full_name: 'Patient A',
+          dob: '1990-01-01',
           gender: 'male',
         })
         .select('id')
@@ -81,9 +81,9 @@ describe('🔒 Cross-Tenant Isolation (Gate 0 Adversarial Test)', () => {
         .from('hc_master_patient_index')
         .insert({
           tenant_id: tenantB,
-          given_name: 'Patient',
-          family_name: 'B',
-          date_of_birth: '1990-01-01',
+          mrn_code: 'MRN-B-001',
+          full_name: 'Patient B',
+          dob: '1990-01-01',
           gender: 'female',
         })
         .select('id')

@@ -14,7 +14,6 @@
  * 9. Zero Placeholder Data: Entities require real tenant IDs, person IDs, and timestamps.
  */
 
-import { describe, it, expect } from 'vitest';
 
 describe('Axis 5: Commercial UX Hardening & Commercial Readiness Suite', () => {
   it('Gate 5.1: System Statuses & Exceptions 100% Vietnamese Translation Dictionary', () => {

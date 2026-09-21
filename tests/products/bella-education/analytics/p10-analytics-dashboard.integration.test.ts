@@ -10,7 +10,6 @@
  * 5. Event-Driven Projection & Dynamic Recalculation across P1, P3, P7, P9 domain changes.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
 import { PreschoolAnalyticsRepository } from '../../../../src/products/bella-education/analytics/repositories/preschool-analytics.repository';
 import { PreschoolAnalyticsService } from '../../../../src/products/bella-education/analytics/services/preschool-analytics.service';

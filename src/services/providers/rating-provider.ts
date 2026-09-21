@@ -135,9 +135,10 @@ export class RatingProvider implements PayrollProvider<SalaryComponent> {
 
     // Check if override amount provided
     if (options?.applyOverrides && overrides?.ratingBonus !== undefined) {
+      const overrideAmount = typeof overrides.ratingBonus === 'number' ? overrides.ratingBonus : undefined;
       return createSalaryComponent('rating-bonus', {
         eligible: true,
-        amount: overrides.ratingBonus,
+        amount: overrideAmount,
         reason: 'Manual override applied',
         metadata: {
           override: true,

@@ -23,6 +23,7 @@ import type {
   ValidationWarning,
   SchemaDefinition,
   JSONSchema,
+  JSONSchemaType,
   EndpointDefinition,
   EventDefinition,
 } from './types';
@@ -640,10 +641,17 @@ export class ContractRegistryService {
     }
   }
 
-  private getType(value: unknown): string {
+  private getType(value: unknown): JSONSchemaType {
     if (value === null) return 'null';
     if (Array.isArray(value)) return 'array';
-    return typeof value;
+    const typeofValue = typeof value;
+    // Map typeof results to JSONSchemaType
+    if (typeofValue === 'object') return 'object';
+    if (typeofValue === 'string') return 'string';
+    if (typeofValue === 'number') return 'number';
+    if (typeofValue === 'boolean') return 'boolean';
+    // Fallback for unknown types (shouldn't happen in practice)
+    return 'string';
   }
 }
 

@@ -8,6 +8,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
 import type {
   SurgicalEngineContract,
   CreateSurgicalCaseRequest,
@@ -31,8 +32,18 @@ import { SupabaseSurgeryRepository } from './repositories/supabase-surgery.repos
 class DefaultSterilizationContract implements ISterilizationContract {
   readonly engineName = 'sterilization-contract';
   readonly engineVersion = '1.0.0';
-  async isSterile(): Promise<boolean> {
+  readonly contractVersion = '1.0.0';
+  
+  async isSterile(_tenantId: string, _tokenId: string): Promise<boolean> {
     return true;
+  }
+  
+  async healthCheck(): Promise<EngineHealthStatus> {
+    return {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      checks: {},
+    };
   }
 }
 
@@ -45,7 +56,7 @@ export class SurgicalEngineService implements SurgicalEngineContract {
   private readonly sterilizationContract: ISterilizationContract;
 
   constructor(
-    private readonly supabase: SupabaseClient<Record<string, unknown>>,
+    private readonly supabase: SupabaseClient<Database>,
     repo?: ISurgeryRepository,
     sterilizationContract?: ISterilizationContract
   ) {

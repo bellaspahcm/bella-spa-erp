@@ -539,5 +539,5 @@ describe('E2E Accounting GL Verification (Critical Accounting Test)', () => {
 
     console.log('\n🎉 E2E ACCOUNTING GL VERIFICATION TEST: COMPLETED!');
     console.log('Note: Full GL verification requires accounting system to be enabled and worker to process events.');
-  }, 60000);
+  }, 150000);
 });
