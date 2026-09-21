@@ -68,6 +68,8 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
+  applyThemeTokensToRoot,
+  resolveDynamicThemeTokens,
   resolveTenantBrandIdentity,
   type ResolvedTenantBrandIdentity,
 } from '@/lib/business-rules/tenant-modules';
@@ -79,6 +81,7 @@ import {
   getCachedCurrentUser,
   getCachedTenantSettings,
 } from '@/lib/dashboard-client-context';
+import { useUser } from '@/lib/user-context';
 import { createPageRefreshEvent } from '@/lib/page-refresh';
 import ThemeToggle from '@/components/common/ThemeToggle';
 import { TenantBrandLogo } from '@/components/common/TenantBrandLogo';
@@ -262,29 +265,7 @@ function clearTenantBrandRuntimeCache() {
 
 function resolveTenantBrandDisplay(settings: Awaited<ReturnType<typeof getCachedTenantSettings>>): TenantBrandDisplay {
   if (!settings) {
-    if (typeof window !== 'undefined') {
-      const path = window.location.pathname;
-      if (path.startsWith('/dashboard/hospital') || path.startsWith('/dashboard/medical') || path.startsWith('/dashboard/healthcare') || path.startsWith('/dashboard/dental')) {
-        return resolveTenantBrandIdentity({
-          enabledModules: { bella_healthcare: true },
-          tenantName: path.includes('dental') ? 'Bella Dental Clinic' : 'Bella Medical Clinic',
-          surface: 'app',
-        });
-      } else if (path.startsWith('/dashboard/real-estate')) {
-        return resolveTenantBrandIdentity({
-          enabledModules: { real_estate: true },
-          tenantName: 'Bella Land',
-          surface: 'app',
-        });
-      } else if (path.startsWith('/dashboard/bella-auto')) {
-        return resolveTenantBrandIdentity({
-          enabledModules: { bella_auto: true },
-          tenantName: 'Bella Auto',
-          surface: 'app',
-        });
-      }
-    }
-    return DEFAULT_SIDEBAR_BRAND;
+    return NEUTRAL_SIDEBAR_BRAND;
   }
 
   return resolveTenantBrandIdentity({
@@ -311,10 +292,9 @@ function applyTenantBrandRuntime(brand: TenantBrandDisplay) {
     root.style.removeProperty(token);
   }
 
-  root.style.setProperty('--primary', brand.primaryColor);
-  root.style.setProperty('--primary-hover', brand.primaryHoverColor);
-  root.style.setProperty('--accent', brand.accentColor);
-  root.style.setProperty('--ring', brand.primaryColor);
+  const tokens = resolveDynamicThemeTokens(brand);
+  applyThemeTokensToRoot(tokens);
+
   // Inject tenant heading font: 'serif' → Playfair Display, 'sans' → Geist
   root.style.setProperty(
     '--font-heading',
@@ -648,6 +628,7 @@ export function Sidebar() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const isDashboardHome = pathname?.replace(/\/+$/, '') === '/dashboard';
+  const { product } = useUser(); // Product Identity from UserProvider
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [rolePermissions, setRolePermissions] = useState<RolePermissions | null>(null);
   const [tenantBrand, setTenantBrand] = useState<TenantBrandDisplay>(NEUTRAL_SIDEBAR_BRAND);
@@ -683,7 +664,22 @@ export function Sidebar() {
       let settings: Awaited<ReturnType<typeof getCachedTenantSettings>> = null;
       try {
         settings = await getCachedTenantSettings();
+        
         const resolvedBrand = resolveTenantBrandDisplay(settings);
+        
+        // Apply Product Identity if no custom brand configured
+        // Business Rule: CUSTOM BRAND > PRODUCT IDENTITY > NEUTRAL
+        const brandThemeObj = settings?.brand_theme as Record<string, unknown> | null | undefined;
+        const customBrandName = typeof brandThemeObj?.brandName === 'string' ? brandThemeObj.brandName.trim() : undefined;
+        if (!customBrandName && product?.displayName) {
+          resolvedBrand.displayName = product.displayName;
+          
+          // Apply product subtitle if available
+          if (product.subtitle) {
+            resolvedBrand.subtitle = product.subtitle;
+          }
+        }
+        
         setTenantBrand(resolvedBrand);
         setIsTenantBrandResolved(true);
         writeCachedTenantBrand(userData?.tenant_id, resolvedBrand);
@@ -703,7 +699,7 @@ export function Sidebar() {
       }
     };
     fetchData();
-  }, []);
+  }, [product]);  // Re-run when product loads
 
   useEffect(() => {
     if (!isTenantBrandResolved) return;
@@ -958,7 +954,7 @@ export function Sidebar() {
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className={cn(
-          "flex-1 bg-white dark:bg-[#15171e] rounded-[2.25rem] border border-slate-200/90 dark:border-slate-800/90 flex flex-col overflow-hidden shadow-2xs relative",
+          "flex-1 beauty-erp-sidebar-inner rounded-[2.25rem] flex flex-col overflow-hidden shadow-2xs relative",
           isBellaEducationShell && "border-rose-200/60 dark:border-rose-950/60"
         )}>
         {/* Soft decorative light glows */}
@@ -1014,11 +1010,7 @@ export function Sidebar() {
                     </span>
                   )}
                 </h2>
-                <span className={cn(
-                  "text-[8px] font-extrabold uppercase tracking-[0.25em] block mt-0.5 opacity-80 beauty-erp-brand-subtitle"
-                )}>
-                  {tenantBrand.subtitle}
-                </span>
+                {/* Subtitle hidden to prevent cross-vertical identity leaks */}
               </div>
             </Link>
           )}
@@ -1216,7 +1208,7 @@ export function Sidebar() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate leading-tight beauty-erp-profile-name">
-                  {user?.full_name || 'Admin Preschool'}
+                  {user?.full_name || 'Tài khoản'}
                 </p>
                 <p className="text-[8.5px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-[0.08em] mt-0.5 beauty-erp-profile-role">
                   {roleLabel}

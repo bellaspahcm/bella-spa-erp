@@ -215,6 +215,167 @@ function darkenHexColor(hex: string) {
   return `#${[r, g, b].map((part) => part.toString(16).padStart(2, '0')).join('').toUpperCase()}`;
 }
 
+export type DynamicThemeTokens = {
+  primary: string;
+  primaryHover: string;
+  primaryForeground: string;
+  accent: string;
+  accentForeground: string;
+  ring: string;
+  sidebarBg: string;
+  sidebarInnerBg: string;
+  sidebarFg: string;
+  sidebarMuted: string;
+  sidebarBorder: string;
+};
+
+export function hexToRelativeLuminance(hex: string): number {
+  const normalized = cleanColor(hex, '#074E44');
+  const value = normalized.slice(1);
+  const r = parseInt(value.slice(0, 2), 16) / 255;
+  const g = parseInt(value.slice(2, 4), 16) / 255;
+  const b = parseInt(value.slice(4, 6), 16) / 255;
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+export function resolveDynamicThemeTokens(brand: Partial<TenantBrandTheme> & { primaryColor?: string; accentColor?: string; stylePreset?: string }): DynamicThemeTokens {
+  const preset = brand.stylePreset;
+  const primary = cleanColor(brand.primaryColor, '#074E44');
+  const accent = cleanColor(brand.accentColor, '#C8A97A');
+
+  if (preset === 'jade_wellness') {
+    return {
+      primary: '#074E44',
+      primaryHover: '#03211D',
+      primaryForeground: '#FFFFFF',
+      accent: '#C8A97A',
+      accentForeground: '#03211D',
+      ring: '#074E44',
+      sidebarBg: 'linear-gradient(158deg, #03211d 0%, #074e44 48%, #05362f 100%)',
+      sidebarInnerBg: 'rgba(3, 33, 29, 0.65)',
+      sidebarFg: '#FFFFFF',
+      sidebarMuted: '#E8D4A8',
+      sidebarBorder: 'rgba(200, 169, 122, 0.28)',
+    };
+  }
+
+  if (preset === 'luxury_navy') {
+    return {
+      primary: '#1E3A8A',
+      primaryHover: '#0B192C',
+      primaryForeground: '#FFFFFF',
+      accent: '#D97706',
+      accentForeground: '#FFFFFF',
+      ring: '#1E3A8A',
+      sidebarBg: 'linear-gradient(158deg, #0b192c 0%, #1e3a8a 52%, #0f172a 100%)',
+      sidebarInnerBg: 'rgba(11, 25, 44, 0.65)',
+      sidebarFg: '#FFFFFF',
+      sidebarMuted: '#FBBF24',
+      sidebarBorder: 'rgba(217, 119, 6, 0.28)',
+    };
+  }
+
+  if (preset === 'ocean_clean') {
+    return {
+      primary: '#1E40AF',
+      primaryHover: '#1D4ED8',
+      primaryForeground: '#FFFFFF',
+      accent: '#3B82F6',
+      accentForeground: '#FFFFFF',
+      ring: '#1E40AF',
+      sidebarBg: 'linear-gradient(158deg, #1e3a8a 0%, #1e40af 42%, #1e3a8a 100%)',
+      sidebarInnerBg: 'rgba(30, 58, 138, 0.65)',
+      sidebarFg: '#FFFFFF',
+      sidebarMuted: '#60A5FA',
+      sidebarBorder: 'rgba(59, 130, 246, 0.28)',
+    };
+  }
+
+  if (preset === 'graphite_luxe') {
+    return {
+      primary: '#18181B',
+      primaryHover: '#09090B',
+      primaryForeground: '#FFFFFF',
+      accent: '#64748B',
+      accentForeground: '#FFFFFF',
+      ring: '#18181B',
+      sidebarBg: 'linear-gradient(158deg, #09090b 0%, #18181b 52%, #27272a 100%)',
+      sidebarInnerBg: 'rgba(9, 9, 11, 0.65)',
+      sidebarFg: '#FFFFFF',
+      sidebarMuted: '#D4D4D8',
+      sidebarBorder: 'rgba(161, 161, 170, 0.28)',
+    };
+  }
+
+  if (preset === 'bella_rose') {
+    return {
+      primary: '#A91555',
+      primaryHover: '#881337',
+      primaryForeground: '#FFFFFF',
+      accent: '#F8A5C2',
+      accentForeground: '#881337',
+      ring: '#A91555',
+      sidebarBg: '#FFF0F3',
+      sidebarInnerBg: 'rgba(255, 255, 255, 0.75)',
+      sidebarFg: '#831843',
+      sidebarMuted: '#BE123C',
+      sidebarBorder: 'rgba(236, 72, 153, 0.20)',
+    };
+  }
+
+  if (preset === 'slate_minimal') {
+    return {
+      primary: '#334155',
+      primaryHover: '#1E293B',
+      primaryForeground: '#FFFFFF',
+      accent: '#64748B',
+      accentForeground: '#FFFFFF',
+      ring: '#334155',
+      sidebarBg: '#F1F5F9',
+      sidebarInnerBg: 'rgba(255, 255, 255, 0.80)',
+      sidebarFg: '#1E293B',
+      sidebarMuted: '#64748B',
+      sidebarBorder: 'rgba(51, 65, 85, 0.16)',
+    };
+  }
+
+  // Truly dynamic resolution for any custom color or new tenant/vertical
+  const isDark = hexToRelativeLuminance(primary) < 0.45;
+  const hoverColor = darkenHexColor(primary);
+
+  return {
+    primary,
+    primaryHover: hoverColor,
+    primaryForeground: isDark ? '#FFFFFF' : '#0F172A',
+    accent,
+    accentForeground: isDark ? '#FFFFFF' : '#0F172A',
+    ring: primary,
+    sidebarBg: isDark
+      ? `linear-gradient(158deg, ${darkenHexColor(primary)} 0%, ${primary} 50%, ${darkenHexColor(primary)} 100%)`
+      : '#F8FAFC',
+    sidebarInnerBg: isDark ? 'rgba(0, 0, 0, 0.45)' : 'rgba(255, 255, 255, 0.80)',
+    sidebarFg: isDark ? '#FFFFFF' : '#0F172A',
+    sidebarMuted: accent || (isDark ? '#E2E8F0' : '#64748B'),
+    sidebarBorder: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.12)',
+  };
+}
+
+export function applyThemeTokensToRoot(tokens: DynamicThemeTokens) {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  root.style.setProperty('--primary', tokens.primary);
+  root.style.setProperty('--primary-hover', tokens.primaryHover);
+  root.style.setProperty('--primary-foreground', tokens.primaryForeground);
+  root.style.setProperty('--accent', tokens.accent);
+  root.style.setProperty('--accent-foreground', tokens.accentForeground);
+  root.style.setProperty('--ring', tokens.ring);
+  root.style.setProperty('--sidebar-bg', tokens.sidebarBg);
+  root.style.setProperty('--sidebar-inner-bg', tokens.sidebarInnerBg);
+  root.style.setProperty('--sidebar-fg', tokens.sidebarFg);
+  root.style.setProperty('--sidebar-muted', tokens.sidebarMuted);
+  root.style.setProperty('--sidebar-border', tokens.sidebarBorder);
+}
+
 function buildMonogram(displayName: string) {
   const words = displayName
     .split(/\s+/)
@@ -390,22 +551,16 @@ export function resolveTenantBrandIdentity(input: {
      Boolean((input.enabledModules as Record<string, unknown> | null)?.product === 'dental') ||
      (input.tenantName && /dental|nha khoa/i.test(input.tenantName)));
 
-  const defaultDisplayName = 
-    moduleKey === 'bella_healthcare' ? (isDental ? 'Bella Dental Clinic' : 'Bella Medical Clinic') :
-    moduleKey === 'bella_education' ? 'Bella Preschool' :
-    moduleKey === 'bella_auto' ? 'Bella Auto' :
-    moduleKey === 'beauty_spa' ? 'Beauty Spa' :
-    moduleKey === 'industrial_cleaning' ? 'Industrial Cleaning' :
-    moduleKey === 'real_estate' ? 'Bella Land' :
-    'Bella Spa';
+  // Brand Identity Priority: CUSTOM BRAND > PRODUCT IDENTITY > NEUTRAL
+  // Product Identity will be applied by consumer from UserProvider.product
   const baseDisplayName =
     theme.brandName ||
     (input.surface === 'portal' ? theme.portalDisplayName : '') ||
     (input.surface === 'invoice' ? theme.invoiceDisplayName : '') ||
-    tenantName ||
-    defaultDisplayName;
-  const portalDisplayName = theme.portalDisplayName || theme.brandName || tenantName || defaultDisplayName;
-  const invoiceDisplayName = theme.invoiceDisplayName || theme.brandName || tenantName || defaultDisplayName;
+    'Hệ thống';  // Neutral fallback, NO module-based inference
+    
+  const portalDisplayName = theme.portalDisplayName || theme.brandName || 'Hệ thống';
+  const invoiceDisplayName = theme.invoiceDisplayName || theme.brandName || 'Hệ thống';
   const displayName =
     input.surface === 'portal'
       ? portalDisplayName
@@ -423,17 +578,7 @@ export function resolveTenantBrandIdentity(input: {
     portalDisplayName,
     invoiceDisplayName,
     logoUrl: explicitLogoUrl || theme.logoUrl || (moduleKey === 'babycare' ? '/logo.png' : ''),
-    subtitle: 
-      moduleKey === 'bella_healthcare' ? (
-        isHospitalInpatient ? 'General Hospital Management' :
-        isDental ? 'Clinical Management' : 'Medical Clinic EMR Platform'
-      ) :
-      moduleKey === 'bella_education' ? 'Preschool & Education ERP' :
-      moduleKey === 'bella_auto' ? 'Automotive Management' :
-      moduleKey === 'beauty_spa' ? 'Beauty Spa ERP' :
-      moduleKey === 'industrial_cleaning' ? 'Industrial Cleaning ERP' :
-      moduleKey === 'real_estate' ? 'Real Estate Management' :
-      'Management System',
+    subtitle: 'Management System',  // Neutral fallback, product subtitle will override
     primaryHoverColor: darkenHexColor(theme.primaryColor),
     monogram: buildMonogram(displayName),
     isBeautySpa: moduleKey === 'beauty_spa',

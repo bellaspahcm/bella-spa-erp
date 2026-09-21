@@ -488,7 +488,7 @@ export class ServiceHistoryService {
       .select('*')
       .eq('tenant_id', tenantId)
       .eq('vehicle_id', vehicleId)
-      .eq('warranty_work', true)
+      .eq('warranty_work' as any, true)
       .order('service_date', { ascending: false });
 
     if (error) {

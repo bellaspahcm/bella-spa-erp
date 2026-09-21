@@ -16,6 +16,7 @@ export interface WorkspaceManifest extends BaseManifest {
   readonly theme: string;
   readonly shortcuts: Record<string, string>;
   readonly aiAgents: string[];
+  readonly navigation?: string[] | Record<string, unknown>;
 }
 
 export interface DashboardManifest extends BaseManifest {

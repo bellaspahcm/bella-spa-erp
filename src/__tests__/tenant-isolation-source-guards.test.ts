@@ -252,12 +252,12 @@ describe('dashboard tenant isolation source guards', () => {
     expect(dashboardSource).toContain('data-alert-tone={alert.type}');
     expect(ktvTableSource).toContain('beauty-top-ktv-table');
     expect(ktvTableSource).toContain('w-full min-w-[760px]');
-    expect(globalStyles).toContain('html[data-tenant-module="beauty_spa"] .beauty-erp-sidebar');
+    expect(globalStyles).toContain('html:not([data-tenant-brand-preset])[data-tenant-module="beauty_spa"] .beauty-erp-sidebar');
     expect(globalStyles).toContain(
       'html[data-tenant-module="pending"] .beauty-erp-nav-item-active:hover',
     );
     expect(globalStyles).toContain(
-      'html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item-active:hover',
+      'html:not([data-tenant-brand-preset])[data-tenant-module="beauty_spa"] .beauty-erp-nav-item-active:hover',
     );
     expect(globalStyles).toContain('html.dark[data-tenant-module="beauty_spa"]');
     expect(globalStyles).toContain('html.dark[data-tenant-module="pending"]');

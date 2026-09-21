@@ -94,19 +94,19 @@ export async function POST(
     }
 
     // 5. Update application status to approved
-    const { data: updatedApp, error: updateError } = await supabase
-      .from('partner_applications')
+    const { data: updatedApp, error: updateError } = await (supabase
+      .from('partner_applications' as any)
       .update({
-        status: 'approved' as const,
+        status: 'approved',
         approved_at: new Date().toISOString(),
         approved_by: user.id,
         approval_notes: notes || null,
         updated_at: new Date().toISOString(),
         updated_by: user.id,
-      })
+      } as any)
       .eq('id', params.id)
       .select()
-      .single();
+      .single() as any);
 
     if (updateError) {
       console.error('Failed to update application:', updateError);
@@ -117,18 +117,18 @@ export async function POST(
     }
 
     // 6. Log approval action
-    const { error: logError } = await supabase
-      .from('partner_application_logs')
+    const { error: logError } = await (supabase
+      .from('partner_application_logs' as any)
       .insert({
         application_id: params.id,
-        action: 'approved' as const,
+        action: 'approved',
         action_description: notes || 'Application approved by admin',
         performed_by: user.id,
         performed_by_role: 'admin',
         old_status: application.status,
-        new_status: 'approved' as const,
+        new_status: 'approved',
         metadata: { notes, provisioning_config },
-      });
+      } as any) as any);
 
     if (logError) {
       console.error('Failed to log approval:', logError);

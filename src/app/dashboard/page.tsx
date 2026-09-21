@@ -109,20 +109,13 @@ export default function DashboardPage() {
   const dashboardAlertsRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const customerLabels = getTenantModulePresentationOrNeutral(tenantModuleKey);
   const vocab = useModuleVocabulary();
+  const { user: profile, product } = useUser();
   
   // Use generic greeting until tenant data loads to avoid confusing flash of wrong business type
-  const businessLabel = tenantModuleKey === null
-    ? ''  // Empty string - show generic greeting
-    : tenantModuleKey === 'beauty_spa'
-      ? 'Beauty Spa'
-      : tenantModuleKey === 'industrial_cleaning'
-      ? 'CleanPro'
-      : tenantModuleKey === 'real_estate'
-      ? 'Bella Land'
-      : 'Bella Spa';
+  const businessLabel = product?.displayName ?? 'Hệ thống';
   
   // Don't show role-specific greeting until tenant data is fully loaded
-  const greetingText = tenantModuleKey === null || userRole === null
+  const greetingText = !product || userRole === null
     ? 'Chào buổi sáng!'  // Generic greeting while loading - no business name or role
     : userRole === 'admin'
       ? `Chào buổi sáng, ${businessLabel} admin!`
@@ -137,8 +130,6 @@ export default function DashboardPage() {
     : tenantModuleKey === 'real_estate'
     ? 'Lịch làm việc hôm nay'
     : 'Lịch trình liệu trình trực tuyến';
-
-  const { user: profile } = useUser();
 
   useEffect(() => {
     if (isTenantModuleLoading || tenantModuleKey === 'real_estate' || tenantModuleKey === 'bella_auto' || tenantModuleKey === 'bella_healthcare') return;
