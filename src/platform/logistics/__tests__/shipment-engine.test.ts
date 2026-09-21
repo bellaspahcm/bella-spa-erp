@@ -82,6 +82,25 @@ const createMockSupabaseClient = (): SupabaseClient => {
       }),
       select: (columns = '*') => ({
         eq: (col: string, val: unknown) => ({
+          single: async () => {
+            if (table === 'log_idempotency_keys') {
+              const rows = mockData[table] || [];
+              const row = rows.find((r) => r['id'] === val);
+              if (!row) {
+                return { data: null, error: { code: 'PGRST116', message: 'Not found' } };
+              }
+              return { data: row, error: null };
+            }
+            
+            const rows = mockData[table] || [];
+            const row = rows.find((r) => r[col] === val);
+            
+            if (!row) {
+              return { data: null, error: { message: 'Not found' } };
+            }
+            
+            return { data: row, error: null };
+          },
           eq: (col2: string, val2: unknown) => ({
             single: async () => {
               // Special handling for idempotency check (should return null for new requests)
