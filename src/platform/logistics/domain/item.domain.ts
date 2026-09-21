@@ -19,7 +19,6 @@ import type {
   ItemType,
   ItemStatus,
   UnitOfMeasure,
-  ItemDimensions,
 } from './item.types';
 
 export class ItemDomain {
@@ -62,8 +61,8 @@ export class ItemDomain {
     }
 
     // Dimensions validation (if provided)
-    if (props.dimensions) {
-      const dimResult = this.validateDimensions(props.dimensions);
+    if (props.dimensionsJson) {
+      const dimResult = this.validateDimensions(props.dimensionsJson);
       if (dimResult.isFailure) {
         return dimResult as Result<Item>;
       }
@@ -85,20 +84,20 @@ export class ItemDomain {
     const now = new Date();
 
     const item: Item = {
-      id: { value: props.id || crypto.randomUUID() },
+      id: props.id || crypto.randomUUID(),
       tenantId: props.tenantId,
-      skuCode: { value: props.skuCode.trim() },
+      skuCode: props.skuCode.trim(),
       name: props.name.trim(),
-      description: props.description?.trim(),
+      description: props.description?.trim() || null,
       
       type: props.type || 'GOODS',
-      category: props.category?.trim(),
+      category: props.category?.trim() || null,
       
       baseUom: props.baseUom,
-      weightKg: props.weightKg,
-      dimensions: props.dimensions,
+      weightKg: props.weightKg !== undefined ? props.weightKg : null,
+      dimensionsJson: props.dimensionsJson || null,
       
-      standardCost: props.standardCost,
+      standardCost: props.standardCost !== undefined ? props.standardCost : null,
       currency: props.currency || 'VND',
       
       lotTracked: props.lotTracked || false,
@@ -109,8 +108,8 @@ export class ItemDomain {
       
       createdAt: now,
       updatedAt: now,
-      createdBy: props.createdBy,
-      updatedBy: props.updatedBy,
+      createdBy: props.createdBy || null,
+      updatedBy: props.updatedBy || null,
     };
 
     return Result.ok(item);
@@ -151,8 +150,8 @@ export class ItemDomain {
     }
 
     // Dimensions validation
-    if (updates.dimensions) {
-      const dimResult = this.validateDimensions(updates.dimensions);
+    if (updates.dimensionsJson) {
+      const dimResult = this.validateDimensions(updates.dimensionsJson);
       if (dimResult.isFailure) {
         return dimResult as Result<Item>;
       }
@@ -176,10 +175,10 @@ export class ItemDomain {
       ...updates,
       name: updates.name?.trim() || existingItem.name,
       description: updates.description !== undefined 
-        ? updates.description?.trim() 
+        ? updates.description?.trim() || null 
         : existingItem.description,
       category: updates.category !== undefined 
-        ? updates.category?.trim() 
+        ? updates.category?.trim() || null 
         : existingItem.category,
       updatedAt: new Date(),
     };
@@ -251,8 +250,8 @@ export class ItemDomain {
   /**
    * Validate dimensions JSON structure
    */
-  private static validateDimensions(dimensions: ItemDimensions): Result<void> {
-    const { length, width, height, unit } = dimensions;
+  private static validateDimensions(dimensionsJson: Record<string, unknown>): Result<void> {
+    const { length, width, height, unit } = dimensionsJson;
 
     if (typeof length === 'number' && length < 0) {
       return Result.fail('Length cannot be negative', 'ITEM_DIMENSION_NEGATIVE');
@@ -276,10 +275,10 @@ export class ItemDomain {
   /**
    * Calculate item volume (if dimensions provided)
    */
-  static calculateVolume(item: Item): number | undefined {
-    if (!item.dimensions) return undefined;
+  static calculateVolume(item: Item): number | null {
+    if (!item.dimensionsJson) return null;
 
-    const { length, width, height } = item.dimensions;
+    const { length, width, height } = item.dimensionsJson;
     
     if (
       typeof length === 'number' &&
@@ -289,6 +288,6 @@ export class ItemDomain {
       return length * width * height;
     }
 
-    return undefined;
+    return null;
   }
 }

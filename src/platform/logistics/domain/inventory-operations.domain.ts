@@ -24,11 +24,7 @@
 import { Result } from './core/result';
 import { InventoryDomain } from './inventory.domain';
 import { MovementDomain } from './movement.domain';
-import type { Inventory } from './inventory.types';
-import type { InventoryMovement } from './movement.types';
-
-// Type alias for backward compatibility
-type Movement = InventoryMovement;
+import type { Inventory, Movement } from './inventory.types';
 
 export class InventoryOperationsDomain {
   /**
@@ -79,15 +75,15 @@ export class InventoryOperationsDomain {
     const movementResult = MovementDomain.create({
       movementNumber,
       tenantId: inventory.tenantId,
-      itemId: inventory.itemId.value,
-      fromLocationId: inventory.locationId.value,
-      // toLocationId omitted (undefined) - Outbound reservation not yet shipped
+      itemId: inventory.itemId,
+      fromLocationId: inventory.locationId,
+      toLocationId: null, // Outbound reservation (not yet shipped)
       quantity: params.quantity,
-      unitOfMeasure: 'EA', // TODO: should come from Item domain
+      unitOfMeasure: inventory.uomId,
       direction: 'OUTBOUND',
       movementType: 'ISSUE', // E7.1 frozen enum - use ISSUE for reservation
       sourceDocumentType: params.referenceType || 'INVENTORY_RESERVATION',
-      sourceDocumentId: params.referenceId || inventory.id.value,
+      sourceDocumentId: params.referenceId || reservedInventory.id,
       notes: params.reason,
     });
 
@@ -124,7 +120,10 @@ export class InventoryOperationsDomain {
     }
   ): Result<{ inventory: Inventory; movement: Movement }> {
     // Step 1: Ship inventory
-    const shipResult = InventoryDomain.shipOperation(inventory);
+    const shipResult = InventoryDomain.shipOperation(inventory, {
+      shippedBy: params.shippedBy,
+      shippedAt: params.shippedAt,
+    });
 
     if (shipResult.isFailure) {
       return Result.fail(
@@ -142,15 +141,15 @@ export class InventoryOperationsDomain {
     const movementResult = MovementDomain.create({
       movementNumber,
       tenantId: inventory.tenantId,
-      itemId: inventory.itemId.value,
-      fromLocationId: inventory.locationId.value,
+      itemId: inventory.itemId,
+      fromLocationId: inventory.locationId,
       toLocationId: params.toLocationId,
       quantity: inventory.quantityReserved, // Ship reserved quantity
-      unitOfMeasure: 'EA', // TODO: should come from Item domain
+      unitOfMeasure: inventory.uomId,
       direction: 'OUTBOUND',
       movementType: 'SHIPMENT', // E7.1 frozen enum
       sourceDocumentType: params.referenceType || 'INVENTORY_SHIPMENT',
-      sourceDocumentId: params.referenceId || inventory.id.value,
+      sourceDocumentId: params.referenceId || shippedInventory.id,
       notes: `Shipped by ${params.shippedBy}`,
     });
 
@@ -187,11 +186,10 @@ export class InventoryOperationsDomain {
     }
   ): Result<{ inventory: Inventory; movement: Movement }> {
     // Step 1: Cancel reservation
-    const cancelResult = InventoryDomain.cancelOperation(
-      inventory,
-      params.quantity,
-      params.reason
-    );
+    const cancelResult = InventoryDomain.cancelOperation(inventory, params.quantity, {
+      reason: params.reason,
+      cancelledBy: params.cancelledBy,
+    });
 
     if (cancelResult.isFailure) {
       return Result.fail(
@@ -209,15 +207,15 @@ export class InventoryOperationsDomain {
     const movementResult = MovementDomain.create({
       movementNumber,
       tenantId: inventory.tenantId,
-      itemId: inventory.itemId.value,
-      // fromLocationId omitted (undefined) - Reversal has no source
-      toLocationId: inventory.locationId.value,
+      itemId: inventory.itemId,
+      fromLocationId: null, // Reversal (no source)
+      toLocationId: inventory.locationId,
       quantity: params.quantity,
-      unitOfMeasure: 'EA', // TODO: should come from Item domain
+      unitOfMeasure: inventory.uomId,
       direction: 'INBOUND',
       movementType: 'RETURN_RECEIPT', // E7.1 frozen enum - use RETURN_RECEIPT for reversal
       sourceDocumentType: params.referenceType || 'INVENTORY_CANCELLATION',
-      sourceDocumentId: params.referenceId || inventory.id.value,
+      sourceDocumentId: params.referenceId || cancelledInventory.id,
       notes: params.reason,
     });
 

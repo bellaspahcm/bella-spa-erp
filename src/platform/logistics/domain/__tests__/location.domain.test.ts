@@ -49,7 +49,7 @@ describe('LocationDomain', () => {
       const result = LocationDomain.create(props);
 
       expect(result.isSuccess).toBe(true);
-      expect(result.value?.locationCode.value).toBe('LOC-001');
+      expect(result.value?.locationCode).toBe('LOC-001');
     });
 
     it('should accept valid location code', () => {
@@ -57,7 +57,7 @@ describe('LocationDomain', () => {
       const result = LocationDomain.create(props);
 
       expect(result.isSuccess).toBe(true);
-      expect(result.value?.locationCode.value).toBe('WAREHOUSE-A');
+      expect(result.value?.locationCode).toBe('WAREHOUSE-A');
     });
   });
 
@@ -137,7 +137,7 @@ describe('LocationDomain', () => {
       const result = LocationDomain.create(props);
 
       expect(result.isSuccess).toBe(true);
-      expect(result.value?.parentLocationId).toBeUndefined();
+      expect(result.value?.parentLocationId).toBeNull();
     });
 
     it('should create location with valid parent', () => {
@@ -145,7 +145,7 @@ describe('LocationDomain', () => {
       const result = LocationDomain.create(props);
 
       expect(result.isSuccess).toBe(true);
-      expect(result.value?.parentLocationId?.value).toBe('parent-loc-1');
+      expect(result.value?.parentLocationId).toBe('parent-loc-1');
     });
 
     it('should allow self-parent in create (validation at update)', () => {
@@ -174,7 +174,7 @@ describe('LocationDomain', () => {
 
     it('should fail if trying to set self as parent', () => {
       const result = LocationDomain.update(location, {
-        parentLocationId: location.id.value,
+        parentLocationId: location.id,
       });
 
       expect(result.isFailure).toBe(true);
@@ -188,7 +188,7 @@ describe('LocationDomain', () => {
       });
 
       expect(result.isSuccess).toBe(true);
-      expect(result.value?.parentLocationId?.value).toBe('parent-loc-1');
+      expect(result.value?.parentLocationId).toBe('parent-loc-1');
     });
 
     it('should update location name', () => {
@@ -225,7 +225,7 @@ describe('LocationDomain', () => {
       });
 
       expect(result.value?.tenantId).toBe(location.tenantId);
-      expect(result.value?.locationCode).toEqual(location.locationCode);
+      expect(result.value?.locationCode).toBe(location.locationCode);
       expect(result.value?.createdAt).toEqual(location.createdAt);
     });
 
@@ -246,7 +246,7 @@ describe('LocationDomain', () => {
     it('should accept valid address', () => {
       const props = {
         ...baseProps,
-        address: {
+        addressJson: {
           street: '123 Main St',
           city: 'Springfield',
           state: 'IL',
@@ -257,13 +257,13 @@ describe('LocationDomain', () => {
       const result = LocationDomain.create(props);
 
       expect(result.isSuccess).toBe(true);
-      expect(result.value?.address).toEqual(props.address);
+      expect(result.value?.addressJson).toEqual(props.addressJson);
     });
 
     it('should accept partial address', () => {
       const props = {
         ...baseProps,
-        address: {
+        addressJson: {
           city: 'Springfield',
           country: 'USA',
         },
@@ -276,7 +276,7 @@ describe('LocationDomain', () => {
     it('should fail if address has unknown keys', () => {
       const props = {
         ...baseProps,
-        address: {
+        addressJson: {
           street: '123 Main St',
           invalidKey: 'Invalid',
         } as any,
@@ -291,7 +291,7 @@ describe('LocationDomain', () => {
     it('should fail if address field is not string', () => {
       const props = {
         ...baseProps,
-        address: {
+        addressJson: {
           street: '123 Main St',
           city: 12345,
         } as any,
@@ -306,7 +306,7 @@ describe('LocationDomain', () => {
     it('should accept null address values', () => {
       const props = {
         ...baseProps,
-        address: {
+        addressJson: {
           street: '123 Main St',
           city: null,
         } as any,
@@ -319,7 +319,7 @@ describe('LocationDomain', () => {
     it('should accept empty address object', () => {
       const props = {
         ...baseProps,
-        address: {},
+        addressJson: {},
       };
       const result = LocationDomain.create(props);
 
@@ -525,7 +525,7 @@ describe('LocationDomain', () => {
     it('should format complete address', () => {
       const createResult = LocationDomain.create({
         ...baseProps,
-        address: {
+        addressJson: {
           street: '123 Main St',
           city: 'Springfield',
           state: 'IL',
@@ -543,7 +543,7 @@ describe('LocationDomain', () => {
     it('should format partial address', () => {
       const createResult = LocationDomain.create({
         ...baseProps,
-        address: {
+        addressJson: {
           city: 'Springfield',
           country: 'USA',
         },
@@ -561,19 +561,19 @@ describe('LocationDomain', () => {
 
       const formatted = LocationDomain.getFormattedAddress(location);
 
-      expect(formatted).toBeUndefined();
+      expect(formatted).toBeNull();
     });
 
     it('should return null if address is empty object', () => {
       const createResult = LocationDomain.create({
         ...baseProps,
-        address: {},
+        addressJson: {},
       });
       const location = createResult.value!;
 
       const formatted = LocationDomain.getFormattedAddress(location);
 
-      expect(formatted).toBeUndefined();
+      expect(formatted).toBeNull();
     });
   });
 
@@ -666,7 +666,7 @@ describe('LocationDomain', () => {
       const result = LocationDomain.create(props);
 
       expect(result.isSuccess).toBe(true);
-      expect(result.value?.locationCode.value).toBe(longCode);
+      expect(result.value?.locationCode).toBe(longCode);
     });
 
     it('should handle very long location names', () => {
@@ -702,7 +702,7 @@ describe('LocationDomain', () => {
       const result = LocationDomain.create(props);
 
       expect(result.isSuccess).toBe(true);
-      expect(result.value?.parentLocationId).toBeUndefined();
+      expect(result.value?.parentLocationId).toBeNull();
     });
   });
 });

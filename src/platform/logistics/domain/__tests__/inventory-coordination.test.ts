@@ -27,6 +27,7 @@ describe('E7.2 Inventory Coordination', () => {
       locationId: 'loc-1',
       quantityOnHand: 100,
       quantityReserved: 0,
+      uomId: 'uom-1',
       lotNumber: 'LOT-001',
       ...overrides,
     };
@@ -60,12 +61,12 @@ describe('E7.2 Inventory Coordination', () => {
 
       // Verify movement created
       expect(movement).toBeDefined();
-      expect(movement.itemId).toEqual(inventory.itemId);
+      expect(movement.itemId).toBe(inventory.itemId);
       expect(movement.quantity).toBe(30);
       expect(movement.direction).toBe('OUTBOUND');
       expect(movement.movementType).toBe('ISSUE'); // E7.1 uses ISSUE for reservation
-      expect(movement.fromLocationId).toEqual(inventory.locationId);
-      expect(movement.toLocationId).toBeUndefined(); // Reservation, not transfer
+      expect(movement.fromLocationId).toBe(inventory.locationId);
+      expect(movement.toLocationId).toBeNull(); // Reservation, not transfer
     });
 
     it('should fully reserve inventory when quantity equals available', () => {
@@ -126,7 +127,7 @@ describe('E7.2 Inventory Coordination', () => {
       expect(result.error).toContain('Failed to reserve inventory');
 
       // Verify NO movement created (only checked via absence of success)
-      expect(result.value).toBeNull(); // Result.fail() contract: value is null
+      expect(result.value).toBeNull();
     });
 
     it('should fail entire operation if inventory status invalid', () => {
@@ -145,7 +146,7 @@ describe('E7.2 Inventory Coordination', () => {
       expect(result.error).toContain('Failed to reserve inventory');
 
       // No movement created
-      expect(result.value).toBeNull(); // Result.fail() contract: value is null
+      expect(result.value).toBeNull();
     });
 
     it('should fail if quantity is invalid (zero)', () => {
@@ -161,7 +162,7 @@ describe('E7.2 Inventory Coordination', () => {
       expect(result.errorCode).toBe('INVENTORY_RESERVE_QUANTITY_INVALID');
 
       // No movement created
-      expect(result.value).toBeNull(); // Result.fail() contract: value is null
+      expect(result.value).toBeNull();
     });
   });
 
@@ -186,8 +187,8 @@ describe('E7.2 Inventory Coordination', () => {
       // Movement for transfer
       expect(movement.direction).toBe('OUTBOUND'); // E7.1 uses OUTBOUND for shipment
       expect(movement.movementType).toBe('SHIPMENT');
-      expect(movement.fromLocationId).toEqual(inventory.locationId);
-      expect(movement.toLocationId?.value).toBe('loc-destination');
+      expect(movement.fromLocationId).toBe(inventory.locationId);
+      expect(movement.toLocationId).toBe('loc-destination');
       expect(movement.quantity).toBe(50); // Ships reserved quantity
     });
 
@@ -206,7 +207,7 @@ describe('E7.2 Inventory Coordination', () => {
       expect(result.errorCode).toBe('INVENTORY_INVALID_STATUS_FOR_SHIP');
 
       // No movement created
-      expect(result.value).toBeNull(); // Result.fail() contract: value is null
+      expect(result.value).toBeNull();
     });
   });
 
@@ -232,8 +233,8 @@ describe('E7.2 Inventory Coordination', () => {
       // Movement for reversal
       expect(movement.direction).toBe('INBOUND');
       expect(movement.movementType).toBe('RETURN_RECEIPT'); // E7.1 uses RETURN_RECEIPT for reversal
-      expect(movement.fromLocationId).toBeUndefined(); // Reversal has no source
-      expect(movement.toLocationId).toEqual(inventory.locationId);
+      expect(movement.fromLocationId).toBeNull(); // Reversal has no source
+      expect(movement.toLocationId).toBe(inventory.locationId);
       expect(movement.quantity).toBe(40);
     });
 
@@ -253,7 +254,7 @@ describe('E7.2 Inventory Coordination', () => {
       expect(result.errorCode).toBe('INVENTORY_CANCEL_EXCEEDS_RESERVED');
 
       // No movement created
-      expect(result.value).toBeNull(); // Result.fail() contract: value is null
+      expect(result.value).toBeNull();
     });
   });
 

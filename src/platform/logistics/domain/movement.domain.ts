@@ -97,52 +97,52 @@ export class MovementDomain {
     const now = new Date();
 
     const movement: InventoryMovement = {
-      id: { value: props.id || crypto.randomUUID() },
-      movementNumber: { value: props.movementNumber.trim() },
+      id: props.id || crypto.randomUUID(),
+      movementNumber: props.movementNumber.trim(),
       tenantId: props.tenantId,
       
       movementDate: props.movementDate || now,
       createdAt: now,
-      createdBy: props.createdBy,
+      createdBy: props.createdBy || null,
       
       movementType: props.movementType,
       direction: props.direction,
       
-      itemId: { value: props.itemId },
+      itemId: props.itemId,
       
-      fromLocationId: props.fromLocationId ? { value: props.fromLocationId } : undefined,
-      fromLocationType: props.fromLocationType,
-      toLocationId: props.toLocationId ? { value: props.toLocationId } : undefined,
-      toLocationType: props.toLocationType,
+      fromLocationId: props.fromLocationId || null,
+      fromLocationType: props.fromLocationType || null,
+      toLocationId: props.toLocationId || null,
+      toLocationType: props.toLocationType || null,
       
       quantity: props.quantity,
       unitOfMeasure: props.unitOfMeasure,
       
-      lotNumber: props.lotNumber ? { value: props.lotNumber } : undefined,
-      serialNumber: props.serialNumber ? { value: props.serialNumber } : undefined,
-      expiryDate: props.expiryDate,
+      lotNumber: props.lotNumber || null,
+      serialNumber: props.serialNumber || null,
+      expiryDate: props.expiryDate || null,
       
-      unitCost: props.unitCost,
-      totalCost: props.totalCost,
-      currency: props.currency,
+      unitCost: props.unitCost !== undefined ? props.unitCost : null,
+      totalCost: props.totalCost !== undefined ? props.totalCost : null,
+      currency: props.currency || null,
       
-      sourceDocumentType: props.sourceDocumentType,
-      sourceDocumentId: props.sourceDocumentId,
-      sourceDocumentNumber: props.sourceDocumentNumber,
-      sourceLineItemId: props.sourceLineItemId,
+      sourceDocumentType: props.sourceDocumentType || null,
+      sourceDocumentId: props.sourceDocumentId || null,
+      sourceDocumentNumber: props.sourceDocumentNumber || null,
+      sourceLineItemId: props.sourceLineItemId || null,
       
-      reason: props.reason,
-      notes: props.notes,
+      reason: props.reason || null,
+      notes: props.notes || null,
       
-      batchId: props.batchId,
+      batchId: props.batchId || null,
       
-      approvedBy: undefined,
-      approvedAt: undefined,
+      approvedBy: null,
+      approvedAt: null,
       
       status: props.status || 'COMPLETED',
-      completedAt: props.status === 'COMPLETED' ? now : undefined,
-      cancelledAt: undefined,
-      cancellationReason: undefined,
+      completedAt: props.status === 'COMPLETED' ? now : null,
+      cancelledAt: null,
+      cancellationReason: null,
     };
 
     return Result.ok(movement);
@@ -354,8 +354,8 @@ export class MovementDomain {
   /**
    * Calculate total cost if unit cost provided
    */
-  static calculateTotalCost(movement: InventoryMovement): number | undefined {
-    if (movement.unitCost === undefined) return undefined;
+  static calculateTotalCost(movement: InventoryMovement): number | null {
+    if (movement.unitCost === null) return null;
     return movement.unitCost * movement.quantity;
   }
 
@@ -421,11 +421,11 @@ export class MovementDomain {
     }
 
     if (movement.lotNumber) {
-      parts.push(`Lot: ${movement.lotNumber.value}`);
+      parts.push(`Lot: ${movement.lotNumber}`);
     }
 
     if (movement.serialNumber) {
-      parts.push(`S/N: ${movement.serialNumber.value}`);
+      parts.push(`S/N: ${movement.serialNumber}`);
     }
 
     return parts.join(' | ');

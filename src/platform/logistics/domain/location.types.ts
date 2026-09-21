@@ -14,9 +14,6 @@
 
 import { LocationId, LocationType } from './inventory.types';
 
-// Re-export for domain use
-export type { LocationType };
-
 /**
  * Location Code
  * 
@@ -27,80 +24,60 @@ export interface LocationCode {
 }
 
 /**
- * Location Status
- */
-export type LocationStatus = 'ACTIVE' | 'INACTIVE' | 'CLOSED';
-
-/**
  * Location (Core Entity)
  * 
  * Generic location concept
  */
 export interface Location {
   id: LocationId;
-  tenantId: string;
+  tenant_id: string;
   
   // Identity
-  locationCode: LocationCode;
-  locationName: string;
-  locationType: LocationType;
+  location_code: LocationCode;
+  location_name: string;
+  location_type: LocationType;
   
   // Hierarchy (optional, generic)
-  parentLocationId?: LocationId;
+  parent_location_id?: LocationId;
   
   // Address (optional)
   address?: {
     street?: string;
     city?: string;
     state?: string;
-    postalCode?: string;
+    postal_code?: string;
     country?: string;
   };
   
   // Status
-  status: LocationStatus;
+  status: 'ACTIVE' | 'INACTIVE' | 'CLOSED';
   
   // Audit
-  createdAt: Date;
-  updatedAt: Date;
+  created_at: Date;
+  updated_at: Date;
 }
 
 /**
  * Create Location Props
  */
 export interface CreateLocationProps {
-  id?: string;
-  tenantId: string;
-  locationCode: string;
-  locationName: string;
-  locationType: LocationType;
-  parentLocationId?: string;
+  tenant_id: string;
+  location_code: string;
+  location_name: string;
+  location_type: LocationType;
+  parent_location_id?: string;
   address?: Location['address'];
-  status?: LocationStatus;
-  createdBy?: string;
-}
-
-/**
- * Update Location Props
- */
-export interface UpdateLocationProps {
-  locationName?: string;
-  locationType?: LocationType;
-  parentLocationId?: string;
-  address?: Location['address'];
-  status?: LocationStatus;
-  updatedBy?: string;
 }
 
 /**
  * Location Filters
  */
 export interface LocationFilters {
-  locationType?: LocationType | LocationType[];
-  status?: LocationStatus;
-  parentLocationId?: string;
-  locationCodeLike?: string;
-  locationNameLike?: string;
+  location_type?: LocationType | LocationType[];
+  status?: Location['status'];
+  parent_location_id?: string;
+  location_code_like?: string;
+  location_name_like?: string;
 }
 
 /**

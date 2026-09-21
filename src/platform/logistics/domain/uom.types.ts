@@ -34,23 +34,6 @@ export type StandardUOM =
   | 'HR' | 'DAY' | 'WK';              // Time
 
 /**
- * Unit of Measure (Full entity with governance fields)
- */
-export interface UnitOfMeasure {
-  id: string;
-  tenantId: string;
-  uomCode: string;
-  uomName: string;
-  category: UOMCategory;
-  baseUomCode?: string | null;
-  conversionFactor?: number | null;
-  decimals: number;
-  status: UOMStatus;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-/**
  * UOM Definition (Future: UOM master data)
  */
 export interface UOMDefinition {
@@ -60,38 +43,6 @@ export interface UOMDefinition {
   base_uom?: string; // For conversions
   conversion_factor?: number; // To base UOM
   decimals?: number; // Decimal precision
-}
-
-/**
- * UOM Status
- */
-export type UOMStatus = 'ACTIVE' | 'INACTIVE' | 'DEPRECATED';
-
-/**
- * Create UOM Props
- */
-export interface CreateUOMProps {
-  id?: string;
-  tenantId: string;
-  uomCode: string;
-  uomName: string;
-  category: UOMCategory;
-  baseUomCode?: string;
-  conversionFactor?: number;
-  decimals?: number;
-  status?: UOMStatus;
-}
-
-/**
- * Update UOM Props
- */
-export interface UpdateUOMProps {
-  uomName?: string;
-  category?: UOMCategory;
-  baseUomCode?: string;
-  conversionFactor?: number;
-  decimals?: number;
-  status?: UOMStatus;
 }
 
 /**

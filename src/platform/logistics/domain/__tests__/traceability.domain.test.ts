@@ -45,8 +45,8 @@ describe('TraceabilityDomain', () => {
       const result = TraceabilityDomain.create(props);
 
       expect(result.isSuccess).toBe(true);
-      expect(result.value?.lotNumber?.value).toBe('LOT-001');
-      expect(result.value?.serialNumber).toBeUndefined();
+      expect(result.value?.lotNumber).toBe('LOT-001');
+      expect(result.value?.serialNumber).toBeNull();
     });
 
     it('should succeed with serial number only', () => {
@@ -58,8 +58,8 @@ describe('TraceabilityDomain', () => {
       const result = TraceabilityDomain.create(props);
 
       expect(result.isSuccess).toBe(true);
-      expect(result.value?.lotNumber).toBeUndefined();
-      expect(result.value?.serialNumber?.value).toBe('SN-12345');
+      expect(result.value?.lotNumber).toBeNull();
+      expect(result.value?.serialNumber).toBe('SN-12345');
     });
 
     it('should succeed with both lot and serial', () => {
@@ -71,8 +71,8 @@ describe('TraceabilityDomain', () => {
       const result = TraceabilityDomain.create(props);
 
       expect(result.isSuccess).toBe(true);
-      expect(result.value?.lotNumber?.value).toBe('LOT-001');
-      expect(result.value?.serialNumber?.value).toBe('SN-12345');
+      expect(result.value?.lotNumber).toBe('LOT-001');
+      expect(result.value?.serialNumber).toBe('SN-12345');
     });
   });
 
@@ -785,9 +785,9 @@ describe('TraceabilityDomain', () => {
       const result = TraceabilityDomain.create(props);
 
       expect(result.isSuccess).toBe(true);
-      expect(result.value?.supplierId).toBeUndefined();
-      expect(result.value?.supplierName).toBeUndefined();
-      expect(result.value?.supplierLotNumber).toBeUndefined();
+      expect(result.value?.supplierId).toBeNull();
+      expect(result.value?.supplierName).toBeNull();
+      expect(result.value?.supplierLotNumber).toBeNull();
     });
   });
 
@@ -801,7 +801,7 @@ describe('TraceabilityDomain', () => {
       const result = TraceabilityDomain.create(props);
 
       expect(result.isSuccess).toBe(true);
-      expect(result.value?.lotNumber?.value).toBe(longLot);
+      expect(result.value?.lotNumber).toBe(longLot);
     });
 
     it('should handle very long serial numbers', () => {
@@ -813,7 +813,7 @@ describe('TraceabilityDomain', () => {
       const result = TraceabilityDomain.create(props);
 
       expect(result.isSuccess).toBe(true);
-      expect(result.value?.serialNumber?.value).toBe(longSerial);
+      expect(result.value?.serialNumber).toBe(longSerial);
     });
 
     it('should handle dates far in the future', () => {

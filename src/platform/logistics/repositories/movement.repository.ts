@@ -277,10 +277,10 @@ export class MovementRepository implements IMovementRepository {
 
       lotNumber: row.lot_number,
       serialNumber: row.serial_number,
-      expiryDate: row.expiry_date ? new Date(row.expiry_date) : undefined,
+      expiryDate: row.expiry_date ? new Date(row.expiry_date) : null,
 
-      unitCost: row.unit_cost !== null ? parseFloat(row.unit_cost) : undefined,
-      totalCost: row.total_cost !== null ? parseFloat(row.total_cost) : undefined,
+      unitCost: row.unit_cost !== null ? parseFloat(row.unit_cost) : null,
+      totalCost: row.total_cost !== null ? parseFloat(row.total_cost) : null,
       currency: row.currency,
 
       sourceDocumentType: row.source_document_type,
@@ -294,11 +294,11 @@ export class MovementRepository implements IMovementRepository {
       batchId: row.batch_id,
 
       approvedBy: row.approved_by,
-      approvedAt: row.approved_at ? new Date(row.approved_at) : undefined,
+      approvedAt: row.approved_at ? new Date(row.approved_at) : null,
 
       status: row.status,
-      completedAt: row.completed_at ? new Date(row.completed_at) : undefined,
-      cancelledAt: row.cancelled_at ? new Date(row.cancelled_at) : undefined,
+      completedAt: row.completed_at ? new Date(row.completed_at) : null,
+      cancelledAt: row.cancelled_at ? new Date(row.cancelled_at) : null,
       cancellationReason: row.cancellation_reason,
     };
   }

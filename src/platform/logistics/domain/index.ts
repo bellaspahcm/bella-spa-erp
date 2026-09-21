@@ -30,7 +30,7 @@ export { TraceabilityDomain } from './traceability.domain';
 export { LocationDomain } from './location.domain';
 export { UOMDomain } from './uom.domain';
 
-// Type exports
+// Types (re-export from types layer)
 export type {
   // Item types
   Item,
@@ -38,60 +38,41 @@ export type {
   UpdateItemProps,
   ItemType,
   ItemStatus,
-  ItemId,
-} from './item.types';
-
-// Inventory types
-export type {
+  
+  // Inventory types
   Inventory,
   CreateInventoryProps,
   UpdateInventoryQuantityProps,
   ReserveInventoryProps,
   ReleaseReservationProps,
   InventoryStatus,
-  InventoryFilters,
-  LotNumber,
-  SerialNumber,
-} from './inventory.types';
-
-// Movement types
-export type {
+  
+  // Movement types
   InventoryMovement,
   CreateMovementProps,
   MovementType,
   MovementDirection,
   MovementStatus,
-  MovementFilters,
-  MovementId,
-} from './movement.types';
-
-// Location types
-export type {
-  Location,
-  CreateLocationProps,
-  UpdateLocationProps,
-  LocationStatus,
-  LocationFilters,
-  LocationType,
-} from './location.types';
-
-// UOM types
-export type {
-  UOMCategory,
-  StandardUOM,
-  UOMDefinition,
-  UOMConversion,
-} from './uom.types';
-
-// Traceability types
-export type {
+  
+  // Traceability types
   Traceability,
-  TraceabilityRecord,
   CreateTraceabilityProps,
   AddCustodyEventProps,
   CustodyEvent,
   RecallStatus,
   ComplianceStatus,
-  TraceabilityFilters,
-  TraceabilityId,
-} from './traceability.types';
+  
+  // Location types
+  Location,
+  CreateLocationProps,
+  UpdateLocationProps,
+  LocationType,
+  LocationStatus,
+  
+  // UOM types
+  UnitOfMeasure,
+  CreateUOMProps,
+  UpdateUOMProps,
+  UOMCategory,
+  UOMStatus,
+} from './item.types';

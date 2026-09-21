@@ -167,9 +167,8 @@ export class UOMDomain {
     newStatus: UOMStatus
   ): Result<void> {
     const validTransitions: Record<UOMStatus, UOMStatus[]> = {
-      ACTIVE: ['INACTIVE', 'DEPRECATED'],
-      INACTIVE: ['ACTIVE', 'DEPRECATED'],
-      DEPRECATED: [], // Terminal state
+      ACTIVE: ['INACTIVE'],
+      INACTIVE: ['ACTIVE'],
     };
 
     const allowed = validTransitions[uom.status] || [];

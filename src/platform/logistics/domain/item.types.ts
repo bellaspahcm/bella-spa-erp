@@ -88,9 +88,9 @@ export interface ItemDimensions {
  * Business classification (optional, tenant-defined)
  */
 export interface ItemCategory {
-  categoryCode: string;
-  categoryName: string;
-  parentCategoryCode?: string;
+  category_code: string;
+  category_name: string;
+  parent_category_code?: string;
 }
 
 /**
@@ -125,10 +125,10 @@ export interface Item {
   id: ItemId;
   
   /** Tenant ID (P0 Gate - tenant isolation) */
-  tenantId: string;
+  tenant_id: string;
   
   /** Stock Keeping Unit code (unique per tenant) */
-  skuCode: SkuCode;
+  sku_code: SkuCode;
   
   // ========== Description ==========
   /** Item name */
@@ -146,30 +146,30 @@ export interface Item {
   
   // ========== Measurement ==========
   /** Base unit of measure */
-  baseUom: UnitOfMeasure;
+  base_uom: UnitOfMeasure;
   
   /** Weight in kilograms (optional) */
-  weightKg?: number;
+  weight_kg?: number;
   
   /** Physical dimensions (optional) */
   dimensions?: ItemDimensions;
   
   // ========== Costing (Hints for Finance OS) ==========
   /** Standard cost (optional, for reference only) */
-  standardCost?: number;
+  standard_cost?: number;
   
   /** Currency (ISO 4217, default: tenant currency) */
   currency?: string;
   
   // ========== Traceability Requirements ==========
   /** Requires lot/batch tracking */
-  lotTracked: boolean;
+  lot_tracked: boolean;
   
   /** Requires serial number tracking */
-  serialTracked: boolean;
+  serial_tracked: boolean;
   
   /** Requires expiry date tracking */
-  expiryTracked: boolean;
+  expiry_tracked: boolean;
   
   // ========== Status ==========
   /** Current lifecycle status */
@@ -177,16 +177,16 @@ export interface Item {
   
   // ========== Audit ==========
   /** Creation timestamp */
-  createdAt: Date;
+  created_at: Date;
   
   /** Last update timestamp */
-  updatedAt: Date;
+  updated_at: Date;
   
   /** Created by user ID (optional) */
-  createdBy?: string;
+  created_by?: string;
   
   /** Last updated by user ID (optional) */
-  updatedBy?: string;
+  updated_by?: string;
 }
 
 /**
@@ -195,24 +195,21 @@ export interface Item {
  * Input for creating a new item
  */
 export interface CreateItemProps {
-  id?: string;  // Optional - Domain generates if not provided
-  tenantId: string;
-  skuCode: string;
+  tenant_id: string;
+  sku_code: string;
   name: string;
   description?: string;
   type?: ItemType;
   category?: string;
-  baseUom: UnitOfMeasure;
-  weightKg?: number;
+  base_uom: UnitOfMeasure;
+  weight_kg?: number;
   dimensions?: ItemDimensions;
-  standardCost?: number;
+  standard_cost?: number;
   currency?: string;
-  lotTracked?: boolean;
-  serialTracked?: boolean;
-  expiryTracked?: boolean;
-  status?: ItemStatus;
-  createdBy?: string;
-  updatedBy?: string;
+  lot_tracked?: boolean;
+  serial_tracked?: boolean;
+  expiry_tracked?: boolean;
+  created_by?: string;
 }
 
 /**
@@ -225,16 +222,16 @@ export interface UpdateItemProps {
   description?: string;
   type?: ItemType;
   category?: string;
-  baseUom?: UnitOfMeasure;
-  weightKg?: number;
+  base_uom?: UnitOfMeasure;
+  weight_kg?: number;
   dimensions?: ItemDimensions;
-  standardCost?: number;
+  standard_cost?: number;
   currency?: string;
-  lotTracked?: boolean;
-  serialTracked?: boolean;
-  expiryTracked?: boolean;
+  lot_tracked?: boolean;
+  serial_tracked?: boolean;
+  expiry_tracked?: boolean;
   status?: ItemStatus;
-  updatedBy?: string;
+  updated_by?: string;
 }
 
 /**

@@ -40,21 +40,21 @@ export class InventoryExpiryRule implements Rule<ExpiryRuleContext> {
     // Evidence input
     const evidenceInput = {
       inventory_id: inventory.id.value,
-      expiryDate: inventory.expiryDate?.toISOString() || null,
+      expiry_date: inventory.expiry_date?.toISOString() || null,
       evaluation_date: evaluationDate.toISOString(),
     };
 
     // No expiry date → PASS (not expiry-tracked)
-    if (!inventory.expiryDate) {
+    if (!inventory.expiry_date) {
       return pass(
         this.id,
         this.version,
-        createEvidence(evidenceInput, { is_expired: false, reason: 'no_expiryDate' }),
+        createEvidence(evidenceInput, { is_expired: false, reason: 'no_expiry_date' }),
         evaluationDate
       );
     }
 
-    const expiryDate = new Date(inventory.expiryDate);
+    const expiryDate = new Date(inventory.expiry_date);
     const isExpired = expiryDate < evaluationDate;
 
     if (isExpired) {
@@ -70,7 +70,7 @@ export class InventoryExpiryRule implements Rule<ExpiryRuleContext> {
           `Inventory expired ${daysPastExpiry} day(s) ago`,
           'ERROR',
           {
-            field: 'expiryDate',
+            field: 'expiry_date',
             actual: expiryDate.toISOString(),
             expected: `>= ${evaluationDate.toISOString()}`,
           }

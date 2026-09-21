@@ -434,7 +434,7 @@ export class InventoryRepository implements IInventoryRepository {
       
       lotNumber: row.lot_number,
       serialNumber: row.serial_number,
-      expiryDate: row.expiry_date ? new Date(row.expiry_date) : undefined,
+      expiryDate: row.expiry_date ? new Date(row.expiry_date) : null,
       
       status: row.status as 'AVAILABLE' | 'RESERVED' | 'ALLOCATED' | 'QUARANTINE' | 'DAMAGED' | 'EXPIRED' | 'TRANSIT' | 'BLOCKED',
       
