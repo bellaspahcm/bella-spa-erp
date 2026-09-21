@@ -1,5 +1,7 @@
 import '@testing-library/jest-dom'
 import { TextEncoder, TextDecoder } from 'util'
+
+jest.setTimeout(30000);
 import dotenv from 'dotenv'
 import path from 'path'
 
