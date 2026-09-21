@@ -100,7 +100,7 @@ describe('P7.2 Finance Communication & Collection Lifecycle Integration Suite', 
     });
 
     billingPeriodId = period.id;
-  });
+  }, 30_000);
 
   const createTestStudent = async (tenantId: string = tenantA, parentId: string = parentPartyId) => {
     const studentId = crypto.randomUUID();

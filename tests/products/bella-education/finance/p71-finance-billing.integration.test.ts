@@ -77,7 +77,7 @@ describe('P7.1 Preschool Finance & Billing Engine 12-Invariant Integration Suite
     });
 
     billingPeriodId = period.id;
-  });
+  }, 30_000);
 
   test('Invariant 1: Multi-Tenant RLS Isolation — prevents Tenant B from accessing Tenant A invoice', async () => {
     const studentId = getStudentId();

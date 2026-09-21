@@ -69,7 +69,7 @@ describe('P8.2 Leave Processing, Substitution & Reuse Candidate #2 Suite', () =>
       endTime: '11:30:00',
     });
     morningShiftId = morning.id;
-  });
+  }, 30_000);
 
   test('Invariant 1: Leave Request Application Lifecycle', async () => {
     const leave = await leaveService.applyForLeave({

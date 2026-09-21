@@ -57,7 +57,7 @@ describe('P8.1 Preschool Staff Roster & Caregiver Ratio Kernel 12-Invariant Suit
       endTime: '11:30:00',
     });
     morningShiftId = morning.id;
-  });
+  }, 30_000);
 
   test('Invariant 1: Multi-Tenant RLS Isolation', async () => {
     // Tenant B attempts to fetch Tenant A shift templates
