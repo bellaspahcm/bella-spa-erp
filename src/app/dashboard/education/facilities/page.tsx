@@ -531,7 +531,7 @@ export default function FacilitiesPage() {
                   <QrCode className="text-rose-400" size={18} /> Chi Tiết Thiết Bị Giám Sát Cá Thể
                 </h3>
                 {assets.length === 0 ? (
-                  <p className="text-xs text-slate-500 py-4">Chưa có dữ liệu. Nhấn nút "Khởi Tạo Cơ Sở Vật Chất Mẫu" để bắt đầu.</p>
+                  <p className="text-xs text-slate-500 py-4">Chưa có dữ liệu. Nhấn nút &quot;Khởi Tạo Cơ Sở Vật Chất Mẫu&quot; để bắt đầu.</p>
                 ) : (
                   <div className="space-y-2 text-xs text-slate-300">
                     <div className="flex justify-between py-1 border-b border-slate-800/60">
@@ -600,7 +600,7 @@ export default function FacilitiesPage() {
               <Building2 className="text-indigo-400" size={20} /> Cấu Trúc Không Gian & Contract Zone Availability
             </h3>
             {zones.length === 0 ? (
-              <p className="text-xs text-slate-500 py-4">Chưa có khu vực nào. Nhấn "Khởi Tạo Cơ Sở Vật Chất Mẫu" tại Tab Tổng quan.</p>
+              <p className="text-xs text-slate-500 py-4">Chưa có khu vực nào. Nhấn &quot;Khởi Tạo Cơ Sở Vật Chất Mẫu&quot; tại Tab Tổng quan.</p>
             ) : (
               <div className="divide-y divide-slate-800">
                 {zones.map((z) => (

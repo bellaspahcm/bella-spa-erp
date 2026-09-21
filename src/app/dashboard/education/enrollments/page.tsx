@@ -311,7 +311,7 @@ export default function EnrollmentsPage() {
                         {stu.name}
                       </h3>
                       <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                        "{stu.nickname}"
+                        &quot;{stu.nickname}&quot;
                       </span>
                     </div>
                     <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mt-0.5">
