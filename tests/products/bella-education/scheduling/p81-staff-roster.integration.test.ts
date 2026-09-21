@@ -16,7 +16,6 @@
  * 12. Audit Evidence Preservation (NO CASCADE DELETE) — RESTRICT prevents deletion of templates with active assignments
  */
 
-import { describe, test, expect, beforeEach } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
 import { PreschoolSchedulingRepository } from '../../../../src/products/bella-education/scheduling/repositories/preschool-scheduling.repository';
 import { StaffRosterService } from '../../../../src/products/bella-education/scheduling/services/staff-roster.service';
@@ -34,7 +33,7 @@ const staffCaregiver1 = '00000000-0000-0000-0000-000000000083';
 const classIdA1 = '00000000-0000-0000-0000-000000000091';
 const classIdA2 = '00000000-0000-0000-0000-000000000092';
 
-describe('P8.1 Preschool Staff Roster & Caregiver Ratio Kernel 12-Invariant Suite', { timeout: 30000 }, () => {
+describe('P8.1 Preschool Staff Roster & Caregiver Ratio Kernel 12-Invariant Suite', () => {
   let repo: PreschoolSchedulingRepository;
   let rosterService: StaffRosterService;
   let complianceService: RatioComplianceService;
