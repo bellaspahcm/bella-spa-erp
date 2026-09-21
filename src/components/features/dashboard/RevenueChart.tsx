@@ -234,7 +234,7 @@ export function RevenueChart({ performanceData, userRole, isLoading }: RevenueCh
                 fontSize: '11px',
                 fontWeight: '800'
               }}
-              formatter={(val: number) => [`${val}M VND`, 'Doanh thu']}
+              formatter={(val: any) => [`${val}M VND`, 'Doanh thu']}
             />
             <Bar 
               dataKey="revenue" 

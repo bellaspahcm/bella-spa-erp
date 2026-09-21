@@ -60,7 +60,8 @@ function runFull() {
 function loadBaselines() {
   try {
     const data = JSON.parse(readFileSync(baselinePath, 'utf8'));
-    if (!data.full && !data['typescript-full']) {
+    const fullDiag = data.full?.diagnostics || data['typescript-full']?.diagnostics || data.full;
+    if (!fullDiag || Object.keys(fullDiag).length === 0) {
       try {
         const mainData = JSON.parse(readFileSync('.github/ci/baselines/main.json', 'utf8'));
         if (mainData.scopes?.['typescript-full']) {
@@ -117,10 +118,15 @@ function enforceDiagnosticBaseline(scopeKey, output) {
 }
 
 function runTsc(args, scopeKey) {
-  console.log(`\n> npx ${args.join(' ')}`);
-  const result = spawnSync('npx', args, {
+  const outputPath = `.cache/tsbuildinfo/${scopeKey}.diagnostics.txt`;
+  mkdirSync(dirname(outputPath), { recursive: true });
+
+  const tscBin = 'node_modules/typescript/bin/tsc';
+  const fullArgs = [tscBin, ...args.slice(1)];
+  console.log(`\n> node ${fullArgs.join(' ')}`);
+  const result = spawnSync(process.execPath, fullArgs, {
     encoding: 'utf8',
-    shell: process.platform === 'win32',
+    maxBuffer: 100 * 1024 * 1024,
     env: {
       ...process.env,
       NEXT_TELEMETRY_DISABLED: '1',
@@ -131,8 +137,6 @@ function runTsc(args, scopeKey) {
   process.stdout.write(result.stdout ?? '');
   process.stderr.write(result.stderr ?? '');
 
-  const outputPath = `.cache/tsbuildinfo/${scopeKey}.diagnostics.txt`;
-  mkdirSync(dirname(outputPath), { recursive: true });
   writeFileSync(outputPath, output);
 
   if ((result.status ?? 1) === 0) {

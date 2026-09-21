@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url';
 const DIAGNOSTIC_PATTERN = /^(.+?)\((\d+),(\d+)\): error (TS\d+): (.+)$/;
 
 function normalizeUnionLiteralOrder(message) {
+  if (!message || message.length > 300 || !message.includes('|')) return message;
   return message.replace(/"[^"]+"(?:\s+\|\s+"[^"]+")+/g, (unionText) => {
     const literals = unionText
       .split(/\s+\|\s+/)

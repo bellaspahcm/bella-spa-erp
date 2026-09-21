@@ -161,7 +161,7 @@ export async function provisionPartnerAccount(
           tenant_id: tenant.id,
           user_id: authUser.user.id,
         },
-      } as unknown);
+      } as any);
 
     // Step 8: Send activation email (async, don't block)
     sendActivationEmail(input.email, input.full_name, activationToken).catch((err) => {
