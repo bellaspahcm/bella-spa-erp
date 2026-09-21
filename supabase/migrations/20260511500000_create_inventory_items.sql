@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS public.inventory_items (
 );
 
 -- Create index for tenant isolation
+-- zero-downtime: allow blocking-index - index on newly created inventory_items table
 CREATE INDEX IF NOT EXISTS idx_inventory_items_tenant 
 ON public.inventory_items USING btree (tenant_id);
 
