@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { FrameworkRegistryService } from "@/products/bella-education/learning-development/framework-registry.service";
 import { ObservationService } from "@/products/bella-education/learning-development/observation.service";

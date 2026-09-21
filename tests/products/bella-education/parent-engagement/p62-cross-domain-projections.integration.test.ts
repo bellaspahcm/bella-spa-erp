@@ -3,7 +3,6 @@
 // File: tests/products/bella-education/parent-engagement/p62-cross-domain-projections.integration.test.ts
 // ============================================================================
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import {
   ParentCommunicationRepository,

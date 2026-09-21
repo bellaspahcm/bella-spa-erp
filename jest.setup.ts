@@ -9,6 +9,10 @@ import fs from 'fs'
 const envFile = fs.existsSync(path.resolve(process.cwd(), '.env.test')) ? '.env.test' : '.env.local'
 dotenv.config({ path: path.resolve(process.cwd(), envFile) })
 
+// Test environment fallbacks
+process.env.NEXT_PUBLIC_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mock.supabase.co';
+process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'mock-service-role-key';
+
 // Debug: Check if env vars are loaded (DO NOT LOG SECRET VALUES)
 console.log('[Jest Setup] SUPABASE_SERVICE_ROLE_KEY loaded:', Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY));
 
