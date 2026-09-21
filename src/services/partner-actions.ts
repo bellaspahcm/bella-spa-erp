@@ -603,21 +603,24 @@ export async function fetchPartnerCommissions(userId: string) {
 
   if (error) throw error;
 
-  return (data || []).map((c: Record<string, unknown>) => ({
-    id: c.id,
-    booking_id: c.id,
-    project_name: c.real_estate_products?.real_estate_projects?.name || 'Dự án',
-    unit_code: c.real_estate_products?.product_code || 'N/A',
-    transaction_amount: Number(c.base_amount) || 0,
-    commission_rate: Number(c.commission_rate) || 0,
-    commission_amount: Number(c.commission_amount) || 0,
-    tax_deduction: Number(c.commission_amount) * 0.1 || 0, // Mock 10% tax
-    net_amount: Number(c.commission_amount) * 0.9 || 0,
-    status: c.status as 'pending' | 'approved' | 'paid',
-    approved_date: c.status === 'approved' || c.status === 'paid' ? c.earned_date : null,
-    paid_date: c.paid_at,
-    created_at: c.earned_date,
-  }));
+  return (data || []).map((c: Record<string, unknown>) => {
+    const product = c.real_estate_products as { product_code?: string; real_estate_projects?: { name?: string } } | null;
+    return {
+      id: String(c.id ?? ''),
+      booking_id: String(c.id ?? ''),
+      project_name: product?.real_estate_projects?.name || 'Dự án',
+      unit_code: product?.product_code || 'N/A',
+      transaction_amount: Number(c.base_amount) || 0,
+      commission_rate: Number(c.commission_rate) || 0,
+      commission_amount: Number(c.commission_amount) || 0,
+      tax_deduction: (Number(c.commission_amount) || 0) * 0.1,
+      net_amount: (Number(c.commission_amount) || 0) * 0.9,
+      status: (c.status as 'pending' | 'approved' | 'paid') || 'pending',
+      approved_date: c.status === 'approved' || c.status === 'paid' ? (c.earned_date ? String(c.earned_date) : null) : null,
+      paid_date: c.paid_at ? String(c.paid_at) : null,
+      created_at: String(c.earned_date ?? ''),
+    };
+  });
 }
 
 /**
