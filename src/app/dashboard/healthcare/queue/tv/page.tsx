@@ -664,7 +664,7 @@ export default function QueueTVScreenPage() {
 
       {/* Explicit Bottom Extra Scroll Spacer Block */}
       <div className="h-40 w-full shrink-0 pointer-events-none" aria-hidden="true" />
-      <audio id="tts-audio" className="hidden" referrerPolicy="no-referrer" />
+      <audio id="tts-audio" className="hidden" />
 
       {!audioUnlocked && (
         <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center space-y-6">
