@@ -61,7 +61,8 @@ export interface RatingThresholdParams {
 export interface RatingLinearParams {
   baseline: number;
   bonusPerPoint: number;
-  cap?: number; // Optional max bonus
+  maxBonus?: number; // Optional max bonus
+  cap?: number; // Optional max bonus (alias)
 }
 
 export interface RatingTierParams {

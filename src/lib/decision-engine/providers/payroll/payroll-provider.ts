@@ -550,7 +550,7 @@ export class PayrollProvider {
         const p = params as RatingLinearParams;
         const baseline = p.baseline || 4.0;
         const bonusPerPoint = p.bonusPerPoint || 100000;
-        const maxBonus = p.cap || 300000;
+        const maxBonus = p.maxBonus ?? p.cap ?? 300000;
         
         if (avgRating <= baseline) return 0;
         
