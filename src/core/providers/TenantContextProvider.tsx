@@ -3,6 +3,7 @@
 import { useEffect, useState, ReactNode } from 'react';
 import type { TenantContext } from '@/core/types/tenant';
 import { TenantContextContext } from '@/core/hooks/useTenantContext';
+import { normalizeEnabledModules, type TenantPrimaryBusinessModuleKey } from '@/lib/business-rules/tenant-modules';
 
 /**
  * Error message displayed when tenant configuration fails to load.
@@ -51,7 +52,7 @@ const TENANT_LOADING_MESSAGE = 'Đang tải cấu hình chi nhánh...';
  * @param props.children - Child components that will have access to tenant context
  */
 function getDevFallbackContext(): TenantContext {
-  let moduleKey = 'bella_healthcare';
+  let moduleKey: TenantPrimaryBusinessModuleKey = 'bella_healthcare';
   let name = 'Bella Medical Clinic (Dev)';
 
   if (typeof window !== 'undefined') {
@@ -157,7 +158,7 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
     if (!context) return;
 
     const enabledModules = context.enabledModules;
-    let moduleKey: string = 'baby_care'; // Default fallback
+    let moduleKey: TenantPrimaryBusinessModuleKey = 'babycare'; // Default fallback
 
     let modulesArray: string[] = [];
     
@@ -167,9 +168,9 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
       const hasNumericKeys = Object.keys(enabledModules).some(key => /^\d+$/.test(key));
       
       if (hasNumericKeys) {
-        modulesArray = Object.values(enabledModules).filter((v): v is string => typeof v === 'string');
+        modulesArray = Object.values(enabledModules);
       } else {
-        const modules = enabledModules as unknown;
+        const modules = normalizeEnabledModules(enabledModules);
         
         if (modules.real_estate === true) {
           moduleKey = 'real_estate';
@@ -181,8 +182,8 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
           moduleKey = 'bella_auto';
         } else if (modules.bella_healthcare === true) {
           moduleKey = 'bella_healthcare';
-        } else if (modules.babycare === true || modules.spa === true) {
-          moduleKey = 'baby_care';
+        } else if (modules.babycare === true) {
+          moduleKey = 'babycare';
         }
         
         document.documentElement.dataset.tenantModule = moduleKey;
@@ -212,7 +213,7 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
         } else if (modulesArray.includes('bella_auto')) {
           moduleKey = 'bella_auto';
         } else if (modulesArray.includes('babycare') || modulesArray.includes('spa')) {
-          moduleKey = 'baby_care';
+          moduleKey = 'babycare';
         }
       }
     }
@@ -225,14 +226,14 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
     const themeMeta = document.querySelector('meta[name="theme-color"]');
     if (themeMeta) {
       const themeColors: Record<string, string> = {
-        baby_care: '#FDF2F8',
+        babycare: '#FDF2F8',
         beauty_spa: '#F0FDF4',
         industrial_cleaning: '#F8FAFC',
         real_estate: '#FFFBEB',
         bella_auto: '#F0F9FF',
         bella_healthcare: '#ECFEFF',
       };
-      themeMeta.setAttribute('content', themeColors[moduleKey] || themeColors.baby_care);
+      themeMeta.setAttribute('content', themeColors[moduleKey] || themeColors.babycare);
     }
   }, [context]);
 
