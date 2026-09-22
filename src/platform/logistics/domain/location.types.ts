@@ -13,6 +13,7 @@
  */
 
 import { LocationId, LocationType } from './inventory.types';
+export type { LocationType } from './inventory.types';
 
 /**
  * Location Code

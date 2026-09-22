@@ -80,9 +80,9 @@ export class WarrantyService {
       vehicle_id: data.vehicleId,
       repair_order_id: data.repairOrderId,
       claim_type: data.claimType,
-      failure_description: data.failureDescription,
+      issue_description: data.failureDescription,
       failure_date: data.failureDate.toISOString().split('T')[0],
-      mileage_at_failure: data.mileageAtFailure,
+      failure_mileage: data.mileageAtFailure,
       affected_parts: data.affectedParts as WarrantyClaimInsert['affected_parts'],
       customer_complaints: data.customerComplaints,
       submitted_by: data.submittedBy,
@@ -149,7 +149,7 @@ export class WarrantyService {
           type: 'Standard Warranty',
           startDate: sale.warranty_start_date,
           endDate: sale.warranty_end_date,
-          mileageLimit: sale.warranty_mileage_limit,
+          mileageLimit: sale.warranty_mileage_limit ?? undefined,
         },
       };
     }
@@ -163,7 +163,7 @@ export class WarrantyService {
           type: 'Standard Warranty',
           startDate: sale.warranty_start_date,
           endDate: sale.warranty_end_date,
-          mileageLimit: sale.warranty_mileage_limit,
+          mileageLimit: sale.warranty_mileage_limit ?? undefined,
         },
       };
     }
@@ -174,7 +174,7 @@ export class WarrantyService {
         type: 'Standard Warranty',
         startDate: sale.warranty_start_date,
         endDate: sale.warranty_end_date,
-        mileageLimit: sale.warranty_mileage_limit,
+        mileageLimit: sale.warranty_mileage_limit ?? undefined,
       },
     };
   }
@@ -196,7 +196,7 @@ export class WarrantyService {
     const updateData: WarrantyClaimUpdate = {
       reviewed_by: data.reviewedBy,
       reviewed_at: new Date().toISOString(),
-      review_notes: data.reviewNotes,
+      reviewer_notes: data.reviewNotes,
     };
 
     if (data.decision === 'approved') {

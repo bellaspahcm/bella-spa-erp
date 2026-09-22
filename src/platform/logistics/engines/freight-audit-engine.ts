@@ -347,12 +347,12 @@ export class FreightAuditEngine implements FreightAuditContract {
       };
 
       await eventBus.publish({
-        type: 'InvoiceCreated',
+        eventType: 'InvoiceCreated',
+        tenantId: this.tenantId,
+        aggregateId: invoice.invoice_id,
+        aggregateType: 'freight_invoice',
         payload: eventPayload,
-        metadata: {
-          tenant_id: this.tenantId,
-          user_id: this.userId,
-        },
+        userId: this.userId,
       });
 
       return {
@@ -1553,12 +1553,12 @@ export class FreightAuditEngine implements FreightAuditContract {
       };
 
       await eventBus.publish({
-        type: 'DiscrepancyCreated',
+        eventType: 'DiscrepancyCreated',
+        tenantId: this.tenantId,
+        aggregateId: discrepancy.discrepancy_id,
+        aggregateType: 'freight_discrepancy',
         payload: eventPayload,
-        metadata: {
-          tenant_id: this.tenantId,
-          user_id: this.userId,
-        },
+        userId: this.userId,
       });
 
       return {
@@ -1719,12 +1719,12 @@ export class FreightAuditEngine implements FreightAuditContract {
       };
 
       await eventBus.publish({
-        type: 'InvoiceSubmitted',
+        eventType: 'InvoiceSubmitted',
+        tenantId: this.tenantId,
+        aggregateId: invoiceEntity.invoice_id,
+        aggregateType: 'freight_invoice',
         payload: eventPayload,
-        metadata: {
-          tenant_id: this.tenantId,
-          user_id: this.userId,
-        },
+        userId: this.userId,
       });
 
       return {
@@ -1850,12 +1850,12 @@ export class FreightAuditEngine implements FreightAuditContract {
       };
 
       await eventBus.publish({
-        type: 'InvoiceApproved',
+        eventType: 'InvoiceApproved',
+        tenantId: this.tenantId,
+        aggregateId: invoiceEntity.invoice_id,
+        aggregateType: 'freight_invoice',
         payload: eventPayload,
-        metadata: {
-          tenant_id: this.tenantId,
-          user_id: this.userId,
-        },
+        userId: this.userId,
       });
 
       return {
@@ -1976,12 +1976,12 @@ export class FreightAuditEngine implements FreightAuditContract {
       };
 
       await eventBus.publish({
-        type: 'InvoiceRejected',
+        eventType: 'InvoiceRejected',
+        tenantId: this.tenantId,
+        aggregateId: invoiceEntity.invoice_id,
+        aggregateType: 'freight_invoice',
         payload: eventPayload,
-        metadata: {
-          tenant_id: this.tenantId,
-          user_id: this.userId,
-        },
+        userId: this.userId,
       });
 
       return {
@@ -2103,12 +2103,12 @@ export class FreightAuditEngine implements FreightAuditContract {
       };
 
       await eventBus.publish({
-        type: 'InvoicePaid',
+        eventType: 'InvoicePaid',
+        tenantId: this.tenantId,
+        aggregateId: invoiceEntity.invoice_id,
+        aggregateType: 'freight_invoice',
         payload: eventPayload,
-        metadata: {
-          tenant_id: this.tenantId,
-          user_id: this.userId,
-        },
+        userId: this.userId,
       });
 
       return {
@@ -2217,12 +2217,12 @@ export class FreightAuditEngine implements FreightAuditContract {
       };
 
       await eventBus.publish({
-        type: 'InvoiceReopened',
+        eventType: 'InvoiceReopened',
+        tenantId: this.tenantId,
+        aggregateId: invoiceEntity.invoice_id,
+        aggregateType: 'freight_invoice',
         payload: eventPayload,
-        metadata: {
-          tenant_id: this.tenantId,
-          user_id: this.userId,
-        },
+        userId: this.userId,
       });
 
       return {

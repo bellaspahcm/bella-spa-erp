@@ -449,23 +449,23 @@ export class InventoryRepository implements IInventoryRepository {
   private mapToInsert(inventory: Inventory): LogisticsInventoryInsert {
     return {
       id: inventory.id,
-      tenant_id: inventory.tenantId,
-      item_id: inventory.itemId,
-      location_id: inventory.locationId,
-      location_type: inventory.locationType,
+      tenant_id: inventory.tenant_id,
+      item_id: inventory.item_id.value,
+      location_id: inventory.location_id.value,
+      location_type: inventory.location_type,
 
-      quantity_on_hand: inventory.quantityOnHand,
-      quantity_reserved: inventory.quantityReserved,
-      quantity_available: inventory.quantityAvailable,
+      quantity_on_hand: inventory.quantity_on_hand,
+      quantity_reserved: inventory.quantity_reserved,
+      quantity_available: inventory.quantity_available,
 
-      lot_number: inventory.lotNumber,
-      serial_number: inventory.serialNumber,
-      expiry_date: inventory.expiryDate?.toISOString() || null,
+      lot_number: inventory.lot_number?.value ?? null,
+      serial_number: inventory.serial_number?.value ?? null,
+      expiry_date: inventory.expiry_date?.toISOString() ?? null,
 
       status: inventory.status,
 
-      created_at: inventory.createdAt.toISOString(),
-      updated_at: inventory.updatedAt.toISOString(),
+      created_at: inventory.created_at.toISOString(),
+      updated_at: inventory.updated_at.toISOString(),
     };
   }
 
@@ -474,15 +474,15 @@ export class InventoryRepository implements IInventoryRepository {
    */
   private mapToUpdate(inventory: Inventory): LogisticsInventoryUpdate {
     return {
-      quantity_on_hand: inventory.quantityOnHand,
-      quantity_reserved: inventory.quantityReserved,
-      quantity_available: inventory.quantityAvailable,
+      quantity_on_hand: inventory.quantity_on_hand,
+      quantity_reserved: inventory.quantity_reserved,
+      quantity_available: inventory.quantity_available,
 
-      expiry_date: inventory.expiryDate?.toISOString() || null,
+      expiry_date: inventory.expiry_date?.toISOString() ?? null,
 
       status: inventory.status,
 
-      updated_at: inventory.updatedAt.toISOString(),
+      updated_at: inventory.updated_at.toISOString(),
     };
   }
 }

@@ -578,7 +578,7 @@ export default function LegalDocumentsOperationsCenterPage() {
 
               {/* Notification Bell */}
               <button 
-                onClick={() => { setActiveTab('pending_approval'); toast.info("Đã lọc danh sách tài liệu chờ phê duyệt!"); }}
+                onClick={() => { setFilterStatus('pending_approval'); toast.info("Đã lọc danh sách tài liệu chờ phê duyệt!"); }}
                 className="relative p-2 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition cursor-pointer"
               >
                 <Bell className="w-4 h-4" />

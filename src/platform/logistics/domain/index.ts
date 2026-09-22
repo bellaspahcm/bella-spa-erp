@@ -38,7 +38,10 @@ export type {
   UpdateItemProps,
   ItemType,
   ItemStatus,
-  
+  UnitOfMeasure,
+} from './item.types';
+
+export type {
   // Inventory types
   Inventory,
   CreateInventoryProps,
@@ -46,14 +49,19 @@ export type {
   ReserveInventoryProps,
   ReleaseReservationProps,
   InventoryStatus,
-  
+  LocationType,
+} from './inventory.types';
+
+export type {
   // Movement types
   InventoryMovement,
   CreateMovementProps,
   MovementType,
   MovementDirection,
   MovementStatus,
-  
+} from './movement.types';
+
+export type {
   // Traceability types
   Traceability,
   CreateTraceabilityProps,
@@ -61,18 +69,16 @@ export type {
   CustodyEvent,
   RecallStatus,
   ComplianceStatus,
-  
+} from './traceability.types';
+
+export type {
   // Location types
   Location,
   CreateLocationProps,
   UpdateLocationProps,
-  LocationType,
-  LocationStatus,
-  
+} from './location.types';
+
+export type {
   // UOM types
-  UnitOfMeasure,
-  CreateUOMProps,
-  UpdateUOMProps,
   UOMCategory,
-  UOMStatus,
-} from './item.types';
+} from './uom.types';
