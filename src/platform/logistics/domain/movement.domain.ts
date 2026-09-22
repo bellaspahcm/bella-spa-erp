@@ -19,8 +19,8 @@ import type {
   MovementType,
   MovementDirection,
   MovementStatus,
-  LocationType,
 } from './movement.types';
+import type { LocationType } from './inventory.types';
 
 export class MovementDomain {
   /**

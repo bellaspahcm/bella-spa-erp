@@ -254,8 +254,8 @@ export class MovementRepository implements IMovementRepository {
    */
   private mapToDomain(row: any): InventoryMovement {
     return {
-      id: { value: row.id },
-      movementNumber: { value: row.movement_number },
+      id: row.id,
+      movementNumber: row.movement_number,
       tenantId: row.tenant_id,
 
       movementDate: new Date(row.movement_date),
@@ -265,30 +265,28 @@ export class MovementRepository implements IMovementRepository {
       movementType: row.movement_type,
       direction: row.direction,
 
-      itemId: { value: row.item_id },
+      itemId: row.item_id,
 
-      fromLocationId: row.from_location_id ? { value: row.from_location_id } : undefined,
+      fromLocationId: row.from_location_id,
       fromLocationType: row.from_location_type,
-      toLocationId: row.to_location_id ? { value: row.to_location_id } : undefined,
+      toLocationId: row.to_location_id,
       toLocationType: row.to_location_type,
 
       quantity: parseFloat(row.quantity),
       unitOfMeasure: row.unit_of_measure,
 
-      lotNumber: row.lot_number ? { value: row.lot_number } : undefined,
-      serialNumber: row.serial_number ? { value: row.serial_number } : undefined,
-      expiryDate: row.expiry_date ? new Date(row.expiry_date) : undefined,
+      lotNumber: row.lot_number,
+      serialNumber: row.serial_number,
+      expiryDate: row.expiry_date ? new Date(row.expiry_date) : null,
 
-      unitCost: row.unit_cost !== null ? parseFloat(row.unit_cost) : undefined,
-      totalCost: row.total_cost !== null ? parseFloat(row.total_cost) : undefined,
+      unitCost: row.unit_cost !== null ? parseFloat(row.unit_cost) : null,
+      totalCost: row.total_cost !== null ? parseFloat(row.total_cost) : null,
       currency: row.currency,
 
-      sourceDocument: row.source_document_type ? {
-        documentType: row.source_document_type,
-        documentId: row.source_document_id,
-        documentNumber: row.source_document_number,
-        lineItemId: row.source_line_item_id,
-      } : undefined,
+      sourceDocumentType: row.source_document_type,
+      sourceDocumentId: row.source_document_id,
+      sourceDocumentNumber: row.source_document_number,
+      sourceLineItemId: row.source_line_item_id,
 
       reason: row.reason,
       notes: row.notes,
@@ -296,11 +294,11 @@ export class MovementRepository implements IMovementRepository {
       batchId: row.batch_id,
 
       approvedBy: row.approved_by,
-      approvedAt: row.approved_at ? new Date(row.approved_at) : undefined,
+      approvedAt: row.approved_at ? new Date(row.approved_at) : null,
 
       status: row.status,
-      completedAt: row.completed_at ? new Date(row.completed_at) : undefined,
-      cancelledAt: row.cancelled_at ? new Date(row.cancelled_at) : undefined,
+      completedAt: row.completed_at ? new Date(row.completed_at) : null,
+      cancelledAt: row.cancelled_at ? new Date(row.cancelled_at) : null,
       cancellationReason: row.cancellation_reason,
     };
   }
@@ -310,10 +308,10 @@ export class MovementRepository implements IMovementRepository {
    * 
    * Converts domain types to database types.
    */
-  private mapToDb(movement: InventoryMovement): Record<string, unknown> {
+  private mapToDb(movement: InventoryMovement): any {
     return {
-      id: movement.id.value,
-      movement_number: movement.movementNumber.value,
+      id: movement.id,
+      movement_number: movement.movementNumber,
       tenant_id: movement.tenantId,
 
       movement_date: movement.movementDate.toISOString(),
@@ -323,28 +321,28 @@ export class MovementRepository implements IMovementRepository {
       movement_type: movement.movementType,
       direction: movement.direction,
 
-      item_id: movement.itemId.value,
+      item_id: movement.itemId,
 
-      from_location_id: movement.fromLocationId?.value ?? null,
+      from_location_id: movement.fromLocationId,
       from_location_type: movement.fromLocationType,
-      to_location_id: movement.toLocationId?.value ?? null,
+      to_location_id: movement.toLocationId,
       to_location_type: movement.toLocationType,
 
       quantity: movement.quantity,
       unit_of_measure: movement.unitOfMeasure,
 
-      lot_number: movement.lotNumber?.value ?? null,
-      serial_number: movement.serialNumber?.value ?? null,
-      expiry_date: movement.expiryDate?.toISOString() ?? null,
+      lot_number: movement.lotNumber,
+      serial_number: movement.serialNumber,
+      expiry_date: movement.expiryDate?.toISOString() || null,
 
-      unit_cost: movement.unitCost ?? null,
-      total_cost: movement.totalCost ?? null,
+      unit_cost: movement.unitCost,
+      total_cost: movement.totalCost,
       currency: movement.currency,
 
-      source_document_type: movement.sourceDocument?.documentType ?? null,
-      source_document_id: movement.sourceDocument?.documentId ?? null,
-      source_document_number: movement.sourceDocument?.documentNumber ?? null,
-      source_line_item_id: movement.sourceDocument?.lineItemId ?? null,
+      source_document_type: movement.sourceDocumentType,
+      source_document_id: movement.sourceDocumentId,
+      source_document_number: movement.sourceDocumentNumber,
+      source_line_item_id: movement.sourceLineItemId,
 
       reason: movement.reason,
       notes: movement.notes,
@@ -352,11 +350,11 @@ export class MovementRepository implements IMovementRepository {
       batch_id: movement.batchId,
 
       approved_by: movement.approvedBy,
-      approved_at: movement.approvedAt?.toISOString() ?? null,
+      approved_at: movement.approvedAt?.toISOString() || null,
 
       status: movement.status,
-      completed_at: movement.completedAt?.toISOString() ?? null,
-      cancelled_at: movement.cancelledAt?.toISOString() ?? null,
+      completed_at: movement.completedAt?.toISOString() || null,
+      cancelled_at: movement.cancelledAt?.toISOString() || null,
       cancellation_reason: movement.cancellationReason,
     };
   }

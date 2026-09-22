@@ -19,18 +19,14 @@ import { LocationId, LocationType, LotNumber, SerialNumber } from './inventory.t
 /**
  * Movement ID (unique identifier)
  */
-export interface MovementId {
-  value: string; // UUID
-}
+export type MovementId = string;
 
 /**
  * Movement Number
  * 
  * Human-readable movement identifier
  */
-export interface MovementNumber {
-  value: string; // e.g., "MOV-2024-001234"
-}
+export type MovementNumber = string;
 
 /**
  * Movement Type
@@ -99,7 +95,7 @@ export interface SourceDocumentReference {
   documentNumber?: string;
   
   /** Line item ID (if applicable) */
-  line_itemId?: string;
+  sourceLineItemId?: string;
 }
 
 /**
@@ -145,10 +141,10 @@ export interface SourceDocumentReference {
 export interface InventoryMovement {
   // ========== Identity ==========
   /** Unique movement identifier */
-  id: MovementId;
+  id: string;
   
   /** Human-readable movement number */
-  movementNumber: MovementNumber;
+  movementNumber: string;
   
   /** Tenant ID (P0 Gate - tenant isolation) */
   tenantId: string;
@@ -172,17 +168,17 @@ export interface InventoryMovement {
   
   // ========== Item ==========
   /** Item reference */
-  itemId: ItemId;
+  itemId: string;
   
   // ========== Locations ==========
   /** Source location (optional for inbound) */
-  fromLocationId?: LocationId;
+  fromLocationId?: string;
   
   /** Source location type */
   fromLocationType?: LocationType;
   
   /** Destination location (optional for outbound) */
-  toLocationId?: LocationId;
+  toLocationId?: string;
   
   /** Destination location type */
   toLocationType?: LocationType;
@@ -196,10 +192,10 @@ export interface InventoryMovement {
   
   // ========== Traceability ==========
   /** Lot/batch number */
-  lotNumber?: LotNumber;
+  lotNumber?: string;
   
   /** Serial number */
-  serialNumber?: SerialNumber;
+  serialNumber?: string;
   
   /** Expiry date */
   expiryDate?: Date;
@@ -216,7 +212,10 @@ export interface InventoryMovement {
   
   // ========== Source Document ==========
   /** Reference to originating document */
-  sourceDocument?: SourceDocumentReference;
+  sourceDocumentType?: string;
+  sourceDocumentId?: string;
+  sourceDocumentNumber?: string;
+  sourceLineItemId?: string;
   
   // ========== Reason & Notes ==========
   /** Reason for movement (especially for adjustments) */
@@ -256,6 +255,8 @@ export interface InventoryMovement {
  * Input for creating a new movement
  */
 export interface CreateMovementProps {
+  id?: string;
+  movementNumber: string;
   tenantId: string;
   movementDate?: Date; // Defaults to now
   movementType: MovementType;
@@ -273,12 +274,16 @@ export interface CreateMovementProps {
   unitCost?: number;
   totalCost?: number;
   currency?: string;
-  sourceDocument?: SourceDocumentReference;
+  sourceDocumentType?: string;
+  sourceDocumentId?: string;
+  sourceDocumentNumber?: string;
+  sourceLineItemId?: string;
   reason?: string;
   notes?: string;
   batchId?: string;
   approvedBy?: string;
   createdBy?: string;
+  status?: MovementStatus;
 }
 
 /**
