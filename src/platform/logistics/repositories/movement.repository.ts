@@ -255,53 +255,53 @@ export class MovementRepository implements IMovementRepository {
   private mapToDomain(row: any): InventoryMovement {
     return {
       id: { value: row.id },
-      movement_number: { value: row.movement_number },
-      tenant_id: row.tenant_id,
+      movementNumber: { value: row.movement_number },
+      tenantId: row.tenant_id,
 
-      movement_date: new Date(row.movement_date),
-      created_at: new Date(row.created_at),
-      created_by: row.created_by,
+      movementDate: new Date(row.movement_date),
+      createdAt: new Date(row.created_at),
+      createdBy: row.created_by,
 
-      movement_type: row.movement_type,
+      movementType: row.movement_type,
       direction: row.direction,
 
-      item_id: { value: row.item_id },
+      itemId: { value: row.item_id },
 
-      from_location_id: row.from_location_id ? { value: row.from_location_id } : undefined,
-      from_location_type: row.from_location_type,
-      to_location_id: row.to_location_id ? { value: row.to_location_id } : undefined,
-      to_location_type: row.to_location_type,
+      fromLocationId: row.from_location_id ? { value: row.from_location_id } : undefined,
+      fromLocationType: row.from_location_type,
+      toLocationId: row.to_location_id ? { value: row.to_location_id } : undefined,
+      toLocationType: row.to_location_type,
 
       quantity: parseFloat(row.quantity),
-      unit_of_measure: row.unit_of_measure,
+      unitOfMeasure: row.unit_of_measure,
 
-      lot_number: row.lot_number ? { value: row.lot_number } : undefined,
-      serial_number: row.serial_number ? { value: row.serial_number } : undefined,
-      expiry_date: row.expiry_date ? new Date(row.expiry_date) : undefined,
+      lotNumber: row.lot_number ? { value: row.lot_number } : undefined,
+      serialNumber: row.serial_number ? { value: row.serial_number } : undefined,
+      expiryDate: row.expiry_date ? new Date(row.expiry_date) : undefined,
 
-      unit_cost: row.unit_cost !== null ? parseFloat(row.unit_cost) : undefined,
-      total_cost: row.total_cost !== null ? parseFloat(row.total_cost) : undefined,
+      unitCost: row.unit_cost !== null ? parseFloat(row.unit_cost) : undefined,
+      totalCost: row.total_cost !== null ? parseFloat(row.total_cost) : undefined,
       currency: row.currency,
 
-      source_document: row.source_document_type ? {
-        document_type: row.source_document_type,
-        document_id: row.source_document_id,
-        document_number: row.source_document_number,
-        line_item_id: row.source_line_item_id,
+      sourceDocument: row.source_document_type ? {
+        documentType: row.source_document_type,
+        documentId: row.source_document_id,
+        documentNumber: row.source_document_number,
+        lineItemId: row.source_line_item_id,
       } : undefined,
 
       reason: row.reason,
       notes: row.notes,
 
-      batch_id: row.batch_id,
+      batchId: row.batch_id,
 
-      approved_by: row.approved_by,
-      approved_at: row.approved_at ? new Date(row.approved_at) : undefined,
+      approvedBy: row.approved_by,
+      approvedAt: row.approved_at ? new Date(row.approved_at) : undefined,
 
       status: row.status,
-      completed_at: row.completed_at ? new Date(row.completed_at) : undefined,
-      cancelled_at: row.cancelled_at ? new Date(row.cancelled_at) : undefined,
-      cancellation_reason: row.cancellation_reason,
+      completedAt: row.completed_at ? new Date(row.completed_at) : undefined,
+      cancelledAt: row.cancelled_at ? new Date(row.cancelled_at) : undefined,
+      cancellationReason: row.cancellation_reason,
     };
   }
 
@@ -313,51 +313,51 @@ export class MovementRepository implements IMovementRepository {
   private mapToDb(movement: InventoryMovement): Record<string, unknown> {
     return {
       id: movement.id.value,
-      movement_number: movement.movement_number.value,
-      tenant_id: movement.tenant_id,
+      movement_number: movement.movementNumber.value,
+      tenant_id: movement.tenantId,
 
-      movement_date: movement.movement_date.toISOString(),
-      created_at: movement.created_at.toISOString(),
-      created_by: movement.created_by,
+      movement_date: movement.movementDate.toISOString(),
+      created_at: movement.createdAt.toISOString(),
+      created_by: movement.createdBy,
 
-      movement_type: movement.movement_type,
+      movement_type: movement.movementType,
       direction: movement.direction,
 
-      item_id: movement.item_id.value,
+      item_id: movement.itemId.value,
 
-      from_location_id: movement.from_location_id?.value ?? null,
-      from_location_type: movement.from_location_type,
-      to_location_id: movement.to_location_id?.value ?? null,
-      to_location_type: movement.to_location_type,
+      from_location_id: movement.fromLocationId?.value ?? null,
+      from_location_type: movement.fromLocationType,
+      to_location_id: movement.toLocationId?.value ?? null,
+      to_location_type: movement.toLocationType,
 
       quantity: movement.quantity,
-      unit_of_measure: movement.unit_of_measure,
+      unit_of_measure: movement.unitOfMeasure,
 
-      lot_number: movement.lot_number?.value ?? null,
-      serial_number: movement.serial_number?.value ?? null,
-      expiry_date: movement.expiry_date?.toISOString() ?? null,
+      lot_number: movement.lotNumber?.value ?? null,
+      serial_number: movement.serialNumber?.value ?? null,
+      expiry_date: movement.expiryDate?.toISOString() ?? null,
 
-      unit_cost: movement.unit_cost ?? null,
-      total_cost: movement.total_cost ?? null,
+      unit_cost: movement.unitCost ?? null,
+      total_cost: movement.totalCost ?? null,
       currency: movement.currency,
 
-      source_document_type: movement.source_document?.document_type ?? null,
-      source_document_id: movement.source_document?.document_id ?? null,
-      source_document_number: movement.source_document?.document_number ?? null,
-      source_line_item_id: movement.source_document?.line_item_id ?? null,
+      source_document_type: movement.sourceDocument?.documentType ?? null,
+      source_document_id: movement.sourceDocument?.documentId ?? null,
+      source_document_number: movement.sourceDocument?.documentNumber ?? null,
+      source_line_item_id: movement.sourceDocument?.lineItemId ?? null,
 
       reason: movement.reason,
       notes: movement.notes,
 
-      batch_id: movement.batch_id,
+      batch_id: movement.batchId,
 
-      approved_by: movement.approved_by,
-      approved_at: movement.approved_at?.toISOString() ?? null,
+      approved_by: movement.approvedBy,
+      approved_at: movement.approvedAt?.toISOString() ?? null,
 
       status: movement.status,
-      completed_at: movement.completed_at?.toISOString() ?? null,
-      cancelled_at: movement.cancelled_at?.toISOString() ?? null,
-      cancellation_reason: movement.cancellation_reason,
+      completed_at: movement.completedAt?.toISOString() ?? null,
+      cancelled_at: movement.cancelledAt?.toISOString() ?? null,
+      cancellation_reason: movement.cancellationReason,
     };
   }
 }

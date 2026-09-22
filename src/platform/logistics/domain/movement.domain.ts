@@ -1,9 +1,9 @@
 /**
  * Inventory Movement Domain Kernel
- * 
+ *
  * Pure business logic for inventory movements (transactions).
  * Zero dependencies on infrastructure.
- * 
+ *
  * Responsibilities:
  * - Movement creation with validation
  * - Direction/type compatibility validation
@@ -19,13 +19,13 @@ import type {
   MovementType,
   MovementDirection,
   MovementStatus,
+  LocationType,
 } from './movement.types';
-import type { LocationType } from './inventory.types';
 
 export class MovementDomain {
   /**
    * Create new inventory movement
-   * 
+   *
    * Invariants:
    * - Quantity must be positive (direction indicates increase/decrease)
    * - Direction must match movement type
@@ -35,6 +35,14 @@ export class MovementDomain {
    * - Movement number must be unique (enforced at repository layer)
    */
   static create(props: CreateMovementProps): Result<InventoryMovement> {
+    // Movement number required
+    if (!props.movementNumber || props.movementNumber.trim() === '') {
+      return Result.fail(
+        'Movement number is required',
+        'MOVEMENT_NUMBER_REQUIRED'
+      );
+    }
+
     // Quantity validation
     if (props.quantity <= 0) {
       return Result.fail(
@@ -45,17 +53,17 @@ export class MovementDomain {
 
     // Direction validation
     const directionResult = this.validateDirection(
-      props.movement_type,
+      props.movementType,
       props.direction,
-      props.from_location_id,
-      props.to_location_id
+      props.fromLocationId,
+      props.toLocationId
     );
     if (directionResult.isFailure) {
       return directionResult as Result<InventoryMovement>;
     }
 
     // Unit cost validation
-    if (props.unit_cost !== undefined && props.unit_cost < 0) {
+    if (props.unitCost !== undefined && props.unitCost < 0) {
       return Result.fail(
         'Unit cost cannot be negative',
         'MOVEMENT_UNIT_COST_NEGATIVE'
@@ -63,7 +71,7 @@ export class MovementDomain {
     }
 
     // Total cost validation
-    if (props.total_cost !== undefined && props.total_cost < 0) {
+    if (props.totalCost !== undefined && props.totalCost < 0) {
       return Result.fail(
         'Total cost cannot be negative',
         'MOVEMENT_TOTAL_COST_NEGATIVE'
@@ -79,7 +87,7 @@ export class MovementDomain {
     }
 
     // Traceability validation
-    if (props.serial_number && !props.lot_number) {
+    if (props.serialNumber && !props.lotNumber) {
       return Result.fail(
         'Serial number requires lot number',
         'MOVEMENT_SERIAL_REQUIRES_LOT'
@@ -88,53 +96,53 @@ export class MovementDomain {
 
     const now = new Date();
 
-    // Generate movement number internally (not in CreateMovementProps)
-    const movementNumber = `MOV-${Date.now()}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
-
     const movement: InventoryMovement = {
-      id: { value: crypto.randomUUID() },
-      movement_number: { value: movementNumber },
-      tenant_id: props.tenant_id,
+      id: props.id || crypto.randomUUID(),
+      movementNumber: props.movementNumber.trim(),
+      tenantId: props.tenantId,
 
-      movement_date: props.movement_date || now,
-      created_at: now,
-      created_by: props.created_by,
+      movementDate: props.movementDate || now,
+      createdAt: now,
+      createdBy: props.createdBy || null,
 
-      movement_type: props.movement_type,
+      movementType: props.movementType,
       direction: props.direction,
 
-      item_id: { value: props.item_id },
+      itemId: props.itemId,
 
-      from_location_id: props.from_location_id ? { value: props.from_location_id } : undefined,
-      from_location_type: props.from_location_type,
-      to_location_id: props.to_location_id ? { value: props.to_location_id } : undefined,
-      to_location_type: props.to_location_type,
+      fromLocationId: props.fromLocationId || null,
+      fromLocationType: props.fromLocationType || null,
+      toLocationId: props.toLocationId || null,
+      toLocationType: props.toLocationType || null,
 
       quantity: props.quantity,
-      unit_of_measure: props.unit_of_measure,
+      unitOfMeasure: props.unitOfMeasure,
 
-      lot_number: props.lot_number ? { value: props.lot_number } : undefined,
-      serial_number: props.serial_number ? { value: props.serial_number } : undefined,
-      expiry_date: props.expiry_date,
+      lotNumber: props.lotNumber || null,
+      serialNumber: props.serialNumber || null,
+      expiryDate: props.expiryDate || null,
 
-      unit_cost: props.unit_cost,
-      total_cost: props.total_cost,
-      currency: props.currency,
+      unitCost: props.unitCost !== undefined ? props.unitCost : null,
+      totalCost: props.totalCost !== undefined ? props.totalCost : null,
+      currency: props.currency || null,
 
-      source_document: props.source_document,
+      sourceDocumentType: props.sourceDocumentType || null,
+      sourceDocumentId: props.sourceDocumentId || null,
+      sourceDocumentNumber: props.sourceDocumentNumber || null,
+      sourceLineItemId: props.sourceLineItemId || null,
 
-      reason: props.reason,
-      notes: props.notes,
+      reason: props.reason || null,
+      notes: props.notes || null,
 
-      batch_id: props.batch_id,
+      batchId: props.batchId || null,
 
-      approved_by: props.approved_by,
-      approved_at: undefined,
+      approvedBy: null,
+      approvedAt: null,
 
-      status: 'COMPLETED',
-      completed_at: now,
-      cancelled_at: undefined,
-      cancellation_reason: undefined,
+      status: props.status || 'COMPLETED',
+      completedAt: props.status === 'COMPLETED' ? now : null,
+      cancelledAt: null,
+      cancellationReason: null,
     };
 
     return Result.ok(movement);
@@ -231,7 +239,7 @@ export class MovementDomain {
 
   /**
    * Approve movement
-   * 
+   *
    * Only PENDING movements can be approved.
    */
   static approve(
@@ -249,10 +257,10 @@ export class MovementDomain {
 
     const approved: InventoryMovement = {
       ...movement,
-      approved_by: approvedBy,
-      approved_at: now,
+      approvedBy,
+      approvedAt: now,
       status: 'COMPLETED',
-      completed_at: now,
+      completedAt: now,
     };
 
     return Result.ok(approved);
@@ -260,7 +268,7 @@ export class MovementDomain {
 
   /**
    * Cancel movement
-   * 
+   *
    * Only PENDING movements can be cancelled.
    * COMPLETED movements are immutable.
    */
@@ -287,8 +295,8 @@ export class MovementDomain {
     const cancelled: InventoryMovement = {
       ...movement,
       status: 'CANCELLED',
-      cancelled_at: now,
-      cancellation_reason: cancellationReason.trim(),
+      cancelledAt: now,
+      cancellationReason: cancellationReason.trim(),
     };
 
     return Result.ok(cancelled);
@@ -347,13 +355,13 @@ export class MovementDomain {
    * Calculate total cost if unit cost provided
    */
   static calculateTotalCost(movement: InventoryMovement): number | null {
-    if (movement.unit_cost === undefined) return null;
-    return movement.unit_cost * movement.quantity;
+    if (movement.unitCost === null) return null;
+    return movement.unitCost * movement.quantity;
   }
 
   /**
    * Validate movement against item traceability requirements
-   * 
+   *
    * Note: Item entity not available in pure domain (no dependency).
    * This is a helper for repository layer validation.
    */
@@ -365,21 +373,21 @@ export class MovementDomain {
       expiryTracked: boolean;
     }
   ): Result<void> {
-    if (itemRequirements.lotTracked && !movement.lot_number) {
+    if (itemRequirements.lotTracked && !movement.lotNumber) {
       return Result.fail(
         'Item requires lot tracking, but movement has no lot number',
         'MOVEMENT_LOT_NUMBER_REQUIRED'
       );
     }
 
-    if (itemRequirements.serialTracked && !movement.serial_number) {
+    if (itemRequirements.serialTracked && !movement.serialNumber) {
       return Result.fail(
         'Item requires serial tracking, but movement has no serial number',
         'MOVEMENT_SERIAL_NUMBER_REQUIRED'
       );
     }
 
-    if (itemRequirements.expiryTracked && !movement.expiry_date) {
+    if (itemRequirements.expiryTracked && !movement.expiryDate) {
       return Result.fail(
         'Item requires expiry tracking, but movement has no expiry date',
         'MOVEMENT_EXPIRY_DATE_REQUIRED'
@@ -391,33 +399,33 @@ export class MovementDomain {
 
   /**
    * Get human-readable movement description
-   * 
+   *
    * NOTE: Presentation helper.
    * May move to API/presentation layer if tests show no domain-level need.
    * Do not treat this as a Logistics OS primitive.
    */
   static getDescription(movement: InventoryMovement): string {
     const parts: string[] = [
-      movement.movement_type.replace(/_/g, ' '),
-      `${movement.quantity} ${movement.unit_of_measure}`,
+      movement.movementType.replace(/_/g, ' '),
+      `${movement.quantity} ${movement.unitOfMeasure}`,
     ];
 
     if (movement.direction === 'INBOUND') {
-      parts.push(`→ ${movement.to_location_type || 'location'}`);
+      parts.push(`→ ${movement.toLocationType || 'location'}`);
     } else if (movement.direction === 'OUTBOUND') {
-      parts.push(`← ${movement.from_location_type || 'location'}`);
+      parts.push(`← ${movement.fromLocationType || 'location'}`);
     } else if (movement.direction === 'NEUTRAL') {
       parts.push(
-        `${movement.from_location_type || 'location'} → ${movement.to_location_type || 'location'}`
+        `${movement.fromLocationType || 'location'} → ${movement.toLocationType || 'location'}`
       );
     }
 
-    if (movement.lot_number) {
-      parts.push(`Lot: ${movement.lot_number.value}`);
+    if (movement.lotNumber) {
+      parts.push(`Lot: ${movement.lotNumber}`);
     }
 
-    if (movement.serial_number) {
-      parts.push(`S/N: ${movement.serial_number.value}`);
+    if (movement.serialNumber) {
+      parts.push(`S/N: ${movement.serialNumber}`);
     }
 
     return parts.join(' | ');

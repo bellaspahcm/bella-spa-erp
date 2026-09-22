@@ -36,13 +36,13 @@ export class LotValidityRule implements Rule<LotValidityContext> {
 
     const evidenceInput = {
       item_id: item.id.value,
-      sku_code: item.sku_code.value,
-      lot_tracked: item.lot_tracked,
+      sku_code: item.skuCode.value,
+      lot_tracked: item.lotTracked,
       lot_number: lot_number || null,
     };
 
     // If item is not lot-tracked → PASS
-    if (!item.lot_tracked) {
+    if (!item.lotTracked) {
       return pass(
         this.id,
         this.version,
@@ -61,7 +61,7 @@ export class LotValidityRule implements Rule<LotValidityContext> {
         this.version,
         createViolation(
           RuleViolationCodes.LOT_NUMBER_REQUIRED,
-          `Lot number required for lot-tracked item ${item.sku_code.value}`,
+          `Lot number required for lot-tracked item ${item.skuCode.value}`,
           'ERROR',
           {
             field: 'lot_number',
@@ -108,13 +108,13 @@ export class SerialValidityRule implements Rule<SerialValidityContext> {
 
     const evidenceInput = {
       item_id: item.id.value,
-      sku_code: item.sku_code.value,
-      serial_tracked: item.serial_tracked,
+      sku_code: item.skuCode.value,
+      serial_tracked: item.serialTracked,
       serial_number: serial_number || null,
     };
 
     // If item is not serial-tracked → PASS
-    if (!item.serial_tracked) {
+    if (!item.serialTracked) {
       return pass(
         this.id,
         this.version,
@@ -133,7 +133,7 @@ export class SerialValidityRule implements Rule<SerialValidityContext> {
         this.version,
         createViolation(
           RuleViolationCodes.SERIAL_NUMBER_REQUIRED,
-          `Serial number required for serial-tracked item ${item.sku_code.value}`,
+          `Serial number required for serial-tracked item ${item.skuCode.value}`,
           'ERROR',
           {
             field: 'serial_number',
@@ -178,13 +178,13 @@ export class ChainIntegrityRule implements Rule<ChainIntegrityContext> {
     const { traceability, requiredEvents } = context;
     const evaluationDate = new Date();
 
-    const actualActions = traceability.custody_events.map(e => e.action);
+    const actualActions = traceability.custodyEvents.map(e => e.action);
     const missing = requiredEvents.filter(req => !actualActions.includes(req));
 
     const evidenceInput = {
       traceability_id: traceability.id.value,
-      lot_number: traceability.lot_number?.value || null,
-      serial_number: traceability.serial_number?.value || null,
+      lot_number: traceability.lotNumber?.value || null,
+      serial_number: traceability.serialNumber?.value || null,
       required_events: requiredEvents,
       actual_events: actualActions,
     };
@@ -246,27 +246,27 @@ export class ComplianceStatusRule implements Rule<ComplianceStatusContext> {
 
     const evidenceInput = {
       traceability_id: traceability.id.value,
-      compliance_status: traceability.compliance_status,
-      recall_status: traceability.recall_status,
+      compliance_status: traceability.complianceStatus,
+      recall_status: traceability.recallStatus,
     };
 
-    if (traceability.compliance_status !== 'COMPLIANT') {
+    if (traceability.complianceStatus !== 'COMPLIANT') {
       return violation(
         this.id,
         this.version,
         createViolation(
           RuleViolationCodes.COMPLIANCE_VIOLATION,
-          `Traceability not compliant: status ${traceability.compliance_status}`,
+          `Traceability not compliant: status ${traceability.complianceStatus}`,
           'ERROR',
           {
             field: 'compliance_status',
-            actual: traceability.compliance_status,
+            actual: traceability.complianceStatus,
             expected: 'COMPLIANT',
           }
         ),
         createEvidence(evidenceInput, {
           is_compliant: false,
-          recall_status: traceability.recall_status,
+          recall_status: traceability.recallStatus,
         }),
         evaluationDate
       );
@@ -277,7 +277,7 @@ export class ComplianceStatusRule implements Rule<ComplianceStatusContext> {
       this.version,
       createEvidence(evidenceInput, {
         is_compliant: true,
-        recall_status: traceability.recall_status,
+        recall_status: traceability.recallStatus,
       }),
       evaluationDate
     );

@@ -213,7 +213,7 @@ export function ProductSalesListPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [tenantContext?.tenantId, filters.ktvId, filters.status, filters.startDate, filters.endDate]);
+  }, [tenantContext, filters.ktvId, filters.status, filters.startDate, filters.endDate]);
 
   // Initial fetch
   useEffect(() => {

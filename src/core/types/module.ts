@@ -14,17 +14,7 @@
  * **Adding New Modules**: Update this union type and register the module
  * in the core platform's module registry (Phase 3).
  */
-export type ModuleId =
-  | 'spa'
-  | 'babycare'
-  | 'cleaning'
-  | 'home-service'
-  | 'beauty_spa'
-  | 'industrial_cleaning'
-  | 'real_estate'
-  | 'bella_auto'
-  | 'bella_healthcare'
-  | 'bella_education';
+export type ModuleId = 'spa' | 'babycare' | 'cleaning' | 'home-service' | 'beauty_spa' | 'real_estate';
 
 /**
  * Type guard to validate ModuleId at runtime.
@@ -35,7 +25,7 @@ export type ModuleId =
 export function isModuleId(value: unknown): value is ModuleId {
   return (
     typeof value === 'string' &&
-    (['spa', 'babycare', 'cleaning', 'home-service', 'beauty_spa', 'industrial_cleaning', 'real_estate', 'bella_auto', 'bella_healthcare', 'bella_education'] as const).includes(value as ModuleId)
+    (['spa', 'babycare', 'cleaning', 'home-service', 'beauty_spa', 'real_estate'] as const).includes(value as ModuleId)
   );
 }
 
@@ -43,7 +33,7 @@ export function isModuleId(value: unknown): value is ModuleId {
  * All valid module identifiers as a readonly array.
  * Useful for iteration and validation.
  */
-export const ALL_MODULE_IDS: readonly ModuleId[] = ['spa', 'babycare', 'cleaning', 'home-service', 'beauty_spa', 'industrial_cleaning', 'real_estate', 'bella_auto', 'bella_healthcare', 'bella_education'] as const;
+export const ALL_MODULE_IDS: readonly ModuleId[] = ['spa', 'babycare', 'cleaning', 'home-service', 'beauty_spa', 'real_estate'] as const;
 
 /**
  * Human-readable display names for each module.
@@ -54,9 +44,5 @@ export const MODULE_DISPLAY_NAMES: Readonly<Record<ModuleId, string>> = {
   cleaning: 'Cleaning Services',
   'home-service': 'Home Services',
   beauty_spa: 'Beauty Spa with Resources',
-  industrial_cleaning: 'Industrial Cleaning',
   real_estate: 'Real Estate Management',
-  bella_auto: 'Bella Auto',
-  bella_healthcare: 'Bella Healthcare',
-  bella_education: 'Bella Education',
 } as const;

@@ -768,7 +768,7 @@ function AppointmentCenterContent() {
             {/* Today's Hourly Operations Timeline Distribution */}
             <div className="bg-slate-50/50 p-4.5 rounded-2xl border border-slate-100 space-y-3.5 shadow-inner">
               <div className="flex justify-between items-center text-[10px] font-bold uppercase text-slate-450 tracking-wider">
-                <span>Tải lượng vận hành hôm nay (Today's Operations Load)</span>
+                <span>Tải lượng vận hành hôm nay (Today&apos;s Operations Load)</span>
                 <span className="text-slate-700 font-black">126 Lượt khám</span>
               </div>
               <div className="grid grid-cols-4 gap-3 pt-2.5">
