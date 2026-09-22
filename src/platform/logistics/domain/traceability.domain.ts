@@ -1,9 +1,9 @@
 /**
  * Traceability Domain Kernel
- * 
+ *
  * Pure business logic for lot/serial tracking, chain of custody.
  * Zero dependencies on infrastructure.
- * 
+ *
  * Responsibilities:
  * - Lot/serial creation and validation
  * - Chain of custody management
@@ -24,9 +24,9 @@ import type {
 export class TraceabilityDomain {
   /**
    * Create new traceability record
-   * 
+   *
    * Invariants:
-   * - Must have lot_number OR serial_number (at least one)
+   * - Must have lotNumber OR serialNumber (at least one)
    * - Expiry date must be after manufactured date
    * - Received date required
    */
@@ -66,25 +66,25 @@ export class TraceabilityDomain {
       id: props.id || crypto.randomUUID(),
       tenantId: props.tenantId,
       itemId: props.itemId,
-      
+
       lotNumber: props.lotNumber || null,
       serialNumber: props.serialNumber || null,
-      
+
       manufacturedDate: props.manufacturedDate || null,
       expiryDate: props.expiryDate || null,
       receivedDate: props.receivedDate,
-      
+
       supplierId: props.supplierId || null,
       supplierName: props.supplierName || null,
       supplierLotNumber: props.supplierLotNumber || null,
-      
+
       custodyEvents: props.custodyEvents || [],
-      
+
       complianceStatus: props.complianceStatus || 'COMPLIANT',
       recallStatus: props.recallStatus || 'NONE',
       recallReason: null,
       recallDate: null,
-      
+
       createdAt: now,
       updatedAt: now,
     };
@@ -94,7 +94,7 @@ export class TraceabilityDomain {
 
   /**
    * Add custody event to chain of custody
-   * 
+   *
    * Chain of custody is append-only (immutable).
    */
   static addCustodyEvent(
@@ -138,7 +138,7 @@ export class TraceabilityDomain {
 
   /**
    * Initiate recall
-   * 
+   *
    * Only NONE or COMPLIANT records can be recalled.
    */
   static initiateRecall(
@@ -175,7 +175,7 @@ export class TraceabilityDomain {
 
   /**
    * Mark recalled item as destroyed
-   * 
+   *
    * Only RECALLED items can be destroyed.
    */
   static markAsDestroyed(
@@ -282,7 +282,7 @@ export class TraceabilityDomain {
 
   /**
    * Get chain of custody summary
-   * 
+   *
    * NOTE: Query/read-model helper.
    * May belong in repository query layer or API/presentation layer.
    * Consider whether this is a domain primitive or a reporting concern.

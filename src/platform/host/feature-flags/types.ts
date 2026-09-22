@@ -164,22 +164,3 @@ export interface ABTestVariant {
   description: string;
   configuration: Record<string, unknown>;
 }
-
-// ============================================================================
-// Exports
-// ============================================================================
-
-export type {
-  FeatureFlag,
-  RolloutStrategy,
-  FeatureFlagContext,
-  FeatureFlagEvaluationResult,
-  EvaluationReason,
-  FeatureFlagQueryFilter,
-  FeatureFlagUpdateRequest,
-  FeatureFlagCreatedEvent,
-  FeatureFlagUpdatedEvent,
-  FeatureFlagEvaluatedEvent,
-  ABTestConfig,
-  ABTestVariant,
-};

@@ -55,14 +55,14 @@ export enum RuntimeErrorCode {
 export class RuntimeError extends Error {
   public readonly code: RuntimeErrorCode;
   public readonly retryable: boolean;
-  public readonly context?: Record<string, unknown>;
+  public readonly context?: ErrorContext;
   public readonly timestamp: Date;
   
   constructor(
     code: RuntimeErrorCode,
     message: string,
     retryable: boolean,
-    context?: Record<string, unknown>
+    context?: ErrorContext
   ) {
     super(message);
     this.name = 'RuntimeError';
@@ -76,6 +76,19 @@ export class RuntimeError extends Error {
   }
 }
 
+function extendErrorContext(
+  context: ErrorContext | undefined,
+  additionalContext: Record<string, unknown>
+): ErrorContext {
+  return {
+    ...(context ?? { timestamp: new Date() }),
+    additionalContext: {
+      ...context?.additionalContext,
+      ...additionalContext,
+    },
+  };
+}
+
 /**
  * Validation Error
  * 
@@ -83,7 +96,7 @@ export class RuntimeError extends Error {
  * NOT retryable (client error)
  */
 export class ValidationError extends RuntimeError {
-  constructor(message: string, context?: Record<string, unknown>) {
+  constructor(message: string, context?: ErrorContext) {
     super(RuntimeErrorCode.VALIDATION_FAILED, message, false, context);
     this.name = 'ValidationError';
   }
@@ -98,13 +111,13 @@ export class ValidationError extends RuntimeError {
 export class FinanceProtectionError extends RuntimeError {
   public readonly prohibitedField: string;
   
-  constructor(prohibitedField: string, context?: Record<string, unknown>) {
+  constructor(prohibitedField: string, context?: ErrorContext) {
     super(
       RuntimeErrorCode.PROHIBITED_FIELD,
       `Finance Protection violation: Prohibited field '${prohibitedField}' detected. ` +
       `Financial Intent must NOT contain accounting authority fields.`,
       false,
-      { ...context, prohibitedField }
+      extendErrorContext(context, { prohibitedField })
     );
     this.name = 'FinanceProtectionError';
     this.prohibitedField = prohibitedField;
@@ -120,12 +133,12 @@ export class FinanceProtectionError extends RuntimeError {
 export class TenantIsolationError extends RuntimeError {
   public readonly tenantId: string;
   
-  constructor(tenantId: string, message: string, context?: Record<string, unknown>) {
+  constructor(tenantId: string, message: string, context?: ErrorContext) {
     super(
       RuntimeErrorCode.INVALID_TENANT,
       `Tenant isolation violation: ${message}`,
       false,
-      { ...context, tenantId }
+      extendErrorContext(context, { tenantId })
     );
     this.name = 'TenantIsolationError';
     this.tenantId = tenantId;
@@ -145,14 +158,14 @@ export class IdempotencyError extends RuntimeError {
   constructor(
     idempotencyKey: string,
     originalOutboxId: string,
-    context?: Record<string, unknown>
+    context?: ErrorContext
   ) {
     super(
       RuntimeErrorCode.DUPLICATE_INTENT,
       `Duplicate intent detected (idempotency key: ${idempotencyKey}). ` +
       `Original intent: ${originalOutboxId}. No duplicate financial effect.`,
       false,
-      { ...context, idempotencyKey, originalOutboxId }
+      extendErrorContext(context, { idempotencyKey, originalOutboxId })
     );
     this.name = 'IdempotencyError';
     this.idempotencyKey = idempotencyKey;
@@ -167,7 +180,7 @@ export class IdempotencyError extends RuntimeError {
  * Retryable (database error)
  */
 export class OutboxError extends RuntimeError {
-  constructor(message: string, context?: Record<string, unknown>) {
+  constructor(message: string, context?: ErrorContext) {
     super(RuntimeErrorCode.OUTBOX_WRITE_FAILED, message, true, context);
     this.name = 'OutboxError';
   }
@@ -186,13 +199,13 @@ export class FinanceServiceError extends RuntimeError {
     message: string,
     retryable: boolean,
     statusCode?: number,
-    context?: Record<string, unknown>
+    context?: ErrorContext
   ) {
     super(
       RuntimeErrorCode.FINANCE_SERVICE_UNAVAILABLE,
       message,
       retryable,
-      { ...context, statusCode }
+      extendErrorContext(context, { statusCode })
     );
     this.name = 'FinanceServiceError';
     this.statusCode = statusCode;
@@ -212,13 +225,13 @@ export class QuarantineError extends RuntimeError {
   constructor(
     attempts: number,
     lastError: string,
-    context?: Record<string, unknown>
+    context?: ErrorContext
   ) {
     super(
       RuntimeErrorCode.POISON_MESSAGE,
       `Intent quarantined after ${attempts} failed attempts. Last error: ${lastError}`,
       false,
-      { ...context, attempts, lastError }
+      extendErrorContext(context, { attempts, lastError })
     );
     this.name = 'QuarantineError';
     this.attempts = attempts;
@@ -301,7 +314,7 @@ export function buildErrorContext(
     intentType?: string;
     entityId?: string;
   },
-  error?: Error,
+  error?: Error | null,
   additionalContext?: Record<string, unknown>
 ): ErrorContext {
   return {

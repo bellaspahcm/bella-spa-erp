@@ -17,6 +17,73 @@ import type { WorkflowDefinition } from '../types';
 import { DecisionStep, ActionStep, ConditionStep, ParallelStep } from '../steps';
 import type { IDecisionEngine } from '../steps/DecisionStep';
 
+interface SampleBooking {
+  id: string;
+  productIds: string[];
+  sessionDate: string;
+  serviceType: string;
+  customerEmail: string;
+}
+
+interface SampleApprovalResult {
+  outcome?: string;
+  approved?: boolean;
+  explanation?: string;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function requireString(value: unknown, fieldName: string): string {
+  if (typeof value !== 'string') {
+    throw new Error(`Workflow sample expected ${fieldName}`);
+  }
+
+  return value;
+}
+
+function requireStringArray(value: unknown, fieldName: string): string[] {
+  if (!Array.isArray(value) || !value.every((item) => typeof item === 'string')) {
+    throw new Error(`Workflow sample expected ${fieldName}`);
+  }
+
+  return value;
+}
+
+function getSampleBooking(data: Record<string, unknown>): SampleBooking {
+  const booking = data.booking;
+  if (!isRecord(booking)) {
+    throw new Error('Workflow sample expected booking data');
+  }
+
+  return {
+    id: requireString(booking.id, 'booking.id'),
+    productIds: requireStringArray(booking.productIds, 'booking.productIds'),
+    sessionDate: requireString(booking.sessionDate, 'booking.sessionDate'),
+    serviceType: requireString(booking.serviceType, 'booking.serviceType'),
+    customerEmail: requireString(booking.customerEmail, 'booking.customerEmail'),
+  };
+}
+
+function getApprovalResult(data: Record<string, unknown>): SampleApprovalResult {
+  const result = data.approvalResult;
+  if (!isRecord(result)) {
+    return {};
+  }
+
+  return {
+    outcome: typeof result.outcome === 'string' ? result.outcome : undefined,
+    approved: typeof result.approved === 'boolean' ? result.approved : undefined,
+    explanation: typeof result.explanation === 'string' ? result.explanation : undefined,
+  };
+}
+
+function getStringData(data: Record<string, unknown>, key: string): string {
+  const value = data[key];
+  return requireString(value, key);
+}
+
 /**
  * Booking service interface (mock for demonstration)
  */
@@ -120,7 +187,7 @@ export function createBookingToFulfillmentWorkflow(
       new ConditionStep(
         'approval-branch',
         (ctx) => {
-          const result = ctx.data.approvalResult as unknown;
+          const result = getApprovalResult(ctx.data);
           return result?.outcome === 'APPROVE' || result?.approved === true;
         },
         'reserve-inventory',      // If approved
@@ -132,7 +199,7 @@ export function createBookingToFulfillmentWorkflow(
       new ActionStep(
         'reserve-inventory',
         async (ctx) => {
-          const booking = ctx.data.booking as unknown;
+          const booking = getSampleBooking(ctx.data);
           
           const reservation = await services.inventory.reserve({
             productIds: booking.productIds,
@@ -160,7 +227,7 @@ export function createBookingToFulfillmentWorkflow(
       new ActionStep(
         'assign-ktv',
         async (ctx) => {
-          const booking = ctx.data.booking as unknown;
+          const booking = getSampleBooking(ctx.data);
           
           const assignment = await services.ktv.autoAssign({
             sessionDate: booking.sessionDate,
@@ -185,7 +252,7 @@ export function createBookingToFulfillmentWorkflow(
           new ActionStep(
             'notify-customer',
             async (ctx) => {
-              const booking = ctx.data.booking as unknown;
+              const booking = getSampleBooking(ctx.data);
               
               await services.notification.sendEmail({
                 to: booking.customerEmail,
@@ -193,7 +260,7 @@ export function createBookingToFulfillmentWorkflow(
                 data: {
                   bookingId: booking.id,
                   sessionDate: booking.sessionDate,
-                  assignedKtvId: ctx.data.assignedKtvId
+                  assignedKtvId: getStringData(ctx.data, 'assignedKtvId')
                 }
               });
               
@@ -205,9 +272,10 @@ export function createBookingToFulfillmentWorkflow(
           new ActionStep(
             'notify-ktv',
             async (ctx) => {
+              const booking = getSampleBooking(ctx.data);
               await services.notification.sendSMS({
-                to: ctx.data.assignedKtvId as string,
-                message: `New booking assigned: ${(ctx.data.booking as unknown).id}`
+                to: getStringData(ctx.data, 'assignedKtvId'),
+                message: `New booking assigned: ${booking.id}`
               });
               
               return { ktvNotified: true };
@@ -223,13 +291,13 @@ export function createBookingToFulfillmentWorkflow(
       new ActionStep(
         'finalize-booking',
         async (ctx) => {
-          const booking = ctx.data.booking as unknown;
+          const booking = getSampleBooking(ctx.data);
           
           await services.booking.finalize({
             bookingId: booking.id,
             status: 'confirmed',
-            reservationId: ctx.data.reservationId as string,
-            assignedKtvId: ctx.data.assignedKtvId as string
+            reservationId: getStringData(ctx.data, 'reservationId'),
+            assignedKtvId: getStringData(ctx.data, 'assignedKtvId')
           });
           
           return { bookingFinalized: true };
@@ -241,14 +309,15 @@ export function createBookingToFulfillmentWorkflow(
       new ActionStep(
         'notify-pending-approval',
         async (ctx) => {
-          const booking = ctx.data.booking as unknown;
+          const booking = getSampleBooking(ctx.data);
+          const approvalResult = getApprovalResult(ctx.data);
           
           await services.notification.sendEmail({
             to: booking.customerEmail,
             template: 'booking-pending-approval',
             data: {
               bookingId: booking.id,
-              reason: (ctx.data.approvalResult as unknown)?.explanation ?? 'Requires manager approval'
+              reason: approvalResult.explanation ?? 'Requires manager approval'
             }
           });
           

@@ -55,6 +55,118 @@ interface UserMetadata {
   created_at?: string;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function readString(record: Record<string, unknown>, key: string, fallback = ''): string {
+  const value = record[key];
+  return typeof value === 'string' ? value : fallback;
+}
+
+function readNullableString(record: Record<string, unknown>, key: string): string | null {
+  const value = record[key];
+  return typeof value === 'string' ? value : null;
+}
+
+function readNumber(record: Record<string, unknown>, key: string, fallback = 0): number {
+  const value = record[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+function readRelation(record: Record<string, unknown>, key: string): Record<string, unknown> | null {
+  const value = record[key];
+  return isRecord(value) ? value : null;
+}
+
+function readInventoryStatus(value: unknown): PartnerInventoryItem['status'] {
+  return value === 'booked' ||
+    value === 'deposited' ||
+    value === 'contracted' ||
+    value === 'paid' ||
+    value === 'handed_over' ||
+    value === 'cancelled'
+    ? value
+    : 'available';
+}
+
+function readProductType(value: unknown): PartnerInventoryItem['product_type'] {
+  return value === 'townhouse' || value === 'shophouse' || value === 'villa'
+    ? value
+    : 'apartment';
+}
+
+function readCommissionType(value: unknown): PartnerCommissionItem['transaction_type'] {
+  return value === 'deposit' ||
+    value === 'contract' ||
+    value === 'payment_milestone' ||
+    value === 'adjustment'
+    ? value
+    : 'booking';
+}
+
+function readCommissionStatus(value: unknown): PartnerCommissionItem['status'] {
+  return value === 'approved' || value === 'paid' || value === 'cancelled'
+    ? value
+    : 'pending';
+}
+
+function readDocumentType(value: unknown): PartnerDocumentItem['document_type'] {
+  return value === 'brochure' ||
+    value === 'price_list' ||
+    value === 'legal_docs' ||
+    value === 'bank_policy' ||
+    value === 'faq' ||
+    value === 'training' ||
+    value === 'contract_template'
+    ? value
+    : 'other';
+}
+
+function readBookingStatus(value: unknown): PartnerBookingItem['status'] {
+  return value === 'released' || value === 'expired' || value === 'converted'
+    ? value
+    : 'active';
+}
+
+type PartnerPortalBookingStatus = 'pending' | 'approved' | 'rejected' | 'completed';
+
+function readPartnerPortalBookingStatus(value: unknown): PartnerPortalBookingStatus {
+  if (value === 'converted') return 'approved';
+  if (value === 'expired') return 'rejected';
+  if (value === 'released') return 'completed';
+  return 'pending';
+}
+
+type PartnerPortalDocumentCategory =
+  | 'brochure'
+  | 'price_list'
+  | 'legal'
+  | 'sales_kit'
+  | 'media'
+  | 'policy';
+
+function readReservationMetadata(value: unknown): ReservationMetadata {
+  if (!isRecord(value)) return {};
+
+  const documents = Array.isArray(value.documents)
+    ? value.documents
+        .filter(isRecord)
+        .map((doc) => ({
+          name: readString(doc, 'name'),
+          type: readString(doc, 'type'),
+          url: readString(doc, 'url'),
+        }))
+    : undefined;
+
+  return {
+    customerName: readNullableString(value, 'customerName') ?? undefined,
+    customerPhone: readNullableString(value, 'customerPhone') ?? undefined,
+    depositAmount: typeof value.depositAmount === 'number' ? value.depositAmount : undefined,
+    depositProofUrl: readNullableString(value, 'depositProofUrl'),
+    documents,
+  };
+}
 
 /**
  * Fetch dashboard stats for current logged-in partner/broker
@@ -223,21 +335,27 @@ export async function getPartnerInventory(): Promise<PartnerInventoryItem[]> {
     throw new Error(`Failed to fetch inventory: ${error.message}`);
   }
 
-  return (data || []).map((p: Record<string, unknown>) => ({
-    id: p.id,
-    project_id: p.project_id,
-    project_name: p.real_estate_projects?.name || 'Dự án BĐS',
-    product_code: p.product_code,
-    product_type: p.product_type,
-    floor: p.floor,
-    block: p.block,
-    area: Number(p.area) || 0,
-    unit_price: Number(p.unit_price) || 0,
-    status: p.status,
-    owner_name: p.owner_name,
-    customer_id: p.customer_id,
-    customer_display_name: p.party_parties?.display_name || null,
-  }));
+  return (data || []).map((p: unknown): PartnerInventoryItem => {
+    const row = isRecord(p) ? p : {};
+    const project = readRelation(row, 'real_estate_projects');
+    const customer = readRelation(row, 'party_parties');
+
+    return {
+      id: readString(row, 'id'),
+      project_id: readString(row, 'project_id'),
+      project_name: project ? readString(project, 'name', 'Dự án BĐS') : 'Dự án BĐS',
+      product_code: readString(row, 'product_code'),
+      product_type: readProductType(row.product_type),
+      floor: readNullableString(row, 'floor'),
+      block: readNullableString(row, 'block'),
+      area: readNumber(row, 'area'),
+      unit_price: readNumber(row, 'unit_price'),
+      status: readInventoryStatus(row.status),
+      owner_name: readNullableString(row, 'owner_name'),
+      customer_id: readNullableString(row, 'customer_id'),
+      customer_display_name: customer ? readNullableString(customer, 'display_name') : null,
+    };
+  });
 }
 
 export interface PartnerCommissionItem {
@@ -286,17 +404,23 @@ export async function getPartnerCommissions(): Promise<PartnerCommissionItem[]> 
     throw new Error(`Failed to fetch commissions: ${error.message}`);
   }
 
-  return (data || []).map((c: Record<string, unknown>) => ({
-    id: c.id,
-    transaction_type: c.transaction_type,
-    base_amount: Number(c.base_amount) || 0,
-    commission_rate: c.commission_rate ? Number(c.commission_rate) : null,
-    commission_amount: Number(c.commission_amount) || 0,
-    status: c.status,
-    earned_date: c.earned_date,
-    notes: c.notes,
-    product_code: c.real_estate_products?.product_code,
-  }));
+  return (data || []).map((c: unknown): PartnerCommissionItem => {
+    const row = isRecord(c) ? c : {};
+    const product = readRelation(row, 'real_estate_products');
+    const commissionRate = row.commission_rate;
+
+    return {
+      id: readString(row, 'id'),
+      transaction_type: readCommissionType(row.transaction_type),
+      base_amount: readNumber(row, 'base_amount'),
+      commission_rate: typeof commissionRate === 'number' ? commissionRate : null,
+      commission_amount: readNumber(row, 'commission_amount'),
+      status: readCommissionStatus(row.status),
+      earned_date: readString(row, 'earned_date'),
+      notes: readNullableString(row, 'notes'),
+      product_code: product ? readString(product, 'product_code') : undefined,
+    };
+  });
 }
 
 export interface PartnerDocumentItem {
@@ -332,16 +456,20 @@ export async function getPartnerDocuments(): Promise<PartnerDocumentItem[]> {
     throw new Error(`Failed to fetch documents: ${error.message}`);
   }
 
-  return (data || []).map((d: Record<string, unknown>) => ({
-    id: d.id,
-    title: d.title,
-    description: d.description,
-    document_type: d.document_type,
-    file_url: d.file_url,
-    file_name: d.file_name,
-    file_size_bytes: Number(d.file_size_bytes) || null,
-    version: d.version,
-  }));
+  return (data || []).map((d: unknown): PartnerDocumentItem => {
+    const row = isRecord(d) ? d : {};
+
+    return {
+      id: readString(row, 'id'),
+      title: readString(row, 'title'),
+      description: readNullableString(row, 'description'),
+      document_type: readDocumentType(row.document_type),
+      file_url: readString(row, 'file_url'),
+      file_name: readString(row, 'file_name'),
+      file_size_bytes: typeof row.file_size_bytes === 'number' ? row.file_size_bytes : null,
+      version: readString(row, 'version'),
+    };
+  });
 }
 
 export interface PartnerBookingItem {
@@ -392,16 +520,24 @@ export async function getPartnerBookings(): Promise<PartnerBookingItem[]> {
     throw new Error(`Failed to fetch bookings: ${error.message}`);
   }
 
-  return (data || []).map((r: Record<string, unknown>) => ({
-    id: r.id,
-    product_code: r.real_estate_products?.product_code || 'N/A',
-    project_name: r.real_estate_products?.real_estate_projects?.name || 'Dự án',
-    customer_name: r.customers?.name_mother || r.metadata?.customerName || 'Khách hàng',
-    status: r.status,
-    expires_at: r.expires_at,
-    created_at: r.created_at,
-    deposit_proof_url: r.metadata?.depositProofUrl,
-  }));
+  return (data || []).map((r: unknown): PartnerBookingItem => {
+    const row = isRecord(r) ? r : {};
+    const product = readRelation(row, 'real_estate_products');
+    const project = product ? readRelation(product, 'real_estate_projects') : null;
+    const customer = readRelation(row, 'customers');
+    const metadata = readReservationMetadata(row.metadata);
+
+    return {
+      id: readString(row, 'id'),
+      product_code: product ? readString(product, 'product_code', 'N/A') : 'N/A',
+      project_name: project ? readString(project, 'name', 'Dự án') : 'Dự án',
+      customer_name: customer ? readString(customer, 'name_mother', metadata.customerName || 'Khách hàng') : metadata.customerName || 'Khách hàng',
+      status: readBookingStatus(row.status),
+      expires_at: readString(row, 'expires_at'),
+      created_at: readString(row, 'created_at'),
+      deposit_proof_url: metadata.depositProofUrl ?? undefined,
+    };
+  });
 }
 
 /**
@@ -485,17 +621,24 @@ export async function fetchPartnerBookings(userId: string) {
 
   if (error) throw error;
 
-  return (data || []).map((r: Record<string, unknown>) => ({
-    id: r.id,
-    project_name: r.real_estate_products?.real_estate_projects?.name || 'Dự án',
-    unit_code: r.real_estate_products?.product_code || 'N/A',
-    customer_name: r.metadata?.customerName || 'Khách hàng',
-    customer_phone: r.metadata?.customerPhone || '',
-    deposit_amount: r.metadata?.depositAmount || 0,
-    status: r.status === 'active' ? 'pending' : r.status === 'converted' ? 'approved' : r.status,
-    created_at: r.created_at,
-    documents: r.metadata?.documents || [],
-  }));
+  return (data || []).map((r: unknown) => {
+    const row = isRecord(r) ? r : {};
+    const product = readRelation(row, 'real_estate_products');
+    const project = product ? readRelation(product, 'real_estate_projects') : null;
+    const metadata = readReservationMetadata(row.metadata);
+
+    return {
+      id: readString(row, 'id'),
+      project_name: project ? readString(project, 'name', 'Dự án') : 'Dự án',
+      unit_code: product ? readString(product, 'product_code', 'N/A') : 'N/A',
+      customer_name: metadata.customerName || 'Khách hàng',
+      customer_phone: metadata.customerPhone || '',
+      deposit_amount: metadata.depositAmount || 0,
+      status: readPartnerPortalBookingStatus(row.status),
+      created_at: readString(row, 'created_at'),
+      documents: metadata.documents || [],
+    };
+  });
 }
 
 export async function createBookingRequest(params: {
@@ -603,21 +746,24 @@ export async function fetchPartnerCommissions(userId: string) {
 
   if (error) throw error;
 
-  return (data || []).map((c: Record<string, unknown>) => ({
-    id: c.id,
-    booking_id: c.id,
-    project_name: c.real_estate_products?.real_estate_projects?.name || 'Dự án',
-    unit_code: c.real_estate_products?.product_code || 'N/A',
-    transaction_amount: Number(c.base_amount) || 0,
-    commission_rate: Number(c.commission_rate) || 0,
-    commission_amount: Number(c.commission_amount) || 0,
-    tax_deduction: Number(c.commission_amount) * 0.1 || 0, // Mock 10% tax
-    net_amount: Number(c.commission_amount) * 0.9 || 0,
-    status: c.status as 'pending' | 'approved' | 'paid',
-    approved_date: c.status === 'approved' || c.status === 'paid' ? c.earned_date : null,
-    paid_date: c.paid_at,
-    created_at: c.earned_date,
-  }));
+  return (data || []).map((c: Record<string, unknown>) => {
+    const product = c.real_estate_products as { product_code?: string; real_estate_projects?: { name?: string } } | null;
+    return {
+      id: String(c.id ?? ''),
+      booking_id: String(c.id ?? ''),
+      project_name: product?.real_estate_projects?.name || 'Dự án',
+      unit_code: product?.product_code || 'N/A',
+      transaction_amount: Number(c.base_amount) || 0,
+      commission_rate: Number(c.commission_rate) || 0,
+      commission_amount: Number(c.commission_amount) || 0,
+      tax_deduction: (Number(c.commission_amount) || 0) * 0.1,
+      net_amount: (Number(c.commission_amount) || 0) * 0.9,
+      status: (c.status as 'pending' | 'approved' | 'paid') || 'pending',
+      approved_date: c.status === 'approved' || c.status === 'paid' ? (c.earned_date ? String(c.earned_date) : null) : null,
+      paid_date: c.paid_at ? String(c.paid_at) : null,
+      created_at: String(c.earned_date ?? ''),
+    };
+  });
 }
 
 /**
@@ -651,7 +797,7 @@ export async function fetchPartnerDocuments() {
 
   if (error) throw error;
 
-  const categoryMap: Record<string, unknown> = {
+  const categoryMap: Record<string, PartnerPortalDocumentCategory> = {
     brochure: 'brochure',
     price_list: 'price_list',
     legal_docs: 'legal',
@@ -662,17 +808,24 @@ export async function fetchPartnerDocuments() {
     other: 'media',
   };
 
-  return (data || []).map((d: Record<string, unknown>) => ({
-    id: d.id,
-    title: d.title,
-    category: categoryMap[d.document_type] || 'media',
-    file_type: d.file_name.split('.').pop() || 'pdf',
-    file_size: Number(d.file_size_bytes) || 0,
-    file_url: d.file_url,
-    description: d.description,
-    uploaded_at: d.created_at,
-    project_name: d.real_estate_projects?.name,
-  }));
+  return (data || []).map((d: unknown) => {
+    const row = isRecord(d) ? d : {};
+    const fileName = readString(row, 'file_name');
+    const project = readRelation(row, 'real_estate_projects');
+    const documentType = readString(row, 'document_type');
+
+    return {
+      id: readString(row, 'id'),
+      title: readString(row, 'title'),
+      category: categoryMap[documentType] || 'media',
+      file_type: fileName.split('.').pop() || 'pdf',
+      file_size: readNumber(row, 'file_size_bytes'),
+      file_url: readString(row, 'file_url'),
+      description: readNullableString(row, 'description'),
+      uploaded_at: readString(row, 'created_at'),
+      project_name: project ? readString(project, 'name') : undefined,
+    };
+  });
 }
 
 export async function downloadDocument(fileUrl: string, fileName: string) {

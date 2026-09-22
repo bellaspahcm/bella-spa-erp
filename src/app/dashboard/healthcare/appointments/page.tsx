@@ -62,6 +62,8 @@ type ExtendedStatus =
   | 'rescheduled'
   | 'rejected';
 
+type ScheduleView = 'timeline' | 'calendar' | 'doctor' | 'department';
+
 interface DetailedAppointment extends Omit<Appointment, 'status'> {
   status: ExtendedStatus;
   waitTimeMinutes?: number;
@@ -89,6 +91,8 @@ interface NoShowRiskPatient {
   reason: string;
 }
 
+const demoAppointmentDate = new Date().toISOString().split('T')[0];
+
 // Demo Operational Dataset to support zero-silent-failure and rich UX presentation
 const DEMO_APPOINTMENTS: DetailedAppointment[] = [
   {
@@ -98,6 +102,7 @@ const DEMO_APPOINTMENTS: DetailedAppointment[] = [
     specialty: 'Khoa Tim Mạch',
     doctorName: 'BS. CKII Nguyễn Văn Minh',
     doctorRoom: 'Phòng 201',
+    date: demoAppointmentDate,
     slotTime: '08:00 - 08:30',
     status: 'checked_in',
     waitTimeMinutes: 12,
@@ -113,6 +118,7 @@ const DEMO_APPOINTMENTS: DetailedAppointment[] = [
     specialty: 'Khoa Tim Mạch',
     doctorName: 'BS. CKII Nguyễn Văn Minh',
     doctorRoom: 'Phòng 201',
+    date: demoAppointmentDate,
     slotTime: '08:15 - 08:45',
     status: 'waiting',
     waitTimeMinutes: 28,
@@ -128,6 +134,7 @@ const DEMO_APPOINTMENTS: DetailedAppointment[] = [
     specialty: 'Khoa Tiêu Hóa',
     doctorName: 'BS. CKII Lê Thị Thảo',
     doctorRoom: 'Phòng 203',
+    date: demoAppointmentDate,
     slotTime: '08:30 - 09:00',
     status: 'no_show',
     qrCode: 'QR-CU-4432',
@@ -142,6 +149,7 @@ const DEMO_APPOINTMENTS: DetailedAppointment[] = [
     specialty: 'Khoa Nhi',
     doctorName: 'BS. CKII Trần Quốc Bảo',
     doctorRoom: 'Phòng 204',
+    date: demoAppointmentDate,
     slotTime: '09:00 - 09:30',
     status: 'consultation',
     waitTimeMinutes: 8,
@@ -157,6 +165,7 @@ const DEMO_APPOINTMENTS: DetailedAppointment[] = [
     specialty: 'Khoa Tai Mũi Họng',
     doctorName: 'BS. Nguyễn Văn Hùng',
     doctorRoom: 'Phòng 202',
+    date: demoAppointmentDate,
     slotTime: '09:30 - 10:00',
     status: 'completed',
     qrCode: 'QR-DU-8871',
@@ -170,6 +179,7 @@ const DEMO_APPOINTMENTS: DetailedAppointment[] = [
     specialty: 'Khoa Thần Kinh',
     doctorName: 'BS. CKII Trần Quốc Bảo',
     doctorRoom: 'Phòng 204',
+    date: demoAppointmentDate,
     slotTime: '08:00 - 08:30',
     status: 'completed',
     qrCode: 'QR-EM-7432',
@@ -183,6 +193,7 @@ const DEMO_APPOINTMENTS: DetailedAppointment[] = [
     specialty: 'Khoa Tim Mạch',
     doctorName: 'BS. CKII Nguyễn Văn Minh',
     doctorRoom: 'Phòng 201',
+    date: demoAppointmentDate,
     slotTime: '08:30 - 09:00',
     status: 'cancelled',
     qrCode: 'QR-GI-9012',
@@ -197,6 +208,7 @@ const DEMO_APPOINTMENTS: DetailedAppointment[] = [
     specialty: 'Khoa Tiêu Hóa',
     doctorName: 'BS. CKII Lê Thị Thảo',
     doctorRoom: 'Phòng 203',
+    date: demoAppointmentDate,
     slotTime: '10:00 - 10:30',
     status: 'confirmed',
     qrCode: 'QR-HA-2351',
@@ -210,6 +222,7 @@ const DEMO_APPOINTMENTS: DetailedAppointment[] = [
     specialty: 'Khoa Nhi',
     doctorName: 'BS. CKII Trần Quốc Bảo',
     doctorRoom: 'Phòng 204',
+    date: demoAppointmentDate,
     slotTime: '10:30 - 11:00',
     status: 'scheduled',
     qrCode: 'QR-HU-5531',
@@ -261,7 +274,7 @@ function AppointmentCenterContent() {
   const [encounters, setEncounters] = useState<EncounterItem[]>([]);
   const [selectedEncounterId, setSelectedEncounterId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
-  const [scheduleView, setScheduleView] = useState<'timeline' | 'calendar' | 'doctor' | 'department'>('doctor');
+  const [scheduleView, setScheduleView] = useState<ScheduleView>('doctor');
   const [isNoShowListOpen, setIsNoShowListOpen] = useState(false);
 
   // Search & Filters State
@@ -456,6 +469,7 @@ function AppointmentCenterContent() {
         specialty: newApp.specialty,
         doctorName: newApp.doctorName,
         doctorRoom: 'Phòng 202',
+        date: selectedDate,
         slotTime: newApp.slotTime,
         status: 'confirmed',
         qrCode: `QR-MC-${Math.floor(Math.random() * 9000 + 1000)}`,
@@ -730,15 +744,15 @@ function AppointmentCenterContent() {
                 <span>Lịch Khám Phân Bổ Theo Bác Sĩ & Phòng</span>
               </h3>
               <div className="flex items-center p-1 rounded-xl bg-slate-50 border border-slate-200 text-[10px] font-bold shadow-3xs">
-                {[
+                {([
                   { value: 'timeline', label: 'Theo Giờ' },
                   { value: 'calendar', label: 'Lịch' },
                   { value: 'doctor', label: 'Bác Sĩ' },
                   { value: 'department', label: 'Chuyên Khoa' }
-                ].map((mode) => (
+                ] satisfies { value: ScheduleView; label: string }[]).map((mode) => (
                   <button
                     key={mode.value}
-                    onClick={() => setScheduleView(mode.value as unknown)}
+                    onClick={() => setScheduleView(mode.value)}
                     className={`px-2 py-1 rounded-lg uppercase tracking-wider transition-all cursor-pointer ${
                       scheduleView === mode.value 
                         ? 'bg-white text-cyan-600 shadow-3xs font-black' 
@@ -754,7 +768,7 @@ function AppointmentCenterContent() {
             {/* Today's Hourly Operations Timeline Distribution */}
             <div className="bg-slate-50/50 p-4.5 rounded-2xl border border-slate-100 space-y-3.5 shadow-inner">
               <div className="flex justify-between items-center text-[10px] font-bold uppercase text-slate-450 tracking-wider">
-                <span>Tải lượng vận hành hôm nay (Today's Operations Load)</span>
+                <span>Tải lượng vận hành hôm nay (Today&apos;s Operations Load)</span>
                 <span className="text-slate-700 font-black">126 Lượt khám</span>
               </div>
               <div className="grid grid-cols-4 gap-3 pt-2.5">

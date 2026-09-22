@@ -128,21 +128,21 @@ type CachedTenantBrandDisplay = TenantBrandDisplay & {
 };
 
 const DEFAULT_SIDEBAR_BRAND: TenantBrandDisplay = {
-  displayName: 'Spa ERP',
+  displayName: 'Bella Haircut Shop',
   logoUrl: '',
-  subtitle: 'Management System',
-  moduleKey: 'babycare',
-  primaryColor: '#9D174D',
-  accentColor: '#BE185D',
-  primaryHoverColor: '#831843',
-  monogram: 'S',
+  subtitle: 'Đẹp hơn mỗi ngày',
+  moduleKey: 'beauty_spa',
+  primaryColor: '#074E44',
+  accentColor: '#C8A97A',
+  primaryHoverColor: '#03211D',
+  monogram: 'BH',
   buttonStyle: 'pill',
   menuStyle: 'comfortable',
   radiusStyle: 'soft',
-  isBeautySpa: false,
+  isBeautySpa: true,
   isHospitalInpatient: false,
   fontHeading: 'serif',
-  stylePreset: 'bella_rose',
+  stylePreset: 'jade_wellness',
 };
 const NEUTRAL_SIDEBAR_BRAND: TenantBrandDisplay = {
   displayName: 'System ERP',
@@ -944,8 +944,7 @@ export function Sidebar() {
         - Mobile: Slide-out fixed drawer based on `isOpen` state
       */}
       <aside className={cn(
-        "bg-slate-50/70 dark:bg-[#111318] border-r border-slate-200/60 dark:border-slate-800/60 p-3 flex flex-col h-screen lg:h-screen h-[100dvh] fixed inset-y-0 left-0 z-50 transform lg:translate-x-0 lg:relative lg:inset-auto lg:z-auto transition-transform duration-300 ease-in-out overflow-hidden shrink-0",
-        isRealEstateShell ? "w-[260px]" : "w-80",
+        "bg-slate-50/70 dark:bg-[#111318] border-r border-slate-200/60 dark:border-slate-800/60 p-2.5 flex flex-col h-screen lg:h-screen h-[100dvh] fixed inset-y-0 left-0 z-50 transform lg:translate-x-0 lg:relative lg:inset-auto lg:z-auto transition-transform duration-300 ease-in-out overflow-hidden shrink-0 w-[270px]",
         isBeautySpaShell && "beauty-erp-sidebar",
         isIndustrialCleaningShell && "beauty-erp-sidebar",
         isRealEstateShell && "beauty-erp-sidebar",

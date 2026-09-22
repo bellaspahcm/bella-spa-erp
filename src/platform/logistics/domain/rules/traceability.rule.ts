@@ -182,9 +182,9 @@ export class ChainIntegrityRule implements Rule<ChainIntegrityContext> {
     const missing = requiredEvents.filter(req => !actualActions.includes(req));
 
     const evidenceInput = {
-      traceability_id: traceability.id,
-      lot_number: traceability.lotNumber || null,
-      serial_number: traceability.serialNumber || null,
+      traceability_id: traceability.id.value,
+      lot_number: traceability.lotNumber?.value || null,
+      serial_number: traceability.serialNumber?.value || null,
       required_events: requiredEvents,
       actual_events: actualActions,
     };
@@ -245,7 +245,7 @@ export class ComplianceStatusRule implements Rule<ComplianceStatusContext> {
     const evaluationDate = new Date();
 
     const evidenceInput = {
-      traceability_id: traceability.id,
+      traceability_id: traceability.id.value,
       compliance_status: traceability.complianceStatus,
       recall_status: traceability.recallStatus,
     };

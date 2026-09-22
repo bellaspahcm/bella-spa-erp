@@ -1,9 +1,9 @@
 /**
  * Inventory Movement Domain Kernel
- * 
+ *
  * Pure business logic for inventory movements (transactions).
  * Zero dependencies on infrastructure.
- * 
+ *
  * Responsibilities:
  * - Movement creation with validation
  * - Direction/type compatibility validation
@@ -19,13 +19,13 @@ import type {
   MovementType,
   MovementDirection,
   MovementStatus,
-  LocationType,
 } from './movement.types';
+import type { LocationType } from './inventory.types';
 
 export class MovementDomain {
   /**
    * Create new inventory movement
-   * 
+   *
    * Invariants:
    * - Quantity must be positive (direction indicates increase/decrease)
    * - Direction must match movement type
@@ -100,45 +100,45 @@ export class MovementDomain {
       id: props.id || crypto.randomUUID(),
       movementNumber: props.movementNumber.trim(),
       tenantId: props.tenantId,
-      
+
       movementDate: props.movementDate || now,
       createdAt: now,
       createdBy: props.createdBy || null,
-      
+
       movementType: props.movementType,
       direction: props.direction,
-      
+
       itemId: props.itemId,
-      
+
       fromLocationId: props.fromLocationId || null,
       fromLocationType: props.fromLocationType || null,
       toLocationId: props.toLocationId || null,
       toLocationType: props.toLocationType || null,
-      
+
       quantity: props.quantity,
       unitOfMeasure: props.unitOfMeasure,
-      
+
       lotNumber: props.lotNumber || null,
       serialNumber: props.serialNumber || null,
       expiryDate: props.expiryDate || null,
-      
+
       unitCost: props.unitCost !== undefined ? props.unitCost : null,
       totalCost: props.totalCost !== undefined ? props.totalCost : null,
       currency: props.currency || null,
-      
+
       sourceDocumentType: props.sourceDocumentType || null,
       sourceDocumentId: props.sourceDocumentId || null,
       sourceDocumentNumber: props.sourceDocumentNumber || null,
       sourceLineItemId: props.sourceLineItemId || null,
-      
+
       reason: props.reason || null,
       notes: props.notes || null,
-      
+
       batchId: props.batchId || null,
-      
+
       approvedBy: null,
       approvedAt: null,
-      
+
       status: props.status || 'COMPLETED',
       completedAt: props.status === 'COMPLETED' ? now : null,
       cancelledAt: null,
@@ -239,7 +239,7 @@ export class MovementDomain {
 
   /**
    * Approve movement
-   * 
+   *
    * Only PENDING movements can be approved.
    */
   static approve(
@@ -268,7 +268,7 @@ export class MovementDomain {
 
   /**
    * Cancel movement
-   * 
+   *
    * Only PENDING movements can be cancelled.
    * COMPLETED movements are immutable.
    */
@@ -361,7 +361,7 @@ export class MovementDomain {
 
   /**
    * Validate movement against item traceability requirements
-   * 
+   *
    * Note: Item entity not available in pure domain (no dependency).
    * This is a helper for repository layer validation.
    */
@@ -399,7 +399,7 @@ export class MovementDomain {
 
   /**
    * Get human-readable movement description
-   * 
+   *
    * NOTE: Presentation helper.
    * May move to API/presentation layer if tests show no domain-level need.
    * Do not treat this as a Logistics OS primitive.

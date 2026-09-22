@@ -1,14 +1,14 @@
 /**
  * Location Domain Kernel
- * 
+ *
  * Pure business logic for generic location management.
  * Zero dependencies on infrastructure.
- * 
+ *
  * Responsibilities:
  * - Location creation and validation
  * - Hierarchy validation (basic)
  * - Status transitions
- * 
+ *
  * Note: Location is deliberately generic (not warehouse-specific).
  * Products extend this with their own concepts (e.g., Warehouse adds Bins).
  */
@@ -25,7 +25,7 @@ import type {
 export class LocationDomain {
   /**
    * Create new location
-   * 
+   *
    * Invariants:
    * - Location code required and non-empty
    * - Location name required
@@ -71,13 +71,13 @@ export class LocationDomain {
       locationCode: props.locationCode.trim(),
       locationName: props.locationName.trim(),
       locationType: props.locationType,
-      
+
       parentLocationId: props.parentLocationId || null,
-      
+
       addressJson: props.addressJson || null,
-      
+
       status: props.status || 'ACTIVE',
-      
+
       createdAt: now,
       updatedAt: now,
     };
@@ -87,7 +87,7 @@ export class LocationDomain {
 
   /**
    * Update existing location
-   * 
+   *
    * Cannot change:
    * - tenantId (immutable)
    * - locationCode (business key, immutable)
@@ -98,7 +98,7 @@ export class LocationDomain {
     updates: UpdateLocationProps
   ): Result<Location> {
     // Name cannot be empty if provided
-    if (updates.locationName !== undefined && 
+    if (updates.locationName !== undefined &&
         (!updates.locationName || updates.locationName.trim() === '')) {
       return Result.fail(
         'Location name cannot be empty',
@@ -159,7 +159,7 @@ export class LocationDomain {
 
   /**
    * Check if location can be deactivated
-   * 
+   *
    * Note: Actual inventory check happens at repository layer.
    * This is domain-level validation only.
    */
@@ -176,7 +176,7 @@ export class LocationDomain {
 
   /**
    * Validate circular hierarchy (must be done at repository layer with full tree)
-   * 
+   *
    * This method validates a proposed parent is not a descendant.
    * Implementation requires full hierarchy traversal (repository responsibility).
    */
@@ -256,7 +256,7 @@ export class LocationDomain {
 
   /**
    * Get address string (formatted)
-   * 
+   *
    * NOTE: Presentation helper.
    * May move to API/presentation layer if tests show no domain-level need.
    * Do not treat this as a Logistics OS primitive.
@@ -282,11 +282,11 @@ export class LocationDomain {
 
   /**
    * E7.2: Deactivate location operation
-   * 
+   *
    * Transition: ACTIVE → INACTIVE
-   * 
+   *
    * Use case: Temporary suspension (maintenance, capacity issues)
-   * 
+   *
    * Invariants:
    * - Must be ACTIVE status
    * - Reason required
@@ -341,11 +341,11 @@ export class LocationDomain {
 
   /**
    * E7.2: Close location operation
-   * 
+   *
    * Transition: ACTIVE/INACTIVE → CLOSED
-   * 
+   *
    * Use case: Permanent closure (decommission, consolidation)
-   * 
+   *
    * Invariants:
    * - Cannot close already CLOSED location
    * - Reason required
@@ -393,11 +393,11 @@ export class LocationDomain {
 
   /**
    * E7.2: Reactivate location operation
-   * 
+   *
    * Transition: INACTIVE → ACTIVE
-   * 
+   *
    * Use case: Resume operations after temporary suspension
-   * 
+   *
    * Invariants:
    * - Must be INACTIVE status
    * - Cannot reactivate CLOSED locations

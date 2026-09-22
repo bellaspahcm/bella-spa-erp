@@ -157,11 +157,7 @@ export async function provisionPartnerAccount(
         action: 'provisioned',
         action_description: `Account provisioned: Tenant ${tenant.id}, User ${authUser.user.id}`,
         performed_by_role: 'system',
-        metadata: {
-          tenant_id: tenant.id,
-          user_id: authUser.user.id,
-        },
-      } as unknown);
+      });
 
     // Step 8: Send activation email (async, don't block)
     sendActivationEmail(input.email, input.full_name, activationToken).catch((err) => {

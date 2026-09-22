@@ -14,5 +14,6 @@
  */
 
 export * from './shared-kernel';
+export type { Dimensions, EventMetadata, Weight } from './shared-kernel';
 export * from './contracts';
 export * from './engines';

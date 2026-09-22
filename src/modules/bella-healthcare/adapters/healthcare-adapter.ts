@@ -45,6 +45,65 @@ export interface HealthcareAccountingVM {
   referenceId: string;
 }
 
+const getString = (dto: Record<string, unknown>, key: string, fallback: string): string => {
+  const value = dto[key];
+  return typeof value === 'string' && value.length > 0 ? value : fallback;
+};
+
+const getNumber = (dto: Record<string, unknown>, key: string, fallback: number): number => {
+  const value = dto[key];
+  return typeof value === 'number' ? value : fallback;
+};
+
+const firstString = (dto: Record<string, unknown>, keys: string[], fallback: string): string => {
+  for (const key of keys) {
+    const value = dto[key];
+    if (typeof value === 'string' && value.length > 0) {
+      return value;
+    }
+  }
+
+  return fallback;
+};
+
+const firstNumber = (dto: Record<string, unknown>, keys: string[], fallback: number): number => {
+  for (const key of keys) {
+    const value = dto[key];
+    if (typeof value === 'number') {
+      return value;
+    }
+  }
+
+  return fallback;
+};
+
+const requireString = (dto: Record<string, unknown>, key: string): string => {
+  const value = dto[key];
+  if (typeof value !== 'string') {
+    throw new Error(`Healthcare adapter expected ${key} to be a string`);
+  }
+
+  return value;
+};
+
+const requireNumber = (dto: Record<string, unknown>, key: string): number => {
+  const value = dto[key];
+  if (typeof value !== 'number') {
+    throw new Error(`Healthcare adapter expected ${key} to be a number`);
+  }
+
+  return value;
+};
+
+const getTransactionType = (dto: Record<string, unknown>): 'revenue' | 'expense' => {
+  const value = dto.type;
+  if (value !== 'revenue' && value !== 'expense') {
+    throw new Error('Healthcare adapter expected transaction type to be revenue or expense');
+  }
+
+  return value;
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Healthcare Adapter Implementation
 // ─────────────────────────────────────────────────────────────────────────────
@@ -52,12 +111,12 @@ export interface HealthcareAccountingVM {
 export class HealthcareFinanceAdapter implements IndustryFinanceAdapter<Record<string, unknown>, HealthcareFinanceVM> {
   map(dto: Record<string, unknown>): HealthcareFinanceVM {
     return {
-      monthYear: dto.month || dto.month_year || '',
-      treatmentRevenue: dto.totalRevenue || dto.total_revenue || 0,
-      clinicOperatingExpense: dto.operatingExpense || dto.total_operating_expenses || 0,
-      doctorSalaryExpense: dto.salaryExpense || dto.total_ktv_salaries || 0,
-      clinicNetProfit: dto.netProfit || dto.net_profit || 0,
-      profitMarginPercent: dto.netMarginPct || dto.profit_margin_pct || 0,
+      monthYear: firstString(dto, ['month', 'month_year'], ''),
+      treatmentRevenue: firstNumber(dto, ['totalRevenue', 'total_revenue'], 0),
+      clinicOperatingExpense: firstNumber(dto, ['operatingExpense', 'total_operating_expenses'], 0),
+      doctorSalaryExpense: firstNumber(dto, ['salaryExpense', 'total_ktv_salaries'], 0),
+      clinicNetProfit: firstNumber(dto, ['netProfit', 'net_profit'], 0),
+      profitMarginPercent: firstNumber(dto, ['netMarginPct', 'profit_margin_pct'], 0),
     };
   }
 
@@ -69,13 +128,15 @@ export class HealthcareFinanceAdapter implements IndustryFinanceAdapter<Record<s
       credit_card: 'Thẻ tín dụng',
     };
 
+    const paymentMethod = getString(dto, 'paymentMethod', '');
+
     return {
-      id: dto.id,
-      type: dto.type,
-      amount: dto.amount,
-      paymentMethod: methodLabels[dto.paymentMethod] || dto.paymentMethod || 'Khác',
-      timestamp: dto.timestamp || dto.occurredAt || dto.receivedDate || '',
-      description: dto.description || dto.notes || 'Không có mô tả',
+      id: requireString(dto, 'id'),
+      type: getTransactionType(dto),
+      amount: requireNumber(dto, 'amount'),
+      paymentMethod: methodLabels[paymentMethod] || paymentMethod || 'Khác',
+      timestamp: firstString(dto, ['timestamp', 'occurredAt', 'receivedDate'], ''),
+      description: firstString(dto, ['description', 'notes'], 'Không có mô tả'),
       status: dto.status === 'confirmed' || dto.status === 'approved' || dto.status === 'paid' ? 'Đã xác nhận' : 'Chờ xử lý',
     };
   }
@@ -85,8 +146,8 @@ export class HealthcarePayrollAdapter implements IndustryPayrollAdapter<Record<s
   map(dto: Record<string, unknown>): HealthcarePayrollVM {
     // Determine healthcareRole based on database role, name prefix or email pattern
     let healthcareRole: 'doctor' | 'nurse' | 'assistant' = 'assistant';
-    const fullName = dto.full_name || '';
-    const email = dto.email || '';
+    const fullName = getString(dto, 'full_name', '');
+    const email = getString(dto, 'email', '');
 
     if (dto.role === 'ktv_lead' || fullName.includes('BS.') || email.includes('doctor')) {
       healthcareRole = 'doctor';
@@ -98,7 +159,7 @@ export class HealthcarePayrollAdapter implements IndustryPayrollAdapter<Record<s
 
     // Generate descriptive position tier label based on resolved role and tier level
     let positionTierLabel = 'Thành viên';
-    const tier = dto.positionTier || dto.position_tier || 'junior';
+    const tier = firstString(dto, ['positionTier', 'position_tier'], 'junior');
 
     if (healthcareRole === 'doctor') {
       if (tier === 'lead') positionTierLabel = 'Bác sĩ Trưởng khoa';
@@ -115,15 +176,15 @@ export class HealthcarePayrollAdapter implements IndustryPayrollAdapter<Record<s
     }
 
     return {
-      employeeId: dto.id || dto.ktv_id || '',
+      employeeId: firstString(dto, ['id', 'ktv_id'], ''),
       employeeName: fullName || 'Nhân viên y tế',
       role: healthcareRole,
       positionTier: positionTierLabel,
-      hireDate: dto.hire_date || '',
-      baseSalary: dto.base_salary || 0,
-      procedureBonus: dto.service_percentage_bonus || dto.session_bonus || 0,
-      totalSalary: dto.total_salary || 0,
-      status: dto.status || 'draft',
+      hireDate: getString(dto, 'hire_date', ''),
+      baseSalary: getNumber(dto, 'base_salary', 0),
+      procedureBonus: firstNumber(dto, ['service_percentage_bonus', 'session_bonus'], 0),
+      totalSalary: getNumber(dto, 'total_salary', 0),
+      status: getString(dto, 'status', 'draft'),
     };
   }
 }

@@ -13,6 +13,7 @@
  */
 
 import { LocationId, LocationType } from './inventory.types';
+export type { LocationType } from './inventory.types';
 
 /**
  * Location Code
@@ -30,15 +31,15 @@ export interface LocationCode {
  */
 export interface Location {
   id: LocationId;
-  tenant_id: string;
+  tenantId: string;
   
   // Identity
   location_code: LocationCode;
   location_name: string;
-  location_type: LocationType;
+  locationType: LocationType;
   
   // Hierarchy (optional, generic)
-  parent_location_id?: LocationId;
+  parent_locationId?: LocationId;
   
   // Address (optional)
   address?: {
@@ -53,29 +54,40 @@ export interface Location {
   status: 'ACTIVE' | 'INACTIVE' | 'CLOSED';
   
   // Audit
-  created_at: Date;
-  updated_at: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 /**
  * Create Location Props
  */
 export interface CreateLocationProps {
-  tenant_id: string;
+  tenantId: string;
   location_code: string;
   location_name: string;
-  location_type: LocationType;
-  parent_location_id?: string;
+  locationType: LocationType;
+  parent_locationId?: string;
   address?: Location['address'];
+}
+
+/**
+ * Update Location Props
+ */
+export interface UpdateLocationProps {
+  location_name?: string;
+  locationType?: LocationType;
+  parent_locationId?: string;
+  address?: Location['address'];
+  status?: Location['status'];
 }
 
 /**
  * Location Filters
  */
 export interface LocationFilters {
-  location_type?: LocationType | LocationType[];
+  locationType?: LocationType | LocationType[];
   status?: Location['status'];
-  parent_location_id?: string;
+  parent_locationId?: string;
   location_code_like?: string;
   location_name_like?: string;
 }

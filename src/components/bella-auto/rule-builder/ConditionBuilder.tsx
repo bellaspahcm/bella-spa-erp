@@ -64,7 +64,7 @@ const ENTITY_FIELDS: Record<string, Array<{ key: string; label: string; type: st
   ],
 };
 
-const OPERATORS: Record<string, Array<{ key: string; label: string }>> = {
+const OPERATORS: Record<string, Array<{ key: RuleCondition['operator']; label: string }>> = {
   number: [
     { key: 'equals', label: 'Bằng (=)' },
     { key: 'not_equals', label: 'Khác (≠)' },
@@ -89,6 +89,21 @@ const OPERATORS: Record<string, Array<{ key: string; label: string }>> = {
     { key: 'between', label: 'Trong khoảng' },
   ],
 };
+
+const OPERATOR_KEYS: ReadonlySet<string> = new Set(
+  Object.values(OPERATORS).flatMap((operators) =>
+    operators.map((operator) => operator.key)
+  )
+);
+const LOGIC_OPERATORS: ReadonlySet<string> = new Set(['AND', 'OR']);
+
+function isRuleOperator(value: string): value is RuleCondition['operator'] {
+  return OPERATOR_KEYS.has(value);
+}
+
+function isLogicOperator(value: string): value is NonNullable<RuleCondition['logicOperator']> {
+  return LOGIC_OPERATORS.has(value);
+}
 
 export function ConditionBuilder({
   entityType,
@@ -130,16 +145,34 @@ export function ConditionBuilder({
 
   const renderValueInput = (condition: RuleCondition) => {
     const fieldType = getFieldType(condition.field);
+    const inputValue =
+      typeof condition.value === 'string' || typeof condition.value === 'number'
+        ? condition.value
+        : '';
 
     if (condition.operator === 'between') {
+      const rangeValue = typeof condition.value === 'object' && condition.value !== null
+        ? condition.value
+        : undefined;
+      const fromValue = rangeValue && 'from' in rangeValue &&
+        (typeof rangeValue.from === 'string' || typeof rangeValue.from === 'number')
+        ? rangeValue.from
+        : '';
+      const toValue = rangeValue && 'to' in rangeValue &&
+        (typeof rangeValue.to === 'string' || typeof rangeValue.to === 'number')
+        ? rangeValue.to
+        : '';
+
       return (
         <div className="flex items-center gap-2">
           <input
             type={fieldType === 'date' ? 'date' : 'number'}
-            value={condition.value?.from || ''}
+            value={fromValue}
             onChange={(e) =>
               updateCondition(condition.id, {
-                value: { ...condition.value, from: e.target.value },
+                value: rangeValue
+                  ? { ...rangeValue, from: e.target.value }
+                  : { from: e.target.value },
               })
             }
             className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
@@ -149,10 +182,12 @@ export function ConditionBuilder({
           <span className="text-gray-500">đến</span>
           <input
             type={fieldType === 'date' ? 'date' : 'number'}
-            value={condition.value?.to || ''}
+            value={toValue}
             onChange={(e) =>
               updateCondition(condition.id, {
-                value: { ...condition.value, to: e.target.value },
+                value: rangeValue
+                  ? { ...rangeValue, to: e.target.value }
+                  : { to: e.target.value },
               })
             }
             className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
@@ -167,7 +202,7 @@ export function ConditionBuilder({
       return (
         <input
           type="text"
-          value={condition.value || ''}
+          value={inputValue}
           onChange={(e) => updateCondition(condition.id, { value: e.target.value })}
           className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
           placeholder="Nhập danh sách, phân cách bằng dấu phẩy"
@@ -179,7 +214,7 @@ export function ConditionBuilder({
     return (
       <input
         type={fieldType === 'date' ? 'date' : fieldType === 'number' ? 'number' : 'text'}
-        value={condition.value || ''}
+        value={inputValue}
         onChange={(e) => updateCondition(condition.id, { value: e.target.value })}
         className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
         placeholder="Nhập giá trị"
@@ -204,7 +239,18 @@ export function ConditionBuilder({
 
             let valueText = condition.value;
             if (condition.operator === 'between') {
-              valueText = `${condition.value?.from} đến ${condition.value?.to}`;
+              const rangeValue = typeof condition.value === 'object' && condition.value !== null
+                ? condition.value
+                : undefined;
+              const fromValue = rangeValue && 'from' in rangeValue &&
+                (typeof rangeValue.from === 'string' || typeof rangeValue.from === 'number')
+                ? rangeValue.from
+                : '';
+              const toValue = rangeValue && 'to' in rangeValue &&
+                (typeof rangeValue.to === 'string' || typeof rangeValue.to === 'number')
+                ? rangeValue.to
+                : '';
+              valueText = `${fromValue} đến ${toValue}`;
             }
 
             return `${prefix}${field?.label || condition.field} ${operator?.label || condition.operator} ${valueText}`;
@@ -224,11 +270,12 @@ export function ConditionBuilder({
             {index > 0 && (
               <select
                 value={condition.logicOperator || 'AND'}
-                onChange={(e) =>
-                  updateCondition(condition.id, {
-                    logicOperator: e.target.value as 'AND' | 'OR',
-                  })
-                }
+                onChange={(e) => {
+                  const nextOperator = e.target.value;
+                  if (isLogicOperator(nextOperator)) {
+                    updateCondition(condition.id, { logicOperator: nextOperator });
+                  }
+                }}
                 className="px-3 py-2 border border-gray-300 rounded-md bg-white"
                 disabled={readonly}
               >
@@ -254,7 +301,12 @@ export function ConditionBuilder({
             {/* Operator Selector */}
             <select
               value={condition.operator}
-              onChange={(e) => updateCondition(condition.id, { operator: e.target.value as unknown })}
+              onChange={(e) => {
+                const nextOperator = e.target.value;
+                if (isRuleOperator(nextOperator)) {
+                  updateCondition(condition.id, { operator: nextOperator });
+                }
+              }}
               className="px-3 py-2 border border-gray-300 rounded-md bg-white min-w-[150px]"
               disabled={readonly}
             >

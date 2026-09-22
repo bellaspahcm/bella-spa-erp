@@ -30,6 +30,7 @@ import {
   getPrescriptionsAction,
   approvePrescriptionAction
 } from '@/services/healthcare/healthcare-actions';
+import type { PrescriptionViewModel } from '@/services/healthcare/healthcare-actions';
 import { createClient } from '@/lib/supabase-client';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
@@ -75,6 +76,14 @@ interface PrescriptionReview {
   status: 'pending_review' | 'dispensing' | 'completed';
   createdAt: string;
   cdssAlerts?: string[];
+}
+
+function getReviewStatus(status: string): PrescriptionReview['status'] {
+  if (status === 'dispensing' || status === 'completed') {
+    return status;
+  }
+
+  return 'pending_review';
 }
 
 export default function PharmacyPage() {
@@ -169,48 +178,42 @@ export default function PharmacyPage() {
       const res = await getPrescriptionsAction();
       if (res.success && res.data) {
         if (res.data.length > 0) {
-          const mapped: PrescriptionReview[] = res.data.map((rx: Record<string, unknown>) => {
-            const drugs = Array.isArray(rx.drugs) ? rx.drugs : [];
-            const primaryDrug = drugs[0] || {};
+          const mapped: PrescriptionReview[] = res.data.map((rx: PrescriptionViewModel) => {
             let alerts: string[] = [];
-            if (rx.notes && rx.notes.startsWith('[')) {
-              try {
-                alerts = JSON.parse(rx.notes);
-              } catch (_) {}
-            } else if (rx.notes) {
-              alerts = [rx.notes];
+            if (rx.cdssAlerts.length > 0) {
+              alerts = rx.cdssAlerts;
             } else {
-              if (primaryDrug.drugName?.includes('Augmentin')) {
+              if (rx.drugName.includes('Augmentin')) {
                 alerts = [
                   '⚠️ TƯƠNG TÁC THUỐC: Bệnh nhân đang dùng Warfarin (Nguy cơ xuất huyết cao)',
                   '💡 CHỈNH LIỀU SUY THẬN: eGFR = 28 ml/min ➔ Khuyên dùng 500mg mỗi 12h',
                   '🚨 DỊ ỨNG: Tiền sử Dị ứng Penicillin nhẹ',
                 ];
-              } else if (primaryDrug.drugName?.includes('Morphin')) {
+              } else if (rx.drugName.includes('Morphin')) {
                 alerts = [
                   '⚠️ THUỐC ĐỘC KHUÔN HÀNG: Yêu cầu Ký Số Xác Nhận Kép (Dược Sĩ + Bác Sĩ)',
                   '📦 FEFO: Xuất lô Lô Cận Hạn LOT-MRP-9902X trước (Hạn: 15/11/2026)',
                 ];
-              } else if (primaryDrug.drugName?.includes('Paracetamol')) {
+              } else if (rx.drugName.includes('Paracetamol')) {
                 alerts = ['🟢 Thai kỳ Nhóm B: An toàn cho phụ nữ mang thai'];
               }
             }
 
             return {
               id: rx.id,
-              ticketNumber: `STT-${rx.id.substring(0, 3).toUpperCase()}`,
-              patientName: rx.patient?.display_name || 'Bệnh Nhân',
-              patientAge: rx.patient?.display_name?.includes('Hùng') ? 45 : rx.patient?.display_name?.includes('Hoàng') ? 30 : 28,
-              patientWeight: rx.patient?.display_name?.includes('Hùng') ? 68 : rx.patient?.display_name?.includes('Hoàng') ? 72 : 52,
-              eGFR: rx.patient?.display_name?.includes('Hùng') ? 28 : undefined,
-              isPregnant: rx.patient?.display_name?.includes('Mai') ? true : false,
-              doctorName: rx.doctor?.display_name || 'BS. Trực Lâm Sàng',
-              drugName: primaryDrug.drugName || 'Thuốc',
-              qty: primaryDrug.qty || 1,
-              unit: rx.patient?.display_name?.includes('Hoàng') ? 'Ống' : 'Viên',
-              dosageInstruction: primaryDrug.dosageInstruction || 'Uống theo đơn',
-              status: rx.status as unknown,
-              createdAt: new Date(rx.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+              ticketNumber: rx.ticketNumber,
+              patientName: rx.patientName,
+              patientAge: rx.patientName.includes('Hùng') ? 45 : rx.patientName.includes('Hoàng') ? 30 : 28,
+              patientWeight: rx.patientName.includes('Hùng') ? 68 : rx.patientName.includes('Hoàng') ? 72 : 52,
+              eGFR: rx.patientName.includes('Hùng') ? 28 : undefined,
+              isPregnant: rx.patientName.includes('Mai') ? true : false,
+              doctorName: rx.doctorName,
+              drugName: rx.drugName,
+              qty: rx.qty,
+              unit: rx.patientName.includes('Hoàng') ? 'Ống' : rx.unit,
+              dosageInstruction: rx.dosageInstruction,
+              status: getReviewStatus(rx.status),
+              createdAt: rx.createdAt,
               cdssAlerts: alerts,
             };
           });

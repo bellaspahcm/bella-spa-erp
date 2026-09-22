@@ -498,18 +498,18 @@ export default function HospitalAdmissionsPage() {
       setAdmissions(MOCK_INPATIENT_DATA);
       // Construct basic mock beds/wards
       setBeds([
-        { id: 'bed-001', tenant_id: 'bella_healthcare', ward_id: 'ward-001', bed_code: 'ICU-BED-01', bed_type: 'icu', status: 'occupied', daily_rate: 1500000, updated_at: '' },
-        { id: 'bed-002', tenant_id: 'bella_healthcare', ward_id: 'ward-002', bed_code: 'INT-BED-01', bed_type: 'regular', status: 'occupied', daily_rate: 500000, updated_at: '' },
-        { id: 'bed-003', tenant_id: 'bella_healthcare', ward_id: 'ward-001', bed_code: 'ICU-BED-02', bed_type: 'icu', status: 'occupied', daily_rate: 1500000, updated_at: '' },
-        { id: 'bed-004', tenant_id: 'bella_healthcare', ward_id: 'ward-003', bed_code: 'PED-BED-01', bed_type: 'regular', status: 'occupied', daily_rate: 600000, updated_at: '' },
-        { id: 'bed-005', tenant_id: 'bella_healthcare', ward_id: 'ward-001', bed_code: 'ICU-BED-03', bed_type: 'icu', status: 'occupied', daily_rate: 1500000, updated_at: '' },
-        { id: 'bed-006', tenant_id: 'bella_healthcare', ward_id: 'ward-001', bed_code: 'ICU-BED-04', bed_type: 'icu', status: 'available', daily_rate: 1500000, updated_at: '' },
-        { id: 'bed-007', tenant_id: 'bella_healthcare', ward_id: 'ward-002', bed_code: 'INT-BED-02', bed_type: 'regular', status: 'available', daily_rate: 500000, updated_at: '' },
+        { id: 'bed-001', tenant_id: 'bella_healthcare', room_id: 'room-001', ward_id: 'ward-001', bed_code: 'ICU-BED-01', bed_type: 'icu', status: 'occupied', daily_rate: 1500000, updated_at: '' },
+        { id: 'bed-002', tenant_id: 'bella_healthcare', room_id: 'room-002', ward_id: 'ward-002', bed_code: 'INT-BED-01', bed_type: 'standard', status: 'occupied', daily_rate: 500000, updated_at: '' },
+        { id: 'bed-003', tenant_id: 'bella_healthcare', room_id: 'room-001', ward_id: 'ward-001', bed_code: 'ICU-BED-02', bed_type: 'icu', status: 'occupied', daily_rate: 1500000, updated_at: '' },
+        { id: 'bed-004', tenant_id: 'bella_healthcare', room_id: 'room-003', ward_id: 'ward-003', bed_code: 'PED-BED-01', bed_type: 'standard', status: 'occupied', daily_rate: 600000, updated_at: '' },
+        { id: 'bed-005', tenant_id: 'bella_healthcare', room_id: 'room-001', ward_id: 'ward-001', bed_code: 'ICU-BED-03', bed_type: 'icu', status: 'occupied', daily_rate: 1500000, updated_at: '' },
+        { id: 'bed-006', tenant_id: 'bella_healthcare', room_id: 'room-001', ward_id: 'ward-001', bed_code: 'ICU-BED-04', bed_type: 'icu', status: 'available', daily_rate: 1500000, updated_at: '' },
+        { id: 'bed-007', tenant_id: 'bella_healthcare', room_id: 'room-002', ward_id: 'ward-002', bed_code: 'INT-BED-02', bed_type: 'standard', status: 'available', daily_rate: 500000, updated_at: '' },
       ]);
       setWards([
-        { id: 'ward-001', tenant_id: 'bella_healthcare', name: 'Khoa Hồi Sức Tích Cực (ICU)', description: 'Chăm sóc đặc biệt', created_at: '', updated_at: '' },
-        { id: 'ward-002', tenant_id: 'bella_healthcare', name: 'Khoa Nội Tổng Hợp', description: 'Điều trị nội khoa', created_at: '', updated_at: '' },
-        { id: 'ward-003', tenant_id: 'bella_healthcare', name: 'Khoa Nhi', description: 'Chăm sóc trẻ em', created_at: '', updated_at: '' },
+        { id: 'ward-001', tenant_id: 'bella_healthcare', building_id: 'bldg-001', code: 'ICU', name: 'Khoa Hồi Sức Tích Cực (ICU)' },
+        { id: 'ward-002', tenant_id: 'bella_healthcare', building_id: 'bldg-001', code: 'INT', name: 'Khoa Nội Tổng Hợp' },
+        { id: 'ward-003', tenant_id: 'bella_healthcare', building_id: 'bldg-001', code: 'PED', name: 'Khoa Nhi' },
       ]);
       setSelectedBedId('bed-006');
     } finally {
@@ -603,6 +603,7 @@ export default function HospitalAdmissionsPage() {
         allergies: [],
         last_activity: { time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }), text: 'Tiếp nhận nhập viện (Demo Local)' },
         attending_doctor_name: doctorName,
+        admitted_at: new Date().toISOString(),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };

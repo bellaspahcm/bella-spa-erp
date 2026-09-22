@@ -31,6 +31,7 @@ import type {
   CapacityKnowledge,
   CapacityEvaluationOptions,
   CapacitySnapshot,
+  CapacityConflict,
 } from './types';
 
 /**

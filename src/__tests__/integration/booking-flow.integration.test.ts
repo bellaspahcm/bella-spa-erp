@@ -54,9 +54,11 @@ import {
 import { createBookingWithValidation } from '@/modules/bookings/actions/session-log-actions';
 import { checkBookingCapacity, autoAssignKtv } from '@/services/booking-decision.service';
 
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const HAS_SUPABASE_CREDENTIALS = Boolean(
-  (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL) &&
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  SUPABASE_URL &&
+  process.env.SUPABASE_SERVICE_ROLE_KEY &&
+  !SUPABASE_URL.includes('mock.supabase.co')
 );
 const describeIntegration = HAS_SUPABASE_CREDENTIALS ? describe : describe.skip;
 

@@ -20,10 +20,9 @@
 import {
   InventoryMovement,
   MovementId,
-  CustodyEvent,
 } from '../movement.types';
 import { LotNumber, SerialNumber } from '../inventory.types';
-import { TraceabilityRecord } from '../traceability.types';
+import { CustodyEvent, TraceabilityRecord } from '../traceability.types';
 
 /**
  * Lineage Query Options

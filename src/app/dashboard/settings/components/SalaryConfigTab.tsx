@@ -30,6 +30,12 @@ interface SalaryConfigTabProps {
   setGeneralSettings: (settings: TenantGeneralSettings) => void;
 }
 
+function getConfigPrimitive(value: unknown): string | number | null | undefined {
+  return typeof value === 'string' || typeof value === 'number' || value === null || value === undefined
+    ? value
+    : undefined;
+}
+
 export default function SalaryConfigTab({
   generalSettings,
   setGeneralSettings,
@@ -194,23 +200,23 @@ export default function SalaryConfigTab({
           const config = commissionResult.data.config as Record<string, unknown>;
           
           if (commissionResult.data.strategy === 'fixed') {
-            setCommissionRate(parseIntegerInput(config.rate, { fallback: 120000 }));
-            setCommissionMinSessions(parseIntegerInput(config.minSessions));
+            setCommissionRate(parseIntegerInput(getConfigPrimitive(config.rate), { fallback: 120000 }));
+            setCommissionMinSessions(parseIntegerInput(getConfigPrimitive(config.minSessions)));
           } else if (commissionResult.data.strategy === 'tier') {
             setCommissionTiers((config.tiers as Array<{ min: number; max: number; rate: number }>) || commissionTiers);
           } else if (commissionResult.data.strategy === 'percentage') {
-            setCommissionPercentage(parseIntegerInput(config.percentage, { fallback: 15 }));
-            setCommissionMinRevenue(parseIntegerInput(config.minRevenue));
+            setCommissionPercentage(parseIntegerInput(getConfigPrimitive(config.percentage), { fallback: 15 }));
+            setCommissionMinRevenue(parseIntegerInput(getConfigPrimitive(config.minRevenue)));
           } else if (commissionResult.data.strategy === 'service') {
             setCommissionServiceRates((config.rates as Record<string, number>) || commissionServiceRates);
           } else if (commissionResult.data.strategy === 'product_sales') {
-            setProductSalesPercentage(parseIntegerInput(config.percentage, { fallback: 15 }));
-            setProductSalesMinSales(parseIntegerInput(config.minSales));
+            setProductSalesPercentage(parseIntegerInput(getConfigPrimitive(config.percentage), { fallback: 15 }));
+            setProductSalesMinSales(parseIntegerInput(getConfigPrimitive(config.minSales)));
           } else if (commissionResult.data.strategy === 'total_revenue') {
-            setTotalRevenuePercentage(parseIntegerInput(config.percentage, { fallback: 10 }));
-            setTotalRevenueMinRevenue(parseIntegerInput(config.minRevenue));
-            setServiceWeight(parseDecimalInput(config.serviceWeight, { fallback: 1.0 }));
-            setProductWeight(parseDecimalInput(config.productWeight, { fallback: 1.0 }));
+            setTotalRevenuePercentage(parseIntegerInput(getConfigPrimitive(config.percentage), { fallback: 10 }));
+            setTotalRevenueMinRevenue(parseIntegerInput(getConfigPrimitive(config.minRevenue)));
+            setServiceWeight(parseDecimalInput(getConfigPrimitive(config.serviceWeight), { fallback: 1.0 }));
+            setProductWeight(parseDecimalInput(getConfigPrimitive(config.productWeight), { fallback: 1.0 }));
           }
         } else {
           // Default to fixed strategy if no config

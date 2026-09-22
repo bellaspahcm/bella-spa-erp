@@ -1,5 +1,10 @@
 # BELLA HEALTHCARE & EDUCATION OS — CLAUDE & AI CODING INSTRUCTIONS
 
+Before implementing or modifying any Bella OS or Product, you MUST read and obey:
+- **Bella AI Coding Constitution:** `docs/governance/BELLA_AI_CODING_CONSTITUTION.md`
+
+These rules are mandatory. Do not introduce new abstractions, Platform/Core changes, or cross-scope refactors without evidence and explicit justification.
+
 Before creating or modifying any code, you MUST read and obey:
 - **Healthcare OS Constitution:** `docs/architecture/HEALTHCARE_VERTICAL_CODING_CONSTITUTION.md`
 - **Education OS Constitution:** `docs/architecture/EDUCATION_VERTICAL_CODING_CONSTITUTION.md`
