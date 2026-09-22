@@ -268,6 +268,20 @@ export interface ProductivityTrends {
   utilizationRatePct: number;
 }
 
+interface RetentionWorkforceRow {
+  month: string;
+  current_headcount: number | null;
+  terminations: number | null;
+  avg_tenure_months: number | null;
+}
+
+interface ProductivityPerformanceRow {
+  month: string;
+  total_sessions_completed: number | null;
+  total_revenue_contributed: number | null;
+  working_days: number | null;
+}
+
 // ─── Helper Functions ───────────────────────────────────────────────────────
 
 /**
@@ -526,8 +540,8 @@ export async function getRetentionAnalysis(
     return null;
   }
   
-  // Cast data to proper type after error check and null check
-  const rows = data as unknown as Record<string, unknown>[];
+  // Cast materialized view rows to the read-model fields consumed below.
+  const rows = data as unknown as RetentionWorkforceRow[];
   
   // Aggregate retention metrics
   const totalHeadcount = rows.reduce((sum, row) => sum + (row.current_headcount || 0), 0);
@@ -670,8 +684,8 @@ export async function getProductivityTrends(
     return [];
   }
   
-  // Cast data to proper type after error check and null check
-  const rows = data as unknown as Record<string, unknown>[];
+  // Cast materialized view rows to the read-model fields consumed below.
+  const rows = data as unknown as ProductivityPerformanceRow[];
   
   // Group by month and aggregate
   const monthlyData = rows.reduce((acc, row) => {

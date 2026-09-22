@@ -42,6 +42,38 @@ interface ProductSale {
   customer_name?: string;
 }
 
+interface ProductSaleSource {
+  id: string;
+  ktv_id: string;
+  customer_id: string | null;
+  product_name: string;
+  product_category: string | null;
+  product_sku: string | null;
+  quantity: number;
+  unit_price: number;
+  total_sales_amount: number;
+  calculated_commission: number;
+  override_commission_type: 'fixed' | 'percentage' | null;
+  override_commission_value: number | null;
+  payment_method: 'cash' | 'bank_transfer' | 'zalo_pay' | 'momo' | 'card';
+  sale_date: string;
+  status: 'pending' | 'completed' | 'cancelled' | 'refunded';
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  users?: {
+    full_name?: string | null;
+  } | null;
+  customers?: {
+    name_mother?: string | null;
+    name_baby?: string | null;
+  } | null;
+}
+
+function isProductSaleSource(value: unknown): value is ProductSaleSource {
+  return typeof value === 'object' && value !== null;
+}
+
 interface ProductSalesFilters {
   startDate?: string;
   endDate?: string;
@@ -110,7 +142,7 @@ export function ProductSalesListPage() {
         console.log('[ProductSalesListPage] Raw data from API:', result.data);
         
         // Transform data to match ProductSale interface with safety checks
-        const salesData = (result.data.sales as unknown[]).map((sale, index) => {
+        const salesData = result.data.sales.filter(isProductSaleSource).map((sale, index) => {
           try {
             // Safely extract KTV name
             const ktvName = sale.users?.full_name || 'Unknown KTV';
