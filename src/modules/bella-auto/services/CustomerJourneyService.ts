@@ -103,7 +103,7 @@ export const CustomerJourneyService = {
       throw new Error(`CustomerJourneyService.transitionStage: Khách hàng chưa được khởi tạo hành trình.`);
     }
 
-    const currentStage = (journey.auto_journey_stages as unknown);
+    const currentStage = (journey.auto_journey_stages as any);
     const fromStageCode = currentStage?.code;
     const fromStageId = journey.current_stage_id;
 
