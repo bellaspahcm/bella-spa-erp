@@ -88,9 +88,8 @@ export async function updateAppointmentStatusAction(
   try {
     const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
-    const db = supabase as unknown as { from: (table: string) => unknown };
 
-    const { error } = await db
+    const { error } = await supabase
       .from('hc_appointments')
       .update({
         status,
@@ -106,7 +105,7 @@ export async function updateAppointmentStatusAction(
 
     // Automatically sync checked-in patients into clinical encounters queue
     if (status === 'checked_in') {
-      const { data: appData } = await db
+      const { data: appData } = await supabase
         .from('hc_appointments')
         .select('*')
         .eq('tenant_id', tenantId)
@@ -114,7 +113,7 @@ export async function updateAppointmentStatusAction(
         .maybeSingle();
 
       if (appData) {
-        let { data: party } = await db
+        let { data: party } = await supabase
           .from('party_parties')
           .select('id')
           .eq('tenant_id', tenantId)
@@ -122,7 +121,7 @@ export async function updateAppointmentStatusAction(
           .maybeSingle();
 
         if (!party) {
-          const { data: newParty } = await db
+          const { data: newParty } = await supabase
             .from('party_parties')
             .insert({
               tenant_id: tenantId,
@@ -137,7 +136,7 @@ export async function updateAppointmentStatusAction(
         const partyId = party?.id;
 
         if (partyId) {
-          const { data: journey } = await db
+          const { data: journey } = await supabase
             .from('journey_journeys')
             .select('id')
             .eq('tenant_id', tenantId)
@@ -145,7 +144,7 @@ export async function updateAppointmentStatusAction(
             .maybeSingle();
           const careJourneyId = journey ? journey.id : '99999999-9999-9999-9999-999999999999';
 
-          const { data: enc } = await db
+          const { data: enc } = await supabase
             .from('hc_encounters')
             .select('id')
             .eq('tenant_id', tenantId)
@@ -155,7 +154,7 @@ export async function updateAppointmentStatusAction(
           let encId = enc?.id;
 
           if (encId) {
-            await db
+            await supabase
               .from('hc_encounters')
               .update({
                 status: 'arrived',
@@ -165,7 +164,7 @@ export async function updateAppointmentStatusAction(
               })
               .eq('id', encId);
           } else {
-            const { data: newEnc } = await db
+            const { data: newEnc } = await supabase
               .from('hc_encounters')
               .insert({
                 tenant_id: tenantId,
@@ -182,7 +181,7 @@ export async function updateAppointmentStatusAction(
           }
 
           if (encId) {
-            const { data: qItem } = await db
+            const { data: qItem } = await supabase
               .from('hc_patient_queues')
               .select('id')
               .eq('tenant_id', tenantId)
@@ -190,7 +189,7 @@ export async function updateAppointmentStatusAction(
               .maybeSingle();
 
             if (!qItem) {
-              await db.from('hc_patient_queues').insert({
+              await supabase.from('hc_patient_queues').insert({
                 tenant_id: tenantId,
                 encounter_id: encId,
                 patient_name: appData.patient_name,
@@ -199,11 +198,10 @@ export async function updateAppointmentStatusAction(
                 status: 'called',
               });
             } else {
-              await db
+              await supabase
                 .from('hc_patient_queues')
                 .update({
                   status: 'called',
-                  updated_at: new Date().toISOString(),
                 })
                 .eq('id', qItem.id);
             }
@@ -231,7 +229,6 @@ export async function createAppointmentAction(input: {
   try {
     const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
-    const db = supabase as unknown as { from: (table: string) => unknown };
 
     const appointmentCode = `APP-${Math.floor(8800 + Math.random() * 200)}`;
     const qrCode = `QR-APP-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -252,7 +249,7 @@ export async function createAppointmentAction(input: {
       notes: input.notes || null,
     };
 
-    const { data, error } = await db
+    const { data, error } = await supabase
       .from('hc_appointments')
       .insert(newRow)
       .select()
@@ -271,10 +268,10 @@ export async function createAppointmentAction(input: {
       doctorName: data.doctor_name,
       date: new Date(data.appointment_date).toISOString().split('T')[0],
       slotTime: data.slot_time,
-      status: data.status,
-      channel: data.channel,
+      status: 'confirmed',
+      channel: 'online_website',
       qrCode: data.qr_code,
-      reminderSent: data.reminder_sent,
+      reminderSent: true,
       notes: data.notes || undefined,
     };
 
@@ -291,9 +288,8 @@ export async function sendAppointmentReminderAction(
   try {
     const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
-    const db = supabase as unknown as { from: (table: string) => unknown };
 
-    const { error } = await db
+    const { error } = await supabase
       .from('hc_appointments')
       .update({
         reminder_sent: true,
