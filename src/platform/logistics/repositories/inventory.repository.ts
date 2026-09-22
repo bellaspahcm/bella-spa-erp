@@ -295,7 +295,7 @@ export class InventoryRepository implements IInventoryRepository {
   async save(inventory: Inventory): Promise<Result<Inventory>> {
     try {
       // Check if inventory exists
-      const existsResult = await this.findById(inventory.tenantId, inventory.id);
+      const existsResult = await this.findById(inventory.tenant_id, inventory.id.value);
       if (existsResult.isFailure) {
         return existsResult as Result<Inventory>;
       }
@@ -308,8 +308,8 @@ export class InventoryRepository implements IInventoryRepository {
         const { data, error } = await this.db
           .from('inventory')
           .update(updateData)
-          .eq('tenant_id', inventory.tenantId)
-          .eq('id', inventory.id)
+          .eq('tenant_id', inventory.tenant_id)
+          .eq('id', inventory.id.value)
           .select()
           .single();
 
@@ -427,17 +427,17 @@ export class InventoryRepository implements IInventoryRepository {
       itemId: row.item_id,
       locationId: row.location_id,
       locationType: row.location_type as 'WAREHOUSE' | 'STORE' | 'FULFILLMENT' | '3PL' | 'TRANSIT' | 'SUPPLIER' | 'CUSTOMER' | 'STAGING' | 'QUARANTINE' | 'DAMAGE' | 'VIRTUAL',
-      
+
       quantityOnHand: row.quantity_on_hand,
       quantityReserved: row.quantity_reserved,
       quantityAvailable: row.quantity_available,
-      
+
       lotNumber: row.lot_number,
       serialNumber: row.serial_number,
       expiryDate: row.expiry_date ? new Date(row.expiry_date) : null,
-      
+
       status: row.status as 'AVAILABLE' | 'RESERVED' | 'ALLOCATED' | 'QUARANTINE' | 'DAMAGED' | 'EXPIRED' | 'TRANSIT' | 'BLOCKED',
-      
+
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
     };
@@ -453,17 +453,17 @@ export class InventoryRepository implements IInventoryRepository {
       item_id: inventory.itemId,
       location_id: inventory.locationId,
       location_type: inventory.locationType,
-      
+
       quantity_on_hand: inventory.quantityOnHand,
       quantity_reserved: inventory.quantityReserved,
       quantity_available: inventory.quantityAvailable,
-      
+
       lot_number: inventory.lotNumber,
       serial_number: inventory.serialNumber,
       expiry_date: inventory.expiryDate?.toISOString() || null,
-      
+
       status: inventory.status,
-      
+
       created_at: inventory.createdAt.toISOString(),
       updated_at: inventory.updatedAt.toISOString(),
     };
@@ -477,11 +477,11 @@ export class InventoryRepository implements IInventoryRepository {
       quantity_on_hand: inventory.quantityOnHand,
       quantity_reserved: inventory.quantityReserved,
       quantity_available: inventory.quantityAvailable,
-      
+
       expiry_date: inventory.expiryDate?.toISOString() || null,
-      
+
       status: inventory.status,
-      
+
       updated_at: inventory.updatedAt.toISOString(),
     };
   }

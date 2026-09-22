@@ -34,23 +34,23 @@ export class InventoryDomain {
    */
   static create(props: CreateInventoryProps): Result<Inventory> {
     // Quantity validations
-    if (props.quantityOnHand < 0) {
+    if (props.quantity_on_hand < 0) {
       return Result.fail(
         'Quantity on hand cannot be negative',
         'INVENTORY_QUANTITY_ON_HAND_NEGATIVE'
       );
     }
 
-    const quantityReserved = props.quantityReserved || 0;
+    const quantity_reserved = 0; // CreateInventoryProps does not carry quantity_reserved (canonical)
     
-    if (quantityReserved < 0) {
+    if (quantity_reserved < 0) {
       return Result.fail(
         'Quantity reserved cannot be negative',
         'INVENTORY_QUANTITY_RESERVED_NEGATIVE'
       );
     }
 
-    if (quantityReserved > props.quantityOnHand) {
+    if (quantity_reserved > props.quantity_on_hand) {
       return Result.fail(
         'Quantity reserved cannot exceed quantity on hand',
         'INVENTORY_RESERVED_EXCEEDS_ON_HAND'
@@ -58,7 +58,7 @@ export class InventoryDomain {
     }
 
     // Traceability validation
-    if (props.serialNumber && !props.lotNumber) {
+    if (props.serial_number && !props.lot_number) {
       return Result.fail(
         'Serial number requires lot number',
         'INVENTORY_SERIAL_REQUIRES_LOT'
@@ -68,24 +68,24 @@ export class InventoryDomain {
     const now = new Date();
 
     const inventory: Inventory = {
-      id: props.id || crypto.randomUUID(),
-      tenantId: props.tenantId,
-      itemId: props.itemId,
-      locationId: props.locationId,
-      locationType: props.locationType,
-      
-      quantityOnHand: props.quantityOnHand,
-      quantityReserved,
-      quantityAvailable: props.quantityOnHand - quantityReserved,
-      
-      lotNumber: props.lotNumber || null,
-      serialNumber: props.serialNumber || null,
-      expiryDate: props.expiryDate || null,
-      
+      id: { value: crypto.randomUUID() },
+      tenant_id: props.tenant_id,
+      item_id: { value: props.item_id },
+      location_id: { value: props.location_id },
+      location_type: props.location_type,
+
+      quantity_on_hand: props.quantity_on_hand,
+      quantity_reserved,
+      quantity_available: props.quantity_on_hand - quantity_reserved,
+
+      lot_number: props.lot_number ? { value: props.lot_number } : undefined,
+      serial_number: props.serial_number ? { value: props.serial_number } : undefined,
+      expiry_date: props.expiry_date || undefined,
+
       status: props.status || 'AVAILABLE',
-      
-      createdAt: now,
-      updatedAt: now,
+
+      created_at: now,
+      updated_at: now,
     };
 
     return Result.ok(inventory);
@@ -93,30 +93,23 @@ export class InventoryDomain {
 
   /**
    * Update inventory quantity (typically from movement)
-   * 
-   * Maintains invariant: reserved <= on_hand
+   *
+   * Canonical UpdateInventoryQuantityProps uses quantity_delta (relative adjustment).
+   * Applies delta to current quantity_on_hand; reserved is unchanged.
+   * Maintains invariant: reserved <= on_hand.
    */
   static updateQuantity(
     inventory: Inventory,
     props: UpdateInventoryQuantityProps
   ): Result<Inventory> {
-    const newQuantityOnHand = props.quantityOnHand;
-    const newQuantityReserved = props.quantityReserved !== undefined 
-      ? props.quantityReserved 
-      : inventory.quantityReserved;
+    const newQuantityOnHand = inventory.quantity_on_hand + props.quantity_delta;
+    const newQuantityReserved = inventory.quantity_reserved;
 
     // Validations
     if (newQuantityOnHand < 0) {
       return Result.fail(
         'Quantity on hand cannot be negative',
         'INVENTORY_QUANTITY_ON_HAND_NEGATIVE'
-      );
-    }
-
-    if (newQuantityReserved < 0) {
-      return Result.fail(
-        'Quantity reserved cannot be negative',
-        'INVENTORY_QUANTITY_RESERVED_NEGATIVE'
       );
     }
 
@@ -129,10 +122,10 @@ export class InventoryDomain {
 
     const updated: Inventory = {
       ...inventory,
-      quantityOnHand: newQuantityOnHand,
-      quantityReserved: newQuantityReserved,
-      quantityAvailable: newQuantityOnHand - newQuantityReserved,
-      updatedAt: new Date(),
+      quantity_on_hand: newQuantityOnHand,
+      quantity_reserved: newQuantityReserved,
+      quantity_available: newQuantityOnHand - newQuantityReserved,
+      updated_at: new Date(),
     };
 
     return Result.ok(updated);
@@ -157,21 +150,21 @@ export class InventoryDomain {
       );
     }
 
-    const newQuantityReserved = inventory.quantityReserved + props.quantity;
+    const newQuantityReserved = inventory.quantity_reserved + props.quantity;
 
-    if (newQuantityReserved > inventory.quantityOnHand) {
+    if (newQuantityReserved > inventory.quantity_on_hand) {
       return Result.fail(
-        `Insufficient inventory to reserve ${props.quantity} (available: ${inventory.quantityAvailable})`,
+        `Insufficient inventory to reserve ${props.quantity} (available: ${inventory.quantity_available})`,
         'INVENTORY_INSUFFICIENT_FOR_RESERVATION'
       );
     }
 
     const updated: Inventory = {
       ...inventory,
-      quantityReserved: newQuantityReserved,
-      quantityAvailable: inventory.quantityOnHand - newQuantityReserved,
-      status: newQuantityReserved === inventory.quantityOnHand ? 'RESERVED' : inventory.status,
-      updatedAt: new Date(),
+      quantity_reserved: newQuantityReserved,
+      quantity_available: inventory.quantity_on_hand - newQuantityReserved,
+      status: newQuantityReserved === inventory.quantity_on_hand ? 'RESERVED' : inventory.status,
+      updated_at: new Date(),
     };
 
     return Result.ok(updated);
@@ -197,21 +190,21 @@ export class InventoryDomain {
       );
     }
 
-    const newQuantityReserved = inventory.quantityReserved + props.quantity;
+    const newQuantityReserved = inventory.quantity_reserved + props.quantity;
 
-    if (newQuantityReserved > inventory.quantityOnHand) {
+    if (newQuantityReserved > inventory.quantity_on_hand) {
       return Result.fail(
-        `Insufficient inventory to reserve ${props.quantity} (available: ${inventory.quantityAvailable})`,
+        `Insufficient inventory to reserve ${props.quantity} (available: ${inventory.quantity_available})`,
         'INVENTORY_INSUFFICIENT_FOR_RESERVATION'
       );
     }
 
     const updated: Inventory = {
       ...inventory,
-      quantityReserved: newQuantityReserved,
-      quantityAvailable: inventory.quantityOnHand - newQuantityReserved,
-      status: newQuantityReserved === inventory.quantityOnHand ? 'RESERVED' : inventory.status,
-      updatedAt: new Date(),
+      quantity_reserved: newQuantityReserved,
+      quantity_available: inventory.quantity_on_hand - newQuantityReserved,
+      status: newQuantityReserved === inventory.quantity_on_hand ? 'RESERVED' : inventory.status,
+      updated_at: new Date(),
     };
 
     return Result.ok(updated);
@@ -274,16 +267,16 @@ export class InventoryDomain {
     }
 
     // Operational invariant: sufficient quantity available
-    if (quantity > inventory.quantityAvailable) {
+    if (quantity > inventory.quantity_available) {
       return Result.fail(
-        `Insufficient inventory to reserve ${quantity} (available: ${inventory.quantityAvailable})`,
+        `Insufficient inventory to reserve ${quantity} (available: ${inventory.quantity_available})`,
         'INVENTORY_INSUFFICIENT_QUANTITY'
       );
     }
 
     // Calculate new quantities
-    const newQuantityReserved = inventory.quantityReserved + quantity;
-    const newQuantityAvailable = inventory.quantityOnHand - newQuantityReserved;
+    const newQuantityReserved = inventory.quantity_reserved + quantity;
+    const newQuantityAvailable = inventory.quantity_on_hand - newQuantityReserved;
 
     // Determine new status
     const newStatus: InventoryStatus = newQuantityAvailable === 0 ? 'RESERVED' : 'AVAILABLE';
@@ -301,10 +294,10 @@ export class InventoryDomain {
 
     const updated: Inventory = {
       ...inventory,
-      quantityReserved: newQuantityReserved,
-      quantityAvailable: newQuantityAvailable,
+      quantity_reserved: newQuantityReserved,
+      quantity_available: newQuantityAvailable,
       status: newStatus,
-      updatedAt: new Date(),
+      updated_at: new Date(),
     };
 
     return Result.ok(updated);
@@ -334,7 +327,7 @@ export class InventoryDomain {
     }
 
     // Operational invariant: must have reserved quantity to ship
-    if (inventory.quantityReserved === 0) {
+    if (inventory.quantity_reserved === 0) {
       return Result.fail(
         'Cannot ship inventory with no reserved quantity',
         'INVENTORY_NO_RESERVED_QUANTITY'
@@ -353,7 +346,7 @@ export class InventoryDomain {
     const updated: Inventory = {
       ...inventory,
       status: 'TRANSIT',
-      updatedAt: new Date(),
+      updated_at: new Date(),
     };
 
     return Result.ok(updated);
@@ -388,9 +381,9 @@ export class InventoryDomain {
     }
 
     // Operational invariant: cannot cancel more than reserved
-    if (quantity > inventory.quantityReserved) {
+    if (quantity > inventory.quantity_reserved) {
       return Result.fail(
-        `Cannot cancel ${quantity} units (only ${inventory.quantityReserved} reserved)`,
+        `Cannot cancel ${quantity} units (only ${inventory.quantity_reserved} reserved)`,
         'INVENTORY_CANCEL_EXCEEDS_RESERVED'
       );
     }
@@ -404,8 +397,8 @@ export class InventoryDomain {
     }
 
     // Calculate new quantities
-    const newQuantityReserved = inventory.quantityReserved - quantity;
-    const newQuantityAvailable = inventory.quantityOnHand - newQuantityReserved;
+    const newQuantityReserved = inventory.quantity_reserved - quantity;
+    const newQuantityAvailable = inventory.quantity_on_hand - newQuantityReserved;
 
     // Determine new status (transition to AVAILABLE if no reservations left)
     const newStatus: InventoryStatus = newQuantityReserved === 0 && inventory.status === 'RESERVED'
@@ -425,10 +418,10 @@ export class InventoryDomain {
 
     const updated: Inventory = {
       ...inventory,
-      quantityReserved: newQuantityReserved,
-      quantityAvailable: newQuantityAvailable,
+      quantity_reserved: newQuantityReserved,
+      quantity_available: newQuantityAvailable,
       status: newStatus,
-      updatedAt: new Date(),
+      updated_at: new Date(),
     };
 
     return Result.ok(updated);
@@ -458,9 +451,9 @@ export class InventoryDomain {
     }
 
     // Operational invariant: cannot expire reserved inventory
-    if (inventory.quantityReserved > 0) {
+    if (inventory.quantity_reserved > 0) {
       return Result.fail(
-        `Cannot expire inventory with ${inventory.quantityReserved} reserved units`,
+        `Cannot expire inventory with ${inventory.quantity_reserved} reserved units`,
         'INVENTORY_HAS_RESERVED_QUANTITY'
       );
     }
@@ -477,8 +470,8 @@ export class InventoryDomain {
     const updated: Inventory = {
       ...inventory,
       status: 'EXPIRED',
-      quantityAvailable: 0, // Expired inventory has zero availability
-      updatedAt: new Date(),
+      quantity_available: 0, // Expired inventory has zero availability
+      updated_at: new Date(),
     };
 
     return Result.ok(updated);
@@ -533,23 +526,23 @@ export class InventoryDomain {
       );
     }
 
-    if (props.quantity > inventory.quantityReserved) {
+    if (props.quantity > inventory.quantity_reserved) {
       return Result.fail(
-        `Cannot release ${props.quantity} (only ${inventory.quantityReserved} reserved)`,
+        `Cannot release ${props.quantity} (only ${inventory.quantity_reserved} reserved)`,
         'INVENTORY_RELEASE_EXCEEDS_RESERVED'
       );
     }
 
-    const newQuantityReserved = inventory.quantityReserved - props.quantity;
+    const newQuantityReserved = inventory.quantity_reserved - props.quantity;
 
     const updated: Inventory = {
       ...inventory,
-      quantityReserved: newQuantityReserved,
-      quantityAvailable: inventory.quantityOnHand - newQuantityReserved,
+      quantity_reserved: newQuantityReserved,
+      quantity_available: inventory.quantity_on_hand - newQuantityReserved,
       status: newQuantityReserved === 0 && inventory.status === 'RESERVED' 
         ? 'AVAILABLE' 
         : inventory.status,
-      updatedAt: new Date(),
+      updated_at: new Date(),
     };
 
     return Result.ok(updated);
@@ -586,9 +579,9 @@ export class InventoryDomain {
     }
 
     // Cannot have reservations in DAMAGED/EXPIRED status
-    if ((newStatus === 'DAMAGED' || newStatus === 'EXPIRED') && inventory.quantityReserved > 0) {
+    if ((newStatus === 'DAMAGED' || newStatus === 'EXPIRED') && inventory.quantity_reserved > 0) {
       return Result.fail(
-        `Cannot mark as ${newStatus} while ${inventory.quantityReserved} units are reserved`,
+        `Cannot mark as ${newStatus} while ${inventory.quantity_reserved} units are reserved`,
         'INVENTORY_RESERVED_UNITS_PREVENT_STATUS_CHANGE'
       );
     }
@@ -596,7 +589,7 @@ export class InventoryDomain {
     const updated: Inventory = {
       ...inventory,
       status: newStatus,
-      updatedAt: new Date(),
+      updated_at: new Date(),
     };
 
     return Result.ok(updated);
@@ -608,7 +601,7 @@ export class InventoryDomain {
   static isAvailableForReservation(inventory: Inventory): boolean {
     return (
       inventory.status === 'AVAILABLE' &&
-      inventory.quantityAvailable > 0
+      inventory.quantity_available > 0
     );
   }
 
@@ -623,9 +616,9 @@ export class InventoryDomain {
    * Check if inventory has expired (based on expiry date)
    */
   static hasExpired(inventory: Inventory, referenceDate: Date = new Date()): boolean {
-    if (!inventory.expiryDate) return false;
+    if (!inventory.expiry_date) return false;
     
-    const expiryDate = new Date(inventory.expiryDate);
+    const expiryDate = new Date(inventory.expiry_date);
     return expiryDate < referenceDate;
   }
 
@@ -633,9 +626,9 @@ export class InventoryDomain {
    * Calculate days until expiry
    */
   static daysUntilExpiry(inventory: Inventory, referenceDate: Date = new Date()): number | null {
-    if (!inventory.expiryDate) return null;
+    if (!inventory.expiry_date) return null;
 
-    const expiryDate = new Date(inventory.expiryDate);
+    const expiryDate = new Date(inventory.expiry_date);
     const diffMs = expiryDate.getTime() - referenceDate.getTime();
     const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
@@ -660,7 +653,7 @@ export class InventoryDomain {
    * Calculate allocation percentage
    */
   static getAllocationPercentage(inventory: Inventory): number {
-    if (inventory.quantityOnHand === 0) return 0;
-    return (inventory.quantityReserved / inventory.quantityOnHand) * 100;
+    if (inventory.quantity_on_hand === 0) return 0;
+    return (inventory.quantity_reserved / inventory.quantity_on_hand) * 100;
   }
 }

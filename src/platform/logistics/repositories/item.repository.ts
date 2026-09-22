@@ -130,7 +130,7 @@ export class ItemRepository implements IItemRepository {
   async save(item: Item): Promise<Result<Item>> {
     try {
       // Check if item exists
-      const existsResult = await this.findById(item.tenantId, item.id);
+      const existsResult = await this.findById(item.tenant_id, item.id.value);
       if (existsResult.isFailure) {
         return existsResult as Result<Item>;
       }
@@ -143,8 +143,8 @@ export class ItemRepository implements IItemRepository {
         const { data, error } = await this.db
           .from('items')
           .update(updateData)
-          .eq('tenant_id', item.tenantId)
-          .eq('id', item.id)
+          .eq('tenant_id', item.tenant_id)
+          .eq('id', item.id.value)
           .select()
           .single();
 
@@ -166,7 +166,7 @@ export class ItemRepository implements IItemRepository {
           // Check for unique violation
           if (error.code === '23505') {
             return Result.fail(
-              `Item with SKU code '${item.skuCode}' already exists`,
+              `Item with SKU code '${item.sku_code.value}' already exists`,
               'ITEM_SKU_DUPLICATE'
             );
           }
@@ -275,32 +275,32 @@ export class ItemRepository implements IItemRepository {
    */
   private mapToInsert(item: Item): LogisticsItemInsert {
     return {
-      id: item.id,
-      tenant_id: item.tenantId,
-      sku_code: item.skuCode,
+      id: item.id.value,
+      tenant_id: item.tenant_id,
+      sku_code: item.sku_code.value,
       name: item.name,
       description: item.description,
       
       type: item.type,
       category: item.category,
       
-      base_uom: item.baseUom,
-      weight_kg: item.weightKg,
-      dimensions_json: item.dimensionsJson as Record<string, unknown> | null,
+      base_uom: item.base_uom,
+      weight_kg: item.weight_kg,
+      dimensions_json: (item.dimensions ?? null) as Record<string, unknown> | null,
       
-      standard_cost: item.standardCost,
+      standard_cost: item.standard_cost,
       currency: item.currency,
       
-      lot_tracked: item.lotTracked,
-      serial_tracked: item.serialTracked,
-      expiry_tracked: item.expiryTracked,
+      lot_tracked: item.lot_tracked,
+      serial_tracked: item.serial_tracked,
+      expiry_tracked: item.expiry_tracked,
       
       status: item.status,
       
-      created_at: item.createdAt.toISOString(),
-      updated_at: item.updatedAt.toISOString(),
-      created_by: item.createdBy,
-      updated_by: item.updatedBy,
+      created_at: item.created_at.toISOString(),
+      updated_at: item.updated_at.toISOString(),
+      created_by: item.created_by,
+      updated_by: item.updated_by,
     };
   }
 
@@ -315,21 +315,21 @@ export class ItemRepository implements IItemRepository {
       type: item.type,
       category: item.category,
       
-      base_uom: item.baseUom,
-      weight_kg: item.weightKg,
-      dimensions_json: item.dimensionsJson as Record<string, unknown> | null,
+      base_uom: item.base_uom,
+      weight_kg: item.weight_kg,
+      dimensions_json: (item.dimensions ?? null) as Record<string, unknown> | null,
       
-      standard_cost: item.standardCost,
+      standard_cost: item.standard_cost,
       currency: item.currency,
       
-      lot_tracked: item.lotTracked,
-      serial_tracked: item.serialTracked,
-      expiry_tracked: item.expiryTracked,
+      lot_tracked: item.lot_tracked,
+      serial_tracked: item.serial_tracked,
+      expiry_tracked: item.expiry_tracked,
       
       status: item.status,
       
-      updated_at: item.updatedAt.toISOString(),
-      updated_by: item.updatedBy,
+      updated_at: item.updated_at.toISOString(),
+      updated_by: item.updated_by,
     };
   }
 }

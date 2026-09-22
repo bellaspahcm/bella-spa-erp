@@ -19,8 +19,8 @@ import type {
   MovementType,
   MovementDirection,
   MovementStatus,
-  LocationType,
 } from './movement.types';
+import type { LocationType } from './inventory.types';
 
 export class MovementDomain {
   /**
@@ -35,14 +35,6 @@ export class MovementDomain {
    * - Movement number must be unique (enforced at repository layer)
    */
   static create(props: CreateMovementProps): Result<InventoryMovement> {
-    // Movement number required
-    if (!props.movementNumber || props.movementNumber.trim() === '') {
-      return Result.fail(
-        'Movement number is required',
-        'MOVEMENT_NUMBER_REQUIRED'
-      );
-    }
-
     // Quantity validation
     if (props.quantity <= 0) {
       return Result.fail(
@@ -53,17 +45,17 @@ export class MovementDomain {
 
     // Direction validation
     const directionResult = this.validateDirection(
-      props.movementType,
+      props.movement_type,
       props.direction,
-      props.fromLocationId,
-      props.toLocationId
+      props.from_location_id,
+      props.to_location_id
     );
     if (directionResult.isFailure) {
       return directionResult as Result<InventoryMovement>;
     }
 
     // Unit cost validation
-    if (props.unitCost !== undefined && props.unitCost < 0) {
+    if (props.unit_cost !== undefined && props.unit_cost < 0) {
       return Result.fail(
         'Unit cost cannot be negative',
         'MOVEMENT_UNIT_COST_NEGATIVE'
@@ -71,7 +63,7 @@ export class MovementDomain {
     }
 
     // Total cost validation
-    if (props.totalCost !== undefined && props.totalCost < 0) {
+    if (props.total_cost !== undefined && props.total_cost < 0) {
       return Result.fail(
         'Total cost cannot be negative',
         'MOVEMENT_TOTAL_COST_NEGATIVE'
@@ -87,7 +79,7 @@ export class MovementDomain {
     }
 
     // Traceability validation
-    if (props.serialNumber && !props.lotNumber) {
+    if (props.serial_number && !props.lot_number) {
       return Result.fail(
         'Serial number requires lot number',
         'MOVEMENT_SERIAL_REQUIRES_LOT'
@@ -96,53 +88,53 @@ export class MovementDomain {
 
     const now = new Date();
 
+    // Generate movement number internally (not in CreateMovementProps)
+    const movementNumber = `MOV-${Date.now()}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
+
     const movement: InventoryMovement = {
-      id: props.id || crypto.randomUUID(),
-      movementNumber: props.movementNumber.trim(),
-      tenantId: props.tenantId,
-      
-      movementDate: props.movementDate || now,
-      createdAt: now,
-      createdBy: props.createdBy || null,
-      
-      movementType: props.movementType,
+      id: { value: crypto.randomUUID() },
+      movement_number: { value: movementNumber },
+      tenant_id: props.tenant_id,
+
+      movement_date: props.movement_date || now,
+      created_at: now,
+      created_by: props.created_by,
+
+      movement_type: props.movement_type,
       direction: props.direction,
-      
-      itemId: props.itemId,
-      
-      fromLocationId: props.fromLocationId || null,
-      fromLocationType: props.fromLocationType || null,
-      toLocationId: props.toLocationId || null,
-      toLocationType: props.toLocationType || null,
-      
+
+      item_id: { value: props.item_id },
+
+      from_location_id: props.from_location_id ? { value: props.from_location_id } : undefined,
+      from_location_type: props.from_location_type,
+      to_location_id: props.to_location_id ? { value: props.to_location_id } : undefined,
+      to_location_type: props.to_location_type,
+
       quantity: props.quantity,
-      unitOfMeasure: props.unitOfMeasure,
-      
-      lotNumber: props.lotNumber || null,
-      serialNumber: props.serialNumber || null,
-      expiryDate: props.expiryDate || null,
-      
-      unitCost: props.unitCost !== undefined ? props.unitCost : null,
-      totalCost: props.totalCost !== undefined ? props.totalCost : null,
-      currency: props.currency || null,
-      
-      sourceDocumentType: props.sourceDocumentType || null,
-      sourceDocumentId: props.sourceDocumentId || null,
-      sourceDocumentNumber: props.sourceDocumentNumber || null,
-      sourceLineItemId: props.sourceLineItemId || null,
-      
-      reason: props.reason || null,
-      notes: props.notes || null,
-      
-      batchId: props.batchId || null,
-      
-      approvedBy: null,
-      approvedAt: null,
-      
-      status: props.status || 'COMPLETED',
-      completedAt: props.status === 'COMPLETED' ? now : null,
-      cancelledAt: null,
-      cancellationReason: null,
+      unit_of_measure: props.unit_of_measure,
+
+      lot_number: props.lot_number ? { value: props.lot_number } : undefined,
+      serial_number: props.serial_number ? { value: props.serial_number } : undefined,
+      expiry_date: props.expiry_date,
+
+      unit_cost: props.unit_cost,
+      total_cost: props.total_cost,
+      currency: props.currency,
+
+      source_document: props.source_document,
+
+      reason: props.reason,
+      notes: props.notes,
+
+      batch_id: props.batch_id,
+
+      approved_by: props.approved_by,
+      approved_at: undefined,
+
+      status: 'COMPLETED',
+      completed_at: now,
+      cancelled_at: undefined,
+      cancellation_reason: undefined,
     };
 
     return Result.ok(movement);
@@ -257,10 +249,10 @@ export class MovementDomain {
 
     const approved: InventoryMovement = {
       ...movement,
-      approvedBy,
-      approvedAt: now,
+      approved_by: approvedBy,
+      approved_at: now,
       status: 'COMPLETED',
-      completedAt: now,
+      completed_at: now,
     };
 
     return Result.ok(approved);
@@ -295,8 +287,8 @@ export class MovementDomain {
     const cancelled: InventoryMovement = {
       ...movement,
       status: 'CANCELLED',
-      cancelledAt: now,
-      cancellationReason: cancellationReason.trim(),
+      cancelled_at: now,
+      cancellation_reason: cancellationReason.trim(),
     };
 
     return Result.ok(cancelled);
@@ -355,8 +347,8 @@ export class MovementDomain {
    * Calculate total cost if unit cost provided
    */
   static calculateTotalCost(movement: InventoryMovement): number | null {
-    if (movement.unitCost === null) return null;
-    return movement.unitCost * movement.quantity;
+    if (movement.unit_cost === undefined) return null;
+    return movement.unit_cost * movement.quantity;
   }
 
   /**
@@ -373,21 +365,21 @@ export class MovementDomain {
       expiryTracked: boolean;
     }
   ): Result<void> {
-    if (itemRequirements.lotTracked && !movement.lotNumber) {
+    if (itemRequirements.lotTracked && !movement.lot_number) {
       return Result.fail(
         'Item requires lot tracking, but movement has no lot number',
         'MOVEMENT_LOT_NUMBER_REQUIRED'
       );
     }
 
-    if (itemRequirements.serialTracked && !movement.serialNumber) {
+    if (itemRequirements.serialTracked && !movement.serial_number) {
       return Result.fail(
         'Item requires serial tracking, but movement has no serial number',
         'MOVEMENT_SERIAL_NUMBER_REQUIRED'
       );
     }
 
-    if (itemRequirements.expiryTracked && !movement.expiryDate) {
+    if (itemRequirements.expiryTracked && !movement.expiry_date) {
       return Result.fail(
         'Item requires expiry tracking, but movement has no expiry date',
         'MOVEMENT_EXPIRY_DATE_REQUIRED'
@@ -406,26 +398,26 @@ export class MovementDomain {
    */
   static getDescription(movement: InventoryMovement): string {
     const parts: string[] = [
-      movement.movementType.replace(/_/g, ' '),
-      `${movement.quantity} ${movement.unitOfMeasure}`,
+      movement.movement_type.replace(/_/g, ' '),
+      `${movement.quantity} ${movement.unit_of_measure}`,
     ];
 
     if (movement.direction === 'INBOUND') {
-      parts.push(`→ ${movement.toLocationType || 'location'}`);
+      parts.push(`→ ${movement.to_location_type || 'location'}`);
     } else if (movement.direction === 'OUTBOUND') {
-      parts.push(`← ${movement.fromLocationType || 'location'}`);
+      parts.push(`← ${movement.from_location_type || 'location'}`);
     } else if (movement.direction === 'NEUTRAL') {
       parts.push(
-        `${movement.fromLocationType || 'location'} → ${movement.toLocationType || 'location'}`
+        `${movement.from_location_type || 'location'} → ${movement.to_location_type || 'location'}`
       );
     }
 
-    if (movement.lotNumber) {
-      parts.push(`Lot: ${movement.lotNumber}`);
+    if (movement.lot_number) {
+      parts.push(`Lot: ${movement.lot_number.value}`);
     }
 
-    if (movement.serialNumber) {
-      parts.push(`S/N: ${movement.serialNumber}`);
+    if (movement.serial_number) {
+      parts.push(`S/N: ${movement.serial_number.value}`);
     }
 
     return parts.join(' | ');

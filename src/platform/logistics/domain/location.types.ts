@@ -70,6 +70,17 @@ export interface CreateLocationProps {
 }
 
 /**
+ * Update Location Props
+ */
+export interface UpdateLocationProps {
+  location_name?: string;
+  location_type?: LocationType;
+  parent_location_id?: string;
+  address?: Location['address'];
+  status?: Location['status'];
+}
+
+/**
  * Location Filters
  */
 export interface LocationFilters {

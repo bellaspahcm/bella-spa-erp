@@ -14,6 +14,7 @@
 import { Result } from './core/result';
 import type {
   Item,
+  ItemDimensions,
   CreateItemProps,
   UpdateItemProps,
   ItemType,
@@ -35,7 +36,7 @@ export class ItemDomain {
    */
   static create(props: CreateItemProps): Result<Item> {
     // Required fields
-    if (!props.skuCode || props.skuCode.trim() === '') {
+    if (!props.sku_code || props.sku_code.trim() === '') {
       return Result.fail('SKU code is required', 'ITEM_SKU_CODE_REQUIRED');
     }
 
@@ -43,12 +44,12 @@ export class ItemDomain {
       return Result.fail('Item name is required', 'ITEM_NAME_REQUIRED');
     }
 
-    if (!props.baseUom) {
+    if (!props.base_uom) {
       return Result.fail('Base unit of measure is required', 'ITEM_BASE_UOM_REQUIRED');
     }
 
     // Traceability invariant: serial tracking requires lot tracking
-    if (props.serialTracked && !props.lotTracked) {
+    if (props.serial_tracked && !props.lot_tracked) {
       return Result.fail(
         'Serial tracking requires lot tracking to be enabled',
         'ITEM_SERIAL_REQUIRES_LOT'
@@ -56,20 +57,20 @@ export class ItemDomain {
     }
 
     // Weight validation
-    if (props.weightKg !== undefined && props.weightKg < 0) {
+    if (props.weight_kg !== undefined && props.weight_kg < 0) {
       return Result.fail('Weight cannot be negative', 'ITEM_WEIGHT_NEGATIVE');
     }
 
     // Dimensions validation (if provided)
-    if (props.dimensionsJson) {
-      const dimResult = this.validateDimensions(props.dimensionsJson);
+    if (props.dimensions) {
+      const dimResult = this.validateDimensions(props.dimensions);
       if (dimResult.isFailure) {
         return dimResult as Result<Item>;
       }
     }
 
     // Standard cost validation
-    if (props.standardCost !== undefined && props.standardCost < 0) {
+    if (props.standard_cost !== undefined && props.standard_cost < 0) {
       return Result.fail('Standard cost cannot be negative', 'ITEM_COST_NEGATIVE');
     }
 
@@ -84,32 +85,31 @@ export class ItemDomain {
     const now = new Date();
 
     const item: Item = {
-      id: props.id || crypto.randomUUID(),
-      tenantId: props.tenantId,
-      skuCode: props.skuCode.trim(),
+      id: { value: crypto.randomUUID() },
+      tenant_id: props.tenant_id,
+      sku_code: { value: props.sku_code.trim() },
       name: props.name.trim(),
-      description: props.description?.trim() || null,
-      
+      description: props.description?.trim() || undefined,
+
       type: props.type || 'GOODS',
-      category: props.category?.trim() || null,
-      
-      baseUom: props.baseUom,
-      weightKg: props.weightKg !== undefined ? props.weightKg : null,
-      dimensionsJson: props.dimensionsJson || null,
-      
-      standardCost: props.standardCost !== undefined ? props.standardCost : null,
+      category: props.category?.trim() || undefined,
+
+      base_uom: props.base_uom,
+      weight_kg: props.weight_kg !== undefined ? props.weight_kg : undefined,
+      dimensions: props.dimensions || undefined,
+
+      standard_cost: props.standard_cost !== undefined ? props.standard_cost : undefined,
       currency: props.currency || 'VND',
-      
-      lotTracked: props.lotTracked || false,
-      serialTracked: props.serialTracked || false,
-      expiryTracked: props.expiryTracked || false,
-      
-      status: props.status || 'ACTIVE',
-      
-      createdAt: now,
-      updatedAt: now,
-      createdBy: props.createdBy || null,
-      updatedBy: props.updatedBy || null,
+
+      lot_tracked: props.lot_tracked || false,
+      serial_tracked: props.serial_tracked || false,
+      expiry_tracked: props.expiry_tracked || false,
+
+      status: 'ACTIVE',
+
+      created_at: now,
+      updated_at: now,
+      created_by: props.created_by || undefined,
     };
 
     return Result.ok(item);
@@ -130,12 +130,12 @@ export class ItemDomain {
     }
 
     // Traceability invariant
-    const newLotTracked = updates.lotTracked !== undefined 
-      ? updates.lotTracked 
-      : existingItem.lotTracked;
-    const newSerialTracked = updates.serialTracked !== undefined 
-      ? updates.serialTracked 
-      : existingItem.serialTracked;
+    const newLotTracked = updates.lot_tracked !== undefined
+      ? updates.lot_tracked
+      : existingItem.lot_tracked;
+    const newSerialTracked = updates.serial_tracked !== undefined
+      ? updates.serial_tracked
+      : existingItem.serial_tracked;
 
     if (newSerialTracked && !newLotTracked) {
       return Result.fail(
@@ -145,20 +145,20 @@ export class ItemDomain {
     }
 
     // Weight validation
-    if (updates.weightKg !== undefined && updates.weightKg < 0) {
+    if (updates.weight_kg !== undefined && updates.weight_kg < 0) {
       return Result.fail('Weight cannot be negative', 'ITEM_WEIGHT_NEGATIVE');
     }
 
     // Dimensions validation
-    if (updates.dimensionsJson) {
-      const dimResult = this.validateDimensions(updates.dimensionsJson);
+    if (updates.dimensions) {
+      const dimResult = this.validateDimensions(updates.dimensions);
       if (dimResult.isFailure) {
         return dimResult as Result<Item>;
       }
     }
 
     // Standard cost validation
-    if (updates.standardCost !== undefined && updates.standardCost < 0) {
+    if (updates.standard_cost !== undefined && updates.standard_cost < 0) {
       return Result.fail('Standard cost cannot be negative', 'ITEM_COST_NEGATIVE');
     }
 
@@ -174,13 +174,13 @@ export class ItemDomain {
       ...existingItem,
       ...updates,
       name: updates.name?.trim() || existingItem.name,
-      description: updates.description !== undefined 
-        ? updates.description?.trim() || null 
+      description: updates.description !== undefined
+        ? updates.description?.trim() || undefined
         : existingItem.description,
-      category: updates.category !== undefined 
-        ? updates.category?.trim() || null 
+      category: updates.category !== undefined
+        ? updates.category?.trim() || undefined
         : existingItem.category,
-      updatedAt: new Date(),
+      updated_at: new Date(),
     };
 
     return Result.ok(updatedItem);
@@ -230,38 +230,38 @@ export class ItemDomain {
    * Check if item requires lot tracking
    */
   static requiresLotTracking(item: Item): boolean {
-    return item.lotTracked || item.serialTracked || item.expiryTracked;
+    return item.lot_tracked || item.serial_tracked || item.expiry_tracked;
   }
 
   /**
    * Check if item requires serial tracking
    */
   static requiresSerialTracking(item: Item): boolean {
-    return item.serialTracked;
+    return item.serial_tracked;
   }
 
   /**
    * Check if item requires expiry tracking
    */
   static requiresExpiryTracking(item: Item): boolean {
-    return item.expiryTracked;
+    return item.expiry_tracked;
   }
 
   /**
    * Validate dimensions JSON structure
    */
-  private static validateDimensions(dimensionsJson: Record<string, unknown>): Result<void> {
-    const { length, width, height, unit } = dimensionsJson;
+  private static validateDimensions(dimensions: ItemDimensions): Result<void> {
+    const { length, width, height, unit } = dimensions;
 
-    if (typeof length === 'number' && length < 0) {
+    if (length < 0) {
       return Result.fail('Length cannot be negative', 'ITEM_DIMENSION_NEGATIVE');
     }
 
-    if (typeof width === 'number' && width < 0) {
+    if (width < 0) {
       return Result.fail('Width cannot be negative', 'ITEM_DIMENSION_NEGATIVE');
     }
 
-    if (typeof height === 'number' && height < 0) {
+    if (height < 0) {
       return Result.fail('Height cannot be negative', 'ITEM_DIMENSION_NEGATIVE');
     }
 
@@ -276,9 +276,9 @@ export class ItemDomain {
    * Calculate item volume (if dimensions provided)
    */
   static calculateVolume(item: Item): number | null {
-    if (!item.dimensionsJson) return null;
+    if (!item.dimensions) return null;
 
-    const { length, width, height } = item.dimensionsJson;
+    const { length, width, height } = item.dimensions;
     
     if (
       typeof length === 'number' &&

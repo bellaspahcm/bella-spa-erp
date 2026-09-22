@@ -66,6 +66,9 @@ export type ComplianceStatus =
  * 
  * Complete traceability information for lot or serial
  */
+/** Alias for TraceabilityRecord — backward-compatible export for domain consumers */
+export type Traceability = TraceabilityRecord;
+
 export interface TraceabilityRecord {
   id: TraceabilityId;
   tenant_id: string;
@@ -95,6 +98,18 @@ export interface TraceabilityRecord {
   // Audit
   created_at: Date;
   updated_at: Date;
+}
+
+/**
+ * Add Custody Event Props
+ */
+export interface AddCustodyEventProps {
+  location_id: string;
+  location_type?: LocationType;
+  action: string;
+  user_id?: string;
+  notes?: string;
+  timestamp?: Date;
 }
 
 /**

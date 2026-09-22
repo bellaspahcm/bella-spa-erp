@@ -24,7 +24,8 @@
 import { Result } from './core/result';
 import { InventoryDomain } from './inventory.domain';
 import { MovementDomain } from './movement.domain';
-import type { Inventory, Movement } from './inventory.types';
+import type { Inventory } from './inventory.types';
+import type { InventoryMovement } from './movement.types';
 
 export class InventoryOperationsDomain {
   /**
@@ -52,7 +53,7 @@ export class InventoryOperationsDomain {
       referenceType?: string;
       referenceId?: string;
     }
-  ): Result<{ inventory: Inventory; movement: Movement }> {
+  ): Result<{ inventory: Inventory; movement: InventoryMovement }> {
     // Step 1: Reserve inventory
     const reserveResult = InventoryDomain.reserveOperation(inventory, params.quantity, {
       reason: params.reason,
@@ -68,22 +69,20 @@ export class InventoryOperationsDomain {
 
     const reservedInventory = reserveResult.value!;
 
-    // Step 2: Create outbound movement
-    // Generate movement number (E7.1 frozen contract requires this)
-    const movementNumber = `MV-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+
 
     const movementResult = MovementDomain.create({
-      movementNumber,
-      tenantId: inventory.tenantId,
-      itemId: inventory.itemId,
-      fromLocationId: inventory.locationId,
-      toLocationId: null, // Outbound reservation (not yet shipped)
+      tenant_id: inventory.tenant_id,
+      item_id: inventory.item_id.value,
+      from_location_id: inventory.location_id.value,
+      to_location_id: undefined, // Outbound reservation — not yet shipped
       quantity: params.quantity,
-      unitOfMeasure: inventory.uomId,
+      unit_of_measure: 'EACH', // STOP: uomId not in canonical Inventory — defaulting to EACH pending architecture decision
       direction: 'OUTBOUND',
-      movementType: 'ISSUE', // E7.1 frozen enum - use ISSUE for reservation
-      sourceDocumentType: params.referenceType || 'INVENTORY_RESERVATION',
-      sourceDocumentId: params.referenceId || reservedInventory.id,
+      movement_type: 'ISSUE',
+      source_document: params.referenceId
+        ? { document_type: params.referenceType || 'INVENTORY_RESERVATION', document_id: params.referenceId }
+        : undefined,
       notes: params.reason,
     });
 
@@ -118,12 +117,9 @@ export class InventoryOperationsDomain {
       referenceType?: string;
       referenceId?: string;
     }
-  ): Result<{ inventory: Inventory; movement: Movement }> {
+  ): Result<{ inventory: Inventory; movement: InventoryMovement }> {
     // Step 1: Ship inventory
-    const shipResult = InventoryDomain.shipOperation(inventory, {
-      shippedBy: params.shippedBy,
-      shippedAt: params.shippedAt,
-    });
+    const shipResult = InventoryDomain.shipOperation(inventory); // canonical: (inventory: Inventory) — no extra params
 
     if (shipResult.isFailure) {
       return Result.fail(
@@ -134,22 +130,19 @@ export class InventoryOperationsDomain {
 
     const shippedInventory = shipResult.value!;
 
-    // Step 2: Create transfer movement
-    // Generate movement number (E7.1 frozen contract requires this)
-    const movementNumber = `MV-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
 
     const movementResult = MovementDomain.create({
-      movementNumber,
-      tenantId: inventory.tenantId,
-      itemId: inventory.itemId,
-      fromLocationId: inventory.locationId,
-      toLocationId: params.toLocationId,
-      quantity: inventory.quantityReserved, // Ship reserved quantity
-      unitOfMeasure: inventory.uomId,
+      tenant_id: inventory.tenant_id,
+      item_id: inventory.item_id.value,
+      from_location_id: inventory.location_id.value,
+      to_location_id: params.toLocationId,
+      quantity: inventory.quantity_reserved, // Ship reserved quantity
+      unit_of_measure: 'EACH', // STOP: uomId not in canonical Inventory — defaulting to EACH pending architecture decision
       direction: 'OUTBOUND',
-      movementType: 'SHIPMENT', // E7.1 frozen enum
-      sourceDocumentType: params.referenceType || 'INVENTORY_SHIPMENT',
-      sourceDocumentId: params.referenceId || shippedInventory.id,
+      movement_type: 'SHIPMENT',
+      source_document: params.referenceId
+        ? { document_type: params.referenceType || 'INVENTORY_SHIPMENT', document_id: params.referenceId }
+        : undefined,
       notes: `Shipped by ${params.shippedBy}`,
     });
 
@@ -184,12 +177,13 @@ export class InventoryOperationsDomain {
       referenceType?: string;
       referenceId?: string;
     }
-  ): Result<{ inventory: Inventory; movement: Movement }> {
+  ): Result<{ inventory: Inventory; movement: InventoryMovement }> {
     // Step 1: Cancel reservation
-    const cancelResult = InventoryDomain.cancelOperation(inventory, params.quantity, {
-      reason: params.reason,
-      cancelledBy: params.cancelledBy,
-    });
+    const cancelResult = InventoryDomain.cancelOperation(
+      inventory,
+      params.quantity,
+      params.reason, // canonical cancelOperation signature: (inventory, quantity, reason: string)
+    );
 
     if (cancelResult.isFailure) {
       return Result.fail(
@@ -200,22 +194,19 @@ export class InventoryOperationsDomain {
 
     const cancelledInventory = cancelResult.value!;
 
-    // Step 2: Create reversal movement
-    // Generate movement number (E7.1 frozen contract requires this)
-    const movementNumber = `MV-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
 
     const movementResult = MovementDomain.create({
-      movementNumber,
-      tenantId: inventory.tenantId,
-      itemId: inventory.itemId,
-      fromLocationId: null, // Reversal (no source)
-      toLocationId: inventory.locationId,
+      tenant_id: inventory.tenant_id,
+      item_id: inventory.item_id.value,
+      from_location_id: undefined, // Reversal — no source
+      to_location_id: inventory.location_id.value,
       quantity: params.quantity,
-      unitOfMeasure: inventory.uomId,
+      unit_of_measure: 'EACH', // STOP: uomId not in canonical Inventory — defaulting to EACH pending architecture decision
       direction: 'INBOUND',
-      movementType: 'RETURN_RECEIPT', // E7.1 frozen enum - use RETURN_RECEIPT for reversal
-      sourceDocumentType: params.referenceType || 'INVENTORY_CANCELLATION',
-      sourceDocumentId: params.referenceId || cancelledInventory.id,
+      movement_type: 'RETURN_RECEIPT',
+      source_document: params.referenceId
+        ? { document_type: params.referenceType || 'INVENTORY_CANCELLATION', document_id: params.referenceId }
+        : undefined,
       notes: params.reason,
     });
 

@@ -34,21 +34,21 @@ export class LocationDomain {
    */
   static create(props: CreateLocationProps): Result<Location> {
     // Required fields
-    if (!props.locationCode || props.locationCode.trim() === '') {
+    if (!props.location_code || props.location_code.trim() === '') {
       return Result.fail(
         'Location code is required',
         'LOCATION_CODE_REQUIRED'
       );
     }
 
-    if (!props.locationName || props.locationName.trim() === '') {
+    if (!props.location_name || props.location_name.trim() === '') {
       return Result.fail(
         'Location name is required',
         'LOCATION_NAME_REQUIRED'
       );
     }
 
-    if (!props.locationType) {
+    if (!props.location_type) {
       return Result.fail(
         'Location type is required',
         'LOCATION_TYPE_REQUIRED'
@@ -56,8 +56,8 @@ export class LocationDomain {
     }
 
     // Address validation (if provided)
-    if (props.addressJson) {
-      const addressResult = this.validateAddress(props.addressJson);
+    if (props.address) {
+      const addressResult = this.validateAddress(props.address);
       if (addressResult.isFailure) {
         return addressResult as Result<Location>;
       }
@@ -66,20 +66,18 @@ export class LocationDomain {
     const now = new Date();
 
     const location: Location = {
-      id: props.id || crypto.randomUUID(),
-      tenantId: props.tenantId,
-      locationCode: props.locationCode.trim(),
-      locationName: props.locationName.trim(),
-      locationType: props.locationType,
-      
-      parentLocationId: props.parentLocationId || null,
-      
-      addressJson: props.addressJson || null,
-      
-      status: props.status || 'ACTIVE',
-      
-      createdAt: now,
-      updatedAt: now,
+      id: { value: crypto.randomUUID() },
+      tenant_id: props.tenant_id,
+      location_code: { value: props.location_code.trim() },
+      location_name: props.location_name.trim(),
+      location_type: props.location_type,
+      parent_location_id: props.parent_location_id
+        ? { value: props.parent_location_id }
+        : undefined,
+      address: props.address,
+      status: 'ACTIVE',
+      created_at: now,
+      updated_at: now,
     };
 
     return Result.ok(location);
@@ -89,17 +87,17 @@ export class LocationDomain {
    * Update existing location
    * 
    * Cannot change:
-   * - tenantId (immutable)
-   * - locationCode (business key, immutable)
-   * - createdAt (audit)
+   * - tenant_id (immutable)
+   * - location_code (business key, immutable)
+   * - created_at (audit)
    */
   static update(
     existingLocation: Location,
     updates: UpdateLocationProps
   ): Result<Location> {
     // Name cannot be empty if provided
-    if (updates.locationName !== undefined && 
-        (!updates.locationName || updates.locationName.trim() === '')) {
+    if (updates.location_name !== undefined &&
+        (!updates.location_name || updates.location_name.trim() === '')) {
       return Result.fail(
         'Location name cannot be empty',
         'LOCATION_NAME_REQUIRED'
@@ -107,7 +105,8 @@ export class LocationDomain {
     }
 
     // Prevent self-parenting
-    if (updates.parentLocationId === existingLocation.id) {
+    if (updates.parent_location_id !== undefined &&
+        updates.parent_location_id === existingLocation.id.value) {
       return Result.fail(
         'Location cannot be its own parent',
         'LOCATION_CANNOT_BE_SELF_PARENT'
@@ -115,8 +114,8 @@ export class LocationDomain {
     }
 
     // Address validation
-    if (updates.addressJson) {
-      const addressResult = this.validateAddress(updates.addressJson);
+    if (updates.address) {
+      const addressResult = this.validateAddress(updates.address);
       if (addressResult.isFailure) {
         return addressResult as Result<Location>;
       }
@@ -124,9 +123,14 @@ export class LocationDomain {
 
     const updated: Location = {
       ...existingLocation,
-      ...updates,
-      locationName: updates.locationName?.trim() || existingLocation.locationName,
-      updatedAt: new Date(),
+      location_name: updates.location_name?.trim() ?? existingLocation.location_name,
+      location_type: updates.location_type ?? existingLocation.location_type,
+      parent_location_id: updates.parent_location_id !== undefined
+        ? (updates.parent_location_id ? { value: updates.parent_location_id } : undefined)
+        : existingLocation.parent_location_id,
+      address: updates.address !== undefined ? updates.address : existingLocation.address,
+      status: updates.status ?? existingLocation.status,
+      updated_at: new Date(),
     };
 
     return Result.ok(updated);
@@ -205,11 +209,13 @@ export class LocationDomain {
   }
 
   /**
-   * Validate address JSON structure
+   * Validate address structure
    */
-  private static validateAddress(addressJson: Record<string, unknown>): Result<void> {
-    const allowedKeys = ['street', 'city', 'state', 'postalCode', 'country'];
-    const providedKeys = Object.keys(addressJson);
+  private static validateAddress(address: Location['address']): Result<void> {
+    if (!address) return Result.ok(undefined);
+
+    const allowedKeys = ['street', 'city', 'state', 'postal_code', 'country'];
+    const providedKeys = Object.keys(address);
 
     // Check for unknown keys
     const unknownKeys = providedKeys.filter(key => !allowedKeys.includes(key));
@@ -222,7 +228,8 @@ export class LocationDomain {
 
     // All values must be strings (if provided)
     for (const key of providedKeys) {
-      if (addressJson[key] !== null && typeof addressJson[key] !== 'string') {
+      const val = (address as Record<string, unknown>)[key];
+      if (val !== null && val !== undefined && typeof val !== 'string') {
         return Result.fail(
           `Address field '${key}' must be a string`,
           'LOCATION_ADDRESS_FIELD_TYPE_INVALID'
@@ -251,7 +258,7 @@ export class LocationDomain {
    * Check if location has parent (is child)
    */
   static hasParent(location: Location): boolean {
-    return location.parentLocationId !== null;
+    return location.parent_location_id !== undefined;
   }
 
   /**
@@ -262,16 +269,16 @@ export class LocationDomain {
    * Do not treat this as a Logistics OS primitive.
    */
   static getFormattedAddress(location: Location): string | null {
-    if (!location.addressJson) return null;
+    if (!location.address) return null;
 
     const parts: string[] = [];
-    const address = location.addressJson;
+    const address = location.address;
 
-    if (address.street) parts.push(address.street as string);
-    if (address.city) parts.push(address.city as string);
-    if (address.state) parts.push(address.state as string);
-    if (address.postalCode) parts.push(address.postalCode as string);
-    if (address.country) parts.push(address.country as string);
+    if (address.street) parts.push(address.street);
+    if (address.city) parts.push(address.city);
+    if (address.state) parts.push(address.state);
+    if (address.postal_code) parts.push(address.postal_code);
+    if (address.country) parts.push(address.country);
 
     return parts.length > 0 ? parts.join(', ') : null;
   }
@@ -333,7 +340,7 @@ export class LocationDomain {
     const updated: Location = {
       ...location,
       status: 'INACTIVE',
-      updatedAt: new Date(),
+      updated_at: new Date(),
     };
 
     return Result.ok(updated);
@@ -385,7 +392,7 @@ export class LocationDomain {
     const updated: Location = {
       ...location,
       status: 'CLOSED',
-      updatedAt: new Date(),
+      updated_at: new Date(),
     };
 
     return Result.ok(updated);
@@ -437,7 +444,7 @@ export class LocationDomain {
     const updated: Location = {
       ...location,
       status: 'ACTIVE',
-      updatedAt: new Date(),
+      updated_at: new Date(),
     };
 
     return Result.ok(updated);
