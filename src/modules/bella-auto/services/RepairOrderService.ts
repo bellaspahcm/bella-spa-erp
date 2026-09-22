@@ -631,11 +631,11 @@ export class RepairOrderService {
     }
 
     const activeOrders = orders.filter(o => 
-      ['open', 'diagnosed', 'approved', 'in_progress', 'quality_check'].includes(o.status)
+      o.status && ['open', 'diagnosed', 'approved', 'in_progress', 'quality_check'].includes(o.status)
     ).length;
 
     const completedOrders = orders.filter(o => 
-      ['completed', 'invoiced', 'delivered'].includes(o.status)
+      o.status && ['completed', 'invoiced', 'delivered'].includes(o.status)
     ).length;
 
     const totalHours = orders.reduce((sum, o) => sum + (o.actual_hours || 0), 0);
