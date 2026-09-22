@@ -115,7 +115,7 @@ export class NPSSurveyService {
       throw new Error('Customer not found');
     }
 
-    const customerObj = customer as any;
+    const customerObj = customer as unknown as Record<string, unknown>;
     const customerName = (customerObj.name || customerObj.name_mother || 'Customer') as string;
     const customerEmail = (customerObj.email || 'customer@example.com') as string;
 

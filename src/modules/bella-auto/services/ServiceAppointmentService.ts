@@ -545,7 +545,7 @@ export class ServiceAppointmentService {
     }
 
     // TODO: Integrate with SMS/Email service
-    console.log(`[Service] Sending reminder to ${(appointment.customers as any)?.name}`);
+    console.log(`[Service] Sending reminder to ${(appointment.customers as unknown)?.name}`);
 
     // Mark reminder as sent
     await supabase
