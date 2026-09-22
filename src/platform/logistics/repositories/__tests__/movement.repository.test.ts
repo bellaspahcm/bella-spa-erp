@@ -18,7 +18,15 @@ import { MovementRepository } from '../movement.repository';
 import { MovementDomain } from '../../domain/movement.domain';
 import type { CreateMovementProps } from '../../domain/movement.types';
 
-describe('MovementRepository (Smoke Test)', () => {
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const HAS_SUPABASE_CREDENTIALS = Boolean(
+  SUPABASE_URL &&
+  process.env.SUPABASE_SERVICE_ROLE_KEY &&
+  !SUPABASE_URL.includes('mock.supabase.co')
+);
+const describeIntegration = HAS_SUPABASE_CREDENTIALS ? describe : describe.skip;
+
+describeIntegration('MovementRepository (Smoke Test)', () => {
   let repository: MovementRepository;
   const tenantId = 'tenant-repo-test';
 
