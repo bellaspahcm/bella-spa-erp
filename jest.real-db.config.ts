@@ -6,11 +6,12 @@ const createJestConfig = nextJest({ dir: './' })
 const config: Config = {
   coverageProvider: 'v8',
   testEnvironment: 'node',
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts', '<rootDir>/jest.real-db.setup.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   testMatch: [
+    '<rootDir>/src/__tests__/bella-auto-phase5-experience.test.ts',
     '<rootDir>/src/__tests__/e2e-order-lifecycle-real.test.ts',
     '<rootDir>/src/__tests__/e2e-refund-full.test.ts',
     '<rootDir>/src/__tests__/e2e-accounting-gl-verification.test.ts',
