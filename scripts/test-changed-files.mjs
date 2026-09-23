@@ -6,6 +6,7 @@ const TEST_FILE_PATTERN = /\.(test|spec)\.(ts|tsx|js|jsx)$/;
 const EXCLUDED_PATTERNS = [
   /^scripts\//,
   /^\.github\//,
+  /^src\/__tests__\/bella-auto-phase5-experience\.test\.ts$/,
   /\.(test|spec)\.(ts|tsx|js|jsx)$/,
 ];
 
