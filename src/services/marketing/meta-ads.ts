@@ -132,6 +132,9 @@ type MetaGraphInsight = {
 type MetaGraphInsightsResponse = {
   data?: MetaGraphInsight[];
   paging?: {
+    cursors?: {
+      after?: string;
+    };
     next?: string;
   };
   error?: {
@@ -310,7 +313,8 @@ async function resolveMetaAccessToken(params: {
 }
 
 function buildMetaInsightsUrl(
-  input: SyncMetaAdsInsightsInput & { normalizedAdAccountId: string; accessToken: string },
+  input: SyncMetaAdsInsightsInput & { normalizedAdAccountId: string },
+  afterCursor?: string | null,
 ) {
   const version = (process.env.META_MARKETING_API_VERSION || DEFAULT_META_API_VERSION)
     .trim()
@@ -320,8 +324,12 @@ function buildMetaInsightsUrl(
     throw new Error('META_MARKETING_API_VERSION khong hop le.');
   }
 
+  if (!/^act_[0-9]+$/.test(input.normalizedAdAccountId)) {
+    throw new Error('Meta ad account id khong hop le.');
+  }
+
   const url = new URL(
-    `https://graph.facebook.com/${version}/${input.normalizedAdAccountId}/insights`,
+    `https://graph.facebook.com/${version}/${encodeURIComponent(input.normalizedAdAccountId)}/insights`,
   );
   url.searchParams.set('level', 'ad');
   url.searchParams.set('time_increment', '1');
@@ -352,31 +360,28 @@ function buildMetaInsightsUrl(
       'actions',
     ].join(','),
   );
-  url.searchParams.set('access_token', input.accessToken);
-
-  return url.toString();
-}
-
-function isSafeMetaUrl(urlStr: string): boolean {
-  try {
-    const parsed = new URL(urlStr);
-    return parsed.protocol === 'https:' && parsed.hostname === 'graph.facebook.com';
-  } catch {
-    return false;
+  if (afterCursor) {
+    url.searchParams.set('after', afterCursor);
   }
+
+  return url;
 }
 
 async function fetchMetaInsights(
   input: SyncMetaAdsInsightsInput & { normalizedAdAccountId: string; accessToken: string },
 ) {
   const insights: MetaGraphInsight[] = [];
-  let nextUrl: string | null = buildMetaInsightsUrl(input);
+  let afterCursor: string | null = null;
 
-  for (let page = 0; nextUrl && page < MAX_PAGES_PER_SYNC; page += 1) {
-    if (!isSafeMetaUrl(nextUrl)) {
-      throw new Error('Meta Ads API loi: Paging URL khong an toan.');
-    }
-    const response = await fetch(nextUrl, { method: 'GET', cache: 'no-store' });
+  for (let page = 0; page < MAX_PAGES_PER_SYNC; page += 1) {
+    const response = await fetch(buildMetaInsightsUrl(input, afterCursor), {
+      method: 'GET',
+      cache: 'no-store',
+      redirect: 'error',
+      headers: {
+        Authorization: `Bearer ${input.accessToken}`,
+      },
+    });
     const body = await response.json() as MetaGraphInsightsResponse;
 
     if (!response.ok) {
@@ -385,7 +390,8 @@ async function fetchMetaInsights(
     }
 
     insights.push(...(body.data || []));
-    nextUrl = body.paging?.next || null;
+    afterCursor = body.paging?.cursors?.after || null;
+    if (!afterCursor) break;
   }
 
   return insights;
