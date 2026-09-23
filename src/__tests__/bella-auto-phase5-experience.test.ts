@@ -17,7 +17,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 jest.setTimeout(30000);
 
-const TEST_TENANT_ID = 'da9e610b-88c5-4901-8ab9-5439f4931467';
+let testTenantId: string;
 let testCustomerId: string;
 let testJourneyId: string;
 let testVehicleId: string;
@@ -26,36 +26,77 @@ let testCsiTemplateId: string;
 
 describe('Bella Auto Phase 5 - Experience Center', () => {
   beforeAll(async () => {
+    const { data: tenant, error: tenantLookupError } = await supabase
+      .from('tenants')
+      .select('id')
+      .eq('name', 'Test Tenant Bella Auto Phase5 E2E')
+      .maybeSingle();
+
+    if (tenantLookupError) {
+      throw new Error(`Failed to look up Bella Auto Phase 5 test tenant: ${tenantLookupError.message}`);
+    }
+
+    if (tenant) {
+      testTenantId = tenant.id;
+    } else {
+      const { data: newTenant, error: tenantCreateError } = await supabase
+        .from('tenants')
+        .insert({
+          name: 'Test Tenant Bella Auto Phase5 E2E',
+          status: 'active',
+        })
+        .select('id')
+        .single();
+
+      if (tenantCreateError) {
+        throw new Error(`Failed to create Bella Auto Phase 5 test tenant: ${tenantCreateError.message}`);
+      }
+
+      testTenantId = newTenant!.id;
+    }
+
     // Set tenant context
-    await supabase.rpc('set_tenant_context', { tenant_id: TEST_TENANT_ID });
+    const { error: tenantContextError } = await supabase.rpc('set_session_tenant', { p_tenant_id: testTenantId });
+
+    if (tenantContextError) {
+      throw new Error(`Failed to set Bella Auto Phase 5 tenant context: ${tenantContextError.message}`);
+    }
 
     // Create test customer
-    const { data: customer } = await supabase
+    const { data: customer, error: customerError } = await supabase
       .from('customers')
       .insert({
-        tenant_id: TEST_TENANT_ID,
+        tenant_id: testTenantId,
         name_mother: 'Test Customer Phase 5',
         phone: '09' + Math.floor(10000000 + Math.random() * 90000000).toString(),
       })
       .select()
       .single();
 
+    if (customerError) {
+      throw new Error(`Failed to create Bella Auto Phase 5 test customer: ${customerError.message}`);
+    }
+
     testCustomerId = customer!.id;
 
     // Query an existing vehicle to bypass complex variant foreign keys
-    const { data: vehicle } = await supabase
+    const { data: vehicle, error: vehicleError } = await supabase
       .from('auto_vehicles')
       .select('id')
       .limit(1)
       .single();
 
+    if (vehicleError) {
+      throw new Error(`Failed to find Bella Auto Phase 5 test vehicle: ${vehicleError.message}`);
+    }
+
     testVehicleId = vehicle!.id;
 
     // Create test NPS template
-    const { data: npsTemplate } = await supabase
+    const { data: npsTemplate, error: npsTemplateError } = await supabase
       .from('auto_survey_templates')
       .insert({
-        tenant_id: TEST_TENANT_ID,
+        tenant_id: testTenantId,
         name: 'Test NPS Template',
         survey_type: 'nps',
         trigger_event: 'vehicle_delivered',
@@ -72,13 +113,18 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
       })
       .select()
       .single();
+
+    if (npsTemplateError) {
+      throw new Error(`Failed to create Bella Auto Phase 5 NPS template: ${npsTemplateError.message}`);
+    }
+
     testNpsTemplateId = npsTemplate!.id;
 
     // Create test CSI template
-    const { data: csiTemplate } = await supabase
+    const { data: csiTemplate, error: csiTemplateError } = await supabase
       .from('auto_survey_templates')
       .insert({
-        tenant_id: TEST_TENANT_ID,
+        tenant_id: testTenantId,
         name: 'Test CSI Template',
         survey_type: 'csi',
         trigger_event: 'vehicle_delivered',
@@ -95,13 +141,18 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
       })
       .select()
       .single();
+
+    if (csiTemplateError) {
+      throw new Error(`Failed to create Bella Auto Phase 5 CSI template: ${csiTemplateError.message}`);
+    }
+
     testCsiTemplateId = csiTemplate!.id;
 
     // Create test journey
     const { data: journey, error: journeyErr } = await supabase
       .from('auto_customer_journeys')
       .insert({
-        tenant_id: TEST_TENANT_ID,
+        tenant_id: testTenantId,
         customer_id: testCustomerId,
         current_stage_id: '5af246ac-cb07-4d31-b13f-3631237891f1', // Stage: 'delivered'
         entered_stage_at: new Date().toISOString(),
@@ -112,7 +163,7 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
       .single();
 
     if (journeyErr) {
-      console.error('Journey Insert Error:', journeyErr);
+      throw new Error(`Failed to create Bella Auto Phase 5 test journey: ${journeyErr.message}`);
     }
 
     testJourneyId = journey!.id;
@@ -120,21 +171,30 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
 
   afterAll(async () => {
     // Cleanup test data
-    await supabase.from('auto_nps_scores').delete().eq('customer_id', testCustomerId);
-    await supabase.from('auto_csi_scores').delete().eq('customer_id', testCustomerId);
-    await supabase.from('auto_surveys').delete().eq('customer_id', testCustomerId);
-    await supabase.from('auto_customer_health_scores').delete().eq('customer_id', testCustomerId);
-    await supabase.from('auto_next_best_actions').delete().eq('customer_id', testCustomerId);
-    await supabase.from('auto_lost_analysis').delete().eq('customer_id', testCustomerId);
-    await supabase.from('auto_customer_journeys').delete().eq('id', testJourneyId);
-    await supabase.from('auto_survey_templates').delete().in('id', [testNpsTemplateId, testCsiTemplateId]);
-    await supabase.from('customers').delete().eq('id', testCustomerId);
+    if (testCustomerId) {
+      await supabase.from('auto_nps_scores').delete().eq('customer_id', testCustomerId);
+      await supabase.from('auto_csi_scores').delete().eq('customer_id', testCustomerId);
+      await supabase.from('auto_surveys').delete().eq('customer_id', testCustomerId);
+      await supabase.from('auto_customer_health_scores').delete().eq('customer_id', testCustomerId);
+      await supabase.from('auto_next_best_actions').delete().eq('customer_id', testCustomerId);
+      await supabase.from('auto_lost_analysis').delete().eq('customer_id', testCustomerId);
+      await supabase.from('customers').delete().eq('id', testCustomerId);
+    }
+
+    if (testJourneyId) {
+      await supabase.from('auto_customer_journeys').delete().eq('id', testJourneyId);
+    }
+
+    const templateIds = [testNpsTemplateId, testCsiTemplateId].filter(Boolean);
+    if (templateIds.length > 0) {
+      await supabase.from('auto_survey_templates').delete().in('id', templateIds);
+    }
   });
 
   describe('NPS Survey Service', () => {
     it('should create NPS survey after vehicle delivery', async () => {
       const survey = await NPSSurveyService.createAutoSurvey({
-        tenantId: TEST_TENANT_ID,
+        tenantId: testTenantId,
         customerId: testCustomerId,
         journeyId: testJourneyId,
         vehicleId: testVehicleId,
@@ -150,7 +210,7 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
     it('should record NPS response and categorize correctly', async () => {
       // Create survey first
       const survey = await NPSSurveyService.createAutoSurvey({
-        tenantId: TEST_TENANT_ID,
+        tenantId: testTenantId,
         customerId: testCustomerId,
         journeyId: testJourneyId,
         triggerEvent: 'vehicle_delivered',
@@ -163,7 +223,7 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
           score: 9,
           feedbackText: 'Excellent service!',
         },
-        TEST_TENANT_ID
+        testTenantId
       );
 
       expect(npsScore.score).toBe(9);
@@ -173,7 +233,7 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
 
     it('should auto-flag detractors for follow-up', async () => {
       const survey = await NPSSurveyService.createAutoSurvey({
-        tenantId: TEST_TENANT_ID,
+        tenantId: testTenantId,
         customerId: testCustomerId,
         journeyId: testJourneyId,
         triggerEvent: 'vehicle_delivered',
@@ -185,7 +245,7 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
           score: 4,
           feedbackText: 'Price too high',
         },
-        TEST_TENANT_ID
+        testTenantId
       );
 
       expect(npsScore.category).toBe('detractor');
@@ -204,7 +264,7 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
 
     it('should calculate NPS correctly', async () => {
       const nps = await NPSSurveyService.calculateNPS(
-        TEST_TENANT_ID,
+        testTenantId,
         new Date('2026-01-01'),
         new Date('2026-12-31')
       );
@@ -219,7 +279,7 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
   describe('CSI Survey Service', () => {
     it('should create CSI survey after delivery', async () => {
       const survey = await CSISurveyService.createCSISurvey({
-        tenantId: TEST_TENANT_ID,
+        tenantId: testTenantId,
         customerId: testCustomerId,
         journeyId: testJourneyId,
         vehicleId: testVehicleId,
@@ -232,7 +292,7 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
 
     it('should record CSI response with all dimensions', async () => {
       const survey = await CSISurveyService.createCSISurvey({
-        tenantId: TEST_TENANT_ID,
+        tenantId: testTenantId,
         customerId: testCustomerId,
         journeyId: testJourneyId,
       });
@@ -247,7 +307,7 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
           afterSalesScore: 4.0,
           positiveFeedback: 'Great experience overall',
         },
-        TEST_TENANT_ID
+        testTenantId
       );
 
       expect(csiScore.overall_csi).toBeGreaterThan(0);
@@ -257,7 +317,7 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
 
     it('should create follow-up for low CSI scores', async () => {
       const survey = await CSISurveyService.createCSISurvey({
-        tenantId: TEST_TENANT_ID,
+        tenantId: testTenantId,
         customerId: testCustomerId,
         journeyId: testJourneyId,
       });
@@ -272,7 +332,7 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
           afterSalesScore: 2.0,
           negativeFeedback: 'Poor service quality',
         },
-        TEST_TENANT_ID
+        testTenantId
       );
 
       expect(csiScore.overall_csi).toBeLessThan(3.0);
@@ -291,7 +351,7 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
   describe('Customer Health Score Service', () => {
     it('should calculate customer health score', async () => {
       const healthScore = await CustomerHealthScoreService.calculateHealthScore(
-        TEST_TENANT_ID,
+        testTenantId,
         testCustomerId
       );
 
@@ -303,7 +363,7 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
 
     it('should identify risk factors', async () => {
       const healthScore = await CustomerHealthScoreService.calculateHealthScore(
-        TEST_TENANT_ID,
+        testTenantId,
         testCustomerId
       );
 
@@ -313,7 +373,7 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
 
     it('should get at-risk customers', async () => {
       const atRiskCustomers = await CustomerHealthScoreService.getCustomersAtRisk(
-        TEST_TENANT_ID,
+        testTenantId,
         10
       );
 
@@ -324,7 +384,7 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
   describe('Next Best Action Engine', () => {
     it('should generate recommendations for customer', async () => {
       const recommendations = await NextBestActionEngine.generateRecommendations(
-        TEST_TENANT_ID,
+        testTenantId,
         testCustomerId,
         testJourneyId
       );
@@ -342,7 +402,7 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
 
     it('should get pending actions', async () => {
       const pendingActions = await NextBestActionEngine.getPendingActions(
-        TEST_TENANT_ID,
+        testTenantId,
         undefined,
         20
       );
@@ -352,14 +412,14 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
 
     it('should update action status', async () => {
       const recommendations = await NextBestActionEngine.generateRecommendations(
-        TEST_TENANT_ID,
+        testTenantId,
         testCustomerId
       );
 
       if (recommendations.length > 0) {
         await NextBestActionEngine.updateActionStatus(
           recommendations[0].id,
-          TEST_TENANT_ID,
+          testTenantId,
           'completed',
           'successful',
           'Test completion'
@@ -380,7 +440,7 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
   describe('Lost Analysis AI Service', () => {
     it('should record lost opportunity', async () => {
       const lostAnalysis = await LostAnalysisAIService.recordLostOpportunity(
-        TEST_TENANT_ID,
+        testTenantId,
         {
           customerId: testCustomerId,
           journeyId: testJourneyId,
@@ -408,7 +468,7 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
 
     it('should perform AI analysis on lost opportunity', async () => {
       const lostAnalysis = await LostAnalysisAIService.recordLostOpportunity(
-        TEST_TENANT_ID,
+        testTenantId,
         {
           customerId: testCustomerId,
           journeyId: testJourneyId,
@@ -424,7 +484,7 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
       );
 
       // Run analysis synchronously for test stability
-      await LostAnalysisAIService.performAIAnalysis(TEST_TENANT_ID, lostAnalysis.id);
+      await LostAnalysisAIService.performAIAnalysis(testTenantId, lostAnalysis.id);
 
       const { data: analyzed } = await supabase
         .from('auto_lost_analysis')
@@ -438,7 +498,7 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
 
     it('should get lost opportunity analytics', async () => {
       const analytics = await LostAnalysisAIService.getLostOpportunityAnalytics(
-        TEST_TENANT_ID,
+        testTenantId,
         new Date('2026-01-01'),
         new Date('2026-12-31')
       );
@@ -451,7 +511,7 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
 
     it('should get prevention insights', async () => {
       const insights = await LostAnalysisAIService.getPreventionInsights(
-        TEST_TENANT_ID,
+        testTenantId,
         'last_90_days'
       );
 
@@ -467,7 +527,7 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
     it('should handle complete experience lifecycle', async () => {
       // 1. Create NPS survey
       const npsSurvey = await NPSSurveyService.createAutoSurvey({
-        tenantId: TEST_TENANT_ID,
+        tenantId: testTenantId,
         customerId: testCustomerId,
         journeyId: testJourneyId,
         triggerEvent: 'vehicle_delivered',
@@ -477,12 +537,12 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
       const npsScore = await NPSSurveyService.recordNPSResponse(
         npsSurvey.id,
         { score: 8, feedbackText: 'Good experience' },
-        TEST_TENANT_ID
+        testTenantId
       );
 
       // 3. Create CSI survey
       const csiSurvey = await CSISurveyService.createCSISurvey({
-        tenantId: TEST_TENANT_ID,
+        tenantId: testTenantId,
         customerId: testCustomerId,
         journeyId: testJourneyId,
       });
@@ -497,18 +557,18 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
           vehicleQualityScore: 4.8,
           afterSalesScore: 4.3,
         },
-        TEST_TENANT_ID
+        testTenantId
       );
 
       // 5. Calculate health score
       const healthScore = await CustomerHealthScoreService.calculateHealthScore(
-        TEST_TENANT_ID,
+        testTenantId,
         testCustomerId
       );
 
       // 6. Generate recommendations
       const recommendations = await NextBestActionEngine.generateRecommendations(
-        TEST_TENANT_ID,
+        testTenantId,
         testCustomerId,
         testJourneyId
       );
