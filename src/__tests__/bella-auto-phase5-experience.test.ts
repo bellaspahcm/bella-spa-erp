@@ -20,6 +20,9 @@ jest.setTimeout(30000);
 let testTenantId: string;
 let testCustomerId: string;
 let testJourneyId: string;
+let testBrandId: string;
+let testModelId: string;
+let testVariantId: string;
 let testVehicleId: string;
 let testNpsTemplateId: string;
 let testCsiTemplateId: string;
@@ -79,15 +82,84 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
 
     testCustomerId = customer!.id;
 
-    // Query an existing vehicle to bypass complex variant foreign keys
+    const fixtureSuffix = Date.now().toString();
+
+    const { data: brand, error: brandError } = await supabase
+      .from('auto_brands')
+      .insert({
+        tenant_id: testTenantId,
+        name: `Test Phase 5 Brand ${fixtureSuffix}`,
+        country_of_origin: 'VN',
+        is_active: true,
+      })
+      .select('id')
+      .single();
+
+    if (brandError) {
+      throw new Error(`Failed to create Bella Auto Phase 5 test brand: ${brandError.message}`);
+    }
+
+    testBrandId = brand!.id;
+
+    const { data: model, error: modelError } = await supabase
+      .from('auto_models')
+      .insert({
+        tenant_id: testTenantId,
+        brand_id: testBrandId,
+        name: `Test Phase 5 Model ${fixtureSuffix}`,
+        segment: 'sedan',
+        is_active: true,
+      })
+      .select('id')
+      .single();
+
+    if (modelError) {
+      throw new Error(`Failed to create Bella Auto Phase 5 test model: ${modelError.message}`);
+    }
+
+    testModelId = model!.id;
+
+    const { data: variant, error: variantError } = await supabase
+      .from('auto_variants')
+      .insert({
+        tenant_id: testTenantId,
+        model_id: testModelId,
+        name: `Test Phase 5 Variant ${fixtureSuffix}`,
+        year: 2026,
+        fuel_type: 'gasoline',
+        transmission: 'automatic',
+        specs_json: {},
+        is_active: true,
+      })
+      .select('id')
+      .single();
+
+    if (variantError) {
+      throw new Error(`Failed to create Bella Auto Phase 5 test variant: ${variantError.message}`);
+    }
+
+    testVariantId = variant!.id;
+
+    const testVin = `TST${Math.floor(10000000000000 + Math.random() * 90000000000000).toString()}`;
     const { data: vehicle, error: vehicleError } = await supabase
       .from('auto_vehicles')
+      .insert({
+        tenant_id: testTenantId,
+        variant_id: testVariantId,
+        vin: testVin,
+        engine_number: `ENG-${fixtureSuffix}`,
+        color_exterior: 'white',
+        model_year: 2026,
+        list_price: 1000000000,
+        cost_price: 900000000,
+        status: 'delivered',
+        metadata: {},
+      })
       .select('id')
-      .limit(1)
       .single();
 
     if (vehicleError) {
-      throw new Error(`Failed to find Bella Auto Phase 5 test vehicle: ${vehicleError.message}`);
+      throw new Error(`Failed to create Bella Auto Phase 5 test vehicle: ${vehicleError.message}`);
     }
 
     testVehicleId = vehicle!.id;
@@ -183,6 +255,22 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
 
     if (testJourneyId) {
       await supabase.from('auto_customer_journeys').delete().eq('id', testJourneyId);
+    }
+
+    if (testVehicleId) {
+      await supabase.from('auto_vehicles').delete().eq('id', testVehicleId);
+    }
+
+    if (testVariantId) {
+      await supabase.from('auto_variants').delete().eq('id', testVariantId);
+    }
+
+    if (testModelId) {
+      await supabase.from('auto_models').delete().eq('id', testModelId);
+    }
+
+    if (testBrandId) {
+      await supabase.from('auto_brands').delete().eq('id', testBrandId);
     }
 
     const templateIds = [testNpsTemplateId, testCsiTemplateId].filter(Boolean);
