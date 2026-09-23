@@ -1571,10 +1571,10 @@
           "components": {
             "code": "TS2345",
             "symbol": "unknown",
-            "message_sig": "d6b34840"
+            "message_sig": "a7b619b9"
           },
-          "message": "Argument of type 'unknown' is not assignable to parameter of type 'SetStateAction<\"sync\" | \"journals\">'.",
-          "fingerprint": "ts:src/app/dashboard/healthcare/accounting/page.tsx:TS2345:unknown:d6b34840"
+          "message": "Argument of type 'unknown' is not assignable to parameter of type 'SetStateAction<\"journals\" | \"sync\">'.",
+          "fingerprint": "ts:src/app/dashboard/healthcare/accounting/page.tsx:TS2345:unknown:a7b619b9"
         },
         {
           "file": "src/app/dashboard/healthcare/accounting/page.tsx",
@@ -2196,10 +2196,10 @@
           "components": {
             "code": "TS2322",
             "symbol": "unknown",
-            "message_sig": "d52fc7fa"
+            "message_sig": "b9b4608e"
           },
-          "message": "Type 'unknown' is not assignable to type '\"service\" | \"priority\" | \"bhyt\"'.",
-          "fingerprint": "ts:src/app/dashboard/healthcare/queue/page.tsx:TS2322:unknown:d52fc7fa"
+          "message": "Type 'unknown' is not assignable to type '\"priority\" | \"service\" | \"bhyt\"'.",
+          "fingerprint": "ts:src/app/dashboard/healthcare/queue/page.tsx:TS2322:unknown:b9b4608e"
         },
         {
           "file": "src/app/dashboard/healthcare/queue/tv/page.tsx",
@@ -2276,11 +2276,11 @@
           "severity": "error",
           "components": {
             "code": "TS2322",
-            "symbol": "\"vip\" | \"standard\" | \"icu\" | \"isolation\" | \"pediatric\" | \"recovery\"",
-            "message_sig": "b83614d5"
+            "symbol": "\"standard\" | \"vip\" | \"icu\" | \"isolation\" | \"pediatric\" | \"recovery\"",
+            "message_sig": "9344946c"
           },
-          "message": "Type '\"vip\" | \"standard\" | \"icu\" | \"isolation\" | \"pediatric\" | \"recovery\"' is not assignable to type 'BedType | undefined'.",
-          "fingerprint": "ts:src/app/dashboard/hospital/beds/page.tsx:TS2322:\"vip\" | \"standard\" | \"icu\" | \"isolation\" | \"pediatric\" | \"recovery\":b83614d5"
+          "message": "Type '\"standard\" | \"vip\" | \"icu\" | \"isolation\" | \"pediatric\" | \"recovery\"' is not assignable to type 'BedType | undefined'.",
+          "fingerprint": "ts:src/app/dashboard/hospital/beds/page.tsx:TS2322:\"standard\" | \"vip\" | \"icu\" | \"isolation\" | \"pediatric\" | \"recovery\":9344946c"
         },
         {
           "file": "src/app/dashboard/hospital/incidents/page.tsx",
@@ -2451,12 +2451,12 @@
           "tool": "typescript",
           "severity": "error",
           "components": {
-            "code": "TS2552",
+            "code": "TS2304",
             "symbol": "setSelectedDoc",
-            "message_sig": "89ded02c"
+            "message_sig": "f1a7c75f"
           },
-          "message": "Cannot find name 'setSelectedDoc'. Did you mean 'setSelectedDocId'?",
-          "fingerprint": "ts:src/app/dashboard/real-estate/documents/page.tsx:TS2552:setSelectedDoc:89ded02c"
+          "message": "Cannot find name 'setSelectedDoc'.",
+          "fingerprint": "ts:src/app/dashboard/real-estate/documents/page.tsx:TS2304:setSelectedDoc:f1a7c75f"
         },
         {
           "file": "src/app/dashboard/real-estate/documents/page.tsx",
@@ -2605,11 +2605,11 @@
           "severity": "error",
           "components": {
             "code": "TS2322",
-            "symbol": "\"babycare\" | \"beauty_spa\" | \"industrial_cleaning\" | \"real_estate\" | \"bella_auto\" | \"bella_healthcare\" | \"bella_education\"",
-            "message_sig": "7aaab888"
+            "symbol": "\"babycare\" | \"beauty_spa\" | \"real_estate\" | \"bella_auto\" | \"industrial_cleaning\" | \"bella_healthcare\" | \"bella_education\"",
+            "message_sig": "a99a3659"
           },
-          "message": "Type '\"babycare\" | \"beauty_spa\" | \"industrial_cleaning\" | \"real_estate\" | \"bella_auto\" | \"bella_healthcare\" | \"bella_education\"' is not assignable to type 'ServiceModuleKey'.",
-          "fingerprint": "ts:src/app/dashboard/services/hooks/useServicesPageState.ts:TS2322:\"babycare\" | \"beauty_spa\" | \"industrial_cleaning\" | \"real_estate\" | \"bella_auto\" | \"bella_healthcare\" | \"bella_education\":7aaab888"
+          "message": "Type '\"babycare\" | \"beauty_spa\" | \"real_estate\" | \"bella_auto\" | \"industrial_cleaning\" | \"bella_healthcare\" | \"bella_education\"' is not assignable to type 'ServiceModuleKey'.",
+          "fingerprint": "ts:src/app/dashboard/services/hooks/useServicesPageState.ts:TS2322:\"babycare\" | \"beauty_spa\" | \"real_estate\" | \"bella_auto\" | \"industrial_cleaning\" | \"bella_healthcare\" | \"bella_education\":a99a3659"
         },
         {
           "file": "src/app/dashboard/services/hooks/useServicesPageState.ts",
@@ -2619,11 +2619,11 @@
           "severity": "error",
           "components": {
             "code": "TS2345",
-            "symbol": "(current: ServiceFormState) => { moduleKey: \"babycare\" | \"beauty_spa\" | \"industrial_cleaning\" | \"real_estate\" | \"bella_auto\" | \"bella_healthcare\" | \"bella_education\"; ... 20 more ...; risBodySite: string; }",
-            "message_sig": "ca7816f3"
+            "symbol": "(current: ServiceFormState) => { moduleKey: \"babycare\" | \"beauty_spa\" | \"real_estate\" | \"bella_auto\" | \"industrial_cleaning\" | \"bella_healthcare\" | \"bella_education\"; ... 20 more ...; risBodySite: string; }",
+            "message_sig": "46b1816b"
           },
-          "message": "Argument of type '(current: ServiceFormState) => { moduleKey: \"babycare\" | \"beauty_spa\" | \"industrial_cleaning\" | \"real_estate\" | \"bella_auto\" | \"bella_healthcare\" | \"bella_education\"; ... 20 more ...; risBodySite: string; }' is not assignable to parameter of type 'SetStateAction<ServiceFormState>'.",
-          "fingerprint": "ts:src/app/dashboard/services/hooks/useServicesPageState.ts:TS2345:(current: ServiceFormState) => { moduleKey: \"babycare\" | \"beauty_spa\" | \"industrial_cleaning\" | \"real_estate\" | \"bella_auto\" | \"bella_healthcare\" | \"bella_education\"; ... 20 more ...; risBodySite: string; }:ca7816f3"
+          "message": "Argument of type '(current: ServiceFormState) => { moduleKey: \"babycare\" | \"beauty_spa\" | \"real_estate\" | \"bella_auto\" | \"industrial_cleaning\" | \"bella_healthcare\" | \"bella_education\"; ... 20 more ...; risBodySite: string; }' is not assignable to parameter of type 'SetStateAction<ServiceFormState>'.",
+          "fingerprint": "ts:src/app/dashboard/services/hooks/useServicesPageState.ts:TS2345:(current: ServiceFormState) => { moduleKey: \"babycare\" | \"beauty_spa\" | \"real_estate\" | \"bella_auto\" | \"industrial_cleaning\" | \"bella_healthcare\" | \"bella_education\"; ... 20 more ...; risBodySite: string; }:46b1816b"
         },
         {
           "file": "src/app/dashboard/services/hooks/useServicesPageState.ts",
@@ -2734,7 +2734,7 @@
             "symbol": "unknown",
             "message_sig": "b90f134d"
           },
-          "message": "Argument of type 'unknown' is not assignable to parameter of type '\"XRAY\" | \"CT\" | \"ULTRASOUND\" | \"MRI\" | \"ENDOSCOPY\"'.",
+          "message": "Argument of type 'unknown' is not assignable to parameter of type '\"XRAY\" | \"CT\" | \"MRI\" | \"ULTRASOUND\" | \"ENDOSCOPY\"'.",
           "fingerprint": "ts:src/app/dashboard/services/page.tsx:TS2345:unknown:b90f134d"
         },
         {
@@ -2889,104 +2889,6 @@
           "fingerprint": "ts:src/app/workforce/tasks/page.tsx:TS18046:unknown:f5c440b4"
         },
         {
-          "file": "src/components/bella-auto/BellaAutoAnalyticsDashboard.tsx",
-          "line": 505,
-          "column": 56,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2322",
-            "symbol": "(value: number, name: string) => [number, string] | [string, string]",
-            "message_sig": "d9a3fec7"
-          },
-          "message": "Type '(value: number, name: string) => [number, string] | [string, string]' is not assignable to type 'Formatter<ValueType, NameType> & ((value: ValueType, name: NameType, item: TooltipPayloadEntry, index: number, payload: TooltipPayload) => ReactNode | [...])'.",
-          "fingerprint": "ts:src/components/bella-auto/BellaAutoAnalyticsDashboard.tsx:TS2322:(value: number, name: string) => [number, string] | [string, string]:d9a3fec7"
-        },
-        {
-          "file": "src/components/bella-auto/CreateBookingModal.tsx",
-          "line": 275,
-          "column": 27,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2345",
-            "symbol": "string | number | undefined",
-            "message_sig": "4e364217"
-          },
-          "message": "Argument of type 'string | number | undefined' is not assignable to parameter of type 'string'.",
-          "fingerprint": "ts:src/components/bella-auto/CreateBookingModal.tsx:TS2345:string | number | undefined:4e364217"
-        },
-        {
-          "file": "src/components/bella-auto/VehicleInventoryDashboard.tsx",
-          "line": 78,
-          "column": 36,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2345",
-            "symbol": "string",
-            "message_sig": "a3a0e06f"
-          },
-          "message": "Argument of type 'string' is not assignable to parameter of type 'NonNullable<\"in_transit\" | \"warehouse\" | \"showroom\" | \"allocated\" | \"delivered\" | \"returned\" | \"scrapped\">'.",
-          "fingerprint": "ts:src/components/bella-auto/VehicleInventoryDashboard.tsx:TS2345:string:a3a0e06f"
-        },
-        {
-          "file": "src/components/bella-auto/VehicleInventoryDashboard.tsx",
-          "line": 102,
-          "column": 39,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2339",
-            "symbol": "auto_models",
-            "message_sig": "eb419ecd"
-          },
-          "message": "Property 'auto_models' does not exist on type '{}'.",
-          "fingerprint": "ts:src/components/bella-auto/VehicleInventoryDashboard.tsx:TS2339:auto_models:eb419ecd"
-        },
-        {
-          "file": "src/components/bella-auto/VehicleInventoryDashboard.tsx",
-          "line": 103,
-          "column": 39,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2339",
-            "symbol": "auto_models",
-            "message_sig": "eb419ecd"
-          },
-          "message": "Property 'auto_models' does not exist on type '{}'.",
-          "fingerprint": "ts:src/components/bella-auto/VehicleInventoryDashboard.tsx:TS2339:auto_models:eb419ecd"
-        },
-        {
-          "file": "src/components/bella-auto/VehicleInventoryDashboard.tsx",
-          "line": 104,
-          "column": 41,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2339",
-            "symbol": "name",
-            "message_sig": "db11b348"
-          },
-          "message": "Property 'name' does not exist on type '{}'.",
-          "fingerprint": "ts:src/components/bella-auto/VehicleInventoryDashboard.tsx:TS2339:name:db11b348"
-        },
-        {
-          "file": "src/components/bella-auto/VehicleInventoryDashboard.tsx",
-          "line": 110,
-          "column": 19,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2345",
-            "symbol": "{ id: unknown; vin: unknown; variant_id: unknown; color_exterior: unknown; color_interior: unknown; model_year: unknown; status: unknown; location_note: unknown; list_price: number; brandName: any; modelName: any; variantName: any; chassisNumber: unknown; }[]",
-            "message_sig": "e17b1ff3"
-          },
-          "message": "Argument of type '{ id: unknown; vin: unknown; variant_id: unknown; color_exterior: unknown; color_interior: unknown; model_year: unknown; status: unknown; location_note: unknown; list_price: number; brandName: any; modelName: any; variantName: any; chassisNumber: unknown; }[]' is not assignable to parameter of type 'SetStateAction<Vehicle[]>'.",
-          "fingerprint": "ts:src/components/bella-auto/VehicleInventoryDashboard.tsx:TS2345:{ id: unknown; vin: unknown; variant_id: unknown; color_exterior: unknown; color_interior: unknown; model_year: unknown; status: unknown; location_note: unknown; list_price: number; brandName: any; modelName: any; variantName: any; chassisNumber: unknown; }[]:e17b1ff3"
-        },
-        {
           "file": "src/components/bella-auto/approval/ApprovalDashboard.tsx",
           "line": 212,
           "column": 21,
@@ -3083,6 +2985,34 @@
           },
           "message": "Property 'total' does not exist on type '{}'.",
           "fingerprint": "ts:src/components/bella-auto/approval/ApprovalDashboard.tsx:TS2339:total:5ca803f6"
+        },
+        {
+          "file": "src/components/bella-auto/BellaAutoAnalyticsDashboard.tsx",
+          "line": 505,
+          "column": 56,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2322",
+            "symbol": "(value: number, name: string) => [number, string] | [string, string]",
+            "message_sig": "d9a3fec7"
+          },
+          "message": "Type '(value: number, name: string) => [number, string] | [string, string]' is not assignable to type 'Formatter<ValueType, NameType> & ((value: ValueType, name: NameType, item: TooltipPayloadEntry, index: number, payload: TooltipPayload) => ReactNode | [...])'.",
+          "fingerprint": "ts:src/components/bella-auto/BellaAutoAnalyticsDashboard.tsx:TS2322:(value: number, name: string) => [number, string] | [string, string]:d9a3fec7"
+        },
+        {
+          "file": "src/components/bella-auto/CreateBookingModal.tsx",
+          "line": 275,
+          "column": 27,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2345",
+            "symbol": "string | number | undefined",
+            "message_sig": "4e364217"
+          },
+          "message": "Argument of type 'string | number | undefined' is not assignable to parameter of type 'string'.",
+          "fingerprint": "ts:src/components/bella-auto/CreateBookingModal.tsx:TS2345:string | number | undefined:4e364217"
         },
         {
           "file": "src/components/bella-auto/marketplace/CapabilityMarketplace.tsx",
@@ -3281,6 +3211,76 @@
           "fingerprint": "ts:src/components/bella-auto/rule-builder/RuleBuilderForm.tsx:TS2322:unknown:d98103b9"
         },
         {
+          "file": "src/components/bella-auto/VehicleInventoryDashboard.tsx",
+          "line": 78,
+          "column": 36,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2345",
+            "symbol": "string",
+            "message_sig": "a3a0e06f"
+          },
+          "message": "Argument of type 'string' is not assignable to parameter of type 'NonNullable<\"in_transit\" | \"warehouse\" | \"showroom\" | \"allocated\" | \"delivered\" | \"returned\" | \"scrapped\">'.",
+          "fingerprint": "ts:src/components/bella-auto/VehicleInventoryDashboard.tsx:TS2345:string:a3a0e06f"
+        },
+        {
+          "file": "src/components/bella-auto/VehicleInventoryDashboard.tsx",
+          "line": 102,
+          "column": 39,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2339",
+            "symbol": "auto_models",
+            "message_sig": "eb419ecd"
+          },
+          "message": "Property 'auto_models' does not exist on type '{}'.",
+          "fingerprint": "ts:src/components/bella-auto/VehicleInventoryDashboard.tsx:TS2339:auto_models:eb419ecd"
+        },
+        {
+          "file": "src/components/bella-auto/VehicleInventoryDashboard.tsx",
+          "line": 103,
+          "column": 39,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2339",
+            "symbol": "auto_models",
+            "message_sig": "eb419ecd"
+          },
+          "message": "Property 'auto_models' does not exist on type '{}'.",
+          "fingerprint": "ts:src/components/bella-auto/VehicleInventoryDashboard.tsx:TS2339:auto_models:eb419ecd"
+        },
+        {
+          "file": "src/components/bella-auto/VehicleInventoryDashboard.tsx",
+          "line": 104,
+          "column": 41,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2339",
+            "symbol": "name",
+            "message_sig": "db11b348"
+          },
+          "message": "Property 'name' does not exist on type '{}'.",
+          "fingerprint": "ts:src/components/bella-auto/VehicleInventoryDashboard.tsx:TS2339:name:db11b348"
+        },
+        {
+          "file": "src/components/bella-auto/VehicleInventoryDashboard.tsx",
+          "line": 110,
+          "column": 19,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2345",
+            "symbol": "{ id: unknown; vin: unknown; variant_id: unknown; color_exterior: unknown; color_interior: unknown; model_year: unknown; status: unknown; location_note: unknown; list_price: number; brandName: any; modelName: any; variantName: any; chassisNumber: unknown; }[]",
+            "message_sig": "e17b1ff3"
+          },
+          "message": "Argument of type '{ id: unknown; vin: unknown; variant_id: unknown; color_exterior: unknown; color_interior: unknown; model_year: unknown; status: unknown; location_note: unknown; list_price: number; brandName: any; modelName: any; variantName: any; chassisNumber: unknown; }[]' is not assignable to parameter of type 'SetStateAction<Vehicle[]>'.",
+          "fingerprint": "ts:src/components/bella-auto/VehicleInventoryDashboard.tsx:TS2345:{ id: unknown; vin: unknown; variant_id: unknown; color_exterior: unknown; color_interior: unknown; model_year: unknown; status: unknown; location_note: unknown; list_price: number; brandName: any; modelName: any; variantName: any; chassisNumber: unknown; }[]:e17b1ff3"
+        },
+        {
           "file": "src/components/error-boundary/ErrorBoundary.tsx",
           "line": 49,
           "column": 42,
@@ -3374,6 +3374,20 @@
           "fingerprint": "ts:src/components/intelligence/BudgetStatusChart.tsx:TS18046:unknown:b6e12774"
         },
         {
+          "file": "src/components/intelligence/customer/ChurnRiskChart.tsx",
+          "line": 104,
+          "column": 27,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2322",
+            "symbol": "(props: Record<string, unknown>) => JSX.Element",
+            "message_sig": "a2121f41"
+          },
+          "message": "Type '(props: Record<string, unknown>) => JSX.Element' is not assignable to type 'ContentType | undefined'.",
+          "fingerprint": "ts:src/components/intelligence/customer/ChurnRiskChart.tsx:TS2322:(props: Record<string, unknown>) => JSX.Element:a2121f41"
+        },
+        {
           "file": "src/components/intelligence/ExpenseBreakdownChart.tsx",
           "line": 102,
           "column": 11,
@@ -3426,20 +3440,6 @@
           },
           "message": "Type '(value: any, entry: Record<string, unknown>) => string' is not assignable to type 'Formatter'.",
           "fingerprint": "ts:src/components/intelligence/RevenueBreakdownChart.tsx:TS2322:(value: any, entry: Record<string, unknown>) => string:cc187689"
-        },
-        {
-          "file": "src/components/intelligence/customer/ChurnRiskChart.tsx",
-          "line": 104,
-          "column": 27,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2322",
-            "symbol": "(props: Record<string, unknown>) => JSX.Element",
-            "message_sig": "a2121f41"
-          },
-          "message": "Type '(props: Record<string, unknown>) => JSX.Element' is not assignable to type 'ContentType | undefined'.",
-          "fingerprint": "ts:src/components/intelligence/customer/ChurnRiskChart.tsx:TS2322:(props: Record<string, unknown>) => JSX.Element:a2121f41"
         },
         {
           "file": "src/components/salary/AdjustmentsListPage.tsx",
@@ -4643,11 +4643,11 @@
           "severity": "error",
           "components": {
             "code": "TS2322",
-            "symbol": "{ id: string; priority: number; conditions: unknown; action: { outcome: \"APPROVE\" | \"REJECT\" | \"ESCALATE\"; reason: string; metadata: Record<string, unknown> | undefined; }; }[]",
-            "message_sig": "5c231bfb"
+            "symbol": "{ id: string; priority: number; conditions: unknown; action: { outcome: \"ESCALATE\" | \"APPROVE\" | \"REJECT\"; reason: string; metadata: Record<string, unknown> | undefined; }; }[]",
+            "message_sig": "f9fecb6c"
           },
-          "message": "Type '{ id: string; priority: number; conditions: unknown; action: { outcome: \"APPROVE\" | \"REJECT\" | \"ESCALATE\"; reason: string; metadata: Record<string, unknown> | undefined; }; }[]' is not assignable to type 'DecisionRule[]'.",
-          "fingerprint": "ts:src/lib/decision-engine/providers/booking/capacity-management-provider.ts:TS2322:{ id: string; priority: number; conditions: unknown; action: { outcome: \"APPROVE\" | \"REJECT\" | \"ESCALATE\"; reason: string; metadata: Record<string, unknown> | undefined; }; }[]:5c231bfb"
+          "message": "Type '{ id: string; priority: number; conditions: unknown; action: { outcome: \"ESCALATE\" | \"APPROVE\" | \"REJECT\"; reason: string; metadata: Record<string, unknown> | undefined; }; }[]' is not assignable to type 'DecisionRule[]'.",
+          "fingerprint": "ts:src/lib/decision-engine/providers/booking/capacity-management-provider.ts:TS2322:{ id: string; priority: number; conditions: unknown; action: { outcome: \"ESCALATE\" | \"APPROVE\" | \"REJECT\"; reason: string; metadata: Record<string, unknown> | undefined; }; }[]:f9fecb6c"
         },
         {
           "file": "src/lib/decision-engine/providers/booking/capacity-management-provider.ts",
@@ -5359,34 +5359,6 @@
           "fingerprint": "ts:src/modules/bella-auto/services/AutoSalesProvider.ts:TS2322:unknown:923e759a"
         },
         {
-          "file": "src/modules/bella-auto/services/CSISurveyService.ts",
-          "line": 212,
-          "column": 36,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2339",
-            "symbol": "assigned_to",
-            "message_sig": "c0836bbc"
-          },
-          "message": "Property 'assigned_to' does not exist on type 'SelectQueryError<\"column 'assigned_to' does not exist on 'auto_customer_journeys'.\">'.",
-          "fingerprint": "ts:src/modules/bella-auto/services/CSISurveyService.ts:TS2339:assigned_to:c0836bbc"
-        },
-        {
-          "file": "src/modules/bella-auto/services/CSISurveyService.ts",
-          "line": 475,
-          "column": 47,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2339",
-            "symbol": "name",
-            "message_sig": "db11b348"
-          },
-          "message": "Property 'name' does not exist on type '{}'.",
-          "fingerprint": "ts:src/modules/bella-auto/services/CSISurveyService.ts:TS2339:name:db11b348"
-        },
-        {
           "file": "src/modules/bella-auto/services/ChurnPredictionService.ts",
           "line": 65,
           "column": 7,
@@ -5413,6 +5385,34 @@
           },
           "message": "Type 'unknown' is not assignable to type 'Json | undefined'.",
           "fingerprint": "ts:src/modules/bella-auto/services/ChurnPredictionService.ts:TS2322:unknown:93b660f2"
+        },
+        {
+          "file": "src/modules/bella-auto/services/CSISurveyService.ts",
+          "line": 212,
+          "column": 36,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2339",
+            "symbol": "assigned_to",
+            "message_sig": "c0836bbc"
+          },
+          "message": "Property 'assigned_to' does not exist on type 'SelectQueryError<\"column 'assigned_to' does not exist on 'auto_customer_journeys'.\">'.",
+          "fingerprint": "ts:src/modules/bella-auto/services/CSISurveyService.ts:TS2339:assigned_to:c0836bbc"
+        },
+        {
+          "file": "src/modules/bella-auto/services/CSISurveyService.ts",
+          "line": 475,
+          "column": 47,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2339",
+            "symbol": "name",
+            "message_sig": "db11b348"
+          },
+          "message": "Property 'name' does not exist on type '{}'.",
+          "fingerprint": "ts:src/modules/bella-auto/services/CSISurveyService.ts:TS2339:name:db11b348"
         },
         {
           "file": "src/modules/bella-auto/services/CustomerHealthScoreService.ts",
@@ -6034,18 +6034,87 @@
           "fingerprint": "ts:src/modules/bella-auto/services/LostAnalysisAIService.ts:TS2352:unknown:94c8b1a5"
         },
         {
-          "file": "src/modules/bella-auto/services/NPSSurveyService.ts",
-          "line": 293,
-          "column": 29,
+          "file": "src/modules/bella-auto/services/mobile/MobileNotificationService.ts",
+          "line": 51,
+          "column": 7,
           "tool": "typescript",
           "severity": "error",
           "components": {
-            "code": "TS2339",
-            "symbol": "assigned_to",
-            "message_sig": "c0836bbc"
+            "code": "TS2322",
+            "symbol": "unknown",
+            "message_sig": "93b660f2"
           },
-          "message": "Property 'assigned_to' does not exist on type 'SelectQueryError<\"column 'assigned_to' does not exist on 'auto_customer_journeys'.\">'.",
-          "fingerprint": "ts:src/modules/bella-auto/services/NPSSurveyService.ts:TS2339:assigned_to:c0836bbc"
+          "message": "Type 'unknown' is not assignable to type 'Json | undefined'.",
+          "fingerprint": "ts:src/modules/bella-auto/services/mobile/MobileNotificationService.ts:TS2322:unknown:93b660f2"
+        },
+        {
+          "file": "src/modules/bella-auto/services/mobile/OfflineSyncService.ts",
+          "line": 68,
+          "column": 7,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2322",
+            "symbol": "unknown",
+            "message_sig": "e48d5060"
+          },
+          "message": "Type 'unknown' is not assignable to type 'Json'.",
+          "fingerprint": "ts:src/modules/bella-auto/services/mobile/OfflineSyncService.ts:TS2322:unknown:e48d5060"
+        },
+        {
+          "file": "src/modules/bella-auto/services/mobile/OfflineSyncService.ts",
+          "line": 108,
+          "column": 5,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2322",
+            "symbol": "{ action_data: Json; action_id: string; action_type: string; created_at: string; entity_type: string; priority: number; }[]",
+            "message_sig": "669f65b5"
+          },
+          "message": "Type '{ action_data: Json; action_id: string; action_type: string; created_at: string; entity_type: string; priority: number; }[]' is not assignable to type '{ action_data: Json; action_type: string; conflict_resolution: string | null; conflict_resolved_at: string | null; conflict_resolved_by: string | null; created_at: string; ... 12 more ...; user_id: string; }[]'.",
+          "fingerprint": "ts:src/modules/bella-auto/services/mobile/OfflineSyncService.ts:TS2322:{ action_data: Json; action_id: string; action_type: string; created_at: string; entity_type: string; priority: number; }[]:669f65b5"
+        },
+        {
+          "file": "src/modules/bella-auto/services/mobile/OfflineSyncService.ts",
+          "line": 122,
+          "column": 9,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2322",
+            "symbol": "unknown",
+            "message_sig": "c34d339c"
+          },
+          "message": "Type 'unknown' is not assignable to type 'number | null | undefined'.",
+          "fingerprint": "ts:src/modules/bella-auto/services/mobile/OfflineSyncService.ts:TS2322:unknown:c34d339c"
+        },
+        {
+          "file": "src/modules/bella-auto/services/mobile/OfflineSyncService.ts",
+          "line": 122,
+          "column": 37,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2345",
+            "symbol": "\"increment\"",
+            "message_sig": "d0e5f2bc"
+          },
+          "message": "Argument of type '\"increment\"' is not assignable to parameter of type '\"acc_balance_at\" | \"accounting_missing_required_fields\" | \"add_partner_document\" | \"apply_rating_bonus\" | \"auto_confirm_stale_salary_records\" | \"backfill_accounting_metadata\" | ... 166 more ... | \"validate_api_partner\"'.",
+          "fingerprint": "ts:src/modules/bella-auto/services/mobile/OfflineSyncService.ts:TS2345:\"increment\":d0e5f2bc"
+        },
+        {
+          "file": "src/modules/bella-auto/services/mobile/OfflineSyncService.ts",
+          "line": 332,
+          "column": 24,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS18047",
+            "message_sig": "83d47ac4"
+          },
+          "message": "'action.sync_attempts' is possibly 'null'.",
+          "fingerprint": "ts:src/modules/bella-auto/services/mobile/OfflineSyncService.ts:TS18047:unknown:83d47ac4"
         },
         {
           "file": "src/modules/bella-auto/services/NextBestActionEngine.ts",
@@ -6670,6 +6739,20 @@
           },
           "message": "Type 'unknown' is not assignable to type 'Json | undefined'.",
           "fingerprint": "ts:src/modules/bella-auto/services/NextBestActionEngine.ts:TS2322:unknown:93b660f2"
+        },
+        {
+          "file": "src/modules/bella-auto/services/NPSSurveyService.ts",
+          "line": 293,
+          "column": 29,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2339",
+            "symbol": "assigned_to",
+            "message_sig": "c0836bbc"
+          },
+          "message": "Property 'assigned_to' does not exist on type 'SelectQueryError<\"column 'assigned_to' does not exist on 'auto_customer_journeys'.\">'.",
+          "fingerprint": "ts:src/modules/bella-auto/services/NPSSurveyService.ts:TS2339:assigned_to:c0836bbc"
         },
         {
           "file": "src/modules/bella-auto/services/PartsInventoryIntegration.ts",
@@ -7824,6 +7907,202 @@
           "fingerprint": "ts:src/modules/bella-auto/services/RepairOrderService.ts:TS2538:unknown:91d3ee8b"
         },
         {
+          "file": "src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts",
+          "line": 119,
+          "column": 9,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2322",
+            "symbol": "Record<string, unknown>",
+            "message_sig": "683a0fdb"
+          },
+          "message": "Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.",
+          "fingerprint": "ts:src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts:TS2322:Record<string, unknown>:683a0fdb"
+        },
+        {
+          "file": "src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts",
+          "line": 172,
+          "column": 9,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2322",
+            "symbol": "Record<string, unknown> | null",
+            "message_sig": "8a0bc7e4"
+          },
+          "message": "Type 'Record<string, unknown> | null' is not assignable to type 'Json | undefined'.",
+          "fingerprint": "ts:src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts:TS2322:Record<string, unknown> | null:8a0bc7e4"
+        },
+        {
+          "file": "src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts",
+          "line": 173,
+          "column": 9,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2322",
+            "symbol": "Record<string, unknown> | null",
+            "message_sig": "8a0bc7e4"
+          },
+          "message": "Type 'Record<string, unknown> | null' is not assignable to type 'Json | undefined'.",
+          "fingerprint": "ts:src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts:TS2322:Record<string, unknown> | null:8a0bc7e4"
+        },
+        {
+          "file": "src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts",
+          "line": 175,
+          "column": 9,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2322",
+            "symbol": "Record<string, unknown>",
+            "message_sig": "683a0fdb"
+          },
+          "message": "Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.",
+          "fingerprint": "ts:src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts:TS2322:Record<string, unknown>:683a0fdb"
+        },
+        {
+          "file": "src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts",
+          "line": 177,
+          "column": 9,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2322",
+            "symbol": "Record<string, unknown>",
+            "message_sig": "683a0fdb"
+          },
+          "message": "Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.",
+          "fingerprint": "ts:src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts:TS2322:Record<string, unknown>:683a0fdb"
+        },
+        {
+          "file": "src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts",
+          "line": 193,
+          "column": 7,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2322",
+            "symbol": "string | number | true | { [key: string]: Json | undefined; } | Json[] | undefined",
+            "message_sig": "be6eb2c3"
+          },
+          "message": "Type 'string | number | true | { [key: string]: Json | undefined; } | Json[] | undefined' is not assignable to type 'Record<string, unknown> | undefined'.",
+          "fingerprint": "ts:src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts:TS2322:string | number | true | { [key: string]: Json | undefined; } | Json[] | undefined:be6eb2c3"
+        },
+        {
+          "file": "src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts",
+          "line": 194,
+          "column": 7,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2322",
+            "symbol": "string | number | true | { [key: string]: Json | undefined; } | Json[] | undefined",
+            "message_sig": "be6eb2c3"
+          },
+          "message": "Type 'string | number | true | { [key: string]: Json | undefined; } | Json[] | undefined' is not assignable to type 'Record<string, unknown> | undefined'.",
+          "fingerprint": "ts:src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts:TS2322:string | number | true | { [key: string]: Json | undefined; } | Json[] | undefined:be6eb2c3"
+        },
+        {
+          "file": "src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts",
+          "line": 195,
+          "column": 7,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2322",
+            "symbol": "string | null",
+            "message_sig": "520f4ec2"
+          },
+          "message": "Type 'string | null' is not assignable to type 'string'.",
+          "fingerprint": "ts:src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts:TS2322:string | null:520f4ec2"
+        },
+        {
+          "file": "src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts",
+          "line": 196,
+          "column": 7,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2322",
+            "symbol": "Json",
+            "message_sig": "46c26acd"
+          },
+          "message": "Type 'Json' is not assignable to type 'Record<string, unknown>'.",
+          "fingerprint": "ts:src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts:TS2322:Json:46c26acd"
+        },
+        {
+          "file": "src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts",
+          "line": 358,
+          "column": 17,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2322",
+            "symbol": "string",
+            "message_sig": "f2ad6f87"
+          },
+          "message": "Type 'string' is not assignable to type '\"in_transit\" | \"warehouse\" | \"showroom\" | \"allocated\" | \"delivered\" | \"returned\" | \"scrapped\" | undefined'.",
+          "fingerprint": "ts:src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts:TS2322:string:f2ad6f87"
+        },
+        {
+          "file": "src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts",
+          "line": 380,
+          "column": 17,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2561",
+            "symbol": "current_stage_code",
+            "message_sig": "52c9cf5d"
+          },
+          "message": "Object literal may only specify known properties, but 'current_stage_code' does not exist in type 'RejectExcessProperties<{ created_at?: string | undefined; current_stage_id?: string | undefined; customer_id?: string | undefined; entered_stage_at?: string | undefined; id?: string | undefined; metadata?: Json | undefined; sla_deadline?: string | ... 1 more ... | undefined; sla_status?: string | undefined; tenant_i...'. Did you mean to write 'current_stage_id'?",
+          "fingerprint": "ts:src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts:TS2561:current_stage_code:52c9cf5d"
+        },
+        {
+          "file": "src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts",
+          "line": 416,
+          "column": 47,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2345",
+            "symbol": "\"increment_inventory\"",
+            "message_sig": "088d421e"
+          },
+          "message": "Argument of type '\"increment_inventory\"' is not assignable to parameter of type '\"acc_balance_at\" | \"accounting_missing_required_fields\" | \"add_partner_document\" | \"apply_rating_bonus\" | \"auto_confirm_stale_salary_records\" | \"backfill_accounting_metadata\" | ... 166 more ... | \"validate_api_partner\"'.",
+          "fingerprint": "ts:src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts:TS2345:\"increment_inventory\":088d421e"
+        },
+        {
+          "file": "src/modules/bella-auto/services/rollback/VehicleDeliveryRollback.ts",
+          "line": 162,
+          "column": 35,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2339",
+            "symbol": "current_stage_code",
+            "message_sig": "a7ab85d1"
+          },
+          "message": "Property 'current_stage_code' does not exist on type 'SelectQueryError<\"column 'current_stage_code' does not exist on 'auto_customer_journeys'.\">'.",
+          "fingerprint": "ts:src/modules/bella-auto/services/rollback/VehicleDeliveryRollback.ts:TS2339:current_stage_code:a7ab85d1"
+        },
+        {
+          "file": "src/modules/bella-auto/services/rollback/VehicleDeliveryRollback.ts",
+          "line": 167,
+          "column": 17,
+          "tool": "typescript",
+          "severity": "error",
+          "components": {
+            "code": "TS2561",
+            "symbol": "current_stage_code",
+            "message_sig": "52c9cf5d"
+          },
+          "message": "Object literal may only specify known properties, but 'current_stage_code' does not exist in type 'RejectExcessProperties<{ created_at?: string | undefined; current_stage_id?: string | undefined; customer_id?: string | undefined; entered_stage_at?: string | undefined; id?: string | undefined; metadata?: Json | undefined; sla_deadline?: string | ... 1 more ... | undefined; sla_status?: string | undefined; tenant_i...'. Did you mean to write 'current_stage_id'?",
+          "fingerprint": "ts:src/modules/bella-auto/services/rollback/VehicleDeliveryRollback.ts:TS2561:current_stage_code:52c9cf5d"
+        },
+        {
           "file": "src/modules/bella-auto/services/ServiceAppointmentService.ts",
           "line": 55,
           "column": 11,
@@ -8292,285 +8571,6 @@
           },
           "message": "Property 'actual_repair_cost' does not exist on type '{ approved_at: string | null; approved_by: string | null; claim_date: string; claim_number: string; claim_type: string; closed_at: string | null; coverage_percentage: number | null; ... 36 more ...; warranty_type: string | null; }'.",
           "fingerprint": "ts:src/modules/bella-auto/services/WarrantyService.ts:TS2339:actual_repair_cost:94b0d3b9"
-        },
-        {
-          "file": "src/modules/bella-auto/services/mobile/MobileNotificationService.ts",
-          "line": 51,
-          "column": 7,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2322",
-            "symbol": "unknown",
-            "message_sig": "93b660f2"
-          },
-          "message": "Type 'unknown' is not assignable to type 'Json | undefined'.",
-          "fingerprint": "ts:src/modules/bella-auto/services/mobile/MobileNotificationService.ts:TS2322:unknown:93b660f2"
-        },
-        {
-          "file": "src/modules/bella-auto/services/mobile/OfflineSyncService.ts",
-          "line": 68,
-          "column": 7,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2322",
-            "symbol": "unknown",
-            "message_sig": "e48d5060"
-          },
-          "message": "Type 'unknown' is not assignable to type 'Json'.",
-          "fingerprint": "ts:src/modules/bella-auto/services/mobile/OfflineSyncService.ts:TS2322:unknown:e48d5060"
-        },
-        {
-          "file": "src/modules/bella-auto/services/mobile/OfflineSyncService.ts",
-          "line": 108,
-          "column": 5,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2322",
-            "symbol": "{ action_data: Json; action_id: string; action_type: string; created_at: string; entity_type: string; priority: number; }[]",
-            "message_sig": "669f65b5"
-          },
-          "message": "Type '{ action_data: Json; action_id: string; action_type: string; created_at: string; entity_type: string; priority: number; }[]' is not assignable to type '{ action_data: Json; action_type: string; conflict_resolution: string | null; conflict_resolved_at: string | null; conflict_resolved_by: string | null; created_at: string; ... 12 more ...; user_id: string; }[]'.",
-          "fingerprint": "ts:src/modules/bella-auto/services/mobile/OfflineSyncService.ts:TS2322:{ action_data: Json; action_id: string; action_type: string; created_at: string; entity_type: string; priority: number; }[]:669f65b5"
-        },
-        {
-          "file": "src/modules/bella-auto/services/mobile/OfflineSyncService.ts",
-          "line": 122,
-          "column": 9,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2322",
-            "symbol": "unknown",
-            "message_sig": "c34d339c"
-          },
-          "message": "Type 'unknown' is not assignable to type 'number | null | undefined'.",
-          "fingerprint": "ts:src/modules/bella-auto/services/mobile/OfflineSyncService.ts:TS2322:unknown:c34d339c"
-        },
-        {
-          "file": "src/modules/bella-auto/services/mobile/OfflineSyncService.ts",
-          "line": 122,
-          "column": 37,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2345",
-            "symbol": "\"increment\"",
-            "message_sig": "d0e5f2bc"
-          },
-          "message": "Argument of type '\"increment\"' is not assignable to parameter of type '\"acc_balance_at\" | \"accounting_missing_required_fields\" | \"add_partner_document\" | \"apply_rating_bonus\" | \"auto_confirm_stale_salary_records\" | \"backfill_accounting_metadata\" | ... 166 more ... | \"validate_api_partner\"'.",
-          "fingerprint": "ts:src/modules/bella-auto/services/mobile/OfflineSyncService.ts:TS2345:\"increment\":d0e5f2bc"
-        },
-        {
-          "file": "src/modules/bella-auto/services/mobile/OfflineSyncService.ts",
-          "line": 332,
-          "column": 24,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS18047",
-            "message_sig": "83d47ac4"
-          },
-          "message": "'action.sync_attempts' is possibly 'null'.",
-          "fingerprint": "ts:src/modules/bella-auto/services/mobile/OfflineSyncService.ts:TS18047:unknown:83d47ac4"
-        },
-        {
-          "file": "src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts",
-          "line": 119,
-          "column": 9,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2322",
-            "symbol": "Record<string, unknown>",
-            "message_sig": "683a0fdb"
-          },
-          "message": "Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.",
-          "fingerprint": "ts:src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts:TS2322:Record<string, unknown>:683a0fdb"
-        },
-        {
-          "file": "src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts",
-          "line": 172,
-          "column": 9,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2322",
-            "symbol": "Record<string, unknown> | null",
-            "message_sig": "8a0bc7e4"
-          },
-          "message": "Type 'Record<string, unknown> | null' is not assignable to type 'Json | undefined'.",
-          "fingerprint": "ts:src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts:TS2322:Record<string, unknown> | null:8a0bc7e4"
-        },
-        {
-          "file": "src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts",
-          "line": 173,
-          "column": 9,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2322",
-            "symbol": "Record<string, unknown> | null",
-            "message_sig": "8a0bc7e4"
-          },
-          "message": "Type 'Record<string, unknown> | null' is not assignable to type 'Json | undefined'.",
-          "fingerprint": "ts:src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts:TS2322:Record<string, unknown> | null:8a0bc7e4"
-        },
-        {
-          "file": "src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts",
-          "line": 175,
-          "column": 9,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2322",
-            "symbol": "Record<string, unknown>",
-            "message_sig": "683a0fdb"
-          },
-          "message": "Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.",
-          "fingerprint": "ts:src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts:TS2322:Record<string, unknown>:683a0fdb"
-        },
-        {
-          "file": "src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts",
-          "line": 177,
-          "column": 9,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2322",
-            "symbol": "Record<string, unknown>",
-            "message_sig": "683a0fdb"
-          },
-          "message": "Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.",
-          "fingerprint": "ts:src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts:TS2322:Record<string, unknown>:683a0fdb"
-        },
-        {
-          "file": "src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts",
-          "line": 193,
-          "column": 7,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2322",
-            "symbol": "string | number | true | { [key: string]: Json | undefined; } | Json[] | undefined",
-            "message_sig": "be6eb2c3"
-          },
-          "message": "Type 'string | number | true | { [key: string]: Json | undefined; } | Json[] | undefined' is not assignable to type 'Record<string, unknown> | undefined'.",
-          "fingerprint": "ts:src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts:TS2322:string | number | true | { [key: string]: Json | undefined; } | Json[] | undefined:be6eb2c3"
-        },
-        {
-          "file": "src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts",
-          "line": 194,
-          "column": 7,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2322",
-            "symbol": "string | number | true | { [key: string]: Json | undefined; } | Json[] | undefined",
-            "message_sig": "be6eb2c3"
-          },
-          "message": "Type 'string | number | true | { [key: string]: Json | undefined; } | Json[] | undefined' is not assignable to type 'Record<string, unknown> | undefined'.",
-          "fingerprint": "ts:src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts:TS2322:string | number | true | { [key: string]: Json | undefined; } | Json[] | undefined:be6eb2c3"
-        },
-        {
-          "file": "src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts",
-          "line": 195,
-          "column": 7,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2322",
-            "symbol": "string | null",
-            "message_sig": "520f4ec2"
-          },
-          "message": "Type 'string | null' is not assignable to type 'string'.",
-          "fingerprint": "ts:src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts:TS2322:string | null:520f4ec2"
-        },
-        {
-          "file": "src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts",
-          "line": 196,
-          "column": 7,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2322",
-            "symbol": "Json",
-            "message_sig": "46c26acd"
-          },
-          "message": "Type 'Json' is not assignable to type 'Record<string, unknown>'.",
-          "fingerprint": "ts:src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts:TS2322:Json:46c26acd"
-        },
-        {
-          "file": "src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts",
-          "line": 358,
-          "column": 17,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2322",
-            "symbol": "string",
-            "message_sig": "f2ad6f87"
-          },
-          "message": "Type 'string' is not assignable to type '\"in_transit\" | \"warehouse\" | \"showroom\" | \"allocated\" | \"delivered\" | \"returned\" | \"scrapped\" | undefined'.",
-          "fingerprint": "ts:src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts:TS2322:string:f2ad6f87"
-        },
-        {
-          "file": "src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts",
-          "line": 380,
-          "column": 17,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2561",
-            "symbol": "current_stage_code",
-            "message_sig": "52c9cf5d"
-          },
-          "message": "Object literal may only specify known properties, but 'current_stage_code' does not exist in type 'RejectExcessProperties<{ created_at?: string | undefined; current_stage_id?: string | undefined; customer_id?: string | undefined; entered_stage_at?: string | undefined; id?: string | undefined; metadata?: Json | undefined; sla_deadline?: string | ... 1 more ... | undefined; sla_status?: string | undefined; tenant_i...'. Did you mean to write 'current_stage_id'?",
-          "fingerprint": "ts:src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts:TS2561:current_stage_code:52c9cf5d"
-        },
-        {
-          "file": "src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts",
-          "line": 416,
-          "column": 47,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2345",
-            "symbol": "\"increment_inventory\"",
-            "message_sig": "088d421e"
-          },
-          "message": "Argument of type '\"increment_inventory\"' is not assignable to parameter of type '\"acc_balance_at\" | \"accounting_missing_required_fields\" | \"add_partner_document\" | \"apply_rating_bonus\" | \"auto_confirm_stale_salary_records\" | \"backfill_accounting_metadata\" | ... 166 more ... | \"validate_api_partner\"'.",
-          "fingerprint": "ts:src/modules/bella-auto/services/rollback/BusinessRollbackEngine.ts:TS2345:\"increment_inventory\":088d421e"
-        },
-        {
-          "file": "src/modules/bella-auto/services/rollback/VehicleDeliveryRollback.ts",
-          "line": 162,
-          "column": 35,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2339",
-            "symbol": "current_stage_code",
-            "message_sig": "a7ab85d1"
-          },
-          "message": "Property 'current_stage_code' does not exist on type 'SelectQueryError<\"column 'current_stage_code' does not exist on 'auto_customer_journeys'.\">'.",
-          "fingerprint": "ts:src/modules/bella-auto/services/rollback/VehicleDeliveryRollback.ts:TS2339:current_stage_code:a7ab85d1"
-        },
-        {
-          "file": "src/modules/bella-auto/services/rollback/VehicleDeliveryRollback.ts",
-          "line": 167,
-          "column": 17,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2561",
-            "symbol": "current_stage_code",
-            "message_sig": "52c9cf5d"
-          },
-          "message": "Object literal may only specify known properties, but 'current_stage_code' does not exist in type 'RejectExcessProperties<{ created_at?: string | undefined; current_stage_id?: string | undefined; customer_id?: string | undefined; entered_stage_at?: string | undefined; id?: string | undefined; metadata?: Json | undefined; sla_deadline?: string | ... 1 more ... | undefined; sla_status?: string | undefined; tenant_i...'. Did you mean to write 'current_stage_id'?",
-          "fingerprint": "ts:src/modules/bella-auto/services/rollback/VehicleDeliveryRollback.ts:TS2561:current_stage_code:52c9cf5d"
         },
         {
           "file": "src/modules/bella-healthcare/adapters/healthcare-adapter.ts",
@@ -13876,7 +13876,7 @@
             "symbol": "string",
             "message_sig": "b99a1c59"
           },
-          "message": "Type 'string' is not assignable to type '\"RECEIVED\" | \"QUARANTINED\" | \"DAMAGED\" | \"MOVED\" | \"RELEASED\" | \"SHIPPED\" | \"DESTROYED\"'.",
+          "message": "Type 'string' is not assignable to type '\"RELEASED\" | \"RECEIVED\" | \"QUARANTINED\" | \"DAMAGED\" | \"MOVED\" | \"SHIPPED\" | \"DESTROYED\"'.",
           "fingerprint": "ts:src/platform/logistics/domain/traceability.domain.ts:TS2322:string:b99a1c59"
         },
         {
@@ -15114,19 +15114,6 @@
         },
         {
           "file": "src/platform/logistics/repositories/inventory.repository.ts",
-          "line": 402,
-          "column": 38,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2589",
-            "message_sig": "b1fe10ad"
-          },
-          "message": "Type instantiation is excessively deep and possibly infinite.",
-          "fingerprint": "ts:src/platform/logistics/repositories/inventory.repository.ts:TS2589:unknown:b1fe10ad"
-        },
-        {
-          "file": "src/platform/logistics/repositories/inventory.repository.ts",
           "line": 403,
           "column": 15,
           "tool": "typescript",
@@ -15871,19 +15858,6 @@
         },
         {
           "file": "src/platform/logistics/repositories/item.repository.ts",
-          "line": 216,
-          "column": 19,
-          "tool": "typescript",
-          "severity": "error",
-          "components": {
-            "code": "TS2589",
-            "message_sig": "b1fe10ad"
-          },
-          "message": "Type instantiation is excessively deep and possibly infinite.",
-          "fingerprint": "ts:src/platform/logistics/repositories/item.repository.ts:TS2589:unknown:b1fe10ad"
-        },
-        {
-          "file": "src/platform/logistics/repositories/item.repository.ts",
           "line": 217,
           "column": 15,
           "tool": "typescript",
@@ -15945,11 +15919,11 @@
           "severity": "error",
           "components": {
             "code": "TS2322",
-            "symbol": "\"GOODS\" | \"SERVICE\" | \"VIRTUAL\" | \"ASSET\"",
-            "message_sig": "349640fd"
+            "symbol": "\"ASSET\" | \"GOODS\" | \"SERVICE\" | \"VIRTUAL\"",
+            "message_sig": "2b51d947"
           },
-          "message": "Type '\"GOODS\" | \"SERVICE\" | \"VIRTUAL\" | \"ASSET\"' is not assignable to type 'ItemType'.",
-          "fingerprint": "ts:src/platform/logistics/repositories/item.repository.ts:TS2322:\"GOODS\" | \"SERVICE\" | \"VIRTUAL\" | \"ASSET\":349640fd"
+          "message": "Type '\"ASSET\" | \"GOODS\" | \"SERVICE\" | \"VIRTUAL\"' is not assignable to type 'ItemType'.",
+          "fingerprint": "ts:src/platform/logistics/repositories/item.repository.ts:TS2322:\"ASSET\" | \"GOODS\" | \"SERVICE\" | \"VIRTUAL\":2b51d947"
         },
         {
           "file": "src/platform/logistics/repositories/item.repository.ts",
@@ -19324,12 +19298,12 @@
           "tool": "typescript",
           "severity": "error",
           "components": {
-            "code": "TS2304",
+            "code": "TS2552",
             "symbol": "PartnerApplicationStatus",
-            "message_sig": "08da8432"
+            "message_sig": "55274c0f"
           },
-          "message": "Cannot find name 'PartnerApplicationStatus'.",
-          "fingerprint": "ts:src/services/partner-registration-actions.ts:TS2304:PartnerApplicationStatus:08da8432"
+          "message": "Cannot find name 'PartnerApplicationStatus'. Did you mean 'PartnerApplication'?",
+          "fingerprint": "ts:src/services/partner-registration-actions.ts:TS2552:PartnerApplicationStatus:55274c0f"
         },
         {
           "file": "src/services/partner-registration-actions.ts",
@@ -19485,10 +19459,10 @@
           "fingerprint": "ts:src/services/workforce-actions.ts:TS2304:CustomersJoin:4d21396a"
         }
       ],
-      "count": 1411,
+      "count": 1409,
       "metadata": {
-        "last_updated": "2026-09-22T15:49:54Z",
-        "notes": "Aligned from origin/main@de6a450f Type Check run 35749332435 artifact full.diagnostics.txt"
+        "last_updated": "2026-09-23T07:22:18.634Z",
+        "notes": "Updated from exact TypeScript collector output on origin/main@c0b671f760dd490ccbf1e5d69216bc8bcaf0b10e"
       }
     },
     "eslint-changed": {
