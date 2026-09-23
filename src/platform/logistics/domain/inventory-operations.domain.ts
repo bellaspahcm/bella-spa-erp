@@ -1,19 +1,19 @@
 /**
  * E7.2 Inventory Operations Domain Service
- * 
+ *
  * Coordinates multi-entity operations involving Inventory + Movement.
- * 
+ *
  * Design Principles:
  * - Pure functions (no infrastructure dependencies)
  * - Returns entity tuples (no persistence)
  * - Products orchestrate transaction boundaries
  * - NO Product workflow logic (Warehouse, Finance, etc.)
- * 
+ *
  * Responsibilities:
  * - Coordinate Inventory + Movement creation
  * - Validate cross-entity constraints
  * - Ensure both entities valid before returning
- * 
+ *
  * NOT Responsibilities:
  * - Transaction management (Product layer)
  * - Persistence orchestration (Product layer)
@@ -29,18 +29,18 @@ import type { Inventory, Movement } from './inventory.types';
 export class InventoryOperationsDomain {
   /**
    * Reserve inventory with corresponding movement record
-   * 
+   *
    * Coordinates:
    * 1. Reserve inventory (AVAILABLE → RESERVED)
    * 2. Create outbound movement record
-   * 
+   *
    * Both entities must be valid. Products responsible for:
    * - Transaction boundary
    * - Persistence orchestration
    * - Rollback on failure
-   * 
+   *
    * Use case: Sales order allocation, production requisition
-   * 
+   *
    * NOT for: Warehouse-specific putaway, bin selection
    */
   static reserveWithMovement(
@@ -102,11 +102,11 @@ export class InventoryOperationsDomain {
 
   /**
    * Ship inventory with corresponding movement record
-   * 
+   *
    * Coordinates:
    * 1. Ship inventory (RESERVED → IN_TRANSIT)
    * 2. Create transfer movement record
-   * 
+   *
    * Use case: Fulfillment, inter-location transfer
    */
   static shipWithMovement(
@@ -168,11 +168,11 @@ export class InventoryOperationsDomain {
 
   /**
    * Cancel reservation with corresponding reversal movement
-   * 
+   *
    * Coordinates:
    * 1. Cancel inventory reservation (RESERVED → AVAILABLE)
    * 2. Create reversal movement record
-   * 
+   *
    * Use case: Order cancellation, reservation expiration
    */
   static cancelWithMovement(

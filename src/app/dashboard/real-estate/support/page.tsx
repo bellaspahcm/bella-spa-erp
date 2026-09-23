@@ -403,7 +403,7 @@ export default function CustomerServiceCenterPage() {
                 <Search className="w-4 h-4" />
               </button>
               <button 
-                onClick={() => { setFilterStatus('escalated'); toast.info("Đã lọc danh sách phiếu quá hạn!"); }}
+                onClick={() => { setActiveTab("overdue"); toast.info("Đã lọc danh sách phiếu quá hạn!"); }}
                 className="relative w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition shadow-2xs cursor-pointer"
                 title="Thông báo CSKH"
               >

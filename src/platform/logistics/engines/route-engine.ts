@@ -21,6 +21,7 @@ import type {
   Route,
   RouteStatus,
   Waypoint,
+  Location,
   Distance,
 } from '../shared-kernel/types';
 
@@ -1213,11 +1214,11 @@ export class RouteEngineService implements RouteManagementContract {
       const wp = w as WaypointRow;
       return {
         sequence: wp.sequence,
-        location: wp.location as unknown as { type: string; address: unknown; coordinates?: unknown },
+        location: wp.location as Location,
         type: wp.waypoint_type,
         plannedArrival: wp.planned_arrival,
         actualArrival: wp.actual_arrival || undefined,
-        shipmentIds: [],
+        shipmentIds: [] as string[],
         action: wp.action,
         completed: wp.completed,
         notes: wp.notes || undefined,

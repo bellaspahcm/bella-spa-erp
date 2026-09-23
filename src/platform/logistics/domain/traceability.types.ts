@@ -28,7 +28,7 @@ export interface TraceabilityId {
 export interface SupplierReference {
   supplier_id: string;
   supplier_name: string;
-  supplier_lot_number?: string;
+  supplier_lotNumber?: string;
 }
 
 /**
@@ -38,8 +38,8 @@ export interface SupplierReference {
  */
 export interface CustodyEvent {
   timestamp: Date;
-  location_id: string;
-  location_type: LocationType;
+  locationId: string;
+  locationType: LocationType;
   action: 'RECEIVED' | 'MOVED' | 'QUARANTINED' | 'RELEASED' | 'SHIPPED' | 'DAMAGED' | 'DESTROYED';
   user_id?: string;
   notes?: string;
@@ -66,18 +66,21 @@ export type ComplianceStatus =
  * 
  * Complete traceability information for lot or serial
  */
+/** Alias for TraceabilityRecord — backward-compatible export for domain consumers */
+export type Traceability = TraceabilityRecord;
+
 export interface TraceabilityRecord {
   id: TraceabilityId;
-  tenant_id: string;
-  item_id: ItemId;
+  tenantId: string;
+  itemId: ItemId;
   
   // Identifiers
-  lot_number?: LotNumber;
-  serial_number?: SerialNumber;
+  lotNumber?: LotNumber;
+  serialNumber?: SerialNumber;
   
   // Lifecycle
   manufactured_date?: Date;
-  expiry_date?: Date;
+  expiryDate?: Date;
   received_date: Date;
   
   // Origin
@@ -93,20 +96,32 @@ export interface TraceabilityRecord {
   recall_date?: Date;
   
   // Audit
-  created_at: Date;
-  updated_at: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Add Custody Event Props
+ */
+export interface AddCustodyEventProps {
+  locationId: string;
+  locationType?: LocationType;
+  action: string;
+  user_id?: string;
+  notes?: string;
+  timestamp?: Date;
 }
 
 /**
  * Create Traceability Props
  */
 export interface CreateTraceabilityProps {
-  tenant_id: string;
-  item_id: string;
-  lot_number?: string;
-  serial_number?: string;
+  tenantId: string;
+  itemId: string;
+  lotNumber?: string;
+  serialNumber?: string;
   manufactured_date?: Date;
-  expiry_date?: Date;
+  expiryDate?: Date;
   received_date?: Date;
   supplier?: SupplierReference;
 }
@@ -115,9 +130,9 @@ export interface CreateTraceabilityProps {
  * Traceability Filters
  */
 export interface TraceabilityFilters {
-  item_id?: string | string[];
-  lot_number?: string;
-  serial_number?: string;
+  itemId?: string | string[];
+  lotNumber?: string;
+  serialNumber?: string;
   expiry_before?: Date;
   expiry_after?: Date;
   recall_status?: RecallStatus;

@@ -25,7 +25,9 @@ import {
   HoldReceiptResult,
   ReleaseHoldInput,
   ReleaseHoldResult,
+  ListReceiptsInput,
   ListReceiptsResult,
+  ReceiptSummary,
 } from '../shared-kernel/types/warehouse.types';
 import {
   validateCreateReceipt,
@@ -300,7 +302,6 @@ export class ReceiptService {
       const lineItems = (lineItemsData as LineItemRow[]).map(this.mapLineItemRowToEntity);
 
       // Generate discrepancy summary
-      const skuMap = new Map((skus as SKURow[]).map(s => [s.id, s]));
       const discrepancies: DiscrepancySummary[] = lineItems
         .filter(item => item.discrepancy_status !== 'match')
         .map(item => {

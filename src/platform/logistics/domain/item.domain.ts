@@ -1,9 +1,9 @@
 /**
  * Item Domain Kernel
- * 
+ *
  * Pure business logic for Item/SKU management.
  * Zero dependencies on infrastructure (database, HTTP, Warehouse).
- * 
+ *
  * Responsibilities:
  * - SKU creation with validation
  * - Traceability configuration validation
@@ -24,7 +24,7 @@ import type {
 export class ItemDomain {
   /**
    * Create new Item/SKU
-   * 
+   *
    * Invariants:
    * - SKU code required and non-empty
    * - Name required
@@ -89,23 +89,23 @@ export class ItemDomain {
       skuCode: props.skuCode.trim(),
       name: props.name.trim(),
       description: props.description?.trim() || null,
-      
+
       type: props.type || 'GOODS',
       category: props.category?.trim() || null,
-      
+
       baseUom: props.baseUom,
       weightKg: props.weightKg !== undefined ? props.weightKg : null,
       dimensionsJson: props.dimensionsJson || null,
-      
+
       standardCost: props.standardCost !== undefined ? props.standardCost : null,
       currency: props.currency || 'VND',
-      
+
       lotTracked: props.lotTracked || false,
       serialTracked: props.serialTracked || false,
       expiryTracked: props.expiryTracked || false,
-      
+
       status: props.status || 'ACTIVE',
-      
+
       createdAt: now,
       updatedAt: now,
       createdBy: props.createdBy || null,
@@ -117,7 +117,7 @@ export class ItemDomain {
 
   /**
    * Update existing Item
-   * 
+   *
    * Cannot change:
    * - tenantId (immutable)
    * - skuCode (business key, immutable)
@@ -130,11 +130,11 @@ export class ItemDomain {
     }
 
     // Traceability invariant
-    const newLotTracked = updates.lotTracked !== undefined 
-      ? updates.lotTracked 
+    const newLotTracked = updates.lotTracked !== undefined
+      ? updates.lotTracked
       : existingItem.lotTracked;
-    const newSerialTracked = updates.serialTracked !== undefined 
-      ? updates.serialTracked 
+    const newSerialTracked = updates.serialTracked !== undefined
+      ? updates.serialTracked
       : existingItem.serialTracked;
 
     if (newSerialTracked && !newLotTracked) {
@@ -174,11 +174,11 @@ export class ItemDomain {
       ...existingItem,
       ...updates,
       name: updates.name?.trim() || existingItem.name,
-      description: updates.description !== undefined 
-        ? updates.description?.trim() || null 
+      description: updates.description !== undefined
+        ? updates.description?.trim() || null
         : existingItem.description,
-      category: updates.category !== undefined 
-        ? updates.category?.trim() || null 
+      category: updates.category !== undefined
+        ? updates.category?.trim() || null
         : existingItem.category,
       updatedAt: new Date(),
     };
@@ -198,7 +198,7 @@ export class ItemDomain {
     };
 
     const allowed = validTransitions[item.status] || [];
-    
+
     if (!allowed.includes(newStatus)) {
       return Result.fail(
         `Cannot transition from ${item.status} to ${newStatus}`,
@@ -211,7 +211,7 @@ export class ItemDomain {
 
   /**
    * Check if item can be deactivated
-   * 
+   *
    * Note: Actual inventory check happens at repository layer.
    * This is domain-level validation only.
    */
@@ -279,7 +279,7 @@ export class ItemDomain {
     if (!item.dimensionsJson) return null;
 
     const { length, width, height } = item.dimensionsJson;
-    
+
     if (
       typeof length === 'number' &&
       typeof width === 'number' &&

@@ -67,9 +67,9 @@ export function mapRepairOrderForBoard(dbOrder: DbRepairOrder) {
     priority: dbOrder.priority || 'normal',
     estimatedCompletionDate: dbOrder.estimated_completion_date,
     actualCompletionDate: dbOrder.actual_completion_date,
-    totalEstimate: dbOrder.total_estimate ? Number(dbOrder.total_estimate) : 0,
-    totalActual: dbOrder.total_actual ? Number(dbOrder.total_actual) : 0,
-    assignedTechnicianId: dbOrder.assigned_technician_id,
+    totalEstimate: dbOrder.estimated_total ? Number(dbOrder.estimated_total) : 0,
+    totalActual: dbOrder.actual_total ? Number(dbOrder.actual_total) : 0,
+    assignedTechnicianId: dbOrder.primary_technician_id,
     serviceAdvisorId: dbOrder.service_advisor_id,
   };
 }

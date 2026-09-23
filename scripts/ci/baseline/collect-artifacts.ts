@@ -204,18 +204,22 @@ async function main() {
   let jestParseError: string | undefined;
 
   try {
-    const res = execSync('npx jest --json --testPathPatterns="src/"', {
+    execSync(`node scripts/test-changed-files.mjs --jest-json-output "${path.join(outDir, 'jest-output.json')}"`, {
       encoding: 'utf-8',
       stdio: 'pipe',
       maxBuffer: 50 * 1024 * 1024
     });
-    jestOutput = res || '{}';
+    jestOutput = fs.existsSync(path.join(outDir, 'jest-output.json'))
+      ? fs.readFileSync(path.join(outDir, 'jest-output.json'), 'utf-8')
+      : '{}';
   } catch (err: any) {
     if (err.signal || err.code === 'ENOENT' || err.code === 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER') {
       jestStatus = 'failed';
       jestParseError = `Jest execution crash: ${err.signal || err.code || err.message}`;
     } else {
-      jestOutput = err.stdout || '{}';
+      jestOutput = fs.existsSync(path.join(outDir, 'jest-output.json'))
+        ? fs.readFileSync(path.join(outDir, 'jest-output.json'), 'utf-8')
+        : '{}';
     }
   }
 

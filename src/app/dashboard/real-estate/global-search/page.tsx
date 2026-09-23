@@ -172,10 +172,14 @@ export default function GlobalSearchPage() {
         const savedLeadsStr = localStorage.getItem('bella_re_managed_leads');
         if (savedLeadsStr) {
           type SavedLead = {
+            id?: string;
             fullName?: string;
             phone?: string;
             email?: string;
             interestedProject?: string;
+            notes?: string;
+            currentSaleName?: string;
+            state?: "unassigned" | "waiting_accept" | "in_progress" | "converted" | "lost";
           };
           const leadsList = JSON.parse(savedLeadsStr) as SavedLead[];
           const filteredLeads = leadsList.filter(l => {
@@ -207,11 +211,12 @@ export default function GlobalSearchPage() {
               converted: "Đã chốt cọc",
               lost: "Đã mất/Từ chối"
             };
+            const stateLabel = l.state ? stateMap[l.state] || l.state : "Chưa phân phối";
             all.push({
-              id: l.id,
+              id: l.id || l.phone || l.email || l.fullName || "lead",
               type: "lead",
-              title: l.fullName,
-              subtitle: `SĐT: ${l.phone} • Trạng thái: ${stateMap[l.state] || l.state} • Sale: ${l.currentSaleName || "Chưa phân phối"}`,
+              title: l.fullName || "Lead",
+              subtitle: `SĐT: ${l.phone} • Trạng thái: ${stateLabel} • Sale: ${l.currentSaleName || "Chưa phân phối"}`,
               href: `/dashboard/real-estate/leads`,
             });
           });

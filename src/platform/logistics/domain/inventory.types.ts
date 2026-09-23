@@ -5,7 +5,7 @@
  * Supports reservation (soft allocation) and availability tracking.
  * 
  * Design Principles:
- * - Location-agnostic (uses generic location_id, not bin-specific)
+ * - Location-agnostic (uses generic locationId, not bin-specific)
  * - Product-agnostic (serves Warehouse, Fulfillment, 3PL, etc.)
  * - State-aware (AVAILABLE, QUARANTINE, DAMAGED, etc.)
  * - Traceability-ready (lot, serial, expiry tracking)
@@ -93,27 +93,27 @@ export interface SerialNumber {
  * Represents current on-hand balance of an item at a location
  * 
  * Quantity Rules:
- * - quantity_on_hand: Physical quantity present
- * - quantity_reserved: Soft allocated (order placed, not picked)
- * - quantity_available: on_hand - reserved (computed)
+ * - quantityOnHand: Physical quantity present
+ * - quantityReserved: Soft allocated (order placed, not picked)
+ * - quantityAvailable: on_hand - reserved (computed)
  * 
  * Example:
  * ```typescript
  * const inventory: Inventory = {
  *   id: { value: '123e4567-...' },
- *   tenant_id: 'tenant-a',
- *   item_id: { value: 'item-1' },
- *   location_id: { value: 'WH-001' },
- *   location_type: 'WAREHOUSE',
- *   quantity_on_hand: 100,
- *   quantity_reserved: 25,
- *   quantity_available: 75, // computed
- *   lot_number: { value: 'LOT-2024-001' },
- *   serial_number: undefined, // lot-tracked, not serial-tracked
- *   expiry_date: new Date('2025-12-31'),
+ *   tenantId: 'tenant-a',
+ *   itemId: { value: 'item-1' },
+ *   locationId: { value: 'WH-001' },
+ *   locationType: 'WAREHOUSE',
+ *   quantityOnHand: 100,
+ *   quantityReserved: 25,
+ *   quantityAvailable: 75, // computed
+ *   lotNumber: { value: 'LOT-2024-001' },
+ *   serialNumber: undefined, // lot-tracked, not serial-tracked
+ *   expiryDate: new Date('2025-12-31'),
  *   status: 'AVAILABLE',
- *   created_at: new Date(),
- *   updated_at: new Date(),
+ *   createdAt: new Date(),
+ *   updatedAt: new Date(),
  * };
  * ```
  */
@@ -123,37 +123,37 @@ export interface Inventory {
   id: InventoryId;
   
   /** Tenant ID (P0 Gate - tenant isolation) */
-  tenant_id: string;
+  tenantId: string;
   
   /** Item reference */
-  item_id: ItemId;
+  itemId: ItemId;
   
   // ========== Location ==========
   /** Generic location identifier */
-  location_id: LocationId;
+  locationId: LocationId;
   
   /** Location type (for filtering/reporting) */
-  location_type: LocationType;
+  locationType: LocationType;
   
   // ========== Quantity ==========
   /** Physical quantity on hand */
-  quantity_on_hand: number;
+  quantityOnHand: number;
   
   /** Reserved quantity (soft allocation) */
-  quantity_reserved: number;
+  quantityReserved: number;
   
   /** Available quantity (computed: on_hand - reserved) */
-  quantity_available: number;
+  quantityAvailable: number;
   
   // ========== Traceability ==========
-  /** Lot/batch number (if item.lot_tracked = true) */
-  lot_number?: LotNumber;
+  /** Lot/batch number (if item.lotTracked = true) */
+  lotNumber?: LotNumber;
   
-  /** Serial number (if item.serial_tracked = true) */
-  serial_number?: SerialNumber;
+  /** Serial number (if item.serialTracked = true) */
+  serialNumber?: SerialNumber;
   
-  /** Expiry date (if item.expiry_tracked = true) */
-  expiry_date?: Date;
+  /** Expiry date (if item.expiryTracked = true) */
+  expiryDate?: Date;
   
   // ========== Status ==========
   /** Current inventory status */
@@ -161,10 +161,10 @@ export interface Inventory {
   
   // ========== Audit ==========
   /** Creation timestamp */
-  created_at: Date;
+  createdAt: Date;
   
   /** Last update timestamp */
-  updated_at: Date;
+  updatedAt: Date;
 }
 
 /**
@@ -173,14 +173,14 @@ export interface Inventory {
  * Input for creating a new inventory record
  */
 export interface CreateInventoryProps {
-  tenant_id: string;
-  item_id: string;
-  location_id: string;
-  location_type: LocationType;
-  quantity_on_hand: number;
-  lot_number?: string;
-  serial_number?: string;
-  expiry_date?: Date;
+  tenantId: string;
+  itemId: string;
+  locationId: string;
+  locationType: LocationType;
+  quantityOnHand: number;
+  lotNumber?: string;
+  serialNumber?: string;
+  expiryDate?: Date;
   status?: InventoryStatus;
 }
 
@@ -233,29 +233,29 @@ export interface ReleaseReservationProps {
  */
 export interface InventoryFilters {
   /** Filter by item */
-  item_id?: string | string[];
+  itemId?: string | string[];
   
   /** Filter by location */
-  location_id?: string | string[];
+  locationId?: string | string[];
   
   /** Filter by location type */
-  location_type?: LocationType | LocationType[];
+  locationType?: LocationType | LocationType[];
   
   /** Filter by status */
   status?: InventoryStatus | InventoryStatus[];
   
   /** Filter by lot number */
-  lot_number?: string;
+  lotNumber?: string;
   
   /** Filter by serial number */
-  serial_number?: string;
+  serialNumber?: string;
   
   /** Filter expiry date range */
   expiry_before?: Date;
   expiry_after?: Date;
   
   /** Filter by availability */
-  only_available?: boolean; // quantity_available > 0
+  only_available?: boolean; // quantityAvailable > 0
   
   /** Filter by minimum quantity */
   min_quantity?: number;
@@ -267,18 +267,18 @@ export interface InventoryFilters {
  * Aggregated view of inventory across locations
  */
 export interface InventoryBalanceSummary {
-  tenant_id: string;
-  item_id: string;
+  tenantId: string;
+  itemId: string;
   total_on_hand: number;
   total_reserved: number;
   total_available: number;
   location_count: number; // Number of locations with inventory
   by_location: Array<{
-    location_id: string;
-    location_type: LocationType;
-    quantity_on_hand: number;
-    quantity_reserved: number;
-    quantity_available: number;
+    locationId: string;
+    locationType: LocationType;
+    quantityOnHand: number;
+    quantityReserved: number;
+    quantityAvailable: number;
   }>;
   by_status: Array<{
     status: InventoryStatus;

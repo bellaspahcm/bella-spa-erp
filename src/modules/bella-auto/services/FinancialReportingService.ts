@@ -38,10 +38,10 @@ interface SaleRow {
 
 interface RepairOrderRow {
   id: string;
-  total_labor_cost: number | null;
-  total_parts_cost: number | null;
-  total_amount: number | null;
-  service_type: string | null;
+  actual_labor_cost: number | null;
+  actual_parts_cost: number | null;
+  actual_total: number | null;
+  order_type: string | null;
 }
 
 interface LoanRow {
@@ -203,10 +203,10 @@ export class FinancialReportingService {
       .from('auto_repair_orders')
       .select(`
         id,
-        total_labor_cost,
-        total_parts_cost,
-        total_amount,
-        service_type
+        actual_labor_cost,
+        actual_parts_cost,
+        actual_total,
+        order_type
       `)
       .eq('tenant_id', tenantId)
       .eq('status', 'completed');
@@ -237,19 +237,19 @@ export class FinancialReportingService {
     };
     
     (data || []).forEach((order: RepairOrderRow) => {
-      const totalAmount = Number(order.total_amount) || 0;
-      const laborCost = Number(order.total_labor_cost) || 0;
-      const partsCost = Number(order.total_parts_cost) || 0;
+      const totalAmount = Number(order.actual_total) || 0;
+      const laborCost = Number(order.actual_labor_cost) || 0;
+      const partsCost = Number(order.actual_parts_cost) || 0;
       
       revenue.totalRevenue += totalAmount;
       revenue.laborRevenue += laborCost;
       revenue.partsRevenue += partsCost;
       
-      if (order.service_type === 'maintenance') {
+      if (order.order_type === 'maintenance') {
         revenue.revenueByType.maintenance += totalAmount;
-      } else if (order.service_type === 'repair') {
+      } else if (order.order_type === 'repair') {
         revenue.revenueByType.repair += totalAmount;
-      } else if (order.service_type === 'warranty') {
+      } else if (order.order_type === 'warranty') {
         revenue.revenueByType.warranty += totalAmount;
       }
     });

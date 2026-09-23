@@ -7,8 +7,13 @@ import ClinicalDecisionPanel from './ClinicalDecisionPanel';
 import QuickActions from './QuickActions';
 import VitalSigns from './VitalSigns';
 import ClinicalContextPanel from './ClinicalContextPanel';
+import { ClinicalContextType } from './ClinicalContext';
 
-export const WorkspaceComponentRegistry: Record<string, React.ComponentType<Record<string, unknown>>> = {
+type WorkspaceComponentProps = {
+  context: ClinicalContextType;
+};
+
+export const WorkspaceComponentRegistry: Record<string, React.ComponentType<WorkspaceComponentProps>> = {
   patient_banner: PatientBanner,
   clinical_alerts: ClinicalAlerts,
   soap_editor: SOAPEditor,

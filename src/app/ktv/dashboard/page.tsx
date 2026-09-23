@@ -401,7 +401,7 @@ export default function KTVDashboard() {
         setNotifications(cachedNotifs as KtvDashboardNotification[]);
       }
 
-      let dashboardPromise: Promise<unknown>;
+      let dashboardPromise: ReturnType<typeof getKTVDashboardData>;
       
       if (cachedSessions) {
         console.log(`[KTV Dashboard] 💾 Cache HIT - loaded sessions in ${perfMarks['cache_check'].toFixed(0)}ms`);

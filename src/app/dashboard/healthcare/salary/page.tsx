@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase-client';
 import { HealthcarePayrollAdapter, type HealthcarePayrollVM } from '@/modules/bella-healthcare/adapters/healthcare-adapter';
 import { getHealthcarePayrollAction, adjustHealthcareSalaryAction } from '@/services/healthcare/healthcare-actions';
+import type { HealthcareStaffPayroll } from '@/services/healthcare/healthcare-actions';
 
 export default function HealthcareSalaryPage() {
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
@@ -49,13 +50,13 @@ export default function HealthcareSalaryPage() {
       }
 
       const payrollAdapter = new HealthcarePayrollAdapter();
-      const mapped = res.data.map((item: Record<string, unknown>) =>
+      const mapped = res.data.map((item: HealthcareStaffPayroll) =>
         payrollAdapter.map({
           id: item.id,
           full_name: item.full_name,
           role: item.role,
           positionTier: item.position_tier,
-          hire_date: item.hire_date || '2024-01-15',
+          hire_date: '2024-01-15',
           base_salary: Number(item.base_salary || 0),
           service_percentage_bonus: Number(item.service_percentage_bonus || 0),
           total_salary: Number(item.total_salary || 0),
@@ -129,7 +130,7 @@ export default function HealthcareSalaryPage() {
       fetchData();
     } catch (err: unknown) {
       console.error(err);
-      toast.error('Lỗi khi lưu điều chỉnh: ' + err.message);
+      toast.error('Lỗi khi lưu điều chỉnh: ' + (err instanceof Error ? err.message : 'Lỗi hệ thống'));
     } finally {
       setIsSubmitting(false);
     }
@@ -141,7 +142,7 @@ export default function HealthcareSalaryPage() {
       setSalaries(prev => prev.map(s => ({ ...s, status: 'finalized' as const })));
       toast.success('Đã chốt bảng lương tháng thành công!');
     } catch (err: unknown) {
-      toast.error('Lỗi chốt bảng lương: ' + err.message);
+      toast.error('Lỗi chốt bảng lương: ' + (err instanceof Error ? err.message : 'Lỗi hệ thống'));
     } finally {
       setIsSubmitting(false);
     }

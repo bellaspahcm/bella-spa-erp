@@ -1,9 +1,9 @@
 /**
  * Inventory Domain Kernel
- * 
+ *
  * Pure business logic for inventory balance management.
  * Zero dependencies on infrastructure.
- * 
+ *
  * Responsibilities:
  * - Inventory balance calculations
  * - Reservation/allocation logic
@@ -25,7 +25,7 @@ import type {
 export class InventoryDomain {
   /**
    * Create new inventory record
-   * 
+   *
    * Invariants:
    * - Quantity on hand >= 0
    * - Quantity reserved >= 0
@@ -42,7 +42,7 @@ export class InventoryDomain {
     }
 
     const quantityReserved = props.quantityReserved || 0;
-    
+
     if (quantityReserved < 0) {
       return Result.fail(
         'Quantity reserved cannot be negative',
@@ -73,17 +73,17 @@ export class InventoryDomain {
       itemId: props.itemId,
       locationId: props.locationId,
       locationType: props.locationType,
-      
+
       quantityOnHand: props.quantityOnHand,
       quantityReserved,
       quantityAvailable: props.quantityOnHand - quantityReserved,
-      
+
       lotNumber: props.lotNumber || null,
       serialNumber: props.serialNumber || null,
       expiryDate: props.expiryDate || null,
-      
+
       status: props.status || 'AVAILABLE',
-      
+
       createdAt: now,
       updatedAt: now,
     };
@@ -93,7 +93,7 @@ export class InventoryDomain {
 
   /**
    * Update inventory quantity (typically from movement)
-   * 
+   *
    * Maintains invariant: reserved <= on_hand
    */
   static updateQuantity(
@@ -101,8 +101,8 @@ export class InventoryDomain {
     props: UpdateInventoryQuantityProps
   ): Result<Inventory> {
     const newQuantityOnHand = props.quantityOnHand;
-    const newQuantityReserved = props.quantityReserved !== undefined 
-      ? props.quantityReserved 
+    const newQuantityReserved = props.quantityReserved !== undefined
+      ? props.quantityReserved
       : inventory.quantityReserved;
 
     // Validations
@@ -140,10 +140,10 @@ export class InventoryDomain {
 
   /**
    * Reserve inventory (soft allocation)
-   * 
+   *
    * Reduces available quantity without physical movement.
    * Used when order is placed but not yet picked/shipped.
-   * 
+   *
    * E7.1 implementation - basic reservation logic
    */
   static reserveQuantity(
@@ -179,10 +179,10 @@ export class InventoryDomain {
 
   /**
    * Reserve inventory (E7.1 basic primitive)
-   * 
+   *
    * Basic reservation logic without operational constraints.
    * For operational semantics with state machine, use reserveOperation().
-   * 
+   *
    * Reduces available quantity without physical movement.
    * Used when order is placed but not yet picked/shipped.
    */
@@ -219,20 +219,20 @@ export class InventoryDomain {
 
   /**
    * Reserve inventory with operational semantics (E7.2 operational method)
-   * 
+   *
    * Full operational semantics with state machine integration.
    * For basic reservation without operational constraints, use reserve().
-   * 
+   *
    * Preconditions:
    * - Inventory must be in AVAILABLE status
    * - Quantity must be positive
    * - Sufficient available quantity
-   * 
+   *
    * Postconditions:
    * - Inventory status transitions to RESERVED (if fully reserved) or stays AVAILABLE
    * - Quantity reserved increases
    * - Quantity available decreases
-   * 
+   *
    * Invariants preserved:
    * - reserved + available = on_hand
    * - reserved <= on_hand
@@ -312,14 +312,14 @@ export class InventoryDomain {
 
   /**
    * Ship inventory (E7.2 operational method)
-   * 
+   *
    * Transitions inventory from RESERVED to IN_TRANSIT.
    * Represents physical movement initiation.
-   * 
+   *
    * Preconditions:
    * - Inventory must be in RESERVED status
    * - Must have reserved quantity
-   * 
+   *
    * Postconditions:
    * - Status transitions to TRANSIT (IN_TRANSIT)
    * - Reserved quantity moves to in-transit tracking
@@ -361,14 +361,14 @@ export class InventoryDomain {
 
   /**
    * Cancel reservation (E7.2 operational method)
-   * 
+   *
    * Releases reserved quantity back to available.
    * Represents order cancellation or reservation expiry.
-   * 
+   *
    * Preconditions:
    * - Must have reserved quantity
    * - Quantity to cancel must not exceed reserved
-   * 
+   *
    * Postconditions:
    * - Reserved quantity decreases
    * - Available quantity increases
@@ -436,14 +436,14 @@ export class InventoryDomain {
 
   /**
    * Expire inventory (E7.2 operational method)
-   * 
+   *
    * Marks inventory as EXPIRED. Must go through QUARANTINE first.
    * Terminal state - cannot be reversed.
-   * 
+   *
    * Preconditions:
    * - Inventory must be in QUARANTINE status
    * - Cannot have reserved quantity
-   * 
+   *
    * Postconditions:
    * - Status transitions to EXPIRED (terminal)
    * - Inventory becomes unusable
@@ -486,7 +486,7 @@ export class InventoryDomain {
 
   /**
    * Check if status transition is valid
-   * 
+   *
    * E7.1 method - used by E7.2 operational methods
    */
   private static canTransitionTo(
@@ -518,7 +518,7 @@ export class InventoryDomain {
 
   /**
    * Release reservation (undo soft allocation)
-   * 
+   *
    * Increases available quantity without physical movement.
    * Used when order is cancelled or reservation expires.
    */
@@ -546,8 +546,8 @@ export class InventoryDomain {
       ...inventory,
       quantityReserved: newQuantityReserved,
       quantityAvailable: inventory.quantityOnHand - newQuantityReserved,
-      status: newQuantityReserved === 0 && inventory.status === 'RESERVED' 
-        ? 'AVAILABLE' 
+      status: newQuantityReserved === 0 && inventory.status === 'RESERVED'
+        ? 'AVAILABLE'
         : inventory.status,
       updatedAt: new Date(),
     };
@@ -557,7 +557,7 @@ export class InventoryDomain {
 
   /**
    * Change inventory status
-   * 
+   *
    * Status affects availability for allocation/reservation.
    */
   static changeStatus(
@@ -624,7 +624,7 @@ export class InventoryDomain {
    */
   static hasExpired(inventory: Inventory, referenceDate: Date = new Date()): boolean {
     if (!inventory.expiryDate) return false;
-    
+
     const expiryDate = new Date(inventory.expiryDate);
     return expiryDate < referenceDate;
   }
@@ -652,7 +652,7 @@ export class InventoryDomain {
   ): boolean {
     const daysUntil = this.daysUntilExpiry(inventory, referenceDate);
     if (daysUntil === null) return false;
-    
+
     return daysUntil > 0 && daysUntil <= thresholdDays;
   }
 

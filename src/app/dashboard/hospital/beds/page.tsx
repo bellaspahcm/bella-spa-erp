@@ -491,23 +491,25 @@ export default function InpatientBedCommandCenter() {
         // Map database records into extended UI model
         const mappedData: BedCardData[] = result.data.map((dbBed) => {
           // Find matching mock item for patient context preservation
-          const mockMatch = MOCK_BEDS_DATA.find((m) => m.code === dbBed.bed_code);
+          const mockMatch = MOCK_BEDS_DATA.find((m) => m.code === dbBed.bedNumber);
           
           let stateMapped: BedStateExtended = dbBed.status as BedStateExtended;
-          if (dbBed.status === 'out_of_service') stateMapped = 'blocked';
+          if (dbBed.status === 'out-of-service') stateMapped = 'blocked';
+
+          const roomId = dbBed.roomNumber ?? 'r-default';
 
           return {
             id: dbBed.id,
-            code: dbBed.bed_code,
-            wardId: dbBed.ward_id,
-            wardName: dbBed.ward_id === 'w-icu' ? 'Khoa Hồi Sức Tích Cực (ICU)' : dbBed.ward_id === 'w-internal' ? 'Khoa Nội Tổng Hợp' : 'Khoa Ngoại Khoa',
-            roomId: dbBed.room_id,
-            roomName: dbBed.room_id.replace('r-', 'Phòng ').toUpperCase(),
-            bedType: dbBed.bed_type as BedCardData['bedType'],
+            code: dbBed.bedNumber,
+            wardId: dbBed.wardId,
+            wardName: dbBed.wardId === 'w-icu' ? 'Khoa Hồi Sức Tích Cực (ICU)' : dbBed.wardId === 'w-internal' ? 'Khoa Nội Tổng Hợp' : 'Khoa Ngoại Khoa',
+            roomId,
+            roomName: roomId.replace('r-', 'Phòng ').toUpperCase(),
+            bedType: dbBed.bedType as BedCardData['bedType'],
             state: stateMapped,
-            dailyRate: dbBed.daily_rate,
-            patient: dbBed.current_patient_id ? (mockMatch?.patient || {
-              id: dbBed.current_patient_id,
+            dailyRate: 0,
+            patient: dbBed.assignedPatientId ? (mockMatch?.patient || {
+              id: dbBed.assignedPatientId,
               name: 'Bệnh nhân nội trú',
               age: 45,
               gender: 'Nam',
@@ -518,10 +520,10 @@ export default function InpatientBedCommandCenter() {
               orderCount: 1,
             }) : undefined,
             constraints: mockMatch?.constraints || {
-              icuCompatible: dbBed.bed_type === 'icu',
-              hasVentilator: dbBed.bed_type === 'icu',
+              icuCompatible: dbBed.bedType === 'icu',
+              hasVentilator: dbBed.bedType === 'icu',
               hasMonitor: true,
-              isolationCapable: dbBed.bed_type === 'isolation',
+              isolationCapable: dbBed.bedType === 'isolation',
               pediatricSuitable: false,
             },
             lastUpdated: 'Vừa đồng bộ',

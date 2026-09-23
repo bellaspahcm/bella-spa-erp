@@ -14,7 +14,7 @@ function normalizeUnionLiteralOrder(message) {
   });
 }
 
-function normalizeSignature(signature) {
+export function normalizeSignature(signature) {
   const match = signature.match(/^([^|]+)\|(TS\d+)\|(.+)$/);
   if (!match) return signature;
 

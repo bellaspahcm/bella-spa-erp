@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { compareDiagnostics, parseDiagnostics } from './ci-compare-tsc-diagnostics.mjs';
+import { compareDiagnostics, parseDiagnostics, normalizeSignature } from './ci-compare-tsc-diagnostics.mjs';
 
 const mode = process.env.CI_SCOPE_TYPECHECK_MODE || process.argv[2] || 'changed';
 const affectedProducts = (process.env.CI_SCOPE_AFFECTED_PRODUCTS || process.env.CI_SCOPE_PRODUCTS || '')
@@ -68,7 +68,7 @@ function loadBaselines() {
           const diagnostics = {};
           for (const f of mainData.scopes['typescript-full'].findings || []) {
             const code = f.components?.code || f.code || 'TS0000';
-            const sig = `${f.file}|${code}|${f.message}`;
+            const sig = normalizeSignature(`${f.file}|${code}|${f.message}`);
             diagnostics[sig] = (diagnostics[sig] || 0) + 1;
           }
           data['full'] = { diagnostics };

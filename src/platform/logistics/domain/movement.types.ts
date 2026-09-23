@@ -19,18 +19,14 @@ import { LocationId, LocationType, LotNumber, SerialNumber } from './inventory.t
 /**
  * Movement ID (unique identifier)
  */
-export interface MovementId {
-  value: string; // UUID
-}
+export type MovementId = string;
 
 /**
  * Movement Number
  * 
  * Human-readable movement identifier
  */
-export interface MovementNumber {
-  value: string; // e.g., "MOV-2024-001234"
-}
+export type MovementNumber = string;
 
 /**
  * Movement Type
@@ -90,16 +86,16 @@ export type MovementStatus =
  */
 export interface SourceDocumentReference {
   /** Document type (e.g., "RECEIPT", "ORDER", "TRANSFER") */
-  document_type: string;
+  documentType: string;
   
   /** Document ID */
-  document_id: string;
+  documentId: string;
   
   /** Document number (human-readable) */
-  document_number?: string;
+  documentNumber?: string;
   
   /** Line item ID (if applicable) */
-  line_item_id?: string;
+  sourceLineItemId?: string;
 }
 
 /**
@@ -108,115 +104,118 @@ export interface SourceDocumentReference {
  * Immutable record of inventory transaction
  * 
  * Direction Rules:
- * - INBOUND: to_location_id required, from_location_id optional
- * - OUTBOUND: from_location_id required, to_location_id optional
- * - NEUTRAL: both from_location_id and to_location_id required
+ * - INBOUND: toLocationId required, fromLocationId optional
+ * - OUTBOUND: fromLocationId required, toLocationId optional
+ * - NEUTRAL: both fromLocationId and toLocationId required
  * 
  * Example (Receipt):
  * ```typescript
  * const movement: InventoryMovement = {
  *   id: { value: '123e4567-...' },
- *   movement_number: { value: 'MOV-2024-001234' },
- *   tenant_id: 'tenant-a',
- *   movement_date: new Date(),
- *   movement_type: 'RECEIPT',
+ *   movementNumber: { value: 'MOV-2024-001234' },
+ *   tenantId: 'tenant-a',
+ *   movementDate: new Date(),
+ *   movementType: 'RECEIPT',
  *   direction: 'INBOUND',
- *   item_id: { value: 'item-1' },
- *   from_location_id: undefined, // From supplier (external)
- *   from_location_type: 'SUPPLIER',
- *   to_location_id: { value: 'WH-001' },
- *   to_location_type: 'WAREHOUSE',
+ *   itemId: { value: 'item-1' },
+ *   fromLocationId: undefined, // From supplier (external)
+ *   fromLocationType: 'SUPPLIER',
+ *   toLocationId: { value: 'WH-001' },
+ *   toLocationType: 'WAREHOUSE',
  *   quantity: 100,
- *   unit_of_measure: 'EA',
- *   lot_number: { value: 'LOT-2024-001' },
- *   unit_cost: 50.00, // Hint for Finance OS
- *   total_cost: 5000.00,
+ *   unitOfMeasure: 'EA',
+ *   lotNumber: { value: 'LOT-2024-001' },
+ *   unitCost: 50.00, // Hint for Finance OS
+ *   totalCost: 5000.00,
  *   currency: 'VND',
- *   source_document: {
- *     document_type: 'RECEIPT',
- *     document_id: 'receipt-123',
- *     document_number: 'RCP-2024-001',
+ *   sourceDocument: {
+ *     documentType: 'RECEIPT',
+ *     documentId: 'receipt-123',
+ *     documentNumber: 'RCP-2024-001',
  *   },
  *   status: 'COMPLETED',
- *   created_at: new Date(),
+ *   createdAt: new Date(),
  * };
  * ```
  */
 export interface InventoryMovement {
   // ========== Identity ==========
   /** Unique movement identifier */
-  id: MovementId;
+  id: string;
   
   /** Human-readable movement number */
-  movement_number: MovementNumber;
+  movementNumber: string;
   
   /** Tenant ID (P0 Gate - tenant isolation) */
-  tenant_id: string;
+  tenantId: string;
   
   // ========== Temporal ==========
   /** Movement date (business date) */
-  movement_date: Date;
+  movementDate: Date;
   
   /** Creation timestamp (system time) */
-  created_at: Date;
+  createdAt: Date;
   
   /** Created by user ID */
-  created_by?: string;
+  createdBy?: string;
   
   // ========== Classification ==========
   /** Type of movement */
-  movement_type: MovementType;
+  movementType: MovementType;
   
   /** Directional indicator */
   direction: MovementDirection;
   
   // ========== Item ==========
   /** Item reference */
-  item_id: ItemId;
+  itemId: string;
   
   // ========== Locations ==========
   /** Source location (optional for inbound) */
-  from_location_id?: LocationId;
+  fromLocationId?: string;
   
   /** Source location type */
-  from_location_type?: LocationType;
+  fromLocationType?: LocationType;
   
   /** Destination location (optional for outbound) */
-  to_location_id?: LocationId;
+  toLocationId?: string;
   
   /** Destination location type */
-  to_location_type?: LocationType;
+  toLocationType?: LocationType;
   
   // ========== Quantity ==========
   /** Movement quantity (always positive) */
   quantity: number;
   
   /** Unit of measure */
-  unit_of_measure: string;
+  unitOfMeasure: string;
   
   // ========== Traceability ==========
   /** Lot/batch number */
-  lot_number?: LotNumber;
+  lotNumber?: string;
   
   /** Serial number */
-  serial_number?: SerialNumber;
+  serialNumber?: string;
   
   /** Expiry date */
-  expiry_date?: Date;
+  expiryDate?: Date;
   
   // ========== Costing (Hints for Finance OS) ==========
   /** Unit cost (optional, for reference) */
-  unit_cost?: number;
+  unitCost?: number;
   
-  /** Total cost (quantity * unit_cost) */
-  total_cost?: number;
+  /** Total cost (quantity * unitCost) */
+  totalCost?: number;
   
   /** Currency (ISO 4217) */
   currency?: string;
   
   // ========== Source Document ==========
   /** Reference to originating document */
-  source_document?: SourceDocumentReference;
+  sourceDocumentType?: string;
+  sourceDocumentId?: string;
+  sourceDocumentNumber?: string;
+  sourceLineItemId?: string;
   
   // ========== Reason & Notes ==========
   /** Reason for movement (especially for adjustments) */
@@ -227,27 +226,27 @@ export interface InventoryMovement {
   
   // ========== Batch Processing ==========
   /** Batch ID (for bulk operations) */
-  batch_id?: string;
+  batchId?: string;
   
   // ========== Approval ==========
   /** Approved by user ID (for adjustments) */
-  approved_by?: string;
+  approvedBy?: string;
   
   /** Approval timestamp */
-  approved_at?: Date;
+  approvedAt?: Date;
   
   // ========== Status ==========
   /** Processing status */
   status: MovementStatus;
   
   /** Completion timestamp (when status → COMPLETED) */
-  completed_at?: Date;
+  completedAt?: Date;
   
   /** Cancellation timestamp (when status → CANCELLED) */
-  cancelled_at?: Date;
+  cancelledAt?: Date;
   
   /** Cancellation reason */
-  cancellation_reason?: string;
+  cancellationReason?: string;
 }
 
 /**
@@ -256,29 +255,35 @@ export interface InventoryMovement {
  * Input for creating a new movement
  */
 export interface CreateMovementProps {
-  tenant_id: string;
-  movement_date?: Date; // Defaults to now
-  movement_type: MovementType;
+  id?: string;
+  movementNumber: string;
+  tenantId: string;
+  movementDate?: Date; // Defaults to now
+  movementType: MovementType;
   direction: MovementDirection;
-  item_id: string;
-  from_location_id?: string;
-  from_location_type?: LocationType;
-  to_location_id?: string;
-  to_location_type?: LocationType;
+  itemId: string;
+  fromLocationId?: string;
+  fromLocationType?: LocationType;
+  toLocationId?: string;
+  toLocationType?: LocationType;
   quantity: number;
-  unit_of_measure: string;
-  lot_number?: string;
-  serial_number?: string;
-  expiry_date?: Date;
-  unit_cost?: number;
-  total_cost?: number;
+  unitOfMeasure: string;
+  lotNumber?: string;
+  serialNumber?: string;
+  expiryDate?: Date;
+  unitCost?: number;
+  totalCost?: number;
   currency?: string;
-  source_document?: SourceDocumentReference;
+  sourceDocumentType?: string;
+  sourceDocumentId?: string;
+  sourceDocumentNumber?: string;
+  sourceLineItemId?: string;
   reason?: string;
   notes?: string;
-  batch_id?: string;
-  approved_by?: string;
-  created_by?: string;
+  batchId?: string;
+  approvedBy?: string;
+  createdBy?: string;
+  status?: MovementStatus;
 }
 
 /**
@@ -288,45 +293,45 @@ export interface CreateMovementProps {
  */
 export interface MovementFilters {
   /** Filter by item */
-  item_id?: string | string[];
+  itemId?: string | string[];
   
   /** Filter by movement type */
-  movement_type?: MovementType | MovementType[];
+  movementType?: MovementType | MovementType[];
   
   /** Filter by direction */
   direction?: MovementDirection;
   
   /** Filter by from location */
-  from_location_id?: string | string[];
+  fromLocationId?: string | string[];
   
   /** Filter by to location */
-  to_location_id?: string | string[];
+  toLocationId?: string | string[];
   
   /** Filter by location (either from or to) */
-  location_id?: string;
+  locationId?: string;
   
   /** Filter by lot number */
-  lot_number?: string;
+  lotNumber?: string;
   
   /** Filter by serial number */
-  serial_number?: string;
+  serialNumber?: string;
   
   /** Filter by date range */
-  movement_date_from?: Date;
-  movement_date_to?: Date;
+  movementDate_from?: Date;
+  movementDate_to?: Date;
   
   /** Filter by status */
   status?: MovementStatus | MovementStatus[];
   
   /** Filter by source document */
-  source_document_type?: string;
-  source_document_id?: string;
+  sourceDocument_type?: string;
+  sourceDocument_id?: string;
   
   /** Filter by batch */
-  batch_id?: string;
+  batchId?: string;
   
   /** Filter by creator */
-  created_by?: string;
+  createdBy?: string;
 }
 
 /**
@@ -335,25 +340,25 @@ export interface MovementFilters {
  * Aggregated movement statistics
  */
 export interface MovementSummary {
-  tenant_id: string;
-  item_id?: string;
-  location_id?: string;
-  period_from: Date;
-  period_to: Date;
+  tenantId: string;
+  itemId?: string;
+  locationId?: string;
+  periodFrom: Date;
+  periodTo: Date;
   
-  inbound_quantity: number;
-  inbound_value: number;
-  inbound_count: number;
+  inboundQuantity: number;
+  inboundValue: number;
+  inboundCount: number;
   
-  outbound_quantity: number;
-  outbound_value: number;
-  outbound_count: number;
+  outboundQuantity: number;
+  outboundValue: number;
+  outboundCount: number;
   
-  adjustment_quantity: number; // Net adjustment
-  adjustment_count: number;
+  adjustmentQuantity: number; // Net adjustment
+  adjustmentCount: number;
   
-  by_type: Array<{
-    movement_type: MovementType;
+  byType: Array<{
+    movementType: MovementType;
     quantity: number;
     value: number;
     count: number;

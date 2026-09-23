@@ -29,7 +29,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABAS
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 // Create Supabase client with service role (bypasses RLS) if credentials available
-export const testSupabase = (SUPABASE_URL && SUPABASE_SERVICE_KEY)
+export const testSupabase = (SUPABASE_URL && SUPABASE_SERVICE_KEY && !SUPABASE_URL.includes('mock.supabase.co'))
   ? createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
       auth: {
         autoRefreshToken: false,
