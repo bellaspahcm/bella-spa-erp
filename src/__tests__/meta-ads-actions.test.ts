@@ -466,8 +466,12 @@ describe('Meta Ads Phase 1 actions', () => {
     expect(result).toEqual({ success: true, data: { rowsSynced: 1, runId: 'run-1' } });
     expect(mockFetch).toHaveBeenCalledTimes(1);
     const requestedUrl = new URL(mockFetch.mock.calls[0][0]);
+    const fetchOptions = mockFetch.mock.calls[0][1] as RequestInit;
     expect(requestedUrl.pathname).toBe('/v24.0/act_123/insights');
-    expect(requestedUrl.searchParams.get('access_token')).toBe('secret-meta-token');
+    expect(requestedUrl.searchParams.get('access_token')).toBeNull();
+    expect(fetchOptions.headers).toEqual(expect.objectContaining({
+      Authorization: 'Bearer secret-meta-token',
+    }));
 
     const upsertCall = queryCalls.find(
       (call) => call.table === 'marketing_meta_ads_insights_daily' && call.operation === 'upsert',
@@ -524,8 +528,14 @@ describe('Meta Ads Phase 1 actions', () => {
 
     expect(result).toEqual({ success: true, data: { rowsSynced: 0, runId: 'run-1' } });
     const requestedUrl = new URL(mockFetch.mock.calls[0][0]);
-    expect(requestedUrl.searchParams.get('access_token')).toBe('stored-account-token');
-    expect(requestedUrl.searchParams.get('access_token')).not.toBe('legacy-env-token');
+    const fetchOptions = mockFetch.mock.calls[0][1] as RequestInit;
+    expect(requestedUrl.searchParams.get('access_token')).toBeNull();
+    expect(fetchOptions.headers).toEqual(expect.objectContaining({
+      Authorization: 'Bearer stored-account-token',
+    }));
+    expect(fetchOptions.headers).not.toEqual(expect.objectContaining({
+      Authorization: 'Bearer legacy-env-token',
+    }));
   });
 
   it('recognizes synced Meta Ads spend as an approved marketing expense and accounting outbox event', async () => {

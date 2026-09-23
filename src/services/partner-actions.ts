@@ -1117,7 +1117,8 @@ export async function updatePartnerLeadStatus(
     email?: string;
   }
 ): Promise<{ success: boolean; data?: PartnerLead; error?: string }> {
-  const response = await fetch(`/api/partner/leads/${leadId}`, {
+  const encodedLeadId = encodeURIComponent(leadId);
+  const response = await fetch(`/api/partner/leads/${encodedLeadId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(updates),
@@ -1142,7 +1143,8 @@ export async function updatePartnerLeadStatus(
  * Delete a lead (soft delete to 'lost' status)
  */
 export async function deletePartnerLead(leadId: string): Promise<{ success: boolean; error?: string }> {
-  const response = await fetch(`/api/partner/leads/${leadId}`, {
+  const encodedLeadId = encodeURIComponent(leadId);
+  const response = await fetch(`/api/partner/leads/${encodedLeadId}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
   });

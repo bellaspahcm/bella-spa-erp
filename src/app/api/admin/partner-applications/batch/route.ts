@@ -1,6 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isPartnerApplicationId(value: unknown): value is string {
+  return typeof value === 'string' && UUID_PATTERN.test(value);
+}
+
+function getInternalAppBaseUrl(): string {
+  const configuredUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'http://localhost:3000';
+  const parsedUrl = new URL(configuredUrl);
+
+  if (parsedUrl.protocol !== 'https:' && parsedUrl.hostname !== 'localhost') {
+    throw new Error('NEXT_PUBLIC_APP_URL must use HTTPS outside localhost.');
+  }
+
+  parsedUrl.pathname = '';
+  parsedUrl.search = '';
+  parsedUrl.hash = '';
+
+  return parsedUrl.toString().replace(/\/$/, '');
+}
+
 /**
  * POST /api/admin/partner-applications/batch
  * 
@@ -30,6 +51,13 @@ export async function POST(request: NextRequest) {
     if (!applicationIds || !Array.isArray(applicationIds) || applicationIds.length === 0) {
       return NextResponse.json(
         { success: false, error: 'Application IDs required' },
+        { status: 400 }
+      );
+    }
+
+    if (!applicationIds.every(isPartnerApplicationId)) {
+      return NextResponse.json(
+        { success: false, error: 'Application IDs must be valid UUIDs' },
         { status: 400 }
       );
     }
@@ -64,6 +92,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const appBaseUrl = getInternalAppBaseUrl();
+
     const results = {
       success: 0,
       failed: 0,
@@ -73,8 +103,9 @@ export async function POST(request: NextRequest) {
     // Process each application
     for (const id of applicationIds) {
       try {
+        const encodedApplicationId = encodeURIComponent(id);
         if (action === 'approve') {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/admin/partner-applications/${id}/approve`, {
+          const response = await fetch(`${appBaseUrl}/api/admin/partner-applications/${encodedApplicationId}/approve`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ notes }),
@@ -87,7 +118,7 @@ export async function POST(request: NextRequest) {
             results.errors.push({ id, error: 'Approve failed' });
           }
         } else {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/admin/partner-applications/${id}/reject`, {
+          const response = await fetch(`${appBaseUrl}/api/admin/partner-applications/${encodedApplicationId}/reject`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ reason: reason || 'Batch rejection' }),

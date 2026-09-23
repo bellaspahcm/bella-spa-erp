@@ -8,6 +8,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { lookup } from 'node:dns/promises';
+import { isIP } from 'node:net';
 import { createClient } from '@/lib/supabase-server';
 import { getPartnerById } from '@/services/api-gateway/partner.service';
 import type { APIErrorCode } from '@/types/api-gateway';
@@ -21,34 +23,72 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-function isSafeWebhookUrl(urlStr: string): boolean {
+const BLOCKED_WEBHOOK_HOSTNAMES = new Set(['localhost']);
+const BLOCKED_WEBHOOK_SUFFIXES = ['.local', '.internal', '.lan', '.test'];
+
+function isPrivateIpv4(hostname: string): boolean {
+  const parts = hostname.split('.').map((part) => Number(part));
+  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) {
+    return false;
+  }
+
+  const first = parts[0] ?? -1;
+  const second = parts[1] ?? -1;
+  return (
+    first === 0 ||
+    first === 10 ||
+    first === 127 ||
+    (first === 100 && second >= 64 && second <= 127) ||
+    (first === 169 && second === 254) ||
+    (first === 172 && second >= 16 && second <= 31) ||
+    (first === 192 && second === 168) ||
+    first >= 224
+  );
+}
+
+function isBlockedWebhookIp(hostname: string): boolean {
+  const normalizedHostname = hostname.replace(/^\[|\]$/g, '').toLowerCase();
+  const ipVersion = isIP(normalizedHostname);
+  if (ipVersion === 0) return false;
+  if (ipVersion === 4) return isPrivateIpv4(normalizedHostname);
+
+  return (
+    normalizedHostname === '::1' ||
+    normalizedHostname === '::' ||
+    normalizedHostname.startsWith('fc') ||
+    normalizedHostname.startsWith('fd') ||
+    normalizedHostname.startsWith('fe80:') ||
+    normalizedHostname.startsWith('ff') ||
+    normalizedHostname.startsWith('::ffff:')
+  );
+}
+
+function parseSafeWebhookUrl(urlStr: string): URL | null {
   try {
     const parsedUrl = new URL(urlStr);
-    if (parsedUrl.protocol !== 'https:') return false;
+    if (parsedUrl.protocol !== 'https:') return null;
+    if (parsedUrl.username || parsedUrl.password) return null;
 
     const hostname = parsedUrl.hostname.toLowerCase();
 
-    // Block localhost, local subnets, and local domain suffixes
     if (
-      hostname === 'localhost' ||
-      hostname === '127.0.0.1' ||
-      hostname === '[::1]' ||
-      hostname.endsWith('.local') ||
-      hostname.endsWith('.internal') ||
-      hostname.endsWith('.lan') ||
-      hostname.endsWith('.test')
+      BLOCKED_WEBHOOK_HOSTNAMES.has(hostname) ||
+      BLOCKED_WEBHOOK_SUFFIXES.some((suffix) => hostname.endsWith(suffix)) ||
+      isBlockedWebhookIp(hostname)
     ) {
-      return false;
+      return null;
     }
 
-    // Block IPv4 private address spaces
-    // 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, 0.0.0.0/8
-    const ipv4Pattern = /^(10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+|192\.168\.\d+\.\d+|169\.254\.\d+\.\d+|0\.\d+\.\d+\.\d+)$/;
-    if (ipv4Pattern.test(hostname)) {
-      return false;
-    }
+    return parsedUrl;
+  } catch {
+    return null;
+  }
+}
 
-    return true;
+async function resolvesToPublicAddress(url: URL): Promise<boolean> {
+  try {
+    const addresses = await lookup(url.hostname, { all: true, verbatim: true });
+    return addresses.length > 0 && addresses.every(({ address }) => !isBlockedWebhookIp(address));
   } catch {
     return false;
   }
@@ -148,7 +188,8 @@ export async function POST(
       );
     }
 
-    if (!isSafeWebhookUrl(body.webhook_url)) {
+    const safeWebhookUrl = parseSafeWebhookUrl(body.webhook_url);
+    if (!safeWebhookUrl || !(await resolvesToPublicAddress(safeWebhookUrl))) {
       return NextResponse.json(
         {
           success: false,
@@ -190,7 +231,7 @@ export async function POST(
     const startTime = Date.now();
 
     try {
-      const webhookResponse = await fetch(body.webhook_url, {
+      const webhookResponse = await fetch(safeWebhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -198,6 +239,7 @@ export async function POST(
           ...(signature && { 'X-Webhook-Signature': signature }),
         },
         body: JSON.stringify(testPayload),
+        redirect: 'error',
         signal: AbortSignal.timeout(5000), // 5 second timeout
       });
 
