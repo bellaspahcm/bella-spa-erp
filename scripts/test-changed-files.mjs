@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { writeFileSync } from 'node:fs';
 
 const CODE_FILE_PATTERN = /\.(ts|tsx|js|jsx)$/;
 const TEST_FILE_PATTERN = /\.(test|spec)\.(ts|tsx|js|jsx)$/;
@@ -25,9 +26,35 @@ function gitOutput(args) {
   return result.stdout.trim();
 }
 
-function resolveChangedFiles() {
-  if (process.argv.length > 2) {
-    return process.argv.slice(2);
+function parseArgs() {
+  const args = process.argv.slice(2);
+  const jsonOutputIndex = args.indexOf('--jest-json-output');
+  const jestJsonOutput = jsonOutputIndex === -1 ? undefined : args[jsonOutputIndex + 1];
+  const changedFiles = args.filter((arg, index) => (
+    arg !== '--jest-json-output'
+    && index !== jsonOutputIndex + 1
+  ));
+
+  return { jestJsonOutput, changedFiles };
+}
+
+function writeEmptyJestResult(outputPath) {
+  const emptyResult = {
+    numFailedTests: 0,
+    numPassedTests: 0,
+    numPendingTests: 0,
+    numTodoTests: 0,
+    numTotalTests: 0,
+    success: true,
+    testResults: [],
+  };
+
+  writeFileSync(outputPath, `${JSON.stringify(emptyResult)}\n`, 'utf8');
+}
+
+function resolveChangedFiles(explicitChangedFiles) {
+  if (explicitChangedFiles.length > 0) {
+    return explicitChangedFiles;
   }
 
   const eventName = process.env.GITHUB_EVENT_NAME;
@@ -56,7 +83,8 @@ function resolveChangedFiles() {
   return [];
 }
 
-const changedFiles = resolveChangedFiles();
+const { jestJsonOutput, changedFiles: explicitChangedFiles } = parseArgs();
+const changedFiles = resolveChangedFiles(explicitChangedFiles);
 const sourceFiles = changedFiles.filter((file) => (
   CODE_FILE_PATTERN.test(file)
   && !EXCLUDED_PATTERNS.some((pattern) => pattern.test(file))
@@ -70,13 +98,21 @@ if (sourceFiles.length === 0) {
       console.log(`- ${file}`);
     }
 
-    const jest = run('npx', ['jest', '--runInBand', ...testFiles], {
+    const jestArgs = ['jest', '--runInBand', ...testFiles];
+    if (jestJsonOutput) {
+      jestArgs.push('--json', '--outputFile', jestJsonOutput);
+    }
+
+    const jest = run('npx', jestArgs, {
       stdio: 'inherit',
     });
     process.exit(jest.status ?? 1);
   }
 
   console.log('No changed application source files with related Jest coverage.');
+  if (jestJsonOutput) {
+    writeEmptyJestResult(jestJsonOutput);
+  }
   process.exit(0);
 }
 
@@ -85,7 +121,12 @@ for (const file of sourceFiles) {
   console.log(`- ${file}`);
 }
 
-const jest = run('npx', ['jest', '--findRelatedTests', ...sourceFiles, '--runInBand', '--passWithNoTests'], {
+const jestArgs = ['jest', '--findRelatedTests', ...sourceFiles, '--runInBand', '--passWithNoTests'];
+if (jestJsonOutput) {
+  jestArgs.push('--json', '--outputFile', jestJsonOutput);
+}
+
+const jest = run('npx', jestArgs, {
   stdio: 'inherit',
 });
 process.exit(jest.status ?? 1);
