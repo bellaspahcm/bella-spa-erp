@@ -109,6 +109,7 @@ const ROOT_TYPECHECK_SURFACE_PATTERN = /^(src\/(core|lib|services|shared|types|c
 const TYPECHECK_CONFIG_PATTERN = /^tsconfig(\..+)?\.json$/;
 const DB_RUNTIME_SURFACE_PATTERN = /^(src\/(app|core|lib|modules|platform|products|services|shared)\/|supabase\/|database\/|prisma\/|migrations\/|.*\.sql$)/;
 const SECURITY_SCRIPT_PATTERN = /^scripts\/(audit-production|check-secret-leaks|check-ci-quality-env)\.mjs$/;
+const BELLA_AUTO_REAL_DB_SURFACE_PATTERN = /^src\/modules\/bella-auto\/services\//;
 
 function normalize(file) {
   return file.replace(/\\/g, '/').replace(/^\.\//, '').trim();
@@ -191,6 +192,7 @@ export function classifyFiles(files) {
   let hasRootTypecheckSurface = false;
   let hasTypecheckConfig = false;
   let hasDbRuntimeSurface = false;
+  let hasBellaAutoRealDbSurface = false;
 
   for (const file of normalizedFiles) {
     hasCode ||= CODE_PATTERN.test(file);
@@ -206,6 +208,7 @@ export function classifyFiles(files) {
     hasRootTypecheckSurface ||= ROOT_TYPECHECK_SURFACE_PATTERN.test(file);
     hasTypecheckConfig ||= TYPECHECK_CONFIG_PATTERN.test(file);
     hasDbRuntimeSurface ||= DB_RUNTIME_SURFACE_PATTERN.test(file);
+    hasBellaAutoRealDbSurface ||= BELLA_AUTO_REAL_DB_SURFACE_PATTERN.test(file);
 
     for (const [key, scope] of Object.entries(PRODUCT_SCOPES)) {
       if (matchesAny(file, scope.patterns)) {
@@ -260,7 +263,7 @@ export function classifyFiles(files) {
   const needsTests = (hasCode || hasTest) && !docsOnly;
   const needsBuild = (hasCode || hasDependencies || scopeLevel === 'platform') && !hasMigration && !docsOnly;
   const needsArchitectureGuard = hasCode && !docsOnly;
-  const needsRealDbE2e = hasMigration || (scopeLevel === 'platform' && hasDbRuntimeSurface);
+  const needsRealDbE2e = hasMigration || hasBellaAutoRealDbSurface || (scopeLevel === 'platform' && hasDbRuntimeSurface);
   const needsE2e = scopeLevel === 'platform' || products.size > 0 || hasDependencies;
   const needsMigrationGates = hasMigration;
   const needsApiDocs = hasApiDocs;
@@ -305,6 +308,7 @@ export function classifyFiles(files) {
     workflows_changed: hasWorkflow,
     core_changed: hasCore,
     has_db_runtime_surface: hasDbRuntimeSurface,
+    has_bella_auto_real_db_surface: hasBellaAutoRealDbSurface,
     needs_typecheck: needsTypecheck,
     needs_tests: needsTests,
     needs_build: needsBuild,

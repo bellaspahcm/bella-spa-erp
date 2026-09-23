@@ -122,6 +122,20 @@ const cases = [
     },
   },
   {
+    name: 'RUN real database E2E for Bella Auto service surface',
+    files: [
+      'src/modules/bella-auto/services/CustomerHealthScoreService.ts',
+      'src/modules/bella-auto/services/FinancialReportingService.ts',
+      'src/modules/bella-auto/services/RepairOrderService.ts',
+    ],
+    expect(result) {
+      assert.equal(result.scope_status, 'ALLOW');
+      assert.equal(result.needs_tests, true);
+      assert.equal(result.needs_real_db_e2e, true);
+      assert.equal(result.typecheck_mode, 'changed');
+    },
+  },
+  {
     name: 'BLOCK multi-product product-only contamination',
     files: [
       'src/products/bella-english-center/services/class.service.ts',
