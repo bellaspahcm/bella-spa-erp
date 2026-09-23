@@ -24,6 +24,7 @@ let testBrandId: string;
 let testModelId: string;
 let testVariantId: string;
 let testVehicleId: string;
+let testStageId: string;
 let testNpsTemplateId: string;
 let testCsiTemplateId: string;
 
@@ -220,13 +221,31 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
 
     testCsiTemplateId = csiTemplate!.id;
 
+    const { data: stage, error: stageError } = await supabase
+      .from('auto_journey_stages')
+      .insert({
+        tenant_id: testTenantId,
+        code: 'delivered',
+        name: 'Delivered',
+        sort_order: 1,
+        is_active: true,
+      })
+      .select('id')
+      .single();
+
+    if (stageError) {
+      throw new Error(`Failed to create Bella Auto Phase 5 delivered stage: ${stageError.message}`);
+    }
+
+    testStageId = stage!.id;
+
     // Create test journey
     const { data: journey, error: journeyErr } = await supabase
       .from('auto_customer_journeys')
       .insert({
         tenant_id: testTenantId,
         customer_id: testCustomerId,
-        current_stage_id: '5af246ac-cb07-4d31-b13f-3631237891f1', // Stage: 'delivered'
+        current_stage_id: testStageId,
         entered_stage_at: new Date().toISOString(),
         sla_status: 'normal',
         metadata: {},
@@ -255,6 +274,10 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
 
     if (testJourneyId) {
       await supabase.from('auto_customer_journeys').delete().eq('id', testJourneyId);
+    }
+
+    if (testStageId) {
+      await supabase.from('auto_journey_stages').delete().eq('id', testStageId);
     }
 
     if (testVehicleId) {
