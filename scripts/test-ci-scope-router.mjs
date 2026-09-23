@@ -136,6 +136,19 @@ const cases = [
     },
   },
   {
+    name: 'RUN real database E2E when real-db Jest config changes',
+    files: [
+      'jest.real-db.config.ts',
+      'jest.real-db.setup.ts',
+    ],
+    expect(result) {
+      assert.equal(result.scope_status, 'ALLOW');
+      assert.equal(result.needs_tests, true);
+      assert.equal(result.needs_real_db_e2e, true);
+      assert.equal(result.has_real_db_test_config, true);
+    },
+  },
+  {
     name: 'BLOCK multi-product product-only contamination',
     files: [
       'src/products/bella-english-center/services/class.service.ts',
