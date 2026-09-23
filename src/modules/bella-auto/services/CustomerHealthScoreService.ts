@@ -116,7 +116,7 @@ export class CustomerHealthScoreService {
       .select('id')
       .eq('tenant_id', tenantId)
       .eq('customer_id', customerId)
-      .gte('occurred_at', thirtyDaysAgo.toISOString());
+      .gte('interacted_at', thirtyDaysAgo.toISOString());
 
     // Count touchpoints in 30-90 days ago
     const { data: olderTouchpoints } = await supabase
@@ -124,8 +124,8 @@ export class CustomerHealthScoreService {
       .select('id')
       .eq('tenant_id', tenantId)
       .eq('customer_id', customerId)
-      .gte('occurred_at', ninetyDaysAgo.toISOString())
-      .lt('occurred_at', thirtyDaysAgo.toISOString());
+      .gte('interacted_at', ninetyDaysAgo.toISOString())
+      .lt('interacted_at', thirtyDaysAgo.toISOString());
 
     const recentCount = recentTouchpoints?.length || 0;
     const olderCount = olderTouchpoints?.length || 0;
@@ -170,16 +170,16 @@ export class CustomerHealthScoreService {
     // Recency bonus (0-20 points)
     const { data: latestTouchpoint } = await supabase
       .from('auto_touchpoints')
-      .select('occurred_at')
+      .select('interacted_at')
       .eq('tenant_id', tenantId)
       .eq('customer_id', customerId)
-      .order('occurred_at', { ascending: false })
+      .order('interacted_at', { ascending: false })
       .limit(1)
       .single();
 
     if (latestTouchpoint) {
       const daysSinceLatest = Math.floor(
-        (now.getTime() - new Date(latestTouchpoint.occurred_at).getTime()) / (24 * 60 * 60 * 1000)
+        (now.getTime() - new Date(latestTouchpoint.interacted_at).getTime()) / (24 * 60 * 60 * 1000)
       );
 
       if (daysSinceLatest <= 7) score += 20;
@@ -277,7 +277,7 @@ export class CustomerHealthScoreService {
     // Get service appointments
     const { data: serviceAppointments } = await supabase
       .from('auto_service_appointments')
-      .select('id, total_amount')
+      .select('id, final_cost')
       .eq('tenant_id', tenantId)
       .eq('customer_id', customerId)
       .eq('status', 'completed')
@@ -300,7 +300,7 @@ export class CustomerHealthScoreService {
 
     // Service revenue (0-20 points)
     const totalServiceRevenue = serviceAppointments?.reduce(
-      (sum, appt) => sum + (appt.total_amount || 0),
+      (sum, appt) => sum + (appt.final_cost || 0),
       0
     ) || 0;
 
@@ -367,7 +367,7 @@ export class CustomerHealthScoreService {
       .from('customers')
       .select('id')
       .eq('tenant_id', tenantId)
-      .eq('referred_by', customerId);
+      .eq('referrer_id', customerId);
 
     const referralCount = referrals?.length || 0;
     if (referralCount >= 5) score += 15;
@@ -549,17 +549,17 @@ export class CustomerHealthScoreService {
     // Last touchpoint
     const { data: lastTouchpoint } = await supabase
       .from('auto_touchpoints')
-      .select('occurred_at')
+      .select('interacted_at')
       .eq('tenant_id', tenantId)
       .eq('customer_id', customerId)
-      .order('occurred_at', { ascending: false })
+      .order('interacted_at', { ascending: false })
       .limit(1)
       .single();
 
     const dates = [
       lastPurchase?.created_at,
       lastService?.appointment_date,
-      lastTouchpoint?.occurred_at,
+      lastTouchpoint?.interacted_at,
     ].filter(Boolean);
 
     const lastInteractionDate = dates.length > 0
@@ -573,7 +573,7 @@ export class CustomerHealthScoreService {
     return {
       lastPurchaseDate: lastPurchase?.created_at || null,
       lastServiceDate: lastService?.appointment_date || null,
-      lastInteractionDate,
+      lastInteractionDate: lastInteractionDate || null,
       daysSinceLastInteraction,
     };
   }
