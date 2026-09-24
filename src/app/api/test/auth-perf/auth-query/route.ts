@@ -27,6 +27,20 @@ export async function GET() {
       );
     }
 
+    const tenantId = currentUser.tenant_id;
+    if (!tenantId) {
+      const t_handler_ms = performance.now() - t_handler_start;
+      return NextResponse.json(
+        { error: 'Missing tenant context' },
+        {
+          status: 400,
+          headers: {
+            'Server-Timing': `next_handler;dur=${t_handler_ms.toFixed(1)}, auth;dur=${t_auth_ms.toFixed(1)}`,
+          },
+        }
+      );
+    }
+
     const t_client_start = performance.now();
     const db = createClient();
     const t_client_ms = performance.now() - t_client_start;
@@ -35,7 +49,7 @@ export async function GET() {
     const { data: tenant, error } = await db
       .from('tenants')
       .select('id, name')
-      .eq('id', currentUser.tenant_id)
+      .eq('id', tenantId)
       .single();
     const t_query_ms = performance.now() - t_query_start;
 

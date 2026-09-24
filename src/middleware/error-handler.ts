@@ -7,6 +7,15 @@ export interface APIError extends Error {
   details?: unknown;
 }
 
+type WindowWithSentry = Window & {
+  Sentry?: {
+    captureException: (
+      error: unknown,
+      options?: { tags?: Record<string, string | number> }
+    ) => void;
+  };
+};
+
 /**
  * Standard API error handler
  * 
@@ -44,8 +53,11 @@ export function handleAPIError(error: unknown, context?: string): NextResponse {
   );
   
   // Report to Sentry (only 500 errors)
-  if (statusCode >= 500 && typeof window !== 'undefined' && (window as unknown).Sentry) {
-    (window as unknown).Sentry.captureException(error, {
+  const sentry = typeof window !== 'undefined'
+    ? (window as WindowWithSentry).Sentry
+    : undefined;
+  if (statusCode >= 500 && sentry) {
+    sentry.captureException(error, {
       tags: {
         context: context || 'api',
         statusCode,

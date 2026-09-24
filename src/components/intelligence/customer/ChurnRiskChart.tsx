@@ -6,6 +6,7 @@
  */
 
 import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
+import type { DefaultLegendContentProps } from 'recharts';
 import { SafeResponsiveContainer as ResponsiveContainer } from '@/components/ui/SafeResponsiveContainer';
 import type { ChurnRiskAnalysis } from '@/services/intelligence/customer/queries-simple';
 
@@ -19,6 +20,61 @@ const RISK_COLORS: Record<string, string> = {
   'Medium': '#F59E0B',  // premium amber-500
   'Low': '#10B981',     // premium emerald-500
 };
+
+function getLegendPayloadCount(payload: object | undefined): number {
+  if (!payload || !('count' in payload)) {
+    return 0;
+  }
+
+  return typeof payload.count === 'number' ? payload.count : 0;
+}
+
+function readTooltipPayload(payload: readonly unknown[] | undefined) {
+  const entry = payload?.[0];
+  if (!entry || typeof entry !== 'object' || !('payload' in entry)) {
+    return {
+      count: 0,
+      name: 'Không xác định',
+    };
+  }
+
+  const item = entry.payload;
+  if (!item || typeof item !== 'object') {
+    return {
+      count: 0,
+      name: 'Không xác định',
+    };
+  }
+
+  const count = 'count' in item && typeof item.count === 'number' ? item.count : 0;
+  const name = 'name' in item && typeof item.name === 'string' ? item.name : 'Không xác định';
+  return { count, name };
+}
+
+function ChurnRiskTooltip({
+  active,
+  payload,
+  total,
+}: {
+  active?: boolean;
+  payload?: readonly unknown[];
+  total: number;
+}) {
+  if (active && payload && payload.length) {
+    const { count, name } = readTooltipPayload(payload);
+    const percent = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0';
+    return (
+      <div className="bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl border border-slate-200/50 shadow-xl text-xs font-bold text-slate-800">
+        <p className="text-slate-500 mb-1 uppercase tracking-wider">{name}</p>
+        <p className="text-sm font-black text-slate-900">
+          {count} KH <span className="text-primary font-normal">({percent}%)</span>
+        </p>
+      </div>
+    );
+  }
+
+  return null;
+}
 
 export function ChurnRiskChart({ data, height = 350 }: ChurnRiskChartProps) {
   const riskCounts = data.reduce((acc, customer) => {
@@ -35,29 +91,12 @@ export function ChurnRiskChart({ data, height = 350 }: ChurnRiskChartProps) {
     { level: 'Low', count: riskCounts['Low'] || 0, name: 'Rủi ro thấp' },
   ].filter(item => item.count > 0); // Only show segments with data
 
-  // Custom tooltips matching glassmorphism
-  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: { count: number; name: string } }> }) => {
-    if (active && payload && payload.length) {
-      const entry = payload[0].payload;
-      const percent = total > 0 ? ((entry.count / total) * 100).toFixed(1) : '0.0';
-      return (
-        <div className="bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl border border-slate-200/50 shadow-xl text-xs font-bold text-slate-800">
-          <p className="text-slate-500 mb-1 uppercase tracking-wider">{entry.name}</p>
-          <p className="text-sm font-black text-slate-900">
-            {entry.count} KH <span className="text-primary font-normal">({percent}%)</span>
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
-
-  const renderLegend = (props: Record<string, unknown>) => {
-    const { payload } = props as { payload: Array<{ payload: { count: number }; value: string; color: string }> };
+  const renderLegend = ({ payload = [] }: DefaultLegendContentProps) => {
     return (
       <ul className="flex justify-center gap-6 mt-4 flex-wrap">
         {payload.map((entry, index: number) => {
-          const percent = total > 0 ? ((entry.payload.count / total) * 100).toFixed(0) : '0';
+          const count = getLegendPayloadCount(entry.payload);
+          const percent = total > 0 ? ((count / total) * 100).toFixed(0) : '0';
           return (
             <li key={`legend-${index}`} className="flex items-center gap-2 text-xs font-bold text-slate-600">
               <span 
@@ -80,7 +119,7 @@ export function ChurnRiskChart({ data, height = 350 }: ChurnRiskChartProps) {
     <div className="relative flex flex-col items-center justify-center" style={{ height }}>
       <ResponsiveContainer width="100%" height="90%">
         <PieChart>
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip content={(props) => <ChurnRiskTooltip {...props} total={total} />} />
           <Pie
             data={chartData}
             cx="50%"

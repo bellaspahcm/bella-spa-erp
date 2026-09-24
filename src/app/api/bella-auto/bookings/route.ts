@@ -155,7 +155,7 @@ export async function POST(request: Request) {
       const { error: vehicleError } = await supabase
         .from('auto_vehicles')
         .update({ 
-          status: 'reserved',
+          status: 'allocated',
           updated_at: new Date().toISOString(),
         })
         .eq('id', body.vehicleId)

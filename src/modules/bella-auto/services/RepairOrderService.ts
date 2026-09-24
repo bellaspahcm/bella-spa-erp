@@ -60,11 +60,45 @@ export class RepairOrderService {
       throw new Error('Failed to generate repair order number');
     }
 
+    const [
+      { data: customer, error: customerError },
+      { data: vehicle, error: vehicleError },
+    ] = await Promise.all([
+      supabase
+        .from('customers')
+        .select('name_mother, phone')
+        .eq('id', data.customerId)
+        .eq('tenant_id', data.tenantId)
+        .single(),
+      supabase
+        .from('auto_vehicles')
+        .select('model_year, color_exterior, vin')
+        .eq('id', data.vehicleId)
+        .eq('tenant_id', data.tenantId)
+        .single(),
+    ]);
+
+    if (customerError || !customer) {
+      throw new Error('Customer not found for repair order');
+    }
+    if (vehicleError || !vehicle) {
+      throw new Error('Vehicle not found for repair order');
+    }
+
+    const vehicleInfo = [
+      vehicle.model_year,
+      vehicle.color_exterior,
+      vehicle.vin,
+    ].filter((part) => part !== null && part !== undefined && part !== '').join(' - ');
+
     const orderData: RepairOrderInsert = {
       tenant_id: data.tenantId,
       order_number: orderNumber,
       customer_id: data.customerId,
+      customer_name: customer.name_mother,
+      customer_phone: customer.phone,
       vehicle_id: data.vehicleId,
+      vehicle_info: vehicleInfo,
       appointment_id: data.appointmentId,
       order_type: data.orderType,
       work_description: data.workDescription,
@@ -450,9 +484,10 @@ export class RepairOrderService {
 
     // Get technician name
     const { data: tech } = await supabase
-      .from('employees')
-      .select('name')
+      .from('users')
+      .select('full_name')
       .eq('id', technicianId)
+      .eq('tenant_id', tenantId)
       .single();
 
     await supabase
@@ -461,7 +496,7 @@ export class RepairOrderService {
         tenant_id: tenantId,
         repair_order_id: repairOrderId,
         technician_id: technicianId,
-        technician_name: tech?.name,
+        technician_name: tech?.full_name,
         clock_in_time: new Date().toISOString(),
       });
   }
@@ -692,7 +727,8 @@ export class RepairOrderService {
     let totalRevenue = 0;
 
     for (const order of orders) {
-      byStatus[order.status] = (byStatus[order.status] || 0) + 1;
+      const statusKey = order.status || 'unknown';
+      byStatus[statusKey] = (byStatus[statusKey] || 0) + 1;
       byType[order.order_type] = (byType[order.order_type] || 0) + 1;
 
       if (order.actual_total) {

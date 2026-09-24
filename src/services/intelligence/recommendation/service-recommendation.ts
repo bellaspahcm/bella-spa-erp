@@ -291,9 +291,9 @@ async function collaborativeFilteringRecommendations(
     if (!interactions) continue;
     
     for (const interaction of interactions) {
-      if (purchasedServiceIds.has(interaction.item_id)) continue;
+      if (purchasedServiceIds.has(interaction.itemId)) continue;
       
-      const key = interaction.item_id;
+      const key = interaction.itemId;
       if (!candidateServices.has(key)) {
         candidateServices.set(key, {
           service: interaction,
@@ -304,7 +304,7 @@ async function collaborativeFilteringRecommendations(
       }
       
       const candidate = candidateServices.get(key)!;
-      candidate.weightedScore += similarCustomer.similarityScore * interaction.interaction_score;
+      candidate.weightedScore += similarCustomer.similarityScore * interaction.interactionScore;
       candidate.similaritySum += similarCustomer.similarityScore;
       candidate.purchaseCount++;
     }

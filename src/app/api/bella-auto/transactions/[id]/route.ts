@@ -5,8 +5,20 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrimaryClient } from '@/lib/database/read-replica';
+import type { Database, Json } from '@/types/database.types';
 
 export const runtime = 'nodejs';
+
+type TransactionStep = Database['public']['Tables']['auto_transaction_steps']['Row'];
+
+function getMetadataString(metadata: Json | null, key: string): string | undefined {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+    return undefined;
+  }
+
+  const value = metadata[key];
+  return typeof value === 'string' ? value : undefined;
+}
 
 export async function GET(
   request: NextRequest,
@@ -36,7 +48,7 @@ export async function GET(
       .from('auto_transaction_steps')
       .select('*')
       .eq('transaction_id', id)
-      .order('step_order', { ascending: true });
+      .order('sequence', { ascending: true });
 
     if (stepsError) {
       console.error('Failed to fetch steps:', stepsError);
@@ -54,19 +66,19 @@ export async function GET(
       entityType: transaction.entity_type,
       entityId: transaction.entity_id,
       createdAt: transaction.created_at,
-      createdBy: transaction.metadata?.created_by_email,
+      createdBy: getMetadataString(transaction.metadata, 'created_by_email'),
       rollbackReason: transaction.rollback_reason,
       rolledBackAt: transaction.rolled_back_at,
-      rolledBackBy: transaction.metadata?.rolled_back_by_email,
+      rolledBackBy: getMetadataString(transaction.metadata, 'rolled_back_by_email'),
       metadata: transaction.metadata,
-      steps: steps.map((step: { id: string; step_order: number; action_type: string; target_table: string; target_record_id?: string; before_snapshot?: unknown; after_snapshot?: unknown; status: string; created_at: string }) => ({
+      steps: (steps ?? []).map((step: TransactionStep) => ({
         id: step.id,
-        stepOrder: step.step_order,
-        actionType: step.action_type,
-        targetTable: step.target_table,
-        targetRecordId: step.target_record_id,
-        beforeSnapshot: step.before_snapshot,
-        afterSnapshot: step.after_snapshot,
+        stepOrder: step.sequence,
+        actionType: step.action,
+        targetTable: step.entity_type,
+        targetRecordId: step.entity_id,
+        beforeSnapshot: step.snapshot_before,
+        afterSnapshot: step.snapshot_after,
         status: step.status,
         executedAt: step.executed_at,
         errorMessage: step.error_message,

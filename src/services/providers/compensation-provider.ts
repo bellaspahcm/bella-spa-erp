@@ -133,10 +133,14 @@ export class CompensationProvider implements PayrollProvider<SalaryComponent> {
     };
 
     // Check if override amount provided
-    if (options?.applyOverrides && overrides?.compensation !== undefined) {
+    const overrideAmount = typeof overrides?.compensation === 'number'
+      ? overrides.compensation
+      : undefined;
+
+    if (options?.applyOverrides && overrideAmount !== undefined) {
       return createSalaryComponent('session-commission', {
         eligible: true,
-        amount: overrides.compensation,
+        amount: overrideAmount,
         reason: 'Manual override applied',
         metadata: {
           override: true,
@@ -232,9 +236,12 @@ export class CompensationProvider implements PayrollProvider<SalaryComponent> {
     );
     
     // I2. Team Incentive (team lead override)
+    const teamTotalCompensation = typeof context.metadata?.teamTotalCompensation === 'number'
+      ? context.metadata.teamTotalCompensation
+      : undefined;
     const teamIncentive = this.applyTeamIncentive(
       employee,
-      context.metadata?.teamTotalCompensation,
+      teamTotalCompensation,
       appliedPolicies
     );
 

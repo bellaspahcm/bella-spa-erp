@@ -57,9 +57,9 @@ export async function POST(
     }
 
     // Check if rollback is allowed
-    if (transaction.status !== 'completed') {
+    if (transaction.status !== 'committed') {
       return NextResponse.json(
-        { error: 'Only completed transactions can be rolled back' },
+        { error: 'Only committed transactions can be rolled back' },
         { status: 400 }
       );
     }
@@ -80,7 +80,7 @@ export async function POST(
         { 
           error: 'Rollback execution failed', 
           details: result.error,
-          partialSteps: result.completedSteps,
+          partialSteps: result.stepsRolledBack,
         },
         { status: 500 }
       );

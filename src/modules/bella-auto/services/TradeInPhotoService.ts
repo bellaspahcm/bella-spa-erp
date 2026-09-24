@@ -6,10 +6,18 @@
  */
 
 import { getPrimaryClient } from '@/lib/database/read-replica';
-import { Database } from '@/types/database.types';
+import type { Database, Json } from '@/types/database.types';
 
 type TradeInPhoto = Database['public']['Tables']['auto_trade_in_photos']['Row'];
 type TradeInPhotoInsert = Database['public']['Tables']['auto_trade_in_photos']['Insert'];
+type TradeInPhotoUpdate = Database['public']['Tables']['auto_trade_in_photos']['Update'];
+
+type DamageMarker = {
+  x: number;
+  y: number;
+  label: string;
+  severity: 'minor' | 'moderate' | 'severe';
+};
 
 export interface UploadPhotoData {
   tenantId: string;
@@ -24,12 +32,7 @@ export interface UploadPhotoData {
   heightPx?: number;
   description?: string;
   notes?: string;
-  damageMarkers?: Array<{
-    x: number;
-    y: number;
-    label: string;
-    severity: 'minor' | 'moderate' | 'severe';
-  }>;
+  damageMarkers?: DamageMarker[];
   displayOrder?: number;
   isPrimary?: boolean;
   uploadedBy?: string;
@@ -73,6 +76,12 @@ export class TradeInPhotoService {
    */
   static async uploadPhoto(data: UploadPhotoData): Promise<TradeInPhoto> {
     const supabase = getPrimaryClient();
+    const damageMarkers: Json | undefined = data.damageMarkers?.map((marker) => ({
+      x: marker.x,
+      y: marker.y,
+      label: marker.label,
+      severity: marker.severity,
+    }));
 
     const photoData: TradeInPhotoInsert = {
       tenant_id: data.tenantId,
@@ -87,7 +96,7 @@ export class TradeInPhotoService {
       height_px: data.heightPx,
       description: data.description,
       notes: data.notes,
-      damage_markers: data.damageMarkers as unknown,
+      damage_markers: damageMarkers,
       display_order: data.displayOrder || 0,
       is_primary: data.isPrimary || false,
       uploaded_by: data.uploadedBy,
@@ -197,13 +206,13 @@ export class TradeInPhotoService {
     metadata: {
       description?: string;
       notes?: string;
-      damageMarkers?: unknown;
+      damageMarkers?: Json;
       displayOrder?: number;
     }
   ): Promise<TradeInPhoto> {
     const supabase = getPrimaryClient();
 
-    const updateData: Record<string, unknown> = {};
+    const updateData: TradeInPhotoUpdate = {};
     if (metadata.description !== undefined) updateData.description = metadata.description;
     if (metadata.notes !== undefined) updateData.notes = metadata.notes;
     if (metadata.damageMarkers !== undefined) updateData.damage_markers = metadata.damageMarkers;

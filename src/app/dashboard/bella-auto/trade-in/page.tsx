@@ -5,6 +5,20 @@ import { createClient } from '@/lib/supabase-client';
 import { TradeInPhotoService, type PhotoCategory } from '@/modules/bella-auto/services/TradeInPhotoService';
 import { Camera, Upload, CheckCircle, AlertCircle, X, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import type { Database } from '@/types/database.types';
+
+type TradeInAppraisalRow = Pick<
+  Database['public']['Tables']['auto_trade_in_appraisals']['Row'],
+  | 'id'
+  | 'customer_id'
+  | 'make'
+  | 'model'
+  | 'variant'
+  | 'year'
+  | 'color'
+  | 'license_plate'
+  | 'status'
+>;
 
 interface PhotoUploadStatus {
   category: string;
@@ -20,6 +34,24 @@ interface TradeInAppraisal {
   customer_name: string;
   vehicle_info: string;
   status: string;
+}
+
+function mapTradeInAppraisal(row: TradeInAppraisalRow): TradeInAppraisal {
+  const vehicleParts = [
+    row.year,
+    row.make,
+    row.model,
+    row.variant,
+    row.color,
+    row.license_plate,
+  ].filter((value): value is string | number => value !== null && value !== undefined && value !== '');
+
+  return {
+    id: row.id,
+    customer_name: row.customer_id ? `KH ${row.customer_id.slice(0, 8)}` : 'Khách hàng chưa liên kết',
+    vehicle_info: vehicleParts.join(' · '),
+    status: row.status,
+  };
 }
 
 export default function TradeInPage() {
@@ -50,20 +82,24 @@ export default function TradeInPage() {
 
         // Get user profile with tenant_id
         const { data: profile, error: profileError } = await supabase
-          .from('user_profiles')
+          .from('users')
           .select('tenant_id')
-          .eq('user_id', user.id)
+          .eq('id', user.id)
           .single();
 
         if (profileError || !profile) {
           toast.error('Không tìm thấy thông tin tenant');
           return;
         }
+        if (!profile.tenant_id) {
+          toast.error('Tài khoản chưa được gán tenant');
+          return;
+        }
 
         // Fetch trade-in appraisals (assuming table exists)
         const { data, error } = await supabase
           .from('auto_trade_in_appraisals')
-          .select('id, customer_name, vehicle_info, status')
+          .select('id, customer_id, make, model, variant, year, color, license_plate, status')
           .eq('tenant_id', profile.tenant_id)
           .order('created_at', { ascending: false });
 
@@ -72,7 +108,7 @@ export default function TradeInPage() {
           console.warn('Trade-in appraisals table not found:', error);
           setAppraisals([]);
         } else {
-          setAppraisals(data || []);
+          setAppraisals((data || []).map(mapTradeInAppraisal));
         }
       } catch (error) {
         console.error('Error fetching appraisals:', error);
@@ -96,12 +132,12 @@ export default function TradeInPage() {
         if (!user) return;
 
         const { data: profile } = await supabase
-          .from('user_profiles')
+          .from('users')
           .select('tenant_id')
-          .eq('user_id', user.id)
+          .eq('id', user.id)
           .single();
 
-        if (!profile) return;
+        if (!profile?.tenant_id) return;
 
         // Get photo categories with status
         const categories = await TradeInPhotoService.getPhotoCategoriesWithStatus(
@@ -145,19 +181,17 @@ export default function TradeInPage() {
 
   // Handle file upload
   const handleUpload = useCallback(async (category: string) => {
-    // Get current file from state before async operations
-    let fileToUpload: File | null = null;
+    const currentStatus = uploadStatuses[category];
+    if (!currentStatus?.file || !selectedAppraisal) return;
+
+    const fileToUpload = currentStatus.file;
+
     setUploadStatuses(prev => {
-      const status = prev[category];
-      if (!status?.file || !selectedAppraisal) return prev;
-      fileToUpload = status.file;
       return {
         ...prev,
-        [category]: { ...prev[category], uploading: true, error: null },
+        [category]: { ...currentStatus, uploading: true, error: null },
       };
     });
-
-    if (!fileToUpload || !selectedAppraisal) return;
 
     try {
       const supabase = createClient();
@@ -165,12 +199,12 @@ export default function TradeInPage() {
       if (!user) throw new Error('Not authenticated');
 
       const { data: profile } = await supabase
-        .from('user_profiles')
+        .from('users')
         .select('tenant_id')
-        .eq('user_id', user.id)
+        .eq('id', user.id)
         .single();
 
-      if (!profile) throw new Error('Profile not found');
+      if (!profile?.tenant_id) throw new Error('Tenant not found');
 
       // Upload to Supabase Storage
       const fileName = `${selectedAppraisal}/${category}/${Date.now()}_${fileToUpload.name}`;
@@ -229,7 +263,7 @@ export default function TradeInPage() {
       }));
       toast.error(`Lỗi tải ảnh: ${errorMessage}`);
     }
-  }, [selectedAppraisal]);
+  }, [selectedAppraisal, uploadStatuses]);
 
 
   // Remove photo preview

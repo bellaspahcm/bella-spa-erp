@@ -37,6 +37,12 @@ const CATEGORY_INFO = {
   analytics: { label: 'Analytics', icon: '📊', color: 'orange' },
 };
 
+type CapabilitySort = 'popular' | 'newest' | 'rating';
+
+function isCapabilitySort(value: string): value is CapabilitySort {
+  return value === 'popular' || value === 'newest' || value === 'rating';
+}
+
 export function CapabilityMarketplace({
   onInstall,
   installedCapabilityIds = [],
@@ -45,7 +51,7 @@ export function CapabilityMarketplace({
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'popular' | 'newest' | 'rating'>('popular');
+  const [sortBy, setSortBy] = useState<CapabilitySort>('popular');
 
   async function fetchCapabilities() {
     setIsLoading(true);
@@ -248,7 +254,12 @@ export function CapabilityMarketplace({
         {/* Sort */}
         <select
           value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as unknown)}
+          onChange={(e) => {
+            const value = e.target.value;
+            if (isCapabilitySort(value)) {
+              setSortBy(value);
+            }
+          }}
           className="px-3 py-2 border border-gray-300 rounded-md bg-white"
         >
           <option value="popular">Phổ biến nhất</option>

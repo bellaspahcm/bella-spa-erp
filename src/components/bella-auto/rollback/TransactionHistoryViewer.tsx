@@ -103,15 +103,15 @@ export function TransactionHistoryViewer({
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, unknown> = {
+    const variants: Record<string, 'default' | 'destructive' | 'secondary'> = {
       committed: 'default',
       rolled_back: 'destructive',
       failed: 'destructive',
       pending: 'secondary',
-    };
+    } as const;
 
     return (
-      <Badge variant={variants[status] || 'outline'}>
+      <Badge variant={variants[status] ?? 'outline'}>
         {status.replace('_', ' ')}
       </Badge>
     );
@@ -139,7 +139,7 @@ export function TransactionHistoryViewer({
       <div className="flex items-center gap-4">
         <Filter className="w-4 h-4 text-gray-500" />
         
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
+        <Select value={filterStatus} onValueChange={(value) => setFilterStatus(value ?? 'all')}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
@@ -152,7 +152,7 @@ export function TransactionHistoryViewer({
           </SelectContent>
         </Select>
 
-        <Select value={filterType} onValueChange={setFilterType}>
+        <Select value={filterType} onValueChange={(value) => setFilterType(value ?? 'all')}>
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder="Filter by type" />
           </SelectTrigger>

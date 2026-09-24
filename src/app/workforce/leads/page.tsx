@@ -55,6 +55,15 @@ interface ManagedLead {
   updatedAt: string;
 }
 
+type LeadTab = 'waiting_accept' | 'in_progress' | 'converted' | 'lost';
+
+const LEAD_TABS: Array<{ value: LeadTab; label: string }> = [
+  { value: 'waiting_accept', label: 'Chờ nhận' },
+  { value: 'in_progress', label: 'Đang chăm' },
+  { value: 'converted', label: 'Đã chốt' },
+  { value: 'lost', label: 'Đã đóng' },
+];
+
 const INITIAL_MOCK_LEADS: ManagedLead[] = [
   {
     id: 'lead-001',
@@ -179,7 +188,7 @@ const INITIAL_MOCK_LEADS: ManagedLead[] = [
 
 export default function LeadsPipeline() {
   const [leads, setLeads] = useState<ManagedLead[]>([]);
-  const [selectedTab, setSelectedTab] = useState<'waiting_accept' | 'in_progress' | 'converted' | 'lost'>('waiting_accept');
+  const [selectedTab, setSelectedTab] = useState<LeadTab>('waiting_accept');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLead, setSelectedLead] = useState<ManagedLead | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -310,15 +319,10 @@ export default function LeadsPipeline() {
 
         {/* Swipe tabs */}
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
-          {[
-            { value: 'waiting_accept', label: 'Chờ nhận' },
-            { value: 'in_progress', label: 'Đang chăm' },
-            { value: 'converted', label: 'Đã chốt' },
-            { value: 'lost', label: 'Đã đóng' }
-          ].map(t => (
+          {LEAD_TABS.map(t => (
             <button
               key={t.value}
-              onClick={() => setSelectedTab(t.value as unknown)}
+              onClick={() => setSelectedTab(t.value)}
               className={`flex-shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold transition-all border ${selectedTab === t.value ? 'bg-primary border-primary text-white shadow-sm' : 'bg-slate-50 dark:bg-slate-850 text-slate-500 dark:text-slate-400 border-slate-100 dark:border-slate-850 hover:border-slate-200'}`}
             >
               {t.label}

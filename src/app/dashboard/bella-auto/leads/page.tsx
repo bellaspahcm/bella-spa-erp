@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase-client';
+import type { Database } from '@/types/database.types';
 
 // Mock Sales Agents
 const MOCK_AGENTS = [
@@ -45,16 +46,66 @@ const STATUS_CONFIG: Record<string, { label: string; bg: string }> = {
   lost:        { label: 'Thất Bại',    bg: 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400' },
 };
 
+type AutoLeadRow = Database['public']['Tables']['auto_leads']['Row'];
+type CustomerRow = Database['public']['Tables']['customers']['Row'];
+type VariantRow = Database['public']['Tables']['auto_variants']['Row'];
+type UserRow = Database['public']['Tables']['users']['Row'];
+
+type LeadQueryRow = Pick<
+  AutoLeadRow,
+  | 'id'
+  | 'status'
+  | 'source'
+  | 'created_at'
+  | 'preferred_color'
+  | 'budget_limit'
+  | 'assigned_sales_agent_id'
+> & {
+  customers: Pick<CustomerRow, 'name_mother' | 'phone'> | null;
+  auto_variants: Pick<VariantRow, 'name' | 'year'> | null;
+  users: Pick<UserRow, 'full_name'> | null;
+};
+
 type Lead = {
   id: string;
-  customer_name: string;
+  name: string;
   phone: string;
-  email?: string;
   status: string;
   source: string;
   created_at: string;
-  assigned_to?: string;
+  variantName: string;
+  color: string;
+  budget: string;
+  agentName: string;
+  assigned_sales_agent_id: string | null;
 };
+
+function formatLeadBudget(value: number | null) {
+  if (value === null) return 'Chưa cập nhật';
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function mapLeadRow(row: LeadQueryRow): Lead {
+  return {
+    id: row.id,
+    name: row.customers?.name_mother ?? 'Chưa cập nhật',
+    phone: row.customers?.phone ?? '',
+    status: row.status,
+    source: row.source,
+    created_at: row.created_at,
+    variantName: row.auto_variants
+      ? `${row.auto_variants.name} ${row.auto_variants.year}`
+      : 'Chưa chọn dòng xe',
+    color: row.preferred_color ?? 'Chưa chọn',
+    budget: formatLeadBudget(row.budget_limit),
+    agentName: row.users?.full_name ?? 'Chưa phân bổ',
+    assigned_sales_agent_id: row.assigned_sales_agent_id,
+  };
+}
 
 export default function LeadCenterPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -68,9 +119,23 @@ export default function LeadCenterPage() {
       setIsLoading(true);
       const supabase = createClient();
       if (!supabase) { setIsLoading(false); return; }
-      const { data, error } = await supabase.from('auto_leads').select('*').order('created_at', { ascending: false });
+      const { data, error } = await supabase
+        .from('auto_leads')
+        .select(`
+          id,
+          status,
+          source,
+          created_at,
+          preferred_color,
+          budget_limit,
+          assigned_sales_agent_id,
+          customers(name_mother, phone),
+          auto_variants(name, year),
+          users(full_name)
+        `)
+        .order('created_at', { ascending: false });
       if (error) { toast.error('Không thể tải danh sách lead'); setLeads([]); }
-      else { setLeads(data || []); }
+      else { setLeads((data || []).map(mapLeadRow)); }
     } catch { toast.error('Không thể tải danh sách lead'); setLeads([]); }
     finally { setIsLoading(false); }
   }, []);

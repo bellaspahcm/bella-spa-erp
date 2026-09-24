@@ -24,7 +24,17 @@ import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { useUser } from '@/lib/user-context';
 import { useServicesPageState } from './hooks/useServicesPageState';
 import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
-import type { ServiceModuleKey } from './types';
+import type { ServiceFormState, ServiceModuleKey } from './types';
+
+type RisModality = ServiceFormState['risModality'];
+
+const isRisModality = (value: string): value is RisModality => (
+  value === 'XRAY' ||
+  value === 'CT' ||
+  value === 'MRI' ||
+  value === 'ULTRASOUND' ||
+  value === 'ENDOSCOPY'
+);
 
 export default function ServicesPage() {
   const vocab = useModuleVocabulary();
@@ -865,7 +875,11 @@ export default function ServicesPage() {
                           <label className="text-xs font-black text-slate-600 dark:text-slate-300 ml-1">Phương Pháp (Modality) *</label>
                           <PremiumSelect
                             value={risModality}
-                            onChange={(val) => setRisModality(val as unknown)}
+                            onChange={(val) => {
+                              if (isRisModality(val)) {
+                                setRisModality(val);
+                              }
+                            }}
                             options={[
                               { value: 'XRAY', label: 'XRAY — X-Quang Kỹ Thuật Số' },
                               { value: 'CT', label: 'CT — CT-Scanner Cắt Lớp' },

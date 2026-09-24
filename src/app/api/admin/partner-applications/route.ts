@@ -1,5 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
+import type { Database } from '@/types/database.types';
+
+const PARTNER_APPLICATION_STATUSES = [
+  'draft',
+  'pending_verification',
+  'pending_review',
+  'need_more_info',
+  'approved',
+  'rejected',
+  'provisioned',
+  'activated',
+] as const satisfies readonly Database['public']['Enums']['partner_application_status'][];
+
+function isPartnerApplicationStatus(
+  value: string
+): value is Database['public']['Enums']['partner_application_status'] {
+  return PARTNER_APPLICATION_STATUSES.some((status) => status === value);
+}
 
 /**
  * GET /api/admin/partner-applications
@@ -55,6 +73,13 @@ export async function GET(request: NextRequest) {
     // Filter by status
     const status = searchParams.get('status');
     if (status && status !== 'all') {
+      if (!isPartnerApplicationStatus(status)) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid partner application status' },
+          { status: 400 }
+        );
+      }
+
       query = query.eq('status', status);
     }
 

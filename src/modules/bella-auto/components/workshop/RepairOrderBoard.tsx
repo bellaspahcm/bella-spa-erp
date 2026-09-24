@@ -8,7 +8,7 @@
 import { useState } from 'react';
 import { Wrench, Clock, User, Car, Sparkles, AlertCircle } from 'lucide-react';
 
-interface RepairOrder {
+export interface RepairOrder {
   id: string;
   orderNumber: string;
   customerName: string;

@@ -21,12 +21,18 @@ export async function DELETE() {
     if (supabase) {
       console.log('[API/clear-cache] Refreshing database materialized views...');
       await Promise.all([
-        supabase.rpc('refresh_all_finance_mvs').catch((err) => {
-          console.warn('[API/clear-cache] Failed to refresh finance materialized views:', err);
-        }),
-        supabase.rpc('refresh_all_intelligence_materialized_views').catch((err) => {
-          console.warn('[API/clear-cache] Failed to refresh operational materialized views:', err);
-        })
+        (async () => {
+          const { error } = await supabase.rpc('refresh_all_finance_mvs');
+          if (error) {
+            console.warn('[API/clear-cache] Failed to refresh finance materialized views:', error);
+          }
+        })(),
+        (async () => {
+          const { error } = await supabase.rpc('refresh_all_intelligence_materialized_views');
+          if (error) {
+            console.warn('[API/clear-cache] Failed to refresh operational materialized views:', error);
+          }
+        })()
       ]);
     }
 

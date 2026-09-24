@@ -15,6 +15,23 @@ interface State {
   error: Error | null;
 }
 
+type SentryCaptureOptions = {
+  contexts?: {
+    react?: {
+      componentStack?: string | null;
+    };
+  };
+  tags?: Record<string, string | boolean>;
+};
+
+declare global {
+  interface Window {
+    Sentry?: {
+      captureException: (error: Error, options?: SentryCaptureOptions) => void;
+    };
+  }
+}
+
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
@@ -46,8 +63,8 @@ export class ErrorBoundary extends Component<Props, State> {
     );
     
     // Report to Sentry if available
-    if (typeof window !== 'undefined' && (window as unknown).Sentry) {
-      (window as unknown).Sentry.captureException(error, {
+    if (typeof window !== 'undefined' && window.Sentry) {
+      window.Sentry.captureException(error, {
         contexts: {
           react: {
             componentStack: errorInfo.componentStack,

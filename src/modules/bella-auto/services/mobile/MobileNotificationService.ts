@@ -7,7 +7,7 @@
  */
 
 import { getPrimaryClient } from '@/lib/database/read-replica';
-import { Database } from '@/types/database.types';
+import type { Database, Json } from '@/types/database.types';
 
 type MobileNotification = Database['public']['Tables']['auto_mobile_notifications']['Row'];
 type MobileNotificationInsert = Database['public']['Tables']['auto_mobile_notifications']['Insert'];
@@ -32,7 +32,7 @@ interface CreateNotificationParams {
   title: string;
   message: string;
   actionType?: string;
-  actionData?: unknown;
+  actionData?: Json;
   priority?: Priority;
   expiresAt?: string;
 }
@@ -48,7 +48,7 @@ export class MobileNotificationService {
       title: params.title,
       message: params.message,
       action_type: params.actionType,
-      action_data: params.actionData as unknown,
+      action_data: params.actionData,
       priority: params.priority || 'normal',
       expires_at: params.expiresAt,
       status: 'pending',

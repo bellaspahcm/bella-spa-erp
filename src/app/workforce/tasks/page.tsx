@@ -9,6 +9,23 @@ import { getMyTasks, completeTask, createTask, WorkforceTask } from '@/services/
 import { toast } from 'sonner';
 import Link from 'next/link';
 
+type TaskType = 'lead_followup' | 'site_visit' | 'deposit_reminder' | 'contract_preparation' | 'manual';
+type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+function isTaskType(value: string): value is TaskType {
+  return (
+    value === 'lead_followup' ||
+    value === 'site_visit' ||
+    value === 'deposit_reminder' ||
+    value === 'contract_preparation' ||
+    value === 'manual'
+  );
+}
+
+function isTaskPriority(value: string): value is TaskPriority {
+  return value === 'low' || value === 'medium' || value === 'high' || value === 'urgent';
+}
+
 export default function TaskCenter() {
   const [tasks, setTasks] = useState<WorkforceTask[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -18,8 +35,8 @@ export default function TaskCenter() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
-  const [newType, setNewType] = useState<'lead_followup' | 'site_visit' | 'deposit_reminder' | 'contract_preparation' | 'manual'>('manual');
-  const [newPriority, setNewPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
+  const [newType, setNewType] = useState<TaskType>('manual');
+  const [newPriority, setNewPriority] = useState<TaskPriority>('medium');
   const [newDueDate, setNewDueDate] = useState('');
 
   const fetchTasks = useCallback(async () => {
@@ -252,7 +269,12 @@ export default function TaskCenter() {
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loại nhiệm vụ</label>
                   <select
                     value={newType}
-                    onChange={(e: Record<string, unknown>) => setNewType(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (isTaskType(value)) {
+                        setNewType(value);
+                      }
+                    }}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-750 rounded-2xl px-4 py-3 text-xs outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
                   >
                     <option value="manual">Tự tạo</option>
@@ -267,7 +289,12 @@ export default function TaskCenter() {
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Mức độ ưu tiên</label>
                   <select
                     value={newPriority}
-                    onChange={(e: Record<string, unknown>) => setNewPriority(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (isTaskPriority(value)) {
+                        setNewPriority(value);
+                      }
+                    }}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-750 rounded-2xl px-4 py-3 text-xs outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
                   >
                     <option value="low">Thấp</option>
