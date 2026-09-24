@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2, X } from 'lucide-react';
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import { useUser } from '@/lib/user-context';
 import { getLocalDateString } from '@bella/shared';;
 import type { BookingResourceOption } from './BookingDayDetailModal';
 
@@ -53,7 +54,9 @@ export function BookingCreateScheduleModal({
   onSubmit,
   tenantModuleKey,
 }: BookingCreateScheduleModalProps) {
+  const { product } = useUser();
   const [selectedResourceId, setSelectedResourceId] = useState('');
+  const isHaircut = product?.productKey === 'bella_haircut';
   const activeBookingResources = bookingResources.filter((resource) => (
     resource.status === 'available' || resource.status === 'in_use'
   ));
@@ -163,7 +166,7 @@ export function BookingCreateScheduleModal({
                           })),
                         ]}
                         onChange={setSelectedResourceId}
-                        placeholder="Chọn giường/phòng/máy..."
+                        placeholder={isHaircut ? 'Chọn ghế/khu vực/thiết bị...' : 'Chọn giường/phòng/máy...'}
                         className="mt-1"
                       />
                     </div>

@@ -3,6 +3,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
+import { useUser } from '@/lib/user-context';
 
 type BookingsTimelineDateRibbonProps = {
   selectedDate: Date;
@@ -43,6 +44,8 @@ export function BookingsTimelineDateRibbon({
 }: BookingsTimelineDateRibbonProps) {
   const weekDays = getDaysOfWeek(selectedDate);
   const vocab = useModuleVocabulary();
+  const { product } = useUser();
+  const isHaircut = product?.productKey === 'bella_haircut';
   
   // Dynamic coordinator label based on module
   const coordinatorLabel = moduleKey == null
@@ -50,7 +53,7 @@ export function BookingsTimelineDateRibbon({
     : moduleKey === 'industrial_cleaning'
       ? 'Quản lý ca làm việc'
       : moduleKey === 'beauty_spa'
-        ? 'Beauty Spa Coordinator'
+        ? isHaircut ? 'Haircut Shop Coordinator' : 'Beauty Spa Coordinator'
         : 'Bella Spa Coordinator';
 
   const moveDate = (days: number) => {
