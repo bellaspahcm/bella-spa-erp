@@ -128,21 +128,21 @@ type CachedTenantBrandDisplay = TenantBrandDisplay & {
 };
 
 const DEFAULT_SIDEBAR_BRAND: TenantBrandDisplay = {
-  displayName: 'Bella Haircut Shop',
+  displayName: 'Spa ERP',
   logoUrl: '',
-  subtitle: 'Đẹp hơn mỗi ngày',
-  moduleKey: 'beauty_spa',
-  primaryColor: '#074E44',
-  accentColor: '#C8A97A',
-  primaryHoverColor: '#03211D',
-  monogram: 'BH',
+  subtitle: 'Management System',
+  moduleKey: 'babycare',
+  primaryColor: '#9D174D',
+  accentColor: '#BE185D',
+  primaryHoverColor: '#831843',
+  monogram: 'S',
   buttonStyle: 'pill',
   menuStyle: 'comfortable',
   radiusStyle: 'soft',
-  isBeautySpa: true,
+  isBeautySpa: false,
   isHospitalInpatient: false,
-  fontHeading: 'serif',
-  stylePreset: 'jade_wellness',
+  fontHeading: 'sans',
+  stylePreset: 'bella_rose',
 };
 const NEUTRAL_SIDEBAR_BRAND: TenantBrandDisplay = {
   displayName: 'System ERP',
