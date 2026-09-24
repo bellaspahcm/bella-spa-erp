@@ -6,6 +6,7 @@ import { PremiumSelect } from "@/components/ui/PremiumSelect";
 import { TenantGeneralSettings, DEFAULT_CONFLICT_DETECTION_CONFIG } from "@/types/domain";
 import OverbookingConfigSection from "./OverbookingConfigSection";
 import { useTenantModuleKey } from "@/hooks/useTenantModuleKey";
+import { useUser } from "@/lib/user-context";
 
 const POPULAR_BANKS = [
   { code: "MB", name: "MB Bank (Ngân hàng Quân Đội)" },
@@ -31,6 +32,8 @@ export default function GeneralSettingsTab({
   isLoadingSettings,
 }: GeneralSettingsTabProps) {
   const { tenantModuleKey } = useTenantModuleKey();
+  const { product } = useUser();
+  const isHaircut = product?.productKey === "bella_haircut";
   const isRealEstate = tenantModuleKey === "real_estate";
   const isIndustrialCleaning = tenantModuleKey === "industrial_cleaning";
   const isBellaAuto = tenantModuleKey === "bella_auto";
@@ -47,7 +50,9 @@ export default function GeneralSettingsTab({
     );
   }
 
-  const titleText = isRealEstate 
+  const titleText = isHaircut
+    ? "Thông tin Haircut Shop"
+    : isRealEstate
     ? "Thông tin Doanh nghiệp" 
     : isBellaAuto
     ? "Thông tin Showroom"
