@@ -794,7 +794,9 @@ export default function ServicesPage() {
                             : 'VD: Khám lâm sàng, Xét nghiệm công thức máu, Siêu âm ổ bụng, Đo điện tâm đồ'
                           : vocab.worker.short === 'NVS'
                             ? 'VD: Vệ sinh sàn nhà, Lau kính, Dọn toilet'
-                            : 'VD: Massage body, Chăm sóc da mặt, Xông hơi'
+                            : isHaircut
+                              ? 'VD: Cắt tóc nam, Gội đầu, Tạo kiểu'
+                              : 'VD: Massage body, Chăm sóc da mặt, Xông hơi'
                       }
                     />
                   </div>
@@ -952,7 +954,7 @@ export default function ServicesPage() {
                             value={serviceCategory}
                             onChange={(event) => setServiceCategory(event.target.value)}
                             className="w-full rounded-2xl border-none bg-white px-5 py-4 text-sm font-bold text-slate-700 outline-none transition focus:ring-4 focus:ring-primary/10"
-                            placeholder={enabledModules.bella_healthcare ? (isDental ? "VD: implant, invisalign, dental, porcelain, nhổ răng" : "VD: nội khoa, ngoại khoa, nhi khoa, siêu âm, xét nghiệm") : "VD: facial, body, laser"}
+                            placeholder={enabledModules.bella_healthcare ? (isDental ? "VD: implant, invisalign, dental, porcelain, nhổ răng" : "VD: nội khoa, ngoại khoa, nhi khoa, siêu âm, xét nghiệm") : isHaircut ? "VD: haircut, styling, coloring" : "VD: facial, body, laser"}
                           />
                         </div>
 
