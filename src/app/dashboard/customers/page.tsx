@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
 import { useModuleVocabulary } from '@/lib/business-rules/module-vocabulary';
+import { useUser } from '@/lib/user-context';
 import { calculateBookingPaymentState, type PaymentRevenueLike } from '@/lib/business-rules/payment';
 import {
   getCustomerGenderPresentation,
@@ -93,13 +94,27 @@ export default function CustomersPage() {
   const customerLoadRequestRef = useRef(0);
   const backgroundCustomerLoadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { tenantModuleKey, refreshTenantModuleKey } = useTenantModuleKey();
+  const { product } = useUser();
+  const isHaircut = product?.productKey === 'bella_haircut';
   const vocab = useModuleVocabulary(tenantModuleKey);
 
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState(ALL_STATUS_FILTER);
   const customerLabels = useMemo(
-    () => getTenantModulePresentationOrNeutral(tenantModuleKey),
-    [tenantModuleKey]
+    () => {
+      const labels = getTenantModulePresentationOrNeutral(tenantModuleKey);
+      if (!isHaircut) return labels;
+
+      return {
+        ...labels,
+        customerListSubtitle: 'Quản lý hồ sơ khách hàng Haircut Shop',
+        customerSearchPlaceholder: 'Tìm khách, SĐT, dịch vụ cắt tóc...',
+        editDescription: 'Chỉnh sửa hồ sơ khách hàng Haircut Shop',
+        createDescription: 'Nhập thông tin cơ bản của khách hàng Haircut Shop',
+        secondaryNamePlaceholder: 'VD: Khách cắt tóc định kỳ',
+      };
+    },
+    [isHaircut, tenantModuleKey]
   );
   const SecondaryInfoIcon = tenantModuleKey === 'babycare' ? Baby : Sparkles;
 
