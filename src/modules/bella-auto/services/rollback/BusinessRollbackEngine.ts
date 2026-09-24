@@ -407,7 +407,7 @@ export class BusinessRollbackEngine {
   ): Promise<void> {
     const { error } = await this.supabase
       .from('auto_customer_journeys')
-      .update({ current_stage_code: params.previous_stage })
+      .update({ current_stage_id: params.previous_stage })
       .eq('id', journeyId)
       .eq('tenant_id', this.tenantId);
 

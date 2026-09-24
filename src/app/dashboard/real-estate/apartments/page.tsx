@@ -221,19 +221,26 @@ export default function RealEstateApartmentsPage() {
       id: `imported-${bulkBlock}-${bulkFloor}-${idx}-${Date.now()}`,
       product_code: code,
       floor: bulkFloor,
+      floor_number: Number(bulkFloor) || null,
       block: bulkBlock,
       area: 76.5,
+      area_m2: 76.5,
       unit_price: 55000000,
       status: "available",
       project_id: selectedProject?.id || "p1",
       created_at: new Date().toISOString(),
+      created_by: null,
+      customer_id: null,
+      deleted_at: null,
+      direction: null,
+      metadata: null,
       updated_at: new Date().toISOString(),
+      updated_by: null,
       tenant_id: "tenant-1",
       building_id: null,
       floor_id: null,
       owner_name: null,
-      product_type: "apartment",
-      description: null
+      product_type: "apartment"
     }));
 
     const updated = [...newUnits, ...displayUnits];
