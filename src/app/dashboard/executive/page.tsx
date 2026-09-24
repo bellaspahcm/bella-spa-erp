@@ -45,6 +45,9 @@ import {
   FinancialHealthChart,
   GrowthIndicatorsChart,
 } from '@/components/intelligence';
+import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
+import { useUser } from '@/lib/user-context';
+import { HaircutExecutiveDashboardView } from './components/HaircutExecutiveDashboardView';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -95,14 +98,6 @@ import { HaircutExecutiveDashboardView } from './components/HaircutExecutiveDash
 // ─────────────────────────────────────────────────────────────────────────────
 
 function ExecutiveDashboardPage() {
-  const { tenantModuleKey } = useTenantModuleKey();
-  const { product } = useUser();
-  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'haircut';
-
-  if (isHaircut) {
-    return <HaircutExecutiveDashboardView />;
-  }
-
   const router = useRouter();
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [period, setPeriod] = useState<TimePeriod>('month');
@@ -782,6 +777,14 @@ function ExecutiveDashboardPage() {
 
 // Wrap with ErrorBoundary to prevent full page crashes
 export default function ExecutiveDashboardPageWrapper() {
+  const { tenantModuleKey } = useTenantModuleKey();
+  const { product } = useUser();
+  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'haircut';
+
+  if (isHaircut) {
+    return <HaircutExecutiveDashboardView />;
+  }
+
   return (
     <ErrorBoundary>
       <ExecutiveDashboardPage />
