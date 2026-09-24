@@ -5,6 +5,7 @@ import {
   type BookingResourceType,
 } from '@/lib/business-rules/booking-resource';
 import { TENANT_MODULE_KEYS, type TenantModuleKey } from '@/lib/business-rules/tenant-modules';
+import type { Json } from '@/types/database.types';
 
 type NumericLike = number | string | null | undefined;
 
@@ -31,6 +32,7 @@ export type ServicePackageInput = {
   default_resource_type?: string | null;
   before_after_required?: boolean | null;
   care_note_template?: string | null;
+  metadata?: Json | null;
 };
 
 export type HqPackageTemplateRuleInput = ServicePackageInput & {
@@ -61,6 +63,7 @@ export type ServicePackageRulePayload = {
   default_resource_type: BookingResourceType | null;
   before_after_required: boolean;
   care_note_template: string | null;
+  metadata?: Json | null;
 };
 
 export type HqPackageTemplateRulePayload = ServicePackageRulePayload & {
@@ -211,6 +214,7 @@ export function buildServicePackagePayload(input: ServicePackageInput): ServiceP
     payload.before_after_required = input.before_after_required === true;
   }
   if (input.care_note_template !== undefined) payload.care_note_template = normalizeNullableText(input.care_note_template);
+  if (input.metadata !== undefined) payload.metadata = input.metadata;
 
   return payload;
 }
@@ -248,6 +252,7 @@ export function buildServicePackageUpdatePayload(input: Partial<ServicePackageIn
     payload.before_after_required = input.before_after_required === true;
   }
   if (input.care_note_template !== undefined) payload.care_note_template = normalizeNullableText(input.care_note_template);
+  if (input.metadata !== undefined) payload.metadata = input.metadata;
 
   return payload;
 }

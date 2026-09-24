@@ -24,6 +24,8 @@ export interface BusinessRule {
   effectiveUntil?: string;
 }
 
+type BusinessRuleEntityType = BusinessRule['entityType'];
+
 export interface RuleBuilderFormProps {
   initialRule?: BusinessRule;
   onSave: (rule: BusinessRule) => Promise<void>;
@@ -31,13 +33,17 @@ export interface RuleBuilderFormProps {
   readonly?: boolean;
 }
 
-const ENTITY_TYPES = [
+const ENTITY_TYPES: Array<{ key: BusinessRuleEntityType; label: string }> = [
   { key: 'quotation', label: 'Báo giá (Quotation)' },
   { key: 'booking', label: 'Hợp đồng đặt cọc (Booking)' },
   { key: 'trade_in', label: 'Thu mua xe cũ (Trade-In)' },
   { key: 'loan', label: 'Hồ sơ vay (Loan)' },
   { key: 'service', label: 'Dịch vụ sửa chữa (Service)' },
 ];
+
+function isBusinessRuleEntityType(value: string): value is BusinessRuleEntityType {
+  return ENTITY_TYPES.some((entityType) => entityType.key === value);
+}
 
 export function RuleBuilderForm({
   initialRule,
@@ -178,8 +184,8 @@ interface TestResult {
     }
   };
 
-  const getSampleDataForEntity = (entityType: string) => {
-    const samples: Record<string, unknown> = {
+  const getSampleDataForEntity = (entityType: BusinessRuleEntityType): Record<string, unknown> => {
+    const samples: Record<BusinessRuleEntityType, Record<string, unknown>> = {
       quotation: {
         total_price: 2500000000,
         discount: 50000000,
@@ -210,7 +216,7 @@ interface TestResult {
         mileage: 80000,
       },
     };
-    return samples[entityType] || {};
+    return samples[entityType];
   };
 
   return (
@@ -319,7 +325,11 @@ interface TestResult {
             </label>
             <select
               value={rule.entityType}
-              onChange={(e) => updateRule({ entityType: e.target.value as unknown })}
+              onChange={(e) => {
+                if (isBusinessRuleEntityType(e.target.value)) {
+                  updateRule({ entityType: e.target.value });
+                }
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white"
               disabled={readonly}
             >

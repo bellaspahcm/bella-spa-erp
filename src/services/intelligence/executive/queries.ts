@@ -592,7 +592,7 @@ export async function getGrowthIndicators(
 
     const { data: prevMonthRevenues, error: prevMonthError } = await supabase
       .from('revenue')
-      .select('amount, status')
+      .select('amount, status, revenue_type')
       .eq('tenant_id', tenantId)
       .gte('received_date', formatDate(prevMonthStart))
       .lte('received_date', formatDate(prevMonthEnd))
@@ -638,7 +638,7 @@ export async function getGrowthIndicators(
 
     const prevMonthRevenueByType: Record<string, number> = {};
     (prevMonthRevenues || []).forEach(r => {
-      const type = (r as unknown).revenue_type || 'other';
+      const type = r.revenue_type || 'other';
       prevMonthRevenueByType[type] = (prevMonthRevenueByType[type] || 0) + Number(r.amount || 0);
     });
 

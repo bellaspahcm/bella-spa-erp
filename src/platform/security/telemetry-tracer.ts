@@ -26,7 +26,7 @@ export class TelemetryTracer {
   private static queryCounter = new Map<string, number>(); // traceId -> count
 
   public static clearTraces(): void {
-    this.traces.clear();
+    this.traces = [];
     this.queryCounter.clear();
   }
 

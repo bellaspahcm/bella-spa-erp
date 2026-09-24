@@ -12,6 +12,16 @@ type ServiceAppointment = Database['public']['Tables']['auto_service_appointment
 type ServiceAppointmentInsert = Database['public']['Tables']['auto_service_appointments']['Insert'];
 type ServiceAppointmentUpdate = Database['public']['Tables']['auto_service_appointments']['Update'];
 
+function getCustomerDisplayName(customer: unknown): string {
+  if (typeof customer === 'object' && customer !== null && 'name' in customer) {
+    const name = customer.name;
+    if (typeof name === 'string' && name.trim().length > 0) {
+      return name;
+    }
+  }
+  return 'customer';
+}
+
 export interface CreateAppointmentData {
   tenantId: string;
   customerId: string;
@@ -51,14 +61,36 @@ export class ServiceAppointmentService {
       throw new Error('Failed to generate appointment number');
     }
 
+    const appointmentDate = data.appointmentDate.toISOString().split('T')[0];
+    const scheduledDate = `${appointmentDate}T${data.appointmentTime}:00+07:00`;
+    const { data: vehicle, error: vehicleError } = await supabase
+      .from('auto_vehicles')
+      .select('vin, chassis_number, color_exterior')
+      .eq('id', data.vehicleId)
+      .eq('tenant_id', data.tenantId)
+      .single();
+
+    if (vehicleError) {
+      throw new Error(`Failed to load appointment vehicle: ${vehicleError.message}`);
+    }
+
+    const vehicleInfo = [
+      vehicle.vin,
+      vehicle.chassis_number,
+      vehicle.color_exterior,
+    ].filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+      .join(' - ');
+
     // Create appointment
     const appointmentData: ServiceAppointmentInsert = {
       tenant_id: data.tenantId,
       appointment_number: appointmentNumber,
       customer_id: data.customerId,
       vehicle_id: data.vehicleId,
-      appointment_date: data.appointmentDate.toISOString().split('T')[0],
+      appointment_date: appointmentDate,
       appointment_time: data.appointmentTime,
+      scheduled_date: scheduledDate,
+      vehicle_info: vehicleInfo,
       service_type: data.serviceType,
       requested_services: data.requestedServices,
       service_package_id: data.servicePackageId,
@@ -173,7 +205,7 @@ export class ServiceAppointmentService {
       .update({
         status: 'in_progress',
         work_started_at: new Date().toISOString(),
-        assigned_technicians: technicianIds as unknown,
+        assigned_technicians: technicianIds,
       })
       .eq('id', appointmentId)
       .eq('tenant_id', tenantId)
@@ -545,7 +577,7 @@ export class ServiceAppointmentService {
     }
 
     // TODO: Integrate with SMS/Email service
-    console.log(`[Service] Sending reminder to ${(appointment.customers as unknown)?.name}`);
+    console.log(`[Service] Sending reminder to ${getCustomerDisplayName(appointment.customers)}`);
 
     // Mark reminder as sent
     await supabase
@@ -619,7 +651,9 @@ export class ServiceAppointmentService {
     let completedCount = 0;
 
     for (const appt of appointments) {
-      byStatus[appt.status] = (byStatus[appt.status] || 0) + 1;
+      if (appt.status) {
+        byStatus[appt.status] = (byStatus[appt.status] || 0) + 1;
+      }
 
       if (appt.status === 'completed' && appt.work_started_at && appt.work_completed_at) {
         completedCount++;

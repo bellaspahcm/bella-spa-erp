@@ -401,7 +401,7 @@ export default function LegalDocumentsOperationsCenterPage() {
 
   // Selected Document object
   const selectedDoc = useMemo(() => {
-    return documents.find(d => d.id === selectedDocId) || documents[0] || null;
+    return documents.find(d => d.id === selectedDocId) || null;
   }, [documents, selectedDocId]);
 
   // Operational KPIs (Matching Image 2 Metrics)
@@ -1161,7 +1161,7 @@ export default function LegalDocumentsOperationsCenterPage() {
                 </div>
 
                 <button
-                  onClick={() => setSelectedDoc(null)}
+                  onClick={() => setSelectedDocId("")}
                   className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                 >
                   <X className="w-4 h-4" />
@@ -1410,7 +1410,7 @@ export default function LegalDocumentsOperationsCenterPage() {
 
                 <button
                   onClick={() => {
-                    downloadPdfReport(`${selectedDoc.code}.pdf`, selectedDoc.title, { Code: selectedDoc.code, Project: selectedDoc.projectName });
+                    downloadPdfReport(`${selectedDoc.code}.pdf`, selectedDoc.title, { Code: selectedDoc.code, Project: selectedDoc.project });
                     toast.success(`✅ Đã tải xuống file ${selectedDoc.code}.pdf thành công!`);
                   }}
                   className="flex-1 py-2 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold text-xs transition flex items-center justify-center gap-1.5"

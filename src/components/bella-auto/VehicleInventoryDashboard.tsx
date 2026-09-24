@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase-client';
 import { RefreshCw, Search, Download } from 'lucide-react';
+import type { VehicleStatus } from '@/modules/bella-auto/services/VehicleStatusMachineService';
 
 interface Vehicle {
   id: string;
@@ -10,7 +11,7 @@ interface Vehicle {
   variant_id: string;
   color_exterior: string;
   model_year: number;
-  status: string;
+  status: VehicleStatus;
   location_note: string | null;
   list_price: number;
   // Fields from seed data (direct columns)
@@ -25,13 +26,24 @@ interface Vehicle {
 const supabase = createClient();
 const ITEMS_PER_PAGE = 15;
 
+function getRelatedRecord(value: unknown): Record<string, unknown> | null {
+  if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+    return Object.fromEntries(Object.entries(value));
+  }
+  return null;
+}
+
+function getOptionalString(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined;
+}
+
 export default function VehicleInventoryDashboard({ tenantId }: { tenantId: string }) {
   console.log('[VehicleInventoryDashboard] Component mounted with tenantId:', tenantId);
   
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<VehicleStatus | 'all'>('all');
   const [stats, setStats] = useState({ total: 0, showroom: 0, warehouse: 0, allocated: 0, delivered: 0 });
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -89,21 +101,27 @@ export default function VehicleInventoryDashboard({ tenantId }: { tenantId: stri
       console.log('[VehicleInventory] Loaded vehicles:', data?.length);
 
       // Map to interface format
-      const mappedVehicles = (data || []).map((row: Record<string, unknown>) => ({
-        id: row.id,
-        vin: row.vin,
-        variant_id: row.variant_id,
-        color_exterior: row.color_exterior,
-        color_interior: row.color_interior,
-        model_year: row.model_year,
-        status: row.status,
-        location_note: row.location_note,
-        list_price: Number(row.list_price),
-        brandName: row.auto_variants?.auto_models?.auto_brands?.name,
-        modelName: row.auto_variants?.auto_models?.name,
-        variantName: row.auto_variants?.name,
-        chassisNumber: row.chassis_number,
-      }));
+      const mappedVehicles = (data || []).map((row) => {
+        const variant = getRelatedRecord(row.auto_variants);
+        const model = getRelatedRecord(variant?.auto_models);
+        const brand = getRelatedRecord(model?.auto_brands);
+
+        return {
+          id: row.id,
+          vin: row.vin,
+          variant_id: row.variant_id,
+          color_exterior: row.color_exterior,
+          color_interior: row.color_interior,
+          model_year: row.model_year,
+          status: row.status,
+          location_note: row.location_note,
+          list_price: Number(row.list_price),
+          brandName: getOptionalString(brand?.name),
+          modelName: getOptionalString(model?.name),
+          variantName: getOptionalString(variant?.name),
+          chassisNumber: row.chassis_number,
+        };
+      });
 
       console.log('[VehicleInventory] Sample vehicle:', mappedVehicles[0]);
 
@@ -233,7 +251,21 @@ export default function VehicleInventoryDashboard({ tenantId }: { tenantId: stri
             </div>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (
+                  value === 'all' ||
+                  value === 'in_transit' ||
+                  value === 'warehouse' ||
+                  value === 'showroom' ||
+                  value === 'allocated' ||
+                  value === 'delivered' ||
+                  value === 'returned' ||
+                  value === 'scrapped'
+                ) {
+                  setStatusFilter(value);
+                }
+              }}
               className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all"
             >
               <option value="all">Tất cả</option>

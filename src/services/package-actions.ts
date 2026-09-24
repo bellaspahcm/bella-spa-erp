@@ -42,6 +42,7 @@ export type PackageActionInput = {
   default_resource_type?: string | null;
   before_after_required?: boolean | null;
   care_note_template?: string | null;
+  metadata?: Json | null;
 };
 
 type PackageActionResult = {

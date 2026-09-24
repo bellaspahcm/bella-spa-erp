@@ -24,13 +24,7 @@ export * from './feature-flags';
 export * from './event-bus';
 
 // Host Platform Shared Services
-export * from './iam';
-export * from './notification';
-export * from './workflow';
 export * from './policy';
-export * from './ai-runtime';
-export * from './metadata';
-export * from './integration';
 
 // Platform Metadata
 export const HOST_PLATFORM_VERSION = '1.0.0';

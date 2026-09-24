@@ -3,7 +3,14 @@ import { createClient } from '@/lib/supabase-server';
 import { checkRateLimit, getClientIp, RATE_LIMITS, resetRateLimit } from '@/lib/security/rate-limiter';
 import { withRecaptchaVerification, RECAPTCHA_THRESHOLDS } from '@/lib/security/recaptcha';
 import { checkRegistrationForSpam, logActivity } from '@/lib/security/spam-detector';
+import type { Database } from '@/types/database.types';
 import crypto from 'crypto';
+
+type PartnerApplicantType = Database['public']['Enums']['partner_applicant_type'];
+
+function isPartnerApplicantType(value: unknown): value is PartnerApplicantType {
+  return value === 'individual' || value === 'company';
+}
 
 /**
  * POST /api/partner/register
@@ -171,6 +178,16 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    if (!isPartnerApplicantType(applicant_type)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Loại đối tác không hợp lệ',
+        },
+        { status: 400 }
+      );
+    }
     
     if (applicant_type === 'company' && !company_name) {
       return NextResponse.json(
@@ -209,22 +226,14 @@ export async function POST(request: NextRequest) {
           .update({
             full_name,
             phone,
-            applicant_type,
+            business_type: applicant_type,
             company_name,
             tax_code,
-            business_license,
-            address,
+            company_address: address,
             city,
-            district,
-            ward,
             verification_token: verificationToken,
             verification_token_expires_at: tokenExpiresAt.toISOString(),
             updated_at: new Date().toISOString(),
-            metadata: {
-              spam_check: spamCheck,
-              recaptcha_score: recaptchaResult.score,
-              ip_address: ip,
-            },
           })
           .eq('id', existingApp.id)
           .select()
@@ -283,25 +292,15 @@ export async function POST(request: NextRequest) {
         full_name,
         email,
         phone,
-        applicant_type,
+        business_type: applicant_type,
         company_name,
         tax_code,
-        business_license,
-        address,
+        company_address: address,
         city,
-        district,
-        ward,
         status: 'pending_verification',
-        registration_type: 'partner',
         verification_token: verificationToken,
         verification_token_expires_at: tokenExpiresAt.toISOString(),
-        documents: '[]',
-        metadata: {
-          spam_check: spamCheck,
-          recaptcha_score: recaptchaResult.score,
-          ip_address: ip,
-          flagged_for_review: spamCheck.shouldReview,
-        },
+        documents: [],
       })
       .select()
       .single();

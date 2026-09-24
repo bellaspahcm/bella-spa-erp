@@ -9,30 +9,23 @@ import { useState } from 'react';
 import { TransactionHistoryViewer } from '@/components/bella-auto/rollback/TransactionHistoryViewer';
 import { RollbackConfirmationDialog } from '@/components/bella-auto/rollback/RollbackConfirmationDialog';
 import { AuditTrailDashboard } from '@/components/bella-auto/rollback/AuditTrailDashboard';
-import { useTransactions, useTransactionDetail, useRollbackTransaction } from '@/hooks/bella-auto/useTransactions';
+import { useRollbackTransaction } from '@/hooks/bella-auto/useTransactions';
 
 export default function RollbackDemoPage() {
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
   const [showRollbackDialog, setShowRollbackDialog] = useState(false);
   const [activeTab, setActiveTab] = useState<'transactions' | 'audit'>('transactions');
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
 
-  // Fetch transactions (demo: show all)
-  const { transactions, isLoading: isLoadingList, refetch: refetchList } = useTransactions();
-  
-  // Fetch selected transaction detail
-  const { transaction, isLoading: isLoadingDetail } = useTransactionDetail(selectedTransactionId);
-  
   // Rollback hook
-  const { rollback, isRollingBack } = useRollbackTransaction();
+  const { rollback } = useRollbackTransaction();
 
   const handleRollbackClick = (transactionId: string) => {
     setSelectedTransactionId(transactionId);
     setShowRollbackDialog(true);
   };
 
-  const handleConfirmRollback = async (reason: string) => {
-    if (!selectedTransactionId) return;
-
+  const handleConfirmRollback = async (transactionId: string, reason: string) => {
     // In production, get from auth context
     const mockUser = {
       id: 'demo-user-id',
@@ -40,7 +33,7 @@ export default function RollbackDemoPage() {
     };
 
     const result = await rollback(
-      selectedTransactionId,
+      transactionId,
       reason,
       mockUser.id,
       mockUser.email
@@ -50,7 +43,7 @@ export default function RollbackDemoPage() {
       setShowRollbackDialog(false);
       setSelectedTransactionId(null);
       alert('✅ Rollback completed successfully!');
-      void refetchList();
+      setHistoryRefreshKey((key) => key + 1);
     } else {
       alert(`❌ Rollback failed: ${result.error}`);
     }
@@ -101,19 +94,11 @@ export default function RollbackDemoPage() {
             {activeTab === 'transactions' ? (
               <div>
                 <h2 className="text-xl font-semibold mb-4">All Transactions</h2>
-                {isLoadingList ? (
-                  <div className="text-center py-8">Loading transactions...</div>
-                ) : transactions.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    No transactions found. Create a booking/delivery to see rollback history.
-                  </div>
-                ) : (
-                  <TransactionHistoryViewer
-                    transactions={transactions}
-                    onRollbackClick={handleRollbackClick}
-                    onViewDetails={(id) => setSelectedTransactionId(id)}
-                  />
-                )}
+                <TransactionHistoryViewer
+                  key={historyRefreshKey}
+                  onRollback={handleRollbackClick}
+                  onViewDetails={(id) => setSelectedTransactionId(id)}
+                />
               </div>
             ) : (
               <div>
@@ -125,11 +110,10 @@ export default function RollbackDemoPage() {
         </div>
 
         {/* Rollback Dialog */}
-        {showRollbackDialog && transaction && (
+        {showRollbackDialog && (
           <RollbackConfirmationDialog
-            transaction={transaction}
-            isOpen={showRollbackDialog}
-            isLoading={isRollingBack}
+            open={showRollbackDialog}
+            transactionId={selectedTransactionId}
             onConfirm={handleConfirmRollback}
             onCancel={() => {
               setShowRollbackDialog(false);

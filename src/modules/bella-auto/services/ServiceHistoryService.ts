@@ -21,16 +21,39 @@ interface VehicleJoinRow {
   year: number;
 }
 
-interface CustomerJoinRow {
-  id: string;
-  name: string;
-}
-
 interface PartItem {
   partNumber: string | null;
   partName: string;
   quantity: number;
   isWarrantyCovered: boolean | null;
+}
+
+function toPartItems(value: ServiceHistory['parts_replaced']): PartItem[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item) => {
+    if (typeof item !== 'object' || item === null || Array.isArray(item)) {
+      return [];
+    }
+
+    const partName = item.partName;
+    const quantity = item.quantity;
+    const partNumber = item.partNumber;
+    const isWarrantyCovered = item.isWarrantyCovered;
+
+    if (typeof partName !== 'string' || typeof quantity !== 'number') {
+      return [];
+    }
+
+    return [{
+      partName,
+      quantity,
+      partNumber: typeof partNumber === 'string' ? partNumber : null,
+      isWarrantyCovered: typeof isWarrantyCovered === 'boolean' ? isWarrantyCovered : null,
+    }];
+  });
 }
 
 interface ExportResult {
@@ -93,56 +116,62 @@ export class ServiceHistoryService {
 
     // Prepare service history data
     const vehicle = repairOrder.auto_vehicles as unknown as VehicleJoinRow;
-    const customer = repairOrder.customers as unknown as CustomerJoinRow;
+    if (!vehicle.vin) {
+      throw new Error(`Repair order ${repairOrderId} is missing vehicle VIN`);
+    }
+    if (repairOrder.mileage_in === null) {
+      throw new Error(`Repair order ${repairOrderId} is missing mileage`);
+    }
+
+    const recordedBy =
+      repairOrder.updated_by ??
+      repairOrder.created_by ??
+      repairOrder.service_advisor_id ??
+      repairOrder.primary_technician_id;
+    if (!recordedBy) {
+      throw new Error(`Repair order ${repairOrderId} is missing history recorder`);
+    }
+
+    const servicesPerformed = (items ?? []).map(item => ({
+      type: item.item_type,
+      code: item.item_code,
+      name: item.item_name,
+      description: item.description,
+      quantity: item.quantity,
+      laborHours: item.labor_hours,
+      partNumber: item.part_number,
+      isWarrantyCovered: item.is_warranty_covered,
+    }));
+
+    const partsReplaced = (items ?? [])
+      .filter(item => item.item_type === 'part')
+      .map(item => ({
+        partNumber: item.part_number,
+        partName: item.item_name,
+        quantity: item.quantity,
+        isWarrantyCovered: item.is_warranty_covered,
+      }));
 
     const historyData: ServiceHistoryInsert = {
       tenant_id: tenantId,
       vin: vehicle.vin,
       vehicle_id: repairOrder.vehicle_id,
-      license_plate: vehicle.license_plate,
-      vehicle_make: vehicle.make,
-      vehicle_model: vehicle.model,
-      vehicle_year: vehicle.year,
-      customer_id: repairOrder.customer_id,
-      customer_name: customer.name,
       repair_order_id: repairOrder.id,
-      repair_order_number: repairOrder.order_number,
       service_date: repairOrder.order_date,
       service_type: repairOrder.order_type,
       mileage: repairOrder.mileage_in,
-      work_description: repairOrder.work_description,
-      diagnosis_notes: repairOrder.diagnosis_notes,
-      technician_notes: repairOrder.technician_notes,
-      primary_technician_id: repairOrder.primary_technician_id,
+      service_description: repairOrder.work_description,
+      services_performed: servicesPerformed,
+      recorded_by: recordedBy,
+      technician_ids: repairOrder.primary_technician_id ? [repairOrder.primary_technician_id] : null,
       service_advisor_id: repairOrder.service_advisor_id,
-      service_items: items?.map(item => ({
-        type: item.item_type,
-        code: item.item_code,
-        name: item.item_name,
-        description: item.description,
-        quantity: item.quantity,
-        laborHours: item.labor_hours,
-        partNumber: item.part_number,
-        isWarrantyCovered: item.is_warranty_covered,
-      })) as ServiceHistoryInsert['service_items'],
-      parts_replaced: items
-        ?.filter(item => item.item_type === 'part')
-        ?.map(item => ({
-          partNumber: item.part_number,
-          partName: item.item_name,
-          quantity: item.quantity,
-          isWarrantyCovered: item.is_warranty_covered,
-        })) as ServiceHistoryInsert['parts_replaced'],
+      parts_replaced: partsReplaced,
       labor_hours: repairOrder.actual_hours,
       labor_cost: Number(repairOrder.actual_labor_cost || 0),
       parts_cost: Number(repairOrder.actual_parts_cost || 0),
       total_cost: Number(repairOrder.actual_total || 0),
-      warranty_work: repairOrder.is_warranty_work || false,
-      warranty_claim_id: repairOrder.warranty_claim_id,
-      quality_check_passed: repairOrder.quality_check_passed,
-      quality_checked_by: repairOrder.quality_checked_by,
-      quality_check_notes: repairOrder.quality_check_notes,
-      customer_complaints: repairOrder.customer_complaints as ServiceHistoryInsert['customer_complaints'],
+      is_warranty_service: repairOrder.is_warranty_work || false,
+      workshop_location: repairOrder.bay_number,
       is_locked: true, // IMMUTABLE by default
     };
 
@@ -283,7 +312,7 @@ export class ServiceHistoryService {
     // Count common parts
     const partsCount: Record<string, number> = {};
     history.forEach(h => {
-      const parts = (h.parts_replaced as PartItem[]) || [];
+      const parts = toPartItems(h.parts_replaced);
       parts.forEach((part: PartItem) => {
         const partName = part.partName || 'Unknown';
         partsCount[partName] = (partsCount[partName] || 0) + 1;
@@ -346,7 +375,7 @@ export class ServiceHistoryService {
     for (const [serviceType, interval] of Object.entries(intervals)) {
       const lastService = history.find(h => 
         h.service_type === serviceType || 
-        h.work_description?.toLowerCase().includes(serviceType.toLowerCase())
+        h.service_description?.toLowerCase().includes(serviceType.toLowerCase())
       );
 
       const lastMileage = lastService?.mileage || 0;
@@ -400,10 +429,10 @@ export class ServiceHistoryService {
       // Convert to CSV format
       const headers = [
         'Service Date',
-        'Order Number',
+        'Repair Order ID',
         'Service Type',
         'Mileage',
-        'Work Description',
+        'Service Description',
         'Labor Hours',
         'Total Cost',
         'Warranty Work',
@@ -411,13 +440,13 @@ export class ServiceHistoryService {
 
       const rows = history.map(h => [
         h.service_date,
-        h.repair_order_number,
+        h.repair_order_id,
         h.service_type,
         h.mileage,
-        h.work_description,
+        h.service_description,
         h.labor_hours,
         h.total_cost,
-        h.warranty_work ? 'Yes' : 'No',
+        h.is_warranty_service ? 'Yes' : 'No',
       ]);
 
       return { headers, rows };
@@ -488,7 +517,7 @@ export class ServiceHistoryService {
       .select('*')
       .eq('tenant_id', tenantId)
       .eq('vehicle_id', vehicleId)
-      .eq('warranty_work' as any, true)
+      .eq('is_warranty_service', true)
       .order('service_date', { ascending: false });
 
     if (error) {

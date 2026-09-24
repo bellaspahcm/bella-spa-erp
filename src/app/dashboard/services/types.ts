@@ -1,4 +1,5 @@
 import type { Database } from '@/types/database.types';
+import type { TenantPrimaryBusinessModuleKey } from '@/lib/business-rules/tenant-modules';
 
 export type ServicePackage = Database['public']['Tables']['packages']['Row'];
 export type ServicePackageInsert = Database['public']['Tables']['packages']['Insert'];
@@ -9,7 +10,7 @@ export type BookingResource = Database['public']['Tables']['booking_resources'][
 export type ServiceStatus = 'active' | 'inactive';
 export type ServiceStatusFilter = 'all' | ServiceStatus;
 export type ServiceModalMode = 'add' | 'edit';
-export type ServiceModuleKey = 'babycare' | 'beauty_spa' | 'industrial_cleaning' | 'real_estate' | 'bella_healthcare';
+export type ServiceModuleKey = TenantPrimaryBusinessModuleKey;
 export type ServiceModuleFilter = 'all' | ServiceModuleKey;
 export type ServiceKind = 'single_service' | 'treatment_package' | 'retail_product' | 'consultation' | 'lis_test' | 'ris_imaging';
 export type ResourceType = 'bed' | 'room' | 'machine' | 'chair' | 'other';

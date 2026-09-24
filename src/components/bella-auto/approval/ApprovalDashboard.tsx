@@ -8,6 +8,14 @@
 import { useState, useEffect } from 'react';
 import { Clock, CheckCircle, XCircle, AlertCircle, User } from 'lucide-react';
 
+interface ApprovalEntityData {
+  customer?: string;
+  vehicle?: string;
+  total?: number;
+  loanAmount?: number;
+  term?: number;
+}
+
 export interface ApprovalInstance {
   id: string;
   workflowName: string;
@@ -16,7 +24,7 @@ export interface ApprovalInstance {
   currentLevel: number;
   requestedAt: string;
   ageHours: number;
-  entityData?: unknown;
+  entityData?: ApprovalEntityData;
 }
 
 export interface ApprovalDashboardProps {

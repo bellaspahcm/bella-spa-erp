@@ -79,6 +79,30 @@ import type {
   Platform,
 } from './types';
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isCampaignAnalytics(value: unknown): value is CampaignAnalytics {
+  return isRecord(value)
+    && typeof value.campaignId === 'string'
+    && typeof value.campaignName === 'string'
+    && Array.isArray(value.dailyBreakdown)
+    && Array.isArray(value.platformBreakdown);
+}
+
+function isChannelPerformance(value: unknown): value is ChannelPerformance {
+  return isRecord(value)
+    && typeof value.platform === 'string'
+    && typeof value.month === 'string'
+    && typeof value.totalSpend === 'number'
+    && typeof value.totalRevenue === 'number';
+}
+
+function isChannelPerformanceList(value: unknown): value is ChannelPerformance[] {
+  return Array.isArray(value) && value.every(isChannelPerformance);
+}
+
 // ─── Helper Functions ───────────────────────────────────────────────────────
 
 /**
@@ -185,9 +209,15 @@ export async function getCampaignAnalytics(
   );
   
   // Try to get from cache first
-  return marketingCache.getOrSet(cacheKey, async () => {
+  const result = await marketingCache.getOrSet(cacheKey, async () => {
     return _getCampaignAnalyticsUncached(params);
   });
+
+  if (!isCampaignAnalytics(result)) {
+    throw new QueryError('Invalid cached campaign analytics payload');
+  }
+
+  return result;
 }
 
 /**
@@ -385,9 +415,15 @@ export async function getChannelPerformance(
   );
   
   // Try to get from cache first
-  return marketingCache.getOrSet(cacheKey, async () => {
+  const result = await marketingCache.getOrSet(cacheKey, async () => {
     return _getChannelPerformanceUncached(params);
   });
+
+  if (!isChannelPerformanceList(result)) {
+    throw new QueryError('Invalid cached channel performance payload');
+  }
+
+  return result;
 }
 
 /**

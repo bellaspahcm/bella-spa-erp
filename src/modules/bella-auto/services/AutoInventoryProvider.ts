@@ -10,11 +10,44 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
 import {
   VehicleStatusMachineService,
   type VehicleStatus,
   type TransitionVehicleInput,
 } from './VehicleStatusMachineService';
+
+type AutoVehicleRow = Database['public']['Tables']['auto_vehicles']['Row'];
+
+type VehicleListRow = Pick<
+  AutoVehicleRow,
+  | 'id'
+  | 'vin'
+  | 'chassis_number'
+  | 'engine_number'
+  | 'color_exterior'
+  | 'color_interior'
+  | 'model_year'
+  | 'list_price'
+  | 'cost_price'
+  | 'status'
+  | 'location_note'
+  | 'expected_arrival_date'
+  | 'actual_arrival_date'
+  | 'variant_id'
+  | 'created_at'
+  | 'updated_at'
+> & {
+  auto_variants: {
+    name: string | null;
+    auto_models: {
+      name: string | null;
+      auto_brands: {
+        name: string | null;
+      } | null;
+    } | null;
+  } | null;
+};
 
 export interface VehicleInventorySummary {
   totalVehicles: number;
@@ -153,10 +186,10 @@ export const AutoInventoryProvider = {
       );
     }
 
-    const { data, error } = await query;
+    const { data, error } = await query.returns<VehicleListRow[]>();
     if (error) throw new Error(`AutoInventoryProvider.listVehicles: ${error.message}`);
 
-    return (data ?? []).map((row: Record<string, unknown>) => ({
+    return (data ?? []).map((row) => ({
       id:                  row.id,
       vin:                 row.vin,
       chassisNumber:       row.chassis_number,
@@ -171,9 +204,9 @@ export const AutoInventoryProvider = {
       expectedArrivalDate: row.expected_arrival_date,
       actualArrivalDate:   row.actual_arrival_date,
       variantId:           row.variant_id,
-      variantName:         row.auto_variants?.name,
-      modelName:           row.auto_variants?.auto_models?.name,
-      brandName:           row.auto_variants?.auto_models?.auto_brands?.name,
+      variantName:         row.auto_variants?.name ?? undefined,
+      modelName:           row.auto_variants?.auto_models?.name ?? undefined,
+      brandName:           row.auto_variants?.auto_models?.auto_brands?.name ?? undefined,
       createdAt:           row.created_at,
       updatedAt:           row.updated_at,
     }));

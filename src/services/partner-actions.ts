@@ -557,11 +557,10 @@ export async function createPartnerBooking(params: {
   const supabase = await createClient();
 
   // Call the core RPC reserve_product (defined in reservation_engine migration)
-  const { data, error } = await supabase.rpc('reserve_product' as never, { // TODO: Regenerate types after migration
+  const { data, error } = await supabase.rpc('reserve_product', {
     p_tenant_id: user.tenant_id,
     p_product_id: params.productId,
     p_user_id: user.id,
-    p_customer_id: null, // Custom flow for new lead without saved customer row yet
     p_duration_minutes: 1440, // 24 hours lock
   });
 
@@ -573,6 +572,9 @@ export async function createPartnerBooking(params: {
   const res = data as unknown as { success: boolean; error?: string; reservation_id?: string };
   if (!res.success) {
     return { success: false, error: res.error };
+  }
+  if (!res.reservation_id) {
+    return { success: false, error: 'Reservation was not created' };
   }
 
   // Update metadata with customer details and payment proof image url

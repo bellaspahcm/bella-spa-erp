@@ -63,14 +63,14 @@ export async function provisionPartnerAccount(
       .insert({
         name: tenantName,
         email: input.email,
-        phone: input.phone,
-        tax_code: input.tax_code,
+        contact_phone: input.phone,
         status: 'active',
         metadata: {
           source: 'partner_registration',
           application_id: input.application_id,
+          tax_code: input.tax_code,
         },
-      } as unknown)
+      })
       .select()
       .single();
 
@@ -119,7 +119,7 @@ export async function provisionPartnerAccount(
         user_id: authUser.user.id,
         role_name: 'partner',
         tenant_id: tenant.id,
-      } as unknown);
+      });
     
     if (roleError) {
       console.error('[provisionPartnerAccount] Role assignment failed:', roleError);
@@ -141,7 +141,7 @@ export async function provisionPartnerAccount(
         activation_token: activationToken,
         activation_token_expires_at: tokenExpiresAt.toISOString(),
         updated_at: new Date().toISOString(),
-      } as unknown)
+      })
       .eq('id', input.application_id);
 
     if (updateError) {
