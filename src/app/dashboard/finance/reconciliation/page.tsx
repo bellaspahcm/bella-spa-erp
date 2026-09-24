@@ -40,12 +40,24 @@ import {
   getFinancialReconciliationSnapshot,
 } from '@/services/reconciliation-actions';
 
+import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
+import { useUser } from '@/lib/user-context';
+import { HaircutReconciliationView } from './components/HaircutReconciliationView';
+
 const tableWrapperClassName =
   'w-full overflow-x-auto overscroll-x-contain custom-scrollbar shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.42)]';
 const stickyBodyCellClassName =
   'bg-white';
 
 export default function FinancialReconciliationPage() {
+  const { tenantModuleKey } = useTenantModuleKey();
+  const { product } = useUser();
+  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'haircut';
+
+  if (isHaircut) {
+    return <HaircutReconciliationView />;
+  }
+
   const vocab = useModuleVocabulary();
   const [data, setData] = useState<FinancialAnomaliesData>({
     debt_alerts: [],
