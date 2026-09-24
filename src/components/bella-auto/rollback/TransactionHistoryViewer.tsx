@@ -44,8 +44,8 @@ interface Transaction {
 }
 
 interface TransactionHistoryViewerProps {
-  entityType: string;
-  entityId: string;
+  entityType?: string;
+  entityId?: string;
   onViewDetails?: (transactionId: string) => void;
   onRollback?: (transactionId: string) => void;
 }
@@ -64,10 +64,12 @@ export function TransactionHistoryViewer({
   const loadTransactions = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({
-        entity_type: entityType,
-        entity_id: entityId,
-      });
+      const params = new URLSearchParams();
+
+      if (entityType && entityId) {
+        params.set('entity_type', entityType);
+        params.set('entity_id', entityId);
+      }
       
       if (filterStatus !== 'all') params.append('status', filterStatus);
       if (filterType !== 'all') params.append('type', filterType);
