@@ -89,10 +89,6 @@ const periodOptions = [
   { value: 'year', label: 'Năm này' },
 ];
 
-import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
-import { useUser } from '@/lib/user-context';
-import { HaircutExecutiveDashboardView } from './components/HaircutExecutiveDashboardView';
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────────────────────────────────────
