@@ -86,11 +86,23 @@ const periodOptions = [
   { value: 'year', label: 'Năm này' },
 ];
 
+import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
+import { useUser } from '@/lib/user-context';
+import { HaircutExecutiveDashboardView } from './components/HaircutExecutiveDashboardView';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────────────────────────────────────
 
 function ExecutiveDashboardPage() {
+  const { tenantModuleKey } = useTenantModuleKey();
+  const { product } = useUser();
+  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'haircut';
+
+  if (isHaircut) {
+    return <HaircutExecutiveDashboardView />;
+  }
+
   const router = useRouter();
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [period, setPeriod] = useState<TimePeriod>('month');

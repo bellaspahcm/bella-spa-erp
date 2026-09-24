@@ -9,6 +9,8 @@
  * @see docs/plans/core-platform-extraction-roadmap.md
  */
 
+import { HaircutExecutiveDashboardView } from './executive/components/HaircutExecutiveDashboardView';
+
 import { KtvPerformanceTable } from '@/components/features/dashboard/KtvPerformanceTable';
 import { RevenueChart } from '@/components/features/dashboard/RevenueChart';
 import { StatsGrid } from '@/components/features/dashboard/StatsGrid';
@@ -372,7 +374,11 @@ export default function DashboardPage() {
     return <RealEstateDashboardPage />;
   }
 
-  const isHaircut = product?.productKey === 'bella_haircut';
+  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'haircut';
+
+  if (isHaircut) {
+    return <HaircutExecutiveDashboardView />;
+  }
 
   const handleCompleteSession = async (sessionId: string, bookingId: string, note: string) => {
     setUpdatingId(sessionId);
