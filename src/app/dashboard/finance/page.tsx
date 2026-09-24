@@ -508,8 +508,8 @@ export default function FinancePage() {
             className="luxury-card-white p-6 sm:p-8 rounded-3xl sm:rounded-[40px] flex flex-col justify-center"
           >
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center">
-                <ArrowUpRight className="w-6 h-6 text-emerald-600" />
+              <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20">
+                <ArrowUpRight className="w-6 h-6 text-primary" />
               </div>
               <div>
                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Tổng thu tháng</p>
@@ -517,7 +517,7 @@ export default function FinancePage() {
               </div>
             </div>
             <div className="w-full bg-slate-50 h-2 rounded-full overflow-hidden">
-              <div className="bg-emerald-500 h-full w-[70%] rounded-full"></div>
+              <div className="bg-primary h-full w-[70%] rounded-full"></div>
             </div>
             <p className="text-xs font-bold text-slate-500 mt-3">Đạt 70% mục tiêu tháng</p>
           </motion.div>
@@ -705,7 +705,7 @@ export default function FinancePage() {
                   onClick={() => setCurrentPage(i + 1)}
                   className={`w-8 h-8 rounded-lg text-xs font-black transition-all ${
                     currentPage === i + 1 
-                      ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-100 dark:shadow-none' 
+                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 dark:shadow-none' 
                       : 'text-slate-400 hover:bg-white hover:text-slate-600'
                   }`}
                 >
