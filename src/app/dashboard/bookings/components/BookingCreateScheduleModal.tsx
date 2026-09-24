@@ -57,6 +57,10 @@ export function BookingCreateScheduleModal({
   const { product } = useUser();
   const [selectedResourceId, setSelectedResourceId] = useState('');
   const isHaircut = product?.productKey === 'bella_haircut';
+  const modalTitle = isHaircut ? 'Tạo lịch hẹn mới' : 'Tạo lịch chăm sóc mới';
+  const packageFallbackLabel = isHaircut ? 'Gói dịch vụ' : 'Gói liệu trình';
+  const resourceLabel = isHaircut ? 'Tài nguyên dịch vụ' : 'Tài nguyên chăm sóc';
+  const resourcePlaceholder = isHaircut ? 'Chọn ghế/khu vực/thiết bị...' : 'Chọn giường/phòng/máy...';
   const activeBookingResources = bookingResources.filter((resource) => (
     resource.status === 'available' || resource.status === 'in_use'
   ));
@@ -89,7 +93,7 @@ export function BookingCreateScheduleModal({
             className="relative max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-[28px] bg-white p-5 shadow-2xl sm:rounded-[40px] sm:p-8"
           >
             <div className="mb-6 flex items-start justify-between gap-3 sm:mb-8">
-              <h3 className="min-w-0 break-words text-xl font-black text-slate-900 sm:text-2xl">Tạo lịch chăm sóc mới</h3>
+              <h3 className="min-w-0 break-words text-xl font-black text-slate-900 sm:text-2xl">{modalTitle}</h3>
               <button onClick={onClose} className="p-3 hover:bg-slate-100 rounded-2xl transition-colors">
                 <X className="w-6 h-6 text-slate-400" />
               </button>
@@ -107,7 +111,7 @@ export function BookingCreateScheduleModal({
                     options={allBookings.map((booking) => ({
                       value: booking.id,
                       label: `${booking.customers?.name_mother} - ${
-                        booking.packages?.name || booking.package_name || 'Gói liệu trình'
+                        booking.packages?.name || booking.package_name || packageFallbackLabel
                       }`,
                     }))}
                     onChange={onSelectedBookingChange}
@@ -153,7 +157,7 @@ export function BookingCreateScheduleModal({
                   {showResourceSelection && (
                     <div className="sm:col-span-2">
                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">
-                        Tài nguyên chăm sóc
+                        {resourceLabel}
                       </label>
                       <input type="hidden" name="booking_resource_id" value={selectedResourceId} />
                       <PremiumSelect
@@ -166,7 +170,7 @@ export function BookingCreateScheduleModal({
                           })),
                         ]}
                         onChange={setSelectedResourceId}
-                        placeholder={isHaircut ? 'Chọn ghế/khu vực/thiết bị...' : 'Chọn giường/phòng/máy...'}
+                        placeholder={resourcePlaceholder}
                         className="mt-1"
                       />
                     </div>

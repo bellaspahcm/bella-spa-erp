@@ -26,6 +26,7 @@ import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 import { useServiceItems } from '../hooks/useServiceItems';
 import type { BookingInvoicePrintLog } from '@/core/services/order/invoice-print-actions';
 import { useScrollLock } from '@/hooks/useScrollLock';
+import { useUser } from '@/lib/user-context';
 
 export type KtvOption = {
   id: string;
@@ -117,8 +118,14 @@ export function BookingDayDetailModal({
   tenantModuleKey,
 }: BookingDayDetailModalProps) {
   const vocab = useModuleVocabulary();
+  const { product } = useUser();
   const router = useRouter();
   const { serviceItems, isLoadingServiceItems, fetchServiceItems } = useServiceItems();
+  const isHaircut = product?.productKey === 'bella_haircut';
+  const timeLabel = isHaircut ? 'Giờ thực hiện' : 'Giờ chăm sóc';
+  const resourceLabel = isHaircut ? 'Tài nguyên dịch vụ' : 'Tài nguyên chăm sóc';
+  const resourcePlaceholder = isHaircut ? 'Chọn ghế/khu vực/thiết bị...' : 'Chọn giường/phòng/máy...';
+  const serviceNoteLabel = isHaircut ? 'Nội dung dịch vụ hôm nay' : 'Nội dung chăm sóc hôm nay';
 
   useScrollLock(isOpen);
   
@@ -248,7 +255,7 @@ export function BookingDayDetailModal({
                         />
                       </div>
                       <div>
-                        <p className="text-xs text-slate-400 font-bold mb-1">Giờ chăm sóc</p>
+                        <p className="text-xs text-slate-400 font-bold mb-1">{timeLabel}</p>
                         <input
                           type="time"
                           value={modalData.time || ''}
@@ -260,7 +267,7 @@ export function BookingDayDetailModal({
                      {showResourceSelection && (
                       <div>
                         <p className="text-xs text-slate-400 font-bold mb-2 ml-1">
-                          Tài nguyên chăm sóc
+                          {resourceLabel}
                         </p>
                         <PremiumSelect
                           value={modalData.bookingResourceId || ''}
@@ -276,7 +283,7 @@ export function BookingDayDetailModal({
                               bookingResourceType: resource?.resource_type || null,
                             });
                           }}
-                          placeholder="Chọn giường/phòng/máy..."
+                          placeholder={resourcePlaceholder}
                         />
                       </div>
                     )}
@@ -469,7 +476,7 @@ export function BookingDayDetailModal({
                     <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex items-center gap-3 text-primary">
                         <MessageSquare className="w-5 h-5" />
-                        <span className="text-xs font-black uppercase tracking-widest">Nội dung chăm sóc hôm nay</span>
+                        <span className="text-xs font-black uppercase tracking-widest">{serviceNoteLabel}</span>
                       </div>
                       {modalData.status === 'in_progress' && (
                         <span className="bg-blue-100 text-blue-600 text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-wider animate-pulse">
