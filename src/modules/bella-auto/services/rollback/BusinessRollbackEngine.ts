@@ -40,30 +40,54 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { Database } from '@/types/database.types';
+import { Database, Json } from '@/types/database.types';
 
 type BusinessTransactionType = Database['public']['Enums']['auto_business_transaction_type'];
 type BusinessTransactionStatus = Database['public']['Enums']['auto_business_transaction_status'];
 type TransactionStepStatus = Database['public']['Enums']['auto_transaction_step_status'];
+type VehicleStatus = Database['public']['Enums']['auto_vehicle_status'];
 type StepRow = Database['public']['Tables']['auto_transaction_steps']['Row'];
+type JsonObject = { [key: string]: Json | undefined };
+
+const AUTO_VEHICLE_STATUSES: readonly VehicleStatus[] = [
+  'in_transit',
+  'warehouse',
+  'showroom',
+  'allocated',
+  'delivered',
+  'returned',
+  'scrapped',
+];
+
+function isJsonObject(value: Json | null | undefined): value is JsonObject {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function toJsonObject(value: Json | null | undefined): JsonObject | undefined {
+  return isJsonObject(value) ? value : undefined;
+}
+
+function isVehicleStatus(value: Json | undefined): value is VehicleStatus {
+  return typeof value === 'string' && AUTO_VEHICLE_STATUSES.some(status => status === value);
+}
 
 interface StartTransactionParams {
   type: BusinessTransactionType;
   entityType: string;
   entityId: string;
   createdBy?: string;
-  metadata?: Record<string, unknown>;
+  metadata?: JsonObject;
 }
 
 interface ExecuteStepParams {
   action: string;
   entityType: string;
   entityId: string;
-  snapshotBefore?: Record<string, unknown>;
-  snapshotAfter?: Record<string, unknown>;
+  snapshotBefore?: JsonObject;
+  snapshotAfter?: JsonObject;
   compensatingAction: string;
-  compensatingParams: Record<string, unknown>;
-  metadata?: Record<string, unknown>;
+  compensatingParams: JsonObject;
+  metadata?: JsonObject;
 }
 
 interface BusinessTransaction {
@@ -85,10 +109,10 @@ interface TransactionStep {
   status: TransactionStepStatus;
   entityType: string;
   entityId: string;
-  snapshotBefore?: Record<string, unknown>;
-  snapshotAfter?: Record<string, unknown>;
+  snapshotBefore?: JsonObject;
+  snapshotAfter?: JsonObject;
   compensatingAction: string;
-  compensatingParams: Record<string, unknown>;
+  compensatingParams: JsonObject;
   executedAt?: string;
   rolledBackAt?: string;
   errorMessage?: string;
@@ -181,6 +205,7 @@ export class BusinessRollbackEngine {
 
     if (error) throw new Error(`Failed to execute step: ${error.message}`);
     if (!data) throw new Error('No step data returned');
+    if (!data.compensating_action) throw new Error('No compensating action returned');
 
     return {
       id: data.id,
@@ -190,10 +215,10 @@ export class BusinessRollbackEngine {
       status: data.status,
       entityType: data.entity_type,
       entityId: data.entity_id,
-      snapshotBefore: data.snapshot_before || undefined,
-      snapshotAfter: data.snapshot_after || undefined,
+      snapshotBefore: toJsonObject(data.snapshot_before),
+      snapshotAfter: toJsonObject(data.snapshot_after),
       compensatingAction: data.compensating_action,
-      compensatingParams: data.compensating_params,
+      compensatingParams: toJsonObject(data.compensating_params) ?? {},
       executedAt: data.executed_at || undefined,
     };
   }
@@ -309,35 +334,40 @@ export class BusinessRollbackEngine {
    */
   private async executeCompensatingAction(step: StepRow): Promise<void> {
     const { compensating_action, compensating_params, entity_id } = step;
+    const params = toJsonObject(compensating_params) ?? {};
 
     // Route to appropriate handler based on compensating action
     switch (compensating_action) {
-      case 'revert_vehicle_status':
-        await this.revertVehicleStatus(entity_id || '', compensating_params as { status: string });
+      case 'revert_vehicle_status': {
+        if (!isVehicleStatus(params.status)) {
+          throw new Error('Invalid vehicle status for compensation');
+        }
+        await this.revertVehicleStatus(entity_id || '', { status: params.status });
         break;
+      }
       
       case 'reverse_accounting_entry':
-        await this.reverseAccountingEntry(entity_id || '', compensating_params as { reversal_reason: string });
+        await this.reverseAccountingEntry(entity_id || '', params as { reversal_reason: string });
         break;
       
       case 'revert_journey_stage':
-        await this.revertJourneyStage(entity_id || '', compensating_params as { previous_stage: string });
+        await this.revertJourneyStage(entity_id || '', params as { previous_stage: string });
         break;
       
       case 'cancel_notification':
-        await this.cancelNotification(entity_id || '', compensating_params as Record<string, unknown>);
+        await this.cancelNotification(entity_id || '', params);
         break;
       
       case 'remove_ai_event':
-        await this.removeAIEvent(entity_id || '', compensating_params as Record<string, unknown>);
+        await this.removeAIEvent(entity_id || '', params);
         break;
       
       case 'revert_commission':
-        await this.revertCommission(entity_id || '', compensating_params as Record<string, unknown>);
+        await this.revertCommission(entity_id || '', params);
         break;
       
       case 'restore_inventory':
-        await this.restoreInventory(entity_id || '', compensating_params as { quantity: number });
+        await this.restoreInventory(entity_id || '', params as { quantity: number });
         break;
       
       default:
@@ -351,7 +381,7 @@ export class BusinessRollbackEngine {
 
   private async revertVehicleStatus(
     vehicleId: string,
-    params: { status: string }
+    params: { status: VehicleStatus }
   ): Promise<void> {
     const { error } = await this.supabase
       .from('auto_vehicles')
@@ -386,7 +416,7 @@ export class BusinessRollbackEngine {
 
   private async cancelNotification(
     notificationId: string,
-    params: Record<string, unknown>
+    params: JsonObject
   ): Promise<void> {
     // Mark notification as cancelled
     console.log('TODO: Implement notification cancellation', { notificationId, params });
@@ -394,7 +424,7 @@ export class BusinessRollbackEngine {
 
   private async removeAIEvent(
     eventId: string,
-    params: Record<string, unknown>
+    params: JsonObject
   ): Promise<void> {
     // Remove AI event from insights
     console.log('TODO: Implement AI event removal', { eventId, params });
@@ -402,7 +432,7 @@ export class BusinessRollbackEngine {
 
   private async revertCommission(
     commissionId: string,
-    params: Record<string, unknown>
+    params: JsonObject
   ): Promise<void> {
     // Reverse commission calculation
     console.log('TODO: Implement commission reversal', { commissionId, params });
