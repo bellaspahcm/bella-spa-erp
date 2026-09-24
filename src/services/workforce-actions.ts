@@ -3,6 +3,16 @@
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from './user-actions';
 
+interface UserJoin {
+  full_name: string | null;
+  avatar_url?: string | null;
+}
+
+interface CustomersJoin {
+  name_mother: string | null;
+  address?: string | null;
+}
+
 /**
  * Workforce Portal Server Actions
  * 
@@ -122,8 +132,6 @@ export async function getMyCommissionLedger(): Promise<CommissionLedgerEntry[]> 
     deal_name?: string;
     customer_name?: string;
   }
-
-  const ledgerMetadata = (record.metadata as unknown as CommissionLedgerMetadata) || {};
 
   return (data || []).map(record => {
     const meta = (record.metadata as unknown as CommissionLedgerMetadata) || {};

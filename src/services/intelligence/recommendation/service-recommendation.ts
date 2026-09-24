@@ -686,21 +686,43 @@ async function fetchCustomerContext(
     return {};
   }
   
-  return {
+  const context: RecommendationContext = {
     customerSegment: segment.segment || 'Unknown',
-    rfmScores: {
+    churnRisk: undefined, // Would need separate query from churn forecast
+  };
+
+  if (
+    segment.recency_score !== null &&
+    segment.recency_score !== undefined &&
+    segment.frequency_score !== null &&
+    segment.frequency_score !== undefined &&
+    segment.monetary_score !== null &&
+    segment.monetary_score !== undefined
+  ) {
+    context.rfmScores = {
       recency: segment.recency_score,
       frequency: segment.frequency_score,
       monetary: segment.monetary_score,
-    },
-    purchaseHistory: {
+    };
+  }
+
+  if (
+    segment.total_orders !== null &&
+    segment.total_orders !== undefined &&
+    segment.avg_order_value !== null &&
+    segment.avg_order_value !== undefined &&
+    segment.last_purchase_date !== null &&
+    segment.last_purchase_date !== undefined
+  ) {
+    context.purchaseHistory = {
       totalOrders: segment.total_orders,
       avgOrderValue: Number(segment.avg_order_value) || 0,
       lastPurchaseDate: segment.last_purchase_date,
       topCategories: [], // Would need separate query
-    },
-    churnRisk: undefined, // Would need separate query from churn forecast
-  };
+    };
+  }
+
+  return context;
 }
 
 async function fetchCustomerInteractions(

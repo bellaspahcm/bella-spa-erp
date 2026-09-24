@@ -13,10 +13,12 @@
 
 import crypto from 'crypto';
 import { createClient } from '@/lib/supabase-server';
+import type { Database } from '@/types/database.types';
 import type {
   PartnerApplication,
   PartnerApplicationInsert,
   PartnerApplicationUpdate,
+  PartnerApplicationStatus,
   PartnerRegistrationResponse,
   EmailVerificationResponse,
   DocumentUploadResponse,
