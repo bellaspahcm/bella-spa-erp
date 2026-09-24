@@ -41,6 +41,17 @@ const formatVND = (v: number) => {
 const formatVNDFull = (v: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(v);
 
+const getTooltipNumericValue = (
+  value: unknown
+) => {
+  const rawValue = Array.isArray(value) ? value[0] : value;
+  return Number(rawValue ?? 0);
+};
+
+const formatTooltipAmount = (
+  value: unknown
+): [string, string] => [formatVNDFull(getTooltipNumericValue(value)), 'Số tiền'];
+
 // ─── Custom Active Dot for Line/Area Charts ────────────────────────────────────
 
 const PremiumActiveDot = (props: { cx?: number; cy?: number; stroke?: string; [key: string]: unknown }) => {
@@ -620,7 +631,7 @@ export function PnLStatementChart({
             width={70}
           />
           <Tooltip
-            formatter={(value: number | string) => [formatVNDFull(Number(value)), 'Số tiền'] as [string, string]}
+            formatter={(value) => formatTooltipAmount(value)}
             contentStyle={{
               backgroundColor: 'rgba(255, 255, 255, 0.95)',
               borderRadius: '16px',

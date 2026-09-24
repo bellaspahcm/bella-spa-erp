@@ -18,6 +18,38 @@ import type { WorkflowDefinition } from '../types';
 import { DecisionStep, ActionStep, ConditionStep } from '../steps';
 import type { IDecisionEngine } from '../steps/DecisionStep';
 
+type InventoryReorderDecision = {
+  outcome?: string;
+  reorder?: boolean;
+  quantity?: number;
+  explanation?: string;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> => (
+  typeof value === 'object' && value !== null
+);
+
+function readReorderDecision(value: unknown): InventoryReorderDecision {
+  if (!isRecord(value)) {
+    return {};
+  }
+
+  return {
+    outcome: typeof value.outcome === 'string' ? value.outcome : undefined,
+    reorder: typeof value.reorder === 'boolean' ? value.reorder : undefined,
+    quantity: typeof value.quantity === 'number' ? value.quantity : undefined,
+    explanation: typeof value.explanation === 'string' ? value.explanation : undefined,
+  };
+}
+
+function requireReorderQuantity(value: unknown): number {
+  const quantity = readReorderDecision(value).quantity;
+  if (quantity === undefined) {
+    throw new Error('Reorder decision did not include a numeric quantity');
+  }
+  return quantity;
+}
+
 /**
  * Inventory service interface (mock for demonstration)
  */
@@ -138,7 +170,7 @@ export function createInventoryReorderWorkflow(
       new ConditionStep(
         'reorder-branch',
         (ctx) => {
-          const decision = ctx.data.reorderDecision as unknown;
+          const decision = readReorderDecision(ctx.data.reorderDecision);
           return decision?.outcome === 'APPROVE' || decision?.reorder === true;
         },
         'create-purchase-order', // If reorder needed
@@ -150,17 +182,17 @@ export function createInventoryReorderWorkflow(
       new ActionStep(
         'create-purchase-order',
         async (ctx) => {
-          const decision = ctx.data.reorderDecision as unknown;
+          const quantity = requireReorderQuantity(ctx.data.reorderDecision);
           
           const po = await services.purchaseOrder.create({
             productId: ctx.data.productId as string,
-            quantity: decision.quantity,
+            quantity,
             supplierId: ctx.data.supplierId as string
           });
           
           return {
             purchaseOrderId: po.id,
-            orderQuantity: decision.quantity
+            orderQuantity: quantity
           };
         },
         'Create purchase order for reorder quantity',
@@ -220,7 +252,7 @@ export function createInventoryReorderWorkflow(
       new ActionStep(
         'audit-reorder',
         async (ctx) => {
-          const decision = ctx.data.reorderDecision as unknown;
+          const decision = readReorderDecision(ctx.data.reorderDecision);
           
           await services.audit.log({
             action: 'inventory-reorder',
@@ -238,7 +270,7 @@ export function createInventoryReorderWorkflow(
       new ActionStep(
         'skip-reorder',
         async (ctx) => {
-          const decision = ctx.data.reorderDecision as unknown;
+          const decision = readReorderDecision(ctx.data.reorderDecision);
           
           await services.audit.log({
             action: 'inventory-reorder-skipped',

@@ -211,11 +211,15 @@ export default function AppearanceTab() {
   const [brandTheme, setBrandTheme] = useState<TenantBrandTheme>(initialBrandTheme);
   const [logoUrl, setLogoUrl] = useState('');
   const [enabledModules, setEnabledModules] = useState<TenantEnabledModules>(() => ({
+    ...DEFAULT_ENABLED_MODULES,
     babycare: activeModuleKey === 'babycare',
     beauty_spa: activeModuleKey === 'beauty_spa',
     student_training: activeModuleKey === 'student_training',
     industrial_cleaning: activeModuleKey === 'industrial_cleaning',
     real_estate: activeModuleKey === 'real_estate',
+    bella_auto: activeModuleKey === 'bella_auto',
+    bella_healthcare: activeModuleKey === 'bella_healthcare',
+    bella_education: activeModuleKey === 'bella_education',
   }));
   const [tenantId, setTenantId] = useState('');
   const [tenantModuleKey, setTenantModuleKey] = useState<TenantModuleKey>(activeModuleKey);

@@ -42,24 +42,40 @@ const STATUS_LABELS: Record<string, string> = {
   over: 'Vượt ngân sách',
 };
 
-interface CustomLabelProps {
-  cx: number;
-  cy: number;
-  midAngle: number;
-  innerRadius: number;
-  outerRadius: number;
-  percent: number;
-}
+const isRecord = (value: unknown): value is Record<string, unknown> => (
+  typeof value === 'object' && value !== null
+);
+
+const readNumber = (value: unknown): number | null => (
+  typeof value === 'number' && Number.isFinite(value) ? value : null
+);
+
+const isBudgetStatus = (value: unknown): value is BudgetStatusItem['status'] => (
+  value === 'under' || value === 'on_target' || value === 'over'
+);
 
 export function BudgetStatusChart({ data, height = 250 }: BudgetStatusChartProps) {
-  const renderCustomLabel = ({
-    cx,
-    cy,
-    midAngle,
-    innerRadius,
-    outerRadius,
-    percent,
-  }: CustomLabelProps) => {
+  const renderCustomLabel = (props: unknown) => {
+    if (!isRecord(props)) return null;
+
+    const cx = readNumber(props.cx);
+    const cy = readNumber(props.cy);
+    const midAngle = readNumber(props.midAngle);
+    const innerRadius = readNumber(props.innerRadius);
+    const outerRadius = readNumber(props.outerRadius);
+    const percent = readNumber(props.percent);
+
+    if (
+      cx === null ||
+      cy === null ||
+      midAngle === null ||
+      innerRadius === null ||
+      outerRadius === null ||
+      percent === null
+    ) {
+      return null;
+    }
+
     const RADIAN = Math.PI / 180;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -95,18 +111,20 @@ export function BudgetStatusChart({ data, height = 250 }: BudgetStatusChartProps
           outerRadius={80}
           fill="#8884d8"
           dataKey="count"
+          nameKey="status"
         >
           {data.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={STATUS_COLORS[entry.status]} />
           ))}
         </Pie>
         <Tooltip
-          formatter={(value, name, props: Record<string, unknown>) => {
-            const item = data.find((d) => d.status === props.payload.status);
+          formatter={(value, name) => {
+            const status = isBudgetStatus(name) ? name : null;
+            const item = status ? data.find((d) => d.status === status) : null;
             const numValue = typeof value === 'number' ? value : 0;
             return [
               `${numValue} danh mục (${item?.percentage.toFixed(1) || 0}%)`,
-              STATUS_LABELS[props.payload.status] || name,
+              status ? STATUS_LABELS[status] : name,
             ];
           }}
           contentStyle={{

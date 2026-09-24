@@ -30,8 +30,8 @@ function StatusContent() {
     try {
       const result = await getApplicationById(id);
       
-      if (result.success && result.data) {
-        setApplication(result.data);
+      if (result.success && result.application) {
+        setApplication(result.application);
       } else {
         setError(result.error || 'Không thể tải thông tin đơn đăng ký');
       }

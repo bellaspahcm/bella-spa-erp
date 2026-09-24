@@ -7,7 +7,6 @@
  * Governance: Constitution #1 (Zero Silent DB Failures), #3 (Strict Types), #8 (Immutable Finalized)
  */
 
-import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
 // ---------------------------------------------------------------------------

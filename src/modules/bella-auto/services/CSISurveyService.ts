@@ -444,7 +444,7 @@ export class CSISurveyService {
 
     const { data: scores, error } = await supabase
       .from('auto_csi_scores')
-      .select('sales_consultant_id, overall_csi, employees(name)')
+      .select('sales_consultant_id, overall_csi')
       .eq('tenant_id', tenantId)
       .gte('recorded_at', startDate.toISOString())
       .lte('recorded_at', endDate.toISOString())
@@ -457,6 +457,25 @@ export class CSISurveyService {
     if (!scores || scores.length === 0) {
       return [];
     }
+
+    const consultantIds = Array.from(new Set(
+      scores
+        .map((score) => score.sales_consultant_id)
+        .filter((id): id is string => Boolean(id))
+    ));
+    const { data: consultants, error: consultantsError } = await supabase
+      .from('users')
+      .select('id, full_name')
+      .eq('tenant_id', tenantId)
+      .in('id', consultantIds);
+
+    if (consultantsError) {
+      throw new Error(`Failed to get consultant names: ${consultantsError.message}`);
+    }
+
+    const consultantNames = new Map(
+      (consultants || []).map((consultant) => [consultant.id, consultant.full_name])
+    );
 
     // Group by consultant
     const consultantMap = new Map<string, { sum: number; count: number; name: string }>();
@@ -472,7 +491,7 @@ export class CSISurveyService {
         consultantMap.set(score.sales_consultant_id, {
           sum: score.overall_csi || 0,
           count: 1,
-          name: (score.employees as unknown)?.name || 'Unknown',
+          name: consultantNames.get(score.sales_consultant_id) || 'Unknown',
         });
       }
     }

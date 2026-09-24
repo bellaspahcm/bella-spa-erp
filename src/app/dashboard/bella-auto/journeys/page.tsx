@@ -22,6 +22,7 @@ import {
   RefreshCw,
   Target,
   ArrowRight,
+  type LucideIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -98,8 +99,16 @@ const GROUPED_STAGES = JOURNEY_STAGES.reduce((acc, s) => {
 
 const CATEGORY_ORDER = ['Awareness', 'Consideration', 'Intent', 'Purchase', 'Retention', 'Loyalty'];
 
+type JourneyView = 'funnel' | 'heatmap' | 'timeline';
+
+const JOURNEY_TABS: Array<{ key: JourneyView; label: string; icon: LucideIcon }> = [
+  { key: 'funnel', label: 'Phễu Chuyển Đổi', icon: Layers },
+  { key: 'heatmap', label: 'Biểu Đồ Tắc Nghẽn', icon: Flame },
+  { key: 'timeline', label: 'Timeline CEO View', icon: Activity },
+];
+
 export default function CustomerJourneyPage() {
-  const [activeTab, setActiveTab] = useState<'funnel' | 'heatmap' | 'timeline'>('funnel');
+  const [activeTab, setActiveTab] = useState<JourneyView>('funnel');
   const [selectedCustomerId, setSelectedCustomerId] = useState('Nguyễn Văn A');
   const [isPending, startTransition] = useTransition();
 
@@ -146,16 +155,12 @@ export default function CustomerJourneyPage() {
       {/* Tabs (Segmented Control style) */}
       <div className="flex justify-start">
         <nav className="flex p-1.5 bg-slate-100/80 dark:bg-slate-900/60 border border-slate-200/50 dark:border-slate-800/40 rounded-2xl gap-1.5 shadow-sm">
-          {[
-            { key: 'funnel', label: 'Phễu Chuyển Đổi', icon: Layers },
-            { key: 'heatmap', label: 'Biểu Đồ Tắc Nghẽn', icon: Flame },
-            { key: 'timeline', label: 'Timeline CEO View', icon: Activity },
-          ].map(tab => {
+          {JOURNEY_TABS.map(tab => {
             const Icon = tab.icon;
             return (
               <button
                 key={tab.key}
-                onClick={() => setActiveTab(tab.key as 'discovery' | 'consideration' | 'purchase' | 'delivery' | 'ownership')}
+                onClick={() => setActiveTab(tab.key)}
                 className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl transition-all duration-300 ${
                   activeTab === tab.key
                     ? 'bg-white dark:bg-slate-950 text-indigo-600 dark:text-indigo-400 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-200/20 dark:border-slate-800/30'

@@ -63,6 +63,30 @@ export interface GetKtvSuggestionsResult {
   error?: string;
 }
 
+type CapacityConfig = {
+  break_buffer_minutes?: number;
+  max_sessions_per_day?: number;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function readCapacityConfig(metadata: unknown): CapacityConfig {
+  if (!isRecord(metadata) || !isRecord(metadata.capacity_config)) {
+    return {};
+  }
+
+  return {
+    break_buffer_minutes: typeof metadata.capacity_config.break_buffer_minutes === 'number'
+      ? metadata.capacity_config.break_buffer_minutes
+      : undefined,
+    max_sessions_per_day: typeof metadata.capacity_config.max_sessions_per_day === 'number'
+      ? metadata.capacity_config.max_sessions_per_day
+      : undefined,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // getKtvSuggestions
 // ---------------------------------------------------------------------------
@@ -317,7 +341,7 @@ async function filterAvailableKtvs(
       .eq('id', tenantId)
       .single();
 
-    const capacityConfig = ((tenant?.metadata as unknown)?.capacity_config as { break_buffer_minutes?: number; max_sessions_per_day?: number } | null) || {};
+    const capacityConfig = readCapacityConfig(tenant?.metadata);
     const breakBufferMinutes = capacityConfig.break_buffer_minutes || 15;
     const maxSessionsPerDay = capacityConfig.max_sessions_per_day || 8;
 

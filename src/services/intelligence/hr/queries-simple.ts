@@ -142,10 +142,7 @@ export async function getAttendanceReport(tenantId: string, month?: string) {
       .select('ktv_id, date, status, checkin_time')
       .eq('tenant_id', tenantId)
       .gte('date', startDate)
-      .lt('date', endDate) as {
-        data: Array<{ ktv_id: string; date: string; status: string; checkin_time: string | null }> | null;
-        error: unknown;
-      };
+      .lt('date', endDate);
 
     if (error) {
       console.error('[HR Intelligence] Attendance query error:', error);
@@ -176,7 +173,7 @@ export async function getAttendanceReport(tenantId: string, month?: string) {
       }
       acc[record.ktv_id].push(record);
       return acc;
-    }, {} as Record<string, Array<{ ktv_id: string; date: string; status: string; checkin_time: string | null }>>);
+    }, {} as Record<string, Array<{ ktv_id: string; date: string; status: string | null; checkin_time: string | null }>>);
 
     // Calculate metrics per user
     return Object.entries(userAttendance).map(([userId, records]) => {
@@ -316,10 +313,7 @@ export async function getEmployeePerformance(tenantId: string, month?: string) {
       .from('kpi_records')
       .select('ktv_id, customer_satisfaction, bonus_amount')
       .eq('tenant_id', tenantId)
-      .eq('month_year', formattedMonth) as {
-        data: Array<{ ktv_id: string; customer_satisfaction: number | null; bonus_amount: number | null }> | null;
-        error: unknown;
-      };
+      .eq('month_year', formattedMonth);
 
     if (kpiError) {
       console.error('[HR Intelligence] KPI query error:', kpiError);

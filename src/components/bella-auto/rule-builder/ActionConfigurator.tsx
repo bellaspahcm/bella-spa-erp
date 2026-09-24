@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Trash2, Plus, Settings } from 'lucide-react';
 
 export interface RuleAction {
@@ -14,13 +14,28 @@ export interface RuleAction {
   [key: string]: string | number | boolean | undefined;
 }
 
+type RuleActionType = RuleAction['type'];
+
 export interface ActionConfiguratorProps {
   actions: RuleAction[];
   onChange: (actions: RuleAction[]) => void;
   readonly?: boolean;
 }
 
-const ACTION_TYPES = [
+interface ActionTypeConfig {
+  key: RuleActionType;
+  label: string;
+  icon: string;
+  description: string;
+  params: Array<{
+    key: string;
+    label: string;
+    type: 'select' | 'text' | 'textarea' | 'number';
+    options?: string[];
+  }>;
+}
+
+const ACTION_TYPES: ActionTypeConfig[] = [
   {
     key: 'require_approval',
     label: 'Yêu cầu phê duyệt',
@@ -95,6 +110,10 @@ const ACTION_TYPES = [
     ],
   },
 ];
+
+function isRuleActionType(value: string): value is RuleActionType {
+  return ACTION_TYPES.some((actionType) => actionType.key === value);
+}
 
 export function ActionConfigurator({
   actions,
@@ -247,7 +266,11 @@ export function ActionConfigurator({
                   <div className="flex-1">
                     <select
                       value={action.type}
-                      onChange={(e) => updateAction(action.id, { type: e.target.value as unknown })}
+                      onChange={(e) => {
+                        if (isRuleActionType(e.target.value)) {
+                          updateAction(action.id, { type: e.target.value });
+                        }
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white font-medium"
                       disabled={readonly}
                     >

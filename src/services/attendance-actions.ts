@@ -61,6 +61,30 @@ function getErrorMessage(error: unknown, fallback = 'Lá»—i há»‡ thá»�
   return fallback;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function readLeaveReassignmentBooking(value: unknown) {
+  const booking = Array.isArray(value) ? value[0] : value;
+  if (!isRecord(booking)) {
+    return {
+      customerName: 'Khách hàng',
+      packageName: 'Dịch vụ',
+    };
+  }
+
+  const packageName = typeof booking.package_name === 'string'
+    ? booking.package_name
+    : 'Dịch vụ';
+  const customers = booking.customers;
+  const customerName = isRecord(customers) && typeof customers.name_mother === 'string'
+    ? customers.name_mother
+    : 'Khách hàng';
+
+  return { customerName, packageName };
+}
+
 function getSessionHour(session: ConflictSession, fallbackTime: string) {
   const time = session.assigned_time || session.bookings?.preferred_time || fallbackTime;
   return parseInt(time.split(':')[0], 10);
@@ -669,9 +693,7 @@ export async function approveLeaveRequest(
 
       // Send real-time notification to the substitute KTV
       try {
-        const booking = Array.isArray(sessionLog.bookings) ? sessionLog.bookings[0] : sessionLog.bookings;
-        const customerName = (booking as unknown)?.customers?.name_mother || 'Khách hàng';
-        const packageName = (booking as unknown)?.package_name || 'Dịch vụ';
+        const { customerName, packageName } = readLeaveReassignmentBooking(sessionLog.bookings);
         const dateStr = sessionLog.assigned_date ? sessionLog.assigned_date.split('-').reverse().join('/') : '';
         
         const { createSystemNotification } = await import('./notification-helpers');

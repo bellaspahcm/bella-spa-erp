@@ -15,7 +15,7 @@
  */
 
 import { getPrimaryClient } from '@/lib/database/read-replica';
-import { Database } from '@/types/database.types';
+import type { Database, Json } from '@/types/database.types';
 
 type DemandForecast = Database['public']['Tables']['auto_demand_forecasts']['Row'];
 type DemandForecastInsert = Database['public']['Tables']['auto_demand_forecasts']['Insert'];
@@ -50,7 +50,7 @@ interface CreateForecastParams {
   modelName?: string;
   modelVersion?: string;
   modelAccuracy?: number;
-  featuresUsed?: unknown;
+  featuresUsed?: Json;
   createdBy?: string;
 }
 
@@ -91,7 +91,7 @@ export class DemandForecastingService {
       model_name: params.modelName || 'demand-forecast-v1',
       model_version: params.modelVersion,
       model_accuracy: params.modelAccuracy,
-      features_used: params.featuresUsed as unknown,
+      features_used: params.featuresUsed,
       status: 'active',
       created_by: params.createdBy,
     };

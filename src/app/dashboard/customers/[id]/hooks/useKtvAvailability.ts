@@ -1,10 +1,15 @@
 import { useState, useCallback, useMemo } from 'react';
 // Inline debounce implementation to avoid lodash dependency issues
-function debounce<T extends (...args: unknown[]) => void>(fn: T, delay: number) {
+function debounce<TArgs extends unknown[]>(
+  fn: (...args: TArgs) => void | Promise<void>,
+  delay: number
+) {
   let timer: ReturnType<typeof setTimeout> | null = null;
-  const debounced = (...args: Parameters<T>) => {
+  const debounced = (...args: TArgs) => {
     if (timer) clearTimeout(timer);
-    timer = setTimeout(() => fn(...args), delay);
+    timer = setTimeout(() => {
+      void fn(...args);
+    }, delay);
   };
   return debounced;
 }

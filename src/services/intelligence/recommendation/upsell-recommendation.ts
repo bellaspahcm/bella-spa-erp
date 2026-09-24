@@ -60,6 +60,12 @@ interface SupabaseClientWithUpsellRPCs {
   }>;
 }
 
+type PackageRatingBookingRow = {
+  sessions: {
+    reviews: Array<{ overall_rating: number | null }> | null;
+  } | null;
+};
+
 // ============================================================================
 // CONSTANTS
 // ============================================================================
@@ -560,18 +566,17 @@ async function fetchSingleItemDetails(
         )
       `)
       .eq('tenant_id', tenantId)
-      .eq('package_id', itemId);
+      .eq('package_id', itemId)
+      .returns<PackageRatingBookingRow[]>();
     
     let avgRating = 0;
     let totalRatings = 0;
     
     if (ratings) {
-      for (const booking of ratings as unknown[]) {
-        if (booking.sessions && booking.sessions.reviews) {
-          for (const review of booking.sessions.reviews) {
-            avgRating += review.overall_rating;
-            totalRatings++;
-          }
+      for (const booking of ratings) {
+        for (const review of booking.sessions?.reviews ?? []) {
+          avgRating += Number(review.overall_rating);
+          totalRatings++;
         }
       }
     }

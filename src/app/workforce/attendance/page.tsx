@@ -10,6 +10,18 @@ import { getRealEstateProjects, projectSiteCheckIn, getMyCheckIns, RealEstatePro
 import { toast } from 'sonner';
 import Link from 'next/link';
 
+type VisitPurpose = 'site_duty' | 'customer_tour' | 'meeting' | 'training' | 'other';
+
+function isVisitPurpose(value: string): value is VisitPurpose {
+  return (
+    value === 'site_duty' ||
+    value === 'customer_tour' ||
+    value === 'meeting' ||
+    value === 'training' ||
+    value === 'other'
+  );
+}
+
 export default function AttendanceAndCheckIn() {
   const [activeTab, setActiveTab] = useState<'shift' | 'project'>('shift');
   const [projects, setProjects] = useState<RealEstateProjectSummary[]>([]);
@@ -23,7 +35,7 @@ export default function AttendanceAndCheckIn() {
 
   // Form states for project check-in
   const [selectedProjectId, setSelectedProjectId] = useState('');
-  const [visitPurpose, setVisitPurpose] = useState<'site_duty' | 'customer_tour' | 'meeting' | 'training' | 'other'>('customer_tour');
+  const [visitPurpose, setVisitPurpose] = useState<VisitPurpose>('customer_tour');
   const [notes, setNotes] = useState('');
   const [coords, setCoords] = useState<{ latitude: number; longitude: number; accuracy: number } | null>(null);
 
@@ -271,7 +283,12 @@ export default function AttendanceAndCheckIn() {
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Mục đích check-in</label>
                 <select
                   value={visitPurpose}
-                  onChange={(e: Record<string, unknown>) => setVisitPurpose(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (isVisitPurpose(value)) {
+                      setVisitPurpose(value);
+                    }
+                  }}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-750 rounded-2xl px-4 py-3.5 text-xs outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
                 >
                   <option value="customer_tour">Dẫn khách xem nhà mẫu</option>
@@ -324,7 +341,7 @@ export default function AttendanceAndCheckIn() {
                   </div>
                 ) : (
                   <p className="text-[10px] text-rose-500 font-bold text-center flex items-center justify-center gap-1.5 py-1">
-                    <AlertCircle className="w-4 h-4" /> Vui lòng click "Lấy vị trí" để lấy tọa độ hiện tại.
+                    <AlertCircle className="w-4 h-4" /> Vui lòng click &quot;Lấy vị trí&quot; để lấy tọa độ hiện tại.
                   </p>
                 )}
               </div>

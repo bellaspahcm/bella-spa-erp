@@ -30,10 +30,10 @@ const STATUS_CONFIG: Record<VehicleStatus, { label: string; bg: string; color: s
   in_transit: { label: 'Đang Vận Chuyển', bg: 'bg-amber-50 dark:bg-amber-950/30', color: 'text-amber-700 dark:text-amber-400', border: 'border-amber-200/60 dark:border-amber-900/30' },
   warehouse:  { label: 'Trong Kho',       bg: 'bg-slate-50 dark:bg-slate-950/30', color: 'text-slate-700 dark:text-slate-400', border: 'border-slate-200/60 dark:border-slate-900/30' },
   showroom:   { label: 'Showroom',        bg: 'bg-cyan-50 dark:bg-cyan-950/30',   color: 'text-cyan-700 dark:text-cyan-400',   border: 'border-cyan-200/60 dark:border-cyan-900/30' },
-  arrived:    { label: 'Đã Về Kho',       bg: 'bg-blue-50 dark:bg-blue-950/30',   color: 'text-blue-700 dark:text-blue-400',   border: 'border-blue-200/60 dark:border-blue-900/30' },
   allocated:  { label: 'Đã Phân Bổ',      bg: 'bg-violet-50 dark:bg-violet-950/30', color: 'text-violet-700 dark:text-violet-400', border: 'border-violet-200/60 dark:border-violet-900/30' },
   delivered:  { label: 'Đã Giao Xe',      bg: 'bg-teal-50 dark:bg-teal-950/30',  color: 'text-teal-700 dark:text-teal-400',   border: 'border-teal-200/60 dark:border-teal-900/30' },
-  sold:       { label: 'Đã Bán',           bg: 'bg-emerald-50 dark:bg-emerald-950/30', color: 'text-emerald-700 dark:text-emerald-400', border: 'border-emerald-200/60 dark:border-emerald-900/30' },
+  returned:   { label: 'Đã Trả Lại',      bg: 'bg-blue-50 dark:bg-blue-950/30',   color: 'text-blue-700 dark:text-blue-400',   border: 'border-blue-200/60 dark:border-blue-900/30' },
+  scrapped:   { label: 'Thanh Lý/Hủy',    bg: 'bg-red-50 dark:bg-red-950/30',     color: 'text-red-700 dark:text-red-400',     border: 'border-red-200/60 dark:border-red-900/30' },
 };
 
 // ── Add Vehicle Modal ─────────────────────────────────────────────────────────

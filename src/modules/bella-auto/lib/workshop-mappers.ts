@@ -5,9 +5,12 @@
  */
 
 import type { Database } from '@/types/database.types';
+import type { RepairOrder } from '@/modules/bella-auto/components/workshop/RepairOrderBoard';
 
 type DbAppointment = Database['public']['Tables']['auto_service_appointments']['Row'];
 type DbRepairOrder = Database['public']['Tables']['auto_repair_orders']['Row'];
+
+const DEFAULT_REPAIR_ORDER_PRIORITY = 'normal';
 
 /**
  * Map database appointment to ServiceCalendar component format
@@ -49,7 +52,7 @@ export function mapAppointmentForCalendar(dbApt: DbAppointment) {
 /**
  * Map database repair order to RepairOrderBoard component format
  */
-export function mapRepairOrderForBoard(dbOrder: DbRepairOrder) {
+export function mapRepairOrderForBoard(dbOrder: DbRepairOrder): RepairOrder {
   // Parse vehicle_info to extract license plate
   const vehicleInfoParts = dbOrder.vehicle_info?.split(' - ') || [];
   const vehicleDisplay = vehicleInfoParts[0] || 'Unknown Vehicle';
@@ -59,18 +62,15 @@ export function mapRepairOrderForBoard(dbOrder: DbRepairOrder) {
     id: dbOrder.id,
     orderNumber: dbOrder.order_number || 'N/A',
     customerName: dbOrder.customer_name || 'Unknown Customer',
-    customerPhone: dbOrder.customer_phone || '',
     vehicleInfo: vehicleDisplay,
     licensePlate,
+    orderType: dbOrder.order_type,
     status: dbOrder.status || 'new',
-    openedAt: dbOrder.opened_at,
-    priority: dbOrder.priority || 'normal',
-    estimatedCompletionDate: dbOrder.estimated_completion_date,
-    actualCompletionDate: dbOrder.actual_completion_date,
-    totalEstimate: dbOrder.estimated_total ? Number(dbOrder.estimated_total) : 0,
-    totalActual: dbOrder.actual_total ? Number(dbOrder.actual_total) : 0,
-    assignedTechnicianId: dbOrder.primary_technician_id,
-    serviceAdvisorId: dbOrder.service_advisor_id,
+    openedAt: dbOrder.opened_at || dbOrder.created_at || dbOrder.order_date,
+    priority: DEFAULT_REPAIR_ORDER_PRIORITY,
+    estimatedHours: dbOrder.estimated_hours ? Number(dbOrder.estimated_hours) : undefined,
+    actualHours: dbOrder.actual_hours ? Number(dbOrder.actual_hours) : undefined,
+    bayNumber: dbOrder.bay_number || undefined,
   };
 }
 

@@ -10,6 +10,7 @@ import { useTenantContext } from '@/core/hooks/useTenantContext';
 import { useKTVList } from '@/hooks/useKTVList';
 import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
 import { createClient } from '@/lib/supabase-client';
+import type { Database } from '@/types/database.types';
 import { toast } from 'sonner';
 
 type SalaryAdjustment = {
@@ -31,6 +32,17 @@ type SalaryAdjustment = {
   created_by_name?: string;
   approved_by_name?: string;
 };
+
+type SalaryAdjustmentUserName = Pick<Database['public']['Tables']['users']['Row'], 'full_name'>;
+type SalaryAdjustmentQueryRow = Omit<
+  Database['public']['Tables']['salary_adjustments']['Row'],
+  'adjustment_type' | 'status'
+> &
+  Pick<SalaryAdjustment, 'adjustment_type' | 'status'> & {
+    ktv: SalaryAdjustmentUserName | null;
+    created_by: SalaryAdjustmentUserName | null;
+    approved_by: SalaryAdjustmentUserName | null;
+  };
 
 interface AdvancedFilters {
   startDate?: string;
@@ -160,7 +172,7 @@ export function AdjustmentsListPage() {
       const supabase = createClient();
       
        
-      let query = (supabase as unknown)
+      let query = supabase
         .from('salary_adjustments')
         .select(`
           *,
@@ -208,7 +220,7 @@ export function AdjustmentsListPage() {
         query = query.in('created_by_id', filters.createdByIds);
       }
 
-      const { data, error: fetchError } = await query;
+      const { data, error: fetchError } = await query.returns<SalaryAdjustmentQueryRow[]>();
 
       if (fetchError) {
         console.error('[AdjustmentsListPage] Error fetching adjustments:', fetchError);
@@ -218,7 +230,7 @@ export function AdjustmentsListPage() {
 
       // Transform data
        
-      const adjustmentsData: SalaryAdjustment[] = (data || []).map((adj: Record<string, unknown>) => ({
+      const adjustmentsData: SalaryAdjustment[] = (data || []).map((adj) => ({
         id: adj.id,
         ktv_id: adj.ktv_id,
         month_year: adj.month_year,
@@ -235,7 +247,7 @@ export function AdjustmentsListPage() {
         updated_at: adj.updated_at,
         ktv_name: adj.ktv?.full_name || 'N/A',
         created_by_name: adj.created_by?.full_name || 'N/A',
-        approved_by_name: adj.approved_by?.full_name || null,
+        approved_by_name: adj.approved_by?.full_name,
       }));
 
       setAdjustments(adjustmentsData);

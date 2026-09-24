@@ -953,7 +953,17 @@ export async function markNotificationAsRead(id: string) {
 /**
  * Batches all dashboard calls into one request to drastically improve KTV UX
  */
-export async function getKTVDashboardData(monthStr: string) {
+export type KTVDashboardData = {
+  active: Awaited<ReturnType<typeof getKTVActiveSessions>>;
+  upcoming: Awaited<ReturnType<typeof getKTVUpcomingSessions>>;
+  attendance: Awaited<ReturnType<typeof getKTVTodayAttendance>>;
+  earnings: Awaited<ReturnType<typeof getKTVEarnings>>;
+  notifications: Awaited<ReturnType<typeof getKTVNotifications>>;
+  leaderboard: Awaited<ReturnType<typeof getKTVLeaderboard>>;
+  overdue: Awaited<ReturnType<typeof getKTVOverdueSessions>>;
+};
+
+export async function getKTVDashboardData(monthStr: string): Promise<KTVDashboardData | null> {
   const user = await getCurrentUser();
   if (!user || user.role !== 'ktv') {
     return null;
