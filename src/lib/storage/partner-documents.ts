@@ -13,6 +13,7 @@
  */
 
 import { createClient } from '@/lib/supabase-server';
+import type { Json } from '@/types/database.types';
 
 export const PARTNER_DOCUMENTS_BUCKET = 'partner-documents';
 
@@ -72,6 +73,55 @@ export interface DocumentMetadata {
   uploadedBy?: string;
 }
 
+type AllowedFileType = typeof ALLOWED_FILE_TYPES[number];
+type AllowedExtension = typeof ALLOWED_EXTENSIONS[number];
+
+function isAllowedFileType(value: string): value is AllowedFileType {
+  return ALLOWED_FILE_TYPES.some((allowedType) => allowedType === value);
+}
+
+function isAllowedExtension(value: string): value is AllowedExtension {
+  return ALLOWED_EXTENSIONS.some((allowedExtension) => allowedExtension === value);
+}
+
+function isDocumentCategory(value: unknown): value is DocumentCategory {
+  return (
+    value === 'business_license' ||
+    value === 'tax_certificate' ||
+    value === 'id_card' ||
+    value === 'bank_document' ||
+    value === 'other'
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isDocumentMetadata(value: unknown): value is DocumentMetadata {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    typeof value.applicationId === 'string' &&
+    isDocumentCategory(value.category) &&
+    typeof value.originalName === 'string' &&
+    typeof value.fileSize === 'number' &&
+    typeof value.mimeType === 'string' &&
+    typeof value.uploadedAt === 'string' &&
+    (value.description === undefined || typeof value.description === 'string') &&
+    (value.uploadedBy === undefined || typeof value.uploadedBy === 'string')
+  );
+}
+
+function toDocumentMetadataList(value: unknown): DocumentMetadata[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter(isDocumentMetadata);
+}
+
 /**
  * Validate file before upload
  */
@@ -85,7 +135,7 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
   }
   
   // Check file type
-  if (!ALLOWED_FILE_TYPES.includes(file.type as unknown)) {
+  if (!isAllowedFileType(file.type)) {
     return {
       valid: false,
       error: `Loại file không hợp lệ. Chỉ chấp nhận: ${ALLOWED_EXTENSIONS.join(', ')}`,
@@ -94,7 +144,7 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
   
   // Check file name extension
   const ext = file.name.toLowerCase().match(/\.\w+$/)?.[0];
-  if (!ext || !ALLOWED_EXTENSIONS.includes(ext as unknown)) {
+  if (!ext || !isAllowedExtension(ext)) {
     return {
       valid: false,
       error: `Phần mở rộng file không hợp lệ`,
@@ -147,11 +197,24 @@ export async function uploadDocument(
     const metadata: DocumentMetadata = {
       applicationId,
       category,
-      description,
       originalName: file.name,
       fileSize: file.size,
       mimeType: file.type,
       uploadedAt: new Date().toISOString(),
+    };
+    if (description) {
+      metadata.description = description;
+    }
+
+    const metadataJson: Json = {
+      applicationId: metadata.applicationId,
+      category: metadata.category,
+      originalName: metadata.originalName,
+      fileSize: metadata.fileSize,
+      mimeType: metadata.mimeType,
+      uploadedAt: metadata.uploadedAt,
+      ...(metadata.description ? { description: metadata.description } : {}),
+      ...(metadata.uploadedBy ? { uploadedBy: metadata.uploadedBy } : {}),
     };
     
     // Upload to storage
@@ -178,12 +241,12 @@ export async function uploadDocument(
       .getPublicUrl(filePath);
     
     // Update application with document reference
-    const { error: dbError } = await (supabase.rpc as unknown)('add_partner_document', {
+    const { error: dbError } = await supabase.rpc('add_partner_document', {
       p_application_id: applicationId,
       p_file_path: filePath,
       p_file_url: urlData.publicUrl,
       p_category: category,
-      p_metadata: metadata,
+      p_metadata: metadataJson,
     });
     
     if (dbError) {
@@ -238,7 +301,7 @@ export async function deleteDocument(
     }
     
     // Remove from application documents array
-    const { error: dbError } = await (supabase.rpc as unknown)('remove_partner_document', {
+    const { error: dbError } = await supabase.rpc('remove_partner_document', {
       p_application_id: applicationId,
       p_file_path: filePath,
     });
@@ -311,9 +374,9 @@ export async function listDocuments(
       return { documents: [], error: error.message };
     }
     
-    const documents = application?.documents || [];
+    const documents = toDocumentMetadataList(application?.documents);
     
-    return { documents: documents as unknown };
+    return { documents };
     
   } catch (error) {
     console.error('[listDocuments] Exception:', error);
