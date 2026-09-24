@@ -1167,7 +1167,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {/* Card 1: Khách hàng (Tất cả) */}
         <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex items-start gap-4">
-          <div className="w-12 h-12 rounded-full bg-[#074E44] flex items-center justify-center text-white shrink-0 shadow-md">
+          <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground shrink-0 shadow-md">
             <User className="w-6 h-6" />
           </div>
           <div className="flex-1 min-w-0">
@@ -1184,7 +1184,7 @@ export default function DashboardPage() {
 
         {/* Card 2: Lịch hẹn hôm nay */}
         <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex items-start gap-4">
-          <div className="w-12 h-12 rounded-full bg-[#074E44] flex items-center justify-center text-white shrink-0 shadow-md">
+          <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground shrink-0 shadow-md">
             <Calendar className="w-6 h-6" />
           </div>
           <div className="flex-1 min-w-0">
@@ -1201,7 +1201,7 @@ export default function DashboardPage() {
 
         {/* Card 3: Doanh thu tháng */}
         <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex items-start gap-4">
-          <div className="w-12 h-12 rounded-full bg-[#074E44] flex items-center justify-center text-white shrink-0 shadow-md">
+          <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground shrink-0 shadow-md">
             <TrendingUp className="w-6 h-6" />
           </div>
           <div className="flex-1 min-w-0">
@@ -1243,17 +1243,17 @@ export default function DashboardPage() {
         <div className="lg:col-span-5 bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-[#074E44]" />
+              <Calendar className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">Lịch hẹn hôm nay</h2>
             </div>
-            <Link href="/dashboard/bookings" className="text-xs font-bold text-[#074E44] hover:underline flex items-center gap-1">
+            <Link href="/dashboard/bookings" className="text-xs font-bold text-primary hover:underline flex items-center gap-1">
               Xem tất cả <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
           {/* Filter tabs */}
           <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1">
-            <button className="px-4 py-1.5 rounded-full text-xs font-bold bg-[#074E44] text-white shadow-xs">
+            <button className="px-4 py-1.5 rounded-full text-xs font-bold bg-primary text-primary-foreground shadow-xs">
               Tất cả <span className="ml-1 px-1.5 py-0.2 bg-white/20 rounded-full text-[10px]">8</span>
             </button>
             <button className="px-4 py-1.5 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200">
@@ -1411,31 +1411,31 @@ export default function DashboardPage() {
       </div>
 
       {/* BOTTOM BANNER WITH GOLDEN SCISSORS BACKGROUND */}
-      <div className="relative overflow-hidden rounded-3xl bg-[#074E44] p-6 text-white shadow-md border border-[#C8A97A]/40 flex flex-col md:flex-row items-center justify-between gap-4 mb-8 group">
+      <div className="relative overflow-hidden rounded-3xl bg-primary p-6 text-white shadow-md border border-white/20 flex flex-col md:flex-row items-center justify-between gap-4 mb-8 group">
         {/* Left Scissors Background Image */}
         <div
           className="absolute inset-y-0 left-0 w-full md:w-1/2 bg-cover bg-left opacity-90 transition-transform duration-700 group-hover:scale-105 pointer-events-none"
           style={{ backgroundImage: "url('/images/haircut_bottom.png')" }}
         />
-        {/* Gradient overlay transitioning scissors into deep emerald green background */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#03211D]/80 via-[#074E44]/95 to-[#0A665A] z-0 pointer-events-none" />
+        {/* Gradient overlay transitioning scissors into tenant brand primary color */}
+        <div className="absolute inset-0 bg-gradient-to-r from-primary-hover/90 via-primary/95 to-primary-hover z-0 pointer-events-none" />
 
         <div className="relative z-10 flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shrink-0 shadow-sm">
-            <SparklesIcon className="w-6 h-6 text-[#C8A97A]" />
+            <SparklesIcon className="w-6 h-6 text-amber-300" />
           </div>
           <div>
-            <h4 className="text-xl font-serif font-bold text-white tracking-tight drop-shadow-xs">Bella Haircut Shop</h4>
-            <p className="text-xs text-slate-200 mt-0.5 font-medium">Không chỉ là cắt tóc, mà là trải nghiệm.</p>
+            <h4 className="text-xl font-serif font-bold text-white tracking-tight drop-shadow-xs">{businessLabel}</h4>
+            <p className="text-xs text-white/90 mt-0.5 font-medium">Không chỉ là dịch vụ, mà là trải nghiệm.</p>
           </div>
         </div>
 
         <div className="relative z-10 flex items-center gap-5">
-          <span className="font-serif italic text-xl md:text-2xl text-[#E4D1AC] font-light tracking-wide select-none drop-shadow-sm">
+          <span className="font-serif italic text-xl md:text-2xl text-amber-200 font-light tracking-wide select-none drop-shadow-sm">
             Be Your Best Version
           </span>
           <div className="w-11 h-11 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 flex items-center justify-center text-white cursor-pointer hover:scale-105 transition-transform shadow-md active:scale-95">
-            <ArrowRight className="w-5 h-5" />
+            <ArrowRight className="w-5 h-5 text-white" />
           </div>
         </div>
       </div>

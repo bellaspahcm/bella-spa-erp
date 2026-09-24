@@ -439,10 +439,10 @@ export function ProductSalesListPage() {
 
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex flex-1 sm:flex-none items-center justify-center gap-2 px-5 py-3 text-sm font-black text-white bg-primary rounded-2xl hover:bg-primary-hover shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all duration-200 active:scale-[0.98]"
+            className="beauty-customer-add-cta flex flex-1 sm:flex-none items-center justify-center gap-2 px-5 py-3 text-sm font-black text-white bg-primary rounded-2xl hover:bg-primary-hover shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all duration-200 active:scale-[0.98]"
           >
-            <Plus className="w-4 h-4" />
-            <span>Thêm bán hàng</span>
+            <Plus className="w-4 h-4 text-white" />
+            <span className="text-white">Thêm bán hàng</span>
           </button>
         </div>
       </div>
@@ -628,10 +628,10 @@ export function ProductSalesListPage() {
           </p>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center gap-2 px-5 py-3 text-sm font-black text-white bg-primary rounded-2xl hover:bg-primary-hover shadow-lg shadow-primary/20 transition-all duration-200 active:scale-[0.98]"
+            className="beauty-customer-add-cta inline-flex items-center gap-2 px-5 py-3 text-sm font-black text-white bg-primary rounded-2xl hover:bg-primary-hover shadow-lg shadow-primary/20 transition-all duration-200 active:scale-[0.98]"
           >
-            <Plus className="w-4 h-4" />
-            <span>Thêm giao dịch đầu tiên</span>
+            <Plus className="w-4 h-4 text-white" />
+            <span className="text-white">Thêm giao dịch đầu tiên</span>
           </button>
         </div>
       ) : (
