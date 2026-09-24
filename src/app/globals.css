@@ -545,14 +545,14 @@ html[data-tenant-module="pending"] .ktv-profile-btn-primary:hover {
 .glass-pink {
   background: rgba(255, 240, 243, 0.6);
   backdrop-filter: blur(12px);
-  border: 1.2px solid color-mix(in srgb, var(--primary) 65%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--primary) 12%, rgba(226, 232, 240, 0.7)) !important;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .luxury-box-hover:hover {
   transform: translateY(-6px);
   box-shadow: 0 20px 30px -10px color-mix(in srgb, var(--primary) 12%, transparent);
-  border-color: var(--primary) !important;
+  border-color: color-mix(in srgb, var(--primary) 25%, transparent) !important;
 }
 
 /* Custom Scrollbar */
@@ -928,6 +928,27 @@ input[type="time"]::-webkit-datetime-edit-ampm-field {
 .dark .bg-primary:hover,
 .dark [class*="bg-primary"]:hover {
   background-color: #4D1328 !important;
+}
+
+/* ===========================================================================
+   GLOBAL BUTTON FOREGROUND SAFETY RULE
+   Ensures bg-primary buttons always use --primary-foreground text color.
+   This is a safety net for any tenant preset that changes --primary to a
+   light color without updating text color, preventing white-on-white text.
+   These rules are lower specificity than tenant-specific overrides (which use
+   html[data-tenant-*] selectors) so presets can still customize further.
+   =========================================================================== */
+button.bg-primary,
+a.bg-primary,
+button[class*="bg-primary"]:not([class*="bg-primary/"]),
+a[class*="bg-primary"]:not([class*="bg-primary/"]) {
+  color: var(--primary-foreground, #ffffff);
+}
+button.bg-primary *,
+a.bg-primary *,
+button[class*="bg-primary"]:not([class*="bg-primary/"]) span,
+button[class*="bg-primary"]:not([class*="bg-primary/"]) svg {
+  color: var(--primary-foreground, #ffffff);
 }
 
 /* Text overrides for contrast - keep default Tailwind colors */
@@ -1639,14 +1660,27 @@ html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item-active {
   box-shadow: 0 10px 28px rgba(169, 21, 85, 0.28) !important;
 }
 html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item-active svg { color: #fda4af !important; }
-html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item-active span { color: #ffffff !important; }
+html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item-active span,
+html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item-active * { color: #ffffff !important; }
 
 /* bella_rose — ACTIVE + HOVER (lock text/icon) */
 html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item-active:hover {
   background: linear-gradient(135deg, #be123c 0%, #a91555 100%) !important;
 }
 html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item-active:hover svg { color: #fda4af !important; }
-html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item-active:hover span { color: #ffffff !important; }
+html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item-active:hover span,
+html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item-active:hover * { color: #ffffff !important; }
+
+/* bella_rose — Buttons use tenant primary (deep rose) with white text */
+html[data-tenant-brand-preset="bella_rose"] button[class*="bg-primary"]:not([class*="bg-primary/"]),
+html[data-tenant-brand-preset="bella_rose"] a[class*="bg-primary"]:not([class*="bg-primary/"]),
+html[data-tenant-brand-preset="bella_rose"] .beauty-customer-add-cta {
+  background: linear-gradient(135deg, #a91555 0%, #9d174d 100%) !important;
+  color: #ffffff !important;
+  border-color: rgba(248, 165, 194, 0.46) !important;
+}
+html[data-tenant-brand-preset="bella_rose"] button[class*="bg-primary"]:not([class*="bg-primary/"]) *,
+html[data-tenant-brand-preset="bella_rose"] .beauty-customer-add-cta * { color: #ffffff !important; }
 
 /* =========================================================================
    5. SLATE MINIMAL (White & Slate Gray — #334155 slate-700)
@@ -1725,6 +1759,26 @@ html[data-tenant-brand-preset="slate_minimal"] .beauty-erp-profile-role {
   font-weight: 600 !important;
 }
 
+/* — Buttons — slate_minimal uses slate-700 primary (dark enough for white text) */
+html[data-tenant-brand-preset="slate_minimal"] button[class*="bg-primary"]:not([class*="bg-primary/"]),
+html[data-tenant-brand-preset="slate_minimal"] a[class*="bg-primary"]:not([class*="bg-primary/"]),
+html[data-tenant-brand-preset="slate_minimal"] .beauty-customer-add-cta {
+  background: linear-gradient(135deg, #334155 0%, #1e293b 100%) !important;
+  color: #ffffff !important;
+  border-color: rgba(51, 65, 85, 0.44) !important;
+  box-shadow: 0 4px 14px rgba(51, 65, 85, 0.18) !important;
+}
+html[data-tenant-brand-preset="slate_minimal"] button[class*="bg-primary"]:not([class*="bg-primary/"]) *,
+html[data-tenant-brand-preset="slate_minimal"] a[class*="bg-primary"]:not([class*="bg-primary/"]) *,
+html[data-tenant-brand-preset="slate_minimal"] .beauty-customer-add-cta * { color: #ffffff !important; }
+
+html[data-tenant-brand-preset="slate_minimal"] button[class*="bg-primary"]:not([class*="bg-primary/"]):hover,
+html[data-tenant-brand-preset="slate_minimal"] a[class*="bg-primary"]:not([class*="bg-primary/"]):hover,
+html[data-tenant-brand-preset="slate_minimal"] .beauty-customer-add-cta:hover {
+  background: linear-gradient(135deg, #475569 0%, #334155 100%) !important;
+  box-shadow: 0 8px 20px rgba(51, 65, 85, 0.22) !important;
+}
+
 
 /* Universal Active Nav Item — spa/beauty shells with bg-white active style */
 /* Real estate (jade_wellness/luxury_navy) and Education have their own canonical rules */
@@ -1735,10 +1789,10 @@ html .beauty-erp-nav-item-active.bg-white p {
   color: #042f2e !important;
 }
 
-/* Dark pill active nav items (non-white bg) — high contrast white text */
-html .beauty-erp-nav-item-active:not(.bg-white):not([class*="bg-white"]) *,
-html .beauty-erp-nav-item-active:not(.bg-white):not([class*="bg-white"]) svg,
-html .beauty-erp-nav-item-active:not(.bg-white):not([class*="bg-white"]) span {
+/* Dark pill active nav items (non-white bg) — high contrast white text for dark active backgrounds */
+html:not([data-tenant-brand-preset="slate_minimal"]) .beauty-erp-nav-item-active:not(.bg-white):not([class*="bg-white"]):not([class*="bg-slate"]):not([class*="bg-[#f"]):not([class*="bg-gray"]) *,
+html:not([data-tenant-brand-preset="slate_minimal"]) .beauty-erp-nav-item-active:not(.bg-white):not([class*="bg-white"]):not([class*="bg-slate"]):not([class*="bg-[#f"]):not([class*="bg-gray"]) svg,
+html:not([data-tenant-brand-preset="slate_minimal"]) .beauty-erp-nav-item-active:not(.bg-white):not([class*="bg-white"]):not([class*="bg-slate"]):not([class*="bg-[#f"]):not([class*="bg-gray"]) span {
   color: #ffffff !important;
 }
 
@@ -2774,19 +2828,19 @@ html[data-tenant-module="beauty_spa"] .beauty-calendar-day-active span {
 html[data-tenant-module="beauty_spa"] .luxury-card-pink {
   background:
     radial-gradient(circle at 14% 10%, rgba(255, 255, 255, 0.12), transparent 30%),
-    linear-gradient(135deg, var(--beauty-em) 0%, var(--beauty-em-2) 52%, var(--beauty-sap) 100%) !important;
-  border: 1px solid rgba(200, 169, 122, 0.56) !important;
-  box-shadow: 0 24px 64px rgba(11, 34, 64, 0.18) !important;
+    linear-gradient(135deg, var(--primary) 0%, var(--primary-hover, var(--primary)) 60%, color-mix(in srgb, var(--primary) 70%, #000) 100%) !important;
+  border: 1px solid color-mix(in srgb, var(--accent, #c8a97a) 40%, transparent) !important;
+  box-shadow: 0 24px 64px color-mix(in srgb, var(--primary) 25%, transparent) !important;
 }
 
 html[data-tenant-module="beauty_spa"] button[class*="bg-primary"]:not([class*="bg-primary/"]),
 html[data-tenant-module="beauty_spa"] a[class*="bg-primary"]:not([class*="bg-primary/"]),
 html[data-tenant-module="beauty_spa"] button[class*="from-primary"],
 html[data-tenant-module="beauty_spa"] a[class*="from-primary"] {
-  background: linear-gradient(135deg, var(--beauty-em), var(--beauty-em-2)) !important;
-  border-color: rgba(200, 169, 122, 0.62) !important;
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover, var(--primary))) !important;
+  border-color: color-mix(in srgb, var(--accent, #c8a97a) 50%, transparent) !important;
   color: #ffffff !important;
-  box-shadow: 0 8px 24px rgba(7, 78, 68, 0.2) !important;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--primary) 24%, transparent) !important;
 }
 
 html[data-tenant-module="beauty_spa"] button[class*="bg-primary"]:not([class*="bg-primary/"]):hover,
@@ -4964,11 +5018,13 @@ html[data-tenant-module="beauty_spa"] .border-rose-100\/50 {
 
 /* END BEAUTY SPA OVERRIDES */
 
-/* Intelligence Dashboard Tabs - Active State Override */
+/* Intelligence Dashboard Tabs - Active State Override
+   Uses tenant primary color instead of hardcoded pink
+   so all brand presets look consistent */
 [data-state="active"][role="tab"] {
-  background-color: #E91E63 !important;
-  color: white !important;
-  border-color: #E91E63 !important;
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground, #ffffff) !important;
+  border-color: var(--primary) !important;
 }
 
 /* KTV Performance Table Full Width Fix */
@@ -5098,6 +5154,17 @@ html[data-tenant-module="beauty_spa"] .luxury-card-pink *:not(.bg-white):not(.bg
   color: #ffffff !important;
 }
 
+/* Explicit gradient background protection for Reconciliation KPI Cards */
+.reconciliation-kpi-card:nth-child(1) {
+  background: linear-gradient(135deg, #f43f5e 0%, #dc2626 100%) !important;
+}
+.reconciliation-kpi-card:nth-child(2) {
+  background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%) !important;
+}
+.reconciliation-kpi-card:nth-child(3) {
+  background: linear-gradient(135deg, #a855f7 0%, #4f46e5 100%) !important;
+}
+
 /* Specific override for beauty_spa payment amount contrast in luxury-card-pink */
 html[data-tenant-module="beauty_spa"] .luxury-card-pink .text-primary {
   color: #34d399 !important;
@@ -5159,11 +5226,13 @@ html[data-tenant-module="beauty_spa"] .border-rose-100\/50 {
 
 /* END BEAUTY SPA OVERRIDES */
 
-/* Intelligence Dashboard Tabs - Active State Override */
+/* Intelligence Dashboard Tabs - Active State Override
+   Uses tenant primary color instead of hardcoded pink
+   so all brand presets (bella_rose, jade_wellness, slate_minimal, etc.) look consistent */
 [data-state="active"][role="tab"] {
-  background-color: #E91E63 !important;
-  color: white !important;
-  border-color: #E91E63 !important;
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground, #ffffff) !important;
+  border-color: var(--primary) !important;
 }
 
 /* KTV Performance Table Full Width Fix */
@@ -5665,6 +5734,99 @@ html[data-tenant-module="beauty_spa"] .customer-detail-card:hover {
 }
 
 /* ==========================================================================
+   TENANT-AWARE CHART COLOR PALETTE
+   Chart colors follow the selected brand preset's primary palette.
+   This ensures charts, KPI cards, and data visualizations look visually
+   consistent with the rest of the tenant's brand theme.
+   ========================================================================== */
+
+/* jade_wellness (deep teal/gold palette) */
+html[data-tenant-brand-preset="jade_wellness"] {
+  --chart-1: #074E44; /* deep teal */
+  --chart-2: #0A6B5A; /* mid teal */
+  --chart-3: #C8A97A; /* warm gold accent */
+  --chart-4: #10B981; /* emerald green */
+  --chart-5: #059669; /* deeper emerald */
+}
+
+/* luxury_navy (navy/gold palette) */
+html[data-tenant-brand-preset="luxury_navy"] {
+  --chart-1: #1E3A8A; /* deep navy */
+  --chart-2: #2563EB; /* bright blue */
+  --chart-3: #D97706; /* amber accent */
+  --chart-4: #FBBF24; /* golden yellow */
+  --chart-5: #0F172A; /* midnight */
+}
+
+/* ocean_clean (clean blue/teal palette) */
+html[data-tenant-brand-preset="ocean_clean"] {
+  --chart-1: #1E40AF; /* deep blue */
+  --chart-2: #3B82F6; /* sky blue */
+  --chart-3: #06B6D4; /* cyan */
+  --chart-4: #0891B2; /* teal */
+  --chart-5: #0E7490; /* dark teal */
+}
+
+/* graphite_luxe (dark zinc/charcoal palette) */
+html[data-tenant-brand-preset="graphite_luxe"] {
+  --chart-1: #18181B; /* charcoal */
+  --chart-2: #27272A; /* dark zinc */
+  --chart-3: #52525B; /* medium zinc */
+  --chart-4: #71717A; /* light zinc */
+  --chart-5: #A1A1AA; /* muted zinc */
+}
+
+/* bella_rose (rose/burgundy palette) */
+html[data-tenant-brand-preset="bella_rose"] {
+  --chart-1: #A91555; /* deep rose */
+  --chart-2: #BE123C; /* crimson */
+  --chart-3: #F8A5C2; /* soft pink accent */
+  --chart-4: #FB7185; /* rose-400 */
+  --chart-5: #881337; /* dark burgundy */
+}
+
+/* slate_minimal (clean slate/gray palette) */
+html[data-tenant-brand-preset="slate_minimal"] {
+  --chart-1: #334155; /* slate-700 */
+  --chart-2: #475569; /* slate-600 */
+  --chart-3: #64748B; /* slate-500 */
+  --chart-4: #94A3B8; /* slate-400 */
+  --chart-5: #1E293B; /* slate-800 */
+}
+
+/* Body background follows tenant brand preset */
+html[data-tenant-brand-preset="jade_wellness"] body {
+  background-image:
+    radial-gradient(circle at 0% 0%, rgba(7, 78, 68, 0.04) 0%, transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(10, 107, 90, 0.04) 0%, transparent 40%) !important;
+}
+html[data-tenant-brand-preset="luxury_navy"] body {
+  background-image:
+    radial-gradient(circle at 0% 0%, rgba(30, 58, 138, 0.04) 0%, transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(15, 23, 42, 0.04) 0%, transparent 40%) !important;
+}
+html[data-tenant-brand-preset="ocean_clean"] body {
+  background-image:
+    radial-gradient(circle at 0% 0%, rgba(30, 64, 175, 0.04) 0%, transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(6, 182, 212, 0.04) 0%, transparent 40%) !important;
+}
+html[data-tenant-brand-preset="graphite_luxe"] body {
+  background-image:
+    radial-gradient(circle at 0% 0%, rgba(39, 39, 42, 0.04) 0%, transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(82, 82, 91, 0.04) 0%, transparent 40%) !important;
+}
+html[data-tenant-brand-preset="bella_rose"] body {
+  background-image:
+    radial-gradient(circle at 0% 0%, rgba(169, 21, 85, 0.04) 0%, transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(190, 18, 60, 0.04) 0%, transparent 40%) !important;
+}
+html[data-tenant-brand-preset="slate_minimal"] body {
+  background-image:
+    radial-gradient(circle at 0% 0%, rgba(51, 65, 85, 0.03) 0%, transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(71, 85, 105, 0.03) 0%, transparent 40%) !important;
+}
+
+/* ==========================================================================
    SETTINGS UI ISOLATION SCOPE
    [data-settings-ui="appearance"]
 
@@ -5699,5 +5861,21 @@ html[data-tenant-module="beauty_spa"] .customer-detail-card:hover {
 /* Prevent nav item rules from targeting settings content */
 [data-settings-ui="appearance"] .beauty-erp-nav-item, [data-settings-ui="appearance"] .beauty-erp-nav-item-active {
   all: revert;
+}
+
+/* ==========================================================================
+   GLOBAL LIGHT MODE BOX BORDER PURGE (ALL TENANTS)
+   Completely eliminates pitch black/dark borders around cards, panels,
+   boxes, and glass containers in light mode across all pages and tenants.
+   ========================================================================== */
+html:not(.dark) .glass-pink,
+html:not(.dark) [class*="glass-pink"],
+html:not(.dark) .luxury-box-hover,
+html:not(.dark) [class*="border-slate-800"],
+html:not(.dark) [class*="border-slate-900"],
+html:not(.dark) [class*="border-zinc-800"],
+html:not(.dark) [class*="border-gray-800"],
+html:not(.dark) [class*="border-black"] {
+  border-color: rgba(226, 232, 240, 0.6) !important;
 }
 

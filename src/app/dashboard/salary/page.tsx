@@ -596,10 +596,10 @@ export default function SalaryPage() {
             <>
               <button
                 onClick={handlePublishAll}
-                className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-amber-500 px-5 py-3 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-amber-100 transition-all hover:bg-amber-600 sm:px-6 sm:py-4"
+                className="beauty-customer-add-cta flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3 text-xs font-black uppercase tracking-widest text-white shadow-lg transition-all hover:bg-primary-hover sm:px-6 sm:py-4"
               >
-                <Send className="w-4 h-4" />
-                <span>Gửi đối soát</span>
+                <Send className="w-4 h-4 text-white" />
+                <span className="text-white">Gửi đối soát</span>
               </button>
               <button
                 onClick={handleFinalizeAll}
