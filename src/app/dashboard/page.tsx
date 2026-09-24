@@ -1172,13 +1172,24 @@ export default function DashboardPage() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Khách hàng <span className="text-[10px] text-slate-400 font-normal">(Tất cả)</span></p>
-            <div className="flex items-baseline gap-2 mt-1">
-              <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{stats[0]?.value || '1.284'}</h2>
-              <span className="inline-flex items-center text-xs font-extrabold text-emerald-700 bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400 px-2 py-0.5 rounded-full">
-                ↗ 12%
-              </span>
-            </div>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 font-medium">+138 khách so với tháng trước</p>
+            {isLoading ? (
+              <div className="mt-2 space-y-2">
+                <div className="h-8 w-24 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-lg" />
+                <div className="h-3 w-32 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-lg" />
+              </div>
+            ) : (
+              <>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{stats[0]?.value || '0'}</h2>
+                  {stats[0]?.trend ? (
+                    <span className="inline-flex items-center text-xs font-extrabold text-emerald-700 bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400 px-2 py-0.5 rounded-full">
+                      {stats[0].trend > 0 ? '↗' : '↘'} {Math.abs(stats[0].trend)}%
+                    </span>
+                  ) : null}
+                </div>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 font-medium">Theo dữ liệu hiện tại</p>
+              </>
+            )}
           </div>
         </div>
 
@@ -1189,13 +1200,24 @@ export default function DashboardPage() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Lịch hẹn hôm nay</p>
-            <div className="flex items-baseline gap-2 mt-1">
-              <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{stats[1]?.value || '28'}</h2>
-              <span className="inline-flex items-center text-xs font-extrabold text-emerald-700 bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400 px-2 py-0.5 rounded-full">
-                ↗ 27%
-              </span>
-            </div>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 font-medium">20 đã phục vụ · 8 sắp tới</p>
+            {isLoading ? (
+              <div className="mt-2 space-y-2">
+                <div className="h-8 w-24 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-lg" />
+                <div className="h-3 w-32 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-lg" />
+              </div>
+            ) : (
+              <>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{stats[1]?.value || '0'}</h2>
+                  {stats[1]?.trend ? (
+                    <span className="inline-flex items-center text-xs font-extrabold text-emerald-700 bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400 px-2 py-0.5 rounded-full">
+                      {stats[1].trend > 0 ? '↗' : '↘'} {Math.abs(stats[1].trend)}%
+                    </span>
+                  ) : null}
+                </div>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 font-medium">Theo dữ liệu hiện tại</p>
+              </>
+            )}
           </div>
         </div>
 
@@ -1206,13 +1228,24 @@ export default function DashboardPage() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Doanh thu tháng</p>
-            <div className="flex items-baseline gap-2 mt-1">
-              <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{stats[2]?.value || '68,5M'} <span className="text-sm text-slate-400 font-bold">VND</span></h2>
-              <span className="inline-flex items-center text-xs font-extrabold text-emerald-700 bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400 px-2 py-0.5 rounded-full">
-                ↗ 18%
-              </span>
-            </div>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 font-medium">Đạt 78% mục tiêu tháng</p>
+            {isLoading ? (
+              <div className="mt-2 space-y-2">
+                <div className="h-8 w-24 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-lg" />
+                <div className="h-3 w-32 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-lg" />
+              </div>
+            ) : (
+              <>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{stats[2]?.value || '0'} <span className="text-sm text-slate-400 font-bold">VND</span></h2>
+                  {stats[2]?.trend ? (
+                    <span className="inline-flex items-center text-xs font-extrabold text-emerald-700 bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400 px-2 py-0.5 rounded-full">
+                      {stats[2].trend > 0 ? '↗' : '↘'} {Math.abs(stats[2].trend)}%
+                    </span>
+                  ) : null}
+                </div>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 font-medium">Theo dữ liệu hiện tại</p>
+              </>
+            )}
           </div>
         </div>
 
@@ -1226,13 +1259,24 @@ export default function DashboardPage() {
               <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Đánh giá trung bình</p>
               <ChevronRight className="w-4 h-4 text-slate-400 cursor-pointer hover:text-slate-600" />
             </div>
-            <div className="flex items-baseline gap-2 mt-1">
-              <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{stats[3]?.value || '4.9/5'}</h2>
-              <span className="inline-flex items-center text-xs font-extrabold text-emerald-700 bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400 px-2 py-0.5 rounded-full">
-                ↗ 0.2
-              </span>
-            </div>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 font-medium">Từ 642 lượt đánh giá</p>
+            {isLoading ? (
+              <div className="mt-2 space-y-2">
+                <div className="h-8 w-24 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-lg" />
+                <div className="h-3 w-32 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-lg" />
+              </div>
+            ) : (
+              <>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{stats[3]?.value || '0'}</h2>
+                  {stats[3]?.trend ? (
+                    <span className="inline-flex items-center text-xs font-extrabold text-emerald-700 bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400 px-2 py-0.5 rounded-full">
+                      {stats[3].trend > 0 ? '↗' : '↘'} {Math.abs(stats[3].trend)}%
+                    </span>
+                  ) : null}
+                </div>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 font-medium">Theo dữ liệu hiện tại</p>
+              </>
+            )}
           </div>
         </div>
       </div>
