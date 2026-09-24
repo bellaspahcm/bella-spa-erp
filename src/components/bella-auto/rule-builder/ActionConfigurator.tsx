@@ -15,6 +15,7 @@ export interface RuleAction {
 }
 
 type RuleActionType = RuleAction['type'];
+type RuleActionValue = RuleAction[string];
 
 export interface ActionConfiguratorProps {
   actions: RuleAction[];
@@ -115,6 +116,13 @@ function isRuleActionType(value: string): value is RuleActionType {
   return ACTION_TYPES.some((actionType) => actionType.key === value);
 }
 
+function toFormInputValue(value: RuleActionValue): string | number {
+  if (typeof value === 'string' || typeof value === 'number') {
+    return value;
+  }
+  return '';
+}
+
 export function ActionConfigurator({
   actions,
   onChange,
@@ -179,7 +187,7 @@ export function ActionConfigurator({
             </label>
             {param.type === 'select' ? (
               <select
-                value={action[param.key] || ''}
+                value={toFormInputValue(action[param.key])}
                 onChange={(e) => updateAction(action.id, { [param.key]: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white"
                 disabled={readonly}
@@ -193,7 +201,7 @@ export function ActionConfigurator({
               </select>
             ) : param.type === 'textarea' ? (
               <textarea
-                value={action[param.key] || ''}
+                value={toFormInputValue(action[param.key])}
                 onChange={(e) => updateAction(action.id, { [param.key]: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 rows={3}
@@ -202,7 +210,7 @@ export function ActionConfigurator({
             ) : (
               <input
                 type={param.type}
-                value={action[param.key] || ''}
+                value={toFormInputValue(action[param.key])}
                 onChange={(e) => updateAction(action.id, { [param.key]: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 disabled={readonly}

@@ -26,6 +26,9 @@ export async function POST(
     const supabase = createClient();
     const body = await request.json();
     const { message, fields } = body;
+    const requestedFields = Array.isArray(fields)
+      ? fields.filter((field): field is string => typeof field === 'string')
+      : [];
 
     // Validate required fields
     if (!message || message.trim().length === 0) {
@@ -95,12 +98,10 @@ export async function POST(
       .from('partner_applications')
       .update({
         status: 'need_more_info' as const,
-        info_request_message: message.trim(),
-        info_request_fields: fields || null,
-        info_requested_at: new Date().toISOString(),
-        info_requested_by: user.id,
+        additional_info_requested: message.trim(),
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: user.id,
         updated_at: new Date().toISOString(),
-        updated_by: user.id,
       })
       .eq('id', params.id)
       .select()
@@ -120,12 +121,13 @@ export async function POST(
       .insert({
         application_id: params.id,
         action: 'info_requested' as const,
-        action_description: `Additional info requested: ${message}`,
-        performed_by: user.id,
+        action_description: `Additional info requested: ${message}${
+          requestedFields.length > 0 ? ` Fields: ${requestedFields.join(', ')}` : ''
+        }`,
+        performed_by_user_id: user.id,
         performed_by_role: 'admin',
         old_status: application.status,
         new_status: 'need_more_info' as const,
-        metadata: { message, fields },
       });
 
     if (logError) {
