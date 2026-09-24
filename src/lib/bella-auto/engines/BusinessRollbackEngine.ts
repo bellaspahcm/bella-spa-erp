@@ -63,20 +63,20 @@ export class BusinessRollbackEngine {
 
       // 2. Perform compensating action for each step
       for (const step of steps) {
-        // If action is INSERT, compensating action is to DELETE the record
-        if (step.action === 'INSERT') {
+        // If action_type is INSERT, compensating action is to DELETE the record
+        if (step.action_type === 'INSERT') {
           const { error } = await client
-            .from(step.entity_type)
+            .from(step.target_table)
             .delete()
-            .eq('id', step.entity_id);
+            .eq('id', step.target_record_id);
           if (error) throw error;
         } 
-        // If action is UPDATE, compensating action is to RESTORE snapshot_before
-        else if (step.action === 'UPDATE' && step.snapshot_before) {
+        // If action_type is UPDATE, compensating action is to RESTORE before_snapshot
+        else if (step.action_type === 'UPDATE' && step.before_snapshot) {
           const { error } = await client
-            .from(step.entity_type)
-            .update(step.snapshot_before)
-            .eq('id', step.entity_id);
+            .from(step.target_table)
+            .update(step.before_snapshot)
+            .eq('id', step.target_record_id);
           if (error) throw error;
         }
 
