@@ -275,6 +275,15 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
     return value.toLocaleString('vi-VN');
   };
 
+  const formatTopModelTooltip = (value: unknown, name: unknown): [string, string] => {
+    const numericValue = typeof value === 'number' ? value : Number(value);
+    if (name === 'revenue') {
+      return [`${formatCurrency(Number.isFinite(numericValue) ? numericValue : 0)} VNĐ`, 'Doanh thu'];
+    }
+
+    return [String(value), 'Số lượng'];
+  };
+
   const formatNumber = (value: number) => {
     return value.toLocaleString('vi-VN');
   };
@@ -502,10 +511,7 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
                   <CartesianGrid strokeDasharray="4 4" stroke="rgba(148, 163, 184, 0.08)" horizontal={false} />
                   <XAxis type="number" stroke="#cbd5e1" tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />
                   <YAxis dataKey="model" type="category" stroke="#cbd5e1" tick={{ fill: '#475569', fontSize: 11, fontWeight: 700 }} axisLine={false} tickLine={false} dx={-4} width={110} />
-                  <Tooltip content={<CustomTooltip />} formatter={(value: number, name: string) => {
-                    if (name === 'revenue') return [formatCurrency(value) + ' VNĐ', 'Doanh thu'];
-                    return [value, 'Số lượng'];
-                  }} />
+                  <Tooltip content={<CustomTooltip />} formatter={formatTopModelTooltip} />
                   <Bar dataKey="sold" fill="url(#barModelGradient)" name="Đã bán" radius={[0, 6, 6, 0]} barSize={12} />
                 </BarChart>
               </ResponsiveContainer>
