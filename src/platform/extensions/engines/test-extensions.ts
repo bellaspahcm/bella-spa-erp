@@ -9,6 +9,57 @@
 
 import { AVAILABLE_EXTENSIONS } from './extension-runtime';
 
+interface GpaInput {
+  scores: number[];
+}
+
+interface TuitionInput {
+  baseTuitionFee: number;
+}
+
+interface ExploitInput {
+  exploitType: string;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isGpaInput(value: unknown): value is GpaInput {
+  return isRecord(value)
+    && Array.isArray(value.scores)
+    && value.scores.every(score => typeof score === 'number');
+}
+
+function isTuitionInput(value: unknown): value is TuitionInput {
+  return isRecord(value) && typeof value.baseTuitionFee === 'number';
+}
+
+function isExploitInput(value: unknown): value is ExploitInput {
+  return isRecord(value) && typeof value.exploitType === 'string';
+}
+
+function requireGpaInput(value: unknown): GpaInput {
+  if (!isGpaInput(value)) {
+    throw new Error('INVALID_EXTENSION_INPUT: GPA extension requires numeric scores.');
+  }
+  return value;
+}
+
+function requireTuitionInput(value: unknown): TuitionInput {
+  if (!isTuitionInput(value)) {
+    throw new Error('INVALID_EXTENSION_INPUT: Tuition extension requires baseTuitionFee.');
+  }
+  return value;
+}
+
+function requireExploitInput(value: unknown): ExploitInput {
+  if (!isExploitInput(value)) {
+    throw new Error('INVALID_EXTENSION_INPUT: Security exploit extension requires exploitType.');
+  }
+  return value;
+}
+
 // 1. GPA Calculator Extension v1
 AVAILABLE_EXTENSIONS['gpa-calculator-ext-v1'] = {
   manifest: {
@@ -20,10 +71,11 @@ AVAILABLE_EXTENSIONS['gpa-calculator-ext-v1'] = {
     hooks: ['education.calculate_gpa'],
     capabilities: ['education.grade.calculate']
   },
-  execute: async (context, input: { scores: number[] }) => {
-    if (input.scores.length === 0) return 0;
-    const sum = input.scores.reduce((a, b) => a + b, 0);
-    return Number((sum / input.scores.length).toFixed(2));
+  execute: async (_context, input) => {
+    const { scores } = requireGpaInput(input);
+    if (scores.length === 0) return 0;
+    const sum = scores.reduce((a, b) => a + b, 0);
+    return Number((sum / scores.length).toFixed(2));
   }
 };
 
@@ -38,10 +90,11 @@ AVAILABLE_EXTENSIONS['gpa-calculator-ext-v2'] = {
     hooks: ['education.calculate_gpa'],
     capabilities: ['education.grade.calculate']
   },
-  execute: async (context, input: { scores: number[] }) => {
-    if (input.scores.length === 0) return 0;
-    const sum = input.scores.reduce((a, b) => a + b, 0);
-    const average = sum / input.scores.length;
+  execute: async (_context, input) => {
+    const { scores } = requireGpaInput(input);
+    if (scores.length === 0) return 0;
+    const sum = scores.reduce((a, b) => a + b, 0);
+    const average = sum / scores.length;
     // Curved grading: Add 0.5 bonus points, capped at 10.0
     return Number(Math.min(average + 0.5, 10.0).toFixed(2));
   }
@@ -58,9 +111,10 @@ AVAILABLE_EXTENSIONS['scholarship-fee-ext'] = {
     hooks: ['education.calculate_tuition'],
     capabilities: ['education.tuition.calculate']
   },
-  execute: async (context, input: { baseTuitionFee: number }) => {
+  execute: async (_context, input) => {
+    const { baseTuitionFee } = requireTuitionInput(input);
     // 20% Academic Scholarship waiver
-    const finalFee = Math.round(input.baseTuitionFee * 0.8);
+    const finalFee = Math.round(baseTuitionFee * 0.8);
     return {
       finalTuitionFee: finalFee,
       isCorporateFunded: false
@@ -79,9 +133,10 @@ AVAILABLE_EXTENSIONS['malicious-db-ext'] = {
     hooks: ['security.exploit_test'],
     capabilities: ['security.exploit.execute']
   },
-  execute: async (context, input: { exploitType: string }) => {
+  execute: async (_context, input) => {
+    const { exploitType } = requireExploitInput(input);
     // Simulated sandbox containment triggers
-    switch (input.exploitType) {
+    switch (exploitType) {
       case 'direct_db':
         throw new Error('SANDBOX_BLOCKED: Direct supabase database clients are prohibited in extension execution.');
       case 'internal_repository':
