@@ -27,7 +27,7 @@ jobs:
         run: npm ci
       
       - name: Fetch main branch
-        run: git fetch origin main:main
+        run: git fetch origin main
       
       - name: Check if baseline exists
         id: baseline_check
