@@ -536,24 +536,24 @@ export function HaircutReconciliationView() {
 
           {/* Customer Grouped Data Table (Issue #4) */}
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[700px]">
+            <div className="overflow-x-auto custom-scrollbar">
+              <table className="w-full text-left border-collapse min-w-[980px]">
                 <thead>
                   <tr className="bg-slate-50/70 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    <th className="py-3.5 px-4">Khách hàng</th>
-                    <th className="py-3.5 px-4 text-center">Số khoản</th>
-                    <th className="py-3.5 px-4 text-right">Tổng giá trị</th>
-                    <th className="py-3.5 px-4 text-right">Đã thu</th>
-                    <th className="py-3.5 px-4 text-right">Còn nợ</th>
-                    <th className="py-3.5 px-4 text-center">Tuổi nợ</th>
-                    <th className="py-3.5 px-4 text-center">Trạng thái</th>
-                    <th className="py-3.5 px-4 text-center">Thao tác</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">Khách hàng</th>
+                    <th className="py-3.5 px-4 text-center whitespace-nowrap">Số khoản</th>
+                    <th className="py-3.5 px-4 text-right whitespace-nowrap">Tổng giá trị</th>
+                    <th className="py-3.5 px-4 text-right whitespace-nowrap">Đã thu</th>
+                    <th className="py-3.5 px-4 text-right whitespace-nowrap">Còn nợ</th>
+                    <th className="py-3.5 px-4 text-center whitespace-nowrap">Tuổi nợ</th>
+                    <th className="py-3.5 px-4 text-center whitespace-nowrap">Trạng thái</th>
+                    <th className="py-3.5 px-4 text-center whitespace-nowrap">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs">
                   {filteredCustomers.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-12 text-center text-slate-400 font-medium">
+                      <td colSpan={8} className="py-12 text-center text-slate-400 font-medium whitespace-nowrap">
                         Không tìm thấy khoản công nợ phù hợp.
                       </td>
                     </tr>
@@ -564,7 +564,7 @@ export function HaircutReconciliationView() {
                         <React.Fragment key={cust.id}>
                           <tr className="hover:bg-slate-50/60 transition-colors group">
                             {/* Khách hàng */}
-                            <td className="py-3.5 px-4">
+                            <td className="py-3.5 px-4 whitespace-nowrap">
                               <div className="flex items-center gap-3">
                                 <div
                                   className={cn(
@@ -574,60 +574,60 @@ export function HaircutReconciliationView() {
                                 >
                                   {cust.avatarText}
                                 </div>
-                                <div>
-                                  <div className="font-bold text-slate-900 text-xs">{cust.customerName}</div>
-                                  <div className="text-[11px] text-slate-500 font-medium flex items-center gap-2 mt-0.5">
-                                    <span>{cust.phone}</span>
+                                <div className="whitespace-nowrap">
+                                  <div className="font-bold text-slate-900 text-xs whitespace-nowrap">{cust.customerName}</div>
+                                  <div className="text-[11px] text-slate-500 font-medium flex items-center gap-2 mt-0.5 whitespace-nowrap">
+                                    <span className="whitespace-nowrap">{cust.phone}</span>
                                     <span>·</span>
-                                    <span className="text-slate-400">Lần cuối: {cust.lastVisit}</span>
+                                    <span className="text-slate-400 whitespace-nowrap">Lần cuối: {cust.lastVisit}</span>
                                   </div>
                                 </div>
                               </div>
                             </td>
 
                             {/* Số khoản */}
-                            <td className="py-3.5 px-4 text-center">
-                              <span className="inline-block px-2.5 py-1 rounded-lg bg-slate-100 font-extrabold text-slate-700 text-xs">
+                            <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                              <span className="inline-block px-2.5 py-1 rounded-lg bg-slate-100 font-extrabold text-slate-700 text-xs whitespace-nowrap">
                                 {cust.itemCount} khoản
                               </span>
                             </td>
 
                             {/* Tổng giá trị */}
-                            <td className="py-3.5 px-4 text-right font-medium text-slate-600">
+                            <td className="py-3.5 px-4 text-right font-medium text-slate-600 whitespace-nowrap">
                               {formatCurrency(cust.totalPrice)}
                             </td>
 
                             {/* Đã thu */}
-                            <td className="py-3.5 px-4 text-right font-medium text-emerald-600">
+                            <td className="py-3.5 px-4 text-right font-medium text-emerald-600 whitespace-nowrap">
                               {formatCurrency(cust.totalPaid)}
                             </td>
 
                             {/* Còn nợ */}
-                            <td className="py-3.5 px-4 text-right font-black text-rose-600 text-sm">
+                            <td className="py-3.5 px-4 text-right font-black text-rose-600 text-sm whitespace-nowrap">
                               {formatCurrency(cust.remainingDebt)}
                             </td>
 
                             {/* Tuổi nợ */}
-                            <td className="py-3.5 px-4 text-center font-bold text-slate-700">
+                            <td className="py-3.5 px-4 text-center font-bold text-slate-700 whitespace-nowrap">
                               {cust.maxAgeDays} ngày
                             </td>
 
                             {/* Trạng thái */}
-                            <td className="py-3.5 px-4 text-center">
+                            <td className="py-3.5 px-4 text-center whitespace-nowrap">
                               {cust.status === 'overdue' && (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 whitespace-nowrap">
                                   <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
                                   Quá hạn
                                 </span>
                               )}
                               {cust.status === 'due_soon' && (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
                                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                                   Đến hạn
                                 </span>
                               )}
                               {cust.status === 'upcoming' && (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">
                                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                                   Chưa đến hạn
                                 </span>
