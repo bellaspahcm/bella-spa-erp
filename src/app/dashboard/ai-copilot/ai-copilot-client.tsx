@@ -18,6 +18,7 @@ import { toast,Toaster } from "sonner";
 
 import { useTenantModuleKey } from "@/hooks/useTenantModuleKey";
 import type { TenantModuleKey } from "@/lib/business-rules/tenant-modules";
+import { useUser } from "@/lib/user-context";
 
 interface Message {
   role: "user" | "assistant";
@@ -46,7 +47,11 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
-function getAiWelcomeMessage(moduleKey: TenantModuleKey | null) {
+function getAiWelcomeMessage(moduleKey: TenantModuleKey | null, productKey?: string | null) {
+  if (productKey === "bella_haircut") {
+    return "Xin chào Ban điều hành! Tôi là AI COO - trợ lý vận hành cho Bella Haircut Shop. Tôi có thể hỗ trợ theo dõi lịch hẹn cắt tóc, hồ sơ khách hàng, doanh thu, chấm công & lương stylist/KTV, CRM/Zalo, Meta Ads và các điểm bất thường cần xử lý trong ngày. Anh/chị cần tôi kiểm tra mảng nào hôm nay?";
+  }
+
   if (moduleKey === "real_estate") {
     return "Xin chào Ban điều hành! Tôi là AI COO - trợ lý vận hành cho Bella Land. Tôi có thể hỗ trợ kiểm tra giỏ hàng căn hộ, tiến độ hợp đồng cọc, doanh thu dự án, tính hoa hồng môi giới, CRM nhà đầu tư và các báo cáo phân tích bất động sản trong ngày. Anh/chị cần tôi kiểm tra mảng nào hôm nay?";
   }
@@ -78,6 +83,8 @@ function getPlaceholderText(moduleKey: TenantModuleKey | null) {
 
 export default function AICopilotClient() {
   const { tenantModuleKey } = useTenantModuleKey();
+  const { product } = useUser();
+  const productKey = product?.productKey;
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
@@ -103,9 +110,9 @@ export default function AICopilotClient() {
   useEffect(() => {
     setMessages((current) => {
       if (current.length !== 1 || current[0]?.role !== "assistant") return current;
-      return [{ ...current[0], content: getAiWelcomeMessage(tenantModuleKey) }];
+      return [{ ...current[0], content: getAiWelcomeMessage(tenantModuleKey, productKey) }];
     });
-  }, [tenantModuleKey]);
+  }, [tenantModuleKey, productKey]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();

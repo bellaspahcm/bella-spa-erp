@@ -629,6 +629,7 @@ export function Sidebar() {
   const router = useRouter();
   const isDashboardHome = pathname?.replace(/\/+$/, '') === '/dashboard';
   const { product } = useUser(); // Product Identity from UserProvider
+  const isHaircut = product?.productKey === 'bella_haircut';
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [rolePermissions, setRolePermissions] = useState<RolePermissions | null>(null);
   const [tenantBrand, setTenantBrand] = useState<TenantBrandDisplay>(NEUTRAL_SIDEBAR_BRAND);
@@ -792,6 +793,9 @@ export function Sidebar() {
 
   const moduleAwareMenuItems = baseMenuItems.map((item): SidebarMenuItem => {
     if (isMenuHeader(item) || item.href !== '/dashboard/sessions') return item;
+    if (isHaircut) {
+      return { ...item, label: 'Gói dịch vụ' };
+    }
     // Industrial Cleaning: "Phiếu công việc"
     if (tenantBrand.moduleKey === 'industrial_cleaning') {
       return { ...item, label: 'Phiếu công việc' };

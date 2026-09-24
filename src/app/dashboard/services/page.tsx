@@ -21,12 +21,14 @@ import { cn, formatNumberWithSeparator, parseDecimalInput, parseIntegerInput,  }
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
+import { useUser } from '@/lib/user-context';
 import { useServicesPageState } from './hooks/useServicesPageState';
 import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 import type { ServiceModuleKey } from './types';
 
 export default function ServicesPage() {
   const vocab = useModuleVocabulary();
+  const { product } = useUser();
   const {
     isModalOpen,
     setIsModalOpen,
@@ -122,6 +124,7 @@ export default function ServicesPage() {
   } = useServicesPageState();
 
   const isDental = /dental|nha khoa/i.test(tenantName);
+  const isHaircut = product?.productKey === 'bella_haircut';
 
   const resourceTypeLabels = enabledModules.bella_healthcare ? {
     chair: 'Ghế nha khoa',
@@ -129,6 +132,12 @@ export default function ServicesPage() {
     machine: 'Máy X-Quang 3D / CT',
     bed: 'Giường nằm hồi sức',
     other: 'Thiết bị khác',
+  } : isHaircut ? {
+    bed: 'Ghế gội',
+    room: 'Khu vực / phòng dịch vụ',
+    machine: 'Thiết bị',
+    chair: 'Ghế làm tóc',
+    other: 'Khác',
   } : {
     bed: 'Giường',
     room: 'Phòng',
@@ -160,7 +169,7 @@ export default function ServicesPage() {
       ? [{ value: 'babycare', label: 'Bella Mother & Baby' }]
       : []),
     ...(enabledModules.beauty_spa
-      ? [{ value: 'beauty_spa', label: 'Beauty Spa' }]
+      ? [{ value: 'beauty_spa', label: isHaircut ? 'Bella Haircut Shop' : 'Beauty Spa' }]
       : []),
     ...(enabledModules.industrial_cleaning
       ? [{ value: 'industrial_cleaning', label: 'Industrial Cleaning' }]
@@ -229,7 +238,7 @@ export default function ServicesPage() {
               options={[
                 { value: 'all', label: 'Tất cả module', icon: <Tag className="h-4 w-4 text-slate-400" /> },
                 { value: 'babycare', label: 'Bella Mother & Baby', icon: <CheckCircle2 className="h-4 w-4 text-emerald-500" /> },
-                { value: 'beauty_spa', label: 'Beauty Spa', icon: <Sparkles className="h-4 w-4 text-fuchsia-500" /> },
+                { value: 'beauty_spa', label: isHaircut ? 'Bella Haircut Shop' : 'Beauty Spa', icon: <Sparkles className="h-4 w-4 text-fuchsia-500" /> },
                 { value: 'industrial_cleaning', label: 'Industrial Cleaning', icon: <Zap className="h-4 w-4 text-cyan-500" /> },
                 { value: 'bella_healthcare', label: isDental ? 'Bella Healthcare & Nha khoa' : 'Bella Healthcare & Phòng khám', icon: <CheckCircle2 className="h-4 w-4 text-teal-500" /> },
               ]}
@@ -249,11 +258,13 @@ export default function ServicesPage() {
               </div>
               <div>
                 <h2 className="text-lg font-black text-slate-900">
-                  {enabledModules.bella_healthcare ? 'Tài nguyên Y tế & Phòng khám' : 'Tài nguyên đặt lịch Beauty Spa'}
+                  {enabledModules.bella_healthcare ? 'Tài nguyên Y tế & Phòng khám' : isHaircut ? 'Tài nguyên đặt lịch Haircut Shop' : 'Tài nguyên đặt lịch Beauty Spa'}
                 </h2>
                 <p className="text-sm font-semibold text-slate-500">
                   {enabledModules.bella_healthcare
                     ? 'Quản lý ghế nha khoa, máy X-Quang 3D, phòng phẫu thuật và thiết bị lâm sàng.'
+                    : isHaircut
+                      ? 'Quản lý ghế làm tóc, ghế gội, khu vực phục vụ hoặc thiết bị dùng khi triển khai lịch hẹn Haircut.'
                     : 'Quản lý giường, phòng, máy hoặc ghế dùng khi triển khai lịch hẹn Beauty Spa.'}
                 </p>
               </div>
@@ -276,7 +287,7 @@ export default function ServicesPage() {
                   value={resourceForm.name}
                   onChange={(event) => setResourceName(event.target.value)}
                   className="w-full rounded-2xl border border-slate-100 bg-white px-5 py-3 text-sm font-bold text-slate-800 outline-none transition focus:border-rose-300 focus:ring-4 focus:ring-rose-50"
-                  placeholder="VD: Giường Facial 01"
+                  placeholder={isHaircut ? 'VD: Ghế cắt 01' : 'VD: Giường Facial 01'}
                 />
               </div>
               <div className="space-y-2">
@@ -364,6 +375,8 @@ export default function ServicesPage() {
                       <td colSpan={5} className="px-5 py-10 text-center text-xs font-bold italic text-slate-400">
                         {enabledModules.bella_healthcare
                           ? 'Chưa có ghế nha khoa / máy X-Quang nào. Thêm tài nguyên đầu tiên để phục vụ phòng khám.'
+                          : isHaircut
+                            ? 'Chưa có ghế/khu vực/thiết bị nào. Thêm tài nguyên đầu tiên để chuẩn bị lịch hẹn Haircut.'
                           : 'Chưa có giường/phòng/máy nào. Thêm tài nguyên đầu tiên để chuẩn bị pilot Beauty Spa.'}
                       </td>
                     </tr>
@@ -477,7 +490,7 @@ export default function ServicesPage() {
                     </span>
                     {service.module_key === 'beauty_spa' && (
                       <span className="rounded-full border border-fuchsia-100 bg-fuchsia-50 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-fuchsia-600">
-                        Beauty Spa
+                        {isHaircut ? 'Bella Haircut Shop' : 'Beauty Spa'}
                       </span>
                     )}
                     {service.module_key === 'bella_healthcare' && (
@@ -781,7 +794,9 @@ export default function ServicesPage() {
                             : 'VD: Khám lâm sàng, Xét nghiệm công thức máu, Siêu âm ổ bụng, Đo điện tâm đồ'
                           : vocab.worker.short === 'NVS'
                             ? 'VD: Vệ sinh sàn nhà, Lau kính, Dọn toilet'
-                            : 'VD: Massage body, Chăm sóc da mặt, Xông hơi'
+                            : isHaircut
+                              ? 'VD: Cắt tóc nam, Gội đầu, Tạo kiểu'
+                              : 'VD: Massage body, Chăm sóc da mặt, Xông hơi'
                       }
                     />
                   </div>
@@ -939,7 +954,7 @@ export default function ServicesPage() {
                             value={serviceCategory}
                             onChange={(event) => setServiceCategory(event.target.value)}
                             className="w-full rounded-2xl border-none bg-white px-5 py-4 text-sm font-bold text-slate-700 outline-none transition focus:ring-4 focus:ring-primary/10"
-                            placeholder={enabledModules.bella_healthcare ? (isDental ? "VD: implant, invisalign, dental, porcelain, nhổ răng" : "VD: nội khoa, ngoại khoa, nhi khoa, siêu âm, xét nghiệm") : "VD: facial, body, laser"}
+                            placeholder={enabledModules.bella_healthcare ? (isDental ? "VD: implant, invisalign, dental, porcelain, nhổ răng" : "VD: nội khoa, ngoại khoa, nhi khoa, siêu âm, xét nghiệm") : isHaircut ? "VD: haircut, styling, coloring" : "VD: facial, body, laser"}
                           />
                         </div>
 
@@ -967,6 +982,8 @@ export default function ServicesPage() {
                                   ? isDental
                                     ? 'Cần ghế nha / thiết bị khám'
                                     : 'Cần giường bệnh / phòng khám'
+                                  : isHaircut
+                                    ? 'Cần ghế/khu vực/thiết bị'
                                   : 'Cần giường/phòng/máy'}
                               </p>
                               <p className="mt-1 text-xs font-bold text-slate-500">
@@ -974,6 +991,8 @@ export default function ServicesPage() {
                                   ? isDental
                                     ? 'Dùng khi phân bổ ghế nha khoa & máy X-Quang 3D.'
                                     : 'Dùng khi phân bổ phòng khám chuyên khoa & giường bệnh.'
+                                  : isHaircut
+                                    ? 'Dùng khi phân bổ tài nguyên cho lịch hẹn Haircut.'
                                   : 'Dùng khi lên lịch Spa sau này.'}
                               </p>
                             </div>
