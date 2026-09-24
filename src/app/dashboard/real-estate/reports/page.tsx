@@ -130,24 +130,26 @@ const REPORT_PACKAGES: ReportPackage[] = [
       { label: "Nợ quá hạn >30 ngày", value: "12.4 tỷ" },
       { label: "Tỷ lệ hoàn thành kế hoạch", value: "92.0%" },
     ],
-    categoryColor: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300",
-    description: "Phân tích chi phí CPA/CPL, tỷ lệ lead nhận -> đàm phán -> cọc, cùng hiệu quả kênh chạy quảng cáo.",
-    lastUpdated: "01/08/2026",
-    frequency: "Hàng tuần",
-    formats: ["PDF", "Excel"],
-    downloadsCount: 76
+    pdfAvailable: true,
+    excelAvailable: true,
   },
   {
     id: "REP-005",
     title: "Báo Cáo Tiến Độ Pháp Lý & Cấp Sổ Hồng",
     category: "executive",
     categoryLabel: "Ban Giám Đốc",
-    categoryColor: "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300",
-    description: "Theo dõi tình trạng phê duyệt 1/500, GPLX, tiến độ nộp hồ sơ xin cấp sổ hồng cho cư dân các dự án.",
-    lastUpdated: "28/07/2026",
-    frequency: "Hàng tháng",
-    formats: ["PDF"],
-    downloadsCount: 64
+    period: "Tháng 7/2026",
+    scope: "Tình trạng pháp lý các dự án Bella Land",
+    updatedAt: "28/07/2026",
+    author: "Ban Pháp lý Dự án",
+    metrics: [
+      { label: "Hồ sơ pháp lý đang xử lý", value: "18 bộ" },
+      { label: "Dự án đã có GPLX", value: "6 dự án" },
+      { label: "Hồ sơ sổ hồng đã nộp", value: "320 bộ" },
+      { label: "Tần suất cập nhật", value: "Hàng tháng" },
+    ],
+    pdfAvailable: true,
+    excelAvailable: false,
   }
 ];
 
