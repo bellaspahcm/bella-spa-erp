@@ -794,7 +794,7 @@ export function Sidebar() {
   const moduleAwareMenuItems = baseMenuItems.map((item): SidebarMenuItem => {
     if (isMenuHeader(item) || item.href !== '/dashboard/sessions') return item;
     if (isHaircut) {
-      return { ...item, label: 'Gói dịch vụ' };
+      return { ...item, label: 'Gói & Membership' };
     }
     // Industrial Cleaning: "Phiếu công việc"
     if (tenantBrand.moduleKey === 'industrial_cleaning') {

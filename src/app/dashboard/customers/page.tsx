@@ -84,6 +84,8 @@ function getErrorMessage(error: unknown, fallback = 'Có lỗi xảy ra') {
 
 
 
+import { HaircutCustomerView } from './HaircutCustomerView';
+
 export default function CustomersPage() {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -95,7 +97,7 @@ export default function CustomersPage() {
   const backgroundCustomerLoadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { tenantModuleKey, refreshTenantModuleKey } = useTenantModuleKey();
   const { product } = useUser();
-  const isHaircut = product?.productKey === 'bella_haircut';
+  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'haircut';
   const vocab = useModuleVocabulary(tenantModuleKey);
 
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
@@ -471,6 +473,176 @@ export default function CustomersPage() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
+
+  if (isHaircut) {
+    return (
+      <>
+        <HaircutCustomerView
+          customers={customers}
+          isLoading={isLoading}
+          isSyncing={isSyncing}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          monthFilter={monthFilter}
+          setMonthFilter={setMonthFilter}
+          yearFilter={yearFilter}
+          setYearFilter={setYearFilter}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          handleAddNew={handleAddNew}
+          handleEdit={handleEdit}
+          handleDelete={handleDelete}
+          handleZalo={handleZalo}
+          activeMenuId={activeMenuId}
+          setActiveMenuId={setActiveMenuId}
+          toggleMenu={toggleMenu}
+        />
+
+        {/* Modal for Add / Edit Customer */}
+        <AnimatePresence>
+          {isModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsModalOpen(false)}
+                className="absolute inset-0 bg-[#1A0A0E]/70 backdrop-blur-sm"
+              />
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative max-h-[92vh] w-full max-w-2xl overflow-hidden rounded-[28px] bg-white shadow-2xl sm:rounded-[40px]"
+              >
+                <div className="max-h-[92vh] overflow-y-auto p-5 sm:p-8 lg:p-10">
+                  <div className="mb-6 flex items-start justify-between gap-3 sm:mb-8">
+                    <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                      <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-200 dark:shadow-none">
+                        <UserPlus className="w-6 h-6" />
+                      </div>
+                      <div className="min-w-0">
+                        <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">{isEditMode ? 'Cập nhật thông tin' : 'Thêm khách hàng mới'}</h2>
+                        <p className="text-slate-500 font-medium">{isEditMode ? customerLabels.editDescription : customerLabels.createDescription}</p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => setIsModalOpen(false)}
+                      className="p-3 bg-slate-50 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-all"
+                    >
+                      <X className="w-6 h-6" />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
+                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700 ml-1">{customerLabels.primaryNameLabel}</label>
+                        <input 
+                          type="text" 
+                          name="name_mother"
+                          required
+                          value={formData.name_mother}
+                          onChange={handleInputChange}
+                          className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none" 
+                          placeholder={customerLabels.primaryNamePlaceholder}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700 ml-1">Số điện thoại</label>
+                        <input 
+                          type="text" 
+                          name="phone"
+                          required
+                          value={formData.phone}
+                          onChange={handleInputChange}
+                          className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none" 
+                          placeholder="VD: 0901234567" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700 ml-1">{customerLabels.secondaryNameLabel}</label>
+                        <input 
+                          type="text" 
+                          name="name_baby"
+                          value={formData.name_baby}
+                          onChange={handleInputChange}
+                          className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all" 
+                          placeholder={customerLabels.secondaryNamePlaceholder}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700 ml-1">{customerLabels.secondaryDateLabel}</label>
+                          <input 
+                            type="date" 
+                            name="dob_expected"
+                            min={tenantModuleKey === 'babycare' ? today : undefined}
+                            max="9999-12-31"
+                            value={formData.dob_expected}
+                            onChange={handleInputChange}
+                            className="w-full px-3 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-bold" 
+                          />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700 ml-1">{customerLabels.secondaryGenderLabel}</label>
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                          {customerLabels.genderOptions.map(g => (
+                            <button
+                              key={g.id}
+                              type="button"
+                              onClick={() => setFormData({ ...formData, gender_baby: g.id })}
+                              className={cn(
+                                "py-3 rounded-xl font-bold text-xs transition-all border",
+                                formData.gender_baby === g.id 
+                                  ? "bg-primary text-white border-primary shadow-md shadow-emerald-100 dark:shadow-none" 
+                                  : "bg-slate-50 text-slate-400 border-slate-100 hover:border-primary/20"
+                              )}
+                            >
+                              {g.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-slate-700 ml-1">Địa chỉ</label>
+                      <textarea 
+                        name="address"
+                        required
+                        value={formData.address}
+                        onChange={handleInputChange}
+                        className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none resize-none h-24" 
+                        placeholder="Nhập địa chỉ chi tiết..."
+                      ></textarea>
+                    </div>
+                    
+                    <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:gap-4 sm:pt-6">
+                      <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-2xl transition-all">
+                        Hủy bỏ
+                      </button>
+                      <button 
+                        type="submit" 
+                        disabled={isSubmitting}
+                        className={cn(
+                          "flex-1 py-4 text-white font-bold rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2",
+                          isSubmitting ? "bg-slate-400 cursor-not-allowed" : "bg-primary hover:opacity-90 shadow-emerald-200 dark:shadow-none"
+                        )}
+                      >
+                        {isSubmitting && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
+                        {isSubmitting ? (isEditMode ? 'Đang cập nhật...' : 'Đang lưu...') : (isEditMode ? 'Cập nhật hồ sơ' : 'Lưu hồ sơ')}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+      </>
+    );
+  }
 
   return (
     <div id="customers-list-container" className="flex-1 overflow-auto bg-background/30 p-3 sm:p-6 md:p-10 relative" onClick={() => { setActiveMenuId(null); }}>

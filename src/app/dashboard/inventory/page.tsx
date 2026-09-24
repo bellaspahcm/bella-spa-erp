@@ -12,6 +12,9 @@ import { InventoryRestockModal } from './components/InventoryRestockModal';
 import { InventoryStockPanel } from './components/InventoryStockPanel';
 import { InventoryTabs } from './components/InventoryTabs';
 import { InventoryTransferOrdersPanel } from './components/InventoryTransferOrdersPanel';
+import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
+import { useUser } from '@/lib/user-context';
+import { HaircutInventoryView } from './HaircutInventoryView';
 import { useInventoryPageState } from './hooks/useInventoryPageState';
 import { useInventoryForecast } from './hooks/useInventoryForecast';
 import { ProductSalesListPage } from '@/components/product-sales/ProductSalesListPage';
@@ -75,6 +78,10 @@ export default function InventoryPage() {
     refreshPageData,
   } = useInventoryPageState();
 
+  const { tenantModuleKey } = useTenantModuleKey();
+  const { product } = useUser();
+  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'haircut';
+
   // ✅ Inventory forecast enabled
   const {
     forecast,
@@ -97,6 +104,53 @@ export default function InventoryPage() {
       <RefreshCw className="w-10 h-10 text-primary animate-spin" />
     </div>
   );
+
+  if (isHaircut) {
+    return (
+      <>
+        <HaircutInventoryView
+          onRestock={() => setShowAdd(true)}
+          onAdjust={(item) => setRestockTarget(item)}
+          onTransferRequest={() => setShowCreateRequest(true)}
+        />
+
+        <InventoryRestockModal
+          target={restockTarget}
+          restockAmt={restockAmt}
+          submitting={submitting}
+          setRestockAmt={setRestockAmt}
+          onClose={() => setRestockTarget(null)}
+          onSubmit={handleRestock}
+        />
+
+        <InventoryCreateRequestModal
+          show={showCreateRequest}
+          items={items}
+          requestCart={requestCart}
+          selectedItemIndex={selectedItemIndex}
+          requestQty={requestQty}
+          requestNotes={requestNotes}
+          submittingOrder={submittingOrder}
+          setSelectedItemIndex={setSelectedItemIndex}
+          setRequestQty={setRequestQty}
+          setRequestNotes={setRequestNotes}
+          addToCart={addToCart}
+          removeFromCart={removeFromCart}
+          submitTransferOrder={submitTransferOrder}
+          onClose={() => setShowCreateRequest(false)}
+        />
+
+        <InventoryAddItemModal
+          show={showAdd}
+          newItem={newItem}
+          submitting={submitting}
+          setNewItem={setNewItem}
+          onClose={() => setShowAdd(false)}
+          onSubmit={handleAddItem}
+        />
+      </>
+    );
+  }
 
   return (
     <div className="flex-1 overflow-auto bg-background/30 p-3 sm:p-6 md:p-10 space-y-6 md:space-y-10">

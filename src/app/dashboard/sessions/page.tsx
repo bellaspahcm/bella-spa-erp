@@ -35,6 +35,7 @@ import { useModuleVocabulary } from '@/lib/business-rules/module-vocabulary';
 import { SessionCard } from './components/SessionCard';
 import { LeaveRequest,SessionBooking } from './types';
 import dynamic from 'next/dynamic';
+import { HaircutPackagesView } from './HaircutPackagesView';
 
 const LeaveApprovalModal = dynamic(
   () => import('./components/LeaveApprovalModal').then(m => m.LeaveApprovalModal),
@@ -426,6 +427,44 @@ function SessionsContent() {
       setIsReusingId(null);
     }
   };
+
+  const { product } = useUser();
+  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'haircut';
+
+  if (isHaircut) {
+    return (
+      <>
+        <HaircutPackagesView
+          sessions={sessions}
+          isLoading={!criticalReady}
+          isSyncing={isSyncing}
+          onUseSession={(id) => {
+            const booking = sessions.find(s => s.id === id);
+            if (booking) setSelectedBooking(booking);
+            else toast.info('Đã chọn sử dụng 1 lượt gói dịch vụ');
+          }}
+          onReorderPackage={(id) => {
+            handleReusePackage(id, 'Khách hàng');
+          }}
+          onViewDetails={(booking) => {
+            setSelectedBooking(booking);
+          }}
+          onAddNewPackage={() => {
+            router.push('/dashboard/bookings');
+          }}
+        />
+
+        <SessionLogsDetailsModal
+          isOpen={!!activeBooking}
+          activeBooking={activeBooking}
+          onClose={handleCloseModal}
+          onSuccess={loadSessions}
+          userRole={userRole}
+          tenantModuleKey={tenantModuleKey}
+        />
+      </>
+    );
+  }
 
   return (
     <div className="flex-1 overflow-auto bg-background/30 p-3 sm:p-6 md:p-10 relative">
