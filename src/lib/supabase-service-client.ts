@@ -7,12 +7,12 @@
  * - For tests: Use to create test data that would normally be blocked by RLS
  */
 
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database.types';
+import { createClient } from '@supabase/supabase-js';
+import { Database } from '@/types/database.types';
 
-export function createServiceClient(): SupabaseClient<Database> | null {
+export function createServiceClient() {
   if (typeof window !== 'undefined') {
-    return null;
+    return null as unknown;
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
