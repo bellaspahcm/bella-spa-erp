@@ -83,9 +83,12 @@ export class WarrantyService {
       issue_description: data.failureDescription,
       failure_date: data.failureDate.toISOString().split('T')[0],
       failure_mileage: data.mileageAtFailure,
-      affected_parts: data.affectedParts as WarrantyClaimInsert['affected_parts'],
-      customer_complaints: data.customerComplaints,
-      submitted_by: data.submittedBy,
+      parts_covered: data.affectedParts?.map((part) => ({
+        partName: part.partName,
+        ...(part.partNumber ? { partNumber: part.partNumber } : {}),
+        quantity: part.quantity,
+      })) ?? [],
+      created_by: data.submittedBy,
       submitted_at: new Date().toISOString(),
       status: 'submitted',
     };
@@ -207,7 +210,7 @@ export class WarrantyService {
       updateData.status = 'under_review';
     } else {
       updateData.status = 'rejected';
-      updateData.rejection_reason = data.reviewNotes;
+      updateData.denial_reason = data.reviewNotes;
     }
 
     const { data: claim, error } = await supabase
@@ -291,7 +294,7 @@ export class WarrantyService {
       updateData.approved_by = data.inspectorId;
     } else {
       updateData.status = 'rejected';
-      updateData.rejection_reason = data.findings;
+      updateData.denial_reason = data.findings;
     }
 
     const { data: claim, error } = await supabase
@@ -512,7 +515,9 @@ export class WarrantyService {
     let completedCount = 0;
 
     for (const claim of claims) {
-      byStatus[claim.status] = (byStatus[claim.status] || 0) + 1;
+      if (claim.status) {
+        byStatus[claim.status] = (byStatus[claim.status] || 0) + 1;
+      }
       byType[claim.claim_type] = (byType[claim.claim_type] || 0) + 1;
 
       if (claim.status === 'approved' || claim.status === 'completed') {
