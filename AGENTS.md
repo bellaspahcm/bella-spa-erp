@@ -42,9 +42,10 @@ Before writing or modifying ANY code, you MUST generate an `ARCHITECTURE_GATE_RE
 2. **Product Manifest** (Capabilities & Scope)
 3. **Ownership Map** ("WHO OWNS THIS DATA?")
 4. **Contract Dependency Map** (`Product → Contract → Kernel`)
-5. **UI → Contract Reconciliation** for Product UI redesigns or data/action-bound UI changes
-6. **Additive Migration Plan** (`CREATE` new product tables / indexes only)
-7. **11 Automated Verification Gates Plan**
+5. **Change Authority** (which layers the requested change authorizes modifying)
+6. **UI → Contract Reconciliation** for Product UI redesigns or data/action-bound UI changes
+7. **Additive Migration Plan** (`CREATE` new product tables / indexes only)
+8. **11 Automated Verification Gates Plan**
 
 For any new OS, new Product, Product vertical, or Product UI redesign, `ARCHITECTURE_GATE_RESULT.md` must conclude `PASS`, `BLOCKED`, or `DEFER` before product/runtime code is written.
 

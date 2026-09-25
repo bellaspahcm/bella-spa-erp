@@ -1,10 +1,14 @@
 # BELLA ENGINEERING RULES - OS & PRODUCT DEVELOPMENT v2
 
-> Follow Bella Engineering Execution Contract: Evidence -> Truth -> Canonical Contract -> Ownership -> Boundary -> Minimal Implementation -> Verification. Never invent a contract, cross an ownership boundary, weaken a test, or hide a failure merely to make TypeScript or CI green.
+> Follow Bella Engineering Execution Contract: Evidence -> Truth -> Source of Truth -> Canonical Contract -> Ownership -> Boundary -> Change Authority -> Minimal Implementation -> Verification -> Evidence. Never change a lower-layer contract merely to satisfy a higher-layer consumer, redesigned UI, TypeScript, or CI.
 
 This is the authoritative engineering constitution for Bella OS and Product development. It applies to AI-assisted and human implementation work across Platform, OS, Product, Integration, Shared UI, CI, tests, and technical-debt cleanup.
 
 This document is not a list of optional preferences. It is the default execution contract. If a local vertical constitution, freeze policy, ADR, or human architect decision is stricter, the stricter rule wins.
+
+AI must first determine what is true, which source has authority to prove it, which canonical contract represents it, who owns it, and whether the requested task authorizes changing it.
+
+The Truth, Contract, and Change Authority rules below apply to all Bella OS, Products, features, refactors, UI redesigns, and technical-debt fixes.
 
 ## 0. Truth -> Canonical -> Consumer
 
@@ -25,6 +29,12 @@ Domain behavior        -> verified domain contract / producer
 ```
 
 Truth is not automatically whatever existing code currently says.
+
+### Source of Truth
+
+Source of Truth is the authoritative source used to prove the Truth for the specific question being answered.
+
+The AI coding agent must identify the correct Source of Truth before treating an existing behavior, field, status, schema, API, UI element, or test fixture as canonical.
 
 ### Canonical Contract
 
@@ -47,7 +57,13 @@ Required reasoning:
 ```text
 Truth
   ↓
+Source of Truth
+  ↓
 Canonical Contract
+  ↓
+Ownership
+  ↓
+Boundary
   ↓
 Consumer
 ```
@@ -58,13 +74,13 @@ If Truth is unclear, investigate before coding.
 
 If Truth is known but Canonical Contract is unclear, defer and resolve ownership or architecture first.
 
-If Canonical Contract does not exist, never invent one merely to satisfy TypeScript or CI.
+If Canonical Contract does not exist, never invent one merely to satisfy TypeScript, UI, or CI.
 
 If changing Canonical Contract is genuinely required, treat it as an explicit contract or architecture change, not as a local bug fix.
 
 ### Mandatory Pre-Coding Check
 
-Before changing a field, type, query, API, RPC, relation, or domain model:
+Before changing a field, type, schema, relation, query, API, RPC, DTO, domain model, status, action, or workflow:
 
 1. What is the Truth?
 2. What is the Source of Truth?
@@ -72,6 +88,9 @@ Before changing a field, type, query, API, RPC, relation, or domain model:
 4. Who owns that contract?
 5. Is this layer allowed to consume it?
 6. Is the current Consumer stale?
+7. Does a verified implementation already exist?
+8. What change authority did the user request grant?
+9. What is the minimum sufficient change?
 
 Only then modify code.
 
@@ -87,6 +106,8 @@ CANONICAL CONTRACT
 OWNERSHIP
   ↓
 BOUNDARY
+  ↓
+CHANGE AUTHORITY
   ↓
 CONSUMER
   ↓
@@ -214,6 +235,7 @@ Capability Map
 Reuse Analysis
 Canonical Contracts
 Boundary & Data Flow
+Change Intent & Change Authority
 UI -> Contract Reconciliation when UI is involved
 Minimal Implementation Plan
 Verification Plan
@@ -233,7 +255,9 @@ DEFER
 
 `DEFER` means the requested capability or UI element is valid to consider later, but there is not enough evidence to implement it safely in the current scope.
 
-For UI redesign work, the gate must explicitly list every data-bound or action-bound UI element that introduces a field, KPI, status, action, filter, or workflow. Each one must conclude as `MATCH`, `STALE UI`, `MAPPING BUG`, or `CAPABILITY GAP`.
+For UI redesign work, the gate must explicitly list every data-bound or action-bound UI element that introduces a field, KPI, status, action, filter, or workflow. Each one must conclude as `MATCH`, `STALE UI`, `MAPPING BUG`, `CAPABILITY GAP`, or `CONTRACT CHANGE REQUIRED`.
+
+The gate must also state which layers the request authorizes changing. Requested scope is the default change boundary.
 
 This is a lightweight entry gate, not a new framework. It should be short, specific, and evidence-backed.
 
@@ -385,6 +409,60 @@ PII
 Audit
 ```
 
+### Change Authority
+
+The requested change determines which layer the AI coding agent is authorized to modify.
+
+Examples:
+
+```text
+UI redesign          -> Presentation layer
+Mapping bug          -> Mapping / Repository boundary
+Business-rule change -> Domain / Service
+API contract change  -> API + affected consumers
+Schema change        -> Database contract + affected layers
+```
+
+Do not expand the change into other layers because doing so is easier.
+
+Example:
+
+```text
+"Redesign Bella Haircut Shop dashboard"
+```
+
+does not authorize:
+
+```text
+redesign database
+change domain model
+create new API
+create new RPC
+invent statuses
+change business workflow
+```
+
+If implementation appears to require crossing the requested boundary:
+
+```text
+Requested Change
+       ↓
+Lower-layer change required?
+       ↓
+      YES
+       ↓
+Evidence proves requirement?
+   ┌───────┴───────┐
+  NO              YES
+   ↓                ↓
+ STOP         Report Contract /
+              Capability Gap
+                    ↓
+          Explicit change required
+```
+
+Do not silently expand scope.
+
 ### 7. Minimum Implementation Plan
 
 Plan only what the first proven workflow needs:
@@ -410,7 +488,8 @@ Before each meaningful change, check:
 4. Owner là ai?
 5. Layer này có quyền dùng không?
 6. Có implementation reuse được không?
-7. Minimal change là gì?
+7. Requested task có authorize đổi layer này không?
+8. Minimal change là gì?
 ```
 
 During coding, never invent schema, field, RPC, API, enum, or type; never use casts or suppressions to hide contract mismatch; never fake fallbacks, swallow errors, edit generated types for consumers, cross ownership boundaries, or weaken tests.
@@ -564,7 +643,18 @@ MATCH
 STALE UI
 MAPPING BUG
 CAPABILITY GAP
+CONTRACT CHANGE REQUIRED
 ```
+
+`MATCH` means the existing canonical capability fully supports the UI.
+
+`STALE UI` means the UI is using an old or incorrect contract; fix the UI consumer.
+
+`MAPPING BUG` means the capability exists, but mapping, DTO, or presentation adaptation is missing; add the minimum correct mapping at the correct boundary.
+
+`CAPABILITY GAP` means the required business capability does not exist; stop and report it separately.
+
+`CONTRACT CHANGE REQUIRED` means the existing canonical contract is proven insufficient or incorrect for a real business requirement; handle it as an explicit contract change with ownership, affected consumers, and regression verification.
 
 Check only data, actions, states, and workflows. Do not expand a contract reconciliation into a visual audit of color, icon, font, or spacing.
 
@@ -648,7 +738,7 @@ Full required gates
 
 Do not fix every red check independently when an aggregate or cascade failure comes from a single root job.
 
-### Ten Immutable Principles
+### Eleven Immutable Principles
 
 ```text
 BELLA ENGINEERING CONSTITUTION
@@ -668,19 +758,22 @@ BELLA ENGINEERING CONSTITUTION
 5. BOUNDARIES MUST BE RESPECTED.
    Đúng dữ liệu nhưng sai layer vẫn là sai.
 
-6. NEVER INVENT A CONTRACT.
+6. CHANGE AUTHORITY BEFORE IMPLEMENTATION.
+   Requested scope quyết định layer được phép thay đổi.
+
+7. NEVER INVENT A CONTRACT.
    Không invent field/type/schema/RPC/API.
 
-7. NEVER HIDE A FAILURE.
+8. NEVER HIDE A FAILURE.
    Không cast/suppress/weaken test để xanh CI.
 
-8. MINIMUM SUFFICIENT IMPLEMENTATION.
+9. MINIMUM SUFFICIENT IMPLEMENTATION.
    Chỉ xây cái hiện tại có evidence cần.
 
-9. ZERO NEW TECHNICAL DEBT.
+10. ZERO NEW TECHNICAL DEBT.
    Code mới phải sạch từ đầu.
 
-10. EVIDENCE BEFORE CLOSURE.
+11. EVIDENCE BEFORE CLOSURE.
     Không evidence -> không VERIFIED/CLOSED.
 ```
 
@@ -691,7 +784,7 @@ Use this prompt at the start of new OS/Product work:
 ```text
 Follow Bella Engineering Constitution and OS/Product Development Process.
 
-Before coding: establish Business Truth -> Source of Truth -> Ownership -> Existing Capabilities -> Canonical Contracts -> Boundaries -> Minimal Scope.
+Before coding: establish Business Truth -> Source of Truth -> Ownership -> Existing Capabilities -> Canonical Contracts -> Boundaries -> Change Authority -> Minimal Scope.
 
 During coding: reuse before create; never invent schema/type/API/RPC; never bypass ownership; never use suppression/casts to hide contract mismatch; implement only proven requirements.
 
@@ -714,6 +807,8 @@ REUSE
 CANONICAL CONTRACT
       ↓
 BOUNDARY
+      ↓
+CHANGE AUTHORITY
       ↓
 MINIMAL IMPLEMENTATION
       ↓
@@ -951,25 +1046,45 @@ Before a query, answer both:
 
 Only `YES + YES` permits implementation.
 
-## 15. Tests Must Follow Production Contract
+## 15. Change Intent Defines Change Authority
+
+The requested change determines which layer the AI coding agent is authorized to modify.
+
+Requested scope is the default change boundary. Do not expand the task into other layers because doing so is easier or because a higher-layer consumer expects data, status, behavior, or UI affordances that lower layers have not proven.
+
+Examples:
+
+```text
+UI redesign          -> Presentation layer
+Mapping bug          -> Mapping / Repository boundary
+Business-rule change -> Domain / Service
+API contract change  -> API + affected consumers
+Schema change        -> Database contract + affected layers
+```
+
+For a presentation request such as `Redesign Bella Haircut Shop dashboard`, the default authority is presentation. It does not authorize database redesign, domain model changes, new APIs/RPCs, invented statuses, or workflow changes.
+
+If implementation requires crossing the requested boundary, stop and report the required lower-layer change as a `CAPABILITY GAP`, `CONTRACT_CHANGE_REQUIRED`, or explicit architecture decision. Do not silently expand scope.
+
+## 16. Tests Must Follow Production Contract
 
 When production code is corrected to the canonical contract, fixtures and mocks must follow that contract.
 
 Do not revert production to an obsolete contract merely because old tests fail.
 
-## 16. Test Doubles Must Model the Boundary They Replace
+## 17. Test Doubles Must Model the Boundary They Replace
 
 Database mocks that cover multiple tables must be table-aware. Do not let `.from('anything')` return the same fixture for every table.
 
 The standard is minimum faithful mock, not a full fake database.
 
-## 17. Integration Tests Must Declare Execution Requirements
+## 18. Integration Tests Must Declare Execution Requirements
 
 If a test needs real Supabase, PostgreSQL, migrations, network, or credentials, its execution contract must declare that requirement.
 
 Do not run an integration test in a non-DB Jest job and then treat `mock.supabase.co` or `ENOTFOUND` as a product failure. Reuse canonical credential-gating patterns when they exist.
 
-## 18. Never Weaken Tests to Make CI Green
+## 19. Never Weaken Tests to Make CI Green
 
 Do not:
 
@@ -984,7 +1099,7 @@ catch or swallow errors
 
 Skip or gate only when the execution environment is proven not to satisfy the test contract, and the test still runs in the correct environment.
 
-## 19. Attribute Failures Before Fixing
+## 20. Attribute Failures Before Fixing
 
 A red CI result is not automatically a PR regression. Classify first:
 
@@ -1001,13 +1116,13 @@ CASCADE
 
 Each class has a different fix path.
 
-## 20. Compare With Main Before Blaming the PR
+## 21. Compare With Main Before Blaming the PR
 
 When a CI failure is unclear, compare PR behavior with `origin/main` under the same selector, environment, command, and fixture.
 
 If main also fails, do not call the failure a PR regression.
 
-## 21. Fix Root Failure, Not Cascade Failure
+## 22. Fix Root Failure, Not Cascade Failure
 
 Do not investigate aggregate failures as independent root causes.
 
@@ -1021,13 +1136,13 @@ All Required Gates failed
 
 Fix the root failure. The cascade should clear after the root clears.
 
-## 22. Cancel Expensive CI After Proven Blocking Failure
+## 23. Cancel Expensive CI After Proven Blocking Failure
 
 If a blocking failure is already proven while expensive jobs continue, it can be appropriate to cancel heavy jobs such as full typecheck, baseline comparison, or heavy integration runs.
 
 This is an operational optimization only. It must never be used to hide unverified gates before merge.
 
-## 23. Zero New Technical Debt From Day One
+## 24. Zero New Technical Debt From Day One
 
 New OS/Product work must start with:
 
@@ -1039,7 +1154,7 @@ Architecture violation = 0
 
 Do not create a temporary baseline to handle later. Historical debt in existing Bella areas is being cleaned up; new work must not create the next generation of historical debt.
 
-## 24. BAD_NEW Is Immediate Authority During Cleanup
+## 25. BAD_NEW Is Immediate Authority During Cleanup
 
 During historical cleanup:
 
@@ -1050,7 +1165,7 @@ BAD_NEW = 0 -> checkpoint may be valid
 
 Raw diagnostic count is useful only when no new bad diagnostics are introduced. The final target remains absolute diagnostics = 0.
 
-## 25. Fresh Full Verification Is Final Authority
+## 26. Fresh Full Verification Is Final Authority
 
 Targeted checks save time, but important closure requires fresh evidence:
 
@@ -1068,7 +1183,7 @@ relevant architecture/test gates
 
 Do not use stale cache or old artifacts as closure evidence.
 
-## 26. Easy + Proven + Local First
+## 27. Easy + Proven + Local First
 
 During cleanup, fix only when the issue is:
 
@@ -1082,7 +1197,7 @@ LOCAL
 
 Defer when a diagnostic pulls into recursive types, `TS2589`, query-builder redesign, schema invention, RPC creation, generic/conditional type design, unclear business semantics, or architecture ownership decisions.
 
-## 27. One Root Cause, One Minimal Fix, Verify, Stop
+## 28. One Root Cause, One Minimal Fix, Verify, Stop
 
 Do not opportunistically:
 
@@ -1097,7 +1212,7 @@ fix unrelated warnings
 
 A cluster is closed when the cluster's root cause is resolved. The entire file does not need to be zero if residual diagnostics belong to other root causes.
 
-## 28. Deferred Is a Valid Engineering Decision
+## 29. Deferred Is a Valid Engineering Decision
 
 `DEFER` means there is not enough evidence to safely fix the issue in the current scope.
 
@@ -1112,7 +1227,7 @@ TS2589             -> query/type-system complexity
 
 Deferred debt belongs in an appropriate workstream, not forced through TypeScript cleanup.
 
-## 29. Multi-Tenant Isolation Is a Hard Invariant
+## 30. Multi-Tenant Isolation Is a Hard Invariant
 
 Every OS/Product must define:
 
@@ -1126,7 +1241,7 @@ cross-tenant prevention
 
 No feature is done if tenant isolation is unresolved.
 
-## 30. Security Is Part of the Contract
+## 31. Security Is Part of the Contract
 
 Every input boundary must consider:
 
@@ -1142,13 +1257,13 @@ audit
 
 Security is not a final hardening phase; it is part of the implementation contract.
 
-## 31. UI Is Not the Domain Engine
+## 32. UI Is Not the Domain Engine
 
 UI should collect input, present state, and invoke use cases.
 
 UI must not own business invariants, financial calculations, inventory transitions, workflow state machines, or authorization decisions. Those belong to the correct domain/service layer.
 
-## 32. UI Must Not Invent Domain Capabilities
+## 33. UI Must Not Invent Domain Capabilities
 
 Redesigning presentation does not authorize changing business contracts.
 
@@ -1190,7 +1305,7 @@ DB -> Domain -> Service    UI
 
 If they do not meet, the UI is promising users something the system has not proven it can do.
 
-## 33. Evidence Before Closure
+## 34. Evidence Before Closure
 
 Do not report:
 
@@ -1256,9 +1371,12 @@ Stop implementation and report status when any of these is true:
 Owner is unclear
 Canonical contract is missing or contradictory
 Current layer does not have access rights
+Requested change does not authorize modifying the required layer
 Read/write semantics are not proven
 Fix requires frozen/core/kernel modification
 Fix requires inventing schema, RPC, API, field, or type
+UI requires an unverified status, action, KPI, or workflow
+New business semantics would need to be invented
 Execution environment cannot satisfy the test contract
 Verification evidence is stale or unavailable
 ```
