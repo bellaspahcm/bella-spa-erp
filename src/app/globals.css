@@ -2069,10 +2069,10 @@ html[data-tenant-module="beauty_spa"] [role="button"] svg {
   /* Icons will inherit from parent color or use CSS variable */
 }
 
-/* Beauty Spa: Force primary color for all SVG icons to use emerald instead of pink */
+/* Beauty Spa: Force primary color for all SVG icons to use tenant primary instead of pink */
 html[data-tenant-module="beauty_spa"] svg.text-primary,
 html[data-tenant-module="beauty_spa"] .text-primary > svg {
-  color: #074e44 !important; /* Beauty Spa primary green */
+  color: var(--primary) !important; /* Tenant primary color */
 }
 
 /* Allow primary icons to change color dynamically on hover */
@@ -2132,7 +2132,7 @@ html[data-tenant-module="beauty_spa"] .beauty-erp-avatar,
 html[data-tenant-module="beauty_spa"] .beauty-erp-icon-button {
   background: rgba(248, 246, 242, 0.9) !important;
   border-color: rgba(200, 169, 122, 0.36) !important;
-  color: #074e44 !important;
+  color: var(--primary) !important;
 }
 
 html[data-tenant-module="beauty_spa"] .beauty-erp-icon-button:hover {
@@ -3029,7 +3029,7 @@ html[data-tenant-module="beauty_spa"] .active-booking-panel button[class*="bg-wh
 }
 
 html[data-tenant-module="beauty_spa"] .active-booking-panel button[class*="text-rose-600"] {
-  color: #074e44 !important;
+  color: var(--primary) !important;
 }
 
 html[data-tenant-module="beauty_spa"] .active-booking-panel button[disabled] {
