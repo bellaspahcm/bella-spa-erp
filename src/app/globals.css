@@ -2069,10 +2069,10 @@ html[data-tenant-module="beauty_spa"] [role="button"] svg {
   /* Icons will inherit from parent color or use CSS variable */
 }
 
-/* Beauty Spa: Force primary color for all SVG icons to use emerald instead of pink */
+/* Beauty Spa: Force primary color for all SVG icons to use tenant primary instead of pink */
 html[data-tenant-module="beauty_spa"] svg.text-primary,
 html[data-tenant-module="beauty_spa"] .text-primary > svg {
-  color: #074e44 !important; /* Beauty Spa primary green */
+  color: var(--primary) !important; /* Tenant primary color */
 }
 
 /* Allow primary icons to change color dynamically on hover */
@@ -2132,7 +2132,7 @@ html[data-tenant-module="beauty_spa"] .beauty-erp-avatar,
 html[data-tenant-module="beauty_spa"] .beauty-erp-icon-button {
   background: rgba(248, 246, 242, 0.9) !important;
   border-color: rgba(200, 169, 122, 0.36) !important;
-  color: #074e44 !important;
+  color: var(--primary) !important;
 }
 
 html[data-tenant-module="beauty_spa"] .beauty-erp-icon-button:hover {
@@ -2558,13 +2558,13 @@ html[data-tenant-module="real_estate"][data-tenant-brand-preset="jade_wellness"]
 html[data-tenant-module="beauty_spa"] .luxury-card-pink {
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 42%),
-    linear-gradient(142deg, #074e44 0%, #0a6357 48%, #0b2240 100%) !important;
-  border-color: rgba(200, 169, 122, 0.36) !important;
-  box-shadow: 0 22px 52px rgba(11, 34, 64, 0.2) !important;
+    linear-gradient(142deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 85%, #000) 48%, color-mix(in srgb, var(--primary) 70%, #000) 100%) !important;
+  border-color: color-mix(in srgb, var(--accent, #c8a97a) 36%, transparent) !important;
+  box-shadow: 0 22px 52px color-mix(in srgb, var(--primary) 30%, transparent) !important;
 }
 
 html[data-tenant-module="beauty_spa"] .luxury-card-pink:hover {
-  box-shadow: 0 28px 64px rgba(7, 78, 68, 0.24) !important;
+  box-shadow: 0 28px 64px color-mix(in srgb, var(--primary) 40%, transparent) !important;
 }
 
 html[data-tenant-module="beauty_spa"] [class*="shadow-pink-"] {
@@ -3029,7 +3029,7 @@ html[data-tenant-module="beauty_spa"] .active-booking-panel button[class*="bg-wh
 }
 
 html[data-tenant-module="beauty_spa"] .active-booking-panel button[class*="text-rose-600"] {
-  color: #074e44 !important;
+  color: var(--primary) !important;
 }
 
 html[data-tenant-module="beauty_spa"] .active-booking-panel button[disabled] {
@@ -3044,10 +3044,13 @@ html[data-tenant-module="beauty_spa"] .bella-data-table th {
 html[data-tenant-module="beauty_spa"] .bella-data-table {
   min-width: max-content;
   width: 100%;
+  white-space: nowrap;
 }
 
+html[data-tenant-module="beauty_spa"] .bella-data-table th,
 html[data-tenant-module="beauty_spa"] .bella-data-table td {
   color: var(--beauty-text);
+  white-space: nowrap;
 }
 
 /* Beauty Spa dark skin, scoped so Bella ERP keeps its existing dark mode. */
@@ -5365,12 +5368,14 @@ html, body {
    Beauty Spa Text Contrast & Visibility Overrides
    ============================================ */
 html[data-tenant-module="beauty_spa"] .luxury-card-pink {
-  background: linear-gradient(135deg, #074E44 0%, #065f46 50%, #047857 100%) !important;
-  box-shadow: 0 10px 20px -5px rgba(7, 78, 68, 0.2) !important;
+  background:
+    radial-gradient(circle at 14% 10%, rgba(255, 255, 255, 0.12), transparent 30%),
+    linear-gradient(135deg, var(--primary) 0%, var(--primary-hover, var(--primary)) 60%, color-mix(in srgb, var(--primary) 70%, #000) 100%) !important;
+  box-shadow: 0 10px 20px -5px color-mix(in srgb, var(--primary) 30%, transparent) !important;
 }
 
 html[data-tenant-module="beauty_spa"] .luxury-card-pink:hover {
-  box-shadow: 0 25px 50px -12px rgba(7, 78, 68, 0.4) !important;
+  box-shadow: 0 25px 50px -12px color-mix(in srgb, var(--primary) 45%, transparent) !important;
 }
 
 html[data-tenant-module="beauty_spa"] .luxury-card-pink,

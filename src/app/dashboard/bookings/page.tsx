@@ -170,7 +170,7 @@ function BookingsContent() {
     void handlePrintThermalInvoice(nextModalData);
   };
 
-  const isHaircut = product?.productKey === 'bella_haircut' || resolvedTenantModuleKey === 'haircut';
+  const isHaircut = product?.productKey === 'bella_haircut' || resolvedTenantModuleKey === 'beauty_spa';
 
   if (isHaircut && surface !== 'pos') {
     return (
@@ -184,7 +184,7 @@ function BookingsContent() {
           ktvs={ktvs}
           isSyncing={isSyncing}
           onSessionSelect={(session) => {
-            openSessionDetail(session);
+            openSessionDetail(session as unknown as Parameters<typeof buildSessionModalData>[0]);
           }}
           onEmptySlotClick={(hour) => {
             setSelectedBookingIdForCreate('');

@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -33,11 +34,27 @@ import {
   FileText
 } from 'lucide-react';
 
+export interface HaircutSalaryDetail {
+  id?: string;
+  name: string;
+  role?: string;
+  daysWorked?: string;
+  totalSessions?: number;
+  baseSalary?: string;
+  commission?: string;
+  kpiBonus?: string;
+  totalIncome?: string;
+  totalIncomeNum?: number;
+  status?: string;
+  statusLabel?: string;
+  hasIssue?: boolean;
+}
+
 interface HaircutSalaryViewProps {
   onPublishAll?: () => void;
   onFinalizeAll?: () => void;
-  onEditKtv?: (ktv: unknown) => void;
-  onFixAttendance?: (ktv: unknown) => void;
+  onEditKtv?: (ktv: HaircutSalaryDetail) => void;
+  onFixAttendance?: (ktv: HaircutSalaryDetail) => void;
 }
 
 const KTV_AVATARS: Record<string, string> = {
@@ -48,6 +65,103 @@ const KTV_AVATARS: Record<string, string> = {
   'Vũ Hoàng Anh': 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=120&auto=format&fit=crop&q=80',
   'Đỗ Thị Nga': 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80',
 };
+
+// Payroll Table Data matching target screenshot
+const SALARY_LIST = [
+  {
+    id: 'sal-1',
+    name: 'Nguyễn Minh',
+    role: 'Thợ Chính 1',
+    daysWorked: '26/26',
+    totalSessions: 68,
+    baseSalary: '8.000.000đ',
+    commission: '6.800.000đ',
+    kpiBonus: '1.500.000đ',
+    totalIncome: '16.300.000đ',
+    totalIncomeNum: 16300000,
+    status: 'ready',
+    statusLabel: 'Đủ dữ liệu',
+    hasIssue: false,
+  },
+  {
+    id: 'sal-2',
+    name: 'Trần Thị Linh',
+    role: 'Thợ Chính 2',
+    daysWorked: '25/26',
+    totalSessions: 61,
+    baseSalary: '8.000.000đ',
+    commission: '6.100.000đ',
+    kpiBonus: '1.200.000đ',
+    totalIncome: '15.300.000đ',
+    totalIncomeNum: 15300000,
+    status: 'ready',
+    statusLabel: 'Đủ dữ liệu',
+    hasIssue: false,
+  },
+  {
+    id: 'sal-3',
+    name: 'Lê Quốc Nam',
+    role: 'Thợ Phụ 1',
+    daysWorked: '24/26',
+    totalSessions: 57,
+    baseSalary: '7.500.000đ',
+    commission: '5.700.000đ',
+    kpiBonus: '900.000đ',
+    totalIncome: '14.100.000đ',
+    totalIncomeNum: 14100000,
+    status: 'ready',
+    statusLabel: 'Đủ dữ liệu',
+    hasIssue: false,
+  },
+  {
+    id: 'sal-4',
+    name: 'Phạm Thu Hà',
+    role: 'Thợ Phụ 2',
+    daysWorked: '0/26',
+    totalSessions: 0,
+    baseSalary: '7.000.000đ',
+    commission: '0đ',
+    kpiBonus: '0đ',
+    totalIncome: '0đ',
+    totalIncomeNum: 0,
+    status: 'issue',
+    statusLabel: 'Thiếu dữ liệu',
+    issueNote: 'Không có dữ liệu chấm công tháng 09/2026',
+    hasIssue: true,
+  },
+  {
+    id: 'sal-5',
+    name: 'Vũ Hoàng Anh',
+    role: 'Thợ Chính 3',
+    daysWorked: '0/26',
+    totalSessions: 0,
+    baseSalary: '8.000.000đ',
+    commission: '0đ',
+    kpiBonus: '0đ',
+    totalIncome: '0đ',
+    totalIncomeNum: 0,
+    status: 'issue',
+    statusLabel: 'Thiếu dữ liệu',
+    issueNote: 'Không có dữ liệu chấm công tháng 09/2026',
+    hasIssue: true,
+  },
+  {
+    id: 'sal-6',
+    name: 'Đỗ Thị Nga',
+    role: 'Thợ Phụ 3',
+    daysWorked: '0/26',
+    totalSessions: 0,
+    baseSalary: '6.500.000đ',
+    commission: '0đ',
+    kpiBonus: '0đ',
+    totalIncome: '0đ',
+    totalIncomeNum: 0,
+    status: 'issue',
+    statusLabel: 'Thiếu dữ liệu',
+    issueNote: 'Không có dữ liệu chấm công tháng 09/2026',
+    hasIssue: true,
+  },
+];
 
 export function HaircutSalaryView({
   onPublishAll,
@@ -62,7 +176,7 @@ export function HaircutSalaryView({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
-  const [selectedKtvDetail, setSelectedKtvDetail] = useState<unknown | null>(null);
+  const [selectedKtvDetail, setSelectedKtvDetail] = useState<HaircutSalaryDetail | null>(null);
 
   const statusOptions = [
     { value: 'Tất cả trạng thái', label: 'Tất cả trạng thái' },
@@ -70,102 +184,7 @@ export function HaircutSalaryView({
     { value: 'Thiếu dữ liệu', label: 'Thiếu dữ liệu' },
   ];
 
-  // Payroll Table Data matching target screenshot
-  const salaryList = [
-    {
-      id: 'sal-1',
-      name: 'Nguyễn Minh',
-      role: 'Thợ Chính 1',
-      daysWorked: '26/26',
-      totalSessions: 68,
-      baseSalary: '8.000.000đ',
-      commission: '6.800.000đ',
-      kpiBonus: '1.500.000đ',
-      totalIncome: '16.300.000đ',
-      totalIncomeNum: 16300000,
-      status: 'ready',
-      statusLabel: 'Đủ dữ liệu',
-      hasIssue: false,
-    },
-    {
-      id: 'sal-2',
-      name: 'Trần Thị Linh',
-      role: 'Thợ Chính 2',
-      daysWorked: '25/26',
-      totalSessions: 61,
-      baseSalary: '8.000.000đ',
-      commission: '6.100.000đ',
-      kpiBonus: '1.200.000đ',
-      totalIncome: '15.300.000đ',
-      totalIncomeNum: 15300000,
-      status: 'ready',
-      statusLabel: 'Đủ dữ liệu',
-      hasIssue: false,
-    },
-    {
-      id: 'sal-3',
-      name: 'Lê Quốc Nam',
-      role: 'Thợ Phụ 1',
-      daysWorked: '24/26',
-      totalSessions: 57,
-      baseSalary: '7.500.000đ',
-      commission: '5.700.000đ',
-      kpiBonus: '900.000đ',
-      totalIncome: '14.100.000đ',
-      totalIncomeNum: 14100000,
-      status: 'ready',
-      statusLabel: 'Đủ dữ liệu',
-      hasIssue: false,
-    },
-    {
-      id: 'sal-4',
-      name: 'Phạm Thu Hà',
-      role: 'Thợ Phụ 2',
-      daysWorked: '0/26',
-      totalSessions: 0,
-      baseSalary: '7.000.000đ',
-      commission: '0đ',
-      kpiBonus: '0đ',
-      totalIncome: '0đ',
-      totalIncomeNum: 0,
-      status: 'issue',
-      statusLabel: 'Thiếu dữ liệu',
-      issueNote: 'Không có dữ liệu chấm công tháng 09/2026',
-      hasIssue: true,
-    },
-    {
-      id: 'sal-5',
-      name: 'Vũ Hoàng Anh',
-      role: 'Thợ Chính 3',
-      daysWorked: '0/26',
-      totalSessions: 0,
-      baseSalary: '8.000.000đ',
-      commission: '0đ',
-      kpiBonus: '0đ',
-      totalIncome: '0đ',
-      totalIncomeNum: 0,
-      status: 'issue',
-      statusLabel: 'Thiếu dữ liệu',
-      issueNote: 'Không có dữ liệu chấm công tháng 09/2026',
-      hasIssue: true,
-    },
-    {
-      id: 'sal-6',
-      name: 'Đỗ Thị Nga',
-      role: 'Thợ Phụ 3',
-      daysWorked: '0/26',
-      totalSessions: 0,
-      baseSalary: '6.500.000đ',
-      commission: '0đ',
-      kpiBonus: '0đ',
-      totalIncome: '0đ',
-      totalIncomeNum: 0,
-      status: 'issue',
-      statusLabel: 'Thiếu dữ liệu',
-      issueNote: 'Không có dữ liệu chấm công tháng 09/2026',
-      hasIssue: true,
-    },
-  ];
+
 
   // Action Issues Sidebar List
   const pendingIssues = [
@@ -222,7 +241,7 @@ export function HaircutSalaryView({
   ];
 
   const filteredSalaries = useMemo(() => {
-    return salaryList.filter((item) => {
+    return SALARY_LIST.filter((item) => {
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !q ||
@@ -508,29 +527,29 @@ export function HaircutSalaryView({
 
           {/* Table */}
           <div className="overflow-x-auto custom-scrollbar">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider">
-                  <th className="p-3 pl-4">Kỹ thuật viên</th>
-                  <th className="p-3 text-center">Ngày công (/ 26)</th>
-                  <th className="p-3 text-center">Tổng buổi</th>
-                  <th className="p-3 text-right">Lương cứng</th>
-                  <th className="p-3 text-right">Hoa hồng dịch vụ</th>
-                  <th className="p-3 text-right">Thưởng hiệu suất</th>
-                  <th className="p-3 text-right">Tổng thu nhập</th>
-                  <th className="p-3 text-center">Trạng thái</th>
-                  <th className="p-3 text-right pr-4">Hành động</th>
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider whitespace-nowrap">
+                  <th className="p-3 pl-4 whitespace-nowrap min-w-[170px]">Kỹ thuật viên</th>
+                  <th className="p-3 text-center whitespace-nowrap min-w-[100px]">Ngày công (/ 26)</th>
+                  <th className="p-3 text-center whitespace-nowrap min-w-[80px]">Tổng buổi</th>
+                  <th className="p-3 text-right whitespace-nowrap min-w-[110px]">Lương cứng</th>
+                  <th className="p-3 text-right whitespace-nowrap min-w-[130px]">Hoa hồng dịch vụ</th>
+                  <th className="p-3 text-right whitespace-nowrap min-w-[130px]">Thưởng hiệu suất</th>
+                  <th className="p-3 text-right whitespace-nowrap min-w-[130px]">Tổng thu nhập</th>
+                  <th className="p-3 text-center whitespace-nowrap min-w-[110px]">Trạng thái</th>
+                  <th className="p-3 text-right pr-4 whitespace-nowrap min-w-[110px]">Hành động</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+              <tbody className="divide-y divide-slate-100 font-medium text-slate-700 whitespace-nowrap">
                 {paginatedSalaries.map((item) => {
                   const isReady = item.status === 'ready';
 
                   return (
                     <tr key={item.id} className="hover:bg-slate-50/50 transition">
                       {/* KTV Name & Avatar */}
-                      <td className="p-3 pl-4">
-                        <div className="flex items-center gap-2.5 min-w-[150px]">
+                      <td className="p-3 pl-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2.5 min-w-[170px]">
                           <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-200 bg-slate-100 shrink-0">
                             <img
                               src={
@@ -551,44 +570,44 @@ export function HaircutSalaryView({
                       </td>
 
                       {/* Ngày công */}
-                      <td className="p-3 text-center font-bold font-mono">
+                      <td className="p-3 text-center font-bold font-mono whitespace-nowrap">
                         <span className={cn(isReady ? 'text-emerald-600' : 'text-rose-600')}>
                           {item.daysWorked}
                         </span>
                       </td>
 
                       {/* Tổng buổi */}
-                      <td className="p-3 text-center font-extrabold text-slate-900">
+                      <td className="p-3 text-center font-extrabold text-slate-900 whitespace-nowrap">
                         {item.totalSessions}
                       </td>
 
                       {/* Lương cứng */}
-                      <td className="p-3 text-right font-medium text-slate-600">
+                      <td className="p-3 text-right font-medium text-slate-600 whitespace-nowrap">
                         {item.baseSalary}
                       </td>
 
                       {/* Hoa hồng dịch vụ */}
-                      <td className="p-3 text-right font-medium text-slate-600">
+                      <td className="p-3 text-right font-medium text-slate-600 whitespace-nowrap">
                         {item.commission}
                       </td>
 
                       {/* Thưởng hiệu suất */}
-                      <td className="p-3 text-right font-medium text-slate-600">
+                      <td className="p-3 text-right font-medium text-slate-600 whitespace-nowrap">
                         {item.kpiBonus}
                       </td>
 
                       {/* TỔNG THU NHẬP (Nổi bật) */}
-                      <td className="p-3 text-right">
+                      <td className="p-3 text-right whitespace-nowrap">
                         <span className="font-black text-emerald-600 text-sm">
                           {item.totalIncome}
                         </span>
                       </td>
 
                       {/* Trạng thái */}
-                      <td className="p-3 text-center">
+                      <td className="p-3 text-center whitespace-nowrap">
                         <span
                           className={cn(
-                            'inline-flex items-center gap-1 font-bold text-[10px] px-2 py-0.5 rounded-full border',
+                            'inline-flex items-center gap-1 font-bold text-[10px] px-2.5 py-0.5 rounded-full border whitespace-nowrap shrink-0',
                             isReady
                               ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                               : 'bg-rose-50 text-rose-700 border-rose-200'
@@ -596,7 +615,7 @@ export function HaircutSalaryView({
                         >
                           <span
                             className={cn(
-                              'w-1.5 h-1.5 rounded-full',
+                              'w-1.5 h-1.5 rounded-full shrink-0',
                               isReady ? 'bg-emerald-500' : 'bg-rose-500'
                             )}
                           />
@@ -605,19 +624,19 @@ export function HaircutSalaryView({
                       </td>
 
                       {/* Hành động */}
-                      <td className="p-3 text-right pr-4">
+                      <td className="p-3 text-right pr-4 whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1">
                           {isReady ? (
                             <button
                               onClick={() => setSelectedKtvDetail(item)}
-                              className="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 font-bold text-[11px] text-slate-700 transition"
+                              className="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 font-bold text-[11px] text-slate-700 transition whitespace-nowrap"
                             >
                               Chi tiết
                             </button>
                           ) : (
                             <button
                               onClick={() => onFixAttendance?.(item)}
-                              className="px-2.5 py-1 rounded-lg bg-rose-500 text-white font-bold text-[11px] hover:opacity-90 transition shadow-xs"
+                              className="px-2.5 py-1 rounded-lg bg-rose-500 text-white font-bold text-[11px] hover:opacity-90 transition shadow-xs whitespace-nowrap"
                             >
                               Xử lý
                             </button>
@@ -667,18 +686,17 @@ export function HaircutSalaryView({
 
               {/* Summary Total Row Footer */}
               <tfoot>
-                <tr className="bg-emerald-50/50 border-t-2 border-emerald-100 font-extrabold text-slate-900 text-xs">
-                  <td className="p-3 pl-4 text-emerald-800">Tổng cộng (tạm tính)</td>
-                  <td className="p-3 text-center text-emerald-800 font-mono">75/156</td>
-                  <td className="p-3 text-center text-emerald-800 font-mono">186</td>
-                  <td className="p-3 text-right">39.000.000đ</td>
-                  <td className="p-3 text-right">18.600.000đ</td>
-                  <td className="p-3 text-right">3.600.000đ</td>
-                  <td className="p-3 text-right text-emerald-700 text-sm font-black">
+                <tr className="bg-emerald-50/50 border-t-2 border-emerald-100 font-extrabold text-slate-900 text-xs whitespace-nowrap">
+                  <td className="p-3 pl-4 text-emerald-800 whitespace-nowrap font-bold">Tổng cộng (tạm tính)</td>
+                  <td className="p-3 text-center text-emerald-800 font-mono whitespace-nowrap">75/156</td>
+                  <td className="p-3 text-center text-emerald-800 font-mono whitespace-nowrap">186</td>
+                  <td className="p-3 text-right whitespace-nowrap">39.000.000đ</td>
+                  <td className="p-3 text-right whitespace-nowrap">18.600.000đ</td>
+                  <td className="p-3 text-right whitespace-nowrap">3.600.000đ</td>
+                  <td className="p-3 text-right text-emerald-700 text-sm font-black whitespace-nowrap">
                     61.200.000đ
                   </td>
-                  <td className="p-3" />
-                  <td className="p-3" />
+                  <td className="p-3 whitespace-nowrap" />
                 </tr>
               </tfoot>
             </table>

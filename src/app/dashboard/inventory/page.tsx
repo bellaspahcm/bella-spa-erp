@@ -81,7 +81,7 @@ function StandardInventoryPage() {
 
   const { tenantModuleKey } = useTenantModuleKey();
   const { product } = useUser();
-  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'haircut';
+  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'beauty_spa';
 
   // ✅ Inventory forecast enabled
   const {
@@ -250,7 +250,7 @@ function HaircutInventoryViewWrapper() {
 export default function InventoryPage() {
   const { tenantModuleKey } = useTenantModuleKey();
   const { product } = useUser();
-  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'haircut';
+  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'beauty_spa';
 
   if (isHaircut) {
     return <HaircutInventoryViewWrapper />;

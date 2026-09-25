@@ -243,7 +243,9 @@ export function resolveDynamicThemeTokens(brand: Partial<TenantBrandTheme> & { p
   const primary = cleanColor(brand.primaryColor, '#074E44');
   const accent = cleanColor(brand.accentColor, '#C8A97A');
 
-  if (preset === 'jade_wellness') {
+  const hasCustomPrimary = typeof brand.primaryColor === 'string' && brand.primaryColor.trim().length > 0;
+
+  if (preset === 'jade_wellness' && (!hasCustomPrimary || primary.toUpperCase() === '#074E44')) {
     return {
       primary: '#074E44',
       primaryHover: '#03211D',
@@ -259,7 +261,7 @@ export function resolveDynamicThemeTokens(brand: Partial<TenantBrandTheme> & { p
     };
   }
 
-  if (preset === 'luxury_navy') {
+  if (preset === 'luxury_navy' && (!hasCustomPrimary || primary.toUpperCase() === '#1E3A8A')) {
     return {
       primary: '#1E3A8A',
       primaryHover: '#0B192C',
@@ -275,7 +277,7 @@ export function resolveDynamicThemeTokens(brand: Partial<TenantBrandTheme> & { p
     };
   }
 
-  if (preset === 'ocean_clean') {
+  if (preset === 'ocean_clean' && (!hasCustomPrimary || primary.toUpperCase() === '#1E40AF')) {
     return {
       primary: '#1E40AF',
       primaryHover: '#1D4ED8',
@@ -291,7 +293,7 @@ export function resolveDynamicThemeTokens(brand: Partial<TenantBrandTheme> & { p
     };
   }
 
-  if (preset === 'graphite_luxe') {
+  if (preset === 'graphite_luxe' && (!hasCustomPrimary || primary.toUpperCase() === '#18181B')) {
     return {
       primary: '#18181B',
       primaryHover: '#09090B',
@@ -307,7 +309,7 @@ export function resolveDynamicThemeTokens(brand: Partial<TenantBrandTheme> & { p
     };
   }
 
-  if (preset === 'bella_rose') {
+  if (preset === 'bella_rose' && (!hasCustomPrimary || primary.toUpperCase() === '#A91555')) {
     return {
       primary: '#A91555',
       primaryHover: '#881337',
@@ -323,7 +325,7 @@ export function resolveDynamicThemeTokens(brand: Partial<TenantBrandTheme> & { p
     };
   }
 
-  if (preset === 'slate_minimal') {
+  if (preset === 'slate_minimal' && (!hasCustomPrimary || primary.toUpperCase() === '#334155')) {
     return {
       primary: '#334155',
       primaryHover: '#1E293B',
@@ -363,17 +365,17 @@ export function resolveDynamicThemeTokens(brand: Partial<TenantBrandTheme> & { p
 export function applyThemeTokensToRoot(tokens: DynamicThemeTokens) {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
-  root.style.setProperty('--primary', tokens.primary);
-  root.style.setProperty('--primary-hover', tokens.primaryHover);
-  root.style.setProperty('--primary-foreground', tokens.primaryForeground);
-  root.style.setProperty('--accent', tokens.accent);
-  root.style.setProperty('--accent-foreground', tokens.accentForeground);
-  root.style.setProperty('--ring', tokens.ring);
-  root.style.setProperty('--sidebar-bg', tokens.sidebarBg);
-  root.style.setProperty('--sidebar-inner-bg', tokens.sidebarInnerBg);
-  root.style.setProperty('--sidebar-fg', tokens.sidebarFg);
-  root.style.setProperty('--sidebar-muted', tokens.sidebarMuted);
-  root.style.setProperty('--sidebar-border', tokens.sidebarBorder);
+  root.style.setProperty('--primary', tokens.primary, 'important');
+  root.style.setProperty('--primary-hover', tokens.primaryHover, 'important');
+  root.style.setProperty('--primary-foreground', tokens.primaryForeground, 'important');
+  root.style.setProperty('--accent', tokens.accent, 'important');
+  root.style.setProperty('--accent-foreground', tokens.accentForeground, 'important');
+  root.style.setProperty('--ring', tokens.ring, 'important');
+  root.style.setProperty('--sidebar-bg', tokens.sidebarBg, 'important');
+  root.style.setProperty('--sidebar-inner-bg', tokens.sidebarInnerBg, 'important');
+  root.style.setProperty('--sidebar-fg', tokens.sidebarFg, 'important');
+  root.style.setProperty('--sidebar-muted', tokens.sidebarMuted, 'important');
+  root.style.setProperty('--sidebar-border', tokens.sidebarBorder, 'important');
 }
 
 function buildMonogram(displayName: string) {
