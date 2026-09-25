@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -65,6 +66,103 @@ const KTV_AVATARS: Record<string, string> = {
   'Đỗ Thị Nga': 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80',
 };
 
+// Payroll Table Data matching target screenshot
+const SALARY_LIST = [
+  {
+    id: 'sal-1',
+    name: 'Nguyễn Minh',
+    role: 'Thợ Chính 1',
+    daysWorked: '26/26',
+    totalSessions: 68,
+    baseSalary: '8.000.000đ',
+    commission: '6.800.000đ',
+    kpiBonus: '1.500.000đ',
+    totalIncome: '16.300.000đ',
+    totalIncomeNum: 16300000,
+    status: 'ready',
+    statusLabel: 'Đủ dữ liệu',
+    hasIssue: false,
+  },
+  {
+    id: 'sal-2',
+    name: 'Trần Thị Linh',
+    role: 'Thợ Chính 2',
+    daysWorked: '25/26',
+    totalSessions: 61,
+    baseSalary: '8.000.000đ',
+    commission: '6.100.000đ',
+    kpiBonus: '1.200.000đ',
+    totalIncome: '15.300.000đ',
+    totalIncomeNum: 15300000,
+    status: 'ready',
+    statusLabel: 'Đủ dữ liệu',
+    hasIssue: false,
+  },
+  {
+    id: 'sal-3',
+    name: 'Lê Quốc Nam',
+    role: 'Thợ Phụ 1',
+    daysWorked: '24/26',
+    totalSessions: 57,
+    baseSalary: '7.500.000đ',
+    commission: '5.700.000đ',
+    kpiBonus: '900.000đ',
+    totalIncome: '14.100.000đ',
+    totalIncomeNum: 14100000,
+    status: 'ready',
+    statusLabel: 'Đủ dữ liệu',
+    hasIssue: false,
+  },
+  {
+    id: 'sal-4',
+    name: 'Phạm Thu Hà',
+    role: 'Thợ Phụ 2',
+    daysWorked: '0/26',
+    totalSessions: 0,
+    baseSalary: '7.000.000đ',
+    commission: '0đ',
+    kpiBonus: '0đ',
+    totalIncome: '0đ',
+    totalIncomeNum: 0,
+    status: 'issue',
+    statusLabel: 'Thiếu dữ liệu',
+    issueNote: 'Không có dữ liệu chấm công tháng 09/2026',
+    hasIssue: true,
+  },
+  {
+    id: 'sal-5',
+    name: 'Vũ Hoàng Anh',
+    role: 'Thợ Chính 3',
+    daysWorked: '0/26',
+    totalSessions: 0,
+    baseSalary: '8.000.000đ',
+    commission: '0đ',
+    kpiBonus: '0đ',
+    totalIncome: '0đ',
+    totalIncomeNum: 0,
+    status: 'issue',
+    statusLabel: 'Thiếu dữ liệu',
+    issueNote: 'Không có dữ liệu chấm công tháng 09/2026',
+    hasIssue: true,
+  },
+  {
+    id: 'sal-6',
+    name: 'Đỗ Thị Nga',
+    role: 'Thợ Phụ 3',
+    daysWorked: '0/26',
+    totalSessions: 0,
+    baseSalary: '6.500.000đ',
+    commission: '0đ',
+    kpiBonus: '0đ',
+    totalIncome: '0đ',
+    totalIncomeNum: 0,
+    status: 'issue',
+    statusLabel: 'Thiếu dữ liệu',
+    issueNote: 'Không có dữ liệu chấm công tháng 09/2026',
+    hasIssue: true,
+  },
+];
+
 export function HaircutSalaryView({
   onPublishAll,
   onFinalizeAll,
@@ -86,102 +184,7 @@ export function HaircutSalaryView({
     { value: 'Thiếu dữ liệu', label: 'Thiếu dữ liệu' },
   ];
 
-  // Payroll Table Data matching target screenshot
-  const salaryList = [
-    {
-      id: 'sal-1',
-      name: 'Nguyễn Minh',
-      role: 'Thợ Chính 1',
-      daysWorked: '26/26',
-      totalSessions: 68,
-      baseSalary: '8.000.000đ',
-      commission: '6.800.000đ',
-      kpiBonus: '1.500.000đ',
-      totalIncome: '16.300.000đ',
-      totalIncomeNum: 16300000,
-      status: 'ready',
-      statusLabel: 'Đủ dữ liệu',
-      hasIssue: false,
-    },
-    {
-      id: 'sal-2',
-      name: 'Trần Thị Linh',
-      role: 'Thợ Chính 2',
-      daysWorked: '25/26',
-      totalSessions: 61,
-      baseSalary: '8.000.000đ',
-      commission: '6.100.000đ',
-      kpiBonus: '1.200.000đ',
-      totalIncome: '15.300.000đ',
-      totalIncomeNum: 15300000,
-      status: 'ready',
-      statusLabel: 'Đủ dữ liệu',
-      hasIssue: false,
-    },
-    {
-      id: 'sal-3',
-      name: 'Lê Quốc Nam',
-      role: 'Thợ Phụ 1',
-      daysWorked: '24/26',
-      totalSessions: 57,
-      baseSalary: '7.500.000đ',
-      commission: '5.700.000đ',
-      kpiBonus: '900.000đ',
-      totalIncome: '14.100.000đ',
-      totalIncomeNum: 14100000,
-      status: 'ready',
-      statusLabel: 'Đủ dữ liệu',
-      hasIssue: false,
-    },
-    {
-      id: 'sal-4',
-      name: 'Phạm Thu Hà',
-      role: 'Thợ Phụ 2',
-      daysWorked: '0/26',
-      totalSessions: 0,
-      baseSalary: '7.000.000đ',
-      commission: '0đ',
-      kpiBonus: '0đ',
-      totalIncome: '0đ',
-      totalIncomeNum: 0,
-      status: 'issue',
-      statusLabel: 'Thiếu dữ liệu',
-      issueNote: 'Không có dữ liệu chấm công tháng 09/2026',
-      hasIssue: true,
-    },
-    {
-      id: 'sal-5',
-      name: 'Vũ Hoàng Anh',
-      role: 'Thợ Chính 3',
-      daysWorked: '0/26',
-      totalSessions: 0,
-      baseSalary: '8.000.000đ',
-      commission: '0đ',
-      kpiBonus: '0đ',
-      totalIncome: '0đ',
-      totalIncomeNum: 0,
-      status: 'issue',
-      statusLabel: 'Thiếu dữ liệu',
-      issueNote: 'Không có dữ liệu chấm công tháng 09/2026',
-      hasIssue: true,
-    },
-    {
-      id: 'sal-6',
-      name: 'Đỗ Thị Nga',
-      role: 'Thợ Phụ 3',
-      daysWorked: '0/26',
-      totalSessions: 0,
-      baseSalary: '6.500.000đ',
-      commission: '0đ',
-      kpiBonus: '0đ',
-      totalIncome: '0đ',
-      totalIncomeNum: 0,
-      status: 'issue',
-      statusLabel: 'Thiếu dữ liệu',
-      issueNote: 'Không có dữ liệu chấm công tháng 09/2026',
-      hasIssue: true,
-    },
-  ];
+
 
   // Action Issues Sidebar List
   const pendingIssues = [
@@ -238,7 +241,7 @@ export function HaircutSalaryView({
   ];
 
   const filteredSalaries = useMemo(() => {
-    return salaryList.filter((item) => {
+    return SALARY_LIST.filter((item) => {
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !q ||

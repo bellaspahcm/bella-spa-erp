@@ -235,7 +235,7 @@ export function HaircutDashboardView() {
     void fetchPrimaryData();
     const t = setTimeout(() => { void fetchSecondaryData(); }, 200);
     return () => clearTimeout(t);
-  }, [tenantId, isTenantModuleLoading]);
+  }, [tenantId, isTenantModuleLoading, fetchPrimaryData, fetchSecondaryData]);
 
   const scheduleDashboardRefresh = useCallback(() => {
     if (dashboardRefreshTimerRef.current) {
