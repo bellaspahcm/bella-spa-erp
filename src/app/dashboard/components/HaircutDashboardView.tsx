@@ -3,6 +3,7 @@
 import { KtvPerformanceTable } from '@/components/features/dashboard/KtvPerformanceTable';
 import { RevenueChart } from '@/components/features/dashboard/RevenueChart';
 import AdminNotificationBell from '@/components/common/AdminNotificationBell';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
 import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
@@ -54,14 +55,25 @@ const OnboardingTour = dynamic(
   { ssr: false }
 );
 
+interface StatCardViewModel {
+  label: string;
+  value: string;
+  trend: number;
+  subtitle?: string;
+  iconName: 'Users' | 'Calendar' | 'DollarSign' | 'Star';
+  color: string;
+  bg: string;
+}
+
 export function HaircutDashboardView() {
   const router = useRouter();
   const { tenantModuleKey, isTenantModuleLoading } = useTenantModuleKey({ forceFresh: true });
-  const [stats, setStats] = useState<DashboardStatsViewModel[]>([]);
+  const [stats, setStats] = useState<StatCardViewModel[]>([]);
   const [sessions, setSessions] = useState<DashboardSessionViewModel[]>([]);
   const [topKTVs, setTopKTVs] = useState<KtvPerformanceViewModel[]>([]);
   const [alerts, setAlerts] = useState<DashboardAlert[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<'all' | 'upcoming' | 'in_progress' | 'completed'>('all');
   const [performanceData, setPerformanceData] = useState<PerformanceDataPointViewModel[]>([]);
   const [inventorySummary, setInventorySummary] = useState<InventorySummaryViewModel>({ totalItems: 0, lowStockCount: 0, totalValue: 0 });
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
@@ -110,12 +122,49 @@ export function HaircutDashboardView() {
     return { startDate, endDate };
   };
 
-  const buildDashboardStats = useCallback((statsData: Awaited<ReturnType<typeof getDashboardPrimaryData>>['statsData']) => {
+  const buildDashboardStats = useCallback((statsData: Awaited<ReturnType<typeof getDashboardPrimaryData>>['statsData']): StatCardViewModel[] => {
+    const custTrend = Number(statsData.totalCustomers?.trend || 0);
+    const bookTrend = Number(statsData.todayBookings?.trend || 0);
+    const revTrend = Number(statsData.totalRevenue?.trend || 0);
+    const rateTrend = Number(statsData.avgRating?.trend || 0);
+
     return [
-      { label: 'Tổng khách hàng', value: String(statsData.totalCustomers?.value || '1.284'), trend: Number(statsData.totalCustomers?.trend || 12), iconName: 'Users' as const, color: 'text-blue-600', bg: 'bg-blue-50' },
-      { label: 'Lịch hẹn hôm nay', value: String(statsData.todayBookings?.value || '28'), trend: Number(statsData.todayBookings?.trend || 27), iconName: 'Calendar' as const, color: 'text-rose-600', bg: 'bg-rose-50' },
-      ...(userRole === 'admin' ? [{ label: 'Doanh thu tháng', value: String(statsData.totalRevenue?.value || '68,5M'), trend: Number(statsData.totalRevenue?.trend || 18), iconName: 'DollarSign' as const, color: 'text-emerald-600', bg: 'bg-emerald-50' }] : []),
-      { label: `Đánh giá ${vocab.worker.short}`, value: String(statsData.avgRating?.value || '4.9/5'), trend: Number(statsData.avgRating?.trend || 0.2), iconName: 'Star' as const, color: 'text-amber-600', bg: 'bg-amber-50' },
+      {
+        label: 'Tổng khách hàng',
+        value: String(statsData.totalCustomers?.value ?? '0'),
+        trend: custTrend,
+        subtitle: custTrend !== 0 ? `${custTrend >= 0 ? '+' : ''}${custTrend}% so với tháng trước` : 'Tổng số khách hàng',
+        iconName: 'Users' as const,
+        color: 'text-blue-600',
+        bg: 'bg-blue-50'
+      },
+      {
+        label: 'Lịch hẹn hôm nay',
+        value: String(statsData.todayBookings?.value ?? '0'),
+        trend: bookTrend,
+        subtitle: bookTrend !== 0 ? `${bookTrend >= 0 ? '+' : ''}${bookTrend}% so với hôm qua` : 'Lịch hẹn trong ngày',
+        iconName: 'Calendar' as const,
+        color: 'text-rose-600',
+        bg: 'bg-rose-50'
+      },
+      ...(userRole === 'admin' ? [{
+        label: 'Doanh thu tháng',
+        value: String(statsData.totalRevenue?.value ?? '0M'),
+        trend: revTrend,
+        subtitle: revTrend !== 0 ? `${revTrend >= 0 ? '+' : ''}${revTrend}% so với tháng trước` : 'Doanh thu trong tháng',
+        iconName: 'DollarSign' as const,
+        color: 'text-emerald-600',
+        bg: 'bg-emerald-50'
+      }] : []),
+      {
+        label: `Đánh giá ${vocab.worker.short}`,
+        value: String(statsData.avgRating?.value ?? '—'),
+        trend: rateTrend,
+        subtitle: 'Đánh giá trung bình KTV',
+        iconName: 'Star' as const,
+        color: 'text-amber-600',
+        bg: 'bg-amber-50'
+      },
     ];
   }, [userRole, vocab.worker.short]);
 
@@ -229,6 +278,32 @@ export function HaircutDashboardView() {
     };
   }, [scheduleDashboardAlertsRefresh, scheduleDashboardRefresh, isTenantModuleLoading]);
 
+  // Compute tab counts from real DB sessions
+  const allCount = sessions.length;
+  const upcomingCount = sessions.filter(s => s.status !== 'completed' && s.status !== 'in_progress').length;
+  const inProgressCount = sessions.filter(s => s.status === 'in_progress').length;
+  const completedCount = sessions.filter(s => s.status === 'completed').length;
+
+  const filteredSessions = sessions.filter(session => {
+    const booking = Array.isArray(session.bookings) ? session.bookings[0] : session.bookings;
+    const customerName = booking?.customers?.name_mother || '';
+    const packageName = booking?.package_name || booking?.packages?.name || '';
+
+    const matchesSearch = customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         packageName.toLowerCase().includes(searchQuery.toLowerCase());
+
+    let matchesTab = true;
+    if (activeTab === 'upcoming') {
+      matchesTab = session.status !== 'completed' && session.status !== 'in_progress';
+    } else if (activeTab === 'in_progress') {
+      matchesTab = session.status === 'in_progress';
+    } else if (activeTab === 'completed') {
+      matchesTab = session.status === 'completed';
+    }
+
+    return matchesTab && matchesSearch;
+  });
+
   return (
     <div className="flex-1 overflow-auto bg-[#F4F5F7] dark:bg-slate-950 p-6 md:p-8 min-h-screen relative">
       {/* VIEWPORT SALON INTERIOR BACKGROUND - FULL WIDTH & EXPANDED HEIGHT */}
@@ -322,76 +397,52 @@ export function HaircutDashboardView() {
 
         {/* ROW 1: 4 STAT CARDS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {/* Card 1: Khách hàng (Tất cả) */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex items-start gap-4">
-            <div className="w-12 h-12 rounded-full bg-[#074E44] flex items-center justify-center text-white shrink-0 shadow-md">
-              <User className="w-6 h-6" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Khách hàng <span className="text-[10px] text-slate-400 font-normal">(Tất cả)</span></p>
-              <div className="flex items-baseline gap-2 mt-1">
-                <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{stats[0]?.value || '1.284'}</h2>
-                <span className="inline-flex items-center text-xs font-extrabold text-emerald-700 bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400 px-2 py-0.5 rounded-full">
-                  ↗ 12%
-                </span>
+          {isLoading ? (
+            [1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex items-start gap-4 animate-pulse">
+                <SkeletonLoader variant="circular" width={48} height={48} className="shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <SkeletonLoader variant="text" width={100} height={12} />
+                  <SkeletonLoader variant="text" width={120} height={28} />
+                  <SkeletonLoader variant="text" width={140} height={12} />
+                </div>
               </div>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 font-medium">+138 khách so với tháng trước</p>
-            </div>
-          </div>
-
-          {/* Card 2: Lịch hẹn hôm nay */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex items-start gap-4">
-            <div className="w-12 h-12 rounded-full bg-[#074E44] flex items-center justify-center text-white shrink-0 shadow-md">
-              <Calendar className="w-6 h-6" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Lịch hẹn hôm nay</p>
-              <div className="flex items-baseline gap-2 mt-1">
-                <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{stats[1]?.value || '28'}</h2>
-                <span className="inline-flex items-center text-xs font-extrabold text-emerald-700 bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400 px-2 py-0.5 rounded-full">
-                  ↗ 27%
-                </span>
+            ))
+          ) : (
+            stats.map((stat, idx) => (
+              <div key={idx} className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex items-start gap-4 relative">
+                <div className={cn(
+                  "w-12 h-12 rounded-full flex items-center justify-center text-white shrink-0 shadow-md",
+                  stat.iconName === 'Star' ? 'bg-amber-500' : 'bg-[#074E44]'
+                )}>
+                  {stat.iconName === 'Users' && <User className="w-6 h-6" />}
+                  {stat.iconName === 'Calendar' && <Calendar className="w-6 h-6" />}
+                  {stat.iconName === 'DollarSign' && <TrendingUp className="w-6 h-6" />}
+                  {stat.iconName === 'Star' && <SparklesIcon className="w-6 h-6 fill-white text-white" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{stat.label}</p>
+                    {stat.iconName === 'Star' && <ChevronRight className="w-4 h-4 text-slate-400 cursor-pointer hover:text-slate-600" />}
+                  </div>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{stat.value}</h2>
+                    {stat.trend !== 0 && (
+                      <span className={cn(
+                        "inline-flex items-center text-xs font-extrabold px-2 py-0.5 rounded-full",
+                        stat.trend >= 0 ? "text-emerald-700 bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400" : "text-rose-700 bg-rose-100 dark:bg-rose-950/60 dark:text-rose-400"
+                      )}>
+                        {stat.trend >= 0 ? '↗' : '↘'} {Math.abs(stat.trend)}%
+                      </span>
+                    )}
+                  </div>
+                  {stat.subtitle && (
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 font-medium">{stat.subtitle}</p>
+                  )}
+                </div>
               </div>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 font-medium">20 đã phục vụ · 8 sắp tới</p>
-            </div>
-          </div>
-
-          {/* Card 3: Doanh thu tháng */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex items-start gap-4">
-            <div className="w-12 h-12 rounded-full bg-[#074E44] flex items-center justify-center text-white shrink-0 shadow-md">
-              <TrendingUp className="w-6 h-6" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Doanh thu tháng</p>
-              <div className="flex items-baseline gap-2 mt-1">
-                <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{stats[2]?.value || '68,5M'} <span className="text-sm text-slate-400 font-bold">VND</span></h2>
-                <span className="inline-flex items-center text-xs font-extrabold text-emerald-700 bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400 px-2 py-0.5 rounded-full">
-                  ↗ 18%
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 font-medium">Đạt 78% mục tiêu tháng</p>
-            </div>
-          </div>
-
-          {/* Card 4: Đánh giá trung bình */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex items-start gap-4 relative">
-            <div className="w-12 h-12 rounded-full bg-amber-500 flex items-center justify-center text-white shrink-0 shadow-md">
-              <SparklesIcon className="w-6 h-6 fill-white text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Đánh giá trung bình</p>
-                <ChevronRight className="w-4 h-4 text-slate-400 cursor-pointer hover:text-slate-600" />
-              </div>
-              <div className="flex items-baseline gap-2 mt-1">
-                <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{stats[3]?.value || '4.9/5'}</h2>
-                <span className="inline-flex items-center text-xs font-extrabold text-emerald-700 bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400 px-2 py-0.5 rounded-full">
-                  ↗ 0.2
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 font-medium">Từ 642 lượt đánh giá</p>
-            </div>
-          </div>
+            ))
+          )}
         </div>
 
         {/* ROW 2: 3-COLUMN BENTO GRID */}
@@ -410,60 +461,96 @@ export function HaircutDashboardView() {
 
             {/* Filter tabs */}
             <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1">
-              <button className="px-4 py-1.5 rounded-full text-xs font-bold bg-[#074E44] text-white shadow-xs">
-                Tất cả <span className="ml-1 px-1.5 py-0.2 bg-white/20 rounded-full text-[10px]">8</span>
-              </button>
-              <button className="px-4 py-1.5 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200">
-                Sắp tới <span className="ml-1 text-slate-400 text-[10px]">8</span>
-              </button>
-              <button className="px-4 py-1.5 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200">
-                Đang phục vụ <span className="ml-1 text-slate-400 text-[10px]">3</span>
-              </button>
-              <button className="px-4 py-1.5 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200">
-                Đã xong <span className="ml-1 text-slate-400 text-[10px]">20</span>
-              </button>
+              {[
+                { id: 'all', label: 'Tất cả', count: allCount },
+                { id: 'upcoming', label: 'Sắp tới', count: upcomingCount },
+                { id: 'in_progress', label: 'Đang phục vụ', count: inProgressCount },
+                { id: 'completed', label: 'Đã xong', count: completedCount },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                  className={cn(
+                    "px-4 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 shrink-0",
+                    activeTab === tab.id
+                      ? "bg-[#074E44] text-white shadow-xs"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                  )}
+                >
+                  <span>{tab.label}</span>
+                  <span className={cn(
+                    "px-1.5 py-0.2 rounded-full text-[10px]",
+                    activeTab === tab.id ? "bg-white/20 text-white" : "text-slate-400"
+                  )}>
+                    {tab.count}
+                  </span>
+                </button>
+              ))}
             </div>
 
             {/* List of appointments */}
             <div className="space-y-4 flex-1">
               {isLoading ? (
                 [1, 2, 3].map((i) => (
-                  <div key={i} className="h-16 bg-slate-100 animate-pulse rounded-2xl" />
-                ))
-              ) : (() => {
-                const displayList = [
-                  { time: '09:30', status: 'Đang phục vụ', statusColor: 'bg-emerald-500', name: 'Nguyễn Hoàng Anh', service: 'Cắt tóc nam · 45 phút', ktv: 'KTV Minh', avatar: 'M', ktvBg: 'bg-[#074E44]' },
-                  { time: '10:00', status: 'Sắp tới', statusColor: 'bg-blue-500', name: 'Trần Thị Mai', service: 'Uốn + Phục hồi · 90 phút', ktv: 'KTV Linh', avatar: 'L', ktvBg: 'bg-purple-600' },
-                  { time: '10:30', status: 'Sắp tới', statusColor: 'bg-blue-500', name: 'Lê Quốc Bảo', service: 'Cắt + Tạo kiểu · 45 phút', ktv: 'KTV Nam', avatar: 'N', ktvBg: 'bg-blue-600' },
-                  { time: '11:00', status: 'Sắp tới', statusColor: 'bg-blue-500', name: 'Phạm Thu Hà', service: 'Nhuộm thời trang · 120 phút', ktv: 'KTV An', avatar: 'A', ktvBg: 'bg-rose-600' },
-                  { time: '11:30', status: 'Sắp tới', statusColor: 'bg-blue-500', name: 'Vũ Minh Đức', service: 'Cắt tóc nam · 45 phút', ktv: 'KTV Huy', avatar: 'H', ktvBg: 'bg-amber-600' },
-                ];
-
-                return displayList.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 hover:border-[#074E44]/30 transition-all">
+                  <div key={i} className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 animate-pulse">
                     <div className="flex items-center gap-3">
-                      <span className="text-xs font-extrabold text-slate-900 dark:text-white min-w-[42px]">{item.time}</span>
-                      <span className={`w-2 h-2 rounded-full ${item.statusColor}`} />
-                      <div className="w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold flex items-center justify-center text-xs shrink-0">
-                        {item.name.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{item.name}</p>
-                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{item.service}</p>
+                      <SkeletonLoader variant="text" width={40} height={14} />
+                      <SkeletonLoader variant="circular" width={8} height={8} />
+                      <SkeletonLoader variant="circular" width={36} height={36} />
+                      <div className="space-y-1">
+                        <SkeletonLoader variant="text" width={120} height={14} />
+                        <SkeletonLoader variant="text" width={80} height={12} />
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 px-2.5 py-1 rounded-xl border border-slate-200 dark:border-slate-700">
-                        <div className={`w-5 h-5 rounded-full ${item.ktvBg} text-white text-[9px] font-bold flex items-center justify-center`}>
-                          {item.avatar}
-                        </div>
-                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">{item.ktv}</span>
-                      </div>
-                      <button className="p-1 text-slate-400 hover:text-slate-600">⋮</button>
-                    </div>
+                    <SkeletonLoader variant="rectangular" width={80} height={28} className="rounded-xl" />
                   </div>
-                ));
-              })()}
+                ))
+              ) : filteredSessions.length === 0 ? (
+                <div className="py-12 text-center text-slate-400 dark:text-slate-500">
+                  <Calendar className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p className="font-bold text-sm">Không có lịch hẹn nào</p>
+                  <p className="text-xs mt-1">Vui lòng chọn bộ lọc khác hoặc tạo lịch hẹn mới</p>
+                </div>
+              ) : (
+                filteredSessions.map((session) => {
+                  const booking = Array.isArray(session.bookings) ? session.bookings[0] : session.bookings;
+                  const customerName = booking?.customers?.name_mother || customerLabels.customerPrefix;
+                  const serviceName = booking?.package_name || booking?.packages?.name || 'Cắt tóc nam';
+                  const technicianName = booking?.assigned_ktv?.full_name || 'Chưa phân công';
+                  const timeStr = session.assigned_time || booking?.preferred_time || 'Chưa xếp';
+
+                  const isDone = session.status === 'completed';
+                  const isInProgress = session.status === 'in_progress';
+                  const statusColor = isDone ? 'bg-emerald-500' : isInProgress ? 'bg-emerald-500' : 'bg-blue-500';
+
+                  return (
+                    <div key={session.id} className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 hover:border-[#074E44]/30 transition-all">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-extrabold text-slate-900 dark:text-white min-w-[42px]">{timeStr}</span>
+                        <span className={`w-2 h-2 rounded-full ${statusColor}`} />
+                        <div className="w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold flex items-center justify-center text-xs shrink-0">
+                          {customerName.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{customerName}</p>
+                          <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{serviceName}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 px-2.5 py-1 rounded-xl border border-slate-200 dark:border-slate-700">
+                          <div className="w-5 h-5 rounded-full bg-[#074E44] text-white text-[9px] font-bold flex items-center justify-center">
+                            {technicianName.charAt(0)}
+                          </div>
+                          <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">{technicianName}</span>
+                        </div>
+                        <Link href={`/dashboard/customers/${booking?.customers?.id}?bookingId=${booking?.id}`} className="p-1 text-slate-400 hover:text-slate-600">
+                          <ChevronRight className="w-4 h-4" />
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
 
@@ -504,35 +591,48 @@ export function HaircutDashboardView() {
 
             {/* Card 2: Cảnh báo & cần chú ý */}
             <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2 mb-4">
-                <Bell className="w-4 h-4 text-rose-500" />
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Cảnh báo & cần chú ý <span className="text-rose-500 font-extrabold">(3)</span></h3>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Bell className="w-4 h-4 text-rose-500" />
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                    Cảnh báo & cần chú ý <span className="text-rose-500 font-extrabold">({alerts.length})</span>
+                  </h3>
+                </div>
+                {alerts.length > 0 && (
+                  <button onClick={() => setIsAllNotificationsOpen(true)} className="text-[10px] font-bold text-primary hover:underline">
+                    Xem tất cả
+                  </button>
+                )}
               </div>
               <div className="space-y-3">
-                <div className="flex items-start gap-3 text-xs p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
-                  <span className="w-2 h-2 rounded-full bg-rose-500 mt-1 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-slate-800 dark:text-slate-200">2 lịch hẹn sắp trễ</p>
-                    <p className="text-slate-400 text-[11px]">Cần liên hệ khách hàng</p>
+                {isSecondaryLoading ? (
+                  [1, 2, 3].map((i) => (
+                    <div key={i} className="h-12 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-xl" />
+                  ))
+                ) : alerts.length === 0 ? (
+                  <div className="py-6 text-center text-slate-400 dark:text-slate-500 text-xs italic">
+                    Không có cảnh báo mới
                   </div>
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-                </div>
-                <div className="flex items-start gap-3 text-xs p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
-                  <span className="w-2 h-2 rounded-full bg-amber-500 mt-1 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-slate-800 dark:text-slate-200">3 sản phẩm sắp hết</p>
-                    <p className="text-slate-400 text-[11px] truncate">Dầu gội phục hồi, Thuốc nhuộm nâu, Sáp vuốt tóc</p>
-                  </div>
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-                </div>
-                <div className="flex items-start gap-3 text-xs p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
-                  <span className="w-2 h-2 rounded-full bg-amber-500 mt-1 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-slate-800 dark:text-slate-200">1 kỹ thuật viên chưa check-in</p>
-                    <p className="text-slate-400 text-[11px]">KTV Huy (Ca sáng)</p>
-                  </div>
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-                </div>
+                ) : (
+                  alerts.slice(0, 4).map((alert, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => alert.link && router.push(alert.link)}
+                      className="flex items-start gap-3 text-xs p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer border border-transparent hover:border-slate-100"
+                    >
+                      <span className={cn(
+                        "w-2 h-2 rounded-full mt-1.5 shrink-0",
+                        alert.type === 'warning' ? "bg-amber-500" :
+                        alert.type === 'danger' ? "bg-rose-500" : "bg-blue-500"
+                      )} />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-slate-800 dark:text-slate-200 truncate">{alert.title}</p>
+                        <p className="text-slate-400 text-[11px] truncate mt-0.5">{alert.message}</p>
+                      </div>
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
@@ -549,15 +649,21 @@ export function HaircutDashboardView() {
               </div>
               <div className="grid grid-cols-3 gap-2">
                 <div className="bg-rose-50 dark:bg-rose-950/40 p-3 rounded-2xl text-center border border-rose-100 dark:border-rose-900">
-                  <div className="w-6 h-6 rounded-full bg-rose-100 text-rose-600 mx-auto flex items-center justify-center mb-1 text-xs font-bold">3</div>
+                  <div className="w-6 h-6 rounded-full bg-rose-100 text-rose-600 mx-auto flex items-center justify-center mb-1 text-xs font-bold">
+                    {inventorySummary.lowStockCount}
+                  </div>
                   <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Sản phẩm sắp hết</p>
                 </div>
                 <div className="bg-emerald-50 dark:bg-emerald-950/40 p-3 rounded-2xl text-center border border-emerald-100 dark:border-emerald-900">
-                  <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center mb-1 text-xs font-bold">248</div>
+                  <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center mb-1 text-xs font-bold">
+                    {inventorySummary.totalItems}
+                  </div>
                   <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Tổng mặt hàng</p>
                 </div>
                 <div className="bg-blue-50 dark:bg-blue-950/40 p-3 rounded-2xl text-center border border-blue-100 dark:border-blue-900">
-                  <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 mx-auto flex items-center justify-center mb-1 text-xs font-bold text-[9px]">42,5M</div>
+                  <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 mx-auto flex items-center justify-center mb-1 text-xs font-bold text-[9px]">
+                    {inventorySummary.totalValue > 0 ? (inventorySummary.totalValue / 1_000_000).toFixed(1) + 'M' : '0M'}
+                  </div>
                   <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Giá trị tồn kho</p>
                 </div>
               </div>
