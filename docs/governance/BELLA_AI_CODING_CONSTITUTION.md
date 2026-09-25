@@ -467,6 +467,70 @@ terminology
 
 Module means what Bella can do. Product means what the user sees.
 
+### UI to Contract Reconciliation
+
+When a Product UI is redesigned, verify data-bound and action-bound elements against canonical contracts before coding or before accepting the redesign as correct.
+
+Redesign may change:
+
+```text
+layout
+spacing
+typography
+visual hierarchy
+component presentation
+responsive behavior
+theme
+UX organization
+```
+
+Redesign does not authorize:
+
+```text
+changing domain model
+inventing fields
+inventing KPIs
+inventing statuses
+inventing APIs
+inventing DB columns
+changing business workflow
+changing action semantics
+```
+
+For every new or changed UI element that displays data or triggers behavior, trace:
+
+```text
+UI element
+     ↓
+Field / KPI / Action / State?
+     ↓
+Canonical capability exists?
+   ┌──────┴──────┐
+  YES            NO
+   ↓              ↓
+Map contract     GAP
+   ↓              ↓
+Implement UI    STOP
+               do not invent
+```
+
+Use a focused reconciliation table:
+
+```text
+UI element | UI expectation | Canonical contract | Backend reality | Conclusion
+```
+
+Allowed conclusions:
+
+```text
+MATCH
+STALE UI
+MAPPING BUG
+CAPABILITY GAP
+```
+
+Check only data, actions, states, and workflows. Do not expand a contract reconciliation into a visual audit of color, icon, font, or spacing.
+
 ### Missing Capability Process
 
 If Product A needs capability X, do not automatically move X to Platform or OS.
@@ -1047,7 +1111,49 @@ UI should collect input, present state, and invoke use cases.
 
 UI must not own business invariants, financial calculations, inventory transitions, workflow state machines, or authorization decisions. Those belong to the correct domain/service layer.
 
-## 32. Evidence Before Closure
+## 32. UI Must Not Invent Domain Capabilities
+
+Redesigning presentation does not authorize changing business contracts.
+
+Every field, KPI, status, action, filter, and workflow shown in UI must trace to a verified canonical capability or contract.
+
+If a UI design requires a capability that does not exist, mark it as `CAPABILITY GAP` or `NEW CAPABILITY / GAP`. Do not invent backend schema, fields, APIs, RPCs, DTOs, statuses, or business semantics to make the UI work.
+
+The required reverse trace is:
+
+```text
+UX/UI DESIGN
+     ↓
+UI element
+     ↓
+Field / KPI / Action / State?
+     ↓
+API / DTO
+     ↓
+Service
+     ↓
+Domain
+     ↓
+Repository
+     ↓
+DB
+```
+
+Both directions must meet at the canonical contract:
+
+```text
+           CANONICAL CONTRACT
+                 │
+       ┌─────────┴─────────┐
+       ↓                   ↓
+DB -> Domain -> Service    UI
+       ↑                   ↑
+       └────── MATCH ──────┘
+```
+
+If they do not meet, the UI is promising users something the system has not proven it can do.
+
+## 33. Evidence Before Closure
 
 Do not report:
 
@@ -1087,6 +1193,7 @@ BELLA OS / PRODUCT - DEFINITION OF DONE
 □ FK/relation được resolve đúng semantics
 □ Read/write contracts được chứng minh riêng khi cần
 □ Product Identity rõ
+□ UI data/action/state/workflow trace được tới canonical contract
 □ Tenant isolation đúng
 □ AuthN/AuthZ đúng
 □ Null semantics rõ
