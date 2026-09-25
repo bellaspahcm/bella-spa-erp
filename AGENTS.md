@@ -38,11 +38,15 @@ You MUST NOT:
 
 Before writing or modifying ANY code, you MUST generate an `ARCHITECTURE_GATE_RESULT.md` containing:
 
-1. **Product Manifest** (Capabilities & Scope)
-2. **Ownership Map** ("WHO OWNS THIS DATA?")
-3. **Contract Dependency Map** (`Product → Contract → Kernel`)
-4. **Additive Migration Plan** (`CREATE` new product tables / indexes only)
-5. **11 Automated Verification Gates Plan**
+1. **Bella OS/Product Development Process Gate** from `docs/governance/BELLA_AI_CODING_CONSTITUTION.md`
+2. **Product Manifest** (Capabilities & Scope)
+3. **Ownership Map** ("WHO OWNS THIS DATA?")
+4. **Contract Dependency Map** (`Product → Contract → Kernel`)
+5. **UI → Contract Reconciliation** for Product UI redesigns or data/action-bound UI changes
+6. **Additive Migration Plan** (`CREATE` new product tables / indexes only)
+7. **11 Automated Verification Gates Plan**
+
+For any new OS, new Product, Product vertical, or Product UI redesign, `ARCHITECTURE_GATE_RESULT.md` must conclude `PASS`, `BLOCKED`, or `DEFER` before product/runtime code is written.
 
 ### 🔴 ARCHITECTURAL GAP PROTOCOL
 If the requested feature appears to require a new Kernel capability or modification to H1–H12:

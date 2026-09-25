@@ -17,6 +17,6 @@ Before creating or modifying any code, you MUST read and obey:
 5. **ZERO ENTITY DUPLICATION:** Do not recreate `Patient`, `Doctor`, `Course`, or `Student` tables.
 6. **EVENT-AFTER-PERSISTENCE:** `DB COMMIT → DOMAIN EVENT → CONSUMER`.
 7. **TENANT ISOLATION (GATE 0):** Enforce `tenant_id` on all queries/services.
-8. **PRE-CODING ANALYSIS:** Output `ARCHITECTURE_GATE_RESULT.md` before coding.
+8. **PRE-CODING ANALYSIS:** Output `ARCHITECTURE_GATE_RESULT.md` before coding. For any new OS, new Product, Product vertical, or Product UI redesign, this must pass the Bella OS/Product Development Process Gate in `docs/governance/BELLA_AI_CODING_CONSTITUTION.md` with `PASS`, `BLOCKED`, or `DEFER` before product/runtime code is written.
 9. **NO CROSS-INDUSTRY COUPLING:** Retail/Education/Healthcare OS must never import from each other. They must remain completely isolated.
 10. **VERIFICATION:** Run `npm run healthcare:verify` before completion.
