@@ -59,7 +59,7 @@ export class PreschoolAnalyticsService {
     const totalClassrooms = enrollmentRaw.classrooms.length;
 
     const classroomUtilization: ClassroomUtilizationDTO[] = enrollmentRaw.classrooms.map((c) => {
-      const currentEnrollment = c.current_enrollment ?? 0;
+      const currentEnrollment = enrollmentRaw.enrolledStudents.filter(s => s.classroom_id === c.id).length;
       const maxCap = c.max_capacity || 25;
       return {
         classId: c.id,

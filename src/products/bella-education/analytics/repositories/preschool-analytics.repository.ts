@@ -30,30 +30,17 @@ export class PreschoolAnalyticsRepository {
     }
 
     // Try preschool_classrooms first, fallback to edu_classrooms / courses
-    const { data: rawClassrooms } = await this.supabase
+    let { data: classrooms } = await this.supabase
       .from('preschool_classrooms')
       .select('id, name, max_capacity')
       .eq('tenant_id', tenantId);
-    let classrooms = rawClassrooms?.map((classroom) => ({
-      ...classroom,
-      current_enrollment: null,
-    }));
 
     if (!classrooms || classrooms.length === 0) {
-      const { data: fallbackCourses } = await this.supabase
-        .from('edu_courses')
-        .select('id, title, max_students, current_enrollment')
-        .eq('tenant_id', tenantId)
-        .eq('status', 'active');
-
-      if (fallbackCourses) {
-        classrooms = fallbackCourses.map((course) => ({
-          id: course.id,
-          name: course.title,
-          max_capacity: course.max_students,
-          current_enrollment: course.current_enrollment,
-        }));
-      }
+      const { data: fallbackRooms } = await this.supabase
+        .from('edu_classrooms')
+        .select('id, name, max_capacity')
+        .eq('tenant_id', tenantId);
+      if (fallbackRooms) classrooms = fallbackRooms as any[];
     }
 
     return {
