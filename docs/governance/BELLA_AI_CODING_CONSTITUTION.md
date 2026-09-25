@@ -1,10 +1,101 @@
 # BELLA ENGINEERING RULES - OS & PRODUCT DEVELOPMENT v2
 
-> Follow Bella Engineering Execution Contract: Evidence -> Ownership -> Canonical Contract -> Minimal Implementation -> Targeted Verification -> Fresh Verification. Never invent a contract, cross an ownership boundary, weaken a test, or hide a failure merely to make TypeScript or CI green.
+> Follow Bella Engineering Execution Contract: Evidence -> Truth -> Canonical Contract -> Ownership -> Boundary -> Minimal Implementation -> Verification. Never invent a contract, cross an ownership boundary, weaken a test, or hide a failure merely to make TypeScript or CI green.
 
 This is the authoritative engineering constitution for Bella OS and Product development. It applies to AI-assisted and human implementation work across Platform, OS, Product, Integration, Shared UI, CI, tests, and technical-debt cleanup.
 
 This document is not a list of optional preferences. It is the default execution contract. If a local vertical constitution, freeze policy, ADR, or human architect decision is stricter, the stricter rule wins.
+
+## 0. Truth -> Canonical -> Consumer
+
+Before modifying code, distinguish these three concepts.
+
+### Truth
+
+Truth is the authoritative fact about the system for the question being answered.
+
+Examples:
+
+```text
+Database structure     -> migration / verified DB schema
+Generated DB shape     -> generated database types
+Product identity       -> Product Registry
+Architecture permission -> Architecture Constitution / ownership rules
+Domain behavior        -> verified domain contract / producer
+```
+
+Truth is not automatically whatever existing code currently says.
+
+### Canonical Contract
+
+Canonical Contract is the official representation or access pattern Bella currently accepts for that Truth.
+
+Canonical means:
+
+```text
+New code should follow this contract.
+```
+
+Existing or frequently used code is not automatically canonical.
+
+### Consumer
+
+Consumer is the code currently consuming the canonical contract.
+
+Required reasoning:
+
+```text
+Truth
+  ↓
+Canonical Contract
+  ↓
+Consumer
+```
+
+If Consumer != Canonical, fix the stale Consumer.
+
+If Truth is unclear, investigate before coding.
+
+If Truth is known but Canonical Contract is unclear, defer and resolve ownership or architecture first.
+
+If Canonical Contract does not exist, never invent one merely to satisfy TypeScript or CI.
+
+If changing Canonical Contract is genuinely required, treat it as an explicit contract or architecture change, not as a local bug fix.
+
+### Mandatory Pre-Coding Check
+
+Before changing a field, type, query, API, RPC, relation, or domain model:
+
+1. What is the Truth?
+2. What is the Source of Truth?
+3. What is the Canonical Contract?
+4. Who owns that contract?
+5. Is this layer allowed to consume it?
+6. Is the current Consumer stale?
+
+Only then modify code.
+
+The complete Bella reasoning model is:
+
+```text
+TRUTH
+  ↓
+SOURCE OF TRUTH
+  ↓
+CANONICAL CONTRACT
+  ↓
+OWNERSHIP
+  ↓
+BOUNDARY
+  ↓
+CONSUMER
+  ↓
+IMPLEMENTATION
+  ↓
+VERIFICATION
+```
+
+Correct Truth plus correct canonical data plus wrong ownership is still wrong implementation.
 
 ## Core Incident Lesson
 
@@ -17,9 +108,13 @@ LỖI
  ↓
 Có phải PR gây ra?
  ↓
-Owner là ai?
+Truth là gì?
+ ↓
+Source of Truth là gì?
  ↓
 Canonical contract là gì?
+ ↓
+Owner là ai?
  ↓
 Layer này có quyền dùng contract đó?
  ↓
