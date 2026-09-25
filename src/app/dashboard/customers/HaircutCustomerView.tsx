@@ -89,7 +89,30 @@ const AVATAR_SEEDS = [
   'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80',
 ];
 
-const LOCATIONS = ['Quận 1', 'Quận 2', 'Quận 7', 'Thủ Đức', 'Bình Thạnh', 'Quận 3', 'Phú Nhuận'];
+const getCustomerBookingCount = (customer: CustomerListItem) => customer.bookings?.length ?? 0;
+const isNewCustomer = (customer: CustomerListItem) =>
+  customer.status === 'lead' || getCustomerBookingCount(customer) <= 1;
+const isLoyalCustomer = (customer: CustomerListItem) =>
+  Boolean(customer.is_in_care) || getCustomerBookingCount(customer) >= 3;
+const isVipCustomer = (customer: CustomerListItem) =>
+  (customer.loyalty_points ?? 0) >= 400 || getCustomerBookingCount(customer) >= 8;
+const isCareCustomer = (customer: CustomerListItem) => customer.status === 'deposit';
+
+const getCustomerSpendAmount = (customer: CustomerListItem) => {
+  if (typeof customer.deposit_amount === 'number') {
+    return customer.deposit_amount;
+  }
+
+  const bookingPayments = customer.bookings
+    ?.map((booking) => booking.deposit_amount)
+    .filter((amount): amount is number => typeof amount === 'number') ?? [];
+
+  if (bookingPayments.length === 0) {
+    return null;
+  }
+
+  return bookingPayments.reduce((total, amount) => total + amount, 0);
+};
 
 export function HaircutCustomerView({
   customers,
@@ -168,16 +191,33 @@ export function HaircutCustomerView({
     { value: 'name_desc', label: 'Tên Z-A' },
   ];
 
-  // Calculated Stats
-  const totalCount = 1284;
-  const newCount = 324;
-  const loyalCount = 428;
-  const vipCount = 156;
-  const careCount = 86;
+  const customerStats = useMemo(() => {
+    return customers.reduce(
+      (stats, customer) => {
+        stats.totalCount += 1;
+        if (isNewCustomer(customer)) stats.newCount += 1;
+        if (isLoyalCustomer(customer)) stats.loyalCount += 1;
+        if (isVipCustomer(customer)) stats.vipCount += 1;
+        if (isCareCustomer(customer)) stats.careCount += 1;
+        if (getCustomerBookingCount(customer) >= 2) stats.returningCount += 1;
+        return stats;
+      },
+      {
+        totalCount: 0,
+        newCount: 0,
+        loyalCount: 0,
+        vipCount: 0,
+        careCount: 0,
+        returningCount: 0,
+      }
+    );
+  }, [customers]);
+
+  const { totalCount, newCount, loyalCount, vipCount, careCount, returningCount } = customerStats;
 
   // Filter customer list
   const filteredCustomers = useMemo(() => {
-    return customers.filter((customer, idx) => {
+    return customers.filter((customer) => {
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !q ||
@@ -192,22 +232,22 @@ export function HaircutCustomerView({
       // Pill Tab filter
       let matchesPill = true;
       if (activeTabPill === 'new') {
-        matchesPill = customer.status === 'lead' || (customer.bookings?.length ?? 0) <= 1;
+        matchesPill = isNewCustomer(customer);
       } else if (activeTabPill === 'loyal') {
-        matchesPill = Boolean(customer.is_in_care) || (customer.bookings?.length ?? 0) >= 3;
+        matchesPill = isLoyalCustomer(customer);
       } else if (activeTabPill === 'vip') {
-        matchesPill = (customer.loyalty_points ?? 0) >= 400 || (customer.bookings?.length ?? 0) >= 8;
+        matchesPill = isVipCustomer(customer);
       } else if (activeTabPill === 'care') {
-        matchesPill = customer.status === 'deposit' || idx % 4 === 0;
+        matchesPill = isCareCustomer(customer);
       }
 
       // Group Dropdown filter
       let matchesGroup = true;
       if (groupFilter !== 'Tất cả nhóm') {
-        if (groupFilter === 'VIP') matchesGroup = (customer.loyalty_points ?? 0) >= 400;
-        else if (groupFilter === 'Khách thân thiết') matchesGroup = Boolean(customer.is_in_care);
-        else if (groupFilter === 'Khách mới') matchesGroup = customer.status === 'lead';
-        else if (groupFilter === 'Cần chăm sóc') matchesGroup = customer.status === 'deposit';
+        if (groupFilter === 'VIP') matchesGroup = isVipCustomer(customer);
+        else if (groupFilter === 'Khách thân thiết') matchesGroup = isLoyalCustomer(customer);
+        else if (groupFilter === 'Khách mới') matchesGroup = isNewCustomer(customer);
+        else if (groupFilter === 'Cần chăm sóc') matchesGroup = isCareCustomer(customer);
       }
 
       return matchesSearch && matchesPill && matchesGroup;
@@ -293,10 +333,10 @@ export function HaircutCustomerView({
                 {totalCount.toLocaleString('vi-VN')}
               </span>
               <span className="inline-flex items-center text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">
-                ↑ 12%
+                Real
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-0.5">+138 khách so với tháng trước</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Theo danh sách khách hàng hiện có</p>
           </div>
         </div>
 
@@ -312,10 +352,10 @@ export function HaircutCustomerView({
                 {newCount.toLocaleString('vi-VN')}
               </span>
               <span className="inline-flex items-center text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">
-                ↑ 18%
+                Real
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-0.5">Đang tăng trưởng tốt</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Lead hoặc có tối đa 1 booking</p>
           </div>
         </div>
 
@@ -328,13 +368,13 @@ export function HaircutCustomerView({
             <p className="text-xs font-semibold text-slate-500 mb-0.5">Khách quay lại</p>
             <div className="flex items-center gap-2">
               <span className="text-2xl font-black text-slate-900 tracking-tight font-sans">
-                2.416
+                {returningCount.toLocaleString('vi-VN')}
               </span>
               <span className="inline-flex items-center text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">
-                ↑ 9%
+                Real
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-0.5">Tỷ lệ quay lại 72%</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Có từ 2 booking trở lên</p>
           </div>
         </div>
 
@@ -350,10 +390,10 @@ export function HaircutCustomerView({
                 {careCount.toLocaleString('vi-VN')}
               </span>
               <span className="inline-flex items-center text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100">
-                ↑ 5%
+                Real
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-0.5">Chưa ghé lại &gt; 45 ngày</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Đang ở trạng thái đặt cọc</p>
           </div>
         </div>
       </div>
@@ -536,20 +576,48 @@ export function HaircutCustomerView({
           paginatedCustomers.map((customer, idx) => {
             const avatarUrl = AVATAR_SEEDS[idx % AVATAR_SEEDS.length];
             const isSelected = selectedIds.includes(customer.id);
-            const isVip = (customer.loyalty_points ?? 0) >= 400 || idx % 3 === 0;
-            const isLoyal = Boolean(customer.is_in_care) || idx % 2 === 0;
-            const gender = customer.gender_baby === 'female' ? 'Nữ' : 'Nam';
-            const age = 24 + ((idx * 3) % 15);
-            const location = customer.address || LOCATIONS[idx % LOCATIONS.length];
-            const serviceName = customer.package_name || (idx % 2 === 0 ? 'Cắt tóc nam, Tạo kiểu' : 'Uốn + Phục hồi');
-            const lastVisit = customer.created_at
-              ? new Date(customer.created_at).toLocaleDateString('vi-VN')
-              : '18/09/2026';
-            const visitCount = 8 + (idx % 8);
-            const spendAmount = customer.deposit_amount
-              ? `${Number(customer.deposit_amount).toLocaleString('vi-VN')}đ`
-              : `${(5400000 + (idx * 1200000)).toLocaleString('vi-VN')}đ`;
-            const points = customer.loyalty_points ?? (120 + idx * 50);
+            const isVip = isVipCustomer(customer);
+            const isLoyal = isLoyalCustomer(customer);
+            const isCare = isCareCustomer(customer);
+            const bookingCount = getCustomerBookingCount(customer);
+            const latestBooking = customer.bookings?.reduce<CustomerBookingSummary | null>(
+              (latest, booking) => {
+                if (!latest) return booking;
+                return new Date(booking.created_at || 0).getTime() >
+                  new Date(latest.created_at || 0).getTime()
+                  ? booking
+                  : latest;
+              },
+              null
+            );
+            const gender =
+              customer.gender_baby === 'female'
+                ? 'Nữ'
+                : customer.gender_baby === 'male'
+                  ? 'Nam'
+                  : 'Chưa có giới tính';
+            const location = customer.address || 'Chưa có địa chỉ';
+            const serviceName =
+              customer.package_name || latestBooking?.package_name || 'Chưa có dữ liệu';
+            const lastVisitSource = latestBooking?.created_at ?? customer.created_at;
+            const lastVisit = lastVisitSource
+              ? new Date(lastVisitSource).toLocaleDateString('vi-VN')
+              : 'Chưa có dữ liệu';
+            const spendTotal = getCustomerSpendAmount(customer);
+            const spendAmount =
+              spendTotal === null
+                ? 'Chưa có dữ liệu'
+                : `${spendTotal.toLocaleString('vi-VN')}đ`;
+            const points = customer.loyalty_points ?? null;
+            const profileLabel = isVip
+              ? 'VIP'
+              : isLoyal
+                ? 'Khách thân thiết'
+                : isCare
+                  ? 'Cần chăm sóc'
+                  : isNewCustomer(customer)
+                    ? 'Khách mới'
+                    : 'Chưa phân nhóm';
 
             return (
               <motion.div
@@ -584,7 +652,7 @@ export function HaircutCustomerView({
                   <div className="min-w-[180px] flex-1 lg:flex-initial">
                     <div className="flex items-center gap-2 mb-0.5">
                       <h3 className="font-bold text-slate-900 text-sm truncate">
-                        {customer.name_mother || 'Nguyễn Hoàng Anh'}
+                        {customer.name_mother || 'Khách hàng chưa đặt tên'}
                       </h3>
                       {isVip ? (
                         <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-200/80">
@@ -601,10 +669,10 @@ export function HaircutCustomerView({
                       )}
                     </div>
                     <p className="text-xs font-medium text-slate-500 flex items-center gap-1.5">
-                      <span>{customer.phone || '0900 002 6801'}</span>
+                      <span>{customer.phone || 'Chưa có SĐT'}</span>
                     </p>
                     <p className="text-[11px] text-slate-400 mt-0.5">
-                      {gender} · {age} tuổi · {location}
+                      {gender} · {location}
                     </p>
                   </div>
 
@@ -618,7 +686,7 @@ export function HaircutCustomerView({
                     <div className="mt-1 flex items-center gap-1.5 text-[11px]">
                       <span className="text-slate-400">Hồ sơ</span>
                       <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold text-[10px]">
-                        Khách thân thiết
+                        {profileLabel}
                       </span>
                     </div>
                   </div>
@@ -630,7 +698,9 @@ export function HaircutCustomerView({
                       <span>Lần cuối</span>
                     </div>
                     <p className="text-xs font-bold text-slate-800">{lastVisit}</p>
-                    <p className="text-[11px] text-slate-400">{visitCount} lần ghé</p>
+                    <p className="text-[11px] text-slate-400">
+                      {bookingCount.toLocaleString('vi-VN')} booking
+                    </p>
                   </div>
 
                   {/* Total Spend */}
@@ -648,7 +718,9 @@ export function HaircutCustomerView({
                       <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
                       <span>Điểm</span>
                     </div>
-                    <p className="text-xs font-extrabold text-slate-900">{points} điểm</p>
+                    <p className="text-xs font-extrabold text-slate-900">
+                      {points === null ? 'Chưa có dữ liệu' : `${points} điểm`}
+                    </p>
                   </div>
                 </div>
 

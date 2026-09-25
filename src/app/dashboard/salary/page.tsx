@@ -36,7 +36,7 @@ import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
 import { useUser } from '@/lib/user-context';
-import { HaircutSalaryView, HaircutSalaryDetail } from './HaircutSalaryView';
+import { HaircutSalaryView } from './HaircutSalaryView';
 
 // Types
 import { 
@@ -587,19 +587,7 @@ export default function SalaryPage() {
   if (isHaircut) {
     return (
       <>
-        <HaircutSalaryView
-          onPublishAll={handlePublishAll}
-          onFinalizeAll={handleFinalizeAll}
-          onEditKtv={(ktv: HaircutSalaryDetail) => {
-            const match = ktvSalaries.find((s) => s.name === ktv.name);
-            if (match) openEditModal(match);
-          }}
-          onFixAttendance={(ktv: HaircutSalaryDetail) => {
-            const match = attendanceData.find((a) => a.name === ktv.name);
-            if (match) openKtvCalendar(match);
-            else handleTabChange('attendance');
-          }}
-        />
+        <HaircutSalaryView />
 
         <EditSalaryModal
           isOpen={isEditModalOpen}

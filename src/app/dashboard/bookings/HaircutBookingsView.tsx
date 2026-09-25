@@ -38,10 +38,10 @@ interface HaircutBookingsViewProps {
   sessions: unknown[];
   ktvs: unknown[];
   isSyncing: boolean;
-  onSessionSelect: (session: unknown) => void;
-  onEmptySlotClick: (hour: number, ktvId?: string) => void;
-  onCreateClick: () => void;
 }
+
+const HAIRCUT_BOOKING_WRITE_GAP_MESSAGE =
+  'Booking Haircut đang hiển thị timeline tạm. Chưa thể tạo/sửa/phân công từ màn hình này cho đến khi mỗi dòng có session_log_id và booking_id canonical.';
 
 const STYLIST_AVATARS: Record<string, string> = {
   'unassigned': '',
@@ -74,9 +74,6 @@ export function HaircutBookingsView({
   sessions,
   ktvs,
   isSyncing,
-  onSessionSelect,
-  onEmptySlotClick,
-  onCreateClick,
 }: HaircutBookingsViewProps) {
   const [activeTaxonomy, setActiveTaxonomy] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('Tất cả trạng thái');
@@ -101,6 +98,10 @@ export function HaircutBookingsView({
     { value: 'Đã hoàn thành', label: 'Đã hoàn thành' },
     { value: 'Trễ lịch', label: 'Trễ lịch' },
   ];
+
+  const handleUnavailableBookingAction = () => {
+    window.alert(HAIRCUT_BOOKING_WRITE_GAP_MESSAGE);
+  };
 
   // Stylist columns matching screenshot
   const stylists = [
@@ -238,7 +239,7 @@ export function HaircutBookingsView({
 
           {/* CTA Add Booking */}
           <button
-            onClick={onCreateClick}
+            onClick={handleUnavailableBookingAction}
             className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 font-bold text-xs sm:text-sm text-white shadow-sm transition hover:opacity-90 active:scale-95"
           >
             <Plus className="w-4 h-4" />
@@ -305,6 +306,10 @@ export function HaircutBookingsView({
             Hôm nay
           </button>
         </div>
+      </div>
+
+      <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-900 shadow-sm">
+        {HAIRCUT_BOOKING_WRITE_GAP_MESSAGE}
       </div>
 
       {/* Operational KPI Summary Chips */}
@@ -502,7 +507,7 @@ export function HaircutBookingsView({
                         )}
                         onClick={() => {
                           if (bookings.length === 0) {
-                            onEmptySlotClick(parseInt(hour.split(':')[0], 10), st.id);
+                            handleUnavailableBookingAction();
                           }
                         }}
                       >
@@ -513,7 +518,7 @@ export function HaircutBookingsView({
                                 key={b.id}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  onSessionSelect(b);
+                                  handleUnavailableBookingAction();
                                 }}
                                 className={cn(
                                   'p-2 rounded-xl border text-xs cursor-pointer shadow-2xs hover:shadow-sm transition-all',

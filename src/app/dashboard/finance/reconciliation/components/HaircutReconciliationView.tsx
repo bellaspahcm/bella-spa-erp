@@ -31,6 +31,9 @@ import { formatCurrency } from '@bella/shared';
 import { cn } from '@/lib/utils';
 import type { PaymentMethod } from '../types';
 
+const HAIRCUT_DEBT_COLLECTION_GAP_MESSAGE =
+  'Chưa thể xác nhận thu từ màn hình Haircut vì dữ liệu công nợ hiện chưa có booking_id thật để ghi nhận qua contract Finance.';
+
 interface GroupedCustomerDebt {
   id: string;
   customerName: string;
@@ -192,7 +195,6 @@ export function HaircutReconciliationView() {
   const [targetAccount, setTargetAccount] = useState('vcb_1234');
   const [payFull, setPayFull] = useState(true);
   const [notes, setNotes] = useState('');
-  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -215,16 +217,7 @@ export function HaircutReconciliationView() {
   };
 
   const handleConfirmPayment = () => {
-    if (!selectedCustomer || !paymentAmount) return;
-    setIsSubmittingPayment(true);
-    setTimeout(() => {
-      setIsSubmittingPayment(false);
-      setShowPaymentModal(false);
-      toast.success(
-        `Đã thu thành công ${formatCurrency(Number(paymentAmount))} từ khách hàng ${selectedCustomer.customerName}! Sổ cái & Dòng tiền đã được cập nhật.`
-      );
-      setSelectedCustomer(null);
-    }, 700);
+    toast.error(HAIRCUT_DEBT_COLLECTION_GAP_MESSAGE);
   };
 
   const filteredCustomers = MOCK_CUSTOMER_DEBTS.filter((cust) => {
@@ -913,7 +906,8 @@ export function HaircutReconciliationView() {
                     value={paymentAmount}
                     onChange={(e) => setPaymentAmount(e.target.value)}
                     placeholder="Nhập số tiền..."
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 outline-none"
+                    disabled
+                    className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-sm font-bold text-slate-500 outline-none cursor-not-allowed"
                   />
                 </div>
 
@@ -923,11 +917,11 @@ export function HaircutReconciliationView() {
                   <select
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none cursor-pointer"
+                    disabled
+                    className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-500 outline-none cursor-not-allowed"
                   >
                     <option value="bank_transfer">Chuyển khoản Ngân hàng (VietQR)</option>
                     <option value="cash">Tiền mặt tại quầy</option>
-                    <option value="mpos">Quẹt thẻ MPOS / POS Salon</option>
                   </select>
                 </div>
 
@@ -937,7 +931,8 @@ export function HaircutReconciliationView() {
                   <select
                     value={targetAccount}
                     onChange={(e) => setTargetAccount(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none cursor-pointer"
+                    disabled
+                    className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-500 outline-none cursor-not-allowed"
                   >
                     <option value="vcb_1234">Vietcombank - 1012345678 (Chi nhánh HCM)</option>
                     <option value="tcb_5678">Techcombank - 1903456789 (Tài khoản Salon)</option>
@@ -950,13 +945,14 @@ export function HaircutReconciliationView() {
                   <input
                     type="checkbox"
                     checked={payFull}
+                    disabled
                     onChange={(e) => {
                       setPayFull(e.target.checked);
                       if (e.target.checked) {
                         setPaymentAmount(selectedCustomer.remainingDebt.toString());
                       }
                     }}
-                    className="w-4 h-4 rounded text-primary focus:ring-primary/20"
+                    className="w-4 h-4 rounded text-primary focus:ring-primary/20 disabled:cursor-not-allowed"
                   />
                   <span>Thanh toán toàn bộ công nợ ({formatCurrency(selectedCustomer.remainingDebt)})</span>
                 </label>
@@ -969,16 +965,15 @@ export function HaircutReconciliationView() {
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Ghi chú thu nợ đối soát tài chính..."
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none"
+                    disabled
+                    className="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-medium text-slate-500 outline-none cursor-not-allowed"
                   />
                 </div>
 
                 {/* Audit Trail Note */}
-                <div className="p-3 bg-emerald-50/80 rounded-xl border border-emerald-200/80 text-[11px] text-emerald-900 font-medium flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>
-                    Hệ thống sẽ tự động tạo transaction: <strong className="font-bold">Receivable → Payment → Ledger → Cash/Bank</strong> có Audit Trail.
-                  </span>
+                <div className="p-3 bg-amber-50/90 rounded-xl border border-amber-200/80 text-[11px] text-amber-900 font-medium flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <span>{HAIRCUT_DEBT_COLLECTION_GAP_MESSAGE}</span>
                 </div>
               </div>
 
@@ -992,20 +987,11 @@ export function HaircutReconciliationView() {
                 </button>
                 <button
                   onClick={handleConfirmPayment}
-                  disabled={isSubmittingPayment}
-                  className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
+                  disabled
+                  className="px-5 py-2.5 rounded-xl bg-slate-300 text-slate-600 text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-not-allowed"
                 >
-                  {isSubmittingPayment ? (
-                    <>
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      Đang xử lý...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                      Xác nhận thu {formatCurrency(Number(paymentAmount) || 0)}
-                    </>
-                  )}
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-700" />
+                  Chưa thể xác nhận thu
                 </button>
               </div>
             </motion.div>
