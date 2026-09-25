@@ -78,6 +78,10 @@ const RealEstateDashboardPage = dynamic(
   () => import('@/app/dashboard/real-estate/page'),
   { ssr: false }
 );
+const HaircutDashboardView = dynamic(
+  () => import('@/app/dashboard/components/HaircutDashboardView').then(m => ({ default: m.HaircutDashboardView })),
+  { ssr: false }
+);
 
 function StandardDashboardPage() {
   const router = useRouter();
@@ -1067,6 +1071,12 @@ function StandardDashboardPage() {
 
 export default function DashboardPage() {
   const { tenantModuleKey } = useTenantModuleKey({ forceFresh: true });
+  const { product } = useUser();
+  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'haircut';
+
+  if (isHaircut) {
+    return <HaircutDashboardView />;
+  }
 
   if (tenantModuleKey === 'real_estate') {
     return <RealEstateDashboardPage />;
