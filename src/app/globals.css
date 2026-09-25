@@ -3044,10 +3044,13 @@ html[data-tenant-module="beauty_spa"] .bella-data-table th {
 html[data-tenant-module="beauty_spa"] .bella-data-table {
   min-width: max-content;
   width: 100%;
+  white-space: nowrap;
 }
 
+html[data-tenant-module="beauty_spa"] .bella-data-table th,
 html[data-tenant-module="beauty_spa"] .bella-data-table td {
   color: var(--beauty-text);
+  white-space: nowrap;
 }
 
 /* Beauty Spa dark skin, scoped so Bella ERP keeps its existing dark mode. */
