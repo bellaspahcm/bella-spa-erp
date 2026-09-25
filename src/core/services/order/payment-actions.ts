@@ -4,6 +4,7 @@ import { safeRevalidatePath } from '@/lib/revalidate';
 import { BookingError } from '@/core/lib/errors';
 import {
   assertPaymentAccountingPeriod,
+  findExistingManualPaymentByIdempotencyKey,
   fetchBookingDetailsWithPayment,
   getBookingPaymentSnapshot,
   recordBookingPaymentRpc,
@@ -36,6 +37,23 @@ export async function recordRemainingPayment(params: RecordRemainingPaymentParam
     const bookingResult = await getBookingPaymentSnapshot(supabase, params.booking_id, tenantId);
     if ('error' in bookingResult) {
       throw new BookingError(bookingResult.error || 'Unknown booking payment snapshot error', 'BOOKING_PAYMENT_SNAPSHOT_ERROR', { bookingId: params.booking_id });
+    }
+
+    const existingPaymentResult = await findExistingManualPaymentByIdempotencyKey({
+      supabase,
+      payment: params,
+      tenantId,
+    });
+    if ('error' in existingPaymentResult) {
+      throw new BookingError(existingPaymentResult.error || 'Failed to verify payment idempotency', 'BOOKING_PAYMENT_IDEMPOTENCY_LOOKUP_ERROR', { bookingId: params.booking_id });
+    }
+    if (existingPaymentResult.data) {
+      await Promise.all([
+        safeRevalidatePath(`/dashboard/customers/${params.customer_id}`),
+        safeRevalidatePath('/dashboard/finance'),
+      ]);
+
+      return { success: true, data: existingPaymentResult.data };
     }
 
     const amountValidation = validateRemainingPaymentAmount(bookingResult.booking, params.amount);

@@ -35,7 +35,6 @@ import { useModuleVocabulary } from '@/lib/business-rules/module-vocabulary';
 import { SessionCard } from './components/SessionCard';
 import { LeaveRequest,SessionBooking } from './types';
 import dynamic from 'next/dynamic';
-import { HaircutPackagesView } from './HaircutPackagesView';
 
 const LeaveApprovalModal = dynamic(
   () => import('./components/LeaveApprovalModal').then(m => m.LeaveApprovalModal),
@@ -427,30 +426,6 @@ function SessionsContent() {
       setIsReusingId(null);
     }
   };
-
-  const { product } = useUser();
-  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'beauty_spa';
-
-  if (isHaircut) {
-    return (
-      <>
-        <HaircutPackagesView
-          sessions={sessions}
-          isLoading={!criticalReady}
-          isSyncing={isSyncing}
-        />
-
-        <SessionLogsDetailsModal
-          isOpen={!!activeBooking}
-          activeBooking={activeBooking}
-          onClose={handleCloseModal}
-          onSuccess={loadSessions}
-          userRole={userRole}
-          tenantModuleKey={tenantModuleKey}
-        />
-      </>
-    );
-  }
 
   return (
     <div className="flex-1 overflow-auto bg-background/30 p-3 sm:p-6 md:p-10 relative">
