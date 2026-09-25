@@ -238,11 +238,19 @@ export class NextBestActionEngine {
       // No test drive scheduled yet, but in consideration stage
       const { data: journey } = await supabase
         .from('auto_customer_journeys')
-        .select('current_stage')
+        .select('current_stage_id')
         .eq('id', journeyId)
         .single();
 
-      if (journey?.current_stage === 'consideration' || journey?.current_stage === 'evaluation') {
+      const { data: currentStage } = journey
+        ? await supabase
+            .from('auto_journey_stages')
+            .select('code')
+            .eq('id', journey.current_stage_id)
+            .single()
+        : { data: null };
+
+      if (currentStage?.code === 'consideration' || currentStage?.code === 'evaluation') {
         recommendations.push({
           actionType: 'schedule_test_drive',
           priority: 'high',
@@ -251,7 +259,7 @@ export class NextBestActionEngine {
           reason: 'Customer in consideration stage - test drive increases conversion significantly',
           confidenceScore: 0.80,
           dataPoints: {
-            journey_stage: journey.current_stage,
+            journey_stage: currentStage.code,
           },
           validUntil: new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000),
         });
