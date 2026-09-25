@@ -14,7 +14,7 @@
  */
 
 import { getPrimaryClient } from '@/lib/database/read-replica';
-import { Database } from '@/types/database.types';
+import { Database, Json } from '@/types/database.types';
 
 type LoanApplication = Database['public']['Tables']['auto_loan_applications']['Row'];
 type LoanApplicationInsert = Database['public']['Tables']['auto_loan_applications']['Insert'];
@@ -72,6 +72,72 @@ interface DocumentChecklistItem {
   employment_certificate: boolean;
   vehicle_registration: boolean;
   other_documents: string[];
+}
+
+type JsonRecord = { [key: string]: Json | undefined };
+type DocumentChecklistBooleanKey = Exclude<keyof DocumentChecklistItem, 'other_documents'>;
+
+const DOCUMENT_CHECKLIST_BOOLEAN_KEYS = [
+  'id_card',
+  'household_registration',
+  'income_proof',
+  'bank_statement',
+  'employment_certificate',
+  'vehicle_registration',
+] satisfies readonly DocumentChecklistBooleanKey[];
+
+const REQUIRED_DOCUMENT_CHECKLIST_KEYS = [
+  'id_card',
+  'household_registration',
+  'income_proof',
+  'bank_statement',
+  'employment_certificate',
+] satisfies readonly DocumentChecklistBooleanKey[];
+
+function isJsonRecord(value: Json | null | undefined): value is JsonRecord {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isStringArray(value: Json | undefined): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string');
+}
+
+function documentChecklistFromJson(value: Json | null | undefined): Partial<DocumentChecklistItem> {
+  if (!isJsonRecord(value)) {
+    return {};
+  }
+
+  const checklist: Partial<DocumentChecklistItem> = {};
+
+  for (const key of DOCUMENT_CHECKLIST_BOOLEAN_KEYS) {
+    const fieldValue = value[key];
+    if (typeof fieldValue === 'boolean') {
+      checklist[key] = fieldValue;
+    }
+  }
+
+  if (isStringArray(value.other_documents)) {
+    checklist.other_documents = value.other_documents;
+  }
+
+  return checklist;
+}
+
+function documentChecklistToJson(checklist: Partial<DocumentChecklistItem>): Json {
+  const result: JsonRecord = {};
+
+  for (const key of DOCUMENT_CHECKLIST_BOOLEAN_KEYS) {
+    const fieldValue = checklist[key];
+    if (typeof fieldValue === 'boolean') {
+      result[key] = fieldValue;
+    }
+  }
+
+  if (Array.isArray(checklist.other_documents)) {
+    result.other_documents = checklist.other_documents;
+  }
+
+  return result;
 }
 
 export class LoanApplicationService {
@@ -237,13 +303,13 @@ export class LoanApplicationService {
       throw new Error('Loan application not found');
     }
     
-    const currentChecklist = (current.documents_checklist || {}) as DocumentChecklistItem;
+    const currentChecklist = documentChecklistFromJson(current.documents_checklist);
     const updatedChecklist = { ...currentChecklist, ...checklist };
     
     const { data, error } = await supabase
       .from('auto_loan_applications')
       .update({
-        documents_checklist: updatedChecklist as LoanApplicationUpdate['documents_checklist'],
+        documents_checklist: documentChecklistToJson(updatedChecklist),
         updated_by: updatedBy,
       })
       .eq('id', loanId)
@@ -264,15 +330,7 @@ export class LoanApplicationService {
   static isDocumentChecklistComplete(checklist: Partial<DocumentChecklistItem> | null | undefined): boolean {
     if (!checklist) return false;
     
-    const required = [
-      'id_card',
-      'household_registration',
-      'income_proof',
-      'bank_statement',
-      'employment_certificate',
-    ];
-    
-    return required.every(field => checklist[field] === true);
+    return REQUIRED_DOCUMENT_CHECKLIST_KEYS.every(field => checklist[field] === true);
   }
   
   /**
@@ -340,7 +398,7 @@ export class LoanApplicationService {
       throw new Error('Loan application not found');
     }
     
-    if (!this.isDocumentChecklistComplete(loan.documents_checklist)) {
+    if (!this.isDocumentChecklistComplete(documentChecklistFromJson(loan.documents_checklist))) {
       throw new Error('Cannot submit: Required documents are incomplete');
     }
     

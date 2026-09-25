@@ -18,7 +18,9 @@ import type {
   BulkForecastResponse,
   ForecastAccuracySummary,
   ModelComparisonResult,
+  ForecastType,
   ForecastHorizon,
+  ModelName,
 } from './types';
 
 // ============================================================================
@@ -30,6 +32,137 @@ const CACHE_TTL = {
   churn: 12 * 60 * 60 * 1000, // 12 hours
   demand: 3 * 60 * 60 * 1000, // 3 hours
 };
+
+function requireString(row: Record<string, unknown>, field: string): string {
+  const value = row[field];
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  throw new Error(`[ForecastService] Invalid string field: ${field}`);
+}
+
+function requireNumber(row: Record<string, unknown>, field: string): number {
+  const value = row[field];
+  const numberValue = typeof value === 'number' ? value : Number(value);
+  if (Number.isFinite(numberValue)) {
+    return numberValue;
+  }
+  throw new Error(`[ForecastService] Invalid number field: ${field}`);
+}
+
+function optionalNumber(row: Record<string, unknown>, field: string): number | null {
+  const value = row[field];
+  if (value === null || value === undefined) {
+    return null;
+  }
+  return requireNumber(row, field);
+}
+
+function requireBoolean(row: Record<string, unknown>, field: string): boolean {
+  const value = row[field];
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  throw new Error(`[ForecastService] Invalid boolean field: ${field}`);
+}
+
+function requireForecastType(row: Record<string, unknown>, field: string): ForecastType {
+  const value = requireString(row, field);
+  switch (value) {
+    case 'revenue':
+    case 'churn':
+    case 'demand':
+      return value;
+    default:
+      throw new Error(`[ForecastService] Invalid forecast type: ${value}`);
+  }
+}
+
+function requireForecastHorizon(row: Record<string, unknown>, field: string): ForecastHorizon {
+  const value = requireNumber(row, field);
+  switch (value) {
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+    case 7:
+    case 8:
+    case 9:
+    case 10:
+    case 11:
+    case 12:
+    case 30:
+    case 60:
+    case 90:
+      return value;
+    default:
+      throw new Error(`[ForecastService] Invalid forecast horizon: ${value}`);
+  }
+}
+
+function requireModelName(row: Record<string, unknown>, field: string): ModelName {
+  const value = requireString(row, field);
+  switch (value) {
+    case 'simple_moving_average':
+    case 'exponential_smoothing':
+    case 'linear_regression':
+    case 'arima':
+    case 'prophet':
+    case 'logistic_regression':
+    case 'random_forest':
+      return value;
+    default:
+      throw new Error(`[ForecastService] Invalid model name: ${value}`);
+  }
+}
+
+function mapForecastAccuracySummary(row: Record<string, unknown>): ForecastAccuracySummary {
+  return {
+    tenantId: requireString(row, 'tenant_id'),
+    forecastType: requireForecastType(row, 'forecast_type'),
+    modelName: requireModelName(row, 'model_name'),
+    modelVersion: requireString(row, 'model_version'),
+    forecastHorizon: requireForecastHorizon(row, 'forecast_horizon'),
+    totalForecasts: requireNumber(row, 'total_forecasts'),
+    forecastsWithinCi: requireNumber(row, 'forecasts_within_ci'),
+    avgAccuracyPct: requireNumber(row, 'avg_accuracy_pct'),
+    medianAccuracyPct: requireNumber(row, 'median_accuracy_pct'),
+    minAccuracyPct: requireNumber(row, 'min_accuracy_pct'),
+    maxAccuracyPct: requireNumber(row, 'max_accuracy_pct'),
+    avgError: requireNumber(row, 'avg_error'),
+    avgMape: requireNumber(row, 'avg_mape'),
+    medianError: requireNumber(row, 'median_error'),
+    stddevError: requireNumber(row, 'stddev_error'),
+    ciCoveragePct: requireNumber(row, 'ci_coverage_pct'),
+    avgBias: requireNumber(row, 'avg_bias'),
+    avgBiasPct: requireNumber(row, 'avg_bias_pct'),
+    recentAccuracyPct: optionalNumber(row, 'recent_accuracy_pct'),
+    recentError: optionalNumber(row, 'recent_error'),
+    earliestForecastDate: requireString(row, 'earliest_forecast_date'),
+    latestForecastDate: requireString(row, 'latest_forecast_date'),
+    lastUpdated: requireString(row, 'last_updated'),
+    accuracyRank: requireNumber(row, 'accuracy_rank'),
+    isBestModel: requireBoolean(row, 'is_best_model'),
+  };
+}
+
+function mapModelComparisonResult(row: Record<string, unknown>): ModelComparisonResult {
+  return {
+    modelName: requireModelName(row, 'model_name'),
+    modelVersion: requireString(row, 'model_version'),
+    avgAccuracyPct: requireNumber(row, 'avg_accuracy_pct'),
+    avgMape: requireNumber(row, 'avg_mape'),
+    ciCoveragePct: requireNumber(row, 'ci_coverage_pct'),
+    totalForecasts: requireNumber(row, 'total_forecasts'),
+    recentAccuracyPct: optionalNumber(row, 'recent_accuracy_pct'),
+    accuracyRank: requireNumber(row, 'accuracy_rank'),
+  };
+}
 
 // ============================================================================
 // MAIN SERVICE CLASS
@@ -358,7 +491,7 @@ export class ForecastService {
         throw error;
       }
       
-      return (data || []) as ForecastAccuracySummary[];
+      return (data || []).map(mapForecastAccuracySummary);
     } catch (viewError) {
       // mv_forecast_accuracy view not yet created — return empty array gracefully
       console.warn('[ForecastService] mv_forecast_accuracy not available:', viewError);
@@ -384,7 +517,7 @@ export class ForecastService {
       throw new Error(`Failed to compare models: ${error.message}`);
     }
     
-    return (data || []) as ModelComparisonResult[];
+    return (data || []).map(mapModelComparisonResult);
   }
   
   // ==========================================================================

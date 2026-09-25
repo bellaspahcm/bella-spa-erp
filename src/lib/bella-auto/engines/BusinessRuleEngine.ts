@@ -23,6 +23,9 @@ export interface RuleAction {
   [key: string]: unknown;
 }
 
+function hasWorkflowCode(action: RuleAction): action is RuleAction & { workflow: string } {
+  return typeof action.workflow === 'string' && action.workflow.length > 0;
+}
 
 export interface BusinessRule {
   id: string;
@@ -134,6 +137,11 @@ export class BusinessRuleEngine {
       try {
         switch (action.type) {
           case 'require_approval':
+            if (!hasWorkflowCode(action)) {
+              results.push({ action: 'require_approval', success: false, error: 'Missing approval workflow' });
+              break;
+            }
+
             const approvalResult = await this.createApprovalInstance(
               tenantId,
               action.workflow,
@@ -258,7 +266,7 @@ export class BusinessRuleEngine {
       // Validate approver role matches current level
       const workflow = instance.workflow as unknown as ApprovalWorkflow;
       const currentLevelConfig = workflow.levels.find(
-        (l: Record<string, unknown>) => l.level === instance.current_level
+        (l) => l.level === instance.current_level
       );
 
       if (!currentLevelConfig || currentLevelConfig.role !== approverRole) {
@@ -308,7 +316,7 @@ export class BusinessRuleEngine {
       if (currentLevelApprovals.length >= currentLevelConfig.requiredCount) {
         // Move to next level or complete
         const nextLevel = instance.current_level + 1;
-        const hasNextLevel = workflow.levels.some((l: Record<string, unknown>) => l.level === nextLevel);
+        const hasNextLevel = workflow.levels.some((l) => l.level === nextLevel);
 
         const { error: updateError } = await this.supabase
           .from('auto_approval_instances')

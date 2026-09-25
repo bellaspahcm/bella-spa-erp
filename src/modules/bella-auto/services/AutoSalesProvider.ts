@@ -43,6 +43,10 @@ export interface BookingDetail {
   createdAt: string;
 }
 
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 export const AutoSalesProvider = {
   /**
    * Tạo hợp đồng đặt cọc xe ô tô mới.
@@ -57,6 +61,8 @@ export const AutoSalesProvider = {
     // 1. Tạo số booking duy nhất
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     const bookingNumber = `BK-AUTO-2026-${randomSuffix}`;
+    const initialPaymentStatus: BookingDetail['paymentStatus'] = 'unpaid';
+    const initialBookingStatus: BookingDetail['status'] = 'pending';
 
     // 2. Insert vào bảng auto_bookings
     const { data: booking, error: insertErr } = await supabase
@@ -72,8 +78,8 @@ export const AutoSalesProvider = {
         total_price:          totalPrice,
         deposit_amount:       depositAmount,
         deposit_paid:         0,
-        payment_status:       'unpaid',
-        status:               'pending',
+        payment_status:       initialPaymentStatus,
+        status:               initialBookingStatus,
         metadata:             { createdByUserId },
       })
       .select('*')
@@ -96,7 +102,7 @@ export const AutoSalesProvider = {
       } catch (allocErr: unknown) {
         // Rollback booking nếu phân bổ xe thất bại để đảm bảo tính nhất quán dữ liệu
         await supabase.from('auto_bookings').delete().eq('id', booking.id);
-        throw new Error(`AutoSalesProvider.createBooking: Lỗi phân bổ số VIN. ${allocErr.message}`);
+        throw new Error(`AutoSalesProvider.createBooking: Lỗi phân bổ số VIN. ${errorMessage(allocErr)}`);
       }
     }
 
@@ -132,7 +138,7 @@ export const AutoSalesProvider = {
         metadata:        { bookingId: booking.id },
       });
     } catch (jErr: unknown) {
-      console.warn(`[AutoSalesProvider] Không thể cập nhật hành trình khách hàng: ${jErr.message}`);
+      console.warn(`[AutoSalesProvider] Không thể cập nhật hành trình khách hàng: ${errorMessage(jErr)}`);
     }
 
     return {
@@ -147,8 +153,8 @@ export const AutoSalesProvider = {
       totalPrice:    Number(booking.total_price),
       depositAmount: Number(booking.deposit_amount),
       depositPaid:   Number(booking.deposit_paid),
-      paymentStatus: booking.payment_status as unknown,
-      status:        booking.status as unknown,
+      paymentStatus: initialPaymentStatus,
+      status:        initialBookingStatus,
       createdAt:     booking.created_at,
     };
   },
