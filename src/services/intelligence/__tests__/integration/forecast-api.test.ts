@@ -28,6 +28,15 @@ import {
 } from '../helpers/test-utils';
 import { forecastService } from '../../forecast';
 
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const HAS_SUPABASE_CREDENTIALS = Boolean(
+  SUPABASE_URL &&
+  process.env.SUPABASE_SERVICE_ROLE_KEY &&
+  !SUPABASE_URL.includes('mock.supabase.co')
+);
+
+const describeIntegration = HAS_SUPABASE_CREDENTIALS ? describe : describe.skip;
+
 // Mock Supabase Server Client for routes
 jest.mock('@/lib/supabase-server', () => {
   const getTestClient = () => {
@@ -97,7 +106,7 @@ global.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit): Pro
   return new Response(JSON.stringify({ error: 'Not found' }), { status: 404 });
 }) as any;
 
-describe('Forecast API - Integration Tests', () => {
+describeIntegration('Forecast API - Integration Tests', () => {
   let supabase: ReturnType<typeof getTestSupabaseClient>;
 
   beforeAll(async () => {

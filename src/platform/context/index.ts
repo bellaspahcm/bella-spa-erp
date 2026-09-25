@@ -77,12 +77,16 @@ export interface PlatformContext {
   readonly manifest?: VerticalManifest;
 }
 
+type MutablePlatformContext = {
+  -readonly [Key in keyof PlatformContext]: PlatformContext[Key];
+};
+
 // ═══════════════════════════════════════════════════════════════════════════
 // CONTEXT BUILDER
 // ═══════════════════════════════════════════════════════════════════════════
 
 export class ContextBuilder {
-  private data: Partial<PlatformContext> & { activeCapabilities?: Set<string> } = {};
+  private data: Partial<MutablePlatformContext> & { activeCapabilities?: Set<string> } = {};
 
   withTenant(tenant: TenantInfo): this {
     this.data.tenant = tenant;

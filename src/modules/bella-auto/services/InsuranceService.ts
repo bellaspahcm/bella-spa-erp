@@ -14,7 +14,7 @@
  */
 
 import { getPrimaryClient } from '@/lib/database/read-replica';
-import { Database } from '@/types/database.types';
+import { Database, Json } from '@/types/database.types';
 
 type InsurancePolicy = Database['public']['Tables']['auto_insurance_policies']['Row'];
 type InsurancePolicyInsert = Database['public']['Tables']['auto_insurance_policies']['Insert'];
@@ -32,6 +32,46 @@ interface CoverageItems {
   third_party_liability: boolean;
   personal_accident: boolean;
   passenger_accident: boolean;
+}
+
+const COVERAGE_ITEM_KEYS = [
+  'collision',
+  'theft',
+  'fire',
+  'flood',
+  'third_party_liability',
+  'personal_accident',
+  'passenger_accident',
+] as const satisfies readonly (keyof CoverageItems)[];
+
+function coverageItemsToJson(items?: Partial<CoverageItems> | null): Json {
+  const json: { [key: string]: Json | undefined } = {};
+
+  for (const key of COVERAGE_ITEM_KEYS) {
+    const value = items?.[key];
+    if (typeof value === 'boolean') {
+      json[key] = value;
+    }
+  }
+
+  return json;
+}
+
+function coverageItemsFromJson(value: Json | null): Partial<CoverageItems> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {};
+  }
+
+  const coverage: Partial<CoverageItems> = {};
+
+  for (const key of COVERAGE_ITEM_KEYS) {
+    const rawValue = value[key];
+    if (typeof rawValue === 'boolean') {
+      coverage[key] = rawValue;
+    }
+  }
+
+  return coverage;
 }
 
 interface CreateInsurancePolicyParams {
@@ -90,7 +130,7 @@ export class InsuranceService {
       policy_type: params.policyType,
       coverage_amount: params.coverageAmount,
       deductible_amount: params.deductibleAmount,
-      coverage_items: params.coverageItems as unknown,
+      coverage_items: coverageItemsToJson(params.coverageItems),
       premium_amount: params.premiumAmount,
       premium_payment_frequency: params.premiumPaymentFrequency,
       effective_date: params.effectiveDate,
@@ -321,7 +361,7 @@ export class InsuranceService {
       policy_type: oldPolicy.policy_type,
       coverage_amount: oldPolicy.coverage_amount,
       deductible_amount: oldPolicy.deductible_amount,
-      coverage_items: oldPolicy.coverage_items as unknown,
+      coverage_items: oldPolicy.coverage_items,
       premium_amount: renewalParams.premiumAmount ?? oldPolicy.premium_amount,
       premium_payment_frequency: oldPolicy.premium_payment_frequency,
       effective_date: renewalParams.effectiveDate,
@@ -522,13 +562,13 @@ export class InsuranceService {
       throw new Error('Insurance policy not found');
     }
     
-    const currentCoverage = (current.coverage_items || {}) as CoverageItems;
+    const currentCoverage = coverageItemsFromJson(current.coverage_items);
     const updatedCoverage = { ...currentCoverage, ...coverageItems };
     
     const { data, error } = await supabase
       .from('auto_insurance_policies')
       .update({
-        coverage_items: updatedCoverage as unknown,
+        coverage_items: coverageItemsToJson(updatedCoverage),
         updated_by: updatedBy,
       })
       .eq('id', policyId)
