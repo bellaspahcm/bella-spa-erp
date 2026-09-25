@@ -34,10 +34,10 @@ interface HaircutBookingsViewProps {
   onViewChange: (v: BookingsViewMode) => void;
   selectedDate: Date;
   onSelectedDateChange: (d: Date) => void;
-  sessions: any[];
-  ktvs: any[];
+  sessions: unknown[];
+  ktvs: unknown[];
   isSyncing: boolean;
-  onSessionSelect: (session: any) => void;
+  onSessionSelect: (session: unknown) => void;
   onEmptySlotClick: (hour: number, ktvId?: string) => void;
   onCreateClick: () => void;
 }
@@ -111,7 +111,7 @@ export function HaircutBookingsView({
   ];
 
   // Hardcoded mockup schedule grid items matching target UI screenshot
-  const timelineGridData: Record<string, Record<string, any[]>> = {
+  const timelineGridData: Record<string, Record<string, Array<{ id: string; name: string; service: string; time: string; status: string; statusLabel: string; style: string }>>> = {
     '08:00': {
       'unassigned': [],
       'minh': [{ id: 'b1', name: 'Nguyễn Hoàng Anh', service: 'Cắt + Styling', time: '08:00 - 08:45', status: 'in_service', statusLabel: 'Đang phục vụ', style: 'bg-emerald-50/90 border-emerald-200 text-emerald-900' }],

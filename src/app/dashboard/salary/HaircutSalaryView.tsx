@@ -36,8 +36,8 @@ import {
 interface HaircutSalaryViewProps {
   onPublishAll?: () => void;
   onFinalizeAll?: () => void;
-  onEditKtv?: (ktv: any) => void;
-  onFixAttendance?: (ktv: any) => void;
+  onEditKtv?: (ktv: unknown) => void;
+  onFixAttendance?: (ktv: unknown) => void;
 }
 
 const KTV_AVATARS: Record<string, string> = {
@@ -62,7 +62,7 @@ export function HaircutSalaryView({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
-  const [selectedKtvDetail, setSelectedKtvDetail] = useState<any | null>(null);
+  const [selectedKtvDetail, setSelectedKtvDetail] = useState<unknown | null>(null);
 
   const statusOptions = [
     { value: 'Tất cả trạng thái', label: 'Tất cả trạng thái' },

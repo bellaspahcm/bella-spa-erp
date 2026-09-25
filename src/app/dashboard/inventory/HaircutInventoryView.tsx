@@ -30,7 +30,7 @@ import {
 
 interface HaircutInventoryViewProps {
   onRestock?: () => void;
-  onAdjust?: (item: any) => void;
+  onAdjust?: (item: unknown) => void;
   onTransferRequest?: () => void;
   onReconciliation?: () => void;
 }

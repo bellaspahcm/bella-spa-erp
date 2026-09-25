@@ -236,7 +236,7 @@ function StandardInventoryPage() {
 function HaircutInventoryViewWrapper() {
   const [showAdd, setShowAdd] = useState(false);
   const [showCreateRequest, setShowCreateRequest] = useState(false);
-  const [restockTarget, setRestockTarget] = useState<any>(null);
+  const [restockTarget, setRestockTarget] = useState<unknown>(null);
 
   return (
     <HaircutInventoryView

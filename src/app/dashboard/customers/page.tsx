@@ -18,7 +18,7 @@ import {
   getTenantModulePresentationOrNeutral,
 } from '@/lib/business-rules/tenant-module-presentation';
 import { getLocalDateString } from '@bella/shared';
-import { cn } from '@/lib/utils';;
+import { cn } from '@/lib/utils';
 
 import {
 Baby,
