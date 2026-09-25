@@ -405,7 +405,7 @@ export default function RealEstateContractsPage() {
       if (search) {
         const q = search.toLowerCase();
         const mNo = c.contractNo.toLowerCase().includes(q);
-        const mCust = c.fullName ? c.fullName.toLowerCase().includes(q) : c.customerName.toLowerCase().includes(q);
+        const mCust = c.customerName.toLowerCase().includes(q);
         const mUnit = c.unitCode.toLowerCase().includes(q);
         if (!mNo && !mCust && !mUnit) return false;
       }

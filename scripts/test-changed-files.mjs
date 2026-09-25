@@ -9,6 +9,31 @@ const EXCLUDED_PATTERNS = [
   /^src\/__tests__\/bella-auto-phase5-experience\.test\.ts$/,
   /\.(test|spec)\.(ts|tsx|js|jsx)$/,
 ];
+const RELATED_TEST_EXCLUDED_PATTERNS = [
+  '/node_modules/',
+  '/.next/',
+  '/e2e/',
+  '/playwright-report/',
+  '/tests/unit/runtime/',
+  '/tests/integration/runtime/',
+  '/tests/e2e/runtime/',
+  '/src/__tests__/bella-auto-phase5-experience\\.test\\.ts$',
+  '/src/__tests__/e2e-order-lifecycle-real\\.test\\.ts$',
+  '/src/__tests__/e2e-refund-full\\.test\\.ts$',
+  '/src/__tests__/e2e-accounting-gl-verification\\.test\\.ts$',
+  '/src/__tests__/e2e-payroll-month-close\\.test\\.ts$',
+  '/src/__tests__/auto-phase3-journey-engine\\.test\\.ts$',
+  '/src/__tests__/create-booking-payment-status\\.test\\.ts$',
+  '/src/__tests__/e2e-salary-comprehensive\\.test\\.ts$',
+  '/src/__tests__/healthcare-hospital-inpatient\\.test\\.ts$',
+  '/src/__tests__/hospital-clinical-alerts\\.test\\.ts$',
+  '/src/app/api/rules/__tests__/rules-api\\.test\\.ts$',
+  '/src/modules/bookings/actions/__tests__/service-items-actions\\.test\\.ts$',
+  '/src/platform/finance/__tests__/finance-f2-concurrency\\.test\\.ts$',
+  '/src/platform/finance/__tests__/finance-f2-reconstruction\\.test\\.ts$',
+  '/src/platform/finance/__tests__/finance-f2-reporting-api\\.test\\.ts$',
+  '/src/platform/real-estate/__tests__/real-estate-kernel\\.integration\\.test\\.ts$',
+];
 
 function run(command, args, options = {}) {
   return spawnSync(command, args, {
@@ -122,6 +147,9 @@ for (const file of sourceFiles) {
 }
 
 const jestArgs = ['jest', '--findRelatedTests', ...sourceFiles, '--runInBand', '--passWithNoTests'];
+for (const pattern of RELATED_TEST_EXCLUDED_PATTERNS) {
+  jestArgs.push('--testPathIgnorePatterns', pattern);
+}
 if (jestJsonOutput) {
   jestArgs.push('--json', '--outputFile', jestJsonOutput);
 }

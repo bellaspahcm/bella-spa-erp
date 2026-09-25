@@ -137,10 +137,8 @@ export async function POST(request: Request) {
         total_price: body.totalPrice,
         deposit_amount: body.depositAmount,
         deposit_paid: depositPaidAmount,
-        deposit_remaining: body.depositAmount - depositPaidAmount,
         status: status,
-        booking_date: new Date().toISOString(),
-        created_by: user.id,
+        metadata: { createdByUserId: user.id },
       })
       .select()
       .single();
@@ -155,7 +153,7 @@ export async function POST(request: Request) {
       const { error: vehicleError } = await supabase
         .from('auto_vehicles')
         .update({ 
-          status: 'reserved',
+          status: 'allocated',
           updated_at: new Date().toISOString(),
         })
         .eq('id', body.vehicleId)

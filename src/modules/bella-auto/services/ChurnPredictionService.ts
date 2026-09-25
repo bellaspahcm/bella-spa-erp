@@ -14,7 +14,7 @@
  */
 
 import { getPrimaryClient } from '@/lib/database/read-replica';
-import { Database } from '@/types/database.types';
+import type { Database, Json } from '@/types/database.types';
 
 type ChurnPrediction = Database['public']['Tables']['auto_churn_predictions']['Row'];
 type ChurnPredictionInsert = Database['public']['Tables']['auto_churn_predictions']['Insert'];
@@ -31,7 +31,7 @@ interface CreatePredictionParams {
   churnProbability: number;
   churnRiskLevel: ChurnRiskLevel;
   estimatedDaysToChurn?: number;
-  factors: unknown[];
+  factors: Json;
   primaryReason?: string;
   daysSinceLastService?: number;
   totalServiceVisits?: number;
@@ -40,7 +40,7 @@ interface CreatePredictionParams {
   averageRepairCost?: number;
   npsScore?: number;
   csiScore?: number;
-  recommendedActions?: unknown[];
+  recommendedActions?: Json;
   retentionStrategy?: string;
   estimatedRetentionCost?: number;
   modelName?: string;
@@ -62,7 +62,7 @@ export class ChurnPredictionService {
       churn_probability: params.churnProbability,
       churn_risk_level: params.churnRiskLevel,
       estimated_days_to_churn: params.estimatedDaysToChurn,
-      factors: params.factors as unknown,
+      factors: params.factors,
       primary_reason: params.primaryReason,
       days_since_last_service: params.daysSinceLastService,
       total_service_visits: params.totalServiceVisits,
@@ -71,7 +71,7 @@ export class ChurnPredictionService {
       average_repair_cost: params.averageRepairCost,
       nps_score: params.npsScore,
       csi_score: params.csiScore,
-      recommended_actions: params.recommendedActions as unknown,
+      recommended_actions: params.recommendedActions,
       retention_strategy: params.retentionStrategy,
       estimated_retention_cost: params.estimatedRetentionCost,
       model_name: params.modelName || 'churn-prediction-v1',

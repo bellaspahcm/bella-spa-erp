@@ -170,7 +170,8 @@ export class QuarantineRepository {
       .single();
     
     if (error || !data) {
-      throw new Error(`Failed to mark reviewed: ${error.message}`);
+      const errorMessage = error ? error.message : 'No quarantine record returned';
+      throw new Error(`Failed to mark reviewed: ${errorMessage}`);
     }
     
     return this.mapToRecord(data);

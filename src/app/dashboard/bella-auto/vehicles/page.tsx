@@ -23,17 +23,74 @@ import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase-client';
 import { AutoInventoryProvider, type VehicleInventoryItem } from '@/modules/bella-auto/services/AutoInventoryProvider';
 import { VehicleStatusMachineService, type VehicleStatus } from '@/modules/bella-auto/services/VehicleStatusMachineService';
+import type { Database } from '@/types/database.types';
 import { useEffect } from 'react';
+
+type AutoVehicleRow = Database['public']['Tables']['auto_vehicles']['Row'];
+
+type VehicleQueryRow = Pick<
+  AutoVehicleRow,
+  | 'id'
+  | 'vin'
+  | 'chassis_number'
+  | 'engine_number'
+  | 'color_exterior'
+  | 'color_interior'
+  | 'model_year'
+  | 'list_price'
+  | 'cost_price'
+  | 'status'
+  | 'location_note'
+  | 'expected_arrival_date'
+  | 'actual_arrival_date'
+  | 'variant_id'
+  | 'created_at'
+  | 'updated_at'
+> & {
+  auto_variants: {
+    name: string | null;
+    auto_models: {
+      name: string | null;
+      auto_brands: {
+        name: string | null;
+      } | null;
+    } | null;
+  } | null;
+};
+
+function mapVehicleQueryRow(row: VehicleQueryRow): VehicleInventoryItem {
+  return {
+    id: row.id,
+    vin: row.vin,
+    chassisNumber: row.chassis_number,
+    engineNumber: row.engine_number,
+    colorExterior: row.color_exterior,
+    colorInterior: row.color_interior,
+    modelYear: row.model_year,
+    listPrice: row.list_price,
+    costPrice: row.cost_price,
+    status: row.status,
+    locationNote: row.location_note,
+    expectedArrivalDate: row.expected_arrival_date,
+    actualArrivalDate: row.actual_arrival_date,
+    variantId: row.variant_id,
+    variantName: row.auto_variants?.name ?? undefined,
+    modelName: row.auto_variants?.auto_models?.name ?? undefined,
+    brandName: row.auto_variants?.auto_models?.auto_brands?.name ?? undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
 
 // Status configuration
 const STATUS_CONFIG: Record<VehicleStatus, { label: string; bg: string; color: string; border: string }> = {
   in_transit: { label: 'Đang Vận Chuyển', bg: 'bg-amber-50 dark:bg-amber-950/30', color: 'text-amber-700 dark:text-amber-400', border: 'border-amber-200/60 dark:border-amber-900/30' },
   warehouse:  { label: 'Trong Kho',       bg: 'bg-slate-50 dark:bg-slate-950/30', color: 'text-slate-700 dark:text-slate-400', border: 'border-slate-200/60 dark:border-slate-900/30' },
   showroom:   { label: 'Showroom',        bg: 'bg-cyan-50 dark:bg-cyan-950/30',   color: 'text-cyan-700 dark:text-cyan-400',   border: 'border-cyan-200/60 dark:border-cyan-900/30' },
-  arrived:    { label: 'Đã Về Kho',       bg: 'bg-blue-50 dark:bg-blue-950/30',   color: 'text-blue-700 dark:text-blue-400',   border: 'border-blue-200/60 dark:border-blue-900/30' },
   allocated:  { label: 'Đã Phân Bổ',      bg: 'bg-violet-50 dark:bg-violet-950/30', color: 'text-violet-700 dark:text-violet-400', border: 'border-violet-200/60 dark:border-violet-900/30' },
   delivered:  { label: 'Đã Giao Xe',      bg: 'bg-teal-50 dark:bg-teal-950/30',  color: 'text-teal-700 dark:text-teal-400',   border: 'border-teal-200/60 dark:border-teal-900/30' },
-  sold:       { label: 'Đã Bán',           bg: 'bg-emerald-50 dark:bg-emerald-950/30', color: 'text-emerald-700 dark:text-emerald-400', border: 'border-emerald-200/60 dark:border-emerald-900/30' },
+  returned:   { label: 'Đã Trả Lại',      bg: 'bg-blue-50 dark:bg-blue-950/30',   color: 'text-blue-700 dark:text-blue-400',   border: 'border-blue-200/60 dark:border-blue-900/30' },
+  scrapped:   { label: 'Thanh Lý/Hủy',    bg: 'bg-red-50 dark:bg-red-950/30',     color: 'text-red-700 dark:text-red-400',     border: 'border-red-200/60 dark:border-red-900/30' },
 };
 
 // ── Add Vehicle Modal ─────────────────────────────────────────────────────────
@@ -285,6 +342,7 @@ export default function VehicleInventoryPage() {
             )
           )
         `)
+        .returns<VehicleQueryRow[]>()
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -292,28 +350,8 @@ export default function VehicleInventoryPage() {
         toast.error('Không thể tải danh sách xe');
         setVehicles([]);
       } else {
-        // Map to VehicleInventoryItem interface
-        const mappedVehicles = (data || []).map((row: Record<string, unknown>) => ({
-          id: row.id,
-          vin: row.vin,
-          chassisNumber: row.chassis_number,
-          engineNumber: row.engine_number,
-          colorExterior: row.color_exterior,
-          colorInterior: row.color_interior,
-          modelYear: row.model_year,
-          listPrice: Number(row.list_price),
-          costPrice: Number(row.cost_price),
-          status: row.status,
-          locationNote: row.location_note,
-          expectedArrivalDate: row.expected_arrival_date,
-          actualArrivalDate: row.actual_arrival_date,
-          variantId: row.variant_id,
-          variantName: row.auto_variants?.name,
-          modelName: row.auto_variants?.auto_models?.name,
-          brandName: row.auto_variants?.auto_models?.auto_brands?.name,
-          createdAt: row.created_at,
-          updatedAt: row.updated_at,
-        }));
+        // Map query result to VehicleInventoryItem interface
+        const mappedVehicles = (data || []).map(mapVehicleQueryRow);
         
         console.log('[VehiclesPage] Loaded vehicles:', mappedVehicles.length);
         console.log('[VehiclesPage] Sample vehicle:', mappedVehicles[0]);
@@ -518,13 +556,7 @@ export default function VehicleInventoryPage() {
                     <StatusChip 
                       vehicle={vehicle} 
                       onTransitioned={() => {
-                        // Refetch vehicles after status transition
-                        const fetchVehicles = async () => {
-                          const supabase = createClient();
-                          const { data } = await supabase.from('auto_vehicles').select('*').order('created_at', { ascending: false });
-                          if (data) setVehicles(data);
-                        };
-                        fetchVehicles();
+                        void fetchVehicles();
                       }}
                       isOpen={openDropdownId === vehicle.id}
                       onToggle={handleDropdownToggle}
@@ -660,13 +692,7 @@ export default function VehicleInventoryPage() {
           <AddVehicleModal
             onClose={() => setShowAddModal(false)}
             onSuccess={() => {
-              // Refetch vehicles after adding
-              const fetchVehicles = async () => {
-                const supabase = createClient();
-                const { data } = await supabase.from('auto_vehicles').select('*').order('created_at', { ascending: false });
-                if (data) setVehicles(data);
-              };
-              fetchVehicles();
+              void fetchVehicles();
             }}
           />
         )}

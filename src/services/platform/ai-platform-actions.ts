@@ -244,7 +244,9 @@ export async function getPromptLedgerAction(agentCode?: string): Promise<{
     return { data: [], error: error.message };
   }
 
-  const logs = (data ?? []).map((l) => ({
+  const logs = (data ?? [])
+    .filter((l): l is typeof l & { called_at: string } => l.called_at !== null)
+    .map((l) => ({
     id: l.id,
     agentCode: l.agent_code,
     promptText: 'Simulated prompt payload', // Excluded actual raw text from public view for security

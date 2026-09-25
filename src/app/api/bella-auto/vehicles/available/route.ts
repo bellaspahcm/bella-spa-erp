@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       .select('id, vin, color_exterior, status')
       .eq('tenant_id', profile.tenant_id)
       .eq('variant_id', variantId)
-      .eq('status', 'available');
+      .in('status', ['warehouse', 'showroom']);
 
     // Filter by color if provided
     if (colorExterior) {

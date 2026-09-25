@@ -271,7 +271,7 @@ export function CreateBookingModal({ isOpen, onClose, onSuccess }: CreateBooking
     setFormData(prev => ({ ...prev, [field]: value }));
     
     // Check duplicate when phone changes in new customer form
-    if (field === 'customerPhone' && showNewCustomerForm) {
+    if (field === 'customerPhone' && showNewCustomerForm && typeof value === 'string') {
       checkDuplicatePhone(value);
     }
   }

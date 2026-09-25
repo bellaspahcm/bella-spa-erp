@@ -1146,7 +1146,7 @@ export default function RealEstateMarketingPage() {
                   </div>
                   <div>
                     <span className="text-slate-400 font-semibold block text-[10px]">Chỉ tiêu chuyển đổi</span>
-                    <span className="font-bold text-blue-600">{selectedAgency.convertedDeals} giao dịch ({((selectedAgency.convertedDeals / selectedAgency.leadsDelivered) * 100).toFixed(1)}%)</span>
+                    <span className="font-bold text-blue-600">{selectedAgency.dealsClosed} giao dịch ({((selectedAgency.dealsClosed / selectedAgency.leadsDelivered) * 100).toFixed(1)}%)</span>
                   </div>
                 </div>
 

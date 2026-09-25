@@ -7,7 +7,11 @@ import {
   DashboardAuthorizedShell,
 } from '@/components/layout/DashboardLoadingShell';
 import { resolveTenantBrandIdentity } from '@/lib/business-rules/tenant-modules';
-import { getCachedCurrentUser, getCachedTenantSettings } from '@/lib/dashboard-client-context';
+import {
+  clearDashboardClientContextCache,
+  getCachedCurrentUser,
+  getCachedTenantSettings,
+} from '@/lib/dashboard-client-context';
 
 const RUNTIME_BRAND_CACHE_KEY = 'bella.runtime.brand.v1';
 
@@ -125,8 +129,11 @@ export default function DashboardLayout({
                 
                 // Show toast notification (optional - only if toast context available)
                 type WindowWithToast = Window & { showToast?: (opts: { title: string; description: string; variant: string }) => void };
-                if (typeof window !== 'undefined' && (window as WindowWithToast).showToast) {
-                  (window as WindowWithToast).showToast({
+                const showToast = typeof window !== 'undefined'
+                  ? (window as WindowWithToast).showToast
+                  : undefined;
+                if (showToast) {
+                  showToast({
                     title: 'Cập nhật giao diện',
                     description: getUpgradeDescription(moduleKey),
                     variant: 'success',
@@ -134,8 +141,8 @@ export default function DashboardLayout({
                 }
                 
                 // Force reload tenant settings to get updated theme
-                await getCachedTenantSettings.cache?.delete?.(getCachedTenantSettings);
-                const updatedTenant = await getCachedTenantSettings().catch(() => tenant);
+                clearDashboardClientContextCache();
+                const updatedTenant = await getCachedTenantSettings({ force: true }).catch(() => tenant);
                 await applyDashboardTenantBrandRuntime(updatedTenant ?? undefined);
               } else {
                 await applyDashboardTenantBrandRuntime(tenant);

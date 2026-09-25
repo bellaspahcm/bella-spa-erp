@@ -65,7 +65,10 @@ export default function Inventory() {
   }, [loadProducts]);
 
   // Extract unique blocks for filter
-  const blocks = ['all', ...Array.from(new Set(products.map(p => p.block).filter(Boolean)))];
+  const blocks = [
+    'all',
+    ...Array.from(new Set(products.map(p => p.block).filter((block): block is string => Boolean(block))))
+  ];
 
   // Filter products by search query and block
   const filteredProducts = products.filter(p => {

@@ -92,8 +92,7 @@ export const CustomerJourneyService = {
       .select(`
         id, 
         entered_stage_at,
-        current_stage_id,
-        auto_journey_stages!current_stage_id(code, name)
+        current_stage_id
       `)
       .eq('tenant_id', tenantId)
       .eq('customer_id', customerId)
@@ -103,8 +102,18 @@ export const CustomerJourneyService = {
       throw new Error(`CustomerJourneyService.transitionStage: Khách hàng chưa được khởi tạo hành trình.`);
     }
 
-    const currentStage = (journey.auto_journey_stages as unknown);
-    const fromStageCode = currentStage?.code;
+    const { data: currentStage, error: currentStageErr } = await supabase
+      .from('auto_journey_stages')
+      .select('code, name')
+      .eq('tenant_id', tenantId)
+      .eq('id', journey.current_stage_id)
+      .single();
+
+    if (currentStageErr || !currentStage) {
+      throw new Error(`CustomerJourneyService.transitionStage: Không tìm thấy stage hiện tại.`);
+    }
+
+    const fromStageCode = currentStage.code;
     const fromStageId = journey.current_stage_id;
 
     if (fromStageCode === toStageCode) {

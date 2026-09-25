@@ -25,6 +25,7 @@ import {
   normalizeEnabledModules,
   type TenantEnabledModules,
 } from '@/lib/business-rules/tenant-modules';
+import type { Json } from '@/types/database.types';
 
 import { createBlankBookingResourceForm, createBlankServiceForm, PAGE_SIZE } from '../constants';
 import type {
@@ -59,7 +60,33 @@ const EMPTY_ENABLED_MODULES: TenantEnabledModules = {
   student_training: false,
   industrial_cleaning: false,
   real_estate: false,
+  bella_auto: false,
+  bella_healthcare: false,
+  bella_education: false,
 };
+
+type JsonObject = { [key: string]: Json | undefined };
+
+function isJsonObject(value: Json | null): value is JsonObject {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function getMetadataText(metadata: Json | null, key: string, fallback = '') {
+  if (!isJsonObject(metadata)) return fallback;
+  const value = metadata[key];
+  return typeof value === 'string' ? value : fallback;
+}
+
+function getMetadataRisModality(metadata: Json | null) {
+  const value = getMetadataText(metadata, 'risModality');
+  return (
+    value === 'XRAY'
+    || value === 'CT'
+    || value === 'MRI'
+    || value === 'ULTRASOUND'
+    || value === 'ENDOSCOPY'
+  ) ? value : 'XRAY';
+}
 
 const createDefaultPackages = (moduleKey: ServiceModuleKey): PackageActionInput[] => {
   if (moduleKey === 'industrial_cleaning') {
@@ -488,12 +515,12 @@ export function useServicesPageState() {
       ) ? service.default_resource_type : 'bed',
       beforeAfterRequired: service.before_after_required === true,
       careNoteTemplate: service.care_note_template || '',
-      lisCode: (service.metadata as unknown)?.lisCode || '',
-      lisSampleType: (service.metadata as unknown)?.lisSampleType || '',
-      lisTubeColor: (service.metadata as unknown)?.lisTubeColor || '',
-      risCode: (service.metadata as unknown)?.risCode || '',
-      risModality: (service.metadata as unknown)?.risModality || 'XRAY',
-      risBodySite: (service.metadata as unknown)?.risBodySite || '',
+      lisCode: getMetadataText(service.metadata, 'lisCode'),
+      lisSampleType: getMetadataText(service.metadata, 'lisSampleType'),
+      lisTubeColor: getMetadataText(service.metadata, 'lisTubeColor'),
+      risCode: getMetadataText(service.metadata, 'risCode'),
+      risModality: getMetadataRisModality(service.metadata),
+      risBodySite: getMetadataText(service.metadata, 'risBodySite'),
     });
     setMaterialRows([]);
     setIsModalOpen(true);
@@ -675,7 +702,7 @@ export function useServicesPageState() {
         ? form.moduleKey
         : getDefaultTenantModuleKey(enabledModules);
 
-      const metadata: Record<string, unknown> = {};
+      const metadata: JsonObject = {};
       if (form.serviceKind === 'lis_test') {
         metadata.lisCode = form.lisCode || undefined;
         metadata.lisSampleType = form.lisSampleType || undefined;

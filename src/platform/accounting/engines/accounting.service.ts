@@ -42,9 +42,9 @@ export class AccountingService implements IAccountingContract {
       const codes = request.lines.map(line => line.accountCode);
       const { data: accounts, error: accountError } = await this.supabase
         .from('accounting_accounts')
-        .select('id, code')
+        .select('id, account_code')
         .eq('tenant_id', request.tenantId)
-        .in('code', codes);
+        .in('account_code', codes);
 
       if (accountError) {
         return { success: false, error: `ACCOUNT_RESOLUTION_FAILED: ${accountError.message}` };
@@ -52,7 +52,7 @@ export class AccountingService implements IAccountingContract {
 
       const accountMap = new Map<string, string>();
       for (const acc of accounts || []) {
-        accountMap.set(acc.code, acc.id);
+        accountMap.set(acc.account_code, acc.id);
       }
 
       // Check if all codes resolved
@@ -63,9 +63,9 @@ export class AccountingService implements IAccountingContract {
             .from('accounting_accounts')
             .insert({
               tenant_id: request.tenantId,
-              code: line.accountCode,
-              name: `Tài khoản ${line.accountCode}`,
-              type: 'asset'
+              account_code: line.accountCode,
+              account_name: `Tài khoản ${line.accountCode}`,
+              account_type: 'asset'
             })
             .select('id')
             .single();
@@ -99,11 +99,10 @@ export class AccountingService implements IAccountingContract {
 
       // 4. Insert Journal Lines
       const linesToInsert = request.lines.map(line => ({
-        tenant_id: request.tenantId,
         entry_id: entry.id,
         account_id: accountMap.get(line.accountCode)!,
-        debit: line.debitAmount,
-        credit: line.creditAmount
+        debit_amount: line.debitAmount,
+        credit_amount: line.creditAmount
       }));
 
       const { error: linesError } = await this.supabase

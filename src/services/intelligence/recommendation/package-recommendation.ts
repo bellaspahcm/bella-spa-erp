@@ -50,7 +50,7 @@ interface FitScore {
 interface PackageRow {
   id: string;
   name: string;
-  price: number;
+  price: number | null;
   total_sessions: number;
 }
 

@@ -20,6 +20,28 @@ import type { WorkflowDefinition } from '../types';
 import { DecisionStep, ActionStep, ParallelStep } from '../steps';
 import type { IDecisionEngine } from '../steps/DecisionStep';
 
+type PayrollDecisionAmounts = {
+  bonusAmount?: number;
+  amount?: number;
+  deductionAmount?: number;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> => (
+  typeof value === 'object' && value !== null
+);
+
+function readPayrollDecisionAmounts(value: unknown): PayrollDecisionAmounts {
+  if (!isRecord(value)) {
+    return {};
+  }
+
+  return {
+    bonusAmount: typeof value.bonusAmount === 'number' ? value.bonusAmount : undefined,
+    amount: typeof value.amount === 'number' ? value.amount : undefined,
+    deductionAmount: typeof value.deductionAmount === 'number' ? value.deductionAmount : undefined,
+  };
+}
+
 /**
  * Approval service interface (mock for demonstration)
  */
@@ -146,9 +168,9 @@ export function createPayrollApprovalWorkflow(
       new ActionStep(
         'aggregate-salary',
         async (ctx) => {
-          const kpiResult = ctx.data.kpiResult as unknown;
-          const deductionResult = ctx.data.deductionResult as unknown;
-          const commissionResult = ctx.data.commissionResult as unknown;
+          const kpiResult = readPayrollDecisionAmounts(ctx.data.kpiResult);
+          const deductionResult = readPayrollDecisionAmounts(ctx.data.deductionResult);
+          const commissionResult = readPayrollDecisionAmounts(ctx.data.commissionResult);
           const baseSalary = ctx.data.baseSalary as number;
           
           const totalSalary =

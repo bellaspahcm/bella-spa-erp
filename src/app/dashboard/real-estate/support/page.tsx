@@ -239,6 +239,7 @@ export default function CustomerServiceCenterPage() {
   const [activeTab, setActiveTab] = useState<"all" | "mine" | "unassigned" | "overdue" | "high" | "new" | "processing" | "waiting" | "closed">("all");
   const [search, setSearch] = useState("");
   const [selectedDateRange, setSelectedDateRange] = useState("01/08/2026 - 31/08/2026");
+  const [supportPageSize, setSupportPageSize] = useState("10");
 
   // Selection Checkboxes
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([]);

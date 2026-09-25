@@ -83,10 +83,14 @@ export class BaseSalaryProvider implements PayrollProvider<SalaryComponent> {
     const { employee, attendance, monthYear, tenantConfig, overrides } = context;
 
     // Check if override amount provided
-    if (options?.applyOverrides && overrides?.baseSalary !== undefined) {
+    const overrideAmount = typeof overrides?.baseSalary === 'number'
+      ? overrides.baseSalary
+      : undefined;
+
+    if (options?.applyOverrides && overrideAmount !== undefined) {
       return createSalaryComponent('base-salary', {
         eligible: true,
-        amount: overrides.baseSalary,
+        amount: overrideAmount,
         reason: 'Manual override applied',
         metadata: {
           override: true,

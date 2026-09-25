@@ -39,6 +39,62 @@ import type {
 import { CapacityManagementProvider } from '@/lib/decision-engine/providers/booking/capacity-management-provider';
 import { createClient } from '@/lib/supabase-server';
 
+type SpaCapacityConfig = {
+  bufferPercentage?: number;
+  enablePeakHourManagement?: boolean;
+  enforceBreakTimes?: boolean;
+  dailyCapacityLimit?: number;
+  concurrentSessionLimit?: number;
+  minBreakMinutes?: number;
+  workingHours?: { start: string; end: string };
+  peakHours?: { start: string; end: string; maxBookings: number };
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function readWorkingHours(value: unknown): SpaCapacityConfig['workingHours'] {
+  if (!isRecord(value)) return undefined;
+  return typeof value.start === 'string' && typeof value.end === 'string'
+    ? { start: value.start, end: value.end }
+    : undefined;
+}
+
+function readPeakHours(value: unknown): SpaCapacityConfig['peakHours'] {
+  if (!isRecord(value)) return undefined;
+  return (
+    typeof value.start === 'string' &&
+    typeof value.end === 'string' &&
+    typeof value.maxBookings === 'number'
+  )
+    ? { start: value.start, end: value.end, maxBookings: value.maxBookings }
+    : undefined;
+}
+
+function readSpaCapacityConfig(metadata: unknown): SpaCapacityConfig | null {
+  if (!isRecord(metadata) || !isRecord(metadata.capacity_config)) {
+    return null;
+  }
+
+  const config = metadata.capacity_config;
+  return {
+    bufferPercentage: typeof config.bufferPercentage === 'number' ? config.bufferPercentage : undefined,
+    enablePeakHourManagement: typeof config.enablePeakHourManagement === 'boolean' ? config.enablePeakHourManagement : undefined,
+    enforceBreakTimes: typeof config.enforceBreakTimes === 'boolean' ? config.enforceBreakTimes : undefined,
+    dailyCapacityLimit: typeof config.dailyCapacityLimit === 'number' ? config.dailyCapacityLimit : undefined,
+    concurrentSessionLimit: typeof config.concurrentSessionLimit === 'number' ? config.concurrentSessionLimit : undefined,
+    minBreakMinutes: typeof config.minBreakMinutes === 'number' ? config.minBreakMinutes : undefined,
+    workingHours: readWorkingHours(config.workingHours),
+    peakHours: readPeakHours(config.peakHours),
+  };
+}
+
+function readPackageDurationMinutes(value: unknown): number {
+  if (!isRecord(value)) return 60;
+  return typeof value.duration_minutes === 'number' ? value.duration_minutes : 60;
+}
+
 /**
  * Spa-specific package type extending CoreServiceCatalogItem.
  * 
@@ -274,7 +330,7 @@ export class SpaModuleAdapter implements ModuleAdapter {
         .eq('id', context.tenantId)
         .single();
       
-      const capacityConfig = (tenantData?.metadata as unknown)?.capacity_config as Record<string, unknown> | null;
+      const capacityConfig = readSpaCapacityConfig(tenantData?.metadata);
       
       // Get booking date from scheduledStartTime (YYYY-MM-DD format)
       const scheduledDate = order.scheduledStartTime; // Already in YYYY-MM-DD
@@ -319,7 +375,7 @@ export class SpaModuleAdapter implements ModuleAdapter {
 
       const existingBookingsFormatted = filteredSessions.map(session => {
         const booking = Array.isArray(session.bookings) ? session.bookings[0] : session.bookings;
-        const durationMinutes = (booking?.packages as unknown as Record<string, unknown>)?.duration_minutes as number || 60;
+        const durationMinutes = readPackageDurationMinutes(booking?.packages);
         const statusMap: Record<string, 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled'> = {
           scheduled: 'confirmed',
           in_progress: 'in_progress',
@@ -362,16 +418,16 @@ export class SpaModuleAdapter implements ModuleAdapter {
         ktvId: ktvId,
         existingBookings: existingBookingsFormatted,
         tenantCapacity: capacityConfig ? {
-          bufferPercentage: (capacityConfig.bufferPercentage as number) || 10,
-          enablePeakHourManagement: (capacityConfig.enablePeakHourManagement as boolean) || false,
-          enforceBreakTimes: (capacityConfig.enforceBreakTimes as boolean) || false,
+          bufferPercentage: capacityConfig.bufferPercentage || 10,
+          enablePeakHourManagement: capacityConfig.enablePeakHourManagement || false,
+          enforceBreakTimes: capacityConfig.enforceBreakTimes || false,
         } : undefined,
         ktvCapacity: {
-          maxDailyBookings: (capacityConfig?.dailyCapacityLimit as number) || 10,
-          maxConcurrentSessions: (capacityConfig?.concurrentSessionLimit as number) || 5,
-          minBreakMinutes: (capacityConfig?.minBreakMinutes as number) || 15,
-          workingHours: (capacityConfig?.workingHours as { start: string; end: string }) || { start: '08:00', end: '22:00' },
-          peakHours: capacityConfig?.peakHours as { start: string; end: string; maxBookings: number } | undefined,
+          maxDailyBookings: capacityConfig?.dailyCapacityLimit || 10,
+          maxConcurrentSessions: capacityConfig?.concurrentSessionLimit || 5,
+          minBreakMinutes: capacityConfig?.minBreakMinutes || 15,
+          workingHours: capacityConfig?.workingHours || { start: '08:00', end: '22:00' },
+          peakHours: capacityConfig?.peakHours,
         },
         tenantId: context.tenantId,
       });

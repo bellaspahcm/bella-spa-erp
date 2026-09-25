@@ -12,6 +12,7 @@ import { mapAppointmentForCalendar, mapRepairOrderForBoard } from '@/modules/bel
 import { useTenantContext } from '@/core/hooks/useTenantContext';
 
 type TabType = 'appointments' | 'orders' | 'technicians';
+type RepairOrderBoardItem = Parameters<typeof RepairOrderBoard>[0]['orders'][number];
 
 interface TechnicianWorkload {
   technicianId: string;
@@ -34,8 +35,8 @@ interface TechnicianWorkload {
 export default function WorkshopPage() {
   const { tenantId } = useTenantContext();
   const [activeTab, setActiveTab] = useState<TabType>('appointments');
-  const [appointments, setAppointments] = useState<Array<Record<string, unknown>>>([]);
-  const [orders, setOrders] = useState<Array<Record<string, unknown>>>([]);
+  const [appointments, setAppointments] = useState<ServiceAppointment[]>([]);
+  const [orders, setOrders] = useState<RepairOrderBoardItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedAppointment, setSelectedAppointment] = useState<ServiceAppointment | null>(null);
@@ -269,7 +270,7 @@ export default function WorkshopPage() {
           order_date: aptData.appointment_date || new Date().toISOString().split('T')[0],
           order_type: 'repair',
           work_description: aptData.description || aptData.requested_services || 'Sửa chữa bảo dưỡng theo lịch hẹn',
-          customer_name: aptData.customer_name,
+          customer_name: aptData.customer_name || 'Unknown Customer',
           customer_phone: aptData.customer_phone,
           vehicle_info: aptData.vehicle_info,
           estimated_labor_cost: 300000,
@@ -426,7 +427,7 @@ export default function WorkshopPage() {
               selectedDate={selectedDate}
               onDateChange={setSelectedDate}
               onAppointmentClick={(apt) => {
-                setSelectedAppointment(apt as unknown as ServiceAppointment);
+                setSelectedAppointment(apt);
                 setIsDetailModalOpen(true);
               }}
             />

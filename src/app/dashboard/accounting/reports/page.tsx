@@ -157,13 +157,13 @@ export default function AccountingReportsPage() {
         let data = await getTrialBalanceReport(asOfDate);
         if (!data || data.length === 0) {
           data = [
-            { account_id: '1', account_code: '1111', account_name: 'Tiền mặt tại quỹ (VND)', opening_debit: 45000000, opening_credit: 0, period_debit: 125000000, period_credit: 85000000, closing_debit: 85000000, closing_credit: 0 },
-            { account_id: '2', account_code: '1121', account_name: 'Tiền gửi Ngân hàng Techcombank', opening_debit: 120000000, opening_credit: 0, period_debit: 310000000, period_credit: 140000000, closing_debit: 290000000, closing_credit: 0 },
-            { account_id: '3', account_code: '131_BHYT', account_name: 'Phải thu BHXH Bảo hiểm y tế (80%)', opening_debit: 15000000, opening_credit: 0, period_debit: 42500000, period_credit: 32000000, closing_debit: 25500000, closing_credit: 0 },
-            { account_id: '4', account_code: '1521', account_name: 'Kho Dược phẩm & Hóa chất LIS', opening_debit: 35000000, opening_credit: 0, period_debit: 28000000, period_credit: 18000000, closing_debit: 45000000, closing_credit: 0 },
-            { account_id: '5', account_code: '5113', account_name: 'Doanh thu Dịch vụ Khám Y Tế & Chẩn đoán', opening_debit: 0, opening_credit: 0, period_debit: 0, period_credit: 477500000, closing_debit: 0, closing_credit: 477500000 },
-            { account_id: '6', account_code: '6421', account_name: 'Chi phí Lương & Thù lao Y Bác sĩ', opening_debit: 0, opening_credit: 0, period_debit: 176500000, period_credit: 0, closing_debit: 176500000, closing_credit: 0 },
-          ] as unknown;
+            { account_id: '1', account_code: '1111', account_name: 'Tiền mặt tại quỹ (VND)', account_type: 'asset', opening_debit: 45000000, opening_credit: 0, period_debit: 125000000, period_credit: 85000000, closing_debit: 85000000, closing_credit: 0 },
+            { account_id: '2', account_code: '1121', account_name: 'Tiền gửi Ngân hàng Techcombank', account_type: 'asset', opening_debit: 120000000, opening_credit: 0, period_debit: 310000000, period_credit: 140000000, closing_debit: 290000000, closing_credit: 0 },
+            { account_id: '3', account_code: '131_BHYT', account_name: 'Phải thu BHXH Bảo hiểm y tế (80%)', account_type: 'asset', opening_debit: 15000000, opening_credit: 0, period_debit: 42500000, period_credit: 32000000, closing_debit: 25500000, closing_credit: 0 },
+            { account_id: '4', account_code: '1521', account_name: 'Kho Dược phẩm & Hóa chất LIS', account_type: 'asset', opening_debit: 35000000, opening_credit: 0, period_debit: 28000000, period_credit: 18000000, closing_debit: 45000000, closing_credit: 0 },
+            { account_id: '5', account_code: '5113', account_name: 'Doanh thu Dịch vụ Khám Y Tế & Chẩn đoán', account_type: 'revenue', opening_debit: 0, opening_credit: 0, period_debit: 0, period_credit: 477500000, closing_debit: 0, closing_credit: 477500000 },
+            { account_id: '6', account_code: '6421', account_name: 'Chi phí Lương & Thù lao Y Bác sĩ', account_type: 'expense', opening_debit: 0, opening_credit: 0, period_debit: 176500000, period_credit: 0, closing_debit: 176500000, closing_credit: 0 },
+          ];
         }
         reportCacheRef.current.set(cacheKey, { kind: 'trial_balance', data: data || [] });
         setTrialBalance(data || []);
@@ -185,7 +185,7 @@ export default function AccountingReportsPage() {
             profit_before_tax: 220200000,
             tax_expense: 44040000,
             net_profit: 176160000,
-          } as unknown;
+          };
         }
         reportCacheRef.current.set(cacheKey, { kind: 'income_statement', data });
         setIncomeStatement(data);
@@ -210,7 +210,7 @@ export default function AccountingReportsPage() {
             owners_capital: 250000000,
             retained_earnings: 177500000,
             total_equity_and_liabilities: 445500000,
-          } as unknown;
+          };
         }
         reportCacheRef.current.set(cacheKey, { kind: 'balance_sheet', data });
         setBalanceSheet(data);
@@ -236,7 +236,8 @@ export default function AccountingReportsPage() {
             owner_contributions: 0,
             loans_received: 0,
             loans_repaid: 0,
-          } as unknown;
+            verification_diff: 0,
+          };
         }
         reportCacheRef.current.set(cacheKey, { kind: 'cash_flow', data });
         setCashFlow(data);

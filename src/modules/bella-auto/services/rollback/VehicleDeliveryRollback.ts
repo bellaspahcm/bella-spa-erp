@@ -153,18 +153,19 @@ export class VehicleDeliveryRollback {
     // Get current journey state
     const { data: journey } = await this.supabase
       .from('auto_customer_journeys')
-      .select('current_stage_code')
+      .select('current_stage_id')
       .eq('id', journeyId)
       .single();
 
     if (!journey) throw new Error('Journey not found');
 
-    const previousStage = journey.current_stage_code;
+    const previousStage = journey.current_stage_id;
+    const deliveredStageId = await this.getStageId('vehicle_delivered');
 
     // Update journey to delivered
     const { error } = await this.supabase
       .from('auto_customer_journeys')
-      .update({ current_stage_code: 'vehicle_delivered' })
+      .update({ current_stage_id: deliveredStageId })
       .eq('id', journeyId);
 
     if (error) throw error;
@@ -175,10 +176,25 @@ export class VehicleDeliveryRollback {
       entityType: 'journey',
       entityId: journeyId,
       snapshotBefore: { stage: previousStage },
-      snapshotAfter: { stage: 'vehicle_delivered' },
+      snapshotAfter: { stage: deliveredStageId },
       compensatingAction: 'revert_journey_stage',
       compensatingParams: { previous_stage: previousStage },
     });
+  }
+
+  private async getStageId(stageCode: string): Promise<string> {
+    const { data: stage, error } = await this.supabase
+      .from('auto_journey_stages')
+      .select('id')
+      .eq('tenant_id', this.tenantId)
+      .eq('code', stageCode)
+      .single();
+
+    if (error || !stage) {
+      throw new Error(`Journey stage not found for code "${stageCode}"`);
+    }
+
+    return stage.id;
   }
 
   private async stepSendNotifications(

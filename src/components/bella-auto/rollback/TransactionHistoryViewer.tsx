@@ -44,8 +44,8 @@ interface Transaction {
 }
 
 interface TransactionHistoryViewerProps {
-  entityType: string;
-  entityId: string;
+  entityType?: string;
+  entityId?: string;
   onViewDetails?: (transactionId: string) => void;
   onRollback?: (transactionId: string) => void;
 }
@@ -64,10 +64,12 @@ export function TransactionHistoryViewer({
   const loadTransactions = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({
-        entity_type: entityType,
-        entity_id: entityId,
-      });
+      const params = new URLSearchParams();
+
+      if (entityType && entityId) {
+        params.set('entity_type', entityType);
+        params.set('entity_id', entityId);
+      }
       
       if (filterStatus !== 'all') params.append('status', filterStatus);
       if (filterType !== 'all') params.append('type', filterType);
@@ -103,15 +105,15 @@ export function TransactionHistoryViewer({
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, unknown> = {
+    const variants: Record<string, 'default' | 'destructive' | 'secondary'> = {
       committed: 'default',
       rolled_back: 'destructive',
       failed: 'destructive',
       pending: 'secondary',
-    };
+    } as const;
 
     return (
-      <Badge variant={variants[status] || 'outline'}>
+      <Badge variant={variants[status] ?? 'outline'}>
         {status.replace('_', ' ')}
       </Badge>
     );
@@ -139,7 +141,7 @@ export function TransactionHistoryViewer({
       <div className="flex items-center gap-4">
         <Filter className="w-4 h-4 text-gray-500" />
         
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
+        <Select value={filterStatus} onValueChange={(value) => setFilterStatus(value ?? 'all')}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
@@ -152,7 +154,7 @@ export function TransactionHistoryViewer({
           </SelectContent>
         </Select>
 
-        <Select value={filterType} onValueChange={setFilterType}>
+        <Select value={filterType} onValueChange={(value) => setFilterType(value ?? 'all')}>
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder="Filter by type" />
           </SelectTrigger>

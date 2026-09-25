@@ -29,5 +29,10 @@ export default async function BookingsPage() {
     redirect('/login');
   }
 
-  return <BookingsPageClient tenantId={profile.tenant_id} />;
+  const tenantId = profile.tenant_id;
+  if (!tenantId) {
+    redirect('/login');
+  }
+
+  return <BookingsPageClient tenantId={tenantId} />;
 }

@@ -227,7 +227,12 @@ describe('Phase 11: Business Rollback Engine', () => {
           ...s,
           entity_type: 'test',
           entity_id: 'test-123',
-          compensating_params: {},
+          compensating_params:
+            s.compensating_action === 'revert_vehicle_status'
+              ? { status: 'allocated' }
+              : s.compensating_action === 'revert_journey_stage'
+                ? { previous_stage: 'stage-prep-id' }
+                : {},
         })),
         error: null,
       });
@@ -337,6 +342,16 @@ describe('Phase 11: Business Rollback Engine', () => {
             transaction_id: 'tx-delivery-1',
             sequence: i,
             status: 'executed',
+            compensating_action: [
+              'revert_journey_stage',
+              'cancel_notification',
+              'remove_ai_event',
+              'revert_commission',
+              'reverse_accounting_entry',
+              'restore_inventory',
+              'revert_vehicle_status',
+            ][i - 1],
+            compensating_params: {},
           },
           error: null,
         });
@@ -344,7 +359,12 @@ describe('Phase 11: Business Rollback Engine', () => {
 
       // Mock journey, vehicle queries
       mockSupabase.from('auto_customer_journeys').select.mockResolvedValueOnce({
-        data: { id: JOURNEY_ID, current_stage_code: 'vehicle_prep' },
+        data: { id: JOURNEY_ID, current_stage_id: 'stage-prep-id' },
+        error: null,
+      });
+
+      mockSupabase.from('auto_journey_stages').select.mockResolvedValueOnce({
+        data: { id: 'stage-delivered-id' },
         error: null,
       });
 
@@ -409,7 +429,12 @@ describe('Phase 11: Business Rollback Engine', () => {
       });
 
       mockSupabase.from('auto_customer_journeys').select.mockResolvedValueOnce({
-        data: { id: JOURNEY_ID, current_stage_code: 'vehicle_prep' },
+        data: { id: JOURNEY_ID, current_stage_id: 'stage-prep-id' },
+        error: null,
+      });
+
+      mockSupabase.from('auto_journey_stages').select.mockResolvedValueOnce({
+        data: { id: 'stage-delivered-id' },
         error: null,
       });
 

@@ -148,7 +148,6 @@ export default function AiPlatformPortalPage() {
                         {agent.status === 'active' ? 'Active' : 'Disabled'}
                       </button>
                     </div>
-                    <p className="text-xs text-gray-400 line-clamp-2">{agent.description}</p>
                     <div className="mt-3 flex items-center justify-between text-[10px] text-gray-500 border-t border-white/5 pt-2 font-mono">
                       <span>📞 {agent.totalCalls.toLocaleString()} calls</span>
                       <span>💵 ${agent.monthlyCostUsd.toFixed(3)}</span>

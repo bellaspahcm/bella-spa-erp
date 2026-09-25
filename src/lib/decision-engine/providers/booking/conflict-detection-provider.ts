@@ -112,146 +112,167 @@ export class ConflictDetectionProvider {
     // Check customer double-booking (Rule 200)
     if (input.config.detectCustomerDoubleBooking) {
       if (this.checkCustomerTimeOverlap(input)) {
-        conflicts.push({
-          type: 'customer_double_booking',
-          severity: 'blocking',
-          message: 'Customer đã có lịch hẹn trùng thời gian',
-          resource: {
-            type: 'customer',
-            id: input.booking.customerId,
-            name: 'Customer',
-          },
-          conflictingBooking: this.findCustomerConflictingBooking(input),
-          rule: 'conflict-200-customer-double-booking',
-          context: {
-            ruleDescription: 'Customer must not have overlapping bookings at the same time',
-            rulePriority: 200,
-          },
-        });
+        const conflictingBooking = this.findCustomerConflictingBooking(input);
+        if (conflictingBooking) {
+          conflicts.push({
+            type: 'customer_double_booking',
+            severity: 'blocking',
+            message: 'Customer đã có lịch hẹn trùng thời gian',
+            resource: {
+              type: 'customer',
+              id: input.booking.customerId,
+              name: 'Customer',
+            },
+            conflictingBooking,
+            rule: 'conflict-200-customer-double-booking',
+            context: {
+              ruleDescription: 'Customer must not have overlapping bookings at the same time',
+              rulePriority: 200,
+            },
+          });
+        }
       }
 
       // Check close bookings (Rule 201)
       if (this.checkCloseBookings(input)) {
-        conflicts.push({
-          type: 'customer_double_booking',
-          severity: 'warning',
-          message: 'Customer có lịch hẹn gần nhau (trong vòng 30 phút)',
-          resource: {
-            type: 'customer',
-            id: input.booking.customerId,
-            name: 'Customer',
-          },
-          conflictingBooking: this.findCustomerConflictingBooking(input),
-          rule: 'conflict-201-customer-close-bookings',
-          context: {
-            ruleDescription: 'Warn if customer has bookings within 30 minutes of each other',
-            rulePriority: 201,
-          },
-        });
+        const conflictingBooking = this.findCustomerCloseBooking(input);
+        if (conflictingBooking) {
+          conflicts.push({
+            type: 'customer_double_booking',
+            severity: 'warning',
+            message: 'Customer có lịch hẹn gần nhau (trong vòng 30 phút)',
+            resource: {
+              type: 'customer',
+              id: input.booking.customerId,
+              name: 'Customer',
+            },
+            conflictingBooking,
+            rule: 'conflict-201-customer-close-bookings',
+            context: {
+              ruleDescription: 'Warn if customer has bookings within 30 minutes of each other',
+              rulePriority: 201,
+            },
+          });
+        }
       }
     }
 
     // Check room conflicts (Rule 210-211)
     if (input.config.detectRoomConflicts && input.booking.roomId) {
       if (this.checkRoomConflict(input)) {
-        conflicts.push({
-          type: 'room_unavailable',
-          severity: 'blocking',
-          message: 'Phòng/giường đã được đặt cho khung giờ này',
-          resource: {
-            type: 'room',
-            id: input.booking.roomId,
-            name: `Room ${input.booking.roomId}`,
-          },
-          conflictingBooking: this.findRoomConflictingBooking(input),
-          rule: 'conflict-210-room-double-booking',
-          context: {
-            ruleDescription: 'Room/bed must be available at requested time',
-            rulePriority: 210,
-          },
-        });
+        const conflictingBooking = this.findRoomConflictingBooking(input);
+        if (conflictingBooking) {
+          conflicts.push({
+            type: 'room_unavailable',
+            severity: 'blocking',
+            message: 'Phòng/giường đã được đặt cho khung giờ này',
+            resource: {
+              type: 'room',
+              id: input.booking.roomId,
+              name: `Room ${input.booking.roomId}`,
+            },
+            conflictingBooking,
+            rule: 'conflict-210-room-double-booking',
+            context: {
+              ruleDescription: 'Room/bed must be available at requested time',
+              rulePriority: 210,
+            },
+          });
+        }
       }
 
       if (this.checkRoomTurnoverTime(input)) {
-        conflicts.push({
-          type: 'room_unavailable',
-          severity: 'warning',
-          message: 'Phòng cần thời gian dọn dẹp (15 phút) trước lịch hẹn tiếp theo',
-          resource: {
-            type: 'room',
-            id: input.booking.roomId,
-            name: `Room ${input.booking.roomId}`,
-          },
-          conflictingBooking: this.findRoomConflictingBooking(input),
-          rule: 'conflict-211-room-turnover-time',
-          context: {
-            ruleDescription: 'Room requires 15-minute turnover time between bookings',
-            rulePriority: 211,
-          },
-        });
+        const conflictingBooking = this.findRoomTurnoverBooking(input);
+        if (conflictingBooking) {
+          conflicts.push({
+            type: 'room_unavailable',
+            severity: 'warning',
+            message: 'Phòng cần thời gian dọn dẹp (15 phút) trước lịch hẹn tiếp theo',
+            resource: {
+              type: 'room',
+              id: input.booking.roomId,
+              name: `Room ${input.booking.roomId}`,
+            },
+            conflictingBooking,
+            rule: 'conflict-211-room-turnover-time',
+            context: {
+              ruleDescription: 'Room requires 15-minute turnover time between bookings',
+              rulePriority: 211,
+            },
+          });
+        }
       }
     }
 
     // Check equipment conflicts (Rule 220-221)
     if (input.config.detectEquipmentConflicts && input.booking.equipmentIds && input.booking.equipmentIds.length > 0) {
       if (this.checkEquipmentConflict(input)) {
-        conflicts.push({
-          type: 'equipment_unavailable',
-          severity: 'blocking',
-          message: 'Thiết bị chuyên dụng đã được sử dụng cho khung giờ này',
-          resource: {
-            type: 'equipment',
-            id: input.booking.equipmentIds[0],
-            name: `Equipment ${input.booking.equipmentIds[0]}`,
-          },
-          conflictingBooking: this.findEquipmentConflictingBooking(input),
-          rule: 'conflict-220-equipment-unavailable',
-          context: {
-            ruleDescription: 'Specialized equipment must not be in use at requested time',
-            rulePriority: 220,
-          },
-        });
+        const conflictingBooking = this.findEquipmentConflictingBooking(input);
+        if (conflictingBooking) {
+          conflicts.push({
+            type: 'equipment_unavailable',
+            severity: 'blocking',
+            message: 'Thiết bị chuyên dụng đã được sử dụng cho khung giờ này',
+            resource: {
+              type: 'equipment',
+              id: input.booking.equipmentIds[0],
+              name: `Equipment ${input.booking.equipmentIds[0]}`,
+            },
+            conflictingBooking,
+            rule: 'conflict-220-equipment-unavailable',
+            context: {
+              ruleDescription: 'Specialized equipment must not be in use at requested time',
+              rulePriority: 220,
+            },
+          });
+        }
       }
     }
 
     // Check package sequence (Rule 230-231)
     if (input.config.validatePackageSequence && input.booking.packageId) {
       if (this.checkPackageSequence(input)) {
-        conflicts.push({
-          type: 'package_sequence_violation',
-          severity: 'blocking',
-          message: 'Phải hoàn thành các ca trước mới được đặt ca này',
-          resource: {
-            type: 'package',
-            id: input.booking.packageId,
-            name: `Package ${input.booking.packageId}`,
-          },
-          conflictingBooking: this.findPackageConflictingSession(input),
-          rule: 'conflict-230-package-sequence-violation',
-          context: {
-            ruleDescription: 'Package sessions must be completed in order (session 1 before 2, etc.)',
-            rulePriority: 230,
-          },
-        });
+        const conflictingBooking = this.findPackageConflictingSession(input);
+        if (conflictingBooking) {
+          conflicts.push({
+            type: 'package_sequence_violation',
+            severity: 'blocking',
+            message: 'Phải hoàn thành các ca trước mới được đặt ca này',
+            resource: {
+              type: 'package',
+              id: input.booking.packageId,
+              name: `Package ${input.booking.packageId}`,
+            },
+            conflictingBooking,
+            rule: 'conflict-230-package-sequence-violation',
+            context: {
+              ruleDescription: 'Package sessions must be completed in order (session 1 before 2, etc.)',
+              rulePriority: 230,
+            },
+          });
+        }
       }
 
       if (this.checkPackageInterval(input)) {
-        conflicts.push({
-          type: 'package_sequence_violation',
-          severity: 'warning',
-          message: 'Nên cách ít nhất 24 giờ giữa các ca trong gói',
-          resource: {
-            type: 'package',
-            id: input.booking.packageId,
-            name: `Package ${input.booking.packageId}`,
-          },
-          conflictingBooking: this.findPackageConflictingSession(input),
-          rule: 'conflict-231-package-min-interval',
-          context: {
-            ruleDescription: 'Minimum 24 hours required between package sessions',
-            rulePriority: 231,
-          },
-        });
+        const conflictingBooking = this.findPackageConflictingSession(input);
+        if (conflictingBooking) {
+          conflicts.push({
+            type: 'package_sequence_violation',
+            severity: 'warning',
+            message: 'Nên cách ít nhất 24 giờ giữa các ca trong gói',
+            resource: {
+              type: 'package',
+              id: input.booking.packageId,
+              name: `Package ${input.booking.packageId}`,
+            },
+            conflictingBooking,
+            rule: 'conflict-231-package-min-interval',
+            context: {
+              ruleDescription: 'Minimum 24 hours required between package sessions',
+              rulePriority: 231,
+            },
+          });
+        }
       }
     }
 
@@ -317,6 +338,29 @@ export class ConflictDetectionProvider {
   }
 
   /**
+   * Find customer booking close enough to trigger a scheduling warning
+   */
+  private findCustomerCloseBooking(input: ConflictDetectionInput): { id: string; date: string; startTime: string; endTime: string; status: string } | undefined {
+    const { requestedStartTime, requestedEndTime } = input.booking;
+    const requestedStart = this.timeToMinutes(requestedStartTime);
+    const requestedEnd = this.timeToMinutes(requestedEndTime);
+
+    return input.existingBookings.customerBookings?.find((booking) => {
+      if (booking.status === 'cancelled') return false;
+
+      const bookingStart = this.timeToMinutes(booking.startTime);
+      const bookingEnd = this.timeToMinutes(booking.endTime);
+      const gapBefore = requestedStart - bookingEnd;
+      const gapAfter = bookingStart - requestedEnd;
+
+      return (
+        (gapBefore > 0 && gapBefore < 30) ||
+        (gapAfter > 0 && gapAfter < 30)
+      );
+    });
+  }
+
+  /**
    * Find room conflicting booking
    */
   private findRoomConflictingBooking(input: ConflictDetectionInput): { id: string; date: string; startTime: string; endTime: string; status: string } | undefined {
@@ -325,6 +369,32 @@ export class ConflictDetectionProvider {
       b.roomId === roomId &&
       this.hasTimeOverlap(requestedStartTime, requestedEndTime, b.startTime, b.endTime)
     );
+    if (!found) return undefined;
+    return {
+      id: found.id,
+      date: found.date,
+      startTime: found.startTime,
+      endTime: found.endTime,
+      status: found.status,
+    };
+  }
+
+  /**
+   * Find room booking that violates turnover time before the requested booking
+   */
+  private findRoomTurnoverBooking(input: ConflictDetectionInput): { id: string; date: string; startTime: string; endTime: string; status: string } | undefined {
+    const TURNOVER_MINUTES = 15;
+    const { roomId, requestedStartTime } = input.booking;
+    const requestedStart = this.timeToMinutes(requestedStartTime);
+    const found = input.existingBookings.roomBookings?.find((booking) => {
+      if (booking.roomId !== roomId) return false;
+      if (booking.status === 'cancelled') return false;
+
+      const bookingEnd = this.timeToMinutes(booking.endTime);
+      const gap = requestedStart - bookingEnd;
+
+      return gap > 0 && gap < TURNOVER_MINUTES;
+    });
     if (!found) return undefined;
     return {
       id: found.id,

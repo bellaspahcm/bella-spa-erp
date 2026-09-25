@@ -14,11 +14,13 @@
  */
 
 import { getPrimaryClient } from '@/lib/database/read-replica';
-import { Database } from '@/types/database.types';
+import type { Database, Json } from '@/types/database.types';
 
 type OfflineAction = Database['public']['Tables']['auto_offline_actions']['Row'];
 type OfflineActionInsert = Database['public']['Tables']['auto_offline_actions']['Insert'];
 type OfflineActionUpdate = Database['public']['Tables']['auto_offline_actions']['Update'];
+type PendingOfflineAction =
+  Database['public']['Functions']['get_pending_offline_actions']['Returns'][number];
 
 type ActionType =
   | 'lead_capture'
@@ -40,7 +42,7 @@ interface QueueActionParams {
   sessionId?: string;
   actionType: ActionType;
   entityType: string;
-  actionData: unknown;
+  actionData: Json;
   priority?: number;
 }
 
@@ -65,7 +67,7 @@ export class OfflineSyncService {
       session_id: params.sessionId,
       action_type: params.actionType,
       entity_type: params.entityType,
-      action_data: params.actionData as unknown,
+      action_data: params.actionData,
       priority: params.priority || 5,
       status: 'pending',
       sync_attempts: 0,
@@ -91,7 +93,7 @@ export class OfflineSyncService {
     tenantId: string,
     userId: string,
     limit: number = 50
-  ): Promise<OfflineAction[]> {
+  ): Promise<PendingOfflineAction[]> {
     const supabase = getPrimaryClient();
     
     const { data, error } = await supabase
@@ -113,13 +115,25 @@ export class OfflineSyncService {
    */
   static async markSyncing(actionId: string, tenantId: string): Promise<OfflineAction> {
     const supabase = getPrimaryClient();
+
+    const { data: existingAction, error: existingError } = await supabase
+      .from('auto_offline_actions')
+      .select('sync_attempts')
+      .eq('id', actionId)
+      .eq('tenant_id', tenantId)
+      .eq('status', 'pending')
+      .single();
+
+    if (existingError) {
+      throw new Error(`Failed to fetch pending action: ${existingError.message}`);
+    }
     
     const { data, error } = await supabase
       .from('auto_offline_actions')
       .update({
         status: 'syncing',
         last_sync_attempt_at: new Date().toISOString(),
-        sync_attempts: supabase.rpc('increment', { column_name: 'sync_attempts' }) as unknown,
+        sync_attempts: (existingAction.sync_attempts ?? 0) + 1,
       })
       .eq('id', actionId)
       .eq('tenant_id', tenantId)
@@ -329,7 +343,7 @@ export class OfflineSyncService {
       stats.byActionType[action.action_type] = (stats.byActionType[action.action_type] || 0) + 1;
       
       // Average attempts
-      totalAttempts += action.sync_attempts;
+      totalAttempts += action.sync_attempts ?? 0;
     });
     
     stats.averageAttempts = data.length > 0 ? totalAttempts / data.length : 0;

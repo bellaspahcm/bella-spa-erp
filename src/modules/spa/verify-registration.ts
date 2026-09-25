@@ -70,7 +70,7 @@ function verify() {
 
     // Step 6: Verify adapter methods exist
     console.log('Step 6: Verifying adapter methods...');
-    const requiredMethods = [
+    const requiredMethods: Array<keyof SpaModuleAdapter> = [
       'transformServiceItem',
       'transformBookingOrder',
       'validateBookingRules',
@@ -80,9 +80,7 @@ function verify() {
     ];
 
     for (const method of requiredMethods) {
-      // Runtime method checking requires 'as any' cast since method names are dynamic strings
-       
-      if (typeof (adapter2 as unknown)[method] !== 'function') {
+      if (typeof adapter2[method] !== 'function') {
         throw new Error(`Method ${method} is not a function`);
       }
       console.log(`  ✓ ${method}()`);

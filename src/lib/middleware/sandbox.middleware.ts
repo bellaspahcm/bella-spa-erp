@@ -17,7 +17,7 @@ import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { APIPartner } from '@/types/api-gateway';
 import type { PartnerContext, RequestWithPartner } from './api-key.middleware';
-import { APIError } from '@/types/api-gateway';
+import { APIError, HTTPMethod } from '@/types/api-gateway';
 
 /**
  * Environment type
@@ -34,6 +34,19 @@ interface SandboxConfig {
 }
 
 type RequestWithSandbox = RequestWithPartner & { sandbox?: SandboxConfig };
+const HTTP_METHODS: readonly HTTPMethod[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+
+function toHTTPMethod(method: string): HTTPMethod {
+  const upperMethod = method.toUpperCase();
+  const matched = HTTP_METHODS.find(candidate => candidate === upperMethod);
+  if (!matched) {
+    throw new APIError(
+      'SERVER_001',
+      `Unsupported HTTP method for API request logging: ${method}`
+    );
+  }
+  return matched;
+}
 
 /**
  * Detect environment from API key prefix
@@ -313,7 +326,7 @@ export function withSandbox(
         await logAPIRequest({
           partner_id: partner.partner_id,
           tenant_id: partner.tenant_id,
-          method: req.method as unknown,
+          method: toHTTPMethod(req.method),
           endpoint: req.nextUrl.pathname,
           status_code: response.status,
           response_time_ms: Date.now() - startTime,

@@ -634,18 +634,17 @@ export class AutoAssignmentProvider {
    * @private
    */
   private mapOperator(operator: string): '>=' | '>' | '<=' | '<' | '==' | '===' | '!=' | '!==' {
-    const operatorMap: Record<string, '>= ' | '>' | '<=' | '<' | '==' | '===' | '!=' | '!=='> = {
-      equals: '===' as const,
-      notEquals: '!==' as const,
-      greaterThan: '>' as const,
-      greaterThanOrEqual: '>=' as const,
-      lessThan: '<' as const,
-      lessThanOrEqual: '<=' as const,
+    const operatorMap: Record<string, '>=' | '>' | '<=' | '<' | '==' | '===' | '!=' | '!=='> = {
+      equals: '===',
+      notEquals: '!==',
+      greaterThan: '>',
+      greaterThanOrEqual: '>=',
+      lessThan: '<',
+      lessThanOrEqual: '<=',
     };
 
     const mapped = operatorMap[operator];
-    // Strip trailing space in '>= ' typo if any, ensuring type correctness
-    return (mapped ? mapped.trim() : '===') as '>=' | '>' | '<=' | '<' | '==' | '===' | '!=' | '!==';
+    return mapped ?? '===';
   }
 }
 

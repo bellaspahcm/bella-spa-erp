@@ -8,11 +8,12 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import { Database } from '@/types/database.types';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
 
-export function createServiceClient() {
+export function createServiceClient(): SupabaseClient<Database> {
   if (typeof window !== 'undefined') {
-    return null as unknown;
+    throw new Error('Supabase service role client is server-side only');
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
