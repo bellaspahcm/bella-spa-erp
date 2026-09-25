@@ -154,17 +154,31 @@ jobs:
           fetch-depth: 0
       
       - name: Verify approved Core change
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
-            echo "❌ Core Freeze approved-change verification is only supported for pull_request events."
-            echo "Core changes outside an approved PR fail closed."
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+            PR_NUMBER="${{ github.event.pull_request.number }}"
+          elif [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            BASE_SHA="${{ github.event.before }}"
+            HEAD_SHA="${{ github.sha }}"
+            PR_NUMBER="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/pulls" --jq '.[0].number // empty')"
+            if [ -z "$PR_NUMBER" ]; then
+              echo "❌ Core changes on push must resolve to an approved PR."
+              echo "Direct Core pushes remain fail-closed."
+              exit 1
+            fi
+          else
+            echo "❌ Core Freeze approved-change verification only supports pull_request and push events."
             exit 1
           fi
 
           node scripts/approved-core-change-guard.mjs \
-            --base "${{ github.event.pull_request.base.sha }}" \
-            --head "${{ github.event.pull_request.head.sha }}" \
-            --pr "${{ github.event.pull_request.number }}"
+            --base "$BASE_SHA" \
+            --head "$HEAD_SHA" \
+            --pr "$PR_NUMBER"
 
   block-result:
     name: Architecture Guard Summary
