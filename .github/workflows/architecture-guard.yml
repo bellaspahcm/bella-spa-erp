@@ -150,21 +150,21 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
       
-      - name: Core Modification Detected
+      - name: Verify approved Core change
         run: |
-          echo "⚠️  CORE MODIFICATION DETECTED"
-          echo ""
-          echo "Core is under freeze. Modifications require:"
-          echo "1. Architecture Review Board approval"
-          echo "2. ADR documentation"
-          echo "3. Zero-Core-Change validation"
-          echo ""
-          echo "Changed files:"
-          git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep "src/core"
-          echo ""
-          echo "Please review with Architecture Review Board."
-          exit 1
+          if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
+            echo "❌ Core Freeze approved-change verification is only supported for pull_request events."
+            echo "Core changes outside an approved PR fail closed."
+            exit 1
+          fi
+
+          node scripts/approved-core-change-guard.mjs \
+            --base "${{ github.event.pull_request.base.sha }}" \
+            --head "${{ github.event.pull_request.head.sha }}" \
+            --pr "${{ github.event.pull_request.number }}"
 
   block-result:
     name: Architecture Guard Summary
