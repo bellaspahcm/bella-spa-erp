@@ -170,7 +170,7 @@ function BookingsContent() {
     void handlePrintThermalInvoice(nextModalData);
   };
 
-  const isHaircut = product?.productKey === 'bella_haircut' || resolvedTenantModuleKey === 'haircut';
+  const isHaircut = product?.productKey === 'bella_haircut' || resolvedTenantModuleKey === 'beauty_spa';
 
   if (isHaircut && surface !== 'pos') {
     return (

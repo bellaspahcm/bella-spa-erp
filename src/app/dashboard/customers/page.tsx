@@ -97,7 +97,7 @@ export default function CustomersPage() {
   const backgroundCustomerLoadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { tenantModuleKey, refreshTenantModuleKey } = useTenantModuleKey();
   const { product } = useUser();
-  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'haircut';
+  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'beauty_spa';
   const vocab = useModuleVocabulary(tenantModuleKey);
 
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);

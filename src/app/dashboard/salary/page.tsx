@@ -575,7 +575,7 @@ export default function SalaryPage() {
 
   const { tenantModuleKey } = useTenantModuleKey();
   const { product } = useUser();
-  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'haircut';
+  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'beauty_spa';
 
   const filteredSalaries = ktvSalaries.filter((s) => 
     s.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -590,11 +590,11 @@ export default function SalaryPage() {
         <HaircutSalaryView
           onPublishAll={handlePublishAll}
           onFinalizeAll={handleFinalizeAll}
-          onEditKtv={(ktv) => {
+          onEditKtv={(ktv: any) => {
             const match = ktvSalaries.find((s) => s.name === ktv.name);
             if (match) openEditModal(match);
           }}
-          onFixAttendance={(ktv) => {
+          onFixAttendance={(ktv: any) => {
             const match = attendanceData.find((a) => a.name === ktv.name);
             if (match) openKtvCalendar(match);
             else handleTabChange('attendance');
@@ -606,7 +606,7 @@ export default function SalaryPage() {
           onClose={() => setIsEditModalOpen(false)}
           editingSalary={editingSalary}
           setEditingSalary={setEditingSalary}
-          onSave={handleSaveConfig}
+          handleSaveConfig={handleSaveConfig}
           isSaving={isSaving}
         />
 
@@ -642,9 +642,7 @@ export default function SalaryPage() {
           isOpen={isPublishModalOpen}
           onClose={() => setIsPublishModalOpen(false)}
           onConfirm={handleConfirmPublish}
-          recordCount={
-            ktvSalaries.filter((s) => s.status === 'pending' || s.status === 'approved').length
-          }
+          salaries={ktvSalaries}
           currentMonth={currentMonthYear}
         />
 
@@ -653,7 +651,7 @@ export default function SalaryPage() {
           title={confirmModal.title}
           message={confirmModal.message}
           onConfirm={confirmModal.onConfirm}
-          onCancel={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+          onClose={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
           confirmText={confirmModal.confirmText}
           cancelText={confirmModal.cancelText}
           isDanger={confirmModal.isDanger}
