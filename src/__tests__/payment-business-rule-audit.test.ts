@@ -158,6 +158,22 @@ describe('payment business rule audit', () => {
     expect(auditedMoneyInputSources).not.toMatch(/Number\([^\n]*replace/);
   });
 
+  it('keeps the operational customer payment path on the canonical remaining-payment contract', () => {
+    const activeBookingPanelSource = readSource('src/app/dashboard/customers/[id]/components/ActiveBookingPanel.tsx');
+    const customerControllerSource = readSource('src/app/dashboard/customers/[id]/useCustomerDetailController.ts');
+    const paymentActionSource = readSource('src/core/services/order/payment-actions.ts');
+    const paymentHelperSource = readSource('src/core/services/order/payment-helpers.ts');
+
+    expect(activeBookingPanelSource).toContain('calculateBookingPaymentState');
+    expect(activeBookingPanelSource).toContain('onPayRemaining(remainingBalance)');
+    expect(customerControllerSource).toContain('recordRemainingPayment({');
+    expect(customerControllerSource).toContain('booking_id: activeBooking.id');
+    expect(paymentActionSource).toContain('validateRemainingPaymentAmount');
+    expect(paymentActionSource).toContain('assertPaymentAccountingPeriod');
+    expect(paymentHelperSource).toContain('record_remaining_payment_atomic');
+    expect(paymentHelperSource).toContain(".eq('tenant_id', tenantId)");
+  });
+
   it('keeps Haircut debt collection from claiming persistence without the Finance contract', () => {
     const haircutReconciliationSource = readSource(
       'src/app/dashboard/finance/reconciliation/components/HaircutReconciliationView.tsx'
@@ -180,7 +196,12 @@ describe('payment business rule audit', () => {
     expect(haircutSalarySource).not.toContain('onFinalizeAll');
     expect(haircutSalarySource).not.toContain('onEditKtv');
     expect(haircutSalarySource).not.toContain('onFixAttendance');
-    expect(salaryPageSource).toContain('<HaircutSalaryView />');
+    expect(salaryPageSource).not.toContain('HaircutSalaryView');
+    expect(salaryPageSource).not.toContain("product?.productKey === 'bella_haircut'");
+    expect(salaryPageSource).toContain('getSalaryData');
+    expect(salaryPageSource).toContain('publishAllSalaryRecords');
+    expect(salaryPageSource).toContain('finalizeAllSalaryRecords');
+    expect(salaryPageSource).toContain('SalaryTable');
     expect(salaryPageSource).not.toContain('onPublishAll={');
     expect(salaryPageSource).not.toContain('onFinalizeAll={');
   });
@@ -196,6 +217,13 @@ describe('payment business rule audit', () => {
     expect(haircutBookingsSource).not.toContain('onSessionSelect(b)');
     expect(haircutBookingsSource).not.toContain('onEmptySlotClick(parseInt');
     expect(haircutBookingsSource).not.toContain('onCreateClick');
+    expect(bookingsPageSource).not.toContain('HaircutBookingsView');
+    expect(bookingsPageSource).not.toContain("product?.productKey === 'bella_haircut'");
+    expect(bookingsPageSource).toContain('BookingsTimelineGrid');
+    expect(bookingsPageSource).toContain('BookingDayDetailModal');
+    expect(bookingsPageSource).toContain('BookingCreateScheduleModal');
+    expect(bookingsPageSource).toContain('handleUpdatePlan');
+    expect(bookingsPageSource).toContain('handleCreateScheduleSubmit');
     expect(bookingsPageSource).not.toContain('openSessionDetail(session as unknown');
   });
 
@@ -209,6 +237,12 @@ describe('payment business rule audit', () => {
     expect(haircutPackagesSource).not.toContain('onUseSession?.(pkg.id)');
     expect(haircutPackagesSource).not.toContain('onReorderPackage?.(pkg.id)');
     expect(haircutPackagesSource).not.toContain('onViewDetails?.(pkg as any)');
+    expect(sessionsPageSource).not.toContain('HaircutPackagesView');
+    expect(sessionsPageSource).not.toContain("product?.productKey === 'bella_haircut'");
+    expect(sessionsPageSource).toContain('getSessionsWithDetails');
+    expect(sessionsPageSource).toContain('completeSession');
+    expect(sessionsPageSource).toContain('reusePackage');
+    expect(sessionsPageSource).toContain('SessionCard');
     expect(sessionsPageSource).not.toContain("toast.info('Đã chọn sử dụng 1 lượt gói dịch vụ')");
     expect(sessionsPageSource).not.toContain("handleReusePackage(id, 'Khách hàng')");
   });

@@ -180,6 +180,12 @@ class MockQueryBuilder<T = Record<string, unknown>> {
     if (list.length === 0) return { data: null, error: { message: 'No rows found' } };
     return { data: list[0], error: null };
   }
+
+  async maybeSingle(): Promise<{ data: T | null; error: null }> {
+    this.applyPendingMutation();
+    const list = this.execute();
+    return { data: list[0] ?? null, error: null };
+  }
 }
 
 const mockGetCurrentUser = jest.fn();
