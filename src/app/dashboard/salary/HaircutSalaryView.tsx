@@ -2,7 +2,6 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import PremiumExportButton from '@/components/ui/PremiumExportButton';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
@@ -34,6 +33,9 @@ import {
   FileText
 } from 'lucide-react';
 
+const HAIRCUT_SALARY_WRITE_GAP_MESSAGE =
+  'Chưa thể thao tác từ màn hình Haircut vì dữ liệu lương hiện là dữ liệu tĩnh và chưa có định danh salary_records/KTV canonical.';
+
 export interface HaircutSalaryDetail {
   id?: string;
   name: string;
@@ -48,13 +50,6 @@ export interface HaircutSalaryDetail {
   status?: string;
   statusLabel?: string;
   hasIssue?: boolean;
-}
-
-interface HaircutSalaryViewProps {
-  onPublishAll?: () => void;
-  onFinalizeAll?: () => void;
-  onEditKtv?: (ktv: HaircutSalaryDetail) => void;
-  onFixAttendance?: (ktv: HaircutSalaryDetail) => void;
 }
 
 const KTV_AVATARS: Record<string, string> = {
@@ -163,13 +158,7 @@ const SALARY_LIST = [
   },
 ];
 
-export function HaircutSalaryView({
-  onPublishAll,
-  onFinalizeAll,
-  onEditKtv,
-  onFixAttendance,
-}: HaircutSalaryViewProps) {
-  const router = useRouter();
+export function HaircutSalaryView() {
   const [activeTab, setActiveTab] = useState<'overview' | 'payroll' | 'matrix' | 'attendance' | 'history' | 'rules'>('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('Tất cả trạng thái');
@@ -177,6 +166,11 @@ export function HaircutSalaryView({
   const [pageSize, setPageSize] = useState(10);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [selectedKtvDetail, setSelectedKtvDetail] = useState<HaircutSalaryDetail | null>(null);
+
+  const handleUnavailableSalaryWrite = () => {
+    setActiveMenuId(null);
+    window.alert(HAIRCUT_SALARY_WRITE_GAP_MESSAGE);
+  };
 
   const statusOptions = [
     { value: 'Tất cả trạng thái', label: 'Tất cả trạng thái' },
@@ -291,16 +285,18 @@ export function HaircutSalaryView({
           <PremiumExportButton />
 
           <button
-            onClick={() => onPublishAll?.()}
-            className="flex items-center gap-2 rounded-xl bg-white border border-slate-200 px-4 py-2.5 font-bold text-xs sm:text-sm text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-95"
+            disabled
+            title={HAIRCUT_SALARY_WRITE_GAP_MESSAGE}
+            className="flex items-center gap-2 rounded-xl bg-slate-100 border border-slate-200 px-4 py-2.5 font-bold text-xs sm:text-sm text-slate-400 shadow-sm cursor-not-allowed"
           >
             <Send className="w-4 h-4 shrink-0 text-slate-500" />
             <span>Gửi đối soát</span>
           </button>
 
           <button
-            onClick={() => onFinalizeAll?.()}
-            className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 font-bold text-xs sm:text-sm text-white shadow-sm transition hover:opacity-90 active:scale-95"
+            disabled
+            title={HAIRCUT_SALARY_WRITE_GAP_MESSAGE}
+            className="flex items-center gap-2 rounded-xl bg-slate-300 px-4 py-2.5 font-bold text-xs sm:text-sm text-slate-600 shadow-sm cursor-not-allowed"
           >
             <Lock className="w-4 h-4 shrink-0" />
             <span>Chốt lương</span>
@@ -484,6 +480,11 @@ export function HaircutSalaryView({
         </button>
       </div>
 
+      <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-3.5 mb-5 flex items-start gap-2.5 text-xs font-bold text-amber-900">
+        <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+        <span>{HAIRCUT_SALARY_WRITE_GAP_MESSAGE}</span>
+      </div>
+
       {/* Main Grid Section: Table (Left ~75%) + Right Sidebars (~25%) */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-5 mb-6">
         {/* Left Column (3 cols): Payroll Table Panel */}
@@ -635,8 +636,8 @@ export function HaircutSalaryView({
                             </button>
                           ) : (
                             <button
-                              onClick={() => onFixAttendance?.(item)}
-                              className="px-2.5 py-1 rounded-lg bg-rose-500 text-white font-bold text-[11px] hover:opacity-90 transition shadow-xs whitespace-nowrap"
+                              onClick={handleUnavailableSalaryWrite}
+                              className="px-2.5 py-1 rounded-lg bg-slate-200 text-slate-500 font-bold text-[11px] transition shadow-xs whitespace-nowrap"
                             >
                               Xử lý
                             </button>
@@ -662,7 +663,7 @@ export function HaircutSalaryView({
                                   className="absolute right-0 top-full mt-1 w-36 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden p-1 text-xs font-bold text-slate-700"
                                 >
                                   <button
-                                    onClick={() => onEditKtv?.(item)}
+                                    onClick={handleUnavailableSalaryWrite}
                                     className="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-lg transition"
                                   >
                                     Sửa thông tin
@@ -768,8 +769,8 @@ export function HaircutSalaryView({
                   </div>
 
                   <button
-                    onClick={() => onFixAttendance?.(issue)}
-                    className="px-2 py-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 font-bold text-[10px] text-slate-700 shrink-0 shadow-xs"
+                    onClick={handleUnavailableSalaryWrite}
+                    className="px-2 py-1 rounded-lg bg-slate-100 border border-slate-200 font-bold text-[10px] text-slate-500 shrink-0 shadow-xs"
                   >
                     Bổ sung
                   </button>
@@ -898,11 +899,8 @@ export function HaircutSalaryView({
                   Đóng
                 </button>
                 <button
-                  onClick={() => {
-                    setSelectedKtvDetail(null);
-                    onEditKtv?.(selectedKtvDetail);
-                  }}
-                  className="px-4 py-2 rounded-xl bg-primary text-white font-bold text-xs hover:opacity-90 shadow-xs"
+                  onClick={handleUnavailableSalaryWrite}
+                  className="px-4 py-2 rounded-xl bg-slate-300 text-slate-600 font-bold text-xs shadow-xs"
                 >
                   Điều chỉnh lương
                 </button>

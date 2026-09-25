@@ -438,20 +438,6 @@ function SessionsContent() {
           sessions={sessions}
           isLoading={!criticalReady}
           isSyncing={isSyncing}
-          onUseSession={(id) => {
-            const booking = sessions.find(s => s.id === id);
-            if (booking) setSelectedBooking(booking);
-            else toast.info('Đã chọn sử dụng 1 lượt gói dịch vụ');
-          }}
-          onReorderPackage={(id) => {
-            handleReusePackage(id, 'Khách hàng');
-          }}
-          onViewDetails={(booking) => {
-            setSelectedBooking(booking);
-          }}
-          onAddNewPackage={() => {
-            router.push('/dashboard/bookings');
-          }}
         />
 
         <SessionLogsDetailsModal

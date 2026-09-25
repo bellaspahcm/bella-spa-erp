@@ -158,6 +158,84 @@ describe('payment business rule audit', () => {
     expect(auditedMoneyInputSources).not.toMatch(/Number\([^\n]*replace/);
   });
 
+  it('keeps Haircut debt collection from claiming persistence without the Finance contract', () => {
+    const haircutReconciliationSource = readSource(
+      'src/app/dashboard/finance/reconciliation/components/HaircutReconciliationView.tsx'
+    );
+
+    expect(haircutReconciliationSource).toContain('HAIRCUT_DEBT_COLLECTION_GAP_MESSAGE');
+    expect(haircutReconciliationSource).toContain('Chưa thể xác nhận thu');
+    expect(haircutReconciliationSource).not.toContain('Đã thu thành công');
+    expect(haircutReconciliationSource).not.toContain('Sổ cái & Dòng tiền đã được cập nhật');
+    expect(haircutReconciliationSource).not.toContain('value="mpos"');
+  });
+
+  it('keeps Haircut salary static rows from driving canonical Payroll writes', () => {
+    const haircutSalarySource = readSource('src/app/dashboard/salary/HaircutSalaryView.tsx');
+    const salaryPageSource = readSource('src/app/dashboard/salary/page.tsx');
+
+    expect(haircutSalarySource).toContain('SALARY_LIST');
+    expect(haircutSalarySource).toContain('HAIRCUT_SALARY_WRITE_GAP_MESSAGE');
+    expect(haircutSalarySource).not.toContain('onPublishAll');
+    expect(haircutSalarySource).not.toContain('onFinalizeAll');
+    expect(haircutSalarySource).not.toContain('onEditKtv');
+    expect(haircutSalarySource).not.toContain('onFixAttendance');
+    expect(salaryPageSource).toContain('<HaircutSalaryView />');
+    expect(salaryPageSource).not.toContain('onPublishAll={');
+    expect(salaryPageSource).not.toContain('onFinalizeAll={');
+  });
+
+  it('keeps Haircut booking static rows from driving canonical booking writes', () => {
+    const haircutBookingsSource = readSource('src/app/dashboard/bookings/HaircutBookingsView.tsx');
+    const bookingsPageSource = readSource('src/app/dashboard/bookings/page.tsx');
+
+    expect(haircutBookingsSource).toContain('timelineGridData');
+    expect(haircutBookingsSource).toContain('HAIRCUT_BOOKING_WRITE_GAP_MESSAGE');
+    expect(haircutBookingsSource).toContain('session_log_id');
+    expect(haircutBookingsSource).toContain('booking_id canonical');
+    expect(haircutBookingsSource).not.toContain('onSessionSelect(b)');
+    expect(haircutBookingsSource).not.toContain('onEmptySlotClick(parseInt');
+    expect(haircutBookingsSource).not.toContain('onCreateClick');
+    expect(bookingsPageSource).not.toContain('openSessionDetail(session as unknown');
+  });
+
+  it('keeps Haircut package static rows from driving canonical package writes', () => {
+    const haircutPackagesSource = readSource('src/app/dashboard/sessions/HaircutPackagesView.tsx');
+    const sessionsPageSource = readSource('src/app/dashboard/sessions/page.tsx');
+
+    expect(haircutPackagesSource).toContain('PACKAGES_LIST');
+    expect(haircutPackagesSource).toContain('HAIRCUT_PACKAGES_WRITE_GAP_MESSAGE');
+    expect(haircutPackagesSource).toContain('booking_id canonical');
+    expect(haircutPackagesSource).not.toContain('onUseSession?.(pkg.id)');
+    expect(haircutPackagesSource).not.toContain('onReorderPackage?.(pkg.id)');
+    expect(haircutPackagesSource).not.toContain('onViewDetails?.(pkg as any)');
+    expect(sessionsPageSource).not.toContain("toast.info('Đã chọn sử dụng 1 lượt gói dịch vụ')");
+    expect(sessionsPageSource).not.toContain("handleReusePackage(id, 'Khách hàng')");
+  });
+
+  it('keeps Haircut customer metrics from using synthetic business claims', () => {
+    const haircutCustomerSource = readSource('src/app/dashboard/customers/HaircutCustomerView.tsx');
+
+    expect(haircutCustomerSource).toContain('customers.reduce');
+    expect(haircutCustomerSource).toContain('getCustomerBookingCount');
+    expect(haircutCustomerSource).toContain('getCustomerSpendAmount');
+    expect(haircutCustomerSource).not.toContain('const totalCount = 1284');
+    expect(haircutCustomerSource).not.toContain('const newCount = 324');
+    expect(haircutCustomerSource).not.toContain('const loyalCount = 428');
+    expect(haircutCustomerSource).not.toContain('const vipCount = 156');
+    expect(haircutCustomerSource).not.toContain('const careCount = 86');
+    expect(haircutCustomerSource).not.toContain('2.416');
+    expect(haircutCustomerSource).not.toContain('idx % 2 === 0');
+    expect(haircutCustomerSource).not.toContain('idx % 3 === 0');
+    expect(haircutCustomerSource).not.toContain('idx % 4 === 0');
+    expect(haircutCustomerSource).not.toContain('5400000');
+    expect(haircutCustomerSource).not.toContain('0900 002 6801');
+    expect(haircutCustomerSource).not.toContain('Nguyễn Hoàng Anh');
+    expect(haircutCustomerSource).not.toContain('18/09/2026');
+    expect(haircutCustomerSource).not.toContain('Tỷ lệ quay lại 72%');
+    expect(haircutCustomerSource).not.toContain('+138 khách so với tháng trước');
+  });
+
   it('keeps high-risk percent and integer inputs routed through shared numeric helpers', () => {
     const auditedNumericInputSources = [
       'src/components/features/BookingModal.tsx',

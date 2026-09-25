@@ -183,21 +183,6 @@ function BookingsContent() {
           sessions={sessions}
           ktvs={ktvs}
           isSyncing={isSyncing}
-          onSessionSelect={(session) => {
-            openSessionDetail(session as unknown as Parameters<typeof buildSessionModalData>[0]);
-          }}
-          onEmptySlotClick={(hour) => {
-            setSelectedBookingIdForCreate('');
-            const startHourStr = String(hour).padStart(2, '0') + ':00';
-            const endHourStr = String(hour + 2).padStart(2, '0') + ':00';
-            setCreateTimeRange({ start: startHourStr, end: endHourStr });
-            setCreateDate(getLocalDateString(selectedDate));
-            setShowCreateModal(true);
-          }}
-          onCreateClick={() => {
-            setCreateDate(getLocalDateString());
-            setShowCreateModal(true);
-          }}
         />
 
         <BookingDayDetailModal
