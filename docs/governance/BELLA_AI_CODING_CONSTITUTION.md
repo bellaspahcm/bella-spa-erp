@@ -1,10 +1,101 @@
 # BELLA ENGINEERING RULES - OS & PRODUCT DEVELOPMENT v2
 
-> Follow Bella Engineering Execution Contract: Evidence -> Ownership -> Canonical Contract -> Minimal Implementation -> Targeted Verification -> Fresh Verification. Never invent a contract, cross an ownership boundary, weaken a test, or hide a failure merely to make TypeScript or CI green.
+> Follow Bella Engineering Execution Contract: Evidence -> Truth -> Canonical Contract -> Ownership -> Boundary -> Minimal Implementation -> Verification. Never invent a contract, cross an ownership boundary, weaken a test, or hide a failure merely to make TypeScript or CI green.
 
 This is the authoritative engineering constitution for Bella OS and Product development. It applies to AI-assisted and human implementation work across Platform, OS, Product, Integration, Shared UI, CI, tests, and technical-debt cleanup.
 
 This document is not a list of optional preferences. It is the default execution contract. If a local vertical constitution, freeze policy, ADR, or human architect decision is stricter, the stricter rule wins.
+
+## 0. Truth -> Canonical -> Consumer
+
+Before modifying code, distinguish these three concepts.
+
+### Truth
+
+Truth is the authoritative fact about the system for the question being answered.
+
+Examples:
+
+```text
+Database structure     -> migration / verified DB schema
+Generated DB shape     -> generated database types
+Product identity       -> Product Registry
+Architecture permission -> Architecture Constitution / ownership rules
+Domain behavior        -> verified domain contract / producer
+```
+
+Truth is not automatically whatever existing code currently says.
+
+### Canonical Contract
+
+Canonical Contract is the official representation or access pattern Bella currently accepts for that Truth.
+
+Canonical means:
+
+```text
+New code should follow this contract.
+```
+
+Existing or frequently used code is not automatically canonical.
+
+### Consumer
+
+Consumer is the code currently consuming the canonical contract.
+
+Required reasoning:
+
+```text
+Truth
+  ↓
+Canonical Contract
+  ↓
+Consumer
+```
+
+If Consumer != Canonical, fix the stale Consumer.
+
+If Truth is unclear, investigate before coding.
+
+If Truth is known but Canonical Contract is unclear, defer and resolve ownership or architecture first.
+
+If Canonical Contract does not exist, never invent one merely to satisfy TypeScript or CI.
+
+If changing Canonical Contract is genuinely required, treat it as an explicit contract or architecture change, not as a local bug fix.
+
+### Mandatory Pre-Coding Check
+
+Before changing a field, type, query, API, RPC, relation, or domain model:
+
+1. What is the Truth?
+2. What is the Source of Truth?
+3. What is the Canonical Contract?
+4. Who owns that contract?
+5. Is this layer allowed to consume it?
+6. Is the current Consumer stale?
+
+Only then modify code.
+
+The complete Bella reasoning model is:
+
+```text
+TRUTH
+  ↓
+SOURCE OF TRUTH
+  ↓
+CANONICAL CONTRACT
+  ↓
+OWNERSHIP
+  ↓
+BOUNDARY
+  ↓
+CONSUMER
+  ↓
+IMPLEMENTATION
+  ↓
+VERIFICATION
+```
+
+Correct Truth plus correct canonical data plus wrong ownership is still wrong implementation.
 
 ## Core Incident Lesson
 
@@ -17,9 +108,13 @@ LỖI
  ↓
 Có phải PR gây ra?
  ↓
-Owner là ai?
+Truth là gì?
+ ↓
+Source of Truth là gì?
  ↓
 Canonical contract là gì?
+ ↓
+Owner là ai?
  ↓
 Layer này có quyền dùng contract đó?
  ↓
@@ -30,6 +125,502 @@ Minimal fix là gì?
 Verify
  ↓
 STOP
+```
+
+## Bella OS & Product Development Process v1.0
+
+Use this single process for every new Bella OS and Product. It exists to prevent technical debt before code starts while preserving Bella's rule against unnecessary bureaucracy.
+
+### OS vs Product
+
+```text
+BELLA PLATFORM
+│
+├── PLATFORM CORE
+│
+├── INDUSTRY OS
+│     ├── Healthcare OS
+│     ├── Education OS
+│     ├── Logistics OS
+│     ├── Beauty OS
+│     └── ...
+│
+└── PRODUCTS
+      ├── Bella Hospital
+      ├── Bella Preschool
+      ├── Bella Haircut Shop
+      ├── Bella Nail Shop
+      ├── Bella English Center
+      └── ...
+```
+
+OS owns reusable industry capability and domain semantics. Product packages capabilities into concrete software for users.
+
+```text
+Beauty OS
+   │
+   ├── Scheduling
+   ├── Service
+   ├── Staff
+   └── Resource
+          │
+          ▼
+Bella Haircut Shop
+Bella Nail Shop
+Bella Beauty Spa
+```
+
+OS must not be designed around one Product's UI. Product must not copy a domain engine that belongs to an OS.
+
+### Standard Process
+
+```text
+0. Problem
+      ↓
+1. Truth
+      ↓
+2. Ownership
+      ↓
+3. Capability Map
+      ↓
+4. Reuse Analysis
+      ↓
+5. Contract
+      ↓
+6. Boundary & Data
+      ↓
+7. Minimal Implementation Plan
+      ↓
+8. Coding
+      ↓
+9. Verification
+      ↓
+10. Closure
+```
+
+Do not expand this into extra governance phases unless repeated evidence proves the current process is insufficient.
+
+### 0. Define the Problem
+
+Do not code yet. Answer:
+
+```text
+Đang xây cái gì?
+Cho ai?
+Giải quyết vấn đề gì?
+Workflow thực tế là gì?
+Phạm vi phiên bản đầu tiên?
+Cái gì KHÔNG làm?
+```
+
+Start from the business workflow, not from tables.
+
+### 1. Find the Truth
+
+Identify the real domain facts before designing:
+
+```text
+Nghiệp vụ thực tế vận hành thế nào?
+Entity thực sự là gì?
+Lifecycle thực sự là gì?
+Quan hệ nào thực sự tồn tại?
+```
+
+Acceptable sources of Truth include business operation, verified system behavior, database schema, migrations, existing domain engines, Product Registry, Architecture Constitution, and verified documentation. Existing code is not automatically Truth.
+
+### 2. Determine Ownership
+
+Every capability must be classified:
+
+```text
+PLATFORM
+OS
+PRODUCT
+INTEGRATION
+SHARED UI
+```
+
+If ownership is unclear, stop before coding.
+
+### 3. Build Capability Map
+
+Map capabilities before designing data:
+
+```text
+Capability          Owner       Existing?
+
+Customer            Platform    YES
+Booking             Beauty OS   YES
+Service             Beauty OS   YES
+Staff               Platform    YES
+Commission          ?           investigate
+Product presentation Product    NEW
+```
+
+This prevents a Product from recreating existing Platform or OS capability.
+
+### 4. Reuse Before Create
+
+For each capability:
+
+```text
+Có implementation verified?
+        │
+    ┌───┴────┐
+   YES       NO
+    │         │
+ REUSE    Có thể EXTEND?
+              │
+          ┌───┴───┐
+         YES      NO
+          │        │
+       EXTEND    LOCAL
+```
+
+The order is:
+
+```text
+REUSE -> EXTEND -> LOCAL -> ABSTRACT
+```
+
+Evidence of reuse creates abstraction. Abstraction must not be created to predict reuse.
+
+### 5. Define Canonical Contract
+
+For each contract, identify:
+
+```text
+Entity
+ID
+Fields
+Enum
+Nullable
+Relation
+Lifecycle
+Owner
+Consumer
+```
+
+Use the Rule 0 model:
+
+```text
+TRUTH
+  ↓
+SOURCE OF TRUTH
+  ↓
+CANONICAL CONTRACT
+  ↓
+OWNER
+  ↓
+CONSUMER
+```
+
+Do not let consumers invent fields such as `journey.current_stage` when the canonical relationship is `current_stage_id -> JourneyStage.id -> JourneyStage.code`.
+
+### 6. Define Boundaries & Data Flow
+
+Use the standard flow:
+
+```text
+DATABASE
+   ↓
+Repository / Mapper
+   ↓
+DOMAIN
+   ↓
+SERVICE / USE CASE
+   ↓
+API / DTO
+   ↓
+UI
+```
+
+Product code must consume OS or Platform through the allowed service/contract boundary, not direct internal table access.
+
+Also verify:
+
+```text
+Tenant
+AuthN
+AuthZ
+RLS
+PII
+Audit
+```
+
+### 7. Minimum Implementation Plan
+
+Plan only what the first proven workflow needs:
+
+```text
+Workflow nào cần chạy?
+Capability nào cần cho workflow đó?
+Contract nào cần?
+File nào cần thay đổi?
+Test nào chứng minh nó?
+```
+
+Do not include future architecture such as AI recommendation, generic workflow engines, advanced analytics, or dynamic rules frameworks unless the current workflow proves they are required.
+
+### 8. Coding
+
+Before each meaningful change, check:
+
+```text
+1. Truth là gì?
+2. Source of Truth ở đâu?
+3. Canonical Contract là gì?
+4. Owner là ai?
+5. Layer này có quyền dùng không?
+6. Có implementation reuse được không?
+7. Minimal change là gì?
+```
+
+During coding, never invent schema, field, RPC, API, enum, or type; never use casts or suppressions to hide contract mismatch; never fake fallbacks, swallow errors, edit generated types for consumers, cross ownership boundaries, or weaken tests.
+
+If evidence is insufficient, defer instead of guessing.
+
+### 9. Verify Continuously
+
+Do not wait until the end of a Product to test:
+
+```text
+Small implementation
+      ↓
+Targeted test
+      ↓
+Targeted lint/typecheck
+      ↓
+PASS
+      ↓
+Next implementation
+```
+
+Increase verification scope by checkpoint:
+
+```text
+Feature -> Domain -> Phase -> Product
+```
+
+### 10. Closure
+
+Before saying `DONE`, `CLOSED`, `VERIFIED`, or `RC READY`, check the Definition of Done in this document.
+
+If code is written but evidence is incomplete, report `IMPLEMENTED` or `UNVERIFIED`, not `VERIFIED`.
+
+### Additional OS Process
+
+New OS work must start with domain modeling:
+
+```text
+Business Reality
+       ↓
+Domain Vocabulary
+       ↓
+Entities
+       ↓
+Relationships
+       ↓
+Lifecycle
+       ↓
+Invariants
+       ↓
+Capabilities
+       ↓
+Contracts
+       ↓
+Implementation
+```
+
+An OS owns reusable domain semantics. It must not include Product-specific presentation, navigation, hero imagery, or terminology such as a single Product's dashboard label when those belong to Product Identity.
+
+### Additional Product Process
+
+New Product work starts with:
+
+```text
+Target Customer
+      ↓
+Business Workflow
+      ↓
+Required Capabilities
+      ↓
+Map capabilities -> Platform/OS
+      ↓
+Product-specific gaps
+      ↓
+Product Identity
+      ↓
+UX
+```
+
+Products must declare:
+
+```text
+productKey
+requiredModules
+navigationProfile
+serviceProfile
+themePreset
+terminology
+```
+
+Module means what Bella can do. Product means what the user sees.
+
+### Missing Capability Process
+
+If Product A needs capability X, do not automatically move X to Platform or OS.
+
+```text
+Product A needs X
+      ↓
+OS already has X?
+ ┌────┴────┐
+YES        NO
+ │          │
+REUSE   Product-local?
+             │
+          YES
+             ↓
+           LOCAL
+```
+
+Only after Product B and Product C also need X, and their semantics are proven equivalent, consider extraction.
+
+### Failure Process
+
+When a failure appears, do not fix immediately:
+
+```text
+FAILURE
+   ↓
+Reproduce
+   ↓
+Find Truth
+   ↓
+Find Source of Truth
+   ↓
+Find Canonical Contract
+   ↓
+Check Ownership
+   ↓
+Classify Root Cause
+```
+
+Classify as:
+
+```text
+CODE BUG
+STALE CONSUMER
+CONTRACT DRIFT
+SCHEMA DRIFT
+FIXTURE DRIFT
+ENVIRONMENT
+ARCHITECTURE
+PRE-EXISTING
+CASCADE
+```
+
+Then apply one root cause, one minimal fix, targeted verification, stop.
+
+### CI Failure Process
+
+When CI is red:
+
+```text
+CI FAIL
+   ↓
+Find first/root failure
+   ↓
+Separate cascade failures
+   ↓
+Compare origin/main if necessary
+   ↓
+Classify
+   ↓
+Minimal fix
+   ↓
+Targeted rerun
+   ↓
+Full required gates
+```
+
+Do not fix every red check independently when an aggregate or cascade failure comes from a single root job.
+
+### Ten Immutable Principles
+
+```text
+BELLA ENGINEERING CONSTITUTION
+
+1. TRUTH BEFORE ASSUMPTION.
+   Không đoán hệ thống hoạt động thế nào.
+
+2. OWNERSHIP BEFORE CODE.
+   Biết capability thuộc đâu trước khi implement.
+
+3. REUSE BEFORE CREATE.
+   Không tạo thứ đã tồn tại.
+
+4. CANONICAL CONTRACT BEFORE CONSUMER.
+   Consumer phải theo contract, không ngược lại.
+
+5. BOUNDARIES MUST BE RESPECTED.
+   Đúng dữ liệu nhưng sai layer vẫn là sai.
+
+6. NEVER INVENT A CONTRACT.
+   Không invent field/type/schema/RPC/API.
+
+7. NEVER HIDE A FAILURE.
+   Không cast/suppress/weaken test để xanh CI.
+
+8. MINIMUM SUFFICIENT IMPLEMENTATION.
+   Chỉ xây cái hiện tại có evidence cần.
+
+9. ZERO NEW TECHNICAL DEBT.
+   Code mới phải sạch từ đầu.
+
+10. EVIDENCE BEFORE CLOSURE.
+    Không evidence -> không VERIFIED/CLOSED.
+```
+
+### Standard AI Coding Prompt
+
+Use this prompt at the start of new OS/Product work:
+
+```text
+Follow Bella Engineering Constitution and OS/Product Development Process.
+
+Before coding: establish Business Truth -> Source of Truth -> Ownership -> Existing Capabilities -> Canonical Contracts -> Boundaries -> Minimal Scope.
+
+During coding: reuse before create; never invent schema/type/API/RPC; never bypass ownership; never use suppression/casts to hide contract mismatch; implement only proven requirements.
+
+When uncertain: investigate or DEFER - never guess.
+
+Before closure: verify TypeScript, ESLint, Architecture, relevant tests, tenant/security boundaries and regression evidence. Code written is not equivalent to DONE.
+```
+
+The entire process compresses to:
+
+```text
+BUSINESS TRUTH
+      ↓
+OWNERSHIP
+      ↓
+CAPABILITY
+      ↓
+REUSE
+      ↓
+CANONICAL CONTRACT
+      ↓
+BOUNDARY
+      ↓
+MINIMAL IMPLEMENTATION
+      ↓
+VERIFY
+      ↓
+EVIDENCE
+      ↓
+CLOSE
 ```
 
 ## 1. Ownership Before Code
