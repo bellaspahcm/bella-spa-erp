@@ -9,8 +9,6 @@
  * @see docs/plans/core-platform-extraction-roadmap.md
  */
 
-import { HaircutExecutiveDashboardView } from './executive/components/HaircutExecutiveDashboardView';
-
 import { KtvPerformanceTable } from '@/components/features/dashboard/KtvPerformanceTable';
 import { RevenueChart } from '@/components/features/dashboard/RevenueChart';
 import { StatsGrid } from '@/components/features/dashboard/StatsGrid';
@@ -1069,12 +1067,6 @@ function StandardDashboardPage() {
 
 export default function DashboardPage() {
   const { tenantModuleKey } = useTenantModuleKey({ forceFresh: true });
-  const { product } = useUser();
-  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'haircut';
-
-  if (isHaircut) {
-    return <HaircutExecutiveDashboardView />;
-  }
 
   if (tenantModuleKey === 'real_estate') {
     return <RealEstateDashboardPage />;
