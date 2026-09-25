@@ -184,7 +184,7 @@ function BookingsContent() {
           ktvs={ktvs}
           isSyncing={isSyncing}
           onSessionSelect={(session) => {
-            openSessionDetail(session);
+            openSessionDetail(session as unknown as Parameters<typeof buildSessionModalData>[0]);
           }}
           onEmptySlotClick={(hour) => {
             setSelectedBookingIdForCreate('');

@@ -1081,6 +1081,5 @@ export default function DashboardPage() {
   if (tenantModuleKey === 'real_estate') {
     return <RealEstateDashboardPage />;
   }
-
   return <StandardDashboardPage />;
 }

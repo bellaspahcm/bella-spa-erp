@@ -33,11 +33,27 @@ import {
   FileText
 } from 'lucide-react';
 
+export interface HaircutSalaryDetail {
+  id?: string;
+  name: string;
+  role?: string;
+  daysWorked?: string;
+  totalSessions?: number;
+  baseSalary?: string;
+  commission?: string;
+  kpiBonus?: string;
+  totalIncome?: string;
+  totalIncomeNum?: number;
+  status?: string;
+  statusLabel?: string;
+  hasIssue?: boolean;
+}
+
 interface HaircutSalaryViewProps {
   onPublishAll?: () => void;
   onFinalizeAll?: () => void;
-  onEditKtv?: (ktv: unknown) => void;
-  onFixAttendance?: (ktv: unknown) => void;
+  onEditKtv?: (ktv: HaircutSalaryDetail) => void;
+  onFixAttendance?: (ktv: HaircutSalaryDetail) => void;
 }
 
 const KTV_AVATARS: Record<string, string> = {
@@ -62,7 +78,7 @@ export function HaircutSalaryView({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
-  const [selectedKtvDetail, setSelectedKtvDetail] = useState<unknown | null>(null);
+  const [selectedKtvDetail, setSelectedKtvDetail] = useState<HaircutSalaryDetail | null>(null);
 
   const statusOptions = [
     { value: 'Tất cả trạng thái', label: 'Tất cả trạng thái' },
@@ -677,7 +693,6 @@ export function HaircutSalaryView({
                   <td className="p-3 text-right text-emerald-700 text-sm font-black whitespace-nowrap">
                     61.200.000đ
                   </td>
-                  <td className="p-3 whitespace-nowrap" />
                   <td className="p-3 whitespace-nowrap" />
                 </tr>
               </tfoot>
