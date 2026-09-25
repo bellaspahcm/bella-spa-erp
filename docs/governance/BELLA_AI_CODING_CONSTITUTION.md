@@ -200,6 +200,43 @@ OS must not be designed around one Product's UI. Product must not copy a domain 
 
 Do not expand this into extra governance phases unless repeated evidence proves the current process is insufficient.
 
+### Mandatory Entry Gate for New OS/Product Work
+
+Before coding any new OS, new Product, Product vertical, or Product UI redesign, the AI coding agent must produce or update `ARCHITECTURE_GATE_RESULT.md` for the current work scope.
+
+The gate must cover:
+
+```text
+Problem / non-goals
+Truth and Source of Truth
+Ownership
+Capability Map
+Reuse Analysis
+Canonical Contracts
+Boundary & Data Flow
+UI -> Contract Reconciliation when UI is involved
+Minimal Implementation Plan
+Verification Plan
+```
+
+The gate result must be one of:
+
+```text
+PASS
+BLOCKED
+DEFER
+```
+
+`PASS` means the work may proceed with a minimal implementation plan.
+
+`BLOCKED` means ownership, contract, boundary, freeze, tenant/security, or architecture permission is unresolved. Do not write product/runtime code.
+
+`DEFER` means the requested capability or UI element is valid to consider later, but there is not enough evidence to implement it safely in the current scope.
+
+For UI redesign work, the gate must explicitly list every data-bound or action-bound UI element that introduces a field, KPI, status, action, filter, or workflow. Each one must conclude as `MATCH`, `STALE UI`, `MAPPING BUG`, or `CAPABILITY GAP`.
+
+This is a lightweight entry gate, not a new framework. It should be short, specific, and evidence-backed.
+
 ### 0. Define the Problem
 
 Do not code yet. Answer:
