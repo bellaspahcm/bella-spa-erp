@@ -34,6 +34,9 @@ import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { calculateSalaryTotal } from '@/lib/business-rules/salary';
 import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
+import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
+import { useUser } from '@/lib/user-context';
+import { HaircutSalaryView } from './HaircutSalaryView';
 
 // Types
 import { 
@@ -570,12 +573,95 @@ export default function SalaryPage() {
     setIsHrModalOpen(true);
   };
 
+  const { tenantModuleKey } = useTenantModuleKey();
+  const { product } = useUser();
+  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'haircut';
+
   const filteredSalaries = ktvSalaries.filter((s) => 
     s.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const totalPayout = ktvSalaries.reduce((acc, curr) => acc + curr.totalSalary, 0);
   const totalSessions = ktvSalaries.reduce((acc, curr) => acc + curr.sessions, 0);
+
+  if (isHaircut) {
+    return (
+      <>
+        <HaircutSalaryView
+          onPublishAll={handlePublishAll}
+          onFinalizeAll={handleFinalizeAll}
+          onEditKtv={(ktv) => {
+            const match = ktvSalaries.find((s) => s.name === ktv.name);
+            if (match) openEditModal(match);
+          }}
+          onFixAttendance={(ktv) => {
+            const match = attendanceData.find((a) => a.name === ktv.name);
+            if (match) openKtvCalendar(match);
+            else handleTabChange('attendance');
+          }}
+        />
+
+        <EditSalaryModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          editingSalary={editingSalary}
+          setEditingSalary={setEditingSalary}
+          onSave={handleSaveConfig}
+          isSaving={isSaving}
+        />
+
+        <AttendanceCalendar
+          isOpen={isCalendarModalOpen}
+          onClose={() => setIsCalendarModalOpen(false)}
+          selectedKtv={selectedKtv}
+          onSaveSuccess={() =>
+            refreshData({
+              includeAttendance: true,
+              includeMatrix: true,
+              forceAttendance: true,
+              forceMatrix: true,
+            })
+          }
+        />
+
+        <HrProfileEditor
+          isOpen={isHrModalOpen}
+          onClose={() => setIsHrModalOpen(false)}
+          hrKtvProfile={hrKtvProfile}
+          onSaveSuccess={() =>
+            refreshData({
+              includeAttendance: hasLoadedAttendance,
+              includeMatrix: true,
+              forceAttendance: true,
+              forceMatrix: true,
+            })
+          }
+        />
+
+        <PublishConfirmModal
+          isOpen={isPublishModalOpen}
+          onClose={() => setIsPublishModalOpen(false)}
+          onConfirm={handleConfirmPublish}
+          recordCount={
+            ktvSalaries.filter((s) => s.status === 'pending' || s.status === 'approved').length
+          }
+          currentMonth={currentMonthYear}
+        />
+
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          title={confirmModal.title}
+          message={confirmModal.message}
+          onConfirm={confirmModal.onConfirm}
+          onCancel={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+          confirmText={confirmModal.confirmText}
+          cancelText={confirmModal.cancelText}
+          isDanger={confirmModal.isDanger}
+          isLoading={confirmModal.isLoading}
+        />
+      </>
+    );
+  }
 
   return (
     <div className="flex-1 overflow-auto bg-background/30 p-3 sm:p-6 md:p-10">

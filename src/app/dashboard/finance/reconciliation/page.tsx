@@ -14,8 +14,9 @@ import {
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
-import { formatCurrency, parseMoneyInput } from '@bella/shared';;
-import { cn } from '@/lib/utils';
+import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
+import { parseMoneyInput } from '@bella/shared';
+import { HaircutReconciliationView } from './components/HaircutReconciliationView';
 import { AllocateRevenueModal } from './components/AllocateRevenueModal';
 import { DebtPaymentModal } from './components/DebtPaymentModal';
 import { ReconciliationHeader } from './components/ReconciliationHeader';
@@ -45,7 +46,7 @@ const tableWrapperClassName =
 const stickyBodyCellClassName =
   'bg-white';
 
-export default function FinancialReconciliationPage() {
+function StandardFinancialReconciliationPage() {
   const vocab = useModuleVocabulary();
   const [data, setData] = useState<FinancialAnomaliesData>({
     debt_alerts: [],
@@ -805,4 +806,16 @@ export default function FinancialReconciliationPage() {
       />
     </div>
   );
+}
+
+export default function FinancialReconciliationPage() {
+  const { tenantModuleKey } = useTenantModuleKey();
+  const { product } = useUser();
+  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'haircut';
+
+  if (isHaircut) {
+    return <HaircutReconciliationView />;
+  }
+
+  return <StandardFinancialReconciliationPage />;
 }

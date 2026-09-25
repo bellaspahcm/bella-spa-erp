@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { InventoryAddItemModal } from './components/InventoryAddItemModal';
@@ -12,11 +13,14 @@ import { InventoryRestockModal } from './components/InventoryRestockModal';
 import { InventoryStockPanel } from './components/InventoryStockPanel';
 import { InventoryTabs } from './components/InventoryTabs';
 import { InventoryTransferOrdersPanel } from './components/InventoryTransferOrdersPanel';
+import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
+import { useUser } from '@/lib/user-context';
+import { HaircutInventoryView } from './HaircutInventoryView';
 import { useInventoryPageState } from './hooks/useInventoryPageState';
 import { useInventoryForecast } from './hooks/useInventoryForecast';
 import { ProductSalesListPage } from '@/components/product-sales/ProductSalesListPage';
 
-export default function InventoryPage() {
+function StandardInventoryPage() {
   const {
     activeTab,
     setActiveTab,
@@ -74,6 +78,10 @@ export default function InventoryPage() {
     handleCancelOrder,
     refreshPageData,
   } = useInventoryPageState();
+
+  const { tenantModuleKey } = useTenantModuleKey();
+  const { product } = useUser();
+  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'haircut';
 
   // ✅ Inventory forecast enabled
   const {
@@ -223,4 +231,30 @@ export default function InventoryPage() {
       />
     </div>
   );
+}
+
+function HaircutInventoryViewWrapper() {
+  const [showAdd, setShowAdd] = useState(false);
+  const [showCreateRequest, setShowCreateRequest] = useState(false);
+  const [restockTarget, setRestockTarget] = useState<unknown>(null);
+
+  return (
+    <HaircutInventoryView
+      onRestock={() => setShowAdd(true)}
+      onAdjust={(item) => setRestockTarget(item)}
+      onTransferRequest={() => setShowCreateRequest(true)}
+    />
+  );
+}
+
+export default function InventoryPage() {
+  const { tenantModuleKey } = useTenantModuleKey();
+  const { product } = useUser();
+  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'haircut';
+
+  if (isHaircut) {
+    return <HaircutInventoryViewWrapper />;
+  }
+
+  return <StandardInventoryPage />;
 }

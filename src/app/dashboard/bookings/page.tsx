@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { getLocalDateString } from '@bella/shared';;
+import { getLocalDateString } from '@bella/shared';
 import { formatBookingCustomerLabel, getTenantSpecialtyOptions } from '@/lib/business-rules/tenant-module-presentation';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { useTenantContext } from '@/core/hooks/useTenantContext';
@@ -27,11 +27,15 @@ import { useBookingsPageActions } from './hooks/useBookingsPageActions';
 import { buildSessionModalData, getMonthDays, isSameDay } from './utils/bookingsPageUtils';
 
 
+import { useUser } from '@/lib/user-context';
+import { HaircutBookingsView } from './HaircutBookingsView';
+
 function BookingsContent() {
   const searchParams = useSearchParams();
   const customerName = searchParams.get('name');
   const surface = searchParams.get('surface') === 'pos' ? 'pos' : 'schedule';
   const tenantContext = useTenantContext();
+  const { product } = useUser();
 
   const [view, setView] = useState<BookingsViewMode>('timeline');
   const [ktvSpecialty, setKtvSpecialty] = useState<KtvSpecialty>('all');
@@ -165,6 +169,92 @@ function BookingsContent() {
     void fetchInvoicePrintLogs(session.booking_id);
     void handlePrintThermalInvoice(nextModalData);
   };
+
+  const isHaircut = product?.productKey === 'bella_haircut' || resolvedTenantModuleKey === 'haircut';
+
+  if (isHaircut && surface !== 'pos') {
+    return (
+      <div className="flex-1 overflow-auto bg-slate-50/60 relative">
+        <HaircutBookingsView
+          view={view}
+          onViewChange={setView}
+          selectedDate={selectedDate}
+          onSelectedDateChange={setSelectedDate}
+          sessions={sessions}
+          ktvs={ktvs}
+          isSyncing={isSyncing}
+          onSessionSelect={(session) => {
+            openSessionDetail(session);
+          }}
+          onEmptySlotClick={(hour) => {
+            setSelectedBookingIdForCreate('');
+            const startHourStr = String(hour).padStart(2, '0') + ':00';
+            const endHourStr = String(hour + 2).padStart(2, '0') + ':00';
+            setCreateTimeRange({ start: startHourStr, end: endHourStr });
+            setCreateDate(getLocalDateString(selectedDate));
+            setShowCreateModal(true);
+          }}
+          onCreateClick={() => {
+            setCreateDate(getLocalDateString());
+            setShowCreateModal(true);
+          }}
+        />
+
+        <BookingDayDetailModal
+          isOpen={showDetailModal}
+          modalData={modalData}
+          ktvs={ktvs}
+          bookingResources={bookingResources}
+          sessionHistory={sessionHistory}
+          invoicePrintLogs={invoicePrintLogs}
+          isLoadingInvoicePrintLogs={isLoadingInvoicePrintLogs}
+          isPrintingInvoice={isPrintingInvoice}
+          isUpdating={isUpdating}
+          tenantId={tenantContext?.tenantId}
+          onClose={() => setShowDetailModal(false)}
+          onModalDataChange={setModalData}
+          onOpenQrModal={handleOpenQrModal}
+          onPrintInvoice={handlePrintThermalInvoice}
+          onVoidInvoice={handleVoidLatestInvoice}
+          onSave={handleUpdatePlan}
+          tenantModuleKey={resolvedTenantModuleKey}
+        />
+        <BookingThermalInvoicePrint
+          invoice={printInvoiceData}
+          onAfterPrint={() => setPrintInvoiceData(null)}
+        />
+        <ReprintReasonModal
+          isOpen={Boolean(reprintRequest)}
+          isSubmitting={isPrintingInvoice}
+          onClose={closeReprintRequest}
+          onConfirm={confirmReprintRequest}
+        />
+        <BookingCreateScheduleModal
+          isOpen={showCreateModal}
+          allBookings={allBookings}
+          bookingResources={bookingResources}
+          selectedBookingId={selectedBookingIdForCreate}
+          defaultDate={createDate}
+          createTimeRange={createTimeRange}
+          isUpdating={isUpdating}
+          onClose={() => setShowCreateModal(false)}
+          onSelectedBookingChange={setSelectedBookingIdForCreate}
+          onCreateTimeRangeChange={setCreateTimeRange}
+          onSubmit={handleCreateScheduleSubmit}
+          tenantModuleKey={resolvedTenantModuleKey}
+        />
+        {qrModalData && (
+          <VietQRPaymentModal
+            isOpen={showQrModal}
+            onClose={() => setShowQrModal(false)}
+            bookingNumber={qrModalData.bookingNumber}
+            amount={qrModalData.amount}
+            tenantInfo={qrModalData.tenantInfo}
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 overflow-auto bg-background/30 p-3 sm:p-6 md:p-10 relative">
