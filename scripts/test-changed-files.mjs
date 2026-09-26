@@ -29,6 +29,8 @@ const RELATED_TEST_EXCLUDED_PATTERNS = [
   '/src/__tests__/hospital-clinical-alerts\\.test\\.ts$',
   '/src/app/api/rules/__tests__/rules-api\\.test\\.ts$',
   '/src/modules/bookings/actions/__tests__/service-items-actions\\.test\\.ts$',
+  '/tests/products/bella-education/.+\\.integration\\.test\\.ts$',
+  '/tests/products/bella-education/finance/preschool-finance-canonical-identity\\.test\\.ts$',
   '/src/platform/finance/__tests__/finance-f2-concurrency\\.test\\.ts$',
   '/src/platform/finance/__tests__/finance-f2-reconstruction\\.test\\.ts$',
   '/src/platform/finance/__tests__/finance-f2-reporting-api\\.test\\.ts$',

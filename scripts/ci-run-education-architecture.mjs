@@ -32,14 +32,29 @@ function addCount(counts, signature) {
   counts[signature] = (counts[signature] ?? 0) + 1;
 }
 
+function normalizeViolationSignature(signature) {
+  return signature.replace(/:L\d+\b/g, ':L*');
+}
+
+function normalizeViolationCounts(counts) {
+  const normalized = {};
+  for (const [signature, count] of Object.entries(counts)) {
+    const stableSignature = normalizeViolationSignature(signature);
+    normalized[stableSignature] = (normalized[stableSignature] ?? 0) + count;
+  }
+  return normalized;
+}
+
 function compareBaseline(baseline, current) {
+  const stableBaseline = normalizeViolationCounts(baseline);
+  const stableCurrent = normalizeViolationCounts(current);
   const added = [];
   const reduced = [];
-  const signatures = new Set([...Object.keys(baseline), ...Object.keys(current)]);
+  const signatures = new Set([...Object.keys(stableBaseline), ...Object.keys(stableCurrent)]);
 
   for (const signature of [...signatures].sort()) {
-    const baselineCount = baseline[signature] ?? 0;
-    const currentCount = current[signature] ?? 0;
+    const baselineCount = stableBaseline[signature] ?? 0;
+    const currentCount = stableCurrent[signature] ?? 0;
     const delta = currentCount - baselineCount;
 
     if (delta > 0) {
