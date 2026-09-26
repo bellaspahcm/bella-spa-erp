@@ -35,6 +35,9 @@ export class PaymentReconciliationService {
       throw new Error(`INVALID_PAYMENT_AMOUNT_ERROR: Payment amount must be greater than zero.`);
     }
 
+    await this.repo.assertStudentPartyBelongsToTenant(tenantId, studentId);
+    await this.repo.assertPayerPartyBelongsToTenant(tenantId, payerPartyId);
+
     const paymentNumber = `PAY-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`;
 
     return await this.repo.recordPayment({
@@ -90,11 +93,13 @@ export class PaymentReconciliationService {
     }
 
     // 2. Fetch Payment Record & Validate Unallocated Balance
-    const payments = await this.repo.recordPayment; // Ensure repo access
-    // Fetch payment via repo
     const payment = await this.fetchPaymentById(tenantId, paymentId);
     if (!payment) {
       throw new Error(`PAYMENT_NOT_FOUND_ERROR: Payment ${paymentId} not found.`);
+    }
+
+    if (payment.studentId !== invoice.studentId) {
+      throw new Error(`PAYMENT_INVOICE_STUDENT_MISMATCH_ERROR: Payment student does not match invoice student.`);
     }
 
     if (allocationAmount > payment.unallocatedAmount) {

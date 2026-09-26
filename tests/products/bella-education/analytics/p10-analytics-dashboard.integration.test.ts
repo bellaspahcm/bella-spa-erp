@@ -47,8 +47,14 @@ describe('P10 Preschool Analytics & Executive Dashboard Integration Test Suite',
   }
 
   async function seedStudent(): Promise<string> {
-    const studentId = crypto.randomUUID();
+    const studentPartyId = crypto.randomUUID();
     const personId = crypto.randomUUID();
+    await supabase.from('party_parties').insert({
+      id: studentPartyId,
+      tenant_id: tenantId,
+      party_type: 'person',
+      display_name: `Minh Lê ${studentPartyId.slice(0, 8)}`,
+    });
     await supabase.from('persons').insert({
       id: personId,
       tenant_id: tenantId,
@@ -57,19 +63,30 @@ describe('P10 Preschool Analytics & Executive Dashboard Integration Test Suite',
       date_of_birth: '2022-01-01',
       gender: 'male',
     });
-
     await supabase.from('students').insert({
-      student_id: studentId,
+      student_id: studentPartyId,
       tenant_id: tenantId,
       person_id: personId,
-      student_code: `STU-${studentId.slice(0, 8)}`,
+      student_code: `STU-${studentPartyId.slice(0, 8)}`,
       academic_status: 'enrolled',
       enrollment_type: 'full_time',
       program_id: 'PRESCHOOL',
       enrollment_date: todayStr,
     });
 
-    return studentId;
+    return studentPartyId;
+  }
+
+  async function seedPayer(): Promise<string> {
+    const payerPartyId = crypto.randomUUID();
+    await supabase.from('party_parties').insert({
+      id: payerPartyId,
+      tenant_id: tenantId,
+      party_type: 'person',
+      display_name: `P10 Payer ${payerPartyId.slice(0, 8)}`,
+    });
+
+    return payerPartyId;
   }
 
   async function seedShiftTemplate(): Promise<string> {
@@ -102,7 +119,7 @@ describe('P10 Preschool Analytics & Executive Dashboard Integration Test Suite',
 
   it('Invariant 2: Work Queue RESOLVED while staffing still SHORTAGE MUST STILL report active staffing violation', async () => {
     const shiftTemplateId = await seedShiftTemplate();
-    const studentId = crypto.randomUUID();
+    const studentId = await seedStudent();
 
     // 1. Seed P8 non-compliant ratio snapshot (Domain Truth)
     await supabase.from('edu_sched_compliance_snapshots').insert({
@@ -154,7 +171,7 @@ describe('P10 Preschool Analytics & Executive Dashboard Integration Test Suite',
 
     await supabase.from('edu_comm_exceptions').insert({
       tenant_id: tenantId,
-      student_id: crypto.randomUUID(),
+      student_id: await seedStudent(),
       exception_type: 'SAFETY_DEFECT',
       severity: 'CRITICAL',
       assigned_role: 'FACILITIES_MANAGER',
@@ -204,6 +221,7 @@ describe('P10 Preschool Analytics & Executive Dashboard Integration Test Suite',
   it('Invariant 5: Dynamic Event-Driven & Hybrid Reconciliation across P1, P3, P7, P9 domain changes', async () => {
     const periodId = await seedBillingPeriod();
     const studentId = await seedStudent();
+    const payerPartyId = await seedPayer();
     const classId = crypto.randomUUID();
 
     // Emit domain event for student enrollment
@@ -237,7 +255,7 @@ describe('P10 Preschool Analytics & Executive Dashboard Integration Test Suite',
     await supabase.from('edu_fin_payments').insert({
       id: paymentId,
       tenant_id: tenantId,
-      payer_party_id: crypto.randomUUID(),
+      payer_party_id: payerPartyId,
       student_id: studentId,
       payment_number: 'PAY-DYN-01',
       amount: 1000000,
@@ -251,7 +269,7 @@ describe('P10 Preschool Analytics & Executive Dashboard Integration Test Suite',
       invoice_id: invId,
       payment_id: paymentId,
       allocated_amount: 1000000,
-      reconciled_by_party_id: crypto.randomUUID(),
+      reconciled_by_party_id: payerPartyId,
     });
 
     // Emit domain event for payment reconciliation

@@ -14,6 +14,17 @@ import {
 } from '../domain/preschool-analytics.types';
 import { PreschoolDomainEvent } from '../events/preschool-analytics-events';
 
+type EnrollmentStudentRaw = {
+  metadata?: Record<string, unknown> | null;
+};
+
+function getStudentClassroomId(student: EnrollmentStudentRaw): string | null {
+  const metadata = student.metadata;
+  const classroomId = metadata?.classroom_id ?? metadata?.classroomId;
+
+  return typeof classroomId === 'string' ? classroomId : null;
+}
+
 export class PreschoolAnalyticsService {
   private eventLog: PreschoolDomainEvent[] = [];
 
@@ -59,7 +70,7 @@ export class PreschoolAnalyticsService {
     const totalClassrooms = enrollmentRaw.classrooms.length;
 
     const classroomUtilization: ClassroomUtilizationDTO[] = enrollmentRaw.classrooms.map((c) => {
-      const currentEnrollment = enrollmentRaw.enrolledStudents.filter(s => s.classroom_id === c.id).length;
+      const currentEnrollment = enrollmentRaw.enrolledStudents.filter(s => getStudentClassroomId(s) === c.id).length;
       const maxCap = c.max_capacity || 25;
       return {
         classId: c.id,
