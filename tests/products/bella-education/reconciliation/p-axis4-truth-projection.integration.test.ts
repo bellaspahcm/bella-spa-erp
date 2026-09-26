@@ -51,30 +51,19 @@ describe('Axis 4: Product-Wide Truth & Projection Reconciliation Integration Sui
     return data!.id;
   }
 
+  async function seedPersonParty(tenantId: string, displayName: string): Promise<string> {
+    const partyId = crypto.randomUUID();
+    await supabase.from('party_parties').insert({
+      id: partyId,
+      tenant_id: tenantId,
+      party_type: 'person',
+      display_name: displayName,
+    });
+    return partyId;
+  }
+
   async function seedStudent(tenantId: string): Promise<string> {
-    const studentId = crypto.randomUUID();
-    const personId = crypto.randomUUID();
-    await supabase.from('persons').insert({
-      id: personId,
-      tenant_id: tenantId,
-      first_name: 'An',
-      last_name: 'Trần',
-      date_of_birth: '2022-03-15',
-      gender: 'female',
-    });
-
-    await supabase.from('students').insert({
-      student_id: studentId,
-      tenant_id: tenantId,
-      person_id: personId,
-      student_code: `STU-${studentId.slice(0, 8)}`,
-      academic_status: 'enrolled',
-      enrollment_type: 'full_time',
-      program_id: 'PRESCHOOL',
-      enrollment_date: todayStr,
-    });
-
-    return studentId;
+    return seedPersonParty(tenantId, `An Trần ${crypto.randomUUID().slice(0, 8)}`);
   }
 
   it('Invariant 4.1: P7 Finance Truth Reconciliation — Work Queue RESOLVED without ledger reconciliation STILL reports outstanding balance', async () => {
@@ -115,10 +104,11 @@ describe('Axis 4: Product-Wide Truth & Projection Reconciliation Integration Sui
 
     // 4. Perform Canonical P7 Payment & Ledger Reconciliation
     const paymentId = crypto.randomUUID();
+    const payerPartyId = await seedPersonParty(tenantA, 'Axis4 Payer 4.1');
     await supabase.from('edu_fin_payments').insert({
       id: paymentId,
       tenant_id: tenantA,
-      payer_party_id: crypto.randomUUID(),
+      payer_party_id: payerPartyId,
       student_id: studentId,
       payment_number: 'PAY-AXIS4-01',
       amount: 10000000,
@@ -132,7 +122,7 @@ describe('Axis 4: Product-Wide Truth & Projection Reconciliation Integration Sui
       invoice_id: invId,
       payment_id: paymentId,
       allocated_amount: 10000000,
-      reconciled_by_party_id: crypto.randomUUID(),
+      reconciled_by_party_id: payerPartyId,
     });
 
     await supabase.from('edu_fin_invoices').update({ settlement_status: 'PAID' }).eq('id', invId);
@@ -185,7 +175,7 @@ describe('Axis 4: Product-Wide Truth & Projection Reconciliation Integration Sui
     // 2. Mark Exception RESOLVED in Work Queue
     await supabase.from('edu_comm_exceptions').insert({
       tenant_id: tenantA,
-      student_id: crypto.randomUUID(),
+      student_id: await seedStudent(tenantA),
       exception_type: 'RATIO_SHORTAGE',
       severity: 'HIGH',
       assigned_role: 'STAFF_TEACHER',
@@ -230,7 +220,7 @@ describe('Axis 4: Product-Wide Truth & Projection Reconciliation Integration Sui
     // 2. Mark exception RESOLVED in Work Queue
     await supabase.from('edu_comm_exceptions').insert({
       tenant_id: tenantA,
-      student_id: crypto.randomUUID(),
+      student_id: await seedStudent(tenantA),
       exception_type: 'SAFETY_DEFECT',
       severity: 'CRITICAL',
       assigned_role: 'FACILITIES_MANAGER',
@@ -279,10 +269,11 @@ describe('Axis 4: Product-Wide Truth & Projection Reconciliation Integration Sui
 
     // Reconcile Tenant A
     const paymentId = crypto.randomUUID();
+    const payerPartyId = await seedPersonParty(tenantA, 'Axis4 Payer 4.4');
     await supabase.from('edu_fin_payments').insert({
       id: paymentId,
       tenant_id: tenantA,
-      payer_party_id: crypto.randomUUID(),
+      payer_party_id: payerPartyId,
       student_id: studentId,
       payment_number: 'PAY-TENANT-A',
       amount: 5000000,
@@ -296,7 +287,7 @@ describe('Axis 4: Product-Wide Truth & Projection Reconciliation Integration Sui
       invoice_id: invId,
       payment_id: paymentId,
       allocated_amount: 5000000,
-      reconciled_by_party_id: crypto.randomUUID(),
+      reconciled_by_party_id: payerPartyId,
     });
 
     // Verify Tenant B remains 0

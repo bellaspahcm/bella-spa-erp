@@ -36,6 +36,19 @@ export class ParentCommunicationRepository {
     studentId: string,
     guardianPartyId: string
   ): Promise<boolean> {
+    const { data: canonicalRelationship } = await this.supabase
+      .from('party_relationships')
+      .select('id')
+      .eq('tenant_id', tenantId)
+      .eq('source_party_id', guardianPartyId)
+      .eq('target_party_id', studentId)
+      .in('relationship_type', ['guardian_of', 'parent_of'])
+      .maybeSingle();
+
+    if (canonicalRelationship) {
+      return true;
+    }
+
     // Check students table for canonical guardian link in metadata or student_guardians table
     const { data: student, error } = await this.supabase
       .from('students')

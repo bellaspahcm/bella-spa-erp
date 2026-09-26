@@ -21,7 +21,98 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+type DbRow = Record<string, unknown>;
+
+type PartyValidationOptions = {
+  tenantId: string;
+  partyId: string;
+  identityLabel: 'STUDENT_PARTY' | 'PAYER_PARTY';
+  requirePersonParty: boolean;
+};
+
+function readString(row: DbRow, key: string): string {
+  const value = row[key];
+  if (typeof value !== 'string') {
+    throw new Error(`FINANCE_REPOSITORY_MAPPING_ERROR: Expected ${key} to be string.`);
+  }
+  return value;
+}
+
+function readOptionalString(row: DbRow, key: string): string | undefined {
+  const value = row[key];
+  if (value === null || value === undefined) return undefined;
+  if (typeof value !== 'string') {
+    throw new Error(`FINANCE_REPOSITORY_MAPPING_ERROR: Expected ${key} to be optional string.`);
+  }
+  return value;
+}
+
+function readBoolean(row: DbRow, key: string): boolean {
+  const value = row[key];
+  if (typeof value !== 'boolean') {
+    throw new Error(`FINANCE_REPOSITORY_MAPPING_ERROR: Expected ${key} to be boolean.`);
+  }
+  return value;
+}
+
+function readNumber(row: DbRow, key: string): number {
+  const value = row[key];
+  const parsed = typeof value === 'number' ? value : typeof value === 'string' ? Number.parseFloat(value) : Number.NaN;
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`FINANCE_REPOSITORY_MAPPING_ERROR: Expected ${key} to be numeric.`);
+  }
+  return parsed;
+}
+
 export class PreschoolFinanceRepository {
+  async assertStudentPartyBelongsToTenant(tenantId: string, studentPartyId: string): Promise<void> {
+    await this.requirePartyBelongsToTenant({
+      tenantId,
+      partyId: studentPartyId,
+      identityLabel: 'STUDENT_PARTY',
+      requirePersonParty: true,
+    });
+  }
+
+  async assertPayerPartyBelongsToTenant(tenantId: string, payerPartyId: string): Promise<void> {
+    await this.requirePartyBelongsToTenant({
+      tenantId,
+      partyId: payerPartyId,
+      identityLabel: 'PAYER_PARTY',
+      requirePersonParty: false,
+    });
+  }
+
+  private async requirePartyBelongsToTenant(options: PartyValidationOptions): Promise<void> {
+    const { data: party, error } = await supabase
+      .from('party_parties')
+      .select('id, tenant_id, party_type, deleted_at')
+      .eq('id', options.partyId)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(`FINANCE_PARTY_LOOKUP_ERROR: ${error.message}`);
+    }
+
+    if (!party) {
+      throw new Error(`${options.identityLabel}_NOT_FOUND: Party ${options.partyId} not found.`);
+    }
+
+    const partyRow = party as DbRow;
+    const partyTenantId = readString(partyRow, 'tenant_id');
+    if (partyTenantId !== options.tenantId) {
+      throw new Error(`${options.identityLabel}_TENANT_MISMATCH: Party ${options.partyId} belongs to tenant ${partyTenantId}, expected ${options.tenantId}.`);
+    }
+
+    if (readOptionalString(partyRow, 'deleted_at')) {
+      throw new Error(`${options.identityLabel}_ARCHIVED: Party ${options.partyId} is archived.`);
+    }
+
+    if (options.requirePersonParty && readString(partyRow, 'party_type') !== 'person') {
+      throw new Error(`${options.identityLabel}_TYPE_ERROR: Student Party must be party_type person.`);
+    }
+  }
+
   // ── FEE STRUCTURES ──
   async createFeeStructure(data: Omit<FeeStructure, 'id' | 'createdAt' | 'updatedAt'>): Promise<FeeStructure> {
     const { data: result, error } = await supabase
@@ -383,140 +474,140 @@ export class PreschoolFinanceRepository {
   }
 
   // ── PRIVATE MAPPER HELPERS ──
-  private mapFeeStructure(r: Record<string, any>): FeeStructure {
+  private mapFeeStructure(r: DbRow): FeeStructure {
     return {
-      id: r.id,
-      tenantId: r.tenant_id,
-      programId: r.program_id,
-      feeCode: r.fee_code,
-      feeName: r.fee_name,
-      feeType: r.fee_type,
-      amount: parseFloat(r.amount),
-      currency: r.currency,
-      billingCycle: r.billing_cycle,
-      isActive: r.is_active,
-      createdAt: r.created_at,
-      updatedAt: r.updated_at,
+      id: readString(r, 'id'),
+      tenantId: readString(r, 'tenant_id'),
+      programId: readString(r, 'program_id'),
+      feeCode: readString(r, 'fee_code'),
+      feeName: readString(r, 'fee_name'),
+      feeType: readString(r, 'fee_type') as FeeStructure['feeType'],
+      amount: readNumber(r, 'amount'),
+      currency: readString(r, 'currency'),
+      billingCycle: readString(r, 'billing_cycle') as FeeStructure['billingCycle'],
+      isActive: readBoolean(r, 'is_active'),
+      createdAt: readOptionalString(r, 'created_at'),
+      updatedAt: readOptionalString(r, 'updated_at'),
     };
   }
 
-  private mapBillingPeriod(r: Record<string, any>): BillingPeriod {
+  private mapBillingPeriod(r: DbRow): BillingPeriod {
     return {
-      id: r.id,
-      tenantId: r.tenant_id,
-      periodName: r.period_name,
-      startDate: r.start_date,
-      endDate: r.end_date,
-      dueDate: r.due_date,
-      status: r.status,
-      createdBy: r.created_by,
-      createdAt: r.created_at,
-      updatedAt: r.updated_at,
+      id: readString(r, 'id'),
+      tenantId: readString(r, 'tenant_id'),
+      periodName: readString(r, 'period_name'),
+      startDate: readString(r, 'start_date'),
+      endDate: readString(r, 'end_date'),
+      dueDate: readString(r, 'due_date'),
+      status: readString(r, 'status') as BillingPeriod['status'],
+      createdBy: readString(r, 'created_by'),
+      createdAt: readOptionalString(r, 'created_at'),
+      updatedAt: readOptionalString(r, 'updated_at'),
     };
   }
 
-  private mapDiscountProfile(r: Record<string, any>): StudentDiscountProfile {
+  private mapDiscountProfile(r: DbRow): StudentDiscountProfile {
     return {
-      id: r.id,
-      tenantId: r.tenant_id,
-      studentId: r.student_id,
-      discountType: r.discount_type,
-      discountName: r.discount_name,
-      discountPercent: parseFloat(r.discount_percent),
-      fixedAmount: parseFloat(r.fixed_amount),
-      reason: r.reason,
-      validFrom: r.valid_from,
-      validUntil: r.valid_until,
-      isActive: r.is_active,
-      createdAt: r.created_at,
+      id: readString(r, 'id'),
+      tenantId: readString(r, 'tenant_id'),
+      studentId: readString(r, 'student_id'),
+      discountType: readString(r, 'discount_type') as StudentDiscountProfile['discountType'],
+      discountName: readString(r, 'discount_name'),
+      discountPercent: readNumber(r, 'discount_percent'),
+      fixedAmount: readNumber(r, 'fixed_amount'),
+      reason: readOptionalString(r, 'reason'),
+      validFrom: readString(r, 'valid_from'),
+      validUntil: readOptionalString(r, 'valid_until'),
+      isActive: readBoolean(r, 'is_active'),
+      createdAt: readOptionalString(r, 'created_at'),
     };
   }
 
-  private mapInvoice(r: Record<string, any>): Invoice {
+  private mapInvoice(r: DbRow): Invoice {
     return {
-      id: r.id,
-      tenantId: r.tenant_id,
-      studentId: r.student_id,
-      billingPeriodId: r.billing_period_id,
-      invoiceNumber: r.invoice_number,
-      invoiceStatus: r.invoice_status,
-      settlementStatus: r.settlement_status,
-      grossAmount: parseFloat(r.gross_amount),
-      discountAmount: parseFloat(r.discount_amount),
-      netAmount: parseFloat(r.net_amount),
-      paidAmount: parseFloat(r.paid_amount),
-      outstandingAmount: parseFloat(r.outstanding_amount),
-      issuedAt: r.issued_at,
-      dueDate: r.due_date,
-      sha256Checksum: r.sha256_checksum,
-      isArchived: r.is_archived,
-      createdBy: r.created_by,
-      createdAt: r.created_at,
-      updatedAt: r.updated_at,
+      id: readString(r, 'id'),
+      tenantId: readString(r, 'tenant_id'),
+      studentId: readString(r, 'student_id'),
+      billingPeriodId: readString(r, 'billing_period_id'),
+      invoiceNumber: readString(r, 'invoice_number'),
+      invoiceStatus: readString(r, 'invoice_status') as Invoice['invoiceStatus'],
+      settlementStatus: readString(r, 'settlement_status') as Invoice['settlementStatus'],
+      grossAmount: readNumber(r, 'gross_amount'),
+      discountAmount: readNumber(r, 'discount_amount'),
+      netAmount: readNumber(r, 'net_amount'),
+      paidAmount: readNumber(r, 'paid_amount'),
+      outstandingAmount: readNumber(r, 'outstanding_amount'),
+      issuedAt: readOptionalString(r, 'issued_at'),
+      dueDate: readString(r, 'due_date'),
+      sha256Checksum: readOptionalString(r, 'sha256_checksum'),
+      isArchived: readBoolean(r, 'is_archived'),
+      createdBy: readString(r, 'created_by'),
+      createdAt: readOptionalString(r, 'created_at'),
+      updatedAt: readOptionalString(r, 'updated_at'),
     };
   }
 
-  private mapLineItem(r: Record<string, any>): InvoiceLineItem {
+  private mapLineItem(r: DbRow): InvoiceLineItem {
     return {
-      id: r.id,
-      tenantId: r.tenant_id,
-      invoiceId: r.invoice_id,
-      itemType: r.item_type,
-      description: r.description,
-      unitPrice: parseFloat(r.unit_price),
-      quantity: parseFloat(r.quantity),
-      subtotalAmount: parseFloat(r.subtotal_amount),
-      sourceDomain: r.source_domain,
-      sourceEntityType: r.source_entity_type,
-      sourceEntityId: r.source_entity_id,
-      createdAt: r.created_at,
+      id: readString(r, 'id'),
+      tenantId: readString(r, 'tenant_id'),
+      invoiceId: readString(r, 'invoice_id'),
+      itemType: readString(r, 'item_type') as InvoiceLineItem['itemType'],
+      description: readString(r, 'description'),
+      unitPrice: readNumber(r, 'unit_price'),
+      quantity: readNumber(r, 'quantity'),
+      subtotalAmount: readNumber(r, 'subtotal_amount'),
+      sourceDomain: readOptionalString(r, 'source_domain'),
+      sourceEntityType: readOptionalString(r, 'source_entity_type'),
+      sourceEntityId: readOptionalString(r, 'source_entity_id'),
+      createdAt: readOptionalString(r, 'created_at'),
     };
   }
 
-  private mapPayment(r: Record<string, any>): Payment {
+  private mapPayment(r: DbRow): Payment {
     return {
-      id: r.id,
-      tenantId: r.tenant_id,
-      payerPartyId: r.payer_party_id,
-      studentId: r.student_id,
-      paymentNumber: r.payment_number,
-      paymentMethod: r.payment_method,
-      amount: parseFloat(r.amount),
-      allocatedAmount: parseFloat(r.allocated_amount),
-      unallocatedAmount: parseFloat(r.unallocated_amount),
-      referenceNumber: r.reference_number,
-      paymentDate: r.payment_date,
-      status: r.status,
-      createdBy: r.created_by,
-      createdAt: r.created_at,
+      id: readString(r, 'id'),
+      tenantId: readString(r, 'tenant_id'),
+      payerPartyId: readString(r, 'payer_party_id'),
+      studentId: readString(r, 'student_id'),
+      paymentNumber: readString(r, 'payment_number'),
+      paymentMethod: readString(r, 'payment_method') as Payment['paymentMethod'],
+      amount: readNumber(r, 'amount'),
+      allocatedAmount: readNumber(r, 'allocated_amount'),
+      unallocatedAmount: readNumber(r, 'unallocated_amount'),
+      referenceNumber: readOptionalString(r, 'reference_number'),
+      paymentDate: readString(r, 'payment_date'),
+      status: readString(r, 'status') as Payment['status'],
+      createdBy: readString(r, 'created_by'),
+      createdAt: readOptionalString(r, 'created_at'),
     };
   }
 
-  private mapReconciliationEntry(r: Record<string, any>): ReconciliationLedgerEntry {
+  private mapReconciliationEntry(r: DbRow): ReconciliationLedgerEntry {
     return {
-      id: r.id,
-      tenantId: r.tenant_id,
-      paymentId: r.payment_id,
-      invoiceId: r.invoice_id,
-      allocatedAmount: parseFloat(r.allocated_amount),
-      allocationDate: r.allocation_date,
-      reconciledByPartyId: r.reconciled_by_party_id,
-      notes: r.notes,
-      createdAt: r.created_at,
+      id: readString(r, 'id'),
+      tenantId: readString(r, 'tenant_id'),
+      paymentId: readString(r, 'payment_id'),
+      invoiceId: readString(r, 'invoice_id'),
+      allocatedAmount: readNumber(r, 'allocated_amount'),
+      allocationDate: readString(r, 'allocation_date'),
+      reconciledByPartyId: readString(r, 'reconciled_by_party_id'),
+      notes: readOptionalString(r, 'notes'),
+      createdAt: readOptionalString(r, 'created_at'),
     };
   }
 
-  private mapReceipt(r: Record<string, any>): PaymentReceipt {
+  private mapReceipt(r: DbRow): PaymentReceipt {
     return {
-      id: r.id,
-      tenantId: r.tenant_id,
-      paymentId: r.payment_id,
-      invoiceId: r.invoice_id,
-      receiptNumber: r.receipt_number,
-      settlementSnapshot: r.settlement_snapshot,
-      sha256Fingerprint: r.sha256_fingerprint,
-      issuedAt: r.issued_at,
-      createdAt: r.created_at,
+      id: readString(r, 'id'),
+      tenantId: readString(r, 'tenant_id'),
+      paymentId: readString(r, 'payment_id'),
+      invoiceId: readString(r, 'invoice_id'),
+      receiptNumber: readString(r, 'receipt_number'),
+      settlementSnapshot: (r.settlement_snapshot ?? {}) as Record<string, unknown>,
+      sha256Fingerprint: readString(r, 'sha256_fingerprint'),
+      issuedAt: readString(r, 'issued_at'),
+      createdAt: readOptionalString(r, 'created_at'),
     };
   }
 }

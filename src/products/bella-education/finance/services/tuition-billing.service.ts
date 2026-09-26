@@ -33,6 +33,8 @@ export class TuitionBillingService {
   }): Promise<Invoice> {
     const { tenantId, studentId, billingPeriodId, dueDate, createdBy, mealChargeInputs = [], additionalLineItems = [] } = params;
 
+    await this.repo.assertStudentPartyBelongsToTenant(tenantId, studentId);
+
     // 1. Fetch base active fee structures for Preschool
     const feeStructures = await this.repo.getFeeStructures(tenantId, 'PRESCHOOL');
     const tuitionFee = feeStructures.find((f) => f.feeType === 'TUITION');
