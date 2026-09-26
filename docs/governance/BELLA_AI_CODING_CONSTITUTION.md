@@ -221,6 +221,12 @@ OS must not be designed around one Product's UI. Product must not copy a domain 
 
 Do not expand this into extra governance phases unless repeated evidence proves the current process is insufficient.
 
+### Operational Readiness SOP
+
+When a product moves from implementation correctness toward real customer operation, use `docs/governance/OPERATIONAL_READINESS_SOP.md`.
+
+Operational readiness work is read-only first and must audit real business workflows rather than source folders, modules, or cleanup opportunities. The SOP defines operational statuses, workflow evidence chains, the `NOT_PROVEN` vs `BLOCKED` distinction, and the rule that operational audit must stop at the decision boundary before any implementation.
+
 ### Mandatory Entry Gate for New OS/Product Work
 
 Before coding any new OS, new Product, Product vertical, or Product UI redesign, the AI coding agent must produce or update `ARCHITECTURE_GATE_RESULT.md` for the current work scope.
