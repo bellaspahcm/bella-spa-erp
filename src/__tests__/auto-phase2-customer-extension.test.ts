@@ -3,29 +3,36 @@ import { AutoCustomerProvider } from '@/modules/bella-auto/services/AutoCustomer
 
 // Mock SupabaseClient
 function makeSupabaseMock(dbState: any) {
-  const chain: any = {};
-  chain.eq = (field: string, value: any) => {
+  const makeChain = (table: string) => {
+    const chain: any = {};
+    chain.eq = (field: string, value: any) => {
+      return chain;
+    };
+    chain.in = (field: string, values: any) => {
+      return chain;
+    };
+    chain.maybeSingle = () => {
+      const items = dbState[table] ?? [];
+      return Promise.resolve({ data: items[0] ?? null, error: null });
+    };
+    chain.single = () => {
+      const items = dbState[table] ?? [];
+      return Promise.resolve({ data: items[0] ?? { id: 'owner-new-id' }, error: null });
+    };
+
+    // Cho phép chain.then và giải quyết như Promise nếu select().eq() được gọi mà không có .maybeSingle() hay .single()
+    chain.then = (onfulfilled: any) => {
+      const items = dbState[table] ?? [];
+      return Promise.resolve({ data: items, error: null, count: Array.isArray(items) ? items.length : null }).then(onfulfilled);
+    };
+
     return chain;
-  };
-  chain.in = (field: string, values: any) => {
-    return chain;
-  };
-  chain.maybeSingle = () => {
-    const profiles = dbState['auto_customer_profiles'] ?? [];
-    return Promise.resolve({ data: profiles[0] ?? null, error: null });
-  };
-  chain.single = () => {
-    const items = dbState['auto_vehicle_owners'] ?? [];
-    return Promise.resolve({ data: items[0] ?? { id: 'owner-new-id' }, error: null });
-  };
-  
-  // Cho phép chain.then và giải quyết như Promise nếu select().eq() được gọi mà không có .maybeSingle() hay .single()
-  chain.then = (onfulfilled: any) => {
-    return Promise.resolve({ data: dbState['auto_vehicle_owners'] ?? [], error: null }).then(onfulfilled);
   };
 
   return {
     from: (table: string) => {
+      const chain = makeChain(table);
+
       return {
         select: (columns: string, options?: any) => {
           if (options && options.count) {
@@ -88,19 +95,41 @@ describe('Phase 2: Customer 360 Extension — Unit Tests', () => {
           license_plate: '30K-999.99',
           registration_date: '2026-07-28',
           is_active: true,
-          auto_vehicles: {
-            id: 'veh-001',
-            vin: 'WBAHF3C01L7D34567',
-            color_exterior: 'White',
-            model_year: 2026,
-            auto_variants: {
-              name: 'Luxury Line',
-              auto_models: {
-                name: '3 Series',
-                auto_brands: { name: 'BMW' }
-              }
-            }
-          }
+          vehicle_id: 'veh-001',
+        }
+      ],
+      auto_vehicles: [
+        {
+          id: 'veh-001',
+          tenant_id: 'tenant-001',
+          vin: 'WBAHF3C01L7D34567',
+          color_exterior: 'White',
+          model_year: 2026,
+          variant_id: 'variant-001',
+          list_price: 2439000000,
+        }
+      ],
+      auto_variants: [
+        {
+          id: 'variant-001',
+          tenant_id: 'tenant-001',
+          name: 'Luxury Line',
+          model_id: 'model-001',
+        }
+      ],
+      auto_models: [
+        {
+          id: 'model-001',
+          tenant_id: 'tenant-001',
+          name: '3 Series',
+          brand_id: 'brand-001',
+        }
+      ],
+      auto_brands: [
+        {
+          id: 'brand-001',
+          tenant_id: 'tenant-001',
+          name: 'BMW',
         }
       ]
     };

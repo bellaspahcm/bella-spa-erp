@@ -69,7 +69,7 @@ export class PartsInventoryIntegration {
         // Part not tracked in inventory
         availabilityChecks.push({
           itemId: item.id,
-          partNumber: item.part_number,
+          partNumber: item.part_number ?? undefined,
           partName: item.item_name,
           requiredQuantity: item.quantity,
           availableStock: item.quantity, // Assume available
@@ -80,19 +80,19 @@ export class PartsInventoryIntegration {
 
       // Check inventory stock
       const { data: inventoryItem } = await supabase
-        .from('inventory')
-        .select('quantity_on_hand')
+        .from('inventory_items')
+        .select('stock_level')
         .eq('id', item.inventory_item_id)
         .eq('tenant_id', tenantId)
         .single();
 
-      const availableStock = inventoryItem?.quantity_on_hand || 0;
+      const availableStock = inventoryItem?.stock_level ?? 0;
       const requiredQuantity = item.quantity;
       const shortfall = Math.max(0, requiredQuantity - availableStock);
 
       availabilityChecks.push({
         itemId: item.id,
-        partNumber: item.part_number,
+        partNumber: item.part_number ?? undefined,
         partName: item.item_name,
         requiredQuantity,
         availableStock,
@@ -411,11 +411,11 @@ export class PartsInventoryIntegration {
     const supabase = getPrimaryClient();
 
     const { data: items, error } = await supabase
-      .from('inventory')
+      .from('inventory_items')
       .select('*')
       .eq('tenant_id', tenantId)
-      .not('reorder_point', 'is', null)
-      .order('quantity_on_hand', { ascending: true });
+      .not('min_stock_level', 'is', null)
+      .order('stock_level', { ascending: true });
 
     if (error || !items) {
       return [];
@@ -424,14 +424,14 @@ export class PartsInventoryIntegration {
     const alerts = [];
 
     for (const item of items) {
-      const currentStock = item.quantity_on_hand || 0;
-      const reorderPoint = item.reorder_point || 0;
+      const currentStock = item.stock_level;
+      const reorderPoint = item.min_stock_level;
 
       if (currentStock <= 0) {
         alerts.push({
           inventoryItemId: item.id,
-          partNumber: item.item_code || '',
-          partName: item.item_name || '',
+          partNumber: item.sku || '',
+          partName: item.name,
           currentStock,
           reorderPoint,
           status: 'out_of_stock' as const,
@@ -439,8 +439,8 @@ export class PartsInventoryIntegration {
       } else if (currentStock <= reorderPoint * 0.5) {
         alerts.push({
           inventoryItemId: item.id,
-          partNumber: item.item_code || '',
-          partName: item.item_name || '',
+          partNumber: item.sku || '',
+          partName: item.name,
           currentStock,
           reorderPoint,
           status: 'critical' as const,
@@ -448,8 +448,8 @@ export class PartsInventoryIntegration {
       } else if (currentStock <= reorderPoint) {
         alerts.push({
           inventoryItemId: item.id,
-          partNumber: item.item_code || '',
-          partName: item.item_name || '',
+          partNumber: item.sku || '',
+          partName: item.name,
           currentStock,
           reorderPoint,
           status: 'low' as const,

@@ -7,6 +7,12 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database, Json } from '@/types/database.types';
+
+type VehicleRow = Database['public']['Tables']['auto_vehicles']['Row'];
+type VariantRow = Database['public']['Tables']['auto_variants']['Row'];
+type ModelRow = Database['public']['Tables']['auto_models']['Row'];
+type BrandRow = Database['public']['Tables']['auto_brands']['Row'];
 
 export interface AutoCustomerProfile {
   customerId: string;
@@ -16,7 +22,7 @@ export interface AutoCustomerProfile {
   purchasingPurpose: string | null;
   totalVehiclesOwned: number;
   totalValueSpent: number;
-  metadata?: Record<string, unknown>;
+  metadata?: Json;
 }
 
 export interface OwnedVehicle {
@@ -40,7 +46,7 @@ export const AutoCustomerProvider = {
    * Lấy hồ sơ 360 độ mở rộng của Khách hàng, bao gồm sở thích và danh sách xe sở hữu.
    */
   async getProfile(
-    supabase: SupabaseClient,
+    supabase: SupabaseClient<Database>,
     tenantId: string,
     customerId: string
   ): Promise<{ profile: AutoCustomerProfile | null; ownedVehicles: OwnedVehicle[] }> {
@@ -60,25 +66,70 @@ export const AutoCustomerProvider = {
     // 2. Đọc danh sách xe sở hữu
     const { data: ownersData, error: ownersErr } = await supabase
       .from('auto_vehicle_owners')
-      .select(`
-        id, ownership_type, license_plate, registration_date, is_active, transferred_at,
-        auto_vehicles!inner(
-          id, vin, color_exterior, model_year,
-          auto_variants!inner(
-            name,
-            auto_models!inner(
-              name,
-              auto_brands!inner(name)
-            )
-          )
-        )
-      `)
+      .select('id, vehicle_id, ownership_type, license_plate, registration_date, is_active, transferred_at')
       .eq('tenant_id', tenantId)
       .eq('customer_id', customerId);
 
     if (ownersErr) {
       throw new Error(`AutoCustomerProvider.getOwnedVehicles: ${ownersErr.message}`);
     }
+
+    const vehicleIds = [...new Set((ownersData ?? []).map(row => row.vehicle_id))];
+    const { data: vehiclesData, error: vehiclesErr } = vehicleIds.length > 0
+      ? await supabase
+        .from('auto_vehicles')
+        .select('id, vin, color_exterior, model_year, variant_id')
+        .eq('tenant_id', tenantId)
+        .in('id', vehicleIds)
+      : { data: [] as Pick<VehicleRow, 'id' | 'vin' | 'color_exterior' | 'model_year' | 'variant_id'>[], error: null };
+
+    if (vehiclesErr) {
+      throw new Error(`AutoCustomerProvider.getOwnedVehicles: ${vehiclesErr.message}`);
+    }
+
+    const variantIds = [...new Set((vehiclesData ?? []).map(row => row.variant_id))];
+    const { data: variantsData, error: variantsErr } = variantIds.length > 0
+      ? await supabase
+        .from('auto_variants')
+        .select('id, name, model_id')
+        .eq('tenant_id', tenantId)
+        .in('id', variantIds)
+      : { data: [] as Pick<VariantRow, 'id' | 'name' | 'model_id'>[], error: null };
+
+    if (variantsErr) {
+      throw new Error(`AutoCustomerProvider.getOwnedVehicles: ${variantsErr.message}`);
+    }
+
+    const modelIds = [...new Set((variantsData ?? []).map(row => row.model_id))];
+    const { data: modelsData, error: modelsErr } = modelIds.length > 0
+      ? await supabase
+        .from('auto_models')
+        .select('id, name, brand_id')
+        .eq('tenant_id', tenantId)
+        .in('id', modelIds)
+      : { data: [] as Pick<ModelRow, 'id' | 'name' | 'brand_id'>[], error: null };
+
+    if (modelsErr) {
+      throw new Error(`AutoCustomerProvider.getOwnedVehicles: ${modelsErr.message}`);
+    }
+
+    const brandIds = [...new Set((modelsData ?? []).map(row => row.brand_id))];
+    const { data: brandsData, error: brandsErr } = brandIds.length > 0
+      ? await supabase
+        .from('auto_brands')
+        .select('id, name')
+        .eq('tenant_id', tenantId)
+        .in('id', brandIds)
+      : { data: [] as Pick<BrandRow, 'id' | 'name'>[], error: null };
+
+    if (brandsErr) {
+      throw new Error(`AutoCustomerProvider.getOwnedVehicles: ${brandsErr.message}`);
+    }
+
+    const vehiclesById = new Map((vehiclesData ?? []).map(vehicle => [vehicle.id, vehicle]));
+    const variantsById = new Map((variantsData ?? []).map(variant => [variant.id, variant]));
+    const modelsById = new Map((modelsData ?? []).map(model => [model.id, model]));
+    const brandsById = new Map((brandsData ?? []).map(brand => [brand.id, brand]));
 
     const profile: AutoCustomerProfile | null = profileData ? {
       customerId:         profileData.customer_id,
@@ -91,21 +142,30 @@ export const AutoCustomerProvider = {
       metadata:           profileData.metadata,
     } : null;
 
-    const ownedVehicles: OwnedVehicle[] = (ownersData ?? []).map((row: Record<string, unknown>) => ({
-      ownerRecordId:    row.id,
-      vehicleId:        row.auto_vehicles.id,
-      vin:              row.auto_vehicles.vin,
-      colorExterior:    row.auto_vehicles.color_exterior,
-      modelYear:        row.auto_vehicles.model_year,
-      variantName:      row.auto_vehicles.auto_variants?.name,
-      modelName:        row.auto_vehicles.auto_variants?.auto_models?.name,
-      brandName:        row.auto_vehicles.auto_variants?.auto_models?.auto_brands?.name,
-      ownershipType:    row.ownership_type,
-      licensePlate:     row.license_plate,
-      registrationDate: row.registration_date,
-      isActive:         row.is_active,
-      transferredAt:    row.transferred_at,
-    }));
+    const ownedVehicles: OwnedVehicle[] = (ownersData ?? []).flatMap(row => {
+      const vehicle = vehiclesById.get(row.vehicle_id);
+      if (!vehicle) return [];
+
+      const variant = variantsById.get(vehicle.variant_id);
+      const model = variant ? modelsById.get(variant.model_id) : undefined;
+      const brand = model ? brandsById.get(model.brand_id) : undefined;
+
+      return [{
+        ownerRecordId:    row.id,
+        vehicleId:        vehicle.id,
+        vin:              vehicle.vin,
+        colorExterior:    vehicle.color_exterior,
+        modelYear:        vehicle.model_year,
+        variantName:      variant?.name,
+        modelName:        model?.name,
+        brandName:        brand?.name,
+        ownershipType:    row.ownership_type,
+        licensePlate:     row.license_plate,
+        registrationDate: row.registration_date,
+        isActive:         row.is_active,
+        transferredAt:    row.transferred_at,
+      }];
+    });
 
     return { profile, ownedVehicles };
   },
@@ -114,7 +174,7 @@ export const AutoCustomerProvider = {
    * Lưu hoặc Cập nhật profile Automotive của Khách hàng
    */
   async upsertProfile(
-    supabase: SupabaseClient,
+    supabase: SupabaseClient<Database>,
     tenantId: string,
     profile: Omit<AutoCustomerProfile, 'totalVehiclesOwned' | 'totalValueSpent'>
   ): Promise<void> {
@@ -142,7 +202,7 @@ export const AutoCustomerProvider = {
    * Thêm quyền sở hữu xe cho khách hàng (Liên kết khách hàng - xe)
    */
   async addVehicleOwner(
-    supabase: SupabaseClient,
+    supabase: SupabaseClient<Database>,
     input: {
       tenantId: string;
       customerId: string;
@@ -180,7 +240,7 @@ export const AutoCustomerProvider = {
    * Chuyển nhượng sở hữu xe (đánh dấu sở hữu không còn hoạt động nữa)
    */
   async transferOwnership(
-    supabase: SupabaseClient,
+    supabase: SupabaseClient<Database>,
     tenantId: string,
     ownerRecordId: string,
     notes?: string
@@ -220,7 +280,7 @@ export const AutoCustomerProvider = {
    * Tự động tính toán lại aggregates trong auto_customer_profiles (Atomic helper)
    */
   async recalculateProfileAggregates(
-    supabase: SupabaseClient,
+    supabase: SupabaseClient<Database>,
     tenantId: string,
     customerId: string
   ): Promise<void> {
@@ -235,20 +295,29 @@ export const AutoCustomerProvider = {
     if (countErr) return;
 
     // 2. Tính tổng tiền chi (ví dụ lấy từ list_price các xe sở hữu)
-    const { data: priceData, error: priceErr } = await supabase
+    const { data: activeOwners, error: activeOwnersErr } = await supabase
       .from('auto_vehicle_owners')
-      .select(`
-        auto_vehicles (list_price)
-      `)
+      .select('vehicle_id')
       .eq('tenant_id', tenantId)
       .eq('customer_id', customerId)
       .eq('is_active', true);
 
+    if (activeOwnersErr) return;
+
+    const activeVehicleIds = [...new Set((activeOwners ?? []).map(row => row.vehicle_id))];
+    const { data: priceData, error: priceErr } = activeVehicleIds.length > 0
+      ? await supabase
+        .from('auto_vehicles')
+        .select('list_price')
+        .eq('tenant_id', tenantId)
+        .in('id', activeVehicleIds)
+      : { data: [] as Pick<VehicleRow, 'list_price'>[], error: null };
+
     if (priceErr) return;
 
-    const totalValueSpent = (priceData ?? []).reduce((acc: number, row: Record<string, unknown>) => {
-      return acc + (Number(row.auto_vehicles?.list_price) || 0);
-    }, 0);
+    const totalValueSpent = (priceData ?? []).reduce((acc: number, row) => (
+      acc + Number(row.list_price)
+    ), 0);
 
     // 3. Upsert vào bảng profiles
     await supabase

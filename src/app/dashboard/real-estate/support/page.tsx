@@ -24,6 +24,7 @@ export interface SupportTicketItem {
   description: string;
   categoryTags: string[];
   customerName: string;
+  customerCode: string;
   customerPhone: string;
   customerEmail: string;
   customerAvatar?: string;
@@ -62,6 +63,7 @@ const INITIAL_TICKETS: SupportTicketItem[] = [
     description: "Khách hàng phản ánh căn hộ CH001 đã bàn giao 6 tháng nhưng chưa nhận được thông báo nộp hồ sơ cấp sổ.",
     categoryTags: ["Pháp lý", "Sổ hồng"],
     customerName: "Lê Văn C",
+    customerCode: "KH00123",
     customerPhone: "0903 123 456",
     customerEmail: "levanc@gmail.com",
     projectName: "Grand Tower",
@@ -84,6 +86,7 @@ const INITIAL_TICKETS: SupportTicketItem[] = [
     description: "Khách hàng phản ánh hệ thống tính sai số ngày chậm thanh toán dẫn đến tiền phạt chênh lệch 1,200,000 VNĐ.",
     categoryTags: ["Thanh toán", "Lãi suất"],
     customerName: "Phạm Thị D",
+    customerCode: "KH00456",
     customerPhone: "0908 456 789",
     customerEmail: "phamthid@gmail.com",
     projectName: "Central Residence",
@@ -106,6 +109,7 @@ const INITIAL_TICKETS: SupportTicketItem[] = [
     description: "Khách hàng phản ánh căn hộ bị thấm nước sau trận mưa lớn ngày 25/07/2025.",
     categoryTags: ["Bảo hành", "Kỹ thuật"],
     customerName: "Nguyễn Văn H",
+    customerCode: "KH00789",
     customerPhone: "0911 234 567",
     customerEmail: "nguyenvanh@gmail.com",
     projectName: "Riverside City",
@@ -128,6 +132,7 @@ const INITIAL_TICKETS: SupportTicketItem[] = [
     description: "Khách hàng đề nghị cấp thêm 2 thẻ cư dân cho người thân.",
     categoryTags: ["Dịch vụ", "Thẻ cư dân"],
     customerName: "Trần Thị M",
+    customerCode: "KH00678",
     customerPhone: "0905 678 901",
     customerEmail: "tranthim@gmail.com",
     projectName: "Sunrise Residence",
@@ -150,6 +155,7 @@ const INITIAL_TICKETS: SupportTicketItem[] = [
     description: "Khách hàng phản ánh tiếng ồn kéo dài vào đêm muộn.",
     categoryTags: ["Vận hành", "Nội quy"],
     customerName: "Hoàng Văn T",
+    customerCode: "KH00912",
     customerPhone: "0909 111 222",
     customerEmail: "hoangvant@gmail.com",
     projectName: "Lake View",
@@ -338,6 +344,7 @@ export default function CustomerServiceCenterPage() {
       description: newDesc,
       categoryTags: [newCategory === "SERVICE_QUALITY" ? "Dịch vụ" : newCategory === "BILLING" ? "Thanh toán" : "Kỹ thuật"],
       customerName: newCustomerName,
+      customerCode: `KH${String(ticketList.length + 1).padStart(5, "0")}`,
       customerPhone: "0903 123 456",
       customerEmail: "levanc@gmail.com",
       projectName: newProject,

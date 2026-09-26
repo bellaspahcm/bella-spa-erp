@@ -10,7 +10,7 @@
  */
 
 import { getPrimaryClient } from '@/lib/database/read-replica';
-import { Database } from '@/types/database.types';
+import { Database, Json } from '@/types/database.types';
 
 type CustomerHealthScore = Database['public']['Tables']['auto_customer_health_scores']['Row'];
 type CustomerHealthScoreInsert = Database['public']['Tables']['auto_customer_health_scores']['Insert'];
@@ -27,6 +27,15 @@ export interface RiskFactor {
   severity: 'low' | 'medium' | 'high' | 'critical';
   description: string;
   detectedAt: string;
+}
+
+function riskFactorsToJson(riskFactors: RiskFactor[]): Json {
+  return riskFactors.map(factor => ({
+    type: factor.type,
+    severity: factor.severity,
+    description: factor.description,
+    detectedAt: factor.detectedAt,
+  }));
 }
 
 export class CustomerHealthScoreService {
@@ -73,7 +82,7 @@ export class CustomerHealthScoreService {
       loyalty_score: loyaltyScore,
       overall_health_score: overallScore,
       health_status: this.determineHealthStatus(overallScore),
-      risk_factors: riskFactors as unknown,
+      risk_factors: riskFactorsToJson(riskFactors),
       last_purchase_date: interactionData.lastPurchaseDate,
       last_service_date: interactionData.lastServiceDate,
       last_interaction_date: interactionData.lastInteractionDate,

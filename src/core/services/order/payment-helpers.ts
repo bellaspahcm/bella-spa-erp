@@ -11,6 +11,7 @@ import type { Database } from '@/types/database.types';
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 type BookingUpdate = Database['public']['Tables']['bookings']['Update'];
+type RevenueRow = Database['public']['Tables']['revenue']['Row'];
 
 export type RecordRemainingPaymentParams = {
   booking_id: string;
@@ -196,6 +197,44 @@ export async function recordBookingPaymentRpc(params: {
   }
 
   return { data: rpcResult };
+}
+
+export async function findExistingManualPaymentByIdempotencyKey(params: {
+  supabase: SupabaseServerClient;
+  payment: RecordRemainingPaymentParams;
+  tenantId: string;
+}) {
+  const { supabase, payment, tenantId } = params;
+  const receivedDate = getLocalDateString();
+  const revenueType = payment.revenue_type || 'remaining_payment';
+  const manualPaymentIdempotencyKey = payment.idempotency_key
+    || buildManualPaymentIdempotencyKey(payment, receivedDate, revenueType);
+
+  const { data, error } = await supabase
+    .from('revenue')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .eq('booking_id', payment.booking_id)
+    .eq('accounting_metadata->>manual_payment_idempotency_key', manualPaymentIdempotencyKey)
+    .maybeSingle();
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  const revenue = data as RevenueRow | null;
+  if (!revenue) {
+    return { data: null };
+  }
+
+  return {
+    data: {
+      booking_id: payment.booking_id,
+      revenue_id: revenue.id,
+      idempotent: true,
+      revenue,
+    },
+  };
 }
 
 export async function updateBookingShareToken(

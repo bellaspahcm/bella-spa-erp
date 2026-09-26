@@ -62,11 +62,11 @@ export class ProcurementProcess extends BaseBusinessProcess<
     for (const result of policyResults) {
       if (result.status === 'success' && result.data) {
         const data = result.data;
-        components.push(data);
 
         switch (result.policyType) {
           case 'procurement-validation': {
             const validationData = data as ValidationResult;
+            components.push(validationData);
             valid = validationData.valid;
             if (!valid) {
               reason = validationData.reason;
@@ -76,6 +76,7 @@ export class ProcurementProcess extends BaseBusinessProcess<
 
           case 'procurement-approval': {
             const approvalData = data as ApprovalRoutingResult;
+            components.push(approvalData);
             requiredApprovers = approvalData.requiredApprovers;
             autoApproved = approvalData.autoApproved;
             estimatedCompletionTime = approvalData.estimatedApprovalTime;
@@ -87,6 +88,7 @@ export class ProcurementProcess extends BaseBusinessProcess<
 
           case 'procurement-escalation': {
             const escalationData = data as EscalationResult;
+            components.push(escalationData);
             shouldEscalate = escalationData.shouldEscalate;
             if (shouldEscalate && !reason) {
               reason = escalationData.reason;
