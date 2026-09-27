@@ -8,6 +8,7 @@ import { CreateStudentRequest } from '../../shared-kernel/types';
 describe('StudentAggregate', () => {
   const validRequest: CreateStudentRequest = {
     tenantId: 'tenant-123',
+    partyId: 'party-456',
     personId: 'person-456',
     studentCode: 'EDU-2024-001',
     academicStatus: 'enrolled',
@@ -28,6 +29,7 @@ describe('StudentAggregate', () => {
       const student = aggregate.getStudent();
 
       expect(student.tenantId).toBe('tenant-123');
+      expect(student.partyId).toBe('party-456');
       expect(student.personId).toBe('person-456');
       expect(student.studentCode).toBe('EDU-2024-001');
       expect(student.academicStatus).toBe('enrolled');
@@ -39,6 +41,19 @@ describe('StudentAggregate', () => {
       expect(student.studentId).toBeTruthy();
       expect(student.createdAt).toBeTruthy();
       expect(student.updatedAt).toBeTruthy();
+    });
+
+    it('should create new canonical student without transitional person mapping', () => {
+      const aggregate = StudentAggregate.create({
+        ...validRequest,
+        personId: undefined,
+        studentCode: 'EDU-2024-010',
+      });
+      const student = aggregate.getStudent();
+
+      expect(student.partyId).toBe('party-456');
+      expect(student.personId).toBeNull();
+      expect(student.studentCode).toBe('EDU-2024-010');
     });
 
     it('should uppercase student code', () => {
@@ -55,10 +70,15 @@ describe('StudentAggregate', () => {
       ).toThrow('Tenant ID is required');
     });
 
-    it('should throw error if person ID missing', () => {
+    it('should throw error if party ID missing', () => {
       expect(() =>
-        StudentAggregate.create({ ...validRequest, personId: '' })
-      ).toThrow('Person ID is required');
+        StudentAggregate.create({ ...validRequest, partyId: '' })
+      ).toThrow('Party ID is required');
+    });
+
+    it('should preserve legacy person mapping when provided', () => {
+      const aggregate = StudentAggregate.create({ ...validRequest, personId: 'person-456' });
+      expect(aggregate.getStudent().personId).toBe('person-456');
     });
 
     it('should throw error if student code missing', () => {

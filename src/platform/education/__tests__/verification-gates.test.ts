@@ -315,6 +315,7 @@ describe('Education OS — 11 Automated Verification Gates', () => {
 
       const student = await StudentService.createStudent({
         tenantId: TENANT_A,
+        partyId: person.data!.personId,
         personId: person.data!.personId,
         studentCode: 'EDU-2026-999',
         academicStatus: 'enrolled',

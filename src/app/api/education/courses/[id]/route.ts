@@ -1,6 +1,51 @@
 import { NextResponse } from 'next/server';
+import { createClient as createSupabaseClient, type SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase-server';
+import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
 import { TeacherAssignmentContractImpl } from '@/platform/education/contracts/teacher-assignment.contract.impl';
+import { getCurrentUser } from '@/services/user-actions';
+import type { Database } from '@/types/database.types';
+
+type EducationCourseDetailClient = SupabaseClient<Database>;
+const ROSTER_ENROLLMENT_STATUSES = ['active', 'pending'] as const;
+
+function getDevMockEmail(request: Request): string {
+  if (process.env.NODE_ENV !== 'development') return '';
+  return request.headers.get('x-mock-user-email')?.trim() ?? '';
+}
+
+function createDevMockClient(mockEmail: string): EducationCourseDetailClient | null {
+  if (!mockEmail) return null;
+  const adminUrl = getSupabaseAdminUrl();
+  const adminKey = getSupabaseAdminKey();
+  if (!adminUrl || !adminKey) return null;
+
+  return createSupabaseClient<Database>(adminUrl, adminKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+async function getTenantIdForCourseDetail(
+  supabase: EducationCourseDetailClient,
+  request: Request,
+): Promise<string> {
+  const { searchParams } = new URL(request.url);
+  const explicitTenantId = searchParams.get('tenantId');
+  if (explicitTenantId) return explicitTenantId;
+
+  const mockEmail = getDevMockEmail(request);
+  if (mockEmail) {
+    const { data: mockUser } = await supabase
+      .from('users')
+      .select('tenant_id')
+      .eq('email', mockEmail)
+      .maybeSingle();
+    if (mockUser?.tenant_id) return mockUser.tenant_id;
+  }
+
+  const currentUser = await getCurrentUser();
+  return currentUser?.tenant_id || '00000000-0000-0000-0000-000000000001';
+}
 
 export async function GET(
   request: Request,
@@ -8,10 +53,8 @@ export async function GET(
 ) {
   try {
     const { id: courseId } = await params;
-    const { searchParams } = new URL(request.url);
-    const tenantId = searchParams.get('tenantId') || '00000000-0000-0000-0000-000000000001';
-
-    const supabase = await createClient();
+    const supabase = createDevMockClient(getDevMockEmail(request)) ?? await createClient();
+    const tenantId = await getTenantIdForCourseDetail(supabase, request);
 
     // 1. Fetch Course details
     const { data: course, error: courseErr } = await supabase
@@ -52,44 +95,62 @@ export async function GET(
       }
     }
 
-    // 3. Fetch Enrolled Students
-    const { data: enrollments } = await supabase
-      .from('enrollments')
-      .select('enrollment_id, student_id, status, enrollment_date, students(student_code, person_id, academic_status, persons(first_name, last_name, gender, date_of_birth))')
+    // 3. Fetch enrolled students from canonical Education enrollments.
+    const { data: enrollments, error: enrollmentErr } = await supabase
+      .from('edu_enrollments')
+      .select('id, student_party_id, status, enrolled_at')
       .eq('course_id', courseId)
       .eq('tenant_id', tenantId)
-      .in('status', ['active', 'pending']);
+      .in('status', [...ROSTER_ENROLLMENT_STATUSES]);
 
-    interface StudentJoinRow {
-      student_code: string;
-      person_id: string;
-      academic_status: string;
-      persons: {
-        first_name: string;
-        last_name: string;
-        gender: string;
-        date_of_birth: string;
-      } | null;
+    if (enrollmentErr) {
+      throw new Error(`Failed to load canonical enrollments: ${enrollmentErr.message}`);
     }
 
-    interface EnrollmentJoinRow {
-      enrollment_id: string;
-      student_id: string;
-      status: string;
-      enrollment_date: string;
-      students: StudentJoinRow | null;
+    const studentPartyIds = [...new Set((enrollments || []).map(e => e.student_party_id))];
+
+    const [{ data: students, error: studentsErr }, { data: parties, error: partiesErr }] = studentPartyIds.length > 0
+      ? await Promise.all([
+        supabase
+          .from('students')
+          .select('student_id, party_id, student_code, academic_status')
+          .eq('tenant_id', tenantId)
+          .in('party_id', studentPartyIds),
+        supabase
+          .from('party_parties')
+          .select('id, display_name, gender, dob')
+          .eq('tenant_id', tenantId)
+          .in('id', studentPartyIds),
+      ])
+      : [
+        { data: [], error: null },
+        { data: [], error: null },
+      ];
+
+    if (studentsErr) {
+      throw new Error(`Failed to load canonical students: ${studentsErr.message}`);
+    }
+    if (partiesErr) {
+      throw new Error(`Failed to load canonical student parties: ${partiesErr.message}`);
     }
 
-    const studentRoster = ((enrollments || []) as unknown as EnrollmentJoinRow[]).map(e => {
-      const s = e.students;
-      const p = s?.persons;
-      const name = p ? `${p.last_name} ${p.first_name}`.trim() : 'Học sinh';
+    const studentByPartyId = new Map((students || []).map(s => [s.party_id, s]));
+    const partyById = new Map((parties || []).map(p => [p.id, p]));
+
+    const studentRoster = (enrollments || []).map(e => {
+      const s = studentByPartyId.get(e.student_party_id);
+      const p = partyById.get(e.student_party_id);
+      if (!s || !p?.display_name) {
+        throw new Error(`Canonical roster join failed for student party ${e.student_party_id}`);
+      }
+
       return {
-        enrollmentId: e.enrollment_id,
-        studentId: e.student_id,
-        studentCode: s?.student_code || 'STU-000',
-        name,
-        gender: p?.gender || 'N/A',
+        enrollmentId: e.id,
+        studentId: s.student_id,
+        studentPartyId: e.student_party_id,
+        studentCode: s.student_code,
+        name: p.display_name,
+        gender: p.gender || 'N/A',
         status: e.status === 'active' ? 'Có mặt' : 'Chưa điểm danh',
         temp: '36.5°C',
       };

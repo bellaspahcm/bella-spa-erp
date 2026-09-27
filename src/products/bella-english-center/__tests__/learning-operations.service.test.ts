@@ -159,6 +159,18 @@ function makeAttendanceContract(): IEducationAttendanceContract {
       status: 'present',
       rollCallTime: '2026-09-15T09:05:00.000Z',
     }]),
+    setDailyAttendance: jest.fn(async (input) => ({
+      id: 'daily-attendance-a',
+      tenantId: input.tenantId,
+      enrollmentId: input.enrollmentId,
+      schoolDay: '2026-09-15',
+      status: input.status,
+      eventId: 'canonical-attendance-a',
+      rollCallTime: input.rollCallTime || '2026-09-15T09:05:00.000Z',
+      createdAt: '2026-09-15T09:05:00.000Z',
+      updatedAt: '2026-09-15T09:05:00.000Z',
+    })),
+    getCourseDailyAttendance: jest.fn(async () => []),
   };
 }
 

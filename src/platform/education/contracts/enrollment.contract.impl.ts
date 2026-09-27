@@ -4,6 +4,10 @@ import { SupabaseEducationRepository } from '../repositories/supabase-education.
 import { createClient } from '@/lib/supabase-server';
 import { eventBus } from '@/platform/host/event-bus';
 import { EventBusPort, DomainEventEnvelope } from '@/platform/core/events/types';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
+
+type EducationEnrollmentClient = SupabaseClient<Database>;
 
 /**
  * Adapter: EventBusService → EventBusPort
@@ -34,8 +38,10 @@ class EventBusServiceAdapter implements EventBusPort {
 }
 
 export class EnrollmentContractImpl implements IEducationEnrollmentContract {
+  constructor(private readonly supabase?: EducationEnrollmentClient) {}
+
   public async enrollStudent(input: EnrollStudentInput): Promise<EducationEnrollmentDTO> {
-    const supabase = createClient();
+    const supabase = this.supabase ?? createClient();
     const repository = new SupabaseEducationRepository(supabase);
     const eventBusAdapter = new EventBusServiceAdapter();
     const service = new EducationEngineService(repository, eventBusAdapter);
@@ -72,7 +78,7 @@ export class EnrollmentContractImpl implements IEducationEnrollmentContract {
   }
 
   public async getEnrollment(tenantId: string, enrollmentId: string): Promise<EducationEnrollmentDTO | null> {
-    const supabase = createClient();
+    const supabase = this.supabase ?? createClient();
     const repository = new SupabaseEducationRepository(supabase);
     const enrollment = await repository.findEnrollmentById(enrollmentId, tenantId);
     if (!enrollment) {

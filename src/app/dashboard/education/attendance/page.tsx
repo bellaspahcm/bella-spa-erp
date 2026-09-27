@@ -1,82 +1,271 @@
+'use client';
+
 /**
  * Bella Education — Daily Roll-Call & Safe Pickup Verification
- *
- * Synchronized style: Unified Header, 2 Column Responsive Grid, Harmonized Theme.
  */
 
 import Link from 'next/link';
-import { 
-  CalendarCheck, 
-  ArrowLeft, 
-  Search, 
-  CheckCircle2, 
-  XCircle, 
-  Clock, 
-  ShieldCheck, 
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  CalendarCheck,
+  ArrowLeft,
+  Search,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  ShieldCheck,
   Thermometer,
   QrCode,
-  Sparkles,
-  UserCheck,
-  BellRing
+  BellRing,
+  AlertCircle,
+  Loader2,
 } from 'lucide-react';
 
-const ROLL_CALL_DATA = [
-  {
-    id: 'STU-001',
-    name: 'Nguyễn Minh An (Bé Bi)',
-    className: 'Lớp Mầm A1',
-    checkInTime: '07:45 AM',
-    temp: '36.5°C',
-    tempStatus: 'normal',
-    status: 'Present',
-    pickupPerson: 'Nguyễn Văn Hùng (Bố)',
-    pickupVerified: true,
-  },
-  {
-    id: 'STU-002',
-    name: 'Trần Bảo Ngọc (Bé Bắp)',
-    className: 'Lớp Mầm A1',
-    checkInTime: '07:50 AM',
-    temp: '36.6°C',
-    tempStatus: 'normal',
-    status: 'Present',
-    pickupPerson: 'Lê Thị Thu Hương (Mẹ)',
-    pickupVerified: true,
-  },
-  {
-    id: 'STU-003',
-    name: 'Phạm Hoàng Nam (Bé Bin)',
-    className: 'Lớp Mầm A1',
-    checkInTime: '08:10 AM',
-    temp: '37.8°C (Cảnh báo)',
-    tempStatus: 'warning',
-    status: 'Present',
-    pickupPerson: 'Phạm Quốc Bảo (Bố)',
-    pickupVerified: true,
-  },
-  {
-    id: 'STU-004',
-    name: 'Lê Hoàng Yến (Bé Na)',
-    className: 'Lớp Mầm A1',
-    checkInTime: '---',
-    temp: '---',
-    tempStatus: 'none',
-    status: 'Excused',
-    pickupPerson: 'Đã báo vắng (Bệnh sốt)',
-    pickupVerified: false,
-  },
-];
+type AttendanceStatus = 'present' | 'absent' | 'excused';
+
+interface ClassroomOverviewItem {
+  id: string;
+  code: string;
+  name: string;
+  students: number;
+  maxStudents: number;
+  todayStatus: {
+    present: number;
+    excused: number;
+    unmarked: number;
+    healthAlerts: number;
+  };
+}
+
+interface DailyAttendanceState {
+  id: string;
+  enrollmentId: string;
+  schoolDay: string;
+  status: AttendanceStatus;
+}
+
+interface AuthorizedGuardian {
+  authorizationId: string;
+  studentPartyId: string;
+  guardianPartyId: string;
+  displayName: string;
+  phone: string;
+  status: 'authorized';
+}
+
+interface SafePickupHandover {
+  id: string;
+  studentPartyId: string;
+  guardianPartyId: string;
+  pickupAuthorizationId: string;
+  handedOverAt: string;
+  handedOverBy: string;
+}
+
+interface AttendanceRosterItem {
+  enrollmentId: string;
+  studentId: string;
+  studentPartyId: string;
+  studentCode: string | null;
+  name: string;
+  gender: string | null;
+  dob: string | null;
+  enrollmentStatus: string;
+  attendance: DailyAttendanceState | null;
+  authorizedGuardians?: AuthorizedGuardian[];
+  safePickupHandover?: SafePickupHandover | null;
+}
+
+const ATTENDANCE_LABELS: Record<AttendanceStatus, string> = {
+  present: 'Có Mặt',
+  absent: 'Vắng',
+  excused: 'Có Phép',
+};
+
+const ATTENDANCE_BADGES: Record<AttendanceStatus, string> = {
+  present: 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300',
+  absent: 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300',
+  excused: 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300',
+};
+
+function todayLocalDate(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+}
 
 export default function AttendancePage() {
+  const [classrooms, setClassrooms] = useState<readonly ClassroomOverviewItem[]>([]);
+  const [selectedCourseId, setSelectedCourseId] = useState('');
+  const [schoolDay, setSchoolDay] = useState(() => todayLocalDate());
+  const [roster, setRoster] = useState<readonly AttendanceRosterItem[]>([]);
+  const [search, setSearch] = useState('');
+  const [loadingClassrooms, setLoadingClassrooms] = useState(true);
+  const [loadingRoster, setLoadingRoster] = useState(false);
+  const [savingEnrollmentId, setSavingEnrollmentId] = useState<string | null>(null);
+  const [savingHandoverStudentPartyId, setSavingHandoverStudentPartyId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const selectedClassroom = classrooms.find((classroom) => classroom.id === selectedCourseId) ?? null;
+
+  const filteredRoster = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+    if (!normalizedSearch) return roster;
+
+    return roster.filter((student) => {
+      return (
+        student.name.toLowerCase().includes(normalizedSearch) ||
+        (student.studentCode ?? '').toLowerCase().includes(normalizedSearch)
+      );
+    });
+  }, [roster, search]);
+
+  const attendanceSummary = useMemo(() => {
+    return roster.reduce(
+      (summary, student) => {
+        if (!student.attendance) {
+          summary.unmarked += 1;
+          return summary;
+        }
+
+        summary[student.attendance.status] += 1;
+        return summary;
+      },
+      { present: 0, absent: 0, excused: 0, unmarked: 0 },
+    );
+  }, [roster]);
+
+  useEffect(() => {
+    async function loadClassrooms() {
+      setLoadingClassrooms(true);
+      setError(null);
+      try {
+        const response = await fetch('/api/education/courses', { cache: 'no-store' });
+        const payload = await response.json();
+        if (!response.ok || !payload.success) {
+          throw new Error(payload.error ?? 'Không tải được danh sách lớp');
+        }
+
+        const loadedClassrooms = (payload.classrooms ?? []) as ClassroomOverviewItem[];
+        setClassrooms(loadedClassrooms);
+        setSelectedCourseId((current) => current || loadedClassrooms[0]?.id || '');
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : 'Không tải được danh sách lớp');
+      } finally {
+        setLoadingClassrooms(false);
+      }
+    }
+
+    void loadClassrooms();
+  }, []);
+
+  const refreshRoster = useCallback(async (): Promise<void> => {
+    if (!selectedCourseId) {
+      setRoster([]);
+      return;
+    }
+
+    const params = new URLSearchParams({ courseId: selectedCourseId, date: schoolDay });
+    const response = await fetch(`/api/education/attendance?${params.toString()}`, { cache: 'no-store' });
+    const payload = await response.json();
+    if (!response.ok || !payload.success) {
+      throw new Error(payload.error ?? 'Không tải được danh sách điểm danh');
+    }
+
+    setRoster((payload.roster ?? []) as AttendanceRosterItem[]);
+  }, [selectedCourseId, schoolDay]);
+
+  useEffect(() => {
+    async function loadRoster() {
+      setLoadingRoster(true);
+      setError(null);
+      try {
+        await refreshRoster();
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : 'Không tải được danh sách điểm danh');
+        setRoster([]);
+      } finally {
+        setLoadingRoster(false);
+      }
+    }
+
+    void loadRoster();
+  }, [refreshRoster]);
+
+  async function markAttendance(enrollmentId: string, status: AttendanceStatus) {
+    setSavingEnrollmentId(enrollmentId);
+    setError(null);
+    setSuccessMessage(null);
+    try {
+      const response = await fetch('/api/education/attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enrollmentId, status, date: schoolDay }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error ?? 'Không ghi được điểm danh');
+      }
+
+      setSuccessMessage('Đã ghi nhận điểm danh thật vào hệ thống');
+      await refreshRoster();
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : 'Không ghi được điểm danh');
+    } finally {
+      setSavingEnrollmentId(null);
+    }
+  }
+
+  async function recordHandover(row: AttendanceRosterItem, guardian: AuthorizedGuardian) {
+    setSavingHandoverStudentPartyId(row.studentPartyId);
+    setError(null);
+    setSuccessMessage(null);
+    try {
+      const response = await fetch('/api/education/attendance/handover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentPartyId: row.studentPartyId,
+          guardianPartyId: guardian.guardianPartyId,
+          pickupAuthorizationId: guardian.authorizationId,
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error ?? 'Không ghi được bàn giao');
+      }
+
+      setSuccessMessage(`Đã bàn giao ${row.name} cho ${guardian.displayName}`);
+      await refreshRoster();
+    } catch (handoverError) {
+      setError(handoverError instanceof Error ? handoverError.message : 'Không ghi được bàn giao');
+    } finally {
+      setSavingHandoverStudentPartyId(null);
+    }
+  }
+
+  function formatHandoverTime(value: string): string {
+    return new Intl.DateTimeFormat('vi-VN', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      hour: '2-digit',
+      minute: '2-digit',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).format(new Date(value));
+  }
+
   return (
     <div className="w-full p-4 sm:p-6 lg:p-8 space-y-6 pb-12">
-      {/* ── Unified Page Header ── */}
       <div className="w-full rounded-3xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 p-6 sm:p-8 shadow-sm space-y-6">
-        {/* Top Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-700/60 pb-5">
           <div className="flex items-center gap-3">
-            <Link 
-              href="/dashboard/education" 
+            <Link
+              href="/dashboard/education"
               className="p-2.5 rounded-2xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition-colors shrink-0"
               title="Quay lại Dashboard Education"
             >
@@ -91,54 +280,80 @@ export default function AttendancePage() {
                   Điểm Danh & Đưa Đón Bé An Toàn
                 </h1>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                  Ghi nhận điểm danh buổi sáng, kiểm tra thân nhiệt và xác thực QR đưa đón chính chủ
+                  Ghi nhận điểm danh hằng ngày từ danh sách học sinh đã enrollment thật
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
-            <span className="text-xs font-bold px-3.5 py-2 rounded-2xl bg-amber-50 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-              📅 Thứ Tư, 09/09/2026
-            </span>
-            <button className="inline-flex items-center justify-center gap-2 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white px-5 py-3 text-xs font-bold shadow-lg shadow-amber-500/20 transition-all active:scale-95">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 shrink-0">
+            <input
+              type="date"
+              value={schoolDay}
+              onChange={(event) => setSchoolDay(event.target.value)}
+              className="px-3.5 py-2 rounded-2xl bg-amber-50 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-xs font-bold"
+            />
+            <span className="inline-flex items-center justify-center gap-2 rounded-2xl bg-amber-500 text-white px-5 py-3 text-xs font-bold shadow-lg shadow-amber-500/20">
               <CheckCircle2 className="w-4 h-4" />
-              <span>Điểm Danh Nhanh</span>
-            </button>
+              Điểm danh thật
+            </span>
           </div>
         </div>
 
-        {/* Search & Category Filter Tabs */}
         <div className="flex flex-col lg:flex-row items-center gap-4 justify-between">
           <div className="flex items-center gap-2 overflow-x-auto w-full lg:w-auto pb-1 lg:pb-0">
-            <button className="px-4 py-2 rounded-2xl text-xs font-bold bg-amber-500 text-white shadow-sm transition-colors whitespace-nowrap">
-              Lớp Mầm A1 (22/23)
-            </button>
-            <button className="px-4 py-2 rounded-2xl text-xs font-semibold bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors whitespace-nowrap">
-              Lớp Chồi B1 (24/24)
-            </button>
-            <button className="px-4 py-2 rounded-2xl text-xs font-semibold bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors whitespace-nowrap">
-              Lớp Lá C1 (25/25)
-            </button>
-            <button className="px-4 py-2 rounded-2xl text-xs font-semibold bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors whitespace-nowrap">
-              Nhà Trẻ N1 (15/15)
-            </button>
+            {loadingClassrooms ? (
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Đang tải lớp
+              </span>
+            ) : classrooms.length === 0 ? (
+              <span className="px-4 py-2 rounded-2xl text-xs font-semibold bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300">
+                Chưa có lớp đang hoạt động
+              </span>
+            ) : (
+              classrooms.map((classroom) => (
+                <button
+                  key={classroom.id}
+                  type="button"
+                  onClick={() => setSelectedCourseId(classroom.id)}
+                  className={`px-4 py-2 rounded-2xl text-xs font-bold transition-colors whitespace-nowrap ${
+                    classroom.id === selectedCourseId
+                      ? 'bg-amber-500 text-white shadow-sm'
+                      : 'bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  {classroom.name} ({classroom.students}/{classroom.maxStudents})
+                </button>
+              ))
+            )}
           </div>
 
           <div className="relative w-full lg:w-80">
             <Search className="w-4 h-4 absolute left-3.5 top-3 text-gray-400" />
             <input
               type="text"
-              placeholder="Tìm tên bé..."
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Tìm tên bé hoặc mã học sinh..."
               className="w-full pl-10 pr-4 py-2.5 text-xs rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all"
             />
           </div>
         </div>
+
+        {(error || successMessage) && (
+          <div className={`flex items-center gap-2 rounded-2xl px-4 py-3 text-xs font-semibold ${
+            error
+              ? 'bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-300'
+              : 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
+          }`}>
+            {error ? <AlertCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+            {error ?? successMessage}
+          </div>
+        )}
       </div>
 
-      {/* ── 2 Column Grid: Left Table, Right Pickup Safety Panel ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Column: Roll-Call Table */}
         <div className="rounded-3xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 overflow-hidden shadow-sm flex flex-col">
           <div className="p-5 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -148,7 +363,7 @@ export default function AttendancePage() {
               </h3>
             </div>
             <span className="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-2.5 py-1 rounded-full">
-              Sĩ Số 22/23
+              {selectedClassroom ? `${selectedClassroom.name} • ${roster.length} học sinh` : 'Chưa chọn lớp'}
             </span>
           </div>
 
@@ -157,56 +372,86 @@ export default function AttendancePage() {
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200/80 dark:border-slate-700 text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                   <th className="py-3.5 px-5">Học Sinh</th>
-                  <th className="py-3.5 px-3">Giờ Đến</th>
+                  <th className="py-3.5 px-3">Trạng thái ngày</th>
                   <th className="py-3.5 px-3">Thân Nhiệt</th>
-                  <th className="py-3.5 px-4 text-right">Trạng Thái</th>
+                  <th className="py-3.5 px-4 text-right">Ghi nhận</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 text-xs text-gray-700 dark:text-gray-300">
-                {ROLL_CALL_DATA.map((row) => (
-                  <tr key={row.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors">
-                    <td className="py-3.5 px-5 font-bold text-gray-900 dark:text-white">
-                      <div>
-                        <p className="text-xs">{row.name}</p>
-                        <span className="text-[10px] text-gray-400 font-normal">{row.id}</span>
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-3 font-semibold text-gray-600 dark:text-gray-300 text-xs">
-                      {row.checkInTime}
-                    </td>
-                    <td className="py-3.5 px-3">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                        row.tempStatus === 'warning' 
-                          ? 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300' 
-                          : row.tempStatus === 'normal'
-                          ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
-                          : 'bg-slate-100 dark:bg-slate-700 text-slate-500'
-                      }`}>
-                        <Thermometer className="w-3 h-3" />
-                        {row.temp}
+                {loadingRoster ? (
+                  <tr>
+                    <td colSpan={4} className="py-8 px-5 text-center text-gray-500">
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Đang tải danh sách thật...
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 text-right">
-                      {row.status === 'Present' ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold text-[10px]">
-                          <CheckCircle2 className="w-3 h-3" />
-                          Có Mặt
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold text-[10px]">
-                          <XCircle className="w-3 h-3" />
-                          Có Phép
-                        </span>
-                      )}
+                  </tr>
+                ) : filteredRoster.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-8 px-5 text-center text-gray-500">
+                      Không có học sinh canonical nào trong lớp/ngày này
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredRoster.map((row) => {
+                    const status = row.attendance?.status;
+                    return (
+                      <tr key={row.enrollmentId} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors">
+                        <td className="py-3.5 px-5 font-bold text-gray-900 dark:text-white">
+                          <div>
+                            <p className="text-xs">{row.name}</p>
+                            <span className="text-[10px] text-gray-400 font-normal">
+                              {row.studentCode || row.studentPartyId}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-3">
+                          {status ? (
+                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold text-[10px] ${ATTENDANCE_BADGES[status]}`}>
+                              {status === 'present' ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                              {ATTENDANCE_LABELS[status]}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 font-bold text-[10px]">
+                              Chưa điểm danh
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-3">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-500">
+                            <Thermometer className="w-3 h-3" />
+                            Chưa kết nối
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="flex justify-end gap-2">
+                            {VALID_ATTENDANCE_ACTIONS.map((action) => (
+                              <button
+                                key={action}
+                                type="button"
+                                disabled={savingEnrollmentId === row.enrollmentId}
+                                onClick={() => void markAttendance(row.enrollmentId, action)}
+                                className={`px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition-colors disabled:opacity-50 ${
+                                  status === action
+                                    ? ATTENDANCE_BADGES[action]
+                                    : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+                                }`}
+                              >
+                                {ATTENDANCE_LABELS[action]}
+                              </button>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
         </div>
 
-        {/* Right Column: Safe Pickup Panel */}
         <div className="rounded-3xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 p-6 shadow-sm space-y-5 flex flex-col justify-between">
           <div className="space-y-4">
             <div className="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-slate-700/60">
@@ -218,46 +463,89 @@ export default function AttendancePage() {
                   Ủy Quyền Đưa Đón & Quét QR An Toàn
                 </h3>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Xác thực danh tính phụ huynh đón bé buổi chiều
+                  Danh sách bên dưới dùng học sinh thật; capability đưa đón/QR chưa nối trong bước này
                 </p>
               </div>
             </div>
 
-            <div className="space-y-3">
-              {ROLL_CALL_DATA.map((row) => (
-                <div 
-                  key={row.id}
-                  className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-700/40 border border-slate-100 dark:border-slate-700/50 flex items-center justify-between gap-4"
-                >
-                  <div className="space-y-1">
-                    <h4 className="text-xs font-bold text-gray-900 dark:text-white">
-                      {row.name}
-                    </h4>
-                    <p className="text-[11px] text-gray-600 dark:text-gray-300">
-                      Người đón: <strong>{row.pickupPerson}</strong>
-                    </p>
-                    {row.pickupVerified && (
-                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
-                        <QrCode className="w-3 h-3" /> QR Xác Thực Chính Chủ
-                      </span>
-                    )}
-                  </div>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950 p-4">
+                <p className="font-bold text-emerald-700 dark:text-emerald-300">Có mặt</p>
+                <p className="text-2xl font-extrabold text-emerald-900 dark:text-emerald-100">{attendanceSummary.present}</p>
+              </div>
+              <div className="rounded-2xl bg-slate-50 dark:bg-slate-700/50 p-4">
+                <p className="font-bold text-slate-600 dark:text-slate-300">Chưa điểm danh</p>
+                <p className="text-2xl font-extrabold text-slate-900 dark:text-white">{attendanceSummary.unmarked}</p>
+              </div>
+            </div>
 
-                  <button className="px-3.5 py-2 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-md transition-all shrink-0">
-                    Xác Nhận Đón
-                  </button>
-                </div>
-              ))}
+            <div className="space-y-3">
+              {filteredRoster.map((row) => {
+                const guardian = row.authorizedGuardians?.[0] ?? null;
+                const handover = row.safePickupHandover ?? null;
+                const savingHandover = savingHandoverStudentPartyId === row.studentPartyId;
+
+                return (
+                  <div
+                    key={row.studentPartyId}
+                    className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-700/40 border border-slate-100 dark:border-slate-700/50 flex items-center justify-between gap-4"
+                  >
+                    <div className="space-y-1">
+                      <h4 className="text-xs font-bold text-gray-900 dark:text-white">
+                        {row.name}
+                      </h4>
+                      <p className="text-[11px] text-gray-600 dark:text-gray-300">
+                        Party: <strong>{row.studentPartyId}</strong>
+                      </p>
+                      {guardian ? (
+                        <p className="text-[11px] text-emerald-700 dark:text-emerald-300 font-bold">
+                          Được phép đón: {guardian.displayName}
+                          {guardian.phone ? ` · ${guardian.phone}` : ''}
+                        </p>
+                      ) : (
+                        <p className="text-[11px] text-amber-700 dark:text-amber-300 font-bold">
+                          Chưa có guardian được phép đón
+                        </p>
+                      )}
+                      {handover ? (
+                        <p className="text-[11px] text-sky-700 dark:text-sky-300 font-bold">
+                          Đã bàn giao: {guardian?.displayName ?? 'Guardian đã xác thực'} · {formatHandoverTime(handover.handedOverAt)}
+                        </p>
+                      ) : null}
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold flex items-center gap-1">
+                        <QrCode className="w-3 h-3" /> QR chưa kết nối; bàn giao ghi nhận bằng thao tác nhân viên
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={!guardian || Boolean(handover) || savingHandover}
+                      onClick={() => {
+                        if (guardian) void recordHandover(row, guardian);
+                      }}
+                      className={`px-3.5 py-2 rounded-2xl font-bold text-xs shrink-0 transition-colors ${
+                        handover
+                          ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 cursor-default'
+                          : guardian
+                            ? 'bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-60'
+                            : 'bg-slate-200 dark:bg-slate-700 text-slate-500 cursor-not-allowed'
+                      }`}
+                    >
+                      {savingHandover ? 'Đang ghi...' : handover ? 'Đã bàn giao' : 'Bàn giao'}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
           <div className="p-4 rounded-2xl bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50 space-y-1 text-xs">
             <p className="font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
               <BellRing className="w-3.5 h-3.5 text-indigo-500" />
-              Quy Trình An Toàn Đưa Đón:
+              Checkpoint hiện tại:
             </p>
             <p className="text-indigo-800 dark:text-indigo-400 leading-relaxed text-[11px]">
-              Mọi trường hợp thay đổi người đưa đón bất ngờ phải được Phụ huynh xác nhận qua ứng dụng Zalo / Sổ liên lạc điện tử trước 15:30.
+              Điểm danh và bàn giao đang ghi dữ liệu thật. QR và thân nhiệt vẫn là capability riêng, chưa được giả lập trong UI này.
             </p>
           </div>
         </div>
@@ -265,3 +553,5 @@ export default function AttendancePage() {
     </div>
   );
 }
+
+const VALID_ATTENDANCE_ACTIONS: readonly AttendanceStatus[] = ['present', 'absent', 'excused'];
