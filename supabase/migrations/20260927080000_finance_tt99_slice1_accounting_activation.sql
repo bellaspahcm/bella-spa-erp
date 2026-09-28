@@ -17,6 +17,7 @@ ALTER TABLE public.finance_control_account_mappings
 ALTER TABLE public.finance_control_account_mappings
   ADD COLUMN IF NOT EXISTS effective_to DATE;
 
+-- zero-downtime: allow blocking-index - reviewed owner-deployed TT99 semantic mapping effective-date lookup index
 CREATE INDEX IF NOT EXISTS idx_finance_control_account_mappings_effective
   ON public.finance_control_account_mappings(tenant_id, control_type, effective_from, effective_to);
 

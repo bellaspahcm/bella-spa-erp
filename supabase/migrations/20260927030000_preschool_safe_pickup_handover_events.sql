@@ -13,12 +13,15 @@ CREATE TABLE IF NOT EXISTS public.edu_preschool_pickup_handover_events (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- zero-downtime: allow blocking-index - reviewed owner-deployed event table index for student handover history
 CREATE INDEX IF NOT EXISTS idx_edu_preschool_pickup_handover_events_student
   ON public.edu_preschool_pickup_handover_events(tenant_id, student_party_id, handed_over_at DESC);
 
+-- zero-downtime: allow blocking-index - reviewed owner-deployed event table index for guardian handover history
 CREATE INDEX IF NOT EXISTS idx_edu_preschool_pickup_handover_events_guardian
   ON public.edu_preschool_pickup_handover_events(tenant_id, guardian_party_id, handed_over_at DESC);
 
+-- zero-downtime: allow blocking-index - reviewed owner-deployed event table index for authorization-linked read-back
 CREATE INDEX IF NOT EXISTS idx_edu_preschool_pickup_handover_events_authorization
   ON public.edu_preschool_pickup_handover_events(pickup_authorization_id);
 

@@ -21,8 +21,6 @@ import {
 } from '../domain/finance.types';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 type PreschoolFinanceClient = SupabaseClient<Database>;
 type UntypedSupabaseClient = SupabaseClient;
 type TuitionRecognitionPolicyRow = {
@@ -89,8 +87,16 @@ function readNumber(row: DbRow, key: string): number {
   return parsed;
 }
 
+function createDefaultFinanceClient(): PreschoolFinanceClient {
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  if (!supabaseKey) {
+    throw new Error('PRESCHOOL_FINANCE_REPOSITORY_CONFIG_ERROR: Supabase key is required.');
+  }
+  return createClient<Database>(supabaseUrl, supabaseKey);
+}
+
 export class PreschoolFinanceRepository {
-  constructor(private readonly client: PreschoolFinanceClient = supabase) {}
+  constructor(private readonly client: PreschoolFinanceClient = createDefaultFinanceClient()) {}
 
   async hasActiveEnrollmentForStudentParty(tenantId: string, studentPartyId: string): Promise<boolean> {
     const { data, error } = await this.client

@@ -13,9 +13,11 @@ CREATE TABLE IF NOT EXISTS public.edu_attendance_daily_state (
     UNIQUE (tenant_id, enrollment_id, school_day)
 );
 
+-- zero-downtime: allow blocking-index - reviewed owner-deployed product table index for daily attendance state lookup
 CREATE INDEX IF NOT EXISTS idx_edu_attendance_daily_state_tenant_day
   ON public.edu_attendance_daily_state(tenant_id, school_day);
 
+-- zero-downtime: allow blocking-index - reviewed owner-deployed product table index for daily attendance enrollment read-back
 CREATE INDEX IF NOT EXISTS idx_edu_attendance_daily_state_enrollment
   ON public.edu_attendance_daily_state(enrollment_id);
 

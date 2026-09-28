@@ -14,10 +14,12 @@ ALTER TABLE public.edu_daily_parent_digests
 ALTER TABLE public.edu_daily_parent_digests
   ALTER COLUMN student_id DROP NOT NULL;
 
+-- zero-downtime: allow blocking-index - reviewed owner-deployed canonical parent digest uniqueness boundary
 CREATE UNIQUE INDEX IF NOT EXISTS uq_daily_parent_digests_session_student_party
   ON public.edu_daily_parent_digests(session_id, student_party_id)
   WHERE student_party_id IS NOT NULL;
 
+-- zero-downtime: allow blocking-index - reviewed owner-deployed canonical parent digest read-back index
 CREATE INDEX IF NOT EXISTS idx_daily_parent_digests_tenant_student_party
   ON public.edu_daily_parent_digests(tenant_id, student_party_id);
 

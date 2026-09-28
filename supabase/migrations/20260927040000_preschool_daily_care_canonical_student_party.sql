@@ -18,10 +18,12 @@ ALTER TABLE public.edu_daily_care_records
 ALTER TABLE public.edu_daily_care_records
   ALTER COLUMN student_id DROP NOT NULL;
 
+-- zero-downtime: allow blocking-index - reviewed owner-deployed canonical student daily care uniqueness boundary
 CREATE UNIQUE INDEX IF NOT EXISTS uq_daily_care_records_session_student_party
   ON public.edu_daily_care_records(session_id, student_party_id)
   WHERE student_party_id IS NOT NULL;
 
+-- zero-downtime: allow blocking-index - reviewed owner-deployed canonical student daily care read-back index
 CREATE INDEX IF NOT EXISTS idx_daily_care_records_tenant_student_party
   ON public.edu_daily_care_records(tenant_id, student_party_id);
 

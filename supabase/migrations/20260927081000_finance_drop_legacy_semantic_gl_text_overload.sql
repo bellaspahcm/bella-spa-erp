@@ -8,6 +8,7 @@
 -- This migration intentionally does not alter accounts, mappings, COA data,
 -- accounting semantics, invoices, journals, or AR state.
 
+-- zero-downtime: allow drop-object - reviewed RPC overload cleanup to remove PostgREST ambiguity while preserving canonical varchar signature
 DROP FUNCTION IF EXISTS public.finance_get_accounting_semantic_gl_map_as_of(
   UUID,
   TEXT,

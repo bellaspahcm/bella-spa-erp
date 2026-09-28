@@ -54,14 +54,17 @@ BEGIN
     END IF;
 END $$;
 
+-- zero-downtime: allow blocking-index - reviewed owner-deployed canonical finance discount lookup index
 CREATE INDEX IF NOT EXISTS idx_edu_fin_discount_profiles_tenant_student_party
 ON public.edu_fin_student_discount_profiles(tenant_id, student_party_id)
 WHERE student_party_id IS NOT NULL;
 
+-- zero-downtime: allow blocking-index - reviewed owner-deployed canonical finance invoice lookup index
 CREATE INDEX IF NOT EXISTS idx_edu_fin_invoices_tenant_student_party
 ON public.edu_fin_invoices(tenant_id, student_party_id)
 WHERE student_party_id IS NOT NULL;
 
+-- zero-downtime: allow blocking-index - reviewed owner-deployed canonical finance payment lookup index
 CREATE INDEX IF NOT EXISTS idx_edu_fin_payments_tenant_student_party
 ON public.edu_fin_payments(tenant_id, student_party_id)
 WHERE student_party_id IS NOT NULL;

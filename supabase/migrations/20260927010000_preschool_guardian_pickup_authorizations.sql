@@ -12,13 +12,16 @@ CREATE TABLE IF NOT EXISTS public.edu_preschool_pickup_authorizations (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- zero-downtime: allow blocking-index - reviewed owner-deployed product table unique boundary for active pickup authorization
 CREATE UNIQUE INDEX IF NOT EXISTS idx_edu_preschool_pickup_authorizations_active_unique
   ON public.edu_preschool_pickup_authorizations(tenant_id, student_party_id, guardian_party_id)
   WHERE status = 'authorized';
 
+-- zero-downtime: allow blocking-index - reviewed owner-deployed product table index for student authorization lookup
 CREATE INDEX IF NOT EXISTS idx_edu_preschool_pickup_authorizations_student
   ON public.edu_preschool_pickup_authorizations(tenant_id, student_party_id);
 
+-- zero-downtime: allow blocking-index - reviewed owner-deployed product table index for guardian authorization lookup
 CREATE INDEX IF NOT EXISTS idx_edu_preschool_pickup_authorizations_guardian
   ON public.edu_preschool_pickup_authorizations(tenant_id, guardian_party_id);
 

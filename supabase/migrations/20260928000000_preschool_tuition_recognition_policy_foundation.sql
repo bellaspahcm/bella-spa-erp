@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS public.edu_fin_tuition_recognition_policies (
     CHECK (effective_to IS NULL OR effective_to >= effective_from)
 );
 
+-- zero-downtime: allow blocking-index - reviewed owner-deployed tuition recognition policy effective-date lookup index
 CREATE INDEX IF NOT EXISTS idx_edu_fin_tuition_recognition_policies_tenant_effective
   ON public.edu_fin_tuition_recognition_policies(tenant_id, status, effective_from, effective_to);
 
@@ -66,6 +67,7 @@ CREATE TABLE IF NOT EXISTS public.edu_fin_tuition_service_period_completions (
     UNIQUE (tenant_id, billing_period_id)
 );
 
+-- zero-downtime: allow blocking-index - reviewed owner-deployed tuition service completion read-back index
 CREATE INDEX IF NOT EXISTS idx_edu_fin_tuition_service_period_completions_tenant_period
   ON public.edu_fin_tuition_service_period_completions(tenant_id, billing_period_id);
 
