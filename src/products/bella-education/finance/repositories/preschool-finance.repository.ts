@@ -6,7 +6,7 @@
  */
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database.types';
+import type { Database, Json } from '@/types/database.types';
 import {
   FeeStructure,
   BillingPeriod,
@@ -23,6 +23,7 @@ import {
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
 type PreschoolFinanceClient = SupabaseClient<Database>;
 type UntypedSupabaseClient = SupabaseClient;
+type EduFinInvoiceUpdate = Database['public']['Tables']['edu_fin_invoices']['Update'];
 type TuitionRecognitionPolicyRow = {
   id: string;
   tenant_id: string;
@@ -85,6 +86,10 @@ function readNumber(row: DbRow, key: string): number {
     throw new Error(`FINANCE_REPOSITORY_MAPPING_ERROR: Expected ${key} to be numeric.`);
   }
   return parsed;
+}
+
+function toJson(value: Record<string, unknown>): Json {
+  return JSON.parse(JSON.stringify(value)) as Json;
 }
 
 function createDefaultFinanceClient(): PreschoolFinanceClient {
@@ -503,7 +508,7 @@ export class PreschoolFinanceRepository {
       sha256Checksum?: string;
     }
   ): Promise<Invoice> {
-    const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    const patch: EduFinInvoiceUpdate = { updated_at: new Date().toISOString() };
     if (update.invoiceStatus !== undefined) patch.invoice_status = update.invoiceStatus;
     if (update.settlementStatus !== undefined) patch.settlement_status = update.settlementStatus;
     if (update.grossAmount !== undefined) patch.gross_amount = update.grossAmount;
@@ -635,7 +640,7 @@ export class PreschoolFinanceRepository {
         payment_id: data.paymentId,
         invoice_id: data.invoiceId,
         receipt_number: data.receiptNumber,
-        settlement_snapshot: data.settlementSnapshot,
+        settlement_snapshot: toJson(data.settlementSnapshot),
         sha256_fingerprint: data.sha256Fingerprint,
         issued_at: data.issuedAt,
       })

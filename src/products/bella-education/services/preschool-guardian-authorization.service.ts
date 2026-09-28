@@ -104,7 +104,7 @@ export class PreschoolGuardianAuthorizationService {
     }
 
     const activeAuthorizations = (authorizations ?? []).filter(
-      (row): row is Pick<GuardianAuthorizationRow, 'id' | 'student_party_id' | 'guardian_party_id' | 'status'> =>
+      (row): row is Pick<GuardianAuthorizationRow, 'id' | 'tenant_id' | 'student_party_id' | 'guardian_party_id' | 'status'> =>
         row.status === AUTHORIZED_STATUS,
     );
 

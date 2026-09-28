@@ -9400,7 +9400,8 @@ export type Database = {
           published_at: string | null
           session_id: string
           status: string
-          student_id: string
+          student_id: string | null
+          student_party_id: string | null
           tenant_id: string
           updated_at: string
         }
@@ -9412,7 +9413,8 @@ export type Database = {
           published_at?: string | null
           session_id: string
           status?: string
-          student_id: string
+          student_id?: string | null
+          student_party_id?: string | null
           tenant_id: string
           updated_at?: string
         }
@@ -9424,7 +9426,8 @@ export type Database = {
           published_at?: string | null
           session_id?: string
           status?: string
-          student_id?: string
+          student_id?: string | null
+          student_party_id?: string | null
           tenant_id?: string
           updated_at?: string
         }
@@ -9442,6 +9445,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "edu_daily_parent_digests_student_party_id_fkey"
+            columns: ["student_party_id"]
+            isOneToOne: false
+            referencedRelation: "party_parties"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "edu_daily_parent_digests_tenant_id_fkey"
@@ -10906,7 +10916,8 @@ export type Database = {
           paid_amount: number
           settlement_status: string
           sha256_checksum: string | null
-          student_id: string
+          student_id: string | null
+          student_party_id: string | null
           tenant_id: string
           updated_at: string
         }
@@ -10927,7 +10938,8 @@ export type Database = {
           paid_amount?: number
           settlement_status?: string
           sha256_checksum?: string | null
-          student_id: string
+          student_id?: string | null
+          student_party_id?: string | null
           tenant_id: string
           updated_at?: string
         }
@@ -10948,7 +10960,8 @@ export type Database = {
           paid_amount?: number
           settlement_status?: string
           sha256_checksum?: string | null
-          student_id?: string
+          student_id?: string | null
+          student_party_id?: string | null
           tenant_id?: string
           updated_at?: string
         }
@@ -10958,6 +10971,13 @@ export type Database = {
             columns: ["billing_period_id"]
             isOneToOne: false
             referencedRelation: "edu_fin_billing_periods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "edu_fin_invoices_student_party_id_fkey"
+            columns: ["student_party_id"]
+            isOneToOne: false
+            referencedRelation: "party_parties"
             referencedColumns: ["id"]
           },
           {
@@ -10989,7 +11009,8 @@ export type Database = {
           payment_number: string
           reference_number: string | null
           status: string
-          student_id: string
+          student_id: string | null
+          student_party_id: string | null
           tenant_id: string
           unallocated_amount: number
         }
@@ -11005,7 +11026,8 @@ export type Database = {
           payment_number: string
           reference_number?: string | null
           status?: string
-          student_id: string
+          student_id?: string | null
+          student_party_id?: string | null
           tenant_id: string
           unallocated_amount?: number
         }
@@ -11021,11 +11043,19 @@ export type Database = {
           payment_number?: string
           reference_number?: string | null
           status?: string
-          student_id?: string
+          student_id?: string | null
+          student_party_id?: string | null
           tenant_id?: string
           unallocated_amount?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "edu_fin_payments_student_party_id_fkey"
+            columns: ["student_party_id"]
+            isOneToOne: false
+            referencedRelation: "party_parties"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "edu_fin_payments_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -11182,7 +11212,8 @@ export type Database = {
           id: string
           is_active: boolean
           reason: string | null
-          student_id: string
+          student_id: string | null
+          student_party_id: string | null
           tenant_id: string
           valid_from: string
           valid_until: string | null
@@ -11196,7 +11227,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           reason?: string | null
-          student_id: string
+          student_id?: string | null
+          student_party_id?: string | null
           tenant_id: string
           valid_from: string
           valid_until?: string | null
@@ -11210,12 +11242,20 @@ export type Database = {
           id?: string
           is_active?: boolean
           reason?: string | null
-          student_id?: string
+          student_id?: string | null
+          student_party_id?: string | null
           tenant_id?: string
           valid_from?: string
           valid_until?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "edu_fin_student_discount_profiles_student_party_id_fkey"
+            columns: ["student_party_id"]
+            isOneToOne: false
+            referencedRelation: "party_parties"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "edu_fin_student_discount_profiles_tenant_id_fkey"
             columns: ["tenant_id"]

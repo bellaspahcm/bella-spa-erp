@@ -76,6 +76,10 @@ function asPaymentMethod(value: unknown): Payment['paymentMethod'] {
 }
 
 function mapPayment(row: PaymentRow): Payment {
+  if (!row.student_party_id) {
+    throw new Error(`FINANCE_CANONICAL_PAYMENT_STUDENT_IDENTITY_MISSING: ${row.id}`);
+  }
+
   return {
     id: row.id,
     tenantId: row.tenant_id,
