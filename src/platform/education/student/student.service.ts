@@ -3,32 +3,45 @@
  * 
  * Responsibilities:
  * - Orchestrate aggregate + repository
- * - Validate Person exists before creating Student
+ * - Validate canonical Party identity before creating Student
  * - NO business logic (belongs in aggregate)
  * 
  * Constitution Compliance:
  * - Law 11: No `any` types
- * - Law 1: Validate Person (aggregate root) before Student
+ * - Law 1: Validate canonical Party identity before Student
  */
 
 import { StudentAggregate } from './student.aggregate';
 import { StudentRepository } from './student.repository';
 import { Student, CreateStudentRequest, UpdateStudentRequest } from '../shared-kernel/types';
-import { PersonRepository } from '@/platform/host/person/person.repository';
 import { createClient } from '@/lib/supabase-server';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
+
+type EducationStudentClient = SupabaseClient<Database>;
 
 export class StudentService {
   /**
    * Create new student
-   * Validates Person exists before creating Student
+   * Validates the canonical Party before creating Student.
+   * Brand-new canonical Students do not require legacy Person mappings.
    */
-  static async createStudent(request: CreateStudentRequest): Promise<Student> {
-    // Validate Person exists (aggregate root must exist first)
-    const supabase = await createClient();
-    const personRepo = new PersonRepository(supabase);
-    const person = await personRepo.findById(request.personId, request.tenantId);
-    if (!person) {
-      throw new Error(`Person with ID ${request.personId} does not exist`);
+  static async createStudent(request: CreateStudentRequest, client?: EducationStudentClient): Promise<Student> {
+    // Validate the canonical Party identity.
+    const supabase = client ?? await createClient();
+    const { data: party, error: partyError } = await supabase
+      .from('party_parties')
+      .select('id, tenant_id, party_type')
+      .eq('id', request.partyId)
+      .eq('tenant_id', request.tenantId)
+      .eq('party_type', 'person')
+      .maybeSingle();
+
+    if (partyError) {
+      throw new Error(`Failed to validate student Party: ${partyError.message}`);
+    }
+    if (!party) {
+      throw new Error(`Person Party with ID ${request.partyId} does not exist`);
     }
 
     // Create aggregate (business logic + validation)
@@ -36,7 +49,7 @@ export class StudentService {
     const student = aggregate.getStudent();
 
     // Persist to database
-    return await StudentRepository.create(student);
+    return await StudentRepository.create(student, client);
   }
 
   /**
@@ -54,10 +67,19 @@ export class StudentService {
   }
 
   /**
-   * Get students by person ID
+   * Legacy read path by transitional person ID
    */
   static async getStudentsByPersonId(personId: string, tenantId: string): Promise<Student[]> {
     return await StudentRepository.findByPersonId(personId, tenantId);
+  }
+
+  /** Get students by the canonical Party identity. */
+  static async getStudentsByPartyId(
+    partyId: string,
+    tenantId: string,
+    client?: EducationStudentClient,
+  ): Promise<Student[]> {
+    return await StudentRepository.findByPartyId(partyId, tenantId, client);
   }
 
   /**

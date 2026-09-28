@@ -20,11 +20,7 @@ import {
   ArrowLeft, 
   Phone, 
   FileText,
-  Heart,
-  Calendar,
   CalendarCheck,
-  Sparkles,
-  ChevronRight,
   ChevronDown,
   CheckCircle2,
   AlertTriangle,
@@ -32,10 +28,10 @@ import {
   ShieldCheck,
   X,
   Check,
-  UserCheck,
   GraduationCap,
   CreditCard,
-  MessageSquare
+  MessageSquare,
+  Loader2
 } from 'lucide-react';
 
 type StudentItem = {
@@ -57,6 +53,58 @@ type StudentItem = {
     badgeBg: string;
     badgeText: string;
   };
+};
+
+type ClassroomOption = {
+  id: string;
+  name: string;
+  code: string;
+  grade: string;
+};
+
+type AdmissionFormState = {
+  childName: string;
+  nickname: string;
+  dateOfBirth: string;
+  gender: 'Nam' | 'Nữ';
+  guardianName: string;
+  guardianPhone: string;
+  medicalNote: string;
+  courseId: string;
+};
+
+type AdmissionResponse = {
+  success: boolean;
+  error?: string;
+  student?: {
+    partyId: string;
+    studentCode: string;
+    childName: string;
+    nickname: string;
+    dateOfBirth: string;
+    gender: string;
+    guardianName: string;
+    guardianPhone: string;
+    medicalNote: string;
+  };
+  enrollment?: {
+    id: string;
+    courseId: string;
+    courseTitle: string;
+    status: string;
+    enrolledAt: string;
+  };
+};
+
+const DEFAULT_ADMISSION_FORM: AdmissionFormState = {
+  childName: '',
+  nickname: '',
+  dateOfBirth: '2023-06-15',
+  gender: 'Nam',
+  guardianName: '',
+  guardianPhone: '',
+  medicalNote: '',
+  courseId: '',
 };
 
 const STUDENTS_LIST: StudentItem[] = [
@@ -143,12 +191,18 @@ const STUDENTS_LIST: StudentItem[] = [
 ];
 
 export default function EnrollmentsPage() {
+  const [students, setStudents] = useState<StudentItem[]>(STUDENTS_LIST);
   const [selectedYear, setSelectedYear] = useState('2026 - 2027');
   const [selectedStatusTab, setSelectedStatusTab] = useState<'all' | 'active' | 'pending' | 'healthAlert'>('active');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [isAdmissionModalOpen, setIsAdmissionModalOpen] = useState(false);
   const [modalStep, setModalStep] = useState(1);
+  const [classrooms, setClassrooms] = useState<ClassroomOption[]>([]);
+  const [admissionForm, setAdmissionForm] = useState<AdmissionFormState>(DEFAULT_ADMISSION_FORM);
+  const [admissionError, setAdmissionError] = useState('');
+  const [admissionSuccess, setAdmissionSuccess] = useState('');
+  const [isSubmittingAdmission, setIsSubmittingAdmission] = useState(false);
 
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -163,7 +217,42 @@ export default function EnrollmentsPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const filteredStudents = STUDENTS_LIST.filter((stu) => {
+  useEffect(() => {
+    if (!isAdmissionModalOpen) return;
+
+    let cancelled = false;
+    async function loadClassrooms() {
+      try {
+        const response = await fetch('/api/education/courses');
+        const data = await response.json();
+        if (cancelled || !data?.success) return;
+
+        const loadedClassrooms: ClassroomOption[] = (data.classrooms || []).map((item: ClassroomOption) => ({
+          id: item.id,
+          code: item.code,
+          name: item.name,
+          grade: item.grade,
+        }));
+
+        setClassrooms(loadedClassrooms);
+        setAdmissionForm((current) => ({
+          ...current,
+          courseId: current.courseId || loadedClassrooms[0]?.id || '',
+        }));
+      } catch {
+        if (!cancelled) {
+          setAdmissionError('Không tải được danh sách lớp. Vui lòng thử lại.');
+        }
+      }
+    }
+
+    loadClassrooms();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmissionModalOpen]);
+
+  const filteredStudents = students.filter((stu) => {
     const matchesSearch = stu.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           stu.nickname.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           stu.parentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -176,6 +265,85 @@ export default function EnrollmentsPage() {
     if (selectedStatusTab === 'healthAlert') return matchesSearch && stu.hasHealthAlert;
     return matchesSearch;
   });
+
+  function openAdmissionModal() {
+    setAdmissionForm(DEFAULT_ADMISSION_FORM);
+    setAdmissionError('');
+    setAdmissionSuccess('');
+    setModalStep(1);
+    setIsAdmissionModalOpen(true);
+  }
+
+  function updateAdmissionForm<K extends keyof AdmissionFormState>(field: K, value: AdmissionFormState[K]) {
+    setAdmissionForm((current) => ({ ...current, [field]: value }));
+    setAdmissionError('');
+  }
+
+  function formatAge(dateOfBirth: string): string {
+    const dob = new Date(dateOfBirth);
+    if (Number.isNaN(dob.getTime())) return 'Chưa rõ tuổi';
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const monthDelta = today.getMonth() - dob.getMonth();
+    if (monthDelta < 0 || (monthDelta === 0 && today.getDate() < dob.getDate())) {
+      age -= 1;
+    }
+    return `${Math.max(age, 0)} Tuổi`;
+  }
+
+  async function submitAdmission() {
+    setAdmissionError('');
+    setAdmissionSuccess('');
+
+    if (!admissionForm.childName.trim() || !admissionForm.dateOfBirth || !admissionForm.guardianName.trim() || !admissionForm.guardianPhone.trim() || !admissionForm.courseId) {
+      setAdmissionError('Vui lòng nhập đủ thông tin bắt buộc và chọn lớp.');
+      return;
+    }
+
+    setIsSubmittingAdmission(true);
+    try {
+      const response = await fetch('/api/education/enrollments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(admissionForm),
+      });
+      const data = (await response.json()) as AdmissionResponse;
+
+      if (!response.ok || !data.success || !data.student || !data.enrollment) {
+        throw new Error(data.error || 'Đăng ký nhập học chưa hoàn tất.');
+      }
+
+      const selectedClass = classrooms.find((item) => item.id === data.enrollment?.courseId);
+      const createdStudent: StudentItem = {
+        id: data.student.studentCode,
+        name: data.student.childName,
+        nickname: data.student.nickname || 'Chưa có',
+        dob: new Date(data.student.dateOfBirth).toLocaleDateString('vi-VN'),
+        age: formatAge(data.student.dateOfBirth),
+        gender: data.student.gender === 'female' ? 'Nữ' : data.student.gender === 'male' ? 'Nam' : 'Khác',
+        className: selectedClass ? `${selectedClass.name} — ${selectedClass.grade}` : data.enrollment.courseTitle,
+        parentName: data.student.guardianName,
+        parentPhone: data.student.guardianPhone,
+        hasHealthAlert: Boolean(data.student.medicalNote),
+        medicalNote: data.student.medicalNote || 'Chưa ghi nhận lưu ý y tế.',
+        status: data.enrollment.status === 'active' ? 'Đang Học' : 'Chờ Nhập Học',
+        statusKey: data.enrollment.status === 'active' ? 'active' : 'pending',
+        theme: {
+          avatarBg: 'bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300',
+          badgeBg: 'bg-sky-50 dark:bg-sky-950/60',
+          badgeText: 'text-sky-700 dark:text-sky-300 border-sky-200/60',
+        },
+      };
+
+      setStudents((current) => [createdStudent, ...current]);
+      setAdmissionSuccess(`Đã tạo học sinh ${data.student.studentCode} và enrollment ${data.enrollment.id}.`);
+      setIsAdmissionModalOpen(false);
+    } catch (error) {
+      setAdmissionError(error instanceof Error ? error.message : 'Đăng ký nhập học thất bại.');
+    } finally {
+      setIsSubmittingAdmission(false);
+    }
+  }
 
   return (
     <div className="w-full p-4 sm:p-6 lg:p-8 space-y-6 pb-12">
@@ -222,7 +390,7 @@ export default function EnrollmentsPage() {
 
             {/* Admission Workflow Button */}
             <button 
-              onClick={() => { setIsAdmissionModalOpen(true); setModalStep(1); }}
+              onClick={openAdmissionModal}
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 text-xs font-bold shadow-lg shadow-emerald-500/20 transition-all active:scale-95 cursor-pointer"
             >
               <UserPlus className="w-4 h-4" />
@@ -253,7 +421,7 @@ export default function EnrollmentsPage() {
                   : 'bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
               }`}
             >
-              Tất cả trẻ ({STUDENTS_LIST.length})
+              Tất cả trẻ ({students.length})
             </button>
             <button 
               onClick={() => setSelectedStatusTab('active')}
@@ -447,7 +615,7 @@ export default function EnrollmentsPage() {
             {/* Modal Header */}
             <div className="space-y-1">
               <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                Quy trình đăng ký nhập học • Bước {modalStep}/3
+                Quy trình đăng ký nhập học • Bước {modalStep}/2
               </span>
               <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
                 Đăng Ký Hồ Sơ Nhập Học Mới
@@ -467,6 +635,8 @@ export default function EnrollmentsPage() {
                     </label>
                     <input
                       type="text"
+                      value={admissionForm.childName}
+                      onChange={(event) => updateAdmissionForm('childName', event.target.value)}
                       placeholder="VD: Lê Hoàng Nam"
                       className="w-full p-3 text-xs rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500"
                     />
@@ -477,6 +647,8 @@ export default function EnrollmentsPage() {
                     </label>
                     <input
                       type="text"
+                      value={admissionForm.nickname}
+                      onChange={(event) => updateAdmissionForm('nickname', event.target.value)}
                       placeholder="VD: Bé Tôm"
                       className="w-full p-3 text-xs rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500"
                     />
@@ -490,7 +662,8 @@ export default function EnrollmentsPage() {
                     </label>
                     <input
                       type="date"
-                      defaultValue="2023-06-15"
+                      value={admissionForm.dateOfBirth}
+                      onChange={(event) => updateAdmissionForm('dateOfBirth', event.target.value)}
                       className="w-full p-3 text-xs rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500"
                     />
                   </div>
@@ -498,7 +671,11 @@ export default function EnrollmentsPage() {
                     <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
                       Giới tính
                     </label>
-                    <select className="w-full p-3 text-xs rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500">
+                    <select
+                      value={admissionForm.gender}
+                      onChange={(event) => updateAdmissionForm('gender', event.target.value as AdmissionFormState['gender'])}
+                      className="w-full p-3 text-xs rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500"
+                    >
                       <option>Nam</option>
                       <option>Nữ</option>
                     </select>
@@ -517,6 +694,8 @@ export default function EnrollmentsPage() {
                     </label>
                     <input
                       type="text"
+                      value={admissionForm.guardianName}
+                      onChange={(event) => updateAdmissionForm('guardianName', event.target.value)}
                       placeholder="VD: Lê Văn Thành (Bố)"
                       className="w-full p-3 text-xs rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500"
                     />
@@ -527,6 +706,8 @@ export default function EnrollmentsPage() {
                     </label>
                     <input
                       type="text"
+                      value={admissionForm.guardianPhone}
+                      onChange={(event) => updateAdmissionForm('guardianPhone', event.target.value)}
                       placeholder="VD: 0989 112 334"
                       className="w-full p-3 text-xs rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500"
                     />
@@ -539,20 +720,55 @@ export default function EnrollmentsPage() {
                   </label>
                   <textarea
                     rows={2}
+                    value={admissionForm.medicalNote}
+                    onChange={(event) => updateAdmissionForm('medicalNote', event.target.value)}
                     placeholder="VD: Dị ứng sữa bò, cần dùng sữa hạt thay thế."
                     className="w-full p-3 text-xs rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
 
+                <div>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
+                    Lớp nhập học *
+                  </label>
+                  <select
+                    value={admissionForm.courseId}
+                    onChange={(event) => updateAdmissionForm('courseId', event.target.value)}
+                    className="w-full p-3 text-xs rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500"
+                  >
+                    {classrooms.length === 0 ? (
+                      <option value="">Chưa có lớp active để chọn</option>
+                    ) : (
+                      classrooms.map((classroom) => (
+                        <option key={classroom.id} value={classroom.id}>
+                          {classroom.name} • {classroom.grade}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+
                 <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/60 text-xs space-y-1">
                   <span className="font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
                     <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                    Kiểm tra hồ sơ hợp lệ:
+                    Kiểm tra hồ sơ trước khi ghi nhận:
                   </span>
                   <p className="text-emerald-700 dark:text-emerald-400 text-[11px]">
-                    ✓ Mã học sinh tự động sinh: STU-005 • Đạt tiêu chuẩn phân lớp Khối Mầm.
+                    Mã học sinh sẽ được sinh trên server. Hệ thống chỉ báo hoàn tất sau khi enrollment được ghi và đọc lại từ database.
                   </p>
                 </div>
+              </div>
+            )}
+
+            {admissionError && (
+              <div className="rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200/70 dark:border-rose-900/70 px-4 py-3 text-xs font-bold text-rose-700 dark:text-rose-300">
+                {admissionError}
+              </div>
+            )}
+
+            {admissionSuccess && (
+              <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/70 dark:border-emerald-900/70 px-4 py-3 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                {admissionSuccess}
               </div>
             )}
 
@@ -578,11 +794,12 @@ export default function EnrollmentsPage() {
               ) : (
                 <button
                   type="button"
-                  onClick={() => setIsAdmissionModalOpen(false)}
-                  className="px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+                  onClick={submitAdmission}
+                  disabled={isSubmittingAdmission}
+                  className="px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-400 text-white font-bold text-xs shadow-md transition-all cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5"
                 >
-                  <Check className="w-4 h-4" />
-                  <span>Hoàn Tất Đăng Ký Nhập Học</span>
+                  {isSubmittingAdmission ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                  <span>{isSubmittingAdmission ? 'Đang ghi nhận...' : 'Hoàn Tất Đăng Ký Nhập Học'}</span>
                 </button>
               )}
             </div>

@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server';
+import { createClient as createSupabaseClient, type SupabaseClient } from '@supabase/supabase-js';
+import { getLocalDateString } from '@bella/shared';
 import { createClient } from '@/lib/supabase-server';
+import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
 import { TeacherAssignmentContractImpl } from '@/platform/education/contracts/teacher-assignment.contract.impl';
+import { getCurrentUser } from '@/services/user-actions';
+import type { Database } from '@/types/database.types';
+
+type EducationCoursesClient = SupabaseClient<Database>;
+const ROSTER_ENROLLMENT_STATUSES = ['active', 'pending'] as const;
 
 export interface ClassroomOverviewItem {
   id: string;
@@ -24,11 +32,48 @@ export interface ClassroomOverviewItem {
   };
 }
 
+function getDevMockEmail(request: Request): string {
+  if (process.env.NODE_ENV !== 'development') return '';
+  return request.headers.get('x-mock-user-email')?.trim() ?? '';
+}
+
+function createDevMockClient(mockEmail: string): EducationCoursesClient | null {
+  if (!mockEmail) return null;
+  const adminUrl = getSupabaseAdminUrl();
+  const adminKey = getSupabaseAdminKey();
+  if (!adminUrl || !adminKey) return null;
+
+  return createSupabaseClient<Database>(adminUrl, adminKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+async function getTenantIdForCourses(
+  supabase: EducationCoursesClient,
+  request: Request,
+): Promise<string> {
+  const { searchParams } = new URL(request.url);
+  const explicitTenantId = searchParams.get('tenantId');
+  if (explicitTenantId) return explicitTenantId;
+
+  const mockEmail = getDevMockEmail(request);
+  if (mockEmail) {
+    const { data: mockUser } = await supabase
+      .from('users')
+      .select('tenant_id')
+      .eq('email', mockEmail)
+      .maybeSingle();
+    if (mockUser?.tenant_id) return mockUser.tenant_id;
+  }
+
+  const currentUser = await getCurrentUser();
+  return currentUser?.tenant_id || '00000000-0000-0000-0000-000000000001';
+}
+
 export async function GET(request: Request) {
   try {
-    const supabase = await createClient();
-    const { searchParams } = new URL(request.url);
-    const tenantId = searchParams.get('tenantId') || '00000000-0000-0000-0000-000000000001';
+    const supabase = createDevMockClient(getDevMockEmail(request)) ?? await createClient();
+    const tenantId = await getTenantIdForCourses(supabase, request);
 
     // 1. Fetch courses from DB
     const { data: dbCourses, error: courseErr } = await supabase
@@ -73,13 +118,13 @@ export async function GET(request: Request) {
           .join(' & ');
       }
 
-      // Count active enrollments for capacity
+      // Count canonical active enrollments for capacity.
       const { count: studentCount } = await supabase
-        .from('enrollments')
+        .from('edu_enrollments')
         .select('*', { count: 'exact', head: true })
         .eq('course_id', course.course_id)
         .eq('tenant_id', tenantId)
-        .in('status', ['active', 'pending']);
+        .in('status', [...ROSTER_ENROLLMENT_STATUSES]);
 
       // Grade key mapping from course_code or course_name
       let gradeKey: 'mam' | 'choi' | 'la' | 'nursery' = 'mam';
@@ -90,6 +135,27 @@ export async function GET(request: Request) {
 
       const currentStudents = studentCount || 0;
       const maxCap = course.duration_weeks || 25; // using duration_weeks or fallback 25 for max capacity
+      const today = getLocalDateString(new Date());
+      const { data: enrollmentRows } = await supabase
+        .from('edu_enrollments')
+        .select('id')
+        .eq('course_id', course.course_id)
+        .eq('tenant_id', tenantId)
+        .in('status', [...ROSTER_ENROLLMENT_STATUSES]);
+
+      const enrollmentIds = (enrollmentRows || []).map((enrollment) => enrollment.id);
+      const { data: todayStates } = enrollmentIds.length > 0
+        ? await supabase
+          .from('edu_attendance_daily_state')
+          .select('status')
+          .eq('tenant_id', tenantId)
+          .eq('school_day', today)
+          .in('enrollment_id', enrollmentIds)
+        : { data: [] };
+
+      const presentCount = (todayStates || []).filter((state) => state.status === 'present').length;
+      const excusedCount = (todayStates || []).filter((state) => state.status === 'excused').length;
+      const markedCount = todayStates?.length || 0;
 
       classrooms.push({
         id: course.course_id,
@@ -106,10 +172,10 @@ export async function GET(request: Request) {
         focus: 'Phát triển Kỹ năng & Vận động',
         status: course.status === 'active' ? 'active' : 'inactive',
         todayStatus: {
-          present: Math.min(currentStudents, Math.max(0, currentStudents - 2)),
-          excused: Math.min(2, currentStudents),
-          unmarked: 0,
-          healthAlerts: 1,
+          present: presentCount,
+          excused: excusedCount,
+          unmarked: Math.max(0, currentStudents - markedCount),
+          healthAlerts: 0,
         },
       });
     }

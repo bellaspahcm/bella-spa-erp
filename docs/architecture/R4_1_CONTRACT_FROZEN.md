@@ -18,14 +18,17 @@ The R4.1 Approval Contract Specification is hereby **FROZEN** and ready for impl
 
 **Core fields:**
 - Identity: `approval_id`, `migration_id`, `migration_hash`
-- Authorization: `requester_id`, `approver_id`, `approver_role`, `approved_at`
+- Authorization: `approval_mode`, `requester_id`, `approver_id`, `approver_role`, `approved_at`
 - Scope: `target_environment`, `target_schema`, `expires_at`
 - State: `status`, `used_at`, `used_by`
 - Integrity: `approval_hash`
 
 **Database constraint:**
 ```sql
-CONSTRAINT no_self_approval CHECK (requester_id <> approver_id)
+  CONSTRAINT no_self_approval CHECK (
+    (approval_mode = 'separated' AND requester_id <> approver_id)
+    OR approval_mode = 'owner_operated'
+  )
 ```
 
 ---
@@ -34,7 +37,7 @@ CONSTRAINT no_self_approval CHECK (requester_id <> approver_id)
 
 | ID | Invariant | Enforcement |
 |----|-----------|-------------|
-| I0 | No Self-Approval | requester_id ≠ approver_id |
+| I0 | Approval Mode | `separated`: requester_id ≠ approver_id; `owner_operated`: same owner identity allowed |
 | I1 | Migration Binding | approved_hash == executing_hash |
 | I2 | Scope Binding | All scope components match |
 | I3 | Single-Use | Atomic status update |
@@ -72,8 +75,10 @@ INSERT INTO bella_migration_approval (status, ...) VALUES ('approved', ...);
 
 **D2: Approval Creation**
 - Decision: Two-phase (REQUEST → APPROVE)
-- Enforcement: `requester_id ≠ approver_id`
-- Rationale: Prevents self-approval bypass
+- Enforcement:
+  - `separated`: `requester_id ≠ approver_id`
+  - `owner_operated`: one authorized owner may request and approve for Bella's one-person company model
+- Rationale: Preserve explicit approval while supporting owner-operated production governance without fake identities.
 
 **D3: Emergency Override**
 - Decision: Dedicated emergency authorization path
@@ -90,7 +95,7 @@ INSERT INTO bella_migration_approval (status, ...) VALUES ('approved', ...);
 
 **12 test cases:**
 1. No approval → BLOCK
-2. Self-approval → BLOCK
+2. Self-approval without explicit owner-operated mode → BLOCK
 3. Hash mismatch → BLOCK
 4. Wrong environment → BLOCK
 5. Wrong schema → BLOCK
@@ -109,9 +114,9 @@ INSERT INTO bella_migration_approval (status, ...) VALUES ('approved', ...);
 ### Cannot Be Changed Without Unfreeze
 
 1. Contract schema fields
-2. Eight invariants (I0-I7)
+2. Eight invariants (I0-I7), including the two explicit approval modes
 3. Two-phase workflow requirement
-4. `no_self_approval` constraint
+4. Conditional `no_self_approval` constraint
 5. Negative test matrix
 
 ### Can Be Extended
@@ -135,7 +140,7 @@ INSERT INTO bella_migration_approval (status, ...) VALUES ('approved', ...);
 
 ### Implementation Constraints
 
-1. **MUST check I0 first:** `requester_id ≠ approver_id`
+1. **MUST check I0 first:** approval mode validity and self-approval rule
 2. **MUST verify hash:** `approved_hash == executing_hash`
 3. **MUST be atomic:** Status update uses `WHERE status = 'approved'`
 4. **MUST generate evidence:** Every BLOCK includes reason + evidence
@@ -162,9 +167,9 @@ Contract frozen → Implementation can begin
 
 ## 🔐 SECURITY GUARANTEES (FROM CONTRACT)
 
-### G1: No Self-Approval
+### G1: Explicit Approval Mode
 
-Developer cannot approve their own migration (I0 + database constraint).
+Separated approvals cannot self-approve. Owner-operated approvals are explicit and still require all hash, scope, expiry, token, executor and audit controls.
 
 ### G2: No Approval Forgery
 

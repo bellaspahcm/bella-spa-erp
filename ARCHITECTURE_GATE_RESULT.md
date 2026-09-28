@@ -1,652 +1,1626 @@
-# ARCHITECTURE GATE RESULT - BELLA HAIRCUT FINISH PAYROLL CONNECTION
+# ARCHITECTURE GATE RESULT - PRESCHOOL P7 TUITION RECOGNITION POLICY FOUNDATION
 
-> **Status:** PASS - minimum payroll connection repair and one real verification
+> **Status:** PASS - decouple invoice issuance from tuition service recognition and add Product-owned PERIOD_COMPLETION policy foundation
 > **Date:** 2026-09-28
-> **Scope:** Payroll config read boundary plus salary dashboard persisted-truth display
+> **Scope:** Preschool Product P7 recognition boundary only; no Finance OS, TT99 mapping, payment, prepayment, 3387, refund, tax, e-invoice, or browser/production mutation
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+The proven blocker is a business-boundary mismatch: Preschool invoice issuance is not proof that tuition service has been performed. Gate decision: `PASS` for the smallest Product-owned correction that removes direct recognition from `InvoiceIssuanceService`, records tenant/effective-dated recognition policy vocabulary, records explicit service-period completion evidence, and emits Finance OS `TUITION_SERVICE_RECOGNIZED` only through a separate PERIOD_COMPLETION service.
+
+## 2. Product Manifest
+
+In scope:
+- Preschool Product policy vocabulary: `PERIOD_COMPLETION`, `TIME_BASED`, `MILESTONE_EVENT`.
+- Runtime execution for `PERIOD_COMPLETION` only.
+- Explicit tuition service-period completion evidence.
+- Tuition-only eligible amount guard.
+- Reuse of sealed Finance OS semantic receivable contract after Preschool proves recognition eligibility.
+
+Out of scope:
+- Payment, prepayment, `111/112`, `3387`, refund, discount accounting, tax, VAT, e-invoice.
+- Finance OS, TT99, 131/511, accounting periods, or semantic mapping changes.
+- `TIME_BASED` or `MILESTONE_EVENT` execution.
+- Generic policy framework or `edu_fin_*` cleanup.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Role |
+|---|---|---|
+| `edu_fin_invoices` | Preschool Product Finance | Billing/invoice workflow state, not service-performance proof |
+| `edu_fin_tuition_recognition_policies` | Preschool Product Finance | Tenant/effective-dated recognition policy vocabulary |
+| `edu_fin_tuition_service_period_completions` | Preschool Product Finance | Explicit completion evidence for PERIOD_COMPLETION |
+| `TUITION_SERVICE_RECOGNIZED` | Finance OS | Accounting execution after valid business semantic arrives |
+
+## 4. Contract Dependency Map
+
+```text
+Invoice issuance
+        ↓
+Preschool invoice state only
+
+Explicit service-period completion
+        ↓
+Tenant effective-dated recognition policy
+        ↓
+PERIOD_COMPLETION recognition service
+        ↓
+TUITION_SERVICE_RECOGNIZED
+        ↓
+Finance OS semantic receivable path
+```
+
+## 5. Change Authority
+
+Authorized:
+- Preschool Product Finance invoice issuance decoupling.
+- Additive Preschool Product finance policy/completion tables.
+- Separate Product-owned recognition service for PERIOD_COMPLETION only.
+- Focused regression tests and this gate record.
+
+Not authorized:
+- Finance OS changes.
+- Payment/prepayment/accounting slices.
+- Generic policy framework.
+- Production policy/config/completion creation.
+
+## 6. UI -> Contract Reconciliation
+
+No UI redesign. Existing invoice issue action remains a billing workflow action and must not claim revenue/service recognition.
+
+## 7. Additive Migration Plan
+
+One additive migration:
+
+```text
+supabase/migrations/20260928000000_preschool_tuition_recognition_policy_foundation.sql
+```
+
+It creates only Product-owned tuition recognition policy and service-period completion evidence tables plus tenant RLS/overlap guard.
+
+## 8. Verification Plan
+
+- Focused Jest proves invoice issuance emits zero Finance recognition.
+- PERIOD_COMPLETION fails closed without completion evidence.
+- Valid completion + effective policy emits one Finance semantic request.
+- No policy, overlapping policy, unsupported policy types, cross-tenant invoice scope, and non-tuition amount all fail closed.
+- Scoped ESLint, `git diff --check`, and one `typecheck:changed` attempt.
+
+Gate result: `PASS`.
+
+---
+
+# ARCHITECTURE GATE RESULT - PRESCHOOL P7 BILLING PERIOD PROVENANCE FIX
+
+> **Status:** PASS - remove hardcoded September 2026 billing-period provenance from Preschool P7 invoice compilation
+> **Date:** 2026-09-28
+> **Scope:** Preschool Product P7 invoice compile API/UI only; no Finance OS, payment, accounting policy, runtime config, or production data mutation
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+The proven blocker is `BLOCKED_BY_HARDCODED_BILLING_PERIOD_PROVENANCE`: the P7 finance API manufactured a September 2026 billing period from source-code constants before invoice compilation. Gate decision: `PASS` for the smallest Product-owned consumer fix that requires a tenant-scoped `billingPeriodId` and derives invoice due date from the persisted P7 billing period.
+
+## 2. Product Manifest
+
+In scope:
+- Preschool Product Finance API `compileDraftInvoice`.
+- Preschool Finance UI billing-period selection.
+- Existing `edu_fin_billing_periods` repository contract.
+- Focused provenance regression tests.
+
+Out of scope:
+- Creating fee structures, billing periods, invoices, or Finance periods.
+- Finance kernel, TT99, account mapping, payments, 3387, refund, tax, VAT, e-invoice.
+- Generic billing configuration framework or legacy `edu_fin_*` cleanup.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Role |
+|---|---|---|
+| `edu_fin_billing_periods` | Preschool Product Finance | Product billing-period configuration |
+| `edu_fin_invoices` | Preschool Product Finance | Product invoice workflow/read model |
+| Finance OS semantic receivable contract | Finance OS | Downstream accounting recognition boundary |
+
+## 4. Contract Dependency Map
+
+```text
+Preschool operator selects configured billingPeriodId
+        ↓
+API resolves tenant-scoped edu_fin_billing_periods row
+        ↓
+TuitionBillingService.compileDraftInvoice
+        ↓
+Invoice dueDate comes from persisted billing period
+        ↓
+Later issueInvoice may recognize tuition through Finance OS
+```
+
+## 5. Change Authority
+
+Authorized:
+- Remove source-code billing-period/date hardcodes from Preschool Product API/UI.
+- Require tenant-scoped billing-period lookup for invoice compilation.
+- Add focused regression tests and gate record.
+
+Not authorized:
+- Finance OS changes.
+- Runtime setup or production data mutation.
+- New billing framework or accounting policy.
+
+## 6. UI -> Contract Reconciliation
+
+The staff billing UI previously collected only student and a due-date field while the API supplied the billing period. The corrected UI consumes real active billing periods from the API and sends only the selected `billingPeriodId`; source-code dates no longer create business truth.
+
+## 7. Additive Migration Plan
+
+No migration. This is a Product API/UI consumer correction over existing P7 tables.
+
+## 8. Verification Plan
+
+- Focused static provenance tests prove the route no longer contains September 2026 constants or `createBillingPeriod`.
+- API guard test proves invoice compilation requires `billingPeriodId`, tenant-scoped lookup, active status, and due date from the persisted period.
+- Existing tuition recognition test proves Finance connector dates come from billing-period fields rather than source-code September constants.
+- Scoped ESLint and `git diff --check`.
+
+Gate result: `PASS`.
+
+---
+
+# ARCHITECTURE GATE RESULT - PRESCHOOL P7 FINANCE OS TUITION RECOGNITION CONNECTION
+
+> **Status:** PASS - connect Preschool P7 issued tuition invoice to sealed Finance OS semantic receivable path
+> **Date:** 2026-09-28
+> **Scope:** Preschool Product P7 -> Finance OS `TUITION_SERVICE_RECOGNIZED` only; no payment, 3387, refund, discount, tax, e-invoice, or `edu_fin_*` cleanup
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+The sealed Finance OS milestone proves `TUITION_SERVICE_RECOGNIZED -> TRADE_RECEIVABLE 131 / SERVICE_REVENUE 511 -> F1 ledger + F3 AR` with recovery and idempotency. The current Preschool blocker is a stale P7 consumer: issuing a Preschool invoice updates `edu_fin_invoices` but does not cross the Finance OS semantic boundary. Gate decision: `PASS` for the smallest Product-owned connector that sends issued tuition-only invoices to the sealed Finance OS semantic receivable contract.
+
+## 2. Product Manifest
+
+In scope:
+- Preschool Product invoice issuance path.
+- Reuse existing `SemanticReceivableChargeService` and `SupabaseReceivableChargeGateway`.
+- Source identity: `PRESCHOOL_P7_TUITION_INVOICE` + `edu_fin_invoices.id`.
+- Canonical student identity: `edu_fin_invoices.student_party_id`.
+- Billing period dates as service period and recognition date.
+- Fail-closed for non-tuition invoice lines so meal/discount/tax are not silently posted.
+
+Out of scope:
+- Payment, cash, `111/112`, customer advance, `3387`, refund, discount, tax, VAT, e-invoice.
+- Deleting or refactoring `edu_fin_*`.
+- New Finance kernel, Billing kernel, or generic integration framework.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `edu_fin_invoices` | Preschool Product Finance | Product invoice workflow/read model |
+| `TUITION_SERVICE_RECOGNIZED` contract | Finance OS | Canonical business semantic for recognized service receivable |
+| `finance_invoices` / `finance_transactions` / AR | Finance OS | Canonical financial truth |
+
+## 4. Contract Dependency Map
+
+```text
+Preschool P7 issueInvoice
+        ↓
+edu_fin_invoices(student_party_id, tuition line, billing period)
+        ↓
+Finance OS semantic receivable contract
+        ↓
+TRADE_RECEIVABLE / SERVICE_REVENUE
+        ↓
+131 / 511
+        ↓
+Finance invoice + ledger + AR position
+```
+
+P7 does not supply account code, chart-of-account regime, tax treatment, or payment semantics.
+
+## 5. Change Authority
+
+Authorized:
+- Preschool Product Finance issuance service.
+- Preschool Product Finance API service construction.
+- Tenant-scoped repository read for billing period.
+- Focused service tests and this architecture gate artifact.
+
+Not authorized:
+- Finance kernel/accounting policy changes.
+- Education Kernel changes.
+- `edu_fin_*` cleanup or broad migration/RLS work.
+- Payment/refund/discount/tax/e-invoice implementation.
+
+## 6. UI -> Contract Reconciliation
+
+No UI redesign. Existing UI `issueInvoice` action should now be truthful: success requires the Product invoice issuance service to invoke Finance OS recognition when configured by the server API.
+
+## 7. Additive Migration Plan
+
+No migration. This connector consumes already deployed P7 and Finance OS contracts.
+
+## 8. Verification Plan
+
+- Focused service tests prove tuition-only issuance calls Finance OS semantic contract.
+- Recovery/idempotency: already issued P7 invoice still calls Finance OS by same business source.
+- Unsupported non-tuition lines fail closed before P7 status update.
+- Existing canonical student connection tests remain green.
+- Scoped ESLint/diff check.
+
+Gate result: `PASS`.
+
+---
+
+# ARCHITECTURE GATE RESULT - FINANCE OS TT99 SLICE 1 ACCOUNTING ACTIVATION
+
+> **Status:** PASS - TT99 Slice 1 accounting policy proven for tuition service recognition and target-tenant semantic mapping activation
+> **Date:** 2026-09-27
+> **Scope:** Finance OS `TUITION_SERVICE_RECOGNIZED` receivable contract + TT99 Slice 1 semantic mappings only; no Preschool connector, no payment, no 3387, no tax, no e-invoice
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+The proven blocker is not Preschool Finance UI logic. The Finance OS F3 AR kernel already supports draft invoice, invoice line, finalization, F1 transaction posting, AR ledger, and AR position creation, but the public usable path still requires callers to supply `revenue_account_code`. Under the Accounting Legal-Source Rule, the owner has now provided an authoritative accounting specification for Slice 1 only: `TUITION_SERVICE_RECOGNIZED`, where the education service obligation has already been performed and the amount is eligible for accounting revenue recognition under TT99-effective 2026 enterprise accounting. Gate decision: `PASS` for a Finance-owned contract that maps that semantic to `TRADE_RECEIVABLE -> 131` and `SERVICE_REVENUE -> 511` through Finance-owned, source-backed semantic GL mappings.
+
+## 2. Product Manifest
+
+In scope:
+- Finance OS public contract for a semantic receivable charge.
+- Finance-owned service/facade that creates/finalizes one AR invoice through existing F3 RPCs.
+- Finance-owned implementation of only the accounting mappings specified by authoritative evidence: `TRADE_RECEIVABLE` and `SERVICE_REVENUE`.
+- Forward-only activation of the minimum proven TT99 Slice 1 accounts and semantic mappings for the isolated Preschool browser-smoke tenant.
+- Idempotency based on Finance-owned source identity.
+- Focused tests proving account-code-free caller contract and AR RPC orchestration.
+
+Out of scope:
+- Preschool connector/payment implementation.
+- P7 `edu_fin_*` runtime changes.
+- TT133, TT200, or full TT99 regime engine.
+- Customer advance / 3387 / payment / refund / tax / e-invoice treatment.
+- New payment allocation flow.
+- New Billing Kernel redesign.
+- Broad Finance RLS/migration repair.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| semantic receivable charge contract | Finance OS | Vertical-neutral request to recognize a receivable charge |
+| semantic GL mapping | Finance OS / authoritative accounting specification | Internal account code selection by semantic and effective date; never vertical supplied and never AI-guessed |
+| `finance_invoices` / `finance_invoice_lines` | Finance F3 AR | Canonical invoice header and lines |
+| `finance_transactions` / `finance_transaction_lines` | Finance F1 Ledger | Posted accounting transaction |
+| `finance_receivable_ledger` / `finance_receivable_positions` | Finance F3 AR | AR subledger fact and derived position |
+
+## 4. Contract Dependency Map
+
+```text
+Vertical/Product semantic charge
+        ↓
+Finance OS semantic receivable charge contract
+        ↓
+Finance-owned semantic GL mapping as of recognition date
+        ↓
+finance_create_draft_invoice
+        ↓
+finance_add_invoice_line
+        ↓
+finance_finalize_invoice
+        ↓
+finance_post_transaction
+        ↓
+finance_transactions + finance_receivable_ledger + finance_receivable_positions
+```
+
+The product/vertical caller must not provide `revenue_account_code`, account code, chart-of-account regime, or TT policy.
+
+## 5. Change Authority
+
+Authorized:
+- Finance OS contract/service files for `TUITION_SERVICE_RECOGNIZED`.
+- Finance-owned semantic GL mapping resolution for `TRADE_RECEIVABLE` and `SERVICE_REVENUE`.
+- Finance-owned runtime migration for effective-dated semantic mapping resolution and target-tenant TT99 Slice 1 activation.
+- Focused Finance OS tests for semantic input, account-code-free caller boundary, posting orchestration, and idempotency.
+- This architecture gate artifact.
+
+Not authorized:
+- Education Kernel changes.
+- Preschool Finance connector/payment path.
+- Existing P7 product runtime changes.
+- Regime-specific chart-of-accounts policy beyond Slice 1 proven semantics.
+- Historical migration rewrite or migration-history repair.
+
+## 6. UI -> Contract Reconciliation
+
+No UI change in this gate. The stale consumer is any vertical that would otherwise call F3 AR RPCs directly and supply account codes. The canonical contract is now Finance OS semantic charge input.
+
+## 7. Additive Migration Plan
+
+One forward-only migration is required:
+
+```text
+supabase/migrations/20260927080000_finance_tt99_slice1_accounting_activation.sql
+```
+
+The migration:
+- reuses `public.finance_control_account_mappings` as the Finance-owned semantic mapping storage;
+- adds effective-date and authority metadata only if missing;
+- replaces the semantic mapping RPCs so unsupported semantics fail closed;
+- activates only target tenant account `131` and account `511`;
+- saves `TRADE_RECEIVABLE -> 131` and `SERVICE_REVENUE -> 511` effective `2026-01-01`;
+- does not seed a full chart of accounts, activate `5111`, post tuition, connect Preschool, or touch other tenants.
+
+Post-deploy verification found a narrow PostgREST overload ambiguity between the repo-owned `uuid, varchar, date, varchar` RPC signature and an older `uuid, text, date, text` signature. A follow-up migration may drop only the obsolete `text` overload:
+
+```text
+supabase/migrations/20260927081000_finance_drop_legacy_semantic_gl_text_overload.sql
+```
+
+This follow-up does not alter accounts, mappings, COA data, accounting semantics, invoices, journals, or AR state.
+
+The runtime must refuse to post if the required semantic mappings are absent or not marked as proven for `VI_TT99_2025|99/2025/TT-BTC|PROVEN`.
+
+## 8. 11 Automated Verification Gates Plan
+
+- Gate 1 Architecture Compliance: Finance OS files only.
+- Gate 2 Contract Boundary: vertical request contains semantic charge only; no account code.
+- Gate 3 Tenant Isolation: tenant id is required and passed through every F3 RPC/query.
+- Gate 4 RLS & Authorization: no RLS change; existing F3 RPC privileges unchanged.
+- Gate 5 Database Migration Safety: one bounded forward-only Finance migration; no historical migration rewrite.
+- Gate 6 Event-After-Persistence: no new event path.
+- Gate 7 Academic Safety Routing: not applicable.
+- Gate 8 Temporal Provenance: semantic GL mapping is effective-date aware.
+- Gate 9 Rule Governance: accounting regime and posting rule are source-backed for Slice 1 only.
+- Gate 10 Audit Evidence Integrity: F3/F1 idempotency and request hash preserved.
+- Gate 11 Platform Regression: focused Finance OS tests, scoped lint, scoped TypeScript, `git diff --check`.
+
+Gate result: `PASS`.
+
+---
+
+# ARCHITECTURE GATE RESULT - PRESCHOOL FINANCE TENANT + ACTOR AUTHORIZATION
+
+> **Status:** PASS - bounded Preschool Product Finance server authorization boundary
+> **Date:** 2026-09-27
+> **Scope:** F2 active finance UI/API path only; no Finance RLS hardening, no billing redesign, no browser field verification
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+F1 cut over Preschool Finance identity to canonical `student_party_id`. The next proven blocker is that the active Finance UI still supplies hardcoded tenant/staff/parent IDs from the browser. Gate decision: `PASS` for the smallest server boundary that derives tenant and actor from the authenticated session, permits only existing Bella finance roles, and preserves P7 fee/invoice/payment/reconciliation semantics.
+
+## 2. Product Manifest
+
+In scope:
+- Preschool Product Finance API boundary for active Finance page read/actions.
+- Finance page consumer change from direct Supabase/service calls to server API calls.
+- Role mapping for existing Bella roles `admin` and `accountant`.
+- Focused tests proving server-derived tenant/actor and parent denial.
+
+Out of scope:
+- Broad `edu_fin_*` RLS/grant remediation.
+- Generic authorization framework.
+- Finance/Billing Kernel redesign.
+- Browser field verification before F3 RLS hardening.
+- Parent Finance redesign or notification workflow expansion.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| authenticated user/session | Platform Auth / Bella user profile | Source for current user id, role, tenant |
+| `admin` / `accountant` user roles | Bella existing user model | Allowed active Preschool finance operators |
+| P7 Finance actions | Preschool Product Finance | Compile/issue invoices, payment reconciliation, finance projections |
+| `edu_fin_*` RLS policies | Preschool Product Finance / DB security | Deferred F3 hardening target |
+
+## 4. Contract Dependency Map
+
+```text
+Finance UI
+        ↓
+/api/education/finance
+        ↓
+getCurrentUser()
+        ↓
+server-derived tenant + actor + role
+        ↓
+P7 Finance services
+        ↓
+edu_fin_* canonical student_party_id rows
+```
+
+Client-supplied `tenantId`, `createdBy`, `payerPartyId`, or authorization status is not trusted.
+
+## 5. Change Authority
+
+Authorized:
+- Preschool Product Finance route/UI boundary.
+- Bounded finance authorization helper/service.
+- Directly affected finance service call signatures where actor/guardian derivation must move server-side.
+- Focused tests and this gate artifact.
+
+Not authorized:
+- Education Kernel changes.
+- Generic Auth/RBAC framework.
+- Broad RLS policy repair.
+- Migration history or BDGF work.
+
+## 6. UI -> Contract Reconciliation
+
+| UI element/action | Old authority | New authority | Conclusion |
+|---|---|---|---|
+| Finance data load | browser Supabase + hardcoded tenant | server API derives tenant from authenticated profile | STALE UI |
+| Draft invoice | browser sends `DEFAULT_TENANT_ID` / `DEFAULT_STAFF_ID` | server derives tenant/actor | STALE UI |
+| Issued notice projection | browser sends `DEFAULT_PARENT_ID` | server derives guardians via canonical `guardian_of` relationship | STALE UI |
+| Payment/reconciliation | browser sends payer/staff constants | server derives payer guardian and actor | STALE UI |
+
+## 7. Additive Migration Plan
+
+No migration in F2. Existing broad/permissive Finance RLS is recorded as F3:
+
+```text
+edu_fin_fee_structures
+edu_fin_billing_periods
+edu_fin_student_discount_profiles
+edu_fin_invoices
+edu_fin_invoice_line_items
+edu_fin_payments
+edu_fin_reconciliation_ledger
+edu_fin_receipts
+```
+
+## 8. 11 Automated Verification Gates Plan
+
+- Gate 1 Architecture Compliance: Preschool Product Finance only; no Education Kernel change.
+- Gate 2 Contract Boundary: API mediates UI to P7 services.
+- Gate 3 Tenant Isolation: server derives tenant and repository filters by tenant.
+- Gate 4 RLS & Authorization: app-layer roles `admin` and `accountant` allowed; `parent` denied; DB RLS hardening deferred to F3.
+- Gate 5 Database Migration Safety: no migration.
+- Gate 6 Event-After-Persistence: no new domain event.
+- Gate 7 Academic Safety Routing: not applicable.
+- Gate 8 Temporal Provenance: not applicable.
+- Gate 9 Rule Governance: not applicable.
+- Gate 10 Audit Evidence Integrity: existing invoice/receipt fingerprints preserved.
+- Gate 11 Platform Regression: F1/F2 focused tests, scoped ESLint, `git diff --check`.
+
+Gate result: `PASS`.
+
+---
+
+# ARCHITECTURE GATE RESULT - PRESCHOOL FINANCE CANONICAL STUDENT CONNECTION
+
+> **Status:** PASS - bounded Preschool Product cutover from legacy `student_id` to canonical `student_party_id`
+> **Date:** 2026-09-27
+> **Scope:** P7 Preschool Finance student identity only; no Billing Kernel redesign or broad RLS/auth repair
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+The sealed Preschool operational chain now creates canonical Student Parties through Enrollment. The next Market Ready blocker is that P7 Preschool Finance still selects and persists legacy `students.student_id`, while the real enrolled student identity is:
+
+```text
+edu_enrollments.student_party_id
+        ↓
+students.party_id
+        ↓
+party_parties.id
+```
+
+Gate decision: `PASS` for the smallest Preschool Product-owned finance cutover that writes and reads canonical `student_party_id` for new invoice/payment/discount operations while preserving legacy rows.
+
+## 2. Product Manifest
+
+In scope:
+- P7 finance domain types, repository, invoice compilation, inbound payment recording, issuance fingerprint identity, and the finance UI student selector/action path.
+- One additive migration on directly affected `edu_fin_*` tables.
+- Focused service/static tests proving canonical enrollment validation and legacy compatibility.
+
+Out of scope:
+- Generic Finance/Billing redesign.
+- Finance RLS/grant hardening.
+- Server auth/actor/tenant hardcode removal.
+- Parent Communication or Notice redesign beyond the directly affected finance projection belonging check.
+- Browser field verification before owner deployment.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `edu_enrollments.student_party_id` | Education Enrollment / Preschool consumer | Canonical enrolled student identity |
+| `party_parties.id` | Platform Party | Canonical Party identity |
+| `edu_fin_student_discount_profiles.student_party_id` | Preschool Product Finance | Canonical student identity for discounts |
+| `edu_fin_invoices.student_party_id` | Preschool Product Finance | Canonical student identity for invoices |
+| `edu_fin_payments.student_party_id` | Preschool Product Finance | Canonical student identity for payments |
+
+## 4. Contract Dependency Map
+
+```text
+Finance UI
+        ↓
+edu_enrollments(active/pending)
+        ↓
+Student Party
+        ↓
+P7 Finance services
+        ↓
+edu_fin_* rows keyed by student_party_id
+```
+
+Payer identity remains separate as `payer_party_id`.
+
+## 5. Change Authority
+
+Authorized:
+- Preschool Product finance code and UI path.
+- Additive/cutover migration on P7 finance tables.
+- Direct finance projection check required by issued-invoice notice creation.
+
+Not authorized:
+- Education Kernel changes.
+- Finance OS Kernel changes.
+- Generic billing engine rebuild.
+- Broad RLS/security remediation.
+
+## 6. UI -> Contract Reconciliation
+
+| UI element | Old source | New source | Conclusion |
+|---|---|---|---|
+| Student selector | `students.student_id` with hardcoded P7 fallback | `edu_enrollments.student_party_id -> party_parties` | CUT OVER |
+| Draft invoice action | legacy `studentId` | canonical `studentPartyId` | CUT OVER |
+| Payment action | invoice legacy student key | invoice canonical `studentPartyId` | CUT OVER |
+
+Known hardcoded tenant/staff/parent IDs remain a separate F2/auth-boundary finding and are not fixed in this F1 identity slice.
+
+## 7. Additive Migration Plan
+
+One migration:
+
+```text
+edu_fin_student_discount_profiles
+edu_fin_invoices
+edu_fin_payments
+  ADD student_party_id UUID REFERENCES party_parties(id)
+  ALTER student_id DROP NOT NULL
+  ADD CHECK (student_id IS NOT NULL OR student_party_id IS NOT NULL)
+  ADD tenant + student_party_id indexes
+```
+
+Legacy columns are preserved. No backfill, cleanup, RLS, grant, migration history, or data mutation is included.
+
+## 8. 11 Automated Verification Gates Plan
+
+- Gate 1 Architecture Compliance: Product-owned Preschool finance only; no Education/Finance Kernel change.
+- Gate 2 Contract Boundary: validate canonical enrollment before new finance obligation/payment creation.
+- Gate 3 Tenant Isolation: enrollment validation is scoped by tenant and `student_party_id`.
+- Gate 4 RLS & Authorization: no policy change in this slice; existing broad finance RLS is deferred.
+- Gate 5 Database Migration Safety: one bounded additive/cutover migration; no legacy drop/backfill.
+- Gate 6 Event-After-Persistence: not applicable; no domain event emitted.
+- Gate 7 Academic Safety Routing: not applicable.
+- Gate 8 Temporal Provenance: not applicable.
+- Gate 9 Rule Governance: not applicable.
+- Gate 10 Audit Evidence Integrity: invoice publication fingerprint uses canonical student identity.
+- Gate 11 Platform Regression: focused Preschool finance tests, scoped ESLint, `git diff --check`.
+
+Gate result: `PASS`.
+
+---
+
+# ARCHITECTURE GATE RESULT - PRESCHOOL PARENT USER ROLE ENABLEMENT
+
+> **Status:** PASS - minimum auth/profile contract amendment for legitimate parent accounts
+> **Date:** 2026-09-27
+> **Scope:** `public.users.users_role_check` only; prerequisite for Parent Daily browser field verification
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+The Parent Daily backend, canonical Guardian Party mapping, and focused access tests are implemented. Browser field verification is blocked because a real parent account cannot have a legitimate `public.users` profile:
+
+```text
+Supabase Auth user
+        ↓
+public.users profile
+        ↓
+users_role_check rejects 'parent'
+```
+
+Gate decision: `PASS` for the smallest database contract amendment that permits a `parent` actor without granting staff/admin authority.
+
+## 2. Product Manifest
+
+In scope:
+- Preserve all currently accepted `public.users.role` values.
+- Add exactly one canonical role: `parent`.
+- Keep role validation bounded by `users_role_check`.
+
+Out of scope:
+- Auth redesign, invitation workflow, password management, RBAC framework.
+- Staff/admin permission changes.
+- Parent Daily business semantics, Attendance, Daily Care, Handover, Guardian Authorization, Enrollment, R3, Course RLS.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `public.users.role` | Platform Auth/Profile | User profile role label used by app guards and tenant context |
+| `parent` | Preschool Product consumer of Platform profile | External guardian/parent login actor; not staff/admin |
+
+## 4. Contract Dependency Map
+
+```text
+Supabase Auth user
+        ↓
+public.users(role = parent, tenant_id, phone)
+        ↓
+Parent Daily access service
+        ↓
+party_identifiers(preschool_guardian_phone)
+        ↓
+Guardian Party
+        ↓
+party_relationships guardian_of
+        ↓
+Student Party
+```
+
+Pickup authorization remains excluded from parent data-access authority.
+
+## 5. Change Authority
+
+Authorized:
+- One bounded migration changing only `public.users.users_role_check`.
+- Focused static migration test and existing Parent Daily access tests.
+
+Not authorized:
+- Generic RBAC/permission engine.
+- Staff/admin route permission expansion.
+- Product workflow changes.
+
+## 6. UI -> Contract Reconciliation
+
+No UI change in this slice. This is a contract prerequisite for using a real parent browser session in the already implemented Parent Inbox.
+
+## 7. Additive Migration Plan
+
+One migration:
+
+```sql
+ALTER TABLE public.users DROP CONSTRAINT IF EXISTS users_role_check;
+ALTER TABLE public.users ADD CONSTRAINT users_role_check
+CHECK (role IN (... existing roles ..., 'parent'));
+```
+
+No RLS, policy, grant, profile data, or auth-user mutation.
+
+## 8. Verification Plan
+
+- Focused migration static test:
+  - existing roles remain valid
+  - `parent` is accepted
+  - arbitrary roles are not accepted
+  - validation is not weakened
+- Existing Parent Daily access tests still pass.
+- Scoped ESLint/diff check.
+
+Gate result: `PASS`.
+
+---
+
+# ARCHITECTURE GATE RESULT - PRESCHOOL PARENT DAILY EXPERIENCE
+
+> **Status:** PASS - complete parent daily view from canonical Preschool operational truth
+> **Date:** 2026-09-27
+> **Scope:** Parent daily read model, canonical guardian access, Parent Digest `student_party_id` cutover, `/dashboard/education/parent-inbox`
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+The sealed Preschool operational chain is:
+
+```text
+New Student -> Enrollment -> Classroom Roster -> Daily Attendance
+-> Daily Care -> Guardian Authorization -> Safe Pickup/Handover
+= FIELD VERIFIED
+```
+
+The next proven product blocker is:
+
+```text
+Parent Daily Experience = PARTIAL
+```
+
+Operational truth exists for Attendance, Daily Care, and Handover, but Parent Digest and Parent Inbox still consume legacy/static paths. Gate decision: `PASS` for the minimum Preschool Product connection that exposes today's real child-day truth to an authenticated canonical Guardian Party.
+
+## 2. Product Manifest (Capabilities & Scope)
+
+In scope:
+- Resolve authenticated user to Guardian Party using existing tenant-scoped guardian phone identifier.
+- Validate `Guardian Party --guardian_of--> Student Party` before returning any child data.
+- Cut Parent Digest operational key from legacy `student_id` to canonical `student_party_id`.
+- Read today's Attendance, Daily Care, and Handover truth from existing FIELD VERIFIED sources.
+- Replace operational Parent Inbox mock path with real backend read-back.
+
+Out of scope:
+- QR, SMS, push, mobile app, billing, medication workflow, temperature, staff scheduling, facilities.
+- Generic parent authorization framework.
+- Pickup authorization as parent data-access authority.
+- Reopening R3, Enrollment, Roster, Attendance, Daily Care source semantics, Guardian Authorization, Safe Pickup/Handover, Course RLS.
+
+## 3. Ownership Map ("WHO OWNS THIS DATA?")
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `party_relationships guardian_of` | Platform Party | Family/guardian relationship between Guardian Party and Student Party |
+| `edu_attendance_daily_state` | Education Attendance / Preschool consumer | Daily attendance state |
+| `edu_daily_care_records.student_party_id` | Preschool Product | Daily care state for a canonical Student Party |
+| `edu_preschool_pickup_handover_events` | Preschool Product | Immutable pickup handover event |
+| `edu_daily_parent_digests.student_party_id` | Preschool Product | Parent digest projection keyed by canonical Student Party |
+| `/dashboard/education/parent-inbox` | Preschool Product UI | Parent daily experience read surface |
+
+## 4. Contract Dependency Map
+
+```text
+Authenticated user
+        ↓
+public.users.phone
+        ↓
+party_identifiers(preschool_guardian_phone)
+        ↓
+Guardian Party
+        ↓
+party_relationships guardian_of
+        ↓
+Student Party
+        ↓
+Attendance + Daily Care + Handover read model
+        ↓
+Parent Inbox UI
+```
+
+Pickup authorization is not part of the parent data-access contract.
+
+## 5. Change Authority
+
+Authorized:
+- Preschool Product service/API/UI for parent daily read model.
+- Additive/cutover migration on Preschool-owned `edu_daily_parent_digests`.
+- Focused tests for related child access, unrelated child denial, cross-tenant denial, pickup authorization not granting data access, and canonical sources.
+
+Not authorized:
+- Platform identity redesign.
+- Education Kernel changes.
+- Generic authorization framework.
+- Notification delivery, QR, mobile app, or parent communication redesign.
+
+## 6. UI -> Contract Reconciliation
+
+| UI element | UI expectation | Canonical contract | Conclusion |
+|---|---|---|---|
+| Parent daily child card | Shows real child | `party_relationships guardian_of -> party_parties` | MATCH |
+| Attendance | Present/absent/excused/unmarked | `edu_attendance_daily_state` through canonical enrollment | MATCH |
+| Arrival/meal/hygiene/nap | Today's care state | `edu_daily_care_records.student_party_id` | MATCH |
+| Handover | Pickup complete/time/guardian | `edu_preschool_pickup_handover_events` | MATCH |
+| Static NOT-* notices | Mock operational data | No real parent daily contract | STALE UI |
+
+## 7. Additive Migration Plan
+
+One migration only:
+
+```text
+edu_daily_parent_digests
+  ADD student_party_id UUID REFERENCES party_parties(id)
+  ALTER student_id DROP NOT NULL
+  ADD unique/indexes for session + student_party_id
+```
+
+No legacy cleanup/drop.
+
+## 8. Verification Plan
+
+- Focused parent daily service tests.
+- Focused Parent Digest canonical tests where practical.
+- Scoped ESLint.
+- `git diff --check`.
+- Typecheck changed once; if it stalls, report `NOT_VERIFIED_STALL`.
+
+Gate result: `PASS`.
+
+---
+
+# ARCHITECTURE GATE RESULT - PRESCHOOL DAILY CARE CANONICAL CONNECTION
+
+> **Status:** PASS - minimum Preschool-owned Daily Care connection to canonical enrolled students
+> **Date:** 2026-09-27
+> **Scope:** `/dashboard/education/care`, Daily Care product service/API, canonical `student_party_id` persistence
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+The verified Preschool chain has reached:
+
+```text
+New Student -> Enrollment -> Classroom Roster -> Daily Attendance -> Guardian Authorization -> Safe Pickup/Handover = FIELD VERIFIED
+```
+
+The next proven blocker is:
+
+```text
+Daily Care / Care & Wellbeing = PARTIAL
+```
+
+The existing Care UI is a real Preschool menu capability, but still uses hardcoded tenant/class/student/date/static students and writes care records through legacy `students.student_id`.
+
+Gate decision: `PASS` for the minimum Preschool Product connection that lets the existing Care workspace operate on the same canonical enrolled students already proven by Enrollment/Roster/Attendance.
+
+## 2. Product Manifest (Capabilities & Scope)
+
+In scope:
+- Load real active courses and enrolled students for the authenticated Preschool tenant.
+- Persist Daily Care records by canonical `student_party_id`.
+- Preserve existing Care semantics for arrival, meal, hygiene, and nap.
+- Return DB read-back so browser refresh can show persisted truth.
+
+Out of scope:
+- Parent Digest publishing.
+- QR, pickup, handover, Attendance changes, Guardian Authorization changes.
+- Medication authorization redesign.
+- Platform/Education-wide Care engine or generic workflow framework.
+
+## 3. Ownership Map ("WHO OWNS THIS DATA?")
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `edu_daily_care_sessions` | Preschool Product | Care session per course/date |
+| `edu_daily_care_records` | Preschool Product | Care state for one canonical student/day |
+| `edu_enrollments` | Education OS Enrollment | Canonical course membership |
+| `students.party_id` / `party_parties.id` | Education Student / Platform Party | Canonical student identity |
+| `/dashboard/education/care` | Preschool Product UI | Staff care action workspace |
+
+## 4. Contract Dependency Map
+
+```text
+Care UI
+        ↓
+GET /api/education/courses
+        ↓
+GET /api/education/care/bulk?courseId&date
+        ↓
+DailyCareService
+        ↓
+edu_enrollments.student_party_id
+        ↓
+edu_daily_care_records.student_party_id
+        ↓
+Care UI DB read-back
+```
+
+## 5. Change Authority
+
+Authorized:
+- One bounded migration for canonical Daily Care identity on existing product-owned table.
+- `DailyCareService` and its product-local contract.
+- `/api/education/care/bulk` server boundary.
+- Existing Care page operational data/action wiring.
+- Focused tests for canonical student persistence and tenant/course denial.
+
+Not authorized:
+- R3, Enrollment, Attendance, Guardian Authorization, Safe Pickup/Handover.
+- Parent Digest, Parent Engagement, QR, Haircut, BDGF, migration history.
+
+## 6. UI -> Contract Reconciliation
+
+| UI element | UI expectation | Canonical contract | Conclusion |
+|---|---|---|---|
+| Course selector | Real Preschool class/course | `GET /api/education/courses` | MATCH |
+| Student roster | Real enrolled students | `edu_enrollments.student_party_id -> party_parties` | MATCH |
+| Care action | Persist care for current student/day | `edu_daily_care_records.student_party_id` | CONTRACT CHANGE REQUIRED |
+| Temperature | Health check input | No real current input in Care page | DEFER |
+| Parent Digest | Publish parent-facing snapshot | Existing separate digest projection | DEFER |
+
+## 7. Additive Migration Plan
+
+Minimum table correction:
+
+```text
+edu_daily_care_records.student_party_id -> party_parties.id
+student_id DROP NOT NULL for canonical rows
+unique session + student_party_id
+index tenant + student_party_id
+```
+
+No parent digest migration, attendance change, guardian change, or R3 change.
+
+## 8. 11 Automated Verification Gates Plan
+
+- Gate 1 Architecture Compliance: Product-owned service/API/UI; no Education Kernel modification.
+- Gate 2 Contract Boundary: Product consumes canonical enrollment/party identity only.
+- Gate 3 Tenant Isolation: API derives tenant server-side and service validates tenant/course membership.
+- Gate 4 RLS/Auth: no RLS weakening; server-side route owns mutation.
+- Gate 5 Migration Safety: bounded product table identity correction only.
+- Gate 6 Event-After-Persistence: not applicable; success after DB update/read-back.
+- Gate 7 Academic Safety Routing: not applicable.
+- Gate 8 Temporal Provenance: daily record update semantics preserved.
+- Gate 9 Rule Governance: not applicable.
+- Gate 10 Audit Evidence: focused tests prove DB-shaped persistence and denial.
+- Gate 11 Regression: focused Daily Care tests, scoped lint, diff check.
+
+---
+
+# ARCHITECTURE GATE RESULT - PRESCHOOL SAFE PICKUP HANDOVER EVENT
+
+> **Status:** PASS - minimum Preschool-owned handover event truth
+> **Date:** 2026-09-27
+> **Scope:** Safe Pickup handover event persistence, API action, Attendance/Safe Pickup UI connection
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+The verified Preschool operational chain has reached:
+
+```text
+New Student -> Enrollment -> Classroom Roster -> Daily Attendance -> Guardian Authorization = FIELD VERIFIED
+```
+
+Discovery proved:
+
+```text
+Safe Pickup authorization != handover event
+Existing canonical handover capability = NONE
+Owner = Preschool Product
+```
+
+Gate decision: `PASS` for one minimum product-owned event record proving that an authorized guardian received a specific student from an authenticated operator at a specific time.
+
+## 2. Product Manifest (Capabilities & Scope)
+
+In scope:
+- Create one Preschool-owned handover event table.
+- Validate the active pickup authorization before recording handover.
+- Derive tenant, operator, and timestamp server-side.
+- Add one minimal API action for the existing Safe Pickup panel.
+- Show persisted handover read-back in the existing Attendance/Safe Pickup UI.
+
+Out of scope:
+- QR, scanner/camera, pickup token, biometrics, signature capture.
+- Notifications, pickup schedules, custody rules, effective authorization windows.
+- Guardian Authorization semantic changes.
+- Enrollment, Student/R3, Attendance status semantics, Course RLS, BDGF, migration history.
+
+## 3. Ownership Map ("WHO OWNS THIS DATA?")
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `edu_preschool_pickup_handover_events` | Preschool Product | Immutable handover business event |
+| `edu_preschool_pickup_authorizations` | Preschool Product | Active authorization prerequisite |
+| `party_parties` | Platform Party | Canonical Student and Guardian identities |
+| Safe Pickup UI | Preschool Product UI | Action surface and truthful read-back |
+
+## 4. Contract Dependency Map
+
+```text
+Safe Pickup UI
+        ↓
+POST /api/education/attendance/handover
+        ↓
+PreschoolSafePickupHandoverService
+        ↓
+Validate active authorization
+        ↓
+Insert edu_preschool_pickup_handover_events
+        ↓
+GET /api/education/attendance read-back
+        ↓
+Safe Pickup panel shows "Đã bàn giao"
+```
+
+## 5. Change Authority
+
+Authorized:
+- One additive Preschool Product migration.
+- Product-owned service for handover event.
+- Attendance API route read-back and one new handover endpoint.
+- Existing Attendance/Safe Pickup UI action wiring.
+- Focused tests for handover validation and failure paths.
+
+Not authorized:
+- Education Kernel handover engine.
+- Guardian Authorization redesign.
+- QR/custody/notification/Parent Engagement.
+- Broad regression repair or migration history work.
+
+## 6. UI -> Contract Reconciliation
+
+| UI element | UI expectation | Canonical contract | Conclusion |
+|---|---|---|---|
+| Authorized guardian display | Existing active authorization shown | `edu_preschool_pickup_authorizations` | MATCH |
+| Bàn giao action | Persist real handover event | New `edu_preschool_pickup_handover_events` | CONTRACT CHANGE REQUIRED |
+| QR copy/status | QR verification | No canonical capability in this slice | DEFER |
+| Handover success message | Only after persisted event read-back | Handover API + roster refresh | MATCH after slice |
+
+## 7. Additive Migration Plan
+
+Create one table only:
+
+```text
+edu_preschool_pickup_handover_events
+tenant_id
+student_party_id
+guardian_party_id
+pickup_authorization_id
+handed_over_at
+handed_over_by
+created_at
+```
+
+No mutation of authorization, enrollment, student identity, attendance, QR, Parent Engagement, or legacy tables.
+
+## 8. 11 Automated Verification Gates Plan
+
+- Gate 1 Architecture Compliance: Product-owned service/API/UI only.
+- Gate 2 Contract Boundary: No Education Kernel modification.
+- Gate 3 Tenant Isolation: tenant derived server-side; service validates same tenant.
+- Gate 4 RLS/Auth: new table has tenant RLS policy.
+- Gate 5 Migration Safety: additive table/index/policy only.
+- Gate 6 Event-After-Persistence: success only after insert/read-back.
+- Gate 7 Academic Safety Routing: not applicable.
+- Gate 8 Temporal Provenance: immutable event record.
+- Gate 9 Rule Governance: not applicable.
+- Gate 10 Audit Evidence: focused test/read-back proves event truth.
+- Gate 11 Regression: focused handover test, scoped lint, diff check.
+
+---
+
+# ARCHITECTURE GATE RESULT - PRESCHOOL DAILY ATTENDANCE STATE
+
+> **Status:** PASS - canonical Education daily attendance state projection for Preschool roll call
+> **Date:** 2026-09-26
+> **Scope:** Education Attendance public contract extension, additive daily-state projection, Preschool Attendance UI wiring
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+The verified Preschool workflow has reached:
+
+```text
+New Student → Enrollment → Classroom Roster = FIELD VERIFIED
+```
+
+The next blocker is daily roll call. Discovery proved two distinct semantics:
+
+```text
+edu_attendance = event history
+Preschool roll call = current daily state
+```
+
+Gate decision: `PASS` for the minimum canonical Education Attendance contract extension that preserves event history and adds a bounded daily-state projection.
+
+## 2. Product Manifest (Capabilities & Scope)
+
+In scope:
+- Add an Education-owned daily attendance state projection.
+- Preserve `edu_attendance` append-only event semantics.
+- Add atomic write boundary: append event + upsert daily state.
+- Add canonical read path for course/date roster attendance.
+- Wire Preschool Attendance UI to the canonical Education Attendance service/API.
+
+Out of scope:
+- Pickup, temperature, Care, Parent notification, Billing, Reporting.
+- R3, BDGF, migration history, credential debugging.
+- Legacy `attendances` cleanup or dual-write.
+- Generic timezone framework or event-sourcing framework.
+
+## 3. Ownership Map ("WHO OWNS THIS DATA?")
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `public.edu_attendance` | Education OS Attendance | Append-only attendance event history |
+| Daily attendance state projection | Education OS Attendance | Effective state for tenant + enrollment + school_day |
+| `public.edu_enrollments` | Education OS Enrollment | Canonical roster membership by course |
+| `public.students` / `public.party_parties` | Education Student / Platform Party | Canonical student identity for roster display |
+| Preschool Attendance page | Preschool Product UI | Presentation and user action surface only |
+
+## 4. Contract Dependency Map
+
+```text
+Preschool Attendance UI
+        ↓
+Education Attendance API
+        ↓
+AttendanceProductService
+        ↓
+IEducationAttendanceContract
+        ↓
+AttendanceContractImpl
+        ↓
+Education DB boundary
+        ├── edu_attendance event append
+        └── daily attendance state upsert
+```
+
+Read path:
+
+```text
+course + school_day
+        ↓
+edu_enrollments
+        ↓
+students.party_id
+        ↓
+party_parties
+        ↓
+daily attendance state (nullable/unmarked)
+```
+
+## 5. Change Authority
+
+Authorized:
+- One additive Education attendance migration.
+- `src/platform/education/contracts/attendance.contract.ts`
+- `src/platform/education/contracts/attendance.contract.impl.ts`
+- `src/products/bella-education/services/attendance.service.ts`
+- Minimal Attendance API route(s).
+- `src/app/dashboard/education/attendance/page.tsx`
+- Focused tests for daily-state semantics and UI/API mapping.
+
+Not authorized:
+- Healthcare, Logistics, R3, BDGF, legacy cleanup.
+- Legacy `attendances` dual-write.
+- Product-specific attendance engine separate from Education.
+
+## 6. UI → Contract Reconciliation
+
+| UI element | UI expectation | Canonical contract | Conclusion |
+|---|---|---|---|
+| Class/course selector | Real course list | Existing Education courses API | MATCH |
+| Roster rows | Enrolled students for selected course | `edu_enrollments.student_party_id → students.party_id → party_parties` | MATCH |
+| Present/Absent/Excused action | One effective state for school day | New Education daily-state projection | CONTRACT CHANGE REQUIRED |
+| History/correction evidence | Correction preserves history | Existing `edu_attendance` event log | MATCH |
+| Pickup/temperature panels | Not proven for attendance mutation | Out of scope | DEFER |
+
+## 7. Additive Migration Plan
+
+Create only a new Education daily attendance state projection with:
+
+```text
+tenant_id
+enrollment_id
+school_day
+status present|absent|excused
+created_at
+updated_at
+UNIQUE (tenant_id, enrollment_id, school_day)
+RLS tenant isolation consistent with Education tables
+```
+
+No modification to `edu_attendance`, `attendances`, `persons`, identity mappings, or enrollment tables.
+
+## 8. 11 Automated Verification Gates Plan
+
+- Gate 1 Architecture Compliance: Education contract and Product UI only; no cross-industry imports.
+- Gate 2 Contract Boundary: Product calls public Education Attendance service/contract.
+- Gate 3 Tenant Isolation: mutation/read validates tenant owns enrollment/course.
+- Gate 4 RLS/Auth: new table has RLS and tenant policy.
+- Gate 5 Migration Safety: additive table only.
+- Gate 6 Event-After-Persistence: event + state mutation must be transactional/atomic.
+- Gate 7 Academic Safety Routing: not applicable.
+- Gate 8 Temporal Provenance: event history remains append-only.
+- Gate 9 Rule Governance: not applicable.
+- Gate 10 Audit Evidence: correction test proves two history events and one effective state.
+- Gate 11 Regression: focused attendance tests, scoped lint, diff check.
+
+---
+
+# ARCHITECTURE GATE RESULT - PRESCHOOL GUARDIAN AUTHORIZATION
+
+> **Status:** PASS - minimal Preschool-owned guardian pickup authorization truth
+> **Date:** 2026-09-27
+> **Scope:** New Enrollment guardian identity/relationship/authorization; Safe Pickup panel read-only truth display
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+The verified Preschool operational chain has reached:
+
+```text
+New Student -> Enrollment -> Classroom Roster -> Daily Attendance = FIELD VERIFIED
+```
+
+The next blocker is not QR or pickup event execution. Discovery proved the first missing truth is:
+
+```text
+Student Party
+      ↓
+Guardian Party
+      ↓
+Guardian identity relationship
+      ↓
+Preschool pickup authorization
+```
+
+Gate decision: `PASS` for the minimum product-owned model answering only which Guardian Party is currently authorized to pick up which Student Party.
+
+## 2. Product Manifest (Capabilities & Scope)
+
+In scope:
+- Resolve/create a tenant-scoped Guardian Party from required enrollment guardian input.
+- Store a bounded tenant-scoped guardian phone identifier for this Preschool flow.
+- Link Guardian Party to Student Party through `guardian_of` identity relationship.
+- Create/read a separate Preschool pickup authorization.
+- Extend the existing enrollment response and Safe Pickup panel to display real authorized guardian truth.
+
+Out of scope:
+- QR token/scanner.
+- Pickup/handover/release event.
+- Temperature or Daily Care changes.
+- Parent Engagement refactor.
+- Generic identity, phone, or authorization framework.
+
+## 3. Ownership Map ("WHO OWNS THIS DATA?")
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `party_parties` | Platform Party | Canonical Guardian and Student identity |
+| `party_identifiers` | Platform Party | Tenant-scoped Preschool guardian phone resolution key |
+| `party_relationships` | Platform Party | Guardian -> Student identity/family relationship |
+| `edu_preschool_pickup_authorizations` | Preschool Product | Operational truth that a guardian is currently authorized for pickup |
+| Attendance Safe Pickup panel | Preschool Product UI | Read-only display of authorization truth; no pickup event/QR claim |
+
+## 4. Contract Dependency Map
+
+```text
+Preschool Enrollment API
+        ↓
+Student Party
+        ↓
+Guardian Party resolve/create
+        ↓
+party_relationships guardian_of
+        ↓
+edu_preschool_pickup_authorizations
+        ↓
+Student + Enrollment
+```
+
+Read path:
+
+```text
+Attendance roster
+        ↓
+student_party_id
+        ↓
+edu_preschool_pickup_authorizations
+        ↓
+guardian party display + phone identifier
+        ↓
+Safe Pickup panel
+```
+
+## 5. Change Authority
+
+Authorized:
+- One additive Preschool-owned authorization migration.
+- Product service for guardian authorization.
+- Enrollment API integration.
+- Attendance API/UI read-only display of authorized guardian.
+- Focused tests for identity, duplicate boundaries, and false-success prevention.
+
+Not authorized:
+- Education Attendance engine redesign.
+- Parent Engagement refactor.
+- QR, pickup event, custody scheduling, temperature, or Daily Care.
+- BDGF/R3/migration-history work.
+
+## 6. UI -> Contract Reconciliation
+
+| UI element | UI expectation | Canonical contract | Conclusion |
+|---|---|---|---|
+| Enrollment guardian fields | Required guardian info becomes operational truth | Guardian Party + relationship + pickup authorization | CONTRACT CHANGE REQUIRED |
+| Safe Pickup guardian display | Show who is authorized | `edu_preschool_pickup_authorizations` + Party identity | MATCH after slice |
+| QR action | Verify pickup via QR | No canonical capability yet | DEFER |
+| Pickup completion | Child released/handover event | No canonical capability yet | DEFER |
+| Temperature | Care/health check | Daily Care capability, not Attendance | DEFER |
+
+## 7. Additive Migration Plan
+
+Create one table only:
+
+```text
+edu_preschool_pickup_authorizations
+tenant_id
+student_party_id
+guardian_party_id
+status authorized|revoked
+created_at
+updated_at
+```
+
+Add a partial unique boundary for active authorization:
+
+```text
+tenant_id + student_party_id + guardian_party_id WHERE status = authorized
+```
+
+No pickup event, QR token, schedule, custody, photo, signature, or geolocation fields.
+
+## 8. 11 Automated Verification Gates Plan
+
+- Gate 1 Architecture Compliance: Product-owned service/API/UI; Platform Party tables only for identity.
+- Gate 2 Contract Boundary: Education attendance/enrollment contracts remain unchanged.
+- Gate 3 Tenant Isolation: guardian phone resolution and authorization are tenant scoped.
+- Gate 4 RLS/Auth: new table has RLS tenant policy.
+- Gate 5 Migration Safety: additive table/index/policy only.
+- Gate 6 Event-After-Persistence: no event behavior added.
+- Gate 7 Academic Safety Routing: not applicable.
+- Gate 8 Temporal Provenance: not applicable.
+- Gate 9 Rule Governance: not applicable.
+- Gate 10 Audit Evidence: read-back proves authorization truth.
+- Gate 11 Regression: enrollment and attendance focused tests, scoped lint, diff check.
+
+---
+
+# ARCHITECTURE GATE RESULT - PRESCHOOL NEW STUDENT ENROLLMENT PATH
+
+> **Status:** PASS - minimal Product UI to canonical Education enrollment wiring
+> **Date:** 2026-09-26
+> **Scope:** Preschool New Student modal, product-owned API boundary, canonical Party/Student/Enrollment chain
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+Request targets the proven Preschool blocker:
+
+```text
+Enrollment UI
+        ↓
+static/local completion
+        ↓
+no canonical Party
+no Student contract call
+no edu_enrollments persistence/read-back
+```
+
+R3 Student identity is sealed; new canonical Student creation now supports:
+
+```text
+party_id = public.party_parties.id
+person_id = NULL
+```
+
+Gate decision: `PASS` for a minimal Product-layer server boundary plus UI submit wiring.
+
+## 2. Product Manifest (Capabilities & Scope)
+
+In scope:
+- Use the existing Preschool Enrollment UI/modal.
+- Create one product-owned API route for the admission operation.
+- Create a canonical person Party in `public.party_parties`.
+- Register the Student through `StudentContractImpl`.
+- Enroll through `EnrollmentProductService` and `EnrollmentContractImpl`.
+- Report success only after Student and Enrollment read-back.
+
+Out of scope:
+- Attendance, Care, Parent Inbox, Pickup, Finance, Reporting.
+- R3, BDGF, migration history, credential/debug work.
+- New identity framework, fake `persons`, fake `identity_migration_mapping`, or compatibility layer.
+- Broad Preschool redesign.
+
+## 3. Ownership Map ("WHO OWNS THIS DATA?")
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `public.party_parties` | Platform Party identity | Canonical person identity for the new student |
+| `public.students` | Education OS Student | Student role bound to canonical Party |
+| `public.edu_enrollments` | Education OS Enrollment | Canonical enrollment persistence/read-back |
+| Enrollment modal state | Preschool Product UI | User input only; not source of operational truth |
+
+## 4. Contract Dependency Map
+
+```text
+Preschool Enrollment UI
+        ↓
+POST /api/education/enrollments
+        ↓
+party_parties insert
+        ↓
+StudentContractImpl.registerStudent()
+        ↓
+EnrollmentProductService.enrollStudent()
+        ↓
+EnrollmentContractImpl
+        ↓
+EducationEngineService
+        ↓
+SupabaseEducationRepository
+        ↓
+edu_enrollments
+        ↓
+getStudent() + getEnrollment() read-back
+```
+
+## 5. Change Authority
+
+Authorized:
+- `src/app/dashboard/education/enrollments/page.tsx`
+- `src/app/api/education/enrollments/route.ts`
+- Focused tests for the new product API boundary.
+- This architecture gate artifact.
+
+Not authorized:
+- Education Kernel schema changes.
+- Attendance/Care/Parent/Finance/Reporting.
+- Migration deployment, BDGF, or production credential work.
+
+## 6. UI → Contract Reconciliation
+
+The previous button only closed the modal. The new path must submit the UI payload to the product API and display failure if the server chain fails. Course/class identity must come from the existing `GET /api/education/courses` source, not from a hardcoded ID.
+
+Browser smoke discovered a direct mapping bug in that existing course source:
+
+```text
+Enrollment modal
+        ↓
+GET /api/education/courses
+        ↓
+hardcoded tenant fallback
+        ↓
+classrooms: []
+        ↓
+submit blocked before canonical enrollment request
+```
+
+Authorized minimal correction: the course API must prefer the authenticated
+user's tenant context before legacy fallback so the Enrollment UI can submit a
+canonical course/class ID for the current Preschool tenant.
+
+## 7. Additive Migration Plan
+
+No migration in this task.
+
+## 8. 11 Automated Verification Gates Plan
+
+- Gate 1 Architecture Compliance: product API uses public Education contracts.
+- Gate 2 Contract Boundary: Student registration uses `partyId`; enrollment uses `studentPartyId`.
+- Gate 3 Tenant Isolation: API resolves tenant from authenticated user context before writes.
+- Gate 4 RLS/Auth: no RLS/grant changes.
+- Gate 5 Migration Safety: no schema change.
+- Gate 6 Event-After-Persistence: Enrollment engine remains responsible.
+- Gate 7 Academic Safety Routing: course validation remains in Education engine.
+- Gate 8 Temporal Provenance: not changed.
+- Gate 9 Rule Governance: not changed.
+- Gate 10 Audit Evidence: API response includes persisted/read-back IDs.
+- Gate 11 Regression: focused route tests, existing R3 Student tests, scoped lint/diff checks.
+
+---
+
+# ARCHITECTURE GATE RESULT - R3 STUDENT CREATE-SIDE COMPLETION
+
+> **Status:** PASS - minimal R3 create-side cutover for canonical Party-backed Students
+> **Date:** 2026-09-26
+> **Scope:** Education Student create path only; prerequisite for Preschool New Student enrollment
 
 ---
 
 ## 1. Product Manifest (Capabilities & Scope)
 
-This change finishes the existing Haircut payroll connection without creating a new payroll architecture. The workflow remains:
+This change completes the proven R3 create-side gap:
 
-```
-Settings -> tenant_payroll_config -> Salary Engine -> attendance + completed sessions -> salary_records -> Salary UI
+```text
+New canonical Party
+        ↓
+Student role creation
+        ↓
+students.party_id = party_parties.id
+students.person_id = NULL
 ```
 
 Included:
-- Fix the proven `PayrollConfigService.getProviderConfig` read boundary so persisted tenant provider config can be consumed during calculation.
-- Make Salary UI data use existing `salary_records` financial values when a salary row exists, instead of presenting a parallel live total after recalculation.
-- Run one real authenticated Haircut verification through `/dashboard/salary` and stop at the first unrelated failure.
+- Relax the transitional `students.person_id` NOT NULL requirement.
+- Preserve `students.person_id` column, FK, index, and legacy read path.
+- Preserve canonical `partyId` requirement at the Student application/contract boundary.
+- Stop requiring `identity_migration_mapping` for brand-new canonical Student creation.
+- Fix the proven semantic bug where `studentPartyId` was queried against `students.person_id`.
 
 Excluded:
-- No new payroll engine.
-- No formula change.
-- No hard-coded `135000`.
-- No change to `DEFAULT_CONFIGS = 120000`.
-- No forced use of package `ktv_commission = 150000`.
-- No attendance, payment, publication, approval, finalization, salary expense, Finance, RLS, schema, migration, or Preschool change.
+- No Preschool Enrollment implementation in this task.
+- No `persons` creation for new Students.
+- No fake `identity_migration_mapping` rows.
+- No `students.party_id NOT NULL` schema hardening.
+- No legacy cleanup, mapping removal, BDGF, migration history, or production deployment.
 
-## 2. Ownership Map
+## 2. Ownership Map ("WHO OWNS THIS DATA?")
 
 | Artifact | Owner Context | Data Definition |
 |---|---|---|
-| `tenant_payroll_config` | Shared HR/Payroll configuration | Existing tenant-specific payroll policy |
-| Salary Engine | Shared HR/Payroll calculation | Existing salary calculation and persistence contract |
-| `salary_records` | Shared HR/Payroll result truth | Persisted payroll calculation result |
-| `/dashboard/salary` | Payroll admin UI | Existing read/write surface for payroll admins |
+| `public.students` | Education OS Student bounded context | Student role state for canonical Party identity |
+| `public.party_parties` | Platform Party identity | Canonical person Party identity |
+| `public.persons` | Legacy Platform Host Person | Transitional legacy identity retained for existing rows |
+| `public.identity_migration_mapping` | R3 migration bridge | Legacy mapping for migrated rows only |
 
 ## 3. Contract Dependency Map
 
+```text
+Preschool Product
+        ↓
+Education Student Contract
+        ↓
+StudentService
+        ↓
+StudentAggregate
+        ↓
+StudentRepository
+        ↓
+public.students
+        ↓
+party_id → public.party_parties(id)
 ```
-/dashboard/settings salary config
-        |
-        v
-tenant_payroll_config
-        |
-        v
-PayrollConfigService.getProviderConfig
-        |
-        v
-CommissionProvider / AttendanceProvider
-        |
-        v
-Salary Engine
-        |
-        v
-salary_records
-        |
-        v
-/dashboard/salary displays persisted financial truth
+
+Legacy compatibility remains:
+
+```text
+Existing legacy consumers
+        ↓
+StudentRepository.findByPersonId()
+        ↓
+students.person_id → public.persons(id)
 ```
 
 ## 4. Change Authority
 
-Authorized layers: the proven payroll config read boundary and Salary UI persisted-result display boundary.
+Authorized by owner prompt:
+- Education Student create path.
+- One additive/transitional schema migration: `ALTER COLUMN person_id DROP NOT NULL`.
+- Generated DB type refresh/update for `students.person_id` nullability.
+- Focused tests for Student create/read-back/legacy compatibility.
 
-Not authorized: payroll formulas, provider strategies, attendance data, payroll lifecycle transitions, salary publication/approval/finalization, Finance/accounting, RLS, schema, migrations, or broad auth/UI refactors.
+Not authorized:
+- Preschool UI/backend wiring.
+- BDGF/governance changes.
+- Production migration execution.
+- Broad Education architecture refactor.
 
-## 5. Verification Plan
+## 5. UI → Contract Reconciliation
 
-- Focused service tests for persisted tenant config override and fallback behavior.
-- Focused salary query test for existing draft `salary_records` as UI financial truth.
-- Existing admin salary action focused tests.
-- Scoped ESLint on touched files.
-- `git diff --check`.
-- One real authenticated Haircut UI recalculation and read-back.
+No UI changes in this task. Preschool UI remains out of scope until R3 create-side is reviewed and deployed.
 
----
+## 6. Additive Migration Plan
 
-# ARCHITECTURE GATE RESULT - BELLA HAIRCUT H9A.2 PAYROLL CONFIG SERVICE AUTH CONTEXT
+One migration only:
 
-> **Status:** PASS - minimum auth-context repair for PayrollConfigService provider lookup
-> **Date:** 2026-09-28
-> **Scope:** `PayrollConfigService.getProviderConfig` tenant/provider read boundary only
-
----
-
-## 1. Product Manifest (Capabilities & Scope)
-
-This change does not create or redesign payroll configuration, payroll calculation, commission policy, attendance, or Finance. It fixes the proven H9A.2 blocker where a real Haircut tenant payroll config row exists and the salary recalculation engine runs, but `PayrollConfigService` cannot read `tenant_payroll_config` from the nested provider path and therefore falls back to `DEFAULT_CONFIGS`.
-
-Included:
-- Use the established Haircut authenticated/dev server client pattern for `getProviderConfig`.
-- Preserve tenant identity supplied by the salary engine/provider context.
-- Preserve explicit `tenant_id` and `provider_key` predicates.
-- Preserve default fallback behavior when tenant config is genuinely missing.
-
-Excluded:
-- No formula change.
-- No `120000` default change.
-- No forced use of `booking.ktv_commission = 150000`.
-- No UI display fix for the deferred UI/DB truth mismatch.
-- No salary record mutation or field retry in this task.
-
-## 2. Ownership Map
-
-| Artifact | Owner Context | Data Definition |
-|---|---|---|
-| `tenant_payroll_config` | Shared HR/Payroll configuration | Existing tenant-scoped provider policy |
-| `PayrollConfigService.getProviderConfig` | Payroll configuration read boundary | Existing provider lookup contract |
-| `CommissionProvider` / `AttendanceProvider` | Payroll provider consumers | Existing engine inputs |
-| `createDevelopmentBypassClient` | Established local/dev authenticated server-action context | Existing pattern verified by Haircut workflows |
-
-## 3. Contract Dependency Map
-
-```
-recalculateAndSaveSalaryRecordEngine
-        |
-        v
-CommissionProvider / AttendanceProvider
-        |
-        v
-PayrollConfigService.getProviderConfig
-        |
-        +-- tenant_payroll_config tenant_id + provider_key
-        +-- tenant config if present
-        +-- DEFAULT_CONFIGS only if genuinely missing
+```sql
+ALTER TABLE public.students
+ALTER COLUMN person_id DROP NOT NULL;
 ```
 
-## 4. Change Authority
-
-Authorized layer: the `getProviderConfig` execution context required for the proven tenant payroll config lookup blocker.
-
-Not authorized: `saveProviderConfig`, provider formulas, Salary Engine formulas, UI totals, attendance data, payment/Finance, publication/approval/finalization, RLS, migrations, or broad auth refactor.
-
-## 5. Verification Plan
-
-- Focused payroll config service tests proving persisted tenant commission config overrides default `120000`, missing config still falls back, tenant/provider predicates remain enforced, attendance lookup still works, and provider config reads do not mutate config.
-- Scoped ESLint on touched files.
-- `git diff --check`.
-- No field retry and no salary DB mutation in this task.
-
----
-
-# ARCHITECTURE GATE RESULT - BELLA HAIRCUT H9A.1 RECALCULATION AUTH CONTEXT
-
-> **Status:** PASS - minimum auth-context repair for draft-row pre-engine read
-> **Date:** 2026-09-28
-> **Scope:** `recalculateSalaryRecord` Supabase execution context only
-
----
-
-## 1. Product Manifest (Capabilities & Scope)
-
-This change does not add or redesign payroll. It fixes the proven H9A.1 blocker where the real Haircut salary UI reaches `recalculateSalaryRecord`, but the pre-engine draft salary row read cannot see the existing tenant-scoped row under the current development/authenticated UI context.
-
-Included:
-- Use the established Haircut authenticated/dev server client pattern for `recalculateSalaryRecord`.
-- Preserve admin authorization, tenant source, tenant predicates, month/KTV filters, draft-only guard, and existing Salary Engine call.
-
-Excluded:
-- No Salary Engine, CommissionProvider, AttendanceProvider, payroll config, formula, schema, RLS, migration, Finance, attendance, or lifecycle change.
-- No field retry in this task.
-
-## 2. Ownership Map
-
-| Artifact | Owner Context | Data Definition |
-|---|---|---|
-| `salary_records` | Shared HR/Payroll | Existing payroll record for tenant/KTV/month |
-| `recalculateSalaryRecord` | Payroll admin operation boundary | Existing H9A UI action |
-| `createDevelopmentBypassClient` | Established local/dev authenticated server-action context | Existing pattern already verified by Haircut workflows |
-
-## 3. Contract Dependency Map
-
-```
-/dashboard/salary "Tính lại"
-        |
-        v
-recalculateSalaryRecord
-        |
-        +-- getSalaryAdminAuth -> tenant_id
-        +-- createDevelopmentBypassClient
-        +-- salary_records ktv_id + month_year + tenant_id
-        +-- draft-only guard
-        +-- recalculateAndSaveSalaryRecord existing engine
-```
-
-## 4. Change Authority
-
-Authorized layer: `recalculateSalaryRecord` execution context for the proven pre-engine read blocker.
-
-Not authorized: payroll calculation semantics, provider config, attendance data, payment/Finance, publication/approval/finalization, RLS, or broad auth refactor.
-
-## 5. Verification Plan
-
-- Focused admin salary action tests proving own-tenant draft row visibility through the dev/auth client, foreign tenant denial, identity/month guards, non-draft rejection, and engine call only after draft row is found.
-- Scoped ESLint on touched files.
-- `git diff --check`.
-- No real recalculation field retry in this task.
-
----
-
-# ARCHITECTURE GATE RESULT - BELLA HAIRCUT H9A PAYROLL RECALCULATION OPERATION
-
-> **Status:** PASS - minimum draft-only recalculation operation boundary
-> **Date:** 2026-09-28
-> **Scope:** Admin salary recalculation-only action and draft-row UI trigger
-
----
-
-## 1. Product Manifest (Capabilities & Scope)
-
-This change does not redesign Haircut payroll, commission policy, attendance, or Finance. It exposes the existing salary recalculation engine through a narrow admin operation so a draft salary row can be recalculated after tenant payroll configuration is established.
-
-Included:
-- Add a recalculation-only admin action for an existing draft salary row.
-- Derive tenant identity from the authenticated admin context.
-- Reuse the existing `recalculateAndSaveSalaryRecord` / engine path without overrides.
-- Add a minimal `/dashboard/salary` UI trigger visible only for draft rows.
-
-Excluded:
-- No formula change.
-- No `120000` default change.
-- No forced use of `booking.ktv_commission = 150000`.
-- No publish, approve, finalize, expense, attendance, Finance, schema, RLS, migration, or Preschool change.
-- No field retry in this implementation pass.
-
-## 2. Ownership Map
-
-| Artifact | Owner Context | Data Definition |
-|---|---|---|
-| `salary_records` | Shared HR/Payroll | Persisted salary row for tenant/KTV/month |
-| `recalculateAndSaveSalaryRecordEngine` | Shared HR/Payroll calculation engine | Existing recalculation and salary row persistence contract |
-| `/dashboard/salary` | Payroll admin UI | Existing operational salary admin surface |
-
-## 3. Contract Dependency Map
-
-```
-/dashboard/salary draft row
-        |
-        v
-recalculateSalaryRecord
-        |
-        +-- getSalaryAdminAuth -> tenant_id
-        +-- salary_records tenant/ktv/month draft guard
-        +-- recalculateAndSaveSalaryRecord without overrides
-        |
-        v
-salary_records update by existing record id
-```
-
-## 4. Change Authority
-
-Authorized layer: Payroll admin operation boundary and a draft-only UI command.
-
-Not authorized: Salary Engine semantics, tenant payroll provider configuration, attendance source data, payroll lifecycle transitions, Finance/accounting, or broad HR refactor.
-
-## 5. Verification Plan
-
-- Focused admin salary action tests proving draft-only recalculation, tenant scoping, no lifecycle overrides, non-draft protection, and no publish/approve/finalize/expense side effects.
-- Scoped ESLint on touched files.
-- `git diff --check`.
-- No DB mutation and no field retry in this pass.
-
----
-
-# ARCHITECTURE GATE RESULT - BELLA HAIRCUT H7B PAYROLL CONFIG BOOTSTRAP
-
-> **Status:** PASS - minimum tenant payroll config first-save persistence repair
-> **Date:** 2026-09-28
-> **Scope:** `saveProviderConfig` persistence boundary for missing `tenant_payroll_config` rows only
-
----
-
-## 1. Product Manifest (Capabilities & Scope)
-
-This change does not add or redesign Haircut payroll. It fixes the proven H7/H9 configuration connection blocker where the Settings salary UI can submit provider configuration, but the first save uses an update against a row that may not exist for the tenant.
-
-Included:
-- Persist first-time provider config rows for a tenant/provider pair.
-- Preserve existing Settings UI payload shape and `tenant_payroll_config` storage contract.
-- Preserve Salary Engine and provider calculation semantics.
-- Preserve `DEFAULT_CONFIGS` as intentional bootstrap fallback when no tenant config exists.
-
-Excluded:
-- No change to `120000` default commission.
-- No forced use of `booking.ktv_commission = 150000`.
-- No Salary Engine, CommissionProvider, PayrollConfigService, schema, RLS, migration, payroll recalculation, payment, Finance, attendance, or Preschool change.
-
-## 2. Ownership Map
-
-| Artifact | Owner Context | Data Definition |
-|---|---|---|
-| `tenant_payroll_config` | Shared HR/Payroll configuration | Tenant-specific provider policy rows |
-| `saveProviderConfig` | Settings payroll configuration action | Existing UI persistence boundary |
-| `DEFAULT_CONFIGS` | Payroll provider bootstrap defaults | Fallback only when tenant config is absent |
-
-## 3. Contract Dependency Map
-
-```
-/dashboard/settings salary UI
-        |
-        v
-saveProviderConfig
-        |
-        v
-tenant_payroll_config tenant_id + provider_key
-        |
-        v
-PayrollConfigService.getProviderConfig
-        |
-        v
-CommissionProvider / Salary Engine
-```
-
-## 4. Change Authority
-
-Authorized layer: Settings payroll configuration persistence for missing tenant/provider rows.
-
-Not authorized: payroll calculation policy, Salary Engine, commission defaults, package commission semantics, schema/RLS/migrations, payroll lifecycle, or downstream Finance.
-
-## 5. Verification Plan
-
-- Focused `saveProviderConfig` tests proving first-time persistence uses tenant/provider upsert and preserves provider config payload.
-- Scoped ESLint on touched files.
-- `git diff --check`.
-- Real UI field verification remains a separate step because this local worktree has no Supabase env file.
-
----
-
-# ARCHITECTURE GATE RESULT - BELLA HAIRCUT H6 PAYMENT AUTH CONTEXT
-
-> **Status:** PASS - minimum payment action auth-context repair for Haircut checkout retry
-> **Date:** 2026-09-28
-> **Scope:** `recordRemainingPayment` booking snapshot / payment RPC client boundary only
-
----
-
-## 1. Product Manifest (Capabilities & Scope)
-
-This change does not add a Haircut payment capability. It fixes the proven H6 blocker where the Haircut customer payment workflow reaches `recordRemainingPayment`, resolves the current tenant, but reads the target booking through a raw no-session Supabase client and fails before any payment mutation.
-
-Included:
-- Use the existing authenticated/dev server Supabase context already proven in Haircut order workflow.
-- Preserve current payment amount validation, idempotency lookup, accounting-period check, RPC contract, and tenant predicates.
-- Retry only the existing H6 customer UI payment workflow for the verified Haircut booking.
-
-Excluded:
-- No payment architecture redesign.
-- No RPC/schema/RLS change.
-- No Finance/account 6421 fix.
-- No salary, commission, notification, inventory, catalog, H1/H3/H4A/H5, or Preschool change.
-- No generic replacement of raw clients in other payment operations.
-
-## 2. Ownership Map
-
-| Artifact | Owner Context | Data Definition |
-|---|---|---|
-| `bookings.id/status/deposit_amount` | Beauty OS booking/order lifecycle | Existing booking payment summary/projection |
-| `revenue.booking_id/amount/status` | Current operational payment recording | Existing payment truth for this workflow |
-| `recordRemainingPayment` | Order/payment service action | Existing checkout/payment action |
-| `record_remaining_payment_atomic` | Database payment RPC | Existing atomic payment persistence contract |
-
-## 3. Contract Dependency Map
-
-```
-Haircut customer UI
-        |
-        v
-recordRemainingPayment
-        |
-        +-- getCurrentUser -> tenant_id
-        +-- authenticated/dev server Supabase context
-        +-- bookings.id + bookings.tenant_id snapshot
-        +-- revenue tenant/idempotency lookup
-        +-- amount validation from persisted truth
-        +-- record_remaining_payment_atomic RPC
-```
-
-## 4. Change Authority
-
-Authorized layer: order/payment server action execution context for the proven H6 payment workflow.
-
-Not authorized: database RPC changes, Finance/accounting configuration, RLS, payment framework redesign, payroll/commission policy, or broad Order refactor.
-
-## 5. Verification Plan
-
-- Focused payment action tests.
-- Focused source invariant test for auth context and tenant/payment contract.
-- Scoped ESLint on touched files.
-- `git diff --check`.
-- Browser retry of exact Haircut H6 payment workflow; stop at first new blocker if any.
-
----
-
-# ARCHITECTURE GATE RESULT - BELLA HAIRCUT H3 PACKAGE VALIDATOR AUTH CONTEXT
-
-> **Status:** PASS - minimum service-layer auth-context repair for Haircut booking package validation
-> **Date:** 2026-09-28
-> **Scope:** `createBooking` package-validation execution context only
-
----
-
-## 1. Product Manifest (Capabilities & Scope)
-
-This change does not add a Haircut business capability. It fixes the proven H3 blocker where Haircut booking creation supplies a canonical `packages.id`, but package scope validation runs through a raw no-auth Supabase client in local mock-auth execution and RLS hides the package.
-
-Included:
-- Use the existing request/dev-bypass Supabase server pattern already used by order query actions.
-- Preserve `package exists`, `package.tenant_id === resolved booking tenant`, and module-scope validation.
-- Retry only the H3 Customer -> Service -> Booking workflow.
-
-Excluded:
-- No H1 routing change.
-- No catalog deduplication.
-- No barber/resource, completion, checkout, commission, payroll, Finance, report, or Preschool change.
-- No DB migration or RLS policy change.
-
-## 2. Ownership Map
-
-| Artifact | Owner Context | Data Definition |
-|---|---|---|
-| `packages.id` | Beauty OS service catalog / tenant service packages | Existing package identity used by booking |
-| `bookings.package_id` | Beauty OS booking/order lifecycle | Existing booking-to-package relationship |
-| `createBooking` | Order/booking service action | Existing write workflow |
-
-## 3. Contract Dependency Map
-
-```
-Haircut BookingModal
-        |
-        v
-payload.package_id = packages.id
-        |
-        v
-createBooking
-        |
-        v
-validateBookingPackageScope
-        |
-        +-- package exists
-        +-- package tenant equals resolved booking tenant
-        +-- package module enabled for tenant
-```
-
-## 4. Change Authority
-
-Authorized layer: order/booking service action execution context for package validation.
-
-Not authorized: schema, migration, catalog cleanup, product routing, downstream booking/session architecture, Finance/Payroll.
-
-## 5. Verification Plan
-
-- Focused package-scope unit tests.
-- Focused booking auth-context unit test.
-- Scoped ESLint on touched files.
-- `git diff --check`.
-- Browser retry of exact Haircut H3 workflow; stop at first new blocker if any.
-
----
-
-# ARCHITECTURE GATE RESULT - BELLA HAIRCUT H5 SERVICE LIFECYCLE AUTH CONTEXT
-
-> **Status:** PASS - bounded service-layer auth-context repair for Haircut service start/completion
-> **Date:** 2026-09-28
-> **Scope:** `updateSessionLog` and `completeSession` Supabase execution context only
-
----
-
-## 1. Product Manifest (Capabilities & Scope)
-
-This change does not add a Haircut business capability. It fixes the proven H5 blocker where the Haircut service lifecycle resolves the correct tenant but performs RLS-sensitive `session_logs`/`bookings` reads through a raw no-session Supabase client.
-
-Included:
-- Use the existing request/dev-bypass Supabase server pattern already proven by H3 `createBooking` and H4A `updateBooking`.
-- Preserve `session_logs.id`, `bookings.id`, explicit `tenant_id` predicates, booking/session relationship validation, schedule/resource guards, lifecycle rules, and completion engine behavior.
-- Retry only the H5 service lifecycle workflow: scheduled -> in_progress -> completed.
-
-Excluded:
-- No fix for `createSessionLog`, `rescheduleSession`, payment, invoice, online booking, reuse package, discount, session note, extra session, sync progress, or unrelated raw-client occurrences.
-- No H1/H3/H4A/H4B reopen.
-- No catalog, checkout/payment, commission, attendance, payroll architecture, Finance, reports, Preschool, migration, or RLS change.
-
-## 2. Ownership Map
-
-| Artifact | Owner Context | Data Definition |
-|---|---|---|
-| `session_logs.id/status` | Beauty OS booking/session lifecycle | Existing service-session identity and lifecycle state |
-| `bookings.id/status/progress` | Beauty OS booking/order lifecycle | Existing booking relation and progress state |
-| `updateSessionLog` | Order/booking service action | Existing session update/start workflow |
-| `completeSession` | Order/booking service action | Existing completion workflow and downstream completion engine entry |
-
-## 3. Contract Dependency Map
-
-```
-Haircut session UI
-        |
-        v
-updateSessionLog / completeSession
-        |
-        +-- getCurrentUser -> tenant_id
-        +-- authenticated/dev server Supabase context
-        +-- session_logs.id + session_logs.tenant_id read/update
-        +-- bookings.id + bookings.tenant_id read where required
-        +-- completion engine behavior unchanged
-```
-
-## 4. Change Authority
-
-Authorized layer: order/booking service action execution context for `updateSessionLog` and `completeSession`.
-
-Not authorized: schema, migration, RLS, lifecycle redesign, completion-engine redesign, resource configuration, payment/commission/payroll/Finance/report behavior, or cross-order refactor.
-
-## 5. Verification Plan
-
-- Focused session lifecycle auth-context/source invariant test.
-- Focused `completeSession` regression test.
-- Scoped ESLint on touched files.
-- `git diff --check`.
-- Browser retry of exact Haircut H5 lifecycle; stop at first new blocker if any.
-
----
-
-# ARCHITECTURE GATE RESULT - BELLA HAIRCUT H5B INVENTORY AUTOCONSUME AUTH CONTEXT
-
-> **Status:** PASS - minimum inventory auto-consume auth-context repair for Haircut completion retry
-> **Date:** 2026-09-28
-> **Scope:** `autoConsumeForSession` tenant config / existing-consumption read boundary only
-
----
-
-## 1. Product Manifest (Capabilities & Scope)
-
-This change does not add a Haircut or Inventory capability. It fixes the proven H5B blocker where Haircut service completion reaches `autoConsumeForSession`, but the first RLS-sensitive tenant config read uses a raw no-session Supabase client and cannot determine that current inventory behavior should be a NOOP.
-
-Included:
-- Use the existing request/dev-bypass Supabase server pattern already proven in Haircut order workflow.
-- Preserve `getCurrentUser()` tenant resolution, explicit tenant predicates, existing inventory rules, and NOOP behavior when `auto_consume_inventory` is disabled.
-- Retry only the existing H5B completion workflow from `in_progress` to `completed`.
-
-Excluded:
-- No change to global `getSupabaseWithTenant`.
-- No replacement of other raw inventory clients.
-- No inventory configuration, fake consumables, RLS, schema, migration, salary/payroll, commission, checkout/payment, Finance, reports, H1/H3/H4A/H4B, or Preschool change.
-- No fix for the deferred `COMPLETION_ROLLBACK_SALARY_SIDE_EFFECT` finding.
-
-## 2. Ownership Map
-
-| Artifact | Owner Context | Data Definition |
-|---|---|---|
-| `tenants.salary_config.auto_consume_inventory` | Tenant/product configuration | Existing switch for automatic inventory consumption |
-| `package_materials` | Inventory / Beauty OS package material configuration | Existing consumable definitions |
-| `inventory_logs` | Inventory OS operational ledger | Existing inventory consumption records |
-| `autoConsumeForSession` | Inventory integration called by session completion | Existing optional completion side effect |
-
-## 3. Contract Dependency Map
-
-```
-Haircut completion
-        |
-        v
-processSessionCompletion
-        |
-        v
-autoConsumeForSession(package_id, session_log_id)
-        |
-        +-- getCurrentUser -> tenant_id
-        +-- authenticated/dev server Supabase context
-        +-- tenants.id + salary_config read
-        +-- if disabled -> NOOP / bypass
-        +-- if enabled -> existing inventory business rules
-```
-
-## 4. Change Authority
-
-Authorized layer: inventory auto-consume server action execution context for the current completion boundary.
-
-Not authorized: global inventory auth refactor, inventory data setup, salary rollback behavior, completion transaction redesign, Finance/Payroll, or cross-domain architecture changes.
-
-## 5. Verification Plan
-
-- Focused inventory auto-consume tests.
-- Focused source invariant test for auth context and tenant predicates.
-- Scoped ESLint on touched files.
-- `git diff --check`.
-- Browser retry of exact Haircut H5B completion; stop at first new blocker if any.
-
----
-
-# ARCHITECTURE GATE RESULT - BELLA HAIRCUT H4A BARBER ASSIGNMENT AUTH CONTEXT
-
-> **Status:** PASS - minimum service-layer auth-context repair for Haircut barber assignment
-> **Date:** 2026-09-28
-> **Scope:** `updateBooking` Supabase execution context only
-
----
-
-## 1. Product Manifest (Capabilities & Scope)
-
-This change does not add a Haircut business capability. It fixes the proven H4A blocker where `updateBooking` resolves the correct Haircut tenant but performs the first `bookings` read through a raw no-session Supabase client, causing RLS to hide the booking before the KTV assignment update can run.
-
-Included:
-- Use the existing request/dev-bypass Supabase server pattern proven by H3 booking creation.
-- Preserve `bookings.id` identity, explicit `tenant_id` scoping, payload validation, and existing business rules.
-- Retry only the H4A barber assignment workflow.
-
-Excluded:
-- No RLS policy change.
-- No tenant routing redesign.
-- No barber identity redesign.
-- No chair/resource assignment.
-- No customer CRUD, booking creation, session lifecycle, attendance, commission, payroll, checkout/payment, Finance, reports, or Preschool change.
-- No DB migration.
-
-## 2. Ownership Map
-
-| Artifact | Owner Context | Data Definition |
-|---|---|---|
-| `bookings.id` | Beauty OS booking/order lifecycle | Existing booking identity |
-| `bookings.assigned_ktv_id` | Beauty OS staff assignment on booking | Existing KTV assignment field |
-| `updateBooking` | Order/booking service action | Existing booking update workflow |
-
-## 3. Contract Dependency Map
-
-```
-Haircut ActiveBookingPanel
-        |
-        v
-updateBooking(booking.id, assigned_ktv_id)
-        |
-        +-- getCurrentUser -> tenant_id
-        +-- authenticated/dev server Supabase context
-        +-- bookings.id + bookings.tenant_id read
-        +-- bookings.id + bookings.tenant_id update
-```
-
-## 4. Change Authority
-
-Authorized layer: order/booking service action execution context for `updateBooking`.
-
-Not authorized: schema, migration, RLS, product routing, resource assignment, staff identity model, session lifecycle, Finance/Payroll, or cross-product refactor.
-
-## 5. Verification Plan
-
-- Focused `updateBooking` regression tests.
-- Focused auth-context/source invariant test.
-- Scoped ESLint on touched files.
-- `git diff --check`.
-- Browser retry of exact Haircut H4A barber assignment; stop at first new blocker if any.
+No data mutation, backfill, FK/index removal, Party hardening, or legacy cleanup.
+
+## 7. Verification Gates Plan
+
+- Gate 1 Architecture Compliance: scoped Education changes only; no cross-industry imports.
+- Gate 2 Contract Boundary: Student public contract remains Party-based.
+- Gate 3 Tenant Isolation: preserve tenant filters in StudentRepository/Service.
+- Gate 4 RLS/Auth: no RLS or grant changes.
+- Gate 5 Migration Safety: transitional nullable change only; no destructive column/FK removal.
+- Gate 6 Event-After-Persistence: not applicable; no event behavior changed.
+- Gate 7 Academic Safety Routing: not applicable.
+- Gate 8 Temporal Provenance: not applicable.
+- Gate 9 Rule Governance: not applicable.
+- Gate 10 Audit Evidence: not applicable.
+- Gate 11 Regression: focused Student tests, affected Education tests where available, scoped TypeScript/lint.
 
 ---
 

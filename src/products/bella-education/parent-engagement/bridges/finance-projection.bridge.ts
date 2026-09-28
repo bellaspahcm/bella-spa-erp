@@ -10,8 +10,8 @@ import { CommunicationNotice, CommunicationDelivery, P6_ERROR_CODES } from '../d
 
 export interface IProjectIssuedInvoiceDto {
   tenantId: string;
-  /** Canonical Student Party ID: party_parties.id */
-  studentId: string;
+  studentPartyId?: string;
+  studentId?: string | null;
   guardianPartyIds: string[];
   invoiceId: string;
   invoiceNumber: string;
@@ -66,23 +66,28 @@ export class FinanceProjectionBridge {
       };
     }
 
+    const studentPartyId = dto.studentPartyId ?? dto.studentId;
+    if (!studentPartyId) {
+      throw new Error(`${P6_ERROR_CODES.TENANT_MISMATCH}: Canonical Student Party ID is required.`);
+    }
+
     // 2. Student Party Belonging Verification
     const { data: studentParty } = await this.supabase
       .from('party_parties')
       .select('id, tenant_id, party_type, deleted_at')
-      .eq('id', dto.studentId)
+      .eq('id', studentPartyId)
       .eq('tenant_id', dto.tenantId)
       .maybeSingle();
 
     if (!studentParty || studentParty.party_type !== 'person' || studentParty.deleted_at) {
-      throw new Error(`${P6_ERROR_CODES.TENANT_MISMATCH}: Student Party ${dto.studentId} does not belong to tenant ${dto.tenantId}.`);
+      throw new Error(`${P6_ERROR_CODES.TENANT_MISMATCH}: Student Party ${studentPartyId} does not belong to tenant ${dto.tenantId}.`);
     }
 
     // 3. Create Thread using Primary Guardian
     const primaryGuardian = dto.guardianPartyIds[0];
     const thread = await this.deliveryService.createThread({
       tenantId: dto.tenantId,
-      studentId: dto.studentId,
+      studentId: studentPartyId,
       guardianPartyId: primaryGuardian,
       threadType: 'GENERAL',
       title: `Thông báo học phí: Hóa đơn ${dto.invoiceNumber}`,

@@ -39,6 +39,7 @@ describe('P7.1 Preschool Finance & Billing Engine 12-Invariant Integration Suite
   let issuanceService: InvoiceIssuanceService;
   let reconService: PaymentReconciliationService;
   let billingPeriodId: string;
+  let courseId: string;
 
   beforeEach(async () => {
     repo = new PreschoolFinanceRepository();
@@ -53,6 +54,15 @@ describe('P7.1 Preschool Finance & Billing Engine 12-Invariant Integration Suite
       { id: staffPartyId, tenant_id: tenantA, party_type: 'person', display_name: 'P71 Staff Party' },
       { id: parentPartyId, tenant_id: tenantA, party_type: 'person', display_name: 'P71 Payer Party' },
     ], { onConflict: 'id' });
+
+    courseId = crypto.randomUUID();
+    await supabase.from('edu_courses').insert({
+      id: courseId,
+      tenant_id: tenantA,
+      course_code: `P71-${courseId.slice(0, 8)}`,
+      title: `P71 Finance Course ${courseId.slice(0, 8)}`,
+      status: 'active',
+    });
 
     // 2. Seed Fee Structure
     await repo.createFeeStructure({
@@ -88,6 +98,13 @@ describe('P7.1 Preschool Finance & Billing Engine 12-Invariant Integration Suite
       tenant_id: tenantId,
       party_type: 'person',
       display_name: `P71 Student ${label}`,
+    });
+    await supabase.from('edu_enrollments').insert({
+      tenant_id: tenantId,
+      course_id: courseId,
+      student_party_id: studentPartyId,
+      status: 'active',
+      request_id: `p71-${label}-${studentPartyId}`,
     });
     return studentPartyId;
   };
@@ -136,6 +153,7 @@ describe('P7.1 Preschool Finance & Billing Engine 12-Invariant Integration Suite
     const studentId = await createStudentParty('3');
     const mealInputs: StudentMealChargeInput[] = [
       {
+        studentPartyId: studentId,
         studentId,
         tenantId: tenantA,
         sourceDomain: 'P4_CARE',
@@ -169,6 +187,7 @@ describe('P7.1 Preschool Finance & Billing Engine 12-Invariant Integration Suite
     // Create Discount Profile (10% Sibling Discount) for student 4
     await repo.createDiscountProfile({
       tenantId: tenantA,
+      studentPartyId: studentId,
       studentId,
       discountType: 'SIBLING',
       discountName: 'Giảm giá Anh Chị Em 10%',
@@ -195,6 +214,7 @@ describe('P7.1 Preschool Finance & Billing Engine 12-Invariant Integration Suite
   test('Invariant 5: P4 Meal Charge Deduplication Guard — prevents double-billing same meal occurrence', async () => {
     const studentId = await createStudentParty('5');
     const mealInput: StudentMealChargeInput = {
+      studentPartyId: studentId,
       studentId,
       tenantId: tenantA,
       sourceDomain: 'P4_CARE',

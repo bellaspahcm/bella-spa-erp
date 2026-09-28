@@ -148,6 +148,47 @@ Verify
 STOP
 ```
 
+## Accounting Legal-Source Rule
+
+AI MUST NOT invent, infer, or hardcode Vietnamese accounting treatment, account
+codes, debit/credit mappings, tax treatment, or accounting regimes from general
+software knowledge.
+
+Before implementing a new accounting mapping, there MUST be evidence from
+authoritative Vietnamese sources applicable to the relevant entity type and
+effective date.
+
+Preferred evidence hierarchy:
+
+1. Vietnamese legal normative documents and official government legal databases.
+2. Ministry of Finance regulations and official guidance.
+3. Official Ministry of Finance accounting/auditing authority interpretations.
+
+Blogs, accounting websites, forums, StackOverflow, AI-generated explanations,
+and vendor documentation MUST NOT be the canonical legal source.
+
+Each implemented posting rule MUST record:
+
+```text
+legal_source
+document_number
+effective_date
+applicable_regime
+business_semantic
+posting_rule
+verification_status
+```
+
+If authoritative evidence is insufficient or conflicting, the implementation
+status is:
+
+```text
+ACCOUNTING_POLICY_NOT_PROVEN
+```
+
+and AI MUST STOP. AI coding may implement only accounting mappings already
+proven by an accounting specification with authoritative source evidence.
+
 ## Bella OS & Product Development Process v1.0
 
 Use this single process for every new Bella OS and Product. It exists to prevent technical debt before code starts while preserving Bella's rule against unnecessary bureaucracy.

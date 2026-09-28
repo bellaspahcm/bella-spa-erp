@@ -1,31 +1,95 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient as createSupabaseClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase-server';
+import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
+import { getCurrentUser } from '@/services/user-actions';
 import { DailyCareService } from '@/products/bella-education/care-wellbeing/daily-care/daily-care.service';
+import { PreschoolParentDailyExperienceService } from '@/products/bella-education/services/preschool-parent-daily-experience.service';
+import type { Database } from '@/types/database.types';
+
+type EducationDigestClient = SupabaseClient<Database>;
+
+interface ParentContext {
+  readonly tenantId: string;
+  readonly userId: string;
+  readonly phone: string | null;
+}
+
+function createAdminOperationClient(): EducationDigestClient | null {
+  if (process.env.NODE_ENV === 'test') return null;
+
+  const adminUrl = getSupabaseAdminUrl();
+  const adminKey = getSupabaseAdminKey();
+  if (!adminUrl || !adminKey) return null;
+
+  return createSupabaseClient<Database>(adminUrl, adminKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+async function resolveParentContext(client: EducationDigestClient): Promise<ParentContext | null> {
+  const currentUser = await getCurrentUser();
+  if (!currentUser?.id || !currentUser.tenant_id) {
+    return null;
+  }
+
+  const { data, error } = await client
+    .from('users')
+    .select('id, tenant_id, phone')
+    .eq('id', currentUser.id)
+    .eq('tenant_id', currentUser.tenant_id)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`PARENT_CONTEXT_LOOKUP_FAILED: ${error.message}`);
+  }
+
+  return {
+    tenantId: currentUser.tenant_id,
+    userId: currentUser.id,
+    phone: data?.phone ?? null,
+  };
+}
+
+function asString(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
+}
 
 export async function GET(request: Request) {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+    const { searchParams } = new URL(request.url);
+    const studentPartyId = searchParams.get('studentPartyId')?.trim() ?? '';
 
-    if (!supabaseKey) {
-      return NextResponse.json({ error: 'Supabase key not configured' }, { status: 500 });
+    if (!studentPartyId) {
+      return NextResponse.json({ success: false, error: 'studentPartyId is required' }, { status: 400 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const tenantId = searchParams.get('tenantId') || '00000000-0000-0000-0000-000000000001';
-    const studentId = searchParams.get('studentId') || '00000000-0000-0000-0000-000000000101';
+    const supabase = createAdminOperationClient() ?? await createClient();
+    const context = await resolveParentContext(supabase);
+    if (!context) {
+      return NextResponse.json({ success: false, error: 'Authenticated parent is required' }, { status: 401 });
+    }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    await new PreschoolParentDailyExperienceService(supabase).assertGuardianCanViewStudent({
+      user: context,
+      studentPartyId,
+      schoolDay: new Date().toISOString().slice(0, 10),
+    });
 
-    const { data: digest } = await supabase
+    const { data: digest, error } = await supabase
       .from('edu_daily_parent_digests')
       .select('*')
-      .eq('tenant_id', tenantId)
-      .eq('student_id', studentId)
+      .eq('tenant_id', context.tenantId)
+      .eq('student_party_id', studentPartyId)
+      .order('date', { ascending: false })
+      .limit(1)
       .single();
 
+    if (error) {
+      return NextResponse.json({ success: true, digestStatus: 'NONE' });
+    }
     if (!digest) {
-      return NextResponse.json({ success: true, digestStatus: 'DRAFT' });
+      return NextResponse.json({ success: true, digestStatus: 'NONE' });
     }
 
     return NextResponse.json({
@@ -34,45 +98,75 @@ export async function GET(request: Request) {
       digestId: digest.id,
       publishedAt: digest.published_at,
     });
-  } catch (error: any) {
-    return NextResponse.json({ success: true, digestStatus: 'DRAFT' });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Internal Server Error';
+    const status = message === 'PARENT_DAILY_STUDENT_ACCESS_DENIED' ? 403 : 500;
+    return NextResponse.json({ success: false, error: message }, { status });
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
-    if (!supabaseKey) {
-      return NextResponse.json({ error: 'Supabase key not configured' }, { status: 500 });
+    const supabase = createAdminOperationClient() ?? await createClient();
+    const context = await resolveParentContext(supabase);
+    if (!context) {
+      return NextResponse.json({ success: false, error: 'Authenticated parent is required' }, { status: 401 });
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
     const dailyCareService = new DailyCareService(supabase);
 
     const body = await request.json();
-    const { action, tenantId, classId, studentId, date, digestId } = body;
+    const action = asString(body?.action);
+    const classId = asString(body?.classId);
+    const studentPartyId = asString(body?.studentPartyId);
+    const date = asString(body?.date);
+    const digestId = asString(body?.digestId);
 
     if (action === 'generate') {
-      if (!tenantId || !classId || !studentId || !date) {
-        return NextResponse.json({ error: 'Missing tenantId, classId, studentId, or date' }, { status: 400 });
+      if (!classId || !studentPartyId || !date) {
+        return NextResponse.json({ error: 'Missing classId, studentPartyId, or date' }, { status: 400 });
       }
-      const digest = await dailyCareService.generateParentDigest(tenantId, classId, studentId, date);
+      await new PreschoolParentDailyExperienceService(supabase).assertGuardianCanViewStudent({
+        user: context,
+        studentPartyId,
+        schoolDay: date,
+      });
+      const digest = await dailyCareService.generateParentDigest(context.tenantId, classId, studentPartyId, date);
       return NextResponse.json({ success: true, digest });
     }
 
     if (action === 'publish') {
-      if (!tenantId || !digestId) {
-        return NextResponse.json({ error: 'Missing tenantId or digestId' }, { status: 400 });
+      if (!digestId) {
+        return NextResponse.json({ error: 'Missing digestId' }, { status: 400 });
       }
-      const digest = await dailyCareService.publishParentDigest(tenantId, digestId);
+      const { data: existingDigest, error: digestLookupError } = await supabase
+        .from('edu_daily_parent_digests')
+        .select('student_party_id, date')
+        .eq('id', digestId)
+        .eq('tenant_id', context.tenantId)
+        .maybeSingle();
+
+      if (digestLookupError) {
+        throw new Error(`DIGEST_LOOKUP_FAILED: ${digestLookupError.message}`);
+      }
+      if (!existingDigest?.student_party_id || !existingDigest.date) {
+        return NextResponse.json({ error: 'Digest not found' }, { status: 404 });
+      }
+
+      await new PreschoolParentDailyExperienceService(supabase).assertGuardianCanViewStudent({
+        user: context,
+        studentPartyId: existingDigest.student_party_id,
+        schoolDay: existingDigest.date,
+      });
+      const digest = await dailyCareService.publishParentDigest(context.tenantId, digestId);
       return NextResponse.json({ success: true, digest });
     }
 
     return NextResponse.json({ error: `Invalid action: ${action}` }, { status: 400 });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Parent Digest API Error:', error);
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Internal Server Error';
+    const status = message === 'PARENT_DAILY_STUDENT_ACCESS_DENIED' ? 403 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }

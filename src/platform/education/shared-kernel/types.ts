@@ -3,7 +3,7 @@
  * 
  * Constitution Compliance:
  * - Law 11: No `any` types (strict typing)
- * - Law 1: Student references Person aggregate root
+ * - Law 1: Student references the canonical Party identity
  */
 
 // ============================================================================
@@ -28,8 +28,8 @@ export type EnrollmentType =
 // ============================================================================
 
 /**
- * Student - represents academic role of a Person
- * References Person for identity (name, DOB, contacts)
+ * Student - represents the academic role bound to canonical Party identity.
+ * Legacy rows may still carry only a transitional Person identity.
  */
 export interface Student {
   // Primary key
@@ -38,8 +38,11 @@ export interface Student {
   // Tenant isolation
   tenantId: string;
   
-  // Person reference (identity aggregate root)
-  personId: string; // Foreign key to persons table
+  // Canonical identity reference
+  partyId: string | null; // Foreign key to party_parties table for canonical rows
+
+  // Transitional legacy reference retained for migrated rows.
+  personId?: string | null;
   
   // Student-specific fields
   studentCode: string;      // Unique identifier (e.g., "EDU-2024-001")
@@ -77,7 +80,8 @@ export interface Student {
  */
 export interface CreateStudentRequest {
   tenantId: string;
-  personId: string;         // Must reference existing Person
+  partyId: string;          // Must reference an existing person Party
+  personId?: string | null; // Transitional mapping to persons.id for legacy rows
   studentCode: string;
   academicStatus: AcademicStatus;
   enrollmentType: EnrollmentType;
@@ -138,7 +142,7 @@ export interface StudentWithPerson extends Student {
 export interface StudentsTableRow {
   student_id: string;
   tenant_id: string;
-  person_id: string;
+  person_id: string | null;
   student_code: string;
   academic_status: AcademicStatus;
   enrollment_type: EnrollmentType;
@@ -157,12 +161,13 @@ export interface StudentsTableRow {
   updated_at: string;
   created_by: string | null;
   updated_by: string | null;
+  party_id: string | null;
 }
 
 export interface StudentsTableInsert {
   student_id?: string;
   tenant_id: string;
-  person_id: string;
+  person_id?: string | null;
   student_code: string;
   academic_status: AcademicStatus;
   enrollment_type: EnrollmentType;
@@ -181,6 +186,7 @@ export interface StudentsTableInsert {
   updated_at?: string;
   created_by?: string | null;
   updated_by?: string | null;
+  party_id?: string | null;
 }
 
 export interface StudentsTableUpdate {
@@ -198,4 +204,5 @@ export interface StudentsTableUpdate {
   metadata?: Record<string, unknown> | null;
   updated_at?: string;
   updated_by?: string | null;
+  party_id?: string | null;
 }

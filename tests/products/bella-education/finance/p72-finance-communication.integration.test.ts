@@ -44,6 +44,7 @@ describe('P7.2 Finance Communication & Collection Lifecycle Integration Suite', 
   let exceptionService: CommunicationExceptionService;
   let commRepo: ParentCommunicationRepository;
   let billingPeriodId: string;
+  let courseId: string;
 
   let tenantA: string;
   let tenantB: string;
@@ -60,7 +61,7 @@ describe('P7.2 Finance Communication & Collection Lifecycle Integration Suite', 
     billingService = new TuitionBillingService(finRepo);
     issuanceService = new InvoiceIssuanceService(finRepo);
     reconService = new PaymentReconciliationService(finRepo);
-    scannerService = new OverduePaymentScannerService(finRepo);
+    scannerService = new OverduePaymentScannerService(supabase);
 
     commRepo = new ParentCommunicationRepository(supabase);
     commDeliveryService = new CommunicationDeliveryService(commRepo);
@@ -76,6 +77,15 @@ describe('P7.2 Finance Communication & Collection Lifecycle Integration Suite', 
       { id: parentPartyId, tenant_id: tenantA, party_type: 'person', display_name: 'Mẹ Phụ Huynh P72' },
       { id: staffPartyId, tenant_id: tenantA, party_type: 'person', display_name: 'Thầy Kế Toán P72' },
     ]);
+
+    courseId = crypto.randomUUID();
+    await supabase.from('edu_courses').insert({
+      id: courseId,
+      tenant_id: tenantA,
+      course_code: `P72-${courseId.slice(0, 8)}`,
+      title: `P72 Finance Course ${courseId.slice(0, 8)}`,
+      status: 'active',
+    });
 
     // 2. Seed Fee Structure
     await finRepo.createFeeStructure({
@@ -111,6 +121,23 @@ describe('P7.2 Finance Communication & Collection Lifecycle Integration Suite', 
       tenant_id: tenantId,
       party_type: 'person',
       display_name: `Bé P72-${studentPartyId.substring(0, 4)}`,
+    });
+    const enrollmentCourseId = tenantId === tenantA ? courseId : crypto.randomUUID();
+    if (tenantId !== tenantA) {
+      await supabase.from('edu_courses').insert({
+        id: enrollmentCourseId,
+        tenant_id: tenantId,
+        course_code: `P72-${enrollmentCourseId.slice(0, 8)}`,
+        title: `P72 Finance Course ${enrollmentCourseId.slice(0, 8)}`,
+        status: 'active',
+      });
+    }
+    await supabase.from('edu_enrollments').insert({
+      tenant_id: tenantId,
+      course_id: enrollmentCourseId,
+      student_party_id: studentPartyId,
+      status: 'active',
+      request_id: `p72-${studentPartyId}`,
     });
 
     if (tenantId === tenantA) {

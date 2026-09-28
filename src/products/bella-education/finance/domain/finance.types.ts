@@ -13,13 +13,16 @@ export type FeeItemType = 'TUITION' | 'MEAL_FEE' | 'ACTIVITY_FEE' | 'DISCOUNT' |
 export type DiscountType = 'SIBLING' | 'SCHOLARSHIP' | 'STAFF_CHILD' | 'FINANCIAL_AID' | 'WAIVER';
 export type PaymentMethod = 'BANK_TRANSFER' | 'CASH' | 'QR_CODE' | 'CARD';
 export type PaymentStatus = 'RECEIVED' | 'RECONCILED' | 'REFUNDED' | 'VOID';
+export type TuitionRecognitionPolicyType = 'PERIOD_COMPLETION' | 'TIME_BASED' | 'MILESTONE_EVENT';
+export type TuitionRecognitionPolicyStatus = 'ACTIVE' | 'INACTIVE';
 
 /**
  * P4 Care & Wellbeing Public Billing Contract Input DTO
  * Finance consumes this contract payload for meal fee compilation
  */
 export type StudentMealChargeInput = {
-  studentId: string;
+  studentPartyId: string;
+  studentId?: string | null;
   tenantId: string;
   sourceDomain: 'P4_CARE';
   sourceEntityType: 'MEAL_LOG' | 'ATTENDANCE';
@@ -61,7 +64,8 @@ export type BillingPeriod = {
 export type StudentDiscountProfile = {
   id: string;
   tenantId: string;
-  studentId: string;
+  studentPartyId: string;
+  studentId?: string | null;
   discountType: DiscountType;
   discountName: string;
   discountPercent: number; // e.g. 10.00 for 10%
@@ -91,7 +95,8 @@ export type InvoiceLineItem = {
 export type Invoice = {
   id: string;
   tenantId: string;
-  studentId: string;
+  studentPartyId: string;
+  studentId?: string | null;
   billingPeriodId: string;
   invoiceNumber: string;
   invoiceStatus: InvoiceStatus;
@@ -115,7 +120,8 @@ export type Payment = {
   id: string;
   tenantId: string;
   payerPartyId: string;
-  studentId: string;
+  studentPartyId: string;
+  studentId?: string | null;
   paymentNumber: string;
   paymentMethod: PaymentMethod;
   amount: number;
@@ -149,5 +155,27 @@ export type PaymentReceipt = {
   settlementSnapshot: Record<string, unknown>;
   sha256Fingerprint: string;
   issuedAt: string;
+  createdAt?: string;
+};
+
+export type TuitionRecognitionPolicy = {
+  id: string;
+  tenantId: string;
+  policyType: TuitionRecognitionPolicyType;
+  effectiveFrom: string;
+  effectiveTo?: string | null;
+  version: string;
+  status: TuitionRecognitionPolicyStatus;
+  createdBy: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type TuitionServicePeriodCompletion = {
+  id: string;
+  tenantId: string;
+  billingPeriodId: string;
+  completedAt: string;
+  completedBy: string;
   createdAt?: string;
 };

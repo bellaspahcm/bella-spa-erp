@@ -7,7 +7,12 @@
  * @module src/products/bella-education/services/attendance.service
  */
 
-import { IEducationAttendanceContract, EducationAttendanceDTO } from '../../../platform/education/contracts/attendance.contract';
+import {
+  CourseDailyAttendanceRosterItem,
+  EducationAttendanceDTO,
+  EducationDailyAttendanceStateDTO,
+  IEducationAttendanceContract,
+} from '../../../platform/education/contracts/attendance.contract';
 import { bellaEducationManifest } from '../manifest';
 
 export interface MarkAttendanceDTO {
@@ -15,6 +20,12 @@ export interface MarkAttendanceDTO {
   enrollmentId: string;
   status: 'present' | 'absent' | 'excused';
   rollCallTime?: string;
+}
+
+export interface CourseDailyAttendanceDTO {
+  tenantId: string;
+  courseId: string;
+  schoolDay: string;
 }
 
 export class AttendanceProductService {
@@ -61,5 +72,37 @@ export class AttendanceProductService {
     if (!enrollmentId) throw new Error('ENROLLMENT_BOUNDARY_VIOLATION: enrollmentId is required');
 
     return this.attendanceContract.getAttendanceHistory(tenantId, enrollmentId);
+  }
+
+  /**
+   * Records one roll-call event and updates the canonical daily attendance state.
+   */
+  async setDailyAttendance(dto: MarkAttendanceDTO): Promise<EducationDailyAttendanceStateDTO> {
+    this.assertCapability('attendance_checkpoint_command');
+    this.assertWorkflow('student_academic_lifecycle');
+
+    if (!dto.tenantId) throw new Error('TENANT_ISOLATION_VIOLATION: tenantId is required');
+    if (!dto.enrollmentId) throw new Error('ENROLLMENT_BOUNDARY_VIOLATION: enrollmentId is required');
+
+    return this.attendanceContract.setDailyAttendance({
+      tenantId: dto.tenantId,
+      enrollmentId: dto.enrollmentId,
+      status: dto.status,
+      rollCallTime: dto.rollCallTime,
+    });
+  }
+
+  /**
+   * Loads the daily classroom roster with attendance state for one school day.
+   */
+  async getCourseDailyAttendance(dto: CourseDailyAttendanceDTO): Promise<readonly CourseDailyAttendanceRosterItem[]> {
+    this.assertCapability('attendance_checkpoint_command');
+    this.assertWorkflow('student_academic_lifecycle');
+
+    if (!dto.tenantId) throw new Error('TENANT_ISOLATION_VIOLATION: tenantId is required');
+    if (!dto.courseId) throw new Error('COURSE_BOUNDARY_VIOLATION: courseId is required');
+    if (!dto.schoolDay) throw new Error('SCHOOL_DAY_REQUIRED: schoolDay is required');
+
+    return this.attendanceContract.getCourseDailyAttendance(dto);
   }
 }

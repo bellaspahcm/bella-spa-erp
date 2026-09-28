@@ -53,7 +53,20 @@ describe('BELLA EDUCATION V1 — RUNTIME CONFORMANCE INTEGRATION TESTS', () => {
       enrollmentId: 'enroll-101',
       status: 'present',
       rollCallTime: new Date().toISOString()
-    })
+    }),
+    getAttendanceHistory: jest.fn().mockResolvedValue([]),
+    setDailyAttendance: jest.fn().mockResolvedValue({
+      id: 'daily-att-101',
+      tenantId: 'tenant-edu-1',
+      enrollmentId: 'enroll-101',
+      schoolDay: '2026-09-26',
+      status: 'present',
+      eventId: 'att-101',
+      rollCallTime: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }),
+    getCourseDailyAttendance: jest.fn().mockResolvedValue([])
   };
 
   const mockAssessmentContract: any = {
@@ -102,6 +115,35 @@ describe('BELLA EDUCATION V1 — RUNTIME CONFORMANCE INTEGRATION TESTS', () => {
     expect(courses.length).toBe(1);
     expect(courses[0].id).toBe('course-101');
     expect(mockCourseContract.listCourses).toHaveBeenCalledWith('tenant-edu-1');
+  });
+
+  test('Gate 2: Daily attendance state routes through the public Attendance contract', async () => {
+    const state = await attendanceService.setDailyAttendance({
+      tenantId: 'tenant-edu-1',
+      enrollmentId: 'enroll-101',
+      status: 'present',
+      rollCallTime: '2026-09-26T08:00:00.000Z',
+    });
+
+    expect(state.enrollmentId).toBe('enroll-101');
+    expect(mockAttendanceContract.setDailyAttendance).toHaveBeenCalledWith({
+      tenantId: 'tenant-edu-1',
+      enrollmentId: 'enroll-101',
+      status: 'present',
+      rollCallTime: '2026-09-26T08:00:00.000Z',
+    });
+
+    await attendanceService.getCourseDailyAttendance({
+      tenantId: 'tenant-edu-1',
+      courseId: 'course-101',
+      schoolDay: '2026-09-26',
+    });
+
+    expect(mockAttendanceContract.getCourseDailyAttendance).toHaveBeenCalledWith({
+      tenantId: 'tenant-edu-1',
+      courseId: 'course-101',
+      schoolDay: '2026-09-26',
+    });
   });
 
   // Gate 3: Tenant Isolation Boundary

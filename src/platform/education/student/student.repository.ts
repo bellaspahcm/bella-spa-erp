@@ -4,7 +4,7 @@
  * Responsibilities:
  * - CRUD operations on students table
  * - Tenant isolation enforcement
- * - Person FK validation
+ * - Canonical Party identity persistence
  * 
  * Constitution Compliance:
  * - Law 11: No `any` types (strict Supabase types)
@@ -12,16 +12,19 @@
  */
 
 import { createClient } from '@/lib/supabase-server';
-import type { Json } from '@/types/database.types';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database, Json } from '@/types/database.types';
 import { Student, StudentsTableInsert, StudentsTableUpdate, StudentsTableRow } from '../shared-kernel/types';
+
+type EducationStudentClient = SupabaseClient<Database>;
 
 export class StudentRepository {
   /**
    * Create new student
-   * Validates person_id FK exists before insert
+   * Persists the canonical party_id and an optional transitional person_id.
    */
-  static async create(student: Student): Promise<Student> {
-    const supabase = await createClient();
+  static async create(student: Student, client?: EducationStudentClient): Promise<Student> {
+    const supabase = client ?? await createClient();
 
     // Map domain model to database row
     const { data, error } = await supabase
@@ -29,7 +32,8 @@ export class StudentRepository {
       .insert({
         student_id: student.studentId,
         tenant_id: student.tenantId,
-        person_id: student.personId,
+        party_id: student.partyId,
+        person_id: student.personId ?? null,
         student_code: student.studentCode,
         academic_status: student.academicStatus,
         enrollment_type: student.enrollmentType,
@@ -53,9 +57,11 @@ export class StudentRepository {
       .single();
 
     if (error) {
-      // Check if error is FK violation (person_id doesn't exist)
+      if (error.code === '23503' && error.message.includes('party_id')) {
+        throw new Error(`Party with ID ${student.partyId} does not exist`);
+      }
       if (error.code === '23503' && error.message.includes('person_id')) {
-        throw new Error(`Person with ID ${student.personId} does not exist`);
+        throw new Error(`Mapped person with ID ${student.personId ?? 'null'} does not exist`);
       }
       // Check if error is unique violation (student_code duplicate)
       if (error.code === '23505' && error.message.includes('student_code')) {
@@ -129,6 +135,28 @@ export class StudentRepository {
 
     if (error) {
       throw new Error(`Failed to find students by person: ${error.message}`);
+    }
+
+    return (data as StudentsTableRow[]).map(this.mapRowToDomain);
+  }
+
+  /** Find students by canonical Party identity. */
+  static async findByPartyId(
+    partyId: string,
+    tenantId: string,
+    client?: EducationStudentClient,
+  ): Promise<Student[]> {
+    const supabase = client ?? await createClient();
+
+    const { data, error } = await supabase
+      .from('students')
+      .select('*')
+      .eq('party_id', partyId)
+      .eq('tenant_id', tenantId)
+      .order('enrollment_date', { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to find students by party: ${error.message}`);
     }
 
     return (data as StudentsTableRow[]).map(this.mapRowToDomain);
@@ -285,6 +313,7 @@ export class StudentRepository {
     return {
       studentId: row.student_id,
       tenantId: row.tenant_id,
+      partyId: row.party_id,
       personId: row.person_id,
       studentCode: row.student_code,
       academicStatus: row.academic_status,

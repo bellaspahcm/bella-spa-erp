@@ -9,9 +9,8 @@
  * Interfaced to real Supabase database for Playwright Field Verification.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { createClient } from '@supabase/supabase-js';
 import { 
   CircleDollarSign, 
   Receipt, 
@@ -34,25 +33,53 @@ import {
   Users
 } from 'lucide-react';
 
-import { PreschoolFinanceRepository } from '@/products/bella-education/finance/repositories/preschool-finance.repository';
-import { TuitionBillingService } from '@/products/bella-education/finance/services/tuition-billing.service';
-import { InvoiceIssuanceService } from '@/products/bella-education/finance/services/invoice-issuance.service';
-import { PaymentReconciliationService } from '@/products/bella-education/finance/services/payment-reconciliation.service';
-import { OverduePaymentScannerService } from '@/products/bella-education/finance/services/overdue-payment-scanner.service';
-import { FinanceProjectionBridge } from '@/products/bella-education/parent-engagement/bridges/finance-projection.bridge';
-import { CommunicationDeliveryService } from '@/products/bella-education/parent-engagement/services/communication-delivery.service';
-import { ParentCommunicationRepository } from '@/products/bella-education/parent-engagement/repositories/parent-communication.repository';
-import { CommunicationExceptionService } from '@/products/bella-education/parent-engagement/services/communication-exception.service';
-import { AcknowledgementService } from '@/products/bella-education/parent-engagement/services/acknowledgement.service';
-import { Invoice, Payment, PaymentReceipt } from '@/products/bella-education/finance/domain/finance.types';
+import {
+  BillingPeriod,
+  Invoice,
+  Payment,
+  PaymentReceipt,
+  TuitionServicePeriodCompletion,
+} from '@/products/bella-education/finance/domain/finance.types';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://lvnvkpyxtuilhrabtlwv.supabase.co';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+type FinanceStudentOption = {
+  enrollmentId: string;
+  courseId: string;
+  studentPartyId: string;
+  studentId: string | null;
+  studentCode: string | null;
+  displayName: string;
+};
 
-const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000001';
-const DEFAULT_STAFF_ID = '00000000-0000-0000-0000-000000000003';
-const DEFAULT_PARENT_ID = '00000000-0000-0000-0000-000000000004';
+type FinanceExceptionRow = {
+  id: string;
+  exception_type: string;
+  status: string;
+  description?: string | null;
+};
+
+type FinanceStateResponse = {
+  success: boolean;
+  error?: string;
+  students?: FinanceStudentOption[];
+  billingPeriods?: BillingPeriod[];
+  servicePeriodCompletions?: TuitionServicePeriodCompletion[];
+  invoices?: Invoice[];
+  payments?: Payment[];
+  exceptions?: FinanceExceptionRow[];
+};
+
+type FinanceCommandResponse = {
+  success: boolean;
+  error?: string;
+  invoice?: Invoice;
+  completion?: TuitionServicePeriodCompletion;
+  alreadyCompleted?: boolean;
+  projection?: { isDuplicate: boolean; notice: { id: string } };
+  escalatedCount?: number;
+  payment?: Payment;
+  receipt?: PaymentReceipt;
+  updatedSettlementStatus?: string;
+};
 
 export default function FinancePage() {
   const [userRole, setUserRole] = useState<'STAFF' | 'PARENT'>('STAFF');
@@ -61,129 +88,94 @@ export default function FinancePage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [receipts, setReceipts] = useState<PaymentReceipt[]>([]);
-  const [exceptions, setExceptions] = useState<any[]>([]);
-  const [students, setStudents] = useState<any[]>([]);
+  const [exceptions, setExceptions] = useState<FinanceExceptionRow[]>([]);
+  const [students, setStudents] = useState<FinanceStudentOption[]>([]);
+  const [billingPeriods, setBillingPeriods] = useState<BillingPeriod[]>([]);
+  const [servicePeriodCompletions, setServicePeriodCompletions] = useState<TuitionServicePeriodCompletion[]>([]);
   
   const [loading, setLoading] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   // Form states
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string>('');
-  const [selectedStudentId, setSelectedStudentId] = useState<string>('');
-  const [dueDate, setDueDate] = useState<string>('2026-08-01');
+  const [selectedStudentPartyId, setSelectedStudentPartyId] = useState<string>('');
+  const [selectedBillingPeriodId, setSelectedBillingPeriodId] = useState<string>('');
   const [paymentAmount, setPaymentAmount] = useState<number>(5000000);
   const [paymentMethod, setPaymentMethod] = useState<'BANK_TRANSFER' | 'QR_CODE' | 'CASH'>('QR_CODE');
   const [resolutionNotes, setResolutionNotes] = useState<string>('Phụ huynh hẹn chuyển khoản bù vào tuần sau.');
 
-  // Services
-  const finRepo = new PreschoolFinanceRepository();
-  const billingService = new TuitionBillingService(finRepo);
-  const issuanceService = new InvoiceIssuanceService(finRepo);
-  const reconService = new PaymentReconciliationService(finRepo);
-  const scannerService = new OverduePaymentScannerService(finRepo);
-  const commRepo = new ParentCommunicationRepository(supabase);
-  const commDeliveryService = new CommunicationDeliveryService(commRepo);
-  const ackService = new AcknowledgementService(commRepo);
-  const exceptionService = new CommunicationExceptionService(commRepo);
-  const finBridge = new FinanceProjectionBridge(supabase, commDeliveryService, commRepo);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      // Load Students
-      const { data: stList } = await supabase
-        .from('students')
-        .select('*')
-        .eq('tenant_id', DEFAULT_TENANT_ID)
-        .limit(50);
-
-      if (stList && stList.length > 0) {
-        setStudents(stList);
-        const p7Student = stList.find((s) => s.student_id === '00000000-0000-0000-0000-000000000071');
-        setSelectedStudentId((prev) => (prev ? prev : (p7Student?.student_id || stList[0].student_id)));
+      const response = await fetch('/api/education/finance', { cache: 'no-store' });
+      const payload = (await response.json()) as FinanceStateResponse;
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error || 'Không tải được dữ liệu tài chính.');
       }
 
-      // Load Invoices
-      const invList = await finRepo.listInvoices(DEFAULT_TENANT_ID);
-      setInvoices(invList);
+      const nextStudents = payload.students || [];
+      const nextBillingPeriods = payload.billingPeriods || [];
+      setStudents(nextStudents);
+      setSelectedStudentPartyId((prev) => (
+        nextStudents.some((student) => student.studentPartyId === prev) ? prev : nextStudents[0]?.studentPartyId || ''
+      ));
+      setBillingPeriods(nextBillingPeriods);
+      setSelectedBillingPeriodId((prev) => (
+        nextBillingPeriods.some((period) => period.id === prev) ? prev : nextBillingPeriods[0]?.id || ''
+      ));
+      setServicePeriodCompletions(payload.servicePeriodCompletions || []);
+      setInvoices(payload.invoices || []);
+      setPayments(payload.payments || []);
+      setExceptions(payload.exceptions || []);
 
-      // Load Payments
-      const { data: payList } = await supabase
-        .from('edu_fin_inbound_payments')
-        .select('*')
-        .eq('tenant_id', DEFAULT_TENANT_ID)
-        .order('created_at', { ascending: false });
-      setPayments(payList || []);
-
-      // Load Exceptions
-      const { data: excList } = await supabase
-        .from('edu_comm_exceptions')
-        .select('*')
-        .eq('tenant_id', DEFAULT_TENANT_ID)
-        .order('created_at', { ascending: false });
-      setExceptions(excList || []);
-
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error loading finance data:', err);
+      setActionMessage(err instanceof Error ? err.message : 'Không tải được dữ liệu tài chính.');
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const financeCommand = async (action: string, payload: Record<string, unknown> = {}): Promise<FinanceCommandResponse> => {
+    const response = await fetch('/api/education/finance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, ...payload }),
+    });
+    const body = (await response.json()) as FinanceCommandResponse;
+    if (!response.ok || !body.success) {
+      throw new Error(body.error || 'Finance operation failed.');
+    }
+    return body;
   };
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   // Staff Actions
   const handleCompileDraftInvoice = async () => {
-    const p7Student = students.find((s) => s.student_id === '00000000-0000-0000-0000-000000000071');
-    const targetStudentId = selectedStudentId || (p7Student?.student_id) || (students[0]?.student_id) || '00000000-0000-0000-0000-000000000071';
+    const targetStudent = students.find((student) => student.studentPartyId === selectedStudentPartyId) || students[0];
+    if (!targetStudent) {
+      setActionMessage('Không có học sinh đã ghi danh hợp lệ để lập hóa đơn.');
+      return;
+    }
+    const targetBillingPeriod = billingPeriods.find((period) => period.id === selectedBillingPeriodId);
+    if (!targetBillingPeriod) {
+      setActionMessage('Chưa có kỳ thu học phí ACTIVE hợp lệ. Vui lòng cấu hình kỳ thu trước khi lập hóa đơn.');
+      return;
+    }
     setLoading(true);
     try {
-      // Ensure base fee structure exists
-      const feeStructs = await finRepo.getFeeStructures(DEFAULT_TENANT_ID, 'PRESCHOOL');
-      if (!feeStructs.find((f) => f.feeType === 'TUITION')) {
-        await finRepo.createFeeStructure({
-          tenantId: DEFAULT_TENANT_ID,
-          programId: 'PRESCHOOL',
-          feeCode: 'TUITION_MONTHLY',
-          feeName: 'Học phí mầm non chính khóa',
-          feeType: 'TUITION',
-          amount: 5000000,
-          currency: 'VND',
-          billingCycle: 'MONTHLY',
-          isActive: true,
-        });
-      }
-
-      // Find active billing period
-      const periods = await finRepo.listActiveBillingPeriods(DEFAULT_TENANT_ID);
-      let periodId = periods[0]?.id;
-      if (!periodId) {
-        const p = await finRepo.createBillingPeriod({
-          tenantId: DEFAULT_TENANT_ID,
-          periodName: 'Kỳ Thu Tháng 9/2026',
-          startDate: '2026-09-01',
-          endDate: '2026-09-30',
-          dueDate: dueDate,
-          status: 'ACTIVE',
-          createdBy: DEFAULT_STAFF_ID,
-        });
-        periodId = p.id;
-      }
-
-      const invoice = await billingService.compileDraftInvoice({
-        tenantId: DEFAULT_TENANT_ID,
-        studentId: targetStudentId,
-        billingPeriodId: periodId,
-        dueDate: dueDate,
-        createdBy: DEFAULT_STAFF_ID,
+      const result = await financeCommand('compileDraftInvoice', {
+        studentPartyId: targetStudent.studentPartyId,
+        billingPeriodId: targetBillingPeriod.id,
       });
-
-      setActionMessage(`Đã lập hóa đơn nháp thành công: ${invoice.invoiceNumber} (${invoice.netAmount.toLocaleString('vi-VN')} VNĐ)`);
+      if (!result.invoice) throw new Error('Không nhận được hóa đơn sau khi lập nháp.');
+      setActionMessage(`Đã lập hóa đơn nháp thành công: ${result.invoice.invoiceNumber} (${result.invoice.netAmount.toLocaleString('vi-VN')} VNĐ)`);
       await loadData();
-    } catch (err: any) {
-      setActionMessage(`Lỗi lập hóa đơn: ${err.message}`);
+    } catch (err: unknown) {
+      setActionMessage(`Lỗi lập hóa đơn: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -192,11 +184,12 @@ export default function FinancePage() {
   const handleIssueInvoice = async (invoiceId: string) => {
     setLoading(true);
     try {
-      const issued = await issuanceService.issueInvoice(DEFAULT_TENANT_ID, invoiceId);
-      setActionMessage(`Đã phát hành hóa đơn ${issued.invoiceNumber} (DRAFT ➔ ISSUED). SHA-256 fingerprint: ${issued.sha256Checksum?.substring(0, 16)}...`);
+      const result = await financeCommand('issueInvoice', { invoiceId });
+      if (!result.invoice) throw new Error('Không nhận được hóa đơn sau khi phát hành.');
+      setActionMessage(`Đã phát hành hóa đơn ${result.invoice.invoiceNumber} (DRAFT ➔ ISSUED). SHA-256 fingerprint: ${result.invoice.sha256Checksum?.substring(0, 16)}...`);
       await loadData();
-    } catch (err: any) {
-      setActionMessage(`Lỗi phát hành: ${err.message}`);
+    } catch (err: unknown) {
+      setActionMessage(`Lỗi phát hành: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -205,26 +198,41 @@ export default function FinancePage() {
   const handleProjectInvoiceNotice = async (invoice: Invoice) => {
     setLoading(true);
     try {
-      const res = await finBridge.projectIssuedInvoice({
-        tenantId: DEFAULT_TENANT_ID,
-        studentId: invoice.studentId,
-        guardianPartyIds: [DEFAULT_PARENT_ID],
-        invoiceId: invoice.id,
-        invoiceNumber: invoice.invoiceNumber,
-        netAmount: invoice.netAmount,
-        dueDate: invoice.dueDate,
-        invoiceStatus: invoice.invoiceStatus,
-        createdBy: DEFAULT_STAFF_ID,
-      });
-
+      const result = await financeCommand('projectInvoiceNotice', { invoiceId: invoice.id });
+      const projection = result.projection;
       setActionMessage(
-        res.isDuplicate
+        projection?.isDuplicate
           ? `Thông báo đã tồn tại cho hóa đơn ${invoice.invoiceNumber} (Idempotent PASS)`
-          : `Đã gửi thông báo hóa đơn ${invoice.invoiceNumber} tới Phụ huynh (P6 Notice ID: ${res.notice.id})`
+          : `Đã gửi thông báo hóa đơn ${invoice.invoiceNumber} tới Phụ huynh (P6 Notice ID: ${projection?.notice.id || 'N/A'})`
       );
       await loadData();
-    } catch (err: any) {
-      setActionMessage(`Lỗi gửi thông báo: ${err.message}`);
+    } catch (err: unknown) {
+      setActionMessage(`Lỗi gửi thông báo: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCompleteTuitionServicePeriod = async () => {
+    const targetBillingPeriod = billingPeriods.find((period) => period.id === selectedBillingPeriodId);
+    if (!targetBillingPeriod) {
+      setActionMessage('Chưa có kỳ thu học phí ACTIVE hợp lệ để xác nhận hoàn thành dịch vụ.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const result = await financeCommand('completeTuitionServicePeriod', {
+        billingPeriodId: targetBillingPeriod.id,
+      });
+      if (!result.completion) throw new Error('Không nhận được bằng chứng hoàn thành kỳ dịch vụ.');
+      setActionMessage(
+        result.alreadyCompleted
+          ? `Kỳ dịch vụ ${targetBillingPeriod.periodName} đã được xác nhận hoàn thành trước đó.`
+          : `Đã xác nhận hoàn thành kỳ dịch vụ ${targetBillingPeriod.periodName}. Recognition vẫn cần thao tác riêng.`
+      );
+      await loadData();
+    } catch (err: unknown) {
+      setActionMessage(`Lỗi xác nhận hoàn thành kỳ dịch vụ: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -233,45 +241,31 @@ export default function FinancePage() {
   const handleScanOverdueInvoices = async () => {
     setLoading(true);
     try {
-      const { escalatedCount, exceptions } = await scannerService.scanAndEscalateOverdueInvoices(
-        DEFAULT_TENANT_ID,
-        DEFAULT_STAFF_ID
-      );
-      setActionMessage(`Quét thành công! Đã phát hiện & leo thang ${escalatedCount} hóa đơn quá hạn chưa thanh toán sang Staff Work Queue.`);
+      const result = await financeCommand('scanOverdueInvoices');
+      setActionMessage(`Quét thành công! Đã phát hiện & leo thang ${result.escalatedCount ?? 0} hóa đơn quá hạn chưa thanh toán sang Staff Work Queue.`);
       await loadData();
-    } catch (err: any) {
-      setActionMessage(`Lỗi quét quá hạn: ${err.message}`);
+    } catch (err: unknown) {
+      setActionMessage(`Lỗi quét quá hạn: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRecordAndReconcilePayment = async (invoiceId: string, studentId: string) => {
+  const handleRecordAndReconcilePayment = async (invoiceId: string) => {
     setLoading(true);
     try {
-      const payment = await reconService.recordInboundPayment({
-        tenantId: DEFAULT_TENANT_ID,
-        payerPartyId: DEFAULT_PARENT_ID,
-        studentId,
-        paymentMethod,
-        amount: paymentAmount,
-        createdBy: DEFAULT_STAFF_ID,
-      });
-
-      const { receipt, updatedSettlementStatus } = await reconService.reconcilePaymentToInvoice({
-        tenantId: DEFAULT_TENANT_ID,
-        paymentId: payment.id,
+      const result = await financeCommand('recordAndReconcilePayment', {
         invoiceId,
-        allocationAmount: paymentAmount,
-        reconciledByPartyId: DEFAULT_STAFF_ID,
+        paymentAmount,
+        paymentMethod,
       });
-
+      if (!result.receipt) throw new Error('Không nhận được phiếu thu sau đối soát.');
       setActionMessage(
-        `Ghi nhận thanh toán ${paymentAmount.toLocaleString('vi-VN')} VNĐ! Trạng thái hóa đơn ➔ ${updatedSettlementStatus}. Phiếu thu SHA-256: ${receipt.sha256Fingerprint.substring(0, 16)}...`
+        `Ghi nhận thanh toán ${paymentAmount.toLocaleString('vi-VN')} VNĐ! Trạng thái hóa đơn ➔ ${result.updatedSettlementStatus}. Phiếu thu SHA-256: ${result.receipt.sha256Fingerprint.substring(0, 16)}...`
       );
       await loadData();
-    } catch (err: any) {
-      setActionMessage(`Lỗi đối soát thanh toán: ${err.message}`);
+    } catch (err: unknown) {
+      setActionMessage(`Lỗi đối soát thanh toán: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -280,20 +274,28 @@ export default function FinancePage() {
   const handleResolveException = async (exceptionId: string) => {
     setLoading(true);
     try {
-      await exceptionService.resolveException({
-        tenantId: DEFAULT_TENANT_ID,
+      await financeCommand('resolveException', {
         exceptionId,
-        resolvedBy: DEFAULT_STAFF_ID,
         resolutionNotes,
       });
       setActionMessage(`Đã xử lý ngoại lệ thu nợ trong Staff Work Queue (Bảo lưu trạng thái tài chính UNPAID cho P7).`);
       await loadData();
-    } catch (err: any) {
-      setActionMessage(`Lỗi xử lý ngoại lệ: ${err.message}`);
+    } catch (err: unknown) {
+      setActionMessage(`Lỗi xử lý ngoại lệ: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
   };
+
+  const parentInvoice = invoices[0];
+  const selectedPeriodCompletion = servicePeriodCompletions.find(
+    (completion) => completion.billingPeriodId === selectedBillingPeriodId,
+  );
+  const parentBillingPeriod = parentInvoice
+    ? billingPeriods.find((period) => period.id === parentInvoice.billingPeriodId)
+    : undefined;
+  const parentPeriodLabel = parentBillingPeriod?.periodName || 'kỳ học phí hiện tại';
+  const parentDueDate = parentInvoice?.dueDate || parentBillingPeriod?.dueDate || 'N/A';
 
   return (
     <div className="w-full p-4 sm:p-6 lg:p-8 space-y-6 pb-16 font-sans" data-testid="finance-command-center">
@@ -428,29 +430,65 @@ export default function FinancePage() {
                   <div>
                     <label className="text-[11px] font-bold text-gray-600 dark:text-gray-400">Chọn Học Sinh:</label>
                     <select
-                      value={selectedStudentId}
-                      onChange={(e) => setSelectedStudentId(e.target.value)}
+                      value={selectedStudentPartyId}
+                      onChange={(e) => setSelectedStudentPartyId(e.target.value)}
                       className="w-full mt-1 p-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-white"
                     >
                       {students.map((st) => (
-                        <option key={st.student_id} value={st.student_id}>
-                          {st.student_code} (ID: {st.student_id.substring(0, 8)}...)
+                        <option key={st.studentPartyId} value={st.studentPartyId}>
+                          {st.displayName} - {st.studentCode ?? 'Chưa có mã'} (Party: {st.studentPartyId.substring(0, 8)}...)
                         </option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label className="text-[11px] font-bold text-gray-600 dark:text-gray-400">Hạn Thanh Toán (Due Date):</label>
-                    <input
-                      type="date"
-                      value={dueDate}
-                      onChange={(e) => setDueDate(e.target.value)}
+                    <label className="text-[11px] font-bold text-gray-600 dark:text-gray-400">Kỳ Thu Học Phí:</label>
+                    <select
+                      value={selectedBillingPeriodId}
+                      onChange={(e) => setSelectedBillingPeriodId(e.target.value)}
                       className="w-full mt-1 p-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-white"
-                    />
+                    >
+                      {billingPeriods.map((period) => (
+                        <option key={period.id} value={period.id}>
+                          {period.periodName} ({period.startDate} - {period.endDate}) • Hạn: {period.dueDate}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-3 space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[11px] font-bold text-gray-600 dark:text-gray-400">
+                          Hoàn thành kỳ dịch vụ
+                        </p>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                          {selectedPeriodCompletion
+                            ? `Đã xác nhận lúc ${new Date(selectedPeriodCompletion.completedAt).toLocaleString('vi-VN')}`
+                            : 'Chưa có xác nhận hoàn thành từ DB.'}
+                        </p>
+                      </div>
+                      {selectedPeriodCompletion ? (
+                        <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-extrabold text-emerald-700">
+                          COMPLETED
+                        </span>
+                      ) : (
+                        <button
+                          onClick={handleCompleteTuitionServicePeriod}
+                          disabled={loading || billingPeriods.length === 0}
+                          data-testid="btn-complete-tuition-service-period"
+                          className="shrink-0 rounded-xl bg-slate-900 px-3 py-2 text-[11px] font-bold text-white hover:bg-slate-800 disabled:opacity-50"
+                        >
+                          Xác nhận hoàn thành
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[10px] font-semibold text-amber-700 dark:text-amber-300">
+                      Thao tác này chỉ tạo completion evidence, không ghi nhận doanh thu.
+                    </p>
                   </div>
                   <button
                     onClick={handleCompileDraftInvoice}
-                    disabled={loading}
+                    disabled={loading || billingPeriods.length === 0}
                     data-testid="btn-compile-invoice"
                     className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-500/20 active:scale-95 transition-all"
                   >
@@ -641,7 +679,7 @@ export default function FinancePage() {
                     <label className="text-[11px] font-bold text-gray-600 dark:text-gray-400">Hình Thức:</label>
                     <select
                       value={paymentMethod}
-                      onChange={(e: any) => setPaymentMethod(e.target.value)}
+                      onChange={(e) => setPaymentMethod(e.target.value as 'BANK_TRANSFER' | 'QR_CODE' | 'CASH')}
                       className="w-full mt-1 p-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-white"
                     >
                       <option value="QR_CODE">Chuyển Khoản QR Code</option>
@@ -654,7 +692,7 @@ export default function FinancePage() {
                     <button
                       onClick={() => {
                         const targetInv = invoices.find((i) => i.id === selectedInvoiceId) || invoices[0];
-                        if (targetInv) handleRecordAndReconcilePayment(targetInv.id, targetInv.studentId);
+                        if (targetInv) handleRecordAndReconcilePayment(targetInv.id);
                       }}
                       disabled={loading}
                       data-testid="btn-reconcile-payment"
@@ -706,10 +744,10 @@ export default function FinancePage() {
           <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white shadow-xl space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider bg-white/20 px-3 py-1 rounded-full">
-                Thông Báo Học Phí Bé An - Tháng 9/2026
+                Thông Báo Học Phí - {parentPeriodLabel}
               </span>
               <span className="text-xs font-bold bg-emerald-900/40 px-3 py-1 rounded-full">
-                Hạn chót: 15/09/2026
+                Hạn chót: {parentDueDate}
               </span>
             </div>
 
@@ -738,7 +776,7 @@ export default function FinancePage() {
             <div className="p-6 rounded-3xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 space-y-4 shadow-sm">
               <h3 className="text-base font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
                 <FileText className="w-4 h-4 text-emerald-500" />
-                Chi Tiết Khoản Thu Tháng 9/2026
+                Chi Tiết Khoản Thu - {parentPeriodLabel}
               </h3>
 
               <div className="divide-y divide-slate-100 dark:divide-slate-700/60 text-xs">
