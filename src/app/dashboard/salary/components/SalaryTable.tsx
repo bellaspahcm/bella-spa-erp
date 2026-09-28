@@ -9,6 +9,7 @@ Download,
 Eye,
 Filter,
 Loader2,
+RefreshCw,
 Search,
 ShieldCheck,
 Star
@@ -26,6 +27,7 @@ interface SalaryTableProps {
   activeSalaryAction: string | null;
   activeSalaryExportId: string | null;
   openEditModal: (s: KtvSalaryRecord) => void;
+  handleRecalculate: (id: string, name: string) => void;
   handleApprove: (id: string, name: string) => void;
   handleExport: (s: KtvSalaryRecord) => void;
   currentMonth: string; // YYYY-MM format
@@ -39,6 +41,7 @@ export default function SalaryTable({
   activeSalaryAction,
   activeSalaryExportId,
   openEditModal,
+  handleRecalculate,
   handleApprove,
   handleExport,
   currentMonth,
@@ -99,9 +102,11 @@ export default function SalaryTable({
           <tbody className="divide-y divide-slate-50">
             {filteredSalaries.map((s, index) => {
               const isApproving = activeSalaryAction === `approve:${s.id}`;
+              const isRecalculating = activeSalaryAction === `recalculate:${s.id}`;
               const isActionBlocked = activeSalaryAction !== null;
               const isExporting = activeSalaryExportId === s.id;
               const isExportBlocked = activeSalaryExportId !== null;
+              const canRecalculate = s.status === 'draft';
 
               return (
               <motion.tr
@@ -195,6 +200,16 @@ export default function SalaryTable({
                       >
                         <Eye className="w-5 h-5" />
                       </button>
+                      {canRecalculate && (
+                        <button
+                          onClick={() => handleRecalculate(s.id, s.name)}
+                          disabled={isActionBlocked}
+                          className="p-3 bg-cyan-50 text-cyan-600 hover:bg-cyan-600 hover:text-white rounded-xl transition-all shadow-sm disabled:opacity-50 disabled:pointer-events-none"
+                          title={isRecalculating ? 'Đang tính lại' : 'Tính lại'}
+                        >
+                          {isRecalculating ? <Loader2 className="w-5 h-5 animate-spin" /> : <RefreshCw className="w-5 h-5" />}
+                        </button>
+                      )}
                       <button 
                         onClick={() => openEditModal(s)}
                         className="p-3 bg-slate-100 text-slate-500 hover:bg-slate-200 rounded-xl transition-all shadow-sm"

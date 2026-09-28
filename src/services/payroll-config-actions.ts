@@ -131,15 +131,17 @@ export async function saveProviderConfig<T = unknown>(
 
     const { error } = await supabase
       .from('tenant_payroll_config')
-      .update({
+      .upsert({
+        tenant_id: tenantId,
+        provider_key: providerKey,
         enabled,
         strategy,
-        config: config as unknown as Database['public']['Tables']['tenant_payroll_config']['Update']['config'],
+        config: config as unknown as Database['public']['Tables']['tenant_payroll_config']['Insert']['config'],
         notes,
         updated_at: new Date().toISOString()
-      })
-      .eq('tenant_id', tenantId)
-      .eq('provider_key', providerKey);
+      } as Database['public']['Tables']['tenant_payroll_config']['Insert'], {
+        onConflict: 'tenant_id,provider_key'
+      });
 
     if (error) throw error;
 

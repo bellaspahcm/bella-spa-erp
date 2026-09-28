@@ -91,6 +91,26 @@ jest.mock('@/lib/supabase-server', () => ({
   }))
 }));
 
+jest.mock('@/lib/supabase-dev-bypass-server', () => ({
+  createDevelopmentBypassClient: jest.fn(() => ({
+    from: jest.fn((table: string) => {
+      if (table === 'revenue') {
+        return new MockQueryBuilder(table, MockQueryBuilder.dataByTable[table] ?? [
+          { amount: 1000000, status: 'confirmed', revenue_type: 'package_payment', received_date: '2026-05-10' },
+          { amount: 500000, status: 'pending', revenue_type: 'additional', received_date: '2026-05-12' },
+        ]);
+      } else if (table === 'expenses') {
+        return new MockQueryBuilder(table, MockQueryBuilder.dataByTable[table] ?? [
+          { amount: 200000, category: 'rent', expense_date: '2026-05-01', status: 'approved' },
+          { amount: 100000, category: 'utilities', expense_date: '2026-05-05', status: 'approved' },
+          { amount: 1500000, category: 'salary', expense_date: '2026-05-20', status: 'approved' },
+        ]);
+      }
+      return new MockQueryBuilder(table, []);
+    })
+  }))
+}));
+
 // Mock User Actions to bypass Auth check
 jest.mock('../services/user-actions', () => ({
   getCurrentUser: jest.fn(() => Promise.resolve({
@@ -266,6 +286,19 @@ describe('getFinancialOverview', () => {
 
     expect(filtersFor('revenue')).toContainEqual({ method: 'eq', args: ['tenant_id', 'tenant1'] });
     expect(filtersFor('expenses')).toContainEqual({ method: 'eq', args: ['tenant_id', 'tenant1'] });
+  });
+
+  it('uses month bounds when loading finance overview for a selected month', async () => {
+    await getFinancialOverview('2026-09-01');
+
+    const filtersFor = (table: string) => MockQueryBuilder.calls
+      .filter((call) => call.table === table)
+      .flatMap((call) => call.filters);
+
+    expect(filtersFor('revenue')).toContainEqual({ method: 'gte', args: ['received_date', '2026-09-01T00:00:00.000Z'] });
+    expect(filtersFor('revenue')).toContainEqual({ method: 'lt', args: ['received_date', '2026-10-01T00:00:00.000Z'] });
+    expect(filtersFor('expenses')).toContainEqual({ method: 'gte', args: ['expense_date', '2026-09-01T00:00:00.000Z'] });
+    expect(filtersFor('expenses')).toContainEqual({ method: 'lt', args: ['expense_date', '2026-10-01T00:00:00.000Z'] });
   });
 });
 

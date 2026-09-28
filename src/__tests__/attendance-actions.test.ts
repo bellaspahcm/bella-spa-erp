@@ -30,6 +30,10 @@ jest.mock('../lib/supabase-server', () => ({
   createClient: jest.fn(() => Promise.resolve({ from: mockFrom })),
 }));
 
+jest.mock('@/lib/supabase-dev-bypass-server', () => ({
+  createDevelopmentBypassClient: jest.fn(() => Promise.resolve({ from: mockFrom })),
+}));
+
 jest.mock('../services/notification-helpers', () => ({
   createSystemNotification: jest.fn().mockResolvedValue(undefined),
 }));

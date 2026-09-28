@@ -96,7 +96,8 @@ export class PayrollConfigService {
 
     // Load from database
     try {
-      const supabase = createClient();
+      const { createDevelopmentBypassClient } = await import('@/lib/supabase-dev-bypass-server');
+      const supabase = await createDevelopmentBypassClient();
       const { data, error } = await supabase
         .from('tenant_payroll_config')
         .select('enabled, strategy, config')

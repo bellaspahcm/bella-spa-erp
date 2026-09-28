@@ -62,6 +62,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback,useEffect,useRef,useState } from 'react';
 import { toast } from 'sonner';
 import { useUser } from '@/lib/user-context';
+import { isHaircutProductPresentation } from '@/lib/business-rules/product-presentation-routing';
 
 // Heavy modals — lazy-loaded so they don't bloat the dashboard's initial JS bundle.
 // BookingModal (~715 LOC + form deps) only opens on user click.
@@ -1072,7 +1073,7 @@ function StandardDashboardPage() {
 export default function DashboardPage() {
   const { tenantModuleKey } = useTenantModuleKey({ forceFresh: true });
   const { product } = useUser();
-  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'beauty_spa';
+  const isHaircut = isHaircutProductPresentation(product);
 
   if (isHaircut) {
     return <HaircutDashboardView />;

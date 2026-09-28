@@ -291,6 +291,85 @@ describe('getSalaryData query errors', () => {
     })]);
   });
 
+  it('uses persisted salary_records financials for existing draft rows instead of a parallel UI calculation', async () => {
+    setupDb([
+      { table: 'tenants', op: 'select', data: { salary_config: null } },
+      { table: 'tenant_payroll_config', op: 'select', data: null },
+      {
+        table: 'users',
+        op: 'select',
+        data: [{
+          id: 'ktv-1',
+          full_name: 'KTV One',
+          role: 'ktv',
+          base_salary: 6000000,
+          hire_date: '2026-01-01',
+          resignation_date: null,
+          status: 'active',
+        }],
+      },
+      {
+        table: 'salary_records',
+        op: 'select',
+        data: [{
+          ktv_id: 'ktv-1',
+          total_sessions: 1,
+          session_bonus: 120000,
+          rating_bonus: 0,
+          base_salary: 230769,
+          kpi_bonus: 0,
+          violations_deduction: 50000,
+          service_percentage_bonus: 0,
+          total_salary: 300769,
+          service_commission: 0,
+          product_sales_commission: 0,
+          position_bonus: 0,
+          seniority_bonus: 0,
+          manual_adjustments: 0,
+          status: 'draft',
+        }],
+      },
+      {
+        table: 'session_logs',
+        op: 'select',
+        data: [{
+          id: 'session-1',
+          completed_by_ktv_id: 'ktv-1',
+          status: 'completed',
+          is_confirmed: false,
+          rating: 5,
+          bookings: { ktv_commission: 150000, package_name: 'Cắt tóc nam cơ bản' },
+          session_reviews: [],
+        }],
+      },
+      {
+        table: 'attendance',
+        op: 'select',
+        data: [{ id: 'att-1', ktv_id: 'ktv-1', date: '2026-06-02', status: 'late' }],
+      },
+      { table: 'packages', op: 'select', data: [{ name: 'Cắt tóc nam cơ bản', session_multiplier: 1 }] },
+      { table: 'kpi_records', op: 'select', data: [] },
+      { table: 'product_sales', op: 'select', data: [] },
+      { table: 'booking_service_items', op: 'select', data: [] },
+      { table: 'salary_adjustments', op: 'select', data: [] },
+    ]);
+
+    const result = await getSalaryData();
+
+    expect(result).toEqual([expect.objectContaining({
+      id: 'ktv-1',
+      sessions: 1,
+      baseSalary: 230769,
+      sessionBonus: 120000,
+      deductions: 50000,
+      totalSalary: 300769,
+      status: 'draft',
+      actualDays: 1,
+    })]);
+    expect(result[0].totalSalary).not.toBe(360769);
+    expect(result[0].sessionBonus).not.toBe(150000);
+  });
+
   it('throws instead of returning an empty salary list when a required query fails', async () => {
     setupDb([
       { table: 'tenants', op: 'select', data: { salary_config: null } },

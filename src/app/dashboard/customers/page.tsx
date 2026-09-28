@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
+import { isHaircutProductPresentation } from '@/lib/business-rules/product-presentation-routing';
 import { useModuleVocabulary } from '@/lib/business-rules/module-vocabulary';
 import { useUser } from '@/lib/user-context';
 import { calculateBookingPaymentState, type PaymentRevenueLike } from '@/lib/business-rules/payment';
@@ -97,7 +98,7 @@ export default function CustomersPage() {
   const backgroundCustomerLoadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { tenantModuleKey, refreshTenantModuleKey } = useTenantModuleKey();
   const { product } = useUser();
-  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'beauty_spa';
+  const isHaircut = isHaircutProductPresentation(product);
   const vocab = useModuleVocabulary(tenantModuleKey);
 
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);

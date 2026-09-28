@@ -1,3 +1,655 @@
+# ARCHITECTURE GATE RESULT - BELLA HAIRCUT FINISH PAYROLL CONNECTION
+
+> **Status:** PASS - minimum payroll connection repair and one real verification
+> **Date:** 2026-09-28
+> **Scope:** Payroll config read boundary plus salary dashboard persisted-truth display
+
+---
+
+## 1. Product Manifest (Capabilities & Scope)
+
+This change finishes the existing Haircut payroll connection without creating a new payroll architecture. The workflow remains:
+
+```
+Settings -> tenant_payroll_config -> Salary Engine -> attendance + completed sessions -> salary_records -> Salary UI
+```
+
+Included:
+- Fix the proven `PayrollConfigService.getProviderConfig` read boundary so persisted tenant provider config can be consumed during calculation.
+- Make Salary UI data use existing `salary_records` financial values when a salary row exists, instead of presenting a parallel live total after recalculation.
+- Run one real authenticated Haircut verification through `/dashboard/salary` and stop at the first unrelated failure.
+
+Excluded:
+- No new payroll engine.
+- No formula change.
+- No hard-coded `135000`.
+- No change to `DEFAULT_CONFIGS = 120000`.
+- No forced use of package `ktv_commission = 150000`.
+- No attendance, payment, publication, approval, finalization, salary expense, Finance, RLS, schema, migration, or Preschool change.
+
+## 2. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `tenant_payroll_config` | Shared HR/Payroll configuration | Existing tenant-specific payroll policy |
+| Salary Engine | Shared HR/Payroll calculation | Existing salary calculation and persistence contract |
+| `salary_records` | Shared HR/Payroll result truth | Persisted payroll calculation result |
+| `/dashboard/salary` | Payroll admin UI | Existing read/write surface for payroll admins |
+
+## 3. Contract Dependency Map
+
+```
+/dashboard/settings salary config
+        |
+        v
+tenant_payroll_config
+        |
+        v
+PayrollConfigService.getProviderConfig
+        |
+        v
+CommissionProvider / AttendanceProvider
+        |
+        v
+Salary Engine
+        |
+        v
+salary_records
+        |
+        v
+/dashboard/salary displays persisted financial truth
+```
+
+## 4. Change Authority
+
+Authorized layers: the proven payroll config read boundary and Salary UI persisted-result display boundary.
+
+Not authorized: payroll formulas, provider strategies, attendance data, payroll lifecycle transitions, salary publication/approval/finalization, Finance/accounting, RLS, schema, migrations, or broad auth/UI refactors.
+
+## 5. Verification Plan
+
+- Focused service tests for persisted tenant config override and fallback behavior.
+- Focused salary query test for existing draft `salary_records` as UI financial truth.
+- Existing admin salary action focused tests.
+- Scoped ESLint on touched files.
+- `git diff --check`.
+- One real authenticated Haircut UI recalculation and read-back.
+
+---
+
+# ARCHITECTURE GATE RESULT - BELLA HAIRCUT H9A.2 PAYROLL CONFIG SERVICE AUTH CONTEXT
+
+> **Status:** PASS - minimum auth-context repair for PayrollConfigService provider lookup
+> **Date:** 2026-09-28
+> **Scope:** `PayrollConfigService.getProviderConfig` tenant/provider read boundary only
+
+---
+
+## 1. Product Manifest (Capabilities & Scope)
+
+This change does not create or redesign payroll configuration, payroll calculation, commission policy, attendance, or Finance. It fixes the proven H9A.2 blocker where a real Haircut tenant payroll config row exists and the salary recalculation engine runs, but `PayrollConfigService` cannot read `tenant_payroll_config` from the nested provider path and therefore falls back to `DEFAULT_CONFIGS`.
+
+Included:
+- Use the established Haircut authenticated/dev server client pattern for `getProviderConfig`.
+- Preserve tenant identity supplied by the salary engine/provider context.
+- Preserve explicit `tenant_id` and `provider_key` predicates.
+- Preserve default fallback behavior when tenant config is genuinely missing.
+
+Excluded:
+- No formula change.
+- No `120000` default change.
+- No forced use of `booking.ktv_commission = 150000`.
+- No UI display fix for the deferred UI/DB truth mismatch.
+- No salary record mutation or field retry in this task.
+
+## 2. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `tenant_payroll_config` | Shared HR/Payroll configuration | Existing tenant-scoped provider policy |
+| `PayrollConfigService.getProviderConfig` | Payroll configuration read boundary | Existing provider lookup contract |
+| `CommissionProvider` / `AttendanceProvider` | Payroll provider consumers | Existing engine inputs |
+| `createDevelopmentBypassClient` | Established local/dev authenticated server-action context | Existing pattern verified by Haircut workflows |
+
+## 3. Contract Dependency Map
+
+```
+recalculateAndSaveSalaryRecordEngine
+        |
+        v
+CommissionProvider / AttendanceProvider
+        |
+        v
+PayrollConfigService.getProviderConfig
+        |
+        +-- tenant_payroll_config tenant_id + provider_key
+        +-- tenant config if present
+        +-- DEFAULT_CONFIGS only if genuinely missing
+```
+
+## 4. Change Authority
+
+Authorized layer: the `getProviderConfig` execution context required for the proven tenant payroll config lookup blocker.
+
+Not authorized: `saveProviderConfig`, provider formulas, Salary Engine formulas, UI totals, attendance data, payment/Finance, publication/approval/finalization, RLS, migrations, or broad auth refactor.
+
+## 5. Verification Plan
+
+- Focused payroll config service tests proving persisted tenant commission config overrides default `120000`, missing config still falls back, tenant/provider predicates remain enforced, attendance lookup still works, and provider config reads do not mutate config.
+- Scoped ESLint on touched files.
+- `git diff --check`.
+- No field retry and no salary DB mutation in this task.
+
+---
+
+# ARCHITECTURE GATE RESULT - BELLA HAIRCUT H9A.1 RECALCULATION AUTH CONTEXT
+
+> **Status:** PASS - minimum auth-context repair for draft-row pre-engine read
+> **Date:** 2026-09-28
+> **Scope:** `recalculateSalaryRecord` Supabase execution context only
+
+---
+
+## 1. Product Manifest (Capabilities & Scope)
+
+This change does not add or redesign payroll. It fixes the proven H9A.1 blocker where the real Haircut salary UI reaches `recalculateSalaryRecord`, but the pre-engine draft salary row read cannot see the existing tenant-scoped row under the current development/authenticated UI context.
+
+Included:
+- Use the established Haircut authenticated/dev server client pattern for `recalculateSalaryRecord`.
+- Preserve admin authorization, tenant source, tenant predicates, month/KTV filters, draft-only guard, and existing Salary Engine call.
+
+Excluded:
+- No Salary Engine, CommissionProvider, AttendanceProvider, payroll config, formula, schema, RLS, migration, Finance, attendance, or lifecycle change.
+- No field retry in this task.
+
+## 2. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `salary_records` | Shared HR/Payroll | Existing payroll record for tenant/KTV/month |
+| `recalculateSalaryRecord` | Payroll admin operation boundary | Existing H9A UI action |
+| `createDevelopmentBypassClient` | Established local/dev authenticated server-action context | Existing pattern already verified by Haircut workflows |
+
+## 3. Contract Dependency Map
+
+```
+/dashboard/salary "Tính lại"
+        |
+        v
+recalculateSalaryRecord
+        |
+        +-- getSalaryAdminAuth -> tenant_id
+        +-- createDevelopmentBypassClient
+        +-- salary_records ktv_id + month_year + tenant_id
+        +-- draft-only guard
+        +-- recalculateAndSaveSalaryRecord existing engine
+```
+
+## 4. Change Authority
+
+Authorized layer: `recalculateSalaryRecord` execution context for the proven pre-engine read blocker.
+
+Not authorized: payroll calculation semantics, provider config, attendance data, payment/Finance, publication/approval/finalization, RLS, or broad auth refactor.
+
+## 5. Verification Plan
+
+- Focused admin salary action tests proving own-tenant draft row visibility through the dev/auth client, foreign tenant denial, identity/month guards, non-draft rejection, and engine call only after draft row is found.
+- Scoped ESLint on touched files.
+- `git diff --check`.
+- No real recalculation field retry in this task.
+
+---
+
+# ARCHITECTURE GATE RESULT - BELLA HAIRCUT H9A PAYROLL RECALCULATION OPERATION
+
+> **Status:** PASS - minimum draft-only recalculation operation boundary
+> **Date:** 2026-09-28
+> **Scope:** Admin salary recalculation-only action and draft-row UI trigger
+
+---
+
+## 1. Product Manifest (Capabilities & Scope)
+
+This change does not redesign Haircut payroll, commission policy, attendance, or Finance. It exposes the existing salary recalculation engine through a narrow admin operation so a draft salary row can be recalculated after tenant payroll configuration is established.
+
+Included:
+- Add a recalculation-only admin action for an existing draft salary row.
+- Derive tenant identity from the authenticated admin context.
+- Reuse the existing `recalculateAndSaveSalaryRecord` / engine path without overrides.
+- Add a minimal `/dashboard/salary` UI trigger visible only for draft rows.
+
+Excluded:
+- No formula change.
+- No `120000` default change.
+- No forced use of `booking.ktv_commission = 150000`.
+- No publish, approve, finalize, expense, attendance, Finance, schema, RLS, migration, or Preschool change.
+- No field retry in this implementation pass.
+
+## 2. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `salary_records` | Shared HR/Payroll | Persisted salary row for tenant/KTV/month |
+| `recalculateAndSaveSalaryRecordEngine` | Shared HR/Payroll calculation engine | Existing recalculation and salary row persistence contract |
+| `/dashboard/salary` | Payroll admin UI | Existing operational salary admin surface |
+
+## 3. Contract Dependency Map
+
+```
+/dashboard/salary draft row
+        |
+        v
+recalculateSalaryRecord
+        |
+        +-- getSalaryAdminAuth -> tenant_id
+        +-- salary_records tenant/ktv/month draft guard
+        +-- recalculateAndSaveSalaryRecord without overrides
+        |
+        v
+salary_records update by existing record id
+```
+
+## 4. Change Authority
+
+Authorized layer: Payroll admin operation boundary and a draft-only UI command.
+
+Not authorized: Salary Engine semantics, tenant payroll provider configuration, attendance source data, payroll lifecycle transitions, Finance/accounting, or broad HR refactor.
+
+## 5. Verification Plan
+
+- Focused admin salary action tests proving draft-only recalculation, tenant scoping, no lifecycle overrides, non-draft protection, and no publish/approve/finalize/expense side effects.
+- Scoped ESLint on touched files.
+- `git diff --check`.
+- No DB mutation and no field retry in this pass.
+
+---
+
+# ARCHITECTURE GATE RESULT - BELLA HAIRCUT H7B PAYROLL CONFIG BOOTSTRAP
+
+> **Status:** PASS - minimum tenant payroll config first-save persistence repair
+> **Date:** 2026-09-28
+> **Scope:** `saveProviderConfig` persistence boundary for missing `tenant_payroll_config` rows only
+
+---
+
+## 1. Product Manifest (Capabilities & Scope)
+
+This change does not add or redesign Haircut payroll. It fixes the proven H7/H9 configuration connection blocker where the Settings salary UI can submit provider configuration, but the first save uses an update against a row that may not exist for the tenant.
+
+Included:
+- Persist first-time provider config rows for a tenant/provider pair.
+- Preserve existing Settings UI payload shape and `tenant_payroll_config` storage contract.
+- Preserve Salary Engine and provider calculation semantics.
+- Preserve `DEFAULT_CONFIGS` as intentional bootstrap fallback when no tenant config exists.
+
+Excluded:
+- No change to `120000` default commission.
+- No forced use of `booking.ktv_commission = 150000`.
+- No Salary Engine, CommissionProvider, PayrollConfigService, schema, RLS, migration, payroll recalculation, payment, Finance, attendance, or Preschool change.
+
+## 2. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `tenant_payroll_config` | Shared HR/Payroll configuration | Tenant-specific provider policy rows |
+| `saveProviderConfig` | Settings payroll configuration action | Existing UI persistence boundary |
+| `DEFAULT_CONFIGS` | Payroll provider bootstrap defaults | Fallback only when tenant config is absent |
+
+## 3. Contract Dependency Map
+
+```
+/dashboard/settings salary UI
+        |
+        v
+saveProviderConfig
+        |
+        v
+tenant_payroll_config tenant_id + provider_key
+        |
+        v
+PayrollConfigService.getProviderConfig
+        |
+        v
+CommissionProvider / Salary Engine
+```
+
+## 4. Change Authority
+
+Authorized layer: Settings payroll configuration persistence for missing tenant/provider rows.
+
+Not authorized: payroll calculation policy, Salary Engine, commission defaults, package commission semantics, schema/RLS/migrations, payroll lifecycle, or downstream Finance.
+
+## 5. Verification Plan
+
+- Focused `saveProviderConfig` tests proving first-time persistence uses tenant/provider upsert and preserves provider config payload.
+- Scoped ESLint on touched files.
+- `git diff --check`.
+- Real UI field verification remains a separate step because this local worktree has no Supabase env file.
+
+---
+
+# ARCHITECTURE GATE RESULT - BELLA HAIRCUT H6 PAYMENT AUTH CONTEXT
+
+> **Status:** PASS - minimum payment action auth-context repair for Haircut checkout retry
+> **Date:** 2026-09-28
+> **Scope:** `recordRemainingPayment` booking snapshot / payment RPC client boundary only
+
+---
+
+## 1. Product Manifest (Capabilities & Scope)
+
+This change does not add a Haircut payment capability. It fixes the proven H6 blocker where the Haircut customer payment workflow reaches `recordRemainingPayment`, resolves the current tenant, but reads the target booking through a raw no-session Supabase client and fails before any payment mutation.
+
+Included:
+- Use the existing authenticated/dev server Supabase context already proven in Haircut order workflow.
+- Preserve current payment amount validation, idempotency lookup, accounting-period check, RPC contract, and tenant predicates.
+- Retry only the existing H6 customer UI payment workflow for the verified Haircut booking.
+
+Excluded:
+- No payment architecture redesign.
+- No RPC/schema/RLS change.
+- No Finance/account 6421 fix.
+- No salary, commission, notification, inventory, catalog, H1/H3/H4A/H5, or Preschool change.
+- No generic replacement of raw clients in other payment operations.
+
+## 2. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `bookings.id/status/deposit_amount` | Beauty OS booking/order lifecycle | Existing booking payment summary/projection |
+| `revenue.booking_id/amount/status` | Current operational payment recording | Existing payment truth for this workflow |
+| `recordRemainingPayment` | Order/payment service action | Existing checkout/payment action |
+| `record_remaining_payment_atomic` | Database payment RPC | Existing atomic payment persistence contract |
+
+## 3. Contract Dependency Map
+
+```
+Haircut customer UI
+        |
+        v
+recordRemainingPayment
+        |
+        +-- getCurrentUser -> tenant_id
+        +-- authenticated/dev server Supabase context
+        +-- bookings.id + bookings.tenant_id snapshot
+        +-- revenue tenant/idempotency lookup
+        +-- amount validation from persisted truth
+        +-- record_remaining_payment_atomic RPC
+```
+
+## 4. Change Authority
+
+Authorized layer: order/payment server action execution context for the proven H6 payment workflow.
+
+Not authorized: database RPC changes, Finance/accounting configuration, RLS, payment framework redesign, payroll/commission policy, or broad Order refactor.
+
+## 5. Verification Plan
+
+- Focused payment action tests.
+- Focused source invariant test for auth context and tenant/payment contract.
+- Scoped ESLint on touched files.
+- `git diff --check`.
+- Browser retry of exact Haircut H6 payment workflow; stop at first new blocker if any.
+
+---
+
+# ARCHITECTURE GATE RESULT - BELLA HAIRCUT H3 PACKAGE VALIDATOR AUTH CONTEXT
+
+> **Status:** PASS - minimum service-layer auth-context repair for Haircut booking package validation
+> **Date:** 2026-09-28
+> **Scope:** `createBooking` package-validation execution context only
+
+---
+
+## 1. Product Manifest (Capabilities & Scope)
+
+This change does not add a Haircut business capability. It fixes the proven H3 blocker where Haircut booking creation supplies a canonical `packages.id`, but package scope validation runs through a raw no-auth Supabase client in local mock-auth execution and RLS hides the package.
+
+Included:
+- Use the existing request/dev-bypass Supabase server pattern already used by order query actions.
+- Preserve `package exists`, `package.tenant_id === resolved booking tenant`, and module-scope validation.
+- Retry only the H3 Customer -> Service -> Booking workflow.
+
+Excluded:
+- No H1 routing change.
+- No catalog deduplication.
+- No barber/resource, completion, checkout, commission, payroll, Finance, report, or Preschool change.
+- No DB migration or RLS policy change.
+
+## 2. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `packages.id` | Beauty OS service catalog / tenant service packages | Existing package identity used by booking |
+| `bookings.package_id` | Beauty OS booking/order lifecycle | Existing booking-to-package relationship |
+| `createBooking` | Order/booking service action | Existing write workflow |
+
+## 3. Contract Dependency Map
+
+```
+Haircut BookingModal
+        |
+        v
+payload.package_id = packages.id
+        |
+        v
+createBooking
+        |
+        v
+validateBookingPackageScope
+        |
+        +-- package exists
+        +-- package tenant equals resolved booking tenant
+        +-- package module enabled for tenant
+```
+
+## 4. Change Authority
+
+Authorized layer: order/booking service action execution context for package validation.
+
+Not authorized: schema, migration, catalog cleanup, product routing, downstream booking/session architecture, Finance/Payroll.
+
+## 5. Verification Plan
+
+- Focused package-scope unit tests.
+- Focused booking auth-context unit test.
+- Scoped ESLint on touched files.
+- `git diff --check`.
+- Browser retry of exact Haircut H3 workflow; stop at first new blocker if any.
+
+---
+
+# ARCHITECTURE GATE RESULT - BELLA HAIRCUT H5 SERVICE LIFECYCLE AUTH CONTEXT
+
+> **Status:** PASS - bounded service-layer auth-context repair for Haircut service start/completion
+> **Date:** 2026-09-28
+> **Scope:** `updateSessionLog` and `completeSession` Supabase execution context only
+
+---
+
+## 1. Product Manifest (Capabilities & Scope)
+
+This change does not add a Haircut business capability. It fixes the proven H5 blocker where the Haircut service lifecycle resolves the correct tenant but performs RLS-sensitive `session_logs`/`bookings` reads through a raw no-session Supabase client.
+
+Included:
+- Use the existing request/dev-bypass Supabase server pattern already proven by H3 `createBooking` and H4A `updateBooking`.
+- Preserve `session_logs.id`, `bookings.id`, explicit `tenant_id` predicates, booking/session relationship validation, schedule/resource guards, lifecycle rules, and completion engine behavior.
+- Retry only the H5 service lifecycle workflow: scheduled -> in_progress -> completed.
+
+Excluded:
+- No fix for `createSessionLog`, `rescheduleSession`, payment, invoice, online booking, reuse package, discount, session note, extra session, sync progress, or unrelated raw-client occurrences.
+- No H1/H3/H4A/H4B reopen.
+- No catalog, checkout/payment, commission, attendance, payroll architecture, Finance, reports, Preschool, migration, or RLS change.
+
+## 2. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `session_logs.id/status` | Beauty OS booking/session lifecycle | Existing service-session identity and lifecycle state |
+| `bookings.id/status/progress` | Beauty OS booking/order lifecycle | Existing booking relation and progress state |
+| `updateSessionLog` | Order/booking service action | Existing session update/start workflow |
+| `completeSession` | Order/booking service action | Existing completion workflow and downstream completion engine entry |
+
+## 3. Contract Dependency Map
+
+```
+Haircut session UI
+        |
+        v
+updateSessionLog / completeSession
+        |
+        +-- getCurrentUser -> tenant_id
+        +-- authenticated/dev server Supabase context
+        +-- session_logs.id + session_logs.tenant_id read/update
+        +-- bookings.id + bookings.tenant_id read where required
+        +-- completion engine behavior unchanged
+```
+
+## 4. Change Authority
+
+Authorized layer: order/booking service action execution context for `updateSessionLog` and `completeSession`.
+
+Not authorized: schema, migration, RLS, lifecycle redesign, completion-engine redesign, resource configuration, payment/commission/payroll/Finance/report behavior, or cross-order refactor.
+
+## 5. Verification Plan
+
+- Focused session lifecycle auth-context/source invariant test.
+- Focused `completeSession` regression test.
+- Scoped ESLint on touched files.
+- `git diff --check`.
+- Browser retry of exact Haircut H5 lifecycle; stop at first new blocker if any.
+
+---
+
+# ARCHITECTURE GATE RESULT - BELLA HAIRCUT H5B INVENTORY AUTOCONSUME AUTH CONTEXT
+
+> **Status:** PASS - minimum inventory auto-consume auth-context repair for Haircut completion retry
+> **Date:** 2026-09-28
+> **Scope:** `autoConsumeForSession` tenant config / existing-consumption read boundary only
+
+---
+
+## 1. Product Manifest (Capabilities & Scope)
+
+This change does not add a Haircut or Inventory capability. It fixes the proven H5B blocker where Haircut service completion reaches `autoConsumeForSession`, but the first RLS-sensitive tenant config read uses a raw no-session Supabase client and cannot determine that current inventory behavior should be a NOOP.
+
+Included:
+- Use the existing request/dev-bypass Supabase server pattern already proven in Haircut order workflow.
+- Preserve `getCurrentUser()` tenant resolution, explicit tenant predicates, existing inventory rules, and NOOP behavior when `auto_consume_inventory` is disabled.
+- Retry only the existing H5B completion workflow from `in_progress` to `completed`.
+
+Excluded:
+- No change to global `getSupabaseWithTenant`.
+- No replacement of other raw inventory clients.
+- No inventory configuration, fake consumables, RLS, schema, migration, salary/payroll, commission, checkout/payment, Finance, reports, H1/H3/H4A/H4B, or Preschool change.
+- No fix for the deferred `COMPLETION_ROLLBACK_SALARY_SIDE_EFFECT` finding.
+
+## 2. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `tenants.salary_config.auto_consume_inventory` | Tenant/product configuration | Existing switch for automatic inventory consumption |
+| `package_materials` | Inventory / Beauty OS package material configuration | Existing consumable definitions |
+| `inventory_logs` | Inventory OS operational ledger | Existing inventory consumption records |
+| `autoConsumeForSession` | Inventory integration called by session completion | Existing optional completion side effect |
+
+## 3. Contract Dependency Map
+
+```
+Haircut completion
+        |
+        v
+processSessionCompletion
+        |
+        v
+autoConsumeForSession(package_id, session_log_id)
+        |
+        +-- getCurrentUser -> tenant_id
+        +-- authenticated/dev server Supabase context
+        +-- tenants.id + salary_config read
+        +-- if disabled -> NOOP / bypass
+        +-- if enabled -> existing inventory business rules
+```
+
+## 4. Change Authority
+
+Authorized layer: inventory auto-consume server action execution context for the current completion boundary.
+
+Not authorized: global inventory auth refactor, inventory data setup, salary rollback behavior, completion transaction redesign, Finance/Payroll, or cross-domain architecture changes.
+
+## 5. Verification Plan
+
+- Focused inventory auto-consume tests.
+- Focused source invariant test for auth context and tenant predicates.
+- Scoped ESLint on touched files.
+- `git diff --check`.
+- Browser retry of exact Haircut H5B completion; stop at first new blocker if any.
+
+---
+
+# ARCHITECTURE GATE RESULT - BELLA HAIRCUT H4A BARBER ASSIGNMENT AUTH CONTEXT
+
+> **Status:** PASS - minimum service-layer auth-context repair for Haircut barber assignment
+> **Date:** 2026-09-28
+> **Scope:** `updateBooking` Supabase execution context only
+
+---
+
+## 1. Product Manifest (Capabilities & Scope)
+
+This change does not add a Haircut business capability. It fixes the proven H4A blocker where `updateBooking` resolves the correct Haircut tenant but performs the first `bookings` read through a raw no-session Supabase client, causing RLS to hide the booking before the KTV assignment update can run.
+
+Included:
+- Use the existing request/dev-bypass Supabase server pattern proven by H3 booking creation.
+- Preserve `bookings.id` identity, explicit `tenant_id` scoping, payload validation, and existing business rules.
+- Retry only the H4A barber assignment workflow.
+
+Excluded:
+- No RLS policy change.
+- No tenant routing redesign.
+- No barber identity redesign.
+- No chair/resource assignment.
+- No customer CRUD, booking creation, session lifecycle, attendance, commission, payroll, checkout/payment, Finance, reports, or Preschool change.
+- No DB migration.
+
+## 2. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `bookings.id` | Beauty OS booking/order lifecycle | Existing booking identity |
+| `bookings.assigned_ktv_id` | Beauty OS staff assignment on booking | Existing KTV assignment field |
+| `updateBooking` | Order/booking service action | Existing booking update workflow |
+
+## 3. Contract Dependency Map
+
+```
+Haircut ActiveBookingPanel
+        |
+        v
+updateBooking(booking.id, assigned_ktv_id)
+        |
+        +-- getCurrentUser -> tenant_id
+        +-- authenticated/dev server Supabase context
+        +-- bookings.id + bookings.tenant_id read
+        +-- bookings.id + bookings.tenant_id update
+```
+
+## 4. Change Authority
+
+Authorized layer: order/booking service action execution context for `updateBooking`.
+
+Not authorized: schema, migration, RLS, product routing, resource assignment, staff identity model, session lifecycle, Finance/Payroll, or cross-product refactor.
+
+## 5. Verification Plan
+
+- Focused `updateBooking` regression tests.
+- Focused auth-context/source invariant test.
+- Scoped ESLint on touched files.
+- `git diff --check`.
+- Browser retry of exact Haircut H4A barber assignment; stop at first new blocker if any.
+
+---
+
 # ARCHITECTURE GATE RESULT - BELLA ENGLISH CENTER POST-RC ENVIRONMENT CLOSURE
 
 > **Status:** PASS - dev-only API auth-context repair for Post-RC runtime validation

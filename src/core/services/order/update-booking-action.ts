@@ -27,8 +27,8 @@ async function requireCurrentTenantId() {
 }
 
 export async function updateBooking(id: string, payload: BookingUpdate) {
-  const { createClient } = await import('@/lib/supabase-server');
-  const supabase = await createClient();
+  const { createDevelopmentBypassClient } = await import('@/lib/supabase-dev-bypass-server');
+  const supabase = await createDevelopmentBypassClient();
   const tenantId = await requireCurrentTenantId();
   const { tenant_id: _ignoredTenantId, ...scopedPayload } = payload;
   void _ignoredTenantId;

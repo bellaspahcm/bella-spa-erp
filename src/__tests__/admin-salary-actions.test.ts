@@ -7,6 +7,7 @@ import {
   finalizeSalaryRecord,
   publishAllSalaryRecords,
   publishSalaryRecord,
+  recalculateSalaryRecord,
   updateSalaryConfig,
 } from '../modules/hr-salary/actions/admin-salary-actions';
 
@@ -17,6 +18,14 @@ const mockRecordAuditLog = jest.fn();
 const mockCheckMonthLock = jest.fn();
 const mockRevalidatePath = jest.fn();
 const mockRecalculateAndSaveSalaryRecordEngine = jest.fn();
+const mockCreateClient = jest.fn(() => Promise.resolve({
+  from: mockFrom,
+  rpc: mockRpc,
+}));
+const mockCreateDevelopmentBypassClient = jest.fn(() => Promise.resolve({
+  from: mockFrom,
+  rpc: mockRpc,
+}));
 
 jest.mock('server-only', () => ({}), { virtual: true });
 
@@ -25,10 +34,11 @@ jest.mock('next/cache', () => ({
 }));
 
 jest.mock('@/lib/supabase-server', () => ({
-  createClient: jest.fn(() => Promise.resolve({
-    from: mockFrom,
-    rpc: mockRpc,
-  })),
+  createClient: () => mockCreateClient(),
+}));
+
+jest.mock('@/lib/supabase-dev-bypass-server', () => ({
+  createDevelopmentBypassClient: () => mockCreateDevelopmentBypassClient(),
 }));
 
 jest.mock('@/services/user-actions', () => ({
@@ -201,6 +211,7 @@ describe('admin salary auth guard', () => {
       () => finalizeAllSalaryRecords(),
       () => checkAndAutoConfirm(),
       () => approveSalary('ktv-1'),
+      () => recalculateSalaryRecord('ktv-1', '2026-06-01'),
       () => updateSalaryConfig('ktv-1', {
         baseSalary: 6000000,
         kpiBonus: 500000,
@@ -223,6 +234,108 @@ describe('admin salary auth guard', () => {
     expect(mockRecordAuditLog).not.toHaveBeenCalled();
     expect(mockRecalculateAndSaveSalaryRecordEngine).not.toHaveBeenCalled();
     expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+});
+
+describe('recalculateSalaryRecord draft-only operation', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetCurrentUser.mockResolvedValue({
+      id: 'admin-1',
+      role: 'admin',
+      tenant_id: 'tenant-1',
+      full_name: 'Admin Bella',
+    });
+    mockCheckMonthLock.mockResolvedValue({ isLocked: false });
+    mockRecalculateAndSaveSalaryRecordEngine.mockResolvedValue({ success: true, totalSalary: 135000 });
+  });
+
+  it('recalculates an existing draft salary row through the tenant-scoped engine without lifecycle overrides', async () => {
+    const calls = setupDb([
+      { table: 'salary_records', op: 'select', data: salarySnapshot },
+    ]);
+
+    const result = await recalculateSalaryRecord('ktv-1', '2026-06-01');
+
+    expect(result).toEqual({ success: true, totalSalary: 135000 });
+    expect(mockCreateDevelopmentBypassClient).toHaveBeenCalledTimes(1);
+    expect(mockCreateClient).not.toHaveBeenCalled();
+    expect(calls).toEqual([
+      {
+        table: 'salary_records',
+        op: 'select',
+        payload: undefined,
+        filters: [
+          { field: 'ktv_id', value: 'ktv-1' },
+          { field: 'month_year', value: '2026-06-01' },
+          { field: 'tenant_id', value: 'tenant-1' },
+        ],
+      },
+    ]);
+    expect(mockRecalculateAndSaveSalaryRecordEngine).toHaveBeenCalledWith(
+      expect.anything(),
+      'ktv-1',
+      '2026-06-01',
+      'tenant-1',
+      undefined
+    );
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/salary');
+  });
+
+  it('denies foreign-tenant or missing salary rows before recalculation', async () => {
+    const calls = setupDb([
+      { table: 'salary_records', op: 'select', data: null },
+    ]);
+
+    const result = await recalculateSalaryRecord('ktv-foreign', '2026-06-01');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Không tìm thấy bảng lương nháp');
+    expect(calls[0]?.filters).toContainEqual({ field: 'tenant_id', value: 'tenant-1' });
+    expect(mockRecalculateAndSaveSalaryRecordEngine).not.toHaveBeenCalled();
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('blocks published, finalized, and locked salary rows', async () => {
+    const blockedSnapshots = [
+      { ...salarySnapshot, status: 'published' },
+      { ...salarySnapshot, status: 'finalized' },
+      { ...salarySnapshot, is_locked: true },
+    ];
+
+    for (const row of blockedSnapshots) {
+      setupDb([{ table: 'salary_records', op: 'select', data: row }]);
+
+      const result = await recalculateSalaryRecord('ktv-1', '2026-06-01');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Chỉ có thể tính lại bảng lương nháp');
+    }
+
+    expect(mockRecalculateAndSaveSalaryRecordEngine).not.toHaveBeenCalled();
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('blocks locked payroll months before reading salary rows', async () => {
+    mockCheckMonthLock.mockResolvedValue({ isLocked: true });
+
+    const result = await recalculateSalaryRecord('ktv-1', '2026-06-01');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Tháng lương đã bị khóa');
+    expect(mockFrom).not.toHaveBeenCalled();
+    expect(mockRecalculateAndSaveSalaryRecordEngine).not.toHaveBeenCalled();
+  });
+
+  it('rejects non-month identity input instead of accepting configuration or attendance payloads', async () => {
+    const result = await recalculateSalaryRecord('ktv-1', '135000');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Tháng lương không hợp lệ');
+    expect(mockFrom).not.toHaveBeenCalled();
+    expect(mockRecalculateAndSaveSalaryRecordEngine).not.toHaveBeenCalled();
   });
 });
 

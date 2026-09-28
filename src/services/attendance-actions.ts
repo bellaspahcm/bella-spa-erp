@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
+import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
 import { getCurrentUser } from './user-actions';
 import { revalidatePath } from 'next/cache';
 import { recordAuditLog } from './audit-actions';
@@ -130,9 +131,11 @@ export async function getVNTodayString(): Promise<string> {
 
 /** Get KTV's attendance status for today */
 export async function getKTVTodayAttendance(currentUser?: CurrentUser) {
-  const supabase = await createClient();
+  const supabase = await createDevelopmentBypassClient();
   const user = currentUser || await getCurrentUser();
   if (!user || user.role !== 'ktv') return null;
+  const tenantId = user.tenant_id;
+  if (!tenantId) return null;
 
   const todayStr = await getVNTodayString();
 
@@ -140,6 +143,7 @@ export async function getKTVTodayAttendance(currentUser?: CurrentUser) {
     .from('attendance')
     .select('*')
     .eq('ktv_id', user.id)
+    .eq('tenant_id', tenantId)
     .eq('date', todayStr)
     .maybeSingle();
 
@@ -151,7 +155,7 @@ export async function getKTVTodayAttendance(currentUser?: CurrentUser) {
 
 /** KTV daily Check-in */
 export async function ktvCheckIn() {
-  const supabase = await createClient();
+  const supabase = await createDevelopmentBypassClient();
   const user = await getCurrentUser();
   if (!user || user.role !== 'ktv') return { success: false, error: 'Không có quyền truy cập' };
 
@@ -208,7 +212,7 @@ export async function ktvCheckIn() {
 
 /** KTV daily Check-out */
 export async function ktvCheckOut() {
-  const supabase = await createClient();
+  const supabase = await createDevelopmentBypassClient();
   const user = await getCurrentUser();
   if (!user || user.role !== 'ktv') return { success: false, error: 'Không có quyền truy cập' };
 

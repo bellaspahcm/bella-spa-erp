@@ -54,6 +54,10 @@ jest.mock('@/lib/supabase-server', () => ({
   createClient: jest.fn(() => Promise.resolve(mockSupabase)),
 }));
 
+jest.mock('@/lib/supabase-dev-bypass-server', () => ({
+  createDevelopmentBypassClient: jest.fn(() => Promise.resolve(mockSupabase)),
+}));
+
 const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<typeof getCurrentUser>;
 jest.mock('../services/user-actions', () => {
   const original = jest.requireActual('../services/user-actions');
@@ -198,6 +202,7 @@ describe('Row-Level Security (RLS) & Tenant Isolation Compliance Suite', () => {
 
       // Ensure that getKTVTodayAttendance strictly appended `.eq('ktv_id', 'ktv-123')`
       expect(mockEq).toHaveBeenCalledWith('ktv_id', 'ktv-123');
+      expect(mockEq).toHaveBeenCalledWith('tenant_id', 'tenant-a');
     });
 
     it('denies attendance queries for non-KTV roles', async () => {

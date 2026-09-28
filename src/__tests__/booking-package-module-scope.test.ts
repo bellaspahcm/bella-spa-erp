@@ -61,6 +61,45 @@ describe('booking package module scope', () => {
     expect(result).toEqual({ success: true });
   });
 
+  it('allows Haircut tenants to use tenant-owned Beauty OS package identities', async () => {
+    const { client } = createScopedSupabaseMock({
+      packages: [{ id: 'pkg-haircut', tenant_id: 'tenant-haircut', module_key: 'beauty_spa', name: 'Cắt tóc nam cơ bản' }],
+      tenants: [{ id: 'tenant-haircut', enabled_modules: { haircut: true, bella_haircut: true, beauty_spa: true } }],
+    });
+
+    const result = await validateBookingPackageScope(client as never, 'tenant-haircut', 'pkg-haircut');
+
+    expect(result).toEqual({ success: true });
+  });
+
+  it('treats package_id as packages.id and does not resolve by display name', async () => {
+    const { client, calls } = createScopedSupabaseMock({
+      packages: [{ id: 'pkg-haircut', tenant_id: 'tenant-haircut', module_key: 'beauty_spa', name: 'Cắt tóc nam cơ bản' }],
+      tenants: [{ id: 'tenant-haircut', enabled_modules: { beauty_spa: true } }],
+    });
+
+    const result = await validateBookingPackageScope(client as never, 'tenant-haircut', 'pkg-haircut');
+
+    expect(result).toEqual({ success: true });
+    expect(calls[0]).toEqual({
+      table: 'packages',
+      filters: { id: 'pkg-haircut' },
+    });
+  });
+
+  it('blocks missing packages', async () => {
+    const { client } = createScopedSupabaseMock({
+      packages: [],
+      tenants: [{ id: 'tenant-a', enabled_modules: { beauty_spa: true } }],
+    });
+
+    const result = await validateBookingPackageScope(client as never, 'tenant-a', 'missing-package');
+
+    expect(result).toEqual({
+      error: 'Không thể xác thực gói dịch vụ của booking. Row not found',
+    });
+  });
+
   it('blocks Beauty Spa bookings from using Babycare packages', async () => {
     const { client } = createScopedSupabaseMock({
       packages: [{ id: 'pkg-babycare', tenant_id: 'tenant-a', module_key: 'babycare', name: 'Tắm bé chuẩn y khoa' }],

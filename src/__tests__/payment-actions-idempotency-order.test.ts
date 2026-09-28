@@ -10,9 +10,14 @@ const mockFindExistingManualPaymentByIdempotencyKey = jest.fn();
 const mockValidateRemainingPaymentAmount = jest.fn();
 const mockAssertPaymentAccountingPeriod = jest.fn();
 const mockRecordBookingPaymentRpc = jest.fn();
+const mockCreateDevelopmentBypassClient = jest.fn().mockResolvedValue(mockSupabase);
 
 jest.mock('@/lib/supabase-server', () => ({
   createClient: jest.fn().mockResolvedValue(mockSupabase),
+}));
+
+jest.mock('@/lib/supabase-dev-bypass-server', () => ({
+  createDevelopmentBypassClient: (...args: unknown[]) => mockCreateDevelopmentBypassClient(...args),
 }));
 
 jest.mock('@/services/user-actions', () => ({
@@ -135,6 +140,24 @@ describe('recordRemainingPayment idempotency ordering', () => {
     expect(mockRecordBookingPaymentRpc).toHaveBeenCalledWith({
       supabase: mockSupabase,
       payment: paymentInput({ idempotency_key: 'manual-payment:new-valid' }),
+      tenantId: 'tenant-1',
+      actorId: 'user-1',
+    });
+  });
+
+  it('uses the authenticated development server client for tenant-scoped payment reads and RPC', async () => {
+    await recordRemainingPayment(paymentInput());
+
+    expect(mockCreateDevelopmentBypassClient).toHaveBeenCalledTimes(1);
+    expect(mockGetBookingPaymentSnapshot).toHaveBeenCalledWith(mockSupabase, 'booking-1', 'tenant-1');
+    expect(mockFindExistingManualPaymentByIdempotencyKey).toHaveBeenCalledWith({
+      supabase: mockSupabase,
+      payment: paymentInput(),
+      tenantId: 'tenant-1',
+    });
+    expect(mockRecordBookingPaymentRpc).toHaveBeenCalledWith({
+      supabase: mockSupabase,
+      payment: paymentInput(),
       tenantId: 'tenant-1',
       actorId: 'user-1',
     });

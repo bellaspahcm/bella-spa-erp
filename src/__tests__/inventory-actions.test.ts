@@ -37,6 +37,10 @@ jest.mock('../lib/supabase-server', () => ({
   createClient: jest.fn(() => Promise.resolve({ from: mockFrom })),
 }));
 
+jest.mock('@/lib/supabase-dev-bypass-server', () => ({
+  createDevelopmentBypassClient: jest.fn(() => Promise.resolve({ from: mockFrom })),
+}));
+
 jest.mock('@/lib/accounting-outbox', () => ({
   enqueueWithAutoClient: (...args: any[]) => mockEnqueueWithAutoClient(...args),
 }));
@@ -764,6 +768,20 @@ describe('inventory write action side effects', () => {
 
     expect(result).toEqual({ success: true, bypassed: true });
     expect(calls).toEqual([{ table: 'tenants', op: 'select' }]);
+    expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();
+  });
+
+  it('treats disabled auto consumption and no configured materials as a no-op without inventory mutation', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'tenants', op: 'select', data: { salary_config: {} } },
+    ]);
+
+    const result = await autoConsumeForSession('pkg-empty', 'session-empty');
+
+    expect(result).toEqual({ success: true, bypassed: true });
+    expect(calls).toEqual([{ table: 'tenants', op: 'select' }]);
+    expect(calls.some(c => c.table === 'package_materials')).toBe(false);
+    expect(calls.some(c => c.table === 'inventory_logs' && c.op === 'insert')).toBe(false);
     expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();
   });
 
