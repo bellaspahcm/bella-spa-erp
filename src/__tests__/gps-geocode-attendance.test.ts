@@ -251,9 +251,11 @@ describe('GPS Geocoding & Customer Geolocation Capture Tests', () => {
       // 3. Update customer table with coordinates (GPS Capture)
       const mockSessionData = {
         booking_id: 'booking-1',
+        tenant_id: 'tenant-1',
         session_number: 1,
         bookings: {
           customer_id: 'cust-123',
+          tenant_id: 'tenant-1',
           total_sessions: 10,
           completed_sessions: 0,
           status: 'scheduled',
@@ -295,9 +297,11 @@ describe('GPS Geocoding & Customer Geolocation Capture Tests', () => {
 
       const mockSessionData = {
         booking_id: 'booking-1',
+        tenant_id: 'tenant-1',
         session_number: 1,
         bookings: {
           customer_id: 'cust-123',
+          tenant_id: 'tenant-1',
           total_sessions: 10,
           completed_sessions: 0,
           status: 'scheduled',
@@ -339,9 +343,11 @@ describe('GPS Geocoding & Customer Geolocation Capture Tests', () => {
 
       const mockSessionData = {
         booking_id: 'booking-1',
+        tenant_id: 'tenant-1',
         start_time: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
         bookings: {
           package_id: 'pkg-1',
+          tenant_id: 'tenant-1',
           packages: {
             duration: '60 phút',
           },

@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
+import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from './user-actions';
 import { getKTVTodayAttendance } from './attendance-actions';
@@ -29,6 +30,7 @@ interface SessionLogWithBooking {
     booking_number: string | null;
     package_name: string | null;
     customer_id: string | null;
+    tenant_id: string | null;
     assigned_ktv_id: string | null;
     total_sessions: number | null;
     completed_sessions: number | null;
@@ -141,13 +143,15 @@ interface LeaderboardRow {
  */
 export async function getKTVActiveSessions(currentUser?: CurrentUser) {
   const perfStart = Date.now();
-  const supabase = await createClient();
+  const supabase = await createDevelopmentBypassClient();
   
   const userStart = Date.now();
   const user = currentUser || await getCurrentUser();
   console.log(`[getKTVActiveSessions] getCurrentUser took ${Date.now() - userStart}ms`);
   
   if (!user || user.role !== 'ktv') return [];
+  const tenantId = user.tenant_id;
+  if (!tenantId) return [];
 
   const queryStart = Date.now();
   const { data, error } = await supabase
@@ -159,6 +163,7 @@ export async function getKTVActiveSessions(currentUser?: CurrentUser) {
         booking_number,
         package_name,
         customer_id,
+        tenant_id,
         assigned_ktv_id,
         total_sessions,
         completed_sessions,
@@ -176,6 +181,8 @@ export async function getKTVActiveSessions(currentUser?: CurrentUser) {
     `)
     .eq('completed_by_ktv_id', user.id)
     .eq('status', 'in_progress')
+    .eq('tenant_id', tenantId)
+    .eq('bookings.tenant_id', tenantId)
     .order('start_time', { ascending: false });
   console.log(`[getKTVActiveSessions] DB query took ${Date.now() - queryStart}ms`);
 
@@ -209,13 +216,15 @@ export async function getKTVActiveSessions(currentUser?: CurrentUser) {
  */
 export async function getKTVUpcomingSessions(currentUser?: CurrentUser) {
   const perfStart = Date.now();
-  const supabase = await createClient();
+  const supabase = await createDevelopmentBypassClient();
   
   const userStart = Date.now();
   const user = currentUser || await getCurrentUser();
   console.log(`[getKTVUpcomingSessions] getCurrentUser took ${Date.now() - userStart}ms`);
   
   if (!user || user.role !== 'ktv') return [];
+  const tenantId = user.tenant_id;
+  if (!tenantId) return [];
 
   // Get current date in Vietnam timezone (YYYY-MM-DD)
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
@@ -247,7 +256,9 @@ export async function getKTVUpcomingSessions(currentUser?: CurrentUser) {
         )
       )
     `)
-    .eq('bookings.assigned_ktv_id', user.id);
+    .eq('bookings.assigned_ktv_id', user.id)
+    .eq('bookings.tenant_id', tenantId)
+    .eq('tenant_id', tenantId);
   console.log(`[getKTVUpcomingSessions] Original sessions query took ${Date.now() - query1Start}ms`);
 
   // 2. Fetch sessions explicitly reassigned to this KTV
@@ -278,7 +289,9 @@ export async function getKTVUpcomingSessions(currentUser?: CurrentUser) {
       )
     `)
     .eq('completed_by_ktv_id', user.id)
-    .eq('status', 'scheduled');
+    .eq('status', 'scheduled')
+    .eq('bookings.tenant_id', tenantId)
+    .eq('tenant_id', tenantId);
   console.log(`[getKTVUpcomingSessions] Reassigned sessions query took ${Date.now() - query2Start}ms`);
 
   if (originalError) {
@@ -331,6 +344,8 @@ export async function getKTVUpcomingSessions(currentUser?: CurrentUser) {
       )
     `)
     .in('booking_id', bookingIds)
+    .eq('bookings.tenant_id', tenantId)
+    .eq('tenant_id', tenantId)
     .order('session_number', { ascending: true });
   console.log(`[getKTVUpcomingSessions] All sessions for bookings query took ${Date.now() - query3Start}ms`);
 
@@ -515,24 +530,31 @@ export async function getKTVOverdueSessions(currentUser?: CurrentUser) {
  * Bắt đầu một buổi chăm sóc (Check-in)
  */
 export async function startSession(sessionId: string, lat?: number, lon?: number) {
-  const supabase = await createClient();
+  const supabase = await createDevelopmentBypassClient();
   const user = await getCurrentUser();
   if (!user || user.role !== 'ktv') return { success: false, error: 'Unauthorized' };
+  const tenantId = user.tenant_id;
+  if (!tenantId) return { success: false, error: 'Unauthorized' };
 
   // 1. Lấy thông tin session để tìm booking_id và tọa độ của khách hàng
   const { data: session, error: sessionFetchError } = await supabase
     .from('session_logs')
-    .select('booking_id, session_number, status, start_time, completed_by_ktv_id, checkin_lat, checkin_lon, bookings(customer_id, total_sessions, completed_sessions, status, is_in_care, customers(latitude, longitude))')
+    .select('booking_id, session_number, tenant_id, status, start_time, completed_by_ktv_id, checkin_lat, checkin_lon, bookings(customer_id, tenant_id, total_sessions, completed_sessions, status, is_in_care, customers(latitude, longitude))')
     .eq('id', sessionId)
+    .eq('tenant_id', tenantId)
     .single();
 
   if (sessionFetchError) return { success: false, error: sessionFetchError.message };
   if (!session) return { success: false, error: 'Session not found' };
+  if (session.tenant_id !== tenantId) return { success: false, error: 'Session tenant mismatch' };
 
   // Guard: check that the booking is not completed and the session number is within the booking's total_sessions
   const bookingData = Array.isArray(session.bookings) ? session.bookings[0] : session.bookings;
-  const booking = bookingData as { customer_id: string; status?: string; is_in_care?: boolean | null; completed_sessions?: number; total_sessions?: number; customers?: { latitude: number | null; longitude: number | null } | { latitude: number | null; longitude: number | null }[] } | null;
+  const booking = bookingData as { customer_id: string; tenant_id?: string; status?: string; is_in_care?: boolean | null; completed_sessions?: number; total_sessions?: number; customers?: { latitude: number | null; longitude: number | null } | { latitude: number | null; longitude: number | null }[] } | null;
   if (booking) {
+    if (booking.tenant_id !== tenantId) {
+      return { success: false, error: 'Booking tenant mismatch' };
+    }
     if (booking.status === 'completed' || (booking.completed_sessions || 0) >= (booking.total_sessions || 0)) {
       return { success: false, error: 'Liệu trình này đã hoàn thành toàn bộ số buổi. Không thể bắt đầu buổi mới.' };
     }
@@ -551,7 +573,8 @@ export async function startSession(sessionId: string, lat?: number, lon?: number
   const { error } = await supabase
     .from('session_logs')
     .update(updatePayload)
-    .eq('id', sessionId);
+    .eq('id', sessionId)
+    .eq('tenant_id', tenantId);
 
   if (error) {
     return { success: false, error: 'Khong the bat dau buoi cham soc: ' + error.message };
@@ -567,7 +590,8 @@ export async function startSession(sessionId: string, lat?: number, lon?: number
         checkin_lat: session.checkin_lat,
         checkin_lon: session.checkin_lon
       })
-      .eq('id', sessionId);
+      .eq('id', sessionId)
+      .eq('tenant_id', tenantId);
 
     if (rollbackError) {
       return {
@@ -586,7 +610,8 @@ export async function startSession(sessionId: string, lat?: number, lon?: number
       is_in_care: true,
       status: 'in_progress'
     })
-    .eq('id', session.booking_id);
+    .eq('id', session.booking_id)
+    .eq('tenant_id', tenantId);
 
   if (bookingUpdateError) {
     return rollbackStartedSession(`Failed to update booking after session start: ${bookingUpdateError.message}`);
@@ -598,7 +623,8 @@ export async function startSession(sessionId: string, lat?: number, lon?: number
     const { error: sessionGpsError } = await supabase
       .from('session_logs')
       .update({ checkin_lat: lat, checkin_lon: lon })
-      .eq('id', sessionId);
+      .eq('id', sessionId)
+      .eq('tenant_id', tenantId);
 
     if (sessionGpsError) {
       warnings.push(`check-in GPS was not saved: ${sessionGpsError.message}`);
@@ -615,7 +641,8 @@ export async function startSession(sessionId: string, lat?: number, lon?: number
           latitude: lat,
           longitude: lon
         })
-        .eq('id', booking.customer_id);
+        .eq('id', booking.customer_id)
+        .eq('tenant_id', tenantId);
       
       if (customerGpsError) {
         warnings.push(`customer GPS coordinates were not saved: ${customerGpsError.message}`);
@@ -636,9 +663,11 @@ export async function startSession(sessionId: string, lat?: number, lon?: number
  * Hoàn thành một buổi chăm sóc (Check-out)
  */
 export async function completeKTVSession(sessionId: string, notes: string = '', ktvCheckoutNote: string = '', lat?: number, lon?: number) {
-  const supabase = await createClient();
+  const supabase = await createDevelopmentBypassClient();
   const user = await getCurrentUser();
   if (!user || user.role !== 'ktv') return { success: false, error: 'Unauthorized' };
+  const tenantId = user.tenant_id;
+  if (!tenantId) return { success: false, error: 'Unauthorized' };
 
   // 1. Lấy thông tin session để tìm booking_id, start_time và package_id
   const { data: session, error: sessionFetchError } = await supabase
@@ -662,6 +691,7 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
       checkout_lon,
       bookings (
         package_id,
+        tenant_id,
         status,
         packages (
           duration
@@ -669,14 +699,19 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
       )
     `)
     .eq('id', sessionId)
+    .eq('tenant_id', tenantId)
     .single();
 
   if (sessionFetchError) return { success: false, error: sessionFetchError.message };
   if (!session) return { success: false, error: 'Session not found' };
+  if (session.tenant_id !== tenantId) return { success: false, error: 'Session tenant mismatch' };
   if (!session.booking_id) return { success: false, error: 'Session is missing booking reference' };
   if (session.status === 'completed') return { success: false, error: 'Session already completed' };
 
   const bookingsData = Array.isArray(session.bookings) ? session.bookings[0] : session.bookings;
+  if (bookingsData?.tenant_id !== tenantId) {
+    return { success: false, error: 'Booking tenant mismatch' };
+  }
   if (bookingsData?.status === 'cancelled') {
     return { success: false, error: 'Khong the hoan thanh buoi cham soc cho booking da huy.' };
   }
@@ -737,12 +772,12 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
   const { error: sessionError } = await supabase
     .from('session_logs')
     .update(sessionUpdatePayload)
-    .eq('id', sessionId);
+    .eq('id', sessionId)
+    .eq('tenant_id', tenantId);
 
   if (sessionError) return { success: false, error: 'Failed to complete session: ' + sessionError.message };
 
   const checkoutWarnings: string[] = [];
-  const tenantId = user.tenant_id || session.tenant_id;
   const completionResult = await processSessionCompletion(
     supabase,
     sessionId,
@@ -773,7 +808,8 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
         checkout_lat: session.checkout_lat,
         checkout_lon: session.checkout_lon
       })
-      .eq('id', sessionId);
+      .eq('id', sessionId)
+      .eq('tenant_id', tenantId);
 
     if (rollbackError) {
       rollbackFailures.push(`failed to roll back completed session: ${rollbackError.message}`);
@@ -799,7 +835,8 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
     const { error: checkoutGpsError } = await supabase
       .from('session_logs')
       .update({ checkout_lat: lat, checkout_lon: lon })
-      .eq('id', sessionId);
+      .eq('id', sessionId)
+      .eq('tenant_id', tenantId);
 
     if (checkoutGpsError) {
       checkoutWarnings.push(`checkout GPS was not saved: ${checkoutGpsError.message}`);
