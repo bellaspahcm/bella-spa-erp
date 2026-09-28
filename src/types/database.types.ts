@@ -27513,7 +27513,7 @@ export type Database = {
           notes: string | null
           product_id: string
           reserved_at: string | null
-          status: Database["public"]["Enums"]["reservation_status"]
+          status: Database["public"]["Enums"]["re_reservation_status"]
           tenant_id: string
           updated_at: string | null
           updated_by: string | null
@@ -27534,7 +27534,7 @@ export type Database = {
           notes?: string | null
           product_id: string
           reserved_at?: string | null
-          status?: Database["public"]["Enums"]["reservation_status"]
+          status?: Database["public"]["Enums"]["re_reservation_status"]
           tenant_id: string
           updated_at?: string | null
           updated_by?: string | null
@@ -27555,7 +27555,7 @@ export type Database = {
           notes?: string | null
           product_id?: string
           reserved_at?: string | null
-          status?: Database["public"]["Enums"]["reservation_status"]
+          status?: Database["public"]["Enums"]["re_reservation_status"]
           tenant_id?: string
           updated_at?: string | null
           updated_by?: string | null
@@ -35505,6 +35505,10 @@ export type Database = {
       }
       increment_loyalty_points: {
         Args: { p_customer_id: string; p_points: number }
+        Returns: undefined
+      }
+      increment_inventory: {
+        Args: { p_inventory_id: string; p_quantity: number }
         Returns: undefined
       }
       increment_tenant_sms: { Args: { p_tenant_id: string }; Returns: number }
