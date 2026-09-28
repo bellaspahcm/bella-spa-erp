@@ -14,7 +14,7 @@ jest.mock('../lib/supabase-server', () => ({
   createClient: jest.fn(() => Promise.resolve({ from: mockFrom })),
 }));
 
-jest.mock('../services/accounting-actions', () => ({
+jest.mock('../core/services/accounting/mode', () => ({
   assertLegacyFinanceWriteAllowed: (...args: unknown[]) => mockAssertLegacyFinanceWriteAllowed(...args),
 }));
 
