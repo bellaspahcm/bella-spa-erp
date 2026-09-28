@@ -65,6 +65,16 @@ function getErrorMessage(error: unknown, fallback = 'Lỗi hệ thống') {
   return fallback;
 }
 
+function getMetadataPaymentMethod(metadata: unknown) {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return null;
+  const value = (metadata as Record<string, unknown>).payment_method;
+  return typeof value === 'string' && value.trim() ? value : null;
+}
+
+function isConfirmedFinanceStatus(status: string | null | undefined) {
+  return status === 'confirmed' || status === 'approved' || status === 'paid';
+}
+
 const tableWrapperClassName =
   'w-full overflow-x-auto overscroll-x-contain custom-scrollbar shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.42)]';
 const stickyBodyCellClassName =
@@ -213,8 +223,7 @@ export default function FinancePage() {
         // TODO: expenses table uses expense_date, not timestamp
         date: new Date(e.expense_date).toLocaleDateString('vi-VN'),
         timestamp: new Date(e.expense_date).getTime(),
-        // TODO: expenses table doesn't have payment_method field
-        method: 'Tiền mặt',
+        method: getMetadataPaymentMethod(e.accounting_metadata) || 'Tiền mặt',
         status: e.status || 'pending',
       }));
 
@@ -224,12 +233,12 @@ export default function FinancePage() {
 
       // Calculate totals
       const totalRevenueMonth = mappedRevenue
-        .filter((t) => t.status === 'confirmed')
+        .filter((t) => isConfirmedFinanceStatus(t.status))
         .reduce((sum, t) => sum + t.amountNum, 0);
       
       const totalExpenseMonth = Math.abs(
         mappedExpense
-          .filter((t) => t.status === 'confirmed')
+          .filter((t) => isConfirmedFinanceStatus(t.status))
           .reduce((sum, t) => sum + t.amountNum, 0)
       );
 
@@ -654,11 +663,11 @@ export default function FinancePage() {
                     <td className="px-8 py-5 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider whitespace-nowrap ${
-                          tx.status === 'confirmed' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                          isConfirmedFinanceStatus(tx.status) ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
                         }`}>
-                          {tx.status === 'confirmed' ? 'Đã xác nhận' : 'Đang chờ'}
+                          {isConfirmedFinanceStatus(tx.status) ? 'Đã xác nhận' : 'Đang chờ'}
                         </span>
-                        {tx.status !== 'confirmed' && (
+                        {!isConfirmedFinanceStatus(tx.status) && (
                           <motion.button 
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
