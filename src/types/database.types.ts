@@ -27503,11 +27503,11 @@ export type Database = {
           converted_at: string | null
           created_at: string | null
           created_by: string | null
-          customer_id: string
+          customer_id: string | null
           deleted_at: string | null
           deposit_amount: number | null
           deposited_at: string | null
-          expires_at: string | null
+          expires_at: string
           id: string
           metadata: Json | null
           notes: string | null
@@ -27517,18 +27517,18 @@ export type Database = {
           tenant_id: string
           updated_at: string | null
           updated_by: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           cancelled_at?: string | null
           converted_at?: string | null
           created_at?: string | null
           created_by?: string | null
-          customer_id: string
+          customer_id?: string | null
           deleted_at?: string | null
           deposit_amount?: number | null
           deposited_at?: string | null
-          expires_at?: string | null
+          expires_at: string
           id?: string
           metadata?: Json | null
           notes?: string | null
@@ -27538,18 +27538,18 @@ export type Database = {
           tenant_id: string
           updated_at?: string | null
           updated_by?: string | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           cancelled_at?: string | null
           converted_at?: string | null
           created_at?: string | null
           created_by?: string | null
-          customer_id?: string
+          customer_id?: string | null
           deleted_at?: string | null
           deposit_amount?: number | null
           deposited_at?: string | null
-          expires_at?: string | null
+          expires_at?: string
           id?: string
           metadata?: Json | null
           notes?: string | null
@@ -27559,7 +27559,7 @@ export type Database = {
           tenant_id?: string
           updated_at?: string | null
           updated_by?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
