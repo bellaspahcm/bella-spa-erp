@@ -14,13 +14,19 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 type PreschoolFinanceClient = SupabaseClient<Database>;
+
+function createDefaultFinanceClient(): PreschoolFinanceClient {
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  if (!supabaseKey) {
+    throw new Error('OVERDUE_PAYMENT_SCANNER_CONFIG_ERROR: Supabase key is required.');
+  }
+  return createClient<Database>(supabaseUrl, supabaseKey);
+}
 
 export class OverduePaymentScannerService {
   constructor(
-    private readonly client: PreschoolFinanceClient = supabase,
+    private readonly client: PreschoolFinanceClient = createDefaultFinanceClient(),
   ) {}
 
   /**
