@@ -926,6 +926,7 @@ describe('finalizeSalaryRecord side-effect rollback', () => {
       payload: {
         status: 'finalized',
         finalized_at: '2026-06-15T08:00:00.000Z',
+        is_locked: true,
       },
       filters: [{ field: 'id', value: 'salary-finalize-1' }],
     });
