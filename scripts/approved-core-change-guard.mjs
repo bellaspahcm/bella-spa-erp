@@ -209,9 +209,21 @@ export function verifyApprovedCoreChange({
     throw new Error('Core changes detected but no APPROVED_CORE_CHANGE_V1 metadata was found.');
   }
 
+  const candidateApprovals = approvals.filter((approval) => {
+    const { metadata } = approval;
+    return metadata
+      && typeof metadata === 'object'
+      && !Array.isArray(metadata)
+      && String(metadata.pr) === String(prNumber);
+  });
+
+  if (candidateApprovals.length === 0) {
+    throw new Error(`Core changes detected but no APPROVED_CORE_CHANGE_V1 metadata was found for PR ${prNumber}.`);
+  }
+
   const validatedApprovals = [];
   const validationErrors = [];
-  for (const approval of approvals) {
+  for (const approval of candidateApprovals) {
     try {
       validatedApprovals.push(validateApproval(approval, prNumber));
     } catch (error) {

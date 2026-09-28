@@ -100,7 +100,7 @@ function runUnitCases() {
       approvals: [approval({ pr: 999 })],
       prNumber: 153,
     },
-    /bound to PR 999|does not exactly match/i,
+    /no APPROVED_CORE_CHANGE_V1 metadata was found for PR 153/i,
   );
 
   expectPass(
@@ -108,6 +108,19 @@ function runUnitCases() {
     {
       changedFiles: [...exactCoreFiles].reverse(),
       approvals: [approval()],
+      prNumber: 153,
+    },
+    /ACR-TEST-001/,
+  );
+
+  expectPass(
+    'approval metadata for a different PR is ignored',
+    {
+      changedFiles: [...exactCoreFiles].reverse(),
+      approvals: [
+        approval({ pr: 999, approvedDate: 'pending' }),
+        approval(),
+      ],
       prNumber: 153,
     },
     /ACR-TEST-001/,
