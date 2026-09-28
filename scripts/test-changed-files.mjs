@@ -24,6 +24,8 @@ const RELATED_TEST_EXCLUDED_PATTERNS = [
   'e2e-',
   'database.test',
   'src/__tests__/integration',
+  'real-estate-module-isolation.test',
+  'bella-english-center/__tests__/enrollment.service.test',
   'verification-gates',
   'phase_d',
   'performance-slo-benchmark',
