@@ -65,6 +65,10 @@ function getErrorMessage(error: unknown, fallback = 'Lỗi hệ thống') {
   return fallback;
 }
 
+function isConfirmedFinanceStatus(status: string | null | undefined) {
+  return status === 'confirmed' || status === 'approved' || status === 'paid';
+}
+
 const tableWrapperClassName =
   'w-full overflow-x-auto overscroll-x-contain custom-scrollbar shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.42)]';
 const stickyBodyCellClassName =
@@ -555,11 +559,11 @@ export default function FinancePage() {
                     <td className="px-8 py-5 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider whitespace-nowrap ${
-                          tx.status === 'confirmed' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                          isConfirmedFinanceStatus(tx.status) ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
                         }`}>
-                          {tx.status === 'confirmed' ? 'Đã xác nhận' : 'Đang chờ'}
+                          {isConfirmedFinanceStatus(tx.status) ? 'Đã xác nhận' : 'Đang chờ'}
                         </span>
-                        {tx.status !== 'confirmed' && (
+                        {!isConfirmedFinanceStatus(tx.status) && (
                           <motion.button 
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
