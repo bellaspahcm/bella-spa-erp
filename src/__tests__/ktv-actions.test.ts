@@ -132,6 +132,7 @@ describe('KTV read actions fail-fast behavior', () => {
   it('rolls back session start when booking update fails', async () => {
     const session = {
       booking_id: 'booking-1',
+      tenant_id: 'tenant-1',
       session_number: 1,
       status: 'scheduled',
       start_time: null,
@@ -140,6 +141,7 @@ describe('KTV read actions fail-fast behavior', () => {
       checkin_lon: null,
       bookings: {
         customer_id: 'cust-1',
+        tenant_id: 'tenant-1',
         total_sessions: 10,
         completed_sessions: 0,
         status: 'booked',
@@ -176,6 +178,7 @@ describe('KTV read actions fail-fast behavior', () => {
   it('does not roll back a started session when non-critical customer GPS capture fails', async () => {
     const session = {
       booking_id: 'booking-1',
+      tenant_id: 'tenant-1',
       session_number: 1,
       status: 'scheduled',
       start_time: null,
@@ -184,6 +187,7 @@ describe('KTV read actions fail-fast behavior', () => {
       checkin_lon: null,
       bookings: {
         customer_id: 'cust-1',
+        tenant_id: 'tenant-1',
         total_sessions: 10,
         completed_sessions: 0,
         status: 'booked',
@@ -216,6 +220,7 @@ describe('KTV read actions fail-fast behavior', () => {
   it('does not roll back a started session when non-critical session GPS save fails', async () => {
     const session = {
       booking_id: 'booking-1',
+      tenant_id: 'tenant-1',
       session_number: 1,
       status: 'scheduled',
       start_time: null,
@@ -224,6 +229,7 @@ describe('KTV read actions fail-fast behavior', () => {
       checkin_lon: null,
       bookings: {
         customer_id: 'cust-1',
+        tenant_id: 'tenant-1',
         total_sessions: 10,
         completed_sessions: 0,
         status: 'booked',
@@ -254,6 +260,7 @@ describe('KTV read actions fail-fast behavior', () => {
   it('returns combined warnings without rollback when both start GPS writes fail', async () => {
     const session = {
       booking_id: 'booking-1',
+      tenant_id: 'tenant-1',
       session_number: 1,
       status: 'scheduled',
       start_time: null,
@@ -262,6 +269,7 @@ describe('KTV read actions fail-fast behavior', () => {
       checkin_lon: null,
       bookings: {
         customer_id: 'cust-1',
+        tenant_id: 'tenant-1',
         total_sessions: 10,
         completed_sessions: 0,
         status: 'booked',
@@ -294,6 +302,7 @@ describe('KTV read actions fail-fast behavior', () => {
   it('does not fail checkout when non-critical checkout GPS save fails', async () => {
     const session = {
       booking_id: 'booking-1',
+      tenant_id: 'tenant-1',
       start_time: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
       status: 'in_progress',
       end_time: null,
@@ -308,6 +317,7 @@ describe('KTV read actions fail-fast behavior', () => {
       checkout_lon: null,
       bookings: {
         package_id: null,
+        tenant_id: 'tenant-1',
         packages: { duration: '60 phut' },
       },
     };
@@ -367,6 +377,7 @@ describe('KTV read actions fail-fast behavior', () => {
       checkout_lon: null,
       bookings: {
         package_id: 'pkg-1',
+        tenant_id: 'tenant-1',
         status: 'in_progress',
         packages: { duration: '60 phut' },
       },
@@ -422,6 +433,7 @@ describe('KTV read actions fail-fast behavior', () => {
       checkout_lon: null,
       bookings: {
         package_id: 'pkg-1',
+        tenant_id: 'tenant-1',
         status: 'in_progress',
         packages: { duration: '60 phut' },
       },
