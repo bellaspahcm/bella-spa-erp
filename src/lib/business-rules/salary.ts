@@ -1187,7 +1187,7 @@ function selectSavedOrLive(
 export function buildSalaryDisplayComponents(input: SalaryDisplayComponentsInput) {
   const record = input.record;
   const status = record?.status || DRAFT_SALARY_STATUS;
-  const useSavedFinancials = shouldUseSavedSalaryFinancials(record);
+  const useSavedFinancials = Boolean(record);
   const sessions = selectSavedOrLive(useSavedFinancials, record?.total_sessions, input.liveSessionsCount);
   const sessionBonus = selectSavedOrLive(useSavedFinancials, record?.session_bonus, input.liveSessionBonus);
   const ratingBonus = selectSavedOrLive(useSavedFinancials, record?.rating_bonus, input.liveRatingBonus);
@@ -1244,7 +1244,7 @@ export function buildSalaryDisplayComponents(input: SalaryDisplayComponentsInput
 
   return {
     status,
-    isDraft: !useSavedFinancials,
+    isDraft: status === DRAFT_SALARY_STATUS,
     useSavedFinancials,
     sessions,
     sessionBonus,

@@ -132,10 +132,10 @@ function createCompleteSessionSupabaseMock(options: {
   return { supabase, updateCalls };
 }
 
-const mockCreateClient = jest.fn();
+const mockCreateDevelopmentBypassClient = jest.fn();
 
-jest.mock('@/lib/supabase-server', () => ({
-  createClient: () => mockCreateClient(),
+jest.mock('@/lib/supabase-dev-bypass-server', () => ({
+  createDevelopmentBypassClient: () => mockCreateDevelopmentBypassClient(),
 }));
 
 describe('completeSession wrapper rollback and revalidation', () => {
@@ -153,7 +153,7 @@ describe('completeSession wrapper rollback and revalidation', () => {
 
   it('rolls back session status and skips revalidation when completion engine fails', async () => {
     const { supabase, updateCalls } = createCompleteSessionSupabaseMock();
-    mockCreateClient.mockResolvedValue(supabase);
+    mockCreateDevelopmentBypassClient.mockResolvedValue(supabase);
     mockProcessSessionCompletion.mockResolvedValueOnce({ error: 'engine failed' });
 
     const result = await completeSession('session-1', 'booking-1', 'Hoan thanh');
@@ -216,7 +216,7 @@ describe('completeSession wrapper rollback and revalidation', () => {
         tenant_id: 'tenant-2',
       },
     });
-    mockCreateClient.mockResolvedValue(supabase);
+    mockCreateDevelopmentBypassClient.mockResolvedValue(supabase);
 
     const result = await completeSession('session-1', 'booking-1', 'Hoan thanh');
 
@@ -229,7 +229,7 @@ describe('completeSession wrapper rollback and revalidation', () => {
     const { supabase } = createCompleteSessionSupabaseMock({
       rollbackError: { message: 'rollback update failed' },
     });
-    mockCreateClient.mockResolvedValue(supabase);
+    mockCreateDevelopmentBypassClient.mockResolvedValue(supabase);
     mockProcessSessionCompletion.mockResolvedValueOnce({ error: 'engine failed' });
 
     const result = await completeSession('session-1', 'booking-1', 'Hoan thanh');
@@ -243,7 +243,7 @@ describe('completeSession wrapper rollback and revalidation', () => {
 
   it('returns an explicit error when rollback salary recalculation fails', async () => {
     const { supabase } = createCompleteSessionSupabaseMock();
-    mockCreateClient.mockResolvedValue(supabase);
+    mockCreateDevelopmentBypassClient.mockResolvedValue(supabase);
     mockProcessSessionCompletion.mockResolvedValueOnce({ error: 'engine failed' });
     mockRecalculateAndSaveSalaryRecord.mockRejectedValueOnce(new Error('salary rollback failed'));
 
@@ -257,7 +257,7 @@ describe('completeSession wrapper rollback and revalidation', () => {
 
   it('revalidates booking, session, and customer dashboards only after success', async () => {
     const { supabase, updateCalls } = createCompleteSessionSupabaseMock();
-    mockCreateClient.mockResolvedValue(supabase);
+    mockCreateDevelopmentBypassClient.mockResolvedValue(supabase);
 
     const result = await completeSession('session-1', 'booking-1', 'Hoan thanh');
 

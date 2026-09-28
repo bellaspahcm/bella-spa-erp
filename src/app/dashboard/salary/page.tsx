@@ -15,6 +15,7 @@ import PremiumExportButton from '@/components/ui/PremiumExportButton';
 import { getSalaryData } from '@/modules/hr-salary/actions/query-salary-actions';
 import { 
   approveSalary, 
+  recalculateSalaryRecord,
   updateSalaryConfig, 
   publishSalaryRecord, 
   publishAllSalaryRecords, 
@@ -74,7 +75,7 @@ function getErrorMessage(error: unknown) {
   return 'Lỗi không xác định';
 }
 
-function getSalaryActionKey(action: 'approve' | 'publish' | 'confirm' | 'finalize', ktvId: string) {
+function getSalaryActionKey(action: 'approve' | 'publish' | 'confirm' | 'finalize' | 'recalculate', ktvId: string) {
   return `${action}:${ktvId}`;
 }
 
@@ -333,6 +334,27 @@ export default function SalaryPage() {
         }
       }
     });
+  };
+
+  const handleRecalculate = async (ktvId: string, ktvName: string) => {
+    const actionKey = getSalaryActionKey('recalculate', ktvId);
+    if (activeSalaryAction) return;
+
+    setActiveSalaryAction(actionKey);
+    try {
+      const result = await recalculateSalaryRecord(ktvId, `${getCurrentMonthString()}-01`);
+      if (result.success) {
+        toast.success(`Đã tính lại bảng lương cho ${ktvName}`);
+        await refreshSalaryData();
+        void loadMatrixData({ force: true });
+      } else {
+        toast.error(result.error || 'Lỗi khi tính lại bảng lương');
+      }
+    } catch (error) {
+      toast.error('Lỗi: ' + getErrorMessage(error));
+    } finally {
+      setActiveSalaryAction(null);
+    }
   };
 
   const openEditModal = (s: KtvSalaryRecord) => {
@@ -694,6 +716,7 @@ export default function SalaryPage() {
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
               openEditModal={openEditModal}
+              handleRecalculate={handleRecalculate}
               handleApprove={handleApprove}
               handleExport={handleExport}
               currentMonth={getCurrentMonthString()}

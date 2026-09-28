@@ -89,8 +89,8 @@ function getErrorMessage(error: unknown, fallback: string) {
  * 
  * @see {@link getMonthlyPnL} for profit/loss reporting
  */
-export async function getFinancialOverview() {
-  return getFinancialOverviewAction();
+export async function getFinancialOverview(month?: string) {
+  return getFinancialOverviewAction(month);
 }
 
 /**

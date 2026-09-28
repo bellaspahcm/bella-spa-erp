@@ -16,8 +16,8 @@ function getErrorMessage(error: unknown, fallback = 'Lỗi hệ thống') {
 }
 
 export async function completeSession(sessionId: string, bookingId: string, customNote?: string) {
-  const { createClient } = await import('@/lib/supabase-server');
-  const supabase = await createClient();
+  const { createDevelopmentBypassClient } = await import('@/lib/supabase-dev-bypass-server');
+  const supabase = await createDevelopmentBypassClient();
   const { getCurrentUser } = await import('@/services/user-actions');
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id || null;

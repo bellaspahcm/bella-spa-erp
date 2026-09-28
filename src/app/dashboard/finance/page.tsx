@@ -18,7 +18,7 @@ import Link from 'next/link';
 import SkeletonLoader,{ SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { createClient } from '@/lib/supabase-client';
-import { confirmTransaction, type MappedTransaction } from '@/services/finance-actions';
+import { confirmTransaction, getFinancialOverview, type MappedTransaction } from '@/services/finance-actions';
 import { useMonthlyPnL } from '@/hooks/intelligence';
 import { motion } from 'framer-motion';
 import {
@@ -135,111 +135,12 @@ export default function FinancePage() {
   const fetchData = useCallback(async (month = selectedMonth, options: { force?: boolean } = {}) => {
     setIsRefreshing(true);
     try {
-      // Fetch transactions directly from Supabase (not in Intelligence Layer)
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast.error('Chưa đăng nhập');
-        return;
-      }
-
-      const { data: profile } = await supabase
-        .from('users')
-        .select('tenant_id')
-        .eq('id', user.id)
-        .single();
-
-      if (!profile?.tenant_id) {
-        toast.error('Không tìm thấy thông tin tenant');
-        return;
-      }
-
-      const tenantId = profile.tenant_id;
-      const startDate = new Date(month);
-      const endDate = new Date(startDate);
-      endDate.setMonth(endDate.getMonth() + 1);
-
-      // Fetch revenue transactions
-      const { data: revenueData, error: revenueError } = await supabase
-        .from('revenue')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        // TODO: revenue table uses received_date, not timestamp or created_at
-        .gte('received_date', startDate.toISOString())
-        .lt('received_date', endDate.toISOString())
-        .order('received_date', { ascending: false });
-
-      if (revenueError) throw revenueError;
-
-      // Fetch expense transactions
-      const { data: expenseData, error: expenseError } = await supabase
-        .from('expenses')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        // TODO: expenses table uses expense_date, not timestamp
-        .gte('expense_date', startDate.toISOString())
-        .lt('expense_date', endDate.toISOString())
-        .order('expense_date', { ascending: false });
-
-      if (expenseError) throw expenseError;
-
-      // Map to MappedTransaction format
-      const mappedRevenue: MappedTransaction[] = (revenueData || []).map((r) => ({
-        id: `revenue-${r.id}`,
-        dbId: r.id,
-        type: 'revenue' as const,
-        // TODO: revenue table doesn't have 'category' field - using business_event_type or default
-        category: r.business_event_type || 'Dịch vụ',
-        details: r.notes || '',
-        amount: `+${(r.amount || 0).toLocaleString()}đ`,
-        amountNum: r.amount || 0,
-        // TODO: revenue table uses received_date, not timestamp or created_at
-        date: new Date(r.received_date).toLocaleDateString('vi-VN'),
-        timestamp: new Date(r.received_date).getTime(),
-        method: r.payment_method || 'Tiền mặt',
-        status: r.status || 'pending',
-      }));
-
-      const mappedExpense: MappedTransaction[] = (expenseData || []).map((e) => ({
-        id: `expense-${e.id}`,
-        dbId: e.id,
-        type: 'expense' as const,
-        category: e.category || 'Chi phí',
-        // TODO: expenses table uses description, not notes
-        details: e.description || '',
-        amount: `-${(e.amount || 0).toLocaleString()}đ`,
-        amountNum: -(e.amount || 0),
-        // TODO: expenses table uses expense_date, not timestamp
-        date: new Date(e.expense_date).toLocaleDateString('vi-VN'),
-        timestamp: new Date(e.expense_date).getTime(),
-        // TODO: expenses table doesn't have payment_method field
-        method: 'Tiền mặt',
-        status: e.status || 'pending',
-      }));
-
-      const allTransactions = [...mappedRevenue, ...mappedExpense].sort(
-        (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      );
-
-      // Calculate totals
-      const totalRevenueMonth = mappedRevenue
-        .filter((t) => t.status === 'confirmed')
-        .reduce((sum, t) => sum + t.amountNum, 0);
-      
-      const totalExpenseMonth = Math.abs(
-        mappedExpense
-          .filter((t) => t.status === 'confirmed')
-          .reduce((sum, t) => sum + t.amountNum, 0)
-      );
-
-      const totalBalance = totalRevenueMonth - totalExpenseMonth;
-
+      const overview = await getFinancialOverview(month);
       setData({
-        totalBalance,
-        totalRevenueMonth,
-        totalExpenseMonth,
-        transactions: allTransactions,
+        totalBalance: overview.totalBalance,
+        totalRevenueMonth: overview.totalRevenueMonth,
+        totalExpenseMonth: overview.totalExpenseMonth,
+        transactions: overview.transactions,
       });
     } catch (error) {
       console.error('Error fetching finance data:', error);

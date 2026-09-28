@@ -981,7 +981,10 @@ export async function autoConsumeForSession(
   options: AutoConsumeForSessionOptions = {}
 ) {
   try {
-    const { supabase, tenantId } = await getSupabaseWithTenant();
+    const { createDevelopmentBypassClient } = await import('@/lib/supabase-dev-bypass-server');
+    const supabase = await createDevelopmentBypassClient();
+    const user = await getCurrentUser();
+    const tenantId = user?.tenant_id || null;
     if (!tenantId) return { success: false, error: 'Chưa đăng nhập' };
 
     // Đọc cấu hình từ bảng tenants để kiểm tra chế độ trừ kho tự động

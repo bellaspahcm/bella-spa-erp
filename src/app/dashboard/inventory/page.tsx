@@ -13,7 +13,7 @@ import { InventoryRestockModal } from './components/InventoryRestockModal';
 import { InventoryStockPanel } from './components/InventoryStockPanel';
 import { InventoryTabs } from './components/InventoryTabs';
 import { InventoryTransferOrdersPanel } from './components/InventoryTransferOrdersPanel';
-import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
+import { isHaircutProductPresentation } from '@/lib/business-rules/product-presentation-routing';
 import { useUser } from '@/lib/user-context';
 import { HaircutInventoryView } from './HaircutInventoryView';
 import { useInventoryPageState } from './hooks/useInventoryPageState';
@@ -79,9 +79,8 @@ function StandardInventoryPage() {
     refreshPageData,
   } = useInventoryPageState();
 
-  const { tenantModuleKey } = useTenantModuleKey();
   const { product } = useUser();
-  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'beauty_spa';
+  const isHaircut = isHaircutProductPresentation(product);
 
   // ✅ Inventory forecast enabled
   const {
@@ -248,9 +247,8 @@ function HaircutInventoryViewWrapper() {
 }
 
 export default function InventoryPage() {
-  const { tenantModuleKey } = useTenantModuleKey();
   const { product } = useUser();
-  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'beauty_spa';
+  const isHaircut = isHaircutProductPresentation(product);
 
   if (isHaircut) {
     return <HaircutInventoryViewWrapper />;

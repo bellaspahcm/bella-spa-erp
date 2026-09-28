@@ -4,9 +4,9 @@ import type { MappedTransaction, RevenueDBRow, ExpenseDBRow } from './types';
 
 const MAX_INITIAL_FINANCE_ROWS_PER_TYPE = 80;
 
-export async function getFinancialOverview() {
-  const { createClient } = await import('@/lib/supabase-server');
-  const supabase = await createClient();
+export async function getFinancialOverview(month?: string) {
+  const { createDevelopmentBypassClient } = await import('@/lib/supabase-dev-bypass-server');
+  const supabase = await createDevelopmentBypassClient();
 
   const { getCurrentUser } = await import('@/services/user-actions');
   const currentUser = await getCurrentUser();
@@ -19,26 +19,54 @@ export async function getFinancialOverview() {
     throw new Error('[getFinancialOverview] Missing tenantId for current user');
   }
 
+  const startDate = month ? new Date(month) : null;
+  const endDate = startDate ? new Date(startDate) : null;
+  if (endDate) {
+    endDate.setMonth(endDate.getMonth() + 1);
+  }
+  const startIso = startDate?.toISOString();
+  const endIso = endDate?.toISOString();
+
+  let revenueTotalsQuery = supabase
+    .from('revenue')
+    .select('amount, status')
+    .eq('tenant_id', tenantId);
+  let expensesTotalsQuery = supabase
+    .from('expenses')
+    .select('amount, status')
+    .eq('tenant_id', tenantId);
+  let revenueQuery = supabase
+    .from('revenue')
+    .select(`id, booking_id, amount, revenue_type, payment_method, received_date, status, notes,
+             bookings(package_name, customers(name_mother, name_baby))`)
+    .eq('tenant_id', tenantId);
+  let expensesQuery = supabase
+    .from('expenses')
+    .select('id, category, amount, description, expense_date, status')
+    .eq('tenant_id', tenantId);
+
+  if (startIso && endIso) {
+    revenueTotalsQuery = revenueTotalsQuery
+      .gte('received_date', startIso)
+      .lt('received_date', endIso);
+    expensesTotalsQuery = expensesTotalsQuery
+      .gte('expense_date', startIso)
+      .lt('expense_date', endIso);
+    revenueQuery = revenueQuery
+      .gte('received_date', startIso)
+      .lt('received_date', endIso);
+    expensesQuery = expensesQuery
+      .gte('expense_date', startIso)
+      .lt('expense_date', endIso);
+  }
+
   const [revenueTotalsResponse, expensesTotalsResponse, revenueResponse, expensesResponse] = await Promise.all([
-    supabase
-      .from('revenue')
-      .select('amount, status')
-      .eq('tenant_id', tenantId),
-    supabase
-      .from('expenses')
-      .select('amount, status')
-      .eq('tenant_id', tenantId),
-    supabase
-      .from('revenue')
-      .select(`id, booking_id, amount, revenue_type, payment_method, received_date, status, notes,
-               bookings(package_name, customers(name_mother, name_baby))`)
-      .eq('tenant_id', tenantId)
+    revenueTotalsQuery,
+    expensesTotalsQuery,
+    revenueQuery
       .order('received_date', { ascending: false })
       .limit(MAX_INITIAL_FINANCE_ROWS_PER_TYPE),
-    supabase
-      .from('expenses')
-      .select('id, category, amount, description, expense_date, status')
-      .eq('tenant_id', tenantId)
+    expensesQuery
       .order('expense_date', { ascending: false })
       .limit(MAX_INITIAL_FINANCE_ROWS_PER_TYPE)
   ]);

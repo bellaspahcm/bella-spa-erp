@@ -45,7 +45,7 @@ import {
   FinancialHealthChart,
   GrowthIndicatorsChart,
 } from '@/components/intelligence';
-import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
+import { isHaircutProductPresentation } from '@/lib/business-rules/product-presentation-routing';
 import { useUser } from '@/lib/user-context';
 import { HaircutExecutiveDashboardView } from './components/HaircutExecutiveDashboardView';
 
@@ -773,9 +773,8 @@ function ExecutiveDashboardPage() {
 
 // Wrap with ErrorBoundary to prevent full page crashes
 export default function ExecutiveDashboardPageWrapper() {
-  const { tenantModuleKey } = useTenantModuleKey();
   const { product } = useUser();
-  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'beauty_spa';
+  const isHaircut = isHaircutProductPresentation(product);
 
   if (isHaircut) {
     return <HaircutExecutiveDashboardView />;

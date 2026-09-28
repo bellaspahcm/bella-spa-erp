@@ -14,7 +14,7 @@ import {
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
-import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
+import { isHaircutProductPresentation } from '@/lib/business-rules/product-presentation-routing';
 import { useUser } from '@/lib/user-context';
 import { parseMoneyInput } from '@bella/shared';
 import { cn, formatCurrency } from '@/lib/utils';
@@ -811,9 +811,8 @@ function StandardFinancialReconciliationPage() {
 }
 
 export default function FinancialReconciliationPage() {
-  const { tenantModuleKey } = useTenantModuleKey();
   const { product } = useUser();
-  const isHaircut = product?.productKey === 'bella_haircut' || tenantModuleKey === 'beauty_spa';
+  const isHaircut = isHaircutProductPresentation(product);
 
   if (isHaircut) {
     return <HaircutReconciliationView />;

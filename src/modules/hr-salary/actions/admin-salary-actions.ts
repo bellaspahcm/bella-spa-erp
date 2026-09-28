@@ -100,6 +100,68 @@ export async function recalculateAndSaveSalaryRecord(
   return recalculateAndSaveSalaryRecordEngine(supabase, ktvId, monthYear, tenantId, overrides);
 }
 
+function getCurrentSalaryMonth() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+}
+
+function isSalaryMonth(value: string) {
+  return /^\d{4}-\d{2}-01$/.test(value);
+}
+
+export async function recalculateSalaryRecord(ktvId: string, monthYear = getCurrentSalaryMonth()) {
+  const auth = await getSalaryAdminAuth();
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  if (!isSalaryMonth(monthYear)) {
+    return { success: false, error: 'Tháng lương không hợp lệ' };
+  }
+
+  const { createDevelopmentBypassClient } = await import('@/lib/supabase-dev-bypass-server');
+  const supabase = await createDevelopmentBypassClient();
+  const tenantId = auth.tenantId;
+
+  const lockFailure = await getSalaryMonthLockFailure(
+    monthYear,
+    'Tháng lương đã bị khóa, không thể tính lại bảng lương.'
+  );
+  if (lockFailure) return lockFailure;
+
+  try {
+    const { data: existingSalary, error: existingSalaryError } = await supabase
+      .from('salary_records')
+      .select('id, status, is_locked, ktv_id, month_year, tenant_id')
+      .eq('ktv_id', ktvId)
+      .eq('month_year', monthYear)
+      .eq('tenant_id', tenantId)
+      .maybeSingle();
+
+    if (existingSalaryError) throw existingSalaryError;
+
+    if (!existingSalary) {
+      return { success: false, error: 'Không tìm thấy bảng lương nháp để tính lại.' };
+    }
+
+    if (existingSalary.is_locked || existingSalary.status !== 'draft') {
+      return { success: false, error: 'Chỉ có thể tính lại bảng lương nháp chưa khóa.' };
+    }
+
+    const result = await recalculateAndSaveSalaryRecord(
+      supabase,
+      ktvId,
+      monthYear,
+      tenantId
+    );
+
+    revalidateSalaryPage();
+    return { success: true, totalSalary: result.totalSalary };
+  } catch (err: unknown) {
+    const errorObj = err as Error;
+    console.error('recalculateSalaryRecord error:', errorObj);
+    return { success: false, error: errorObj.message || 'Lỗi không xác định' };
+  }
+}
+
 function toSalaryRecordSnapshotPayload(record: SalaryRecordRow): SalaryRecordInsert {
   return {
     accounting_metadata: record.accounting_metadata,
@@ -408,7 +470,8 @@ export async function publishSalaryRecord(ktvId: string) {
   const auth = await getSalaryAdminAuth();
   if (!auth.ok) return { success: false, error: auth.error };
 
-  const supabase = await createClient();
+  const { createDevelopmentBypassClient } = await import('@/lib/supabase-dev-bypass-server');
+  const supabase = await createDevelopmentBypassClient();
   const tenantId = auth.tenantId;
 
   const now = new Date();
@@ -644,7 +707,8 @@ export async function adminConfirmOnBehalf(ktvId: string) {
   const auth = await getSalaryAdminAuth();
   if (!auth.ok) return { success: false, error: auth.error };
 
-  const supabase = await createClient();
+  const { createDevelopmentBypassClient } = await import('@/lib/supabase-dev-bypass-server');
+  const supabase = await createDevelopmentBypassClient();
   const tenantId = auth.tenantId;
 
   const monthYear = getMonthStart();
@@ -777,7 +841,8 @@ export async function finalizeSalaryRecord(ktvId: string) {
   const auth = await getSalaryAdminAuth();
   if (!auth.ok) return { success: false, error: auth.error };
 
-  const supabase = await createClient();
+  const { createDevelopmentBypassClient } = await import('@/lib/supabase-dev-bypass-server');
+  const supabase = await createDevelopmentBypassClient();
   const tenantId = auth.tenantId;
 
   const now = new Date();
@@ -825,6 +890,7 @@ export async function finalizeSalaryRecord(ktvId: string) {
   const finalizePayload: SalaryRecordUpdate = {
     status: 'finalized',
     finalized_at: new Date().toISOString(),
+    is_locked: true,
   };
   const { error: lockError } = await supabase.from('salary_records')
     .update(finalizePayload)

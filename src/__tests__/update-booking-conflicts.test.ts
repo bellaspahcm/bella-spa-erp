@@ -91,7 +91,11 @@ jest.mock('@/app/api/bookings/check-ktv-availability/route', () => ({
 }));
 
 jest.mock('@/lib/supabase-server', () => ({
-  createClient: jest.fn().mockResolvedValue(mockSupabase),
+  createClient: jest.fn(),
+}));
+
+jest.mock('@/lib/supabase-dev-bypass-server', () => ({
+  createDevelopmentBypassClient: jest.fn().mockResolvedValue(mockSupabase),
 }));
 
 jest.mock('@/services/audit-actions', () => ({

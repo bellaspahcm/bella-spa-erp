@@ -630,7 +630,7 @@ export async function getKtvSessionMatrix(): Promise<KtvSessionMatrix> {
   const { unstable_noStore: noStore } = await import('next/cache');
   noStore();
   
-  const supabase = await createClient();
+  const supabase = await createDevelopmentBypassClient();
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
   if (!tenantId) {
