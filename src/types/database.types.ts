@@ -12,8 +12,264 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  logistics: {
+    Tables: {
+      inventory: {
+        Row: {
+          created_at: string
+          expiry_date: string | null
+          id: string
+          item_id: string
+          location_id: string
+          location_type: string
+          lot_number: string | null
+          quantity_available: number
+          quantity_on_hand: number
+          quantity_reserved: number
+          serial_number: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          item_id: string
+          location_id: string
+          location_type: string
+          lot_number?: string | null
+          quantity_available?: number
+          quantity_on_hand?: number
+          quantity_reserved?: number
+          serial_number?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          item_id?: string
+          location_id?: string
+          location_type?: string
+          lot_number?: string | null
+          quantity_available?: number
+          quantity_on_hand?: number
+          quantity_reserved?: number
+          serial_number?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      items: {
+        Row: {
+          base_uom: string
+          category: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          dimensions_json: Json | null
+          expiry_tracked: boolean
+          id: string
+          lot_tracked: boolean
+          name: string
+          serial_tracked: boolean
+          sku_code: string
+          standard_cost: number
+          status: string
+          tenant_id: string
+          type: string
+          updated_at: string
+          updated_by: string | null
+          weight_kg: number | null
+        }
+        Insert: {
+          base_uom: string
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          dimensions_json?: Json | null
+          expiry_tracked?: boolean
+          id?: string
+          lot_tracked?: boolean
+          name: string
+          serial_tracked?: boolean
+          sku_code: string
+          standard_cost?: number
+          status?: string
+          tenant_id: string
+          type: string
+          updated_at?: string
+          updated_by?: string | null
+          weight_kg?: number | null
+        }
+        Update: {
+          base_uom?: string
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          dimensions_json?: Json | null
+          expiry_tracked?: boolean
+          id?: string
+          lot_tracked?: boolean
+          name?: string
+          serial_tracked?: boolean
+          sku_code?: string
+          standard_cost?: number
+          status?: string
+          tenant_id?: string
+          type?: string
+          updated_at?: string
+          updated_by?: string | null
+          weight_kg?: number | null
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
+      inventory: {
+        Row: {
+          created_at: string
+          expiry_date: string | null
+          id: string
+          item_id: string
+          location_id: string
+          location_type: string
+          lot_number: string | null
+          quantity_available: number
+          quantity_on_hand: number
+          quantity_reserved: number
+          serial_number: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          item_id: string
+          location_id: string
+          location_type: string
+          lot_number?: string | null
+          quantity_available?: number
+          quantity_on_hand?: number
+          quantity_reserved?: number
+          serial_number?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          item_id?: string
+          location_id?: string
+          location_type?: string
+          lot_number?: string | null
+          quantity_available?: number
+          quantity_on_hand?: number
+          quantity_reserved?: number
+          serial_number?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      items: {
+        Row: {
+          base_uom: string
+          category: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          dimensions_json: Json | null
+          expiry_tracked: boolean
+          id: string
+          lot_tracked: boolean
+          name: string
+          serial_tracked: boolean
+          sku_code: string
+          standard_cost: number
+          status: string
+          tenant_id: string
+          type: string
+          updated_at: string
+          updated_by: string | null
+          weight_kg: number | null
+        }
+        Insert: {
+          base_uom: string
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          dimensions_json?: Json | null
+          expiry_tracked?: boolean
+          id?: string
+          lot_tracked?: boolean
+          name: string
+          serial_tracked?: boolean
+          sku_code: string
+          standard_cost?: number
+          status?: string
+          tenant_id: string
+          type: string
+          updated_at?: string
+          updated_by?: string | null
+          weight_kg?: number | null
+        }
+        Update: {
+          base_uom?: string
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          dimensions_json?: Json | null
+          expiry_tracked?: boolean
+          id?: string
+          lot_tracked?: boolean
+          name?: string
+          serial_tracked?: boolean
+          sku_code?: string
+          standard_cost?: number
+          status?: string
+          tenant_id?: string
+          type?: string
+          updated_at?: string
+          updated_by?: string | null
+          weight_kg?: number | null
+        }
+        Relationships: []
+      }
       _prisma_migrations: {
         Row: {
           applied_steps_count: number
