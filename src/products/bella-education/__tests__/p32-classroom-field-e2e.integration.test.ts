@@ -29,6 +29,7 @@ describe('BELLA EDUCATION V1 — P3.2 CLASSROOM FIELD E2E INTEGRATION', () => {
   let teacherParty1: string;
   let teacherParty2: string;
   let createdCourseId: string;
+  let secondaryCourseId: string;
 
   beforeAll(async () => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -161,6 +162,7 @@ describe('BELLA EDUCATION V1 — P3.2 CLASSROOM FIELD E2E INTEGRATION', () => {
     expect(createRes.status).toBe(200);
 
     const class2Id = createData.course.course_id;
+    secondaryCourseId = class2Id;
 
     // 2. Try assigning teacherParty1 (who is ALREADY lead teacher for E2E-MAM-01) to class2Id
     const assignReq = new Request(`http://localhost/api/education/courses/${class2Id}/teachers`, {
@@ -184,7 +186,110 @@ describe('BELLA EDUCATION V1 — P3.2 CLASSROOM FIELD E2E INTEGRATION', () => {
     expect(assignData.error).toContain('Xung đột: Lớp học đã có Giáo viên chủ nhiệm');
   });
 
-  it('Step 3: Classroom 360° Workspace — GET course detail returns aggregated teacher roster and classroom metadata', async () => {
+  it('Step 3: Classroom 360° Workspace — GET course detail returns canonical roster and classroom metadata', async () => {
+    const studentPartyId = crypto.randomUUID();
+    const studentId = crypto.randomUUID();
+    const excludedCourseStudentPartyId = crypto.randomUUID();
+    const excludedTenantStudentPartyId = crypto.randomUUID();
+
+    await supabase.from('party_parties').insert([
+      {
+        id: studentPartyId,
+        tenant_id: TENANT_A,
+        party_type: 'person',
+        display_name: 'Bé Roster Canonical',
+        dob: '2022-05-12',
+        gender: 'female',
+      },
+      {
+        id: excludedCourseStudentPartyId,
+        tenant_id: TENANT_A,
+        party_type: 'person',
+        display_name: 'Bé Khác Lớp',
+        dob: '2022-07-22',
+        gender: 'male',
+      },
+      {
+        id: excludedTenantStudentPartyId,
+        tenant_id: TENANT_B,
+        party_type: 'person',
+        display_name: 'Bé Khác Tenant',
+        dob: '2022-09-09',
+        gender: 'female',
+      },
+    ]);
+
+    await supabase.from('students').insert([
+      {
+        student_id: studentId,
+        tenant_id: TENANT_A,
+        party_id: studentPartyId,
+        person_id: null,
+        student_code: 'ROSTER-CANON-01',
+        academic_status: 'enrolled',
+        enrollment_type: 'full_time',
+        program_id: 'primary',
+        enrollment_date: '2026-09-26',
+      },
+      {
+        student_id: crypto.randomUUID(),
+        tenant_id: TENANT_A,
+        party_id: excludedCourseStudentPartyId,
+        person_id: null,
+        student_code: 'ROSTER-OTHER-COURSE',
+        academic_status: 'enrolled',
+        enrollment_type: 'full_time',
+        program_id: 'primary',
+        enrollment_date: '2026-09-26',
+      },
+      {
+        student_id: crypto.randomUUID(),
+        tenant_id: TENANT_B,
+        party_id: excludedTenantStudentPartyId,
+        person_id: null,
+        student_code: 'ROSTER-OTHER-TENANT',
+        academic_status: 'enrolled',
+        enrollment_type: 'full_time',
+        program_id: 'primary',
+        enrollment_date: '2026-09-26',
+      },
+    ]);
+
+    await supabase.from('edu_enrollments').insert([
+      {
+        id: crypto.randomUUID(),
+        tenant_id: TENANT_A,
+        student_party_id: studentPartyId,
+        course_id: createdCourseId,
+        status: 'active',
+        request_id: crypto.randomUUID(),
+      },
+      {
+        id: crypto.randomUUID(),
+        tenant_id: TENANT_A,
+        student_party_id: excludedCourseStudentPartyId,
+        course_id: secondaryCourseId,
+        status: 'active',
+        request_id: crypto.randomUUID(),
+      },
+      {
+        id: crypto.randomUUID(),
+        tenant_id: TENANT_B,
+        student_party_id: excludedTenantStudentPartyId,
+        course_id: createdCourseId,
+        status: 'active',
+        request_id: crypto.randomUUID(),
+      },
+      {
+        id: crypto.randomUUID(),
+        tenant_id: TENANT_A,
+        student_party_id: studentPartyId,
+        course_id: secondaryCourseId,
+        status: 'cancelled',
+        request_id: crypto.randomUUID(),
+      },
+    ]);
+
     const detailReq = new Request(`http://localhost/api/education/courses/${createdCourseId}?tenantId=${TENANT_A}`);
     const detailParams = Promise.resolve({ id: createdCourseId });
 
@@ -199,6 +304,41 @@ describe('BELLA EDUCATION V1 — P3.2 CLASSROOM FIELD E2E INTEGRATION', () => {
     expect(detailData.classroom.teachers).toHaveLength(1);
     expect(detailData.classroom.teachers[0].name).toBe('Cô Nguyễn Hoàng Yến');
     expect(detailData.classroom.teachers[0].role).toBe('lead_teacher');
+    expect(detailData.classroom.currentStudents).toBe(1);
+
+    const roster = detailData.classroom.roster;
+    expect(roster).toHaveLength(1);
+    expect(roster[0]).toEqual(expect.objectContaining({
+      studentId,
+      studentPartyId,
+      studentCode: 'ROSTER-CANON-01',
+      name: 'Bé Roster Canonical',
+      gender: 'female',
+      status: 'Có mặt',
+    }));
+    expect(roster[0].name).not.toBe('Học sinh');
+    expect(roster.some((student: { studentCode: string }) => student.studentCode === 'ROSTER-OTHER-COURSE')).toBe(false);
+    expect(roster.some((student: { studentCode: string }) => student.studentCode === 'ROSTER-OTHER-TENANT')).toBe(false);
+
+    const { count: legacyEnrollmentCount } = await supabase
+      .from('enrollments')
+      .select('*', { count: 'exact', head: true })
+      .eq('tenant_id', TENANT_A)
+      .eq('student_id', studentId);
+    expect(legacyEnrollmentCount).toBe(0);
+
+    const { count: personsCount } = await supabase
+      .from('persons')
+      .select('*', { count: 'exact', head: true })
+      .eq('tenant_id', TENANT_A)
+      .eq('id', studentPartyId);
+    expect(personsCount).toBe(0);
+
+    const overviewReq = new Request(`http://localhost/api/education/courses?tenantId=${TENANT_A}`);
+    const overviewRes = await getCourses(overviewReq);
+    const overviewData = await overviewRes.json();
+    const classroomOverview = overviewData.classrooms.find((item: { id: string }) => item.id === createdCourseId);
+    expect(classroomOverview.students).toBe(1);
   });
 
   it('Step 4: Teacher Reassignment & Termination — terminate previous lead teacher, then assign new lead teacher', async () => {

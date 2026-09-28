@@ -74,6 +74,7 @@ function computeApprovalHash(approval) {
     approval_id: approval.approval_id,
     migration_id: approval.migration_id,
     migration_hash: approval.migration_hash,
+    approval_mode: approval.approval_mode || 'separated',
     requester_id: approval.requester_id,
     approver_id: approval.approver_id,
     approved_at: new Date(approval.approved_at).toISOString(),
@@ -90,20 +91,54 @@ function computeApprovalHash(approval) {
   return computeHash(JSON.stringify(sorted));
 }
 
+function computeLegacyApprovalHash(approval) {
+  const canonical = {
+    approval_id: approval.approval_id,
+    migration_id: approval.migration_id,
+    migration_hash: approval.migration_hash,
+    requester_id: approval.requester_id,
+    approver_id: approval.approver_id,
+    approved_at: new Date(approval.approved_at).toISOString(),
+    target_environment: approval.target_environment,
+    expires_at: new Date(approval.expires_at).toISOString()
+  };
+
+  const sorted = Object.keys(canonical).sort().reduce((obj, key) => {
+    obj[key] = canonical[key];
+    return obj;
+  }, {});
+
+  return computeHash(JSON.stringify(sorted));
+}
+
 // ============================================================================
 // INVARIANT CHECKS
 // ============================================================================
 
 /**
- * I0: No Self-Approval
- * Requester MUST NOT equal approver
+ * I0: Approval mode
+ * Separated mode requires requester and approver to differ.
+ * Owner-operated mode permits the same identity.
  */
 function checkNoSelfApproval(approval) {
-  if (approval.requester_id === approval.approver_id) {
+  const approvalMode = approval.approval_mode || 'separated';
+
+  if (!['separated', 'owner_operated'].includes(approvalMode)) {
+    return {
+      pass: false,
+      reason: 'INVALID_APPROVAL_MODE',
+      evidence: {
+        approval_mode: approvalMode
+      }
+    };
+  }
+
+  if (approvalMode === 'separated' && approval.requester_id === approval.approver_id) {
     return {
       pass: false,
       reason: 'SELF_APPROVAL_FORBIDDEN',
       evidence: {
+        approval_mode: approvalMode,
         requester_id: approval.requester_id,
         approver_id: approval.approver_id
       }
@@ -247,6 +282,13 @@ function checkIntegrity(approval) {
   const computed = computeApprovalHash(approval);
   
   if (computed !== approval.approval_hash) {
+    const approvalMode = approval.approval_mode || 'separated';
+    const legacyComputed = computeLegacyApprovalHash(approval);
+
+    if (approvalMode === 'separated' && legacyComputed === approval.approval_hash) {
+      return { pass: true };
+    }
+
     return {
       pass: false,
       reason: 'APPROVAL_TAMPERED',
@@ -334,7 +376,7 @@ async function verifyApproval(input) {
     
     const approval = result.rows[0];
     
-    // 3. Check I0: No Self-Approval (CRITICAL - check first)
+    // 3. Check I0: approval mode (CRITICAL - check first)
     const i0Check = checkNoSelfApproval(approval);
     if (!i0Check.pass) {
       return {
@@ -444,6 +486,7 @@ async function verifyApproval(input) {
       evidence: {
         approval_id: approval.approval_id,
         migration_id: approval.migration_id,
+        approval_mode: approval.approval_mode || 'separated',
         requester_id: approval.requester_id,
         approver_id: approval.approver_id,
         approver_role: approval.approver_role,

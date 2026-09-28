@@ -2,7 +2,7 @@
  * Student Integration Tests
  * 
  * Tests:
- * - Person FK validation (Student requires existing Person)
+ * - R3 identity validation (new Student requires a Party, not a legacy Person mapping)
  * - Tenant isolation (Student cannot access other tenant's data)
  * - CRUD operations with real database
  * - Business rules enforcement
@@ -10,7 +10,6 @@
 
 import { StudentService } from '../student.service';
 import { PersonService } from '@/platform/host/person/person.service';
-import { PersonRepository } from '@/platform/host/person/person.repository';
 import { CreateStudentRequest } from '../../shared-kernel/types';
 import { createClient } from '@/lib/supabase-server';
 
@@ -19,14 +18,14 @@ describe('Student Integration Tests', () => {
   const differentTenantId = '00000000-0000-0000-0000-000000000089';
   const systemUserId = '00000000-0000-0000-0000-000000000001'; // System user UUID (not 'test-system' string)
   let personId: string;
+  let partyId: string;
+  let legacyPartyId: string;
   let studentId: string;
   let personService: PersonService;
-  let personRepository: PersonRepository;
 
   beforeAll(async () => {
     const supabase = await createClient();
     personService = new PersonService(supabase);
-    personRepository = new PersonRepository(supabase);
 
     // Ensure test tenants exist in DB
     const { error: tenant1Error } = await supabase
@@ -69,6 +68,33 @@ describe('Student Integration Tests', () => {
       throw new Error(`Failed to create test person: ${personResult.error?.message}`);
     }
     personId = personResult.data.personId;
+
+    partyId = '00000000-0000-0000-0000-000000000188';
+    const { error: partyError } = await supabase
+      .from('party_parties')
+      .upsert({
+        id: partyId,
+        tenant_id: tenantId,
+        party_type: 'person',
+        display_name: 'John Doe',
+      });
+    if (partyError) {
+      throw new Error(`Failed to create test Party: ${partyError.message}`);
+    }
+
+    legacyPartyId = '00000000-0000-0000-0000-000000000190';
+    const { error: legacyPartyError } = await supabase
+      .from('party_parties')
+      .upsert({
+        id: legacyPartyId,
+        tenant_id: tenantId,
+        party_type: 'person',
+        display_name: 'Legacy Student',
+      });
+    if (legacyPartyError) {
+      throw new Error(`Failed to create legacy test Party: ${legacyPartyError.message}`);
+    }
+
   });
 
   afterAll(async () => {
@@ -77,7 +103,10 @@ describe('Student Integration Tests', () => {
     
     // Delete students first (FK constraint)
     await supabase.from('students').delete().in('tenant_id', [tenantId, differentTenantId]);
-    
+
+    // Delete Party fixtures before their referenced identities.
+    await supabase.from('party_parties').delete().in('tenant_id', [tenantId, differentTenantId]);
+
     // Delete persons
     await supabase.from('persons').delete().in('tenant_id', [tenantId, differentTenantId]);
 
@@ -85,11 +114,11 @@ describe('Student Integration Tests', () => {
     await supabase.from('tenants').delete().in('id', [tenantId, differentTenantId]);
   });
 
-  describe('Person FK Validation', () => {
-    it('should create student with valid Person', async () => {
+  describe('R3 Student Identity', () => {
+    it('should persist and read back new canonical Party student without transitional Person mapping', async () => {
       const request: CreateStudentRequest = {
         tenantId,
-        personId,
+        partyId,
         studentCode: 'EDU-2024-001',
         academicStatus: 'enrolled',
         enrollmentType: 'full_time',
@@ -100,19 +129,58 @@ describe('Student Integration Tests', () => {
         createdBy: systemUserId,
       };
 
+      const supabase = await createClient();
+      const { count: personsBefore, error: personsBeforeError } = await supabase
+        .from('persons')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', tenantId);
+      if (personsBeforeError) {
+        throw new Error(`Failed to count persons before Student create: ${personsBeforeError.message}`);
+      }
+
       const student = await StudentService.createStudent(request);
       studentId = student.studentId;
 
       expect(student).toBeDefined();
-      expect(student.personId).toBe(personId);
+      expect(student.partyId).toBe(partyId);
+      expect(student.personId).toBeNull();
       expect(student.studentCode).toBe('EDU-2024-001');
       expect(student.academicStatus).toBe('enrolled');
+
+      const { data: persistedStudent, error: readBackError } = await supabase
+        .from('students')
+        .select('party_id, person_id')
+        .eq('student_id', studentId)
+        .eq('tenant_id', tenantId)
+        .single();
+      if (readBackError) {
+        throw new Error(`Failed to read back R3 Student identity: ${readBackError.message}`);
+      }
+      expect(persistedStudent?.party_id).toBe(partyId);
+      expect(persistedStudent?.person_id).toBeNull();
+
+      const { count: personsAfter, error: personsAfterError } = await supabase
+        .from('persons')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', tenantId);
+      if (personsAfterError) {
+        throw new Error(`Failed to count persons after Student create: ${personsAfterError.message}`);
+      }
+      expect(personsAfter).toBe(personsBefore);
     });
 
-    it('should reject student creation if Person does not exist', async () => {
+    it('should read back created student through canonical partyId', async () => {
+      const students = await StudentService.getStudentsByPartyId(partyId, tenantId);
+      expect(students.length).toBeGreaterThan(0);
+      expect(students[0].partyId).toBe(partyId);
+      expect(students[0].personId).toBeNull();
+    });
+
+    it('should reject student creation if Party does not exist', async () => {
       const request: CreateStudentRequest = {
         tenantId,
-        personId: '00000000-0000-0000-0000-999999999999', // Valid UUID that doesn't exist
+        partyId: '00000000-0000-0000-0000-999999999999',
+        personId: '00000000-0000-0000-0000-999999999999', // Legacy UUID remains accepted when supplied
         studentCode: 'EDU-2024-002',
         academicStatus: 'enrolled',
         enrollmentType: 'full_time',
@@ -122,14 +190,14 @@ describe('Student Integration Tests', () => {
       };
 
       await expect(StudentService.createStudent(request)).rejects.toThrow(
-        'Person with ID 00000000-0000-0000-0000-999999999999 does not exist'
+        'Person Party with ID 00000000-0000-0000-0000-999999999999 does not exist'
       );
     });
 
     it('should reject duplicate student code in same tenant', async () => {
       const request: CreateStudentRequest = {
         tenantId,
-        personId,
+        partyId,
         studentCode: 'EDU-2024-001', // Same code as first test
         academicStatus: 'enrolled',
         enrollmentType: 'part_time',
@@ -171,10 +239,22 @@ describe('Student Integration Tests', () => {
       expect(student?.studentId).toBe(studentId);
     });
 
-    it('should get students by person ID', async () => {
+    it('should preserve legacy lookup by person ID', async () => {
+      const legacyStudent = await StudentService.createStudent({
+        tenantId,
+        partyId: legacyPartyId,
+        personId,
+        studentCode: 'EDU-2024-004',
+        academicStatus: 'enrolled',
+        enrollmentType: 'full_time',
+        programId: 'program-cs-2024',
+        enrollmentDate: '2024-09-01',
+        createdBy: systemUserId,
+      });
+
       const students = await StudentService.getStudentsByPersonId(personId, tenantId);
       expect(students.length).toBeGreaterThan(0);
-      expect(students[0].personId).toBe(personId);
+      expect(students.some((student) => student.studentId === legacyStudent.studentId)).toBe(true);
     });
 
     it('should update student', async () => {
@@ -242,9 +322,23 @@ describe('Student Integration Tests', () => {
         throw new Error('Failed to create test person');
       }
 
+      const party2Id = '00000000-0000-0000-0000-000000000189';
+      const supabase = await createClient();
+      const { error: party2Error } = await supabase
+        .from('party_parties')
+        .upsert({
+          id: party2Id,
+          tenant_id: tenantId,
+          party_type: 'person',
+          display_name: 'Jane Smith',
+        });
+      if (party2Error) {
+        throw new Error(`Failed to create second test Party: ${party2Error.message}`);
+      }
+
       const student2 = await StudentService.createStudent({
         tenantId,
-        personId: person2Result.data.personId,
+        partyId: party2Id,
         studentCode: 'EDU-2024-003',
         academicStatus: 'enrolled',
         enrollmentType: 'full_time',

@@ -4,7 +4,7 @@
   "directDatabaseAccess": {
     "owner": "Broader Bella Education / Preschool architecture remediation",
     "debtId": "DEBT-EDU-ARCH-01",
-    "reviewedAt": "2026-09-14",
+    "reviewedAt": "2026-09-28",
     "violations": {
       "analytics/repositories/preschool-analytics.repository.ts:L18 - Direct database query targeting '.from('students' is prohibited in the Product layer.": 1,
       "analytics/repositories/preschool-analytics.repository.ts:L25 - Direct database query targeting '.from('edu_' is prohibited in the Product layer.": 1,
@@ -202,7 +202,14 @@
       "scheduling/services/leave-substitution.service.ts:L45 - Direct database query targeting '.from('edu_' is prohibited in the Product layer.": 1,
       "scheduling/services/leave-substitution.service.ts:L84 - Direct database query targeting '.from('edu_' is prohibited in the Product layer.": 1,
       "scheduling/services/leave-substitution.service.ts:L101 - Direct database query targeting '.from('edu_' is prohibited in the Product layer.": 1,
-      "scheduling/services/leave-substitution.service.ts:L167 - Direct database query targeting '.from('edu_' is prohibited in the Product layer.": 1
+      "scheduling/services/leave-substitution.service.ts:L167 - Direct database query targeting '.from('edu_' is prohibited in the Product layer.": 1,
+      "care-wellbeing/daily-care/daily-care.service.ts:L999 - Direct database query targeting '.from('edu_' is prohibited in the Product layer.": 18,
+      "care-wellbeing/daily-care/daily-care.service.ts:L999 - Direct database query targeting '.from('students' is prohibited in the Product layer.": 1,
+      "finance/repositories/preschool-finance.repository.ts:L999 - Direct database query targeting '.from('edu_' is prohibited in the Product layer.": 8,
+      "services/preschool-guardian-authorization.service.ts:L999 - Direct database query targeting '.from('edu_' is prohibited in the Product layer.": 3,
+      "services/preschool-parent-daily-experience.service.ts:L999 - Direct database query targeting '.from('edu_' is prohibited in the Product layer.": 5,
+      "services/preschool-parent-daily-experience.service.ts:L999 - Direct database query targeting '.from('students' is prohibited in the Product layer.": 1,
+      "services/preschool-safe-pickup-handover.service.ts:L999 - Direct database query targeting '.from('edu_' is prohibited in the Product layer.": 4
     }
   },
   "internalKernelImports": {

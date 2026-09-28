@@ -2,11 +2,11 @@
  * Student Aggregate - Education Platform
  * 
  * Business rules and validation for Student entity
- * References Person aggregate for identity
+ * References the canonical Party identity; legacy Person mapping is optional
  * 
  * Constitution Compliance:
  * - Law 11: No `any` types
- * - Law 1: Student references Person (aggregate root)
+ * - Law 1: Student references Party identity
  */
 
 import { Student, CreateStudentRequest, UpdateStudentRequest, AcademicStatus } from '../shared-kernel/types';
@@ -31,8 +31,8 @@ export class StudentAggregate {
     if (!request.tenantId?.trim()) {
       throw new Error('Tenant ID is required');
     }
-    if (!request.personId?.trim()) {
-      throw new Error('Person ID is required (Student must reference a Person)');
+    if (!request.partyId?.trim()) {
+      throw new Error('Party ID is required (Student must reference a person Party)');
     }
     if (!request.studentCode?.trim()) {
       throw new Error('Student code is required');
@@ -72,7 +72,8 @@ export class StudentAggregate {
     const student: Student = {
       studentId: crypto.randomUUID(),
       tenantId: request.tenantId,
-      personId: request.personId,
+      partyId: request.partyId,
+      personId: request.personId ?? null,
       studentCode: normalizedCode,
       academicStatus: request.academicStatus,
       enrollmentType: request.enrollmentType,

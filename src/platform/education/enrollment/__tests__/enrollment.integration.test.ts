@@ -45,6 +45,7 @@ describe('Enrollment Integration Tests', () => {
     // Create Student
     const student = await StudentService.createStudent({
       tenantId,
+      partyId: personId,
       personId,
       studentCode: 'EDU-2024-100',
       academicStatus: 'enrolled',
@@ -143,6 +144,7 @@ describe('Enrollment Integration Tests', () => {
       // Create a second student specifically for this test
       const tempStudent = await StudentService.createStudent({
         tenantId,
+        partyId: personId,
         personId,
         studentCode: 'EDU-2024-101',
         academicStatus: 'enrolled',

@@ -1,5 +1,7 @@
+export type DailyCareAction = 'arrival' | 'meal' | 'hygiene' | 'nap';
+
 export interface IBulkCareException {
-  studentId: string;
+  studentPartyId: string;
   errorCode: string;
   errorMessage: string;
   requiresAction: boolean;
@@ -9,17 +11,17 @@ export interface IBulkCareResult {
   requested: number;
   committed: number;
   blocked: number;
-  successfulStudentIds: string[];
+  successfulStudentPartyIds: string[];
   exceptions: IBulkCareException[];
 }
 
 export interface IRecordBulkArrivalCommand {
   tenantId: string;
-  classId: string;
-  date: string; // YYYY-MM-DD
+  courseId: string;
+  date: string;
   arrivals: Array<{
-    studentId: string;
-    status: "PRESENT" | "ABSENT" | "LATE";
+    studentPartyId: string;
+    status: 'PRESENT' | 'ABSENT' | 'LATE';
     arrivalTime?: Date;
     condition?: string;
   }>;
@@ -27,24 +29,24 @@ export interface IRecordBulkArrivalCommand {
 
 export interface IRecordBulkMealCommand {
   tenantId: string;
-  classId: string;
+  courseId: string;
   date: string;
-  mealItemId: string;
-  mealType: "BREAKFAST" | "LUNCH" | "AFTERNOON_SNACK";
+  mealItemId?: string;
+  mealType: 'BREAKFAST' | 'LUNCH' | 'AFTERNOON_SNACK';
   students: Array<{
-    studentId: string;
-    portion: "ALL" | "HALF" | "FEW" | "NONE";
+    studentPartyId: string;
+    portion: 'ALL' | 'HALF' | 'FEW' | 'NONE';
     notes?: string;
   }>;
 }
 
 export interface IRecordBulkHygieneCommand {
   tenantId: string;
-  classId: string;
+  courseId: string;
   date: string;
   hygieneEntries: Array<{
-    studentId: string;
-    type: "DIAPER" | "TOILET" | "BOWEL_MOVEMENT";
+    studentPartyId: string;
+    type: 'DIAPER' | 'TOILET' | 'BOWEL_MOVEMENT';
     time?: Date;
     notes?: string;
   }>;
@@ -52,33 +54,59 @@ export interface IRecordBulkHygieneCommand {
 
 export interface IRecordBulkNapCommand {
   tenantId: string;
-  classId: string;
+  courseId: string;
   date: string;
   napEntries: Array<{
-    studentId: string;
+    studentPartyId: string;
     sleepTime?: Date;
     wakeTime?: Date;
-    quality: "DEEP" | "RESTLESS" | "REFUSED";
+    quality: 'DEEP' | 'RESTLESS' | 'REFUSED';
     notes?: string;
   }>;
+}
+
+export interface DailyCareRecordDTO {
+  id: string;
+  tenantId: string;
+  sessionId: string;
+  studentPartyId: string;
+  arrivalStatus: 'PRESENT' | 'ABSENT' | 'LATE' | null;
+  arrivalTime: string | null;
+  morningCondition: string | null;
+  mealRecords: unknown[];
+  hygieneRecords: unknown[];
+  napRecords: Record<string, unknown>;
+  healthChecks: Record<string, unknown>;
+  updatedAt: string;
+}
+
+export interface DailyCareRosterItem {
+  enrollmentId: string;
+  studentPartyId: string;
+  studentCode: string | null;
+  name: string;
+  gender: string | null;
+  dob: string | null;
+  care: DailyCareRecordDTO | null;
 }
 
 export interface IParentDigest {
   digestId: string;
   tenantId: string;
   sessionId: string;
-  studentId: string;
+  studentPartyId: string;
   date: string;
-  status: "DRAFT" | "GENERATED" | "PUBLISHED";
-  payload: Record<string, any>;
+  status: 'DRAFT' | 'GENERATED' | 'PUBLISHED';
+  payload: Record<string, unknown>;
   publishedAt?: Date | null;
 }
 
 export interface IDailyCareContract {
+  getDailyCareRoster(tenantId: string, courseId: string, date: string): Promise<readonly DailyCareRosterItem[]>;
   recordBulkArrival(command: IRecordBulkArrivalCommand): Promise<IBulkCareResult>;
   recordBulkMeals(command: IRecordBulkMealCommand): Promise<IBulkCareResult>;
   recordBulkHygiene(command: IRecordBulkHygieneCommand): Promise<IBulkCareResult>;
   recordBulkNap(command: IRecordBulkNapCommand): Promise<IBulkCareResult>;
-  generateParentDigest(tenantId: string, classId: string, studentId: string, date: string): Promise<IParentDigest>;
+  generateParentDigest(tenantId: string, classId: string, studentPartyId: string, date: string): Promise<IParentDigest>;
   publishParentDigest(tenantId: string, digestId: string): Promise<IParentDigest>;
 }

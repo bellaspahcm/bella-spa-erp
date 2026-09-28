@@ -230,7 +230,7 @@ export class SupabaseEducationRepository extends BaseSupabaseRepositoryPrimitive
     const { data: student, error: studentError } = await this.supabase
       .from('students')
       .select('student_id')
-      .eq('person_id', studentPartyId)
+      .eq('party_id', studentPartyId)
       .eq('tenant_id', tenantId)
       .maybeSingle();
 

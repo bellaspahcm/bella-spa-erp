@@ -45,6 +45,7 @@ interface ApprovalContract {
   // Authorization
   requester_id: string;          // User ID of requester (who created request)
   approver_id: string;           // User ID of approver
+  approval_mode: 'separated' | 'owner_operated';
   approver_role: ApproverRole;   // Role at time of approval
   approved_at: timestamp;        // When approval granted
   
@@ -104,13 +105,16 @@ enum ApprovalStatus {
 
 ## 🔒 CONTRACT INVARIANTS
 
-### I0: No Self-Approval (NEW - CRITICAL)
+### I0: Approval Mode (CRITICAL)
 
-**Invariant:** The requester MUST NOT approve their own migration.
+**Invariant:** `separated` approvals require requester and approver to differ. `owner_operated` approvals explicitly allow the same owner identity for Bella's one-person company model.
 
 **Implementation:**
 ```typescript
-if (approval.requester_id === approval.approver_id) {
+if (
+  approval.approval_mode === 'separated' &&
+  approval.requester_id === approval.approver_id
+) {
   throw new Error('SELF_APPROVAL_FORBIDDEN');
 }
 ```
@@ -119,7 +123,7 @@ if (approval.requester_id === approval.approver_id) {
 
 **Enforcement:** Check at approval creation AND verification.
 
-**Violation:** Self-approval detected → BLOCK
+**Violation:** Self-approval in `separated` mode → BLOCK
 
 **Rationale:** Prevents developer from bypassing governance by approving their own work.
 
@@ -353,8 +357,17 @@ async function verifyApproval(input: ApprovalGateInput): Promise<GateResult> {
     };
   }
   
-  // 3. Verify no self-approval (I0)
-  if (approval.requester_id === approval.approver_id) {
+  // 3. Verify approval mode (I0)
+  if (!['separated', 'owner_operated'].includes(approval.approval_mode)) {
+    return {
+      gate: 'G2_APPROVAL',
+      decision: 'BLOCK',
+      reason: 'INVALID_APPROVAL_MODE',
+      evidence: { approval_mode: approval.approval_mode }
+    };
+  }
+
+  if (approval.approval_mode === 'separated' && approval.requester_id === approval.approver_id) {
     return {
       gate: 'G2_APPROVAL',
       decision: 'BLOCK',
@@ -488,7 +501,7 @@ interface GateResult {
 | Test Case | Expected Result | Invariant Tested |
 |-----------|----------------|------------------|
 | No approval exists | BLOCK - NO_APPROVAL_FOUND | - |
-| Self-approval (requester = approver) | BLOCK - SELF_APPROVAL_FORBIDDEN | I0 |
+| Self-approval without explicit `owner_operated` mode | BLOCK - SELF_APPROVAL_FORBIDDEN | I0 |
 | Migration hash mismatch | BLOCK - MIGRATION_HASH_MISMATCH | I1 |
 | Wrong environment | BLOCK - ENVIRONMENT_MISMATCH | I2, I5 |
 | Wrong schema | BLOCK - SCHEMA_MISMATCH | I2 |
@@ -516,6 +529,7 @@ CREATE TABLE bella_migration_approval (
   migration_hash VARCHAR(64) NOT NULL, -- SHA-256 hex
   
   -- Authorization
+  approval_mode VARCHAR(32) NOT NULL DEFAULT 'separated',
   requester_id VARCHAR(255) NOT NULL,  -- Who requested
   approver_id VARCHAR(255) NOT NULL,   -- Who approved
   approver_role VARCHAR(50) NOT NULL,
@@ -546,7 +560,10 @@ CREATE TABLE bella_migration_approval (
   
   -- Indexes
   CONSTRAINT unique_migration_approval UNIQUE (migration_id, target_environment, status) WHERE status = 'approved',
-  CONSTRAINT no_self_approval CHECK (requester_id <> approver_id)
+  CONSTRAINT no_self_approval CHECK (
+    (approval_mode = 'separated' AND requester_id <> approver_id)
+    OR approval_mode = 'owner_operated'
+  )
 );
 
 -- Index for fast lookup
@@ -638,14 +655,16 @@ R4.1 contract frozen → Implement `verify_approval()` → Write tests
 
 **Frozen Elements:**
 - ✅ Approval contract schema
-- ✅ 8 invariants (I0: No Self-Approval, I1: Migration Binding, I2: Scope Binding, I3: Single-Use, I4: Time Validity, I5: Environment Match, I6: Approver Authority, I7: Integrity)
+- ✅ 8 invariants (I0: Approval Mode, I1: Migration Binding, I2: Scope Binding, I3: Single-Use, I4: Time Validity, I5: Environment Match, I6: Approver Authority, I7: Integrity)
 - ✅ Two-phase workflow (REQUEST → APPROVE)
 - ✅ Emergency as stricter auth path (not bypass)
 - ✅ 12 negative tests defined
 
 **Design Decisions (LOCKED):**
 1. Hash-only (no signature for MVP)
-2. Requester ≠ Approver (no self-approval)
+2. Approval mode:
+   - `separated`: requester ≠ approver
+   - `owner_operated`: same owner identity allowed for Bella OPC operation
 3. Emergency = stricter authorization path
 
 **Next:** R4.2 — Implement `verify_approval()` and test suite
@@ -673,7 +692,7 @@ approval.approval_hash = SHA256(canonical_approval_record)
 
 ### Q2: Approval Creation Authority
 
-**Decision:** Two-phase workflow with separation of request and approval ✅
+**Decision:** Two-phase workflow with explicit approval mode ✅
 
 **NOT ALLOWED:**
 ```sql
@@ -702,9 +721,9 @@ REQUESTED → EXPIRED
 APPROVED → REVOKED
 ```
 
-**Enforcement:** `approver_role` verified against trusted authority (not self-declared).
+**Enforcement:** `approver_role` verified against trusted authority (not self-declared). `approval_mode` is included in `approval_hash`.
 
-**Rationale:** Prevents self-approval bypass. Developer cannot grant themselves authorization.
+**Rationale:** Prevents accidental self-approval bypass in separated mode while supporting a named owner-operated mode for Bella's one-person company model without fake identities.
 
 ---
 

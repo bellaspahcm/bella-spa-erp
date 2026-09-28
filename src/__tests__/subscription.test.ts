@@ -652,24 +652,29 @@ describe('Subscription Constraints & Webhook Suite', () => {
 
     it('should handle webhook calls even when Supabase service env is temporarily missing (graceful degradation)', async () => {
       const originalKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const originalSecretKey = process.env.SUPABASE_SECRET_KEY;
       delete process.env.SUPABASE_SERVICE_ROLE_KEY;
-      
-      const supabaseModule = require('@supabase/supabase-js');
+      delete process.env.SUPABASE_SECRET_KEY;
 
       const req = createMockRequest({ transferAmount: 200000, content: 'SUB INV-1002', code: 'TX-MISSING-ENV' }, {
         authorization: 'Bearer super-secret-webhook-key',
       });
 
-      const response = await POST(req);
-      const resData = await response.json();
+      try {
+        const response = await POST(req);
+        const resData = await response.json();
 
-      // Config validation throws, returning 500
-      expect(response.status).toBe(500);
-      expect(resData).toBeDefined();
-      
-      // Restore env after test
-      if (originalKey) {
-        process.env.SUPABASE_SERVICE_ROLE_KEY = originalKey;
+        // Config validation throws, returning 500
+        expect(response.status).toBe(500);
+        expect(resData).toBeDefined();
+      } finally {
+        // Restore env after test
+        if (originalKey) {
+          process.env.SUPABASE_SERVICE_ROLE_KEY = originalKey;
+        }
+        if (originalSecretKey) {
+          process.env.SUPABASE_SECRET_KEY = originalSecretKey;
+        }
       }
     });
 

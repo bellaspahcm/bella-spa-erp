@@ -5,7 +5,8 @@
  * Enforces Tenant Isolation and RLS compliance on every database operation.
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { Database, Json } from '@/types/database.types';
 import {
   FeeStructure,
   BillingPeriod,
@@ -15,11 +16,34 @@ import {
   Payment,
   ReconciliationLedgerEntry,
   PaymentReceipt,
+  TuitionRecognitionPolicy,
+  TuitionServicePeriodCompletion,
 } from '../domain/finance.types';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+type PreschoolFinanceClient = SupabaseClient<Database>;
+type UntypedSupabaseClient = SupabaseClient;
+type EduFinInvoiceUpdate = Database['public']['Tables']['edu_fin_invoices']['Update'];
+type TuitionRecognitionPolicyRow = {
+  id: string;
+  tenant_id: string;
+  policy_type: string;
+  effective_from: string;
+  effective_to: string | null;
+  policy_version: string;
+  status: string;
+  created_by: string;
+  created_at?: string;
+  updated_at?: string;
+};
+type TuitionServicePeriodCompletionRow = {
+  id: string;
+  tenant_id: string;
+  billing_period_id: string;
+  completed_at: string;
+  completed_by: string;
+  created_at?: string;
+};
 
 type DbRow = Record<string, unknown>;
 
@@ -64,7 +88,37 @@ function readNumber(row: DbRow, key: string): number {
   return parsed;
 }
 
+function toJson(value: Record<string, unknown>): Json {
+  return JSON.parse(JSON.stringify(value)) as Json;
+}
+
+function createDefaultFinanceClient(): PreschoolFinanceClient {
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  if (!supabaseKey) {
+    throw new Error('PRESCHOOL_FINANCE_REPOSITORY_CONFIG_ERROR: Supabase key is required.');
+  }
+  return createClient<Database>(supabaseUrl, supabaseKey);
+}
+
 export class PreschoolFinanceRepository {
+  constructor(private readonly client: PreschoolFinanceClient = createDefaultFinanceClient()) {}
+
+  async hasActiveEnrollmentForStudentParty(tenantId: string, studentPartyId: string): Promise<boolean> {
+    const { data, error } = await this.client
+      .from('edu_enrollments')
+      .select('id')
+      .eq('tenant_id', tenantId)
+      .eq('student_party_id', studentPartyId)
+      .in('status', ['active', 'pending'])
+      .limit(1);
+
+    if (error) {
+      throw new Error(`FINANCE_REPOSITORY_ERROR: Failed to verify canonical enrollment: ${error.message}`);
+    }
+
+    return (data || []).length > 0;
+  }
+
   async assertStudentPartyBelongsToTenant(tenantId: string, studentPartyId: string): Promise<void> {
     await this.requirePartyBelongsToTenant({
       tenantId,
@@ -84,7 +138,7 @@ export class PreschoolFinanceRepository {
   }
 
   private async requirePartyBelongsToTenant(options: PartyValidationOptions): Promise<void> {
-    const { data: party, error } = await supabase
+    const { data: party, error } = await this.client
       .from('party_parties')
       .select('id, tenant_id, party_type, deleted_at')
       .eq('id', options.partyId)
@@ -115,7 +169,7 @@ export class PreschoolFinanceRepository {
 
   // ── FEE STRUCTURES ──
   async createFeeStructure(data: Omit<FeeStructure, 'id' | 'createdAt' | 'updatedAt'>): Promise<FeeStructure> {
-    const { data: result, error } = await supabase
+    const { data: result, error } = await this.client
       .from('edu_fin_fee_structures')
       .insert({
         tenant_id: data.tenantId,
@@ -139,7 +193,7 @@ export class PreschoolFinanceRepository {
   }
 
   async getFeeStructures(tenantId: string, programId: string = 'PRESCHOOL'): Promise<FeeStructure[]> {
-    const { data, error } = await supabase
+    const { data, error } = await this.client
       .from('edu_fin_fee_structures')
       .select()
       .eq('tenant_id', tenantId)
@@ -152,7 +206,7 @@ export class PreschoolFinanceRepository {
 
   // ── BILLING PERIODS ──
   async createBillingPeriod(data: Omit<BillingPeriod, 'id' | 'createdAt' | 'updatedAt'>): Promise<BillingPeriod> {
-    const { data: result, error } = await supabase
+    const { data: result, error } = await this.client
       .from('edu_fin_billing_periods')
       .insert({
         tenant_id: data.tenantId,
@@ -174,7 +228,7 @@ export class PreschoolFinanceRepository {
   }
 
   async listActiveBillingPeriods(tenantId: string): Promise<BillingPeriod[]> {
-    const { data, error } = await supabase
+    const { data, error } = await this.client
       .from('edu_fin_billing_periods')
       .select()
       .eq('tenant_id', tenantId)
@@ -184,13 +238,126 @@ export class PreschoolFinanceRepository {
     return (data || []).map(this.mapBillingPeriod);
   }
 
+  async getBillingPeriodById(tenantId: string, billingPeriodId: string): Promise<BillingPeriod | null> {
+    const { data, error } = await this.client
+      .from('edu_fin_billing_periods')
+      .select()
+      .eq('tenant_id', tenantId)
+      .eq('id', billingPeriodId)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(`FINANCE_REPOSITORY_ERROR: ${error.message}`);
+    }
+
+    return data ? this.mapBillingPeriod(data) : null;
+  }
+
+  async createTuitionRecognitionPolicy(
+    data: Omit<TuitionRecognitionPolicy, 'id' | 'createdAt' | 'updatedAt'>,
+  ): Promise<TuitionRecognitionPolicy> {
+    const { data: result, error } = await this.untypedClient()
+      .from('edu_fin_tuition_recognition_policies')
+      .insert({
+        tenant_id: data.tenantId,
+        policy_type: data.policyType,
+        effective_from: data.effectiveFrom,
+        effective_to: data.effectiveTo ?? null,
+        policy_version: data.version,
+        status: data.status,
+        created_by: data.createdBy,
+      })
+      .select()
+      .single();
+
+    if (error || !result) {
+      throw new Error(`FINANCE_REPOSITORY_ERROR: Failed to create tuition recognition policy: ${error?.message}`);
+    }
+
+    return this.mapTuitionRecognitionPolicy(result as TuitionRecognitionPolicyRow);
+  }
+
+  async listActiveTuitionRecognitionPoliciesAsOf(
+    tenantId: string,
+    asOfDate: string,
+  ): Promise<TuitionRecognitionPolicy[]> {
+    const { data, error } = await this.untypedClient()
+      .from('edu_fin_tuition_recognition_policies')
+      .select()
+      .eq('tenant_id', tenantId)
+      .eq('status', 'ACTIVE')
+      .lte('effective_from', asOfDate)
+      .or(`effective_to.is.null,effective_to.gte.${asOfDate}`);
+
+    if (error) {
+      throw new Error(`FINANCE_REPOSITORY_ERROR: Failed to resolve tuition recognition policy: ${error.message}`);
+    }
+
+    return ((data || []) as TuitionRecognitionPolicyRow[]).map(this.mapTuitionRecognitionPolicy);
+  }
+
+  async createTuitionServicePeriodCompletion(
+    data: Omit<TuitionServicePeriodCompletion, 'id' | 'createdAt'>,
+  ): Promise<TuitionServicePeriodCompletion> {
+    const { data: result, error } = await this.untypedClient()
+      .from('edu_fin_tuition_service_period_completions')
+      .insert({
+        tenant_id: data.tenantId,
+        billing_period_id: data.billingPeriodId,
+        completed_at: data.completedAt,
+        completed_by: data.completedBy,
+      })
+      .select()
+      .single();
+
+    if (error || !result) {
+      throw new Error(`FINANCE_REPOSITORY_ERROR: Failed to create tuition service period completion: ${error?.message}`);
+    }
+
+    return this.mapTuitionServicePeriodCompletion(result as TuitionServicePeriodCompletionRow);
+  }
+
+  async getTuitionServicePeriodCompletion(
+    tenantId: string,
+    billingPeriodId: string,
+  ): Promise<TuitionServicePeriodCompletion | null> {
+    const { data, error } = await this.untypedClient()
+      .from('edu_fin_tuition_service_period_completions')
+      .select()
+      .eq('tenant_id', tenantId)
+      .eq('billing_period_id', billingPeriodId)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(`FINANCE_REPOSITORY_ERROR: Failed to read tuition service period completion: ${error.message}`);
+    }
+
+    return data ? this.mapTuitionServicePeriodCompletion(data as TuitionServicePeriodCompletionRow) : null;
+  }
+
+  async listTuitionServicePeriodCompletions(
+    tenantId: string,
+  ): Promise<TuitionServicePeriodCompletion[]> {
+    const { data, error } = await this.untypedClient()
+      .from('edu_fin_tuition_service_period_completions')
+      .select()
+      .eq('tenant_id', tenantId);
+
+    if (error) {
+      throw new Error(`FINANCE_REPOSITORY_ERROR: Failed to list tuition service period completions: ${error.message}`);
+    }
+
+    return ((data || []) as TuitionServicePeriodCompletionRow[]).map(this.mapTuitionServicePeriodCompletion);
+  }
+
   // ── DISCOUNT PROFILES ──
   async createDiscountProfile(data: Omit<StudentDiscountProfile, 'id' | 'createdAt'>): Promise<StudentDiscountProfile> {
-    const { data: result, error } = await supabase
+    const { data: result, error } = await this.client
       .from('edu_fin_student_discount_profiles')
       .insert({
         tenant_id: data.tenantId,
-        student_id: data.studentId,
+        student_party_id: data.studentPartyId,
+        student_id: data.studentId ?? null,
         discount_type: data.discountType,
         discount_name: data.discountName,
         discount_percent: data.discountPercent,
@@ -210,12 +377,12 @@ export class PreschoolFinanceRepository {
     return this.mapDiscountProfile(result);
   }
 
-  async getActiveDiscountProfiles(tenantId: string, studentId: string): Promise<StudentDiscountProfile[]> {
-    const { data, error } = await supabase
+  async getActiveDiscountProfiles(tenantId: string, studentPartyId: string): Promise<StudentDiscountProfile[]> {
+    const { data, error } = await this.client
       .from('edu_fin_student_discount_profiles')
       .select()
       .eq('tenant_id', tenantId)
-      .eq('student_id', studentId)
+      .eq('student_party_id', studentPartyId)
       .eq('is_active', true);
 
     if (error) throw new Error(`FINANCE_REPOSITORY_ERROR: ${error.message}`);
@@ -228,11 +395,12 @@ export class PreschoolFinanceRepository {
     lineItems: Omit<InvoiceLineItem, 'id' | 'invoiceId' | 'createdAt'>[]
   ): Promise<Invoice> {
     // 1. Insert Invoice Header
-    const { data: invResult, error: invErr } = await supabase
+    const { data: invResult, error: invErr } = await this.client
       .from('edu_fin_invoices')
       .insert({
         tenant_id: invoiceData.tenantId,
-        student_id: invoiceData.studentId,
+        student_party_id: invoiceData.studentPartyId,
+        student_id: invoiceData.studentId ?? null,
         billing_period_id: invoiceData.billingPeriodId,
         invoice_number: invoiceData.invoiceNumber,
         invoice_status: invoiceData.invoiceStatus,
@@ -272,8 +440,8 @@ export class PreschoolFinanceRepository {
         source_entity_id: item.sourceEntityId,
       }));
 
-      const { data: itemResults, error: itemErr } = await supabase
-        .from('edu_fin_invoice_line_items')
+      const { data: itemResults, error: itemErr } = await this.client
+      .from('edu_fin_invoice_line_items')
         .insert(itemsToInsert)
         .select();
 
@@ -293,10 +461,10 @@ export class PreschoolFinanceRepository {
     return this.mapInvoice(invResult);
   }
 
-  async listInvoices(tenantId: string, studentId?: string): Promise<Invoice[]> {
-    let query = supabase.from('edu_fin_invoices').select().eq('tenant_id', tenantId).order('created_at', { ascending: false });
-    if (studentId) {
-      query = query.eq('student_id', studentId);
+  async listInvoices(tenantId: string, studentPartyId?: string): Promise<Invoice[]> {
+    let query = this.client.from('edu_fin_invoices').select().eq('tenant_id', tenantId).order('created_at', { ascending: false });
+    if (studentPartyId) {
+      query = query.eq('student_party_id', studentPartyId);
     }
     const { data, error } = await query;
     if (error) throw new Error(`FINANCE_REPOSITORY_ERROR: ${error.message}`);
@@ -304,7 +472,7 @@ export class PreschoolFinanceRepository {
   }
 
   async getInvoiceById(tenantId: string, invoiceId: string): Promise<Invoice | null> {
-    const { data: inv, error: invErr } = await supabase
+    const { data: inv, error: invErr } = await this.client
       .from('edu_fin_invoices')
       .select()
       .eq('id', invoiceId)
@@ -313,7 +481,7 @@ export class PreschoolFinanceRepository {
 
     if (invErr || !inv) return null;
 
-    const { data: items } = await supabase
+    const { data: items } = await this.client
       .from('edu_fin_invoice_line_items')
       .select()
       .eq('invoice_id', invoiceId)
@@ -340,7 +508,7 @@ export class PreschoolFinanceRepository {
       sha256Checksum?: string;
     }
   ): Promise<Invoice> {
-    const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    const patch: EduFinInvoiceUpdate = { updated_at: new Date().toISOString() };
     if (update.invoiceStatus !== undefined) patch.invoice_status = update.invoiceStatus;
     if (update.settlementStatus !== undefined) patch.settlement_status = update.settlementStatus;
     if (update.grossAmount !== undefined) patch.gross_amount = update.grossAmount;
@@ -351,7 +519,7 @@ export class PreschoolFinanceRepository {
     if (update.issuedAt !== undefined) patch.issued_at = update.issuedAt;
     if (update.sha256Checksum !== undefined) patch.sha256_checksum = update.sha256Checksum;
 
-    const { data, error } = await supabase
+    const { data, error } = await this.client
       .from('edu_fin_invoices')
       .update(patch)
       .eq('id', invoiceId)
@@ -371,12 +539,13 @@ export class PreschoolFinanceRepository {
 
   // ── PAYMENTS & RECONCILIATION ──
   async recordPayment(data: Omit<Payment, 'id' | 'createdAt'>): Promise<Payment> {
-    const { data: result, error } = await supabase
+    const { data: result, error } = await this.client
       .from('edu_fin_payments')
       .insert({
         tenant_id: data.tenantId,
         payer_party_id: data.payerPartyId,
-        student_id: data.studentId,
+        student_party_id: data.studentPartyId,
+        student_id: data.studentId ?? null,
         payment_number: data.paymentNumber,
         payment_method: data.paymentMethod,
         amount: data.amount,
@@ -398,7 +567,7 @@ export class PreschoolFinanceRepository {
   }
 
   async updatePaymentAllocation(tenantId: string, paymentId: string, allocatedAmount: number, unallocatedAmount: number, status: Payment['status']): Promise<Payment> {
-    const { data, error } = await supabase
+    const { data, error } = await this.client
       .from('edu_fin_payments')
       .update({
         allocated_amount: allocatedAmount,
@@ -414,8 +583,20 @@ export class PreschoolFinanceRepository {
     return this.mapPayment(data);
   }
 
+  async getPaymentById(tenantId: string, paymentId: string): Promise<Payment | null> {
+    const { data, error } = await this.client
+      .from('edu_fin_payments')
+      .select()
+      .eq('id', paymentId)
+      .eq('tenant_id', tenantId)
+      .single();
+
+    if (error || !data) return null;
+    return this.mapPayment(data);
+  }
+
   async addReconciliationEntry(data: Omit<ReconciliationLedgerEntry, 'id' | 'createdAt'>): Promise<ReconciliationLedgerEntry> {
-    const { data: result, error } = await supabase
+    const { data: result, error } = await this.client
       .from('edu_fin_reconciliation_ledger')
       .insert({
         tenant_id: data.tenantId,
@@ -440,7 +621,7 @@ export class PreschoolFinanceRepository {
   }
 
   async getReconciliationEntriesForInvoice(tenantId: string, invoiceId: string): Promise<ReconciliationLedgerEntry[]> {
-    const { data, error } = await supabase
+    const { data, error } = await this.client
       .from('edu_fin_reconciliation_ledger')
       .select()
       .eq('tenant_id', tenantId)
@@ -452,14 +633,14 @@ export class PreschoolFinanceRepository {
 
   // ── RECEIPTS ──
   async createReceipt(data: Omit<PaymentReceipt, 'id' | 'createdAt'>): Promise<PaymentReceipt> {
-    const { data: result, error } = await supabase
+    const { data: result, error } = await this.client
       .from('edu_fin_receipts')
       .insert({
         tenant_id: data.tenantId,
         payment_id: data.paymentId,
         invoice_id: data.invoiceId,
         receipt_number: data.receiptNumber,
-        settlement_snapshot: data.settlementSnapshot,
+        settlement_snapshot: toJson(data.settlementSnapshot),
         sha256_fingerprint: data.sha256Fingerprint,
         issued_at: data.issuedAt,
       })
@@ -506,11 +687,44 @@ export class PreschoolFinanceRepository {
     };
   }
 
+  private untypedClient(): UntypedSupabaseClient {
+    return this.client as unknown as UntypedSupabaseClient;
+  }
+
+  private mapTuitionRecognitionPolicy(r: TuitionRecognitionPolicyRow): TuitionRecognitionPolicy {
+    return {
+      id: r.id,
+      tenantId: r.tenant_id,
+      policyType: r.policy_type as TuitionRecognitionPolicy['policyType'],
+      effectiveFrom: r.effective_from,
+      effectiveTo: r.effective_to,
+      version: r.policy_version,
+      status: r.status as TuitionRecognitionPolicy['status'],
+      createdBy: r.created_by,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    };
+  }
+
+  private mapTuitionServicePeriodCompletion(
+    r: TuitionServicePeriodCompletionRow,
+  ): TuitionServicePeriodCompletion {
+    return {
+      id: r.id,
+      tenantId: r.tenant_id,
+      billingPeriodId: r.billing_period_id,
+      completedAt: r.completed_at,
+      completedBy: r.completed_by,
+      createdAt: r.created_at,
+    };
+  }
+
   private mapDiscountProfile(r: DbRow): StudentDiscountProfile {
     return {
       id: readString(r, 'id'),
       tenantId: readString(r, 'tenant_id'),
-      studentId: readString(r, 'student_id'),
+      studentPartyId: readString(r, 'student_party_id'),
+      studentId: readOptionalString(r, 'student_id'),
       discountType: readString(r, 'discount_type') as StudentDiscountProfile['discountType'],
       discountName: readString(r, 'discount_name'),
       discountPercent: readNumber(r, 'discount_percent'),
@@ -527,7 +741,8 @@ export class PreschoolFinanceRepository {
     return {
       id: readString(r, 'id'),
       tenantId: readString(r, 'tenant_id'),
-      studentId: readString(r, 'student_id'),
+      studentPartyId: readString(r, 'student_party_id'),
+      studentId: readOptionalString(r, 'student_id'),
       billingPeriodId: readString(r, 'billing_period_id'),
       invoiceNumber: readString(r, 'invoice_number'),
       invoiceStatus: readString(r, 'invoice_status') as Invoice['invoiceStatus'],
@@ -569,7 +784,8 @@ export class PreschoolFinanceRepository {
       id: readString(r, 'id'),
       tenantId: readString(r, 'tenant_id'),
       payerPartyId: readString(r, 'payer_party_id'),
-      studentId: readString(r, 'student_id'),
+      studentPartyId: readString(r, 'student_party_id'),
+      studentId: readOptionalString(r, 'student_id'),
       paymentNumber: readString(r, 'payment_number'),
       paymentMethod: readString(r, 'payment_method') as Payment['paymentMethod'],
       amount: readNumber(r, 'amount'),
