@@ -36,7 +36,23 @@ export class ParentCommunicationRepository {
     studentId: string,
     guardianPartyId: string
   ): Promise<boolean> {
-    // Check students table for canonical guardian link in metadata or student_guardians table
+    const { data: canonicalRelationship, error: canonicalRelationshipError } = await this.supabase
+      .from('party_relationships')
+      .select('id')
+      .eq('tenant_id', tenantId)
+      .eq('source_party_id', guardianPartyId)
+      .eq('target_party_id', studentId)
+      .eq('relationship_type', 'guardian_of')
+      .maybeSingle();
+
+    if (canonicalRelationshipError) {
+      throw new Error(`FETCH_GUARDIAN_RELATIONSHIP_FAILED: ${canonicalRelationshipError.message}`);
+    }
+    if (canonicalRelationship) {
+      return true;
+    }
+
+    // Legacy fallback for historical Parent Engagement rows.
     const { data: student, error } = await this.supabase
       .from('students')
       .select('student_id, tenant_id, metadata')

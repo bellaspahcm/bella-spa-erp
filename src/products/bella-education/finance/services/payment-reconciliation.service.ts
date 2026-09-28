@@ -23,16 +23,22 @@ export class PaymentReconciliationService {
   async recordInboundPayment(params: {
     tenantId: string;
     payerPartyId: string;
-    studentId: string;
+    studentPartyId: string;
+    studentId?: string | null;
     paymentMethod: Payment['paymentMethod'];
     amount: number;
     referenceNumber?: string;
     createdBy: string;
   }): Promise<Payment> {
-    const { tenantId, payerPartyId, studentId, paymentMethod, amount, referenceNumber, createdBy } = params;
+    const { tenantId, payerPartyId, studentPartyId, studentId = null, paymentMethod, amount, referenceNumber, createdBy } = params;
 
     if (amount <= 0) {
       throw new Error(`INVALID_PAYMENT_AMOUNT_ERROR: Payment amount must be greater than zero.`);
+    }
+
+    const hasEnrollment = await this.repo.hasActiveEnrollmentForStudentParty(tenantId, studentPartyId);
+    if (!hasEnrollment) {
+      throw new Error(`FINANCE_STUDENT_ENROLLMENT_REQUIRED: Student Party ${studentPartyId} is not actively enrolled in tenant ${tenantId}.`);
     }
 
     const paymentNumber = `PAY-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`;
@@ -40,6 +46,7 @@ export class PaymentReconciliationService {
     return await this.repo.recordPayment({
       tenantId,
       payerPartyId,
+      studentPartyId,
       studentId,
       paymentNumber,
       paymentMethod,
@@ -90,9 +97,7 @@ export class PaymentReconciliationService {
     }
 
     // 2. Fetch Payment Record & Validate Unallocated Balance
-    const payments = await this.repo.recordPayment; // Ensure repo access
-    // Fetch payment via repo
-    const payment = await this.fetchPaymentById(tenantId, paymentId);
+    const payment = await this.repo.getPaymentById(tenantId, paymentId);
     if (!payment) {
       throw new Error(`PAYMENT_NOT_FOUND_ERROR: Payment ${paymentId} not found.`);
     }
@@ -173,35 +178,4 @@ export class PaymentReconciliationService {
     };
   }
 
-  private async fetchPaymentById(tenantId: string, paymentId: string): Promise<Payment | null> {
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const { data, error } = await supabase
-      .from('edu_fin_payments')
-      .select()
-      .eq('id', paymentId)
-      .eq('tenant_id', tenantId)
-      .single();
-
-    if (error || !data) return null;
-    return {
-      id: data.id,
-      tenantId: data.tenant_id,
-      payerPartyId: data.payer_party_id,
-      studentId: data.student_id,
-      paymentNumber: data.payment_number,
-      paymentMethod: data.payment_method,
-      amount: parseFloat(data.amount),
-      allocatedAmount: parseFloat(data.allocated_amount),
-      unallocatedAmount: parseFloat(data.unallocated_amount),
-      referenceNumber: data.reference_number,
-      paymentDate: data.payment_date,
-      status: data.status,
-      createdBy: data.created_by,
-      createdAt: data.created_at,
-    };
-  }
 }

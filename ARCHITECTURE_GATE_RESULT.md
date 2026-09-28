@@ -1,3 +1,618 @@
+# ARCHITECTURE GATE RESULT - PRESCHOOL P7 TUITION RECOGNITION POLICY FOUNDATION
+
+> **Status:** PASS - decouple invoice issuance from tuition service recognition and add Product-owned PERIOD_COMPLETION policy foundation
+> **Date:** 2026-09-28
+> **Scope:** Preschool Product P7 recognition boundary only; no Finance OS, TT99 mapping, payment, prepayment, 3387, refund, tax, e-invoice, or browser/production mutation
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+The proven blocker is a business-boundary mismatch: Preschool invoice issuance is not proof that tuition service has been performed. Gate decision: `PASS` for the smallest Product-owned correction that removes direct recognition from `InvoiceIssuanceService`, records tenant/effective-dated recognition policy vocabulary, records explicit service-period completion evidence, and emits Finance OS `TUITION_SERVICE_RECOGNIZED` only through a separate PERIOD_COMPLETION service.
+
+## 2. Product Manifest
+
+In scope:
+- Preschool Product policy vocabulary: `PERIOD_COMPLETION`, `TIME_BASED`, `MILESTONE_EVENT`.
+- Runtime execution for `PERIOD_COMPLETION` only.
+- Explicit tuition service-period completion evidence.
+- Tuition-only eligible amount guard.
+- Reuse of sealed Finance OS semantic receivable contract after Preschool proves recognition eligibility.
+
+Out of scope:
+- Payment, prepayment, `111/112`, `3387`, refund, discount accounting, tax, VAT, e-invoice.
+- Finance OS, TT99, 131/511, accounting periods, or semantic mapping changes.
+- `TIME_BASED` or `MILESTONE_EVENT` execution.
+- Generic policy framework or `edu_fin_*` cleanup.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Role |
+|---|---|---|
+| `edu_fin_invoices` | Preschool Product Finance | Billing/invoice workflow state, not service-performance proof |
+| `edu_fin_tuition_recognition_policies` | Preschool Product Finance | Tenant/effective-dated recognition policy vocabulary |
+| `edu_fin_tuition_service_period_completions` | Preschool Product Finance | Explicit completion evidence for PERIOD_COMPLETION |
+| `TUITION_SERVICE_RECOGNIZED` | Finance OS | Accounting execution after valid business semantic arrives |
+
+## 4. Contract Dependency Map
+
+```text
+Invoice issuance
+        ↓
+Preschool invoice state only
+
+Explicit service-period completion
+        ↓
+Tenant effective-dated recognition policy
+        ↓
+PERIOD_COMPLETION recognition service
+        ↓
+TUITION_SERVICE_RECOGNIZED
+        ↓
+Finance OS semantic receivable path
+```
+
+## 5. Change Authority
+
+Authorized:
+- Preschool Product Finance invoice issuance decoupling.
+- Additive Preschool Product finance policy/completion tables.
+- Separate Product-owned recognition service for PERIOD_COMPLETION only.
+- Focused regression tests and this gate record.
+
+Not authorized:
+- Finance OS changes.
+- Payment/prepayment/accounting slices.
+- Generic policy framework.
+- Production policy/config/completion creation.
+
+## 6. UI -> Contract Reconciliation
+
+No UI redesign. Existing invoice issue action remains a billing workflow action and must not claim revenue/service recognition.
+
+## 7. Additive Migration Plan
+
+One additive migration:
+
+```text
+supabase/migrations/20260928000000_preschool_tuition_recognition_policy_foundation.sql
+```
+
+It creates only Product-owned tuition recognition policy and service-period completion evidence tables plus tenant RLS/overlap guard.
+
+## 8. Verification Plan
+
+- Focused Jest proves invoice issuance emits zero Finance recognition.
+- PERIOD_COMPLETION fails closed without completion evidence.
+- Valid completion + effective policy emits one Finance semantic request.
+- No policy, overlapping policy, unsupported policy types, cross-tenant invoice scope, and non-tuition amount all fail closed.
+- Scoped ESLint, `git diff --check`, and one `typecheck:changed` attempt.
+
+Gate result: `PASS`.
+
+---
+
+# ARCHITECTURE GATE RESULT - PRESCHOOL P7 BILLING PERIOD PROVENANCE FIX
+
+> **Status:** PASS - remove hardcoded September 2026 billing-period provenance from Preschool P7 invoice compilation
+> **Date:** 2026-09-28
+> **Scope:** Preschool Product P7 invoice compile API/UI only; no Finance OS, payment, accounting policy, runtime config, or production data mutation
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+The proven blocker is `BLOCKED_BY_HARDCODED_BILLING_PERIOD_PROVENANCE`: the P7 finance API manufactured a September 2026 billing period from source-code constants before invoice compilation. Gate decision: `PASS` for the smallest Product-owned consumer fix that requires a tenant-scoped `billingPeriodId` and derives invoice due date from the persisted P7 billing period.
+
+## 2. Product Manifest
+
+In scope:
+- Preschool Product Finance API `compileDraftInvoice`.
+- Preschool Finance UI billing-period selection.
+- Existing `edu_fin_billing_periods` repository contract.
+- Focused provenance regression tests.
+
+Out of scope:
+- Creating fee structures, billing periods, invoices, or Finance periods.
+- Finance kernel, TT99, account mapping, payments, 3387, refund, tax, VAT, e-invoice.
+- Generic billing configuration framework or legacy `edu_fin_*` cleanup.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Role |
+|---|---|---|
+| `edu_fin_billing_periods` | Preschool Product Finance | Product billing-period configuration |
+| `edu_fin_invoices` | Preschool Product Finance | Product invoice workflow/read model |
+| Finance OS semantic receivable contract | Finance OS | Downstream accounting recognition boundary |
+
+## 4. Contract Dependency Map
+
+```text
+Preschool operator selects configured billingPeriodId
+        ↓
+API resolves tenant-scoped edu_fin_billing_periods row
+        ↓
+TuitionBillingService.compileDraftInvoice
+        ↓
+Invoice dueDate comes from persisted billing period
+        ↓
+Later issueInvoice may recognize tuition through Finance OS
+```
+
+## 5. Change Authority
+
+Authorized:
+- Remove source-code billing-period/date hardcodes from Preschool Product API/UI.
+- Require tenant-scoped billing-period lookup for invoice compilation.
+- Add focused regression tests and gate record.
+
+Not authorized:
+- Finance OS changes.
+- Runtime setup or production data mutation.
+- New billing framework or accounting policy.
+
+## 6. UI -> Contract Reconciliation
+
+The staff billing UI previously collected only student and a due-date field while the API supplied the billing period. The corrected UI consumes real active billing periods from the API and sends only the selected `billingPeriodId`; source-code dates no longer create business truth.
+
+## 7. Additive Migration Plan
+
+No migration. This is a Product API/UI consumer correction over existing P7 tables.
+
+## 8. Verification Plan
+
+- Focused static provenance tests prove the route no longer contains September 2026 constants or `createBillingPeriod`.
+- API guard test proves invoice compilation requires `billingPeriodId`, tenant-scoped lookup, active status, and due date from the persisted period.
+- Existing tuition recognition test proves Finance connector dates come from billing-period fields rather than source-code September constants.
+- Scoped ESLint and `git diff --check`.
+
+Gate result: `PASS`.
+
+---
+
+# ARCHITECTURE GATE RESULT - PRESCHOOL P7 FINANCE OS TUITION RECOGNITION CONNECTION
+
+> **Status:** PASS - connect Preschool P7 issued tuition invoice to sealed Finance OS semantic receivable path
+> **Date:** 2026-09-28
+> **Scope:** Preschool Product P7 -> Finance OS `TUITION_SERVICE_RECOGNIZED` only; no payment, 3387, refund, discount, tax, e-invoice, or `edu_fin_*` cleanup
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+The sealed Finance OS milestone proves `TUITION_SERVICE_RECOGNIZED -> TRADE_RECEIVABLE 131 / SERVICE_REVENUE 511 -> F1 ledger + F3 AR` with recovery and idempotency. The current Preschool blocker is a stale P7 consumer: issuing a Preschool invoice updates `edu_fin_invoices` but does not cross the Finance OS semantic boundary. Gate decision: `PASS` for the smallest Product-owned connector that sends issued tuition-only invoices to the sealed Finance OS semantic receivable contract.
+
+## 2. Product Manifest
+
+In scope:
+- Preschool Product invoice issuance path.
+- Reuse existing `SemanticReceivableChargeService` and `SupabaseReceivableChargeGateway`.
+- Source identity: `PRESCHOOL_P7_TUITION_INVOICE` + `edu_fin_invoices.id`.
+- Canonical student identity: `edu_fin_invoices.student_party_id`.
+- Billing period dates as service period and recognition date.
+- Fail-closed for non-tuition invoice lines so meal/discount/tax are not silently posted.
+
+Out of scope:
+- Payment, cash, `111/112`, customer advance, `3387`, refund, discount, tax, VAT, e-invoice.
+- Deleting or refactoring `edu_fin_*`.
+- New Finance kernel, Billing kernel, or generic integration framework.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `edu_fin_invoices` | Preschool Product Finance | Product invoice workflow/read model |
+| `TUITION_SERVICE_RECOGNIZED` contract | Finance OS | Canonical business semantic for recognized service receivable |
+| `finance_invoices` / `finance_transactions` / AR | Finance OS | Canonical financial truth |
+
+## 4. Contract Dependency Map
+
+```text
+Preschool P7 issueInvoice
+        ↓
+edu_fin_invoices(student_party_id, tuition line, billing period)
+        ↓
+Finance OS semantic receivable contract
+        ↓
+TRADE_RECEIVABLE / SERVICE_REVENUE
+        ↓
+131 / 511
+        ↓
+Finance invoice + ledger + AR position
+```
+
+P7 does not supply account code, chart-of-account regime, tax treatment, or payment semantics.
+
+## 5. Change Authority
+
+Authorized:
+- Preschool Product Finance issuance service.
+- Preschool Product Finance API service construction.
+- Tenant-scoped repository read for billing period.
+- Focused service tests and this architecture gate artifact.
+
+Not authorized:
+- Finance kernel/accounting policy changes.
+- Education Kernel changes.
+- `edu_fin_*` cleanup or broad migration/RLS work.
+- Payment/refund/discount/tax/e-invoice implementation.
+
+## 6. UI -> Contract Reconciliation
+
+No UI redesign. Existing UI `issueInvoice` action should now be truthful: success requires the Product invoice issuance service to invoke Finance OS recognition when configured by the server API.
+
+## 7. Additive Migration Plan
+
+No migration. This connector consumes already deployed P7 and Finance OS contracts.
+
+## 8. Verification Plan
+
+- Focused service tests prove tuition-only issuance calls Finance OS semantic contract.
+- Recovery/idempotency: already issued P7 invoice still calls Finance OS by same business source.
+- Unsupported non-tuition lines fail closed before P7 status update.
+- Existing canonical student connection tests remain green.
+- Scoped ESLint/diff check.
+
+Gate result: `PASS`.
+
+---
+
+# ARCHITECTURE GATE RESULT - FINANCE OS TT99 SLICE 1 ACCOUNTING ACTIVATION
+
+> **Status:** PASS - TT99 Slice 1 accounting policy proven for tuition service recognition and target-tenant semantic mapping activation
+> **Date:** 2026-09-27
+> **Scope:** Finance OS `TUITION_SERVICE_RECOGNIZED` receivable contract + TT99 Slice 1 semantic mappings only; no Preschool connector, no payment, no 3387, no tax, no e-invoice
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+The proven blocker is not Preschool Finance UI logic. The Finance OS F3 AR kernel already supports draft invoice, invoice line, finalization, F1 transaction posting, AR ledger, and AR position creation, but the public usable path still requires callers to supply `revenue_account_code`. Under the Accounting Legal-Source Rule, the owner has now provided an authoritative accounting specification for Slice 1 only: `TUITION_SERVICE_RECOGNIZED`, where the education service obligation has already been performed and the amount is eligible for accounting revenue recognition under TT99-effective 2026 enterprise accounting. Gate decision: `PASS` for a Finance-owned contract that maps that semantic to `TRADE_RECEIVABLE -> 131` and `SERVICE_REVENUE -> 511` through Finance-owned, source-backed semantic GL mappings.
+
+## 2. Product Manifest
+
+In scope:
+- Finance OS public contract for a semantic receivable charge.
+- Finance-owned service/facade that creates/finalizes one AR invoice through existing F3 RPCs.
+- Finance-owned implementation of only the accounting mappings specified by authoritative evidence: `TRADE_RECEIVABLE` and `SERVICE_REVENUE`.
+- Forward-only activation of the minimum proven TT99 Slice 1 accounts and semantic mappings for the isolated Preschool browser-smoke tenant.
+- Idempotency based on Finance-owned source identity.
+- Focused tests proving account-code-free caller contract and AR RPC orchestration.
+
+Out of scope:
+- Preschool connector/payment implementation.
+- P7 `edu_fin_*` runtime changes.
+- TT133, TT200, or full TT99 regime engine.
+- Customer advance / 3387 / payment / refund / tax / e-invoice treatment.
+- New payment allocation flow.
+- New Billing Kernel redesign.
+- Broad Finance RLS/migration repair.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| semantic receivable charge contract | Finance OS | Vertical-neutral request to recognize a receivable charge |
+| semantic GL mapping | Finance OS / authoritative accounting specification | Internal account code selection by semantic and effective date; never vertical supplied and never AI-guessed |
+| `finance_invoices` / `finance_invoice_lines` | Finance F3 AR | Canonical invoice header and lines |
+| `finance_transactions` / `finance_transaction_lines` | Finance F1 Ledger | Posted accounting transaction |
+| `finance_receivable_ledger` / `finance_receivable_positions` | Finance F3 AR | AR subledger fact and derived position |
+
+## 4. Contract Dependency Map
+
+```text
+Vertical/Product semantic charge
+        ↓
+Finance OS semantic receivable charge contract
+        ↓
+Finance-owned semantic GL mapping as of recognition date
+        ↓
+finance_create_draft_invoice
+        ↓
+finance_add_invoice_line
+        ↓
+finance_finalize_invoice
+        ↓
+finance_post_transaction
+        ↓
+finance_transactions + finance_receivable_ledger + finance_receivable_positions
+```
+
+The product/vertical caller must not provide `revenue_account_code`, account code, chart-of-account regime, or TT policy.
+
+## 5. Change Authority
+
+Authorized:
+- Finance OS contract/service files for `TUITION_SERVICE_RECOGNIZED`.
+- Finance-owned semantic GL mapping resolution for `TRADE_RECEIVABLE` and `SERVICE_REVENUE`.
+- Finance-owned runtime migration for effective-dated semantic mapping resolution and target-tenant TT99 Slice 1 activation.
+- Focused Finance OS tests for semantic input, account-code-free caller boundary, posting orchestration, and idempotency.
+- This architecture gate artifact.
+
+Not authorized:
+- Education Kernel changes.
+- Preschool Finance connector/payment path.
+- Existing P7 product runtime changes.
+- Regime-specific chart-of-accounts policy beyond Slice 1 proven semantics.
+- Historical migration rewrite or migration-history repair.
+
+## 6. UI -> Contract Reconciliation
+
+No UI change in this gate. The stale consumer is any vertical that would otherwise call F3 AR RPCs directly and supply account codes. The canonical contract is now Finance OS semantic charge input.
+
+## 7. Additive Migration Plan
+
+One forward-only migration is required:
+
+```text
+supabase/migrations/20260927080000_finance_tt99_slice1_accounting_activation.sql
+```
+
+The migration:
+- reuses `public.finance_control_account_mappings` as the Finance-owned semantic mapping storage;
+- adds effective-date and authority metadata only if missing;
+- replaces the semantic mapping RPCs so unsupported semantics fail closed;
+- activates only target tenant account `131` and account `511`;
+- saves `TRADE_RECEIVABLE -> 131` and `SERVICE_REVENUE -> 511` effective `2026-01-01`;
+- does not seed a full chart of accounts, activate `5111`, post tuition, connect Preschool, or touch other tenants.
+
+Post-deploy verification found a narrow PostgREST overload ambiguity between the repo-owned `uuid, varchar, date, varchar` RPC signature and an older `uuid, text, date, text` signature. A follow-up migration may drop only the obsolete `text` overload:
+
+```text
+supabase/migrations/20260927081000_finance_drop_legacy_semantic_gl_text_overload.sql
+```
+
+This follow-up does not alter accounts, mappings, COA data, accounting semantics, invoices, journals, or AR state.
+
+The runtime must refuse to post if the required semantic mappings are absent or not marked as proven for `VI_TT99_2025|99/2025/TT-BTC|PROVEN`.
+
+## 8. 11 Automated Verification Gates Plan
+
+- Gate 1 Architecture Compliance: Finance OS files only.
+- Gate 2 Contract Boundary: vertical request contains semantic charge only; no account code.
+- Gate 3 Tenant Isolation: tenant id is required and passed through every F3 RPC/query.
+- Gate 4 RLS & Authorization: no RLS change; existing F3 RPC privileges unchanged.
+- Gate 5 Database Migration Safety: one bounded forward-only Finance migration; no historical migration rewrite.
+- Gate 6 Event-After-Persistence: no new event path.
+- Gate 7 Academic Safety Routing: not applicable.
+- Gate 8 Temporal Provenance: semantic GL mapping is effective-date aware.
+- Gate 9 Rule Governance: accounting regime and posting rule are source-backed for Slice 1 only.
+- Gate 10 Audit Evidence Integrity: F3/F1 idempotency and request hash preserved.
+- Gate 11 Platform Regression: focused Finance OS tests, scoped lint, scoped TypeScript, `git diff --check`.
+
+Gate result: `PASS`.
+
+---
+
+# ARCHITECTURE GATE RESULT - PRESCHOOL FINANCE TENANT + ACTOR AUTHORIZATION
+
+> **Status:** PASS - bounded Preschool Product Finance server authorization boundary
+> **Date:** 2026-09-27
+> **Scope:** F2 active finance UI/API path only; no Finance RLS hardening, no billing redesign, no browser field verification
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+F1 cut over Preschool Finance identity to canonical `student_party_id`. The next proven blocker is that the active Finance UI still supplies hardcoded tenant/staff/parent IDs from the browser. Gate decision: `PASS` for the smallest server boundary that derives tenant and actor from the authenticated session, permits only existing Bella finance roles, and preserves P7 fee/invoice/payment/reconciliation semantics.
+
+## 2. Product Manifest
+
+In scope:
+- Preschool Product Finance API boundary for active Finance page read/actions.
+- Finance page consumer change from direct Supabase/service calls to server API calls.
+- Role mapping for existing Bella roles `admin` and `accountant`.
+- Focused tests proving server-derived tenant/actor and parent denial.
+
+Out of scope:
+- Broad `edu_fin_*` RLS/grant remediation.
+- Generic authorization framework.
+- Finance/Billing Kernel redesign.
+- Browser field verification before F3 RLS hardening.
+- Parent Finance redesign or notification workflow expansion.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| authenticated user/session | Platform Auth / Bella user profile | Source for current user id, role, tenant |
+| `admin` / `accountant` user roles | Bella existing user model | Allowed active Preschool finance operators |
+| P7 Finance actions | Preschool Product Finance | Compile/issue invoices, payment reconciliation, finance projections |
+| `edu_fin_*` RLS policies | Preschool Product Finance / DB security | Deferred F3 hardening target |
+
+## 4. Contract Dependency Map
+
+```text
+Finance UI
+        ↓
+/api/education/finance
+        ↓
+getCurrentUser()
+        ↓
+server-derived tenant + actor + role
+        ↓
+P7 Finance services
+        ↓
+edu_fin_* canonical student_party_id rows
+```
+
+Client-supplied `tenantId`, `createdBy`, `payerPartyId`, or authorization status is not trusted.
+
+## 5. Change Authority
+
+Authorized:
+- Preschool Product Finance route/UI boundary.
+- Bounded finance authorization helper/service.
+- Directly affected finance service call signatures where actor/guardian derivation must move server-side.
+- Focused tests and this gate artifact.
+
+Not authorized:
+- Education Kernel changes.
+- Generic Auth/RBAC framework.
+- Broad RLS policy repair.
+- Migration history or BDGF work.
+
+## 6. UI -> Contract Reconciliation
+
+| UI element/action | Old authority | New authority | Conclusion |
+|---|---|---|---|
+| Finance data load | browser Supabase + hardcoded tenant | server API derives tenant from authenticated profile | STALE UI |
+| Draft invoice | browser sends `DEFAULT_TENANT_ID` / `DEFAULT_STAFF_ID` | server derives tenant/actor | STALE UI |
+| Issued notice projection | browser sends `DEFAULT_PARENT_ID` | server derives guardians via canonical `guardian_of` relationship | STALE UI |
+| Payment/reconciliation | browser sends payer/staff constants | server derives payer guardian and actor | STALE UI |
+
+## 7. Additive Migration Plan
+
+No migration in F2. Existing broad/permissive Finance RLS is recorded as F3:
+
+```text
+edu_fin_fee_structures
+edu_fin_billing_periods
+edu_fin_student_discount_profiles
+edu_fin_invoices
+edu_fin_invoice_line_items
+edu_fin_payments
+edu_fin_reconciliation_ledger
+edu_fin_receipts
+```
+
+## 8. 11 Automated Verification Gates Plan
+
+- Gate 1 Architecture Compliance: Preschool Product Finance only; no Education Kernel change.
+- Gate 2 Contract Boundary: API mediates UI to P7 services.
+- Gate 3 Tenant Isolation: server derives tenant and repository filters by tenant.
+- Gate 4 RLS & Authorization: app-layer roles `admin` and `accountant` allowed; `parent` denied; DB RLS hardening deferred to F3.
+- Gate 5 Database Migration Safety: no migration.
+- Gate 6 Event-After-Persistence: no new domain event.
+- Gate 7 Academic Safety Routing: not applicable.
+- Gate 8 Temporal Provenance: not applicable.
+- Gate 9 Rule Governance: not applicable.
+- Gate 10 Audit Evidence Integrity: existing invoice/receipt fingerprints preserved.
+- Gate 11 Platform Regression: F1/F2 focused tests, scoped ESLint, `git diff --check`.
+
+Gate result: `PASS`.
+
+---
+
+# ARCHITECTURE GATE RESULT - PRESCHOOL FINANCE CANONICAL STUDENT CONNECTION
+
+> **Status:** PASS - bounded Preschool Product cutover from legacy `student_id` to canonical `student_party_id`
+> **Date:** 2026-09-27
+> **Scope:** P7 Preschool Finance student identity only; no Billing Kernel redesign or broad RLS/auth repair
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+The sealed Preschool operational chain now creates canonical Student Parties through Enrollment. The next Market Ready blocker is that P7 Preschool Finance still selects and persists legacy `students.student_id`, while the real enrolled student identity is:
+
+```text
+edu_enrollments.student_party_id
+        ↓
+students.party_id
+        ↓
+party_parties.id
+```
+
+Gate decision: `PASS` for the smallest Preschool Product-owned finance cutover that writes and reads canonical `student_party_id` for new invoice/payment/discount operations while preserving legacy rows.
+
+## 2. Product Manifest
+
+In scope:
+- P7 finance domain types, repository, invoice compilation, inbound payment recording, issuance fingerprint identity, and the finance UI student selector/action path.
+- One additive migration on directly affected `edu_fin_*` tables.
+- Focused service/static tests proving canonical enrollment validation and legacy compatibility.
+
+Out of scope:
+- Generic Finance/Billing redesign.
+- Finance RLS/grant hardening.
+- Server auth/actor/tenant hardcode removal.
+- Parent Communication or Notice redesign beyond the directly affected finance projection belonging check.
+- Browser field verification before owner deployment.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `edu_enrollments.student_party_id` | Education Enrollment / Preschool consumer | Canonical enrolled student identity |
+| `party_parties.id` | Platform Party | Canonical Party identity |
+| `edu_fin_student_discount_profiles.student_party_id` | Preschool Product Finance | Canonical student identity for discounts |
+| `edu_fin_invoices.student_party_id` | Preschool Product Finance | Canonical student identity for invoices |
+| `edu_fin_payments.student_party_id` | Preschool Product Finance | Canonical student identity for payments |
+
+## 4. Contract Dependency Map
+
+```text
+Finance UI
+        ↓
+edu_enrollments(active/pending)
+        ↓
+Student Party
+        ↓
+P7 Finance services
+        ↓
+edu_fin_* rows keyed by student_party_id
+```
+
+Payer identity remains separate as `payer_party_id`.
+
+## 5. Change Authority
+
+Authorized:
+- Preschool Product finance code and UI path.
+- Additive/cutover migration on P7 finance tables.
+- Direct finance projection check required by issued-invoice notice creation.
+
+Not authorized:
+- Education Kernel changes.
+- Finance OS Kernel changes.
+- Generic billing engine rebuild.
+- Broad RLS/security remediation.
+
+## 6. UI -> Contract Reconciliation
+
+| UI element | Old source | New source | Conclusion |
+|---|---|---|---|
+| Student selector | `students.student_id` with hardcoded P7 fallback | `edu_enrollments.student_party_id -> party_parties` | CUT OVER |
+| Draft invoice action | legacy `studentId` | canonical `studentPartyId` | CUT OVER |
+| Payment action | invoice legacy student key | invoice canonical `studentPartyId` | CUT OVER |
+
+Known hardcoded tenant/staff/parent IDs remain a separate F2/auth-boundary finding and are not fixed in this F1 identity slice.
+
+## 7. Additive Migration Plan
+
+One migration:
+
+```text
+edu_fin_student_discount_profiles
+edu_fin_invoices
+edu_fin_payments
+  ADD student_party_id UUID REFERENCES party_parties(id)
+  ALTER student_id DROP NOT NULL
+  ADD CHECK (student_id IS NOT NULL OR student_party_id IS NOT NULL)
+  ADD tenant + student_party_id indexes
+```
+
+Legacy columns are preserved. No backfill, cleanup, RLS, grant, migration history, or data mutation is included.
+
+## 8. 11 Automated Verification Gates Plan
+
+- Gate 1 Architecture Compliance: Product-owned Preschool finance only; no Education/Finance Kernel change.
+- Gate 2 Contract Boundary: validate canonical enrollment before new finance obligation/payment creation.
+- Gate 3 Tenant Isolation: enrollment validation is scoped by tenant and `student_party_id`.
+- Gate 4 RLS & Authorization: no policy change in this slice; existing broad finance RLS is deferred.
+- Gate 5 Database Migration Safety: one bounded additive/cutover migration; no legacy drop/backfill.
+- Gate 6 Event-After-Persistence: not applicable; no domain event emitted.
+- Gate 7 Academic Safety Routing: not applicable.
+- Gate 8 Temporal Provenance: not applicable.
+- Gate 9 Rule Governance: not applicable.
+- Gate 10 Audit Evidence Integrity: invoice publication fingerprint uses canonical student identity.
+- Gate 11 Platform Regression: focused Preschool finance tests, scoped ESLint, `git diff --check`.
+
+Gate result: `PASS`.
+
+---
+
 # ARCHITECTURE GATE RESULT - PRESCHOOL PARENT USER ROLE ENABLEMENT
 
 > **Status:** PASS - minimum auth/profile contract amendment for legitimate parent accounts

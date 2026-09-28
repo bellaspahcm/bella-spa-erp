@@ -10,7 +10,8 @@ import { CommunicationNotice, CommunicationDelivery, P6_ERROR_CODES } from '../d
 
 export interface IProjectIssuedInvoiceDto {
   tenantId: string;
-  studentId: string;
+  studentPartyId: string;
+  studentId?: string | null;
   guardianPartyIds: string[];
   invoiceId: string;
   invoiceNumber: string;
@@ -68,20 +69,20 @@ export class FinanceProjectionBridge {
     // 2. Student Belonging Verification
     const { data: student } = await this.supabase
       .from('students')
-      .select('student_id, tenant_id')
-      .eq('student_id', dto.studentId)
+      .select('student_id, party_id, tenant_id')
+      .eq('party_id', dto.studentPartyId)
       .eq('tenant_id', dto.tenantId)
       .maybeSingle();
 
     if (!student) {
-      throw new Error(`${P6_ERROR_CODES.TENANT_MISMATCH}: Student ${dto.studentId} does not belong to tenant ${dto.tenantId}.`);
+      throw new Error(`${P6_ERROR_CODES.TENANT_MISMATCH}: Student Party ${dto.studentPartyId} does not belong to tenant ${dto.tenantId}.`);
     }
 
     // 3. Create Thread using Primary Guardian
     const primaryGuardian = dto.guardianPartyIds[0];
     const thread = await this.deliveryService.createThread({
       tenantId: dto.tenantId,
-      studentId: dto.studentId,
+      studentId: dto.studentPartyId,
       guardianPartyId: primaryGuardian,
       threadType: 'GENERAL',
       title: `Thông báo học phí: Hóa đơn ${dto.invoiceNumber}`,

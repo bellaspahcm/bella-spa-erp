@@ -24,14 +24,20 @@ export class TuitionBillingService {
    */
   async compileDraftInvoice(params: {
     tenantId: string;
-    studentId: string;
+    studentPartyId: string;
+    studentId?: string | null;
     billingPeriodId: string;
     dueDate: string;
     createdBy: string;
     mealChargeInputs?: StudentMealChargeInput[];
     additionalLineItems?: Omit<InvoiceLineItem, 'tenantId'>[];
   }): Promise<Invoice> {
-    const { tenantId, studentId, billingPeriodId, dueDate, createdBy, mealChargeInputs = [], additionalLineItems = [] } = params;
+    const { tenantId, studentPartyId, studentId = null, billingPeriodId, dueDate, createdBy, mealChargeInputs = [], additionalLineItems = [] } = params;
+
+    const hasEnrollment = await this.repo.hasActiveEnrollmentForStudentParty(tenantId, studentPartyId);
+    if (!hasEnrollment) {
+      throw new Error(`FINANCE_STUDENT_ENROLLMENT_REQUIRED: Student Party ${studentPartyId} is not actively enrolled in tenant ${tenantId}.`);
+    }
 
     // 1. Fetch base active fee structures for Preschool
     const feeStructures = await this.repo.getFeeStructures(tenantId, 'PRESCHOOL');
@@ -58,8 +64,8 @@ export class TuitionBillingService {
 
     // Line Items 2: P4 Meal Charges (Consumes P4 Public Billing Contract Input DTO)
     for (const meal of mealChargeInputs) {
-      if (meal.studentId !== studentId) {
-        throw new Error(`FINANCE_MISMATCH_ERROR: Meal charge studentId ${meal.studentId} does not match target student ${studentId}.`);
+      if (meal.studentPartyId !== studentPartyId) {
+        throw new Error(`FINANCE_MISMATCH_ERROR: Meal charge studentPartyId ${meal.studentPartyId} does not match target student ${studentPartyId}.`);
       }
       if (meal.tenantId !== tenantId) {
         throw new Error(`COMMUNICATION_TENANT_MISMATCH_ERROR: Cross-tenant meal charge input detected.`);
@@ -89,7 +95,7 @@ export class TuitionBillingService {
     }
 
     // 2. Fetch Active Student Discount Profiles (Sibling discount, scholarship)
-    const activeDiscounts = await this.repo.getActiveDiscountProfiles(tenantId, studentId);
+    const activeDiscounts = await this.repo.getActiveDiscountProfiles(tenantId, studentPartyId);
     let totalDiscountAmount = 0;
 
     const grossTuition = tuitionFee.amount;
@@ -139,6 +145,7 @@ export class TuitionBillingService {
     return await this.repo.createInvoice(
       {
         tenantId,
+        studentPartyId,
         studentId,
         billingPeriodId,
         invoiceNumber,

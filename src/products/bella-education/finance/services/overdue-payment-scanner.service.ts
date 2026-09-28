@@ -10,28 +10,30 @@
  * - Marking a P6 notice as READ or resolving a Staff Exception DOES NOT mutate financial settlement status.
  */
 
-import { createClient } from '@supabase/supabase-js';
-import { PreschoolFinanceRepository } from '../repositories/preschool-finance.repository';
-import { Invoice } from '../domain/finance.types';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient<Database>(supabaseUrl, supabaseKey);
+type PreschoolFinanceClient = SupabaseClient<Database>;
 
 export class OverduePaymentScannerService {
-  constructor(private repo: PreschoolFinanceRepository = new PreschoolFinanceRepository()) {}
+  constructor(
+    private readonly client: PreschoolFinanceClient = supabase,
+  ) {}
 
   /**
    * Scans overdue invoices for a tenant and projects OVERDUE_PAYMENT_SLA exceptions idempotently
    */
-  async scanAndEscalateOverdueInvoices(tenantId: string, guardianPartyId: string): Promise<{
+  async scanAndEscalateOverdueInvoices(tenantId: string): Promise<{
     escalatedCount: number;
     exceptions: Array<{ invoiceId: string; exceptionId: string; isDuplicate: boolean }>;
   }> {
     const todayStr = new Date().toISOString().split('T')[0];
 
     // 1. Query overdue invoices (ISSUED, UNPAID or PARTIALLY_PAID, due_date < today)
-    const { data: overdueInvoices, error } = await supabase
+    const { data: overdueInvoices, error } = await this.client
       .from('edu_fin_invoices')
       .select('*')
       .eq('tenant_id', tenantId)
@@ -46,8 +48,24 @@ export class OverduePaymentScannerService {
     const results: Array<{ invoiceId: string; exceptionId: string; isDuplicate: boolean }> = [];
 
     for (const inv of overdueInvoices || []) {
+      if (!inv.student_party_id) continue;
+
+      const { data: guardianRelationship, error: guardianError } = await this.client
+        .from('party_relationships')
+        .select('source_party_id')
+        .eq('tenant_id', tenantId)
+        .eq('target_party_id', inv.student_party_id)
+        .eq('relationship_type', 'guardian_of')
+        .limit(1)
+        .maybeSingle();
+
+      if (guardianError) {
+        throw new Error(`FINANCE_SCANNER_ERROR: Failed to resolve invoice guardian: ${guardianError.message}`);
+      }
+      if (!guardianRelationship?.source_party_id) continue;
+
       // 2. Fetch P6 notice associated with this invoice
-      const { data: notice } = await supabase
+      const { data: notice } = await this.client
         .from('edu_comm_notices')
         .select('*')
         .eq('tenant_id', tenantId)
@@ -59,7 +77,7 @@ export class OverduePaymentScannerService {
       if (!notice) continue;
 
       // 3. Idempotent check for active exception
-      const { data: existingExc } = await supabase
+      const { data: existingExc } = await this.client
         .from('edu_comm_exceptions')
         .select('*')
         .eq('tenant_id', tenantId)
@@ -78,13 +96,13 @@ export class OverduePaymentScannerService {
       }
 
       // 4. Create Overdue Exception in Staff Work Queue
-      const { data: newExc, error: excErr } = await supabase
+      const { data: newExc, error: excErr } = await this.client
         .from('edu_comm_exceptions')
         .insert({
           tenant_id: tenantId,
           notice_id: notice.id,
-          student_id: inv.student_id,
-          guardian_party_id: guardianPartyId,
+          student_id: inv.student_party_id,
+          guardian_party_id: guardianRelationship.source_party_id,
           exception_type: 'OVERDUE_PAYMENT_SLA',
           severity: 'HIGH',
           assigned_role: 'ADMIN',

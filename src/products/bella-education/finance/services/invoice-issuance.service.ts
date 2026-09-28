@@ -12,6 +12,19 @@ import { createHash } from 'crypto';
 import { PreschoolFinanceRepository } from '../repositories/preschool-finance.repository';
 import { Invoice } from '../domain/finance.types';
 
+export interface InvoiceIssuanceRepository {
+  getInvoiceById(tenantId: string, invoiceId: string): Promise<Invoice | null>;
+  updateInvoiceStatus(
+    tenantId: string,
+    invoiceId: string,
+    update: {
+      invoiceStatus?: Invoice['invoiceStatus'];
+      issuedAt?: string;
+      sha256Checksum?: string;
+    },
+  ): Promise<Invoice>;
+}
+
 /**
  * Deterministic Key-Sorting Canonical JSON helper
  */
@@ -32,7 +45,9 @@ export function canonicalJsonString(obj: unknown): string {
 }
 
 export class InvoiceIssuanceService {
-  constructor(private repo: PreschoolFinanceRepository = new PreschoolFinanceRepository()) {}
+  constructor(
+    private repo: InvoiceIssuanceRepository = new PreschoolFinanceRepository(),
+  ) {}
 
   /**
    * Issues an invoice, locks header/line items, and generates SHA-256 publication checksum
@@ -57,7 +72,8 @@ export class InvoiceIssuanceService {
     // Generate Canonical Publication DTO for Fingerprint
     const publicationDto = {
       tenantId: invoice.tenantId,
-      studentId: invoice.studentId,
+      studentPartyId: invoice.studentPartyId,
+      legacyStudentId: invoice.studentId ?? null,
       billingPeriodId: invoice.billingPeriodId,
       invoiceNumber: invoice.invoiceNumber,
       grossAmount: invoice.grossAmount,
