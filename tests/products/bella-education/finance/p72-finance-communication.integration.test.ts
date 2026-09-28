@@ -44,6 +44,7 @@ describe('P7.2 Finance Communication & Collection Lifecycle Integration Suite', 
   let exceptionService: CommunicationExceptionService;
   let commRepo: ParentCommunicationRepository;
   let billingPeriodId: string;
+  let courseId: string;
 
   let tenantA: string;
   let tenantB: string;
@@ -60,7 +61,7 @@ describe('P7.2 Finance Communication & Collection Lifecycle Integration Suite', 
     billingService = new TuitionBillingService(finRepo);
     issuanceService = new InvoiceIssuanceService(finRepo);
     reconService = new PaymentReconciliationService(finRepo);
-    scannerService = new OverduePaymentScannerService(finRepo);
+    scannerService = new OverduePaymentScannerService(supabase);
 
     commRepo = new ParentCommunicationRepository(supabase);
     commDeliveryService = new CommunicationDeliveryService(commRepo);
@@ -72,8 +73,19 @@ describe('P7.2 Finance Communication & Collection Lifecycle Integration Suite', 
     await supabase.from('tenants').insert({ id: tenantA, name: 'Bella Preschool Tenant A ' + tenantA.slice(0, 4) });
     await supabase.from('tenants').insert({ id: tenantB, name: 'Bella Preschool Tenant B ' + tenantB.slice(0, 4) });
 
-    await supabase.from('persons').insert({ id: parentPartyId, tenant_id: tenantA, first_name: 'Mẹ', last_name: 'Phụ Huynh', date_of_birth: '1990-01-01', gender: 'female' });
-    await supabase.from('persons').insert({ id: staffPartyId, tenant_id: tenantA, first_name: 'Thầy', last_name: 'Kế Toán', date_of_birth: '1985-01-01', gender: 'male' });
+    await supabase.from('party_parties').insert([
+      { id: parentPartyId, tenant_id: tenantA, party_type: 'person', display_name: 'Mẹ Phụ Huynh P72' },
+      { id: staffPartyId, tenant_id: tenantA, party_type: 'person', display_name: 'Thầy Kế Toán P72' },
+    ]);
+
+    courseId = crypto.randomUUID();
+    await supabase.from('edu_courses').insert({
+      id: courseId,
+      tenant_id: tenantA,
+      course_code: `P72-${courseId.slice(0, 8)}`,
+      title: `P72 Finance Course ${courseId.slice(0, 8)}`,
+      status: 'active',
+    });
 
     // 2. Seed Fee Structure
     await finRepo.createFeeStructure({
@@ -103,28 +115,41 @@ describe('P7.2 Finance Communication & Collection Lifecycle Integration Suite', 
   }, 30_000);
 
   const createTestStudent = async (tenantId: string = tenantA, parentId: string = parentPartyId) => {
-    const studentId = crypto.randomUUID();
-    const { data: stPerson } = await supabase.from('persons').insert({
+    const studentPartyId = crypto.randomUUID();
+    await supabase.from('party_parties').insert({
+      id: studentPartyId,
       tenant_id: tenantId,
-      first_name: 'Bé',
-      last_name: 'P72-' + studentId.substring(0, 4),
-      date_of_birth: '2022-01-01',
-      gender: 'male',
-    }).select('id').single();
-
-    await supabase.from('students').insert({
-      student_id: studentId,
+      party_type: 'person',
+      display_name: `Bé P72-${studentPartyId.substring(0, 4)}`,
+    });
+    const enrollmentCourseId = tenantId === tenantA ? courseId : crypto.randomUUID();
+    if (tenantId !== tenantA) {
+      await supabase.from('edu_courses').insert({
+        id: enrollmentCourseId,
+        tenant_id: tenantId,
+        course_code: `P72-${enrollmentCourseId.slice(0, 8)}`,
+        title: `P72 Finance Course ${enrollmentCourseId.slice(0, 8)}`,
+        status: 'active',
+      });
+    }
+    await supabase.from('edu_enrollments').insert({
       tenant_id: tenantId,
-      person_id: stPerson!.id,
-      student_code: 'P72-ST-' + studentId.substring(0, 8),
-      academic_status: 'enrolled',
-      enrollment_type: 'full_time',
-      program_id: 'PRESCHOOL',
-      enrollment_date: '2026-09-01',
-      metadata: { guardian_party_id: parentId, guardian_party_ids: [parentId] },
+      course_id: enrollmentCourseId,
+      student_party_id: studentPartyId,
+      status: 'active',
+      request_id: `p72-${studentPartyId}`,
     });
 
-    return studentId;
+    if (tenantId === tenantA) {
+      await supabase.from('party_relationships').insert({
+        tenant_id: tenantId,
+        source_party_id: parentId,
+        target_party_id: studentPartyId,
+        relationship_type: 'guardian_of',
+      });
+    }
+
+    return studentPartyId;
   };
 
   test('Test 1: Project ISSUED Invoice to P6 Notice (Mapped to REQUIRES_ACK)', async () => {

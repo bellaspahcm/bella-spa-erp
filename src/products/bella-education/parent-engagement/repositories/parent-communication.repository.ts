@@ -42,12 +42,13 @@ export class ParentCommunicationRepository {
       .eq('tenant_id', tenantId)
       .eq('source_party_id', guardianPartyId)
       .eq('target_party_id', studentId)
-      .eq('relationship_type', 'guardian_of')
+      .in('relationship_type', ['guardian_of', 'parent_of'])
       .maybeSingle();
 
     if (canonicalRelationshipError) {
       throw new Error(`FETCH_GUARDIAN_RELATIONSHIP_FAILED: ${canonicalRelationshipError.message}`);
     }
+
     if (canonicalRelationship) {
       return true;
     }

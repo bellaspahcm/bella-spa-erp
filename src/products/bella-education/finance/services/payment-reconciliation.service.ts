@@ -23,14 +23,28 @@ export class PaymentReconciliationService {
   async recordInboundPayment(params: {
     tenantId: string;
     payerPartyId: string;
-    studentPartyId: string;
+    studentPartyId?: string;
     studentId?: string | null;
     paymentMethod: Payment['paymentMethod'];
     amount: number;
     referenceNumber?: string;
     createdBy: string;
   }): Promise<Payment> {
-    const { tenantId, payerPartyId, studentPartyId, studentId = null, paymentMethod, amount, referenceNumber, createdBy } = params;
+    const {
+      tenantId,
+      payerPartyId,
+      studentPartyId: explicitStudentPartyId,
+      studentId: suppliedStudentId = null,
+      paymentMethod,
+      amount,
+      referenceNumber,
+      createdBy,
+    } = params;
+    const studentPartyId = explicitStudentPartyId ?? suppliedStudentId;
+    if (!studentPartyId) {
+      throw new Error(`FINANCE_STUDENT_PARTY_REQUIRED: Canonical Student Party ID is required.`);
+    }
+    const studentId = suppliedStudentId;
 
     if (amount <= 0) {
       throw new Error(`INVALID_PAYMENT_AMOUNT_ERROR: Payment amount must be greater than zero.`);
@@ -40,6 +54,9 @@ export class PaymentReconciliationService {
     if (!hasEnrollment) {
       throw new Error(`FINANCE_STUDENT_ENROLLMENT_REQUIRED: Student Party ${studentPartyId} is not actively enrolled in tenant ${tenantId}.`);
     }
+
+    await this.repo.assertStudentPartyBelongsToTenant(tenantId, studentPartyId);
+    await this.repo.assertPayerPartyBelongsToTenant(tenantId, payerPartyId);
 
     const paymentNumber = `PAY-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`;
 
@@ -100,6 +117,10 @@ export class PaymentReconciliationService {
     const payment = await this.repo.getPaymentById(tenantId, paymentId);
     if (!payment) {
       throw new Error(`PAYMENT_NOT_FOUND_ERROR: Payment ${paymentId} not found.`);
+    }
+
+    if (payment.studentId !== invoice.studentId) {
+      throw new Error(`PAYMENT_INVOICE_STUDENT_MISMATCH_ERROR: Payment student does not match invoice student.`);
     }
 
     if (allocationAmount > payment.unallocatedAmount) {

@@ -24,7 +24,7 @@ export class TuitionBillingService {
    */
   async compileDraftInvoice(params: {
     tenantId: string;
-    studentPartyId: string;
+    studentPartyId?: string;
     studentId?: string | null;
     billingPeriodId: string;
     dueDate: string;
@@ -32,12 +32,28 @@ export class TuitionBillingService {
     mealChargeInputs?: StudentMealChargeInput[];
     additionalLineItems?: Omit<InvoiceLineItem, 'tenantId'>[];
   }): Promise<Invoice> {
-    const { tenantId, studentPartyId, studentId = null, billingPeriodId, dueDate, createdBy, mealChargeInputs = [], additionalLineItems = [] } = params;
+    const {
+      tenantId,
+      studentPartyId: explicitStudentPartyId,
+      studentId: suppliedStudentId = null,
+      billingPeriodId,
+      dueDate,
+      createdBy,
+      mealChargeInputs = [],
+      additionalLineItems = [],
+    } = params;
+    const studentPartyId = explicitStudentPartyId ?? suppliedStudentId;
+    if (!studentPartyId) {
+      throw new Error(`FINANCE_STUDENT_PARTY_REQUIRED: Canonical Student Party ID is required.`);
+    }
+    const studentId = suppliedStudentId;
 
     const hasEnrollment = await this.repo.hasActiveEnrollmentForStudentParty(tenantId, studentPartyId);
     if (!hasEnrollment) {
       throw new Error(`FINANCE_STUDENT_ENROLLMENT_REQUIRED: Student Party ${studentPartyId} is not actively enrolled in tenant ${tenantId}.`);
     }
+
+    await this.repo.assertStudentPartyBelongsToTenant(tenantId, studentPartyId);
 
     // 1. Fetch base active fee structures for Preschool
     const feeStructures = await this.repo.getFeeStructures(tenantId, 'PRESCHOOL');

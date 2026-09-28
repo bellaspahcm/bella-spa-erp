@@ -78,6 +78,12 @@ function makeFinanceRepoStub(options: FinanceRepoStubOptions = {}) {
       calls.enrollmentChecks.push({ tenantId: inputTenantId, studentPartyId: inputStudentPartyId });
       return options.enrolled ?? true;
     },
+    async assertStudentPartyBelongsToTenant(): Promise<void> {
+      return undefined;
+    },
+    async assertPayerPartyBelongsToTenant(): Promise<void> {
+      return undefined;
+    },
     async getFeeStructures(): Promise<FeeStructure[]> {
       return [makeTuitionFee()];
     },
