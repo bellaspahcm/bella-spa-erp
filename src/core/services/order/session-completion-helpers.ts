@@ -48,6 +48,7 @@ type CompletionBooking = Pick<
   | 'full_price'
   | 'deposit_amount'
   | 'discount_percent'
+  | 'is_in_care'
 >;
 
 function getErrorMessage(error: unknown) {
@@ -260,7 +261,7 @@ export async function syncBookingCompletionProgress(params: {
 
   const { data: currentBooking } = await supabase
     .from('bookings')
-    .select('total_sessions, completed_sessions, status, package_name, ktv_commission, assigned_ktv_id, customer_id, tenant_id, full_price, deposit_amount, discount_percent')
+    .select('total_sessions, completed_sessions, status, package_name, ktv_commission, assigned_ktv_id, customer_id, tenant_id, full_price, deposit_amount, discount_percent, is_in_care')
     .eq('id', bookingId)
     .single();
 

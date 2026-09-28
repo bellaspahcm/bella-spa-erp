@@ -1,4 +1,4 @@
-import { calculateBookingCompletionUpdate } from '../session-completion';
+import { buildCompletionRollbackPayload, calculateBookingCompletionUpdate } from '../session-completion';
 
 describe('calculateBookingCompletionUpdate - is_in_care flag', () => {
   it('should set is_in_care=false when package completes all sessions', () => {
@@ -79,5 +79,19 @@ describe('calculateBookingCompletionUpdate - is_in_care flag', () => {
     expect(result.status).toBeUndefined();
     expect(result.is_in_care).toBeUndefined(); // Should NOT be set
     expect(result.completed_sessions).toBe(5);
+  });
+
+  it('should restore the pre-completion is_in_care value in rollback payload', () => {
+    const currentBooking = {
+      completed_sessions: 14,
+      status: 'in_progress',
+      is_in_care: true,
+    };
+
+    expect(buildCompletionRollbackPayload(currentBooking)).toEqual({
+      completed_sessions: 14,
+      status: 'in_progress',
+      is_in_care: true,
+    });
   });
 });
