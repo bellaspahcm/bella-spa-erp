@@ -17,117 +17,120 @@ export type Database = {
       inventory: {
         Row: {
           created_at: string
-          expiry_date: string | null
-          id: string
-          item_id: string
-          location_id: string
-          location_type: string
-          lot_number: string | null
+          expiry_date: string | undefined
+          id: string & { value: string }
+          item_id: string & { value: string }
+          location_id: string & { value: string }
+          location_type: "WAREHOUSE" | "STORE" | "FULFILLMENT" | "3PL" | "TRANSIT" | "SUPPLIER" | "CUSTOMER" | "STAGING" | "QUARANTINE" | "DAMAGE" | "VIRTUAL"
+          lot_number: (string & { value: string }) | undefined
           quantity_available: number
           quantity_on_hand: number
           quantity_reserved: number
-          serial_number: string | null
+          serial_number: (string & { value: string }) | undefined
           status: string
           tenant_id: string
           updated_at: string
+          last_updated: string | null
         }
         Insert: {
           created_at?: string
           expiry_date?: string | null
-          id?: string
-          item_id: string
-          location_id: string
-          location_type: string
-          lot_number?: string | null
+          id?: string | { value: string }
+          item_id: string | { value: string }
+          location_id: string | { value: string }
+          location_type: "WAREHOUSE" | "STORE" | "FULFILLMENT" | "3PL" | "TRANSIT" | "SUPPLIER" | "CUSTOMER" | "STAGING" | "QUARANTINE" | "DAMAGE" | "VIRTUAL" | string
+          lot_number?: string | { value: string } | null
           quantity_available?: number
           quantity_on_hand?: number
           quantity_reserved?: number
-          serial_number?: string | null
+          serial_number?: string | { value: string } | null
           status?: string
           tenant_id: string
           updated_at?: string
+          last_updated?: string | null
         }
         Update: {
           created_at?: string
           expiry_date?: string | null
-          id?: string
-          item_id?: string
-          location_id?: string
-          location_type?: string
-          lot_number?: string | null
+          id?: string | { value: string }
+          item_id?: string | { value: string }
+          location_id?: string | { value: string }
+          location_type?: "WAREHOUSE" | "STORE" | "FULFILLMENT" | "3PL" | "TRANSIT" | "SUPPLIER" | "CUSTOMER" | "STAGING" | "QUARANTINE" | "DAMAGE" | "VIRTUAL" | string
+          lot_number?: string | { value: string } | null
           quantity_available?: number
           quantity_on_hand?: number
           quantity_reserved?: number
-          serial_number?: string | null
+          serial_number?: string | { value: string } | null
           status?: string
           tenant_id?: string
           updated_at?: string
+          last_updated?: string | null
         }
         Relationships: []
       }
       items: {
         Row: {
-          base_uom: string
-          category: string | null
+          base_uom: "EA" | "CS" | "PLT" | "KG" | "G" | "L" | "ML" | "M" | "CM" | "FT" | "IN"
+          category: string | undefined
           created_at: string
-          created_by: string | null
-          currency: string
-          description: string | null
-          dimensions_json: Json | null
+          created_by: string | undefined
+          currency: string | undefined
+          description: string | undefined
+          dimensions_json: Record<string, unknown> | null
           expiry_tracked: boolean
-          id: string
+          id: string & { value: string }
           lot_tracked: boolean
           name: string
           serial_tracked: boolean
-          sku_code: string
-          standard_cost: number
+          sku_code: string & { value: string }
+          standard_cost: number | undefined
           status: string
           tenant_id: string
-          type: string
+          type: "GOODS" | "SERVICE" | "KIT" | "BUNDLE" | "VIRTUAL"
           updated_at: string
-          updated_by: string | null
-          weight_kg: number | null
+          updated_by: string | undefined
+          weight_kg: number | undefined
         }
         Insert: {
-          base_uom: string
+          base_uom: "EA" | "CS" | "PLT" | "KG" | "G" | "L" | "ML" | "M" | "CM" | "FT" | "IN"
           category?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
           description?: string | null
-          dimensions_json?: Json | null
+          dimensions_json?: Record<string, unknown> | null
           expiry_tracked?: boolean
           id?: string
           lot_tracked?: boolean
           name: string
           serial_tracked?: boolean
-          sku_code: string
+          sku_code: string | { value: string }
           standard_cost?: number
           status?: string
           tenant_id: string
-          type: string
+          type: "GOODS" | "SERVICE" | "KIT" | "BUNDLE" | "VIRTUAL"
           updated_at?: string
           updated_by?: string | null
           weight_kg?: number | null
         }
         Update: {
-          base_uom?: string
+          base_uom?: "EA" | "CS" | "PLT" | "KG" | "G" | "L" | "ML" | "M" | "CM" | "FT" | "IN" | string
           category?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
           description?: string | null
-          dimensions_json?: Json | null
+          dimensions_json?: Record<string, unknown> | null
           expiry_tracked?: boolean
           id?: string
           lot_tracked?: boolean
           name?: string
           serial_tracked?: boolean
-          sku_code?: string
+          sku_code?: string | { value: string }
           standard_cost?: number
           status?: string
           tenant_id?: string
-          type?: string
+          type?: "GOODS" | "SERVICE" | "KIT" | "BUNDLE" | "VIRTUAL" | string
           updated_at?: string
           updated_by?: string | null
           weight_kg?: number | null
@@ -153,117 +156,126 @@ export type Database = {
       inventory: {
         Row: {
           created_at: string
-          expiry_date: string | null
-          id: string
-          item_id: string
-          location_id: string
-          location_type: string
-          lot_number: string | null
+          expiry_date: string | undefined
+          id: string & { value: string }
+          item_id: string & { value: string }
+          location_id: string & { value: string }
+          location_type: "WAREHOUSE" | "STORE" | "FULFILLMENT" | "3PL" | "TRANSIT" | "SUPPLIER" | "CUSTOMER" | "STAGING" | "QUARANTINE" | "DAMAGE" | "VIRTUAL"
+          lot_number: (string & { value: string }) | undefined
           quantity_available: number
           quantity_on_hand: number
           quantity_reserved: number
-          serial_number: string | null
+          reorder_point: number | null
+          unit_cost: number
+          serial_number: (string & { value: string }) | undefined
           status: string
           tenant_id: string
           updated_at: string
+          last_updated: string | null
         }
         Insert: {
           created_at?: string
           expiry_date?: string | null
-          id?: string
-          item_id: string
-          location_id: string
-          location_type: string
-          lot_number?: string | null
+          id?: string | { value: string }
+          item_id: string | { value: string }
+          location_id: string | { value: string }
+          location_type: "WAREHOUSE" | "STORE" | "FULFILLMENT" | "3PL" | "TRANSIT" | "SUPPLIER" | "CUSTOMER" | "STAGING" | "QUARANTINE" | "DAMAGE" | "VIRTUAL" | string
+          lot_number?: string | { value: string } | null
           quantity_available?: number
           quantity_on_hand?: number
           quantity_reserved?: number
-          serial_number?: string | null
+          reorder_point?: number | null
+          unit_cost?: number
+          serial_number?: string | { value: string } | null
           status?: string
           tenant_id: string
           updated_at?: string
+          last_updated?: string | null
         }
         Update: {
           created_at?: string
           expiry_date?: string | null
-          id?: string
-          item_id?: string
-          location_id?: string
-          location_type?: string
-          lot_number?: string | null
+          id?: string | { value: string }
+          item_id?: string | { value: string }
+          location_id?: string | { value: string }
+          location_type?: "WAREHOUSE" | "STORE" | "FULFILLMENT" | "3PL" | "TRANSIT" | "SUPPLIER" | "CUSTOMER" | "STAGING" | "QUARANTINE" | "DAMAGE" | "VIRTUAL" | string
+          lot_number?: string | { value: string } | null
           quantity_available?: number
           quantity_on_hand?: number
           quantity_reserved?: number
-          serial_number?: string | null
+          reorder_point?: number | null
+          unit_cost?: number
+          serial_number?: string | { value: string } | null
           status?: string
           tenant_id?: string
           updated_at?: string
+          last_updated?: string | null
         }
         Relationships: []
       }
       items: {
         Row: {
-          base_uom: string
-          category: string | null
+          base_uom: "EA" | "CS" | "PLT" | "KG" | "G" | "L" | "ML" | "M" | "CM" | "FT" | "IN"
+          category: string | undefined
           created_at: string
-          created_by: string | null
-          currency: string
-          description: string | null
-          dimensions_json: Json | null
+          created_by: string | undefined
+          currency: string | undefined
+          description: string | undefined
+          dimensions_json: Record<string, unknown> | null
           expiry_tracked: boolean
-          id: string
+          id: string & { value: string }
           lot_tracked: boolean
           name: string
           serial_tracked: boolean
-          sku_code: string
-          standard_cost: number
+          sku_code: string & { value: string }
+          standard_cost: number | undefined
           status: string
           tenant_id: string
-          type: string
+          type: "GOODS" | "SERVICE" | "KIT" | "BUNDLE" | "VIRTUAL"
           updated_at: string
-          updated_by: string | null
-          weight_kg: number | null
+          updated_by: string | undefined
+          weight_kg: number | undefined
         }
         Insert: {
-          base_uom: string
+          base_uom: "EA" | "CS" | "PLT" | "KG" | "G" | "L" | "ML" | "M" | "CM" | "FT" | "IN"
           category?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
           description?: string | null
-          dimensions_json?: Json | null
+          dimensions_json?: Record<string, unknown> | null
           expiry_tracked?: boolean
           id?: string
           lot_tracked?: boolean
           name: string
           serial_tracked?: boolean
-          sku_code: string
+          sku_code: string | { value: string }
           standard_cost?: number
           status?: string
           tenant_id: string
-          type: string
+          type: "GOODS" | "SERVICE" | "KIT" | "BUNDLE" | "VIRTUAL"
           updated_at?: string
           updated_by?: string | null
           weight_kg?: number | null
         }
         Update: {
-          base_uom?: string
+          base_uom?: "EA" | "CS" | "PLT" | "KG" | "G" | "L" | "ML" | "M" | "CM" | "FT" | "IN" | string
           category?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
           description?: string | null
-          dimensions_json?: Json | null
+          dimensions_json?: Record<string, unknown> | null
           expiry_tracked?: boolean
           id?: string
           lot_tracked?: boolean
           name?: string
           serial_tracked?: boolean
-          sku_code?: string
+          sku_code?: string | { value: string }
           standard_cost?: number
           status?: string
           tenant_id?: string
-          type?: string
+          type?: "GOODS" | "SERVICE" | "KIT" | "BUNDLE" | "VIRTUAL" | string
           updated_at?: string
           updated_by?: string | null
           weight_kg?: number | null
