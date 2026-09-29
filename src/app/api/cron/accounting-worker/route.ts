@@ -191,6 +191,29 @@ function readOptionalString(payload: OutboxPayload, key: string) {
   throw new Error(`Invalid outbox payload: ${key} must be a string.`);
 }
 
+async function resolvePackageSalePaymentMethod(
+  supabase: AdminClient,
+  tenantId: string,
+  revenueId: string,
+  payload: OutboxPayload
+) {
+  const payloadPaymentMethod = readOptionalString(payload, 'paymentMethod');
+  if (payloadPaymentMethod) return payloadPaymentMethod;
+
+  const { data, error } = await supabase
+    .from('revenue')
+    .select('payment_method')
+    .eq('tenant_id', tenantId)
+    .eq('id', revenueId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to resolve PACKAGE_SALE payment method for revenue ${revenueId}: ${error.message}`);
+  }
+
+  return data?.payment_method ?? undefined;
+}
+
 function readJournalLines(payload: OutboxPayload): JournalEntryInput['lines'] {
   const lines = payload.lines;
   if (!Array.isArray(lines)) {
@@ -646,6 +669,7 @@ export async function GET(req: NextRequest) {
               packageSaleId: refId,
               totalAmount: readRequiredNumber(payload, 'totalAmount'),
               vatRate: readOptionalNumber(payload, 'vatRate'),
+              paymentMethod: await resolvePackageSalePaymentMethod(supabase, tenantId, refId, payload),
               description: readRequiredString(payload, 'description'),
               branchId: readOptionalString(payload, 'branchId'),
             });

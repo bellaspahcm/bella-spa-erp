@@ -59,13 +59,15 @@ export class RevenueRecognitionService {
     packageSaleId: string;
     totalAmount: number;
     vatRate?: number;
+    paymentMethod?: string | null;
     description: string;
     branchId?: string;
   }) {
-    const { tenantId, packageSaleId, totalAmount, vatRate = 0, description, branchId } = params;
+    const { tenantId, packageSaleId, totalAmount, vatRate = 0, paymentMethod, description, branchId } = params;
+    const payAccountCode = resolvePaymentAccountCode(paymentMethod);
 
     const [cashAccountId, unearnedRevAccountId, vatAccountId] = await Promise.all([
-      this.getAccountByCode(tenantId, '111'),
+      this.getAccountByCode(tenantId, payAccountCode),
       this.getAccountByCode(tenantId, '3387'),
       vatRate > 0 ? this.getAccountByCode(tenantId, '3331') : Promise.resolve(null),
     ]);

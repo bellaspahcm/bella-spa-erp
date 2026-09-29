@@ -510,6 +510,7 @@ describe('shared business rule engines', () => {
       tenantId: 'tenant-1',
       revenueId: 'revenue-1',
       totalAmount: 200000,
+      paymentMethod: 'bank_transfer',
       description: 'Deposit package',
     })).toEqual({
       tenantId: 'tenant-1',
@@ -519,6 +520,7 @@ describe('shared business rule engines', () => {
       payload: {
         totalAmount: 200000,
         vatRate: 0,
+        paymentMethod: 'bank_transfer',
         description: 'Deposit package',
         branchId: 'tenant-1',
       },
