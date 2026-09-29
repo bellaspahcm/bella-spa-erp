@@ -5,6 +5,9 @@ const mockAssertOpenAccountingPeriod = jest.fn();
 const mockAutoConsumeForSession = jest.fn();
 const mockRollbackInventoryConsumption = jest.fn();
 const mockRecalculateAndSaveSalaryRecord = jest.fn();
+const mockGetSupabaseAdminUrl = jest.fn(() => '');
+const mockGetSupabaseAdminKey = jest.fn(() => '');
+const mockCreateSupabaseJsClient = jest.fn();
 
 jest.mock('@/lib/accounting-outbox', () => ({
   enqueueWithAutoClient: (...args: unknown[]) => mockEnqueueWithAutoClient(...args),
@@ -21,6 +24,15 @@ jest.mock('@/services/inventory-actions', () => ({
 
 jest.mock('@/modules/hr-salary/actions/admin-salary-actions', () => ({
   recalculateAndSaveSalaryRecord: (...args: unknown[]) => mockRecalculateAndSaveSalaryRecord(...args),
+}));
+
+jest.mock('@/lib/supabase-admin-env', () => ({
+  getSupabaseAdminUrl: () => mockGetSupabaseAdminUrl(),
+  getSupabaseAdminKey: () => mockGetSupabaseAdminKey(),
+}));
+
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: (...args: unknown[]) => mockCreateSupabaseJsClient(...args),
 }));
 
 import { processSessionCompletion } from '../core/services/order/session-completion-engine';
@@ -114,6 +126,9 @@ describe('session completion accounting side effects', () => {
     mockAutoConsumeForSession.mockResolvedValue({ success: true, bypassed: true });
     mockRollbackInventoryConsumption.mockResolvedValue({ success: true });
     mockRecalculateAndSaveSalaryRecord.mockResolvedValue({ success: true });
+    mockGetSupabaseAdminUrl.mockReturnValue('');
+    mockGetSupabaseAdminKey.mockReturnValue('');
+    mockCreateSupabaseJsClient.mockReset();
   });
 
   it('builds completed session accounting metadata from booking value and discount', () => {
@@ -329,6 +344,66 @@ describe('session completion accounting side effects', () => {
       error: 'Booking không thuộc chi nhánh hiện tại, không thể tạo review chờ đánh giá.',
     });
     expect(calls).toEqual([]);
+  });
+
+  it('uses the session review operation client when service-role env is configured', async () => {
+    const standardClient = createSupabaseMock();
+    const operationClient = createSupabaseMock([
+      { data: null },
+      { data: { id: 'review-1' } },
+    ]);
+    mockGetSupabaseAdminUrl.mockReturnValue('https://bella.supabase.co');
+    mockGetSupabaseAdminKey.mockReturnValue('service-role-key');
+    mockCreateSupabaseJsClient.mockReturnValue(operationClient.supabase);
+
+    const result = await ensureSessionReviewPlaceholder({
+      supabase: standardClient.supabase as never,
+      sessionId: 'session-1',
+      ktvId: 'ktv-1',
+      tenantId: 'tenant-1',
+      currentBooking: {
+        package_name: 'Gói dịch vụ',
+        completed_sessions: 1,
+        status: 'booked',
+        total_sessions: 5,
+        ktv_commission: 30000,
+        assigned_ktv_id: 'ktv-1',
+        customer_id: 'customer-1',
+        tenant_id: 'tenant-1',
+        full_price: 500000,
+        deposit_amount: 200000,
+        discount_percent: 0,
+      },
+    });
+
+    expect(result).toEqual({ success: true, createdReviewId: 'review-1' });
+    expect(mockCreateSupabaseJsClient).toHaveBeenCalledWith(
+      'https://bella.supabase.co',
+      'service-role-key',
+      { auth: { persistSession: false, autoRefreshToken: false } },
+    );
+    expect(standardClient.calls).toEqual([]);
+    expect(operationClient.calls).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        table: 'session_reviews',
+        op: 'select',
+        filters: [
+          ['session_log_id', 'session-1'],
+          ['tenant_id', 'tenant-1'],
+        ],
+      }),
+      expect.objectContaining({
+        table: 'session_reviews',
+        op: 'insert',
+        payload: [expect.objectContaining({
+          session_log_id: 'session-1',
+          reviewer_id: 'customer-1',
+          ktv_id: 'ktv-1',
+          status: 'pending_review',
+          tenant_id: 'tenant-1',
+        })],
+      }),
+    ]));
   });
 
   it('creates confirmed revenue and PACKAGE_SALE outbox for single-session packages', async () => {

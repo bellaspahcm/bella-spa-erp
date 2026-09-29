@@ -72,7 +72,7 @@ Authorized:
 - `src/platform/finance/services/semantic-receivable-charge.service.ts`
 - `src/platform/finance/gateways/supabase-receivable-charge.gateway.ts`
 - Focused Finance OS tests.
-- If contract is proven, minimal Haircut/Core consumer call with ACR metadata if `src/core` files must change.
+- Minimal Haircut/Core consumer call through `ACR-2026-007` metadata for PR #168 if `src/core` files must change.
 
 Not authorized:
 - New AR schema.
@@ -104,6 +104,82 @@ No migration planned. Existing Finance OS primitives are sufficient unless imple
 9. Run focused Finance/Haircut payment tests.
 10. Run scoped TypeScript or repository-available equivalent.
 11. Run `git diff --check` and stop before Debt/Reconciliation re-evaluation.
+
+Gate result: `PASS`.
+
+---
+
+# ARCHITECTURE GATE RESULT - BABYCARE SPA SESSION REVIEW RLS FIX
+
+> **Status:** PASS - keep Babycare/Beauty Spa session completion authorized by the existing server action, and write only the system-owned `session_reviews` placeholder through an operation client when service-role credentials are configured
+> **Date:** 2026-09-29
+> **Scope:** Babycare/Beauty Spa session completion review-placeholder side effect only; no schema migration, data migration, Product UI redesign, Healthcare/Education/Logistics kernel work, or accounting policy change
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+Observed runtime symptom: updating a Babycare/Spa session to completion fails with `new row violates row-level security policy for table "session_reviews"` while creating the `pending_review` placeholder. This is a product workflow bug in the shared Beauty/Spa completion path, not a new OS capability. Gate decision: `PASS` for a minimal server-side side-effect fix after existing tenant and action authorization have already succeeded.
+
+## 2. Product Manifest
+
+In scope:
+- Existing Babycare/Beauty Spa session completion/update workflow.
+- Existing `session_reviews` placeholder record created after a session is completed.
+- Preserve tenant-scoped checks before writing the placeholder.
+- Use existing Supabase admin env pattern for the placeholder write only.
+
+Out of scope:
+- Healthcare H1-H12, Logistics E7.1-E7.3, Education product contracts.
+- Database schema, production data, RLS policy migration, UI redesign, salary/accounting policy redesign.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Role |
+|---|---|---|
+| `session_logs` | Beauty/Spa booking workflow | Source session state and completion event |
+| `bookings.customer_id`, `bookings.assigned_ktv_id`, `bookings.tenant_id` | Beauty/Spa booking workflow | Tenant-scoped source for placeholder review |
+| `session_reviews` | Beauty/Spa customer feedback workflow | Analytics/customer-review target table |
+| Server action authorization | Shared order/session service | Confirms current user tenant and role before completion side effects |
+
+## 4. Contract Dependency Map
+
+Admin/KTV session update -> existing server action tenant and role checks -> session completion side effects -> create pending `session_reviews` placeholder -> customer portal later updates the review.
+
+## 5. Change Authority
+
+Authorized:
+- Change the internal server-side client used for `session_reviews` placeholder lookup/insert.
+- Keep existing tenant equality checks before using the operation client.
+- Preserve rollback behavior when placeholder creation still fails.
+
+Not authorized:
+- Loosen product UI permissions.
+- Modify frozen Healthcare/Logistics kernel files.
+- Change RLS policies or migrate data without explicit approval.
+- Introduce `any` types.
+
+## 6. UI -> Contract Reconciliation
+
+No UI redesign. The current UI action "Cập nhật thông tin" maps to the existing `updateSessionLog` server action. The failing contract is the system side-effect that creates a review placeholder after a completed session.
+
+## 7. Additive Migration Plan
+
+No migration. The fix is code-only and does not create, alter, or backfill database objects.
+
+## 8. 11 Automated Verification Gates Plan
+
+1. Architecture scope check: no Healthcare/Logistics/Education kernel files touched.
+2. Type-level check for changed order completion helper.
+3. Focused regression where placeholder lookup/insert uses operation client fallback.
+4. Existing completion rollback behavior remains unchanged.
+5. Tenant check remains before placeholder creation.
+6. No direct product access to `hc_*` tables.
+7. No new `any` types.
+8. No schema migration.
+9. `git diff --check`.
+10. Focused tests if an existing test target is available for this helper.
+11. Manual runtime evidence remains required for deployed Supabase env/RLS state.
 
 Gate result: `PASS`.
 
