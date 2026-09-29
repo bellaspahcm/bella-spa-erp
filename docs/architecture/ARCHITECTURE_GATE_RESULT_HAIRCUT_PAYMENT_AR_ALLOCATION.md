@@ -59,7 +59,7 @@ Haircut booking payment UI
 
 ## 5. Change Authority
 
-Approved by `ACR-2026-007`.
+Approved by `ACR-2026-010`.
 
 Allowed Core file:
 
