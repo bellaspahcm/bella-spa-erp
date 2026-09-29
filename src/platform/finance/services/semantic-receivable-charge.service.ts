@@ -2,7 +2,10 @@ import { createHash } from 'crypto';
 import {
   FINANCE_RECEIVABLE_SEMANTICS,
   ISemanticReceivableChargeContract,
+  PaymentReceivableAllocationInput,
+  PaymentReceivableAllocationResult,
   SemanticReceivableChargeResult,
+  ServiceReceivableChargeInput,
   TuitionServiceRecognizedChargeInput,
 } from '../contracts/receivable-charge.contract';
 
@@ -77,6 +80,7 @@ export interface FinanceReceivableChargeGateway {
     readonly tenantId: string;
     readonly invoiceId: string;
   }): Promise<FinanceChargeReadModel>;
+  allocatePayment(input: PaymentReceivableAllocationInput): Promise<PaymentReceivableAllocationResult>;
 }
 
 export interface FinancePostingLine {
@@ -93,10 +97,14 @@ export interface FinancePostingLine {
 }
 
 export interface FinanceReceivableChargeMetadata {
-  readonly business_semantic: typeof FINANCE_RECEIVABLE_SEMANTICS.TUITION_SERVICE_RECOGNIZED;
+  readonly [key: string]: string | number | boolean | null | undefined;
+  readonly business_semantic:
+    | typeof FINANCE_RECEIVABLE_SEMANTICS.SERVICE_RECEIVABLE_RECOGNIZED
+    | typeof FINANCE_RECEIVABLE_SEMANTICS.TUITION_SERVICE_RECOGNIZED;
   readonly business_source_type: string;
   readonly business_source_id: string;
-  readonly student_party_id: string;
+  readonly customer_id: string;
+  readonly student_party_id?: string;
   readonly service_period_start: string;
   readonly service_period_end: string;
   readonly recognition_date: string;
@@ -109,7 +117,9 @@ export interface FinanceReceivableChargeMetadata {
 export class FinanceSemanticReceivableChargeError extends Error {
   constructor(
     public readonly code:
+      | 'INVALID_SERVICE_RECEIVABLE_INPUT'
       | 'INVALID_TUITION_SERVICE_RECOGNIZED_INPUT'
+      | 'INVALID_PAYMENT_RECEIVABLE_ALLOCATION_INPUT'
       | 'BLOCKED_BY_TT99_ACCOUNT_RESOLUTION_GAP'
       | 'BLOCKED_BY_COUNTERPARTY_CONTRACT',
     message: string,
@@ -122,10 +132,10 @@ export class FinanceSemanticReceivableChargeError extends Error {
 export class SemanticReceivableChargeService implements ISemanticReceivableChargeContract {
   constructor(private readonly gateway: FinanceReceivableChargeGateway) {}
 
-  async recognizeTuitionServiceReceivable(
-    input: TuitionServiceRecognizedChargeInput,
+  async recognizeServiceReceivable(
+    input: ServiceReceivableChargeInput,
   ): Promise<SemanticReceivableChargeResult> {
-    this.assertValidInput(input);
+    this.assertValidServiceInput(input);
 
     const invoiceNumber = this.buildInvoiceNumber(input);
     const existing = await this.gateway.findInvoiceByNumber({
@@ -147,12 +157,12 @@ export class SemanticReceivableChargeService implements ISemanticReceivableCharg
         tenantId: input.tenantId,
         invoiceId: existing.id,
       });
-      return this.toResult(readModel, true);
+      return this.toResult(readModel, true, this.resolveBusinessSemantic(input));
     }
 
     const invoiceId = existing?.id ?? await this.gateway.createDraftInvoice({
       tenantId: input.tenantId,
-      customerId: input.studentPartyId,
+      customerId: input.customerId,
       invoiceNumber,
       currency: input.currency,
       issueDate: input.recognitionDate,
@@ -209,13 +219,43 @@ export class SemanticReceivableChargeService implements ISemanticReceivableCharg
         transactionId: finalize.transactionId,
       },
       finalize.duplicate,
+      this.resolveBusinessSemantic(input),
     );
   }
 
-  private assertValidInput(input: TuitionServiceRecognizedChargeInput): void {
+  async recognizeTuitionServiceReceivable(
+    input: TuitionServiceRecognizedChargeInput,
+  ): Promise<SemanticReceivableChargeResult> {
+    return this.recognizeServiceReceivable({
+      tenantId: input.tenantId,
+      customerId: input.studentPartyId,
+      amountMinor: input.amountMinor,
+      currency: input.currency,
+      servicePeriodStart: input.servicePeriodStart,
+      servicePeriodEnd: input.servicePeriodEnd,
+      recognitionDate: input.recognitionDate,
+      dueDate: input.dueDate,
+      businessSourceType: input.businessSourceType,
+      businessSourceId: input.businessSourceId,
+      description: input.description,
+      businessSemantic: FINANCE_RECEIVABLE_SEMANTICS.TUITION_SERVICE_RECOGNIZED,
+      metadata: {
+        student_party_id: input.studentPartyId,
+      },
+    });
+  }
+
+  async allocatePaymentToReceivable(
+    input: PaymentReceivableAllocationInput,
+  ): Promise<PaymentReceivableAllocationResult> {
+    this.assertValidAllocationInput(input);
+    return this.gateway.allocatePayment(input);
+  }
+
+  private assertValidServiceInput(input: ServiceReceivableChargeInput): void {
     const required = [
       input.tenantId,
-      input.studentPartyId,
+      input.customerId,
       input.currency,
       input.servicePeriodStart,
       input.servicePeriodEnd,
@@ -228,14 +268,35 @@ export class SemanticReceivableChargeService implements ISemanticReceivableCharg
 
     if (required.some((value) => value.trim() === '') || input.amountMinor <= 0) {
       throw new FinanceSemanticReceivableChargeError(
-        'INVALID_TUITION_SERVICE_RECOGNIZED_INPUT',
-        'TUITION_SERVICE_RECOGNIZED requires tenant, student party, source, service period, dates, currency, description, and a positive amount.',
+        'INVALID_SERVICE_RECEIVABLE_INPUT',
+        'SERVICE_RECEIVABLE_RECOGNIZED requires tenant, customer, source, service period, dates, currency, description, and a positive amount.',
+      );
+    }
+  }
+
+  private assertValidAllocationInput(input: PaymentReceivableAllocationInput): void {
+    const required = [
+      input.tenantId,
+      input.invoiceId,
+      input.cashMovementId,
+      input.rateSource,
+      input.rateTimestamp,
+    ];
+
+    if (
+      required.some((value) => value.trim() === '')
+      || input.allocatedAmountMinor <= 0
+      || input.exchangeRate <= 0
+    ) {
+      throw new FinanceSemanticReceivableChargeError(
+        'INVALID_PAYMENT_RECEIVABLE_ALLOCATION_INPUT',
+        'Payment allocation requires tenant, invoice, cash movement, positive amount, positive exchange rate, rate source, and timestamp.',
       );
     }
   }
 
   private async resolveRequiredAccount(
-    input: TuitionServiceRecognizedChargeInput,
+    input: ServiceReceivableChargeInput,
     semanticKey: string,
   ): Promise<FinanceSemanticAccountMapping> {
     const mapping = await this.gateway.resolveSemanticAccount({
@@ -264,17 +325,17 @@ export class SemanticReceivableChargeService implements ISemanticReceivableCharg
     const invoice = await this.gateway.findInvoiceByNumber({ tenantId, invoiceNumber });
     if (!invoice) {
       throw new FinanceSemanticReceivableChargeError(
-        'INVALID_TUITION_SERVICE_RECOGNIZED_INPUT',
+        'INVALID_SERVICE_RECEIVABLE_INPUT',
         'Finance invoice was not readable after draft creation.',
       );
     }
     return invoice;
   }
 
-  private buildInvoiceNumber(input: TuitionServiceRecognizedChargeInput): string {
+  private buildInvoiceNumber(input: ServiceReceivableChargeInput): string {
     const key = [
       input.tenantId,
-      FINANCE_RECEIVABLE_SEMANTICS.TUITION_SERVICE_RECOGNIZED,
+      this.resolveBusinessSemantic(input),
       input.businessSourceType,
       input.businessSourceId,
       input.servicePeriodStart,
@@ -284,12 +345,13 @@ export class SemanticReceivableChargeService implements ISemanticReceivableCharg
     return `FRC-${createHash('sha256').update(key).digest('hex').slice(0, 28).toUpperCase()}`;
   }
 
-  private buildMetadata(input: TuitionServiceRecognizedChargeInput): FinanceReceivableChargeMetadata {
+  private buildMetadata(input: ServiceReceivableChargeInput): FinanceReceivableChargeMetadata {
     return {
-      business_semantic: FINANCE_RECEIVABLE_SEMANTICS.TUITION_SERVICE_RECOGNIZED,
+      ...input.metadata,
+      business_semantic: this.resolveBusinessSemantic(input),
       business_source_type: input.businessSourceType,
       business_source_id: input.businessSourceId,
-      student_party_id: input.studentPartyId,
+      customer_id: input.customerId,
       service_period_start: input.servicePeriodStart,
       service_period_end: input.servicePeriodEnd,
       recognition_date: input.recognitionDate,
@@ -301,7 +363,7 @@ export class SemanticReceivableChargeService implements ISemanticReceivableCharg
   }
 
   private buildPostingLines(
-    input: TuitionServiceRecognizedChargeInput,
+    input: ServiceReceivableChargeInput,
     receivableAccountCode: string,
     revenueAccountCode: string,
   ): readonly FinancePostingLine[] {
@@ -320,7 +382,7 @@ export class SemanticReceivableChargeService implements ISemanticReceivableCharg
         credit_functional_amount: 0,
         debit_amount_minor: input.amountMinor,
         credit_amount_minor: 0,
-        memo: 'Recognize tuition service receivable',
+        memo: 'Recognize service receivable',
       },
       {
         ...base,
@@ -329,12 +391,22 @@ export class SemanticReceivableChargeService implements ISemanticReceivableCharg
         credit_functional_amount: input.amountMinor,
         debit_amount_minor: 0,
         credit_amount_minor: input.amountMinor,
-        memo: 'Recognize tuition service revenue',
+        memo: 'Recognize service revenue',
       },
     ];
   }
 
-  private toResult(readModel: FinanceChargeReadModel, duplicate: boolean): SemanticReceivableChargeResult {
+  private resolveBusinessSemantic(input: ServiceReceivableChargeInput) {
+    return input.businessSemantic ?? FINANCE_RECEIVABLE_SEMANTICS.SERVICE_RECEIVABLE_RECOGNIZED;
+  }
+
+  private toResult(
+    readModel: FinanceChargeReadModel,
+    duplicate: boolean,
+    businessSemantic:
+      | typeof FINANCE_RECEIVABLE_SEMANTICS.SERVICE_RECEIVABLE_RECOGNIZED
+      | typeof FINANCE_RECEIVABLE_SEMANTICS.TUITION_SERVICE_RECOGNIZED,
+  ): SemanticReceivableChargeResult {
     return {
       invoiceId: readModel.invoiceId,
       invoiceNumber: readModel.invoiceNumber,
@@ -347,7 +419,7 @@ export class SemanticReceivableChargeService implements ISemanticReceivableCharg
         legalSource: '99/2025/TT-BTC',
         effectiveFrom: '2026-01-01',
         applicableRegime: 'VI_TT99_2025',
-        businessSemantic: FINANCE_RECEIVABLE_SEMANTICS.TUITION_SERVICE_RECOGNIZED,
+        businessSemantic,
         verificationStatus: 'PROVEN',
       },
     };

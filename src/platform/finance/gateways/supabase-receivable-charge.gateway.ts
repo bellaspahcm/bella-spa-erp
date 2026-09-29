@@ -1,5 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database, Json } from '../../../types/database.types';
+import type {
+  PaymentReceivableAllocationInput,
+  PaymentReceivableAllocationResult,
+} from '../contracts/receivable-charge.contract';
 import {
   FinanceChargeReadModel,
   FinanceInvoiceSnapshot,
@@ -181,6 +185,20 @@ export class SupabaseReceivableChargeGateway implements FinanceReceivableChargeG
       receivablePositionId: position.id,
       transactionLineCount,
     };
+  }
+
+  async allocatePayment(input: PaymentReceivableAllocationInput): Promise<PaymentReceivableAllocationResult> {
+    const { data, error } = await this.client.rpc('finance_allocate_payment', {
+      p_tenant_id: input.tenantId,
+      p_invoice_id: input.invoiceId,
+      p_cash_movement_id: input.cashMovementId,
+      p_allocated_amount_minor: input.allocatedAmountMinor,
+      p_exchange_rate: input.exchangeRate,
+      p_rate_source: input.rateSource,
+      p_rate_timestamp: input.rateTimestamp,
+    });
+    if (error) throw new Error(error.message);
+    return { allocationId: data };
   }
 
   private async findInvoiceById(tenantId: string, invoiceId: string): Promise<FinanceInvoiceSnapshot> {
