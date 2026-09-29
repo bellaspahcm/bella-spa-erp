@@ -244,6 +244,9 @@ export class SupabaseReceivableChargeGateway implements FinanceReceivableChargeG
       .eq('tenant_id', input.tenantId)
       .eq('status', 'FINALIZED');
 
+    if (input.match.invoiceId) {
+      invoiceQuery = invoiceQuery.eq('id', input.match.invoiceId);
+    }
     if (input.match.bookingId) {
       invoiceQuery = invoiceQuery.eq('metadata->>booking_id', input.match.bookingId);
     }
