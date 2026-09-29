@@ -92,6 +92,14 @@ describe('recordRemainingPayment idempotency ordering', () => {
         booking_id: 'booking-1',
         revenue_id: 'revenue-existing',
         idempotent: true,
+        revenue: {
+          id: 'revenue-existing',
+          amount: 200_000,
+          status: 'confirmed',
+          payment_method: 'cash',
+          received_date: '2026-09-29',
+          notes: 'persisted payment fact',
+        },
       },
     });
 
@@ -103,6 +111,14 @@ describe('recordRemainingPayment idempotency ordering', () => {
         booking_id: 'booking-1',
         revenue_id: 'revenue-existing',
         idempotent: true,
+        revenue: {
+          id: 'revenue-existing',
+          amount: 200_000,
+          status: 'confirmed',
+          payment_method: 'cash',
+          received_date: '2026-09-29',
+          notes: 'persisted payment fact',
+        },
       },
     });
     expect(mockFindExistingManualPaymentByIdempotencyKey).toHaveBeenCalledWith({
@@ -118,13 +134,50 @@ describe('recordRemainingPayment idempotency ordering', () => {
         tenantId: 'tenant-1',
         bookingId: 'booking-1',
         revenueId: 'revenue-existing',
-        amountMinor: 999_999,
+        amountMinor: 200_000,
         paymentMethod: 'cash',
+        receivedAt: '2026-09-29',
         idempotencyKey: 'manual-payment:retry-1',
+        description: 'persisted payment fact',
       }),
     );
     expect(mockSafeRevalidatePath).toHaveBeenCalledWith('/dashboard/customers/customer-1');
     expect(mockSafeRevalidatePath).toHaveBeenCalledWith('/dashboard/finance');
+  });
+
+  it('skips Finance AR allocation for an existing idempotent payment that is not confirmed', async () => {
+    mockFindExistingManualPaymentByIdempotencyKey.mockResolvedValueOnce({
+      data: {
+        booking_id: 'booking-1',
+        revenue_id: 'revenue-pending',
+        idempotent: true,
+        revenue: {
+          id: 'revenue-pending',
+          amount: 200_000,
+          status: 'pending',
+          payment_method: 'cash',
+        },
+      },
+    });
+
+    const result = await recordRemainingPayment(paymentInput({ amount: 999_999 }));
+
+    expect(result).toEqual({
+      success: true,
+      data: {
+        booking_id: 'booking-1',
+        revenue_id: 'revenue-pending',
+        idempotent: true,
+        revenue: {
+          id: 'revenue-pending',
+          amount: 200_000,
+          status: 'pending',
+          payment_method: 'cash',
+        },
+      },
+    });
+    expect(mockValidateRemainingPaymentAmount).not.toHaveBeenCalled();
+    expect(mockAllocateConfirmedBookingPaymentToFinanceAr).not.toHaveBeenCalled();
   });
 
   it('still rejects an invalid new overpayment when no existing idempotent payment is found', async () => {
