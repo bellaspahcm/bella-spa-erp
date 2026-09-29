@@ -1,3 +1,194 @@
+# ARCHITECTURE GATE RESULT - PR168 AFFECTED JEST REAL-DB ROUTING FIX
+
+> **Status:** PASS - CI affected-test routing only, keep Finance real-DB verification suites out of the mock/unit integration lane
+> **Date:** 2026-09-29
+> **Scope:** `scripts/test-changed-files.mjs` related-test ignore list only. No Finance OS runtime, Product runtime, schema, RLS, Healthcare, Education, or Logistics change.
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+PR #168 became mergeable after the conflict resolution, but CI `Affected Unit and Integration Tests` selected Finance real-DB verification suites through Jest `--findRelatedTests` and failed with `TypeError: fetch failed`. The failing suites require real database credentials/environment and belong in the dedicated real-DB/Finance verification contract, not the mock affected unit/integration lane. Gate decision: `PASS` for a CI-only selector correction.
+
+## 2. Product Manifest
+
+In scope:
+- Affected Jest routing in `scripts/test-changed-files.mjs`.
+- Exclude Finance F1/F2 real-DB verification suites from the mock affected unit/integration lane.
+
+Out of scope:
+- Finance OS runtime behavior.
+- Finance contract semantics.
+- Product/Core payment behavior.
+- Database schema, RLS, migrations, or data.
+- Healthcare, Education, or Logistics kernel work.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Role |
+|---|---|---|
+| `scripts/test-changed-files.mjs` | CI governance | Selects mock/unit integration tests related to changed files |
+| `finance-f1-ledger-verification.test.ts` | Finance OS real-DB verification | Validates F1 ledger behavior against database-backed environment |
+| `finance-f2-projection-worker.test.ts` | Finance OS real-DB verification | Validates F2 projection behavior against database-backed environment |
+
+## 4. Contract Dependency Map
+
+```text
+PR changed Finance/Core source files
+  -> affected Jest selector
+  -> mock unit/integration lane
+  -> exclude real-DB Finance verification suites
+  -> dedicated real-DB/Finance verification remains responsible
+```
+
+## 5. Change Authority
+
+Authorized:
+- Add exact Finance real-DB verification test paths to the affected-test ignore list.
+
+Not authorized:
+- Change Finance runtime or tests to hide `fetch failed`.
+- Disable the affected-test job.
+- Remove dedicated real-DB verification coverage.
+- Modify Product/Core payment logic.
+
+## 6. UI -> Contract Reconciliation
+
+No UI change.
+
+## 7. Additive Migration Plan
+
+No migration.
+
+## 8. 11 Automated Verification Gates Plan
+
+1. Confirm PR #168 conflict is resolved and mergeable.
+2. Read failed CI log for `Affected Unit and Integration Tests`.
+3. Identify failing suites as Finance F1/F2 database-backed verification suites.
+4. Apply exact affected-test ignore patterns.
+5. Run `node --check scripts/test-changed-files.mjs`.
+6. Run affected selector locally for PR #168 changed files.
+7. Run focused payment/Finance unit suites.
+8. Run `git diff --check`.
+9. Push CI-only selector fix.
+10. Cancel stale/known-failed runs after failure to avoid wasting CI time.
+11. Re-run PR CI and stop at first real failure.
+
+Gate result: `PASS`.
+
+---
+
+# ARCHITECTURE GATE RESULT - FINANCE OS CONFIRMED PAYMENT TO AR CONTRACT
+
+> **Status:** PASS - minimal Finance OS canonical payment-to-AR allocation contract
+> **Date:** 2026-09-29
+> **Scope:** Confirmed payment -> F1 cash receipt -> F2 cash movement -> F3 receivable resolution/allocation. Haircut may only consume this contract after it is proven. No Haircut AR workaround, Payment Engine redesign, COA, Payroll, Debt/Reconciliation, BabyCare, Healthcare, Education, or Logistics change.
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+Source evidence proves the final Haircut Financial Truth gap is not Haircut core:
+
+```text
+Finance OS already has:
+F1 postTransaction()
+F2 CashProjectionWorker -> finance_cash_movements
+F3 recognizeServiceReceivable()
+F3 allocatePaymentToReceivable(invoiceId, cashMovementId)
+
+Missing canonical path:
+Confirmed Payment
+  -> F1 Cash Receipt
+  -> F2 Cash Movement
+  -> Receivable Resolution
+  -> Idempotent F3 Allocation
+```
+
+Gate decision: `PASS` for the smallest Finance OS semantic contract that accepts a confirmed payment, preserves tenant/idempotency, posts the cash receipt through F1, projects cash through the existing F2 worker/outbox path, resolves open receivables by canonical invoice metadata, and allocates without duplicate F3 allocation on retry.
+
+## 2. Product Manifest
+
+In scope:
+- Finance OS payment-to-receivable semantic contract.
+- Existing Finance OS primitives only: F1 ledger, F2 cash projection, F3 invoice/receivable/allocation.
+- Minimal Haircut consumer wiring only after the Finance OS contract is tested.
+
+Out of scope:
+- Haircut-owned AR/cash movement implementation.
+- Payment engine redesign.
+- COA/accounting posting repair.
+- Payroll/commission.
+- Debt/Reconciliation implementation.
+- BabyCare, Preschool, Healthcare, Education, Logistics.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Role |
+|---|---|---|
+| Confirmed payment semantic contract | Finance OS | Canonical bridge from external payment fact to financial truth |
+| F1 cash receipt | Finance OS Ledger | Double-entry cash/AR receipt |
+| F2 cash movement | Finance OS Cash/Treasury | Projected liquidity movement from F1 event |
+| F3 invoice/receivable/allocation | Finance OS AR | Receivable truth and settlement |
+| Haircut payment action | Product/Core consumer | Supplies tenant/payment/source facts only |
+
+## 4. Contract Dependency Map
+
+```text
+Haircut confirmed payment
+  -> Finance OS confirmed payment receivable allocation contract
+  -> F1 Ledger postTransaction
+  -> F1 outbox finance.transaction.posted.v2
+  -> F2 CashProjectionWorker
+  -> finance_cash_movements
+  -> F3 invoice/receivable resolver
+  -> finance_allocate_payment
+```
+
+## 5. Change Authority
+
+Authorized:
+- `src/platform/finance/contracts/receivable-charge.contract.ts`
+- `src/platform/finance/services/semantic-receivable-charge.service.ts`
+- `src/platform/finance/gateways/supabase-receivable-charge.gateway.ts`
+- Focused Finance OS tests.
+- Minimal Haircut/Core consumer call through `ACR-2026-007` metadata for PR #168 if `src/core` files must change.
+
+Not authorized:
+- New AR schema.
+- Direct product writes to `finance_cash_movements`.
+- Direct Haircut allocation workaround.
+- COA changes.
+- Payroll changes.
+- Debt/Reconciliation feature work.
+- Payment engine redesign.
+
+## 6. UI -> Contract Reconciliation
+
+No UI change. This is backend financial truth plumbing only.
+
+## 7. Additive Migration Plan
+
+No migration planned. Existing Finance OS primitives are sufficient unless implementation evidence proves a concrete contract gap.
+
+## 8. 11 Automated Verification Gates Plan
+
+1. Verify source contract evidence for F1/F2/F3 existing primitives.
+2. Add generic confirmed-payment input/result types.
+3. Add Finance OS service method for payment-to-AR allocation.
+4. Keep account semantics scoped to proven TT99 AR mapping plus canonical cash/bank payment-method mapping.
+5. Resolve receivables through invoice metadata, not product-owned AR tables.
+6. Preserve payment idempotency key through F1 and F3 allocation retry checks.
+7. Add focused Finance OS unit tests for allocation, retry, and over-allocation block.
+8. Wire Haircut payment only through the Finance OS contract if required.
+9. Run focused Finance/Haircut payment tests.
+10. Run scoped TypeScript or repository-available equivalent.
+11. Run `git diff --check` and stop before Debt/Reconciliation re-evaluation.
+
+Gate result: `PASS`.
+
+---
+
 # ARCHITECTURE GATE RESULT - BABYCARE SPA SESSION REVIEW RLS FIX
 
 > **Status:** PASS - keep Babycare/Beauty Spa session completion authorized by the existing server action, and write only the system-owned `session_reviews` placeholder through an operation client when service-role credentials are configured
