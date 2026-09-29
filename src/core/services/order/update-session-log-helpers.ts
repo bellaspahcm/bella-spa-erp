@@ -88,7 +88,7 @@ export async function reverseCompletedSessionSideEffects(params: {
   sessionId: string;
   tenantId: string;
   existingLog: SessionLogRow;
-}) {
+}): Promise<{ success: true } | { error: string }> {
   const { supabase, sessionId, tenantId, existingLog } = params;
   const rollbackErrors: string[] = [];
 
