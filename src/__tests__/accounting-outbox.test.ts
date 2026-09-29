@@ -19,6 +19,7 @@ process.env.CRON_SECRET = 'test-cron-secret-123';
 const mockRpc = jest.fn();
 const mockFrom = jest.fn();
 const mockWorkerRunInsert = jest.fn();
+const mockRecognizeServiceReceivable = jest.fn();
 const mockClient = {
   rpc: mockRpc,
   from: mockFrom,
@@ -50,6 +51,16 @@ jest.mock('@/services/accounting-engine', () => ({
   },
 }));
 
+jest.mock('@/platform/finance/services/semantic-receivable-charge.service', () => ({
+  SemanticReceivableChargeService: jest.fn().mockImplementation(() => ({
+    recognizeServiceReceivable: mockRecognizeServiceReceivable,
+  })),
+}));
+
+jest.mock('@/platform/finance/gateways/supabase-receivable-charge.gateway', () => ({
+  SupabaseReceivableChargeGateway: jest.fn().mockImplementation(() => ({})),
+}));
+
 import { GET } from '@/app/api/cron/accounting-worker/route';
 import { NextRequest } from 'next/server';
 
@@ -63,7 +74,41 @@ describe('Accounting Outbox Worker API', () => {
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           maybeSingle: jest.fn().mockResolvedValue({
-            data: { id: 'session-id', status: 'completed' },
+            data: {
+              id: 'session-id',
+              status: 'completed',
+              booking_id: 'booking-id',
+              completed_date: '2026-06-03T09:30:00+07:00',
+              created_at: '2026-06-03T09:00:00+07:00',
+              session_number: 1,
+            },
+            error: null,
+          }),
+        };
+      }
+
+      if (table === 'tenants') {
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          maybeSingle: jest.fn().mockResolvedValue({
+            data: { id: 'tenant-uuid-1', product_key: 'bella_babycare' },
+            error: null,
+          }),
+        };
+      }
+
+      if (table === 'bookings') {
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          maybeSingle: jest.fn().mockResolvedValue({
+            data: {
+              id: 'booking-id',
+              customer_id: 'customer-id',
+              booking_number: 'BK-001',
+              package_name: 'Gói chăm sóc',
+            },
             error: null,
           }),
         };
@@ -331,6 +376,7 @@ describe('Accounting Outbox Worker API', () => {
         branchId: 'branch-1',
         description: 'Hoàn thành ca trị liệu',
       });
+      expect(mockRecognizeServiceReceivable).not.toHaveBeenCalled();
 
       // Verify completion updates in DB
       expect(mockRpc).toHaveBeenCalledWith('mark_outbox_completed', {
@@ -360,6 +406,172 @@ describe('Accounting Outbox Worker API', () => {
           }),
         ]),
       }));
+    });
+
+    it('recognizes Haircut SESSION_DONE receivable through the Finance OS service receivable contract', async () => {
+      const mockBatch = [
+        {
+          id: 'outbox-id-haircut-session',
+          tenant_id: 'tenant-haircut',
+          event_type: 'SESSION_DONE',
+          reference_id: 'session-haircut-1',
+          payload: {
+            bookingId: 'booking-haircut-1',
+            earnedRevenueAmount: 200000,
+            deferredRevenueAmount: 150000,
+            receivableAmount: 60000,
+            commissionAmount: 50000,
+            ktvId: 'ktv-id-1',
+            branchId: 'branch-1',
+            description: 'Hoàn thành ca cắt tóc',
+          },
+          retry_count: 0,
+        },
+      ];
+
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'session_logs') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            maybeSingle: jest.fn().mockResolvedValue({
+              data: {
+                id: 'session-haircut-1',
+                status: 'completed',
+                booking_id: 'booking-haircut-1',
+                completed_date: '2026-06-03T10:15:00+07:00',
+                created_at: '2026-06-03T09:45:00+07:00',
+                session_number: 2,
+              },
+              error: null,
+            }),
+          };
+        }
+
+        if (table === 'tenants') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            maybeSingle: jest.fn().mockResolvedValue({
+              data: { id: 'tenant-haircut', product_key: 'bella_haircut' },
+              error: null,
+            }),
+          };
+        }
+
+        if (table === 'bookings') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            maybeSingle: jest.fn().mockResolvedValue({
+              data: {
+                id: 'booking-haircut-1',
+                customer_id: 'customer-haircut-1',
+                booking_number: 'HC-001',
+                package_name: 'Cắt tóc nam',
+              },
+              error: null,
+            }),
+          };
+        }
+
+        if (table === 'journal_entries') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            neq: jest.fn().mockReturnThis(),
+            maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+          };
+        }
+
+        if (table === 'accounting_worker_runs') {
+          return {
+            insert: mockWorkerRunInsert,
+          };
+        }
+
+        if (table === 'accounting_outbox') {
+          return {
+            update: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockResolvedValue({ error: null }),
+          };
+        }
+
+        throw new Error(`Unexpected table ${table}`);
+      });
+
+      mockRpc.mockResolvedValueOnce({ data: mockBatch, error: null });
+      mockRecognizeServiceReceivable.mockResolvedValueOnce({
+        invoiceId: 'invoice-haircut-1',
+        invoiceNumber: 'FRC-HAIRCUT',
+        transactionId: 'txn-haircut-1',
+        receivableLedgerEntryCount: 1,
+        receivablePositionId: 'position-haircut-1',
+        transactionLineCount: 2,
+        duplicate: false,
+        policyEvidence: {
+          legalSource: '99/2025/TT-BTC',
+          effectiveFrom: '2026-01-01',
+          applicableRegime: 'VI_TT99_2025',
+          businessSemantic: 'SERVICE_RECEIVABLE_RECOGNIZED',
+          verificationStatus: 'PROVEN',
+        },
+      });
+      (RevenueRecognitionService.handleSessionDone as jest.Mock).mockResolvedValueOnce('journal-haircut-session');
+      mockRpc.mockResolvedValueOnce({ error: null });
+
+      const req = new NextRequest('http://localhost/api/cron/accounting-worker', {
+        method: 'GET',
+        headers: {
+          Authorization: 'Bearer test-cron-secret-123',
+        },
+      });
+
+      const response = await GET(req);
+      const json = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(json.success).toBe(true);
+      expect(json.successCount).toBe(1);
+      expect(json.failureCount).toBe(0);
+      expect(mockRecognizeServiceReceivable).toHaveBeenCalledWith({
+        tenantId: 'tenant-haircut',
+        customerId: 'customer-haircut-1',
+        amountMinor: 60000,
+        currency: 'VND',
+        servicePeriodStart: '2026-06-03',
+        servicePeriodEnd: '2026-06-03',
+        recognitionDate: '2026-06-03',
+        dueDate: '2026-06-03',
+        businessSourceType: 'HAIRCUT_SESSION_DONE',
+        businessSourceId: 'session-haircut-1',
+        description: 'Hoàn thành ca cắt tóc',
+        metadata: {
+          booking_id: 'booking-haircut-1',
+          booking_number: 'HC-001',
+          package_name: 'Cắt tóc nam',
+          session_log_id: 'session-haircut-1',
+          session_number: 2,
+          accounting_outbox_id: 'outbox-id-haircut-session',
+          ktv_id: 'ktv-id-1',
+          branch_id: 'branch-1',
+        },
+      });
+      expect(RevenueRecognitionService.handleSessionDone).toHaveBeenCalledWith({
+        tenantId: 'tenant-haircut',
+        sessionLogId: 'session-haircut-1',
+        earnedRevenueAmount: 200000,
+        deferredRevenueAmount: 150000,
+        receivableAmount: 60000,
+        commissionAmount: 50000,
+        ktvId: 'ktv-id-1',
+        branchId: 'branch-1',
+        description: 'Hoàn thành ca cắt tóc',
+      });
+      expect(mockRpc).toHaveBeenCalledWith('mark_outbox_completed', {
+        p_outbox_id: 'outbox-id-haircut-session',
+        p_journal_entry_id: 'journal-haircut-session',
+      });
     });
 
     it('dead-letters stale SESSION_DONE events when the source session is no longer completed', async () => {

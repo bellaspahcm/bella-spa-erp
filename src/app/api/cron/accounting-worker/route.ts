@@ -4,6 +4,8 @@ import type { Database, Json } from '@/types/database.types';
 import { RevenueRecognitionService } from '@/services/revenue-recognition';
 import { AccountingEngineService, type JournalEntryInput } from '@/services/accounting-engine';
 import { requireSupabaseAdminEnv } from '@/lib/supabase-admin-env';
+import { SemanticReceivableChargeService } from '@/platform/finance/services/semantic-receivable-charge.service';
+import { SupabaseReceivableChargeGateway } from '@/platform/finance/gateways/supabase-receivable-charge.gateway';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +33,17 @@ type ExistingJournalReference = {
   status: string;
 };
 type InterBranchClearingRole = 'debtor' | 'creditor';
+type HaircutSessionReceivableSource = Pick<
+  Database['public']['Tables']['session_logs']['Row'],
+  'id' | 'status' | 'booking_id' | 'completed_date' | 'created_at' | 'session_number'
+>;
+type HaircutBookingReceivableSource = Pick<
+  Database['public']['Tables']['bookings']['Row'],
+  'id' | 'customer_id' | 'booking_number' | 'package_name'
+>;
+
+const HAIRCUT_SESSION_DONE_SOURCE_TYPE = 'HAIRCUT_SESSION_DONE';
+const HAIRCUT_PRODUCT_KEY = 'bella_haircut';
 
 function getAdminClient() {
   const { url, adminKey } = requireSupabaseAdminEnv();
@@ -289,6 +302,131 @@ async function assertSessionDoneStillValid(supabase: AdminClient, tenantId: stri
   return null;
 }
 
+async function isHaircutTenant(supabase: AdminClient, tenantId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('tenants')
+    .select('id,product_key')
+    .eq('id', tenantId)
+    .maybeSingle<Pick<Database['public']['Tables']['tenants']['Row'], 'id' | 'product_key'>>();
+
+  if (error) {
+    throw new Error(`Failed to resolve tenant product for Haircut receivable: ${error.message}`);
+  }
+
+  return data?.product_key === HAIRCUT_PRODUCT_KEY;
+}
+
+async function loadHaircutSessionReceivableSource(
+  supabase: AdminClient,
+  tenantId: string,
+  sessionLogId: string,
+): Promise<HaircutSessionReceivableSource> {
+  const { data, error } = await supabase
+    .from('session_logs')
+    .select('id,status,booking_id,completed_date,created_at,session_number')
+    .eq('id', sessionLogId)
+    .eq('tenant_id', tenantId)
+    .maybeSingle<HaircutSessionReceivableSource>();
+
+  if (error) {
+    throw new Error(`Failed to load Haircut session receivable source: ${error.message}`);
+  }
+
+  if (!data) {
+    throw new Error(`Haircut receivable source session ${sessionLogId} no longer exists.`);
+  }
+
+  if (data.status !== 'completed') {
+    throw new Error(`Haircut receivable source session ${sessionLogId} is ${data.status}, not completed.`);
+  }
+
+  return data;
+}
+
+async function loadHaircutBookingReceivableSource(
+  supabase: AdminClient,
+  tenantId: string,
+  bookingId: string,
+): Promise<HaircutBookingReceivableSource> {
+  const { data, error } = await supabase
+    .from('bookings')
+    .select('id,customer_id,booking_number,package_name')
+    .eq('id', bookingId)
+    .eq('tenant_id', tenantId)
+    .maybeSingle<HaircutBookingReceivableSource>();
+
+  if (error) {
+    throw new Error(`Failed to load Haircut booking receivable source: ${error.message}`);
+  }
+
+  if (!data) {
+    throw new Error(`Haircut receivable source booking ${bookingId} no longer exists for tenant ${tenantId}.`);
+  }
+
+  return data;
+}
+
+function toDateOnly(value: string | null, fieldName: string): string {
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw new Error(`Haircut receivable source is missing ${fieldName}.`);
+  }
+
+  const dateOnly = value.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) {
+    throw new Error(`Haircut receivable source has invalid ${fieldName}.`);
+  }
+
+  return dateOnly;
+}
+
+async function recognizeHaircutSessionReceivable(
+  supabase: AdminClient,
+  tenantId: string,
+  sessionLogId: string,
+  outboxId: string,
+  payload: OutboxPayload,
+): Promise<void> {
+  const receivableAmount = readOptionalNumber(payload, 'receivableAmount', undefined);
+  if (receivableAmount === undefined || receivableAmount <= 0) return;
+
+  const haircutTenant = await isHaircutTenant(supabase, tenantId);
+  if (!haircutTenant) return;
+
+  const payloadBookingId = readOptionalString(payload, 'bookingId');
+  const session = await loadHaircutSessionReceivableSource(supabase, tenantId, sessionLogId);
+  const bookingId = payloadBookingId ?? session.booking_id;
+  const booking = await loadHaircutBookingReceivableSource(supabase, tenantId, bookingId);
+  const recognitionDate = toDateOnly(session.completed_date ?? session.created_at, 'completed_date');
+  const description = readRequiredString(payload, 'description');
+  const financeReceivable = new SemanticReceivableChargeService(
+    new SupabaseReceivableChargeGateway(supabase),
+  );
+
+  await financeReceivable.recognizeServiceReceivable({
+    tenantId,
+    customerId: booking.customer_id,
+    amountMinor: receivableAmount,
+    currency: 'VND',
+    servicePeriodStart: recognitionDate,
+    servicePeriodEnd: recognitionDate,
+    recognitionDate,
+    dueDate: recognitionDate,
+    businessSourceType: HAIRCUT_SESSION_DONE_SOURCE_TYPE,
+    businessSourceId: sessionLogId,
+    description,
+    metadata: {
+      booking_id: booking.id,
+      booking_number: booking.booking_number,
+      package_name: booking.package_name,
+      session_log_id: session.id,
+      session_number: session.session_number,
+      accounting_outbox_id: outboxId,
+      ktv_id: readOptionalString(payload, 'ktvId') ?? null,
+      branch_id: readOptionalString(payload, 'branchId') ?? null,
+    },
+  });
+}
+
 async function assertInterBranchClearingStillValid(
   supabase: AdminClient,
   tenantId: string,
@@ -514,6 +652,7 @@ export async function GET(req: NextRequest) {
             break;
 
           case 'SESSION_DONE':
+            await recognizeHaircutSessionReceivable(supabase, tenantId, refId, event.id, payload);
             journalEntryId = await RevenueRecognitionService.handleSessionDone({
               tenantId,
               sessionLogId: refId,
