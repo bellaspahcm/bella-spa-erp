@@ -12,7 +12,18 @@ const mockAssertPaymentAccountingPeriod = jest.fn();
 const mockRecordBookingPaymentRpc = jest.fn();
 const mockCreateDevelopmentBypassClient = jest.fn().mockResolvedValue(mockSupabase);
 const mockAllocateConfirmedBookingPaymentToFinanceAr = jest.fn().mockResolvedValue({
+  transactionId: 'finance-payment-txn-1',
+  cashMovementId: 'cash-movement-1',
   allocatedAmountMinor: 200_000,
+  duplicate: false,
+  allocations: [{
+    invoiceId: 'invoice-1',
+    receivablePositionId: 'position-1',
+    cashMovementId: 'cash-movement-1',
+    allocationId: 'allocation-1',
+    allocatedAmountMinor: 200_000,
+    duplicate: false,
+  }],
 });
 
 jest.mock('@/lib/supabase-server', () => ({
@@ -103,6 +114,14 @@ describe('recordRemainingPayment idempotency ordering', () => {
         booking_id: 'booking-1',
         revenue_id: 'revenue-existing',
         idempotent: true,
+        finance_ar_allocation: {
+          status: 'ALLOCATED',
+          transactionId: 'finance-payment-txn-1',
+          cashMovementId: 'cash-movement-1',
+          allocatedAmountMinor: 200_000,
+          allocationCount: 1,
+          duplicate: false,
+        },
       },
     });
     expect(mockFindExistingManualPaymentByIdempotencyKey).toHaveBeenCalledWith({
@@ -151,6 +170,14 @@ describe('recordRemainingPayment idempotency ordering', () => {
         booking_id: 'booking-1',
         revenue_id: 'revenue-new',
         idempotent: false,
+        finance_ar_allocation: {
+          status: 'ALLOCATED',
+          transactionId: 'finance-payment-txn-1',
+          cashMovementId: 'cash-movement-1',
+          allocatedAmountMinor: 200_000,
+          allocationCount: 1,
+          duplicate: false,
+        },
       },
     });
     expect(mockFindExistingManualPaymentByIdempotencyKey).toHaveBeenCalled();
