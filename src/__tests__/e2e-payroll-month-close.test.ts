@@ -211,7 +211,8 @@ describe('E2E Payroll Month-End Closing (Critical HR Test)', () => {
     for (let i = 1; i <= 3; i++) {
       const sessionDate = i === 1 ? session1DateStr : i === 2 ? session2DateStr : session3DateStr;
       
-      const { data: session, error: sessionError } = await supabase
+      const sessionCreateStart = Date.now();
+      const sessionCreateResult = await supabase
         .from('session_logs')
         .insert({
           booking_id: testBookingId,
@@ -222,6 +223,29 @@ describe('E2E Payroll Month-End Closing (Critical HR Test)', () => {
         })
         .select('*')
         .single();
+      console.log('[real-db-diagnostic] payroll.createSession', {
+        operation: 'session_logs.insert.select_all.single',
+        tenantId: testTenantId,
+        bookingId: testBookingId,
+        sessionNumber: i,
+        elapsedMs: Date.now() - sessionCreateStart,
+        status: sessionCreateResult.status,
+        statusText: sessionCreateResult.statusText,
+        error: sessionCreateResult.error ? {
+          code: sessionCreateResult.error.code,
+          message: sessionCreateResult.error.message,
+          details: sessionCreateResult.error.details,
+          hint: sessionCreateResult.error.hint,
+        } : null,
+        data: sessionCreateResult.data ? {
+          id: sessionCreateResult.data.id,
+          booking_id: sessionCreateResult.data.booking_id,
+          tenant_id: sessionCreateResult.data.tenant_id,
+          session_number: sessionCreateResult.data.session_number,
+          status: sessionCreateResult.data.status,
+        } : null,
+      });
+      const { data: session, error: sessionError } = sessionCreateResult;
 
       expect(sessionError).toBeNull();
       sessionIds.push(session!.id);

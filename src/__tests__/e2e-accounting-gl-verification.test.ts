@@ -133,7 +133,8 @@ describe('E2E Accounting GL Verification (Critical Accounting Test)', () => {
     if (pkg) {
       testPackageId = pkg.id;
     } else {
-      const { data: newPkg, error } = await supabase
+      const packageCreateStart = Date.now();
+      const packageCreateResult = await supabase
         .from('packages')
         .insert({
           tenant_id: testTenantId,
@@ -148,6 +149,21 @@ describe('E2E Accounting GL Verification (Critical Accounting Test)', () => {
         })
         .select('id')
         .single();
+      console.log('[real-db-diagnostic] accountingGl.createPackage', {
+        operation: 'packages.insert.select_id.single',
+        tenantId: testTenantId,
+        elapsedMs: Date.now() - packageCreateStart,
+        status: packageCreateResult.status,
+        statusText: packageCreateResult.statusText,
+        error: packageCreateResult.error ? {
+          code: packageCreateResult.error.code,
+          message: packageCreateResult.error.message,
+          details: packageCreateResult.error.details,
+          hint: packageCreateResult.error.hint,
+        } : null,
+        data: packageCreateResult.data ?? null,
+      });
+      const { data: newPkg, error } = packageCreateResult;
       
       if (error) throw new Error(`Failed to create test package: ${error.message}`);
       testPackageId = newPkg!.id;

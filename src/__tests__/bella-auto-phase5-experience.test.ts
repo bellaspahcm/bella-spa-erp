@@ -61,7 +61,23 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
     }
 
     // Set tenant context
-    const { error: tenantContextError } = await supabase.rpc('set_session_tenant', { p_tenant_id: testTenantId });
+    const tenantContextStart = Date.now();
+    const tenantContextResult = await supabase.rpc('set_session_tenant', { p_tenant_id: testTenantId });
+    console.log('[real-db-diagnostic] autoPhase5.setSessionTenant', {
+      operation: 'rpc.set_session_tenant',
+      tenantId: testTenantId,
+      elapsedMs: Date.now() - tenantContextStart,
+      status: tenantContextResult.status,
+      statusText: tenantContextResult.statusText,
+      error: tenantContextResult.error ? {
+        code: tenantContextResult.error.code,
+        message: tenantContextResult.error.message,
+        details: tenantContextResult.error.details,
+        hint: tenantContextResult.error.hint,
+      } : null,
+      data: tenantContextResult.data ?? null,
+    });
+    const { error: tenantContextError } = tenantContextResult;
 
     if (tenantContextError) {
       throw new Error(`Failed to set Bella Auto Phase 5 tenant context: ${tenantContextError.message}`);

@@ -154,7 +154,8 @@ describe('E2E Full Refund Flow (Critical Business Case)', () => {
     // =========================================
     const today = new Date().toISOString().split('T')[0];
     
-    const { data: customer, error: customerError } = await supabase
+    const customerCreateStart = Date.now();
+    const customerCreateResult = await supabase
       .from('customers')
       .insert({
         tenant_id: testTenantId,
@@ -164,6 +165,21 @@ describe('E2E Full Refund Flow (Critical Business Case)', () => {
       })
       .select('id')
       .single();
+    console.log('[real-db-diagnostic] refund.createCustomer', {
+      operation: 'customers.insert.select_id.single',
+      tenantId: testTenantId,
+      elapsedMs: Date.now() - customerCreateStart,
+      status: customerCreateResult.status,
+      statusText: customerCreateResult.statusText,
+      error: customerCreateResult.error ? {
+        code: customerCreateResult.error.code,
+        message: customerCreateResult.error.message,
+        details: customerCreateResult.error.details,
+        hint: customerCreateResult.error.hint,
+      } : null,
+      data: customerCreateResult.data ?? null,
+    });
+    const { data: customer, error: customerError } = customerCreateResult;
 
     expect(customerError).toBeNull();
     testCustomerId = customer!.id;

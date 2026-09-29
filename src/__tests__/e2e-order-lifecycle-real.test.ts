@@ -215,11 +215,35 @@ describe('E2E Order Lifecycle (Real Database)', () => {
     });
 
     // Verify booking in database
-    const { data: verifyBooking } = await supabase
+    const verifyBookingStart = Date.now();
+    const verifyBookingResult = await supabase
       .from('bookings')
       .select('*')
       .eq('id', testBookingId)
       .single();
+    console.log('[real-db-diagnostic] lifecycle.verifyBooking', {
+      operation: 'bookings.select.by_id.single',
+      bookingId: testBookingId,
+      elapsedMs: Date.now() - verifyBookingStart,
+      status: verifyBookingResult.status,
+      statusText: verifyBookingResult.statusText,
+      error: verifyBookingResult.error ? {
+        code: verifyBookingResult.error.code,
+        message: verifyBookingResult.error.message,
+        details: verifyBookingResult.error.details,
+        hint: verifyBookingResult.error.hint,
+      } : null,
+      data: verifyBookingResult.data ? {
+        id: verifyBookingResult.data.id,
+        tenant_id: verifyBookingResult.data.tenant_id,
+        customer_id: verifyBookingResult.data.customer_id,
+        assigned_ktv_id: verifyBookingResult.data.assigned_ktv_id,
+        status: verifyBookingResult.data.status,
+        total_sessions: verifyBookingResult.data.total_sessions,
+        completed_sessions: verifyBookingResult.data.completed_sessions,
+      } : null,
+    });
+    const { data: verifyBooking } = verifyBookingResult;
 
     expect(verifyBooking).toMatchObject({
       id: testBookingId,
