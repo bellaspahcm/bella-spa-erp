@@ -4,8 +4,10 @@ import { safeRevalidatePath } from '@/lib/revalidate';
 import {
   applyCompletionDefaults,
   isCompletingSession,
+  isRevertingCompletedSession,
   normalizeSessionLogUpdate,
   processCompletedSessionUpdate,
+  reverseCompletedSessionSideEffects,
   syncBookingProgressAfterSessionUpdate,
   type UpdateSessionLogInput,
 } from './update-session-log-helpers';
@@ -180,8 +182,25 @@ export async function updateSessionLog(id: string, payload: UpdateSessionLogInpu
     }
   } else {
     const progressResult = await syncBookingProgressAfterSessionUpdate(supabase, bookingId, tenantId);
-    if (progressResult.error) {
-      return { error: progressResult.error };
+    let reversionError: string | null = null;
+
+    if (isRevertingCompletedSession(safeUpdates, existingLog)) {
+      const rollbackResult = await reverseCompletedSessionSideEffects({
+        supabase,
+        sessionId: id,
+        tenantId,
+        existingLog,
+      });
+
+      if ('error' in rollbackResult) {
+        reversionError = rollbackResult.error;
+      }
+    }
+
+    if (progressResult.error || reversionError) {
+      return {
+        error: [progressResult.error, reversionError].filter(Boolean).join('; '),
+      };
     }
   }
 
