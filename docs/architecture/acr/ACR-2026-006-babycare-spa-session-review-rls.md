@@ -10,9 +10,10 @@
   "version": 1,
   "acrId": "ACR-2026-006",
   "status": "APPROVED",
-  "pr": 167,
+  "pr": 171,
   "approvedCoreFiles": [
-    "src/core/services/order/session-completion-helpers.ts"
+    "src/core/services/order/update-session-log-action.ts",
+    "src/core/services/order/update-session-log-helpers.ts"
   ],
   "approver": "Human/ARB",
   "approvedDate": "2026-09-29",
