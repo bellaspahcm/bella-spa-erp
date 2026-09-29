@@ -8,7 +8,13 @@ import {
   FinanceSemanticReceivableChargeError,
   SemanticReceivableChargeService,
 } from '../services/semantic-receivable-charge.service';
-import { FINANCE_RECEIVABLE_SEMANTICS, TuitionServiceRecognizedChargeInput } from '../contracts/receivable-charge.contract';
+import {
+  FINANCE_RECEIVABLE_SEMANTICS,
+  PaymentReceivableAllocationInput,
+  PaymentReceivableAllocationResult,
+  ServiceReceivableChargeInput,
+  TuitionServiceRecognizedChargeInput,
+} from '../contracts/receivable-charge.contract';
 
 const tenantId = 'tenant-finance-os';
 const studentPartyId = '6c847cf7-bf13-4635-bc65-6286310ff65f';
@@ -27,6 +33,22 @@ function makeInput(): TuitionServiceRecognizedChargeInput {
     businessSourceType: 'PRESCHOOL_TUITION_SERVICE',
     businessSourceId,
     description: 'Preschool tuition service recognized for September 2026',
+  };
+}
+
+function makeGenericInput(): ServiceReceivableChargeInput {
+  return {
+    tenantId,
+    customerId: 'customer-haircut-or-service',
+    amountMinor: 60000,
+    currency: 'VND',
+    servicePeriodStart: '2026-09-30',
+    servicePeriodEnd: '2026-09-30',
+    recognitionDate: '2026-09-30',
+    dueDate: '2026-09-30',
+    businessSourceType: 'BEAUTY_SESSION_DONE',
+    businessSourceId: 'session-log-1',
+    description: 'Haircut service receivable recognized after session completion',
   };
 }
 
@@ -58,6 +80,7 @@ class FakeReceivableChargeGateway implements FinanceReceivableChargeGateway {
       lines: readonly FinancePostingLine[];
     }>,
     saveInvoiceMetadata: [] as FinanceReceivableChargeMetadata[],
+    allocatePayment: [] as PaymentReceivableAllocationInput[],
   };
 
   private invoice: FinanceInvoiceSnapshot | null = null;
@@ -193,9 +216,41 @@ class FakeReceivableChargeGateway implements FinanceReceivableChargeGateway {
       transactionLineCount: 2,
     };
   }
+
+  async allocatePayment(input: PaymentReceivableAllocationInput): Promise<PaymentReceivableAllocationResult> {
+    this.calls.allocatePayment.push(input);
+    return { allocationId: 'allocation-created' };
+  }
 }
 
 describe('SemanticReceivableChargeService', () => {
+  test('posts generic SERVICE_RECEIVABLE_RECOGNIZED through Finance AR primitives', async () => {
+    const gateway = new FakeReceivableChargeGateway();
+    const service = new SemanticReceivableChargeService(gateway);
+
+    const result = await service.recognizeServiceReceivable(makeGenericInput());
+
+    expect(gateway.calls.createDraftInvoice[0]).toMatchObject({
+      tenantId,
+      customerId: 'customer-haircut-or-service',
+      currency: 'VND',
+      issueDate: '2026-09-30',
+      dueDate: '2026-09-30',
+    });
+    expect(gateway.calls.addInvoiceLine[0]).toMatchObject({
+      serviceId: 'session-log-1',
+      unitPriceMinor: 60000,
+      revenueAccountCode: '511',
+    });
+    expect(gateway.calls.saveInvoiceMetadata[0]).toMatchObject({
+      business_semantic: 'SERVICE_RECEIVABLE_RECOGNIZED',
+      customer_id: 'customer-haircut-or-service',
+      business_source_type: 'BEAUTY_SESSION_DONE',
+    });
+    expect(gateway.calls.saveInvoiceMetadata[0]).not.toHaveProperty('student_party_id');
+    expect(result.policyEvidence.businessSemantic).toBe('SERVICE_RECEIVABLE_RECOGNIZED');
+  });
+
   test('posts TUITION_SERVICE_RECOGNIZED through Finance AR without vertical account codes', async () => {
     const gateway = new FakeReceivableChargeGateway();
     const service = new SemanticReceivableChargeService(gateway);
@@ -225,6 +280,8 @@ describe('SemanticReceivableChargeService', () => {
       legal_source: '99/2025/TT-BTC',
       applicable_regime: 'VI_TT99_2025',
       business_semantic: 'TUITION_SERVICE_RECOGNIZED',
+      customer_id: studentPartyId,
+      student_party_id: studentPartyId,
       verification_status: 'PROVEN',
     });
 
@@ -251,6 +308,7 @@ describe('SemanticReceivableChargeService', () => {
       policyEvidence: {
         legalSource: '99/2025/TT-BTC',
         applicableRegime: 'VI_TT99_2025',
+        businessSemantic: 'TUITION_SERVICE_RECOGNIZED',
         verificationStatus: 'PROVEN',
       },
     });
@@ -282,7 +340,33 @@ describe('SemanticReceivableChargeService', () => {
     expect(result.transactionLineCount).toBe(2);
   });
 
+  test('allocates payment to receivable through Finance allocation gateway', async () => {
+    const gateway = new FakeReceivableChargeGateway();
+    const service = new SemanticReceivableChargeService(gateway);
+
+    const result = await service.allocatePaymentToReceivable({
+      tenantId,
+      invoiceId: 'invoice-created',
+      cashMovementId: 'cash-movement-1',
+      allocatedAmountMinor: 60000,
+      exchangeRate: 1,
+      rateSource: 'CENTRAL_BANK',
+      rateTimestamp: '2026-09-30T00:00:00.000Z',
+    });
+
+    expect(result).toEqual({ allocationId: 'allocation-created' });
+    expect(gateway.calls.allocatePayment).toEqual([
+      expect.objectContaining({
+        tenantId,
+        invoiceId: 'invoice-created',
+        cashMovementId: 'cash-movement-1',
+        allocatedAmountMinor: 60000,
+      }),
+    ]);
+  });
+
   test('uses cross-vertical Finance semantics instead of Education-specific revenue semantics', () => {
+    expect(FINANCE_RECEIVABLE_SEMANTICS.SERVICE_RECEIVABLE_RECOGNIZED).toBe('SERVICE_RECEIVABLE_RECOGNIZED');
     expect(FINANCE_RECEIVABLE_SEMANTICS.TRADE_RECEIVABLE).toBe('TRADE_RECEIVABLE');
     expect(FINANCE_RECEIVABLE_SEMANTICS.SERVICE_REVENUE).toBe('SERVICE_REVENUE');
     expect(Object.values(FINANCE_RECEIVABLE_SEMANTICS)).not.toContain('EDUCATION_SERVICE_REVENUE');
