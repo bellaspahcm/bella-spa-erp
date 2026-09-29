@@ -99,6 +99,113 @@ Gate result: `PASS`.
 
 ---
 
+# ARCHITECTURE GATE RESULT - HAIRCUT F3 CUSTOMER DEBT READ AND COLLECTION
+
+> **Status:** PASS - narrow Finance F3 receivable read/collection contract for Haircut reconciliation
+> **Date:** 2026-09-30
+> **Scope:** Replace Haircut reconciliation mock/static customer debt with F3 open receivables and an exact-invoice collection flow. No Core change, migration, schema/RPC change, legacy debt shortcut, Booking/Salary fix, or PR #170 modification.
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+P4 audit established that Haircut customer debt must be an F3 receivable view, not legacy booking debt:
+
+```text
+SESSION_DONE
+  -> finance_invoices
+  -> finance_receivable_positions.outstanding_amount_minor
+  -> Haircut Customer Debt
+  -> exact invoice collection
+  -> F1 cash receipt
+  -> F2 cash movement
+  -> F3 allocation
+  -> F3 position read-back
+```
+
+Gate decision: `PASS` for the smallest Finance/Haircut implementation that consumes existing Finance F1/F2/F3 primitives, targets collection by `tenant_id + invoice_id`, and keeps `receivable_position_id` as read-back/display identity.
+
+## 2. Product Manifest
+
+In scope:
+- Haircut F3 open receivable read contract.
+- Haircut exact-invoice collection action.
+- Haircut reconciliation UI wiring away from `MOCK_CUSTOMER_DEBTS`.
+- Focused read/collection/idempotency/tenant tests.
+
+Out of scope:
+- `src/core/**` changes.
+- `collectDebtPayment()` or `recordRemainingPayment()` reuse for customer debt.
+- Legacy `priceAfterDiscount - revenue` debt semantics.
+- Finance schema, migration, table, or RPC changes.
+- Booking write gap and Salary gap.
+- Healthcare, Education, Logistics, BabyCare, or unrelated tenants.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Role |
+|---|---|---|
+| `finance_invoices` + metadata | Finance OS | F3 invoice identity and Haircut session metadata |
+| `finance_receivable_positions` | Finance OS | Canonical F3 outstanding amount |
+| F1 cash receipt / F2 cash movement / F3 allocation primitives | Finance OS | Canonical collection machinery |
+| Haircut reconciliation screen | Haircut Product | Consumer of Finance contract |
+
+## 4. Contract Dependency Map
+
+```text
+Haircut reconciliation UI
+  -> Haircut F3 reconciliation action
+  -> Finance OS semantic receivable contract
+  -> Supabase Finance gateway
+  -> finance_invoices / finance_receivable_positions / finance_receivable_allocations
+```
+
+## 5. Change Authority
+
+Authorized:
+- Add a narrow Finance exact-invoice collection method using existing Finance primitives.
+- Add a Haircut service/action that validates authenticated tenant context and maps F3 receivables to UI rows.
+- Wire Haircut reconciliation UI to the real contract.
+
+Not authorized:
+- Modify Core files.
+- Create or change schema/RPC/migration.
+- Invent a new debt model.
+- Match customer debt by name or amount.
+- Use legacy collection/payment paths for F3 customer debt.
+
+## 6. UI -> Contract Reconciliation
+
+| UI element/action | Canonical contract | Conclusion |
+|---|---|---|
+| Customer debt amount | `finance_receivable_positions.outstanding_amount_minor` | MATCH |
+| Customer/booking/session labels | Finalized F3 invoice `customer_id` + metadata | MATCH |
+| Collection target | `tenant_id + invoice_id` | MATCH |
+| Receivable position id | Read-back/display identity | MATCH |
+| Legacy debt cards and disabled collection | Mock/static consumer | STALE UI |
+
+## 7. Additive Migration Plan
+
+No migration.
+
+## 8. 11 Automated Verification Gates Plan
+
+1. Verify worktree is clean and based on merged main.
+2. Read Bella constitution and existing Finance F3 contracts.
+3. Add Finance exact-invoice collection contract without Core changes.
+4. Add Haircut F3 read/collection action with authenticated tenant validation.
+5. Wire Haircut UI after contract tests.
+6. Prove tenant A read does not expose tenant B receivable.
+7. Prove collection creates one cash receipt, one cash movement, and one F3 allocation.
+8. Prove overpayment rejects without mutation.
+9. Prove idempotent retry does not duplicate receipt/movement/allocation.
+10. Prove UI no longer uses mock/gap collection path.
+11. Run focused tests and `git diff --check`; stop before wider P2 work.
+
+Gate result: `PASS`.
+
+---
+
 # ARCHITECTURE GATE RESULT - HAIRCUT PAYMENT TO F3 AR ALLOCATION HARDENING
 
 > **Status:** PASS - narrow Core consumer hardening for Finance OS canonical payment-to-AR allocation

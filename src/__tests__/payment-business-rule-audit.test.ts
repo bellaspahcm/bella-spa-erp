@@ -174,15 +174,21 @@ describe('payment business rule audit', () => {
     expect(paymentHelperSource).toContain(".eq('tenant_id', tenantId)");
   });
 
-  it('keeps Haircut debt collection from claiming persistence without the Finance contract', () => {
+  it('keeps Haircut debt collection on the F3 receivable contract', () => {
     const haircutReconciliationSource = readSource(
       'src/app/dashboard/finance/reconciliation/components/HaircutReconciliationView.tsx'
     );
+    const haircutF3ActionSource = readSource('src/services/haircut-f3-reconciliation-actions.ts');
 
-    expect(haircutReconciliationSource).toContain('HAIRCUT_DEBT_COLLECTION_GAP_MESSAGE');
-    expect(haircutReconciliationSource).toContain('Chưa thể xác nhận thu');
-    expect(haircutReconciliationSource).not.toContain('Đã thu thành công');
-    expect(haircutReconciliationSource).not.toContain('Sổ cái & Dòng tiền đã được cập nhật');
+    expect(haircutReconciliationSource).toContain('getHaircutF3OpenReceivables');
+    expect(haircutReconciliationSource).toContain('collectHaircutF3ReceivablePayment');
+    expect(haircutReconciliationSource).not.toContain('MOCK_CUSTOMER_DEBTS');
+    expect(haircutReconciliationSource).not.toContain('HAIRCUT_DEBT_COLLECTION_GAP_MESSAGE');
+    expect(haircutF3ActionSource).toContain('finance_receivable_positions');
+    expect(haircutF3ActionSource).toContain('outstanding_amount_minor');
+    expect(haircutF3ActionSource).toContain('allocateConfirmedPaymentToInvoiceReceivable');
+    expect(haircutF3ActionSource).not.toContain('collectDebtPayment(');
+    expect(haircutF3ActionSource).not.toContain('recordRemainingPayment(');
     expect(haircutReconciliationSource).not.toContain('value="mpos"');
   });
 
