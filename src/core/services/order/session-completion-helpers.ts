@@ -207,11 +207,36 @@ export async function rollbackCompletionSideEffects(params: {
   isInventoryConsumed: boolean;
   isRevenueCreated?: boolean;
   createdRevenueId?: string | null;
+  createdReviewId?: string | null;
 }) {
-  const { supabase, sessionId, bookingId, currentBooking, isInventoryConsumed, isRevenueCreated, createdRevenueId } = params;
+  const {
+    supabase,
+    sessionId,
+    bookingId,
+    currentBooking,
+    isInventoryConsumed,
+    isRevenueCreated,
+    createdRevenueId,
+    createdReviewId,
+  } = params;
   const rollbackFailures: string[] = [];
 
   if (isRevenueCreated) {
+    if (createdRevenueId && currentBooking?.tenant_id) {
+      const { error: outboxRollbackError } = await supabase
+        .from('accounting_outbox')
+        .delete()
+        .eq('tenant_id', currentBooking.tenant_id)
+        .eq('event_type', 'PACKAGE_SALE')
+        .eq('reference_type', 'REVENUE')
+        .eq('reference_id', createdRevenueId)
+        .in('status', ['PENDING', 'FAILED']);
+
+      if (outboxRollbackError) {
+        rollbackFailures.push(`outbox rollback failed: ${outboxRollbackError.message}`);
+      }
+    }
+
     const revenueRollbackError = await deleteSingleSessionRevenue(
       supabase,
       bookingId,
@@ -220,6 +245,18 @@ export async function rollbackCompletionSideEffects(params: {
     );
     if (revenueRollbackError) {
       rollbackFailures.push(`revenue rollback failed: ${revenueRollbackError}`);
+    }
+  }
+
+  if (createdReviewId && currentBooking?.tenant_id) {
+    const { error: reviewRollbackError } = await supabase
+      .from('session_reviews')
+      .delete()
+      .eq('id', createdReviewId)
+      .eq('tenant_id', currentBooking.tenant_id);
+
+    if (reviewRollbackError) {
+      rollbackFailures.push(`review rollback failed: ${reviewRollbackError.message}`);
     }
   }
 
@@ -468,7 +505,7 @@ export async function ensureSessionReviewPlaceholder(params: {
   const { supabase, sessionId, ktvId, tenantId, currentBooking } = params;
 
   if (!currentBooking?.assigned_ktv_id || !currentBooking.customer_id) {
-    return { success: true };
+    return { success: true, createdReviewId: null };
   }
 
   if (currentBooking.tenant_id !== tenantId) {
@@ -487,7 +524,7 @@ export async function ensureSessionReviewPlaceholder(params: {
   }
 
   if (existingReview) {
-    return { success: true };
+    return { success: true, createdReviewId: null };
   }
 
   const reviewPayload: SessionReviewInsert = {
@@ -500,15 +537,17 @@ export async function ensureSessionReviewPlaceholder(params: {
     tenant_id: tenantId,
   };
 
-  const { error: reviewInsertError } = await supabase
+  const { data: createdReview, error: reviewInsertError } = await supabase
     .from('session_reviews')
-    .insert([reviewPayload]);
+    .insert([reviewPayload])
+    .select('id')
+    .single();
 
   if (reviewInsertError) {
     return { error: 'Không thể tạo review chờ đánh giá: ' + reviewInsertError.message };
   }
 
-  return { success: true };
+  return { success: true, createdReviewId: createdReview?.id || null };
 }
 
 export async function enqueueSessionDoneAccountingOutbox(params: {
@@ -523,6 +562,7 @@ export async function enqueueSessionDoneAccountingOutbox(params: {
   isInventoryConsumed: boolean;
   isRevenueCreated: boolean;
   createdRevenueId?: string | null;
+  createdReviewId?: string | null;
 }) {
   const {
     supabase,
@@ -535,6 +575,7 @@ export async function enqueueSessionDoneAccountingOutbox(params: {
     isInventoryConsumed,
     isRevenueCreated,
     createdRevenueId,
+    createdReviewId,
   } = params;
 
   try {
@@ -596,6 +637,7 @@ export async function enqueueSessionDoneAccountingOutbox(params: {
       isInventoryConsumed,
       isRevenueCreated,
       createdRevenueId,
+      createdReviewId,
     });
 
     const rollbackMessage = formatRollbackAppend(rollbackResult);
