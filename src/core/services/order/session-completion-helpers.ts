@@ -20,12 +20,14 @@ import {
   inferBusinessEventType,
   resolveAccountingReviewStatus,
 } from '@/core/services/accounting/template-rules';
+import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
 import type { CoreBookingOrder, BookingOrderStatus } from '@/core/types/booking-order';
 import type { ModuleId } from '@/core/types/module';
 import type { Database, Json } from '@/types/database.types';
 import type { createClient } from '@/lib/supabase-server';
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
+type SessionReviewOperationClient = Pick<SupabaseServerClient, 'from'>;
 type BookingRow = Database['public']['Tables']['bookings']['Row'];
 type BookingUpdate = Database['public']['Tables']['bookings']['Update'];
 type RevenueInsert = Database['public']['Tables']['revenue']['Insert'];
@@ -58,6 +60,22 @@ function getErrorMessage(error: unknown) {
     if (typeof message === 'string') return message;
   }
   return String(error);
+}
+
+async function createSessionReviewOperationClient(
+  fallbackClient: SupabaseServerClient
+): Promise<SessionReviewOperationClient> {
+  const adminUrl = getSupabaseAdminUrl();
+  const adminKey = getSupabaseAdminKey();
+
+  if (!adminUrl || !adminKey) {
+    return fallbackClient;
+  }
+
+  const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+  return createSupabaseClient<Database>(adminUrl, adminKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  }) as unknown as SessionReviewOperationClient;
 }
 
 export async function validateCompletionAccountingPeriod(
@@ -512,7 +530,9 @@ export async function ensureSessionReviewPlaceholder(params: {
     return { error: 'Booking không thuộc chi nhánh hiện tại, không thể tạo review chờ đánh giá.' };
   }
 
-  const { data: existingReview, error: reviewLookupError } = await supabase
+  const reviewClient = await createSessionReviewOperationClient(supabase);
+
+  const { data: existingReview, error: reviewLookupError } = await reviewClient
     .from('session_reviews')
     .select('id')
     .eq('session_log_id', sessionId)
@@ -537,7 +557,7 @@ export async function ensureSessionReviewPlaceholder(params: {
     tenant_id: tenantId,
   };
 
-  const { data: createdReview, error: reviewInsertError } = await supabase
+  const { data: createdReview, error: reviewInsertError } = await reviewClient
     .from('session_reviews')
     .insert([reviewPayload])
     .select('id')

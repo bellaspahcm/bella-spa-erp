@@ -30,6 +30,15 @@ jest.mock('@/lib/revalidate', () => ({
   safeRevalidatePath: jest.fn(() => Promise.resolve()),
 }));
 
+jest.mock('@/app/api/bookings/check-ktv-availability/route', () => ({
+  invalidateAvailabilityCache: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('@/lib/supabase-admin-env', () => ({
+  getSupabaseAdminUrl: jest.fn(() => null),
+  getSupabaseAdminKey: jest.fn(() => null),
+}));
+
 jest.mock('server-only', () => ({}), { virtual: true });
 jest.mock('@sentry/nextjs', () => ({ captureException: jest.fn() }));
 
