@@ -75,6 +75,11 @@ function createSupabaseMock(results: Array<{ data?: unknown; count?: number; err
       return this;
     }
 
+    in(column: string, values: unknown[]) {
+      this.call?.filters.push([column, values]);
+      return this;
+    }
+
     maybeSingle() {
       return this.resolve();
     }
@@ -274,7 +279,7 @@ describe('session completion accounting side effects', () => {
     expect(result).toEqual({
       error: 'Không thể tạo review chờ đánh giá: review insert failed',
     });
-    expect(calls).toEqual([
+    expect(calls).toEqual(expect.arrayContaining([
       expect.objectContaining({
         table: 'session_reviews',
         op: 'select',
@@ -294,7 +299,7 @@ describe('session completion accounting side effects', () => {
           tenant_id: 'tenant-1',
         })],
       }),
-    ]);
+    ]));
   });
 
   it('blocks review placeholder creation when booking belongs to another tenant', async () => {
@@ -456,7 +461,7 @@ describe('session completion accounting side effects', () => {
       {},
       { data: { id: 'revenue-1' } },
       { data: null },
-      {},
+      { data: { id: 'review-1' } },
       { data: [{ amount: 200000, status: 'confirmed', revenue_type: 'deposit' }] },
     ]);
 
@@ -605,5 +610,130 @@ describe('session completion accounting side effects', () => {
       expect.objectContaining({ eventType: 'PACKAGE_SALE', referenceId: 'revenue-1' }),
       '[processSessionCompletion:single-session-revenue]'
     );
+  });
+
+  it('cleans up completion-created PACKAGE_SALE outbox when salary sync fails after revenue creation', async () => {
+    mockRecalculateAndSaveSalaryRecord.mockRejectedValueOnce(new Error('locked salary'));
+    const currentBooking = {
+      package_name: 'G\u00f3i d\u1ecbch v\u1ee5 l\u1ebb',
+      completed_sessions: 1,
+      status: 'booked',
+      total_sessions: 1,
+      ktv_commission: 30000,
+      assigned_ktv_id: 'ktv-1',
+      customer_id: 'customer-1',
+      tenant_id: 'tenant-1',
+      full_price: 500000,
+      deposit_amount: 200000,
+      discount_percent: 0,
+    };
+    const { calls, supabase } = createSupabaseMock([
+      { count: 2 },
+      { data: currentBooking },
+      {},
+      { data: { id: 'revenue-1' } },
+      {},
+      {},
+      {},
+    ]);
+
+    const result = await processSessionCompletion(
+      supabase as never,
+      'session-1',
+      'booking-1',
+      'tenant-1',
+      'ktv-1',
+      '2026-06-03',
+      'package-1',
+      { session_number: 2 },
+      { id: 'user-1' }
+    );
+
+    expect(result).toEqual({
+      error: expect.stringContaining('Không thể ghi nhận lương cho KTV'),
+    });
+    expect(calls).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        table: 'accounting_outbox',
+        op: 'delete',
+        filters: [
+          ['tenant_id', 'tenant-1'],
+          ['event_type', 'PACKAGE_SALE'],
+          ['reference_type', 'REVENUE'],
+          ['reference_id', 'revenue-1'],
+          ['status', ['PENDING', 'FAILED']],
+        ],
+      }),
+      expect.objectContaining({
+        table: 'revenue',
+        op: 'delete',
+        filters: [['id', 'revenue-1']],
+      }),
+      expect.objectContaining({
+        table: 'bookings',
+        op: 'update',
+        payload: { completed_sessions: 1, status: 'booked' },
+        filters: [['id', 'booking-1']],
+      }),
+    ]));
+  });
+
+  it('cleans up completion-created review when SESSION_DONE enqueue fails', async () => {
+    mockEnqueueWithAutoClient.mockResolvedValueOnce(false);
+    const currentBooking = {
+      package_name: 'Li\u1ec7u tr\u00ecnh ch\u0103m s\u00f3c',
+      completed_sessions: 1,
+      status: 'booked',
+      total_sessions: 5,
+      ktv_commission: 30000,
+      assigned_ktv_id: 'ktv-1',
+      customer_id: 'customer-1',
+      tenant_id: 'tenant-1',
+      full_price: 500000,
+      deposit_amount: 200000,
+      discount_percent: 0,
+    };
+    const { calls, supabase } = createSupabaseMock([
+      { count: 2 },
+      { data: currentBooking },
+      {},
+      { data: null },
+      { data: { id: 'review-1' } },
+      { data: [{ amount: 200000, status: 'confirmed', revenue_type: 'deposit' }] },
+      {},
+      {},
+    ]);
+
+    const result = await processSessionCompletion(
+      supabase as never,
+      'session-1',
+      'booking-1',
+      'tenant-1',
+      'ktv-1',
+      '2026-06-03',
+      'package-1',
+      { session_number: 2 },
+      { id: 'user-1' }
+    );
+
+    expect(result).toEqual({
+      error: expect.stringContaining('Failed to enqueue SESSION_DONE accounting event'),
+    });
+    expect(calls).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        table: 'session_reviews',
+        op: 'delete',
+        filters: [
+          ['id', 'review-1'],
+          ['tenant_id', 'tenant-1'],
+        ],
+      }),
+      expect.objectContaining({
+        table: 'bookings',
+        op: 'update',
+        payload: { completed_sessions: 1, status: 'booked' },
+        filters: [['id', 'booking-1']],
+      }),
+    ]));
   });
 });

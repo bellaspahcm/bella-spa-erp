@@ -216,6 +216,7 @@ export async function processSessionCompletion(
     const rollbackMessage = 'error' in rollbackResult ? `; rollback failed: ${rollbackResult.error}` : '';
     return { error: reviewResult.error + rollbackMessage };
   }
+  const createdReviewId = reviewResult.createdReviewId;
 
   const outboxResult = await enqueueSessionDoneAccountingOutbox({
     supabase,
@@ -229,6 +230,7 @@ export async function processSessionCompletion(
     isInventoryConsumed,
     isRevenueCreated,
     createdRevenueId,
+    createdReviewId,
   });
   if ('error' in outboxResult) {
     return { error: outboxResult.error };
