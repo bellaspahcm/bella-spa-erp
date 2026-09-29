@@ -441,6 +441,7 @@ describe('session completion accounting side effects', () => {
       package_name: 'G\u00f3i d\u1ecbch v\u1ee5 l\u1ebb',
       completed_sessions: 1,
       status: 'booked',
+      is_in_care: true,
       total_sessions: 1,
       ktv_commission: 30000,
       assigned_ktv_id: 'ktv-1',
@@ -496,6 +497,7 @@ describe('session completion accounting side effects', () => {
           completed_sessions: 2,
           last_updated_date: '2026-06-03',
           status: 'completed',
+          is_in_care: false,
         }),
         filters: [['id', 'booking-1']],
       }),
@@ -552,6 +554,7 @@ describe('session completion accounting side effects', () => {
       package_name: 'G\u00f3i d\u1ecbch v\u1ee5 l\u1ebb',
       completed_sessions: 1,
       status: 'booked',
+      is_in_care: true,
       total_sessions: 1,
       ktv_commission: 30000,
       assigned_ktv_id: 'ktv-1',
@@ -594,7 +597,7 @@ describe('session completion accounting side effects', () => {
       expect.objectContaining({
         table: 'bookings',
         op: 'update',
-        payload: { completed_sessions: 1, status: 'booked' },
+        payload: { completed_sessions: 1, status: 'booked', is_in_care: true },
         filters: [['id', 'booking-1']],
       }),
     ]));

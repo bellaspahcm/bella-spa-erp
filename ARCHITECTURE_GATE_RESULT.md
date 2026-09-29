@@ -1,3 +1,80 @@
+# ARCHITECTURE GATE RESULT - SPA COMPLETION ROLLBACK IS_IN_CARE FIX
+
+> **Status:** PASS - restore pre-completion `bookings.is_in_care` during shared completion rollback
+> **Date:** 2026-09-29
+> **Scope:** Bella Spa shared completion rollback integrity only; no Payroll, Finance, Accounting, Haircut-specific code, schema, migration, UI redesign, or completion semantics redesign
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+The confirmed gap is rollback integrity, not a new product capability: the completion path can set `bookings.is_in_care = false` when the package reaches completion, while rollback currently restores only `completed_sessions` and `status`. Gate decision: `PASS` for the minimum rollback snapshot/payload correction that restores `is_in_care` to its pre-completion value when downstream completion side effects fail.
+
+## 2. Product Manifest
+
+In scope:
+- Shared Beauty/Spa session completion rollback payload.
+- Current booking snapshot captured before booking progress mutation.
+- Focused regression proving failure-path rollback restores `completed_sessions`, `status`, and `is_in_care`.
+- Focused regression preserving happy-path completion behavior where final package completion sets `is_in_care = false`.
+
+Out of scope:
+- Payroll, salary policy, Finance, Accounting policy, Haircut-specific code, UI, data migration, production data updates, or completion engine redesign.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Role |
+|---|---|---|
+| `bookings.completed_sessions` | Beauty/Spa booking workflow | Completion progress counter |
+| `bookings.status` | Beauty/Spa booking workflow | Booking lifecycle state |
+| `bookings.is_in_care` | Beauty/Spa booking workflow | Active-care flag cleared on completed package |
+| Completion rollback payload | Shared order/session completion service | Restores pre-completion booking workflow state after downstream failure |
+
+## 4. Contract Dependency Map
+
+```text
+Session completion
+        ↓
+Count completed session logs
+        ↓
+Update booking progress/status/is_in_care
+        ↓
+Downstream completion side effects
+        ↓
+On failure: rollback booking fields to pre-completion snapshot
+```
+
+## 5. Change Authority
+
+Authorized:
+- Include `is_in_care` in the pre-completion booking snapshot.
+- Include `is_in_care` in rollback payload with its original value.
+- Add focused tests for the failure path and existing happy path.
+
+Not authorized:
+- Change the meaning of `is_in_care`.
+- Change completion success semantics.
+- Modify Payroll, Finance, Accounting, Haircut-specific code, schema, migrations, or UI.
+
+## 6. UI -> Contract Reconciliation
+
+No UI redesign. This is a service rollback integrity fix.
+
+## 7. Additive Migration Plan
+
+No database migration. `bookings.is_in_care` already exists in generated database types.
+
+## 8. Verification Plan
+
+- Reproduction test: completion reaches package completion with initial `is_in_care = true`, a downstream failure is forced, and rollback restores `completed_sessions`, `status`, and `is_in_care`.
+- Happy-path test: successful package completion still sets `is_in_care = false`.
+- Focused Jest for completion business rules and completion accounting side effects.
+- `git diff --check`.
+
+Gate result: `PASS`.
+
+---
+
 # ARCHITECTURE GATE RESULT - PRESCHOOL P7 TUITION RECOGNITION POLICY FOUNDATION
 
 > **Status:** PASS - decouple invoice issuance from tuition service recognition and add Product-owned PERIOD_COMPLETION policy foundation

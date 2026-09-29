@@ -11,6 +11,7 @@ export type BookingCompletionSnapshot = {
   total_sessions?: number | string | null;
   completed_sessions?: number | string | null;
   status?: BookingCompletionStatus | null;
+  is_in_care?: boolean | null;
 };
 
 export type BookingCompletionUpdate = {
@@ -72,10 +73,20 @@ export function calculateBookingCompletionUpdate(input: {
 }
 
 export function buildCompletionRollbackPayload(currentBooking: BookingCompletionSnapshot | null | undefined) {
-  return {
+  const payload: {
+    completed_sessions: number;
+    status: BookingCompletionStatus;
+    is_in_care?: boolean | null;
+  } = {
     completed_sessions: Math.max(0, asFiniteNumber(currentBooking?.completed_sessions)),
     status: currentBooking?.status || 'booked',
   };
+
+  if (currentBooking && 'is_in_care' in currentBooking) {
+    payload.is_in_care = currentBooking.is_in_care ?? null;
+  }
+
+  return payload;
 }
 
 export function formatRollbackAppend(rollbackResult: RollbackResultLike) {
