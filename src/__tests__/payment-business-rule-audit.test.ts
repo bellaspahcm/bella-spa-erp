@@ -192,24 +192,33 @@ describe('payment business rule audit', () => {
     expect(haircutReconciliationSource).not.toContain('value="mpos"');
   });
 
-  it('keeps Haircut salary static rows from driving canonical Payroll writes', () => {
+  it('keeps Haircut salary routed through the canonical Payroll read-write contract', () => {
     const haircutSalarySource = readSource('src/app/dashboard/salary/HaircutSalaryView.tsx');
     const salaryPageSource = readSource('src/app/dashboard/salary/page.tsx');
+    const adminSalaryActionsSource = readSource('src/modules/hr-salary/actions/admin-salary-actions.ts');
+    const salaryWorkflowHelpersSource = readSource('src/modules/hr-salary/actions/admin-salary-workflow-helpers.ts');
 
-    expect(haircutSalarySource).toContain('SALARY_LIST');
-    expect(haircutSalarySource).toContain('HAIRCUT_SALARY_WRITE_GAP_MESSAGE');
-    expect(haircutSalarySource).not.toContain('onPublishAll');
-    expect(haircutSalarySource).not.toContain('onFinalizeAll');
-    expect(haircutSalarySource).not.toContain('onEditKtv');
-    expect(haircutSalarySource).not.toContain('onFixAttendance');
+    expect(existsSync('src/app/dashboard/salary/HaircutSalaryView.tsx')).toBe(true);
+    expect(haircutSalarySource).not.toContain('SALARY_LIST');
+    expect(haircutSalarySource).not.toContain('HAIRCUT_SALARY_WRITE_GAP_MESSAGE');
+    expect(haircutSalarySource).not.toContain('export function HaircutSalaryView');
+    expect(haircutSalarySource).toContain('shared canonical salary/payroll page');
     expect(salaryPageSource).not.toContain('HaircutSalaryView');
     expect(salaryPageSource).not.toContain("product?.productKey === 'bella_haircut'");
     expect(salaryPageSource).toContain('getSalaryData');
     expect(salaryPageSource).toContain('publishAllSalaryRecords');
     expect(salaryPageSource).toContain('finalizeAllSalaryRecords');
     expect(salaryPageSource).toContain('SalaryTable');
-    expect(salaryPageSource).not.toContain('onPublishAll={');
-    expect(salaryPageSource).not.toContain('onFinalizeAll={');
+    expect(salaryPageSource).toContain('handlePublishAll');
+    expect(salaryPageSource).toContain('handleFinalizeAll');
+    expect(salaryPageSource).toContain('SessionMatrixTable');
+    expect(salaryPageSource).toContain('AttendanceSummaryTable');
+    expect(adminSalaryActionsSource).toContain('export async function publishAllSalaryRecords');
+    expect(adminSalaryActionsSource).toContain('export async function finalizeAllSalaryRecords');
+    expect(adminSalaryActionsSource).toContain('createSalaryExpense({');
+    expect(adminSalaryActionsSource).toContain('revalidateApprovedSalaryViews');
+    expect(salaryWorkflowHelpersSource).toContain("sourceTable: 'expenses'");
+    expect(salaryWorkflowHelpersSource).toContain("category: 'salary'");
   });
 
   it('keeps Haircut booking routed through the canonical booking read-write contract', () => {

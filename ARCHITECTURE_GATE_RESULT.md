@@ -1,3 +1,99 @@
+# ARCHITECTURE GATE RESULT - HAIRCUT SALARY PAYROLL CANONICAL ROUTE CLEANUP
+
+> **Status:** PASS - neutralize stale Haircut-only static salary surface and lock Haircut payroll to the existing canonical Salary/Payroll contract
+> **Date:** 2026-09-30
+> **Scope:** Haircut salary UI surface only. No Core changes, Payroll schema/RPC/migration changes, Finance posting policy changes, Healthcare, Education, Logistics, Booking, or F3 Debt changes.
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+Source evidence shows the active `/dashboard/salary` page already consumes the canonical Salary/Payroll contract:
+
+```text
+getSalaryData
+  -> SalaryTable / SessionMatrixTable / AttendanceSummaryTable
+  -> publishAllSalaryRecords / publishSalaryRecord
+  -> adminConfirmOnBehalf
+  -> finalizeAllSalaryRecords / finalizeSalaryRecord
+  -> createSalaryExpense
+  -> salary + finance page revalidation
+```
+
+The remaining Haircut-specific artifact is an unrouted `HaircutSalaryView` with hard-coded `SALARY_LIST` and a static write-gap alert. Gate decision: `PASS` for replacing that stale product-specific mock surface with a non-runtime tombstone and strengthening the audit test so Haircut salary stays on the canonical Salary/Payroll page/actions.
+
+## 2. Product Manifest
+
+In scope:
+- Remove stale Haircut-only static salary implementation.
+- Preserve the canonical shared salary page for Haircut.
+- Update source audit coverage to prove salary read, publish, finalize, and Finance expense side effects remain contract-backed.
+
+Out of scope:
+- Core service changes.
+- Salary/Payroll schema, RPC, RLS, or migration changes.
+- New Payroll model or product-specific salary engine.
+- Finance accounting policy/posting changes.
+- Booking, F3 Debt, Healthcare, Education, or Logistics changes.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Role |
+|---|---|---|
+| `getSalaryData` | HR Salary module | Canonical salary read contract |
+| `publishAllSalaryRecords` / `finalizeAllSalaryRecords` | HR Salary module | Canonical payroll workflow actions |
+| `createSalaryExpense` | Salary workflow helper | Existing Finance expense side-effect for finalized/approved salary |
+| `/dashboard/salary/page.tsx` | Product UI consumer | Shared salary surface for tenant module/product presentation |
+| `HaircutSalaryView.tsx` | Stale Haircut UI mock | Replaced by a tombstone because it is not canonical and not routed |
+
+## 4. Contract Dependency Map
+
+```text
+Haircut tenant/product identity
+  -> shared salary page
+  -> HR Salary canonical data/actions
+  -> salary_records / session_logs / attendance / expenses
+  -> salary and finance read-back through existing services
+```
+
+## 5. Change Authority
+
+Authorized:
+- Remove stale Haircut static salary UI implementation that is not part of the active route.
+- Update audit test assertions to protect the canonical Salary/Payroll route/actions.
+
+Not authorized:
+- Modify `src/core/**`.
+- Introduce a Haircut-specific Payroll contract.
+- Add or modify database schema/RPC/migrations.
+- Change Finance posting/accounting policy.
+
+## 6. UI -> Contract Reconciliation
+
+Haircut salary UI must not use hard-coded `SALARY_LIST`, fake staff rows, disabled write-gap alerts, or local-only salary actions. The active salary page must continue to use real salary records, salary matrix, attendance data, publish/finalize actions, and existing Finance expense side effects.
+
+## 7. Additive Migration Plan
+
+No migration.
+
+## 8. 11 Automated Verification Gates Plan
+
+1. Confirm branch starts from merged `origin/main`.
+2. Read Bella coding constitution.
+3. Prove `HaircutSalaryView` is not imported by runtime salary page.
+4. Prove `/dashboard/salary/page.tsx` uses canonical salary components.
+5. Prove salary page reads via `getSalaryData`.
+6. Prove publish/finalize actions call canonical HR Salary actions.
+7. Prove finalization path creates/reuses salary expense side effects.
+8. Replace stale Haircut static salary mock with a non-runtime tombstone.
+9. Update source audit coverage.
+10. Run focused audit and salary workflow tests.
+11. Stop without touching Core or Finance schema if any deeper contract is required.
+
+Gate result: `PASS`.
+
+---
+
 # ARCHITECTURE GATE RESULT - HAIRCUT BOOKING UI CANONICAL ROUTE CLEANUP
 
 > **Status:** PASS - neutralize stale Haircut-only static booking surface and lock the booking page to the existing canonical scheduling contract
