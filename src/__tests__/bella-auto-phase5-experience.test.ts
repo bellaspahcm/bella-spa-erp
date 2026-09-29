@@ -25,6 +25,7 @@ let testModelId: string;
 let testVariantId: string;
 let testVehicleId: string;
 let testStageId: string;
+let createdTestStage = false;
 let testNpsTemplateId: string;
 let testCsiTemplateId: string;
 
@@ -221,23 +222,39 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
 
     testCsiTemplateId = csiTemplate!.id;
 
-    const { data: stage, error: stageError } = await supabase
+    const { data: existingStage, error: stageLookupError } = await supabase
       .from('auto_journey_stages')
-      .insert({
-        tenant_id: testTenantId,
-        code: 'delivered',
-        name: 'Delivered',
-        sort_order: 1,
-        is_active: true,
-      })
       .select('id')
-      .single();
+      .eq('tenant_id', testTenantId)
+      .eq('code', 'delivered')
+      .maybeSingle();
 
-    if (stageError) {
-      throw new Error(`Failed to create Bella Auto Phase 5 delivered stage: ${stageError.message}`);
+    if (stageLookupError) {
+      throw new Error(`Failed to look up Bella Auto Phase 5 delivered stage: ${stageLookupError.message}`);
     }
 
-    testStageId = stage!.id;
+    if (existingStage) {
+      testStageId = existingStage.id;
+    } else {
+      const { data: stage, error: stageError } = await supabase
+        .from('auto_journey_stages')
+        .insert({
+          tenant_id: testTenantId,
+          code: 'delivered',
+          name: 'Delivered',
+          sort_order: 1,
+          is_active: true,
+        })
+        .select('id')
+        .single();
+
+      if (stageError) {
+        throw new Error(`Failed to create Bella Auto Phase 5 delivered stage: ${stageError.message}`);
+      }
+
+      testStageId = stage!.id;
+      createdTestStage = true;
+    }
 
     // Create test journey
     const { data: journey, error: journeyErr } = await supabase
@@ -276,7 +293,7 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
       await supabase.from('auto_customer_journeys').delete().eq('id', testJourneyId);
     }
 
-    if (testStageId) {
+    if (testStageId && createdTestStage) {
       await supabase.from('auto_journey_stages').delete().eq('id', testStageId);
     }
 

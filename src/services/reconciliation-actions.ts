@@ -353,6 +353,7 @@ export async function allocateOrphanedRevenue(revenueId: string, bookingId: stri
           tenantId: user.tenant_id,
           revenueId: updatedRevenue.id,
           totalAmount: Math.abs(amount),
+          paymentMethod: orphanedRevenue.payment_method,
           description: orphanedRevenue.notes || reason,
         }),
         '[allocateOrphanedRevenue]'
@@ -447,6 +448,7 @@ export async function collectDebtPayment(input: {
           tenantId: user.tenant_id,
           revenueId: insertedRevenue.id,
           totalAmount: Math.abs(input.amount),
+          paymentMethod: input.paymentMethod,
           description: insertedRevenue.notes || accountingPayload.reason || 'Thu đối soát công nợ',
         }),
         '[collectDebtPayment]'

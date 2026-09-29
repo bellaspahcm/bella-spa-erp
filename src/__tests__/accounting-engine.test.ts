@@ -288,6 +288,7 @@ describe('RevenueRecognitionService.handlePackageSale', () => {
       packageSaleId: 'package-sale-1',
       totalAmount: 1080000, // bao gồm 8% VAT
       vatRate: 0.08,
+      paymentMethod: 'cash',
       description: 'Gói Mẹ & Bé 10 buổi',
     });
 
@@ -303,11 +304,12 @@ describe('RevenueRecognitionService.handlePackageSale', () => {
     const totalCredit = linesCall.reduce((s: number, l: JournalLineInsert) => s + (l.credit_amount || 0), 0);
     expect(totalDebit).toBe(1080000);
     expect(totalCredit).toBeCloseTo(1080000, 2);
+    expect(linesCall[0].account_id).toBe(CASH_ID);
   });
 
-  it('produces a 2-line entry without VAT', async () => {
+  it('produces a 2-line entry without VAT using bank account for bank transfer', async () => {
     mockSingle
-      .mockResolvedValueOnce({ data: { id: CASH_ID }, error: null })
+      .mockResolvedValueOnce({ data: { id: BANK_ID }, error: null })
       .mockResolvedValueOnce({ data: { id: UNEARNED_ID }, error: null })
       .mockResolvedValueOnce({ data: { id: 'entry-uuid-3' }, error: null });
 
@@ -315,11 +317,13 @@ describe('RevenueRecognitionService.handlePackageSale', () => {
       tenantId: TENANT_ID,
       packageSaleId: 'package-sale-2',
       totalAmount: 500000,
+      paymentMethod: 'bank_transfer',
       description: 'Gói lẻ',
     });
 
     const linesCall = mockInsertLines.mock.calls[0][0];
     expect(linesCall).toHaveLength(2);
+    expect(linesCall[0].account_id).toBe(BANK_ID);
     expect(linesCall[0].debit_amount).toBe(500000);
     expect(linesCall[1].credit_amount).toBe(500000);
   });
@@ -332,6 +336,7 @@ describe('RevenueRecognitionService.handlePackageSale', () => {
         tenantId: TENANT_ID,
         packageSaleId: 'package-sale-3',
         totalAmount: 100000,
+        paymentMethod: 'cash',
         description: 'Test',
       })
     ).rejects.toThrow(/Account code 111 not found for tenant/);
