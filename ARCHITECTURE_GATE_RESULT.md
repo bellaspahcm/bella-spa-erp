@@ -1,3 +1,98 @@
+# ARCHITECTURE GATE RESULT - HAIRCUT PAYMENT TO F3 AR ALLOCATION HARDENING
+
+> **Status:** PASS - narrow Core consumer hardening for Finance OS canonical payment-to-AR allocation
+> **Date:** 2026-09-29
+> **Scope:** `recordRemainingPayment` Finance AR allocation call only. Use persisted confirmed `revenue` fact for idempotent retries before calling the Finance OS allocation contract. No Finance schema/RPC migration, direct `finance_*` writes, Debt/Reconciliation, BabyCare, Healthcare, Education, Logistics, or Haircut audit reopen.
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+PR #168 merged the Finance OS canonical contract:
+
+```text
+confirmed payment
+  -> F1 cash receipt
+  -> F2 cash movement
+  -> F3 receivable allocation
+```
+
+The remaining Haircut integration gap is the Core consumer boundary. On idempotent retry, the consumer may receive an existing persisted `revenue` row while the retry request payload has drifted. Gate decision: `PASS` for a minimum consumer fix that treats persisted `revenue` as the financial fact for allocation amount/status/payment metadata and leaves Finance OS ownership intact.
+
+## 2. Product Manifest
+
+In scope:
+- `src/core/services/order/payment-actions.ts` allocation input selection.
+- Existing idempotency lookup result from `revenue`.
+- Focused unit regression for retry amount drift and pending payment skip.
+
+Out of scope:
+- Finance F1/F2/F3 invariant changes.
+- Finance schema, RPC, RLS, or migration work.
+- Product-owned AR allocation logic.
+- Debt/Reconciliation.
+- BabyCare, Healthcare, Education, or Logistics changes.
+- Re-auditing completed Haircut areas.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Role |
+|---|---|---|
+| `revenue` persisted payment row | Core/Product payment persistence | Authoritative payment fact supplied to Finance |
+| Finance payment-to-AR allocation contract | Finance OS | Canonical F1/F2/F3 allocation orchestration |
+| `recordRemainingPayment` | Core consumer | Bridges confirmed persisted payment fact to Finance OS contract |
+
+## 4. Contract Dependency Map
+
+```text
+Haircut/Core confirmed persisted revenue
+  -> recordRemainingPayment consumer
+  -> allocateConfirmedBookingPaymentToFinanceAr
+  -> Finance OS F1 cash receipt
+  -> F2 cash movement
+  -> F3 AR allocation
+```
+
+## 5. Change Authority
+
+Authorized:
+- Harden Core consumer input selection for Finance allocation.
+- Use persisted `revenue.amount`, `revenue.status`, `revenue.payment_method`, `revenue.received_date`, and `revenue.notes` when present.
+- Add focused tests proving retry payload drift does not change Finance allocation amount.
+
+Not authorized:
+- Change Finance OS invariants.
+- Add or modify migrations/RPCs.
+- Write directly to `finance_*` from Product/Core.
+- Implement Debt/Reconciliation.
+- Touch BabyCare or reopen Haircut audit.
+
+## 6. UI -> Contract Reconciliation
+
+No UI change.
+
+## 7. Additive Migration Plan
+
+No migration.
+
+## 8. 11 Automated Verification Gates Plan
+
+1. Confirm branch base is merged `origin/main` after PR #168.
+2. Read Bella constitution and F3 AR constitution.
+3. Confirm Finance OS allocation contract remains the authority.
+4. Confirm current Core consumer calls Finance allocation after persisted payment/idempotency lookup.
+5. Fix consumer to prefer persisted `revenue` financial fact on retries.
+6. Add idempotent retry regression where request amount differs from persisted amount.
+7. Add pending-payment skip regression.
+8. Run focused Core payment action test.
+9. Run Finance semantic allocation test.
+10. Run `git diff --check`.
+11. Stop at first real failure; do not wait on unrelated gates after a failure.
+
+Gate result: `PASS`.
+
+---
+
 # ARCHITECTURE GATE RESULT - PR168 AFFECTED JEST REAL-DB ROUTING FIX
 
 > **Status:** PASS - CI affected-test routing only, keep Finance real-DB verification suites out of the mock/unit integration lane

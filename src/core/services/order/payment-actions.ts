@@ -40,18 +40,59 @@ function readStringField(source: Record<string, unknown> | null, field: string):
   return typeof value === 'string' && value.trim() !== '' ? value : null;
 }
 
+function readNumberField(source: Record<string, unknown> | null, field: string): number | null {
+  const value = source?.[field];
+  const numericValue = typeof value === 'number'
+    ? value
+    : typeof value === 'string'
+      ? Number(value)
+      : NaN;
+  return Number.isFinite(numericValue) ? numericValue : null;
+}
+
+function resolvePaymentRevenueRecord(data: unknown): Record<string, unknown> | null {
+  return asRecord(asRecord(data)?.revenue);
+}
+
 function resolvePaymentRevenueId(data: unknown): string | null {
   const record = asRecord(data);
+  const persistedRevenueId = readStringField(resolvePaymentRevenueRecord(data), 'id');
+  if (persistedRevenueId) return persistedRevenueId;
   const directRevenueId = readStringField(record, 'revenue_id');
-  if (directRevenueId) return directRevenueId;
-  return readStringField(asRecord(record?.revenue), 'id');
+  return directRevenueId;
 }
 
 function resolvePaymentRevenueStatus(data: unknown): string | null {
   const record = asRecord(data);
+  const persistedStatus = readStringField(resolvePaymentRevenueRecord(data), 'status');
+  if (persistedStatus) return persistedStatus;
   const directStatus = readStringField(record, 'revenue_status');
-  if (directStatus) return directStatus;
-  return readStringField(asRecord(record?.revenue), 'status');
+  return directStatus;
+}
+
+function resolvePaymentRevenueAmount(data: unknown): number | null {
+  const record = asRecord(data);
+  return readNumberField(resolvePaymentRevenueRecord(data), 'amount')
+    ?? readNumberField(record, 'revenue_amount')
+    ?? readNumberField(record, 'amount');
+}
+
+function resolvePaymentRevenueMethod(data: unknown): string | null {
+  const record = asRecord(data);
+  return readStringField(resolvePaymentRevenueRecord(data), 'payment_method')
+    ?? readStringField(record, 'payment_method');
+}
+
+function resolvePaymentRevenueReceivedDate(data: unknown): string | null {
+  const record = asRecord(data);
+  return readStringField(resolvePaymentRevenueRecord(data), 'received_date')
+    ?? readStringField(record, 'received_date');
+}
+
+function resolvePaymentRevenueNotes(data: unknown): string | null {
+  const record = asRecord(data);
+  return readStringField(resolvePaymentRevenueRecord(data), 'notes')
+    ?? readStringField(record, 'notes');
 }
 
 async function safeAllocateConfirmedPaymentToFinanceAr(params: {
@@ -86,7 +127,14 @@ async function safeAllocateConfirmedPaymentToFinanceAr(params: {
   const revenueType = params.payment.revenue_type || 'remaining_payment';
   const idempotencyKey = params.payment.idempotency_key
     || buildManualPaymentIdempotencyKey(params.payment, receivedDate, revenueType);
-  const amountMinor = Math.round(Math.abs(Number(params.payment.amount)));
+  const persistedAmount = resolvePaymentRevenueAmount(params.paymentData);
+  const amountMinor = Math.round(Math.abs(persistedAmount ?? Number(params.payment.amount)));
+  if (!Number.isFinite(amountMinor) || amountMinor <= 0) {
+    return {
+      status: 'FAILED',
+      error: 'BOOKING_PAYMENT_AMOUNT_INVALID',
+    };
+  }
 
   try {
     const allocation = await allocateConfirmedBookingPaymentToFinanceAr({
@@ -95,10 +143,12 @@ async function safeAllocateConfirmedPaymentToFinanceAr(params: {
       revenueId,
       amountMinor,
       currency: 'VND',
-      paymentMethod: params.payment.payment_method,
-      receivedAt: receivedDate,
+      paymentMethod: resolvePaymentRevenueMethod(params.paymentData) ?? params.payment.payment_method,
+      receivedAt: resolvePaymentRevenueReceivedDate(params.paymentData) ?? receivedDate,
       idempotencyKey,
-      description: params.payment.notes || 'Confirmed booking remaining payment',
+      description: resolvePaymentRevenueNotes(params.paymentData)
+        ?? params.payment.notes
+        ?? 'Confirmed booking remaining payment',
     });
     return {
       status: 'ALLOCATED',
@@ -122,6 +172,9 @@ function attachFinanceAllocationOutcome(
   data: unknown,
   outcome: Awaited<ReturnType<typeof safeAllocateConfirmedPaymentToFinanceAr>>,
 ) {
+  if (outcome.status === 'SKIPPED') {
+    return data;
+  }
   const record = asRecord(data);
   return record
     ? { ...record, finance_ar_allocation: outcome }
