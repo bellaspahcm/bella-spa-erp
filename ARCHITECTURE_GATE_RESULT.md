@@ -1,3 +1,83 @@
+# ARCHITECTURE GATE RESULT - PR168 AFFECTED JEST REAL-DB ROUTING FIX
+
+> **Status:** PASS - CI affected-test routing only, keep Finance real-DB verification suites out of the mock/unit integration lane
+> **Date:** 2026-09-29
+> **Scope:** `scripts/test-changed-files.mjs` related-test ignore list only. No Finance OS runtime, Product runtime, schema, RLS, Healthcare, Education, or Logistics change.
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+PR #168 became mergeable after the conflict resolution, but CI `Affected Unit and Integration Tests` selected Finance real-DB verification suites through Jest `--findRelatedTests` and failed with `TypeError: fetch failed`. The failing suites require real database credentials/environment and belong in the dedicated real-DB/Finance verification contract, not the mock affected unit/integration lane. Gate decision: `PASS` for a CI-only selector correction.
+
+## 2. Product Manifest
+
+In scope:
+- Affected Jest routing in `scripts/test-changed-files.mjs`.
+- Exclude Finance F1/F2 real-DB verification suites from the mock affected unit/integration lane.
+
+Out of scope:
+- Finance OS runtime behavior.
+- Finance contract semantics.
+- Product/Core payment behavior.
+- Database schema, RLS, migrations, or data.
+- Healthcare, Education, or Logistics kernel work.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Role |
+|---|---|---|
+| `scripts/test-changed-files.mjs` | CI governance | Selects mock/unit integration tests related to changed files |
+| `finance-f1-ledger-verification.test.ts` | Finance OS real-DB verification | Validates F1 ledger behavior against database-backed environment |
+| `finance-f2-projection-worker.test.ts` | Finance OS real-DB verification | Validates F2 projection behavior against database-backed environment |
+
+## 4. Contract Dependency Map
+
+```text
+PR changed Finance/Core source files
+  -> affected Jest selector
+  -> mock unit/integration lane
+  -> exclude real-DB Finance verification suites
+  -> dedicated real-DB/Finance verification remains responsible
+```
+
+## 5. Change Authority
+
+Authorized:
+- Add exact Finance real-DB verification test paths to the affected-test ignore list.
+
+Not authorized:
+- Change Finance runtime or tests to hide `fetch failed`.
+- Disable the affected-test job.
+- Remove dedicated real-DB verification coverage.
+- Modify Product/Core payment logic.
+
+## 6. UI -> Contract Reconciliation
+
+No UI change.
+
+## 7. Additive Migration Plan
+
+No migration.
+
+## 8. 11 Automated Verification Gates Plan
+
+1. Confirm PR #168 conflict is resolved and mergeable.
+2. Read failed CI log for `Affected Unit and Integration Tests`.
+3. Identify failing suites as Finance F1/F2 database-backed verification suites.
+4. Apply exact affected-test ignore patterns.
+5. Run `node --check scripts/test-changed-files.mjs`.
+6. Run affected selector locally for PR #168 changed files.
+7. Run focused payment/Finance unit suites.
+8. Run `git diff --check`.
+9. Push CI-only selector fix.
+10. Cancel stale/known-failed runs after failure to avoid wasting CI time.
+11. Re-run PR CI and stop at first real failure.
+
+Gate result: `PASS`.
+
+---
+
 # ARCHITECTURE GATE RESULT - FINANCE OS CONFIRMED PAYMENT TO AR CONTRACT
 
 > **Status:** PASS - minimal Finance OS canonical payment-to-AR allocation contract
