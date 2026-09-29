@@ -77,6 +77,7 @@ export interface PaymentReceivableAllocationResult {
 }
 
 export interface ReceivableMatchCriteria {
+  readonly invoiceId?: string;
   readonly businessSourceType?: string;
   readonly businessSourceId?: string;
   readonly bookingId?: string;
@@ -112,6 +113,19 @@ export interface ConfirmedPaymentReceivableAllocationResult {
   readonly allocations: readonly ConfirmedPaymentReceivableAllocationLine[];
 }
 
+export interface ConfirmedPaymentInvoiceReceivableAllocationInput {
+  readonly tenantId: string;
+  readonly invoiceId: string;
+  readonly paymentSourceType: string;
+  readonly paymentSourceId: string;
+  readonly amountMinor: number;
+  readonly currency: CurrencyCode;
+  readonly paymentMethod: string;
+  readonly receivedAt: string;
+  readonly idempotencyKey: string;
+  readonly description: string;
+}
+
 export interface ISemanticReceivableChargeContract {
   recognizeServiceReceivable(
     input: ServiceReceivableChargeInput,
@@ -127,5 +141,9 @@ export interface ISemanticReceivableChargeContract {
 
   allocateConfirmedPaymentToReceivables(
     input: ConfirmedPaymentReceivableAllocationInput,
+  ): Promise<ConfirmedPaymentReceivableAllocationResult>;
+
+  allocateConfirmedPaymentToInvoiceReceivable(
+    input: ConfirmedPaymentInvoiceReceivableAllocationInput,
   ): Promise<ConfirmedPaymentReceivableAllocationResult>;
 }

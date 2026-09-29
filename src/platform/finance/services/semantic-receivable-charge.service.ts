@@ -1,6 +1,7 @@
 import { createHash } from 'crypto';
 import {
   ConfirmedPaymentReceivableAllocationInput,
+  ConfirmedPaymentInvoiceReceivableAllocationInput,
   ConfirmedPaymentReceivableAllocationLine,
   ConfirmedPaymentReceivableAllocationResult,
   FINANCE_RECEIVABLE_SEMANTICS,
@@ -433,6 +434,117 @@ export class SemanticReceivableChargeService implements ISemanticReceivableCharg
     };
   }
 
+  async allocateConfirmedPaymentToInvoiceReceivable(
+    input: ConfirmedPaymentInvoiceReceivableAllocationInput,
+  ): Promise<ConfirmedPaymentReceivableAllocationResult> {
+    this.assertValidConfirmedInvoicePaymentInput(input);
+
+    const paymentReceiptIdempotencyKey = this.buildConfirmedPaymentReceiptKey(input.idempotencyKey);
+    const postedAt = this.parsePostedAt(input.receivedAt);
+    const receivableAccount = await this.resolveRequiredAccountAsOf(
+      input.tenantId,
+      this.asOfDate(postedAt),
+      FINANCE_RECEIVABLE_SEMANTICS.TRADE_RECEIVABLE,
+    );
+    const paymentAccountCode = this.resolvePaymentAccountCode(input.paymentMethod);
+    const existingReceipt = await this.gateway.findCashReceiptByIdempotencyKey({
+      tenantId: input.tenantId,
+      idempotencyKey: paymentReceiptIdempotencyKey,
+    });
+
+    const openBeforeReceipt = await this.gateway.findOpenReceivables({
+      tenantId: input.tenantId,
+      match: { invoiceId: input.invoiceId },
+    });
+
+    if (!existingReceipt) {
+      this.assertOutstandingCanCover(input.amountMinor, openBeforeReceipt);
+    }
+
+    const receipt = existingReceipt ?? await this.gateway.postCashReceipt({
+      tenantId: input.tenantId,
+      idempotencyKey: paymentReceiptIdempotencyKey,
+      paymentSourceType: input.paymentSourceType,
+      paymentSourceId: input.paymentSourceId,
+      amountMinor: input.amountMinor,
+      currency: input.currency,
+      paymentAccountCode,
+      receivableAccountCode: receivableAccount.accountCode,
+      postedAt,
+      description: input.description,
+    });
+
+    await this.gateway.projectCashReceipt({
+      tenantId: input.tenantId,
+      transactionId: receipt.transactionId,
+    });
+
+    const cashMovement = await this.requireCashMovementForReceipt(input, receipt.transactionId);
+    const existingAllocation = await this.gateway.findExistingAllocation({
+      tenantId: input.tenantId,
+      invoiceId: input.invoiceId,
+      cashMovementId: cashMovement.id,
+    });
+
+    if (existingAllocation) {
+      return {
+        transactionId: receipt.transactionId,
+        cashMovementId: cashMovement.id,
+        allocatedAmountMinor: existingAllocation.allocatedAmountMinor,
+        duplicate: true,
+        allocations: [{
+          invoiceId: existingAllocation.invoiceId,
+          receivablePositionId: existingAllocation.receivablePositionId,
+          cashMovementId: cashMovement.id,
+          allocationId: existingAllocation.allocationId,
+          allocatedAmountMinor: existingAllocation.allocatedAmountMinor,
+          duplicate: true,
+        }],
+      };
+    }
+
+    const openReceivables = existingReceipt
+      ? await this.gateway.findOpenReceivables({
+        tenantId: input.tenantId,
+        match: { invoiceId: input.invoiceId },
+      })
+      : openBeforeReceipt;
+    this.assertOutstandingCanCover(input.amountMinor, openReceivables);
+
+    const targetReceivable = openReceivables.find((receivable) => receivable.invoiceId === input.invoiceId);
+    if (!targetReceivable) {
+      throw new FinanceSemanticReceivableChargeError(
+        'BLOCKED_BY_RECEIVABLE_RESOLUTION_GAP',
+        'The target invoice does not have an open receivable position.',
+      );
+    }
+
+    const allocation = await this.gateway.allocatePayment({
+      tenantId: input.tenantId,
+      invoiceId: input.invoiceId,
+      cashMovementId: cashMovement.id,
+      allocatedAmountMinor: input.amountMinor,
+      exchangeRate: 1,
+      rateSource: 'VND_BASE',
+      rateTimestamp: postedAt.toISOString(),
+    });
+
+    return {
+      transactionId: receipt.transactionId,
+      cashMovementId: cashMovement.id,
+      allocatedAmountMinor: input.amountMinor,
+      duplicate: false,
+      allocations: [{
+        invoiceId: input.invoiceId,
+        receivablePositionId: targetReceivable.receivablePositionId,
+        cashMovementId: cashMovement.id,
+        allocationId: allocation.allocationId,
+        allocatedAmountMinor: input.amountMinor,
+        duplicate: false,
+      }],
+    };
+  }
+
   private assertValidServiceInput(input: ServiceReceivableChargeInput): void {
     const required = [
       input.tenantId,
@@ -497,6 +609,27 @@ export class SemanticReceivableChargeService implements ISemanticReceivableCharg
       throw new FinanceSemanticReceivableChargeError(
         'INVALID_CONFIRMED_PAYMENT_RECEIVABLE_ALLOCATION_INPUT',
         'Confirmed payment allocation requires tenant, payment source, positive amount, payment method, idempotency key, and receivable match criteria.',
+      );
+    }
+  }
+
+  private assertValidConfirmedInvoicePaymentInput(input: ConfirmedPaymentInvoiceReceivableAllocationInput): void {
+    const required = [
+      input.tenantId,
+      input.invoiceId,
+      input.paymentSourceType,
+      input.paymentSourceId,
+      input.currency,
+      input.paymentMethod,
+      input.receivedAt,
+      input.idempotencyKey,
+      input.description,
+    ];
+
+    if (required.some((value) => value.trim() === '') || input.amountMinor <= 0) {
+      throw new FinanceSemanticReceivableChargeError(
+        'INVALID_CONFIRMED_PAYMENT_RECEIVABLE_ALLOCATION_INPUT',
+        'Confirmed invoice payment allocation requires tenant, invoice, payment source, positive amount, payment method, idempotency key, and description.',
       );
     }
   }
@@ -568,7 +701,7 @@ export class SemanticReceivableChargeService implements ISemanticReceivableCharg
   }
 
   private async requireCashMovementForReceipt(
-    input: ConfirmedPaymentReceivableAllocationInput,
+    input: Pick<ConfirmedPaymentReceivableAllocationInput, 'tenantId' | 'amountMinor'>,
     transactionId: string,
   ): Promise<FinanceCashMovementSnapshot> {
     const movements = await this.gateway.findCashMovementsByTransaction({
