@@ -76,6 +76,55 @@ export function isCompletingSession(safeUpdates: UpdateSessionLogInput, existing
   return safeUpdates.status === 'completed' && existingLog.status !== 'completed';
 }
 
+export function isRevertingCompletedSession(safeUpdates: UpdateSessionLogInput, existingLog: SessionLogRow) {
+  return existingLog.status === 'completed' &&
+    Object.prototype.hasOwnProperty.call(safeUpdates, 'status') &&
+    safeUpdates.status !== undefined &&
+    safeUpdates.status !== 'completed';
+}
+
+export async function reverseCompletedSessionSideEffects(params: {
+  supabase: SupabaseServerClient;
+  sessionId: string;
+  tenantId: string;
+  existingLog: SessionLogRow;
+}): Promise<{ success: true } | { error: string }> {
+  const { supabase, sessionId, tenantId, existingLog } = params;
+  const rollbackErrors: string[] = [];
+
+  if (existingLog.completed_by_ktv_id && existingLog.completed_date) {
+    try {
+      const { recalculateAndSaveSalaryRecord } = await import('@/modules/hr-salary/actions/admin-salary-actions');
+      const monthYear = `${String(existingLog.completed_date).substring(0, 7)}-01`;
+      await recalculateAndSaveSalaryRecord(
+        supabase,
+        existingLog.completed_by_ktv_id,
+        monthYear,
+        tenantId
+      );
+    } catch (salaryError) {
+      rollbackErrors.push(`salary rollback failed: ${getErrorMessage(salaryError)}`);
+    }
+  }
+
+  const { error: outboxError } = await supabase
+    .from('accounting_outbox')
+    .delete()
+    .eq('tenant_id', tenantId)
+    .eq('event_type', 'SESSION_DONE')
+    .eq('reference_type', 'SESSION_LOG')
+    .eq('reference_id', sessionId)
+    .in('status', ['PENDING', 'FAILED', 'DEAD']);
+
+  if (outboxError) {
+    rollbackErrors.push(`SESSION_DONE outbox rollback failed: ${outboxError.message}`);
+  }
+
+  return rollbackErrors.length > 0
+    ? { error: rollbackErrors.join('; ') }
+    : { success: true };
+}
+
 export async function applyCompletionDefaults(
   supabase: SupabaseServerClient,
   bookingId: string,

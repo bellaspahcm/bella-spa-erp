@@ -42,6 +42,10 @@ import {
   ensureSessionReviewPlaceholder,
   recordSingleSessionRevenueIfNeeded,
 } from '../core/services/order/session-completion-helpers';
+import {
+  isRevertingCompletedSession,
+  reverseCompletedSessionSideEffects,
+} from '../core/services/order/update-session-log-helpers';
 
 type DbCall = {
   table: string;
@@ -263,6 +267,59 @@ describe('session completion accounting side effects', () => {
       }),
     ]));
     expect(mockRollbackInventoryConsumption).toHaveBeenCalledWith('session-1');
+  });
+
+  it('identifies only completed-to-non-completed session reversions', () => {
+    expect(isRevertingCompletedSession(
+      { status: 'scheduled' },
+      { status: 'completed' } as never
+    )).toBe(true);
+
+    expect(isRevertingCompletedSession(
+      { status: 'completed' },
+      { status: 'completed' } as never
+    )).toBe(false);
+
+    expect(isRevertingCompletedSession(
+      { notes: 'reschedule only' },
+      { status: 'completed' } as never
+    )).toBe(false);
+  });
+
+  it('reverses completed-session salary and unposted SESSION_DONE outbox for the exact session', async () => {
+    const { calls, supabase } = createSupabaseMock([{}]);
+
+    const result = await reverseCompletedSessionSideEffects({
+      supabase: supabase as never,
+      sessionId: 'session-1',
+      tenantId: 'tenant-1',
+      existingLog: {
+        status: 'completed',
+        completed_by_ktv_id: 'ktv-1',
+        completed_date: '2026-09-29',
+      } as never,
+    });
+
+    expect(result).toEqual({ success: true });
+    expect(mockRecalculateAndSaveSalaryRecord).toHaveBeenCalledWith(
+      supabase,
+      'ktv-1',
+      '2026-09-01',
+      'tenant-1'
+    );
+    expect(calls).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        table: 'accounting_outbox',
+        op: 'delete',
+        filters: [
+          ['tenant_id', 'tenant-1'],
+          ['event_type', 'SESSION_DONE'],
+          ['reference_type', 'SESSION_LOG'],
+          ['reference_id', 'session-1'],
+          ['status', ['PENDING', 'FAILED', 'DEAD']],
+        ],
+      }),
+    ]));
   });
 
   it('returns an explicit error when the review placeholder insert fails', async () => {
