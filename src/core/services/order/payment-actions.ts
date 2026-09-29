@@ -99,7 +99,15 @@ async function safeAllocateConfirmedPaymentToFinanceAr(params: {
   readonly payment: RecordRemainingPaymentParams;
   readonly tenantId: string;
   readonly paymentData: unknown;
-}): Promise<{ readonly status: 'ALLOCATED' | 'SKIPPED' | 'FAILED'; readonly error?: string }> {
+}): Promise<{
+  readonly status: 'ALLOCATED' | 'SKIPPED' | 'FAILED';
+  readonly transactionId?: string;
+  readonly cashMovementId?: string;
+  readonly allocatedAmountMinor?: number;
+  readonly allocationCount?: number;
+  readonly duplicate?: boolean;
+  readonly error?: string;
+}> {
   const revenueId = resolvePaymentRevenueId(params.paymentData);
   const revenueStatus = resolvePaymentRevenueStatus(params.paymentData)
     ?? params.payment.status
@@ -129,7 +137,7 @@ async function safeAllocateConfirmedPaymentToFinanceAr(params: {
   }
 
   try {
-    await allocateConfirmedBookingPaymentToFinanceAr({
+    const allocation = await allocateConfirmedBookingPaymentToFinanceAr({
       tenantId: params.tenantId,
       bookingId: params.payment.booking_id,
       revenueId,
@@ -142,7 +150,14 @@ async function safeAllocateConfirmedPaymentToFinanceAr(params: {
         ?? params.payment.notes
         ?? 'Confirmed booking remaining payment',
     });
-    return { status: 'ALLOCATED' };
+    return {
+      status: 'ALLOCATED',
+      transactionId: allocation.transactionId,
+      cashMovementId: allocation.cashMovementId,
+      allocatedAmountMinor: allocation.allocatedAmountMinor,
+      allocationCount: allocation.allocations.length,
+      duplicate: allocation.duplicate,
+    };
   } catch (error) {
     const message = getErrorMessage(error);
     console.error('[recordRemainingPayment] Finance AR allocation failed:', message);
@@ -155,9 +170,9 @@ async function safeAllocateConfirmedPaymentToFinanceAr(params: {
 
 function attachFinanceAllocationOutcome(
   data: unknown,
-  outcome: { readonly status: 'ALLOCATED' | 'SKIPPED' | 'FAILED'; readonly error?: string },
+  outcome: Awaited<ReturnType<typeof safeAllocateConfirmedPaymentToFinanceAr>>,
 ) {
-  if (outcome.status !== 'FAILED') {
+  if (outcome.status === 'SKIPPED') {
     return data;
   }
   const record = asRecord(data);
