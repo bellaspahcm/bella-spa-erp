@@ -125,6 +125,78 @@ export class OutboxDispatcher {
     return dispatchedCount;
   }
 
+  public async dispatchPendingEventsForAggregate(
+    tenantId: string,
+    aggregateId: string,
+  ): Promise<number> {
+    const { data: rows, error: fetchErr } = await this.client
+      .from('finance_outbox_events')
+      .select('id, tenant_id, event_type, payload, status, retry_count, error, created_at')
+      .eq('tenant_id', tenantId)
+      .eq('status', 'PENDING')
+      .order('created_at', { ascending: true })
+      .limit(MAX_DISPATCH_BATCH);
+
+    if (fetchErr) {
+      console.error('[OutboxDispatcher] Failed to fetch outbox events:', fetchErr.message);
+      return 0;
+    }
+
+    if (!rows || rows.length === 0) {
+      return 0;
+    }
+
+    const outboxRows = (rows as OutboxRow[]).filter((row) => {
+      try {
+        return this.parsePayload(row.payload).aggregateId === aggregateId;
+      } catch {
+        return false;
+      }
+    });
+
+    let dispatchedCount = 0;
+
+    for (const row of outboxRows) {
+      try {
+        const parsed = this.parsePayload(row.payload);
+
+        await eventBus.publish({
+          eventType: (parsed.eventType || row.event_type) as EventType,
+          eventVersion: parsed.eventVersion || 'v1',
+          tenantId: parsed.tenantId || row.tenant_id,
+          aggregateId: parsed.aggregateId,
+          aggregateType: parsed.aggregateType,
+          payload: parsed.data,
+          userId: parsed.userId,
+          correlationId: parsed.correlationId
+        });
+
+        await this.client
+          .from('finance_outbox_events')
+          .update({ status: 'DISPATCHED' })
+          .eq('id', row.id)
+          .eq('tenant_id', row.tenant_id);
+
+        dispatchedCount++;
+      } catch (err: unknown) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        console.error(`[OutboxDispatcher] Failed to dispatch event ${row.id}:`, errMsg);
+
+        await this.client
+          .from('finance_outbox_events')
+          .update({
+            status: 'FAILED',
+            retry_count: row.retry_count + 1,
+            error: errMsg
+          })
+          .eq('id', row.id)
+          .eq('tenant_id', row.tenant_id);
+      }
+    }
+
+    return dispatchedCount;
+  }
+
   /**
    * Retries all FAILED events up to maxRetries for a given tenant.
    * Resets status to PENDING so next dispatchPendingEvents() call picks them up.

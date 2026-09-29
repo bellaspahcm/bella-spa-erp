@@ -1,3 +1,114 @@
+# ARCHITECTURE GATE RESULT - FINANCE OS CONFIRMED PAYMENT TO AR CONTRACT
+
+> **Status:** PASS - minimal Finance OS canonical payment-to-AR allocation contract
+> **Date:** 2026-09-29
+> **Scope:** Confirmed payment -> F1 cash receipt -> F2 cash movement -> F3 receivable resolution/allocation. Haircut may only consume this contract after it is proven. No Haircut AR workaround, Payment Engine redesign, COA, Payroll, Debt/Reconciliation, BabyCare, Healthcare, Education, or Logistics change.
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+Source evidence proves the final Haircut Financial Truth gap is not Haircut core:
+
+```text
+Finance OS already has:
+F1 postTransaction()
+F2 CashProjectionWorker -> finance_cash_movements
+F3 recognizeServiceReceivable()
+F3 allocatePaymentToReceivable(invoiceId, cashMovementId)
+
+Missing canonical path:
+Confirmed Payment
+  -> F1 Cash Receipt
+  -> F2 Cash Movement
+  -> Receivable Resolution
+  -> Idempotent F3 Allocation
+```
+
+Gate decision: `PASS` for the smallest Finance OS semantic contract that accepts a confirmed payment, preserves tenant/idempotency, posts the cash receipt through F1, projects cash through the existing F2 worker/outbox path, resolves open receivables by canonical invoice metadata, and allocates without duplicate F3 allocation on retry.
+
+## 2. Product Manifest
+
+In scope:
+- Finance OS payment-to-receivable semantic contract.
+- Existing Finance OS primitives only: F1 ledger, F2 cash projection, F3 invoice/receivable/allocation.
+- Minimal Haircut consumer wiring only after the Finance OS contract is tested.
+
+Out of scope:
+- Haircut-owned AR/cash movement implementation.
+- Payment engine redesign.
+- COA/accounting posting repair.
+- Payroll/commission.
+- Debt/Reconciliation implementation.
+- BabyCare, Preschool, Healthcare, Education, Logistics.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Role |
+|---|---|---|
+| Confirmed payment semantic contract | Finance OS | Canonical bridge from external payment fact to financial truth |
+| F1 cash receipt | Finance OS Ledger | Double-entry cash/AR receipt |
+| F2 cash movement | Finance OS Cash/Treasury | Projected liquidity movement from F1 event |
+| F3 invoice/receivable/allocation | Finance OS AR | Receivable truth and settlement |
+| Haircut payment action | Product/Core consumer | Supplies tenant/payment/source facts only |
+
+## 4. Contract Dependency Map
+
+```text
+Haircut confirmed payment
+  -> Finance OS confirmed payment receivable allocation contract
+  -> F1 Ledger postTransaction
+  -> F1 outbox finance.transaction.posted.v2
+  -> F2 CashProjectionWorker
+  -> finance_cash_movements
+  -> F3 invoice/receivable resolver
+  -> finance_allocate_payment
+```
+
+## 5. Change Authority
+
+Authorized:
+- `src/platform/finance/contracts/receivable-charge.contract.ts`
+- `src/platform/finance/services/semantic-receivable-charge.service.ts`
+- `src/platform/finance/gateways/supabase-receivable-charge.gateway.ts`
+- Focused Finance OS tests.
+- If contract is proven, minimal Haircut/Core consumer call with ACR metadata if `src/core` files must change.
+
+Not authorized:
+- New AR schema.
+- Direct product writes to `finance_cash_movements`.
+- Direct Haircut allocation workaround.
+- COA changes.
+- Payroll changes.
+- Debt/Reconciliation feature work.
+- Payment engine redesign.
+
+## 6. UI -> Contract Reconciliation
+
+No UI change. This is backend financial truth plumbing only.
+
+## 7. Additive Migration Plan
+
+No migration planned. Existing Finance OS primitives are sufficient unless implementation evidence proves a concrete contract gap.
+
+## 8. 11 Automated Verification Gates Plan
+
+1. Verify source contract evidence for F1/F2/F3 existing primitives.
+2. Add generic confirmed-payment input/result types.
+3. Add Finance OS service method for payment-to-AR allocation.
+4. Keep account semantics scoped to proven TT99 AR mapping plus canonical cash/bank payment-method mapping.
+5. Resolve receivables through invoice metadata, not product-owned AR tables.
+6. Preserve payment idempotency key through F1 and F3 allocation retry checks.
+7. Add focused Finance OS unit tests for allocation, retry, and over-allocation block.
+8. Wire Haircut payment only through the Finance OS contract if required.
+9. Run focused Finance/Haircut payment tests.
+10. Run scoped TypeScript or repository-available equivalent.
+11. Run `git diff --check` and stop before Debt/Reconciliation re-evaluation.
+
+Gate result: `PASS`.
+
+---
+
 # ARCHITECTURE GATE RESULT - BELLA AUTO PHASE 5 REAL DB E2E FIXTURE IDEMPOTENCY
 
 > **Status:** PASS - test fixture idempotency fix only
