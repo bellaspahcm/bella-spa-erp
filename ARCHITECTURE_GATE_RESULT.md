@@ -1,3 +1,229 @@
+# ARCHITECTURE GATE RESULT - BELLA AUTO PHASE 5 REAL DB E2E FIXTURE IDEMPOTENCY
+
+> **Status:** PASS - test fixture idempotency fix only
+> **Date:** 2026-09-29
+> **Scope:** `src/__tests__/bella-auto-phase5-experience.test.ts` setup for `auto_journey_stages` only. No Bella Auto runtime behavior, schema, RPC, service contract, Haircut, Finance, Healthcare, Education, Logistics, Payment, Payroll, or COA change.
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+Evidence from PR #166 CI showed `Real Database Business E2E` failed before any Haircut assertion due to Bella Auto Phase 5 fixture setup:
+
+```text
+auto_journey_stages
+tenant = Test Tenant Bella Auto Phase5 E2E
+code = delivered
+ERROR = duplicate key value violates unique constraint uq_auto_journey_stages_code
+```
+
+Source of truth:
+- Migration `20260803230000_create_auto_journeys.sql` defines `auto_journey_stages` with unique `(tenant_id, code)`.
+- The test intentionally reuses the same test tenant by name across runs.
+
+Gate decision: `PASS` for a minimal test-only change that reuses an existing `delivered` stage for the test tenant when present, and only deletes the stage if this run created it.
+
+## 2. Product Manifest
+
+In scope:
+- Bella Auto Phase 5 real-DB test fixture setup.
+- `auto_journey_stages` lookup/insert idempotency for `code = delivered`.
+
+Out of scope:
+- Bella Auto production services.
+- Journey schema or constraints.
+- Haircut PR #166 implementation.
+- Finance/accounting behavior.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Role |
+|---|---|---|
+| `auto_journey_stages` | Bella Auto journey setup | Stage catalog rows scoped by tenant and code |
+| `bella-auto-phase5-experience.test.ts` | Real DB E2E test fixture | Creates/reuses setup data for Phase 5 experience tests |
+
+## 4. Contract Dependency Map
+
+```text
+Real DB test tenant
+        ↓
+auto_journey_stages(tenant_id, code = delivered)
+        ↓
+auto_customer_journeys.current_stage_id
+        ↓
+Bella Auto Phase 5 services under test
+```
+
+## 5. Change Authority
+
+Authorized:
+- Make the Real DB test fixture setup idempotent for the existing unique `(tenant_id, code)` stage contract.
+
+Not authorized:
+- Change Bella Auto stage semantics.
+- Change `auto_journey_stages` schema/constraint.
+- Change runtime services.
+- Change unrelated verticals.
+
+## 6. UI -> Contract Reconciliation
+
+No UI change.
+
+## 7. Additive Migration Plan
+
+No migration. No DB mutation outside normal test fixture behavior.
+
+## 8. 11 Automated Verification Gates Plan
+
+1. Confirm CI failure is Bella Auto Phase 5 fixture setup.
+2. Confirm canonical unique stage contract from migration.
+3. Patch fixture lookup-before-insert.
+4. Ensure reused stage is not deleted by cleanup.
+5. Run focused Bella Auto Phase 5 real-DB test if feasible.
+6. Run `git diff --check`.
+7. Re-run PR CI and verify Real Database Business E2E.
+8. Verify Haircut accounting files remain unchanged after this fix.
+9. Verify no `src/core` diff is introduced.
+10. Verify migration/build/unit checks still pass in CI.
+11. Stop after CI evidence; no further Bella Auto scope expansion.
+
+Gate result: `PASS`.
+
+---
+
+# ARCHITECTURE GATE RESULT - HAIRCUT ACCOUNTING COA AND PACKAGE SALE FIX
+
+> **Status:** PASS - exact Haircut tenant COA bootstrap plus minimal `PACKAGE_SALE` payment-method propagation
+> **Date:** 2026-09-29
+> **Scope:** Legacy accounting posting readiness for the 3 active `bella_haircut` tenants and the `PACKAGE_SALE` producer path only. No F3 payment allocation, Debt/Reconciliation, Payroll, BabyCare, Payment Engine redesign, or Finance OS kernel change.
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+Evidence proves two independent operational accounting gaps:
+
+```text
+A. Tenant COA/bootstrap configuration
+   3 active bella_haircut tenants are missing active accounting_accounts:
+   111, 112, 131, 334, 3387, 6421, 5113, 5111
+
+B. PACKAGE_SALE producer mapping
+   bank_transfer confirmed revenue emitted PACKAGE_SALE, but runtime path hard-coded 111.
+   Canonical accounting template requires 111_OR_112 based on payment_method.
+```
+
+Gate decision: `PASS` for the minimum scoped implementation that seeds canonical existing COA definitions only for the 3 active Haircut tenants and propagates `paymentMethod` through `PACKAGE_SALE` to resolve `111/112`.
+
+## 2. Product Manifest
+
+In scope:
+- `bella_haircut` tenants with current active status:
+  - Haircut Shop
+  - P1C-haircut-2055f3bb Tenant
+  - P1D1-haircut-75b42702 Tenant
+- Existing legacy accounting COA definitions from `seed_default_coa`.
+- `PACKAGE_SALE` outbox payload and accounting worker producer path.
+- Focused tests for `PACKAGE_SALE` payment-method account selection.
+
+Out of scope:
+- F3 Payment -> AR Allocation.
+- Debt/Reconciliation.
+- Payroll/Commission.
+- BabyCare.
+- Payment Engine redesign.
+- Finance OS F1/F2/F3 kernel changes.
+- Ad hoc account codes or accounting policy invention.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Role |
+|---|---|---|
+| `accounting_accounts` rows | Tenant accounting configuration | Tenant-specific chart of accounts for legacy accounting postings |
+| `seed_default_coa` definitions | Legacy accounting bootstrap | Canonical existing source for required legacy COA codes |
+| `PACKAGE_SALE` outbox payload | Haircut/Beauty payment producer | Carries payment fact into legacy accounting worker |
+| `RevenueRecognitionService.handlePackageSale` | Legacy accounting producer | Posts package/deposit/remaining-payment journal entry |
+| `111_OR_112` template | Accounting event template | Canonical payment-method-dependent account selection |
+
+## 4. Contract Dependency Map
+
+```text
+Haircut remaining payment / package sale revenue
+        ↓
+revenue.payment_method
+        ↓
+PACKAGE_SALE accounting outbox reference_id
+        ↓
+accounting worker
+        ↓
+payload.paymentMethod or revenue.payment_method fallback
+        ↓
+RevenueRecognitionService.handlePackageSale(paymentMethod)
+        ↓
+resolvePaymentAccountCode()
+        ↓
+111 or 112 + 3387 journal lines
+```
+
+COA bootstrap:
+
+```text
+Active bella_haircut tenant
+        ↓
+existing seed_default_coa canonical definitions
+        ↓
+tenant accounting_accounts
+```
+
+## 5. Change Authority
+
+Authorized:
+- Add an exact, idempotent migration scoped to the 3 verified active Haircut tenant IDs, using the existing canonical `seed_default_coa` function.
+- Allow `PACKAGE_SALE` payloads to carry `paymentMethod` when known.
+- Update `PACKAGE_SALE` worker handling to resolve `paymentMethod` from payload or the referenced revenue record.
+- Update `handlePackageSale` to resolve `111/112` using existing `resolvePaymentAccountCode`.
+- Add focused tests.
+
+Not authorized:
+- Create new accounting policy.
+- Add arbitrary account definitions by hand when `seed_default_coa` exists.
+- Touch Finance OS kernel primitives.
+- Open F3 payment allocation, Debt/Reconciliation, Payroll, BabyCare, or Payment Engine redesign.
+
+## 6. UI -> Contract Reconciliation
+
+No UI redesign. No UI action contract is changed.
+
+## 7. Additive Migration Plan
+
+Additive/configuration-only migration:
+
+```text
+For exactly the 3 active bella_haircut tenant IDs:
+  SELECT public.seed_default_coa(tenant_id)
+  ensure 5113 from existing TT133 service revenue migration definition
+```
+
+The seed function is idempotent via `ON CONFLICT (tenant_id, account_code) DO NOTHING`. Account `5113` is also idempotent and uses the existing canonical definition from `20260603010000_tt133_service_revenue_5113.sql`, because the seed function predates that account.
+
+## 8. 11 Automated Verification Gates Plan
+
+1. Source evidence recheck for the 3 Haircut tenant IDs.
+2. Migration scope inspection: exact tenant IDs only.
+3. Focused unit test for `handlePackageSale` bank transfer -> account `112`.
+4. Focused unit test for `handlePackageSale` cash -> account `111`.
+5. Focused payload test or existing test update proving `paymentMethod` can be emitted when known.
+6. Focused worker path test proving `paymentMethod` is resolved from the referenced revenue when absent from payload.
+7. TypeScript scoped check if available/feasible.
+8. Focused Jest for accounting/revenue recognition.
+9. `git diff --check`.
+10. Read-only post-migration DB verification after applying migration.
+11. Focused accounting worker/runtime verification for prior `PACKAGE_SALE`/`SESSION_DONE` missing-account failures if safe and explicitly scoped.
+
+Gate result: `PASS`.
+
+---
+
 # ARCHITECTURE GATE RESULT - SPA COMPLETION ROLLBACK IS_IN_CARE FIX
 
 > **Status:** PASS - restore pre-completion `bookings.is_in_care` during shared completion rollback

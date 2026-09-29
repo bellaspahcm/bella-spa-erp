@@ -114,6 +114,17 @@ describe('Accounting Outbox Worker API', () => {
         };
       }
 
+      if (table === 'revenue') {
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          maybeSingle: jest.fn().mockResolvedValue({
+            data: { payment_method: 'bank_transfer' },
+            error: null,
+          }),
+        };
+      }
+
       if (table === 'inter_branch_clearing_records') {
         return {
           select: jest.fn().mockReturnThis(),
@@ -361,6 +372,7 @@ describe('Accounting Outbox Worker API', () => {
         packageSaleId: 'ref-id-1',
         totalAmount: 1000000,
         vatRate: 0,
+        paymentMethod: 'bank_transfer',
         description: 'Bán gói liệu trình mẹ bé',
         branchId: 'branch-1',
       });

@@ -15,6 +15,7 @@ export function buildPackageSaleOutboxEvent(input: {
   tenantId: string;
   revenueId: string;
   totalAmount: number;
+  paymentMethod?: string | null;
   description?: string | null;
 }): EnqueueAccountingEventParams {
   return {
@@ -25,6 +26,7 @@ export function buildPackageSaleOutboxEvent(input: {
     payload: {
       totalAmount: input.totalAmount,
       vatRate: 0,
+      ...(input.paymentMethod ? { paymentMethod: input.paymentMethod } : {}),
       description: input.description || 'Xác nhận thanh toán gói dịch vụ',
       branchId: input.tenantId,
     },

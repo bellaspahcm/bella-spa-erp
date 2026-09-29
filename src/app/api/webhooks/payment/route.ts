@@ -219,6 +219,7 @@ async function ensureWebhookRevenueSideEffects(
       tenantId: booking.tenant_id,
       revenueId: revenue.id,
       totalAmount: Number(revenue.amount),
+      paymentMethod: revenue.payment_method,
       description: revenue.notes || buildWebhookRevenueNotes(transaction),
     }),
     "[Payment Webhook]"
