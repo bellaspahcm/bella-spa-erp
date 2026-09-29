@@ -1,3 +1,104 @@
+# ARCHITECTURE GATE RESULT - HAIRCUT BOOKING UI CANONICAL ROUTE CLEANUP
+
+> **Status:** PASS - neutralize stale Haircut-only static booking surface and lock the booking page to the existing canonical scheduling contract
+> **Date:** 2026-09-30
+> **Scope:** Haircut booking UI surface only. No Core order service changes, Finance changes, schema/RPC/migration work, Healthcare, Education, Logistics, Salary, or Reconciliation changes.
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+Source evidence shows the active `/dashboard/bookings` page already consumes the canonical booking contract:
+
+```text
+getCalendarSessions
+  -> BookingsTimelineGrid / BookingsDayTimelineList / BookingsPosPanel
+  -> openSessionDetail(session)
+  -> BookingDayDetailModal
+  -> updateBooking / updateSessionLog / rescheduleSession
+```
+
+and booking creation already follows:
+
+```text
+BookingCreateScheduleModal
+  -> checkBookingConflicts
+  -> createSessionLog
+  -> refresh sessions/bookings
+```
+
+The remaining Haircut-specific artifact is an unrouted `HaircutBookingsView` with hard-coded `timelineGridData` and a static write-gap alert. Gate decision: `PASS` for replacing that stale product-specific mock surface with a non-runtime tombstone and strengthening the audit test so Haircut booking stays on the canonical booking page/actions.
+
+## 2. Product Manifest
+
+In scope:
+- Remove the stale Haircut-only static booking implementation.
+- Preserve the canonical shared booking page for Haircut.
+- Update source audit coverage to prove booking read/create/update flows remain contract-backed.
+
+Out of scope:
+- Core order service changes.
+- Booking schema, RPC, RLS, or migration changes.
+- Finance, AR, Debt/Reconciliation, Salary, Payroll, Healthcare, Education, or Logistics changes.
+- Product-specific booking engine or provider/context/registry additions.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Role |
+|---|---|---|
+| `getCalendarSessions` / `createSessionLog` / `updateSessionLog` | Core order service | Canonical booking/session read-write contract |
+| `checkBookingConflicts` | Decision service | Scheduling conflict guard |
+| `/dashboard/bookings/page.tsx` | Product UI consumer | Shared booking surface for tenant module/product presentation |
+| `HaircutBookingsView.tsx` | Stale Haircut UI mock | Replaced by a tombstone because it is not canonical and not routed |
+
+## 4. Contract Dependency Map
+
+```text
+Haircut tenant/product identity
+  -> useTenantModuleKey / useTenantContext
+  -> shared bookings page
+  -> Core order booking/session contract
+  -> DB persistence/read-back through existing services
+```
+
+## 5. Change Authority
+
+Authorized:
+- Remove stale Haircut static booking UI implementation that is not part of the active route.
+- Update audit test assertions to protect the canonical booking route/actions.
+
+Not authorized:
+- Modify `src/core/**`.
+- Introduce a Haircut-specific booking write contract.
+- Add or modify database schema/RPC/migrations.
+- Change Finance/Salary/Reconciliation behavior.
+
+## 6. UI -> Contract Reconciliation
+
+Haircut booking UI must not use hard-coded `timelineGridData`, customer/name/amount matching, or a disabled write-gap alert. The active booking page must continue to use real sessions, bookings, KTV/resource data, create modal, detail modal, conflict checks, and Core order actions.
+
+## 7. Additive Migration Plan
+
+No migration.
+
+## 8. 11 Automated Verification Gates Plan
+
+1. Confirm branch starts from `origin/main`.
+2. Read Bella coding constitution.
+3. Prove `HaircutBookingsView` is not imported by runtime booking page.
+4. Prove `/dashboard/bookings/page.tsx` uses canonical booking components.
+5. Prove data hook uses `getCalendarSessions`.
+6. Prove action hook uses `checkBookingConflicts`, `createSessionLog`, `updateSessionLog`, and `updateBooking`.
+7. Replace stale Haircut static booking mock with a non-runtime tombstone.
+8. Update source audit coverage.
+9. Run focused audit test.
+10. Run scoped lint/diff checks.
+11. Stop without touching Core if any Core change appears necessary.
+
+Gate result: `PASS`.
+
+---
+
 # ARCHITECTURE GATE RESULT - HAIRCUT F3 CUSTOMER DEBT READ AND COLLECTION
 
 > **Status:** PASS - narrow Finance F3 receivable read/collection contract for Haircut reconciliation
