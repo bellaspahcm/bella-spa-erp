@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { calculatePortalPaymentSummary } from '@/app/portal/[token]/payment-utils';
 import {
   calculateBookingPaymentState,
@@ -206,17 +206,17 @@ describe('payment business rule audit', () => {
     expect(salaryPageSource).not.toContain('onFinalizeAll={');
   });
 
-  it('keeps Haircut booking static rows from driving canonical booking writes', () => {
+  it('keeps Haircut booking routed through the canonical booking read-write contract', () => {
     const haircutBookingsSource = readSource('src/app/dashboard/bookings/HaircutBookingsView.tsx');
     const bookingsPageSource = readSource('src/app/dashboard/bookings/page.tsx');
+    const bookingsDataSource = readSource('src/app/dashboard/bookings/hooks/useBookingsPageData.ts');
+    const bookingsActionsSource = readSource('src/app/dashboard/bookings/hooks/useBookingsPageActions.ts');
 
-    expect(haircutBookingsSource).toContain('timelineGridData');
-    expect(haircutBookingsSource).toContain('HAIRCUT_BOOKING_WRITE_GAP_MESSAGE');
-    expect(haircutBookingsSource).toContain('session_log_id');
-    expect(haircutBookingsSource).toContain('booking_id canonical');
-    expect(haircutBookingsSource).not.toContain('onSessionSelect(b)');
-    expect(haircutBookingsSource).not.toContain('onEmptySlotClick(parseInt');
-    expect(haircutBookingsSource).not.toContain('onCreateClick');
+    expect(existsSync('src/app/dashboard/bookings/HaircutBookingsView.tsx')).toBe(true);
+    expect(haircutBookingsSource).not.toContain('timelineGridData');
+    expect(haircutBookingsSource).not.toContain('HAIRCUT_BOOKING_WRITE_GAP_MESSAGE');
+    expect(haircutBookingsSource).not.toContain('export function HaircutBookingsView');
+    expect(haircutBookingsSource).toContain('shared canonical bookings page');
     expect(bookingsPageSource).not.toContain('HaircutBookingsView');
     expect(bookingsPageSource).not.toContain("product?.productKey === 'bella_haircut'");
     expect(bookingsPageSource).toContain('BookingsTimelineGrid');
@@ -224,7 +224,16 @@ describe('payment business rule audit', () => {
     expect(bookingsPageSource).toContain('BookingCreateScheduleModal');
     expect(bookingsPageSource).toContain('handleUpdatePlan');
     expect(bookingsPageSource).toContain('handleCreateScheduleSubmit');
+    expect(bookingsPageSource).toContain('onSessionSelect={(session) => {');
+    expect(bookingsPageSource).toContain('openSessionDetail(session);');
+    expect(bookingsPageSource).toContain('onEmptySlotClick={(hour) => {');
     expect(bookingsPageSource).not.toContain('openSessionDetail(session as unknown');
+    expect(bookingsDataSource).toContain('getCalendarSessions');
+    expect(bookingsActionsSource).toContain('checkBookingConflicts({');
+    expect(bookingsActionsSource).toContain('createSessionLog({');
+    expect(bookingsActionsSource).toContain('updateSessionLog(modalData.id');
+    expect(bookingsActionsSource).toContain('updateBooking(modalData.bookingId');
+    expect(bookingsActionsSource).not.toContain('HAIRCUT_BOOKING_WRITE_GAP_MESSAGE');
   });
 
   it('keeps Haircut package static rows from driving canonical package writes', () => {
