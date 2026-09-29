@@ -1,7 +1,11 @@
 import {
   FinanceChargeReadModel,
+  FinanceCashMovementSnapshot,
+  FinanceCashReceiptSnapshot,
   FinanceInvoiceSnapshot,
+  FinanceOpenReceivable,
   FinancePostingLine,
+  FinanceReceivableAllocationSnapshot,
   FinanceReceivableChargeGateway,
   FinanceReceivableChargeMetadata,
   FinanceSemanticAccountMapping,
@@ -81,15 +85,38 @@ class FakeReceivableChargeGateway implements FinanceReceivableChargeGateway {
     }>,
     saveInvoiceMetadata: [] as FinanceReceivableChargeMetadata[],
     allocatePayment: [] as PaymentReceivableAllocationInput[],
+    postCashReceipt: [] as Array<{
+      tenantId: string;
+      idempotencyKey: string;
+      paymentSourceType: string;
+      paymentSourceId: string;
+      amountMinor: number;
+      currency: string;
+      paymentAccountCode: string;
+      receivableAccountCode: string;
+      postedAt: Date;
+      description: string;
+    }>,
+    projectCashReceipt: [] as Array<{
+      tenantId: string;
+      transactionId: string;
+    }>,
   };
 
   private invoice: FinanceInvoiceSnapshot | null = null;
   private readonly mappings = new Map<string, FinanceSemanticAccountMapping>();
+  private openReceivables: FinanceOpenReceivable[];
+  private cashReceipt: FinanceCashReceiptSnapshot | null = null;
+  private cashMovements: FinanceCashMovementSnapshot[] = [];
+  private allocations: FinanceReceivableAllocationSnapshot[] = [];
   private hasLines = false;
 
   constructor(options: {
     readonly missingRevenueMapping?: boolean;
     readonly existingFinalizedInvoice?: boolean;
+    readonly openReceivables?: readonly FinanceOpenReceivable[];
+    readonly existingCashReceipt?: boolean;
+    readonly existingAllocation?: boolean;
   } = {}) {
     this.mappings.set(FINANCE_RECEIVABLE_SEMANTICS.TRADE_RECEIVABLE, {
       semanticKey: FINANCE_RECEIVABLE_SEMANTICS.TRADE_RECEIVABLE,
@@ -111,6 +138,31 @@ class FakeReceivableChargeGateway implements FinanceReceivableChargeGateway {
         postingAttemptId: 'posting-existing',
         f1TransactionId: 'transaction-existing',
       };
+    }
+    this.openReceivables = [...(options.openReceivables ?? [{
+      invoiceId: 'invoice-created',
+      receivablePositionId: 'position-created',
+      outstandingAmountMinor: 60000,
+      currency: 'VND',
+      issueDate: '2026-09-30',
+      createdAt: '2026-09-30T00:00:00.000Z',
+    }])];
+    if (options.existingCashReceipt) {
+      this.cashReceipt = { transactionId: 'transaction-payment' };
+      this.cashMovements = [{
+        id: 'cash-movement-1',
+        amountMinor: 60000,
+        direction: 'INFLOW',
+      }];
+    }
+    if (options.existingAllocation) {
+      this.openReceivables = [];
+      this.allocations = [{
+        invoiceId: 'invoice-created',
+        receivablePositionId: 'position-created',
+        allocationId: 'allocation-existing',
+        allocatedAmountMinor: 60000,
+      }];
     }
   }
 
@@ -219,7 +271,72 @@ class FakeReceivableChargeGateway implements FinanceReceivableChargeGateway {
 
   async allocatePayment(input: PaymentReceivableAllocationInput): Promise<PaymentReceivableAllocationResult> {
     this.calls.allocatePayment.push(input);
+    const receivable = this.openReceivables.find((item) => item.invoiceId === input.invoiceId);
+    this.allocations.push({
+      invoiceId: input.invoiceId,
+      receivablePositionId: receivable?.receivablePositionId ?? 'position-created',
+      allocationId: 'allocation-created',
+      allocatedAmountMinor: input.allocatedAmountMinor,
+    });
     return { allocationId: 'allocation-created' };
+  }
+
+  async findOpenReceivables(): Promise<readonly FinanceOpenReceivable[]> {
+    return [...this.openReceivables];
+  }
+
+  async findCashReceiptByIdempotencyKey(input: {
+    readonly tenantId: string;
+    readonly idempotencyKey: string;
+  }): Promise<FinanceCashReceiptSnapshot | null> {
+    expect(input.tenantId).toBe(tenantId);
+    return this.cashReceipt;
+  }
+
+  async postCashReceipt(input: {
+    readonly tenantId: string;
+    readonly idempotencyKey: string;
+    readonly paymentSourceType: string;
+    readonly paymentSourceId: string;
+    readonly amountMinor: number;
+    readonly currency: string;
+    readonly paymentAccountCode: string;
+    readonly receivableAccountCode: string;
+    readonly postedAt: Date;
+    readonly description: string;
+  }): Promise<FinanceCashReceiptSnapshot> {
+    this.calls.postCashReceipt.push(input);
+    this.cashReceipt = { transactionId: 'transaction-payment' };
+    return this.cashReceipt;
+  }
+
+  async projectCashReceipt(input: {
+    readonly tenantId: string;
+    readonly transactionId: string;
+  }): Promise<void> {
+    this.calls.projectCashReceipt.push(input);
+    this.cashMovements = [{
+      id: 'cash-movement-1',
+      amountMinor: 60000,
+      direction: 'INFLOW',
+    }];
+  }
+
+  async findCashMovementsByTransaction(): Promise<readonly FinanceCashMovementSnapshot[]> {
+    return [...this.cashMovements];
+  }
+
+  async findAllocationsByCashMovement(): Promise<readonly FinanceReceivableAllocationSnapshot[]> {
+    return [...this.allocations];
+  }
+
+  async findExistingAllocation(input: {
+    readonly tenantId: string;
+    readonly invoiceId: string;
+    readonly cashMovementId: string;
+  }): Promise<FinanceReceivableAllocationSnapshot | null> {
+    expect(input.tenantId).toBe(tenantId);
+    return this.allocations.find((allocation) => allocation.invoiceId === input.invoiceId) ?? null;
   }
 }
 
@@ -363,6 +480,124 @@ describe('SemanticReceivableChargeService', () => {
         allocatedAmountMinor: 60000,
       }),
     ]);
+  });
+
+  test('allocates confirmed payment through F1 cash receipt, F2 cash movement, and F3 AR allocation', async () => {
+    const gateway = new FakeReceivableChargeGateway();
+    const service = new SemanticReceivableChargeService(gateway);
+
+    const result = await service.allocateConfirmedPaymentToReceivables({
+      tenantId,
+      paymentSourceType: 'REVENUE',
+      paymentSourceId: 'revenue-1',
+      amountMinor: 60000,
+      currency: 'VND',
+      paymentMethod: 'bank_transfer',
+      receivedAt: '2026-09-30',
+      idempotencyKey: 'manual-payment:key-1',
+      description: 'Confirmed Haircut remaining payment',
+      receivableMatch: {
+        bookingId: 'booking-1',
+      },
+    });
+
+    expect(gateway.calls.postCashReceipt).toHaveLength(1);
+    expect(gateway.calls.postCashReceipt[0]).toMatchObject({
+      tenantId,
+      paymentSourceType: 'REVENUE',
+      paymentSourceId: 'revenue-1',
+      paymentAccountCode: '112',
+      receivableAccountCode: '131',
+    });
+    expect(gateway.calls.projectCashReceipt).toEqual([{
+      tenantId,
+      transactionId: 'transaction-payment',
+    }]);
+    expect(gateway.calls.allocatePayment).toEqual([
+      expect.objectContaining({
+        tenantId,
+        invoiceId: 'invoice-created',
+        cashMovementId: 'cash-movement-1',
+        allocatedAmountMinor: 60000,
+      }),
+    ]);
+    expect(result).toMatchObject({
+      transactionId: 'transaction-payment',
+      cashMovementId: 'cash-movement-1',
+      allocatedAmountMinor: 60000,
+      duplicate: false,
+    });
+    expect(result.allocations[0]).toMatchObject({
+      invoiceId: 'invoice-created',
+      receivablePositionId: 'position-created',
+      allocationId: 'allocation-created',
+      duplicate: false,
+    });
+  });
+
+  test('confirmed payment allocation retry returns existing F3 allocation without duplicate posting', async () => {
+    const gateway = new FakeReceivableChargeGateway({
+      existingCashReceipt: true,
+      existingAllocation: true,
+    });
+    const service = new SemanticReceivableChargeService(gateway);
+
+    const result = await service.allocateConfirmedPaymentToReceivables({
+      tenantId,
+      paymentSourceType: 'REVENUE',
+      paymentSourceId: 'revenue-1',
+      amountMinor: 60000,
+      currency: 'VND',
+      paymentMethod: 'cash',
+      receivedAt: '2026-09-30',
+      idempotencyKey: 'manual-payment:key-1',
+      description: 'Confirmed Haircut remaining payment retry',
+      receivableMatch: {
+        bookingId: 'booking-1',
+      },
+    });
+
+    expect(gateway.calls.postCashReceipt).toHaveLength(0);
+    expect(gateway.calls.allocatePayment).toHaveLength(0);
+    expect(result.duplicate).toBe(true);
+    expect(result.allocations).toEqual([
+      expect.objectContaining({
+        allocationId: 'allocation-existing',
+        duplicate: true,
+      }),
+    ]);
+  });
+
+  test('blocks confirmed payment before F1 posting when receivable resolution is insufficient', async () => {
+    const gateway = new FakeReceivableChargeGateway({
+      openReceivables: [{
+        invoiceId: 'invoice-created',
+        receivablePositionId: 'position-created',
+        outstandingAmountMinor: 10000,
+        currency: 'VND',
+        issueDate: '2026-09-30',
+        createdAt: '2026-09-30T00:00:00.000Z',
+      }],
+    });
+    const service = new SemanticReceivableChargeService(gateway);
+
+    await expect(service.allocateConfirmedPaymentToReceivables({
+      tenantId,
+      paymentSourceType: 'REVENUE',
+      paymentSourceId: 'revenue-1',
+      amountMinor: 60000,
+      currency: 'VND',
+      paymentMethod: 'bank_transfer',
+      receivedAt: '2026-09-30',
+      idempotencyKey: 'manual-payment:key-1',
+      description: 'Confirmed Haircut remaining payment',
+      receivableMatch: {
+        bookingId: 'booking-1',
+      },
+    })).rejects.toMatchObject<Partial<FinanceSemanticReceivableChargeError>>({
+      code: 'BLOCKED_BY_RECEIVABLE_RESOLUTION_GAP',
+    });
+    expect(gateway.calls.postCashReceipt).toHaveLength(0);
   });
 
   test('uses cross-vertical Finance semantics instead of Education-specific revenue semantics', () => {

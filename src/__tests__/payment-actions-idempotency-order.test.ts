@@ -11,6 +11,9 @@ const mockValidateRemainingPaymentAmount = jest.fn();
 const mockAssertPaymentAccountingPeriod = jest.fn();
 const mockRecordBookingPaymentRpc = jest.fn();
 const mockCreateDevelopmentBypassClient = jest.fn().mockResolvedValue(mockSupabase);
+const mockAllocateConfirmedBookingPaymentToFinanceAr = jest.fn().mockResolvedValue({
+  allocatedAmountMinor: 200_000,
+});
 
 jest.mock('@/lib/supabase-server', () => ({
   createClient: jest.fn().mockResolvedValue(mockSupabase),
@@ -26,6 +29,11 @@ jest.mock('@/services/user-actions', () => ({
 
 jest.mock('@/lib/revalidate', () => ({
   safeRevalidatePath: (...args: unknown[]) => mockSafeRevalidatePath(...args),
+}));
+
+jest.mock('@/services/finance-payment-allocation', () => ({
+  allocateConfirmedBookingPaymentToFinanceAr: (...args: unknown[]) =>
+    mockAllocateConfirmedBookingPaymentToFinanceAr(...args),
 }));
 
 jest.mock('@/core/services/order/payment-helpers', () => ({
@@ -84,6 +92,14 @@ describe('recordRemainingPayment idempotency ordering', () => {
         booking_id: 'booking-1',
         revenue_id: 'revenue-existing',
         idempotent: true,
+        revenue: {
+          id: 'revenue-existing',
+          amount: 200_000,
+          status: 'confirmed',
+          payment_method: 'cash',
+          received_date: '2026-09-29',
+          notes: 'persisted payment fact',
+        },
       },
     });
 
@@ -95,6 +111,14 @@ describe('recordRemainingPayment idempotency ordering', () => {
         booking_id: 'booking-1',
         revenue_id: 'revenue-existing',
         idempotent: true,
+        revenue: {
+          id: 'revenue-existing',
+          amount: 200_000,
+          status: 'confirmed',
+          payment_method: 'cash',
+          received_date: '2026-09-29',
+          notes: 'persisted payment fact',
+        },
       },
     });
     expect(mockFindExistingManualPaymentByIdempotencyKey).toHaveBeenCalledWith({
@@ -105,8 +129,55 @@ describe('recordRemainingPayment idempotency ordering', () => {
     expect(mockValidateRemainingPaymentAmount).not.toHaveBeenCalled();
     expect(mockAssertPaymentAccountingPeriod).not.toHaveBeenCalled();
     expect(mockRecordBookingPaymentRpc).not.toHaveBeenCalled();
+    expect(mockAllocateConfirmedBookingPaymentToFinanceAr).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tenantId: 'tenant-1',
+        bookingId: 'booking-1',
+        revenueId: 'revenue-existing',
+        amountMinor: 200_000,
+        paymentMethod: 'cash',
+        receivedAt: '2026-09-29',
+        idempotencyKey: 'manual-payment:retry-1',
+        description: 'persisted payment fact',
+      }),
+    );
     expect(mockSafeRevalidatePath).toHaveBeenCalledWith('/dashboard/customers/customer-1');
     expect(mockSafeRevalidatePath).toHaveBeenCalledWith('/dashboard/finance');
+  });
+
+  it('skips Finance AR allocation for an existing idempotent payment that is not confirmed', async () => {
+    mockFindExistingManualPaymentByIdempotencyKey.mockResolvedValueOnce({
+      data: {
+        booking_id: 'booking-1',
+        revenue_id: 'revenue-pending',
+        idempotent: true,
+        revenue: {
+          id: 'revenue-pending',
+          amount: 200_000,
+          status: 'pending',
+          payment_method: 'cash',
+        },
+      },
+    });
+
+    const result = await recordRemainingPayment(paymentInput({ amount: 999_999 }));
+
+    expect(result).toEqual({
+      success: true,
+      data: {
+        booking_id: 'booking-1',
+        revenue_id: 'revenue-pending',
+        idempotent: true,
+        revenue: {
+          id: 'revenue-pending',
+          amount: 200_000,
+          status: 'pending',
+          payment_method: 'cash',
+        },
+      },
+    });
+    expect(mockValidateRemainingPaymentAmount).not.toHaveBeenCalled();
+    expect(mockAllocateConfirmedBookingPaymentToFinanceAr).not.toHaveBeenCalled();
   });
 
   it('still rejects an invalid new overpayment when no existing idempotent payment is found', async () => {
@@ -121,6 +192,7 @@ describe('recordRemainingPayment idempotency ordering', () => {
     expect(mockValidateRemainingPaymentAmount).toHaveBeenCalled();
     expect(mockAssertPaymentAccountingPeriod).not.toHaveBeenCalled();
     expect(mockRecordBookingPaymentRpc).not.toHaveBeenCalled();
+    expect(mockAllocateConfirmedBookingPaymentToFinanceAr).not.toHaveBeenCalled();
   });
 
   it('records a new valid payment only after idempotency lookup and amount validation pass', async () => {
@@ -142,6 +214,37 @@ describe('recordRemainingPayment idempotency ordering', () => {
       payment: paymentInput({ idempotency_key: 'manual-payment:new-valid' }),
       tenantId: 'tenant-1',
       actorId: 'user-1',
+    });
+    expect(mockAllocateConfirmedBookingPaymentToFinanceAr).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tenantId: 'tenant-1',
+        bookingId: 'booking-1',
+        revenueId: 'revenue-new',
+        amountMinor: 200_000,
+        paymentMethod: 'cash',
+        idempotencyKey: 'manual-payment:new-valid',
+      }),
+    );
+  });
+
+  it('does not fail persisted payment when Finance AR allocation is blocked', async () => {
+    mockAllocateConfirmedBookingPaymentToFinanceAr.mockRejectedValueOnce(
+      new Error('BLOCKED_BY_CASH_RECEIPT_PROJECTION_GAP'),
+    );
+
+    const result = await recordRemainingPayment(paymentInput({ idempotency_key: 'manual-payment:new-valid' }));
+
+    expect(result).toEqual({
+      success: true,
+      data: {
+        booking_id: 'booking-1',
+        revenue_id: 'revenue-new',
+        idempotent: false,
+        finance_ar_allocation: {
+          status: 'FAILED',
+          error: 'BLOCKED_BY_CASH_RECEIPT_PROJECTION_GAP',
+        },
+      },
     });
   });
 

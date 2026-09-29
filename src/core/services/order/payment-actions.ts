@@ -1,9 +1,12 @@
 'use server';
 
+import { getLocalDateString } from '@bella/shared';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { BookingError } from '@/core/lib/errors';
+import { allocateConfirmedBookingPaymentToFinanceAr } from '@/services/finance-payment-allocation';
 import {
   assertPaymentAccountingPeriod,
+  buildManualPaymentIdempotencyKey,
   findExistingManualPaymentByIdempotencyKey,
   fetchBookingDetailsWithPayment,
   getBookingPaymentSnapshot,
@@ -24,6 +27,143 @@ function requireTenantId(currentUser: { tenant_id?: string | null } | null | und
     throw new BookingError(BOOKING_TENANT_ACCESS_ERROR, 'BOOKING_TENANT_ACCESS_ERROR');
   }
   return currentUser.tenant_id;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function readStringField(source: Record<string, unknown> | null, field: string): string | null {
+  const value = source?.[field];
+  return typeof value === 'string' && value.trim() !== '' ? value : null;
+}
+
+function readNumberField(source: Record<string, unknown> | null, field: string): number | null {
+  const value = source?.[field];
+  const numericValue = typeof value === 'number'
+    ? value
+    : typeof value === 'string'
+      ? Number(value)
+      : NaN;
+  return Number.isFinite(numericValue) ? numericValue : null;
+}
+
+function resolvePaymentRevenueRecord(data: unknown): Record<string, unknown> | null {
+  return asRecord(asRecord(data)?.revenue);
+}
+
+function resolvePaymentRevenueId(data: unknown): string | null {
+  const record = asRecord(data);
+  const persistedRevenueId = readStringField(resolvePaymentRevenueRecord(data), 'id');
+  if (persistedRevenueId) return persistedRevenueId;
+  const directRevenueId = readStringField(record, 'revenue_id');
+  return directRevenueId;
+}
+
+function resolvePaymentRevenueStatus(data: unknown): string | null {
+  const record = asRecord(data);
+  const persistedStatus = readStringField(resolvePaymentRevenueRecord(data), 'status');
+  if (persistedStatus) return persistedStatus;
+  const directStatus = readStringField(record, 'revenue_status');
+  return directStatus;
+}
+
+function resolvePaymentRevenueAmount(data: unknown): number | null {
+  const record = asRecord(data);
+  return readNumberField(resolvePaymentRevenueRecord(data), 'amount')
+    ?? readNumberField(record, 'revenue_amount')
+    ?? readNumberField(record, 'amount');
+}
+
+function resolvePaymentRevenueMethod(data: unknown): string | null {
+  const record = asRecord(data);
+  return readStringField(resolvePaymentRevenueRecord(data), 'payment_method')
+    ?? readStringField(record, 'payment_method');
+}
+
+function resolvePaymentRevenueReceivedDate(data: unknown): string | null {
+  const record = asRecord(data);
+  return readStringField(resolvePaymentRevenueRecord(data), 'received_date')
+    ?? readStringField(record, 'received_date');
+}
+
+function resolvePaymentRevenueNotes(data: unknown): string | null {
+  const record = asRecord(data);
+  return readStringField(resolvePaymentRevenueRecord(data), 'notes')
+    ?? readStringField(record, 'notes');
+}
+
+async function safeAllocateConfirmedPaymentToFinanceAr(params: {
+  readonly payment: RecordRemainingPaymentParams;
+  readonly tenantId: string;
+  readonly paymentData: unknown;
+}): Promise<{ readonly status: 'ALLOCATED' | 'SKIPPED' | 'FAILED'; readonly error?: string }> {
+  const revenueId = resolvePaymentRevenueId(params.paymentData);
+  const revenueStatus = resolvePaymentRevenueStatus(params.paymentData)
+    ?? params.payment.status
+    ?? 'pending';
+
+  if (revenueStatus !== 'confirmed') {
+    return { status: 'SKIPPED' };
+  }
+  if (!revenueId) {
+    return {
+      status: 'FAILED',
+      error: 'BOOKING_PAYMENT_REVENUE_ID_MISSING',
+    };
+  }
+
+  const receivedDate = getLocalDateString();
+  const revenueType = params.payment.revenue_type || 'remaining_payment';
+  const idempotencyKey = params.payment.idempotency_key
+    || buildManualPaymentIdempotencyKey(params.payment, receivedDate, revenueType);
+  const persistedAmount = resolvePaymentRevenueAmount(params.paymentData);
+  const amountMinor = Math.round(Math.abs(persistedAmount ?? Number(params.payment.amount)));
+  if (!Number.isFinite(amountMinor) || amountMinor <= 0) {
+    return {
+      status: 'FAILED',
+      error: 'BOOKING_PAYMENT_AMOUNT_INVALID',
+    };
+  }
+
+  try {
+    await allocateConfirmedBookingPaymentToFinanceAr({
+      tenantId: params.tenantId,
+      bookingId: params.payment.booking_id,
+      revenueId,
+      amountMinor,
+      currency: 'VND',
+      paymentMethod: resolvePaymentRevenueMethod(params.paymentData) ?? params.payment.payment_method,
+      receivedAt: resolvePaymentRevenueReceivedDate(params.paymentData) ?? receivedDate,
+      idempotencyKey,
+      description: resolvePaymentRevenueNotes(params.paymentData)
+        ?? params.payment.notes
+        ?? 'Confirmed booking remaining payment',
+    });
+    return { status: 'ALLOCATED' };
+  } catch (error) {
+    const message = getErrorMessage(error);
+    console.error('[recordRemainingPayment] Finance AR allocation failed:', message);
+    return {
+      status: 'FAILED',
+      error: message,
+    };
+  }
+}
+
+function attachFinanceAllocationOutcome(
+  data: unknown,
+  outcome: { readonly status: 'ALLOCATED' | 'SKIPPED' | 'FAILED'; readonly error?: string },
+) {
+  if (outcome.status !== 'FAILED') {
+    return data;
+  }
+  const record = asRecord(data);
+  return record
+    ? { ...record, finance_ar_allocation: outcome }
+    : data;
 }
 
 export async function recordRemainingPayment(params: RecordRemainingPaymentParams) {
@@ -48,12 +188,21 @@ export async function recordRemainingPayment(params: RecordRemainingPaymentParam
       throw new BookingError(existingPaymentResult.error || 'Failed to verify payment idempotency', 'BOOKING_PAYMENT_IDEMPOTENCY_LOOKUP_ERROR', { bookingId: params.booking_id });
     }
     if (existingPaymentResult.data) {
+      const financeAllocation = await safeAllocateConfirmedPaymentToFinanceAr({
+        payment: params,
+        tenantId,
+        paymentData: existingPaymentResult.data,
+      });
+
       await Promise.all([
         safeRevalidatePath(`/dashboard/customers/${params.customer_id}`),
         safeRevalidatePath('/dashboard/finance'),
       ]);
 
-      return { success: true, data: existingPaymentResult.data };
+      return {
+        success: true,
+        data: attachFinanceAllocationOutcome(existingPaymentResult.data, financeAllocation),
+      };
     }
 
     const amountValidation = validateRemainingPaymentAmount(bookingResult.booking, params.amount);
@@ -77,12 +226,21 @@ export async function recordRemainingPayment(params: RecordRemainingPaymentParam
       throw new BookingError(rpcResult.error || 'Failed to record payment', 'BOOKING_PAYMENT_RECORD_ERROR', { bookingId: params.booking_id });
     }
 
+    const financeAllocation = await safeAllocateConfirmedPaymentToFinanceAr({
+      payment: params,
+      tenantId,
+      paymentData: rpcResult.data,
+    });
+
     await Promise.all([
       safeRevalidatePath(`/dashboard/customers/${params.customer_id}`),
       safeRevalidatePath('/dashboard/finance'),
     ]);
 
-    return { success: true, data: rpcResult.data };
+    return {
+      success: true,
+      data: attachFinanceAllocationOutcome(rpcResult.data, financeAllocation),
+    };
   } catch (error) {
     console.error('Error recording remaining payment:', error);
     return { error: getErrorMessage(error) };
