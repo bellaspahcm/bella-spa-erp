@@ -51,7 +51,6 @@
     "test:booking-engine": "jest src/__tests__/booking-engine/ --runInBand",
     "test:intelligence": "jest src/services/intelligence/__tests__/ --coverage --collectCoverageFrom='src/services/intelligence/**/*.ts' --collectCoverageFrom='!src/services/intelligence/**/*.test.ts'",
     "test:coverage": "jest --coverage",
-    "test:performance": "npx tsx scripts/benchmark-decision-engine.ts",
     "healthcare:guard": "npx tsx scripts/healthcare/architecture-guard.ts",
     "healthcare:architecture": "jest src/platform/healthcare/__tests__/engine-architecture-compliance.test.ts src/products/bella-medical/__tests__/bella-medical-architecture.test.ts --runInBand",
     "healthcare:conformance": "jest src/products/bella-medical/__tests__/bella-medical-conformance.integration.test.ts --runInBand",
