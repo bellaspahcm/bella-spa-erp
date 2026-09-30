@@ -82,12 +82,14 @@ describe('Nail Runtime DB Verification', () => {
         id: TEST_TENANT_ID,
         name: 'E2E Nail Tenant A',
         status: 'active',
+        product_key: 'bella_nail',
         enabled_modules: { beauty_spa: true, babycare: false },
       },
       {
         id: TEST_TENANT_2_ID,
         name: 'E2E Nail Tenant B',
         status: 'active',
+        product_key: 'bella_nail',
         enabled_modules: { beauty_spa: true, babycare: false },
       },
     ]);

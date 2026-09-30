@@ -40,7 +40,9 @@ import {
   buildCompletedSessionAccountingUpdate,
   enqueueSessionDoneAccountingOutbox,
   ensureSessionReviewPlaceholder,
+  isPayrollCapabilityEnabled,
   recordSingleSessionRevenueIfNeeded,
+  syncKtvSalaryAfterCompletion,
 } from '../core/services/order/session-completion-helpers';
 import {
   isRevertingCompletedSession,
@@ -162,6 +164,54 @@ describe('session completion accounting side effects', () => {
         status: 'completed',
       }),
     });
+  });
+
+  it('parses payroll capability from tenant enabled_modules without product-specific checks', () => {
+    expect(isPayrollCapabilityEnabled({ payroll: true, beauty_spa: true })).toBe(true);
+    expect(isPayrollCapabilityEnabled({ payroll: false, beauty_spa: true })).toBe(false);
+    expect(isPayrollCapabilityEnabled(['beauty_spa', 'payroll'])).toBe(true);
+    expect(isPayrollCapabilityEnabled('beauty_spa,payroll')).toBe(true);
+    expect(isPayrollCapabilityEnabled(null)).toBe(false);
+  });
+
+  it('skips KTV salary sync when tenant payroll capability is disabled', async () => {
+    const { calls, supabase } = createSupabaseMock([
+      { data: { enabled_modules: { payroll: false, beauty_spa: true } } },
+    ]);
+
+    const result = await syncKtvSalaryAfterCompletion({
+      supabase: supabase as never,
+      ktvId: 'ktv-1',
+      tenantId: 'tenant-1',
+      today: '2026-06-03',
+      sessionId: 'session-1',
+      bookingId: 'booking-1',
+      currentBooking: {
+        package_name: 'Gói dịch vụ lẻ',
+        completed_sessions: 1,
+        status: 'booked',
+        total_sessions: 1,
+        ktv_commission: 30000,
+        assigned_ktv_id: 'ktv-1',
+        customer_id: 'customer-1',
+        tenant_id: 'tenant-1',
+        full_price: 500000,
+        deposit_amount: 0,
+        discount_percent: 0,
+      },
+      isInventoryConsumed: false,
+      isRevenueCreated: false,
+    });
+
+    expect(result).toEqual({ success: true, skipped: 'PAYROLL_DISABLED' });
+    expect(mockRecalculateAndSaveSalaryRecord).not.toHaveBeenCalled();
+    expect(calls).toEqual([
+      expect.objectContaining({
+        table: 'tenants',
+        op: 'select',
+        filters: [['id', 'tenant-1']],
+      }),
+    ]);
   });
 
   it('rolls back single-session revenue and booking progress when SESSION_DONE enqueue returns false', async () => {
@@ -593,6 +643,7 @@ describe('session completion accounting side effects', () => {
       { data: currentBooking },
       {},
       { data: { id: 'revenue-1' } },
+      { data: { enabled_modules: { payroll: true, beauty_spa: true } } },
       { data: null },
       { data: { id: 'review-1' } },
       { data: [{ amount: 200000, status: 'confirmed', revenue_type: 'deposit' }] },
@@ -706,6 +757,7 @@ describe('session completion accounting side effects', () => {
       { data: currentBooking },
       {},
       { data: { id: 'revenue-1' } },
+      { data: { enabled_modules: { payroll: true, beauty_spa: true } } },
       { data: null },
       { error: { message: 'review insert failed' } },
       {},
@@ -767,6 +819,7 @@ describe('session completion accounting side effects', () => {
       { data: currentBooking },
       {},
       { data: { id: 'revenue-1' } },
+      { data: { enabled_modules: { payroll: true, beauty_spa: true } } },
       {},
       {},
       {},
@@ -832,6 +885,7 @@ describe('session completion accounting side effects', () => {
       { count: 2 },
       { data: currentBooking },
       {},
+      { data: { enabled_modules: { payroll: true, beauty_spa: true } } },
       { data: null },
       { data: { id: 'review-1' } },
       { data: [{ amount: 200000, status: 'confirmed', revenue_type: 'deposit' }] },

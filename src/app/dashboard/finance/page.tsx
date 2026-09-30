@@ -539,8 +539,13 @@ export default function FinancePage() {
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {currentTransactions.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className={`${stickyBodyCellClassName} px-8 py-5 whitespace-nowrap`}>
+                  <tr
+                    key={tx.id}
+                    className="hover:bg-slate-50/50 transition-colors group"
+                    data-testid="finance-transaction-row"
+                    data-transaction-id={tx.id}
+                  >
+                    <td className={`${stickyBodyCellClassName} px-8 py-5 whitespace-nowrap`} data-testid="finance-transaction-category">
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                           tx.type === 'revenue' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
@@ -550,13 +555,13 @@ export default function FinancePage() {
                         <span className="block font-bold text-slate-900" title={tx.category}>{tx.category}</span>
                       </div>
                     </td>
-                    <td className="min-w-[28rem] px-8 py-5 whitespace-nowrap">
+                    <td className="min-w-[28rem] px-8 py-5 whitespace-nowrap" data-testid="finance-transaction-details">
                       <p className="block text-sm font-bold text-slate-700" title={tx.details || 'N/A'}>{tx.details || 'N/A'}</p>
                     </td>
                     <td className="px-8 py-5 text-sm font-medium text-slate-500 whitespace-nowrap">{tx.date}</td>
                     <td className="px-8 py-5 text-sm font-medium text-slate-500 whitespace-nowrap">{tx.method}</td>
-                    <td className="px-8 py-5 font-black text-slate-900 whitespace-nowrap">{tx.amount}</td>
-                    <td className="px-8 py-5 whitespace-nowrap">
+                    <td className="px-8 py-5 font-black text-slate-900 whitespace-nowrap" data-testid="finance-transaction-amount">{tx.amount}</td>
+                    <td className="px-8 py-5 whitespace-nowrap" data-testid="finance-transaction-status">
                       <div className="flex items-center gap-3">
                         <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider whitespace-nowrap ${
                           isConfirmedFinanceStatus(tx.status) ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
