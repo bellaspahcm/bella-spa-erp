@@ -9,7 +9,7 @@ Approver: User explicit approval in Codex thread
   "version": 1,
   "acrId": "ACR-2026-011",
   "status": "APPROVED",
-  "pr": "LOCAL-NAIL-PHASE1",
+  "pr": "178",
   "approvedCoreFiles": [
     "src/core/services/order/complete-session-action.ts",
     "src/core/services/order/session-completion-helpers.ts"
@@ -90,5 +90,4 @@ Tenant payroll OFF
 - ESLint on touched Core and Nail test files.
 - `git diff --check`.
 - Architecture guard.
-- Core freeze guard using local placeholder binding; update `pr` metadata to the real PR number before PR/CI.
-
+- Core freeze guard using PR #178 binding.
