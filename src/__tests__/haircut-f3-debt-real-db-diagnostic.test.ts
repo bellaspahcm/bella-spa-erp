@@ -141,7 +141,7 @@ describeWithRealDb('Haircut P4.7 F3 debt real DB diagnostic', () => {
       const { error } = await supabase.rpc('finance_save_accounting_semantic_gl_mapping', {
         p_tenant_id: tenantId,
         p_semantic_key: semanticKey,
-        p_gl_account_code: accountCode,
+        p_account_code: accountCode,
         p_effective_from: '2026-01-01',
         p_authority_version: 'VI_TT99_2025|99/2025/TT-BTC|PROVEN',
       });
