@@ -481,6 +481,7 @@ describe('SemanticReceivableChargeService', () => {
         invoiceId: 'invoice-created',
         cashMovementId: 'cash-movement-1',
         allocatedAmountMinor: 60000,
+        rateSource: 'CENTRAL_BANK',
       }),
     ]);
   });
@@ -522,6 +523,7 @@ describe('SemanticReceivableChargeService', () => {
         invoiceId: 'invoice-created',
         cashMovementId: 'cash-movement-1',
         allocatedAmountMinor: 60000,
+        rateSource: 'MANUAL_AUTHORIZED',
       }),
     ]);
     expect(result).toMatchObject({
@@ -618,6 +620,7 @@ describe('SemanticReceivableChargeService', () => {
         invoiceId: 'invoice-created',
         cashMovementId: 'cash-movement-1',
         allocatedAmountMinor: 60000,
+        rateSource: 'MANUAL_AUTHORIZED',
       }),
     ]);
     expect(result).toMatchObject({
