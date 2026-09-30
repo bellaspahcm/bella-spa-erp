@@ -12,6 +12,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
+import type { Database, Json } from '@/types/database.types';
 import {
   QuarantineRecord,
   QuarantineInsert,
@@ -19,6 +20,33 @@ import {
   QuarantineResolution,
 } from '../types/database.types';
 import { FinancialIntent } from '../types/financial-intent.types';
+
+type QuarantineRow = Database['public']['Tables']['runtime_quarantine']['Row'];
+
+function serializeFinancialIntent(intent: FinancialIntent): Record<string, unknown> {
+  return { ...intent };
+}
+
+function jsonObject(value: Json): Record<string, unknown> {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return { ...value };
+  }
+
+  throw new Error('INVALID_QUARANTINE_PAYLOAD: Expected FinancialIntent JSON object');
+}
+
+function toQuarantineResolution(value: string | null): QuarantineResolution | null {
+  switch (value) {
+    case null:
+      return null;
+    case 'REPLAYED':
+    case 'DISCARDED':
+    case 'FIXED':
+      return value;
+    default:
+      throw new Error(`INVALID_QUARANTINE_RESOLUTION: ${value}`);
+  }
+}
 
 /**
  * Quarantine Repository
@@ -43,7 +71,7 @@ export class QuarantineRepository {
     const record: QuarantineInsert = {
       tenant_id: intent.tenantId,
       intent_type: intent.intentType,
-      intent_payload: intent as any, // Full Financial Intent preserved
+      intent_payload: serializeFinancialIntent(intent),
       correlation_id: intent.correlationId,
       failure_reason: failureReason,
       attempts,
@@ -294,12 +322,12 @@ export class QuarantineRepository {
   /**
    * Map database row to record
    */
-  private mapToRecord(data: any): QuarantineRecord {
+  private mapToRecord(data: QuarantineRow): QuarantineRecord {
     return {
       id: data.id,
       tenant_id: data.tenant_id,
       intent_type: data.intent_type,
-      intent_payload: data.intent_payload,
+      intent_payload: jsonObject(data.intent_payload),
       correlation_id: data.correlation_id,
       failure_reason: data.failure_reason,
       attempts: data.attempts,
@@ -308,7 +336,7 @@ export class QuarantineRepository {
       reviewed: data.reviewed,
       reviewed_at: data.reviewed_at ? new Date(data.reviewed_at) : null,
       reviewed_by: data.reviewed_by,
-      resolution: data.resolution,
+      resolution: toQuarantineResolution(data.resolution),
       outbox_id: data.outbox_id,
     };
   }

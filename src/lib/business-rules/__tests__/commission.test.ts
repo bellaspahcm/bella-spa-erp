@@ -15,6 +15,22 @@ import {
   DEFAULT_COMMISSION_CONFIG,
 } from '../commission';
 
+type CommissionTypeInput = Parameters<typeof parseCommissionInput>[0];
+type PositionTierInput = Parameters<typeof calculatePositionBonus>[0]['positionTier'];
+type ManualAdjustmentsInput = Parameters<typeof aggregateManualAdjustments>[0];
+
+function commissionTypeBoundaryValue(value: unknown): CommissionTypeInput {
+  return value as CommissionTypeInput;
+}
+
+function positionTierBoundaryValue(value: unknown): PositionTierInput {
+  return value as PositionTierInput;
+}
+
+function manualAdjustmentsBoundaryInput(adjustments: unknown): ManualAdjustmentsInput {
+  return { adjustments } as ManualAdjustmentsInput;
+}
+
 describe('Commission Business Logic', () => {
   describe('parseCommissionInput', () => {
     it('should parse fixed amount commission', () => {
@@ -467,8 +483,8 @@ describe('Commission Edge Cases & Boundary Conditions (Task 34)', () => {
     it('should handle null override values', () => {
       const result = calculateServiceCommission({
         subtotal: 1000000,
-        overrideType: null as any,
-        overrideValue: null as any,
+        overrideType: null,
+        overrideValue: null,
         defaultType: 'fixed',
         defaultValue: 150000,
       });
@@ -495,42 +511,38 @@ describe('Commission Edge Cases & Boundary Conditions (Task 34)', () => {
     it('should handle undefined hire date for seniority', () => {
       const result = calculateSeniorityBonus({
         baseSalary: 6000000,
-        hireDate: undefined as any,
+        hireDate: undefined,
       });
       expect(result).toBe(0);
     });
 
     it('should handle null adjustments array', () => {
-      const result = aggregateManualAdjustments({
-        adjustments: null as any,
-      });
+      const result = aggregateManualAdjustments(manualAdjustmentsBoundaryInput(null));
       expect(result).toBe(0);
     });
 
     it('should handle undefined adjustments array', () => {
-      const result = aggregateManualAdjustments({
-        adjustments: undefined as any,
-      });
+      const result = aggregateManualAdjustments(manualAdjustmentsBoundaryInput(undefined));
       expect(result).toBe(0);
     });
   });
 
   describe('Invalid Commission Types Edge Cases', () => {
     it('should handle invalid commission type (fallback to fixed)', () => {
-      const result = parseCommissionInput('invalid_type' as any, 150000, 1000000);
+      const result = parseCommissionInput(commissionTypeBoundaryValue('invalid_type'), 150000, 1000000);
       // Should default to treating as fixed amount
       expect(result).toBeGreaterThanOrEqual(0);
     });
 
     it('should handle empty string commission type', () => {
-      const result = parseCommissionInput('' as any, 150000, 1000000);
+      const result = parseCommissionInput(commissionTypeBoundaryValue(''), 150000, 1000000);
       expect(result).toBeGreaterThanOrEqual(0);
     });
 
     it('should handle mixed case commission type', () => {
       // Test if function is case-sensitive
-      const result1 = parseCommissionInput('FIXED' as any, 150000, 0);
-      const result2 = parseCommissionInput('Percentage' as any, 10, 1000000);
+      const result1 = parseCommissionInput(commissionTypeBoundaryValue('FIXED'), 150000, 0);
+      const result2 = parseCommissionInput(commissionTypeBoundaryValue('Percentage'), 10, 1000000);
       // Function should handle or normalize case
       expect(result1).toBeGreaterThanOrEqual(0);
       expect(result2).toBeGreaterThanOrEqual(0);
@@ -573,7 +585,7 @@ describe('Commission Edge Cases & Boundary Conditions (Task 34)', () => {
     it('should handle unknown position tier (default to junior)', () => {
       const result = calculatePositionBonus({
         baseCommission: 1000000,
-        positionTier: 'unknown_tier' as any,
+        positionTier: positionTierBoundaryValue('unknown_tier'),
       });
       expect(result).toBe(0); // Should default to junior (no bonus)
     });
@@ -581,7 +593,7 @@ describe('Commission Edge Cases & Boundary Conditions (Task 34)', () => {
     it('should handle null position tier', () => {
       const result = calculatePositionBonus({
         baseCommission: 1000000,
-        positionTier: null as any,
+        positionTier: positionTierBoundaryValue(null),
       });
       expect(result).toBe(0);
     });
@@ -589,7 +601,7 @@ describe('Commission Edge Cases & Boundary Conditions (Task 34)', () => {
     it('should handle undefined position tier', () => {
       const result = calculatePositionBonus({
         baseCommission: 1000000,
-        positionTier: undefined as any,
+        positionTier: positionTierBoundaryValue(undefined),
       });
       expect(result).toBe(0);
     });
@@ -597,7 +609,7 @@ describe('Commission Edge Cases & Boundary Conditions (Task 34)', () => {
     it('should handle empty string position tier', () => {
       const result = calculatePositionBonus({
         baseCommission: 1000000,
-        positionTier: '' as any,
+        positionTier: positionTierBoundaryValue(''),
       });
       expect(result).toBe(0);
     });
@@ -775,4 +787,3 @@ describe('Commission Edge Cases & Boundary Conditions (Task 34)', () => {
     });
   });
 });
-

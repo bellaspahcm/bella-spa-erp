@@ -6,6 +6,7 @@ import { Pool } from 'pg';
 import { getWorkerPool } from './db-connection';
 import {
   OutboxEvent,
+  FinanceApiRequest,
   FinanceApiResponse,
   FailureClassification,
 } from './types/outbox.types';
@@ -262,7 +263,7 @@ async function quarantineEvent(
 // ============================================================================
 
 export interface FinanceApiClient {
-  post(endpoint: string, payload: any): Promise<FinanceApiResponse>;
+  post(endpoint: string, payload: FinanceApiRequest): Promise<FinanceApiResponse>;
 }
 
 // Actual Finance API client implementation should be injected

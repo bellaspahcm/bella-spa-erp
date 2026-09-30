@@ -47,8 +47,8 @@ describe('Real Estate Kernel & Accounting Kernel — Integration Tests', () => {
     mockCommissionsDb = [];
     
     mockAccountsDb = [
-      { id: 'acc-1', tenant_id: 'tenant-1', code: '131', name: 'Phải thu khách hàng', type: 'asset' },
-      { id: 'acc-2', tenant_id: 'tenant-1', code: '5111', name: 'Doanh thu bán hàng', type: 'revenue' }
+      { id: 'acc-1', tenant_id: 'tenant-1', account_code: '131', account_name: 'Phải thu khách hàng', account_type: 'asset' },
+      { id: 'acc-2', tenant_id: 'tenant-1', account_code: '5111', account_name: 'Doanh thu bán hàng', account_type: 'revenue' }
     ];
 
     mockJournalEntriesDb = [];
@@ -155,7 +155,7 @@ describe('Real Estate Kernel & Accounting Kernel — Integration Tests', () => {
             if (table === 'accounting_accounts') {
               const matches = mockAccountsDb.filter(a => {
                 if (filters.tenant_id && a.tenant_id !== filters.tenant_id) return false;
-                if (filters.code && !filters.code.includes(a.code)) return false;
+                if (filters.account_code && !filters.account_code.includes(a.account_code)) return false;
                 return true;
               });
               return Promise.resolve({ data: matches, error: null }).then(onfulfilled);
@@ -286,11 +286,11 @@ describe('Real Estate Kernel & Accounting Kernel — Integration Tests', () => {
 
       // Check journal lines: Account 131 debited, Account 5111 credited
       expect(mockJournalLinesDb.length).toBe(2);
-      const debitLine = mockJournalLinesDb.find(l => l.debit > 0);
-      const creditLine = mockJournalLinesDb.find(l => l.credit > 0);
+      const debitLine = mockJournalLinesDb.find(l => l.debit_amount > 0);
+      const creditLine = mockJournalLinesDb.find(l => l.credit_amount > 0);
 
-      expect(debitLine.debit).toBe(3000000000);
-      expect(creditLine.credit).toBe(3000000000);
+      expect(debitLine.debit_amount).toBe(3000000000);
+      expect(creditLine.credit_amount).toBe(3000000000);
     });
   });
 

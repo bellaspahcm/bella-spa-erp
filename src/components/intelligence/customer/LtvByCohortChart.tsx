@@ -14,8 +14,38 @@ interface LtvByCohortChartProps {
   height?: number;
 }
 
+interface LtvCohortDatum {
+  cohort: string;
+  ltv: number;
+  size: number;
+}
+
+interface LtvCohortTooltipProps {
+  active?: boolean;
+  payload?: Array<{ value: number; payload: LtvCohortDatum }>;
+  formatCurrencyFull: (value: number) => string;
+}
+
+function LtvCohortTooltip({ active, payload, formatCurrencyFull }: LtvCohortTooltipProps) {
+  if (active && payload && payload.length) {
+    const entry = payload[0];
+    return (
+      <div className="bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl border border-slate-200/50 shadow-xl text-xs font-bold text-slate-800">
+        <p className="text-slate-500 mb-1 uppercase tracking-wider">Cohort: {entry.payload.cohort}</p>
+        <p className="text-sm font-black text-slate-900 mb-1">
+          LTV TB: <span className="text-primary">{formatCurrencyFull(entry.value)}</span>
+        </p>
+        <p className="text-[10px] text-slate-400 font-normal">
+          Quy mô cohort: {entry.payload.size} KH
+        </p>
+      </div>
+    );
+  }
+  return null;
+}
+
 export function LtvByCohortChart({ data, height = 350 }: LtvByCohortChartProps) {
-  const chartData = data
+  const chartData: LtvCohortDatum[] = data
     .sort((a, b) => a.cohortMonth.localeCompare(b.cohortMonth))
     .map(d => ({
       cohort: d.cohortMonth.substring(5, 7) + '/' + d.cohortMonth.substring(2, 4),
@@ -40,25 +70,6 @@ export function LtvByCohortChart({ data, height = 350 }: LtvByCohortChartProps) 
     }).format(value);
   };
 
-  // Custom tooltips matching glassmorphism
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const entry = payload[0];
-      return (
-        <div className="bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl border border-slate-200/50 shadow-xl text-xs font-bold text-slate-800">
-          <p className="text-slate-500 mb-1 uppercase tracking-wider">Cohort: {entry.payload.cohort}</p>
-          <p className="text-sm font-black text-slate-900 mb-1">
-            LTV TB: <span className="text-primary">{formatCurrencyFull(entry.value)}</span>
-          </p>
-          <p className="text-[10px] text-slate-400 font-normal">
-            Quy mô cohort: {entry.payload.size} KH
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
-
   return (
     <ResponsiveContainer width="100%" height={height}>
       <AreaChart data={chartData} margin={{ top: 15, right: 20, left: -15, bottom: 15 }}>
@@ -81,7 +92,7 @@ export function LtvByCohortChart({ data, height = 350 }: LtvByCohortChartProps) 
           axisLine={false}
           tickLine={false}
         />
-        <Tooltip content={<CustomTooltip />} />
+        <Tooltip content={<LtvCohortTooltip formatCurrencyFull={formatCurrencyFull} />} />
         <Area
           type="monotone"
           dataKey="ltv"

@@ -19,11 +19,11 @@ const mockFrom = jest.fn();
 const mockRecordAuditLog = jest.fn();
 
 jest.mock('../services/user-actions', () => ({
-  getCurrentUser: (...args: any[]) => mockGetCurrentUser(...args),
+  getCurrentUser: (...args: unknown[]) => mockGetCurrentUser(...args),
 }));
 
 jest.mock('../services/audit-actions', () => ({
-  recordAuditLog: (...args: any[]) => mockRecordAuditLog(...args),
+  recordAuditLog: (...args: unknown[]) => mockRecordAuditLog(...args),
 }));
 
 jest.mock('../lib/supabase-server', () => ({
@@ -39,7 +39,7 @@ jest.mock('../services/notification-helpers', () => ({
 }));
 
 class MockQueryBuilder {
-  constructor(private data: any = null, private error: any = null) {}
+  constructor(private data: unknown = null, private error: unknown = null) {}
 
   select() { return this; }
   eq() { return this; }
@@ -49,7 +49,7 @@ class MockQueryBuilder {
   order() { return this; }
   maybeSingle() { return this; }
 
-  then(onfulfilled: any) {
+  then(onfulfilled: (value: { data: unknown; error: unknown }) => unknown) {
     return Promise.resolve({ data: this.data, error: this.error }).then(onfulfilled);
   }
 }
@@ -57,14 +57,14 @@ class MockQueryBuilder {
 type ScriptedResult = {
   table: string;
   op: 'insert' | 'select' | 'update';
-  data?: any;
+  data?: unknown;
   error?: { message: string };
 };
 
 type DbCall = {
   table: string;
   op: ScriptedResult['op'];
-  payload?: any;
+  payload?: unknown;
 };
 
 class ScriptedQueryBuilder {
@@ -84,13 +84,13 @@ class ScriptedQueryBuilder {
     return this;
   }
 
-  update(payload: any) {
+  update(payload: unknown) {
     this.op = 'update';
     this.calls.push({ table: this.table, op: 'update', payload });
     return this;
   }
 
-  insert(payload: any) {
+  insert(payload: unknown) {
     this.op = 'insert';
     this.calls.push({ table: this.table, op: 'insert', payload });
     return this;
@@ -104,7 +104,7 @@ class ScriptedQueryBuilder {
   maybeSingle() { return this.resolve(); }
   single() { return this.resolve(); }
 
-  then(onfulfilled: (value: { data: any; error: any }) => unknown) {
+  then(onfulfilled: (value: { data: unknown; error: unknown }) => unknown) {
     return this.resolve().then(onfulfilled);
   }
 

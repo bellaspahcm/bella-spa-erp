@@ -19,22 +19,25 @@ const mockMaybeSingle = jest.fn();
 
 // Mock query builder helper that returns promises properly for Supabase chaining
 class MockQueryBuilder {
-  private resultPromise: Promise<any>;
+  private resultPromise: Promise<{ data: unknown; error: unknown }>;
 
-  constructor(data: any = null, error: any = null) {
+  constructor(data: unknown = null, error: unknown = null) {
     this.resultPromise = Promise.resolve({ data, error });
   }
 
-  select(...args: any[]) { mockSelect(...args); return this; }
-  insert(...args: any[]) { mockInsert(...args); return this; }
-  update(...args: any[]) { mockUpdate(...args); return this; }
-  delete(...args: any[]) { mockDelete(...args); return this; }
-  eq(...args: any[]) { mockEq(...args); return this; }
-  order(...args: any[]) { mockOrder(...args); return this; }
-  single(...args: any[]) { mockSingle(...args); return this; }
-  maybeSingle(...args: any[]) { mockMaybeSingle(...args); return this; }
+  select(...args: unknown[]) { mockSelect(...args); return this; }
+  insert(...args: unknown[]) { mockInsert(...args); return this; }
+  update(...args: unknown[]) { mockUpdate(...args); return this; }
+  delete(...args: unknown[]) { mockDelete(...args); return this; }
+  eq(...args: unknown[]) { mockEq(...args); return this; }
+  order(...args: unknown[]) { mockOrder(...args); return this; }
+  single(...args: unknown[]) { mockSingle(...args); return this; }
+  maybeSingle(...args: unknown[]) { mockMaybeSingle(...args); return this; }
 
-  then(onfulfilled: any, onrejected?: any) {
+  then(
+    onfulfilled: (value: { data: unknown; error: unknown }) => unknown,
+    onrejected?: (reason: unknown) => unknown
+  ) {
     return this.resultPromise.then(onfulfilled, onrejected);
   }
 }
@@ -62,12 +65,12 @@ jest.mock('../lib/revalidate', () => ({
 
 const mockRecordAuditLog = jest.fn();
 jest.mock('../services/audit-actions', () => ({
-  recordAuditLog: (...args: any[]) => mockRecordAuditLog(...args),
+  recordAuditLog: (...args: unknown[]) => mockRecordAuditLog(...args),
 }));
 
 const mockProcessSessionCompletion = jest.fn();
 jest.mock('@/core/services/order/session-completion-engine', () => ({
-  processSessionCompletion: (...args: any[]) => mockProcessSessionCompletion(...args),
+  processSessionCompletion: (...args: unknown[]) => mockProcessSessionCompletion(...args),
 }));
 
 import { geocodeAddress, createCustomer, updateCustomer } from '../services/customer-actions';

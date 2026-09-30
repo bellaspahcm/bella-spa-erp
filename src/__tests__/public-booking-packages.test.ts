@@ -8,8 +8,21 @@ jest.mock('@/lib/supabase-server', () => ({
 
 jest.mock('server-only', () => ({}), { virtual: true });
 
+type MockTenantBuilder = {
+  select: jest.Mock<MockTenantBuilder, []>;
+  eq: jest.Mock<MockTenantBuilder, []>;
+  single: jest.Mock<Promise<{ data: Record<string, unknown>; error: null }>, []>;
+};
+
+type MockPackagesBuilder = {
+  select: jest.Mock<MockPackagesBuilder, []>;
+  eq: jest.Mock<MockPackagesBuilder, []>;
+  or: jest.Mock<MockPackagesBuilder, []>;
+  order: jest.Mock<Promise<{ data: Record<string, unknown>[]; error: null }>, []>;
+};
+
 function createTenantBuilder() {
-  const builder: any = {
+  const builder: MockTenantBuilder = {
     select: jest.fn(() => builder),
     eq: jest.fn(() => builder),
     single: jest.fn().mockResolvedValue({
@@ -27,7 +40,7 @@ function createTenantBuilder() {
 }
 
 function createPackagesBuilder(rows: Record<string, unknown>[]) {
-  const builder: any = {
+  const builder: MockPackagesBuilder = {
     select: jest.fn(() => builder),
     eq: jest.fn(() => builder),
     or: jest.fn(() => builder),

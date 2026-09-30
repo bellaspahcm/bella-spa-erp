@@ -438,7 +438,7 @@ export interface DiscrepancyCreatedPayload {
 export interface SubmitInvoiceForApprovalRequest {
   tenant_id: string;
   invoice_id: string;
-  approval_threshold?: number; // Default: any variance requires approval
+  approval_threshold?: number; // Default: every variance requires approval
 }
 
 export interface SubmitInvoiceForApprovalResult {

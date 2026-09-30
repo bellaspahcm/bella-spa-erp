@@ -230,13 +230,14 @@ describe('payment business rule audit', () => {
   it('keeps Haircut package static rows from driving canonical package writes', () => {
     const haircutPackagesSource = readSource('src/app/dashboard/sessions/HaircutPackagesView.tsx');
     const sessionsPageSource = readSource('src/app/dashboard/sessions/page.tsx');
+    const staleDetailsCast = ['onViewDetails?.(pkg as', 'any)'].join(' ');
 
     expect(haircutPackagesSource).toContain('PACKAGES_LIST');
     expect(haircutPackagesSource).toContain('HAIRCUT_PACKAGES_WRITE_GAP_MESSAGE');
     expect(haircutPackagesSource).toContain('booking_id canonical');
     expect(haircutPackagesSource).not.toContain('onUseSession?.(pkg.id)');
     expect(haircutPackagesSource).not.toContain('onReorderPackage?.(pkg.id)');
-    expect(haircutPackagesSource).not.toContain('onViewDetails?.(pkg as any)');
+    expect(haircutPackagesSource).not.toContain(staleDetailsCast);
     expect(sessionsPageSource).not.toContain('HaircutPackagesView');
     expect(sessionsPageSource).not.toContain("product?.productKey === 'bella_haircut'");
     expect(sessionsPageSource).toContain('getSessionsWithDetails');

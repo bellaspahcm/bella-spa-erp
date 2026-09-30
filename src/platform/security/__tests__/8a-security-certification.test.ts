@@ -32,6 +32,15 @@ describe('BELLA AI PLATFORM — PHASE 8A SECURITY CERTIFICATION', () => {
   let criticalViolations = 0;
   let highViolations = 0;
 
+  function getErrorMessage(error: unknown) {
+    if (error instanceof Error) return error.message;
+    if (typeof error === 'object' && error !== null && 'message' in error) {
+      const message = (error as { message?: unknown }).message;
+      if (typeof message === 'string') return message;
+    }
+    return String(error);
+  }
+
   beforeAll(() => {
     runtime = new ExtensionRuntimeEngine();
     kms = new KmsSecretManager();
@@ -92,8 +101,8 @@ describe('BELLA AI PLATFORM — PHASE 8A SECURITY CERTIFICATION', () => {
       try {
         await mockDatabase.select(TENANT_A, TENANT_B);
         countScenario(false, 'critical');
-      } catch (err: any) {
-        expect(err.message).toContain('RLS_VIOLATION');
+      } catch (err) {
+        expect(getErrorMessage(err)).toContain('RLS_VIOLATION');
         countScenario(true);
       }
     });
@@ -110,8 +119,8 @@ describe('BELLA AI PLATFORM — PHASE 8A SECURITY CERTIFICATION', () => {
       try {
         transactionContext.spoofTenantId(TENANT_B);
         countScenario(false, 'critical');
-      } catch (err: any) {
-        expect(err.message).toContain('CONTEXT_VIOLATION');
+      } catch (err) {
+        expect(getErrorMessage(err)).toContain('CONTEXT_VIOLATION');
         countScenario(true);
       }
     });
@@ -129,8 +138,8 @@ describe('BELLA AI PLATFORM — PHASE 8A SECURITY CERTIFICATION', () => {
       try {
         await contractProxy.execute(null);
         countScenario(false, 'high');
-      } catch (err: any) {
-        expect(err.message).toContain('AUTHENTICATION_REQUIRED');
+      } catch (err) {
+        expect(getErrorMessage(err)).toContain('AUTHENTICATION_REQUIRED');
         countScenario(true);
       }
     });
@@ -148,8 +157,8 @@ describe('BELLA AI PLATFORM — PHASE 8A SECURITY CERTIFICATION', () => {
       try {
         await repository.queryScopedTable(false);
         countScenario(false, 'high');
-      } catch (err: any) {
-        expect(err.message).toContain('CONTRACT_BOUNDARY_VIOLATION');
+      } catch (err) {
+        expect(getErrorMessage(err)).toContain('CONTRACT_BOUNDARY_VIOLATION');
         countScenario(true);
       }
     });
@@ -165,8 +174,8 @@ describe('BELLA AI PLATFORM — PHASE 8A SECURITY CERTIFICATION', () => {
         // Attempt to execute a hook that requires capabilities (GPA calculation requires education.grade.calculate)
         await runtime.executeExtensionHook(TENANT_A, 'education.calculate_gpa', { scores: [9, 10] });
         countScenario(false, 'critical');
-      } catch (err: any) {
-        expect(err.message).toContain('EXTENSION_SECURITY_VIOLATION');
+      } catch (err) {
+        expect(getErrorMessage(err)).toContain('EXTENSION_SECURITY_VIOLATION');
         countScenario(true);
       }
     });
@@ -183,8 +192,8 @@ describe('BELLA AI PLATFORM — PHASE 8A SECURITY CERTIFICATION', () => {
       try {
         await router.routeCall('healthcare', 'education');
         countScenario(false, 'high');
-      } catch (err: any) {
-        expect(err.message).toContain('VERTICAL_BOUNDARY_VIOLATION');
+      } catch (err) {
+        expect(getErrorMessage(err)).toContain('VERTICAL_BOUNDARY_VIOLATION');
         countScenario(true);
       }
     });
@@ -196,10 +205,10 @@ describe('BELLA AI PLATFORM — PHASE 8A SECURITY CERTIFICATION', () => {
         // Run exploit code attempting to push 'accounting.write' into capability array
         await runtime.executeExtensionHook(TENANT_A, 'security.privilege_exploit', { exploitType: 'in_memory_mutate_capabilities' });
         countScenario(false, 'critical');
-      } catch (err: any) {
+      } catch (err) {
         // Exploit throws error because capability check happens at Runtime level via immutable context,
         // and doesn't permit execution.
-        expect(err.message).not.toContain('EXPLOIT_EXECUTED');
+        expect(getErrorMessage(err)).not.toContain('EXPLOIT_EXECUTED');
         countScenario(true);
       }
     });
@@ -213,10 +222,11 @@ describe('BELLA AI PLATFORM — PHASE 8A SECURITY CERTIFICATION', () => {
       try {
         await runtime.executeExtensionHook(TENANT_A, 'security.leak_exploit', { exploitType: 'leak_kms_master_key' });
         countScenario(false, 'critical');
-      } catch (err: any) {
+      } catch (err) {
         // Decryption fails with clean secure exception, not containing KMS key details
-        expect(err.message).toContain('SECRET_DECRYPTION_FAILED');
-        expect(err.message).not.toContain('BELLA-PLATFORM-SUPREME-MASTER-KMS');
+        const message = getErrorMessage(err);
+        expect(message).toContain('SECRET_DECRYPTION_FAILED');
+        expect(message).not.toContain('BELLA-PLATFORM-SUPREME-MASTER-KMS');
         countScenario(true);
       }
     });
@@ -255,8 +265,8 @@ describe('BELLA AI PLATFORM — PHASE 8A SECURITY CERTIFICATION', () => {
       try {
         await runtime.executeExtensionHook(TENANT_A, 'security.exploit_test', { exploitType: 'direct_db' });
         countScenario(false, 'critical');
-      } catch (err: any) {
-        expect(err.message).toContain('SANDBOX_BLOCKED');
+      } catch (err) {
+        expect(getErrorMessage(err)).toContain('SANDBOX_BLOCKED');
         countScenario(true);
       }
     });
@@ -266,8 +276,8 @@ describe('BELLA AI PLATFORM — PHASE 8A SECURITY CERTIFICATION', () => {
       try {
         await runtime.executeExtensionHook(TENANT_A, 'security.exploit_test', { exploitType: 'internal_repository' });
         countScenario(false, 'critical');
-      } catch (err: any) {
-        expect(err.message).toContain('SANDBOX_BLOCKED');
+      } catch (err) {
+        expect(getErrorMessage(err)).toContain('SANDBOX_BLOCKED');
         countScenario(true);
       }
     });
@@ -277,8 +287,8 @@ describe('BELLA AI PLATFORM — PHASE 8A SECURITY CERTIFICATION', () => {
       try {
         await runtime.executeExtensionHook(TENANT_A, 'security.exploit_test', { exploitType: 'local_fs' });
         countScenario(false, 'critical');
-      } catch (err: any) {
-        expect(err.message).toContain('SANDBOX_BLOCKED');
+      } catch (err) {
+        expect(getErrorMessage(err)).toContain('SANDBOX_BLOCKED');
         countScenario(true);
       }
     });
@@ -288,8 +298,8 @@ describe('BELLA AI PLATFORM — PHASE 8A SECURITY CERTIFICATION', () => {
       try {
         await runtime.executeExtensionHook(TENANT_A, 'security.exploit_test', { exploitType: 'direct_ledger_write' });
         countScenario(false, 'critical');
-      } catch (err: any) {
-        expect(err.message).toContain('SANDBOX_BLOCKED');
+      } catch (err) {
+        expect(getErrorMessage(err)).toContain('SANDBOX_BLOCKED');
         countScenario(true);
       }
     });

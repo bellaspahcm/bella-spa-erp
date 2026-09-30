@@ -833,7 +833,7 @@ export class PayrollProvider {
       };
     }
 
-    throw new Error(`Unsupported condition type: ${(condition as any).type}`);
+    throw new Error(`Unsupported condition type: ${(condition as { type: string }).type}`);
   }
 
   /**

@@ -27,6 +27,15 @@ process.env.DEFAULT_TENANT_ID = 'tenant-1';
 
 type BookingRow = Database['public']['Tables']['bookings']['Row'];
 type CustomerRow = Database['public']['Tables']['customers']['Row'];
+type MockStoreRow = Record<string, unknown>;
+type MockQueryResult = {
+  data: unknown;
+  error: { message: string } | null;
+};
+
+function toMockStoreRow(value: unknown): MockStoreRow {
+  return value && typeof value === 'object' ? value as MockStoreRow : {};
+}
 
 // Mock Supabase client
 // NOTE: Cannot reference this in jest.mock() factory directly (TDZ issue - jest.mock is hoisted).
@@ -46,9 +55,9 @@ const mockSupabase = {
 const mockStore = {
   customers: [] as CustomerRow[],
   bookings: [] as BookingRow[],
-  packages: [] as any[],
-  tenants: [] as any[],
-  users: [] as any[],
+  packages: [] as MockStoreRow[],
+  tenants: [] as MockStoreRow[],
+  users: [] as MockStoreRow[],
 };
 
 // Helper: Create mock query builder — fully chainable
@@ -72,7 +81,7 @@ class MockQueryBuilder {
 
   insert(data: unknown) {
     if (this._forceError) throw this._forceError;
-    const row = Array.isArray(data) ? data[0] : data;
+    const row = toMockStoreRow(Array.isArray(data) ? data[0] : data);
     if (this.table === 'customers') {
       const newCustomer = { id: `cust-${Date.now()}`, ...row };
       mockStore.customers.push(newCustomer as CustomerRow);
@@ -96,33 +105,33 @@ class MockQueryBuilder {
     return Promise.resolve({ data: null, error: null });
   }
 
-  single<T = unknown>(): Promise<{ data: T | null; error: { message: string } | null }> {
+  single(): Promise<MockQueryResult> {
     if (this.table === 'customers') {
       const customer = mockStore.customers[mockStore.customers.length - 1] ?? null;
-      return Promise.resolve({ data: customer as unknown as T, error: null });
+      return Promise.resolve({ data: customer, error: null });
     }
     if (this.table === 'bookings') {
       const booking = mockStore.bookings[mockStore.bookings.length - 1] ?? null;
-      return Promise.resolve({ data: booking as unknown as T, error: null });
+      return Promise.resolve({ data: booking, error: null });
     }
     if (this.table === 'tenants') {
       const tenant = mockStore.tenants[0] ?? null;
       return Promise.resolve({
-        data: tenant as unknown as T,
+        data: tenant,
         error: tenant ? null : { message: 'No tenant found' },
       });
     }
     if (this.table === 'packages') {
-      return Promise.resolve({ data: (mockStore.packages[0] ?? null) as unknown as T, error: null });
+      return Promise.resolve({ data: mockStore.packages[0] ?? null, error: null });
     }
     if (this.table === 'users') {
-      return Promise.resolve({ data: (mockStore.users[0] ?? null) as unknown as T, error: null });
+      return Promise.resolve({ data: mockStore.users[0] ?? null, error: null });
     }
     return Promise.resolve({ data: null, error: null });
   }
 
   // Make the builder itself awaitable (resolves after .in() chains)
-  then(onfulfilled?: ((value: { data: unknown; error: unknown }) => unknown) | null) {
+  then(onfulfilled?: ((value: MockQueryResult) => unknown) | null) {
     let data: unknown[] = [];
     if (this.table === 'bookings') {
       data = this._inValues.length > 0
@@ -444,7 +453,7 @@ describe('Customer-Level Booking Conflict Detection', () => {
         full_price: 1000000,
         deposit_amount: 500000,
         start_date: '2026-07-20',
-      } as any);
+      });
 
       expect(result.error).toBeUndefined();
       expect(result.data).toBeDefined();
@@ -481,7 +490,7 @@ describe('Customer-Level Booking Conflict Detection', () => {
         full_price: 1000000,
         deposit_amount: 500000,
         start_date: '2026-07-20',
-      } as any);
+      });
 
       expect(result.error).toBeUndefined();
       expect(result.data).toBeDefined();
@@ -522,7 +531,7 @@ describe('Customer-Level Booking Conflict Detection', () => {
         deposit_amount: 1000000,
         full_price: 2000000,
         start_date: '2026-07-20',
-      } as any);
+      });
 
       // Should NOT be blocked by conflict detection
       // May fail for other reasons (validation, etc.), but NOT conflict

@@ -10,7 +10,7 @@ export interface OutboxEvent {
   event_id: string;
   tenant_id: string;
   event_type: string;
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
   status: OutboxStatus;
   
   // H1.1 fields
@@ -43,6 +43,13 @@ export interface FinanceApiResponse {
   transaction_id?: string;
   error?: string;
   http_status?: number;
+}
+
+export interface FinanceApiRequest {
+  idempotency_key: string | null;
+  tenant_id: string;
+  event_type: string;
+  payload: Record<string, unknown>;
 }
 
 export interface ReplayResult {
@@ -82,7 +89,7 @@ export interface QuarantinedEvent {
   last_attempt_at: Date | null;
   quarantined_at: Date | null;
   created_at: Date;
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
 }
 
 export interface Discrepancy {

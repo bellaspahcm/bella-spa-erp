@@ -40,6 +40,20 @@ import {
   Layers
 } from 'lucide-react';
 
+const EVIDENCE_VISIBILITIES = ['INTERNAL_TEACHER', 'PARENT_SHARED'] as const;
+const CONSENT_SCOPES = ['CONSENT_VERIFIED', 'OPT_OUT'] as const;
+
+type EvidenceVisibility = (typeof EVIDENCE_VISIBILITIES)[number];
+type ConsentScope = (typeof CONSENT_SCOPES)[number];
+
+function isEvidenceVisibility(value: string): value is EvidenceVisibility {
+  return EVIDENCE_VISIBILITIES.includes(value as EvidenceVisibility);
+}
+
+function isConsentScope(value: string): value is ConsentScope {
+  return CONSENT_SCOPES.includes(value as ConsentScope);
+}
+
 export default function LearningWorkspacePage() {
   const [activeTab, setActiveTab] = useState<'QUEUE' | 'OBSERVATION' | 'PORTFOLIO' | 'PARENT_VIEW'>('QUEUE');
   
@@ -55,8 +69,8 @@ export default function LearningWorkspacePage() {
   // Observation Form State
   const [obsText, setObsText] = useState('Bé tự lập sắp xếp 5 hình khối gỗ theo đúng thứ tự mầu sắc.');
   const [selectedStudentId, setSelectedStudentId] = useState('00000000-0000-0000-0000-000000000100');
-  const [evidenceVisibility, setEvidenceVisibility] = useState<'INTERNAL_TEACHER' | 'PARENT_SHARED'>('PARENT_SHARED');
-  const [consentScope, setConsentScope] = useState<'CONSENT_VERIFIED' | 'OPT_OUT'>('CONSENT_VERIFIED');
+  const [evidenceVisibility, setEvidenceVisibility] = useState<EvidenceVisibility>('PARENT_SHARED');
+  const [consentScope, setConsentScope] = useState<ConsentScope>('CONSENT_VERIFIED');
   const [milestoneCode, setMilestoneCode] = useState('COG-01 (Phân loại màu sắc)');
   const [obsSuccessMessage, setObsSuccessMessage] = useState<string | null>(null);
 
@@ -306,7 +320,11 @@ export default function LearningWorkspacePage() {
                 <select
                   id="select-visibility"
                   value={evidenceVisibility}
-                  onChange={(e) => setEvidenceVisibility(e.target.value as any)}
+                  onChange={(e) => {
+                    if (isEvidenceVisibility(e.target.value)) {
+                      setEvidenceVisibility(e.target.value);
+                    }
+                  }}
                   className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200"
                 >
                   <option value="PARENT_SHARED">PARENT_SHARED — Phụ huynh được xem trong Portfolio</option>
@@ -319,7 +337,11 @@ export default function LearningWorkspacePage() {
                 <select
                   id="select-consent"
                   value={consentScope}
-                  onChange={(e) => setConsentScope(e.target.value as any)}
+                  onChange={(e) => {
+                    if (isConsentScope(e.target.value)) {
+                      setConsentScope(e.target.value);
+                    }
+                  }}
                   className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200"
                 >
                   <option value="CONSENT_VERIFIED">CONSENT_VERIFIED — Phụ huynh đã đồng ý chia sẻ hình ảnh</option>

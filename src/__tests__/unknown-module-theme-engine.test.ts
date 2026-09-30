@@ -28,7 +28,7 @@ describe('Configuration-Driven Dynamic Theme Engine (Unknown Module & Future-Pro
       const tokens = resolveDynamicThemeTokens({
         primaryColor: CUSTOM_PURPLE_PRIMARY,
         accentColor: CUSTOM_AMBER_ACCENT,
-        stylePreset: '' as any, // No preset match → triggers pure dynamic resolution
+        stylePreset: '', // No preset match → triggers pure dynamic resolution
       });
 
       expect(tokens.primary).toBe(CUSTOM_PURPLE_PRIMARY);
@@ -50,7 +50,7 @@ describe('Configuration-Driven Dynamic Theme Engine (Unknown Module & Future-Pro
       const tokens = resolveDynamicThemeTokens({
         primaryColor: LIGHT_YELLOW_PRIMARY,
         accentColor: '#1E293B',
-        stylePreset: '' as any,
+        stylePreset: '',
       });
 
       expect(tokens.primary).toBe(LIGHT_YELLOW_PRIMARY);
@@ -67,7 +67,7 @@ describe('Configuration-Driven Dynamic Theme Engine (Unknown Module & Future-Pro
       const tokens = resolveDynamicThemeTokens({
         primaryColor: CUSTOM_PURPLE_PRIMARY,
         accentColor: CUSTOM_AMBER_ACCENT,
-        stylePreset: '' as any,
+        stylePreset: '',
       });
 
       applyThemeTokensToRoot(tokens);

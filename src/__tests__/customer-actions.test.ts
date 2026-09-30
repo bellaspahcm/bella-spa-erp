@@ -36,11 +36,11 @@ jest.mock('@supabase/supabase-js', () => ({
 }));
 
 jest.mock('../services/user-actions', () => ({
-  getCurrentUser: (...args: any[]) => mockGetCurrentUser(...args),
+  getCurrentUser: (...args: unknown[]) => mockGetCurrentUser(...args),
 }));
 
 jest.mock('../services/audit-actions', () => ({
-  recordAuditLog: (...args: any[]) => mockRecordAuditLog(...args),
+  recordAuditLog: (...args: unknown[]) => mockRecordAuditLog(...args),
 }));
 
 jest.mock('../lib/subscription', () => ({
@@ -54,12 +54,12 @@ class MockQueryBuilder {
   public rangeSpy = jest.fn().mockReturnThis();
   public filters: Array<{ column: string; value: unknown }> = [];
 
-  constructor(private data: any = null, private error: any = null) {}
+  constructor(private data: unknown = null, private error: unknown = null) {}
 
   select() { return this; }
   order() { return this; }
   limit() { return this; }
-  range(...args: any[]) {
+  range(...args: unknown[]) {
     this.rangeSpy(...args);
     return this;
   }
@@ -69,20 +69,20 @@ class MockQueryBuilder {
   }
   maybeSingle() { return this; }
   single() { return this; }
-  insert(...args: any[]) {
+  insert(...args: unknown[]) {
     this.insertSpy(...args);
     return this;
   }
-  delete(...args: any[]) {
+  delete(...args: unknown[]) {
     this.deleteSpy(...args);
     return this;
   }
-  update(...args: any[]) {
+  update(...args: unknown[]) {
     this.updateSpy(...args);
     return this;
   }
 
-  then(onfulfilled: any) {
+  then(onfulfilled: (value: { data: unknown; error: unknown }) => unknown) {
     return Promise.resolve({ data: this.data, error: this.error }).then(onfulfilled);
   }
 }

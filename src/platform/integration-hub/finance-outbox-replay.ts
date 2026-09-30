@@ -6,6 +6,10 @@ import { Pool } from 'pg';
 import { getWorkerPool } from './db-connection';
 import { ReplayResult, BulkReplayResult } from './types/outbox.types';
 
+interface ReplayEventRow {
+  event_id: string;
+}
+
 // ============================================================================
 // Manual Replay (O6, A4)
 // ============================================================================
@@ -18,7 +22,7 @@ export async function replayEvent(
   const pool = db || getWorkerPool();
   
   // A4: Replay concurrency guard
-  const result = await pool.query(`
+  const result = await pool.query<ReplayEventRow>(`
     UPDATE finance_outbox_events
     SET 
       status = 'PENDING',
@@ -70,7 +74,7 @@ export async function replayBulk(
   // Bounded batch size (O9)
   const clampedLimit = Math.min(limit, 100);
   
-  const result = await pool.query(`
+  const result = await pool.query<ReplayEventRow>(`
     UPDATE finance_outbox_events
     SET 
       status = 'PENDING',
@@ -97,7 +101,7 @@ export async function replayBulk(
   
   return {
     affected_count: result.rowCount || 0,
-    event_ids: result.rows.map((r: any) => r.event_id),
+    event_ids: result.rows.map((r) => r.event_id),
   };
 }
 
@@ -126,7 +130,7 @@ export async function replayEventsByIds(
   // Hard cap at 100 events
   const clampedEventIds = eventIds.slice(0, 100);
   
-  const result = await pool.query(`
+  const result = await pool.query<ReplayEventRow>(`
     UPDATE finance_outbox_events
     SET 
       status = 'PENDING',
@@ -146,6 +150,6 @@ export async function replayEventsByIds(
   
   return {
     affected_count: result.rowCount || 0,
-    event_ids: result.rows.map((r: any) => r.event_id),
+    event_ids: result.rows.map((r) => r.event_id),
   };
 }

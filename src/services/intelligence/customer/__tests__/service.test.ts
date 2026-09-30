@@ -47,8 +47,17 @@ jest.mock('@/services/intelligence/customer/queries-simple', () => ({
 // Load CustomerIntelligenceService dynamically after mocking queries-simple
 const { CustomerIntelligenceService } = require('../service');
 
+type CustomerQueriesSimpleMock = {
+  getCustomerSegmentation: jest.Mock;
+  getCustomerLTV: jest.Mock;
+  getChurnRiskAnalysis: jest.Mock;
+  getRFMAnalysis: jest.Mock;
+  getSegmentDistribution: jest.Mock;
+  getCohortAnalysis: jest.Mock;
+};
+
 // Import mocked functions via requireMock to allow mocking functions at runtime
-const queriesSimple = jest.requireMock('@/services/intelligence/customer/queries-simple') as any;
+const queriesSimple = jest.requireMock('@/services/intelligence/customer/queries-simple') as CustomerQueriesSimpleMock;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Test Data — matches CustomerSegmentation type from queries-simple.ts

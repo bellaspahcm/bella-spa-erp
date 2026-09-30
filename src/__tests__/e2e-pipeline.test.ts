@@ -16,19 +16,200 @@ import { autoConsumeForSession } from '../services/inventory-actions';
 import { recordAuditLog } from '../services/audit-actions';
 import { enqueueWithAutoClient } from '../lib/accounting-outbox';
 
+type MockFieldValue = string | number | boolean | null | undefined | MockRecord | MockRecord[];
+
+interface MockRecord {
+  id?: string;
+  created_at?: string;
+  updated_at?: string;
+  [key: string]: MockFieldValue;
+}
+
+interface MockBooking extends MockRecord {
+  id: string;
+  tenant_id: string;
+  customer_id?: string;
+  package_id?: string;
+  package_name?: string;
+  full_price?: number;
+  deposit_amount?: number;
+  discount_percent?: number;
+  total_sessions?: number;
+  start_date?: string;
+  assigned_ktv_id?: string;
+  preferred_time?: string;
+  ktv_commission?: number;
+  status?: string;
+  customers?: MockUser | MockRecord;
+  packages?: MockPackage | MockRecord;
+}
+
+interface MockSessionLog extends MockRecord {
+  id: string;
+  booking_id: string;
+  session_number?: number;
+  assigned_date?: string;
+  status?: string;
+  completed_by_ktv_id?: string;
+  bookings?: MockBooking | null;
+  session_reviews?: MockSessionReview[];
+}
+
+interface MockRevenue extends MockRecord {
+  id: string;
+  booking_id?: string;
+  amount: number;
+  revenue_type?: string;
+  payment_method?: string;
+  received_date?: string;
+  status?: string;
+  notes?: string;
+  receipt_url?: string;
+  tenant_id?: string;
+  business_event_type?: string;
+  accounting_review_status?: string;
+  accounting_metadata?: MockRecord;
+  is_locked?: boolean;
+  bookings?: MockRecord | null;
+}
+
+interface MockExpense extends MockRecord {
+  id: string;
+  tenant_id?: string;
+  expense_date?: string;
+  is_locked?: boolean;
+}
+
+interface MockUser extends MockRecord {
+  id: string;
+  email?: string;
+  role?: string;
+  tenant_id?: string;
+  full_name?: string;
+  base_salary?: number;
+  name_mother?: string;
+  name_baby?: string;
+  phone?: string;
+}
+
+interface MockSalaryRecord extends MockRecord {
+  id: string;
+  ktv_id: string;
+  month_year: string;
+  total_sessions?: number;
+  session_bonus?: number;
+  rating_bonus?: number;
+  base_salary?: number;
+  total_salary?: number;
+  tenant_id?: string;
+  status?: string;
+  is_locked?: boolean;
+}
+
+interface MockSessionReview extends MockRecord {
+  id: string;
+  session_log_id: string;
+  rating?: number;
+  status?: string;
+}
+
+interface MockTenant extends MockRecord {
+  id: string;
+  name: string;
+  royalty_type?: string;
+  royalty_rate?: number;
+  internal_clearing_rate?: number;
+}
+
+interface MockPackage extends MockRecord {
+  id: string;
+  tenant_id: string;
+  module_key?: string;
+  name: string;
+  description?: string;
+  price: number;
+  total_sessions: number;
+  session_multiplier?: number;
+}
+
+type MockFilter = (item: MockRecord) => boolean;
+type MockTableName = keyof MockStore;
+type MockTableStore = Record<MockTableName, MockRecord[]>;
+
+interface MockQueryResult {
+  data: MockRecord | MockRecord[] | null;
+  error: { message: string } | null;
+  count?: number;
+}
+
+interface RecordRemainingPaymentAtomicParams extends Record<string, unknown> {
+  p_booking_id: string;
+  p_amount: number;
+  p_revenue_type?: string;
+  p_payment_method?: string;
+  p_received_date?: string;
+  p_status?: string;
+  p_notes?: string;
+  p_receipt_url?: string;
+  p_business_event_type?: string;
+  p_accounting_review_status?: string;
+  p_accounting_metadata?: MockRecord;
+}
+
+function isMockTableName(table: string): table is MockTableName {
+  return table in mockStore && Array.isArray(mockStore[table as MockTableName]);
+}
+
+function mockTable(table: string): MockRecord[] {
+  if (!isMockTableName(table)) {
+    return [];
+  }
+  return (mockStore as MockTableStore)[table];
+}
+
+function replaceMockTable(table: string, rows: MockRecord[]) {
+  if (isMockTableName(table)) {
+    (mockStore as MockTableStore)[table] = rows;
+  }
+}
+
+function comparable(value: MockFieldValue): string | number | null {
+  if (typeof value === 'string' || typeof value === 'number') {
+    return value;
+  }
+  return null;
+}
+
+function compareField(
+  item: MockRecord,
+  field: string,
+  value: MockFieldValue,
+  predicate: (left: string | number, right: string | number) => boolean
+) {
+  const left = comparable(item[field]);
+  const right = comparable(value);
+  return left !== null && right !== null && predicate(left, right);
+}
+
+function isRecordRemainingPaymentAtomicParams(
+  params: Record<string, unknown>
+): params is RecordRemainingPaymentAtomicParams {
+  return typeof params.p_booking_id === 'string' && typeof params.p_amount === 'number';
+}
+
 // --- Global Mock Store ---
 interface MockStore {
-  bookings: any[];
-  session_logs: any[];
-  revenue: any[];
-  expenses: any[];
-  users: any[];
-  salary_records: any[];
-  session_reviews: any[];
-  franchise_royalty_invoices: any[];
-  inter_branch_clearing_records: any[];
-  tenants: any[];
-  packages: any[];
+  bookings: MockBooking[];
+  session_logs: MockSessionLog[];
+  revenue: MockRevenue[];
+  expenses: MockExpense[];
+  users: MockUser[];
+  salary_records: MockSalaryRecord[];
+  session_reviews: MockSessionReview[];
+  franchise_royalty_invoices: MockRecord[];
+  inter_branch_clearing_records: MockRecord[];
+  tenants: MockTenant[];
+  packages: MockPackage[];
 }
 
 let mockStore: MockStore = {
@@ -93,50 +274,53 @@ function resetMockStore() {
 // --- Mock Query Builder ---
 class MockQueryBuilder {
   private table: string;
-  private filters: ((item: any) => boolean)[] = [];
+  private filters: MockFilter[] = [];
   private orderField: string | null = null;
   private limitCount: number | null = null;
-  private countOptions: any = null;
-  private updatePayload: any = null;
+  private countOptions: { count?: string } | null = null;
+  private updatePayload: Partial<MockRecord> | null = null;
   private isDelete: boolean = false;
 
-  constructor(table: string, countOptions: any = null) {
+  constructor(table: string, countOptions: { count?: string } | null = null) {
     this.table = table;
     this.countOptions = countOptions;
   }
 
-  eq(field: string, value: any) {
+  eq(field: string, value: MockFieldValue) {
     this.filters.push((item) => {
       if (field.includes('.')) {
         const [parent, child] = field.split('.');
-        return item[parent]?.[child] === value;
+        const parentValue = item[parent];
+        return typeof parentValue === 'object' && parentValue !== null && !Array.isArray(parentValue)
+          ? parentValue[child] === value
+          : false;
       }
       return item[field] === value;
     });
     return this;
   }
 
-  in(field: string, values: any[]) {
+  in(field: string, values: MockFieldValue[]) {
     this.filters.push((item) => values.includes(item[field]));
     return this;
   }
 
-  gte(field: string, value: any) {
-    this.filters.push((item) => item[field] >= value);
+  gte(field: string, value: MockFieldValue) {
+    this.filters.push((item) => compareField(item, field, value, (left, right) => left >= right));
     return this;
   }
 
-  lte(field: string, value: any) {
-    this.filters.push((item) => item[field] <= value);
+  lte(field: string, value: MockFieldValue) {
+    this.filters.push((item) => compareField(item, field, value, (left, right) => left <= right));
     return this;
   }
 
-  lt(field: string, value: any) {
-    this.filters.push((item) => item[field] < value);
+  lt(field: string, value: MockFieldValue) {
+    this.filters.push((item) => compareField(item, field, value, (left, right) => left < right));
     return this;
   }
 
-  not(field: string, operator: string, value: any) {
+  not(field: string, operator: string, value: MockFieldValue) {
     if (operator === 'eq') {
       this.filters.push((item) => item[field] !== value);
     }
@@ -155,7 +339,7 @@ class MockQueryBuilder {
     return this;
   }
 
-  order(field: string, options?: any) {
+  order(field: string) {
     this.orderField = field;
     return this;
   }
@@ -165,7 +349,7 @@ class MockQueryBuilder {
     return this;
   }
 
-  select(fields?: string, options?: any) {
+  select(_fields?: string, options?: { count?: string }) {
     if (options) {
       this.countOptions = options;
     }
@@ -173,13 +357,14 @@ class MockQueryBuilder {
   }
 
   private execute() {
-    let list = (mockStore as any)[this.table] || [];
+    let list = [...mockTable(this.table)];
 
     // Enrichments first so filters can operate on joined fields (e.g. bookings.tenant_id)
     if (this.table === 'bookings') {
-      list = list.map((item: any) => ({
+      list = list.map((item) => ({
         ...item,
         customers: mockStore.users.find((u) => u.id === item.customer_id) || {
+          id: 'mock-customer',
           name_mother: 'Mẹ Nguyễn Vy',
           name_baby: 'Bé Cherry',
           phone: '0901234567',
@@ -194,7 +379,7 @@ class MockQueryBuilder {
     }
 
     if (this.table === 'session_logs') {
-      list = list.map((item: any) => ({
+      list = list.map((item) => ({
         ...item,
         bookings: mockStore.bookings.find((b) => b.id === item.booking_id) || null,
         session_reviews: mockStore.session_reviews.filter((sr) => sr.session_log_id === item.id),
@@ -202,7 +387,7 @@ class MockQueryBuilder {
     }
 
     if (this.table === 'revenue') {
-      list = list.map((item: any) => {
+      list = list.map((item) => {
         const bk = mockStore.bookings.find((b) => b.id === item.booking_id);
         return {
           ...item,
@@ -224,8 +409,12 @@ class MockQueryBuilder {
       list = [...list].sort((a, b) => {
         const valA = a[this.orderField!];
         const valB = b[this.orderField!];
-        if (typeof valA === 'string') return valA.localeCompare(valB);
-        return (valA || 0) - (valB || 0);
+        if (typeof valA === 'string' && typeof valB === 'string') {
+          return valA.localeCompare(valB);
+        }
+        const left = typeof valA === 'number' ? valA : 0;
+        const right = typeof valB === 'number' ? valB : 0;
+        return left - right;
       });
     }
     if (this.limitCount !== null) {
@@ -235,9 +424,9 @@ class MockQueryBuilder {
     return list;
   }
 
-  insert(data: any | any[]) {
+  insert(data: MockRecord | MockRecord[]) {
     const list = Array.isArray(data) ? data : [data];
-    const inserted: any[] = [];
+    const inserted: MockRecord[] = [];
     for (const item of list) {
       const newItem = {
         id: item.id || `mock-id-${Math.random().toString(36).substr(2, 9)}`,
@@ -245,7 +434,7 @@ class MockQueryBuilder {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
-      ((mockStore as any)[this.table]).push(newItem);
+      mockTable(this.table).push(newItem);
       inserted.push(newItem);
     }
 
@@ -259,16 +448,16 @@ class MockQueryBuilder {
       select: () => ({
         single: () => Promise.resolve({ data: inserted[0], error: null }),
         maybeSingle: () => Promise.resolve({ data: inserted[0], error: null }),
-        then: (cb: any) => Promise.resolve(result).then(cb),
+        then: (cb: (value: MockQueryResult) => unknown) => Promise.resolve(result).then(cb),
       }),
       single: () => Promise.resolve({ data: inserted[0], error: null }),
       maybeSingle: () => Promise.resolve({ data: inserted[0], error: null }),
-      then: (cb: any) => Promise.resolve(result).then(cb),
+      then: (cb: (value: MockQueryResult) => unknown) => Promise.resolve(result).then(cb),
     };
     return chain;
   }
 
-  update(payload: any) {
+  update(payload: Partial<MockRecord>) {
     this.updatePayload = payload;
     return this;
   }
@@ -281,9 +470,9 @@ class MockQueryBuilder {
   private applyPendingMutation() {
     if (this.updatePayload) {
       const list = this.execute();
-      const originalList = (mockStore as any)[this.table] || [];
+      const originalList = mockTable(this.table);
       for (const item of list) {
-        const originalItem = originalList.find((x: any) => x.id === item.id);
+        const originalItem = originalList.find((x) => x.id === item.id);
         if (originalItem) {
           Object.assign(originalItem, this.updatePayload, { updated_at: new Date().toISOString() });
         }
@@ -292,18 +481,22 @@ class MockQueryBuilder {
       this.updatePayload = null;
     } else if (this.isDelete) {
       const list = this.execute();
-      const matchedIds = list.map((m: any) => m.id);
-      (mockStore as any)[this.table] = ((mockStore as any)[this.table]).filter(
-        (item: any) => !matchedIds.includes(item.id)
+      const matchedIds = list.map((m) => m.id);
+      replaceMockTable(
+        this.table,
+        mockTable(this.table).filter((item) => !matchedIds.includes(item.id))
       );
       this.isDelete = false;
     }
   }
 
-  then(onfulfilled?: (value: any) => any, onrejected?: (reason: any) => any) {
+  then(
+    onfulfilled?: (value: MockQueryResult) => unknown,
+    onrejected?: (reason: unknown) => unknown
+  ) {
     this.applyPendingMutation();
     const list = this.execute();
-    const res: any = { data: list, error: null };
+    const res: MockQueryResult = { data: list, error: null };
     if (this.countOptions) {
       res.count = list.length;
     }
@@ -332,7 +525,7 @@ jest.mock('@/services/user-actions', () => ({
   getCurrentUser: () => mockGetCurrentUser(),
 }));
 
-function recordRemainingPaymentAtomicMock(params: any) {
+function recordRemainingPaymentAtomicMock(params: RecordRemainingPaymentAtomicParams) {
   const booking = mockStore.bookings.find((b) => b.id === params.p_booking_id);
   if (!booking) {
     return Promise.resolve({ data: null, error: { message: 'Booking not found' } });
@@ -390,26 +583,30 @@ function recordRemainingPaymentAtomicMock(params: any) {
 
 const mockSupabaseClient = {
   from: jest.fn((table: string) => new MockQueryBuilder(table)),
-  rpc: jest.fn().mockImplementation((name, params) => {
+  rpc: jest.fn().mockImplementation((name: string, params: Record<string, unknown>) => {
     if (name === 'record_remaining_payment_atomic') {
+      if (!isRecordRemainingPaymentAtomicParams(params)) {
+        return Promise.resolve({ data: null, error: { message: 'Invalid remaining payment params' } });
+      }
       return recordRemainingPaymentAtomicMock(params);
     }
 
     if (name === 'lock_monthly_records') {
-      const monthStart = params.p_month; // e.g. "2026-05-01"
+      const monthStart = typeof params.p_month === 'string' ? params.p_month : ''; // e.g. "2026-05-01"
+      const tenantId = typeof params.p_tenant_id === 'string' ? params.p_tenant_id : '';
       const monthEnd = `${monthStart.substring(0, 7)}-31`;
       
       // Update is_locked on matching records
       mockStore.revenue
-        .filter(r => r.tenant_id === params.p_tenant_id && r.received_date >= monthStart && r.received_date <= monthEnd)
+        .filter((r) => r.tenant_id === tenantId && r.received_date >= monthStart && r.received_date <= monthEnd)
         .forEach(r => r.is_locked = true);
 
       mockStore.expenses
-        .filter(e => e.tenant_id === params.p_tenant_id && e.expense_date >= monthStart && e.expense_date <= monthEnd)
+        .filter((e) => e.tenant_id === tenantId && e.expense_date >= monthStart && e.expense_date <= monthEnd)
         .forEach(e => e.is_locked = true);
 
       mockStore.salary_records
-        .filter(s => s.tenant_id === params.p_tenant_id && s.month_year === monthStart)
+        .filter((s) => s.tenant_id === tenantId && s.month_year === monthStart)
         .forEach(s => s.is_locked = true);
 
       return Promise.resolve({ error: null });
@@ -423,6 +620,10 @@ const mockSupabaseClient = {
 
 jest.mock('@/lib/supabase-server', () => ({
   createClient: jest.fn(() => Promise.resolve(mockSupabaseClient)),
+}));
+
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn(() => mockSupabaseClient),
 }));
 
 jest.mock('next/cache', () => ({
@@ -447,6 +648,7 @@ jest.mock('next/headers', () => ({
 
 jest.mock('@/services/inventory-actions', () => ({
   autoConsumeForSession: jest.fn().mockResolvedValue({ success: true }),
+  rollbackInventoryConsumption: jest.fn().mockResolvedValue({ success: true }),
 }));
 
 jest.mock('@/modules/hr-salary/actions/admin-salary-actions', () => ({

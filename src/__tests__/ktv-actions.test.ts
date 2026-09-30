@@ -21,7 +21,7 @@ const mockProcessSessionCompletion = jest.fn();
 const mockRecalculateAndSaveSalaryRecord = jest.fn();
 
 jest.mock('../services/user-actions', () => ({
-  getCurrentUser: (...args: any[]) => mockGetCurrentUser(...args),
+  getCurrentUser: (...args: unknown[]) => mockGetCurrentUser(...args),
 }));
 
 jest.mock('../lib/supabase-server', () => ({
@@ -44,10 +44,10 @@ jest.mock('../modules/hr-salary/actions/admin-salary-actions', () => ({
 class MockQueryBuilder {
   public updateSpy = jest.fn().mockReturnThis();
 
-  constructor(private data: any = null, private error: any = null, private count: number | null = null) {}
+  constructor(private data: unknown = null, private error: unknown = null, private count: number | null = null) {}
 
   select() { return this; }
-  update(...args: any[]) {
+  update(...args: unknown[]) {
     this.updateSpy(...args);
     return this;
   }
@@ -61,7 +61,7 @@ class MockQueryBuilder {
   order() { return this; }
   single() { return this; }
 
-  then(onfulfilled: any) {
+  then(onfulfilled: (value: { data: unknown; error: unknown; count: number | null }) => unknown) {
     return Promise.resolve({ data: this.data, error: this.error, count: this.count }).then(onfulfilled);
   }
 }

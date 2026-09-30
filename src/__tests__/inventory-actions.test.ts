@@ -30,7 +30,7 @@ type PackageMaterialRow = Database['public']['Tables']['package_materials']['Row
 type PackageMaterialInsert = Database['public']['Tables']['package_materials']['Insert'];
 
 jest.mock('../services/user-actions', () => ({
-  getCurrentUser: (...args: any[]) => mockGetCurrentUser(...args),
+  getCurrentUser: (...args: unknown[]) => mockGetCurrentUser(...args),
 }));
 
 jest.mock('../lib/supabase-server', () => ({
@@ -42,11 +42,11 @@ jest.mock('@/lib/supabase-dev-bypass-server', () => ({
 }));
 
 jest.mock('@/lib/accounting-outbox', () => ({
-  enqueueWithAutoClient: (...args: any[]) => mockEnqueueWithAutoClient(...args),
+  enqueueWithAutoClient: (...args: unknown[]) => mockEnqueueWithAutoClient(...args),
 }));
 
 class MockQueryBuilder {
-  constructor(private data: any = null, private error: any = null) {}
+  constructor(private data: unknown = null, private error: unknown = null) {}
 
   select() { return this; }
   order() { return this; }
@@ -57,7 +57,7 @@ class MockQueryBuilder {
   in() { return this; }
   maybeSingle() { return this; }
 
-  then(onfulfilled: any) {
+  then(onfulfilled: (value: { data: unknown; error: unknown }) => unknown) {
     return Promise.resolve({ data: this.data, error: this.error }).then(onfulfilled);
   }
 }
@@ -65,8 +65,8 @@ class MockQueryBuilder {
 type ScriptedResult = {
   table: string;
   op: string;
-  data?: any;
-  error?: any;
+  data?: unknown;
+  error?: unknown;
 };
 
 class ScriptedQueryBuilder {
@@ -75,7 +75,7 @@ class ScriptedQueryBuilder {
   constructor(
     private table: string,
     private scripts: ScriptedResult[],
-    private calls: Array<{ table: string; op: string; payload?: any }>
+    private calls: Array<{ table: string; op: string; payload?: unknown }>
   ) {}
 
   select() {
@@ -86,13 +86,13 @@ class ScriptedQueryBuilder {
     return this;
   }
 
-  update(payload: any) {
+  update(payload: unknown) {
     this.op = 'update';
     this.calls.push({ table: this.table, op: 'update', payload });
     return this;
   }
 
-  insert(payload: any) {
+  insert(payload: unknown) {
     this.op = 'insert';
     this.calls.push({ table: this.table, op: 'insert', payload });
     return this;
@@ -113,7 +113,7 @@ class ScriptedQueryBuilder {
   single() { return this; }
   maybeSingle() { return this; }
 
-  then(onfulfilled: any) {
+  then(onfulfilled: (value: { data: unknown; error: unknown }) => unknown) {
     const next = this.scripts.shift();
     if (!next) {
       throw new Error(`No scripted result for ${this.table}.${this.op}`);
@@ -198,7 +198,7 @@ describe('inventory write action side effects', () => {
   });
 
   function installScriptedSupabase(scripts: ScriptedResult[]) {
-    const calls: Array<{ table: string; op: string; payload?: any }> = [];
+    const calls: Array<{ table: string; op: string; payload?: unknown }> = [];
     mockFrom.mockImplementation((table: string) => new ScriptedQueryBuilder(table, scripts, calls));
     return calls;
   }

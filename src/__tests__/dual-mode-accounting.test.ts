@@ -77,8 +77,24 @@ const READY_ACCOUNTING_ROWS = [
   },
 ];
 
+type MockQueryResult = {
+  data: unknown;
+  error: { message: string } | null;
+};
+
+type MockChain = {
+  select: jest.Mock<MockChain, []>;
+  insert: jest.Mock<MockChain | Promise<MockQueryResult>, []>;
+  update: jest.Mock<MockChain, []>;
+  eq: jest.Mock<MockChain, []>;
+  is: jest.Mock<Promise<MockQueryResult>, []>;
+  not: jest.Mock<Promise<MockQueryResult>, []>;
+  single: jest.Mock<Promise<MockQueryResult>, []>;
+  then: (onfulfilled?: (value: MockQueryResult) => unknown) => Promise<unknown>;
+};
+
 function createMockChain(table: string) {
-  const chain: any = {};
+  const chain = {} as MockChain;
   
   chain.select = mockSelect.mockImplementation(() => chain);
   chain.insert = mockInsert.mockImplementation(() => {
@@ -105,8 +121,8 @@ function createMockChain(table: string) {
   });
 
   // Support then/catch in case any intermediate chain is awaited
-  chain.then = (onfulfilled?: any) => {
-    let defaultData: any = [];
+  chain.then = (onfulfilled?: (value: MockQueryResult) => unknown) => {
+    let defaultData: unknown[] = [];
     if (table === 'revenue') {
       defaultData = [
         {

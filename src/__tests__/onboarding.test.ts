@@ -42,22 +42,27 @@ jest.mock('@/services/audit-actions', () => ({
 }));
 
 // Helper class for mock query builders
+type MockQueryResult = {
+  data: unknown;
+  error: unknown;
+};
+
 class MockQueryBuilder {
-  public data: any;
-  public error: any;
+  public data: unknown;
+  public error: unknown;
   public updateSpy = jest.fn().mockReturnThis();
   public eqSpy = jest.fn().mockReturnThis();
 
-  constructor(data: any = null, error: any = null) {
+  constructor(data: unknown = null, error: unknown = null) {
     this.data = data;
     this.error = error;
   }
 
   select() { return this; }
-  eq(...args: any[]) { this.eqSpy(...args); return this; }
-  update(...args: any[]) { this.updateSpy(...args); return this; }
+  eq(...args: unknown[]) { this.eqSpy(...args); return this; }
+  update(...args: unknown[]) { this.updateSpy(...args); return this; }
 
-  then(onfulfilled: any) {
+  then(onfulfilled: (value: MockQueryResult) => unknown) {
     return Promise.resolve({ data: this.data, error: this.error }).then(onfulfilled);
   }
 }

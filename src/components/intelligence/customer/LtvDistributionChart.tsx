@@ -14,6 +14,33 @@ interface LtvDistributionChartProps {
   height?: number;
 }
 
+interface LtvDistributionDatum {
+  range: string;
+  count: number;
+}
+
+interface LtvDistributionTooltipProps {
+  active?: boolean;
+  payload?: Array<{ value: number; payload: LtvDistributionDatum }>;
+  total: number;
+}
+
+function LtvDistributionTooltip({ active, payload, total }: LtvDistributionTooltipProps) {
+  if (active && payload && payload.length) {
+    const entry = payload[0];
+    const percent = total > 0 ? ((entry.value / total) * 100).toFixed(1) : '0.0';
+    return (
+      <div className="bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl border border-slate-200/50 shadow-xl text-xs font-bold text-slate-800">
+        <p className="text-slate-500 mb-1 uppercase tracking-wider">Khoảng: {entry.payload.range}</p>
+        <p className="text-sm font-black text-slate-900">
+          Số lượng: <span className="text-primary">{entry.value} KH</span> <span className="text-slate-400 font-normal">({percent}%)</span>
+        </p>
+      </div>
+    );
+  }
+  return null;
+}
+
 export function LtvDistributionChart({ data, height = 350 }: LtvDistributionChartProps) {
   // Create LTV buckets
   const buckets = [
@@ -30,29 +57,12 @@ export function LtvDistributionChart({ data, height = 350 }: LtvDistributionChar
     if (bucket) bucket.count++;
   });
 
-  const chartData = buckets.map(b => ({
+  const chartData: LtvDistributionDatum[] = buckets.map(b => ({
     range: b.range,
     count: b.count,
   }));
 
   const total = data.length;
-
-  // Custom tooltips matching glassmorphism
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const entry = payload[0];
-      const percent = total > 0 ? ((entry.value / total) * 100).toFixed(1) : '0.0';
-      return (
-        <div className="bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl border border-slate-200/50 shadow-xl text-xs font-bold text-slate-800">
-          <p className="text-slate-500 mb-1 uppercase tracking-wider">Khoảng: {entry.payload.range}</p>
-          <p className="text-sm font-black text-slate-900">
-            Số lượng: <span className="text-primary">{entry.value} KH</span> <span className="text-slate-400 font-normal">({percent}%)</span>
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
 
   return (
     <ResponsiveContainer width="100%" height={height}>
@@ -75,7 +85,7 @@ export function LtvDistributionChart({ data, height = 350 }: LtvDistributionChar
           axisLine={false}
           tickLine={false}
         />
-        <Tooltip content={<CustomTooltip />} />
+        <Tooltip content={<LtvDistributionTooltip total={total} />} />
         <Bar 
           dataKey="count" 
           name="Số khách hàng" 

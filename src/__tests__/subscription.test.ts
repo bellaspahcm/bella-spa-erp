@@ -1,8 +1,30 @@
 import { NextRequest } from 'next/server';
 
+type MockQueryChain = {
+  eq: jest.Mock;
+  or: jest.Mock;
+  neq: jest.Mock;
+  in: jest.Mock;
+  single: jest.Mock;
+  maybeSingle: jest.Mock;
+  then: (resolve: (value: unknown) => unknown) => unknown;
+};
+type WebhookPayloadRecord = Record<string, unknown>;
+type WebhookInsertPayload = WebhookPayloadRecord | WebhookPayloadRecord[];
+
+function firstPayloadRecord(payload: unknown): WebhookPayloadRecord {
+  if (Array.isArray(payload) && typeof payload[0] === 'object' && payload[0] !== null) {
+    return payload[0] as WebhookPayloadRecord;
+  }
+  if (typeof payload === 'object' && payload !== null) {
+    return payload as WebhookPayloadRecord;
+  }
+  return {};
+}
+
 // Helper to create a chainable query builder mock that can be awaited
-const createChainableMock = (resolvedValue: any, singleValueFn?: () => any) => {
-  const chain: any = {
+const createChainableMock = (resolvedValue: unknown, singleValueFn?: () => unknown) => {
+  const chain: MockQueryChain = {
     eq: jest.fn(() => chain),
     or: jest.fn(() => chain),
     neq: jest.fn(() => chain),
@@ -12,7 +34,7 @@ const createChainableMock = (resolvedValue: any, singleValueFn?: () => any) => {
       return Promise.resolve(resolvedValue);
     }),
     maybeSingle: jest.fn(() => Promise.resolve(resolvedValue)),
-    then: (resolve: any) => resolve(resolvedValue),
+    then: (resolve: (value: unknown) => unknown) => resolve(resolvedValue),
   };
   const select = jest.fn(() => chain);
   return { select };
@@ -68,16 +90,16 @@ jest.mock('@supabase/supabase-js', () => ({
 
 const mockEnqueueWithAutoClient = jest.fn();
 jest.mock('@/lib/accounting-outbox', () => ({
-  enqueueWithAutoClient: (...args: any[]) => mockEnqueueWithAutoClient(...args),
+  enqueueWithAutoClient: (...args: unknown[]) => mockEnqueueWithAutoClient(...args),
 }));
 
 // Mock next/server dependencies or other things if necessary
 jest.mock('server-only', () => ({}), { virtual: true });
 
 // Dynamically import modules under test to prevent eager execution before mock variables are initialized
-let checkSubscriptionLimit: any;
-let incrementSmsCount: any;
-let POST: any;
+let checkSubscriptionLimit: typeof import('@/lib/subscription').checkSubscriptionLimit;
+let incrementSmsCount: typeof import('@/lib/subscription').incrementSmsCount;
+let POST: typeof import('@/app/api/webhooks/payment/route').POST;
 
 const defaultEntitlements = [
   {
@@ -618,7 +640,7 @@ describe('Subscription Constraints & Webhook Suite', () => {
   });
 
   describe('Payment Webhook Reconciler (POST /api/webhooks/payment)', () => {
-    const createMockRequest = (body: any, headers: Record<string, string> = {}) => {
+    const createMockRequest = (body: unknown, headers: Record<string, string> = {}) => {
       const url = 'http://localhost/api/webhooks/payment';
       const reqHeaders = new Headers({
         'content-type': 'application/json',
@@ -739,12 +761,12 @@ describe('Subscription Constraints & Webhook Suite', () => {
         tenant_id: 'tenant-1',
         status: 'deposit_pending',
       };
-      const revenueInsertPayloads: any[] = [];
-      const auditInsertPayloads: any[] = [];
-      const bookingStatusUpdates: any[] = [];
+      const revenueInsertPayloads: WebhookInsertPayload[] = [];
+      const auditInsertPayloads: WebhookInsertPayload[] = [];
+      const bookingStatusUpdates: WebhookPayloadRecord[] = [];
 
       mockRouteFrom.mockImplementation((table: string) => {
-        const chain: any = {
+        const chain: WebhookQueryChain = {
           select: jest.fn(() => chain),
           eq: jest.fn(() => chain),
           contains: jest.fn(() => chain),
@@ -755,18 +777,18 @@ describe('Subscription Constraints & Webhook Suite', () => {
             if (table === 'revenue') return Promise.resolve({ data: null, error: null });
             return Promise.resolve({ data: null, error: null });
           }),
-          update: jest.fn((payload: any) => {
+          update: jest.fn((payload: WebhookPayloadRecord) => {
             bookingStatusUpdates.push(payload);
             return { eq: jest.fn(() => Promise.resolve({ error: null })) };
           }),
           delete: jest.fn(() => ({ eq: jest.fn(() => Promise.resolve({ error: null })) })),
-          insert: jest.fn((payload: any) => {
+          insert: jest.fn((payload: WebhookInsertPayload) => {
             if (table === 'revenue') {
               revenueInsertPayloads.push(payload);
               return {
                 select: jest.fn(() => ({
                   single: jest.fn(() => Promise.resolve({
-                    data: { id: 'rev-1', ...payload[0] },
+                    data: { id: 'rev-1', ...firstPayloadRecord(payload) },
                     error: null,
                   })),
                 })),
@@ -905,8 +927,8 @@ describe('Subscription Constraints & Webhook Suite', () => {
         tenant_id: 'tenant-1',
         status: 'deposit_pending',
       };
-      const bookingStatusUpdates: any[] = [];
-      const revenueInsertPayloads: any[] = [];
+      const bookingStatusUpdates: WebhookPayloadRecord[] = [];
+      const revenueInsertPayloads: WebhookInsertPayload[] = [];
 
       mockRouteRpc.mockImplementation((fnName: string) => {
         if (fnName === 'ensure_open_period') {
@@ -918,7 +940,7 @@ describe('Subscription Constraints & Webhook Suite', () => {
         return Promise.resolve({ data: null, error: null });
       });
       mockRouteFrom.mockImplementation((table: string) => {
-        const chain: any = {
+        const chain: WebhookQueryChain = {
           select: jest.fn(() => chain),
           eq: jest.fn(() => chain),
           contains: jest.fn(() => chain),
@@ -929,11 +951,11 @@ describe('Subscription Constraints & Webhook Suite', () => {
             if (table === 'revenue') return Promise.resolve({ data: null, error: null });
             return Promise.resolve({ data: null, error: null });
           }),
-          update: jest.fn((payload: any) => {
+          update: jest.fn((payload: WebhookPayloadRecord) => {
             bookingStatusUpdates.push(payload);
             return { eq: jest.fn(() => Promise.resolve({ error: null })) };
           }),
-          insert: jest.fn((payload: any) => {
+          insert: jest.fn((payload: WebhookInsertPayload) => {
             revenueInsertPayloads.push(payload);
             return Promise.resolve({ error: null });
           }),
@@ -970,11 +992,11 @@ describe('Subscription Constraints & Webhook Suite', () => {
         tenant_id: 'tenant-1',
         status: 'deposit_pending',
       };
-      const bookingStatusUpdates: any[] = [];
+      const bookingStatusUpdates: WebhookPayloadRecord[] = [];
       const deletedRevenueIds: string[] = [];
 
       mockRouteFrom.mockImplementation((table: string) => {
-        const chain: any = {
+        const chain: WebhookQueryChain = {
           select: jest.fn(() => chain),
           eq: jest.fn((field: string, value: string) => {
             if (table === 'revenue' && field === 'id') deletedRevenueIds.push(value);
@@ -988,17 +1010,17 @@ describe('Subscription Constraints & Webhook Suite', () => {
             if (table === 'revenue') return Promise.resolve({ data: null, error: null });
             return Promise.resolve({ data: null, error: null });
           }),
-          update: jest.fn((payload: any) => {
+          update: jest.fn((payload: WebhookPayloadRecord) => {
             bookingStatusUpdates.push(payload);
             return { eq: jest.fn(() => Promise.resolve({ error: null })) };
           }),
           delete: jest.fn(() => chain),
-          insert: jest.fn((payload: any) => {
+          insert: jest.fn((payload: WebhookInsertPayload) => {
             if (table === 'revenue') {
               return {
                 select: jest.fn(() => ({
                   single: jest.fn(() => Promise.resolve({
-                    data: { id: 'rev-rollback', ...payload[0] },
+                    data: { id: 'rev-rollback', ...firstPayloadRecord(payload) },
                     error: null,
                   })),
                 })),

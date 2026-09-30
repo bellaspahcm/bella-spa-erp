@@ -15,6 +15,24 @@ import { RuleReasoner } from '@/lib/decision-engine/RuleReasoner';
 import { bookingCapacityPolicyV1 } from '@/lib/decision-engine/policies/booking-capacity-v1';
 import type { Knowledge } from '@/lib/decision-engine/types';
 
+type SerializedCondition = {
+  type: string;
+  field?: unknown;
+  operator?: string;
+  value?: unknown;
+  conditions?: SerializedCondition[];
+};
+
+type SerializedRule = {
+  conditions: SerializedCondition;
+  action: unknown;
+};
+
+type SerializedPolicy = {
+  id: string;
+  rules: SerializedRule[];
+};
+
 describe('Sprint 3: Booking Capacity Policy', () => {
   let reasoner: RuleReasoner;
 
@@ -33,12 +51,12 @@ describe('Sprint 3: Booking Capacity Policy', () => {
       expect(serialized).toBeDefined();
       
       // Should deserialize back to original structure
-      const deserialized = JSON.parse(serialized);
+      const deserialized = JSON.parse(serialized) as SerializedPolicy;
       expect(deserialized.id).toBe('booking-capacity-v1');
       expect(deserialized.rules).toHaveLength(7);
       
       // Should have data-only conditions (no function references)
-      deserialized.rules.forEach((rule: any) => {
+      deserialized.rules.forEach((rule) => {
         expect(rule.conditions).toBeDefined();
         expect(typeof rule.conditions).toBe('object');
         expect(typeof rule.action).toBe('object');
@@ -47,7 +65,7 @@ describe('Sprint 3: Booking Capacity Policy', () => {
 
     it('all rules are declarative (type: comparison or operator)', () => {
       bookingCapacityPolicyV1.rules.forEach(rule => {
-        const validateCondition = (cond: any): void => {
+        const validateCondition = (cond: SerializedCondition): void => {
           expect(['comparison', 'operator']).toContain(cond.type);
           
           if (cond.type === 'comparison') {
@@ -59,7 +77,7 @@ describe('Sprint 3: Booking Capacity Policy', () => {
           if (cond.type === 'operator') {
             expect(['and', 'or']).toContain(cond.operator);
             expect(Array.isArray(cond.conditions)).toBe(true);
-            cond.conditions.forEach(validateCondition);
+            cond.conditions?.forEach(validateCondition);
           }
         };
         

@@ -24,7 +24,7 @@ jest.mock('@sentry/nextjs', () => ({ captureException: jest.fn() }), { virtual: 
 // Audit log mock
 const mockRecordAuditLog = jest.fn().mockResolvedValue({ success: true });
 jest.mock('../services/audit-actions', () => ({
-  recordAuditLog: (...args: any[]) => mockRecordAuditLog(...args),
+  recordAuditLog: (...args: unknown[]) => mockRecordAuditLog(...args),
 }));
 
 // safeRevalidatePath mock

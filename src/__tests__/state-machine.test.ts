@@ -59,42 +59,58 @@ jest.mock('@/services/inventory-actions', () => ({
   autoConsumeForSession: jest.fn().mockResolvedValue({ success: true }),
 }));
 
+type MockRow = Record<string, unknown>;
+type MockQueryResult = {
+  data: unknown;
+  error: { message: string } | null;
+};
+type MockThenCallback = (value: MockQueryResult) => unknown;
+
 // Mock Query Chain builder
 class MockQueryBuilder {
   private table: string;
-  private dataList: any[];
-  private singleResult: any = null;
+  private dataList: MockRow[];
 
-  constructor(table: string, dataList: any[]) {
+  constructor(table: string, dataList: MockRow[]) {
     this.table = table;
     this.dataList = dataList;
   }
 
-  select(fields?: string) {
+  select(_fields?: string) {
     return this;
   }
 
-  eq(field: string, value: any) {
+  eq(field: string, value: unknown) {
     this.dataList = this.dataList.filter(item => item[field] === value);
     return this;
   }
 
-  in(field: string, values: any[]) {
+  in(field: string, values: unknown[]) {
     this.dataList = this.dataList.filter(item => values.includes(item[field]));
     return this;
   }
 
-  gte(field: string, value: any) {
-    this.dataList = this.dataList.filter(item => item[field] >= value);
+  gte(field: string, value: unknown) {
+    this.dataList = this.dataList.filter(item => {
+      const current = item[field];
+      if (typeof current === 'number' && typeof value === 'number') return current >= value;
+      if (typeof current === 'string' && typeof value === 'string') return current >= value;
+      return false;
+    });
     return this;
   }
 
-  lt(field: string, value: any) {
-    this.dataList = this.dataList.filter(item => item[field] < value);
+  lt(field: string, value: unknown) {
+    this.dataList = this.dataList.filter(item => {
+      const current = item[field];
+      if (typeof current === 'number' && typeof value === 'number') return current < value;
+      if (typeof current === 'string' && typeof value === 'string') return current < value;
+      return false;
+    });
     return this;
   }
 
-  order(field: string, options?: any) {
+  order(_field: string, _options?: unknown) {
     return this;
   }
 
@@ -109,15 +125,15 @@ class MockQueryBuilder {
     return Promise.resolve({ data: this.dataList[0], error: null });
   }
 
-  insert(payload: any) {
+  insert(payload: MockRow) {
     return Promise.resolve({ data: payload, error: null });
   }
 
-  update(payload: any) {
+  update(payload: MockRow) {
     return Promise.resolve({ data: payload, error: null });
   }
 
-  then(onfulfilled: any) {
+  then(onfulfilled: MockThenCallback) {
     return Promise.resolve({ data: this.dataList, error: null }).then(onfulfilled);
   }
 }

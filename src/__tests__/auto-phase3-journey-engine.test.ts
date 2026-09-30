@@ -2,85 +2,102 @@ import { describe, it, expect } from '@jest/globals';
 import { CustomerJourneyService } from '@/modules/bella-auto/services/CustomerJourneyService';
 import { JourneySLAMonitorService } from '@/modules/bella-auto/services/JourneySLAMonitorService';
 
+type MockRow = Record<string, unknown>;
+type MockDbState = Record<string, MockRow[] | MockRow | undefined>;
+type MockChain = {
+  eq: (field: string, value: unknown) => MockChain;
+  single: () => Promise<{ data: MockRow; error: null }>;
+  maybeSingle: () => Promise<{ data: MockRow | null; error: null }>;
+  order: () => Promise<{ data: MockRow[]; error: null }>;
+};
+
 // Mock DB state
-function makeSupabaseMock(dbState: any) {
-  const chain: any = {};
-  chain.eq = (field: string, value: any) => {
+function makeSupabaseMock(dbState: MockDbState) {
+  const rowsFor = (table: string): MockRow[] => {
+    const rows = dbState[table];
+    return Array.isArray(rows) ? rows : [];
+  };
+
+  const matchesFilters = (row: MockRow, filters: Record<string, unknown>) =>
+    Object.entries(filters).every(([field, value]) => row[field] === value);
+
+  const makeChain = (table: string): MockChain => {
+    const filters: Record<string, unknown> = {};
+    const findRow = () => {
+      const rows = rowsFor(table);
+      return rows.find((row) => matchesFilters(row, filters)) ?? rows[0];
+    };
+
+    const chain: MockChain = {
+      eq: (field, value) => {
+        filters[field] = value;
+        return chain;
+      },
+      single: () => {
+        const row = findRow();
+        if (row) {
+          return Promise.resolve({ data: row, error: null });
+        }
+        if (dbState.singleOverride && !Array.isArray(dbState.singleOverride)) {
+          return Promise.resolve({ data: dbState.singleOverride, error: null });
+        }
+        return Promise.resolve({ data: { id: 'test-id', sla_hours: 24, code: 'lead_new', name: 'Lead Mới' }, error: null });
+      },
+      maybeSingle: () => Promise.resolve({ data: findRow() ?? { id: 'journey-001' }, error: null }),
+      order: () => Promise.resolve({ data: rowsFor(table), error: null }),
+    };
+
     return chain;
-  };
-  chain.single = () => {
-    if (dbState.singleOverride) {
-      return Promise.resolve({ data: dbState.singleOverride, error: null });
-    }
-    return Promise.resolve({ data: { id: 'test-id', sla_hours: 24, code: 'lead_new', name: 'Lead Mới' }, error: null });
-  };
-  chain.maybeSingle = () => {
-    return Promise.resolve({ data: { id: 'journey-001' }, error: null });
-  };
-  chain.order = () => {
-    return Promise.resolve({ data: dbState.auto_journey_events ?? [], error: null });
   };
 
   return {
     from: (table: string) => {
       return {
-        select: (columns?: string) => {
-          if (table === 'auto_customer_journeys') {
-            if (dbState.auto_customer_journeys) {
-              return {
-                eq: (f1: string, v1: any) => ({
-                  eq: (f2: string, v2: any) => ({
-                    single: () => Promise.resolve({ data: dbState.auto_customer_journeys[0], error: null })
-                  })
-                })
-              };
-            }
-            return chain;
-          }
+        select: (_columns?: string) => {
           if (table === 'auto_touchpoints') {
             return {
               eq: () => ({
                 eq: () => ({
-                  order: () => Promise.resolve({ data: dbState.auto_touchpoints ?? [], error: null })
+                  order: () => Promise.resolve({ data: Array.isArray(dbState.auto_touchpoints) ? dbState.auto_touchpoints : [], error: null })
                 })
               })
             };
           }
-          return chain;
+          return makeChain(table);
         },
-        upsert: (payload: any) => {
-          if (!dbState[table]) dbState[table] = [];
-          dbState[table].push(payload);
+        upsert: (payload: MockRow) => {
+          if (!Array.isArray(dbState[table])) dbState[table] = [];
+          (dbState[table] as MockRow[]).push(payload);
           return {
             select: () => ({
               single: () => Promise.resolve({ data: { id: 'journey-001' }, error: null })
             })
           };
         },
-        insert: (payload: any) => {
-          if (!dbState[table]) dbState[table] = [];
-          dbState[table].push(payload);
+        insert: (payload: MockRow) => {
+          if (!Array.isArray(dbState[table])) dbState[table] = [];
+          (dbState[table] as MockRow[]).push(payload);
           return {
             select: () => ({
               single: () => Promise.resolve({ data: { id: 'inserted-id' }, error: null })
             })
           };
         },
-        update: (payload: any) => {
-          if (dbState.auto_customer_journeys) {
+        update: (payload: MockRow) => {
+          if (Array.isArray(dbState.auto_customer_journeys)) {
             dbState.auto_customer_journeys[0] = { ...dbState.auto_customer_journeys[0], ...payload };
           }
-          return chain;
+          return makeChain(table);
         }
-      } as any;
+      };
     }
-  } as any;
+  };
 }
 
 describe('Phase 3: Journey Engine & Experience Management — Unit Tests', () => {
 
   it('should start journey for customer and record first event', async () => {
-    const dbState: any = { auto_customer_journeys: [], auto_journey_events: [] };
+    const dbState: MockDbState = { auto_customer_journeys: [], auto_journey_events: [] };
     const supabase = makeSupabaseMock(dbState);
 
     const result = await CustomerJourneyService.startJourney(supabase, 'tenant-001', 'cust-001', 'lead_new');
@@ -94,8 +111,7 @@ describe('Phase 3: Journey Engine & Experience Management — Unit Tests', () =>
     const enteredDate = new Date();
     enteredDate.setHours(enteredDate.getHours() - 5); // 5 hours ago
 
-    const dbState: any = {
-      singleOverride: { id: 'target-stage-id', name: 'Lái thử', sla_hours: 48 },
+    const dbState: MockDbState = {
       auto_customer_journeys: [
         {
           id: 'journey-001',
@@ -103,6 +119,10 @@ describe('Phase 3: Journey Engine & Experience Management — Unit Tests', () =>
           current_stage_id: 'old-stage-id',
           auto_journey_stages: { code: 'lead_new', name: 'Lead Mới' }
         }
+      ],
+      auto_journey_stages: [
+        { id: 'old-stage-id', code: 'lead_new', name: 'Lead Mới', sla_hours: 24 },
+        { id: 'target-stage-id', code: 'test_drive', name: 'Lái thử', sla_hours: 48 }
       ],
       auto_journey_events: []
     };
@@ -127,7 +147,7 @@ describe('Phase 3: Journey Engine & Experience Management — Unit Tests', () =>
   });
 
   it('should record & list customer touchpoints', async () => {
-    const dbState: any = { auto_touchpoints: [] };
+    const dbState: MockDbState = { auto_touchpoints: [] };
     const supabase = makeSupabaseMock(dbState);
 
     const touchId = await JourneySLAMonitorService.recordTouchpoint(supabase, {

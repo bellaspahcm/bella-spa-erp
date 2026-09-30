@@ -16,6 +16,7 @@ import { PremiumSelect } from "@/components/ui/PremiumSelect";
 
 // ── TYPES & INTERFACES ──
 export type LegalDocStatus = 'signed' | 'approved' | 'pending_approval' | 'pending_signature' | 'draft' | 'expiring' | 'has_issue';
+type LegalDocumentDrawerTab = 'info' | 'versions' | 'history' | 'linked';
 
 export interface DocumentVersion {
   version: string;
@@ -378,7 +379,7 @@ export default function LegalDocumentsOperationsCenterPage() {
   const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
 
   // Right Panel Drawer Tab
-  const [drawerTab, setDrawerTab] = useState<'info' | 'versions' | 'history' | 'linked'>('info');
+  const [drawerTab, setDrawerTab] = useState<LegalDocumentDrawerTab>('info');
 
   // Modals & Action States
   const [showAddModal, setShowAddModal] = useState(false);
@@ -525,6 +526,15 @@ export default function LegalDocumentsOperationsCenterPage() {
       fileSize: "2.5 MB"
     });
   };
+
+  const drawerTabs: Array<{ id: LegalDocumentDrawerTab; label: string }> = selectedDoc
+    ? [
+        { id: 'info', label: 'Thông tin' },
+        { id: 'versions', label: `Phiên bản (${selectedDoc.versionsList.length})` },
+        { id: 'history', label: `Lịch sử (${selectedDoc.auditLogs.length})` },
+        { id: 'linked', label: 'Tài liệu liên quan' },
+      ]
+    : [];
 
   return (
     <div className="p-4 md:p-6 space-y-5 max-w-[1680px] mx-auto font-sans text-slate-900 dark:text-slate-100 pb-12">
@@ -1170,15 +1180,10 @@ export default function LegalDocumentsOperationsCenterPage() {
 
               {/* 4 Detail Drawer Tabs */}
               <div className="flex items-center border-b border-slate-200 dark:border-slate-800 gap-2">
-                {[
-                  { id: 'info', label: 'Thông tin' },
-                  { id: 'versions', label: `Phiên bản (${selectedDoc.versionsList.length})` },
-                  { id: 'history', label: `Lịch sử (${selectedDoc.auditLogs.length})` },
-                  { id: 'linked', label: 'Tài liệu liên quan' },
-                ].map(tab => (
+                {drawerTabs.map(tab => (
                   <button
                     key={tab.id}
-                    onClick={() => setDrawerTab(tab.id as any)}
+                    onClick={() => setDrawerTab(tab.id)}
                     className={`pb-2 text-xs font-bold transition border-b-2 ${
                       drawerTab === tab.id
                         ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-black'

@@ -59,6 +59,38 @@ jest.mock('@/lib/accounting-outbox', () => ({
   enqueueWithAutoClient: jest.fn().mockResolvedValue(true),
 }));
 
+type MockRow = Record<string, unknown>;
+type MockQueryResult = {
+  data: unknown;
+  error: { message: string } | null;
+};
+type MockThenCallback = (value: MockQueryResult) => unknown;
+type MockQueryNode = {
+  eq: () => MockQueryNode;
+  select: () => MockQueryNode;
+  single: () => Promise<MockQueryResult>;
+  maybeSingle: () => Promise<MockQueryResult>;
+  then: (cb: MockThenCallback) => Promise<unknown>;
+  data: unknown;
+  error: { message: string } | null;
+};
+
+const toRows = (payload: MockRow | MockRow[]): MockRow[] => Array.isArray(payload) ? payload : [payload];
+const numberValue = (value: unknown, fallback = 0) => typeof value === 'number' ? value : fallback;
+
+const createQueryNode = (res: MockQueryResult): MockQueryNode => {
+  const node: MockQueryNode = {
+    eq: () => node,
+    select: () => node,
+    single: () => Promise.resolve(res),
+    maybeSingle: () => Promise.resolve(res),
+    then: (cb) => Promise.resolve(res).then(cb),
+    data: res.data,
+    error: res.error,
+  };
+  return node;
+};
+
 // Shared Mock DB state to verify concurrency updates
 let sharedSalaryRecord = {
   id: 'shared-salary-record-id',
@@ -74,26 +106,26 @@ class MockQueryBuilder {
     this.table = table;
   }
 
-  select(fields?: string, options?: any) {
+  select(_fields?: string, _options?: unknown) {
     return this;
   }
 
-  eq(field: string, value: any) {
+  eq(field: string, _value: unknown) {
     if (field === 'id') {
       this.idLookup = true;
     }
     return this;
   }
 
-  in(field: string, values: any[]) {
+  in(_field: string, _values: unknown[]) {
     return this;
   }
 
-  order(field: string, options?: any) {
+  order(_field: string, _options?: unknown) {
     return this;
   }
 
-  limit(count: number) {
+  limit(_count: number) {
     return this;
   }
 
@@ -155,60 +187,33 @@ class MockQueryBuilder {
     return Promise.resolve({ data: null, error: null });
   }
 
-  insert(payload: any) {
-    const inserted = Array.isArray(payload) ? payload : [payload];
+  insert(payload: MockRow | MockRow[]) {
+    const inserted = toRows(payload);
     if (this.table === 'salary_records') {
-      const insertedObj = inserted[0];
-      sharedSalaryRecord.total_sessions = (sharedSalaryRecord.total_sessions || 0) + (insertedObj.total_sessions || 1);
-      sharedSalaryRecord.service_percentage_bonus = (sharedSalaryRecord.service_percentage_bonus || 0) + (insertedObj.service_percentage_bonus || 0);
+      const insertedObj = inserted[0] ?? {};
+      sharedSalaryRecord.total_sessions = (sharedSalaryRecord.total_sessions || 0) + numberValue(insertedObj.total_sessions, 1);
+      sharedSalaryRecord.service_percentage_bonus = (sharedSalaryRecord.service_percentage_bonus || 0) + numberValue(insertedObj.service_percentage_bonus);
     }
-    const res = { data: { id: 'mock-inserted-id', ...inserted[0] }, error: null };
-    const node: any = {
-      eq: () => node,
-      select: () => node,
-      single: () => Promise.resolve(res),
-      maybeSingle: () => Promise.resolve(res),
-      then: (cb: any) => Promise.resolve(res).then(cb),
-      data: res.data,
-      error: res.error
-    };
-    return node;
+    const res = { data: { id: 'mock-inserted-id', ...(inserted[0] ?? {}) }, error: null };
+    return createQueryNode(res);
   }
 
-  update(payload: any) {
+  update(payload: MockRow) {
     if (this.table === 'salary_records') {
       // Simulate atomic/safe update on shared database state
-      sharedSalaryRecord.total_sessions = payload.total_sessions;
-      sharedSalaryRecord.service_percentage_bonus = payload.service_percentage_bonus;
+      sharedSalaryRecord.total_sessions = numberValue(payload.total_sessions);
+      sharedSalaryRecord.service_percentage_bonus = numberValue(payload.service_percentage_bonus);
     }
     const res = { data: payload, error: null };
-    const node: any = {
-      eq: () => node,
-      select: () => node,
-      single: () => Promise.resolve(res),
-      maybeSingle: () => Promise.resolve(res),
-      then: (cb: any) => Promise.resolve(res).then(cb),
-      data: res.data,
-      error: res.error
-    };
-    return node;
+    return createQueryNode(res);
   }
 
   delete() {
     const res = { data: [], error: null };
-    const node: any = {
-      eq: () => node,
-      select: () => node,
-      single: () => Promise.resolve(res),
-      maybeSingle: () => Promise.resolve(res),
-      then: (cb: any) => Promise.resolve(res).then(cb),
-      data: res.data,
-      error: res.error
-    };
-    return node;
+    return createQueryNode(res);
   }
 
-  then(onfulfilled: any) {
+  then(onfulfilled: MockThenCallback) {
     const data = this.table === 'bookings' ? null : [];
     return Promise.resolve({ data, error: null }).then(onfulfilled);
   }

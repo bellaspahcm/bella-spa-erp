@@ -17,6 +17,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { UserProvider, useUser } from '../user-context';
 import * as dashboardContext from '../dashboard-client-context';
 import { productRegistry } from '@/platform/registry/product-registry';
+import type { Database, Json } from '@/types/database.types';
 
 // Mock dashboard-client-context
 jest.mock('../dashboard-client-context', () => ({
@@ -26,6 +27,68 @@ jest.mock('../dashboard-client-context', () => ({
 
 const mockGetCachedCurrentUser = dashboardContext.getCachedCurrentUser as jest.MockedFunction<typeof dashboardContext.getCachedCurrentUser>;
 const mockGetCachedTenantSettings = dashboardContext.getCachedTenantSettings as jest.MockedFunction<typeof dashboardContext.getCachedTenantSettings>;
+type CurrentUserResult = Awaited<ReturnType<typeof dashboardContext.getCachedCurrentUser>>;
+type TenantSettingsResult = Awaited<ReturnType<typeof dashboardContext.getCachedTenantSettings>>;
+type CurrentUserFixture = NonNullable<CurrentUserResult>;
+type TenantSettingsFixture = NonNullable<TenantSettingsResult>;
+type TenantRow = Database['public']['Tables']['tenants']['Row'];
+
+function createUserFixture(overrides: Partial<CurrentUserFixture> & Pick<CurrentUserFixture, 'id' | 'role'>): CurrentUserFixture {
+  return {
+    email: `${overrides.id}@example.test`,
+    full_name: null,
+    tenant_id: null,
+    ...overrides,
+  };
+}
+
+function createTenantFixture(overrides: Partial<TenantRow> & Pick<TenantRow, 'id'>): TenantSettingsFixture {
+  return {
+    accounting_mode: null,
+    address: null,
+    brand_theme: {} as Json,
+    commission_config: null,
+    contact_name: null,
+    contact_phone: null,
+    created_at: null,
+    email: null,
+    enabled_modules: {} as Json,
+    franchise_agreement_date: null,
+    gps_threshold_m: null,
+    id: overrides.id,
+    internal_clearing_rate: null,
+    logo_url: null,
+    metadata: null,
+    name: 'Test Tenant',
+    parent_tenant_id: null,
+    product_key: null,
+    qr_account_name: null,
+    qr_account_number: null,
+    qr_bank_code: null,
+    role_permissions: null,
+    royalty_fixed_amount: null,
+    royalty_rate: null,
+    royalty_type: null,
+    salary_config: null,
+    sms_allotment_used: null,
+    status: null,
+    subscription_expires_at: null,
+    subscription_tier: null,
+    tenant_lat: null,
+    tenant_lon: null,
+    updated_at: null,
+    zalo_access_token: null,
+    zalo_app_id: null,
+    zalo_auto_scan: null,
+    zalo_oa_id: null,
+    zalo_refresh_token: null,
+    zalo_secret_key: null,
+    zalo_template_birthday_id: null,
+    zalo_template_reminder_id: null,
+    zalo_token_expires_at: null,
+    ...overrides,
+  };
+}
 
 // Test component to access context
 function TestConsumer() {
@@ -50,16 +113,16 @@ describe('UserProvider Product Resolution', () => {
 
   describe('Product Resolution Success', () => {
     it('should resolve product when product_key=bella_haircut', async () => {
-      mockGetCachedCurrentUser.mockResolvedValue({
+      mockGetCachedCurrentUser.mockResolvedValue(createUserFixture({
         id: 'user-1',
         role: 'ADMIN',
-      } as any);
+      }));
 
-      mockGetCachedTenantSettings.mockResolvedValue({
+      mockGetCachedTenantSettings.mockResolvedValue(createTenantFixture({
         id: 'tenant-haircut',
         product_key: 'bella_haircut',
         name: 'Haircut Test Tenant',
-      } as any);
+      }));
 
       render(
         <UserProvider>
@@ -86,16 +149,16 @@ describe('UserProvider Product Resolution', () => {
     });
 
     it('should resolve product when product_key=bella_babycare (B3.1 UI Identity Proof)', async () => {
-      mockGetCachedCurrentUser.mockResolvedValue({
+      mockGetCachedCurrentUser.mockResolvedValue(createUserFixture({
         id: 'user-babycare',
         role: 'ADMIN',
-      } as any);
+      }));
 
-      mockGetCachedTenantSettings.mockResolvedValue({
+      mockGetCachedTenantSettings.mockResolvedValue(createTenantFixture({
         id: '0e66365b-42b0-420e-acca-f7d7692e125e',
         product_key: 'bella_babycare',
         name: 'Bella Spa Headquarter',
-      } as any);
+      }));
 
       render(
         <UserProvider>
@@ -120,16 +183,16 @@ describe('UserProvider Product Resolution', () => {
 
   describe('Product Resolution Null Cases', () => {
     it('should set product=null when product_key is null', async () => {
-      mockGetCachedCurrentUser.mockResolvedValue({
+      mockGetCachedCurrentUser.mockResolvedValue(createUserFixture({
         id: 'user-2',
         role: 'USER',
-      } as any);
+      }));
 
-      mockGetCachedTenantSettings.mockResolvedValue({
+      mockGetCachedTenantSettings.mockResolvedValue(createTenantFixture({
         id: 'tenant-unclassified',
         product_key: null,
         name: 'Unclassified Tenant',
-      } as any);
+      }));
 
       render(
         <UserProvider>
@@ -152,16 +215,15 @@ describe('UserProvider Product Resolution', () => {
     });
 
     it('should set product=null when product_key is undefined', async () => {
-      mockGetCachedCurrentUser.mockResolvedValue({
+      mockGetCachedCurrentUser.mockResolvedValue(createUserFixture({
         id: 'user-3',
         role: 'USER',
-      } as any);
+      }));
 
-      mockGetCachedTenantSettings.mockResolvedValue({
+      mockGetCachedTenantSettings.mockResolvedValue(createTenantFixture({
         id: 'tenant-legacy',
         name: 'Legacy Tenant',
-        // product_key not present
-      } as any);
+      }));
 
       render(
         <UserProvider>
@@ -178,10 +240,10 @@ describe('UserProvider Product Resolution', () => {
     });
 
     it('should set product=null when tenantSettings is null', async () => {
-      mockGetCachedCurrentUser.mockResolvedValue({
+      mockGetCachedCurrentUser.mockResolvedValue(createUserFixture({
         id: 'user-4',
         role: 'USER',
-      } as any);
+      }));
 
       mockGetCachedTenantSettings.mockResolvedValue(null);
 
@@ -203,16 +265,16 @@ describe('UserProvider Product Resolution', () => {
 
   describe('Unknown Product Key Handling', () => {
     it('should set product=null when product_key is unknown (graceful)', async () => {
-      mockGetCachedCurrentUser.mockResolvedValue({
+      mockGetCachedCurrentUser.mockResolvedValue(createUserFixture({
         id: 'user-5',
         role: 'ADMIN',
-      } as any);
+      }));
 
-      mockGetCachedTenantSettings.mockResolvedValue({
+      mockGetCachedTenantSettings.mockResolvedValue(createTenantFixture({
         id: 'tenant-invalid',
         product_key: 'unknown_product',
         name: 'Invalid Product Tenant',
-      } as any);
+      }));
 
       render(
         <UserProvider>
@@ -234,15 +296,15 @@ describe('UserProvider Product Resolution', () => {
 
   describe('Loading States', () => {
     it('should maintain correct loading states', async () => {
-      let resolveUser: any;
-      let resolveTenant: any;
+      let resolveUser: ((value: CurrentUserResult) => void) | undefined;
+      let resolveTenant: ((value: TenantSettingsResult) => void) | undefined;
 
       mockGetCachedCurrentUser.mockReturnValue(
-        new Promise((resolve) => { resolveUser = resolve; })
+        new Promise<CurrentUserResult>((resolve) => { resolveUser = resolve; })
       );
 
       mockGetCachedTenantSettings.mockReturnValue(
-        new Promise((resolve) => { resolveTenant = resolve; })
+        new Promise<TenantSettingsResult>((resolve) => { resolveTenant = resolve; })
       );
 
       render(
@@ -256,12 +318,12 @@ describe('UserProvider Product Resolution', () => {
       expect(screen.getByTestId('product')).toHaveTextContent('null');
 
       // Resolve data
-      resolveUser({ id: 'user-6', role: 'USER' });
-      resolveTenant({
+      resolveUser!(createUserFixture({ id: 'user-6', role: 'USER' }));
+      resolveTenant!(createTenantFixture({
         id: 'tenant-6',
         product_key: 'bella_haircut',
         name: 'Test',
-      });
+      }));
 
       // Wait for loading complete
       await waitFor(() => {
@@ -275,15 +337,15 @@ describe('UserProvider Product Resolution', () => {
 
   describe('Existing UserProvider Behavior', () => {
     it('should preserve user and userRole loading', async () => {
-      mockGetCachedCurrentUser.mockResolvedValue({
+      mockGetCachedCurrentUser.mockResolvedValue(createUserFixture({
         id: 'user-7',
         role: 'MANAGER',
-      } as any);
+      }));
 
-      mockGetCachedTenantSettings.mockResolvedValue({
+      mockGetCachedTenantSettings.mockResolvedValue(createTenantFixture({
         id: 'tenant-7',
         product_key: null,
-      } as any);
+      }));
 
       render(
         <UserProvider>
