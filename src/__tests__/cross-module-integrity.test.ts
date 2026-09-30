@@ -190,7 +190,7 @@ function resetMockStore() {
         contact_phone: null,
         created_at: null,
         email: null,
-        enabled_modules: null,
+        enabled_modules: { babycare: true, payroll: true },
         franchise_agreement_date: null,
         gps_threshold_m: null,
         logo_url: null,

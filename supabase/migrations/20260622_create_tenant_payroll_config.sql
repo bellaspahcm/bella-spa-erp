@@ -21,12 +21,15 @@ CREATE TABLE IF NOT EXISTS public.tenant_payroll_config (
   UNIQUE (tenant_id, provider_key)
 );
 
+-- zero-downtime: allow blocking-index - index on newly created tenant_payroll_config table
 CREATE INDEX IF NOT EXISTS idx_tenant_payroll_config_tenant
   ON public.tenant_payroll_config (tenant_id);
 
+-- zero-downtime: allow blocking-index - index on newly created tenant_payroll_config table
 CREATE INDEX IF NOT EXISTS idx_tenant_payroll_config_enabled
   ON public.tenant_payroll_config (tenant_id, provider_key, enabled);
 
+-- zero-downtime: allow blocking-index - index on newly created tenant_payroll_config table
 CREATE INDEX IF NOT EXISTS idx_tenant_payroll_config_strategy
   ON public.tenant_payroll_config (tenant_id, provider_key, strategy);
 
@@ -97,12 +100,15 @@ CREATE TABLE IF NOT EXISTS public.tenant_payroll_config_history (
   user_agent TEXT
 );
 
+-- zero-downtime: allow blocking-index - index on newly created tenant_payroll_config_history table
 CREATE INDEX IF NOT EXISTS idx_tenant_payroll_config_history_tenant
   ON public.tenant_payroll_config_history (tenant_id);
 
+-- zero-downtime: allow blocking-index - index on newly created tenant_payroll_config_history table
 CREATE INDEX IF NOT EXISTS idx_tenant_payroll_config_history_provider
   ON public.tenant_payroll_config_history (tenant_id, provider_key);
 
+-- zero-downtime: allow blocking-index - index on newly created tenant_payroll_config_history table
 CREATE INDEX IF NOT EXISTS idx_tenant_payroll_config_history_changed_at
   ON public.tenant_payroll_config_history (changed_at DESC);
 

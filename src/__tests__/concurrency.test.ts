@@ -103,7 +103,7 @@ class MockQueryBuilder {
         data: {
           id: 'tenant-a',
           name: 'Bella Spa A',
-          enabled_modules: ['spa'],
+          enabled_modules: ['spa', 'payroll'],
           subscription_tier: 'professional',
           role_permissions: {},
         },
