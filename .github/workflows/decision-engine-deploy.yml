@@ -12,6 +12,8 @@ on:
     paths:
       - 'src/lib/decision-engine/**'
       - 'supabase/migrations/**'
+      - 'scripts/**'
+      - '.github/workflows/decision-engine-deploy.yml'
 
 jobs:
   test:
@@ -52,7 +54,7 @@ jobs:
           NODE_ENV: test
       
       - name: Performance benchmark
-        run: npm run test:performance
+        run: npx tsx scripts/benchmark-decision-engine.ts
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       
       - name: Security audit
