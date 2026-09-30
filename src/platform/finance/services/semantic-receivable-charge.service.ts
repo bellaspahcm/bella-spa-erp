@@ -14,6 +14,8 @@ import {
   TuitionServiceRecognizedChargeInput,
 } from '../contracts/receivable-charge.contract';
 
+const FINANCE_RECEIVABLE_ALLOCATION_RATE_SOURCE = 'MANUAL_AUTHORIZED';
+
 export interface FinanceSemanticAccountMapping {
   readonly semanticKey: string;
   readonly accountCode: string;
@@ -525,7 +527,7 @@ export class SemanticReceivableChargeService implements ISemanticReceivableCharg
       cashMovementId: cashMovement.id,
       allocatedAmountMinor: input.amountMinor,
       exchangeRate: 1,
-      rateSource: 'VND_BASE',
+      rateSource: FINANCE_RECEIVABLE_ALLOCATION_RATE_SOURCE,
       rateTimestamp: postedAt.toISOString(),
     });
 
@@ -762,7 +764,7 @@ export class SemanticReceivableChargeService implements ISemanticReceivableCharg
         cashMovementId: input.cashMovementId,
         allocatedAmountMinor: allocationAmount,
         exchangeRate: 1,
-        rateSource: 'VND_BASE',
+        rateSource: FINANCE_RECEIVABLE_ALLOCATION_RATE_SOURCE,
         rateTimestamp: input.rateTimestamp,
       });
 

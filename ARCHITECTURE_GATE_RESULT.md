@@ -300,6 +300,30 @@ No migration.
 
 Gate result: `PASS`.
 
+## P4.7 Real DB Contract Addendum
+
+CI Real DB evidence on PR #177 proved the Finance F3 schema/RPC environment is now present, but allocation failed at the DB contract boundary:
+
+```text
+finance_receivable_allocations_rate_source_check
+  allows CENTRAL_BANK | TREASURY | MANUAL_AUTHORIZED
+
+SemanticReceivableChargeService
+  sent rateSource = VND_BASE
+```
+
+Classification:
+
+```text
+ROOT_CAUSE = STALE_FINANCE_CONSUMER_CONSTANT
+CASCADE = All Required Gates Passed
+SCHEMA_CHANGE = NOT_REQUIRED
+RPC_CHANGE = NOT_REQUIRED
+CORE_CHANGE = NO
+```
+
+Minimum authorized fix: align the Finance service consumer with the existing DB canonical allowlist by using `MANUAL_AUTHORIZED` for same-currency VND allocation rate evidence, and add focused unit coverage so mocks assert the DB-compatible value.
+
 ---
 
 # ARCHITECTURE GATE RESULT - HAIRCUT PAYMENT TO F3 AR ALLOCATION HARDENING
