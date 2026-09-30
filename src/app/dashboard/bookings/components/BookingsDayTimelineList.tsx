@@ -67,6 +67,8 @@ export function BookingsDayTimelineList({
             <div
               onClick={() => onSessionSelect(session)}
               className="luxury-card-white flex cursor-pointer flex-col gap-4 rounded-3xl p-4 transition-all hover:border-primary/20 hover:shadow-xl sm:p-6 lg:flex-row lg:items-center lg:gap-6"
+              data-testid="booking-session-row"
+              data-session-id={session.id}
             >
               <div className="min-w-0 flex-1">
                 <div className="mb-3 flex flex-wrap items-center gap-3 sm:gap-4">
@@ -75,6 +77,7 @@ export function BookingsDayTimelineList({
                     {session.assigned_time || session.bookings?.preferred_time || '09:00 - 11:00'}
                   </div>
                   <span
+                    data-testid="booking-session-status"
                     className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
                       session.status === 'completed'
                         ? 'bg-emerald-50 text-emerald-600'
@@ -91,7 +94,7 @@ export function BookingsDayTimelineList({
                   </span>
                 </div>
 
-                <h3 className="mb-1 break-words text-lg font-extrabold text-slate-900 sm:text-xl">
+                <h3 className="mb-1 break-words text-lg font-extrabold text-slate-900 sm:text-xl" data-testid="booking-customer-name">
                   {formatBookingCustomerLabel({
                     moduleKey: tenantModuleKey,
                     primaryName: session.bookings?.customers?.name_mother,
@@ -104,7 +107,7 @@ export function BookingsDayTimelineList({
                 )}
                 <p className="flex min-w-0 items-start gap-2 text-sm font-bold text-slate-500">
                   <LayoutGrid className="mt-0.5 h-4 w-4 shrink-0 text-slate-300" />
-                  <span className="break-words">{session.bookings?.packages?.name || session.bookings?.package_name || 'Gói liệu trình'}</span>
+                  <span className="break-words" data-testid="booking-package-name">{session.bookings?.packages?.name || session.bookings?.package_name || 'Gói liệu trình'}</span>
                 </p>
               </div>
 
@@ -112,7 +115,7 @@ export function BookingsDayTimelineList({
                 <div className="flex items-center gap-3">
                   <div className="min-w-0 text-left lg:text-right">
                     <p className="text-[10px] font-black text-slate-400 uppercase">Kỹ thuật viên</p>
-                    <p className="break-words font-bold text-slate-900">
+                    <p className="break-words font-bold text-slate-900" data-testid="booking-assigned-staff">
                       {session.bookings?.assigned_ktv?.full_name || 'Chưa phân công'}
                     </p>
                   </div>

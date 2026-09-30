@@ -429,6 +429,36 @@ const bellaBabycareProduct: ProductDefinition = {
   navigationProfile: 'babycare'
 };
 
+/**
+ * Bella Nail Shop Product Definition.
+ *
+ * @remarks
+ * **Boundary**: Bella Nail is a Product Identity on top of Beauty OS.
+ * It reuses the `beauty_spa` module for services, booking, resource
+ * allocation, staff assignment, and session completion.
+ *
+ * **First Operational Slice**:
+ * - Nail service taxonomy
+ * - Booking
+ * - Completed session
+ * - Revenue visibility boundary only
+ *
+ * Payroll, commission, attendance, and Finance integration are intentionally
+ * outside this product identity registration.
+ *
+ * @see docs/architecture/ARCHITECTURE_GATE_RESULT_BELLA_NAIL_OPERATIONAL_SLICE.md
+ */
+const bellaNailProduct: ProductDefinition = {
+  productKey: 'bella_nail',
+  displayName: 'Bella Nail Shop',
+  subtitle: 'Nail Shop Management',
+  requiredModules: ['beauty_spa'],
+  serviceProfile: 'nail',
+  defaultRoute: '/dashboard/nail',
+  navigationProfile: 'nail'
+};
+
 // Register products
 productRegistry.register(bellaHaircutProduct);
 productRegistry.register(bellaBabycareProduct);
+productRegistry.register(bellaNailProduct);
