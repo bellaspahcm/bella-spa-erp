@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import { createClient } from '@supabase/supabase-js';
 
 import type { Database } from '@/types/database.types';
@@ -155,6 +157,9 @@ describeWithRealDb('Haircut P4.7 F3 debt real DB diagnostic', () => {
     amountMinor: number;
     label: string;
   }) {
+    const bookingId = randomUUID();
+    const sessionLogId = randomUUID();
+
     return service.recognizeServiceReceivable({
       tenantId: input.tenantId,
       customerId: input.customerId,
@@ -165,13 +170,13 @@ describeWithRealDb('Haircut P4.7 F3 debt real DB diagnostic', () => {
       recognitionDate: receivedAt,
       dueDate: '2026-10-07',
       businessSourceType: 'HAIRCUT_SESSION_DONE',
-      businessSourceId: `${runId}-${input.label}-session`,
+      businessSourceId: sessionLogId,
       description: `${runId} Haircut F3 diagnostic receivable`,
       metadata: {
-        booking_id: `${runId}-${input.label}-booking`,
+        booking_id: bookingId,
         booking_number: `${runId}-${input.label}-booking-no`,
         package_name: `${runId} package`,
-        session_log_id: `${runId}-${input.label}-session-log`,
+        session_log_id: sessionLogId,
       },
     });
   }
