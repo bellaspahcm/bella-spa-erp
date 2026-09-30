@@ -132,8 +132,49 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Check production deployment config
+        id: production_config
+        shell: bash
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          if [ -n "$VERCEL_TOKEN" ] && [ -n "$VERCEL_ORG_ID" ] && [ -n "$VERCEL_PROJECT_ID" ]; then
+            echo "deploy_configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy_configured=false" >> "$GITHUB_OUTPUT"
+            echo "Vercel production deployment skipped: Vercel secrets are not configured for this repository."
+          fi
+
+          if [ -n "$PRODUCTION_URL" ]; then
+            echo "smoke_configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "smoke_configured=false" >> "$GITHUB_OUTPUT"
+            echo "Production smoke tests skipped: PRODUCTION_URL is not configured."
+          fi
+
+          if [ -n "$REDIS_URL" ] && [ -n "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "warmup_configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "warmup_configured=false" >> "$GITHUB_OUTPUT"
+            echo "Cache warmup skipped: REDIS_URL or SUPABASE_SERVICE_ROLE_KEY is not configured."
+          fi
+
+          if [ -n "$SLACK_WEBHOOK" ]; then
+            echo "slack_configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "slack_configured=false" >> "$GITHUB_OUTPUT"
+            echo "Slack notification skipped: SLACK_WEBHOOK is not configured."
+          fi
       
       - name: Deploy to Vercel Production
+        if: steps.production_config.outputs.deploy_configured == 'true'
         uses: amondnet/vercel-action@2d78157ee070f28ff89dd4da74e0369fc26d3b34
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
@@ -143,14 +184,17 @@ jobs:
           scope: ${{ secrets.VERCEL_ORG_ID }}
       
       - name: Wait for deployment
+        if: steps.production_config.outputs.deploy_configured == 'true'
         run: sleep 30
       
       - name: Run production smoke tests
+        if: steps.production_config.outputs.deploy_configured == 'true' && steps.production_config.outputs.smoke_configured == 'true'
         run: npm run test:smoke -- --env=production
         env:
           PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
       
       - name: Warmup cache
+        if: steps.production_config.outputs.deploy_configured == 'true' && steps.production_config.outputs.warmup_configured == 'true'
         run: npm run cache:warmup -- --env=production
         env:
           REDIS_URL: ${{ secrets.REDIS_URL }}
@@ -158,7 +202,7 @@ jobs:
       
       - name: Notify Slack
         uses: 8398a7/action-slack@f3635935f58910a6d6951b73efe9037c960c8c04
-        if: always()
+        if: always() && steps.production_config.outputs.slack_configured == 'true'
         with:
           status: ${{ job.status }}
           text: 'Decision Engine deployed to production'
