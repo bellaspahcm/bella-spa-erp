@@ -6,8 +6,49 @@
  * Usage: npx tsx scripts/benchmark-decision-engine.ts
  */
 
-import { evaluateBookingApproval, type BookingDecisionInput } from '../src/services/booking-decision-service';
-import { metricsCollector } from '../src/lib/decision-engine/observability';
+import { RuleReasoner } from '../src/lib/decision-engine/RuleReasoner';
+import { bookingCapacityPolicyV1 } from '../src/lib/decision-engine/policies/booking-capacity-v1';
+import type { DecisionOutcome, Knowledge } from '../src/lib/decision-engine/types';
+
+const reasoner = new RuleReasoner({ debug: false });
+
+function buildBenchmarkKnowledge(index: number): Knowledge {
+  const remainingSessions = index % 10 === 0 ? 0 : Math.floor(Math.random() * 12) + 1;
+  const isActive = index % 13 !== 0;
+  const hasConcurrentSession = index % 17 === 0;
+  const roomAvailable = index % 19 !== 0;
+  const equipmentAvailable = index % 23 !== 0;
+  const hasConflict = index % 29 === 0;
+
+  return {
+    'booking.id': `booking-${index}`,
+    'booking.remainingSessions': remainingSessions,
+    'booking.completedSessions': Math.max(0, 12 - remainingSessions),
+    'booking.totalSessions': 12,
+    'booking.isActive': isActive,
+    'booking.status': isActive ? 'active' : 'cancelled',
+    'ktv.id': `ktv-${index % 7}`,
+    'ktv.hasConcurrentSession': hasConcurrentSession,
+    'resource.roomAvailable': roomAvailable,
+    'resource.equipmentAvailable': equipmentAvailable,
+    'time.requestedDate': '2026-09-30',
+    'time.requestedTime': `${String(8 + (index % 10)).padStart(2, '0')}:00`,
+    'time.hasConflict': hasConflict,
+    'time.concurrentSessionCount': hasConflict ? 6 : index % 4,
+  };
+}
+
+function incrementOutcome(
+  outcomes: Record<'BOOKABLE' | 'FULL' | 'ESCALATE' | 'OTHER', number>,
+  outcome: DecisionOutcome
+) {
+  if (outcome === 'BOOKABLE' || outcome === 'FULL' || outcome === 'ESCALATE') {
+    outcomes[outcome] += 1;
+    return;
+  }
+
+  outcomes.OTHER += 1;
+}
 
 async function runBenchmark(name: string, count: number, targetAvg: number, targetP95: number) {
   console.log(`\n${'='.repeat(60)}`);
@@ -15,22 +56,19 @@ async function runBenchmark(name: string, count: number, targetAvg: number, targ
   console.log(`${'='.repeat(60)}`);
 
   const executionTimes: number[] = [];
+  const outcomes = {
+    BOOKABLE: 0,
+    FULL: 0,
+    ESCALATE: 0,
+    OTHER: 0,
+  };
   const startTime = Date.now();
 
   for (let i = 0; i < count; i++) {
     const decisionStart = performance.now();
 
-    const input: BookingDecisionInput = {
-      totalAmount: Math.random() * 50000000, // 0-50M VND
-      customer: {
-        id: `cust-${i}`,
-        status: ['new', 'active', 'vip'][Math.floor(Math.random() * 3)] as 'new' | 'active' | 'vip',
-        completedBookingsCount: Math.floor(Math.random() * 100),
-      },
-      tenantId: 'benchmark-test',
-    };
-
-    await evaluateBookingApproval(input);
+    const decision = reasoner.evaluate(bookingCapacityPolicyV1, buildBenchmarkKnowledge(i));
+    incrementOutcome(outcomes, decision.outcome);
 
     const decisionEnd = performance.now();
     executionTimes.push(decisionEnd - decisionStart);
@@ -48,11 +86,10 @@ async function runBenchmark(name: string, count: number, targetAvg: number, targ
   const min = sorted[0];
   const max = sorted[sorted.length - 1];
   const throughput = count / (totalTime / 1000);
-
-  // Get metrics from collector
-  const aggregated = metricsCollector.aggregate({
-    tenantId: 'benchmark-test',
-  });
+  const autoApprovalRate = outcomes.BOOKABLE / count;
+  const rejectionRate = outcomes.FULL / count;
+  const manualReviewRate = outcomes.ESCALATE / count;
+  const errorRate = outcomes.OTHER / count;
 
   // Print results
   console.log(`\n⏱️  Performance Metrics:`);
@@ -66,18 +103,17 @@ async function runBenchmark(name: string, count: number, targetAvg: number, targ
   console.log(`   Throughput: ${throughput.toFixed(2)} decisions/sec`);
 
   console.log(`\n📈 Decision Outcomes:`);
-  console.log(`   Auto Approval Rate: ${(aggregated.autoApprovalRate * 100).toFixed(2)}%`);
-  console.log(`   Rejection Rate: ${(aggregated.rejectionRate * 100).toFixed(2)}%`);
-  console.log(`   Manual Review Rate: ${(aggregated.manualReviewRate * 100).toFixed(2)}%`);
-  console.log(`   Average Confidence: ${(aggregated.averageConfidence * 100).toFixed(2)}%`);
-  console.log(`   Error Rate: ${(aggregated.errorRate * 100).toFixed(2)}%`);
+  console.log(`   Auto Approval Rate: ${(autoApprovalRate * 100).toFixed(2)}%`);
+  console.log(`   Rejection Rate: ${(rejectionRate * 100).toFixed(2)}%`);
+  console.log(`   Manual Review Rate: ${(manualReviewRate * 100).toFixed(2)}%`);
+  console.log(`   Other Outcome Rate: ${(errorRate * 100).toFixed(2)}%`);
 
   console.log(`\n✅ Target Validation:`);
   const avgPass = average < targetAvg;
   const p95Pass = p95 < targetP95;
   console.log(`   Average <${targetAvg}ms: ${avgPass ? '✓ PASS' : '✗ FAIL'}`);
   console.log(`   P95 <${targetP95}ms: ${p95Pass ? '✓ PASS' : '✗ FAIL'}`);
-  console.log(`   Zero Errors: ${aggregated.errorRate === 0 ? '✓ PASS' : '✗ FAIL'}`);
+  console.log(`   Zero Other Outcomes: ${errorRate === 0 ? '✓ PASS' : '✗ FAIL'}`);
 
   return {
     count,
@@ -89,12 +125,11 @@ async function runBenchmark(name: string, count: number, targetAvg: number, targ
     min,
     max,
     throughput,
-    autoApprovalRate: aggregated.autoApprovalRate,
-    rejectionRate: aggregated.rejectionRate,
-    manualReviewRate: aggregated.manualReviewRate,
-    averageConfidence: aggregated.averageConfidence,
-    errorRate: aggregated.errorRate,
-    targetsMet: avgPass && p95Pass && aggregated.errorRate === 0,
+    autoApprovalRate,
+    rejectionRate,
+    manualReviewRate,
+    otherOutcomeRate: errorRate,
+    targetsMet: avgPass && p95Pass && errorRate === 0,
   };
 }
 
@@ -104,9 +139,6 @@ async function main() {
   console.log(`   Date: ${new Date().toISOString()}`);
   console.log(`   Platform: ${process.platform}`);
   console.log(`   Node: ${process.version}`);
-
-  // Clear metrics before benchmarks
-  metricsCollector.clear();
 
   // Run benchmarks
   const results = {
@@ -123,19 +155,8 @@ async function main() {
   if (global.gc) global.gc();
   const baselineMemory = process.memoryUsage();
 
-  metricsCollector.clear();
-
   for (let i = 0; i < 1000; i++) {
-    const input: BookingDecisionInput = {
-      totalAmount: Math.random() * 50000000,
-      customer: {
-        id: `cust-${i}`,
-        status: 'active',
-        completedBookingsCount: 10,
-      },
-      tenantId: 'benchmark-test',
-    };
-    await evaluateBookingApproval(input);
+    reasoner.evaluate(bookingCapacityPolicyV1, buildBenchmarkKnowledge(i));
   }
 
   const peakMemory = process.memoryUsage();
