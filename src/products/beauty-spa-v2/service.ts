@@ -21,6 +21,7 @@ import type {
   SessionRecord,
   TimeInterval,
 } from '../../platform/beauty/contracts';
+import { validateInterval } from '../../platform/beauty/contracts';
 
 export type BeautySpaBookingMode = 'BOOKING' | 'WALK_IN';
 
@@ -189,6 +190,10 @@ export class BeautySpaV2Service {
   }
 
   private assertBookableInput(input: BookBeautySpaServiceInput): void {
+    if (validateInterval(input.interval)) {
+      throw new BeautySpaV2Error('INVALID_INTERVAL', 'Beauty Spa v2 bookings require a valid start and end time.');
+    }
+
     if (input.resources.length === 0) {
       throw new BeautySpaV2Error('RESOURCE_REQUIRED', 'Beauty Spa v2 bookings require at least one room, bed, suite, or device resource.');
     }
@@ -201,6 +206,10 @@ export class BeautySpaV2Service {
     const resourceIds = input.resources.map((resource) => resource.resourceId);
     if (new Set(resourceIds).size !== resourceIds.length) {
       throw new BeautySpaV2Error('DUPLICATE_RESOURCE_REQUIREMENT', 'Beauty Spa v2 bookings cannot require the same resource more than once.');
+    }
+
+    if (input.resources.some((resource) => resource.capacityUnits !== undefined && resource.capacityUnits <= 0)) {
+      throw new BeautySpaV2Error('INVALID_RESOURCE_CAPACITY', 'Beauty Spa v2 resource capacity units must be greater than zero.');
     }
   }
 
