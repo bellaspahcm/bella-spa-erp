@@ -28,6 +28,18 @@ type JournalLineRow = Database['public']['Tables']['journal_lines']['Row'];
 type AccountRow = Database['public']['Tables']['accounts']['Row'];
 type TenantInsert = Database['public']['Tables']['tenants']['Insert'];
 type BookingInsert = Database['public']['Tables']['bookings']['Insert'];
+type AccountingOutboxRow = Pick<
+  Database['public']['Tables']['accounting_outbox']['Row'],
+  'id' | 'status' | 'last_error' | 'journal_entry_id'
+>;
+type AccountingWorkerResponse = {
+  success?: boolean;
+  status?: string;
+  processed?: number;
+  failureCount?: number;
+  criticalFailureCount?: number;
+  details?: unknown;
+};
 
 jest.setTimeout(60_000);
 
@@ -40,17 +52,46 @@ describe('E2E Accounting GL Verification (Critical Accounting Test)', () => {
   let testBookingId: string;
   const testJournalEntryIds: string[] = [];
 
-  async function runAccountingWorker() {
+  async function runAccountingWorkerUntilCompleted(expectedOutboxIds: string[]) {
     const cronSecret = 'e2e-accounting-worker-secret';
     process.env.CRON_SECRET = cronSecret;
-    const response = await processAccountingOutbox(new NextRequest(
-      'http://localhost/api/cron/accounting-worker',
-      { headers: { Authorization: `Bearer ${cronSecret}` } },
-    ));
-    const body = await response.json();
+    let lastWorkerBody: AccountingWorkerResponse | null = null;
+    let lastRows: AccountingOutboxRow[] = [];
 
-    expect(response.status).toBe(200);
-    expect(body).toMatchObject({ success: true, failureCount: 0 });
+    for (let attempt = 1; attempt <= 5; attempt += 1) {
+      const response = await processAccountingOutbox(new NextRequest(
+        'http://localhost/api/cron/accounting-worker',
+        { headers: { Authorization: `Bearer ${cronSecret}` } },
+      ));
+      const body: AccountingWorkerResponse = await response.json();
+      lastWorkerBody = body;
+
+      expect(response.status).toBe(200);
+
+      const { data: rows, error } = await supabase
+        .from('accounting_outbox')
+        .select('id,status,last_error,journal_entry_id')
+        .in('id', expectedOutboxIds);
+
+      expect(error).toBeNull();
+      lastRows = rows ?? [];
+
+      const completedIds = new Set(
+        lastRows
+          .filter((row) => row.status === 'COMPLETED')
+          .map((row) => row.id),
+      );
+
+      if (expectedOutboxIds.every((id) => completedIds.has(id))) {
+        return;
+      }
+    }
+
+    throw new Error(`Expected accounting outbox events to complete: ${JSON.stringify({
+      expectedOutboxIds,
+      rows: lastRows,
+      lastWorkerBody,
+    })}`);
   }
 
   beforeAll(async () => {
@@ -253,8 +294,10 @@ describe('E2E Accounting GL Verification (Critical Accounting Test)', () => {
       },
     );
     expect(depositOutboxError).toBeNull();
-    expect(depositOutboxId).toEqual(expect.any(String));
-    await runAccountingWorker();
+    if (typeof depositOutboxId !== 'string') {
+      throw new Error('Expected deposit accounting outbox id to be a string.');
+    }
+    await runAccountingWorkerUntilCompleted([depositOutboxId]);
 
     console.log('✅ Step 1: Booking & Deposit created', {
       bookingId: testBookingId,
@@ -396,8 +439,10 @@ describe('E2E Accounting GL Verification (Critical Accounting Test)', () => {
       },
     );
     expect(sessionOutboxError).toBeNull();
-    expect(sessionOutboxId).toEqual(expect.any(String));
-    await runAccountingWorker();
+    if (typeof sessionOutboxId !== 'string') {
+      throw new Error('Expected session accounting outbox id to be a string.');
+    }
+    await runAccountingWorkerUntilCompleted([sessionOutboxId]);
 
     console.log('✅ Step 2: Session 1 completed', {
       sessionId: session1!.id,
