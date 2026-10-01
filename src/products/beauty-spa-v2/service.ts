@@ -381,8 +381,9 @@ export class BeautySpaV2Service {
           interval: input.interval,
           capacityUnits: resource.capacityUnits ?? 1,
         });
+        allocations.push(proposed);
         const active = await this.allocationRepo.update({ ...proposed, status: 'ACTIVE' });
-        allocations.push(active);
+        allocations[allocations.length - 1] = active;
       }
     } catch (error) {
       await this.markAllocationsDisrupted(allocations, input.actorId, 'BOOKING_RESOURCE_ALLOCATION_FAILED');

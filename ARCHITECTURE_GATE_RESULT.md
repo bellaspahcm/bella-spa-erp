@@ -222,7 +222,7 @@ Fresh local verification:
 
 ```text
 npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
-PASS - 3 suites, 51 tests
+PASS - 3 suites, 52 tests
 
 npx tsc -p tsconfig.beauty.json --noEmit
 PASS
@@ -251,6 +251,7 @@ Product-layer root-cause fixes verified in the focused suite:
 | Runtime enum values | Runtime callers could bypass TypeScript unions for booking/resource/outcome values. | Validate booking mode, resource type, package-session flag, payment status, inventory handoff, and payroll handoff before side effects. |
 | Malformed runtime shapes | Runtime callers could pass null booking requests, scalar staff/resource lists, null resource entries, malformed intervals, or non-string resource segments and trigger raw property access or partial orchestration. | Validate booking request shape, support-professional/resource lists, resource entries, interval shape, and optional segment IDs before appointment, assignment, allocation, or waitlist side effects. |
 | Rollback cleanup failure | Appointment cancellation failure or per-item assignment/allocation cleanup failure could stop later cleanup and leave accepted staff or active resources after a failed booking. | Attempt appointment cancellation, assignment disruption, and allocation disruption independently; continue per item and report rollback-failed codes when cleanup does not complete cleanly. |
+| Allocation activation failure | A resource allocation created as `PROPOSED` could fail while being activated and remain outside the rollback list. | Track the proposed allocation immediately, then replace it with the active allocation only after activation succeeds. |
 Previously recorded GitHub PR evidence for PR #188:
 
 ```text

@@ -58,6 +58,7 @@ class BeautySpaHarness {
   public readonly unavailableStaff = new Set<string>();
   public readonly assignmentCreateFailures = new Set<string>();
   public readonly assignmentUpdateFailures = new Set<string>();
+  public readonly allocationActivationFailures = new Set<string>();
   public readonly allocationUpdateFailures = new Set<string>();
   public readonly appointmentUpdateFailures = new Set<string>();
 
@@ -110,6 +111,9 @@ class BeautySpaHarness {
       return value;
     },
     update: async (value) => {
+      if (value.status === 'ACTIVE' && this.allocationActivationFailures.has(value.resourceId)) {
+        throw new Error(`allocation activation failed for ${value.resourceId}`);
+      }
       if (value.status === 'DISRUPTED' && this.allocationUpdateFailures.has(value.resourceId)) {
         throw new Error(`allocation update failed for ${value.resourceId}`);
       }
@@ -982,6 +986,47 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
         actorId: 'manager-spa',
       }),
     ]);
+  });
+
+  it('rolls back a proposed allocation when activation fails', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+    harness.allocationActivationFailures.add('room-d1-activation-fails');
+
+    await expect(service.bookService({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-allocation-activation-failure',
+      serviceId: 'service-suite-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-suite',
+      resources: [{ resourceId: 'room-d1-activation-fails', resourceType: 'ROOM' }],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    })).rejects.toThrow('allocation activation failed for room-d1-activation-fails');
+
+    const failedAppointment = harness.appointments.find((appointment) => (
+      appointment.customerId === 'customer-allocation-activation-failure'
+    ));
+    expect(failedAppointment?.status).toBe('CANCELLED');
+
+    expect(harness.allocations).toEqual([
+      expect.objectContaining({
+        resourceId: 'room-d1-activation-fails',
+        status: 'DISRUPTED',
+        reason: 'BOOKING_RESOURCE_ALLOCATION_FAILED',
+        actorId: 'manager-spa',
+      }),
+    ]);
+    expect(harness.allocationHistory).toEqual([
+      expect.objectContaining({
+        allocationId: harness.allocations[0]?.id,
+        eventType: 'BOOKING_ALLOCATION_ROLLED_BACK',
+        reason: 'BOOKING_RESOURCE_ALLOCATION_FAILED',
+        actorId: 'manager-spa',
+      }),
+    ]);
+    expect(harness.assignments.every((assignment) => assignment.status === 'DISRUPTED')).toBe(true);
   });
 
   it('continues later allocation rollback when an earlier allocation cleanup fails', async () => {
