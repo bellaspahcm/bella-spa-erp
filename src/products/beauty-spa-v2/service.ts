@@ -209,6 +209,10 @@ export class BeautySpaV2Service {
   }
 
   private assertBookableInput(input: BookBeautySpaServiceInput): void {
+    if (!isRecord(input)) {
+      throw new BeautySpaV2Error('INVALID_BOOKING_REQUEST', 'Beauty Spa v2 bookings require a structured booking request.');
+    }
+
     if (!isOneOf(BEAUTY_SPA_BOOKING_MODES, input.bookingMode)) {
       throw new BeautySpaV2Error('INVALID_BOOKING_MODE', 'Beauty Spa v2 bookings require a supported booking mode.');
     }

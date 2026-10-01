@@ -612,6 +612,17 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
   });
 
   it('rejects malformed staff and resource lists before creating side effects', async () => {
+    const requestHarness = new BeautySpaHarness();
+    const requestService = requestHarness.createService();
+
+    await expect(requestService.bookOrWaitlist(null as never))
+      .rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_BOOKING_REQUEST' });
+
+    expect(requestHarness.appointments).toHaveLength(0);
+    expect(requestHarness.assignments).toHaveLength(0);
+    expect(requestHarness.allocations).toHaveLength(0);
+    expect(requestHarness.waitlistEntries).toHaveLength(0);
+
     const staffHarness = new BeautySpaHarness();
     const staffService = staffHarness.createService();
 
