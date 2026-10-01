@@ -190,6 +190,20 @@ export class BeautySpaV2Service {
   }
 
   private assertBookableInput(input: BookBeautySpaServiceInput): void {
+    const requiredIds = [
+      input.tenantId,
+      input.branchId,
+      input.customerId,
+      input.serviceId,
+      input.leadProfessionalId,
+      input.actorId,
+      ...(input.supportProfessionalIds ?? []),
+      ...input.resources.map((resource) => resource.resourceId),
+    ];
+    if (requiredIds.some((value) => value.trim().length === 0)) {
+      throw new BeautySpaV2Error('REQUIRED_ID_MISSING', 'Beauty Spa v2 bookings require tenant, branch, customer, service, staff, actor, and resource IDs.');
+    }
+
     if (validateInterval(input.interval)) {
       throw new BeautySpaV2Error('INVALID_INTERVAL', 'Beauty Spa v2 bookings require a valid start and end time.');
     }

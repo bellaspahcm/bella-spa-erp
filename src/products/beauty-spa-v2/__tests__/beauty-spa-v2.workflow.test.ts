@@ -376,6 +376,28 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
     expect(resourceHarness.waitlistEntries).toHaveLength(0);
   });
 
+  it('rejects missing operational IDs before creating side effects', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+
+    await expect(service.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-missing-resource',
+      serviceId: 'service-suite-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-resource',
+      resources: [{ resourceId: ' ', resourceType: 'SUITE' }],
+      actorId: 'manager-spa',
+      bookingMode: 'WALK_IN',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'REQUIRED_ID_MISSING' });
+
+    expect(harness.appointments).toHaveLength(0);
+    expect(harness.assignments).toHaveLength(0);
+    expect(harness.allocations).toHaveLength(0);
+    expect(harness.waitlistEntries).toHaveLength(0);
+  });
+
   it('rejects invalid interval and capacity before creating operational side effects', async () => {
     const intervalHarness = new BeautySpaHarness();
     const intervalService = intervalHarness.createService();
