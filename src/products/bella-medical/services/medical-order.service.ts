@@ -40,8 +40,8 @@ export interface IssueLabOrderDTO {
 
 export class MedicalOrderProductService {
   constructor(
-    private readonly orderEngine: OrderEngineContract,
-    private readonly laboratoryEngine: ILaboratoryEngine
+    private readonly orderEngine: Pick<OrderEngineContract, 'createOrder'>,
+    private readonly laboratoryEngine: Pick<ILaboratoryEngine, 'recordResult' | 'verifyResult'>
   ) {}
 
   private assertCapability(capabilityId: string) {

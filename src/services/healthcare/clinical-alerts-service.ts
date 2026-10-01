@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import type { ClinicalAlert } from '@/components/hospital/ClinicalActionModal';
 import { HospitalClinicalAlertProductService } from '@/products/bella-hospital/services/hospital-clinical-alert.service';
+import type { CdsEngineContract } from '@/platform/healthcare/contracts/cds-engine.contract';
 
 /**
  * Clinical Decision Support (CDS) Alert Service
@@ -285,12 +286,28 @@ export class ClinicalAlertsService {
     dosageMg: number;
     route: string;
   }) {
-    const mockCdsContract: any = {
-      evaluateOrderSafety: async (input: any) => ({
-        hasAbsoluteBlock: false,
-        contraindications: [],
-        warnings: [{ severity: 'WARNING', message: 'Dose warning check' }]
-      })
+    const mockCdsContract: Pick<CdsEngineContract, 'generateCdsSummary'> = {
+      generateCdsSummary: async () => ({
+        success: true,
+        data: {
+          passed: true,
+          hardBlocked: false,
+          alerts: [
+            {
+              alertId: `alert-${Date.now()}`,
+              alertType: 'PROTOCOL',
+              severity: 'WARNING',
+              enforcement: 'ACKNOWLEDGE',
+              canOverride: true,
+              message: 'Dose warning check',
+            },
+          ],
+          calculationId: `calc-${Date.now()}`,
+          knowledgeBaseVersion: 'dev-fallback-kb',
+          policyVersion: 'dev-fallback-policy',
+          evaluatedAt: new Date().toISOString(),
+        },
+      }),
     };
     const productAlertService = new HospitalClinicalAlertProductService(mockCdsContract);
     return await productAlertService.evaluateOrderSafety(request);

@@ -126,11 +126,74 @@ export async function fetchHealthcareChairsAction(): Promise<{ success: true; da
 }
 
 import { DentalChairProductService } from '@/products/bella-dental/services/dental-chair.service';
+import type { IClinicalAuditContract } from '@/platform/healthcare/contracts/clinical-audit.contract';
+import type { ITemporalContract } from '@/platform/healthcare/contracts/temporal-engine.contract';
+import type { EngineResponse } from '@/platform/healthcare/shared-kernel/types';
+
+function healthcareChairSuccess<T>(data: T): EngineResponse<T> {
+  return { success: true, data };
+}
+
+const dentalChairTemporalContract: Pick<ITemporalContract, 'recordTemporalEvent'> = {
+  recordTemporalEvent: async (input) => healthcareChairSuccess({
+    id: `temp-${Date.now()}`,
+    tenantId: input.tenantId,
+    encounterId: input.encounterId,
+    patientId: input.patientId,
+    aggregateType: input.aggregateType,
+    aggregateId: input.aggregateId,
+    eventType: input.eventType,
+    validTime: input.validTime,
+    transactionTime: input.transactionTime ?? new Date().toISOString(),
+    sequenceNumber: 1,
+    deltaPayload: input.deltaPayload,
+    createdAt: new Date().toISOString(),
+  }),
+};
+
+const dentalChairAuditContract: Pick<IClinicalAuditContract, 'recordAuditEntry' | 'issueEvidencePackage'> = {
+  recordAuditEntry: async (input) => healthcareChairSuccess({
+    id: `aud-${Date.now()}`,
+    tenantId: input.tenantId,
+    encounterId: input.encounterId,
+    patientId: input.patientId,
+    actionType: input.actionType,
+    performerId: input.performerId,
+    performerRole: input.performerRole,
+    h8DecisionId: input.h8DecisionId,
+    h9SnapshotId: input.h9SnapshotId,
+    h10RuleCode: input.h10RuleCode,
+    h10RuleVersion: input.h10RuleVersion,
+    h10RuleChecksum: input.h10RuleChecksum,
+    complianceStatus: 'COMPLIANT',
+    evidenceIntegrity: 'COMPLETE',
+    metadata: input.metadata,
+    createdAt: new Date().toISOString(),
+  }),
+  issueEvidencePackage: async (tenantId, auditId) => healthcareChairSuccess({
+    id: `evidence-${Date.now()}`,
+    tenantId,
+    auditId,
+    schemaVersion: '1.0.0',
+    sourceReferences: {
+      encounterId: 'enc-dental-default',
+    },
+    canonicalPayload: {
+      actionType: 'DENTAL_PROCEDURE_COMPLETE',
+      timestamp: new Date().toISOString(),
+      performer: { id: 'BS. Lê Minh', role: 'DENTIST' },
+      complianceStatus: 'COMPLIANT',
+      evidenceIntegrity: 'COMPLETE',
+    },
+    fingerprint: 'SHA256:DENTAL_CHAIR_EVIDENCE_FINGERPRINT',
+    createdAt: new Date().toISOString(),
+  }),
+};
 
 const dentalChairProductService = new DentalChairProductService(
   // Mock contracts wrapping verified services in dev fallback
-  { recordTemporalEvent: async (input: any) => ({ id: `temp-${Date.now()}`, sequenceNumber: 1, ...input }) } as any,
-  { recordAuditEntry: async (input: any) => ({ id: `aud-${Date.now()}`, sha256Fingerprint: 'SHA256:DENTAL_CHAIR_EVIDENCE_FINGERPRINT' }) } as any
+  dentalChairTemporalContract,
+  dentalChairAuditContract
 );
 
 export async function updateHealthcareChairAssignmentAction(

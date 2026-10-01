@@ -3202,10 +3202,9 @@ export async function createDrugAction(input: {
         tenant_id: tenantId,
         name: input.drugName,
         sku: input.drugCode,
-        stock_qty: input.stockQty,
+        stock_level: input.stockQty,
         unit: input.unit,
-        status: 'active',
-      } as any)
+      })
       .select()
       .single();
 
