@@ -37,6 +37,14 @@ export interface ParentEngagementDeliveryRaw {
   } | null;
 }
 
+type ParentEngagementNoticeRaw = NonNullable<ParentEngagementDeliveryRaw['notice']>;
+
+function firstParentEngagementNotice(
+  notice: ParentEngagementNoticeRaw | ParentEngagementNoticeRaw[] | null
+): ParentEngagementDeliveryRaw['notice'] {
+  return Array.isArray(notice) ? notice[0] ?? null : notice;
+}
+
 export class PreschoolAnalyticsRepository {
   constructor(private readonly supabase: SupabaseClient) {}
 
@@ -146,7 +154,11 @@ export class PreschoolAnalyticsRepository {
       .eq('tenant_id', tenantId)
       .in('delivery_status', ['SENT', 'READ']);
 
-    return deliveries || [];
+    return (deliveries || []).map((delivery) => ({
+      id: delivery.id,
+      delivery_status: delivery.delivery_status,
+      notice: firstParentEngagementNotice(delivery.notice),
+    }));
   }
 
   // 6. Finance & Billing Metrics (P7)

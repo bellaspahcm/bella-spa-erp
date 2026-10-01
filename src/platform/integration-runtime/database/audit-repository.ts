@@ -338,7 +338,7 @@ export class AuditRepository {
       intent_type: data.intent_type,
       entity_id: data.entity_id,
       entity_type: data.entity_type,
-      amount: parseFloat(data.amount),
+      amount: data.amount,
       currency: data.currency,
       correlation_id: data.correlation_id,
       source: data.source,

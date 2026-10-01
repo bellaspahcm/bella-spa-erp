@@ -35,6 +35,7 @@ const mockQueryBuilder: ReservationQueryBuilder = {
 describe('ReservationService', () => {
   const tenantId = 'tenant-123';
   const productId = 'prod-456';
+  const userId = 'user-123';
   const reservationId = 'res-789';
 
   let spyRpc: jest.SpiedFunction<SupabaseMockTarget['rpc']>;
@@ -62,14 +63,15 @@ describe('ReservationService', () => {
       const res = await reservationService.reserveProduct({
         tenantId,
         productId,
+        userId,
         durationMinutes: 15,
       });
 
       expect(spyRpc).toHaveBeenCalledWith('reserve_product', {
         p_tenant_id: tenantId,
         p_product_id: productId,
-        p_user_id: null,
-        p_customer_id: null,
+        p_user_id: userId,
+        p_customer_id: undefined,
         p_duration_minutes: 15,
       });
 
@@ -86,6 +88,7 @@ describe('ReservationService', () => {
       const res = await reservationService.reserveProduct({
         tenantId,
         productId,
+        userId,
         durationMinutes: 15,
       });
 
@@ -100,7 +103,7 @@ describe('ReservationService', () => {
       });
 
       await expect(
-        reservationService.reserveProduct({ tenantId, productId, durationMinutes: 15 })
+        reservationService.reserveProduct({ tenantId, productId, userId, durationMinutes: 15 })
       ).rejects.toThrow('Database server disconnected');
     });
   });

@@ -518,7 +518,7 @@ export class PreschoolSchedulingRepository {
       assignmentDate: data.assignment_date,
       status: data.status as ShiftAssignmentStatus,
       amendmentVersion: data.amendment_version,
-      supersededAssignmentId: data.superseded_assignment_id,
+      supersededAssignmentId: data.superseded_assignment_id ?? undefined,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     };

@@ -17,6 +17,7 @@ import {
   OperationalStatus,
   RestrictionScope,
   InspectionResult,
+  JobPriority,
   JobStatus
 } from '../domain/facilities.types';
 
@@ -41,7 +42,28 @@ function isChecklistItem(value: unknown): value is ChecklistItem {
 }
 
 function toChecklistItems(value: Json): ChecklistItem[] {
-  return Array.isArray(value) ? value.filter(isChecklistItem) : [];
+  if (!Array.isArray(value)) return [];
+
+  const items: ChecklistItem[] = [];
+  for (const item of value) {
+    if (isChecklistItem(item)) {
+      items.push(item);
+    }
+  }
+  return items;
+}
+
+function checklistItemToJson(item: ChecklistItem): Json {
+  return {
+    key: item.key,
+    question: item.question,
+    passed: item.passed,
+    notes: item.notes,
+  };
+}
+
+function checklistItemsToJson(items: ChecklistItem[]): Json {
+  return items.map(checklistItemToJson);
 }
 
 export class PreschoolFacilitiesRepository {
@@ -200,7 +222,7 @@ export class PreschoolFacilitiesRepository {
         asset_id: sched.assetId,
         title: sched.title,
         frequency: sched.frequency,
-        checklist_schema: sched.checklistSchema,
+        checklist_schema: checklistItemsToJson(sched.checklistSchema),
         next_due_date: sched.nextDueDate,
       })
       .select('*')
@@ -224,7 +246,7 @@ export class PreschoolFacilitiesRepository {
         inspector_party_id: log.inspectorPartyId,
         inspection_date: log.inspectionDate,
         result_status: log.resultStatus,
-        checklist_answers: log.checklistAnswers,
+        checklist_answers: checklistItemsToJson(log.checklistAnswers),
         remarks: log.remarks,
         restriction_scope: log.restrictionScope,
       })
