@@ -32,12 +32,24 @@ import type {
 } from '../../../platform/beauty/application/ports';
 import type {
   AppointmentRecord,
+  ProfessionalAssignmentHistoryRecord,
   ProfessionalAssignmentRecord,
   ResourceAllocationRecord,
   ResourceCapacityWindow,
   SessionRecord,
 } from '../../../platform/beauty/contracts';
 import type { NailSessionOutcome } from '../adapters';
+
+type NailWaitlistEntry = {
+  id: string;
+  tenant_id: string;
+  customer_id: string;
+  package_id: string;
+  preferred_date: string;
+  booking_value: number;
+  status: 'WAITING';
+  position: number;
+};
 
 // ============================================================================
 // TEST INFRASTRUCTURE (reused from Haircut)
@@ -172,7 +184,7 @@ describe('Nail Workflow #1: Appointment Booking', () => {
 
 describe('Nail Workflow #2: Capacity Conflict → Waitlist', () => {
   it('adds customer to waitlist when all stations are full', async () => {
-    const waitlistEntries: any[] = [];
+    const waitlistEntries: NailWaitlistEntry[] = [];
 
     const availability: ResourceAvailabilityPort = {
       getWindow: async (scope): Promise<ResourceCapacityWindow> => ({
@@ -381,7 +393,7 @@ describe('Nail Workflow #4: Multi-Resource Allocation', () => {
 describe('Nail Workflow #5: Technician Reassignment', () => {
   it('reassigns to different technician and preserves history', async () => {
     const assignments: ProfessionalAssignmentRecord[] = [];
-    const history: any[] = [];
+    const history: ProfessionalAssignmentHistoryRecord[] = [];
 
     const assignmentRepository: ProfessionalAssignmentRepository = {
       create: async (value) => {

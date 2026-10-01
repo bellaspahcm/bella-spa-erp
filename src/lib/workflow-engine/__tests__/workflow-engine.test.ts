@@ -472,8 +472,9 @@ describe('Workflow Engine - Integration Tests', () => {
   
   describe('Validation', () => {
     test('should validate workflow definition', async () => {
-      const invalidWorkflow: any = {
+      const invalidWorkflow: WorkflowDefinition = {
         id: '',
+        name: 'Invalid Workflow',
         version: '1.0.0',
         steps: []
       };
@@ -484,8 +485,9 @@ describe('Workflow Engine - Integration Tests', () => {
     });
     
     test('should reject workflow without version', async () => {
-      const invalidWorkflow: any = {
+      const invalidWorkflow: WorkflowDefinition = {
         id: 'test',
+        name: 'Invalid Workflow',
         version: '',
         steps: [new ActionStep('step1', async () => ({}))]
       };
@@ -533,7 +535,7 @@ describe('Workflow Engine - Integration Tests', () => {
       };
       
       await expect(
-        engine.execute(workflow, {} as any)
+        engine.execute(workflow, {})
       ).rejects.toThrow('tenantId is required');
     });
   });

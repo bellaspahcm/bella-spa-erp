@@ -314,7 +314,7 @@ describe('Product Sales Commission Flow - Integration Tests (Task 36)', () => {
     it('should handle null/undefined override gracefully', () => {
       const commission = calculateProductSalesCommission({
         totalSalesAmount: 1000000,
-        overrideType: null as any,
+        overrideType: null,
         overrideValue: undefined,
       });
       

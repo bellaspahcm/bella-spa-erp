@@ -28,13 +28,26 @@ import { createClient } from '@/lib/supabase-server';
 const mockCreateClient = createClient as jest.Mock;
 const mockEvaluate = overbookingDetectionPolicy.evaluate as jest.Mock;
 
+type TenantProfileQueryBuilder = {
+  select: jest.Mock;
+  eq: jest.Mock;
+  single: jest.Mock;
+};
+
+type BookingDecisionSupabaseMock = {
+  auth: {
+    getUser: jest.Mock;
+  };
+  from: (table: string) => TenantProfileQueryBuilder;
+};
+
 describe('checkBookingConflicts', () => {
   // Mock user and tenant context
   beforeEach(() => {
     jest.clearAllMocks();
 
     // Mock Supabase client with auth and database
-    const mockSupabase = {
+    const mockSupabase: BookingDecisionSupabaseMock = {
       auth: {
         getUser: jest.fn().mockResolvedValue({
           data: { user: { id: 'test-user-123' } },
@@ -51,7 +64,7 @@ describe('checkBookingConflicts', () => {
       })),
     };
 
-    mockCreateClient.mockResolvedValue(mockSupabase as any);
+    mockCreateClient.mockResolvedValue(mockSupabase);
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -283,7 +296,7 @@ describe('checkBookingConflicts', () => {
 
   it('should APPROVE when no tenant context exists', async () => {
     // Mock no tenant_id
-    const mockSupabaseNoTenant = {
+    const mockSupabaseNoTenant: BookingDecisionSupabaseMock = {
       auth: {
         getUser: jest.fn().mockResolvedValue({
           data: { user: { id: 'test-user-123' } },
@@ -300,7 +313,7 @@ describe('checkBookingConflicts', () => {
       }),
     };
 
-    mockCreateClient.mockResolvedValue(mockSupabaseNoTenant as any);
+    mockCreateClient.mockResolvedValue(mockSupabaseNoTenant);
 
     const result = await checkBookingConflicts({
       bookingId: 'booking-no-tenant',

@@ -32,10 +32,29 @@ let insertedNotifications: unknown[];
 let readinessRows: unknown[];
 let legacyPreviewRows: unknown[];
 
+type MockQueryResult = {
+  data: unknown;
+  error: { message: string } | null;
+};
+
+type MockChain = {
+  select: jest.Mock<MockChain, []>;
+  eq: jest.Mock<MockChain, []>;
+  contains: jest.Mock<MockChain, []>;
+  order: jest.Mock<MockChain, []>;
+  limit: jest.Mock<MockChain, []>;
+  insert: jest.Mock<MockChain, [unknown]>;
+  single: jest.Mock<Promise<MockQueryResult>, []>;
+  then: (
+    cb: (value: MockQueryResult) => unknown,
+    onRejected?: (reason: unknown) => unknown,
+  ) => Promise<unknown>;
+};
+
 function setupTableMocks() {
   mockFrom.mockImplementation((table: string) => {
     let insertPayload: unknown = null;
-    const chain: any = {
+    const chain: MockChain = {
       select: jest.fn(() => chain),
       eq: jest.fn(() => chain),
       contains: jest.fn(() => chain),
@@ -58,7 +77,7 @@ function setupTableMocks() {
           error: tableErrors[table] ?? null,
         });
       }),
-      then: (cb: any, onRejected?: any) => Promise.resolve({
+      then: (cb, onRejected) => Promise.resolve({
         data: tableRows[table] ?? [],
         error: tableErrors[table] ?? null,
       }).then(cb, onRejected),

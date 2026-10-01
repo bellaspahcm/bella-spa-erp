@@ -10,9 +10,11 @@
  * @module src/products/bella-medical/services/medical-order.service
  */
 
-import type { OrderEngineContract, CreateOrderRequest } from '../../../platform/healthcare/contracts/order-engine.contract';
+import type { CreateOrderRequest, CreateOrderResult, OrderEngineContract } from '../../../platform/healthcare/contracts/order-engine.contract';
 import type { ILaboratoryEngine } from '../../../platform/healthcare/contracts/laboratory-engine.contract';
 import { medicalProductManifest } from '../manifest';
+
+type VerifiedLabResult = Awaited<ReturnType<ILaboratoryEngine['verifyResult']>>;
 
 export interface PrescribeMedicationDTO {
   requestId: string;
@@ -59,7 +61,7 @@ export class MedicalOrderProductService {
   /**
    * Prescribes a medication. CDS checking is executed non-bypassably at the Kernel level.
    */
-  async prescribeMedication(dto: PrescribeMedicationDTO): Promise<any> {
+  async prescribeMedication(dto: PrescribeMedicationDTO): Promise<CreateOrderResult> {
     this.assertCapability('medical_resource_command');
     this.assertWorkflow('prescription_safety_check_flow');
     if (!dto.tenantId) throw new Error('TENANT_ISOLATION_VIOLATION: tenantId is required');
@@ -98,7 +100,7 @@ export class MedicalOrderProductService {
   /**
    * Issues a laboratory order ticket
    */
-  async issueLabOrder(dto: IssueLabOrderDTO): Promise<any> {
+  async issueLabOrder(dto: IssueLabOrderDTO): Promise<CreateOrderResult> {
     this.assertCapability('medical_resource_command');
     this.assertWorkflow('outpatient_consultation_flow');
     if (!dto.tenantId) throw new Error('TENANT_ISOLATION_VIOLATION: tenantId is required');
@@ -135,7 +137,7 @@ export class MedicalOrderProductService {
     value: string,
     unit: string,
     verifiedBy: string
-  ): Promise<any> {
+  ): Promise<VerifiedLabResult> {
     this.assertCapability('medical_resource_command');
     this.assertWorkflow('outpatient_consultation_flow');
     if (!tenantId) throw new Error('TENANT_ISOLATION_VIOLATION: tenantId is required');

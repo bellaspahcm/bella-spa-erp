@@ -9,7 +9,7 @@
  * Data Sources:
  * - accounting_accounts: Chart of accounts with account types
  * - journal_entries: All accounting transactions
- * - journal_entry_lines: Debit/Credit entries per account
+ * - journal_lines: Debit/Credit entries per account
  * 
  * Calculation Method:
  * 1. Sum all debit/credit amounts per account up to the specified date
@@ -49,7 +49,7 @@ interface AccountBalance {
   accountId: string;
   accountCode: string;
   accountName: string;
-  accountType: 'asset' | 'liability' | 'equity' | 'revenue' | 'expense';
+  accountType: 'asset' | 'liability' | 'equity' | 'revenue' | 'expense' | 'other';
   debitTotal: number;
   creditTotal: number;
   balance: number; // Net balance (debit - credit for assets, credit - debit for liabilities/equity)
@@ -74,6 +74,21 @@ function getStartOfFiscalYear(date: string): string {
   return `${year}-01-01`;
 }
 
+function normalizeAccountType(accountType: string): AccountBalance['accountType'] {
+  const normalized = accountType.toLowerCase();
+  if (
+    normalized === 'asset' ||
+    normalized === 'liability' ||
+    normalized === 'equity' ||
+    normalized === 'revenue' ||
+    normalized === 'expense'
+  ) {
+    return normalized;
+  }
+
+  return 'other';
+}
+
 /**
  * Calculate account balances from journal entries
  */
@@ -83,11 +98,9 @@ async function getAccountBalances(
 ): Promise<AccountBalance[]> {
   const supabase = await createClient();
 
-  const client = supabase as any;
-
   // Query all journal entry lines up to the specified date
-  const { data: lines, error } = await client
-    .from('journal_entry_lines')
+  const { data: lines, error } = await supabase
+    .from('journal_lines')
     .select(`
       account_id,
       debit_amount,
@@ -116,7 +129,7 @@ async function getAccountBalances(
   // Aggregate balances by account
   const balanceMap = new Map<string, AccountBalance>();
 
-  for (const line of (lines as any[]) || []) {
+  for (const line of lines || []) {
     const accountId = line.account_id;
     const account = line.accounting_accounts;
     
@@ -125,7 +138,7 @@ async function getAccountBalances(
         accountId,
         accountCode: account.account_code,
         accountName: account.account_name,
-        accountType: account.account_type.toLowerCase() as any,
+        accountType: normalizeAccountType(account.account_type),
         debitTotal: 0,
         creditTotal: 0,
         balance: 0,
@@ -165,11 +178,9 @@ async function getCurrentPeriodPnL(
 ): Promise<number> {
   const supabase = await createClient();
 
-  const client = supabase as any;
-
   // Query revenue and expense accounts for the period
-  const { data: lines, error } = await client
-    .from('journal_entry_lines')
+  const { data: lines, error } = await supabase
+    .from('journal_lines')
     .select(`
       debit_amount,
       credit_amount,
@@ -197,8 +208,8 @@ async function getCurrentPeriodPnL(
   let revenue = 0;
   let expenses = 0;
 
-  for (const line of (lines as any[]) || []) {
-    const accountType = line.accounting_accounts.account_type.toLowerCase();
+  for (const line of lines || []) {
+    const accountType = normalizeAccountType(line.accounting_accounts.account_type);
     const debit = Number(line.debit_amount) || 0;
     const credit = Number(line.credit_amount) || 0;
 

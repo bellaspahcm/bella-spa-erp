@@ -20,7 +20,7 @@ import { describe, it, expect, beforeAll } from '@jest/globals';
 import { createServerClient } from '@/lib/supabase-server';
 import { HRIntelligenceService } from '../service';
 import { MemoryCacheService } from '../../cache/memory-cache';
-import type { Database } from '@/types/database.types';
+import type { DateRange } from '../../shared/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Test Configuration
@@ -77,7 +77,7 @@ describe.skip('HR Intelligence Integration Tests', () => {
   describe('Materialized Views Schema', () => {
     it('mv_workforce_analytics should have correct columns', async () => {
       const { data, error } = await supabase
-        .from('mv_workforce_analytics' as any)
+        .from('mv_workforce_analytics')
         .select('*')
         .eq('tenant_id', TEST_TENANT_ID)
         .limit(1)
@@ -103,7 +103,7 @@ describe.skip('HR Intelligence Integration Tests', () => {
 
     it('mv_attendance_summary should have correct columns', async () => {
       const { data, error } = await supabase
-        .from('mv_attendance_summary' as any)
+        .from('mv_attendance_summary')
         .select('*')
         .eq('tenant_id', TEST_TENANT_ID)
         .limit(1)
@@ -128,7 +128,7 @@ describe.skip('HR Intelligence Integration Tests', () => {
 
     it('mv_payroll_summary should have correct columns', async () => {
       const { data, error } = await supabase
-        .from('mv_payroll_summary' as any)
+        .from('mv_payroll_summary')
         .select('*')
         .eq('tenant_id', TEST_TENANT_ID)
         .limit(1)
@@ -152,7 +152,7 @@ describe.skip('HR Intelligence Integration Tests', () => {
 
     it('mv_employee_performance should have correct columns', async () => {
       const { data, error } = await supabase
-        .from('mv_employee_performance' as any)
+        .from('mv_employee_performance')
         .select('*')
         .eq('tenant_id', TEST_TENANT_ID)
         .limit(1)
@@ -439,10 +439,13 @@ describe.skip('HR Intelligence Integration Tests', () => {
     });
 
     it('should handle invalid date format gracefully', async () => {
-      const invalidMonth = 'invalid-date';
+      const invalidDateRange: DateRange = {
+        startDate: 'invalid-date',
+        endDate: 'invalid-date',
+      };
 
       await expect(
-        service.getWorkforceAnalytics(TEST_TENANT_ID, invalidMonth as any)
+        service.getWorkforceAnalytics(TEST_TENANT_ID, invalidDateRange)
       ).rejects.toThrow();
     });
   });

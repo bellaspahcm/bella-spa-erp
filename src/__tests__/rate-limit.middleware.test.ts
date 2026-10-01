@@ -13,7 +13,30 @@ import {
   resetRateLimitStateForTests,
 } from '@/lib/middleware/rate-limit.middleware';
 import { APIError } from '@/types/api-gateway';
-import type { APIPartner } from '@/types/api-gateway';
+import type { PartnerContext, RequestWithPartner } from '@/lib/middleware/api-key.middleware';
+
+type TestRateLimitRequest = RequestWithPartner;
+
+const createPartner = (overrides: Partial<PartnerContext> = {}): PartnerContext => ({
+  partner_id: 'partner-1',
+  partner_name: 'Test Partner',
+  tenant_id: 'tenant-1',
+  allowed_scopes: [],
+  is_active: true,
+  is_sandbox: true,
+  rate_limit_per_minute: 60,
+  rate_limit_per_day: 1_000,
+  ...overrides,
+});
+
+const createRequestWithPartner = (
+  partner: PartnerContext,
+  url = 'https://api.bella.vn/v1/orders'
+): TestRateLimitRequest => {
+  const req = new NextRequest(url) as TestRateLimitRequest;
+  req.partner = partner;
+  return req;
+};
 
 // Mock Redis client
 const mockRedisData: Record<string, number> = {};
@@ -129,21 +152,19 @@ describe('Rate Limit Middleware', () => {
 
   describe('Basic Rate Limiting', () => {
     it('allows first request within limit', async () => {
-      const req = new NextRequest('https://api.bella.vn/v1/orders');
-      (req as any).partner = {
+      const req = createRequestWithPartner(createPartner({
         partner_id: 'partner-1',
         partner_name: 'Test Partner',
-      } as APIPartner;
+      }));
 
       await expect(rateLimitMiddleware(req)).resolves.not.toThrow();
     });
 
     it('tracks request count correctly', async () => {
-      const req = new NextRequest('https://api.bella.vn/v1/orders');
-      (req as any).partner = {
+      const req = createRequestWithPartner(createPartner({
         partner_id: 'partner-2',
         partner_name: 'Test Partner 2',
-      } as APIPartner;
+      }));
 
       // Make 3 requests
       await rateLimitMiddleware(req);
@@ -157,30 +178,28 @@ describe('Rate Limit Middleware', () => {
     });
 
     it('sets rate limit headers on request', async () => {
-      const req = new NextRequest('https://api.bella.vn/v1/orders');
-      (req as any).partner = {
+      const req = createRequestWithPartner(createPartner({
         partner_id: 'partner-3',
         partner_name: 'Test Partner 3',
-      } as APIPartner;
+      }));
 
       await rateLimitMiddleware(req);
 
-      const headers = (req as any).rateLimitHeaders;
+      const headers = req.rateLimitHeaders;
       expect(headers).toBeDefined();
-      expect(headers['X-RateLimit-Limit']).toBe('60'); // Free tier per minute
-      expect(headers['X-RateLimit-Remaining']).toBe('59'); // 60 - 1
-      expect(headers['X-RateLimit-Reset']).toBeDefined();
+      expect(headers?.['X-RateLimit-Limit']).toBe('60'); // Free tier per minute
+      expect(headers?.['X-RateLimit-Remaining']).toBe('59'); // 60 - 1
+      expect(headers?.['X-RateLimit-Reset']).toBeDefined();
     });
   });
 
 
   describe('Rate Limit Enforcement', () => {
     it('blocks request when per-minute limit exceeded', async () => {
-      const req = new NextRequest('https://api.bella.vn/v1/orders');
-      (req as any).partner = {
+      const req = createRequestWithPartner(createPartner({
         partner_id: 'partner-rate-limit',
         partner_name: 'Test Partner',
-      } as APIPartner;
+      }));
 
       // Free tier: 60 requests per minute
       // Make 60 requests (should all succeed)
@@ -195,11 +214,10 @@ describe('Rate Limit Middleware', () => {
     });
 
     it('includes retry-after in error when limit exceeded', async () => {
-      const req = new NextRequest('https://api.bella.vn/v1/orders');
-      (req as any).partner = {
+      const req = createRequestWithPartner(createPartner({
         partner_id: 'partner-retry',
         partner_name: 'Test Partner',
-      } as APIPartner;
+      }));
 
       // Exceed limit
       for (let i = 0; i < 61; i++) {
@@ -219,11 +237,10 @@ describe('Rate Limit Middleware', () => {
     });
 
     it('resets counter after time window expires', async () => {
-      const req = new NextRequest('https://api.bella.vn/v1/orders');
-      (req as any).partner = {
+      const req = createRequestWithPartner(createPartner({
         partner_id: 'partner-reset',
         partner_name: 'Test Partner',
-      } as APIPartner;
+      }));
 
       // Make requests until limit
       for (let i = 0; i < 60; i++) {
@@ -262,19 +279,18 @@ describe('Rate Limit Middleware', () => {
         })),
       });
 
-      const req = new NextRequest('https://api.bella.vn/v1/orders');
-      (req as any).partner = {
+      const req = createRequestWithPartner(createPartner({
         partner_id: 'partner-pro',
         partner_name: 'Pro Partner',
-      } as APIPartner;
+      }));
 
       // Should allow more requests than free tier
       for (let i = 0; i < 100; i++) {
         await rateLimitMiddleware(req);
       }
 
-      const headers = (req as any).rateLimitHeaders;
-      expect(headers['X-RateLimit-Limit']).toBe('1000'); // Pro tier limit
+      const headers = req.rateLimitHeaders;
+      expect(headers?.['X-RateLimit-Limit']).toBe('1000'); // Pro tier limit
     });
 
     it('allows unlimited requests for unlimited tier', async () => {
@@ -293,19 +309,18 @@ describe('Rate Limit Middleware', () => {
         })),
       });
 
-      const req = new NextRequest('https://api.bella.vn/v1/orders');
-      (req as any).partner = {
+      const req = createRequestWithPartner(createPartner({
         partner_id: 'partner-unlimited',
         partner_name: 'Unlimited Partner',
-      } as APIPartner;
+      }));
 
       // Should never throw
       for (let i = 0; i < 10000; i++) {
         await rateLimitMiddleware(req);
       }
 
-      const headers = (req as any).rateLimitHeaders;
-      expect(headers['X-RateLimit-Limit']).toBe('unlimited');
+      const headers = req.rateLimitHeaders;
+      expect(headers?.['X-RateLimit-Limit']).toBe('unlimited');
     });
   });
 
@@ -315,11 +330,10 @@ describe('Rate Limit Middleware', () => {
       // Simulate Redis failure
       mockRedisAvailable = false;
 
-      const req = new NextRequest('https://api.bella.vn/v1/orders');
-      (req as any).partner = {
+      const req = createRequestWithPartner(createPartner({
         partner_id: 'partner-no-redis',
         partner_name: 'Test Partner',
-      } as APIPartner;
+      }));
 
       // Should not throw even without Redis
       await expect(rateLimitMiddleware(req)).resolves.not.toThrow();
@@ -329,11 +343,10 @@ describe('Rate Limit Middleware', () => {
       const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
       mockRedisAvailable = false;
 
-      const req = new NextRequest('https://api.bella.vn/v1/orders');
-      (req as any).partner = {
+      const req = createRequestWithPartner(createPartner({
         partner_id: 'partner-redis-fail',
         partner_name: 'Test Partner',
-      } as APIPartner;
+      }));
 
       await rateLimitMiddleware(req);
 
@@ -346,11 +359,10 @@ describe('Rate Limit Middleware', () => {
     it('falls back to in-memory when REDIS_URL not set', async () => {
       delete process.env.REDIS_URL;
 
-      const req = new NextRequest('https://api.bella.vn/v1/orders');
-      (req as any).partner = {
+      const req = createRequestWithPartner(createPartner({
         partner_id: 'partner-no-url',
         partner_name: 'Test Partner',
-      } as APIPartner;
+      }));
 
       // Should still work (in-memory fallback)
       await expect(rateLimitMiddleware(req)).resolves.not.toThrow();
@@ -369,11 +381,10 @@ describe('Rate Limit Middleware', () => {
     });
 
     it('handles concurrent requests correctly', async () => {
-      const req = new NextRequest('https://api.bella.vn/v1/orders');
-      (req as any).partner = {
+      const req = createRequestWithPartner(createPartner({
         partner_id: 'partner-concurrent',
         partner_name: 'Test Partner',
-      } as APIPartner;
+      }));
 
       // Make 10 concurrent requests
       const promises = Array(10).fill(null).map(() => rateLimitMiddleware(req));
@@ -387,11 +398,10 @@ describe('Rate Limit Middleware', () => {
     });
 
     it('tracks separate counters for different time windows', async () => {
-      const req = new NextRequest('https://api.bella.vn/v1/orders');
-      (req as any).partner = {
+      const req = createRequestWithPartner(createPartner({
         partner_id: 'partner-windows',
         partner_name: 'Test Partner',
-      } as APIPartner;
+      }));
 
       // Make request
       await rateLimitMiddleware(req);
@@ -409,11 +419,10 @@ describe('Rate Limit Middleware', () => {
       const partnerId = 'partner-stats';
       
       // Make some requests
-      const req = new NextRequest('https://api.bella.vn/v1/orders');
-      (req as any).partner = {
+      const req = createRequestWithPartner(createPartner({
         partner_id: partnerId,
         partner_name: 'Test Partner',
-      } as APIPartner;
+      }));
 
       await rateLimitMiddleware(req);
       await rateLimitMiddleware(req);
@@ -445,11 +454,10 @@ describe('Rate Limit Middleware', () => {
     it('logs warning when approaching limit (>80%)', async () => {
       const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
 
-      const req = new NextRequest('https://api.bella.vn/v1/orders');
-      (req as any).partner = {
+      const req = createRequestWithPartner(createPartner({
         partner_id: 'partner-warning',
         partner_name: 'Test Partner',
-      } as APIPartner;
+      }));
 
       // Make 50 requests (83% of 60)
       for (let i = 0; i < 50; i++) {
@@ -469,11 +477,10 @@ describe('Rate Limit Middleware', () => {
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
       const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
 
-      const req = new NextRequest('https://api.bella.vn/v1/orders');
-      (req as any).partner = {
+      const req = createRequestWithPartner(createPartner({
         partner_id: 'partner-alert',
         partner_name: 'Test Partner',
-      } as APIPartner;
+      }));
 
       // Exceed limit
       for (let i = 0; i < 61; i++) {

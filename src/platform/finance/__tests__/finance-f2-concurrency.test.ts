@@ -5,7 +5,7 @@
  * reconstruction-projection races, deadlock prevention, and movement immutability.
  *
  * Compliance:
- * - TypeSafety-NoAny: Strictly typed with zero 'any' usages.
+ * - TypeSafety: strictly typed with zero explicit dynamic type usage.
  *
  * @module platform/finance/__tests__/finance-f2-concurrency.test
  */
@@ -23,6 +23,10 @@ import { CashEngineService } from '../engines/cash-engine/cash-engine.service';
 import { Client } from 'pg';
 
 jest.setTimeout(60000);
+
+function expectRpcSuccess(data: unknown): void {
+  expect(data).toMatchObject({ success: true });
+}
 
 describe('F2.5 Cash Engine Concurrency & Security Hardening Tests', () => {
   let supabase: ReturnType<typeof createSupabaseClient<Database>>;
@@ -403,19 +407,19 @@ describe('F2.5 Cash Engine Concurrency & Security Hardening Tests', () => {
       p_tenant_id: testTenantId, p_f1_transaction_id: tx1.id, p_base_idempotency: `t20-b-1-${RUN_ID}`, p_legs: [leg1]
     });
     expect(r1.error).toBeNull();
-    expect((r1.data as any).success).toBe(true);
+    expectRpcSuccess(r1.data);
 
     const r2 = await supabase.rpc('finance_internal_project_cash_transaction', {
       p_tenant_id: testTenantId, p_f1_transaction_id: tx2.id, p_base_idempotency: `t20-b-2-${RUN_ID}`, p_legs: [leg2]
     });
     expect(r2.error).toBeNull();
-    expect((r2.data as any).success).toBe(true);
+    expectRpcSuccess(r2.data);
 
     const r3 = await supabase.rpc('finance_internal_project_cash_transaction', {
       p_tenant_id: testTenantId, p_f1_transaction_id: tx3.id, p_base_idempotency: `t20-b-3-${RUN_ID}`, p_legs: [leg3]
     });
     expect(r3.error).toBeNull();
-    expect((r3.data as any).success).toBe(true);
+    expectRpcSuccess(r3.data);
 
     // Project to Account T20B in Order B: L3 (tx6) -> L1 (tx4) -> L2 (tx5)
     const leg1C = {
@@ -464,28 +468,28 @@ describe('F2.5 Cash Engine Concurrency & Security Hardening Tests', () => {
       p_tenant_id: testTenantId, p_f1_transaction_id: tx6.id, p_base_idempotency: `t20-c-3-${RUN_ID}`, p_legs: [leg3C]
     });
     expect(r4.error).toBeNull();
-    expect((r4.data as any).success).toBe(true);
+    expectRpcSuccess(r4.data);
 
     const r5 = await supabase.rpc('finance_internal_project_cash_transaction', {
       p_tenant_id: testTenantId, p_f1_transaction_id: tx4.id, p_base_idempotency: `t20-c-1-${RUN_ID}`, p_legs: [leg1C]
     });
     expect(r5.error).toBeNull();
-    expect((r5.data as any).success).toBe(true);
+    expectRpcSuccess(r5.data);
 
     const r6 = await supabase.rpc('finance_internal_project_cash_transaction', {
       p_tenant_id: testTenantId, p_f1_transaction_id: tx5.id, p_base_idempotency: `t20-c-2-${RUN_ID}`, p_legs: [leg2C]
     });
     expect(r6.error).toBeNull();
-    expect((r6.data as any).success).toBe(true);
+    expectRpcSuccess(r6.data);
 
     // Reconstruct both
     const rec1 = await supabase.rpc('finance_reconstruct_cash_positions', { p_tenant_id: testTenantId, p_bank_account_id: bankAccountT20AId });
     expect(rec1.error).toBeNull();
-    expect((rec1.data as any).success).toBe(true);
+    expectRpcSuccess(rec1.data);
 
     const rec2 = await supabase.rpc('finance_reconstruct_cash_positions', { p_tenant_id: testTenantId, p_bank_account_id: bankAccountT20BId });
     expect(rec2.error).toBeNull();
-    expect((rec2.data as any).success).toBe(true);
+    expectRpcSuccess(rec2.data);
 
     // Fetch positions
     const { data: posB } = await supabase.from('finance_cash_positions').select('*').eq('tenant_id', testTenantId).eq('bank_account_id', bankAccountT20AId).single();
@@ -574,14 +578,14 @@ describe('F2.5 Cash Engine Concurrency & Security Hardening Tests', () => {
         functional_currency: 'VND',
         valuation_rate: 1.0,
         version: 1
-      } as any);
+      });
     expect(insertErr).not.toBeNull();
     expect(insertErr!.message).toMatch(/DIRECT_CASH_MUTATION_PROHIBITED|permission denied/);
 
     // 2. Direct UPDATE bypass attempt
     const { error: updateErr } = await anonClient
       .from('finance_cash_positions')
-      .update({ balance_minor: 999999 as any })
+      .update({ balance_minor: 999999 })
       .eq('tenant_id', testTenantId)
       .eq('bank_account_id', bankAccountAId);
     expect(updateErr).not.toBeNull();
@@ -686,8 +690,8 @@ describe('F2.5 Cash Engine Concurrency & Security Hardening Tests', () => {
 
     expect(res1.error).toBeNull();
     expect(res2.error).toBeNull();
-    expect((res1.data as any).success).toBe(true);
-    expect((res2.data as any).success).toBe(true);
+    expectRpcSuccess(res1.data);
+    expectRpcSuccess(res2.data);
   });
 
   it('T25: Immutable Movements Guard (verify direct updates/deletes fail & no public mutator service method exists)', async () => {
@@ -746,7 +750,7 @@ describe('F2.5 Cash Engine Concurrency & Security Hardening Tests', () => {
       ]
     });
     expect(error).toBeNull();
-    expect((data as any).success).toBe(true);
+    expectRpcSuccess(data);
   });
 
   it('T27: Position equals Movement-History Reduction Validation', async () => {

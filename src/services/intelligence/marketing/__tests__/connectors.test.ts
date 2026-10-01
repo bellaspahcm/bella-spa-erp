@@ -247,7 +247,7 @@ describe('Zalo OA Connector', () => {
 });
 
 describe('In-Memory Cache', () => {
-  let cache: InMemoryCache<any>;
+  let cache: InMemoryCache<unknown>;
 
   beforeEach(() => {
     cache = new InMemoryCache({

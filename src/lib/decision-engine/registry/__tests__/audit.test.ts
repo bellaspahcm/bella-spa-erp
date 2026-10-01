@@ -10,9 +10,33 @@ import { createClient } from '@/lib/supabase-server';
 // Mock Supabase client
 jest.mock('@/lib/supabase-server');
 
+type QueryResult<TData = unknown> = {
+  data: TData;
+  error: Error | null;
+  count?: number;
+};
+
+type QueryResolve<TData = unknown> = (value: QueryResult<TData>) => unknown;
+
+type MockQueryBuilder = {
+  eq: jest.Mock;
+  order: jest.Mock;
+  range: jest.Mock;
+  gte: jest.Mock;
+  lte: jest.Mock;
+  limit: jest.Mock;
+  is: jest.Mock;
+  single: jest.Mock;
+  then: jest.Mock;
+};
+
+type MockSupabaseClient = {
+  from: jest.Mock;
+};
+
 describe('Audit Utilities', () => {
-  let mockSupabase: any;
-  let mockQueryBuilder: any;
+  let mockSupabase: MockSupabaseClient;
+  let mockQueryBuilder: MockQueryBuilder;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -28,15 +52,15 @@ describe('Audit Utilities', () => {
       is: jest.fn().mockReturnThis(),
       single: jest.fn().mockReturnThis(),
       // Make the query builder itself awaitable (for `await query` pattern)
-      then: jest.fn((resolve) => resolve({ data: [], error: null })),
+      then: jest.fn((resolve: QueryResolve<unknown[]>) => resolve({ data: [], error: null })),
     };
 
     // Default: resolve with empty data
     mockQueryBuilder.range.mockReturnValue({
-      then: jest.fn((resolve) => resolve({ data: [], error: null })),
+      then: jest.fn((resolve: QueryResolve<unknown[]>) => resolve({ data: [], error: null })),
     });
     mockQueryBuilder.limit.mockReturnValue({
-      then: jest.fn((resolve) => resolve({ data: [], error: null })),
+      then: jest.fn((resolve: QueryResolve<unknown[]>) => resolve({ data: [], error: null })),
     });
 
     // Setup mock Supabase client

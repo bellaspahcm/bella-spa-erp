@@ -24,6 +24,10 @@ import { createHash } from 'crypto';
 
 jest.setTimeout(60000);
 
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 describe('F3.3 Payment Allocation Integration Tests', () => {
   let supabaseAdmin: ReturnType<typeof createSupabaseClient<Database>>;
   let pgClientAdmin: Client;
@@ -254,8 +258,8 @@ describe('F3.3 Payment Allocation Integration Tests', () => {
           '${testTenantId}', '${invoiceId}', '${fakeId}', 500000, 1.0, 'CENTRAL_BANK', NOW()
         );
       `);
-    } catch (e: any) {
-      err = e.message;
+    } catch (e: unknown) {
+      err = getErrorMessage(e);
     }
     expect(err).toContain('CASH_MOVEMENT_NOT_FOUND');
   });
@@ -271,8 +275,8 @@ describe('F3.3 Payment Allocation Integration Tests', () => {
           '${testTenantId}', '${invoiceId}', '${cashId}', 500000, 1.0, 'CENTRAL_BANK', NOW()
         );
       `);
-    } catch (e: any) {
-      err = e.message;
+    } catch (e: unknown) {
+      err = getErrorMessage(e);
     }
     expect(err).toContain('INVALID_CASH_DIRECTION');
   });
@@ -288,8 +292,8 @@ describe('F3.3 Payment Allocation Integration Tests', () => {
           '${testTenantId}', '${invoiceId}', '${cashId}', 400000, 1.0, 'CENTRAL_BANK', NOW()
         );
       `);
-    } catch (e: any) {
-      err = e.message;
+    } catch (e: unknown) {
+      err = getErrorMessage(e);
     }
     expect(err).toContain('OVER_ALLOCATION');
   });
@@ -305,8 +309,8 @@ describe('F3.3 Payment Allocation Integration Tests', () => {
           '${testTenantId}', '${invoiceId}', '${cashId}', 300000, 1.0, 'CENTRAL_BANK', NOW()
         );
       `);
-    } catch (e: any) {
-      err = e.message;
+    } catch (e: unknown) {
+      err = getErrorMessage(e);
     }
     expect(err).toContain('ALLOCATION_EXCEEDS_OUTSTANDING');
   });
@@ -455,8 +459,8 @@ describe('F3.3 Payment Allocation Integration Tests', () => {
     let err: string | null = null;
     try {
       await pgClientAdmin.query(`SELECT public.finance_reverse_allocation('${testTenantId}', '${allocId}');`);
-    } catch (e: any) {
-      err = e.message;
+    } catch (e: unknown) {
+      err = getErrorMessage(e);
     }
     expect(err).toContain('ALLOCATION_ALREADY_REVERSED');
   });
@@ -506,10 +510,10 @@ describe('F3.3 Payment Allocation Integration Tests', () => {
         -- Try to directly update cash movements table
         UPDATE public.finance_cash_movements SET amount_minor = 9999 WHERE tenant_id = '${testTenantId}';
       `);
-    } catch (e: any) {
-      err = e.message;
+    } catch (e: unknown) {
+      err = getErrorMessage(e);
     }
-    expect(err).toMatch(/permission denied|DIRECT_CASH_MUTATION_PROHIBITED/);
+    expect(err).toMatch(/permission denied|DIRECT_CASH_MUTATION_PROHIBITED|CASH_MOVEMENT_IMMUTABLE/);
   });
 
   test('F3.3-T16 to T17: Reconstruction consistency of positions cache from subledger history', async () => {

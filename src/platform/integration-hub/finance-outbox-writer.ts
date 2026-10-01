@@ -17,7 +17,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '../../types/database.types';
+import type { Database, Json } from '../../types/database.types';
 import {
   FinanceEventEnvelope,
   BusinessContext,
@@ -93,6 +93,11 @@ export interface FinanceOutboxWriteResult {
   idempotencyKey: string;
 }
 
+function toJson(value: unknown): Json {
+  const serialized: unknown = JSON.parse(JSON.stringify(value));
+  return serialized as Json;
+}
+
 /**
  * Finance Outbox Writer
  * 
@@ -153,7 +158,7 @@ export class FinanceOutboxWriter {
         tenant_id: params.tenantId,
         event_type: params.eventType,
         event_id: envelope.event_id,
-        payload: envelope as any, // JSONB
+        payload: toJson(envelope),
         status: 'PENDING',
         retry_count: 0,
         max_retries: this.config.maxRetries,

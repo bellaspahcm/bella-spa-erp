@@ -16,6 +16,96 @@ import { ReservationProductService } from '../services/reservation.service';
 import { ContractProductService } from '../services/contract.service';
 import { CommissionProductService } from '../services/commission.service';
 import { bellaLandManifest } from '../manifest';
+import type {
+  IPropertyInventoryContract,
+  PropertyUnitRow,
+} from '../../../platform/real-estate/contracts/property-inventory.contract';
+import type { IReservationContract } from '../../../platform/real-estate/contracts/reservation.contract';
+import type { IPropertyContract, ContractRow } from '../../../platform/real-estate/contracts/property.contract';
+import type { ICommissionContract, CommissionRow } from '../../../platform/real-estate/contracts/commission.contract';
+
+const TIMESTAMP = '2026-10-01T00:00:00.000Z';
+
+function productRow(overrides: Partial<PropertyUnitRow> = {}): PropertyUnitRow {
+  return {
+    area: 75,
+    area_m2: null,
+    block: null,
+    created_at: TIMESTAMP,
+    created_by: null,
+    customer_id: null,
+    deleted_at: null,
+    direction: null,
+    floor: null,
+    floor_number: null,
+    id: 'unit-001',
+    metadata: null,
+    owner_name: null,
+    product_code: 'A1-101',
+    product_type: 'apartment',
+    project_id: 'proj-001',
+    status: 'available',
+    tenant_id: 'tenant-land-1',
+    unit_price: 60000000,
+    updated_at: TIMESTAMP,
+    updated_by: null,
+    ...overrides,
+  };
+}
+
+function contractRow(overrides: Partial<ContractRow> = {}): ContractRow {
+  return {
+    activated_at: null,
+    booking_id: null,
+    contract_number: null,
+    contract_price: 3500000000,
+    created_at: TIMESTAMP,
+    created_by: null,
+    customer_id: 'cust-001',
+    deleted_at: null,
+    end_date: null,
+    id: 'ctr-101',
+    installments: null,
+    metadata: null,
+    notes: null,
+    product_id: 'unit-001',
+    signed_date: null,
+    start_date: null,
+    state: 'DRAFT',
+    state_changed_at: null,
+    submitted_at: null,
+    tenant_id: 'tenant-land-1',
+    terminated_at: null,
+    updated_at: TIMESTAMP,
+    updated_by: null,
+    ...overrides,
+  };
+}
+
+function commissionRow(overrides: Partial<CommissionRow> = {}): CommissionRow {
+  return {
+    agent_id: 'agent-001',
+    approved_at: null,
+    base_amount: 3500000000,
+    booking_id: null,
+    commission_amount: 70000000,
+    commission_percentage: null,
+    contract_id: 'ctr-101',
+    created_at: TIMESTAMP,
+    created_by: null,
+    deleted_at: null,
+    earned_at: null,
+    id: 'comm-101',
+    metadata: null,
+    notes: null,
+    paid_at: null,
+    status: 'pending',
+    tenant_id: 'tenant-land-1',
+    updated_at: TIMESTAMP,
+    updated_by: null,
+    ...overrides,
+  };
+}
 
 describe('BELLA LAND V2 — RUNTIME CONFORMANCE INTEGRATION TESTS', () => {
   let catalogService: PropertyCatalogProductService;
@@ -23,13 +113,13 @@ describe('BELLA LAND V2 — RUNTIME CONFORMANCE INTEGRATION TESTS', () => {
   let contractService: ContractProductService;
   let commissionService: CommissionProductService;
 
-  const mockInventoryContract: any = {
+  const mockInventoryContract: jest.Mocked<IPropertyInventoryContract> = {
     getProducts: jest.fn().mockResolvedValue([
-      { id: 'unit-001', tenant_id: 'tenant-land-1', project_id: 'proj-001', status: 'available' }
+      productRow()
     ])
   };
 
-  const mockReservationContract: any = {
+  const mockReservationContract: jest.Mocked<IReservationContract> = {
     reserveProduct: jest.fn().mockImplementation((req) => {
       if (req.productId === 'unit-locked') {
         return Promise.resolve({
@@ -46,14 +136,8 @@ describe('BELLA LAND V2 — RUNTIME CONFORMANCE INTEGRATION TESTS', () => {
     releaseProduct: jest.fn().mockResolvedValue(undefined)
   };
 
-  const mockPropertyContract: any = {
-    createContract: jest.fn().mockResolvedValue({
-      id: 'ctr-101',
-      tenant_id: 'tenant-land-1',
-      product_id: 'unit-001',
-      state: 'DRAFT',
-      contract_price: 3500000000
-    }),
+  const mockPropertyContract: jest.Mocked<IPropertyContract> = {
+    createContract: jest.fn().mockResolvedValue(contractRow()),
     signContract: jest.fn().mockImplementation((tenantId, contractId) => {
       if (contractId === 'ctr-invalid-fsm') {
         return Promise.reject(new Error('INVALID_STATE_TRANSITION: Cannot transition status to contracted.'));
@@ -65,14 +149,8 @@ describe('BELLA LAND V2 — RUNTIME CONFORMANCE INTEGRATION TESTS', () => {
     })
   };
 
-  const mockCommissionContract: any = {
-    calculateCommission: jest.fn().mockResolvedValue({
-      id: 'comm-101',
-      tenant_id: 'tenant-land-1',
-      contract_id: 'ctr-101',
-      commission_amount: 70000000,
-      status: 'pending'
-    })
+  const mockCommissionContract: jest.Mocked<ICommissionContract> = {
+    calculateCommission: jest.fn().mockResolvedValue(commissionRow())
   };
 
   beforeEach(() => {

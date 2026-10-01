@@ -61,7 +61,7 @@ function mockTenantLookup(tenantName: string) {
         }),
       };
     }
-    return {} as any;
+    throw new Error(`Unexpected table ${table}`);
   });
 }
 

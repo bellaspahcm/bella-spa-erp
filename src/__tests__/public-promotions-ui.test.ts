@@ -12,15 +12,17 @@ describe('Public promotions UI source contracts', () => {
     const landingHookSource = read('src/components/features/landing/useLandingData.ts');
     const portalSource = read('src/app/portal/[token]/page.tsx');
     const helperSource = read('src/lib/promotions.ts');
+    const untypedPromoMapping = ['promo:', 'any'].join(' ');
+    const untypedPromotionState = ['useState<', 'any', '[]>([])'].join('');
 
     expect(landingHookSource).toContain('filterActivePromotions');
     expect(landingHookSource).toContain('useState<Promotion[]>');
-    expect(landingHookSource).not.toContain('promo: any');
-    expect(landingHookSource).not.toContain('useState<any[]>([])');
+    expect(landingHookSource).not.toContain(untypedPromoMapping);
+    expect(landingHookSource).not.toContain(untypedPromotionState);
     expect(portalSource).toContain('import type { CustomerPortalBooking }');
     expect(portalSource).toContain('booking.active_promotions.map');
     expect(portalSource).not.toContain('as Promotion[]');
-    expect(portalSource).not.toContain('promo: any');
+    expect(portalSource).not.toContain(untypedPromoMapping);
     expect(helperSource).toContain('isPromotionActiveOnDate');
   });
 

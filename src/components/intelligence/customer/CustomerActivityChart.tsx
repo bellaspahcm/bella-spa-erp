@@ -14,6 +14,39 @@ interface CustomerActivityChartProps {
   height?: number;
 }
 
+interface CustomerActivityDatum {
+  level: string;
+  customers: number;
+  avgScore: number;
+}
+
+interface CustomerActivityTooltipProps {
+  active?: boolean;
+  payload?: Array<{ payload: CustomerActivityDatum }>;
+}
+
+function CustomerActivityTooltip({ active, payload }: CustomerActivityTooltipProps) {
+  if (active && payload && payload.length) {
+    const entry = payload[0].payload;
+    return (
+      <div className="bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl border border-slate-200/50 shadow-xl text-xs font-bold text-slate-800 space-y-1.5">
+        <p className="text-slate-400 uppercase tracking-wider mb-1">Rủi ro: {entry.level}</p>
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[#3b82f6]" />
+          <span className="text-slate-600">Số khách hàng:</span>
+          <span className="text-slate-900 font-black">{entry.customers} KH</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[#f43f5e]" />
+          <span className="text-slate-600">Điểm rủi ro TB:</span>
+          <span className="text-slate-900 font-black">{entry.avgScore}</span>
+        </div>
+      </div>
+    );
+  }
+  return null;
+}
+
 export function CustomerActivityChart({ data, height = 350 }: CustomerActivityChartProps) {
   const aggregated = data.reduce((acc, customer) => {
     const level = customer.churnRiskLevel;
@@ -33,7 +66,7 @@ export function CustomerActivityChart({ data, height = 350 }: CustomerActivityCh
     }
   });
 
-  const chartData = [
+  const chartData: CustomerActivityDatum[] = [
     { 
       level: 'Thấp', 
       customers: aggregated['Low']?.count || 0,
@@ -50,28 +83,6 @@ export function CustomerActivityChart({ data, height = 350 }: CustomerActivityCh
       avgScore: Math.round(aggregated['High']?.avgRiskScore || 0),
     },
   ];
-
-  // Custom tooltips matching glassmorphism
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl border border-slate-200/50 shadow-xl text-xs font-bold text-slate-800 space-y-1.5">
-          <p className="text-slate-400 uppercase tracking-wider mb-1">Rủi ro: {payload[0].payload.level}</p>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#3b82f6]" />
-            <span className="text-slate-600">Số khách hàng:</span>
-            <span className="text-slate-900 font-black">{payload[0].payload.customers} KH</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#f43f5e]" />
-            <span className="text-slate-600">Điểm rủi ro TB:</span>
-            <span className="text-slate-900 font-black">{payload[0].payload.avgScore}</span>
-          </div>
-        </div>
-      );
-    }
-    return null;
-  };
 
   return (
     <ResponsiveContainer width="100%" height={height}>
@@ -96,7 +107,7 @@ export function CustomerActivityChart({ data, height = 350 }: CustomerActivityCh
           axisLine={false}
           tickLine={false}
         />
-        <Tooltip content={<CustomTooltip />} />
+        <Tooltip content={<CustomerActivityTooltip />} />
         <Legend 
           wrapperStyle={{ paddingTop: '20px' }} 
           iconType="circle"

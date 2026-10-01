@@ -24,38 +24,59 @@ const mockCheckHqAuth = jest.fn();
 const mockRpc = jest.fn();
 const mockFrom = jest.fn();
 
-(global as any).mockGetCurrentUser = mockGetCurrentUser;
-(global as any).mockCheckHqAuth = mockCheckHqAuth;
-(global as any).mockRpc = mockRpc;
-(global as any).mockFrom = mockFrom;
+type InventoryTransferTestGlobals = typeof globalThis & {
+  mockGetCurrentUser: typeof mockGetCurrentUser;
+  mockCheckHqAuth: typeof mockCheckHqAuth;
+  mockRpc: typeof mockRpc;
+  mockFrom: typeof mockFrom;
+};
+
+(globalThis as InventoryTransferTestGlobals).mockGetCurrentUser = mockGetCurrentUser;
+(globalThis as InventoryTransferTestGlobals).mockCheckHqAuth = mockCheckHqAuth;
+(globalThis as InventoryTransferTestGlobals).mockRpc = mockRpc;
+(globalThis as InventoryTransferTestGlobals).mockFrom = mockFrom;
 
 jest.mock('@/services/user-actions', () => ({
-  getCurrentUser: (...args: any[]) => (global as any).mockGetCurrentUser(...args),
+  getCurrentUser: (...args: unknown[]) => (globalThis as InventoryTransferTestGlobals).mockGetCurrentUser(...args),
 }));
 
 jest.mock('@/services/hq-actions', () => ({
-  checkHqAuth: (...args: any[]) => (global as any).mockCheckHqAuth(...args),
+  checkHqAuth: (...args: unknown[]) => (globalThis as InventoryTransferTestGlobals).mockCheckHqAuth(...args),
 }));
 
 jest.mock('@/lib/supabase-server', () => ({
   createClient: () => Promise.resolve({
-    rpc: (...args: any[]) => (global as any).mockRpc(...args),
-    from: (...args: any[]) => (global as any).mockFrom(...args),
+    rpc: (...args: unknown[]) => (globalThis as InventoryTransferTestGlobals).mockRpc(...args),
+    from: (...args: unknown[]) => (globalThis as InventoryTransferTestGlobals).mockFrom(...args),
   }),
 }));
 
 // Mock Database State
-let mockDb: {
-  inventory_transfer_orders: any[];
-  tenants: any[];
-  inventory_items: any[];
-  inventory_logs: any[];
-} = {
+type MockRow = Record<string, unknown> & { id?: string };
+type MockDb = {
+  inventory_transfer_orders: MockRow[];
+  tenants: MockRow[];
+  inventory_items: MockRow[];
+  inventory_logs: MockRow[];
+};
+type MockTableName = keyof MockDb;
+
+let mockDb: MockDb = {
   inventory_transfer_orders: [],
   tenants: [],
   inventory_items: [],
   inventory_logs: []
 };
+
+function getMockRows(table: string): MockRow[] {
+  return table in mockDb ? mockDb[table as MockTableName] : [];
+}
+
+function setMockRows(table: string, rows: MockRow[]) {
+  if (table in mockDb) {
+    mockDb[table as MockTableName] = rows;
+  }
+}
 
 type MockDbOp = 'delete' | 'insert' | 'update';
 type MockDbFailure = {
@@ -82,9 +103,9 @@ function consumeMockFailure(table: string, op: MockDbOp) {
 // Helper class for mock query builders interacting with in-memory mockDb
 class MockQueryBuilder {
   private table: string;
-  private filters: Record<string, any> = {};
-  private updateData: any = null;
-  private insertData: any = null;
+  private filters: Record<string, unknown> = {};
+  private updateData: MockRow | null = null;
+  private insertData: MockRow | MockRow[] | null = null;
   private shouldDelete = false;
   private sortField: string = '';
   private sortAscending: boolean = false;
@@ -97,7 +118,7 @@ class MockQueryBuilder {
     return this;
   }
 
-  eq(field: string, value: any) {
+  eq(field: string, value: unknown) {
     this.filters[field] = value;
     return this;
   }
@@ -108,12 +129,12 @@ class MockQueryBuilder {
     return this;
   }
 
-  insert(data: any) {
+  insert(data: MockRow | MockRow[]) {
     this.insertData = data;
     return this;
   }
 
-  update(data: any) {
+  update(data: MockRow) {
     this.updateData = data;
     return this;
   }
@@ -124,7 +145,7 @@ class MockQueryBuilder {
   }
 
   private execute() {
-    let list = [...(mockDb[this.table as keyof typeof mockDb] || [])];
+    let list = [...getMockRows(this.table)];
 
     // Apply Filters
     for (const [field, val] of Object.entries(this.filters)) {
@@ -174,7 +195,7 @@ class MockQueryBuilder {
           updated_at: new Date().toISOString(),
           ...r
         };
-        (mockDb[this.table as keyof typeof mockDb] as any[]).push(newRecord);
+        getMockRows(this.table).push(newRecord);
         return newRecord;
       });
       return { data: Array.isArray(this.insertData) ? inserted : inserted[0], error: null };
@@ -188,7 +209,7 @@ class MockQueryBuilder {
 
       const updated = list.map(item => {
         // Find matching item in global database and mutate it
-        const dbItem = (mockDb[this.table as keyof typeof mockDb] as any[]).find(i => i.id === item.id);
+        const dbItem = getMockRows(this.table).find(i => i.id === item.id);
         if (dbItem) {
           Object.assign(dbItem, this.updateData, { updated_at: new Date().toISOString() });
           Object.assign(item, this.updateData, { updated_at: new Date().toISOString() });
@@ -204,9 +225,9 @@ class MockQueryBuilder {
         return { data: null, error: failure };
       }
 
-      const tableRows = mockDb[this.table as keyof typeof mockDb] as any[];
+      const tableRows = getMockRows(this.table);
       const deletedIds = new Set(list.map(item => item.id));
-      mockDb[this.table as keyof typeof mockDb] = tableRows.filter(item => !deletedIds.has(item.id)) as any;
+      setMockRows(this.table, tableRows.filter(item => !deletedIds.has(item.id)));
       return { data: list, error: null };
     }
 
@@ -227,7 +248,7 @@ class MockQueryBuilder {
     return { data: list[0] || null, error: null };
   }
 
-  then(onfulfilled: any) {
+  then(onfulfilled: (value: { data: MockRow | MockRow[] | null; error: { message: string } | null }) => unknown) {
     const { data, error } = this.execute();
     return Promise.resolve({ data, error }).then(onfulfilled);
   }

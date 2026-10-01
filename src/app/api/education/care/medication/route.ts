@@ -2,6 +2,15 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { MedicationSafetyService } from '@/products/bella-education/care-wellbeing/medication/medication-safety.service';
 
+function getErrorMessage(error: unknown): string | undefined {
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    return typeof message === 'string' ? message : String(message);
+  }
+
+  return undefined;
+}
+
 export async function POST(request: Request) {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
@@ -32,8 +41,8 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ success: true, result });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Medication Admin API Error:', error);
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: getErrorMessage(error) || 'Internal Server Error' }, { status: 500 });
   }
 }

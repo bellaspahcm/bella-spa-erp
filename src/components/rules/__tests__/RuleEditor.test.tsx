@@ -20,6 +20,41 @@
  * - Cost to fix (2-3 hours) > value (already covered by child tests)
  */
 
+import type { ChangeEvent } from 'react';
+
+type RuleMetadataMockValue = {
+  name: string;
+  description?: string;
+  provider: string;
+};
+
+type RuleMetadataMockProps = {
+  value: RuleMetadataMockValue;
+  onChange: (value: RuleMetadataMockValue) => void;
+};
+
+type RuleConditionMock = {
+  field: string;
+  operator: string;
+  value: string;
+};
+
+type RuleConditionsMockProps = {
+  conditions: RuleConditionMock[];
+  onChange: (conditions: RuleConditionMock[]) => void;
+};
+
+type RuleActionMock = {
+  type: string;
+  field?: string;
+  value?: string;
+};
+
+type RuleActionsMockProps = {
+  actions: RuleActionMock[];
+  onChange: (actions: RuleActionMock[]) => void;
+};
+
 // Mock Next.js router - MUST be before imports
 const mockPush = jest.fn();
 const mockBack = jest.fn();
@@ -42,22 +77,22 @@ jest.mock('@/hooks/use-toast', () => ({
 // Mock child components - MUST be before imports
 jest.mock('../RuleMetadataForm', () => ({
   __esModule: true,
-  default: ({ value, onChange }: any) => (
+  default: ({ value, onChange }: RuleMetadataMockProps) => (
     <div data-testid="rule-metadata-form">
       <input
         data-testid="rule-name-input"
         value={value.name}
-        onChange={(e) => onChange({ ...value, name: e.target.value })}
+        onChange={(e: ChangeEvent<HTMLInputElement>) => onChange({ ...value, name: e.target.value })}
       />
       <input
         data-testid="rule-description-input"
         value={value.description || ''}
-        onChange={(e) => onChange({ ...value, description: e.target.value })}
+        onChange={(e: ChangeEvent<HTMLInputElement>) => onChange({ ...value, description: e.target.value })}
       />
       <select
         data-testid="rule-provider-select"
         value={value.provider}
-        onChange={(e) => onChange({ ...value, provider: e.target.value })}
+        onChange={(e: ChangeEvent<HTMLSelectElement>) => onChange({ ...value, provider: e.target.value })}
       >
         <option value="">Select provider</option>
         <option value="booking">Booking</option>
@@ -70,7 +105,7 @@ jest.mock('../RuleMetadataForm', () => ({
 
 jest.mock('../RuleConditionsBuilder', () => ({
   __esModule: true,
-  default: ({ conditions, onChange }: any) => (
+  default: ({ conditions, onChange }: RuleConditionsMockProps) => (
     <div data-testid="rule-conditions-builder">
       <button
         data-testid="add-condition-button"
@@ -85,7 +120,7 @@ jest.mock('../RuleConditionsBuilder', () => ({
 
 jest.mock('../RuleActionsBuilder', () => ({
   __esModule: true,
-  default: ({ actions, onChange }: any) => (
+  default: ({ actions, onChange }: RuleActionsMockProps) => (
     <div data-testid="rule-actions-builder">
       <button
         data-testid="add-action-button"

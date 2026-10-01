@@ -13,6 +13,15 @@ import type { Database } from '@/types/database.types';
 
 jest.setTimeout(60_000);
 
+function readMetadataSource(metadata: unknown): string | undefined {
+  if (!metadata || typeof metadata !== 'object') {
+    return undefined;
+  }
+
+  const value = (metadata as { source?: unknown }).source;
+  return typeof value === 'string' ? value : undefined;
+}
+
 describe('E2E Partner API Create Booking', () => {
   let supabase: ReturnType<typeof createSupabaseClient<Database>>;
   let testTenantId: string;
@@ -91,7 +100,7 @@ describe('E2E Partner API Create Booking', () => {
 
     expect(bookingError).toBeNull();
     expect(booking!.metadata).toBeDefined();
-    expect((booking!.metadata as any).source).toBe('partner_api');
+    expect(readMetadataSource(booking!.metadata)).toBe('partner_api');
     expect(booking!.tenant_id).toBe(testTenantId);
 
     console.log('✅ Partner booking created via API', { bookingId: booking!.id });

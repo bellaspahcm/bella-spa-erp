@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   ServiceCompletionRollback,
   TradeInApprovalRollback,
@@ -11,10 +12,41 @@ import {
   QuotationApprovalRollback,
 } from '../rollback-use-cases';
 
+type AutoTransactionStepFixture = {
+  id: string;
+  action_type: string;
+  target_table: string;
+  target_record_id: string;
+  before_snapshot: Record<string, unknown> | null;
+  after_snapshot: Record<string, unknown>;
+  status: string;
+};
+
+type MockQueryResponse = {
+  data: unknown;
+  error: null;
+};
+
+type MockQueryBuilder = {
+  select: () => MockQueryBuilder;
+  insert: (payload: Record<string, unknown> | Array<Record<string, unknown>>) => MockQueryBuilder;
+  update: () => MockQueryBuilder;
+  delete: () => MockQueryBuilder;
+  eq: () => MockQueryBuilder;
+  limit: () => MockQueryBuilder;
+  order: () => MockQueryBuilder;
+  single: () => Promise<MockQueryResponse>;
+  then: <TResult1 = MockQueryResponse, TResult2 = never>(
+    onfulfilled?: ((value: MockQueryResponse) => TResult1 | PromiseLike<TResult1>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
+  ) => Promise<TResult1 | TResult2>;
+};
+
 // Mock Supabase client
 const mockSupabase = {
-  from: jest.fn(),
-} as any;
+  from: jest.fn<(table: string) => MockQueryBuilder>(),
+};
+const mockSupabaseClient = mockSupabase as SupabaseClient;
 
 function setupMockSupabase(config: {
   transactionId?: string;
@@ -24,71 +56,72 @@ function setupMockSupabase(config: {
   vehicles?: Array<{ id: string; status: string }>;
   journeyStage?: { id: string; sla_hours: number };
   journey?: { id: string };
-  steps?: Array<any>;
+  steps?: AutoTransactionStepFixture[];
 }) {
   let currentTxId = config.transactionId || 'tx-001';
 
   mockSupabase.from.mockImplementation((table: string) => {
-    const builder: any = {};
+    let builder: MockQueryBuilder;
     const chainFn = () => builder;
-    
-    builder.select = chainFn;
-    builder.insert = jest.fn().mockImplementation((payload: any) => {
-      if (table === 'auto_business_transactions') {
-        const txObj = Array.isArray(payload) ? payload[0] : payload;
-        if (txObj.entity_id === 'service-999') currentTxId = 'tx-999';
-        else if (txObj.entity_id === 'trade-001') currentTxId = 'tx-002';
-        else if (txObj.entity_id === 'loan-001') currentTxId = 'tx-003';
-        else if (txObj.entity_id === 'quote-001') currentTxId = 'tx-004';
-      }
-      return builder;
-    });
-    builder.update = chainFn;
-    builder.delete = chainFn;
-    builder.eq = chainFn;
-    builder.limit = chainFn;
-    builder.order = chainFn;
-    
-    builder.single = jest.fn().mockImplementation(async () => {
-      if (table === 'auto_business_transactions') {
-        return { data: { id: currentTxId }, error: null };
-      }
-      if (table === 'auto_inventory') {
-        return { data: config.inventory || { id: 'inv-001', quantity: 100 }, error: null };
-      }
-      if (table === 'auto_bookings') {
-        return { data: config.contract || { id: 'contract-001', total_price: 800000000 }, error: null };
-      }
-      if (table === 'auto_quotations') {
-        return { data: config.quotation || { id: 'quote-001', status: 'draft' }, error: null };
-      }
-      if (table === 'auto_journey_stages') {
-        return { data: config.journeyStage || { id: 'stage-001', sla_hours: 24 }, error: null };
-      }
-      if (table === 'auto_customer_journeys') {
-        return { data: config.journey || { id: 'journey-001' }, error: null };
-      }
-      return { data: null, error: null };
-    });
 
-    builder.then = (onfulfilled: any) => {
-      let resData: any = null;
-      if (table === 'auto_vehicles') {
-        resData = config.vehicles || [{ id: 'vehicle-001', status: 'showroom' }];
-      } else if (table === 'auto_transaction_steps') {
-        resData = config.steps || [
-          {
-            id: 'step-001',
-            action_type: 'INSERT',
-            target_table: 'auto_services',
-            target_record_id: 'service-001',
-            before_snapshot: null,
-            after_snapshot: {},
-            status: 'executed',
-          }
-        ];
-      }
-      return Promise.resolve({ data: resData, error: null }).then(onfulfilled);
+    builder = {
+      select: chainFn,
+      insert: jest.fn((payload: Record<string, unknown> | Array<Record<string, unknown>>) => {
+        if (table === 'auto_business_transactions') {
+          const txObj = Array.isArray(payload) ? payload[0] : payload;
+          const entityId = txObj.entity_id;
+          if (entityId === 'service-999') currentTxId = 'tx-999';
+          else if (entityId === 'trade-001') currentTxId = 'tx-002';
+          else if (entityId === 'loan-001') currentTxId = 'tx-003';
+          else if (entityId === 'quote-001') currentTxId = 'tx-004';
+        }
+        return builder;
+      }),
+      update: chainFn,
+      delete: chainFn,
+      eq: chainFn,
+      limit: chainFn,
+      order: chainFn,
+      single: jest.fn(async () => {
+        if (table === 'auto_business_transactions') {
+          return { data: { id: currentTxId }, error: null };
+        }
+        if (table === 'auto_inventory') {
+          return { data: config.inventory || { id: 'inv-001', quantity: 100 }, error: null };
+        }
+        if (table === 'auto_bookings') {
+          return { data: config.contract || { id: 'contract-001', total_price: 800000000 }, error: null };
+        }
+        if (table === 'auto_quotations') {
+          return { data: config.quotation || { id: 'quote-001', status: 'draft' }, error: null };
+        }
+        if (table === 'auto_journey_stages') {
+          return { data: config.journeyStage || { id: 'stage-001', sla_hours: 24 }, error: null };
+        }
+        if (table === 'auto_customer_journeys') {
+          return { data: config.journey || { id: 'journey-001' }, error: null };
+        }
+        return { data: null, error: null };
+      }),
+      then: (onfulfilled, onrejected) => {
+        let resData: unknown = null;
+        if (table === 'auto_vehicles') {
+          resData = config.vehicles || [{ id: 'vehicle-001', status: 'showroom' }];
+        } else if (table === 'auto_transaction_steps') {
+          resData = config.steps || [
+            {
+              id: 'step-001',
+              action_type: 'INSERT',
+              target_table: 'auto_services',
+              target_record_id: 'service-001',
+              before_snapshot: null,
+              after_snapshot: {},
+              status: 'executed',
+            }
+          ];
+        }
+        return Promise.resolve({ data: resData, error: null }).then(onfulfilled, onrejected);
+      },
     };
 
     return builder;
@@ -102,7 +135,7 @@ describe('Rollback Use Cases', () => {
 
   describe('ServiceCompletionRollback', () => {
     it('should register service completion with all impacts', async () => {
-      const rollback = new ServiceCompletionRollback(mockSupabase);
+      const rollback = new ServiceCompletionRollback(mockSupabaseClient);
       setupMockSupabase({ transactionId: 'tx-001' });
 
       const serviceData = {
@@ -131,7 +164,7 @@ describe('Rollback Use Cases', () => {
     });
 
     it('should rollback service completion', async () => {
-      const rollback = new ServiceCompletionRollback(mockSupabase);
+      const rollback = new ServiceCompletionRollback(mockSupabaseClient);
       setupMockSupabase({
         transactionId: 'tx-001',
         steps: [
@@ -161,7 +194,7 @@ describe('Rollback Use Cases', () => {
 
   describe('TradeInApprovalRollback', () => {
     it('should register trade-in with inventory and accounting impacts', async () => {
-      const rollback = new TradeInApprovalRollback(mockSupabase);
+      const rollback = new TradeInApprovalRollback(mockSupabaseClient);
       setupMockSupabase({ transactionId: 'tx-002' });
 
       const tradeInData = {
@@ -192,7 +225,7 @@ describe('Rollback Use Cases', () => {
 
   describe('LoanDisbursementRollback', () => {
     it('should register loan disbursement with revenue and commission', async () => {
-      const rollback = new LoanDisbursementRollback(mockSupabase);
+      const rollback = new LoanDisbursementRollback(mockSupabaseClient);
       setupMockSupabase({ transactionId: 'tx-003' });
 
       const loanData = {
@@ -224,7 +257,7 @@ describe('Rollback Use Cases', () => {
 
   describe('QuotationApprovalRollback', () => {
     it('should register quotation approval with journey and AI event', async () => {
-      const rollback = new QuotationApprovalRollback(mockSupabase);
+      const rollback = new QuotationApprovalRollback(mockSupabaseClient);
       setupMockSupabase({ transactionId: 'tx-004' });
 
       const quotationData = {
@@ -257,7 +290,7 @@ describe('Rollback Use Cases', () => {
 
   describe('Integration: Complete Rollback Flow', () => {
     it('should execute full rollback with audit trail', async () => {
-      const rollback = new ServiceCompletionRollback(mockSupabase);
+      const rollback = new ServiceCompletionRollback(mockSupabaseClient);
       setupMockSupabase({
         transactionId: 'tx-999',
         steps: [

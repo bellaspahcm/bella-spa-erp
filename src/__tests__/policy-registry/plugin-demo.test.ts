@@ -11,11 +11,87 @@
 import { PolicyRegistry } from '@/lib/policy-registry/policy-registry';
 import { BaseBusinessProcess } from '@/lib/business-process/executor';
 import type { 
-  DecisionRequest, 
-  DecisionResponse, 
-  BusinessPolicy,
-  SalaryComponent 
+  PolicyExecutionResult,
 } from '@/lib/business-process/types';
+import type {
+  PayrollProvider,
+  SalaryComponent,
+} from '@/lib/decision-engine/types/payroll-types';
+
+type DemoDecisionRequest<TInput> = {
+  input: TInput;
+};
+
+type DemoDecisionResponse = {
+  decisionType: string;
+  totalAmount: number;
+  components: SalaryComponent[];
+  metadata?: Record<string, unknown>;
+};
+
+type HospitalAdmissionInput = {
+  patient: {
+    id: string;
+    name: string;
+    age: number;
+  };
+  room: {
+    id: string;
+    type: string;
+    dailyRate: number;
+    occupied: boolean;
+  };
+  insurance: {
+    active: boolean;
+    provider: string;
+    coverageAmount: number;
+  };
+};
+
+type RetailDiscountInput = {
+  customer: {
+    id: string;
+    name: string;
+    tier: string;
+    isFirstTime: boolean;
+  };
+  items: Array<{
+    name: string;
+    price: number;
+  }>;
+  totalAmount: number;
+};
+
+type DemoPolicy = PayrollProvider<DemoDecisionResponse>;
+type SuccessfulDemoResult = PolicyExecutionResult & {
+  status: 'success';
+  data: DemoDecisionResponse;
+};
+
+function getDemoInput<TInput>(request: unknown): TInput {
+  if (!request || typeof request !== 'object' || !('input' in request)) {
+    throw new Error('Demo policy request requires input');
+  }
+
+  return (request as DemoDecisionRequest<TInput>).input;
+}
+
+function isDemoDecisionResponse(value: unknown): value is DemoDecisionResponse {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.decisionType === 'string' &&
+    typeof record.totalAmount === 'number' &&
+    Array.isArray(record.components)
+  );
+}
+
+function isSuccessfulDemoResult(result: PolicyExecutionResult): result is SuccessfulDemoResult {
+  return result.status === 'success' && isDemoDecisionResponse(result.data);
+}
 
 /**
  * NEW POLICY: Hospital Admission Validation
@@ -28,8 +104,8 @@ class HospitalAdmissionPolicy {
   version = '1.0.0';
   decisionType = 'hospital-admission-validation';
   
-  async evaluate(request: DecisionRequest): Promise<DecisionResponse> {
-    const { patient, room, insurance } = request.input as any;
+  async evaluate(request: unknown): Promise<DemoDecisionResponse> {
+    const { patient, room, insurance } = getDemoInput<HospitalAdmissionInput>(request);
     
     // Validation logic
     const validations: SalaryComponent[] = [];
@@ -114,8 +190,8 @@ class RetailDiscountPolicy {
   version = '1.0.0';
   decisionType = 'retail-discount-calculation';
   
-  async evaluate(request: DecisionRequest): Promise<DecisionResponse> {
-    const { customer, items, totalAmount } = request.input as any;
+  async evaluate(request: unknown): Promise<DemoDecisionResponse> {
+    const { customer, items, totalAmount } = getDemoInput<RetailDiscountInput>(request);
     
     const discounts: SalaryComponent[] = [];
     let finalAmount = totalAmount;
@@ -176,24 +252,24 @@ class RetailDiscountPolicy {
  * Uses the new HospitalAdmissionPolicy.
  * Notice: We're using BaseBusinessProcess WITHOUT modification!
  */
-class HospitalAdmissionProcess extends BaseBusinessProcess<DecisionRequest, DecisionResponse> {
+class HospitalAdmissionProcess extends BaseBusinessProcess<DemoDecisionRequest<HospitalAdmissionInput>, DemoDecisionResponse> {
   config = {
     name: 'hospital-admission',
     version: '1.0.0',
     executionMode: 'sequential' as const,
   };
   
-  policies: any[] = [];
+  policies: DemoPolicy[] = [];
   
-  addPolicy(policy: any) {
+  addPolicy(policy: DemoPolicy) {
     this.policies.push(policy);
   }
   
   async aggregate(
-    context: DecisionRequest,
-    policyResults: any[]
-  ): Promise<DecisionResponse> {
-    const successResults = policyResults.filter(r => r.status === 'success');
+    context: DemoDecisionRequest<HospitalAdmissionInput>,
+    policyResults: PolicyExecutionResult[]
+  ): Promise<DemoDecisionResponse> {
+    const successResults = policyResults.filter(isSuccessfulDemoResult);
     if (successResults.length === 0) {
       return {
         decisionType: 'hospital-admission-validation',
@@ -215,24 +291,24 @@ class HospitalAdmissionProcess extends BaseBusinessProcess<DecisionRequest, Deci
  * 
  * Uses the new RetailDiscountPolicy.
  */
-class RetailCheckoutProcess extends BaseBusinessProcess<DecisionRequest, DecisionResponse> {
+class RetailCheckoutProcess extends BaseBusinessProcess<DemoDecisionRequest<RetailDiscountInput>, DemoDecisionResponse> {
   config = {
     name: 'retail-checkout',
     version: '1.0.0',
     executionMode: 'sequential' as const,
   };
   
-  policies: any[] = [];
+  policies: DemoPolicy[] = [];
   
-  addPolicy(policy: any) {
+  addPolicy(policy: DemoPolicy) {
     this.policies.push(policy);
   }
   
   async aggregate(
-    context: DecisionRequest,
-    policyResults: any[]
-  ): Promise<DecisionResponse> {
-    const successResults = policyResults.filter(r => r.status === 'success');
+    context: DemoDecisionRequest<RetailDiscountInput>,
+    policyResults: PolicyExecutionResult[]
+  ): Promise<DemoDecisionResponse> {
+    const successResults = policyResults.filter(isSuccessfulDemoResult);
     if (successResults.length === 0) {
       return {
         decisionType: 'retail-discount-calculation',

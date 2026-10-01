@@ -4,9 +4,18 @@ import React, { useState, useEffect } from 'react';
 import { 
   X, Clock, Tag
 } from 'lucide-react';
-import { Database } from '@/types/database.types';
+import type { Database, Json } from '@/types/database.types';
 
 type ProductRow = Database['public']['Tables']['real_estate_products']['Row'];
+
+function getCustomerDisplayName(metadata: Json | null): string | null {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+    return null;
+  }
+
+  const value = metadata.customer_display_name;
+  return typeof value === 'string' && value.trim() ? value : null;
+}
 
 interface UnitDetailModalProps {
   product: ProductRow | null;
@@ -78,6 +87,7 @@ export const UnitDetailModal: React.FC<UnitDetailModalProps> = ({
 
   const currentStatus = product.status || 'available';
   const cfg = STATUS_CFG[currentStatus] || STATUS_CFG.available;
+  const customerDisplayName = getCustomerDisplayName(product.metadata);
 
   const formatBillion = (price: number, area: number) => {
     if (!price || !area) return '—';
@@ -301,7 +311,7 @@ export const UnitDetailModal: React.FC<UnitDetailModalProps> = ({
                     <span className="font-mono text-sm font-black text-amber-700 dark:text-amber-400">01:43:26</span>
                   </div>
                   <div className="text-xs text-amber-900/80 dark:text-amber-200/80 space-y-1 pt-1 border-t border-amber-200/50">
-                    <p><span className="font-semibold">Khách giữ căn:</span> {(product as any).customer_display_name || product.owner_name || 'Nguyễn Văn A'}</p>
+                    <p><span className="font-semibold">Khách giữ căn:</span> {customerDisplayName || product.owner_name || 'Nguyễn Văn A'}</p>
                     <p><span className="font-semibold">Sales phụ trách:</span> Trần Minh (PKD 1)</p>
                   </div>
                 </div>

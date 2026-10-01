@@ -53,7 +53,7 @@ async function seedPostedTransaction(
     periodId: string;
     apAccountId: string;
     balanceAccountId: string;
-    sourceId: string;          // vendor_bill_id or any UUID used as source_id
+    sourceId: string;          // vendor_bill_id or a UUID used as source_id
     amountMinor: number;
     postedAt: string;          // ISO timestamp
     idempotencyKeySuffix?: string;
@@ -245,7 +245,7 @@ describe('F5.4 Hardening & Fault Injection (Integration)', () => {
 
   afterEach(async () => {
     if (testTenantId) {
-      await supabase.rpc('f5_admin_cleanup_test_data' as any, {
+      await supabase.rpc('f5_admin_cleanup_test_data', {
         p_tenant_ids: [testTenantId],
         p_delete_master: false,
       });
@@ -254,7 +254,7 @@ describe('F5.4 Hardening & Fault Injection (Integration)', () => {
 
   afterAll(async () => {
     if (testTenantId) {
-      await supabase.rpc('f5_admin_cleanup_test_data' as any, {
+      await supabase.rpc('f5_admin_cleanup_test_data', {
         p_tenant_ids: [testTenantId],
         p_delete_master: true,
       });

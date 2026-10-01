@@ -11,15 +11,17 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { PropertyUnit, PropertyUnitStatus } from '../domain/property-unit.entity';
 import type { Database } from '@/types/database.types';
 
+type RealEstateProductStatus = Database['public']['Enums']['re_product_status'];
+
 /**
  * Maps database re_product_status enum to domain PropertyUnitStatus.
  * 
  * Inverse of mapDomainStatusToDb - reconstructs domain state from database.
  */
-function mapDbStatusToDomain(
-  dbStatus: 'available' | 'booked' | 'deposited' | 'contracted' | 'paid' | 'handed_over' | 'cancelled'
-): PropertyUnitStatus {
+function mapDbStatusToDomain(dbStatus: RealEstateProductStatus): PropertyUnitStatus {
   switch (dbStatus) {
+    case 'held':
+      return 'held';
     case 'booked':
       return 'held';  // Database booked maps back to domain held
     case 'handed_over':
@@ -93,7 +95,7 @@ export class PropertyUnitRepository {
       unitCode: (data as any).unit_code || data.product_code || '',
       area: Number(data.area || 0),
       unitPrice: Number(data.unit_price || 0),
-      status: mapDbStatusToDomain(data.status as any) || 'available',
+      status: mapDbStatusToDomain(data.status) || 'available',
       ownerName: data.owner_name || null
     });
   }
@@ -144,7 +146,7 @@ export class PropertyUnitRepository {
       unitCode: (item as any).unit_code || item.product_code || '',
       area: Number(item.area || 0),
       unitPrice: Number(item.unit_price || 0),
-      status: mapDbStatusToDomain(item.status as any) || 'available',
+      status: mapDbStatusToDomain(item.status) || 'available',
       ownerName: item.owner_name || null
     }));
   }

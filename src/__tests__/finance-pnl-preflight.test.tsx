@@ -8,13 +8,41 @@ import { getMonthClosePreflight } from '@/services/accounting-actions';
 import { lockMonth } from '@/services/finance-actions';
 import { toast } from 'sonner';
 import type { AccountingHealthCheck, AccountingHealthSummary } from '@/services/accounting-actions';
+import type { AnchorHTMLAttributes, ChangeEvent, HTMLAttributes, ReactNode } from 'react';
+
+type LinkMockProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
+  href: string;
+  children?: ReactNode;
+};
+
+type MotionMockProps = HTMLAttributes<HTMLElement> & {
+  children?: ReactNode;
+  initial?: unknown;
+  animate?: unknown;
+  exit?: unknown;
+  transition?: unknown;
+  whileHover?: unknown;
+  whileTap?: unknown;
+};
+
+type PremiumSelectOption = {
+  value: string;
+  label: string;
+};
+
+type PremiumSelectMockProps = {
+  options: PremiumSelectOption[];
+  value: string;
+  onChange: (value: string) => void;
+  label?: string;
+};
 
 jest.mock('next/link', () => {
   const React = require('react');
 
   return {
     __esModule: true,
-    default: ({ href, children, ...props }: any) =>
+    default: ({ href, children, ...props }: LinkMockProps) =>
       React.createElement('a', { href, ...props }, children),
   };
 });
@@ -32,7 +60,7 @@ jest.mock('framer-motion', () => {
         whileHover,
         whileTap,
         ...props
-      }: any) => React.createElement(String(element), props, children);
+      }: MotionMockProps) => React.createElement(String(element), props, children);
 
       return MotionComponent;
     },
@@ -40,7 +68,7 @@ jest.mock('framer-motion', () => {
 
   return {
     motion,
-    AnimatePresence: ({ children }: any) =>
+    AnimatePresence: ({ children }: { children?: ReactNode }) =>
       React.createElement(React.Fragment, null, children),
   };
 });
@@ -54,12 +82,12 @@ jest.mock('@/components/ui/PremiumSelect', () => {
       value,
       onChange,
       label,
-    }: any) => React.createElement(
+    }: PremiumSelectMockProps) => React.createElement(
       'select',
       {
         'aria-label': label ?? 'premium-select',
         value,
-        onChange: (event: any) => onChange(event.target.value),
+        onChange: (event: ChangeEvent<HTMLSelectElement>) => onChange(event.target.value),
       },
       options.map((option) =>
         React.createElement('option', { key: option.value, value: option.value }, option.label)

@@ -156,8 +156,8 @@ describe("utils: formatNumberWithSeparator", () => {
     expect(formatNumberWithSeparator("abc1500000def")).toBe("1.500.000");
   });
   it("returns empty for null/undefined", () => {
-    expect(formatNumberWithSeparator(null as any)).toBe("");
-    expect(formatNumberWithSeparator(undefined as any)).toBe("");
+    expect(formatNumberWithSeparator(null)).toBe("");
+    expect(formatNumberWithSeparator(undefined)).toBe("");
   });
   it("returns empty for non-numeric string", () => {
     expect(formatNumberWithSeparator("abc")).toBe("");

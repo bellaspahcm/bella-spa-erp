@@ -45,9 +45,34 @@ import {
   deleteSessionLog,
 } from '../session-log-actions';
 
+type QueryResult = {
+  data?: unknown;
+  error: Error | null;
+};
+
+type QueryResolve = (value: QueryResult) => unknown;
+
+type MockQueryBuilder = {
+  select: jest.Mock;
+  insert: jest.Mock;
+  update: jest.Mock;
+  delete: jest.Mock;
+  eq: jest.Mock;
+  single: jest.Mock;
+  maybeSingle: jest.Mock;
+  then: jest.Mock;
+};
+
+type MockSupabaseClient = {
+  auth: {
+    getUser: jest.Mock;
+  };
+  from: jest.Mock;
+};
+
 describe('Session Log Actions', () => {
-  let mockSupabase: any;  
-  let mockQueryBuilder: any;  
+  let mockSupabase: MockSupabaseClient;
+  let mockQueryBuilder: MockQueryBuilder;
 
   beforeEach(() => {
     // Reset all mocks before each test
@@ -62,7 +87,7 @@ describe('Session Log Actions', () => {
       eq: jest.fn().mockReturnThis(),
       single: jest.fn(),
       maybeSingle: jest.fn(),
-      then: jest.fn((onfulfilled: any) => onfulfilled({ data: null, error: null })),  
+      then: jest.fn((onfulfilled: QueryResolve) => onfulfilled({ data: null, error: null })),
     };
 
     // Mock Supabase client
@@ -602,8 +627,7 @@ describe('Session Log Actions', () => {
         error: null,
       });
 
-       
-      mockQueryBuilder.then.mockImplementationOnce((onfulfilled: any) => onfulfilled({
+      mockQueryBuilder.then.mockImplementationOnce((onfulfilled: QueryResolve) => onfulfilled({
         error: new Error('Foreign key constraint'),
       }));
 

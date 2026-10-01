@@ -1,29 +1,35 @@
 import { describe, it, expect } from '@jest/globals';
 import { AutoCustomerProvider } from '@/modules/bella-auto/services/AutoCustomerProvider';
 
-// Mock SupabaseClient
-function makeSupabaseMock(dbState: any) {
-  const makeChain = (table: string) => {
-    const chain: any = {};
-    chain.eq = (field: string, value: any) => {
-      return chain;
-    };
-    chain.in = (field: string, values: any) => {
-      return chain;
-    };
-    chain.maybeSingle = () => {
-      const items = dbState[table] ?? [];
-      return Promise.resolve({ data: items[0] ?? null, error: null });
-    };
-    chain.single = () => {
-      const items = dbState[table] ?? [];
-      return Promise.resolve({ data: items[0] ?? { id: 'owner-new-id' }, error: null });
-    };
+type MockRow = Record<string, unknown>;
+type MockDbState = Record<string, MockRow[]>;
+type MockChain = {
+  eq: (field: string, value: unknown) => MockChain;
+  in: (field: string, values: unknown) => MockChain;
+  maybeSingle: () => Promise<{ data: MockRow | null; error: null }>;
+  single: () => Promise<{ data: MockRow; error: null }>;
+  then: (onfulfilled: (value: { data: MockRow[]; error: null; count: number | null }) => unknown) => Promise<unknown>;
+};
 
-    // Cho phép chain.then và giải quyết như Promise nếu select().eq() được gọi mà không có .maybeSingle() hay .single()
-    chain.then = (onfulfilled: any) => {
-      const items = dbState[table] ?? [];
-      return Promise.resolve({ data: items, error: null, count: Array.isArray(items) ? items.length : null }).then(onfulfilled);
+// Mock SupabaseClient
+function makeSupabaseMock(dbState: MockDbState) {
+  const makeChain = (table: string) => {
+    const chain: MockChain = {
+      eq: () => chain,
+      in: () => chain,
+      maybeSingle: () => {
+        const items = dbState[table] ?? [];
+        return Promise.resolve({ data: items[0] ?? null, error: null });
+      },
+      single: () => {
+        const items = dbState[table] ?? [];
+        return Promise.resolve({ data: items[0] ?? { id: 'owner-new-id' }, error: null });
+      },
+      // Cho phép chain.then và giải quyết như Promise nếu select().eq() được gọi mà không có .maybeSingle() hay .single()
+      then: (onfulfilled) => {
+        const items = dbState[table] ?? [];
+        return Promise.resolve({ data: items, error: null, count: items.length }).then(onfulfilled);
+      },
     };
 
     return chain;
@@ -34,7 +40,7 @@ function makeSupabaseMock(dbState: any) {
       const chain = makeChain(table);
 
       return {
-        select: (columns: string, options?: any) => {
+        select: (_columns: string, options?: { count?: unknown }) => {
           if (options && options.count) {
             // Cho phép chuỗi eq() sau select(..., {count})
             return chain; 
@@ -44,12 +50,12 @@ function makeSupabaseMock(dbState: any) {
           }
           return chain;
         },
-        upsert: (payload: any, options?: any) => {
+        upsert: (payload: MockRow, _options?: unknown) => {
           if (!dbState[table]) dbState[table] = [];
           dbState[table].push(payload);
           return Promise.resolve({ error: null });
         },
-        insert: (payload: any) => {
+        insert: (payload: MockRow) => {
           if (!dbState[table]) dbState[table] = [];
           dbState[table].push({ id: 'owner-new-id', ...payload });
           return {
@@ -58,16 +64,16 @@ function makeSupabaseMock(dbState: any) {
             })
           };
         },
-        update: (payload: any) => {
+        update: (_payload: MockRow) => {
           return {
             eq: () => ({
               eq: () => Promise.resolve({ error: null })
             })
           };
         }
-      } as any;
+      };
     }
-  } as any;
+  };
 }
 
 describe('Phase 2: Customer 360 Extension — Unit Tests', () => {
@@ -146,7 +152,7 @@ describe('Phase 2: Customer 360 Extension — Unit Tests', () => {
   });
 
   it('should upsert automotive preference profile', async () => {
-    const dbState: any = { auto_customer_profiles: [] };
+    const dbState: MockDbState = { auto_customer_profiles: [] };
     const supabase = makeSupabaseMock(dbState);
 
     await AutoCustomerProvider.upsertProfile(supabase, 'tenant-001', {
@@ -163,7 +169,7 @@ describe('Phase 2: Customer 360 Extension — Unit Tests', () => {
   });
 
   it('should link customer to new owned vehicle', async () => {
-    const dbState: any = { auto_vehicle_owners: [] };
+    const dbState: MockDbState = { auto_vehicle_owners: [] };
     const supabase = makeSupabaseMock(dbState);
 
     const recordId = await AutoCustomerProvider.addVehicleOwner(supabase, {

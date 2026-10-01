@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
+import type { Database } from '@/types/database.types';
+
+type PartnerApplicationUpdate = Database['public']['Tables']['partner_applications']['Update'];
+type PartnerApplicationLogInsert = Database['public']['Tables']['partner_application_logs']['Insert'];
 
 /**
  * POST /api/admin/partner-applications/:id/approve
@@ -31,7 +35,8 @@ export async function POST(
   try {
     const supabase = createClient();
     const body = await request.json();
-    const { notes, provisioning_config } = body;
+    const { notes } = body;
+    const approvalNotes = typeof notes === 'string' ? notes : null;
 
     // 1. Get current user (admin)
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -94,19 +99,21 @@ export async function POST(
     }
 
     // 5. Update application status to approved
-    const { data: updatedApp, error: updateError } = await (supabase
-      .from('partner_applications' as any)
-      .update({
-        status: 'approved',
-        approved_at: new Date().toISOString(),
-        approved_by: user.id,
-        approval_notes: notes || null,
-        updated_at: new Date().toISOString(),
-        updated_by: user.id,
-      } as any)
+    const reviewedAt = new Date().toISOString();
+    const approveUpdate: PartnerApplicationUpdate = {
+      status: 'approved',
+      approval_notes: approvalNotes,
+      reviewed_at: reviewedAt,
+      reviewed_by: user.id,
+      updated_at: reviewedAt,
+    };
+
+    const { data: updatedApp, error: updateError } = await supabase
+      .from('partner_applications')
+      .update(approveUpdate)
       .eq('id', params.id)
       .select()
-      .single() as any);
+      .single();
 
     if (updateError) {
       console.error('Failed to update application:', updateError);
@@ -117,18 +124,19 @@ export async function POST(
     }
 
     // 6. Log approval action
-    const { error: logError } = await (supabase
-      .from('partner_application_logs' as any)
-      .insert({
-        application_id: params.id,
-        action: 'approved',
-        action_description: notes || 'Application approved by admin',
-        performed_by: user.id,
-        performed_by_role: 'admin',
-        old_status: application.status,
-        new_status: 'approved',
-        metadata: { notes, provisioning_config },
-      } as any) as any);
+    const approvalLog: PartnerApplicationLogInsert = {
+      application_id: params.id,
+      action: 'approved',
+      action_description: approvalNotes || 'Application approved by admin',
+      performed_by_user_id: user.id,
+      performed_by_role: 'admin',
+      old_status: application.status,
+      new_status: 'approved',
+    };
+
+    const { error: logError } = await supabase
+      .from('partner_application_logs')
+      .insert(approvalLog);
 
     if (logError) {
       console.error('Failed to log approval:', logError);

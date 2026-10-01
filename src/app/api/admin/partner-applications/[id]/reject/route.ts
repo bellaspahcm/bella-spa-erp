@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
+import type { Database } from '@/types/database.types';
+
+type PartnerApplicationUpdate = Database['public']['Tables']['partner_applications']['Update'];
+type PartnerApplicationLogInsert = Database['public']['Tables']['partner_application_logs']['Insert'];
 
 /**
  * POST /api/admin/partner-applications/:id/reject
@@ -25,10 +29,11 @@ export async function POST(
   try {
     const supabase = createClient();
     const body = await request.json();
-    const { reason, category } = body;
+    const { reason } = body;
+    const rejectionReason = typeof reason === 'string' ? reason.trim() : '';
 
     // Validate required fields
-    if (!reason || reason.trim().length === 0) {
+    if (rejectionReason.length === 0) {
       return NextResponse.json(
         { success: false, error: 'Rejection reason is required' },
         { status: 400 }
@@ -89,20 +94,21 @@ export async function POST(
     }
 
     // 5. Update application status to rejected
-    const { data: updatedApp, error: updateError } = await (supabase
-      .from('partner_applications' as any)
-      .update({
-        status: 'rejected',
-        rejected_at: new Date().toISOString(),
-        rejected_by: user.id,
-        rejection_reason: reason.trim(),
-        rejection_category: category || 'other',
-        updated_at: new Date().toISOString(),
-        updated_by: user.id,
-      } as any)
+    const reviewedAt = new Date().toISOString();
+    const rejectUpdate: PartnerApplicationUpdate = {
+      status: 'rejected',
+      rejection_reason: rejectionReason,
+      reviewed_at: reviewedAt,
+      reviewed_by: user.id,
+      updated_at: reviewedAt,
+    };
+
+    const { data: updatedApp, error: updateError } = await supabase
+      .from('partner_applications')
+      .update(rejectUpdate)
       .eq('id', params.id)
       .select()
-      .single() as any);
+      .single();
 
     if (updateError) {
       console.error('Failed to update application:', updateError);
@@ -113,18 +119,19 @@ export async function POST(
     }
 
     // 6. Log rejection action
-    const { error: logError } = await (supabase
-      .from('partner_application_logs' as any)
-      .insert({
-        application_id: params.id,
-        action: 'rejected',
-        action_description: `Application rejected: ${reason}`,
-        performed_by: user.id,
-        performed_by_role: 'admin',
-        old_status: application.status,
-        new_status: 'rejected',
-        metadata: { reason, category },
-      } as any) as any);
+    const rejectionLog: PartnerApplicationLogInsert = {
+      application_id: params.id,
+      action: 'rejected',
+      action_description: `Application rejected: ${rejectionReason}`,
+      performed_by_user_id: user.id,
+      performed_by_role: 'admin',
+      old_status: application.status,
+      new_status: 'rejected',
+    };
+
+    const { error: logError } = await supabase
+      .from('partner_application_logs')
+      .insert(rejectionLog);
 
     if (logError) {
       console.error('Failed to log rejection:', logError);
@@ -139,7 +146,7 @@ export async function POST(
         application.email,
         application.full_name,
         application.company_name || 'Your Business',
-        reason.trim(),
+        rejectionReason,
         true // canReapply
       );
       

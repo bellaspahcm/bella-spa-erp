@@ -16,6 +16,11 @@ import { EnrollmentProductService } from '../services/enrollment.service';
 import { AttendanceProductService } from '../services/attendance.service';
 import { AssessmentProductService } from '../services/assessment.service';
 import { bellaEducationManifest } from '../manifest';
+import type { IAccountingContract, PostJournalEntryRequest } from '../../../platform/accounting/contracts/accounting.contract';
+import type { IEducationAssessmentContract } from '../../../platform/education/contracts/assessment.contract';
+import type { IEducationAttendanceContract } from '../../../platform/education/contracts/attendance.contract';
+import type { IEducationCourseContract } from '../../../platform/education/contracts/course.contract';
+import type { EnrollStudentInput, IEducationEnrollmentContract } from '../../../platform/education/contracts/enrollment.contract';
 
 describe('BELLA EDUCATION V1 — RUNTIME CONFORMANCE INTEGRATION TESTS', () => {
   let catalogService: CourseCatalogProductService;
@@ -23,14 +28,16 @@ describe('BELLA EDUCATION V1 — RUNTIME CONFORMANCE INTEGRATION TESTS', () => {
   let attendanceService: AttendanceProductService;
   let assessmentService: AssessmentProductService;
 
-  const mockCourseContract: any = {
+  const mockCourseContract: jest.Mocked<IEducationCourseContract> = {
+    createCourse: jest.fn(),
+    getCourse: jest.fn(),
     listCourses: jest.fn().mockResolvedValue([
       { id: 'course-101', tenantId: 'tenant-edu-1', courseCode: 'CSE-101', title: 'Intro to Programming', status: 'active', prerequisites: [] }
     ])
   };
 
-  const mockEnrollmentContract: any = {
-    enrollStudent: jest.fn().mockImplementation((req) => {
+  const mockEnrollmentContract: jest.Mocked<IEducationEnrollmentContract> = {
+    enrollStudent: jest.fn().mockImplementation((req: EnrollStudentInput) => {
       if (req.courseId === 'course-adv' && !req.overrideJustification) {
         return Promise.reject(new Error('Prerequisite check failed. Missing prerequisite courses: CSE-101'));
       }
@@ -46,7 +53,7 @@ describe('BELLA EDUCATION V1 — RUNTIME CONFORMANCE INTEGRATION TESTS', () => {
     getEnrollment: jest.fn()
   };
 
-  const mockAttendanceContract: any = {
+  const mockAttendanceContract: jest.Mocked<IEducationAttendanceContract> = {
     recordAttendance: jest.fn().mockResolvedValue({
       id: 'att-101',
       tenantId: 'tenant-edu-1',
@@ -69,7 +76,7 @@ describe('BELLA EDUCATION V1 — RUNTIME CONFORMANCE INTEGRATION TESTS', () => {
     getCourseDailyAttendance: jest.fn().mockResolvedValue([])
   };
 
-  const mockAssessmentContract: any = {
+  const mockAssessmentContract: jest.Mocked<IEducationAssessmentContract> = {
     recordScore: jest.fn().mockResolvedValue({
       id: 'score-101',
       tenantId: 'tenant-edu-1',
@@ -79,11 +86,12 @@ describe('BELLA EDUCATION V1 — RUNTIME CONFORMANCE INTEGRATION TESTS', () => {
       weight: 30,
       occurredAt: new Date().toISOString()
     }),
+    getScores: jest.fn().mockResolvedValue([]),
     calculateGpa: jest.fn().mockResolvedValue(9.0)
   };
 
-  const mockAccountingContract: any = {
-    postJournalEntry: jest.fn().mockImplementation((req) => {
+  const mockAccountingContract: jest.Mocked<IAccountingContract> = {
+    postJournalEntry: jest.fn().mockImplementation((req: PostJournalEntryRequest) => {
       if (req.referenceId === 'enroll-ledger-fail') {
         return Promise.resolve({ success: false, error: 'BALANCE_VIOLATION' });
       }

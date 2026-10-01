@@ -4,21 +4,21 @@
  * Verifies all 6 clinical safety gates.
  * 
  * Constitution Scope:
- * - Law 11: Zero any types allowed
+ * - Law 11: Zero explicit dynamic type usage allowed
  */
 
 import { randomUUID } from 'crypto';
 import { createClient } from '@/lib/supabase-server';
 import { eventBus } from '@/platform/host/event-bus';
 import { BloodBankEngineService } from '../engines/blood-bank-engine/blood-bank-engine.service';
-import { HealthcareTestFixtures } from './fixtures/healthcare-test-fixtures';
+import { HealthcareTestFixtures, type HealthcareTestFixture } from './fixtures/healthcare-test-fixtures';
 import { BloodUnitStatus } from '../engines/blood-bank-engine/domain/blood-component.vo';
 
 describe('Blood Bank Engine Integration Tests (Phase H7)', () => {
   jest.setTimeout(60_000);
-  let supabase: any;
+  let supabase: Awaited<ReturnType<typeof createClient>>;
   let service: BloodBankEngineService;
-  let fixtures: any;
+  let fixtures: HealthcareTestFixture;
   let tenantId: string;
   let encounterId: string;
   let patientId: string;
@@ -470,17 +470,16 @@ describe('Blood Bank Engine Integration Tests (Phase H7)', () => {
 
     // CASE B: DB commit failure -> NO event
     jest.resetAllMocks();
-    const badService = new BloodBankEngineService({
-      from: () => ({
-        select: () => ({
-          eq: () => ({
-            eq: () => ({
-              single: () => Promise.resolve({ data: null, error: new Error('Simulated DB failure') }),
-            }),
-          }),
-        }),
-      }),
-    } as any);
+    const badService = new BloodBankEngineService(supabase);
+    const failingQuery = {
+      select: () => failingQuery,
+      eq: () => failingQuery,
+      maybeSingle: () => Promise.resolve({ data: null, error: new Error('Simulated DB failure') }),
+      single: () => Promise.resolve({ data: null, error: new Error('Simulated DB failure') }),
+    };
+    jest
+      .spyOn(supabase, 'from')
+      .mockImplementation(() => failingQuery as ReturnType<typeof supabase.from>);
 
     const publishSpy2 = jest.spyOn(eventBus, 'publish');
     const failRes = await badService.recordCrossmatchResult({

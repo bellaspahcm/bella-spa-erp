@@ -39,17 +39,15 @@ export class PropertyService implements IPropertyContract {
 
     // 2. Insert draft contract
     const contractNo = `HĐMB-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-    const { data, error } = await (this.supabase as any)
+    const { data, error } = await this.supabase
       .from('re_contracts')
       .insert({
         tenant_id: params.tenantId,
         product_id: params.productId,
         customer_id: params.customerId,
-        contract_no: contractNo,
         contract_number: contractNo,
         contract_price: params.contractPrice,
         state: 'DRAFT',
-        status: 'DRAFT',
         installments: params.installments
       })
       .select('*')
@@ -59,10 +57,11 @@ export class PropertyService implements IPropertyContract {
       throw new Error(`DATABASE_ERROR: Failed to create contract record: ${error.message}`);
     }
 
-    const res = data as any;
-    if (!res.state && res.status) res.state = res.status;
-    if (!res.status && res.state) res.status = res.state;
-    return res as ContractRow;
+    if (!data) {
+      throw new Error('DATABASE_ERROR: Failed to create contract record: no data returned');
+    }
+
+    return data;
   }
 
   /**
@@ -72,7 +71,7 @@ export class PropertyService implements IPropertyContract {
     if (!tenantId) throw new Error('TENANT_ISOLATION_VIOLATION: tenantId is required');
 
     // 1. Fetch contract
-    const { data: contract, error: contractError } = await (this.supabase as any)
+    const { data: contract, error: contractError } = await this.supabase
       .from('re_contracts')
       .select('*')
       .eq('id', contractId)
@@ -98,11 +97,10 @@ export class PropertyService implements IPropertyContract {
     await this.repository.save(this.supabase, unit);
 
     // 5. Update contract state to ACTIVE
-    const { error: updateError } = await (this.supabase as any)
+    const { error: updateError } = await this.supabase
       .from('re_contracts')
       .update({
         state: 'ACTIVE',
-        status: 'ACTIVE',
         updated_at: new Date().toISOString()
       })
       .eq('id', contractId)
@@ -116,7 +114,7 @@ export class PropertyService implements IPropertyContract {
     // Debit Account 131 (Accounts Receivable) / Credit Account 5111 (Property Sales Revenue)
     const ledgerResult = await this.accountingContract.postJournalEntry({
       tenantId,
-      description: `Ghi nhận doanh thu ký Hợp đồng Mua bán số ${contract.contract_number || contract.contract_no}`,
+      description: `Ghi nhận doanh thu ký Hợp đồng Mua bán số ${contract.contract_number ?? contractId}`,
       referenceType: 'contract',
       referenceId: contractId,
       lines: [

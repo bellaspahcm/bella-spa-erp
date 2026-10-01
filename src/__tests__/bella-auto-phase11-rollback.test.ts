@@ -14,13 +14,47 @@ import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { BusinessRollbackEngine } from '@/modules/bella-auto/services/rollback/BusinessRollbackEngine';
 import { VehicleDeliveryRollback } from '@/modules/bella-auto/services/rollback/VehicleDeliveryRollback';
 
-function createChainableMock(defaultResolveValue: any = { data: null, error: null }) {
-  const mockPromise = (val: any) => {
+type MockQueryResult = {
+  data: unknown;
+  error: { message: string } | null;
+};
+type MockFulfilled = (value: MockQueryResult) => unknown;
+type MockRejected = (reason: unknown) => unknown;
+type MockFinally = () => unknown;
+type MockChain = {
+  then: (onfulfilled?: MockFulfilled | null, onrejected?: MockRejected | null) => Promise<unknown>;
+  catch: (onrejected?: MockRejected | null) => Promise<unknown>;
+  finally: (onfinally?: MockFinally | null) => Promise<unknown>;
+  select: jest.Mock;
+  insert: jest.Mock;
+  update: jest.Mock;
+  delete: jest.Mock;
+  eq: jest.Mock;
+  neq: jest.Mock;
+  in: jest.Mock;
+  order: jest.Mock;
+  limit: jest.Mock;
+  single: jest.Mock;
+  maybeSingle: jest.Mock;
+};
+type ChainableMock = jest.Mock & {
+  _chain: MockChain;
+  mockResolvedValueOnce: (val: MockQueryResult) => ChainableMock;
+  mockResolvedValue: (val: MockQueryResult) => ChainableMock;
+  mockRejectedValueOnce: (val: unknown) => ChainableMock;
+};
+type MockTable = Record<
+  'select' | 'insert' | 'update' | 'delete' | 'eq' | 'neq' | 'in' | 'order' | 'limit' | 'single' | 'maybeSingle',
+  ChainableMock
+>;
+
+function createChainableMock(defaultResolveValue: MockQueryResult = { data: null, error: null }) {
+  const mockPromise = (val: MockQueryResult): MockChain => {
     const promise = Promise.resolve(val);
-    const chain: any = {
-      then: (onfulfilled: any, onrejected: any) => promise.then(onfulfilled, onrejected),
-      catch: (onrejected: any) => promise.catch(onrejected),
-      finally: (onfinally: any) => promise.finally(onfinally),
+    const chain: MockChain = {
+      then: (onfulfilled, onrejected) => promise.then(onfulfilled ?? undefined, onrejected ?? undefined),
+      catch: (onrejected) => promise.catch(onrejected ?? undefined),
+      finally: (onfinally) => promise.finally(onfinally ?? undefined),
       select: jest.fn(() => chain),
       insert: jest.fn(() => chain),
       update: jest.fn(() => chain),
@@ -36,33 +70,43 @@ function createChainableMock(defaultResolveValue: any = { data: null, error: nul
     return chain;
   };
 
-  const fn: any = jest.fn(() => fn._chain);
+  const fn = jest.fn() as ChainableMock;
 
   fn._chain = mockPromise(defaultResolveValue);
+  fn.mockImplementation(() => fn._chain);
 
-  fn.mockResolvedValueOnce = (val: any) => {
+  fn.mockResolvedValueOnce = (val: MockQueryResult) => {
     fn.mockImplementationOnce(() => {
       return mockPromise(val);
     });
     return fn;
   };
 
-  fn.mockResolvedValue = (val: any) => {
+  fn.mockResolvedValue = (val: MockQueryResult) => {
     fn.mockImplementation(() => {
       return mockPromise(val);
     });
     return fn;
   };
 
-  fn.mockRejectedValueOnce = (val: any) => {
+  fn.mockRejectedValueOnce = (val: unknown) => {
     fn.mockImplementationOnce(() => {
-      const promise = Promise.reject(val);
-      const chain: any = {
-        then: (onfulfilled: any, onrejected: any) => promise.then(onfulfilled, onrejected),
-        catch: (onrejected: any) => promise.catch(onrejected),
-        finally: (onfinally: any) => promise.finally(onfinally),
+      const promise = Promise.reject<MockQueryResult>(val);
+      const chain: MockChain = {
+        then: (onfulfilled, onrejected) => promise.then(onfulfilled ?? undefined, onrejected ?? undefined),
+        catch: (onrejected) => promise.catch(onrejected ?? undefined),
+        finally: (onfinally) => promise.finally(onfinally ?? undefined),
         select: jest.fn(() => chain),
+        insert: jest.fn(() => chain),
+        update: jest.fn(() => chain),
+        delete: jest.fn(() => chain),
         eq: jest.fn(() => chain),
+        neq: jest.fn(() => chain),
+        in: jest.fn(() => chain),
+        order: jest.fn(() => chain),
+        limit: jest.fn(() => chain),
+        single: jest.fn(() => chain),
+        maybeSingle: jest.fn(() => chain),
       };
       return chain;
     });
@@ -73,7 +117,7 @@ function createChainableMock(defaultResolveValue: any = { data: null, error: nul
 }
 
 function createMockSupabaseClient() {
-  const tables: Record<string, any> = {};
+  const tables: Record<string, MockTable> = {};
 
   const from = jest.fn((table: string) => {
     if (!tables[table]) {
@@ -114,8 +158,14 @@ describe('Phase 11: Business Rollback Engine', () => {
 
   beforeEach(() => {
     mockSupabase = createMockSupabaseClient();
-    engine = new BusinessRollbackEngine(mockSupabase as any, TENANT_ID);
-    deliveryRollback = new VehicleDeliveryRollback(mockSupabase as any, TENANT_ID);
+    engine = new BusinessRollbackEngine(
+      mockSupabase as ConstructorParameters<typeof BusinessRollbackEngine>[0],
+      TENANT_ID
+    );
+    deliveryRollback = new VehicleDeliveryRollback(
+      mockSupabase as ConstructorParameters<typeof VehicleDeliveryRollback>[0],
+      TENANT_ID
+    );
   });
 
   describe('Transaction Lifecycle', () => {
@@ -569,8 +619,8 @@ describe('Phase 11: Business Rollback Engine', () => {
         error: null,
       });
 
-      let auditLogData: any;
-      mockSupabase.from('auto_rollback_audit_log').insert.mockImplementationOnce((data: any) => {
+      let auditLogData: Record<string, unknown> | undefined;
+      mockSupabase.from('auto_rollback_audit_log').insert.mockImplementationOnce((data: Record<string, unknown>) => {
         auditLogData = data;
         return Promise.resolve({ data: null, error: null });
       });

@@ -24,7 +24,7 @@ const mockFrom = jest.fn();
 const queryFilters: Array<{ column: string; value: unknown; operator?: string }> = [];
 
 jest.mock('../services/user-actions', () => ({
-  getCurrentUser: (...args: any[]) => mockGetCurrentUser(...args),
+  getCurrentUser: (...args: unknown[]) => mockGetCurrentUser(...args),
 }));
 
 jest.mock('../lib/supabase-server', () => ({
@@ -32,7 +32,7 @@ jest.mock('../lib/supabase-server', () => ({
 }));
 
 class MockQueryBuilder {
-  constructor(private data: any = null, private error: any = null) {}
+  constructor(private data: unknown = null, private error: unknown = null) {}
 
   select() { return this; }
   eq(column?: string, value?: unknown) {
@@ -53,7 +53,7 @@ class MockQueryBuilder {
   }
   order() { return this; }
 
-  then(onfulfilled: any) {
+  then(onfulfilled: (value: { data: unknown; error: unknown }) => unknown) {
     return Promise.resolve({ data: this.data, error: this.error }).then(onfulfilled);
   }
 }

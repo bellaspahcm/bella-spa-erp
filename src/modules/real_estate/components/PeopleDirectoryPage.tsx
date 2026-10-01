@@ -23,6 +23,20 @@ import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 export type PersonCategory = 'employee' | 'broker' | 'agency' | 'partner';
 export type PersonStatus = 'active' | 'on_leave' | 'inactive';
+type CategoryTabId = PersonCategory | 'all';
+type DrawerTab = 'overview' | 'performance' | 'access' | 'history';
+
+const PERSON_CATEGORY_VALUES = ['employee', 'broker', 'agency', 'partner'] as const satisfies readonly PersonCategory[];
+const DRAWER_TABS = [
+  { id: 'overview', label: 'Tổng quan' },
+  { id: 'performance', label: 'Hiệu suất' },
+  { id: 'access', label: 'Quyền' },
+  { id: 'history', label: 'Lịch sử' },
+] satisfies ReadonlyArray<{ id: DrawerTab; label: string }>;
+
+function isPersonCategory(value: string): value is PersonCategory {
+  return PERSON_CATEGORY_VALUES.some(category => category === value);
+}
 
 export interface PeopleItem {
   id: string;
@@ -261,7 +275,7 @@ export function PeopleDirectoryPage() {
   const [selectedPerson, setSelectedPerson] = useState<PeopleItem | null>(null);
 
   // Filters
-  const [activeCategoryTab, setActiveCategoryTab] = useState<PersonCategory | 'all'>('all');
+  const [activeCategoryTab, setActiveCategoryTab] = useState<CategoryTabId>('all');
   const [search, setSearch] = useState('');
   const [filterBranch, setFilterBranch] = useState('all');
   const [filterDepartment, setFilterDepartment] = useState('all');
@@ -301,6 +315,14 @@ export function PeopleDirectoryPage() {
       partners: 4
     };
   }, []);
+
+  const categoryTabs = [
+    { id: 'all', label: `Tất cả (${stats.total})` },
+    { id: 'employee', label: `Nhân viên (${stats.employees})` },
+    { id: 'broker', label: `Môi giới (${stats.brokers})` },
+    { id: 'agency', label: `Đại lý F1 (${stats.agencies})` },
+    { id: 'partner', label: `Đối tác F2 (${stats.partners})` },
+  ] satisfies ReadonlyArray<{ id: CategoryTabId; label: string }>;
 
   // Filtered List
   const filteredPeople = useMemo(() => {
@@ -500,16 +522,10 @@ export function PeopleDirectoryPage() {
         
         {/* Category Tabs */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-b border-slate-100 dark:border-slate-800">
-          {[
-            { id: 'all', label: `Tất cả (${stats.total})` },
-            { id: 'employee', label: `Nhân viên (${stats.employees})` },
-            { id: 'broker', label: `Môi giới (${stats.brokers})` },
-            { id: 'agency', label: `Đại lý F1 (${stats.agencies})` },
-            { id: 'partner', label: `Đối tác F2 (${stats.partners})` },
-          ].map(tab => (
+          {categoryTabs.map(tab => (
             <button
               key={tab.id}
-              onClick={() => setActiveCategoryTab(tab.id as any)}
+              onClick={() => setActiveCategoryTab(tab.id)}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
                 activeCategoryTab === tab.id
                   ? 'bg-blue-600 text-white shadow-xs'
@@ -847,7 +863,11 @@ export function PeopleDirectoryPage() {
                     <label className="block text-slate-700 dark:text-slate-300 mb-1">Phân loại nhân sự</label>
                     <PremiumSelect
                       value={newPerson.category}
-                      onChange={(val) => setNewPerson({ ...newPerson, category: val as any })}
+                      onChange={(val) => {
+                        if (isPersonCategory(val)) {
+                          setNewPerson({ ...newPerson, category: val });
+                        }
+                      }}
                       options={[
                         { value: "employee", label: "Nhân viên nội bộ" },
                         { value: "broker", label: "Môi giới tự do" },
@@ -1015,15 +1035,10 @@ function DrawerPanel({ person, onClose }: { person: PeopleItem; onClose: () => v
 
       {/* Sub-Tabs Bar: [Tổng quan | Hiệu suất | Quyền | Lịch sử] */}
       <div className="flex items-center border-b border-slate-100 dark:border-slate-800 gap-1 pt-1">
-        {[
-          { id: 'overview', label: 'Tổng quan' },
-          { id: 'performance', label: 'Hiệu suất' },
-          { id: 'access', label: 'Quyền' },
-          { id: 'history', label: 'Lịch sử' },
-        ].map(t => (
+        {DRAWER_TABS.map(t => (
           <button
             key={t.id}
-            onClick={() => setTab(t.id as any)}
+            onClick={() => setTab(t.id)}
             className={`py-1.5 px-3 text-xs font-extrabold border-b-2 transition-all cursor-pointer ${
               tab === t.id
                 ? 'border-blue-600 text-blue-600'

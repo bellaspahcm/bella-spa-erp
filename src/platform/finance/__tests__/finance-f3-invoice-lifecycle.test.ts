@@ -26,6 +26,10 @@ import { createHash } from 'crypto';
 
 jest.setTimeout(60000);
 
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 describe('F3.2 Invoice Lifecycle Integration Tests', () => {
   let supabaseAdmin: ReturnType<typeof createSupabaseClient<Database>>;
   let pgClientAdmin: Client;
@@ -82,6 +86,34 @@ describe('F3.2 Invoice Lifecycle Integration Tests', () => {
       .single();
     if (pErr || !period) throw pErr || new Error('Period setup failed');
     sharedPeriodId = period.id;
+
+    const currentPeriod = await pgClientAdmin.query(
+      `
+        SELECT id
+        FROM public.finance_accounting_periods
+        WHERE tenant_id = $1
+          AND period_start <= NOW()
+          AND period_end >= NOW()
+        LIMIT 1;
+      `,
+      [testTenantId]
+    );
+
+    if (currentPeriod.rowCount === 0) {
+      await pgClientAdmin.query(
+        `
+          INSERT INTO public.finance_accounting_periods (tenant_id, name, period_start, period_end, status)
+          VALUES (
+            $1,
+            $2,
+            date_trunc('month', NOW()),
+            date_trunc('month', NOW()) + interval '1 month - 1 microsecond',
+            'OPEN'
+          );
+        `,
+        [testTenantId, `CURRENT-${RUN_ID}`]
+      );
+    }
   });
 
   afterAll(async () => {
@@ -126,8 +158,8 @@ describe('F3.2 Invoice Lifecycle Integration Tests', () => {
           '${testTenantId}', '${customerId}', 'INV-T02', 'VND', '2026-08-15', '2026-09-15'
         );
       `);
-    } catch (e: any) {
-      err = e.message;
+    } catch (e: unknown) {
+      err = getErrorMessage(e);
     }
     expect(err).toContain('uq_invoice_number_per_tenant');
   });
@@ -218,8 +250,8 @@ describe('F3.2 Invoice Lifecycle Integration Tests', () => {
           '${testTenantId}', '${invoiceId}', '${crypto.randomUUID()}', 'Late Line', 1.0, 10000, 0.0, '5111'
         );
       `);
-    } catch (e: any) {
-      addLineErr = e.message;
+    } catch (e: unknown) {
+      addLineErr = getErrorMessage(e);
     }
     expect(addLineErr).toContain('INVOICE_NOT_DRAFT');
 
@@ -318,8 +350,8 @@ describe('F3.2 Invoice Lifecycle Integration Tests', () => {
           '${testTenantId}', '${invoiceId}', '${posting_attempt_id}', '${reqHash}', '${JSON.stringify(lines)}'::jsonb
         );
       `);
-    } catch (e: any) {
-      err = e.message;
+    } catch (e: unknown) {
+      err = getErrorMessage(e);
     }
     expect(err).not.toBeNull();
 
@@ -366,8 +398,8 @@ describe('F3.2 Invoice Lifecycle Integration Tests', () => {
           '${testTenantId}', '${invoiceId}', '${posting_attempt_id}', '${reqHash}', '${JSON.stringify(lines)}'::jsonb
         );
       `);
-    } catch (e: any) {
-      err = e.message;
+    } catch (e: unknown) {
+      err = getErrorMessage(e);
     }
     expect(err).not.toBeNull();
 
@@ -398,8 +430,8 @@ describe('F3.2 Invoice Lifecycle Integration Tests', () => {
     let err: string | null = null;
     try {
       await pgClientAdmin.query(`UPDATE public.finance_invoices SET status = 'VOIDED' WHERE id = '${invoiceId}';`);
-    } catch (e: any) {
-      err = e.message;
+    } catch (e: unknown) {
+      err = getErrorMessage(e);
     }
     expect(err).toContain('INVALID_INVOICE_STATUS_TRANSITION');
   });
@@ -495,8 +527,8 @@ describe('F3.2 Invoice Lifecycle Integration Tests', () => {
     let err: string | null = null;
     try {
       await pgClientAdmin.query(`SELECT public.finance_void_invoice('${testTenantId}', '${invoiceId}');`);
-    } catch (e: any) {
-      err = e.message;
+    } catch (e: unknown) {
+      err = getErrorMessage(e);
     }
     expect(err).toContain('INVOICE_HAS_ALLOCATIONS');
   });
@@ -597,8 +629,8 @@ describe('F3.2 Invoice Lifecycle Integration Tests', () => {
           '${testTenantId}', '${invoiceId}', '${posting_attempt_id}', 'somehash', '[]'::jsonb
         );
       `);
-    } catch (e: any) {
-      err = e.message;
+    } catch (e: unknown) {
+      err = getErrorMessage(e);
     }
     expect(err).toContain('INVOICE_EMPTY');
   });
@@ -646,8 +678,8 @@ describe('F3.2 Invoice Lifecycle Integration Tests', () => {
           '${testTenantId}', '${invoiceId}', '${posting_attempt_id}', '${reqHash}', '${JSON.stringify(lines)}'::jsonb
         );
       `);
-    } catch (e: any) {
-      err = e.message;
+    } catch (e: unknown) {
+      err = getErrorMessage(e);
     }
     expect(err).toContain('INVALID_REVENUE_ACCOUNT'); // Correctly rejected in COA check
   });

@@ -17,8 +17,15 @@ jest.mock('@/services/audit-actions', () => ({
   recordAuditLog: jest.fn().mockResolvedValue({ success: true }),
 }));
 
+type SingleRowBuilder = {
+  select: jest.Mock<SingleRowBuilder, []>;
+  eq: jest.Mock<SingleRowBuilder, []>;
+  limit: jest.Mock<SingleRowBuilder, []>;
+  single: jest.Mock<Promise<{ data: Record<string, unknown>; error: null }>, []>;
+};
+
 function createSingleRowBuilder(row: Record<string, unknown>) {
-  const builder: any = {
+  const builder: SingleRowBuilder = {
     select: jest.fn(() => builder),
     eq: jest.fn(() => builder),
     limit: jest.fn(() => builder),

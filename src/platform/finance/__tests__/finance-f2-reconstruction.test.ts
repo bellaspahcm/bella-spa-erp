@@ -21,6 +21,24 @@ import type { Database } from '@/types/database.types';
 import { LedgerEngineService } from '../engines/ledger-engine/ledger.service';
 import { CashEngineService } from '../engines/cash-engine/cash-engine.service';
 
+type FinanceCashPositionUpdate = Database['public']['Tables']['finance_cash_positions']['Update'];
+type ExecSqlCurrentSettingRow = {
+  val?: unknown;
+};
+
+function getFirstCurrentSettingValue(data: unknown): unknown {
+  if (!Array.isArray(data)) {
+    return undefined;
+  }
+
+  const firstRow = data[0];
+  if (typeof firstRow !== 'object' || firstRow === null || !('val' in firstRow)) {
+    return undefined;
+  }
+
+  return (firstRow as ExecSqlCurrentSettingRow).val;
+}
+
 jest.setTimeout(45000);
 
 describe('F2.4 Cash Reconstruction RPC Integration Tests', () => {
@@ -242,7 +260,7 @@ describe('F2.4 Cash Reconstruction RPC Integration Tests', () => {
 
       // 2. Clear derived position manually (simulate corruption/loss)
       // Set allowance config first locally in transaction using exec_sql
-      const { error: clearErr } = await supabase.rpc('exec_sql' as any, {
+      const { error: clearErr } = await supabase.rpc('exec_sql', {
         sql_query: `
           SET LOCAL finance.allow_position_reconstruction = 'true';
           DELETE FROM public.finance_cash_positions WHERE tenant_id = '${testTenantId}' AND bank_account_id = '${bankAccountAId1}';
@@ -293,7 +311,7 @@ describe('F2.4 Cash Reconstruction RPC Integration Tests', () => {
       expect(projectErr).toBeNull();
 
       // 2. Clear both derived positions
-      const { error: clearErr } = await supabase.rpc('exec_sql' as any, {
+      const { error: clearErr } = await supabase.rpc('exec_sql', {
         sql_query: `
           SET LOCAL finance.allow_position_reconstruction = 'true';
           DELETE FROM public.finance_cash_positions WHERE tenant_id = '${testTenantId}';
@@ -574,7 +592,7 @@ describe('F2.4 Cash Reconstruction RPC Integration Tests', () => {
 
     it('T11: should recover derived position correctly when derived data is corrupted', async () => {
       // 1. Manually corrupt the balance of account 1 to 999,000,000 VND (bypassing triggers via admin client setting)
-      const { error: corruptErr } = await supabase.rpc('exec_sql' as any, {
+      const { error: corruptErr } = await supabase.rpc('exec_sql', {
         sql_query: `
           SET LOCAL finance.allow_position_reconstruction = 'true';
           UPDATE public.finance_cash_positions
@@ -599,7 +617,7 @@ describe('F2.4 Cash Reconstruction RPC Integration Tests', () => {
 
     it('T12: should block any escape of privileges (cannot edit movements or create financial events)', async () => {
       // 1. Attempt to write to finance_cash_movements while allow_position_reconstruction is active
-      const { error: triggerBlockErr } = await supabase.rpc('exec_sql' as any, {
+      const { error: triggerBlockErr } = await supabase.rpc('exec_sql', {
         sql_query: `
           SET LOCAL finance.allow_position_reconstruction = 'true';
           INSERT INTO public.finance_cash_movements (
@@ -662,7 +680,7 @@ describe('F2.4 Cash Reconstruction RPC Integration Tests', () => {
       const initialBalance = posInitial.data!.balance_minor;
 
       // 2. Call exec_sql with a sequence that deletes the position, sets the local flag, but then triggers a division by zero error
-      const { error: err } = await supabase.rpc('exec_sql' as any, {
+      const { error: err } = await supabase.rpc('exec_sql', {
         sql_query: `
           SET LOCAL finance.allow_position_reconstruction = 'true';
           DELETE FROM public.finance_cash_positions WHERE tenant_id = '${testTenantId}' AND bank_account_id = '${bankAccountAId1}';
@@ -689,6 +707,8 @@ describe('F2.4 Cash Reconstruction RPC Integration Tests', () => {
     });
 
     it('T15: Reconstruction Privilege Escalation (reject direct update by unauthorized role)', async () => {
+      const unauthorizedUpdate: FinanceCashPositionUpdate = { balance_minor: 999999 };
+
       const anonClient = createSupabaseClient<Database>(
         requireSupabaseAdminEnv().url,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'mock-anon-key'
@@ -696,7 +716,7 @@ describe('F2.4 Cash Reconstruction RPC Integration Tests', () => {
 
       const { error: directUpdateErr } = await anonClient
         .from('finance_cash_positions')
-        .update({ balance_minor: 999999 as any })
+        .update(unauthorizedUpdate)
         .eq('tenant_id', testTenantId)
         .eq('bank_account_id', bankAccountAId1);
 
@@ -707,18 +727,18 @@ describe('F2.4 Cash Reconstruction RPC Integration Tests', () => {
 
     it('T16: Direct GUC Injection (verify setting is strictly local and does not leak or allow bypass)', async () => {
       // 1. Set the local config inside a transaction block
-      await supabase.rpc('exec_sql' as any, {
+      await supabase.rpc('exec_sql', {
         sql_query: "SET LOCAL finance.allow_position_reconstruction = 'true';"
       });
 
       // 2. Query the GUC in a separate call and verify it is not 'true' (did not leak/persist)
-      const { data, error } = await supabase.rpc('exec_sql' as any, {
+      const { data, error } = await supabase.rpc('exec_sql', {
         sql_query: "SELECT current_setting('finance.allow_position_reconstruction', true) as val;"
       });
 
       expect(error).toBeNull();
       // Since it's a separate transaction, the GUC setting must have been reset to empty or false
-      const val = (data as any)?.[0]?.val;
+      const val = getFirstCurrentSettingValue(data);
       expect(val).not.toBe('true');
     });
 

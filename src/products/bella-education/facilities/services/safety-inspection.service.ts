@@ -10,6 +10,7 @@ import { PreschoolFacilitiesRepository } from '../repositories/preschool-facilit
 import { FacilityZoneService } from './facility-zone.service';
 import { FacilitiesProjectionBridge } from '../bridges/facilities-projection.bridge';
 import { 
+  ChecklistItem,
   InspectionSchedule, 
   InspectionLog, 
   InspectionResult, 
@@ -40,7 +41,7 @@ export class SafetyInspectionService {
     inspectorPartyId: string;
     inspectionDate: string;
     resultStatus: InspectionResult;
-    checklistAnswers: any[];
+    checklistAnswers: ChecklistItem[];
     remarks?: string;
     restrictionScope: RestrictionScope;
   }): Promise<InspectionLog> {
@@ -97,7 +98,7 @@ export class SafetyInspectionService {
     inspectorPartyId: string;
     inspectionDate: string;
     resultStatus: InspectionResult;
-    checklistAnswers: any[];
+    checklistAnswers: ChecklistItem[];
     remarks?: string;
   }): Promise<{ log: InspectionLog; restored: boolean }> {
     const entityType = params.assetId ? 'ASSET' : 'ZONE';

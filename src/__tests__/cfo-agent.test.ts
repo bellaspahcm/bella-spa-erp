@@ -1,4 +1,6 @@
 import { runCFOAgent } from '../services/ai/agents/cfo';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
 
 const baseArgs = [
   'tenant-1',
@@ -13,7 +15,7 @@ function createSupabaseMock(result: { data?: unknown; error?: { message: string 
       data: result.data ?? null,
       error: result.error ?? null,
     }),
-  } as any;
+  } as SupabaseClient<Database>;
 }
 
 describe('runCFOAgent reconciliation report handling', () => {

@@ -8,6 +8,12 @@ import { eventBus } from '@/platform/host/event-bus';
 
 jest.setTimeout(30000);
 
+type ClinicalAllergyProjection = Record<string, unknown>;
+
+function isClinicalAllergyProjection(value: unknown): value is ClinicalAllergyProjection {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 describe('CDS Engine H8 Integration Tests (6 Gates)', () => {
   let supabase: Awaited<ReturnType<typeof createClient>>;
   let fixtures: HealthcareTestFixture;
@@ -80,9 +86,11 @@ describe('CDS Engine H8 Integration Tests (6 Gates)', () => {
     expect(snapshot.projection_status).toBe('FRESH');
     expect(snapshot.patient_id).toBe(fixtures.patientId);
     expect(snapshot.allergies).toHaveLength(1);
-    
-    const allergyList = snapshot.allergies as any[];
-    expect(allergyList[0].allergen_code).toBe('PENICILLIN-500');
+
+    const allergyList = Array.isArray(snapshot.allergies)
+      ? snapshot.allergies.filter(isClinicalAllergyProjection)
+      : [];
+    expect(allergyList[0]).toMatchObject({ allergen_code: 'PENICILLIN-500' });
   });
 
   // ────────────────────────────────────────────────────────────────────────────

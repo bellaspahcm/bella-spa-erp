@@ -33,7 +33,7 @@ jest.mock('@/services/user-actions', () => ({
 
 const mockRecordAuditLog = jest.fn();
 jest.mock('@/services/audit-actions', () => ({
-  recordAuditLog: (...args: any[]) => mockRecordAuditLog(...args),
+  recordAuditLog: (...args: unknown[]) => mockRecordAuditLog(...args),
   checkMonthLock: jest.fn().mockResolvedValue({ isLocked: false }),
 }));
 
@@ -48,11 +48,37 @@ jest.mock('next/headers', () => ({
   }),
 }));
 
+type MockDbError = { message: string };
+type MockPayload = Record<string, unknown>;
+type MockChainResult = { data: unknown; error: MockDbError | null };
+type MockChainNode = {
+  eq: (...args: unknown[]) => MockChainNode;
+  select: (...args: unknown[]) => MockChainNode;
+  single: () => Promise<MockChainResult>;
+  maybeSingle: () => Promise<MockChainResult>;
+  then: (cb: (value: MockChainResult) => unknown) => Promise<unknown>;
+  data: unknown;
+  error: MockDbError | null;
+};
+type RescheduleUpdateNode = {
+  eq: (field: string, id: string) => RescheduleUpdateNode;
+  then: (cb: (value: { error: MockDbError | null }) => unknown) => Promise<unknown>;
+};
+type RescheduleSingleChain = {
+  eq: () => RescheduleSingleChain;
+  single: () => Promise<MockChainResult>;
+};
+type RescheduleListChain = {
+  eq: () => RescheduleListChain;
+  gte: () => RescheduleListChain;
+  order: () => Promise<MockChainResult>;
+};
+
 // Mock Query Chain builder with full robust method chaining support
 class MockQueryBuilder {
   private table: string;
   private forceError: boolean;
-  public updatePayloads: any[] = [];
+  public updatePayloads: MockPayload[] = [];
   public deleteCalled: boolean = false;
   public insertCalled: boolean = false;
   public updateCalled: boolean = false;
@@ -167,7 +193,7 @@ class MockQueryBuilder {
     return Promise.resolve({ data: null, error: null });
   }
 
-  insert(payload: any) {
+  insert(payload: MockPayload | MockPayload[]) {
     this.insertCalled = true;
     const inserted = Array.isArray(payload) ? payload : [payload];
     const singleRes = this.forceError
@@ -182,19 +208,19 @@ class MockQueryBuilder {
           error: null
         };
 
-    const node: any = {
+    const node: MockChainNode = {
       eq: () => node,
       select: () => node,
       single: () => Promise.resolve(singleRes),
       maybeSingle: () => Promise.resolve(singleRes),
-      then: (cb: any) => Promise.resolve(chainRes).then(cb),
+      then: (cb: (value: MockChainResult) => unknown) => Promise.resolve(chainRes).then(cb),
       data: chainRes.data,
       error: chainRes.error
     };
     return node;
   }
 
-  update(payload: any) {
+  update(payload: MockPayload) {
     this.updateCalled = true;
     this.updatePayloads.push(payload);
     const res = this.forceError 
@@ -206,12 +232,12 @@ class MockQueryBuilder {
           error: null
         };
     
-    const node: any = {
+    const node: MockChainNode = {
       eq: () => node,
       select: () => node,
       single: () => Promise.resolve(res),
       maybeSingle: () => Promise.resolve(res),
-      then: (cb: any) => Promise.resolve(res).then(cb),
+      then: (cb: (value: MockChainResult) => unknown) => Promise.resolve(res).then(cb),
       data: res.data,
       error: res.error
     };
@@ -221,19 +247,19 @@ class MockQueryBuilder {
   delete() {
     this.deleteCalled = true;
     const res = { data: [], error: null };
-    const node: any = {
+    const node: MockChainNode = {
       eq: () => node,
       select: () => node,
       single: () => Promise.resolve(res),
       maybeSingle: () => Promise.resolve(res),
-      then: (cb: any) => Promise.resolve(res).then(cb),
+      then: (cb: (value: MockChainResult) => unknown) => Promise.resolve(res).then(cb),
       data: res.data,
       error: res.error
     };
     return node;
   }
 
-  then(onfulfilled: any) {
+  then(onfulfilled: (value: MockChainResult) => unknown) {
     const data = this.table === 'bookings' ? null : [];
     return Promise.resolve({ data, error: null }).then(onfulfilled);
   }
@@ -550,17 +576,17 @@ describe('Transaction Safety & Rollback Integrity Tests', () => {
   });
 
   it('rolls back already rescheduled future sessions when a later session update fails', async () => {
-    const updateCalls: Array<{ id: string; payload: any }> = [];
+    const updateCalls: Array<{ id: string; payload: MockPayload }> = [];
     const makeUpdateQuery = (error: { message: string } | null = null) => ({
-      update: (payload: any) => {
-        const node: any = {
+      update: (payload: MockPayload) => {
+        const node: RescheduleUpdateNode = {
           eq: (_field: string, id: string) => {
             if (_field === 'id') {
               updateCalls.push({ id, payload });
             }
             return node;
           },
-          then: (cb: any) => Promise.resolve({ error }).then(cb),
+          then: (cb: (value: { error: MockDbError | null }) => unknown) => Promise.resolve({ error }).then(cb),
         };
         return node;
       },
@@ -568,7 +594,7 @@ describe('Transaction Safety & Rollback Integrity Tests', () => {
     const queryQueue = [
       {
         select: () => {
-          const chain: any = {
+          const chain: RescheduleSingleChain = {
             eq: () => chain,
             single: () => Promise.resolve({
               data: {
@@ -587,7 +613,7 @@ describe('Transaction Safety & Rollback Integrity Tests', () => {
       },
       {
         select: () => {
-          const chain: any = {
+          const chain: RescheduleListChain = {
             eq: () => chain,
             gte: () => chain,
             order: () => Promise.resolve({
@@ -623,17 +649,17 @@ describe('Transaction Safety & Rollback Integrity Tests', () => {
   });
 
   it('rolls back all rescheduled sessions when reschedule audit logging fails', async () => {
-    const updateCalls: Array<{ id: string; payload: any }> = [];
+    const updateCalls: Array<{ id: string; payload: MockPayload }> = [];
     const makeUpdateQuery = () => ({
-      update: (payload: any) => {
-        const node: any = {
+      update: (payload: MockPayload) => {
+        const node: RescheduleUpdateNode = {
           eq: (_field: string, id: string) => {
             if (_field === 'id') {
               updateCalls.push({ id, payload });
             }
             return node;
           },
-          then: (cb: any) => Promise.resolve({ error: null }).then(cb),
+          then: (cb: (value: { error: MockDbError | null }) => unknown) => Promise.resolve({ error: null }).then(cb),
         };
         return node;
       },
@@ -641,7 +667,7 @@ describe('Transaction Safety & Rollback Integrity Tests', () => {
     const queryQueue = [
       {
         select: () => {
-          const chain: any = {
+          const chain: RescheduleSingleChain = {
             eq: () => chain,
             single: () => Promise.resolve({
               data: {
@@ -660,7 +686,7 @@ describe('Transaction Safety & Rollback Integrity Tests', () => {
       },
       {
         select: () => {
-          const chain: any = {
+          const chain: RescheduleListChain = {
             eq: () => chain,
             gte: () => chain,
             order: () => Promise.resolve({

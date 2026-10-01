@@ -1,0 +1,55 @@
+# Broader Any Cleanup Batch C44 Result — 2026-10-01
+
+## Status
+
+SEALED
+
+## Scope
+
+Small type-local Bella Education product runtime cleanup:
+
+- `src/products/bella-education/scheduling/bridges/scheduling-projection.bridge.ts`
+- `src/products/bella-education/scheduling/repositories/preschool-scheduling.repository.ts`
+- `src/products/bella-education/care-wellbeing/incidents/incident-safety.service.ts`
+- `src/products/bella-education/facilities/services/safety-inspection.service.ts`
+
+## Result
+
+```text
+Before check:any-types  306 violations / 69 files
+After check:any-types   297 violations / 65 files
+Removed                   9 violations /  4 files
+```
+
+## Changes
+
+- Replaced the scheduling bridge exception literal cast with the existing `ExceptionType` union.
+- Typed scheduling assignment mapper input with generated `edu_sched_shift_assignments.Row`.
+- Typed incident close update payload with generated `edu_health_incidents.Update`.
+- Typed safety inspection checklist inputs with the existing `ChecklistItem[]` domain contract.
+
+## Boundary
+
+```text
+Runtime behavior          NONE
+Education kernel          NONE
+Public contracts          NONE
+DB / migration            NONE
+Generated types           NONE
+Private repo/client seam  UNCHANGED
+Preschool dirty file      UNTOUCHED / EXCLUDED
+```
+
+## Verification
+
+```text
+targeted explicit-any scan  PASS
+targeted Jest               NOT_APPLICABLE: no direct suite for these four files
+targeted ESLint             PASS
+git diff --check             PASS
+npm run check:any-types      EXPECTED FAIL: 297 / 65
+```
+
+## Notes
+
+This batch intentionally did not touch remaining `repo as any` / private client accesses in Education product services. Those require a separate boundary decision instead of a local typing patch.

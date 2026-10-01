@@ -78,9 +78,17 @@ jest.mock('@/core/services/order/create-booking-action', () => ({
 }));
 import { createBooking } from '@/core/services/order/create-booking-action';
 
+type MockSupabaseClient = {
+  from: jest.Mock;
+};
+
+type MockWaitlistProvider = {
+  addToWaitlist: jest.Mock;
+};
+
 describe('Waitlist Service - addToWaitlist()', () => {
-  let mockSupabase: any;
-  let mockProvider: any;
+  let mockSupabase: MockSupabaseClient;
+  let mockProvider: MockWaitlistProvider;
 
   beforeEach(() => {
     // Reset all mocks
@@ -175,7 +183,7 @@ describe('Waitlist Service - addToWaitlist()', () => {
 });
 
 describe('Waitlist Service - processSlotAvailable()', () => {
-  let mockSupabase: any;
+  let mockSupabase: MockSupabaseClient;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -202,7 +210,7 @@ describe('Waitlist Service - processSlotAvailable()', () => {
 });
 
 describe('Waitlist Service - expireOldEntries()', () => {
-  let mockSupabase: any;
+  let mockSupabase: MockSupabaseClient;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -222,7 +230,7 @@ describe('Waitlist Service - expireOldEntries()', () => {
 });
 
 describe('Waitlist Service - getWaitlistEntries()', () => {
-  let mockSupabase: any;
+  let mockSupabase: MockSupabaseClient;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -246,7 +254,7 @@ describe('Waitlist Service - getWaitlistEntries()', () => {
 });
 
 describe('Waitlist Service - Notification Integration', () => {
-  let mockSupabase: any;
+  let mockSupabase: MockSupabaseClient;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -310,7 +318,7 @@ describe('Waitlist Service - Notification Integration', () => {
 });
 
 describe('Waitlist Service - Edge Cases', () => {
-  let mockSupabase: any;
+  let mockSupabase: MockSupabaseClient;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -345,7 +353,7 @@ describe('Waitlist Service - Edge Cases', () => {
 });
 
 describe('Waitlist Service - convertToBooking()', () => {
-  let mockSupabase: any;
+  let mockSupabase: MockSupabaseClient;
 
   beforeEach(() => {
     jest.clearAllMocks();

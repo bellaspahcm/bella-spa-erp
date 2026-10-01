@@ -24,49 +24,56 @@ const mockCheckHqAuth = jest.fn();
 const mockRpc = jest.fn();
 const mockFrom = jest.fn();
 
-(global as any).mockGetCurrentUser = mockGetCurrentUser;
-(global as any).mockCheckHqAuth = mockCheckHqAuth;
-(global as any).mockRpc = mockRpc;
-(global as any).mockFrom = mockFrom;
+type HqAuditExplorerTestGlobals = typeof globalThis & {
+  mockGetCurrentUser: typeof mockGetCurrentUser;
+  mockCheckHqAuth: typeof mockCheckHqAuth;
+  mockRpc: typeof mockRpc;
+  mockFrom: typeof mockFrom;
+};
+
+(globalThis as HqAuditExplorerTestGlobals).mockGetCurrentUser = mockGetCurrentUser;
+(globalThis as HqAuditExplorerTestGlobals).mockCheckHqAuth = mockCheckHqAuth;
+(globalThis as HqAuditExplorerTestGlobals).mockRpc = mockRpc;
+(globalThis as HqAuditExplorerTestGlobals).mockFrom = mockFrom;
 
 jest.mock('@/services/user-actions', () => ({
-  getCurrentUser: (...args: any[]) => (global as any).mockGetCurrentUser(...args),
+  getCurrentUser: (...args: unknown[]) => (globalThis as HqAuditExplorerTestGlobals).mockGetCurrentUser(...args),
 }));
 
 jest.mock('@/services/hq-actions', () => ({
-  checkHqAuth: (...args: any[]) => (global as any).mockCheckHqAuth(...args),
+  checkHqAuth: (...args: unknown[]) => (globalThis as HqAuditExplorerTestGlobals).mockCheckHqAuth(...args),
 }));
 
 jest.mock('@/lib/supabase-server', () => ({
   createClient: () => Promise.resolve({
-    rpc: (...args: any[]) => (global as any).mockRpc(...args),
-    from: (...args: any[]) => (global as any).mockFrom(...args),
+    rpc: (...args: unknown[]) => (globalThis as HqAuditExplorerTestGlobals).mockRpc(...args),
+    from: (...args: unknown[]) => (globalThis as HqAuditExplorerTestGlobals).mockFrom(...args),
   }),
 }));
 
 // Helper class for mock query builders
 class MockQueryBuilder {
-  public data: any;
-  public error: any;
+  public data: unknown;
+  public error: unknown;
   public eqSpy = jest.fn().mockReturnThis();
   public orderSpy = jest.fn().mockReturnThis();
   public gteSpy = jest.fn().mockReturnThis();
   public lteSpy = jest.fn().mockReturnThis();
   public rangeSpy = jest.fn().mockReturnThis();
 
-  constructor(data: any = null, error: any = null) {
+  constructor(data: unknown = null, error: unknown = null) {
     this.data = data;
     this.error = error;
   }
 
   select() { return this; }
-  eq(...args: any[]) { this.eqSpy(...args); return this; }
-  order(...args: any[]) { this.orderSpy(...args); return this; }
-  gte(...args: any[]) { this.gteSpy(...args); return this; }
-  lte(...args: any[]) { this.lteSpy(...args); return this; }
-  range(...args: any[]) { this.rangeSpy(...args); return this; }
+  eq(...args: unknown[]) { this.eqSpy(...args); return this; }
+  order(...args: unknown[]) { this.orderSpy(...args); return this; }
+  gte(...args: unknown[]) { this.gteSpy(...args); return this; }
+  lte(...args: unknown[]) { this.lteSpy(...args); return this; }
+  range(...args: unknown[]) { this.rangeSpy(...args); return this; }
 
-  then(onfulfilled: any) {
+  then(onfulfilled: (value: { data: unknown; error: unknown }) => unknown) {
     return Promise.resolve({ data: this.data, error: this.error }).then(onfulfilled);
   }
 }

@@ -57,6 +57,17 @@ export interface AgencyItem {
   status: 'active' | 'pending' | 'suspended';
 }
 
+const CAMPAIGN_CHANNELS = ['facebook', 'zalo', 'google', 'tiktok', 'event', 'billboard'] as const satisfies readonly CampaignItem['channel'][];
+const AGENCY_TIERS = ['F1_EXCLUSIVE', 'F1_STANDARD', 'F2_PARTNER', 'CTV_VIP'] as const satisfies readonly AgencyItem['tier'][];
+
+function isCampaignChannel(value: string): value is CampaignItem['channel'] {
+  return (CAMPAIGN_CHANNELS as readonly string[]).includes(value);
+}
+
+function isAgencyTier(value: string): value is AgencyItem['tier'] {
+  return (AGENCY_TIERS as readonly string[]).includes(value);
+}
+
 // ── Seed Data ─────────────────────────────────────────────────────────────────
 
 const INITIAL_CAMPAIGNS: CampaignItem[] = [
@@ -927,7 +938,11 @@ export default function RealEstateMarketingPage() {
                     <label className="block text-slate-700 dark:text-slate-300 mb-1">Kênh truyền thông</label>
                     <PremiumSelect
                       value={newCamp.channel}
-                      onChange={val => setNewCamp({ ...newCamp, channel: val as any })}
+                      onChange={val => {
+                        if (isCampaignChannel(val)) {
+                          setNewCamp({ ...newCamp, channel: val });
+                        }
+                      }}
                       options={[
                         { value: "facebook", label: "Facebook Ads" },
                         { value: "zalo", label: "Zalo OA Ads" },
@@ -1017,7 +1032,11 @@ export default function RealEstateMarketingPage() {
                     <label className="block text-slate-700 dark:text-slate-300 mb-1">Cấp đại lý</label>
                     <PremiumSelect
                       value={newAgency.tier}
-                      onChange={val => setNewAgency({ ...newAgency, tier: val as any })}
+                      onChange={val => {
+                        if (isAgencyTier(val)) {
+                          setNewAgency({ ...newAgency, tier: val });
+                        }
+                      }}
                       options={[
                         { value: "F1_EXCLUSIVE", label: "F1 Độc quyền" },
                         { value: "F1_STANDARD", label: "F1 Chính thức" },

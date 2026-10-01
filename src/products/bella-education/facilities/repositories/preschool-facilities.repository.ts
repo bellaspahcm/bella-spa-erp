@@ -4,7 +4,9 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
+import type { Database, Json } from '@/types/database.types';
 import { 
+  ChecklistItem,
   Facility, 
   FacilityZone, 
   FacilityAsset, 
@@ -17,6 +19,30 @@ import {
   InspectionResult,
   JobStatus
 } from '../domain/facilities.types';
+
+type FacilityRow = Database['public']['Tables']['edu_fac_facilities']['Row'];
+type FacilityZoneRow = Database['public']['Tables']['edu_fac_zones']['Row'];
+type FacilityAssetRow = Database['public']['Tables']['edu_fac_assets']['Row'];
+type FacilityAssetUpdate = Database['public']['Tables']['edu_fac_assets']['Update'];
+type InspectionScheduleRow = Database['public']['Tables']['edu_fac_inspection_schedules']['Row'];
+type InspectionLogRow = Database['public']['Tables']['edu_fac_inspection_logs']['Row'];
+type OutOfServiceLogRow = Database['public']['Tables']['edu_fac_out_of_service_logs']['Row'];
+type MaintenanceJobRow = Database['public']['Tables']['edu_fac_maintenance_jobs']['Row'];
+
+function isChecklistItem(value: unknown): value is ChecklistItem {
+  if (typeof value !== 'object' || value === null) return false;
+  const candidate = value as Partial<ChecklistItem>;
+  return (
+    typeof candidate.key === 'string' &&
+    typeof candidate.question === 'string' &&
+    typeof candidate.passed === 'boolean' &&
+    (candidate.notes === undefined || typeof candidate.notes === 'string')
+  );
+}
+
+function toChecklistItems(value: Json): ChecklistItem[] {
+  return Array.isArray(value) ? value.filter(isChecklistItem) : [];
+}
 
 export class PreschoolFacilitiesRepository {
   constructor(private readonly supabase: SupabaseClient) {}
@@ -141,7 +167,7 @@ export class PreschoolFacilitiesRepository {
   }
 
   async updateAssetStatus(tenantId: string, id: string, status: OperationalStatus, restrictionScope: RestrictionScope, lastInspectedAt?: string): Promise<FacilityAsset> {
-    const updatePayload: any = {
+    const updatePayload: FacilityAssetUpdate = {
       operational_status: status,
       restriction_scope: restrictionScope,
     };
@@ -328,108 +354,209 @@ export class PreschoolFacilitiesRepository {
     }
 
     const { data } = await query.order('created_at', { ascending: false });
-    return (data || []).map(d => ({
-      id: d.id,
-      tenantId: d.tenant_id,
-      zoneId: d.zone_id,
-      assetId: d.asset_id,
-      title: d.title,
-      priority: d.priority,
-      status: d.status,
-      reportedByPartyId: d.reported_by_party_id,
-      assignedTechnicianPartyId: d.assigned_technician_party_id,
-      completionNotes: d.completion_notes,
-      verifiedByPartyId: d.verified_by_party_id,
-      createdAt: d.created_at,
-      updatedAt: d.updated_at,
-    }));
+    return (data || []).map(d => this.mapMaintenanceJob(d));
+  }
+
+  async createMaintenanceJob(input: {
+    tenantId: string;
+    zoneId: string;
+    assetId?: string;
+    title: string;
+    priority: JobPriority;
+    reportedByPartyId: string;
+  }): Promise<MaintenanceJob> {
+    const { data, error } = await this.supabase
+      .from('edu_fac_maintenance_jobs')
+      .insert({
+        tenant_id: input.tenantId,
+        zone_id: input.zoneId,
+        asset_id: input.assetId,
+        title: input.title,
+        priority: input.priority,
+        status: 'SUBMITTED',
+        reported_by_party_id: input.reportedByPartyId,
+      })
+      .select('*')
+      .single();
+
+    if (error || !data) {
+      throw new Error(`Failed to create maintenance job: ${error?.message}`);
+    }
+
+    return this.mapMaintenanceJob(data);
+  }
+
+  async assignMaintenanceTechnician(
+    tenantId: string,
+    jobId: string,
+    technicianPartyId: string
+  ): Promise<MaintenanceJob> {
+    return this.updateMaintenanceJob(tenantId, jobId, {
+      assigned_technician_party_id: technicianPartyId,
+      status: 'IN_PROGRESS',
+      updated_at: new Date().toISOString(),
+    }, 'Failed to assign technician to maintenance job');
+  }
+
+  async completeMaintenanceJob(
+    tenantId: string,
+    jobId: string,
+    completionNotes: string
+  ): Promise<MaintenanceJob> {
+    return this.updateMaintenanceJob(tenantId, jobId, {
+      completion_notes: completionNotes,
+      status: 'COMPLETED',
+      updated_at: new Date().toISOString(),
+    }, 'Failed to complete maintenance job');
+  }
+
+  async verifyMaintenanceJob(
+    tenantId: string,
+    jobId: string,
+    verifiedByPartyId: string
+  ): Promise<MaintenanceJob> {
+    return this.updateMaintenanceJob(tenantId, jobId, {
+      verified_by_party_id: verifiedByPartyId,
+      status: 'VERIFIED',
+      updated_at: new Date().toISOString(),
+    }, 'Failed to verify maintenance job');
+  }
+
+  async getMaintenanceJob(tenantId: string, jobId: string): Promise<MaintenanceJob | null> {
+    const { data } = await this.supabase
+      .from('edu_fac_maintenance_jobs')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .eq('id', jobId)
+      .maybeSingle();
+
+    return data ? this.mapMaintenanceJob(data) : null;
+  }
+
+  private async updateMaintenanceJob(
+    tenantId: string,
+    jobId: string,
+    update: Database['public']['Tables']['edu_fac_maintenance_jobs']['Update'],
+    errorMessage: string
+  ): Promise<MaintenanceJob> {
+    const { data, error } = await this.supabase
+      .from('edu_fac_maintenance_jobs')
+      .update(update)
+      .eq('tenant_id', tenantId)
+      .eq('id', jobId)
+      .select('*')
+      .single();
+
+    if (error || !data) {
+      throw new Error(`${errorMessage}: ${error?.message}`);
+    }
+
+    return this.mapMaintenanceJob(data);
   }
 
   // --- Data Mappers ---
-  private mapFacility(d: any): Facility {
+  private mapFacility(d: FacilityRow): Facility {
     return {
       id: d.id,
       tenantId: d.tenant_id,
       name: d.name,
       code: d.code,
-      address: d.address,
+      address: d.address ?? undefined,
       createdAt: d.created_at,
     };
   }
 
-  private mapZone(d: any): FacilityZone {
+  private mapZone(d: FacilityZoneRow): FacilityZone {
     return {
       id: d.id,
       tenantId: d.tenant_id,
       facilityId: d.facility_id,
       name: d.name,
-      zoneType: d.zone_type,
+      zoneType: d.zone_type as FacilityZone['zoneType'],
       maxOccupancy: d.max_occupancy,
-      operationalStatus: d.operational_status,
-      restrictionScope: d.restriction_scope,
+      operationalStatus: d.operational_status as OperationalStatus,
+      restrictionScope: d.restriction_scope as RestrictionScope,
       createdAt: d.created_at,
     };
   }
 
-  private mapAsset(d: any): FacilityAsset {
+  private mapAsset(d: FacilityAssetRow): FacilityAsset {
     return {
       id: d.id,
       tenantId: d.tenant_id,
       zoneId: d.zone_id,
       name: d.name,
-      assetCategory: d.asset_category,
-      serialNumber: d.serial_number,
+      assetCategory: d.asset_category as FacilityAsset['assetCategory'],
+      serialNumber: d.serial_number ?? undefined,
       inspectionIntervalDays: d.inspection_interval_days,
-      lastInspectedAt: d.last_inspected_at,
-      operationalStatus: d.operational_status,
-      restrictionScope: d.restriction_scope,
+      lastInspectedAt: d.last_inspected_at ?? undefined,
+      operationalStatus: d.operational_status as OperationalStatus,
+      restrictionScope: d.restriction_scope as RestrictionScope,
       createdAt: d.created_at,
     };
   }
 
-  private mapSchedule(d: any): InspectionSchedule {
+  private mapSchedule(d: InspectionScheduleRow): InspectionSchedule {
     return {
       id: d.id,
       tenantId: d.tenant_id,
       zoneId: d.zone_id,
-      assetId: d.asset_id,
+      assetId: d.asset_id ?? undefined,
       title: d.title,
-      frequency: d.frequency,
-      checklistSchema: d.checklist_schema || [],
+      frequency: d.frequency as InspectionSchedule['frequency'],
+      checklistSchema: toChecklistItems(d.checklist_schema),
       nextDueDate: d.next_due_date,
       createdAt: d.created_at,
     };
   }
 
-  private mapInspectionLog(d: any): InspectionLog {
+  private mapInspectionLog(d: InspectionLogRow): InspectionLog {
     return {
       id: d.id,
       tenantId: d.tenant_id,
-      scheduleId: d.schedule_id,
+      scheduleId: d.schedule_id ?? undefined,
       zoneId: d.zone_id,
-      assetId: d.asset_id,
+      assetId: d.asset_id ?? undefined,
       inspectorPartyId: d.inspector_party_id,
       inspectionDate: d.inspection_date,
-      resultStatus: d.result_status,
-      checklistAnswers: d.checklist_answers || [],
-      remarks: d.remarks,
-      restrictionScope: d.restriction_scope,
+      resultStatus: d.result_status as InspectionResult,
+      checklistAnswers: toChecklistItems(d.checklist_answers),
+      remarks: d.remarks ?? undefined,
+      restrictionScope: d.restriction_scope as RestrictionScope,
       createdAt: d.created_at,
     };
   }
 
-  private mapOutOfServiceLog(d: any): OutOfServiceLog {
+  private mapOutOfServiceLog(d: OutOfServiceLogRow): OutOfServiceLog {
     return {
       id: d.id,
       tenantId: d.tenant_id,
-      entityType: d.entity_type,
+      entityType: d.entity_type as OutOfServiceLog['entityType'],
       entityId: d.entity_id,
       reason: d.reason,
-      restrictionScope: d.restriction_scope,
+      restrictionScope: d.restriction_scope as RestrictionScope,
       initiatedByPartyId: d.initiated_by_party_id,
-      restoredByPartyId: d.restored_by_party_id,
+      restoredByPartyId: d.restored_by_party_id ?? undefined,
       createdAt: d.created_at,
-      restoredAt: d.restored_at,
+      restoredAt: d.restored_at ?? undefined,
+    };
+  }
+
+  private mapMaintenanceJob(d: MaintenanceJobRow): MaintenanceJob {
+    return {
+      id: d.id,
+      tenantId: d.tenant_id,
+      zoneId: d.zone_id,
+      assetId: d.asset_id ?? undefined,
+      title: d.title,
+      priority: d.priority as JobPriority,
+      status: d.status as JobStatus,
+      reportedByPartyId: d.reported_by_party_id,
+      assignedTechnicianPartyId: d.assigned_technician_party_id ?? undefined,
+      completionNotes: d.completion_notes ?? undefined,
+      verifiedByPartyId: d.verified_by_party_id ?? undefined,
+      createdAt: d.created_at,
+      updatedAt: d.updated_at,
     };
   }
 }

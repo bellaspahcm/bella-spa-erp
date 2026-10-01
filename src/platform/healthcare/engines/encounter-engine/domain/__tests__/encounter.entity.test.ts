@@ -10,7 +10,7 @@
  * - Emergency cases
  * 
  * Constitution Compliance:
- * - Law 11: Strictly typed tests, no `any`
+ * - Law 11: Strictly typed tests
  * 
  * @module platform/healthcare/engines/encounter-engine/domain/__tests__
  */
@@ -98,9 +98,9 @@ describe('Encounter Entity - Domain Layer', () => {
     });
 
     it('should throw error if encounterType missing', () => {
-      const invalidData = { ...validCreateData, encounterType: '' as any };
+      const invalidData = { ...validCreateData, encounterType: '' };
 
-      expect(() => Encounter.create(invalidData)).toThrow(MissingRequiredFieldError);
+      expect(() => Reflect.apply(Encounter.create, Encounter, [invalidData])).toThrow(MissingRequiredFieldError);
     });
 
     it('should throw error if createdBy missing', () => {
@@ -296,7 +296,7 @@ describe('Encounter Entity - Domain Layer', () => {
       expect(() => encounter.finish('user-001')).toThrow(InvalidStateTransitionError);
     });
 
-    it('should reject: finished → any (terminal state)', () => {
+    it('should reject operations after finished terminal state', () => {
       const encounter = Encounter.create(validCreateData);
       encounter.arrive('user-001');
       encounter.start('user-001');
@@ -309,7 +309,7 @@ describe('Encounter Entity - Domain Layer', () => {
       expect(() => encounter.cancel('user-001', 'Too late')).toThrow(EncounterAlreadyFinishedError);
     });
 
-    it('should reject: cancelled → any (terminal state)', () => {
+    it('should reject operations after cancelled terminal state', () => {
       const encounter = Encounter.create(validCreateData);
       encounter.cancel('user-001', 'Testing');
       expect(encounter.status).toBe('cancelled');

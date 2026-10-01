@@ -1,16 +1,34 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 
-let queryResults: any[] = [];
+type MockQueryResult = {
+  data: unknown;
+  error: { message: string } | null;
+};
+
+type MockBuilder = {
+  select: jest.Mock<MockBuilder, []>;
+  eq: jest.Mock<MockBuilder, []>;
+  in: jest.Mock<MockBuilder, []>;
+  single: jest.Mock<Promise<MockQueryResult>, []>;
+  then: (
+    onfulfilled: (value: MockQueryResult) => unknown,
+    onrejected?: (reason: unknown) => unknown,
+  ) => Promise<unknown>;
+};
+
+type SpaModuleAdapterInstance = typeof import('../modules/spa/adapters/SpaModuleAdapter').spaModuleAdapter;
+
+let queryResults: MockQueryResult[] = [];
 
 // Clean mock builder that implements proper thenable interface for awaits
-const mockBuilder: any = {
+const mockBuilder: MockBuilder = {
   select: jest.fn(() => mockBuilder),
   eq: jest.fn(() => mockBuilder),
   in: jest.fn(() => mockBuilder),
   single: jest.fn(() => {
     return Promise.resolve(queryResults.shift() || { data: null, error: null });
   }),
-  then(onfulfilled: any, onrejected: any) {
+  then(onfulfilled, onrejected) {
     const result = queryResults.shift() || { data: null, error: null };
     return Promise.resolve(result).then(onfulfilled, onrejected);
   },
@@ -31,7 +49,7 @@ jest.mock('@/lib/supabase-server', () => ({
 import type { CoreBookingOrder, TenantContext } from '@/core/types';
 
 describe('SpaModuleAdapter validation', () => {
-  let spaModuleAdapter: any;
+  let spaModuleAdapter: SpaModuleAdapterInstance;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -171,7 +189,10 @@ describe('SpaModuleAdapter validation', () => {
       error: null,
     });
 
-    const result = await constructTenantContextForBooking(mockSupabase as any, 'tenant-123');
+    const result = await constructTenantContextForBooking(
+      mockSupabase as Parameters<typeof constructTenantContextForBooking>[0],
+      'tenant-123',
+    );
     expect('error' in result).toBe(false);
     if (!('error' in result)) {
       expect(result.context.enabledModules).toContain('beauty_spa');

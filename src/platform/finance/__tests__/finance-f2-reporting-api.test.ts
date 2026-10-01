@@ -7,7 +7,7 @@
  * and telemetry isolation.
  *
  * Compliance:
- * - TypeSafety-NoAny: Strictly typed with zero 'any' usages.
+ * - TypeSafety: strictly typed with zero explicit dynamic type usage.
  *
  * @module platform/finance/__tests__/finance-f2-reporting-api.test
  */
@@ -47,6 +47,7 @@ describe('F2.3 Cash Reporting API Integration Tests', () => {
   let bankAccountBId: string;
 
   let sharedPeriodName: string;
+  let seedF1TxId: string;
 
   beforeAll(async () => {
     const { url, adminKey } = requireSupabaseAdminEnv();
@@ -170,7 +171,7 @@ describe('F2.3 Cash Reporting API Integration Tests', () => {
     if (!postRes.success || !postRes.data) {
       throw new Error(`Reporting seed transaction failed: ${postRes.error?.message}`);
     }
-    (globalThis as any).seedF1TxId = postRes.data.id;
+    seedF1TxId = postRes.data.id;
   });
 
   afterAll(async () => {
@@ -222,7 +223,7 @@ describe('F2.3 Cash Reporting API Integration Tests', () => {
         p_functional_amount_minor: 150000,
         p_functional_currency: 'VND',
         p_valuation_rate: 1.0,
-        p_f1_transaction_id: (globalThis as any).seedF1TxId,
+        p_f1_transaction_id: seedF1TxId,
         p_cash_leg_reference: '1111',
         p_source_type: 'F1_POSTING',
         p_source_id: 'so-t03',
@@ -270,7 +271,7 @@ describe('F2.3 Cash Reporting API Integration Tests', () => {
         p_functional_amount_minor: 50000,
         p_functional_currency: 'VND',
         p_valuation_rate: 1.0,
-        p_f1_transaction_id: (globalThis as any).seedF1TxId,
+        p_f1_transaction_id: seedF1TxId,
         p_cash_leg_reference: '1111-outflow',
         p_source_type: 'F1_POSTING',
         p_source_id: 'so-t06',

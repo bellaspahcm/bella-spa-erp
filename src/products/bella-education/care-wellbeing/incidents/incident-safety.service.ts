@@ -1,10 +1,13 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/database.types";
 import {
   ICloseIncidentCommand,
   IEscalateIncidentCommand,
   IIncidentSafetyContract,
   IReportIncidentCommand,
 } from "./incident-safety.contract";
+
+type HealthIncidentUpdate = Database["public"]["Tables"]["edu_health_incidents"]["Update"];
 
 export class IncidentSafetyService implements IIncidentSafetyContract {
   constructor(private readonly supabase: SupabaseClient) {}
@@ -79,7 +82,7 @@ export class IncidentSafetyService implements IIncidentSafetyContract {
     }
 
     // 3. Close the incident
-    const updateData: any = { status: "CLOSED" };
+    const updateData: HealthIncidentUpdate = { status: "CLOSED" };
     if (command.acknowledgedAt) {
       updateData.escalation_acknowledged_at = command.acknowledgedAt.toISOString();
     }

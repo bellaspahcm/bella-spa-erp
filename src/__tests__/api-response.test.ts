@@ -33,6 +33,10 @@ import {
 // HELPERS
 // ============================================================================
 
+type MockRequestWithRateLimit = NextRequest & {
+  rateLimitHeaders?: Record<string, string>;
+};
+
 /**
  * Create mock NextRequest
  */
@@ -52,7 +56,7 @@ function createMockRequest(options: {
 
   // Attach rate limit headers if provided
   if (options.rateLimitHeaders) {
-    (req as any).rateLimitHeaders = options.rateLimitHeaders;
+    (req as MockRequestWithRateLimit).rateLimitHeaders = options.rateLimitHeaders;
   }
 
   return req;
@@ -622,10 +626,11 @@ describe('Response Wrappers', () => {
       const req = createMockRequest();
       
       const handler = withErrorHandling(async () => {
-        const err: any = new Error('API error');
-        err.name = 'APIError';
-        err.code = 'INVALID_INPUT';
-        err.statusCode = 400;
+        const err = Object.assign(new Error('API error'), {
+          name: 'APIError',
+          code: 'INVALID_INPUT',
+          statusCode: 400,
+        });
         throw err;
       });
       

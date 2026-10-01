@@ -5,9 +5,23 @@ type QueryResult = {
   error: { message: string } | null;
 };
 
+type QueryBuilder = {
+  calls: Array<{ method: string; args: unknown[] }>;
+  select: jest.Mock<QueryBuilder, unknown[]>;
+  eq: jest.Mock<QueryBuilder, unknown[]>;
+  in: jest.Mock<QueryBuilder, unknown[]>;
+  limit: jest.Mock<QueryBuilder, unknown[]>;
+  neq: jest.Mock<QueryBuilder, unknown[]>;
+  single: jest.Mock<Promise<QueryResult>, []>;
+  then: (
+    resolve: (value: QueryResult) => unknown,
+    reject?: (reason: unknown) => unknown,
+  ) => Promise<unknown>;
+};
+
 function makeQueryBuilder(result: QueryResult) {
   const calls: Array<{ method: string; args: unknown[] }> = [];
-  const builder: any = {
+  const builder: QueryBuilder = {
     calls,
     select: jest.fn((...args: unknown[]) => {
       calls.push({ method: 'select', args });
