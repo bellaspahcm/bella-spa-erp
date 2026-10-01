@@ -259,11 +259,11 @@ export class BeautySpaV2Service {
       ...(input.supportProfessionalIds ?? []),
       ...input.resources.map((resource) => resource.resourceId),
     ];
-    if (requiredIds.some(isMissingString)) {
+    if (requiredIds.some(isInvalidOperationalId)) {
       throw new BeautySpaV2Error('REQUIRED_ID_MISSING', 'Beauty Spa v2 bookings require tenant, branch, customer, service, staff, actor, and resource IDs.');
     }
 
-    if (input.resources.some((resource) => resource.segmentId !== undefined && isMissingString(resource.segmentId))) {
+    if (input.resources.some((resource) => resource.segmentId !== undefined && isInvalidOperationalId(resource.segmentId))) {
       throw new BeautySpaV2Error('INVALID_RESOURCE_REQUIREMENTS', 'Beauty Spa v2 resource segment IDs must be strings when provided.');
     }
 
@@ -328,10 +328,10 @@ export class BeautySpaV2Service {
       input.session.appointmentId,
       input.session.serviceCommitmentId,
     ];
-    if (requiredSessionIds.some(isMissingString)) {
+    if (requiredSessionIds.some(isInvalidOperationalId)) {
       throw new BeautySpaV2Error('REQUIRED_SESSION_ID_MISSING', 'Beauty Spa v2 session completion requires session, tenant, appointment, and service commitment IDs.');
     }
-    if (isMissingString(input.performerId)) {
+    if (isInvalidOperationalId(input.performerId)) {
       throw new BeautySpaV2Error('REQUIRED_ID_MISSING', 'Beauty Spa v2 session completion requires a performer ID.');
     }
     if (typeof input.outcome.packageSessionUsed !== 'boolean') {
@@ -346,7 +346,7 @@ export class BeautySpaV2Service {
     if (!isOneOf(BEAUTY_SPA_PAYROLL_HANDOFFS, input.outcome.payrollHandoff)) {
       throw new BeautySpaV2Error('INVALID_CHECKOUT_OUTCOME', 'Beauty Spa v2 session completion requires a supported payroll handoff.');
     }
-    if (isMissingString(input.outcome.checkedOutBy)) {
+    if (isInvalidOperationalId(input.outcome.checkedOutBy)) {
       throw new BeautySpaV2Error('CHECKOUT_ACTOR_REQUIRED', 'Beauty Spa v2 session completion requires a checkout actor.');
     }
     if (isMissingString(input.outcome.customerHistoryNote)) {
@@ -511,6 +511,10 @@ function isOneOf<const TValues extends readonly string[]>(
 
 function isMissingString(value: unknown): boolean {
   return typeof value !== 'string' || value.trim().length === 0;
+}
+
+function isInvalidOperationalId(value: unknown): boolean {
+  return typeof value !== 'string' || value.trim().length === 0 || value.trim() !== value;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

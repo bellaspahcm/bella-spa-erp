@@ -425,6 +425,20 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
       },
     })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'CHECKOUT_ACTOR_REQUIRED' });
 
+    await expect(service.completeSession({
+      session: plannedSession,
+      performerId: 'therapist-lead-1',
+      outcome: {
+        checkedOutBy: 'manager-spa ',
+        customerHistoryNote: 'Skin barrier improved.',
+        packageSessionUsed: true,
+        paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+        inventoryHandoff: 'INVENTORY_HANDOFF_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: ['CHAIN_V2'],
+      },
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'CHECKOUT_ACTOR_REQUIRED' });
+
     const invalidPackageOutcome = {
       checkedOutBy: 'manager-spa',
       customerHistoryNote: 'Skin barrier improved.',
@@ -793,6 +807,26 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
     expect(nonStringHarness.assignments).toHaveLength(0);
     expect(nonStringHarness.allocations).toHaveLength(0);
     expect(nonStringHarness.waitlistEntries).toHaveLength(0);
+
+    const paddedHarness = new BeautySpaHarness();
+    const paddedService = paddedHarness.createService();
+
+    await expect(paddedService.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-padded-staff',
+      serviceId: 'service-suite-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-resource ',
+      resources: [{ resourceId: 'suite-d1-04', resourceType: 'SUITE' }],
+      actorId: 'manager-spa',
+      bookingMode: 'WALK_IN',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'REQUIRED_ID_MISSING' });
+
+    expect(paddedHarness.appointments).toHaveLength(0);
+    expect(paddedHarness.assignments).toHaveLength(0);
+    expect(paddedHarness.allocations).toHaveLength(0);
+    expect(paddedHarness.waitlistEntries).toHaveLength(0);
 
     const segmentHarness = new BeautySpaHarness();
     const segmentService = segmentHarness.createService();
