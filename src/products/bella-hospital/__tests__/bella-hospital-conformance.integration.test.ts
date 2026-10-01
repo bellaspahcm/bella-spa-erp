@@ -123,6 +123,8 @@ describe('BELLA HOSPITAL — 11 AUTOMATED VERIFICATION GATES', () => {
     const res = await admissionService.transferBed({
       admissionId: 'adm-hosp-001',
       tenantId: 'tenant-hosp-a',
+      encounterId: 'enc-hosp-101',
+      patientId: 'pat-101',
       targetBedId: 'bed-icu-02',
       transferReason: 'Condition deterioration',
       transferredBy: 'dr-101'
@@ -151,6 +153,8 @@ describe('BELLA HOSPITAL — 11 AUTOMATED VERIFICATION GATES', () => {
     await admissionService.transferBed({
       admissionId: 'adm-hosp-001',
       tenantId: 'tenant-hosp-a',
+      encounterId: 'enc-hosp-101',
+      patientId: 'pat-101',
       targetBedId: 'bed-icu-02',
       transferReason: 'Condition deterioration',
       transferredBy: 'dr-101',
@@ -160,7 +164,8 @@ describe('BELLA HOSPITAL — 11 AUTOMATED VERIFICATION GATES', () => {
     expect(mockTemporalContract.recordTemporalEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         tenantId: 'tenant-hosp-a',
-        entityId: 'adm-hosp-001',
+        encounterId: 'enc-hosp-101',
+        aggregateId: 'adm-hosp-001',
         eventType: 'BED_TRANSFERRED'
       })
     );
