@@ -191,6 +191,9 @@ export class BeautySpaV2Service {
         bookingMode: input.bookingMode,
         reason,
       });
+      if (isMissingString(waitlist.waitlistId) || !Number.isInteger(waitlist.position) || waitlist.position <= 0) {
+        throw new BeautySpaV2Error('WAITLIST_HANDOFF_FAILED', 'Beauty Spa v2 waitlist handoff did not return accepted waitlist evidence.');
+      }
 
       return {
         appointment: this.buildWaitlistedAppointment(input),

@@ -222,7 +222,7 @@ Fresh local verification:
 
 ```text
 npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
-PASS - 3 suites, 53 tests
+PASS - 3 suites, 54 tests
 
 npx tsc -p tsconfig.beauty.json --noEmit
 PASS
@@ -253,6 +253,7 @@ Product-layer root-cause fixes verified in the focused suite:
 | Rollback cleanup failure | Appointment cancellation failure or per-item assignment/allocation cleanup failure could stop later cleanup and leave accepted staff or active resources after a failed booking. | Attempt appointment cancellation, assignment disruption, and allocation disruption independently; continue per item and report rollback-failed codes when cleanup does not complete cleanly. |
 | Allocation activation failure | A resource allocation created as `PROPOSED` could fail while being activated and remain outside the rollback list. | Track the proposed allocation immediately, then replace it with the active allocation only after activation succeeds. |
 | Checkout completion failure | Session start could persist `IN_PROGRESS` before checkout completion failed. | Roll back the started session to the original planned session when completion fails; report `SESSION_ROLLBACK_FAILED` only if cleanup also fails. |
+| Waitlist handoff evidence | Waitlist integration could return malformed acceptance evidence and still be reported as operational success. | Validate returned waitlist ID and position before building waitlisted appointment output. |
 Previously recorded GitHub PR evidence for PR #188:
 
 ```text

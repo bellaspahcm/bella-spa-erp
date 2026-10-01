@@ -62,6 +62,7 @@ class BeautySpaHarness {
   public readonly allocationUpdateFailures = new Set<string>();
   public readonly appointmentUpdateFailures = new Set<string>();
   public readonly sessionCompletionFailures = new Set<string>();
+  public malformedWaitlistResponse: { waitlistId: unknown; position: unknown } | null = null;
 
   public readonly appointmentRepository: AppointmentRepository = {
     create: async (value) => {
@@ -170,6 +171,9 @@ class BeautySpaHarness {
         customerId: request.customerId,
         reason: request.reason,
       });
+      if (this.malformedWaitlistResponse) {
+        return this.malformedWaitlistResponse as { waitlistId: string; position: number };
+      }
       return {
         waitlistId: `waitlist-${this.waitlistEntries.length}`,
         position: this.waitlistEntries.length,
@@ -1173,5 +1177,41 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
       reason: 'RESOURCE_CAPACITY_CONFLICT',
     }]);
     expect(harness.appointments.find((appointment) => appointment.customerId === 'customer-walk-in')?.status).toBe('CANCELLED');
+  });
+
+  it('rejects malformed waitlist handoff evidence without returning false success', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+    harness.malformedWaitlistResponse = { waitlistId: ' ', position: 0 };
+
+    await service.bookService({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-booked',
+      serviceId: 'service-vip-suite',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-a',
+      resources: [{ resourceId: 'suite-d1-01', resourceType: 'SUITE' }],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    });
+
+    await expect(service.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-walk-in-malformed-waitlist',
+      serviceId: 'service-vip-suite',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-b',
+      resources: [{ resourceId: 'suite-d1-01', resourceType: 'SUITE' }],
+      actorId: 'manager-spa',
+      bookingMode: 'WALK_IN',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'WAITLIST_HANDOFF_FAILED' });
+
+    expect(harness.waitlistEntries).toEqual([{
+      tenantId: 'tenant-spa-a',
+      customerId: 'customer-walk-in-malformed-waitlist',
+      reason: 'RESOURCE_CAPACITY_CONFLICT',
+    }]);
   });
 });
