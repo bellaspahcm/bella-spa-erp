@@ -20,6 +20,7 @@ import type {
   TimeInterval,
 } from '../../../platform/beauty/contracts';
 import {
+  type BookBeautySpaServiceInput,
   type BeautySpaBookingMode,
   type BeautySpaOperationalOutcome,
   type BeautySpaResourceRequirement,
@@ -1218,6 +1219,53 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
       }),
     ]);
     expect(harness.assignments.every((assignment) => assignment.status === 'DISRUPTED')).toBe(true);
+  });
+
+  it('allows retry after a clean booking rollback without leftover side effects', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+    harness.allocationActivationFailures.add('room-d1-retry-after-rollback');
+
+    const retryableBooking = {
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-retry-after-rollback',
+      serviceId: 'service-suite-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-suite-retry',
+      resources: [{ resourceId: 'room-d1-retry-after-rollback', resourceType: 'ROOM' }],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    } satisfies BookBeautySpaServiceInput;
+
+    await expect(service.bookService(retryableBooking))
+      .rejects.toThrow('allocation activation failed for room-d1-retry-after-rollback');
+
+    expect(harness.appointments.find((appointment) => (
+      appointment.customerId === 'customer-retry-after-rollback'
+    ))?.status).toBe('CANCELLED');
+    expect(harness.assignments.every((assignment) => assignment.status === 'DISRUPTED')).toBe(true);
+    expect(harness.allocations.every((allocation) => allocation.status === 'DISRUPTED')).toBe(true);
+
+    harness.allocationActivationFailures.clear();
+    const retried = await service.bookService(retryableBooking);
+
+    expect(retried.appointment).toMatchObject({
+      customerId: 'customer-retry-after-rollback',
+      status: 'PENDING',
+    });
+    expect(retried.assignments).toEqual([
+      expect.objectContaining({
+        professionalId: 'therapist-suite-retry',
+        status: 'ACCEPTED',
+      }),
+    ]);
+    expect(retried.allocations).toEqual([
+      expect.objectContaining({
+        resourceId: 'room-d1-retry-after-rollback',
+        status: 'ACTIVE',
+      }),
+    ]);
   });
 
   it('continues later allocation rollback when an earlier allocation cleanup fails', async () => {

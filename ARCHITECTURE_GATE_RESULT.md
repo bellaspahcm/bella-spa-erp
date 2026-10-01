@@ -222,7 +222,7 @@ Fresh local verification:
 
 ```text
 npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
-PASS - 3 suites, 56 tests
+PASS - 3 suites, 57 tests
 
 npx tsc -p tsconfig.beauty.json --noEmit
 PASS
@@ -256,6 +256,28 @@ Product-layer root-cause fixes verified in the focused suite:
 | Waitlist handoff evidence | Waitlist integration could return malformed or whitespace-padded acceptance evidence and still be reported as operational success. | Validate returned waitlist ID as a clean operational ID and require a positive integer position before building waitlisted appointment output. |
 | Staff availability evidence | Staff availability integration could return non-boolean evidence and be interpreted by truthiness, creating booking side effects. | Require strict boolean availability evidence before appointment, assignment, allocation, or waitlist side effects. |
 | Staff availability preflight latency | Independent staff availability checks were serialized before any booking side effect. | Run staff availability checks in parallel, then validate ordered results before appointment, assignment, allocation, or waitlist side effects. |
+| Retry after clean rollback | A failed booking could leave side effects that block a later retry of the same request. | Verify clean rollback leaves cancelled/disrupted records only and a later retry can create fresh accepted assignments and active allocations. |
+
+Workflow completeness audit:
+
+| Workflow | Status | Local evidence / boundary |
+|---|---|---|
+| Customer identity | PASS_SCOPED | Customer ID is required, non-padded, tenant-scoped in booking and session evidence. |
+| Booking / walk-in | PASS | Booking happy path, walk-in waitlist fallback, invalid mode, malformed request, missing IDs, duplicate inputs. |
+| Availability | PASS | Staff availability runs as parallel preflight; malformed availability evidence and staff conflict fail before side effects. |
+| Resource / room / bed / device | PASS_WITH_BOUNDARY | Multi-resource allocation happy path, invalid type/capacity, duplicate resource, partial rollback, activation rollback. Real DB concurrency remains not proven. |
+| Staff assignment | PASS | Lead/support staff happy path, duplicate rejection, mid-assignment rollback, per-item cleanup failure handling, assignment history. |
+| Appointment | PASS | Appointment creation, cancellation on booking failures, retry after clean rollback. |
+| Session | PASS | Session start/checkout completion happy path, completion failure rollback to planned session. |
+| Checkout | PASS | Customer history, actor, package flag, payment/inventory/payroll handoff status, audit tags, and serializable outcome evidence validated before side effects. |
+| Payment / inventory / payroll | PASS_AS_HANDOFF_EVIDENCE | Product records handoff status only. Canonical Finance/Inventory/Payroll execution remains outside product-layer authority. |
+| Waitlist / fallback | PASS | Capacity conflict routes to waitlist; malformed/padded waitlist evidence fails without false success. |
+| History / audit | PASS_SCOPED | Assignment/allocation rollback history appended through Beauty OS ports; checkout audit tags validated. |
+| Retry | PASS_SCOPED | Retry after clean rollback succeeds without leftover active resources or accepted staff from failed attempt. |
+| Idempotency key | DEFER_CONTRACT | No canonical Beauty OS idempotency-key contract exists in this slice. Do not invent product-local persistence semantics. |
+| Permission / tenant boundary | PASS_SCOPED | Actor IDs required; tenant-scoped resource conflict covered. Full auth/RLS proof remains credential-gated Real DB evidence. |
+| Performance | PASS_SCOPED | Independent staff availability preflight is parallelized. Dependent assignment/allocation/session side effects remain ordered for invariants and rollback. |
+
 Previously recorded GitHub PR evidence for PR #188:
 
 ```text
