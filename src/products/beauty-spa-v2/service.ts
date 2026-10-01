@@ -364,7 +364,7 @@ export class BeautySpaV2Service {
     if (
       !Array.isArray(input.outcome.auditTags)
       || input.outcome.auditTags.length === 0
-      || input.outcome.auditTags.some(isMissingString)
+      || input.outcome.auditTags.some(isInvalidOperationalId)
     ) {
       throw new BeautySpaV2Error('AUDIT_TAGS_REQUIRED', 'Beauty Spa v2 session completion requires non-empty audit tags.');
     }

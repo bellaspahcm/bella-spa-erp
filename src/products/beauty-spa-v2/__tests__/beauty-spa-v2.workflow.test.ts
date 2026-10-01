@@ -528,6 +528,20 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
       },
     })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'AUDIT_TAGS_REQUIRED' });
 
+    await expect(service.completeSession({
+      session: plannedSession,
+      performerId: 'therapist-lead-1',
+      outcome: {
+        checkedOutBy: 'manager-spa',
+        customerHistoryNote: 'Skin barrier improved.',
+        packageSessionUsed: true,
+        paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+        inventoryHandoff: 'INVENTORY_HANDOFF_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: [' CHAIN_V2 '],
+      },
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'AUDIT_TAGS_REQUIRED' });
+
     expect(harness.sessions).toHaveLength(0);
   });
 
