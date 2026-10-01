@@ -556,6 +556,49 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
     expect(resourceTypeHarness.waitlistEntries).toHaveLength(0);
   });
 
+  it('rejects malformed staff and resource lists before creating side effects', async () => {
+    const staffHarness = new BeautySpaHarness();
+    const staffService = staffHarness.createService();
+
+    await expect(staffService.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-scalar-support',
+      serviceId: 'service-suite-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-resource',
+      supportProfessionalIds: 'assistant-one' as never,
+      resources: [{ resourceId: 'suite-d1-04', resourceType: 'SUITE' }],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_STAFF_ASSIGNMENT' });
+
+    expect(staffHarness.appointments).toHaveLength(0);
+    expect(staffHarness.assignments).toHaveLength(0);
+    expect(staffHarness.allocations).toHaveLength(0);
+    expect(staffHarness.waitlistEntries).toHaveLength(0);
+
+    const resourceHarness = new BeautySpaHarness();
+    const resourceService = resourceHarness.createService();
+
+    await expect(resourceService.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-scalar-resource',
+      serviceId: 'service-suite-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-resource',
+      resources: 'suite-d1-04' as never,
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_RESOURCE_REQUIREMENTS' });
+
+    expect(resourceHarness.appointments).toHaveLength(0);
+    expect(resourceHarness.assignments).toHaveLength(0);
+    expect(resourceHarness.allocations).toHaveLength(0);
+    expect(resourceHarness.waitlistEntries).toHaveLength(0);
+  });
+
   it('rejects missing operational IDs before creating side effects', async () => {
     const harness = new BeautySpaHarness();
     const service = harness.createService();

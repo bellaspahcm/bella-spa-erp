@@ -222,40 +222,7 @@ Fresh local verification:
 
 ```text
 npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
-PASS - 3 suites, 47 tests
-
-npx tsc -p tsconfig.beauty.json --noEmit
-PASS
-
-npx eslint src/products/beauty-spa-v2 src/platform/registry/product-registry.ts
-PASS
-
-npx eslint src/products/beauty-spa-v2 src/app/dashboard/beauty-spa-v2 src/platform/registry/product-registry.ts
-PASS
-
-npm run arch:guard
-PASS
-
-git diff --check
-PASS
-```
-
-Assignment orchestration rollback verification:
-
-```text
-ROOT_CAUSE
-If a booking created the appointment and accepted an earlier staff assignment, then
-a later assignment failed, the product orchestration could leave a failed booking
-with a PENDING appointment and ACCEPTED staff assignment.
-
-MINIMAL_FIX
-Beauty Spa v2 now wraps staff assignment and resource allocation in one booking
-orchestration rollback path. Any created assignment is disrupted and the appointment
-is cancelled before the original failure is rethrown.
-
-VERIFY
-npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
-PASS - 3 suites, 47 tests
+PASS - 3 suites, 48 tests
 
 npx tsc -p tsconfig.beauty.json --noEmit
 PASS
@@ -270,202 +237,20 @@ git diff --check
 PASS
 ```
 
-Partial allocation rollback verification:
+Product-layer root-cause fixes verified in the focused suite:
 
-```text
-ROOT_CAUSE
-When a multi-resource booking allocated an earlier resource successfully but a later
-resource conflicted, the failed booking path cancelled the appointment and disrupted
-staff assignments but could leave the earlier allocation ACTIVE.
-
-MINIMAL_FIX
-Beauty Spa v2 product orchestration now disrupts allocations created by the same
-booking attempt and writes allocation history before rethrowing the original
-Beauty OS conflict.
-
-VERIFY
-npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
-PASS - 3 suites, 47 tests
-
-Duplicate staff/resource validation verification:
-
-```text
-ROOT_CAUSE
-Beauty Spa v2 accepted duplicate staff IDs or duplicate resource IDs in one
-booking request. That can create double staff assignment or convert an invalid
-request into a false resource conflict/waitlist path.
-
-MINIMAL_FIX
-Beauty Spa v2 validates unique staff and resource requirements before creating
-appointments, assignments, allocations, or waitlist entries.
-
-VERIFY
-npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
-PASS - 3 suites, 47 tests
-
-Invalid interval/capacity validation verification:
-
-```text
-ROOT_CAUSE
-Beauty Spa v2 could let invalid booking intervals or invalid resource capacity
-reach later orchestration stages. Because AppointmentService does not validate
-appointment intervals, invalid input could create a cancelled appointment or
-disrupted assignment instead of being rejected before side effects.
-
-MINIMAL_FIX
-Beauty Spa v2 now validates the interval with the Beauty OS public
-`validateInterval` invariant and validates resource capacity, including
-non-finite numeric values, before appointment, assignment, allocation, or
-waitlist side effects.
-
-VERIFY
-npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
-PASS - 3 suites, 47 tests
-
-npx tsc -p tsconfig.beauty.json --noEmit
-PASS
-
-npx eslint src/products/beauty-spa-v2 src/app/dashboard/beauty-spa-v2 src/platform/registry/product-registry.ts src/platform/registry/__tests__/product-resolver.test.ts
-PASS
-
-npm run arch:guard
-PASS
-```
-
-Assignment rollback history verification:
-
-```text
-ROOT_CAUSE
-Beauty Spa v2 disrupted staff assignments during booking rollback but did not
-write assignment history, while resource rollback already had allocation history.
-That left an audit/provenance gap for failed booking orchestration.
-
-MINIMAL_FIX
-Beauty Spa v2 now writes `BOOKING_ASSIGNMENT_ROLLED_BACK` via the existing
-Beauty OS `ProfessionalAssignmentRepository.appendHistory` port whenever it
-disrupts assignments during booking rollback.
-
-VERIFY
-npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
-PASS - 3 suites, 47 tests
-
-Required operational ID validation verification:
-
-```text
-ROOT_CAUSE
-Beauty Spa v2 accepted blank or non-string tenant, branch, customer, service,
-staff, actor, or resource IDs because TypeScript `string` does not prevent invalid
-runtime values. That could create appointment, assignment, allocation, or waitlist
-records with invalid identity references or throw raw runtime errors.
-
-MINIMAL_FIX
-Beauty Spa v2 now rejects missing or non-string required operational IDs before
-appointment, assignment, allocation, or waitlist side effects.
-
-VERIFY
-npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
-PASS - 3 suites, 47 tests
-
-Checkout evidence validation verification:
-
-```text
-ROOT_CAUSE
-Beauty Spa v2 session completion accepted empty or structurally invalid session
-identity fields, performer IDs, checkout actor IDs, customer history notes, or
-audit tags. That could complete a session without the session, actor,
-customer-history, and audit handoff evidence required by the product workflow or
-throw raw runtime errors.
-
-MINIMAL_FIX
-Beauty Spa v2 validates session, tenant, appointment, service commitment, performer,
-checkout actor, customer history note, and non-empty audit tag arrays before
-invoking Beauty OS session start/complete services.
-
-VERIFY
-npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
-PASS - 3 suites, 47 tests
-
-Runtime enum validation verification:
-
-```text
-ROOT_CAUSE
-Beauty Spa v2 relied on TypeScript unions for booking mode, resource type, and
-checkout outcome statuses. Runtime callers can still pass unsupported values,
-which could persist invalid orchestration or checkout evidence.
-
-MINIMAL_FIX
-Beauty Spa v2 now validates booking mode, resource type, package-session flag,
-payment status, inventory handoff, and payroll handoff at runtime before
-appointment, assignment, allocation, waitlist, or session side effects.
-
-VERIFY
-npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
-PASS - 3 suites, 47 tests
-
-npx tsc -p tsconfig.beauty.json --noEmit
-PASS
-
-npx eslint src/products/beauty-spa-v2 src/app/dashboard/beauty-spa-v2 src/platform/registry/product-registry.ts src/platform/registry/__tests__/product-resolver.test.ts
-PASS
-
-npm run arch:guard
-PASS
-```
-
-npx tsc -p tsconfig.beauty.json --noEmit
-PASS
-
-npx eslint src/products/beauty-spa-v2 src/app/dashboard/beauty-spa-v2 src/platform/registry/product-registry.ts src/platform/registry/__tests__/product-resolver.test.ts
-PASS
-
-npm run arch:guard
-PASS
-```
-
-npx tsc -p tsconfig.beauty.json --noEmit
-PASS
-
-npx eslint src/products/beauty-spa-v2 src/app/dashboard/beauty-spa-v2 src/platform/registry/product-registry.ts src/platform/registry/__tests__/product-resolver.test.ts
-PASS
-
-npm run arch:guard
-PASS
-```
-
-npx tsc -p tsconfig.beauty.json --noEmit
-PASS
-
-npx eslint src/products/beauty-spa-v2 src/app/dashboard/beauty-spa-v2 src/platform/registry/product-registry.ts src/platform/registry/__tests__/product-resolver.test.ts
-PASS
-
-npm run arch:guard
-PASS
-```
-
-npx tsc -p tsconfig.beauty.json --noEmit
-PASS
-
-npx eslint src/products/beauty-spa-v2 src/app/dashboard/beauty-spa-v2 src/platform/registry/product-registry.ts src/platform/registry/__tests__/product-resolver.test.ts
-PASS
-
-npm run arch:guard
-PASS
-```
-
-npx tsc -p tsconfig.beauty.json --noEmit
-PASS
-
-npx eslint src/products/beauty-spa-v2 src/app/dashboard/beauty-spa-v2 src/platform/registry/product-registry.ts src/platform/registry/__tests__/product-resolver.test.ts
-PASS
-
-npm run arch:guard
-PASS
-
-git diff --check
-PASS
-```
-
-Fresh GitHub PR evidence for PR #188:
+| Area | Root cause | Minimal fix |
+|---|---|---|
+| Assignment orchestration rollback | Failed mid-booking assignment could leave `PENDING` appointment and `ACCEPTED` staff. | Cancel appointment, disrupt created assignments, and rethrow original failure. |
+| Partial allocation rollback | Later resource conflict could leave earlier resource `ACTIVE`. | Disrupt allocations created by the same booking attempt and write allocation history. |
+| Duplicate staff/resource inputs | Duplicate IDs could create double assignment or false conflict/waitlist. | Reject duplicate staff/resource requirements before side effects. |
+| Required operational IDs | Blank or non-string IDs could create records with invalid identity references or raw runtime errors. | Reject missing/non-string tenant, branch, customer, service, staff, actor, and resource IDs before side effects. |
+| Invalid interval/capacity | Invalid interval or non-finite capacity could reach later orchestration stages. | Reuse Beauty OS `validateInterval`; reject invalid/non-finite capacity before side effects. |
+| Assignment rollback history | Staff rollback had no provenance while resource rollback did. | Write `BOOKING_ASSIGNMENT_ROLLED_BACK` through Beauty OS assignment history port. |
+| Checkout evidence | Session completion could miss session identity, actors, customer history, or audit tags. | Validate session identity, performer, checkout actor, customer history, and audit tag arrays before Beauty OS session services. |
+| Runtime enum values | Runtime callers could bypass TypeScript unions for booking/resource/outcome values. | Validate booking mode, resource type, package-session flag, payment status, inventory handoff, and payroll handoff before side effects. |
+| Malformed runtime lists | Runtime callers could pass scalar staff/resource lists and trigger raw property access or partial orchestration. | Validate support-professional and resource requirements as arrays before appointment, assignment, allocation, or waitlist side effects. |
+Previously recorded GitHub PR evidence for PR #188:
 
 ```text
 gh pr checks 188
@@ -502,7 +287,7 @@ Evidence classification:
 | Security / tenant isolation | PASS_SCOPED | Tenant-scoped application conflict test; H8 RLS migration reused. |
 | Concurrency | PARTIAL / NOT_REAL_DB_PROVEN | Product service prevents overlapping active allocations in repository contract. Existing H8 migration has no DB-level exclusion/transaction lock proof for concurrent Real DB writes. |
 | Real DB E2E | NOT_VERIFIED | No fresh credentialed Real DB run recorded in this checkpoint. |
-| Required gates | PASS_CI | PR #188 reports `All Required Gates Passed`; merge state is `CLEAN` and `MERGEABLE`. |
+| Required gates | NOT_REFRESHED_AFTER_FOLLOW_UP_COMMITS | PR #188 previously reported `All Required Gates Passed` and merge state `CLEAN` / `MERGEABLE`; per current operating rule, CI was not polled after follow-up product-layer commits. Refresh at final milestone seal. |
 
 Architectural gap classification:
 

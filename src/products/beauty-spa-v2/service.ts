@@ -201,6 +201,14 @@ export class BeautySpaV2Service {
       throw new BeautySpaV2Error('INVALID_BOOKING_MODE', 'Beauty Spa v2 bookings require a supported booking mode.');
     }
 
+    if (input.supportProfessionalIds !== undefined && !Array.isArray(input.supportProfessionalIds)) {
+      throw new BeautySpaV2Error('INVALID_STAFF_ASSIGNMENT', 'Beauty Spa v2 support professionals must be provided as a list.');
+    }
+
+    if (!Array.isArray(input.resources)) {
+      throw new BeautySpaV2Error('INVALID_RESOURCE_REQUIREMENTS', 'Beauty Spa v2 resource requirements must be provided as a list.');
+    }
+
     if (input.resources.some((resource) => !isOneOf(BEAUTY_SPA_RESOURCE_TYPES, resource.resourceType))) {
       throw new BeautySpaV2Error('INVALID_RESOURCE_TYPE', 'Beauty Spa v2 bookings require supported resource types.');
     }
