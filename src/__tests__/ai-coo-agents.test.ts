@@ -17,17 +17,62 @@ jest.mock("next/headers", () => ({ cookies: jest.fn() }), { virtual: true });
 jest.mock("server-only", () => ({}), { virtual: true });
 jest.mock("@sentry/nextjs", () => ({ captureException: jest.fn() }), { virtual: true });
 
+type GeminiRequestBody = {
+  contents?: Array<{
+    parts?: Array<{
+      text?: string;
+    }>;
+  }>;
+};
+
+type MockAnalysisItem = string | Record<string, unknown>;
+type MockDraftAction = Record<string, unknown>;
+type MockQueryResult = {
+  data?: unknown;
+  count?: number;
+  error?: { message: string } | null;
+};
+type MockQueryCallback = (value: MockQueryResult) => unknown;
+type MockRouteBuilder = {
+  insert?: jest.Mock;
+  select?: jest.Mock;
+  eq?: jest.Mock;
+  single?: jest.Mock;
+  maybeSingle?: jest.Mock;
+  gte?: jest.Mock;
+  lte?: jest.Mock;
+  order?: jest.Mock;
+  limit?: jest.Mock;
+  then?: (onfulfilled: MockQueryCallback) => Promise<unknown>;
+};
+type MockSupabaseClient = {
+  auth: {
+    getUser: jest.Mock;
+  };
+  from: typeof mockFrom;
+  rpc: jest.Mock;
+};
+
+const routeBuilder = (builder: MockRouteBuilder): MockRouteBuilder => builder;
+
+const readPromptText = (options?: { body?: BodyInit | null }) => {
+  if (typeof options?.body !== "string") {
+    return "";
+  }
+  const body = JSON.parse(options.body) as GeminiRequestBody;
+  return body.contents?.[0]?.parts?.[0]?.text ?? "";
+};
+
 // Mock global fetch for Gemini API calls
-global.fetch = jest.fn().mockImplementation((url, options) => {
+const mockGeminiFetch = jest.fn().mockImplementation((_url: string | URL | Request, options?: { body?: BodyInit | null }) => {
   let executiveSummary = "Báo cáo tóm tắt phân tích chung.";
-  let anomaliesFound: any[] = [];
+  let anomaliesFound: MockAnalysisItem[] = [];
   let strategicRecommendations = ["Khuyến nghị chung"];
-  let draftActions: any[] = [];
+  let draftActions: MockDraftAction[] = [];
 
   try {
-    if (options && options.body) {
-      const body = JSON.parse(options.body);
-      const promptText = body.contents?.[0]?.parts?.[0]?.text || "";
+    if (options?.body) {
+      const promptText = readPromptText(options);
       
       if (promptText.includes("CPO (Trưởng phòng Kho vận")) {
         executiveSummary = "Phân tích kho vận: Phát hiện 1 mặt hàng đang dưới mức tối thiểu cần nhập kho khẩn cấp.";
@@ -92,7 +137,8 @@ global.fetch = jest.fn().mockImplementation((url, options) => {
       ]
     })
   });
-}) as any;
+});
+global.fetch = mockGeminiFetch as typeof fetch;
 
 const mockInsert = jest.fn().mockResolvedValue({ error: null });
 const mockFrom = jest.fn();
@@ -104,7 +150,7 @@ jest.mock("../lib/supabase-server", () => ({
     },
     from: mockFrom,
     rpc: jest.fn().mockResolvedValue({ data: [], error: null })
-  } as any))
+  } satisfies MockSupabaseClient))
 }));
 
 import { POST } from "../app/api/v1/ai/coo-orchestrator/route";
@@ -125,14 +171,14 @@ describe("AI CPO Sub-Agent (Warehouse & Inventory)", () => {
     // Setup Mock Database Responses
     mockFrom.mockImplementation((table: string) => {
       if (table === "users") {
-        return {
+        return routeBuilder({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null })
-        } as any;
+        });
       }
       if (table === "tenants") {
-        return {
+        return routeBuilder({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           single: jest.fn().mockResolvedValue({ 
@@ -145,17 +191,17 @@ describe("AI CPO Sub-Agent (Warehouse & Inventory)", () => {
             }, 
             error: null 
           })
-        } as any;
+        });
       }
       if (table === "ai_agent_configs") {
-        return {
+        return routeBuilder({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           maybeSingle: jest.fn().mockResolvedValue({ data: { gemini_api_key: "TEST-GEMINI-KEY-123" }, error: null })
-        } as any;
+        });
       }
       if (table === "inventory_items") {
-        return {
+        return routeBuilder({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           order: jest.fn().mockResolvedValue({
@@ -164,10 +210,10 @@ describe("AI CPO Sub-Agent (Warehouse & Inventory)", () => {
             ],
             error: null
           })
-        } as any;
+        });
       }
       if (table === "inventory_logs") {
-        return {
+        return routeBuilder({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           gte: jest.fn().mockReturnThis(),
@@ -177,18 +223,18 @@ describe("AI CPO Sub-Agent (Warehouse & Inventory)", () => {
             ],
             error: null
           })
-        } as any;
+        });
       }
       if (table === "ai_agent_logs") {
-        return {
+        return routeBuilder({
           insert: mockInsert
-        } as any;
+        });
       }
-      return {
+      return routeBuilder({
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         single: jest.fn().mockResolvedValue({ data: null, error: null })
-      } as any;
+      });
     });
 
     const req = new Request("http://localhost/api/v1/ai/coo-orchestrator", {
@@ -220,14 +266,14 @@ describe("AI CPO Sub-Agent (Warehouse & Inventory)", () => {
   it("propagates CPO DB failures immediately (Zero Silent DB Failures)", async () => {
     mockFrom.mockImplementation((table: string) => {
       if (table === "users") {
-        return {
+        return routeBuilder({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null })
-        } as any;
+        });
       }
       if (table === "tenants") {
-        return {
+        return routeBuilder({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           single: jest.fn().mockResolvedValue({ 
@@ -240,23 +286,23 @@ describe("AI CPO Sub-Agent (Warehouse & Inventory)", () => {
             }, 
             error: null 
           })
-        } as any;
+        });
       }
       if (table === "inventory_items") {
-        return {
+        return routeBuilder({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           order: jest.fn().mockResolvedValue({
             data: null,
             error: { message: "Database connection timeout when accessing inventory" }
           })
-        } as any;
+        });
       }
-      return {
+      return routeBuilder({
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         single: jest.fn().mockResolvedValue({ data: null, error: null })
-      } as any;
+      });
     });
 
     const req = new Request("http://localhost/api/v1/ai/coo-orchestrator", {
@@ -277,14 +323,14 @@ describe("AI CMO Sub-Agent (Customer & Marketing)", () => {
   it("routes to CMO agent, queries reviews, CSAT, bookings and drafts apologies", async () => {
     mockFrom.mockImplementation((table: string) => {
       if (table === "users") {
-        return {
+        return routeBuilder({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null })
-        } as any;
+        });
       }
       if (table === "tenants") {
-        return {
+        return routeBuilder({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           single: jest.fn().mockResolvedValue({ 
@@ -297,17 +343,17 @@ describe("AI CMO Sub-Agent (Customer & Marketing)", () => {
             }, 
             error: null 
           })
-        } as any;
+        });
       }
       if (table === "ai_agent_configs") {
-        return {
+        return routeBuilder({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           maybeSingle: jest.fn().mockResolvedValue({ data: { gemini_api_key: "TEST-GEMINI-KEY-123" }, error: null })
-        } as any;
+        });
       }
       if (table === "bookings") {
-        return {
+        return routeBuilder({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           gte: jest.fn().mockResolvedValue({
@@ -317,10 +363,10 @@ describe("AI CMO Sub-Agent (Customer & Marketing)", () => {
             ],
             error: null
           })
-        } as any;
+        });
       }
       if (table === "session_logs") {
-        return {
+        return routeBuilder({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           gte: jest.fn().mockReturnThis(),
@@ -347,10 +393,10 @@ describe("AI CMO Sub-Agent (Customer & Marketing)", () => {
             ],
             error: null
           })
-        } as any;
+        });
       }
       if (table === "session_reviews") {
-        return {
+        return routeBuilder({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           order: jest.fn().mockResolvedValue({
@@ -366,20 +412,20 @@ describe("AI CMO Sub-Agent (Customer & Marketing)", () => {
             ],
             error: null
           })
-        } as any;
+        });
       }
       if (table === "customers") {
         // Thenable builder — covers all 3 query shapes used by CMO Agent:
         //   .select(...).eq(...).gte(...).order(...)        → list of new customers
         //   .select("id", {count:"exact", head:true}).eq(...) → count
         //   .select(...).eq(...).order(...).limit(5)        → top loyal customers
-        const builder: any = {
+        const builder: MockRouteBuilder = {
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           gte: jest.fn().mockReturnThis(),
           order: jest.fn().mockReturnThis(),
           limit: jest.fn().mockReturnThis(),
-          then: (onFulfilled: any) =>
+          then: (onFulfilled: MockQueryCallback) =>
             Promise.resolve({
               data: [
                 { id: "c-1", name_mother: "Nguyễn Thị Lan", phone: "0912345678", loyalty_points: 100 }
@@ -391,15 +437,15 @@ describe("AI CMO Sub-Agent (Customer & Marketing)", () => {
         return builder;
       }
       if (table === "ai_agent_logs") {
-        return {
+        return routeBuilder({
           insert: mockInsert
-        } as any;
+        });
       }
-      return {
+      return routeBuilder({
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         single: jest.fn().mockResolvedValue({ data: null, error: null })
-      } as any;
+      });
     });
 
     const req = new Request("http://localhost/api/v1/ai/coo-orchestrator", {
@@ -423,14 +469,14 @@ describe("AI CMO Sub-Agent (Customer & Marketing)", () => {
   it("propagates CMO DB failures immediately (Zero Silent DB Failures)", async () => {
     mockFrom.mockImplementation((table: string) => {
       if (table === "users") {
-        return {
+        return routeBuilder({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null })
-        } as any;
+        });
       }
       if (table === "tenants") {
-        return {
+        return routeBuilder({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           single: jest.fn().mockResolvedValue({ 
@@ -443,23 +489,23 @@ describe("AI CMO Sub-Agent (Customer & Marketing)", () => {
             }, 
             error: null 
           })
-        } as any;
+        });
       }
       if (table === "bookings") {
-        return {
+        return routeBuilder({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           gte: jest.fn().mockResolvedValue({
             data: null,
             error: { message: "Access denied to bookings table" }
           })
-        } as any;
+        });
       }
-      return {
+      return routeBuilder({
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         single: jest.fn().mockResolvedValue({ data: null, error: null })
-      } as any;
+      });
     });
 
     const req = new Request("http://localhost/api/v1/ai/coo-orchestrator", {
@@ -480,31 +526,31 @@ describe("AI Franchise Sub-Agent (Franchise Operations)", () => {
   it("routes to franchise agent, queries royalty configurations and invoices, compares actual vs calculated royalty", async () => {
     mockFrom.mockImplementation((table: string) => {
       if (table === "users") {
-        return {
+        return routeBuilder({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null })
-        } as any;
+        });
       }
       if (table === "ai_agent_configs") {
-        return {
+        return routeBuilder({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           maybeSingle: jest.fn().mockResolvedValue({ data: { gemini_api_key: "TEST-GEMINI-KEY-123" }, error: null })
-        } as any;
+        });
       }
       if (table === "tenants") {
-        return {
+        return routeBuilder({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           single: jest.fn().mockResolvedValue({
             data: { id: TENANT_ID, name: "Bella Spa Hà Nội", royalty_type: "percentage", royalty_rate: 10, royalty_fixed_amount: 0 },
             error: null
           })
-        } as any;
+        });
       }
       if (table === "franchise_royalty_invoices") {
-        return {
+        return routeBuilder({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           order: jest.fn().mockResolvedValue({
@@ -513,10 +559,10 @@ describe("AI Franchise Sub-Agent (Franchise Operations)", () => {
             ],
             error: null
           })
-        } as any;
+        });
       }
       if (table === "revenue") {
-        return {
+        return routeBuilder({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           gte: jest.fn().mockReturnThis(),
@@ -527,18 +573,18 @@ describe("AI Franchise Sub-Agent (Franchise Operations)", () => {
             ],
             error: null
           })
-        } as any;
+        });
       }
       if (table === "ai_agent_logs") {
-        return {
+        return routeBuilder({
           insert: mockInsert
-        } as any;
+        });
       }
-      return {
+      return routeBuilder({
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         single: jest.fn().mockResolvedValue({ data: null, error: null })
-      } as any;
+      });
     });
 
     const req = new Request("http://localhost/api/v1/ai/coo-orchestrator", {
@@ -562,27 +608,27 @@ describe("AI Franchise Sub-Agent (Franchise Operations)", () => {
   it("propagates Franchise DB failures immediately (Zero Silent DB Failures)", async () => {
     mockFrom.mockImplementation((table: string) => {
       if (table === "users") {
-        return {
+        return routeBuilder({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null })
-        } as any;
+        });
       }
       if (table === "tenants") {
-        return {
+        return routeBuilder({
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           single: jest.fn().mockResolvedValue({
             data: null,
             error: { message: "Tenant data fetch failed" }
           })
-        } as any;
+        });
       }
-      return {
+      return routeBuilder({
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         single: jest.fn().mockResolvedValue({ data: null, error: null })
-      } as any;
+      });
     });
 
     const req = new Request("http://localhost/api/v1/ai/coo-orchestrator", {

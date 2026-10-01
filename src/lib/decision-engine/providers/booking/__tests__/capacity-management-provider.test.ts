@@ -25,6 +25,13 @@ import type {
   CapacityCheckInput,
 } from '../types';
 
+type ExistingCapacityBooking = CapacityCheckInput['existingBookings'][number];
+
+type RuntimeValidationInput = Partial<Omit<CapacityCheckInput, 'booking' | 'ktvCapacity'>> & {
+  booking?: Partial<CapacityCheckInput['booking']>;
+  ktvCapacity?: Partial<CapacityCheckInput['ktvCapacity']>;
+};
+
 describe('CapacityManagementProvider', () => {
   let provider: CapacityManagementProvider;
 
@@ -68,7 +75,10 @@ describe('CapacityManagementProvider', () => {
   });
 
   // Helper: Create existing bookings (non-overlapping, 2-hour gaps)
-  const createExistingBookings = (count: number, startHour: number = 8): Array<any> => {
+  const createExistingBookings = (
+    count: number,
+    startHour: number = 8
+  ): ExistingCapacityBooking[] => {
     return Array.from({ length: count }, (_, i) => {
       const hour = startHour + (i * 2); // 2-hour spacing to avoid overlap
       const endHour = hour + 1; // 90 minutes = 1 hour 30 min
@@ -81,6 +91,11 @@ describe('CapacityManagementProvider', () => {
       };
     });
   };
+
+  const checkCapacityRuntime = (
+    input: RuntimeValidationInput
+  ): ReturnType<CapacityManagementProvider['checkCapacity']> =>
+    provider.checkCapacity(input as CapacityCheckInput);
 
   describe('1. Daily Limit Enforcement', () => {
     it('should allow booking when under daily limit', async () => {
@@ -916,32 +931,31 @@ describe('CapacityManagementProvider', () => {
 
   describe('13. Input Validation', () => {
     it('should throw error for missing tenantId', async () => {
-      const input = createTestInput();
-      delete (input as any).tenantId;
+      const input: RuntimeValidationInput = createTestInput();
+      delete input.tenantId;
 
-      await expect(provider.checkCapacity(input)).rejects.toThrow('tenantId is required');
+      await expect(checkCapacityRuntime(input)).rejects.toThrow('tenantId is required');
     });
 
     it('should throw error for missing ktvId', async () => {
-      const input = createTestInput();
-      delete (input as any).ktvId;
+      const input: RuntimeValidationInput = createTestInput();
+      delete input.ktvId;
 
-      await expect(provider.checkCapacity(input)).rejects.toThrow('ktvId is required');
+      await expect(checkCapacityRuntime(input)).rejects.toThrow('ktvId is required');
     });
 
     it('should throw error for missing booking date', async () => {
-      const input = createTestInput();
-      delete (input.booking as any).requestedDate;
+      const input: RuntimeValidationInput = createTestInput();
+      delete input.booking?.requestedDate;
 
-      await expect(provider.checkCapacity(input)).rejects.toThrow('booking.requestedDate is required');
+      await expect(checkCapacityRuntime(input)).rejects.toThrow('booking.requestedDate is required');
     });
 
     it('should throw error for missing capacity config', async () => {
-      const input = createTestInput();
-      delete (input.ktvCapacity as any).maxDailyBookings;
+      const input: RuntimeValidationInput = createTestInput();
+      delete input.ktvCapacity?.maxDailyBookings;
 
-      await expect(provider.checkCapacity(input)).rejects.toThrow('ktvCapacity.maxDailyBookings is required');
+      await expect(checkCapacityRuntime(input)).rejects.toThrow('ktvCapacity.maxDailyBookings is required');
     });
   });
 });
-

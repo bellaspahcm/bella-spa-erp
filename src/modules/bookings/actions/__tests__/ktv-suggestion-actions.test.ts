@@ -21,9 +21,26 @@ jest.mock('@/services/booking-decision.service', () => ({
 
 import { getKtvSuggestions, applyKtvSuggestion } from '../ktv-suggestion-actions';
 
+type MockQueryBuilder = {
+  select: jest.Mock;
+  insert: jest.Mock;
+  update: jest.Mock;
+  eq: jest.Mock;
+  not: jest.Mock;
+  order: jest.Mock;
+  single: jest.Mock;
+};
+
+type MockSupabaseClient = {
+  from: jest.Mock;
+  auth: {
+    getUser: jest.Mock;
+  };
+};
+
 describe('KTV AI Suggestion Actions', () => {
-  let mockSupabase: any;
-  let mockQueryBuilder: any;
+  let mockSupabase: MockSupabaseClient;
+  let mockQueryBuilder: MockQueryBuilder;
 
   beforeEach(() => {
     jest.clearAllMocks();

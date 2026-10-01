@@ -57,6 +57,22 @@ export interface AgencyItem {
   status: 'active' | 'pending' | 'suspended';
 }
 
+const CAMPAIGN_CHANNELS = ['facebook', 'zalo', 'google', 'tiktok', 'event', 'billboard'] as const satisfies readonly CampaignItem['channel'][];
+const AGENCY_TIERS = ['F1_EXCLUSIVE', 'F1_STANDARD', 'F2_PARTNER', 'CTV_VIP'] as const satisfies readonly AgencyItem['tier'][];
+
+function isCampaignChannel(value: string): value is CampaignItem['channel'] {
+  return (CAMPAIGN_CHANNELS as readonly string[]).includes(value);
+}
+
+function isAgencyTier(value: string): value is AgencyItem['tier'] {
+  return (AGENCY_TIERS as readonly string[]).includes(value);
+}
+
+function getSafeTelHref(phone: string): string | null {
+  const normalizedPhone = phone.replace(/[^\d+#*]/g, '');
+  return normalizedPhone.length > 0 ? `tel:${encodeURIComponent(normalizedPhone)}` : null;
+}
+
 // ── Seed Data ─────────────────────────────────────────────────────────────────
 
 const INITIAL_CAMPAIGNS: CampaignItem[] = [
@@ -927,7 +943,11 @@ export default function RealEstateMarketingPage() {
                     <label className="block text-slate-700 dark:text-slate-300 mb-1">Kênh truyền thông</label>
                     <PremiumSelect
                       value={newCamp.channel}
-                      onChange={val => setNewCamp({ ...newCamp, channel: val as any })}
+                      onChange={val => {
+                        if (isCampaignChannel(val)) {
+                          setNewCamp({ ...newCamp, channel: val });
+                        }
+                      }}
                       options={[
                         { value: "facebook", label: "Facebook Ads" },
                         { value: "zalo", label: "Zalo OA Ads" },
@@ -1017,7 +1037,11 @@ export default function RealEstateMarketingPage() {
                     <label className="block text-slate-700 dark:text-slate-300 mb-1">Cấp đại lý</label>
                     <PremiumSelect
                       value={newAgency.tier}
-                      onChange={val => setNewAgency({ ...newAgency, tier: val as any })}
+                      onChange={val => {
+                        if (isAgencyTier(val)) {
+                          setNewAgency({ ...newAgency, tier: val });
+                        }
+                      }}
                       options={[
                         { value: "F1_EXCLUSIVE", label: "F1 Độc quyền" },
                         { value: "F1_STANDARD", label: "F1 Chính thức" },
@@ -1162,14 +1186,12 @@ export default function RealEstateMarketingPage() {
                 </div>
 
                 <div className="pt-2 flex justify-end gap-2">
-                  <button
-                    onClick={() => {
-                      if (typeof window !== 'undefined') window.location.href = `tel:${selectedAgency.contactPhone}`;
-                    }}
+                  <a
+                    href={getSafeTelHref(selectedAgency.contactPhone) ?? undefined}
                     className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5"
                   >
                     <Phone className="w-3.5 h-3.5" /> Gọi điện ({selectedAgency.contactPhone})
-                  </button>
+                  </a>
                   <button
                     onClick={() => setSelectedAgency(null)}
                     className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs hover:bg-slate-200"

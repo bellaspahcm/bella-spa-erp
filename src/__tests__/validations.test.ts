@@ -42,12 +42,12 @@ describe("validations: customerSchema", () => {
   });
 
   it("rejects when phone missing", () => {
-    const r = customerSchema.safeParse({ name_mother: "Nguyễn Thị An" } as any);
+    const r = customerSchema.safeParse({ name_mother: "Nguyễn Thị An" });
     expect(r.success).toBe(false);
   });
 
   it("rejects when name_mother missing", () => {
-    const r = customerSchema.safeParse({ phone: "0912345678" } as any);
+    const r = customerSchema.safeParse({ phone: "0912345678" });
     expect(r.success).toBe(false);
   });
 
@@ -176,7 +176,7 @@ describe("validations: bookingSchema", () => {
     const r = bookingSchema.safeParse({
       full_price: 21_000_000,
       deposit_amount: 5_000_000,
-    } as any);
+    });
     expect(r.success).toBe(false);
   });
 

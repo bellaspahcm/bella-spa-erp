@@ -1,6 +1,7 @@
 import { describe, it, expect } from '@jest/globals';
 import { VehicleStatusMachineService, type VehicleStatus } from '@/modules/bella-auto/services/VehicleStatusMachineService';
 import { VehicleAllocationService } from '@/modules/bella-auto/services/VehicleAllocationService';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -34,7 +35,7 @@ function makeSingleQuery(vehicle: ReturnType<typeof makeVehicle>) {
         }),
       }),
     }),
-  } as any;
+  } as SupabaseClient;
 }
 
 // ── Test Suite ────────────────────────────────────────────────────────────────

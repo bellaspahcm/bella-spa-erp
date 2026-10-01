@@ -9,13 +9,24 @@
  * Architecture: Runtime Architecture v1.1 (FROZEN)
  */
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
+import type { Database, Json } from '@/types/database.types';
 import {
   TenantRegistryRecord,
   TenantRegistryInsert,
   TenantRegistryUpdate,
 } from '../types/database.types';
 import { TenantIsolationError, buildErrorContext } from '../types/runtime-errors.types';
+
+type TenantRegistryRow = Database['public']['Tables']['runtime_tenant_registry']['Row'];
+
+function jsonRecordOrNull(value: Json | null): Record<string, unknown> | null {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return { ...value };
+  }
+
+  return null;
+}
 
 /**
  * Tenant Repository
@@ -196,14 +207,14 @@ export class TenantRepository {
   /**
    * Map database row to record
    */
-  private mapToRecord(data: any): TenantRegistryRecord {
+  private mapToRecord(data: TenantRegistryRow): TenantRegistryRecord {
     return {
       tenant_id: data.tenant_id,
       tenant_name: data.tenant_name,
       is_active: data.is_active,
       created_at: new Date(data.created_at),
       updated_at: new Date(data.updated_at),
-      metadata: data.metadata,
+      metadata: jsonRecordOrNull(data.metadata),
     };
   }
 }

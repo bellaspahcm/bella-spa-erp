@@ -11,10 +11,16 @@
  * Purpose: Isolate N1 test event from 366 backlog events
  */
 
-import { FinanceOutboxWorker } from './finance-outbox-worker';
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from '../../types/database.types';
+import type { Database, Json } from '../../types/database.types';
 import { config } from 'dotenv';
+
+type FinanceOutboxEventRow = Database['public']['Tables']['finance_outbox_events']['Row'];
+
+interface FinanceOSPostResult {
+  status?: string;
+  transaction_id?: string;
+}
 
 // Load environment variables
 config({ path: '.env.local' });
@@ -53,7 +59,7 @@ const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 /**
  * Claim single event by exact event_id
  */
-async function claimTestEvent(eventId: string): Promise<any | null> {
+async function claimTestEvent(eventId: string): Promise<FinanceOutboxEventRow | null> {
   console.log(`📌 Claiming event by event_id: ${eventId}`);
   
   // First, check if event exists and is PENDING
@@ -96,7 +102,18 @@ async function claimTestEvent(eventId: string): Promise<any | null> {
 /**
  * POST event to Finance OS
  */
-async function postToFinanceOS(event: any): Promise<any> {
+function getPayloadCorrelationId(payload: Json, fallback: string): string {
+  if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+    const correlationId = payload.correlation_id;
+    if (typeof correlationId === 'string') {
+      return correlationId;
+    }
+  }
+
+  return fallback;
+}
+
+async function postToFinanceOS(event: FinanceOutboxEventRow): Promise<FinanceOSPostResult> {
   console.log('📤 POSTing to Finance OS...');
   
   const controller = new AbortController();
@@ -109,7 +126,7 @@ async function postToFinanceOS(event: any): Promise<any> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'X-Tenant-ID': event.tenant_id,
-      'X-Correlation-ID': event.payload.correlation_id || event.id,
+      'X-Correlation-ID': getPayloadCorrelationId(event.payload, event.id),
     };
     
     // Add test failure injection header if enabled
@@ -134,7 +151,7 @@ async function postToFinanceOS(event: any): Promise<any> {
       );
     }
     
-    const result = await response.json();
+    const result = await response.json() as FinanceOSPostResult;
     console.log('   ✅ Finance OS response:', result.status);
     
     return result;

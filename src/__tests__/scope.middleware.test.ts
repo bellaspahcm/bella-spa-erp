@@ -13,30 +13,25 @@ import {
   requireAnyScope,
   requireAllScopes,
 } from '@/lib/middleware/scope.middleware';
-import { RequestWithPartner } from '@/lib/middleware/api-key.middleware';
+import type { PartnerContext, RequestWithPartner } from '@/lib/middleware/api-key.middleware';
 import { APIScope } from '@/types/api-gateway';
 
 // ============================================================================
 // MOCK SETUP
 // ============================================================================
 
-const createMockPartner = (scopes: APIScope[]) => ({
-  id: 'partner-123',
+const createMockPartner = (scopes: APIScope[]): PartnerContext => ({
   tenant_id: 'tenant-456',
   partner_id: 'partner-123',
   partner_name: 'Test Partner',
-  partner_type: 'pos' as const,
-  api_key: 'pk_test_abc123',
   allowed_scopes: scopes,
   is_active: true,
   is_sandbox: true,
   rate_limit_per_minute: 100,
   rate_limit_per_day: 5000,
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
 });
 
-const createMockRequest = (partner: any): RequestWithPartner => {
+const createMockRequest = (partner: PartnerContext): RequestWithPartner => {
   const req = new NextRequest('http://localhost/api/test') as RequestWithPartner;
   req.partner = partner;
   return req;

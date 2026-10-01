@@ -41,6 +41,8 @@ import { SchedulingProjectionBridge } from '@/products/bella-education/schedulin
 import { ParentCommunicationRepository } from '@/products/bella-education/parent-engagement/repositories/parent-communication.repository';
 import { CommunicationExceptionService } from '@/products/bella-education/parent-engagement/services/communication-exception.service';
 import { ShiftAssignment, RatioComplianceSnapshot, ShiftTemplate } from '@/products/bella-education/scheduling/domain/scheduling.types';
+import type { CommunicationException } from '@/products/bella-education/parent-engagement/domain/communication.types';
+import type { Database } from '@/types/database.types';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://lvnvkpyxtuilhrabtlwv.supabase.co';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -53,6 +55,24 @@ const DEFAULT_TEACHER2_ID = '00000000-0000-0000-0000-000000000082';
 const DEFAULT_CAREGIVER1_ID = '00000000-0000-0000-0000-000000000083';
 const DEFAULT_CLASSROOM_ID = '00000000-0000-0000-0000-000000000091';
 
+const LEAVE_TYPES = ['SICK_LEAVE', 'ANNUAL_LEAVE', 'EMERGENCY_LEAVE'] as const;
+type LeaveType = (typeof LEAVE_TYPES)[number];
+type LeaveRequestRow = Database['public']['Tables']['edu_sched_leave_requests']['Row'];
+type SubstitutionRow = Database['public']['Tables']['edu_sched_substitutions']['Row'];
+
+function isLeaveType(value: string): value is LeaveType {
+  return LEAVE_TYPES.includes(value as LeaveType);
+}
+
+function getErrorMessage(error: unknown): string | undefined {
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    return typeof message === 'string' ? message : String(message);
+  }
+
+  return undefined;
+}
+
 export default function SchedulingPage() {
   const [activeTab, setActiveTab] = useState<'ROSTER' | 'LEAVE' | 'WORK_QUEUE'>('ROSTER');
   const [loading, setLoading] = useState<boolean>(false);
@@ -62,9 +82,9 @@ export default function SchedulingPage() {
   const [shiftTemplates, setShiftTemplates] = useState<ShiftTemplate[]>([]);
   const [assignments, setAssignments] = useState<ShiftAssignment[]>([]);
   const [complianceSnapshots, setComplianceSnapshots] = useState<RatioComplianceSnapshot[]>([]);
-  const [leaveRequests, setLeaveRequests] = useState<any[]>([]);
-  const [substitutions, setSubstitutions] = useState<any[]>([]);
-  const [exceptions, setExceptions] = useState<any[]>([]);
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequestRow[]>([]);
+  const [substitutions, setSubstitutions] = useState<SubstitutionRow[]>([]);
+  const [exceptions, setExceptions] = useState<CommunicationException[]>([]);
 
   // Form & Selection State
   const [selectedDate, setSelectedDate] = useState<string>('2026-09-25');
@@ -72,7 +92,7 @@ export default function SchedulingPage() {
   const [leaveStaffId, setLeaveStaffId] = useState<string>(DEFAULT_TEACHER1_ID);
   const [leaveStartDate, setLeaveStartDate] = useState<string>('2026-09-25');
   const [leaveEndDate, setLeaveEndDate] = useState<string>('2026-09-25');
-  const [leaveType, setLeaveType] = useState<'SICK_LEAVE' | 'ANNUAL_LEAVE' | 'EMERGENCY_LEAVE'>('SICK_LEAVE');
+  const [leaveType, setLeaveType] = useState<LeaveType>('SICK_LEAVE');
   const [substituteStaffId, setSubstituteStaffId] = useState<string>(DEFAULT_TEACHER2_ID);
   const [selectedLeaveId, setSelectedLeaveId] = useState<string>('');
 
@@ -126,7 +146,7 @@ export default function SchedulingPage() {
       // 6. Load Exception Work Queue
       const excs = await exceptionService.getStaffWorkQueueExceptions(DEFAULT_TENANT_ID);
       setExceptions(excs);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to load scheduling data:', err);
     } finally {
       setLoading(false);
@@ -215,8 +235,8 @@ export default function SchedulingPage() {
 
       setActionMessage('✅ Đã khởi tạo Ca Sáng & Phân công Giáo viên thành công!');
       await loadData();
-    } catch (err: any) {
-      setActionMessage(`❌ Lỗi khởi tạo ca: ${err.message}`);
+    } catch (err) {
+      setActionMessage(`❌ Lỗi khởi tạo ca: ${getErrorMessage(err)}`);
     } finally {
       setLoading(false);
     }
@@ -237,8 +257,8 @@ export default function SchedulingPage() {
       });
       setActionMessage(`✅ Đã gửi Đơn xin nghỉ phép #${leave.id.slice(0, 8)} (PENDING)!`);
       await loadData();
-    } catch (err: any) {
-      setActionMessage(`❌ Lỗi gửi đơn nghỉ: ${err.message}`);
+    } catch (err) {
+      setActionMessage(`❌ Lỗi gửi đơn nghỉ: ${getErrorMessage(err)}`);
     } finally {
       setLoading(false);
     }
@@ -262,8 +282,8 @@ export default function SchedulingPage() {
         setActionMessage(`✅ Đã duyệt đơn nghỉ phép #${leaveId.slice(0, 8)} thành công!`);
       }
       await loadData();
-    } catch (err: any) {
-      setActionMessage(`❌ Lỗi duyệt nghỉ phép: ${err.message}`);
+    } catch (err) {
+      setActionMessage(`❌ Lỗi duyệt nghỉ phép: ${getErrorMessage(err)}`);
     } finally {
       setLoading(false);
     }
@@ -290,8 +310,8 @@ export default function SchedulingPage() {
 
       setActionMessage(`✅ Đã phân công Giáo viên dạy thay thành công! Tỷ lệ nhân sự đã trở lại COMPLIANT!`);
       await loadData();
-    } catch (err: any) {
-      setActionMessage(`❌ Lỗi phân công dạy thay: ${err.message}`);
+    } catch (err) {
+      setActionMessage(`❌ Lỗi phân công dạy thay: ${getErrorMessage(err)}`);
     } finally {
       setLoading(false);
     }
@@ -311,8 +331,8 @@ export default function SchedulingPage() {
 
       setActionMessage(`ℹ️ Đã đóng Exception trong Work Queue! (Lưu ý: Tỷ lệ tuân thủ P8 chỉ COMPLIANT khi có giáo viên dạy thay thật)`);
       await loadData();
-    } catch (err: any) {
-      setActionMessage(`❌ Lỗi xử lý Exception: ${err.message}`);
+    } catch (err) {
+      setActionMessage(`❌ Lỗi xử lý Exception: ${getErrorMessage(err)}`);
     } finally {
       setLoading(false);
     }
@@ -521,7 +541,7 @@ export default function SchedulingPage() {
                     {assignments.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="px-6 py-8 text-center text-slate-500 text-sm">
-                          Chưa có ca làm việc nào được xếp cho ngày này. Bấm nút "Phân Công Ca Sáng Mẫu" để khởi tạo.
+                          Chưa có ca làm việc nào được xếp cho ngày này. Bấm nút &quot;Phân Công Ca Sáng Mẫu&quot; để khởi tạo.
                         </td>
                       </tr>
                     ) : (
@@ -602,7 +622,11 @@ export default function SchedulingPage() {
                 <label className="text-xs text-slate-400 block mb-1">Loại Nghỉ Phép</label>
                 <select
                   value={leaveType}
-                  onChange={(e) => setLeaveType(e.target.value as any)}
+                  onChange={(e) => {
+                    if (isLeaveType(e.target.value)) {
+                      setLeaveType(e.target.value);
+                    }
+                  }}
                   className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200"
                 >
                   <option value="SICK_LEAVE">Sick Leave (Nghỉ Bệnh)</option>

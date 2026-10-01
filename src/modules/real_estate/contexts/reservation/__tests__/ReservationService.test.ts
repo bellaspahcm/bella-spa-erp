@@ -1,23 +1,51 @@
 import { supabase } from '@/lib/supabase';
 import { reservationService } from '../application/ReservationService';
 
-const mockQueryBuilder = {
-  update: jest.fn().mockReturnThis(),
-  eq: jest.fn().mockReturnThis(),
+type QueryResult<T> = {
+  data: T | null;
+  error: Error | null;
+};
+
+type ReservationQueryBuilder = {
+  update: jest.MockedFunction<(payload: Record<string, unknown>) => ReservationQueryBuilder>;
+  eq: jest.MockedFunction<(column: string, value: string) => ReservationQueryBuilder | Promise<QueryResult<never>>>;
+};
+
+type SupabaseMockTarget = {
+  rpc: (functionName: string, args: Record<string, unknown>) => Promise<QueryResult<unknown>>;
+  from: (table: string) => ReservationQueryBuilder;
+};
+
+function assertSupabaseMockTarget(value: unknown): asserts value is SupabaseMockTarget {
+  if (!value || typeof value !== 'object') {
+    throw new Error('Supabase mock target is not available');
+  }
+
+  const candidate = value as Record<string, unknown>;
+  if (typeof candidate.rpc !== 'function' || typeof candidate.from !== 'function') {
+    throw new Error('Supabase mock target is missing required methods');
+  }
+}
+
+const mockQueryBuilder: ReservationQueryBuilder = {
+  update: jest.fn(() => mockQueryBuilder),
+  eq: jest.fn(() => mockQueryBuilder),
 };
 
 describe('ReservationService', () => {
   const tenantId = 'tenant-123';
   const productId = 'prod-456';
+  const userId = 'user-123';
   const reservationId = 'res-789';
 
-  let spyRpc: jest.SpyInstance;
-  let spyFrom: jest.SpyInstance;
+  let spyRpc: jest.SpiedFunction<SupabaseMockTarget['rpc']>;
+  let spyFrom: jest.SpiedFunction<SupabaseMockTarget['from']>;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    spyRpc = jest.spyOn(supabase as any, 'rpc');
-    spyFrom = jest.spyOn(supabase as any, 'from').mockReturnValue(mockQueryBuilder as any);
+    assertSupabaseMockTarget(supabase);
+    spyRpc = jest.spyOn(supabase, 'rpc');
+    spyFrom = jest.spyOn(supabase, 'from').mockReturnValue(mockQueryBuilder);
   });
 
   afterEach(() => {
@@ -35,14 +63,15 @@ describe('ReservationService', () => {
       const res = await reservationService.reserveProduct({
         tenantId,
         productId,
+        userId,
         durationMinutes: 15,
       });
 
       expect(spyRpc).toHaveBeenCalledWith('reserve_product', {
         p_tenant_id: tenantId,
         p_product_id: productId,
-        p_user_id: null,
-        p_customer_id: null,
+        p_user_id: userId,
+        p_customer_id: undefined,
         p_duration_minutes: 15,
       });
 
@@ -59,6 +88,7 @@ describe('ReservationService', () => {
       const res = await reservationService.reserveProduct({
         tenantId,
         productId,
+        userId,
         durationMinutes: 15,
       });
 
@@ -73,7 +103,7 @@ describe('ReservationService', () => {
       });
 
       await expect(
-        reservationService.reserveProduct({ tenantId, productId, durationMinutes: 15 })
+        reservationService.reserveProduct({ tenantId, productId, userId, durationMinutes: 15 })
       ).rejects.toThrow('Database server disconnected');
     });
   });

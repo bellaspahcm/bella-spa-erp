@@ -17,13 +17,29 @@ import { IBedRepository } from '../engines/bed-engine/repositories/supabase-bed.
 import { ClinicalOrderService } from '../engines/order-engine/services/clinical-order.service';
 import { SupabaseOrderRepository } from '../engines/order-engine/repositories/supabase-order-repository';
 import { PharmacyEngineService } from '../engines/pharmacy-engine/pharmacy-engine.service';
-import { SupabasePharmacyRepository } from '../engines/pharmacy-engine/repositories/supabase-pharmacy.repository';
 import { OrderApprovedSubscriber } from '../engines/pharmacy-engine/events/order-approved-subscriber';
 import { InMemoryEventBus } from '../engines/order-engine/contracts/event-bus.interface';
 import { InpatientAdmission } from '../engines/admission-engine/domain/inpatient-admission.entity';
 import { Bed } from '../engines/bed-engine/domain/bed.entity';
 import { ClinicalOrder } from '../engines/order-engine/domain/clinical-order.entity';
-import { Prescription } from '../engines/pharmacy-engine/domain/prescription.entity';
+import { Prescription, type MAREntry } from '../engines/pharmacy-engine/domain/prescription.entity';
+import type { EncounterReader, EncounterSnapshot } from '../engines/order-engine/contracts/encounter-reader.interface';
+import type { IClinicalOrderReader, ClinicalOrderSnapshot } from '../engines/pharmacy-engine/contracts/clinical-order-reader.interface';
+import type { IPharmacyRepository } from '../engines/pharmacy-engine/repositories/pharmacy-repository.interface';
+
+type PharmacySupabaseClient = ConstructorParameters<typeof PharmacyEngineService>[0];
+
+interface EmptyQueryResult {
+  data: never[];
+  error: null;
+}
+
+interface EmptyQueryBuilder extends PromiseLike<EmptyQueryResult> {
+  select(): EmptyQueryBuilder;
+  eq(): EmptyQueryBuilder;
+  in(): EmptyQueryBuilder;
+  limit(): EmptyQueryBuilder;
+}
 
 class MockAdmissionRepository implements IAdmissionRepository {
   private store = new Map<string, InpatientAdmission>();
@@ -108,7 +124,7 @@ class MockOrderRepo {
   }
 }
 
-class MockPharmacyRepo {
+class MockPharmacyRepo implements IPharmacyRepository {
   private store = new Map<string, Prescription>();
   private stock = new Map<string, number>();
 
@@ -134,8 +150,8 @@ class MockPharmacyRepo {
   }
 
   async saveMAR(): Promise<void> {}
-  async findMARById(): Promise<any> { return null; }
-  async findMARByPrescriptionId(): Promise<any[]> { return []; }
+  async findMARById(): Promise<MAREntry | null> { return null; }
+  async findMARByPrescriptionId(): Promise<MAREntry[]> { return []; }
 
   async setStock(tenantId: string, medCode: string, qty: number): Promise<void> {
     this.stock.set(medCode, qty);
@@ -174,33 +190,35 @@ describe('Inpatient Vertical Slice Integration Test (H1 Acceptance)', () => {
     admissionService = new AdmissionEngineService(admissionRepo);
     bedService = new BedEngineService(bedRepo);
 
-    const encounterReader = {
-      getEncounterSnapshot: async () => ({
-        id: 'enc-slice-001',
-        tenantId,
+    const encounterReader: EncounterReader = {
+      getEncounterSnapshot: async (): Promise<EncounterSnapshot> => ({
+        encounterId: 'enc-slice-001',
         patientPartyId: 'party-slice-001',
-        status: 'in_consultation',
-        encounterClass: 'inpatient',
+        status: 'IN_PROGRESS',
+        encounterType: 'inpatient',
+        admittedAt: new Date('2026-01-01T00:00:00.000Z'),
+        dischargedAt: null,
       }),
       canCreateOrders: async () => true,
     };
 
     orderService = new ClinicalOrderService(
       orderRepo as unknown as SupabaseOrderRepository,
-      encounterReader as any,
+      encounterReader,
       inMemEventBus
     );
 
-    const clinicalOrderReader = {
-      getOrderSnapshot: async (tid: string, orderId: string) => {
+    const clinicalOrderReader: IClinicalOrderReader = {
+      getOrderSnapshot: async (tid: string, orderId: string): Promise<ClinicalOrderSnapshot | null> => {
         const ord = await orderRepo.findById(tid, orderId);
         if (!ord || ord.orderStatus !== 'APPROVED') return null;
         return {
-          orderId: ord.id,
+          id: ord.id,
           tenantId: ord.tenantId,
           encounterId: ord.encounterId,
-          patientPartyId: ord.patientId,
+          patientId: ord.patientId,
           orderType: 'MEDICATION',
+          orderStatus: ord.orderStatus,
           drugCode: 'MED-AMOX-500',
           drugName: 'Amoxicillin 500mg',
           dose: 500,
@@ -216,26 +234,27 @@ describe('Inpatient Vertical Slice Integration Test (H1 Acceptance)', () => {
 
     const mockSupabase = {
       from: () => {
-        const builder: any = {
+        const result: EmptyQueryResult = { data: [], error: null };
+        const builder: EmptyQueryBuilder = {
           select: () => builder,
           eq: () => builder,
           in: () => builder,
           limit: () => builder,
-          then: (resolve: any) => resolve({ data: [], error: null }),
+          then: (onfulfilled, onrejected) => Promise.resolve(result).then(onfulfilled, onrejected),
         };
         return builder;
       },
-    };
+    } as PharmacySupabaseClient;
 
-    pharmacyService = new PharmacyEngineService(mockSupabase as any);
+    pharmacyService = new PharmacyEngineService(mockSupabase);
 
     // Override repository in pharmacyService
-    (pharmacyService as any).pharmacyRepository = pharmacyRepo;
+    Reflect.set(pharmacyService, 'pharmacyRepository', pharmacyRepo);
 
     subscriber = new OrderApprovedSubscriber(
       inMemEventBus,
-      pharmacyRepo as unknown as SupabasePharmacyRepository,
-      clinicalOrderReader as any
+      pharmacyRepo,
+      clinicalOrderReader
     );
   });
 

@@ -27,46 +27,52 @@ const mockGetCurrentUser = jest.fn();
 const mockRpc = jest.fn();
 const mockFrom = jest.fn();
 
-(global as any).mockGetCurrentUser = mockGetCurrentUser;
-(global as any).mockRpc = mockRpc;
-(global as any).mockFrom = mockFrom;
+type AccountingReportsTestGlobals = typeof globalThis & {
+  mockGetCurrentUser: typeof mockGetCurrentUser;
+  mockRpc: typeof mockRpc;
+  mockFrom: typeof mockFrom;
+};
+
+(globalThis as AccountingReportsTestGlobals).mockGetCurrentUser = mockGetCurrentUser;
+(globalThis as AccountingReportsTestGlobals).mockRpc = mockRpc;
+(globalThis as AccountingReportsTestGlobals).mockFrom = mockFrom;
 
 jest.mock('@/services/user-actions', () => ({
-  getCurrentUser: (...args: any[]) => (global as any).mockGetCurrentUser(...args),
+  getCurrentUser: (...args: unknown[]) => (globalThis as AccountingReportsTestGlobals).mockGetCurrentUser(...args),
 }));
 
 jest.mock('@/lib/supabase-server', () => ({
   createClient: () => Promise.resolve({
-    rpc: (...args: any[]) => (global as any).mockRpc(...args),
-    from: (...args: any[]) => (global as any).mockFrom(...args),
+    rpc: (...args: unknown[]) => (globalThis as AccountingReportsTestGlobals).mockRpc(...args),
+    from: (...args: unknown[]) => (globalThis as AccountingReportsTestGlobals).mockFrom(...args),
   }),
 }));
 
 // Helper class for mock query builders
 class MockQueryBuilder {
-  public data: any;
-  public error: any;
+  public data: unknown;
+  public error: unknown;
   public updateSpy = jest.fn().mockReturnThis();
   public insertSpy = jest.fn().mockReturnThis();
   public eqSpy = jest.fn().mockReturnThis();
   public orderSpy = jest.fn().mockReturnThis();
 
-  constructor(data: any = null, error: any = null) {
+  constructor(data: unknown = null, error: unknown = null) {
     this.data = data;
     this.error = error;
   }
 
   select() { return this; }
-  eq(...args: any[]) { this.eqSpy(...args); return this; }
-  order(...args: any[]) { this.orderSpy(...args); return this; }
-  update(...args: any[]) { this.updateSpy(...args); return this; }
-  insert(...args: any[]) { this.insertSpy(...args); return this; }
+  eq(...args: unknown[]) { this.eqSpy(...args); return this; }
+  order(...args: unknown[]) { this.orderSpy(...args); return this; }
+  update(...args: unknown[]) { this.updateSpy(...args); return this; }
+  insert(...args: unknown[]) { this.insertSpy(...args); return this; }
   
   async single() {
     return { data: this.data, error: this.error };
   }
 
-  then(onfulfilled: any) {
+  then(onfulfilled: (value: { data: unknown; error: unknown }) => unknown) {
     return Promise.resolve({ data: this.data, error: this.error }).then(onfulfilled);
   }
 }

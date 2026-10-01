@@ -33,6 +33,15 @@ export interface OrgTreeNode {
   children?: OrgTreeNode[];
 }
 
+type CenterTab = 'chart' | 'people' | 'analytics' | 'scope';
+
+const CENTER_TABS = [
+  { id: 'chart', label: 'Sơ đồ tổ chức' },
+  { id: 'people', label: 'Danh sách nhân sự' },
+  { id: 'analytics', label: 'Thống kê' },
+  { id: 'scope', label: 'Phạm vi quản lý' },
+] satisfies ReadonlyArray<{ id: CenterTab; label: string }>;
+
 export interface UnitDetail {
   id: string;
   name: string;
@@ -185,7 +194,7 @@ const FEATURED_PEOPLE: FeaturedPerson[] = [
 
 export function OrgChartPage() {
   const [selectedUnitId, setSelectedUnitId] = useState<string>('br-hcm');
-  const [activeCenterTab, setActiveCenterTab] = useState<'chart' | 'people' | 'analytics' | 'scope'>('chart');
+  const [activeCenterTab, setActiveCenterTab] = useState<CenterTab>('chart');
   const [rightTab, setRightTab] = useState<'overview' | 'people' | 'departments' | 'projects'>('overview');
   const [zoomLevel, setZoomLevel] = useState<number>(100);
   const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({
@@ -543,15 +552,10 @@ export function OrgChartPage() {
           {/* Sub-tabs Bar */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-2 rounded-2xl shadow-xs flex items-center justify-between gap-2">
             <div className="flex items-center gap-1">
-              {[
-                { id: 'chart', label: 'Sơ đồ tổ chức' },
-                { id: 'people', label: 'Danh sách nhân sự' },
-                { id: 'analytics', label: 'Thống kê' },
-                { id: 'scope', label: 'Phạm vi quản lý' },
-              ].map(tab => (
+              {CENTER_TABS.map(tab => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveCenterTab(tab.id as any)}
+                  onClick={() => setActiveCenterTab(tab.id)}
                   className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     activeCenterTab === tab.id
                       ? 'bg-blue-600 text-white shadow-xs'

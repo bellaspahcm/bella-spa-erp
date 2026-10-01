@@ -6,9 +6,14 @@ import {
 } from '../services/finance-actions';
 
 // Mock MockQueryBuilder for Supabase chains
+type MockQueryResult = {
+  data: unknown;
+  error: { message: string } | null;
+};
+
 class MockQueryBuilder {
   static errorsByTable: Record<string, { message: string } | null> = {};
-  static dataByTable: Record<string, any[] | undefined> = {};
+  static dataByTable: Record<string, Array<Record<string, unknown>> | undefined> = {};
   static calls: Array<{
     table: string;
     filters: Array<{ method: string; args: unknown[] }>;
@@ -16,7 +21,7 @@ class MockQueryBuilder {
 
   private filters: Array<{ method: string; args: unknown[] }> = [];
 
-  constructor(private table: string, private data: any) {}
+  constructor(private table: string, private data: unknown) {}
 
   select() { return this; }
   eq(...args: unknown[]) {
@@ -44,7 +49,7 @@ class MockQueryBuilder {
     return this;
   }
   
-  then(onfulfilled: any) {
+  then(onfulfilled: (value: MockQueryResult) => unknown) {
     MockQueryBuilder.calls.push({
       table: this.table,
       filters: [...this.filters],

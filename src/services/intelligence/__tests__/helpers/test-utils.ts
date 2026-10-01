@@ -118,13 +118,30 @@ export async function cleanupTestData() {
 // ASSERTION HELPERS
 // ============================================================================
 
-export function expectForecastResult(result: any) {
+type ForecastResultAssertion = {
+  forecasts: unknown;
+  summary: unknown;
+};
+
+type RecommendationAssertion = {
+  recommended_item_id: unknown;
+  relevance_score: number;
+  rank_position: number;
+};
+
+type IntelligenceResponseAssertion = {
+  success: boolean;
+  data: unknown;
+  meta: unknown;
+};
+
+export function expectForecastResult(result: ForecastResultAssertion) {
   expect(result).toHaveProperty('forecasts');
   expect(result).toHaveProperty('summary');
   expect(Array.isArray(result.forecasts)).toBe(true);
 }
 
-export function expectRecommendation(recommendation: any) {
+export function expectRecommendation(recommendation: RecommendationAssertion) {
   expect(recommendation).toHaveProperty('recommended_item_id');
   expect(recommendation).toHaveProperty('relevance_score');
   expect(recommendation).toHaveProperty('rank_position');
@@ -134,7 +151,7 @@ export function expectRecommendation(recommendation: any) {
   expect(recommendation.rank_position).toBeGreaterThan(0);
 }
 
-export function expectIntelligenceResponse(response: any) {
+export function expectIntelligenceResponse(response: IntelligenceResponseAssertion) {
   expect(response).toHaveProperty('success');
   expect(response).toHaveProperty('data');
   expect(response).toHaveProperty('meta');

@@ -17,6 +17,11 @@ import { WorkflowRegistryContractImpl } from '../../../platform/education/contra
 import { EducationEnrollmentExtensionContractImpl } from '../../../platform/education/contracts/extension.contract.impl';
 import { EnrollmentProductService } from '../services/enrollment.service';
 import { MemoryEventBusAdapter } from '../../../platform/core/events';
+import { Course } from '../../../platform/education/domain/course.entity';
+import { Enrollment } from '../../../platform/education/domain/enrollment.entity';
+import type { IAccountingContract } from '../../../platform/accounting/contracts/accounting.contract';
+import type { IEducationEnrollmentContract } from '../../../platform/education/contracts/enrollment.contract';
+import type { IEducationRepository } from '../../../platform/education/repositories/education-repository.interface';
 
 describe('BELLA EDUCATION V1 — MULTI-TENANT CUSTOMIZATION INTEGRATION TESTS', () => {
   let eventBus: MemoryEventBusAdapter;
@@ -27,34 +32,50 @@ describe('BELLA EDUCATION V1 — MULTI-TENANT CUSTOMIZATION INTEGRATION TESTS', 
 
   // Mock repository with configurable enrollment count
   let activeEnrollmentCount = 0;
-  const mockRepository: any = {
+  const buildCourse = (courseId: string, tenantId: string): Course =>
+    Course.reconstitute({
+      id: courseId,
+      tenantId,
+      courseCode: 'CSE-101',
+      title: 'Intro to Programming',
+      status: 'active',
+      prerequisiteCourseCodes: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+  const buildEnrollment = (id: string, tenantId: string): Enrollment =>
+    Enrollment.reconstitute({
+      id,
+      tenantId,
+      studentPartyId: 'person-101',
+      courseId: 'course-101',
+      status: 'active',
+      requestId: 'req-1',
+      enrolledAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+  const mockRepository: jest.Mocked<IEducationRepository> = {
     verifyStudentRole: jest.fn().mockResolvedValue({ isValid: true }),
-    findCourseById: jest.fn().mockImplementation((courseId, tenantId) =>
-      Promise.resolve({
-        id: courseId,
-        tenantId,
-        courseCode: 'CSE-101',
-        title: 'Intro to Programming',
-        status: 'active',
-        prerequisiteCourseCodes: [],
-      })
+    findCourseById: jest.fn().mockImplementation((courseId: string, tenantId: string) =>
+      Promise.resolve(buildCourse(courseId, tenantId))
     ),
-    findCourseByCode: jest.fn(),
-    saveEnrollment: jest.fn(),
-    findEnrollmentById: jest.fn().mockImplementation((id, tenantId) =>
-      Promise.resolve({
-        id,
-        tenantId,
-        studentPartyId: 'person-101',
-        courseId: 'course-101',
-        status: 'active',
-        requestId: 'req-1',
-        enrolledAt: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
+    findCourseByCode: jest.fn().mockResolvedValue(null),
+    saveEnrollment: jest.fn().mockResolvedValue(undefined),
+    findEnrollmentById: jest.fn().mockImplementation((id: string, tenantId: string) =>
+      Promise.resolve(buildEnrollment(id, tenantId))
     ),
-    executeEnrollStudentTransaction: jest.fn().mockImplementation((params) =>
+    findEnrollmentByStudentAndCourse: jest.fn().mockResolvedValue(null),
+    saveCourse: jest.fn().mockResolvedValue(undefined),
+    executeEnrollStudentTransaction: jest.fn().mockImplementation((params: {
+      tenantId: string;
+      studentPartyId: string;
+      courseId: string;
+      enrollmentId: string;
+      requestId: string;
+    }) =>
       Promise.resolve({
         isDuplicate: false,
         enrollmentId: params.enrollmentId,
@@ -64,7 +85,7 @@ describe('BELLA EDUCATION V1 — MULTI-TENANT CUSTOMIZATION INTEGRATION TESTS', 
     getActiveEnrollmentsCount: jest.fn().mockImplementation(() => Promise.resolve(activeEnrollmentCount)),
   };
 
-  const mockAccountingContract: any = {
+  const mockAccountingContract: jest.Mocked<IAccountingContract> = {
     postJournalEntry: jest.fn().mockResolvedValue({ success: true, entryId: 'jr-101' }),
   };
 
@@ -219,7 +240,7 @@ describe('BELLA EDUCATION V1 — MULTI-TENANT CUSTOMIZATION INTEGRATION TESTS', 
   });
 
   test('Corporate Tenant enrollment maps tuition payments to corporate ledgers (no accounting bypass)', async () => {
-    const mockEnrollmentContract: any = {
+    const mockEnrollmentContract: jest.Mocked<IEducationEnrollmentContract> = {
       enrollStudent: jest.fn().mockResolvedValue({
         id: 'enroll-101',
         tenantId: 'tenant-corporate',
@@ -228,6 +249,7 @@ describe('BELLA EDUCATION V1 — MULTI-TENANT CUSTOMIZATION INTEGRATION TESTS', 
         status: 'active',
         enrolledAt: new Date().toISOString(),
       }),
+      getEnrollment: jest.fn().mockResolvedValue(null),
     };
 
     const enrollmentProductService = new EnrollmentProductService(mockEnrollmentContract, mockAccountingContract);

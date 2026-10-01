@@ -51,7 +51,7 @@ export class ReservationService implements IReservationContract {
         product_id: params.productId,
         user_id: params.userId,
         customer_id: params.customerId,
-        status: 'active' as any,
+        status: 'active',
         expires_at: expiresAt
       })
       .select('id')

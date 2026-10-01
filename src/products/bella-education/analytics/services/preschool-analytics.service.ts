@@ -98,8 +98,8 @@ export class PreschoolAnalyticsService {
     const pendingMilestoneReviews = learningRaw.pendingObservations.length;
 
     // 5. Parent Engagement (P6)
-    const unacknowledgedNotices = parentRaw.filter((d: any) => d.notice?.policy_requirement === 'REQUIRES_ACK').length;
-    const pendingConsentRequests = parentRaw.filter((d: any) => d.notice?.policy_requirement === 'REQUIRES_CONSENT').length;
+    const unacknowledgedNotices = parentRaw.filter((d) => d.notice?.policy_requirement === 'REQUIRES_ACK').length;
+    const pendingConsentRequests = parentRaw.filter((d) => d.notice?.policy_requirement === 'REQUIRES_CONSENT').length;
 
     // 6. Finance & Billing (P7)
     const invoicedGrossTotal = financeRaw.invoices.reduce((sum, inv) => sum + (inv.gross_amount || 0), 0);

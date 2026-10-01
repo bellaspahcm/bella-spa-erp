@@ -54,6 +54,8 @@ export interface ContractItem {
   }[];
 }
 
+type ContractDomainTab = 'overview' | 'deposit' | 'contract' | 'payment' | 'debt';
+
 const CONTRACT_DATA: ContractItem[] = [
   {
     id: 'ct-001',
@@ -342,7 +344,7 @@ const CONTRACT_DATA: ContractItem[] = [
 export default function RealEstateContractsPage() {
   const [contracts, setContracts] = useState<ContractItem[]>(CONTRACT_DATA);
   const [selectedContractId, setSelectedContractId] = useState<string | null>('ct-001');
-  const [domainTab, setDomainTab] = useState<'overview' | 'deposit' | 'contract' | 'payment' | 'debt'>('overview');
+  const [domainTab, setDomainTab] = useState<ContractDomainTab>('overview');
   const [urgencyFilter, setUrgencyFilter] = useState<string>('all');
   const [search, setSearch] = useState<string>('');
 
@@ -434,6 +436,14 @@ export default function RealEstateContractsPage() {
     setShowPaymentModal(false);
     toast.success(`✅ Đã ghi nhận thanh toán 428.000.000 ₫ cho hợp đồng ${selectedContract.contractNo}!`);
   };
+
+  const domainTabs: Array<{ id: ContractDomainTab; label: string }> = [
+    { id: 'overview', label: 'Tổng quan' },
+    { id: 'deposit', label: 'Đặt cọc' },
+    { id: 'contract', label: 'Hợp đồng' },
+    { id: 'payment', label: 'Thanh toán' },
+    { id: 'debt', label: 'Công nợ' },
+  ];
 
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-[1600px] mx-auto font-sans text-slate-900 dark:text-slate-100 pb-12">
@@ -575,16 +585,10 @@ export default function RealEstateContractsPage() {
       <div className="space-y-3 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl shadow-xs">
         {/* Domain View Tabs */}
         <div className="flex items-center gap-6 border-b border-slate-100 dark:border-slate-800 pb-2 text-xs font-bold">
-          {[
-            { id: 'overview', label: 'Tổng quan' },
-            { id: 'deposit', label: 'Đặt cọc' },
-            { id: 'contract', label: 'Hợp đồng' },
-            { id: 'payment', label: 'Thanh toán' },
-            { id: 'debt', label: 'Công nợ' },
-          ].map(tab => (
+          {domainTabs.map(tab => (
             <button
               key={tab.id}
-              onClick={() => setDomainTab(tab.id as any)}
+              onClick={() => setDomainTab(tab.id)}
               className={`pb-1 transition-all cursor-pointer ${
                 domainTab === tab.id
                   ? 'text-blue-600 border-b-2 border-blue-600 font-black'

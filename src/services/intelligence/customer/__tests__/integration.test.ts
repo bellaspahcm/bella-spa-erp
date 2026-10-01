@@ -598,7 +598,7 @@ describe.skip('Customer Intelligence Integration Tests', () => {
     it('should handle invalid segment filter', async () => {
       const invalidSegment = 'InvalidSegmentName';
 
-      const result = await service.getCustomerSegmentation(TEST_TENANT_ID, invalidSegment as any);
+      const result = await service.getCustomerSegmentation(TEST_TENANT_ID, invalidSegment);
 
       // Should return empty array
       expect(result.data).toEqual([]);

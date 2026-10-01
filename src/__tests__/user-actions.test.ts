@@ -67,14 +67,14 @@ jest.mock('../lib/redis-cache', () => ({
 type ScriptedResult = {
   table: string;
   op: 'select' | 'insert' | 'update' | 'delete';
-  data?: any;
+  data?: unknown;
   error?: { message: string };
 };
 
 type DbCall = {
   table: string;
   op: ScriptedResult['op'];
-  payload?: any;
+  payload?: unknown;
   filters: Array<{ field: string; value: unknown }>;
 };
 
@@ -119,7 +119,7 @@ class ScriptedQueryBuilder {
   }
   single() { return this.resolve(); }
 
-  then(onfulfilled: (value: { data: any; error: any }) => unknown) {
+  then(onfulfilled: (value: { data: unknown; error: { message: string } | null }) => unknown) {
     return this.resolve().then(onfulfilled);
   }
 

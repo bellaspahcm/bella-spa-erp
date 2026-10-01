@@ -5,6 +5,25 @@ import {
   sentryBeforeSend,
 } from "@/lib/log-redactor";
 
+type CircularLogObject = {
+  name: string;
+  self?: CircularLogObject;
+};
+
+type MutableSentryEvent = {
+  user?: Record<string, unknown>;
+  request?: {
+    headers?: Record<string, unknown>;
+    cookies?: unknown;
+    query_string?: unknown;
+    data?: Record<string, unknown>;
+  };
+  exception?: {
+    values: Array<{ value?: string }>;
+  };
+  message?: string;
+};
+
 describe("log-redactor: redactString", () => {
   it("masks Vietnamese mobile numbers (0xx prefix)", () => {
     const out = redactString("Khách hàng số 0912345678 đặt lịch");
@@ -122,7 +141,7 @@ describe("log-redactor: redact (deep)", () => {
   });
 
   it("handles circular references", () => {
-    const a: any = { name: "loop" };
+    const a: CircularLogObject = { name: "loop" };
     a.self = a;
     expect(() => redact(a)).not.toThrow();
   });
@@ -139,7 +158,7 @@ describe("log-redactor: redact (deep)", () => {
 
 describe("log-redactor: sentryBeforeSend", () => {
   it("strips user PII fields", () => {
-    const ev: any = {
+    const ev: MutableSentryEvent = {
       user: { id: "u1", email: "a@b.com", ip_address: "1.2.3.4", phone: "0912345678" },
     };
     const out = sentryBeforeSend(ev);
@@ -150,7 +169,7 @@ describe("log-redactor: sentryBeforeSend", () => {
   });
 
   it("redacts request headers and cookies", () => {
-    const ev: any = {
+    const ev: MutableSentryEvent = {
       request: {
         headers: {
           authorization: "Bearer abcdef1234567890",
@@ -172,7 +191,7 @@ describe("log-redactor: sentryBeforeSend", () => {
   });
 
   it("redacts exception messages", () => {
-    const ev: any = {
+    const ev: MutableSentryEvent = {
       exception: {
         values: [
           { value: "Failed booking for 0912345678 / a@b.com" },
@@ -185,7 +204,7 @@ describe("log-redactor: sentryBeforeSend", () => {
   });
 
   it("never throws on malformed events", () => {
-    expect(() => sentryBeforeSend({} as any)).not.toThrow();
-    expect(() => sentryBeforeSend({ message: "hello" } as any)).not.toThrow();
+    expect(() => sentryBeforeSend({})).not.toThrow();
+    expect(() => sentryBeforeSend({ message: "hello" })).not.toThrow();
   });
 });

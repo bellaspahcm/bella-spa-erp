@@ -3,8 +3,7 @@ import { randomUUID } from 'crypto';
 import { LaboratoryEngineService } from '../../laboratory-engine.service';
 import { LabOrder } from '../../domain/lab-order.entity';
 import { LabResult } from '../../domain/lab-result.entity';
-import { TEST_DEFINITIONS } from '../../domain/test-definition';
-import { ConcurrencyViolationError } from '../../repositories/laboratory-repository.interface';
+import type { ILaboratoryRepository } from '../../repositories/laboratory-repository.interface';
 import { eventBus } from '@/platform/host/event-bus';
 
 // Spy on the real eventBus.publish method
@@ -13,10 +12,10 @@ const publishSpy = jest.spyOn(eventBus, 'publish').mockResolvedValue({ success: 
 const getPublishedEvents = () => publishSpy.mock.calls.map(call => call[0]);
 const clearPublishedEvents = () => publishSpy.mockClear();
 
-class MockLabRepository {
-  public findById = jest.fn<any>();
-  public findByClinicalOrderId = jest.fn<any>();
-  public save = jest.fn<any>();
+class MockLabRepository implements ILaboratoryRepository {
+  public findById = jest.fn<ILaboratoryRepository['findById']>();
+  public findByClinicalOrderId = jest.fn<ILaboratoryRepository['findByClinicalOrderId']>();
+  public save = jest.fn<ILaboratoryRepository['save']>();
 }
 
 describe('LaboratoryEngineService Unit Tests', () => {
@@ -29,7 +28,7 @@ describe('LaboratoryEngineService Unit Tests', () => {
   beforeEach(() => {
     clearPublishedEvents();
     repository = new MockLabRepository();
-    service = new LaboratoryEngineService(repository as any);
+    service = new LaboratoryEngineService(repository);
   });
 
   it('should successfully record results and verify results, publishing appropriate events', async () => {

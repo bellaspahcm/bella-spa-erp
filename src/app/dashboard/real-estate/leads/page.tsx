@@ -58,6 +58,26 @@ export interface LeadItem {
   }[];
 }
 
+type LeadSource = LeadItem['source'];
+
+interface NewLeadForm {
+  fullName: string;
+  phone: string;
+  email: string;
+  project: string;
+  subZone: string;
+  productType: string;
+  budget: string;
+  source: LeadSource;
+  buyerDemand: string;
+}
+
+const LEAD_SOURCES = ['facebook', 'zalo', 'google', 'referral', 'website', 'tiktok', 'email', 'event'] as const satisfies readonly LeadSource[];
+
+function isLeadSource(value: string): value is LeadSource {
+  return (LEAD_SOURCES as readonly string[]).includes(value);
+}
+
 // ── Seed Data (Matching Image 2 Exactly) ───────────────────────────────────────
 
 const INITIAL_LEADS: LeadItem[] = [
@@ -344,7 +364,7 @@ export default function LeadsManagementPage() {
   const [keepSLA, setKeepSLA] = useState(true);
 
   // New Lead Form
-  const [newLead, setNewLead] = useState({
+  const [newLead, setNewLead] = useState<NewLeadForm>({
     fullName: '',
     phone: '',
     email: '',
@@ -464,7 +484,7 @@ export default function LeadsManagementPage() {
       subZone: newLead.subZone,
       productType: newLead.productType,
       budget: newLead.budget,
-      source: newLead.source as any,
+      source: newLead.source,
       sourceLabel: 'Facebook Ads',
       salesOwnerId: 's-001',
       salesOwnerName: 'Nguyễn Văn A',
@@ -1219,7 +1239,11 @@ export default function LeadsManagementPage() {
                   <label className="block text-slate-600 dark:text-slate-400 font-bold mb-1">Nguồn lead</label>
                   <PremiumSelect
                     value={newLead.source}
-                    onChange={(val) => setNewLead({ ...newLead, source: val })}
+                    onChange={(val) => {
+                      if (isLeadSource(val)) {
+                        setNewLead({ ...newLead, source: val });
+                      }
+                    }}
                     options={[
                       { value: "facebook", label: "Facebook Ads" },
                       { value: "zalo", label: "Zalo OA" },

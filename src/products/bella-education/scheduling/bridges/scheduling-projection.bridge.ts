@@ -13,6 +13,9 @@
 import { ParentCommunicationRepository } from '../../parent-engagement/repositories/parent-communication.repository';
 import { CommunicationExceptionService } from '../../parent-engagement/services/communication-exception.service';
 import { RatioComplianceSnapshot } from '../domain/scheduling.types';
+import type { ExceptionType } from '../../parent-engagement/domain/communication.types';
+
+const STAFFING_SHORTAGE_EXCEPTION_TYPE: ExceptionType = 'STAFFING_SHORTAGE_SLA';
 
 export class SchedulingProjectionBridge {
   private exceptionService: CommunicationExceptionService;
@@ -56,7 +59,7 @@ export class SchedulingProjectionBridge {
       noticeId: null,
       studentId: snapshot.classroomId, // classroom identifier
       guardianPartyId: escalatedByPartyId, // Manager party receiving escalation
-      exceptionType: 'STAFFING_SHORTAGE_SLA' as any,
+      exceptionType: STAFFING_SHORTAGE_EXCEPTION_TYPE,
       severity: 'HIGH' as const,
       assignedRole: 'PRINCIPAL' as const,
     };

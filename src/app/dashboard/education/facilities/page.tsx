@@ -38,6 +38,7 @@ import { MaintenanceJobService } from '@/products/bella-education/facilities/ser
 import { FacilitiesProjectionBridge } from '@/products/bella-education/facilities/bridges/facilities-projection.bridge';
 import { ParentCommunicationRepository } from '@/products/bella-education/parent-engagement/repositories/parent-communication.repository';
 import { CommunicationExceptionService } from '@/products/bella-education/parent-engagement/services/communication-exception.service';
+import type { CommunicationException } from '@/products/bella-education/parent-engagement/domain/communication.types';
 import { 
   Facility, 
   FacilityZone, 
@@ -55,6 +56,15 @@ const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 const DEFAULT_INSPECTOR_ID = '00000000-0000-0000-0000-000000000071';
 const DEFAULT_TECHNICIAN_ID = '00000000-0000-0000-0000-000000000072';
 
+function getErrorMessage(error: unknown): string | undefined {
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    return typeof message === 'string' ? message : String(message);
+  }
+
+  return undefined;
+}
+
 export default function FacilitiesPage() {
   const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'SPACES' | 'ASSETS' | 'INSPECTIONS' | 'MAINTENANCE'>('OVERVIEW');
   const [loading, setLoading] = useState<boolean>(false);
@@ -66,7 +76,7 @@ export default function FacilitiesPage() {
   const [assets, setAssets] = useState<FacilityAsset[]>([]);
   const [inspections, setInspections] = useState<InspectionLog[]>([]);
   const [maintenanceJobs, setMaintenanceJobs] = useState<MaintenanceJob[]>([]);
-  const [exceptions, setExceptions] = useState<any[]>([]);
+  const [exceptions, setExceptions] = useState<CommunicationException[]>([]);
   const [zoneAvailability, setZoneAvailability] = useState<ZoneAvailabilityDTO | null>(null);
 
   // Services
@@ -117,7 +127,7 @@ export default function FacilitiesPage() {
       // 6. Load Work Queue Exceptions
       const excs = await exceptionService.getStaffWorkQueueExceptions(DEFAULT_TENANT_ID);
       setExceptions(excs);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to load facilities data:', err);
     } finally {
       setLoading(false);
@@ -188,9 +198,9 @@ export default function FacilitiesPage() {
 
       setActionMessage('✅ Đã khởi tạo Cơ sở vật chất, Khu vui chơi ngoài trời & Thiết bị mẫu thành công!');
       await loadData();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Seed facility error:', err);
-      setActionMessage(`❌ Lỗi khởi tạo cơ sở vật chất: ${err.message}`);
+      setActionMessage(`❌ Lỗi khởi tạo cơ sở vật chất: ${getErrorMessage(err)}`);
     } finally {
       setLoading(false);
     }
@@ -234,8 +244,8 @@ export default function FacilitiesPage() {
 
       setActionMessage('⚠️ Phát hiện Sự cố An toàn Critical! Thiết bị & Khu vui chơi đã bị OUT OF SERVICE ➔ Cảnh báo SAFETY_DEFECT đã gửi sang Exception Work Queue!');
       await loadData();
-    } catch (err: any) {
-      setActionMessage(`❌ Lỗi báo cáo sự cố an toàn: ${err.message}`);
+    } catch (err) {
+      setActionMessage(`❌ Lỗi báo cáo sự cố an toàn: ${getErrorMessage(err)}`);
     } finally {
       setLoading(false);
     }
@@ -255,8 +265,8 @@ export default function FacilitiesPage() {
 
       setActionMessage('ℹ️ Đã đóng Exception trong Work Queue! (Lưu ý: Luật An Toàn — Thiết bị VẪN GIỮ trạng thái OUT_OF_SERVICE cho đến khi hoàn thành sửa chữa & kiểm định lại!)');
       await loadData();
-    } catch (err: any) {
-      setActionMessage(`❌ Lỗi xử lý Exception: ${err.message}`);
+    } catch (err) {
+      setActionMessage(`❌ Lỗi xử lý Exception: ${getErrorMessage(err)}`);
     } finally {
       setLoading(false);
     }
@@ -285,8 +295,8 @@ export default function FacilitiesPage() {
 
       setActionMessage('🛠️ Đã hoàn thành Work Order bảo trì! Trạng thái chuyển sang UNDER_INSPECTION ➔ Cần Kiểm định An toàn trước khi đưa vào vận hành!');
       await loadData();
-    } catch (err: any) {
-      setActionMessage(`❌ Lỗi hoàn thành bảo trì: ${err.message}`);
+    } catch (err) {
+      setActionMessage(`❌ Lỗi hoàn thành bảo trì: ${getErrorMessage(err)}`);
     } finally {
       setLoading(false);
     }
@@ -316,8 +326,8 @@ export default function FacilitiesPage() {
 
       setActionMessage('✅ Kiểm định An toàn ĐẠT CHUẨN (PASS)! Thiết bị & Khu vui chơi đã KHÔI PHỤC trạng thái OPERATIONAL!');
       await loadData();
-    } catch (err: any) {
-      setActionMessage(`❌ Lỗi tái kiểm định an toàn: ${err.message}`);
+    } catch (err) {
+      setActionMessage(`❌ Lỗi tái kiểm định an toàn: ${getErrorMessage(err)}`);
     } finally {
       setLoading(false);
     }

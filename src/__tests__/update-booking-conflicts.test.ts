@@ -3,6 +3,23 @@ import type { Database } from '@/types/database.types';
 
 type BookingRow = Database['public']['Tables']['bookings']['Row'];
 type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
+type MockRow = Record<string, unknown>;
+type SessionLogChainResult = {
+  data: SessionLogRow[];
+  error: null;
+};
+type SessionLogThenCallback = (value: SessionLogChainResult) => unknown;
+type SessionLogChain = {
+  select: () => SessionLogChain;
+  eq: (_column?: string, _value?: unknown) => SessionLogChain;
+  order: () => SessionLogChain;
+  then: (onfulfilled: SessionLogThenCallback) => Promise<unknown>;
+};
+type SessionLogUpdateChain = SessionLogChain & {
+  update: (payload: MockRow) => {
+    eq: (_column: string, value: unknown) => Promise<{ error: null }>;
+  };
+};
 
 // Mock Supabase client
 const mockSupabase = {
@@ -19,31 +36,31 @@ const mockSupabase = {
 const mockStore = {
   bookings: [] as BookingRow[],
   sessionLogs: [] as SessionLogRow[],
-  tenants: [] as any[],
-  users: [] as any[],
+  tenants: [] as MockRow[],
+  users: [] as MockRow[],
 };
 
 // Mock query builder
 class MockQueryBuilder {
   constructor(private table: string) {}
 
-  select(columns?: string) {
+  select(_columns?: string) {
     return this;
   }
 
-  eq(column: string, value: any) {
+  eq(_column: string, _value: unknown) {
     return this;
   }
 
-  in(column: string, values: any[]) {
+  in(_column: string, _values: unknown[]) {
     return this;
   }
 
-  gt(column: string, value: any) {
+  gt(_column: string, _value: unknown) {
     return this;
   }
 
-  order(column: string, options?: any) {
+  order(_column: string, _options?: unknown) {
     return this;
   }
 
@@ -60,7 +77,7 @@ class MockQueryBuilder {
     return Promise.resolve({ data: null, error: null });
   }
 
-  update(payload: any) {
+  update(payload: MockRow) {
     if (this.table === 'bookings') {
       const booking = mockStore.bookings[0];
       if (booking) {
@@ -69,7 +86,7 @@ class MockQueryBuilder {
       return {
         eq: () => ({
           eq: () => ({
-            select: () => ({ data: [{ ...booking }], error: null })
+            select: () => ({ data: booking ? [{ ...booking }] : [], error: null })
           })
         })
       };
@@ -134,7 +151,7 @@ jest.mock('@/core/services/order/create-booking-helpers', () => ({
 // Mock checkBookingConflicts
 const mockCheckBookingConflicts = jest.fn();
 jest.mock('@/services/decision-actions/booking-decisions', () => ({
-  checkBookingConflicts: (...args: any[]) => mockCheckBookingConflicts(...args),
+  checkBookingConflicts: (...args: unknown[]) => mockCheckBookingConflicts(...args),
 }));
 
 describe('updateBooking Conflict Verification', () => {
@@ -177,13 +194,13 @@ describe('updateBooking Conflict Verification', () => {
       const qb = new MockQueryBuilder(table);
       // Chain method overrides to return the correct mock result for select queries
       if (table === 'session_logs') {
-        const chain = {
+        const chain: SessionLogChain = {
           select: () => chain,
           eq: () => chain,
           order: () => chain,
-        } as any;
-        chain.then = (onfulfilled: any) => {
+          then: (onfulfilled) => {
           return Promise.resolve(onfulfilled({ data: mockStore.sessionLogs, error: null }));
+          },
         };
         return chain;
       }
@@ -271,23 +288,23 @@ describe('updateBooking Conflict Verification', () => {
     mockSupabase.from.mockImplementation((table: string) => {
       const qb = new MockQueryBuilder(table);
       if (table === 'session_logs') {
-        const chain = {
+        const chain: SessionLogUpdateChain = {
           select: () => chain,
           order: () => chain,
-          eq: (col: string, val: any) => {
+          eq: () => {
             return chain;
           },
-          update: (payload: any) => {
+          update: (payload: MockRow) => {
             return {
-              eq: (col: string, val: any) => {
-                updatedDates[val] = payload.assigned_date;
+              eq: (_col: string, val: unknown) => {
+                if (typeof val === 'string' && typeof payload.assigned_date === 'string') {
+                  updatedDates[val] = payload.assigned_date;
+                }
                 return Promise.resolve({ error: null });
               }
             };
-          }
-        } as any;
-        chain.then = (onfulfilled: any) => {
-          return Promise.resolve(onfulfilled({ data: mockStore.sessionLogs, error: null }));
+          },
+          then: (onfulfilled) => Promise.resolve(onfulfilled({ data: mockStore.sessionLogs, error: null })),
         };
         return chain;
       }

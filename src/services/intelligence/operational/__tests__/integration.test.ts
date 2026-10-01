@@ -68,7 +68,7 @@ function isValidUUID(str: string): boolean {
   return uuidRegex.test(str);
 }
 
-function isValidDate(date: any): boolean {
+function isValidDate(date: unknown): boolean {
   return date instanceof Date || (typeof date === 'string' && !isNaN(Date.parse(date)));
 }
 

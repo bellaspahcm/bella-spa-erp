@@ -13,12 +13,28 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
 import {
   AuditLogRecord,
   AuditLogInsert,
   AuditStatus,
 } from '../types/database.types';
 import { FinancialIntent } from '../types/financial-intent.types';
+
+type AuditLogRow = Database['public']['Tables']['runtime_audit_log']['Row'];
+
+function toAuditStatus(status: string): AuditStatus {
+  switch (status) {
+    case 'SUCCESS':
+    case 'RETRYING':
+    case 'INVALID':
+    case 'DUPLICATE':
+    case 'QUARANTINED':
+      return status;
+    default:
+      throw new Error(`INVALID_AUDIT_STATUS: ${status}`);
+  }
+}
 
 /**
  * Audit Repository
@@ -315,18 +331,18 @@ export class AuditRepository {
   /**
    * Map database row to record
    */
-  private mapToRecord(data: any): AuditLogRecord {
+  private mapToRecord(data: AuditLogRow): AuditLogRecord {
     return {
       id: data.id,
       tenant_id: data.tenant_id,
       intent_type: data.intent_type,
       entity_id: data.entity_id,
       entity_type: data.entity_type,
-      amount: parseFloat(data.amount),
+      amount: data.amount,
       currency: data.currency,
       correlation_id: data.correlation_id,
       source: data.source,
-      status: data.status,
+      status: toAuditStatus(data.status),
       delivery_attempts: data.delivery_attempts,
       failure_reason: data.failure_reason,
       quarantined_at: data.quarantined_at ? new Date(data.quarantined_at) : null,

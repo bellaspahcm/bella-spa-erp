@@ -22,32 +22,38 @@ const mockCheckHqAuth = jest.fn();
 const mockFrom = jest.fn();
 const mockRecordAuditLog = jest.fn();
 
-(global as any).mockGetCurrentUser = mockGetCurrentUser;
-(global as any).mockCheckHqAuth = mockCheckHqAuth;
-(global as any).mockFrom = mockFrom;
+type BrandServiceTestGlobals = typeof globalThis & {
+  mockGetCurrentUser: typeof mockGetCurrentUser;
+  mockCheckHqAuth: typeof mockCheckHqAuth;
+  mockFrom: typeof mockFrom;
+};
+
+(globalThis as BrandServiceTestGlobals).mockGetCurrentUser = mockGetCurrentUser;
+(globalThis as BrandServiceTestGlobals).mockCheckHqAuth = mockCheckHqAuth;
+(globalThis as BrandServiceTestGlobals).mockFrom = mockFrom;
 
 jest.mock('@/services/user-actions', () => ({
-  getCurrentUser: (...args: any[]) => (global as any).mockGetCurrentUser(...args),
+  getCurrentUser: (...args: unknown[]) => (globalThis as BrandServiceTestGlobals).mockGetCurrentUser(...args),
 }));
 
 jest.mock('@/services/hq-actions', () => ({
-  checkHqAuth: (...args: any[]) => (global as any).mockCheckHqAuth(...args),
+  checkHqAuth: (...args: unknown[]) => (globalThis as BrandServiceTestGlobals).mockCheckHqAuth(...args),
 }));
 
 jest.mock('@/services/audit-actions', () => ({
-  recordAuditLog: (...args: any[]) => mockRecordAuditLog(...args),
+  recordAuditLog: (...args: unknown[]) => mockRecordAuditLog(...args),
 }));
 
 jest.mock('@/lib/supabase-server', () => ({
   createClient: () => Promise.resolve({
-    from: (...args: any[]) => (global as any).mockFrom(...args),
+    from: (...args: unknown[]) => (globalThis as BrandServiceTestGlobals).mockFrom(...args),
   }),
 }));
 
 // Helper class for mock query builders
 class MockQueryBuilder {
-  public data: any;
-  public error: any;
+  public data: unknown;
+  public error: unknown;
   public eqSpy = jest.fn().mockReturnThis();
   public notSpy = jest.fn().mockReturnThis();
   public orderSpy = jest.fn().mockReturnThis();
@@ -58,22 +64,22 @@ class MockQueryBuilder {
   public singleSpy = jest.fn().mockReturnThis();
   public maybeSingleSpy = jest.fn().mockReturnThis();
 
-  constructor(data: any = null, error: any = null) {
+  constructor(data: unknown = null, error: unknown = null) {
     this.data = data;
     this.error = error;
   }
 
-  select(...args: any[]) { this.selectSpy(...args); return this; }
-  eq(...args: any[]) { this.eqSpy(...args); return this; }
-  not(...args: any[]) { this.notSpy(...args); return this; }
-  order(...args: any[]) { this.orderSpy(...args); return this; }
-  insert(...args: any[]) { this.insertSpy(...args); return this; }
-  update(...args: any[]) { this.updateSpy(...args); return this; }
-  delete(...args: any[]) { this.deleteSpy(...args); return this; }
-  single(...args: any[]) { this.singleSpy(...args); return this; }
-  maybeSingle(...args: any[]) { this.maybeSingleSpy(...args); return this; }
+  select(...args: unknown[]) { this.selectSpy(...args); return this; }
+  eq(...args: unknown[]) { this.eqSpy(...args); return this; }
+  not(...args: unknown[]) { this.notSpy(...args); return this; }
+  order(...args: unknown[]) { this.orderSpy(...args); return this; }
+  insert(...args: unknown[]) { this.insertSpy(...args); return this; }
+  update(...args: unknown[]) { this.updateSpy(...args); return this; }
+  delete(...args: unknown[]) { this.deleteSpy(...args); return this; }
+  single(...args: unknown[]) { this.singleSpy(...args); return this; }
+  maybeSingle(...args: unknown[]) { this.maybeSingleSpy(...args); return this; }
 
-  then(onfulfilled: any) {
+  then(onfulfilled: (value: { data: unknown; error: unknown }) => unknown) {
     return Promise.resolve({ data: this.data, error: this.error }).then(onfulfilled);
   }
 }

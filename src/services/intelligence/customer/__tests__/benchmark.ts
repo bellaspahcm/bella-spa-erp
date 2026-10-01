@@ -55,7 +55,7 @@ function formatMemory(bytes: number): string {
 
 async function benchmark(
   name: string,
-  fn: () => Promise<any>,
+  fn: () => Promise<unknown>,
   iterations: number = BENCHMARK_ITERATIONS
 ): Promise<void> {
   console.log(`\n📊 Running benchmark: ${name}`);

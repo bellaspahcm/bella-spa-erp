@@ -6,41 +6,47 @@ jest.mock('@/lib/revalidate', () => ({
 
 const mockGetCurrentUser = jest.fn();
 const mockFrom = jest.fn();
-const updatePayloads: any[] = [];
+const updatePayloads: Array<Record<string, unknown> | undefined> = [];
 
 jest.mock('@/services/user-actions', () => ({
-  getCurrentUser: (...args: any[]) => mockGetCurrentUser(...args),
+  getCurrentUser: (...args: unknown[]) => mockGetCurrentUser(...args),
 }));
 
 const mockRecordAuditLog = jest.fn();
 jest.mock('@/services/audit-actions', () => ({
-  recordAuditLog: (...args: any[]) => mockRecordAuditLog(...args),
+  recordAuditLog: (...args: unknown[]) => mockRecordAuditLog(...args),
 }));
 
 jest.mock('@/lib/supabase-server', () => ({
   createClient: () => Promise.resolve({
-    from: (...args: any[]) => mockFrom(...args),
+    from: (...args: unknown[]) => mockFrom(...args),
   }),
 }));
 
+type MockQueryResult = {
+  data: unknown;
+  error: unknown;
+  count: number | null;
+};
+
 class MockQueryBuilder {
   constructor(
-    private data: any = null,
-    private error: any = null,
+    private data: unknown = null,
+    private error: unknown = null,
     private count: number | null = null
   ) {}
 
   select() { return this; }
   eq() { return this; }
   order() { return this; }
-  update(payload?: any) {
+  update(payload?: Record<string, unknown>) {
     updatePayloads.push(payload);
     return this;
   }
   insert() { return this; }
   single() { return this; }
 
-  then(onfulfilled: any) {
+  then(onfulfilled: (value: MockQueryResult) => unknown) {
     return Promise.resolve({ data: this.data, error: this.error, count: this.count }).then(onfulfilled);
   }
 }

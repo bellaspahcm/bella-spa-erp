@@ -52,15 +52,23 @@ jest.mock('next/headers', () => ({
 }));
 
 // Mock Database Store for Security Testing
+type MockSecurityRow = Record<string, unknown> & {
+  id?: string;
+  tenant_id?: string;
+  received_date?: string;
+  month_year?: string;
+  is_locked?: boolean;
+};
+
 interface MockSecurityStore {
-  attendance: any[];
-  staff_leaves: any[];
-  users: any[];
-  revenue: any[];
-  salary_records: any[];
-  franchise_royalty_invoices: any[];
-  session_reviews: any[];
-  tenants: any[];
+  attendance: MockSecurityRow[];
+  staff_leaves: MockSecurityRow[];
+  users: MockSecurityRow[];
+  revenue: MockSecurityRow[];
+  salary_records: MockSecurityRow[];
+  franchise_royalty_invoices: MockSecurityRow[];
+  session_reviews: MockSecurityRow[];
+  tenants: MockSecurityRow[];
 }
 
 let mockSecurityStore: MockSecurityStore = {
@@ -100,8 +108,8 @@ function resetSecurityStore() {
 
 class MockSecurityQueryBuilder {
   private table: string;
-  private filters: Record<string, any> = {};
-  private updatePayload: any = null;
+  private filters: Record<string, unknown> = {};
+  private updatePayload: MockSecurityRow | null = null;
 
   constructor(table: string) {
     this.table = table;
@@ -111,21 +119,21 @@ class MockSecurityQueryBuilder {
     return this;
   }
 
-  eq(field: string, value: any) {
+  eq(field: string, value: unknown) {
     this.filters[field] = value;
     return this;
   }
 
-  in(field: string, values: any[]) {
+  in(field: string, values: unknown[]) {
     this.filters[field] = values;
     return this;
   }
 
-  gte(field: string, value: any) {
+  gte(field: string, value: unknown) {
     return this;
   }
 
-  lte(field: string, value: any) {
+  lte(field: string, value: unknown) {
     return this;
   }
 
@@ -142,7 +150,7 @@ class MockSecurityQueryBuilder {
     return Promise.resolve({ data: list[0], error: null });
   }
 
-  insert(payload: any) {
+  insert(payload: MockSecurityRow | MockSecurityRow[]) {
     const inserted = Array.isArray(payload) ? payload : [payload];
     const records = inserted.map(item => {
       const newItem = {
@@ -151,7 +159,7 @@ class MockSecurityQueryBuilder {
         updated_at: new Date().toISOString(),
         ...item
       };
-      (mockSecurityStore[this.table as keyof MockSecurityStore] as any[]).push(newItem);
+      mockSecurityStore[this.table as keyof MockSecurityStore].push(newItem);
       return newItem;
     });
     return {
@@ -164,7 +172,7 @@ class MockSecurityQueryBuilder {
     };
   }
 
-  update(payload: any) {
+  update(payload: MockSecurityRow) {
     this.updatePayload = payload;
     return this;
   }
@@ -173,9 +181,9 @@ class MockSecurityQueryBuilder {
     let list = mockSecurityStore[this.table as keyof MockSecurityStore] || [];
     for (const [field, val] of Object.entries(this.filters)) {
       if (Array.isArray(val)) {
-        list = list.filter((item: any) => val.includes(item[field]));
+        list = list.filter(item => val.includes(item[field]));
       } else {
-        list = list.filter((item: any) => item[field] === val);
+        list = list.filter(item => item[field] === val);
       }
     }
 
@@ -189,7 +197,7 @@ class MockSecurityQueryBuilder {
     return list;
   }
 
-  then(onfulfilled: any) {
+  then(onfulfilled: (value: { data: MockSecurityRow[]; error: null }) => unknown) {
     const list = this.execute();
     return Promise.resolve({ data: list, error: null }).then(onfulfilled);
   }

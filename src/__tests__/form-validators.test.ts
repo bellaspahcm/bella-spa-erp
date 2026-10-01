@@ -246,7 +246,7 @@ describe("form-validators: amount VND", () => {
       ["1 000 000đ", 1_000_000],
       [1_500_000, 1_500_000],
     ])("parses %s -> %s", (input, expected) => {
-      expect(parseVnd(input as any)).toBe(expected);
+      expect(parseVnd(input)).toBe(expected);
     });
     it("returns null for invalid", () => {
       expect(parseVnd("")).toBeNull();

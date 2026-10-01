@@ -4,6 +4,12 @@ const mockRpc = jest.fn();
 const mockInsert = jest.fn();
 const mockFrom = jest.fn();
 
+type MockQueryResult = {
+  data: unknown[];
+  count: number;
+  error: null;
+};
+
 jest.mock('@/lib/supabase-server', () => ({
   createClient: jest.fn(() => Promise.resolve({
     rpc: mockRpc,
@@ -19,8 +25,8 @@ const mockQueryBuilder = {
   gte: jest.fn().mockReturnThis(),
   lt: jest.fn().mockReturnThis(),
   single: jest.fn().mockImplementation(() => Promise.resolve({ data: { metadata: {} }, error: null })),
-  then(resolve: any) {
-    resolve({ data: [], count: 0, error: null });
+  then(resolve: (value: MockQueryResult) => unknown) {
+    return Promise.resolve({ data: [], count: 0, error: null }).then(resolve);
   },
 };
 jest.mock('@supabase/supabase-js', () => ({

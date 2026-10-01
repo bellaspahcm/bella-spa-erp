@@ -17,6 +17,10 @@ import {
 } from '../commission-provider-adapter';
 import type { CommissionCalculationContext } from '../commission-provider-adapter';
 
+type MissingConfigCommissionContext = Omit<CommissionCalculationContext, 'config'> & {
+  config: null;
+};
+
 describe('CommissionProviderAdapter - Integration Tests', () => {
   let adapter: CommissionProviderAdapter;
 
@@ -591,7 +595,7 @@ describe('CommissionProviderAdapter - Integration Tests', () => {
     });
 
     test('handles missing config gracefully', async () => {
-      const contextWithoutConfig = {
+      const contextWithoutConfig: MissingConfigCommissionContext = {
         tenantId: 'test-tenant',
         employeeId: 'ktv-001',
         monthYear: '2024-06',
@@ -603,12 +607,15 @@ describe('CommissionProviderAdapter - Integration Tests', () => {
           position_tier: 'junior' as const,
           tenant_id: 'test-tenant',
         },
-        config: null as any, // Missing config
+        config: null, // Missing config
       };
+      const calculateCommissionRuntime = adapter.calculateCommission.bind(adapter) as (
+        context: MissingConfigCommissionContext
+      ) => ReturnType<CommissionProviderAdapter['calculateCommission']>;
 
       // Should throw error for missing config (validation happens in provider)
       await expect(
-        adapter.calculateCommission(contextWithoutConfig)
+        calculateCommissionRuntime(contextWithoutConfig)
       ).rejects.toThrow();
     });
   });

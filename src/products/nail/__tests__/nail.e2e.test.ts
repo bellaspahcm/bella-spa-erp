@@ -24,12 +24,24 @@ import type {
 } from '../../../platform/beauty/application/ports';
 import type {
   AppointmentRecord,
+  ProfessionalAssignmentHistoryRecord,
   ProfessionalAssignmentRecord,
   ResourceAllocationRecord,
   SessionRecord,
   ResourceCapacityWindow,
 } from '../../../platform/beauty/contracts';
 import type { NailSessionOutcome } from '../adapters';
+
+type NailWaitlistEntry = {
+  id: string;
+  tenant_id: string;
+  customer_id: string;
+  package_id: string;
+  preferred_date: string;
+  booking_value: number;
+  status: 'WAITING' | 'PROMOTED';
+  position: number;
+};
 
 // ============================================================================
 // TEST INFRASTRUCTURE
@@ -215,7 +227,7 @@ describe('Nail E2E Journey #1: Multi-Resource Booking', () => {
 
 describe('Nail E2E Journey #2: Waitlist Flow', () => {
   it('adds customer to waitlist when capacity is full', async () => {
-    const waitlistEntries: any[] = [];
+    const waitlistEntries: NailWaitlistEntry[] = [];
 
     // Simulate full capacity
     const availability: ResourceAvailabilityPort = {
@@ -279,7 +291,7 @@ describe('Nail E2E Journey #3: Technician Reassignment', () => {
     const assignments: ProfessionalAssignmentRecord[] = [];
     const allocations: ResourceAllocationRecord[] = [];
     const sessions: SessionRecord[] = [];
-    const history: any[] = [];
+    const history: ProfessionalAssignmentHistoryRecord[] = [];
 
     const appointmentRepo: AppointmentRepository = {
       create: async (value) => {

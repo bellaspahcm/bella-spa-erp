@@ -21,11 +21,29 @@ jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(),
 }));
 
+type SupabaseMockResult = {
+  data: unknown[];
+  error: null;
+};
+
+type SupabaseMockBuilder = Record<string, unknown> & {
+  select: jest.Mock;
+  eq: jest.Mock;
+  neq: jest.Mock;
+  gte: jest.Mock;
+  lte: jest.Mock;
+  in: jest.Mock;
+  order: jest.Mock;
+  then?: Promise<SupabaseMockResult>['then'];
+  catch?: Promise<SupabaseMockResult>['catch'];
+  finally?: Promise<SupabaseMockResult>['finally'];
+};
+
 // Helper to create chainable Supabase mock
-function createSupabaseMock(mockData: any[]) {
+function createSupabaseMock(mockData: unknown[]): SupabaseMockBuilder {
   const result = Promise.resolve({ data: mockData, error: null });
   
-  const builder: any = {
+  const builder: SupabaseMockBuilder = {
     select: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
     neq: jest.fn().mockReturnThis(),

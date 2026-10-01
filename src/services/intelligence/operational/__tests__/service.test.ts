@@ -16,7 +16,8 @@
  */
 
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
-import type { CacheService } from '../../shared/types';
+import type { CacheService, CacheStats } from '../../shared/types';
+import type { OperationalIntelligenceService as OperationalIntelligenceServiceInstance } from '../service';
 
 // ─── Mock Dependencies ──────────────────────────────────────────────────────
 
@@ -32,10 +33,21 @@ jest.mock('@/services/intelligence/operational/queries-simple', () => ({
 }));
 
 // Load service dynamically after registering mock
-const { OperationalIntelligenceService } = require('../service');
+const { OperationalIntelligenceService } = require('../service') as {
+  OperationalIntelligenceService: new (cache: CacheService) => OperationalIntelligenceServiceInstance;
+};
+
+type OperationalQueriesSimpleMock = {
+  getKTVPerformance: jest.Mock;
+  getKTVLeaderboard: jest.Mock;
+  getInventoryStatus: jest.Mock;
+  getInventoryForecast: jest.Mock;
+  getSessionAnalytics: jest.Mock;
+  getCapacityUtilization: jest.Mock;
+};
 
 // Import mocked functions via requireMock
-const queriesSimple = jest.requireMock('@/services/intelligence/operational/queries-simple') as any;
+const queriesSimple = jest.requireMock('@/services/intelligence/operational/queries-simple') as OperationalQueriesSimpleMock;
 
 // Create mock cache instance (will be passed to service constructor)
 const createMockCache = (): jest.Mocked<CacheService> => ({
@@ -117,7 +129,7 @@ const mockLeaderboardData = [
 // ─── Test Suite ─────────────────────────────────────────────────────────────
 
 describe('OperationalIntelligenceService', () => {
-  let service: any;
+  let service: OperationalIntelligenceServiceInstance;
   let mockCache: jest.Mocked<CacheService>;
 
   beforeEach(() => {
@@ -133,12 +145,13 @@ describe('OperationalIntelligenceService', () => {
     mockCache.delete.mockResolvedValue(undefined);
     mockCache.deletePattern.mockResolvedValue(undefined);
     mockCache.deleteByTag.mockResolvedValue(undefined);
-    mockCache.getStats.mockResolvedValue({
+    const emptyCacheStats: CacheStats = {
       hits: 0,
       misses: 0,
       hitRate: 0,
       totalKeys: 0,
-    } as any);
+    };
+    mockCache.getStats.mockResolvedValue(emptyCacheStats);
 
     // Create service instance with mock cache
     service = new OperationalIntelligenceService(mockCache);

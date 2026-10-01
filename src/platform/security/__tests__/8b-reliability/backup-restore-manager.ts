@@ -15,7 +15,7 @@ export interface TransactionRecord {
   id: string;
   tenantId: string;
   vertical: string;
-  payload: any;
+  payload: unknown;
   timestamp: number;
 }
 

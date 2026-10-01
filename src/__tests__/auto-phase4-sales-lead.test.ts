@@ -35,47 +35,63 @@ jest.mock('@/lib/accounting-outbox', () => ({
  * Table-aware Supabase mock factory.
  * Mỗi table có thể có data riêng và single() trả đúng data của table.
  */
+type MockRow = Record<string, unknown>;
+type MockDbState = {
+  auto_leads?: MockRow[];
+  auto_bookings?: MockRow[];
+  auto_vehicles?: MockRow[];
+  singleOverride?: MockRow;
+  [key: string]: MockRow[] | MockRow | undefined;
+};
+type MockChain = {
+  eq: (field: string, value: unknown) => MockChain;
+  in: (field: string, value: unknown) => MockChain;
+  ilike: (field: string, value: unknown) => MockChain;
+  limit: (count: number) => MockChain;
+  order: (column: string, options?: unknown) => Promise<{ data: MockRow[]; error: null }>;
+  single: () => Promise<{ data: MockRow | null; error: { message: string } | null }>;
+  maybeSingle: () => Promise<{ data: null; error: null }>;
+};
+
 function makeSupabaseMock(dbState: {
-  auto_leads?: any[];
-  auto_bookings?: any[];
-  auto_vehicles?: any[];
-  singleOverride?: any;
-  [key: string]: any;
+  auto_leads?: MockRow[];
+  auto_bookings?: MockRow[];
+  auto_vehicles?: MockRow[];
+  singleOverride?: MockRow;
+  [key: string]: MockRow[] | MockRow | undefined;
 }) {
   /** Tạo chain có khả năng track table hiện tại */
   function makeChain(table: string) {
-    const self: any = {};
-
-    self.eq = (_f: string, _v: any) => self;
-    self.in = (_f: string, _v: any) => self;
-    self.ilike = (_f: string, _v: any) => self;
-    self.limit = (_n: number) => self;
-    self.order = (_col: string, _opts?: any) => {
-      if (table === 'auto_leads') {
-        return Promise.resolve({ data: dbState.auto_leads ?? [], error: null });
-      }
-      return Promise.resolve({ data: [], error: null });
+    const self: MockChain = {
+      eq: () => self,
+      in: () => self,
+      ilike: () => self,
+      limit: () => self,
+      order: () => {
+        if (table === 'auto_leads') {
+          return Promise.resolve({ data: dbState.auto_leads ?? [], error: null });
+        }
+        return Promise.resolve({ data: [], error: null });
+      },
+      single: () => {
+        if (table === 'auto_vehicles') {
+          const vehicle = dbState.auto_vehicles?.[0] ?? null;
+          return Promise.resolve({ data: vehicle, error: vehicle ? null : { message: 'Not found' } });
+        }
+        if (table === 'auto_bookings') {
+          const booking = dbState.singleOverride ?? dbState.auto_bookings?.[0] ?? null;
+          return Promise.resolve({ data: booking, error: booking ? null : { message: 'Not found' } });
+        }
+        if (dbState.singleOverride) {
+          return Promise.resolve({ data: dbState.singleOverride, error: null });
+        }
+        return Promise.resolve({
+          data: { id: 'booking-new-id', booking_number: 'BK-AUTO-2026-9999', deposit_amount: 100000000, deposit_paid: 0 },
+          error: null
+        });
+      },
+      maybeSingle: () => Promise.resolve({ data: null, error: null }),
     };
-
-    self.single = () => {
-      if (table === 'auto_vehicles') {
-        const vehicle = dbState.auto_vehicles?.[0] ?? null;
-        return Promise.resolve({ data: vehicle, error: vehicle ? null : { message: 'Not found' } });
-      }
-      if (table === 'auto_bookings') {
-        const booking = dbState.singleOverride ?? dbState.auto_bookings?.[0] ?? null;
-        return Promise.resolve({ data: booking, error: booking ? null : { message: 'Not found' } });
-      }
-      if (dbState.singleOverride) {
-        return Promise.resolve({ data: dbState.singleOverride, error: null });
-      }
-      return Promise.resolve({
-        data: { id: 'booking-new-id', booking_number: 'BK-AUTO-2026-9999', deposit_amount: 100000000, deposit_paid: 0 },
-        error: null
-      });
-    };
-
-    self.maybeSingle = () => Promise.resolve({ data: null, error: null });
 
     return self;
   }
@@ -85,9 +101,9 @@ function makeSupabaseMock(dbState: {
       const chain = makeChain(table);
       return {
         select: (_columns?: string) => chain,
-        insert: (payload: any) => {
-          if (!dbState[table]) dbState[table] = [];
-          dbState[table].push(payload);
+        insert: (payload: MockRow) => {
+          if (!Array.isArray(dbState[table])) dbState[table] = [];
+          (dbState[table] as MockRow[]).push(payload);
           // insert().select().single() — trả đúng dữ liệu đã insert hoặc singleOverride
           const resultData = dbState.singleOverride ?? payload;
           return {
@@ -96,8 +112,8 @@ function makeSupabaseMock(dbState: {
             })
           };
         },
-        update: (payload: any) => {
-          const arr = dbState[table] as any[] | undefined;
+        update: (payload: MockRow) => {
+          const arr = Array.isArray(dbState[table]) ? dbState[table] : undefined;
           if (arr && arr.length > 0) {
             arr[0] = { ...arr[0], ...payload };
           }
@@ -106,10 +122,10 @@ function makeSupabaseMock(dbState: {
         delete: () => ({
           eq: () => ({ eq: () => Promise.resolve({ error: null }) })
         })
-      } as any;
+      };
     },
     rpc: () => Promise.resolve({ data: 'outbox-id-123', error: null })
-  } as any;
+  };
 }
 
 describe('Phase 4: Lead & Sales Center — Unit Tests', () => {

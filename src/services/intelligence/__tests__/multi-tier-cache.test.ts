@@ -15,7 +15,7 @@ import { RedisCache } from '../cache/redis-cache';
 
 // Mock Redis cache to avoid external dependency in unit tests
 jest.mock('../cache/redis-cache', () => {
-  const mockRedisData = new Map<string, { value: any; expiresAt: number }>();
+  const mockRedisData = new Map<string, { value: unknown; expiresAt: number }>();
   
   return {
     RedisCache: jest.fn().mockImplementation(() => ({
@@ -28,7 +28,7 @@ jest.mock('../cache/redis-cache', () => {
         }
         return entry.value;
       }),
-      set: jest.fn(async (key: string, value: any, options?: { ttl?: number }) => {
+      set: jest.fn(async (key: string, value: unknown, options?: { ttl?: number }) => {
         const ttl = (options?.ttl || 300) * 1000;
         mockRedisData.set(key, {
           value,

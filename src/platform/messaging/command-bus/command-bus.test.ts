@@ -1,6 +1,8 @@
 import { commandBus, Command } from './command-bus';
 
 describe('CommandBus', () => {
+  const cleanupHandlers: Array<() => void> = [];
+
   interface CreateProductPayload {
     sku: string;
     price: number;
@@ -12,13 +14,15 @@ describe('CommandBus', () => {
   };
 
   afterEach(() => {
-    // Clean up registry between tests
-    (commandBus as any).handlers.clear();
+    while (cleanupHandlers.length > 0) {
+      cleanupHandlers.pop()?.();
+    }
   });
 
   it('should register handler and execute command successfully', async () => {
     const mockHandler = jest.fn().mockResolvedValue({ id: 'new-prod-id' });
     const unsubscribe = commandBus.register('product.create', mockHandler);
+    cleanupHandlers.push(unsubscribe);
 
     const result = await commandBus.execute(createProductCommand);
 
@@ -30,7 +34,7 @@ describe('CommandBus', () => {
   });
 
   it('should throw error when registering duplicate handler', () => {
-    commandBus.register('product.create', async () => {});
+    cleanupHandlers.push(commandBus.register('product.create', async () => {}));
     expect(() => {
       commandBus.register('product.create', async () => {});
     }).toThrow('[CommandBus] Duplicate handler registered for command: "product.create"');
@@ -45,6 +49,7 @@ describe('CommandBus', () => {
   it('should propagate handler execution exceptions', async () => {
     const errorThrowingHandler = jest.fn().mockRejectedValue(new Error('DB connection failed'));
     const unsubscribe = commandBus.register('product.create', errorThrowingHandler);
+    cleanupHandlers.push(unsubscribe);
 
     await expect(commandBus.execute(createProductCommand)).rejects.toThrow('DB connection failed');
 

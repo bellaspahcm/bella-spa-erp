@@ -47,8 +47,39 @@ jest.mock('@/lib/accounting-outbox', () => ({
   enqueueWithAutoClient: jest.fn().mockResolvedValue(true),
 }));
 
+type MockRow = Record<string, unknown>;
+type MockQueryResult = {
+  data: unknown;
+  error: { message: string } | null;
+};
+type MockThenCallback = (value: MockQueryResult) => unknown;
+type MockQueryNode = {
+  eq: () => MockQueryNode;
+  select: () => MockQueryNode;
+  single: () => Promise<MockQueryResult>;
+  maybeSingle: () => Promise<MockQueryResult>;
+  then: (cb: MockThenCallback) => Promise<unknown>;
+  data: unknown;
+  error: { message: string } | null;
+};
+
+const toRows = (payload: MockRow | MockRow[]): MockRow[] => Array.isArray(payload) ? payload : [payload];
+
+const createQueryNode = (res: MockQueryResult): MockQueryNode => {
+  const node: MockQueryNode = {
+    eq: () => node,
+    select: () => node,
+    single: () => Promise.resolve(res),
+    maybeSingle: () => Promise.resolve(res),
+    then: (cb) => Promise.resolve(res).then(cb),
+    data: res.data,
+    error: res.error,
+  };
+  return node;
+};
+
 // Shared Mock DB state to capture updates
-let sharedUpsertPayload: any = null;
+let sharedUpsertPayload: MockRow | null = null;
 
 class MockQueryBuilder {
   private table: string;
@@ -57,19 +88,19 @@ class MockQueryBuilder {
     this.table = table;
   }
 
-  select(fields?: string, options?: any) {
+  select(_fields?: string, _options?: unknown) {
     return this;
   }
 
-  eq(field: string, value: any) {
+  eq(_field: string, _value: unknown) {
     return this;
   }
 
-  gte(field: string, value: any) {
+  gte(_field: string, _value: unknown) {
     return this;
   }
 
-  lt(field: string, value: any) {
+  lt(_field: string, _value: unknown) {
     return this;
   }
 
@@ -146,53 +177,26 @@ class MockQueryBuilder {
     return Promise.resolve({ data: null, error: null });
   }
 
-  insert(payload: any) {
-    const inserted = Array.isArray(payload) ? payload : [payload];
-    const res = { data: { id: 'mock-inserted-id', ...inserted[0] }, error: null };
-    const node: any = {
-      eq: () => node,
-      select: () => node,
-      single: () => Promise.resolve(res),
-      maybeSingle: () => Promise.resolve(res),
-      then: (cb: any) => Promise.resolve(res).then(cb),
-      data: res.data,
-      error: res.error
-    };
-    return node;
+  insert(payload: MockRow | MockRow[]) {
+    const inserted = toRows(payload);
+    const res = { data: { id: 'mock-inserted-id', ...(inserted[0] ?? {}) }, error: null };
+    return createQueryNode(res);
   }
 
-  update(payload: any) {
+  update(payload: MockRow) {
     if (this.table === 'salary_records') {
       sharedUpsertPayload = payload;
     }
     const res = { data: payload, error: null };
-    const node: any = {
-      eq: () => node,
-      select: () => node,
-      single: () => Promise.resolve(res),
-      maybeSingle: () => Promise.resolve(res),
-      then: (cb: any) => Promise.resolve(res).then(cb),
-      data: res.data,
-      error: res.error
-    };
-    return node;
+    return createQueryNode(res);
   }
 
   delete() {
     const res = { data: [], error: null };
-    const node: any = {
-      eq: () => node,
-      select: () => node,
-      single: () => Promise.resolve(res),
-      maybeSingle: () => Promise.resolve(res),
-      then: (cb: any) => Promise.resolve(res).then(cb),
-      data: res.data,
-      error: res.error
-    };
-    return node;
+    return createQueryNode(res);
   }
 
-  then(onfulfilled: any) {
+  then(onfulfilled: MockThenCallback) {
     const data = this.table === 'attendance' ? [] : [];
     return Promise.resolve({ data, error: null }).then(onfulfilled);
   }
@@ -200,7 +204,7 @@ class MockQueryBuilder {
 
 const mockSupabase = {
   from: jest.fn(),
-  rpc: jest.fn().mockImplementation((name) => {
+  rpc: jest.fn().mockImplementation((name: string) => {
     if (name === 'get_ktv_leaderboard') {
       return Promise.resolve({
         data: [{
@@ -277,7 +281,7 @@ describe('Edge Cases & extreme Precision Integrity Tests', () => {
 
       // Verify basic salary calculations
       expect(sharedUpsertPayload).toBeDefined();
-      expect(sharedUpsertPayload.total_salary).toBe(0); // Should be exactly 0, not negative!
+      expect(sharedUpsertPayload?.total_salary).toBe(0); // Should be exactly 0, not negative!
     });
   });
 

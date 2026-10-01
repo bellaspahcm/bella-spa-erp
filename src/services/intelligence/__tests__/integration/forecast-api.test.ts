@@ -67,9 +67,14 @@ jest.mock('@/lib/supabase-server', () => {
 
 let requestCount = 0;
 
+type ForecastCacheHarness = {
+  getCachedForecast: (...args: unknown[]) => Promise<unknown>;
+  cacheForecast: (...args: unknown[]) => Promise<void>;
+};
+
 // Mock fetch
 const originalFetch = global.fetch;
-global.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+const mockFetch: typeof fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
   const urlString = typeof input === 'string' ? input : input.toString();
   
   if (!urlString.includes('localhost:3000') && !urlString.startsWith('/api')) {
@@ -104,7 +109,8 @@ global.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit): Pro
   }
 
   return new Response(JSON.stringify({ error: 'Not found' }), { status: 404 });
-}) as any;
+});
+global.fetch = mockFetch;
 
 describeIntegration('Forecast API - Integration Tests', () => {
   let supabase: ReturnType<typeof getTestSupabaseClient>;
@@ -177,12 +183,13 @@ describeIntegration('Forecast API - Integration Tests', () => {
     });
 
     it('should use cache on second request', async () => {
-      let cacheStore: any = null;
-      const getSpy = jest.spyOn(forecastService as any, 'getCachedForecast').mockImplementation(async () => {
+      let cacheStore: unknown = null;
+      const forecastCacheHarness = forecastService as ForecastCacheHarness;
+      const getSpy = jest.spyOn(forecastCacheHarness, 'getCachedForecast').mockImplementation(async () => {
         return cacheStore;
       });
-      const setSpy = jest.spyOn(forecastService as any, 'cacheForecast').mockImplementation(async (t, f, k, data) => {
-        cacheStore = data;
+      const setSpy = jest.spyOn(forecastCacheHarness, 'cacheForecast').mockImplementation(async (...args: unknown[]) => {
+        cacheStore = args[3];
       });
 
       // First request (cache miss)
@@ -463,12 +470,13 @@ describeIntegration('Forecast API - Integration Tests', () => {
     });
 
     it('should respond within 100ms for cached requests', async () => {
-      let cacheStore: any = null;
-      const getSpy = jest.spyOn(forecastService as any, 'getCachedForecast').mockImplementation(async () => {
+      let cacheStore: unknown = null;
+      const forecastCacheHarness = forecastService as ForecastCacheHarness;
+      const getSpy = jest.spyOn(forecastCacheHarness, 'getCachedForecast').mockImplementation(async () => {
         return cacheStore;
       });
-      const setSpy = jest.spyOn(forecastService as any, 'cacheForecast').mockImplementation(async (t, f, k, data) => {
-        cacheStore = data;
+      const setSpy = jest.spyOn(forecastCacheHarness, 'cacheForecast').mockImplementation(async (...args: unknown[]) => {
+        cacheStore = args[3];
       });
 
       // Warm up cache

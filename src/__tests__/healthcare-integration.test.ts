@@ -1,4 +1,5 @@
 import { aiOrchestrator, compositionEngine } from '@/platform';
+import type { AiCompletionRequest } from '@/platform';
 import { bootstrapHealthcareKernel } from '@/modules/bella-healthcare/kernel/bootstrap';
 import { generateSoapNoteAi, auditPrescriptionSafetyAi } from '@/modules/bella-healthcare/kernel/ai-agents';
 
@@ -25,7 +26,7 @@ describe('Bella Healthcare Platform Integration & CDSS Verification', () => {
     // 2. Register Mock AI Model Adapter to orchestrator
     const mockAiAdapter = {
       model: 'gemini-2.0-flash',
-      complete: jest.fn(async (req: any) => {
+      complete: jest.fn(async (req: AiCompletionRequest) => {
         // Mock response for SOAP Note request
         if (req.userPrompt.includes('đau răng 36')) {
           return {

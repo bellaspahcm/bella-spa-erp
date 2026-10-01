@@ -85,7 +85,7 @@ describe('E2E Salary System - Minimal Test', () => {
     
     // Recalculate salary (will create draft record)
     const result = await recalculateAndSaveSalaryRecordEngine(
-      supabase as any,
+      supabase,
       ktvId,
       MONTH_YEAR,
       TENANT_ID

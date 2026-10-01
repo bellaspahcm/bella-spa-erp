@@ -28,6 +28,32 @@ const ktvUser  = { id: 'ktv-1',   role: 'ktv',   tenant_id: 'tenant-a' };
 
 type LockPayload = { is_locked: boolean };
 
+type MockQueryError = { message: string } | null;
+
+type MockQueryResult = {
+  data: unknown;
+  error: MockQueryError;
+};
+
+type MockThenCallback = (value: MockQueryResult) => unknown;
+type MockThenRejected = (reason: unknown) => unknown;
+
+type MockQueryChain = {
+  select: (...args: unknown[]) => MockQueryChain;
+  update: (...args: unknown[]) => MockQueryChain;
+  insert: (...args: unknown[]) => MockQueryChain;
+  eq: (...args: unknown[]) => MockQueryChain;
+  gte: (...args: unknown[]) => MockQueryChain;
+  lte: (...args: unknown[]) => MockQueryChain;
+  lt: (...args: unknown[]) => MockQueryChain;
+  in: (...args: unknown[]) => MockQueryChain;
+  order: (...args: unknown[]) => MockQueryChain;
+  limit: (...args: unknown[]) => MockQueryChain;
+  single: () => Promise<MockQueryResult>;
+  maybeSingle: () => Promise<MockQueryResult>;
+  then: (cb: MockThenCallback, onRejected?: MockThenRejected) => Promise<unknown>;
+};
+
 type LockMonthFlowOptions = {
   royaltyInsertFailure?: string;
   clearingInsertFailure?: string;
@@ -46,7 +72,8 @@ function mockUnlockMonthUpdateFlow(options: {
   mockFrom.mockImplementation((table: string) => {
     let operation: 'select' | 'update' = 'select';
     let updatePayload: LockPayload | null = null;
-    const chain: any = {
+    let chain: MockQueryChain;
+    chain = {
       select: jest.fn(() => {
         operation = 'select';
         return chain;
@@ -73,9 +100,12 @@ function mockUnlockMonthUpdateFlow(options: {
         filterCalls.push({ table, payload: updatePayload, method: 'in', args: [field, value] });
         return chain;
       }),
+      lt: jest.fn(() => chain),
       order: jest.fn(() => chain),
       limit: jest.fn(() => chain),
-      then: (cb: any, onRejected?: any) => {
+      single: jest.fn(() => Promise.resolve({ data: null, error: null })),
+      maybeSingle: jest.fn(() => Promise.resolve({ data: null, error: null })),
+      then: (cb: MockThenCallback, onRejected?: MockThenRejected) => {
         if (operation === 'select') {
           return Promise.resolve({
             data: [
@@ -112,7 +142,8 @@ function mockLockMonthSideEffectFlow(options: LockMonthFlowOptions = {}) {
     let operation: 'select' | 'update' | 'insert' = 'select';
     let selected = '';
     let payload: Record<string, unknown> | null = null;
-    const chain: any = {
+    let chain: MockQueryChain;
+    chain = {
       select: jest.fn((fields?: string) => {
         operation = 'select';
         selected = fields ?? '';
@@ -154,17 +185,17 @@ function mockLockMonthSideEffectFlow(options: LockMonthFlowOptions = {}) {
       limit: jest.fn(() => chain),
       single: jest.fn(() => Promise.resolve(resolveQuery())),
       maybeSingle: jest.fn(() => Promise.resolve(resolveMaybeSingle())),
-      then: (cb: any) => Promise.resolve(resolveQuery()).then(cb),
+      then: (cb: MockThenCallback) => Promise.resolve(resolveQuery()).then(cb),
     };
 
-    function snapshotRows() {
+    function snapshotRows(): Array<Record<string, unknown>> {
       return [
         { id: `${table}-locked`, is_locked: true, status: table === 'revenue' ? 'confirmed' : 'approved' },
         { id: `${table}-unlocked`, is_locked: false, status: 'draft' },
       ];
     }
 
-    function resolveMaybeSingle() {
+    function resolveMaybeSingle(): MockQueryResult {
       if (table === 'franchise_royalty_invoices') {
         return {
           data: options.existingInvoiceStatus ? { id: 'invoice-existing', status: options.existingInvoiceStatus } : null,
@@ -180,7 +211,7 @@ function mockLockMonthSideEffectFlow(options: LockMonthFlowOptions = {}) {
       return { data: null, error: null };
     }
 
-    function resolveQuery() {
+    function resolveQuery(): MockQueryResult {
       if (operation === 'update' && payload?.is_locked === false && options.restoreFailure?.table === table) {
         return { data: null, error: { message: options.restoreFailure.message } };
       }
@@ -242,7 +273,7 @@ beforeEach(() => {
   mockRpc.mockResolvedValue({ error: null });
   mockFrom.mockImplementation((table: string) => {
     let usedInFilter = false;
-    const resolve = () => {
+    const resolve = (): MockQueryResult => {
       if (table === 'tenants') {
         return {
           data: usedInFilter
@@ -260,7 +291,8 @@ beforeEach(() => {
       if (table === 'franchise_royalty_invoices' || table === 'inter_branch_clearing_records') return { data: null, error: null };
       return { data: null, error: null };
     };
-    const chain: any = {
+    let chain: MockQueryChain;
+    chain = {
       select: jest.fn(() => chain),
       update: jest.fn(() => chain),
       insert: jest.fn(() => chain),
@@ -274,9 +306,10 @@ beforeEach(() => {
         usedInFilter = true;
         return chain;
       }),
+      lt: jest.fn(() => chain),
       order: jest.fn(() => chain),
       limit: jest.fn(() => chain),
-      then: (cb: any) => Promise.resolve(resolve()).then(cb),
+      then: (cb: MockThenCallback) => Promise.resolve(resolve()).then(cb),
     };
     return chain;
   });
@@ -318,12 +351,21 @@ describe('lockMonth', () => {
   it('blocks before lock RPC when accounting preflight has failed outbox events', async () => {
     mockGetCurrentUser.mockResolvedValue(adminUser);
     mockFrom.mockImplementation((table: string) => {
-      const chain: any = {
+      let chain: MockQueryChain;
+      chain = {
         select: jest.fn(() => chain),
+        update: jest.fn(() => chain),
+        insert: jest.fn(() => chain),
         eq: jest.fn(() => chain),
+        gte: jest.fn(() => chain),
+        lte: jest.fn(() => chain),
+        lt: jest.fn(() => chain),
+        in: jest.fn(() => chain),
         order: jest.fn(() => chain),
         limit: jest.fn(() => chain),
-        then: (cb: any, onRejected?: any) => {
+        single: jest.fn(() => Promise.resolve({ data: null, error: null })),
+        maybeSingle: jest.fn(() => Promise.resolve({ data: null, error: null })),
+        then: (cb: MockThenCallback, onRejected?: MockThenRejected) => {
           const data = table === 'accounting_outbox'
             ? [
                 {
@@ -365,9 +407,11 @@ describe('lockMonth', () => {
   it('returns error when royalty tenant lookup fails', async () => {
     mockGetCurrentUser.mockResolvedValue(adminUser);
     mockFrom.mockImplementation((table: string) => {
-      const chain: any = {
+      let chain: MockQueryChain;
+      chain = {
         select: jest.fn(() => chain),
         update: jest.fn(() => chain),
+        insert: jest.fn(() => chain),
         eq: jest.fn(() => chain),
         gte: jest.fn(() => chain),
         lte: jest.fn(() => chain),
@@ -375,7 +419,7 @@ describe('lockMonth', () => {
         in: jest.fn(() => chain),
         order: jest.fn(() => chain),
         limit: jest.fn(() => chain),
-        then: (cb: any) => Promise.resolve({
+        then: (cb: MockThenCallback) => Promise.resolve({
           data: table === 'revenue' || table === 'expenses' || table === 'salary_records' ? [] : null,
           error: null,
         }).then(cb),
@@ -383,6 +427,7 @@ describe('lockMonth', () => {
           data: null,
           error: table === 'tenants' ? { message: 'tenant unavailable' } : null,
         })),
+        maybeSingle: jest.fn(() => Promise.resolve({ data: null, error: null })),
       };
       return chain;
     });

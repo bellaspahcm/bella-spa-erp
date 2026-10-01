@@ -12,6 +12,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
+import type { Database, Json } from '@/types/database.types';
 import {
   OutboxRecord,
   OutboxInsert,
@@ -19,6 +20,33 @@ import {
   OutboxStatus,
 } from '../types/database.types';
 import { FinancialIntent } from '../types/financial-intent.types';
+
+type OutboxRow = Database['public']['Tables']['runtime_outbox']['Row'];
+
+function serializeFinancialIntent(intent: FinancialIntent): Record<string, unknown> {
+  return { ...intent };
+}
+
+function jsonObject(value: Json): Record<string, unknown> {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return { ...value };
+  }
+
+  throw new Error('INVALID_OUTBOX_PAYLOAD: Expected FinancialIntent JSON object');
+}
+
+function toOutboxStatus(status: string): OutboxStatus {
+  switch (status) {
+    case 'PENDING':
+    case 'PROCESSING':
+    case 'PUBLISHED':
+    case 'FAILED':
+    case 'QUARANTINED':
+      return status;
+    default:
+      throw new Error(`INVALID_OUTBOX_STATUS: ${status}`);
+  }
+}
 
 /**
  * Outbox Repository
@@ -39,7 +67,7 @@ export class OutboxRepository {
     const record: OutboxInsert = {
       tenant_id: intent.tenantId,
       intent_type: intent.intentType,
-      intent_payload: intent as any, // Full Financial Intent
+      intent_payload: serializeFinancialIntent(intent),
       correlation_id: intent.correlationId,
       status: 'PENDING',
       delivery_attempts: 0,
@@ -427,14 +455,14 @@ export class OutboxRepository {
   /**
    * Map database row to record
    */
-  private mapToRecord(data: any): OutboxRecord {
+  private mapToRecord(data: OutboxRow): OutboxRecord {
     return {
       id: data.id,
       tenant_id: data.tenant_id,
       intent_type: data.intent_type,
-      intent_payload: data.intent_payload,
+      intent_payload: jsonObject(data.intent_payload),
       correlation_id: data.correlation_id,
-      status: data.status,
+      status: toOutboxStatus(data.status),
       delivery_attempts: data.delivery_attempts,
       last_attempt_at: data.last_attempt_at ? new Date(data.last_attempt_at) : null,
       next_retry_at: data.next_retry_at ? new Date(data.next_retry_at) : null,

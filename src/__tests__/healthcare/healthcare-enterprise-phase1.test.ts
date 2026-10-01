@@ -61,20 +61,31 @@ export const getPatientsQuerySchema = z.object({
 // ==========================================
 export interface CheckoutPayload {
   amount: number;
-  drugs: Array<{ code: string; name: string; quantity: number }>;
+  drugs: CheckoutDrug[];
+}
+
+export interface CheckoutDrug {
+  code: string;
+  name: string;
+  quantity: number;
+}
+
+interface OperationResult {
+  success: boolean;
+  error?: string;
 }
 
 export class CheckoutTransactionCoordinator {
   constructor(
     private db: {
-      updateEncounterStatus: (id: string, status: string) => Promise<{ success: boolean; error?: string }>;
-      createInvoice: (id: string, amount: number) => Promise<{ success: boolean; error?: string }>;
-      createPrescription: (id: string, drugs: any[]) => Promise<{ success: boolean; error?: string }>;
-      deductInventory: (drugs: any[]) => Promise<{ success: boolean; error?: string }>;
+      updateEncounterStatus: (id: string, status: string) => Promise<OperationResult>;
+      createInvoice: (id: string, amount: number) => Promise<OperationResult>;
+      createPrescription: (id: string, drugs: CheckoutDrug[]) => Promise<OperationResult>;
+      deductInventory: (drugs: CheckoutDrug[]) => Promise<OperationResult>;
     }
   ) {}
 
-  async executeCheckout(encounterId: string, payload: CheckoutPayload): Promise<{ success: boolean; error?: string }> {
+  async executeCheckout(encounterId: string, payload: CheckoutPayload): Promise<OperationResult> {
     const rollbackStack: Array<() => Promise<void>> = [];
 
     try {
@@ -111,7 +122,7 @@ export class CheckoutTransactionCoordinator {
       for (let i = rollbackStack.length - 1; i >= 0; i--) {
         await rollbackStack[i]();
       }
-      return { success: false, error: err.message };
+      return { success: false, error: err instanceof Error ? err.message : String(err) };
     }
   }
 }
@@ -182,8 +193,8 @@ export class ClinicalAuditTrailService {
     action: 'CREATE' | 'UPDATE' | 'DELETE',
     entityId: string,
     entityType: AuditLogEntry['entityType'],
-    oldState: any,
-    newState: any
+    oldState: Record<string, unknown>,
+    newState: Record<string, unknown>
   ): void {
     this.logs.push({
       id: `audit-${Math.random().toString(36).substring(2, 9)}`,
@@ -202,16 +213,23 @@ export class ClinicalAuditTrailService {
   }
 
   // Replay audit trail to reconstruct state history
-  replayHistory(entityId: string, initialState: any): any {
+  replayHistory(entityId: string, initialState: Record<string, unknown>): Record<string, unknown> {
     const entityLogs = this.getLogsForEntity(entityId);
     let state = { ...initialState };
     
     for (const log of entityLogs) {
-      state = JSON.parse(log.newState);
+      const parsedState: unknown = JSON.parse(log.newState);
+      if (isRecord(parsedState)) {
+        state = parsedState;
+      }
     }
     
     return state;
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 // ==========================================

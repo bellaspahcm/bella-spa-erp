@@ -55,6 +55,8 @@ export interface CustomerItem {
   timeline: { time: string; date: string; title: string; description: string; type: string }[];
 }
 
+type CustomerDrawerTab = 'overview' | 'demand' | 'shortlist' | 'transactions' | 'history';
+
 const CUSTOMER_DATA: CustomerItem[] = [
   {
     id: 'c-001',
@@ -410,7 +412,7 @@ export default function RealEstateCustomersPage() {
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
 
   // Modals & Drawer State
-  const [drawerTab, setDrawerTab] = useState<'overview' | 'demand' | 'shortlist' | 'transactions' | 'history'>('demand');
+  const [drawerTab, setDrawerTab] = useState<CustomerDrawerTab>('demand');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showReassignModal, setShowReassignModal] = useState(false);
   const [newInteractionNote, setNewInteractionNote] = useState('');
@@ -482,6 +484,13 @@ export default function RealEstateCustomersPage() {
     setNewInteractionNote('');
     toast.success('✅ Đã lưu tương tác mới vào Hồ sơ 360°!');
   };
+
+  const drawerTabs: Array<{ id: CustomerDrawerTab; label: string }> = [
+    { id: 'demand', label: 'Thông tin' },
+    { id: 'shortlist', label: 'Căn quan tâm' },
+    { id: 'history', label: 'Lịch sử' },
+    { id: 'transactions', label: 'Giao dịch' },
+  ];
 
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-[1600px] mx-auto font-sans text-slate-900 dark:text-slate-100 pb-12">
@@ -1000,15 +1009,10 @@ export default function RealEstateCustomersPage() {
 
             {/* Drawer Navigation Tabs */}
             <div className="flex items-center gap-1 border-b border-slate-100 dark:border-slate-800 pb-2 overflow-x-auto scrollbar-none text-xs font-bold">
-              {[
-                { id: 'demand', label: 'Thông tin' },
-                { id: 'shortlist', label: 'Căn quan tâm' },
-                { id: 'history', label: 'Lịch sử' },
-                { id: 'transactions', label: 'Giao dịch' },
-              ].map(tab => (
+              {drawerTabs.map(tab => (
                 <button
                   key={tab.id}
-                  onClick={() => setDrawerTab(tab.id as any)}
+                  onClick={() => setDrawerTab(tab.id)}
                   className={`px-3 py-1.5 rounded-xl transition-all shrink-0 cursor-pointer ${
                     drawerTab === tab.id
                       ? 'bg-blue-600 text-white shadow-2xs'

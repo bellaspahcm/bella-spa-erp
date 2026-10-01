@@ -17,17 +17,63 @@ jest.mock("next/headers", () => ({ cookies: jest.fn() }), { virtual: true });
 jest.mock("server-only", () => ({}), { virtual: true });
 jest.mock("@sentry/nextjs", () => ({ captureException: jest.fn() }), { virtual: true });
 
+type GeminiRequestBody = {
+  contents?: Array<{
+    parts?: Array<{
+      text?: string;
+    }>;
+  }>;
+};
+
+type MockAnalysisItem = string | Record<string, unknown>;
+type MockDraftAction = Record<string, unknown>;
+type MockQueryResult = {
+  data?: unknown;
+  count?: number;
+  error?: { message: string } | null;
+};
+type MockQueryCallback = (value: MockQueryResult) => unknown;
+type MockRouteBuilder = {
+  insert?: jest.Mock;
+  select?: jest.Mock;
+  eq?: jest.Mock;
+  single?: jest.Mock;
+  maybeSingle?: jest.Mock;
+  gte?: jest.Mock;
+  lte?: jest.Mock;
+  order?: jest.Mock;
+  limit?: jest.Mock;
+  delete?: jest.Mock;
+  then?: (onfulfilled: MockQueryCallback) => Promise<unknown>;
+};
+type MockSupabaseClient = {
+  auth: {
+    getUser: jest.Mock;
+  };
+  from: typeof mockFrom;
+  rpc: typeof mockRpc;
+};
+
+const routeBuilder = (builder: MockRouteBuilder): MockRouteBuilder => builder;
+
+const readPromptText = (options?: { body?: BodyInit | null }) => {
+  if (typeof options?.body !== "string") {
+    return "";
+  }
+  const body = JSON.parse(options.body) as GeminiRequestBody;
+  return body.contents?.[0]?.parts?.[0]?.text ?? "";
+};
+
 // Mock global fetch for Gemini API calls
-global.fetch = jest.fn().mockImplementation((url, options) => {
+const mockGeminiFetch = jest.fn().mockImplementation((_url: string | URL | Request, options?: { body?: BodyInit | null }) => {
   let executiveSummary = "Báo cáo tóm tắt phân tích chung.";
-  let anomaliesFound: any[] = [];
+  let anomaliesFound: MockAnalysisItem[] = [];
   let strategicRecommendations = ["Khuyến nghị chung"];
-  let draftActions: any[] = [];
+  let draftActions: MockDraftAction[] = [];
 
   try {
-    if (options && options.body) {
-      const body = JSON.parse(options.body);
-      const promptText = body.contents?.[0]?.parts?.[0]?.text || "";
+    if (options?.body) {
+      const promptText = readPromptText(options);
       
       if (promptText.includes("CHRO") || promptText.includes("Nhân sự") || promptText.includes("lương")) {
         executiveSummary = "Đã hoàn tất phân tích 1 hồ sơ KTV của chi nhánh. Phát hiện 1 trường hợp cần lưu ý kỷ luật lao động hoặc có khấu trừ vi phạm lớn.";
@@ -73,17 +119,18 @@ global.fetch = jest.fn().mockImplementation((url, options) => {
       ]
     })
   });
-}) as any;
+});
+global.fetch = mockGeminiFetch as typeof fetch;
 
 const mockRpc = jest.fn();
 const mockInsert = jest.fn().mockResolvedValue({ error: null });
-const mockFrom = jest.fn(() => ({
+const mockFrom = jest.fn(() => routeBuilder({
   insert: mockInsert,
   select: jest.fn().mockReturnThis(),
   eq: jest.fn().mockReturnThis(),
   single: jest.fn().mockResolvedValue({ data: { id: "user-id", role: "admin", tenant_id: "tenant-id", full_name: "CEO Admin" }, error: null }),
   maybeSingle: jest.fn().mockResolvedValue({ data: { gemini_api_key: "TEST-GEMINI-KEY-123" }, error: null })
-}) as any);
+}));
 
 jest.mock("../lib/supabase-server", () => ({
   createClient: jest.fn(() => Promise.resolve({
@@ -92,7 +139,7 @@ jest.mock("../lib/supabase-server", () => ({
     },
     from: mockFrom,
     rpc: mockRpc
-  } as any))
+  } satisfies MockSupabaseClient))
 }));
 
 import { POST } from "../app/api/v1/ai/coo-orchestrator/route";
@@ -139,12 +186,12 @@ beforeEach(() => {
 describe("AI COO Orchestrator Security & RBAC Guard", () => {
   it("allows admin user to call orchestrator", async () => {
     // Mock user profile
-    mockFrom.mockImplementationOnce(() => ({
+    mockFrom.mockImplementationOnce(() => routeBuilder({
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
       single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null }),
       insert: mockInsert
-    } as any));
+    }));
 
     // Mock RPC calls for general analysis
     mockRpc.mockResolvedValue({ data: [], error: null });
@@ -161,12 +208,12 @@ describe("AI COO Orchestrator Security & RBAC Guard", () => {
   });
 
   it("allows accountant user to call orchestrator", async () => {
-    mockFrom.mockImplementationOnce(() => ({
+    mockFrom.mockImplementationOnce(() => routeBuilder({
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
       single: jest.fn().mockResolvedValue({ data: ACCOUNTANT_USER, error: null }),
       insert: mockInsert
-    } as any));
+    }));
 
     mockRpc.mockResolvedValue({ data: [], error: null });
 
@@ -245,12 +292,12 @@ describe("AI COO Orchestrator Routing & RPC execution", () => {
   });
 
   it("routes accounting command to CFO agent and calls trial balance RPC", async () => {
-    mockFrom.mockImplementationOnce(() => ({
+    mockFrom.mockImplementationOnce(() => routeBuilder({
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
       single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null }),
       insert: mockInsert
-    } as any));
+    }));
 
     mockRpc.mockImplementation((fnName) => {
       if (fnName === "get_trial_balance") {
@@ -278,12 +325,12 @@ describe("AI COO Orchestrator Routing & RPC execution", () => {
   });
 
   it("preserves CFO reconciliation proposal when Gemini returns empty draftActions", async () => {
-    mockFrom.mockImplementationOnce(() => ({
+    mockFrom.mockImplementationOnce(() => routeBuilder({
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
       single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null }),
       insert: mockInsert
-    } as any));
+    }));
 
     mockRpc.mockImplementation((fnName) => {
       if (fnName === "get_reconciliation_report") {
@@ -315,12 +362,12 @@ describe("AI COO Orchestrator Routing & RPC execution", () => {
   });
 
   it("keeps sub-agent data when Gemini enrichment fails", async () => {
-    mockFrom.mockImplementationOnce(() => ({
+    mockFrom.mockImplementationOnce(() => routeBuilder({
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
       single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null }),
       insert: mockInsert
-    } as any));
+    }));
 
     mockRpc.mockImplementation((fnName) => {
       if (fnName === "get_trial_balance") {
@@ -360,12 +407,12 @@ describe("AI COO Orchestrator Routing & RPC execution", () => {
 
 describe("AI COO Orchestrator Error propagation (Zero Silent DB Failures)", () => {
   it("propagates database RPC error immediately without swallowing it", async () => {
-    mockFrom.mockImplementationOnce(() => ({
+    mockFrom.mockImplementationOnce(() => routeBuilder({
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
       single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null }),
       insert: mockInsert
-    } as any));
+    }));
 
     // Mock RPC error
     mockRpc.mockResolvedValueOnce({
@@ -386,12 +433,12 @@ describe("AI COO Orchestrator Error propagation (Zero Silent DB Failures)", () =
   });
 
   it("returns 500 when required ai_agent_logs insert fails", async () => {
-    mockFrom.mockImplementationOnce(() => ({
+    mockFrom.mockImplementationOnce(() => routeBuilder({
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
       single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null }),
       insert: mockInsert
-    } as any));
+    }));
 
     mockRpc.mockResolvedValue({ data: [], error: null });
     mockInsert.mockResolvedValueOnce({ error: { message: "ai log insert failed" } });
@@ -429,12 +476,12 @@ describe("AI Action Approval Security & Side-Effects", () => {
   });
 
   it("rejects invalid approval payload without notification or audit side effects", async () => {
-    mockFrom.mockImplementationOnce(() => ({
+    mockFrom.mockImplementationOnce(() => routeBuilder({
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
       single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null }),
       insert: mockInsert
-    } as any));
+    }));
 
     const req = new NextRequest("http://localhost/api/v1/ai/action-approval", {
       method: "POST",
@@ -452,12 +499,12 @@ describe("AI Action Approval Security & Side-Effects", () => {
   });
 
   it("returns 500 when approval notification creation fails", async () => {
-    mockFrom.mockImplementationOnce(() => ({
+    mockFrom.mockImplementationOnce(() => routeBuilder({
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
       single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null }),
       insert: mockInsert
-    } as any));
+    }));
 
     const notificationInsert = jest.fn().mockReturnValue({
       select: jest.fn().mockReturnValue({
@@ -470,14 +517,14 @@ describe("AI Action Approval Security & Side-Effects", () => {
 
     mockFrom.mockImplementation((table?: string) => {
       if (table === "app_notifications") {
-        return { insert: notificationInsert } as any;
+        return routeBuilder({ insert: notificationInsert });
       }
-      return {
+      return routeBuilder({
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null }),
         insert: mockInsert
-      } as any;
+      });
     });
 
     const req = new NextRequest("http://localhost/api/v1/ai/action-approval", {
@@ -498,12 +545,12 @@ describe("AI Action Approval Security & Side-Effects", () => {
   });
 
   it("rolls back the notification when approval audit log insert fails", async () => {
-    mockFrom.mockImplementationOnce(() => ({
+    mockFrom.mockImplementationOnce(() => routeBuilder({
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
       single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null }),
       insert: mockInsert
-    } as any));
+    }));
 
     const notificationInsert = jest.fn().mockReturnValue({
       select: jest.fn().mockReturnValue({
@@ -512,25 +559,25 @@ describe("AI Action Approval Security & Side-Effects", () => {
     });
     const notificationDelete = jest.fn().mockReturnValue({
       eq: jest.fn().mockReturnThis(),
-      then: (onfulfilled: any) => Promise.resolve({ error: null }).then(onfulfilled)
+      then: (onfulfilled: MockQueryCallback) => Promise.resolve({ error: null }).then(onfulfilled)
     });
     const auditInsert = jest.fn().mockResolvedValue({ error: { message: "audit insert failed" } });
 
     mockFrom.mockImplementation((table?: string) => {
       if (table === "app_notifications") {
-        return {
+        return routeBuilder({
           insert: notificationInsert,
           delete: notificationDelete,
-        } as any;
+        });
       }
       if (table === "ai_agent_logs") {
-        return { insert: auditInsert } as any;
+        return routeBuilder({ insert: auditInsert });
       }
-      return {
+      return routeBuilder({
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null }),
-      } as any;
+      });
     });
 
     const req = new NextRequest("http://localhost/api/v1/ai/action-approval", {
@@ -551,12 +598,12 @@ describe("AI Action Approval Security & Side-Effects", () => {
   });
 
   it("reports rollback failure when approval audit log insert and notification delete both fail", async () => {
-    mockFrom.mockImplementationOnce(() => ({
+    mockFrom.mockImplementationOnce(() => routeBuilder({
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
       single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null }),
       insert: mockInsert
-    } as any));
+    }));
 
     const notificationInsert = jest.fn().mockReturnValue({
       select: jest.fn().mockReturnValue({
@@ -565,25 +612,25 @@ describe("AI Action Approval Security & Side-Effects", () => {
     });
     const notificationDelete = jest.fn().mockReturnValue({
       eq: jest.fn().mockReturnThis(),
-      then: (onfulfilled: any) => Promise.resolve({ error: { message: "notification rollback failed" } }).then(onfulfilled)
+      then: (onfulfilled: MockQueryCallback) => Promise.resolve({ error: { message: "notification rollback failed" } }).then(onfulfilled)
     });
     const auditInsert = jest.fn().mockResolvedValue({ error: { message: "audit insert failed" } });
 
     mockFrom.mockImplementation((table?: string) => {
       if (table === "app_notifications") {
-        return {
+        return routeBuilder({
           insert: notificationInsert,
           delete: notificationDelete,
-        } as any;
+        });
       }
       if (table === "ai_agent_logs") {
-        return { insert: auditInsert } as any;
+        return routeBuilder({ insert: auditInsert });
       }
-      return {
+      return routeBuilder({
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null }),
-      } as any;
+      });
     });
 
     const req = new NextRequest("http://localhost/api/v1/ai/action-approval", {
@@ -604,32 +651,32 @@ describe("AI Action Approval Security & Side-Effects", () => {
   });
 
   it("inserts system notification and writes audit log upon approval", async () => {
-    mockFrom.mockImplementationOnce(() => ({
+    mockFrom.mockImplementationOnce(() => routeBuilder({
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
       single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null }),
       insert: mockInsert
-    } as any));
+    }));
 
     // Mock successful insert for app_notifications and ai_agent_logs
     mockFrom.mockImplementation((table?: string) => {
       if (table === "app_notifications") {
-        return {
+        return routeBuilder({
           insert: jest.fn().mockReturnThis(),
           select: jest.fn().mockReturnThis(),
           single: jest.fn().mockResolvedValue({ data: { id: "notif-uuid" }, error: null })
-        } as any;
+        });
       }
       if (table === "ai_agent_logs") {
-        return {
+        return routeBuilder({
           insert: jest.fn().mockResolvedValue({ error: null })
-        } as any;
+        });
       }
-      return {
+      return routeBuilder({
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null })
-      } as any;
+      });
     });
 
     const req = new NextRequest("http://localhost/api/v1/ai/action-approval", {

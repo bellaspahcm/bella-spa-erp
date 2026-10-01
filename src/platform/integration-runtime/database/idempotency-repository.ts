@@ -10,11 +10,14 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
 import {
   IdempotencyRegistryRecord,
   IdempotencyRegistryInsert,
 } from '../types/database.types';
 import { IdempotencyError, buildErrorContext } from '../types/runtime-errors.types';
+
+type IdempotencyRegistryRow = Database['public']['Tables']['runtime_idempotency_registry']['Row'];
 
 /**
  * Idempotency Repository
@@ -77,7 +80,7 @@ export class IdempotencyRepository {
           record.idempotency_key,
           'unknown', // Cannot determine original outbox ID from constraint error
           buildErrorContext(
-            { tenantId: record.tenant_id, correlationId: record.correlation_id } as any,
+            { tenantId: record.tenant_id, correlationId: record.correlation_id },
             error,
             { record }
           )
@@ -245,7 +248,7 @@ export class IdempotencyRepository {
   /**
    * Map database row to record
    */
-  private mapToRecord(data: any): IdempotencyRegistryRecord {
+  private mapToRecord(data: IdempotencyRegistryRow): IdempotencyRegistryRecord {
     return {
       id: data.id,
       tenant_id: data.tenant_id,

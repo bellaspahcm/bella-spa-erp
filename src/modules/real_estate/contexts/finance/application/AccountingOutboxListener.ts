@@ -1,7 +1,8 @@
 import { supabase as typedSupabase } from '@/lib/supabase';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
  
-const supabase = typedSupabase as unknown as SupabaseClient<any>;
+const supabase = typedSupabase as SupabaseClient<Database>;
 
 export interface OutboxClaimedEvent {
   id: string;

@@ -267,7 +267,7 @@ describe('F5.5 AR_GL_BALANCE Reconciliation (Integration)', () => {
 
   afterEach(async () => {
     if (testTenantId) {
-      await supabase.rpc('f5_admin_cleanup_test_data' as any, {
+      await supabase.rpc('f5_admin_cleanup_test_data', {
         p_tenant_ids: [testTenantId],
         p_delete_master: false,
       });
@@ -276,7 +276,7 @@ describe('F5.5 AR_GL_BALANCE Reconciliation (Integration)', () => {
 
   afterAll(async () => {
     if (testTenantId) {
-      await supabase.rpc('f5_admin_cleanup_test_data' as any, {
+      await supabase.rpc('f5_admin_cleanup_test_data', {
         p_tenant_ids: [testTenantId],
         p_delete_master: true,
       });

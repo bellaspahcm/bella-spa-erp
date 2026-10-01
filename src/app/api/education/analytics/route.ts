@@ -3,6 +3,15 @@ import { createClient } from '@supabase/supabase-js';
 import { PreschoolAnalyticsRepository } from '@/products/bella-education/analytics/repositories/preschool-analytics.repository';
 import { PreschoolAnalyticsService } from '@/products/bella-education/analytics/services/preschool-analytics.service';
 
+function getErrorMessage(error: unknown): string | undefined {
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    return typeof message === 'string' ? message : String(message);
+  }
+
+  return undefined;
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -23,8 +32,8 @@ export async function GET(request: Request) {
     const dashboard = await service.getExecutiveDashboard(tenantId, date);
 
     return NextResponse.json({ success: true, dashboard });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Preschool Analytics API Error:', error);
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: getErrorMessage(error) || 'Internal Server Error' }, { status: 500 });
   }
 }

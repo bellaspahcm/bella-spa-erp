@@ -24,6 +24,7 @@ import {
   getExecutiveIntelligence,
   resetExecutiveIntelligence,
 } from '../service';
+import type { DateRange } from '../../shared/types';
 import { getCache } from '../../cache';
 
 // Environment variables for test Supabase instance
@@ -457,14 +458,14 @@ describe('Executive Intelligence - Integration Tests', () => {
     it('should handle invalid date range gracefully', async () => {
       if (skipIntegrationTests) return;
 
-      const invalidDateRange = {
+      const invalidDateRange: DateRange = {
         startDate: '2026-13-01', // Invalid month
         endDate: '2026-12-31',
       };
 
       // Should throw error or handle gracefully
       await expect(
-        service!.getMonthlyRevenueSummary(TEST_TENANT_ID, invalidDateRange as any)
+        service!.getMonthlyRevenueSummary(TEST_TENANT_ID, invalidDateRange)
       ).rejects.toThrow();
     });
   });

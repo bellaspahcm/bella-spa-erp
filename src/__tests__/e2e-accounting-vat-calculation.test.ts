@@ -10,9 +10,19 @@ process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ||
 
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { requireSupabaseAdminEnv } from '@/lib/supabase-admin-env';
-import type { Database } from '@/types/database.types';
+import type { Database, Json } from '@/types/database.types';
 
 jest.setTimeout(60_000);
+
+type JournalLineRow = Database['public']['Tables']['journal_lines']['Row'];
+
+function readJsonObject(value: Json | null | undefined): { [key: string]: Json | undefined } | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return undefined;
+  }
+
+  return value;
+}
 
 describe('E2E VAT Calculation (Tax Accounting Test)', () => {
   let supabase: ReturnType<typeof createSupabaseClient<Database>>;
@@ -61,7 +71,7 @@ describe('E2E VAT Calculation (Tax Accounting Test)', () => {
     }
 
     expect(revenue!.amount).toBe(packagePrice);
-    expect((revenue!.accounting_metadata as any)?.vat_amount).toBe(vatAmount);
+    expect(readJsonObject(revenue!.accounting_metadata)?.vat_amount).toBe(vatAmount);
 
     console.log('✅ Step 1: Revenue recorded with VAT', {
       totalAmount: packagePrice,
@@ -90,8 +100,8 @@ describe('E2E VAT Calculation (Tax Accounting Test)', () => {
         .single();
 
       if (journalEntry) {
-        const lines = journalEntry.journal_lines || [];
-        const vatLine = lines.find((l: any) => l.account_id?.includes('3331') || l.account_id?.includes('VAT'));
+        const lines = (journalEntry.journal_lines || []) as JournalLineRow[];
+        const vatLine = lines.find((line) => line.account_id?.includes('3331') || line.account_id?.includes('VAT'));
 
         if (vatLine) {
           expect(Number(vatLine.credit_amount)).toBe(vatAmount);

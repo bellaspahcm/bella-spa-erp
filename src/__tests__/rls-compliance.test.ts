@@ -35,6 +35,43 @@ const mockMaybeSingle = jest.fn();
 const mockInsert = jest.fn();
 const mockUpdate = jest.fn();
 
+function createSuspendedTenantQueryBuilder(table: string) {
+  const single = jest.fn(() => {
+    if (table === 'users') {
+      return Promise.resolve({
+        data: {
+          id: 'user-suspended',
+          email: 'suspended@tenant.com',
+          role: 'admin',
+          tenant_id: 'tenant-suspended',
+          full_name: 'Suspended Admin',
+        },
+        error: null,
+      });
+    }
+    if (table === 'tenants') {
+      return Promise.resolve({
+        data: { status: 'suspended', name: 'Suspended Tenant Co' },
+        error: null,
+      });
+    }
+    return Promise.resolve({ data: null, error: null });
+  });
+
+  return {
+    select: jest.fn(() => ({
+      eq: jest.fn(() => ({
+        single,
+      })),
+    })),
+    eq: mockEq,
+    maybeSingle: mockMaybeSingle,
+    single: mockSingle,
+    insert: mockInsert,
+    update: mockUpdate,
+  };
+}
+
 const mockSupabase = {
   from: jest.fn((table: string) => ({
     select: mockSelect,
@@ -132,8 +169,8 @@ describe('Row-Level Security (RLS) & Tenant Isolation Compliance Suite', () => {
       const bookings = await getBookings();
       expect(mockEq).toHaveBeenCalledWith('tenant_id', 'tenant-a');
       expect(bookings).toHaveLength(2);
-      bookings.forEach((b: any) => {
-        expect(b.tenant_id).toBe('tenant-a');
+      bookings.forEach((booking) => {
+        expect(booking.tenant_id).toBe('tenant-a');
       });
     });
 
@@ -259,7 +296,7 @@ describe('Row-Level Security (RLS) & Tenant Isolation Compliance Suite', () => {
       // Stub Auth user
       mockSupabase.auth.getUser.mockResolvedValue({
         data: { user: { id: 'user-suspended', email: 'suspended@tenant.com' } }
-      } as any);
+      });
 
       // Simulate profile exists in DB
       mockSingle.mockImplementation(() => Promise.resolve({
@@ -275,33 +312,7 @@ describe('Row-Level Security (RLS) & Tenant Isolation Compliance Suite', () => {
 
       // Emulate tenants query returning status = 'suspended'
       mockSupabase.from.mockImplementation((table: string) => {
-        return {
-          select: () => ({
-            eq: () => ({
-              single: () => {
-                if (table === 'users') {
-                  return Promise.resolve({
-                    data: {
-                      id: 'user-suspended',
-                      email: 'suspended@tenant.com',
-                      role: 'admin',
-                      tenant_id: 'tenant-suspended',
-                      full_name: 'Suspended Admin',
-                    },
-                    error: null,
-                  });
-                }
-                if (table === 'tenants') {
-                  return Promise.resolve({
-                    data: { status: 'suspended', name: 'Suspended Tenant Co' },
-                    error: null,
-                  });
-                }
-                return Promise.resolve({ data: null, error: null });
-              }
-            })
-          })
-        } as any;
+        return createSuspendedTenantQueryBuilder(table);
       });
 
       const profile = await getCurrentUser();

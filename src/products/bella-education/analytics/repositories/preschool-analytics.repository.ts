@@ -8,66 +8,112 @@
 
 import { SupabaseClient } from '@supabase/supabase-js';
 
+export interface EnrollmentStudentRaw {
+  id?: string;
+  student_id?: string;
+  academic_status?: string;
+  status?: string;
+  metadata?: Record<string, unknown> | null;
+}
+
+export interface ClassroomRaw {
+  id: string;
+  name: string;
+  max_capacity: number | null;
+}
+
+export interface AttendanceRaw {
+  id: string;
+  student_id: string;
+  attendance_status: string;
+  record_date: string;
+}
+
+export interface ParentEngagementDeliveryRaw {
+  id: string;
+  delivery_status: string;
+  notice?: {
+    policy_requirement?: string | null;
+  } | null;
+}
+
+type ParentEngagementNoticeRaw = NonNullable<ParentEngagementDeliveryRaw['notice']>;
+
+function firstParentEngagementNotice(
+  notice: ParentEngagementNoticeRaw | ParentEngagementNoticeRaw[] | null
+): ParentEngagementDeliveryRaw['notice'] {
+  return Array.isArray(notice) ? notice[0] ?? null : notice;
+}
+
 export class PreschoolAnalyticsRepository {
   constructor(private readonly supabase: SupabaseClient) {}
 
   // 1. Enrollment Metrics (P1/P3)
-  async getEnrollmentRawData(tenantId: string) {
+  async getEnrollmentRawData(tenantId: string): Promise<{
+    enrolledStudents: EnrollmentStudentRaw[];
+    classrooms: ClassroomRaw[];
+  }> {
     // Primary student table in Education Platform is `students`
-    let { data: students } = await this.supabase
+    const { data: primaryStudents } = await this.supabase
       .from('students')
       .select('student_id, academic_status, metadata')
       .eq('tenant_id', tenantId)
       .in('academic_status', ['enrolled', 'ENROLLED']);
 
-    if (!students || students.length === 0) {
+    let students: EnrollmentStudentRaw[] = primaryStudents || [];
+
+    if (students.length === 0) {
       const { data: fallbackStudents } = await this.supabase
         .from('edu_students')
         .select('id, status')
         .eq('tenant_id', tenantId)
         .in('status', ['ENROLLED', 'enrolled']);
-      if (fallbackStudents) students = fallbackStudents as any[];
+      if (fallbackStudents) students = fallbackStudents;
     }
 
     // Try preschool_classrooms first, fallback to edu_classrooms / courses
-    let { data: classrooms } = await this.supabase
+    const { data: primaryClassrooms } = await this.supabase
       .from('preschool_classrooms')
       .select('id, name, max_capacity')
       .eq('tenant_id', tenantId);
 
-    if (!classrooms || classrooms.length === 0) {
+    let classrooms: ClassroomRaw[] = primaryClassrooms || [];
+
+    if (classrooms.length === 0) {
       const { data: fallbackRooms } = await this.supabase
         .from('edu_classrooms')
         .select('id, name, max_capacity')
         .eq('tenant_id', tenantId);
-      if (fallbackRooms) classrooms = fallbackRooms as any[];
+      if (fallbackRooms) classrooms = fallbackRooms;
     }
 
     return {
-      enrolledStudents: students || [],
-      classrooms: classrooms || [],
+      enrolledStudents: students,
+      classrooms,
     };
   }
 
   // 2. Attendance Metrics (P3)
-  async getAttendanceRawData(tenantId: string, dateStr: string) {
+  async getAttendanceRawData(tenantId: string, dateStr: string): Promise<AttendanceRaw[]> {
     // Try edu_daily_care_records first
-    let { data: attendance } = await this.supabase
+    const { data: primaryAttendance } = await this.supabase
       .from('edu_daily_care_records')
       .select('id, student_id, attendance_status, record_date')
       .eq('tenant_id', tenantId)
       .eq('record_date', dateStr);
 
-    if (!attendance || attendance.length === 0) {
+    let attendance: AttendanceRaw[] = primaryAttendance || [];
+
+    if (attendance.length === 0) {
       const { data: fallbackAtt } = await this.supabase
         .from('edu_care_daily_records')
         .select('id, student_id, attendance_status, record_date')
         .eq('tenant_id', tenantId)
         .eq('record_date', dateStr);
-      if (fallbackAtt) attendance = fallbackAtt as any[];
+      if (fallbackAtt) attendance = fallbackAtt;
     }
 
-    return attendance || [];
+    return attendance;
   }
 
   // 3. Care & Safety Metrics (P4)
@@ -97,7 +143,7 @@ export class PreschoolAnalyticsRepository {
   }
 
   // 5. Parent Engagement Metrics (P6)
-  async getParentEngagementRawData(tenantId: string) {
+  async getParentEngagementRawData(tenantId: string): Promise<ParentEngagementDeliveryRaw[]> {
     const { data: deliveries } = await this.supabase
       .from('edu_comm_deliveries')
       .select(`
@@ -108,7 +154,11 @@ export class PreschoolAnalyticsRepository {
       .eq('tenant_id', tenantId)
       .in('delivery_status', ['SENT', 'READ']);
 
-    return deliveries || [];
+    return (deliveries || []).map((delivery) => ({
+      id: delivery.id,
+      delivery_status: delivery.delivery_status,
+      notice: firstParentEngagementNotice(delivery.notice),
+    }));
   }
 
   // 6. Finance & Billing Metrics (P7)

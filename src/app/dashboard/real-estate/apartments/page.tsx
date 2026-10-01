@@ -558,7 +558,7 @@ export default function RealEstateApartmentsPage() {
                     </div>
 
                     <div className="flex flex-wrap gap-2 flex-1 items-center">
-                      {floorUnits.map((u: any) => {
+                      {floorUnits.map((u) => {
                         const statusCfg = STATUS_MAP[u.status ?? "available"] ?? STATUS_MAP.available;
                         const isSelected = activeProduct?.id === u.id || activeProduct?.product_code === u.product_code;
 

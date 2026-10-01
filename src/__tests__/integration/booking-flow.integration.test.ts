@@ -62,6 +62,15 @@ const HAS_SUPABASE_CREDENTIALS = Boolean(
 );
 const describeIntegration = HAS_SUPABASE_CREDENTIALS ? describe : describe.skip;
 
+function readAverageRating(metadata: unknown): number | undefined {
+  if (!metadata || typeof metadata !== 'object') {
+    return undefined;
+  }
+
+  const value = (metadata as { avg_rating?: unknown }).avg_rating;
+  return typeof value === 'number' ? value : undefined;
+}
+
 describeIntegration('Booking Flow Integration Tests', () => {
   // Setup: Seed database before all tests
   beforeAll(async () => {
@@ -601,7 +610,7 @@ describeIntegration('Booking Flow Integration Tests', () => {
 
       const assignedKtv = assignedKtvData ? {
         full_name: assignedKtvData.full_name,
-        avg_rating: (assignedKtvData.metadata as any)?.avg_rating
+        avg_rating: readAverageRating(assignedKtvData.metadata),
       } : null;
 
       console.log(`[Test] VIP assigned to: ${assignedKtv?.full_name} (rating: ${assignedKtv?.avg_rating})`);
@@ -761,7 +770,7 @@ describeIntegration('Booking Flow Integration Tests', () => {
 
         const assignedKtv = assignedKtvData ? {
           full_name: assignedKtvData.full_name,
-          avg_rating: (assignedKtvData.metadata as any)?.avg_rating
+          avg_rating: readAverageRating(assignedKtvData.metadata),
         } : null;
 
         expect(assignedKtv?.avg_rating).toBeGreaterThanOrEqual(4.0);

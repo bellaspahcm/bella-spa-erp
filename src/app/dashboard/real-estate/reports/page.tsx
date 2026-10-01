@@ -186,6 +186,15 @@ export default function ReportsPage() {
     toast.success(`🔗 Đã sao chép liên kết chia sẻ báo cáo "${title}" vào bộ nhớ tạm!`);
   };
 
+  const categoryTabs: Array<{ id: ReportCategoryFilter; label: string }> = [
+    { id: "all", label: "Tất cả báo cáo (5)" },
+    { id: "executive", label: "Điều hành" },
+    { id: "sales", label: "Kinh doanh" },
+    { id: "inventory", label: "Tồn kho BĐS" },
+    { id: "crm", label: "CRM & Marketing" },
+    { id: "finance", label: "Tài chính & Dòng tiền" },
+  ];
+
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-[1600px] mx-auto font-sans text-slate-900 dark:text-slate-100">
       
@@ -244,17 +253,10 @@ export default function ReportsPage() {
 
       {/* ── 2. REPORT CATEGORY FILTER TABS ── */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-b border-slate-200 dark:border-slate-800">
-        {[
-          { id: "all", label: "Tất cả báo cáo (5)" },
-          { id: "executive", label: "Điều hành" },
-          { id: "sales", label: "Kinh doanh" },
-          { id: "inventory", label: "Tồn kho BĐS" },
-          { id: "crm", label: "CRM & Marketing" },
-          { id: "finance", label: "Tài chính & Dòng tiền" },
-        ].map(tab => (
+        {categoryTabs.map(tab => (
           <button
             key={tab.id}
-            onClick={() => setActiveCategory(tab.id as any)}
+            onClick={() => setActiveCategory(tab.id)}
             className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all shrink-0 cursor-pointer ${
               activeCategory === tab.id
                 ? "bg-slate-900 dark:bg-blue-600 text-white shadow-xs"

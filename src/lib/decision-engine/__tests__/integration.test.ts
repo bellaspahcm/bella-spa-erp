@@ -27,7 +27,7 @@ describe.skip('Decision Engine Platform - Integration (OLD ARCHITECTURE - DEPREC
   
   /*
   let engine: DecisionEngine;
-  let eventLog: Array<{ type: string; data: any }> = [];
+  let eventLog: Array<{ type: string; data: unknown }> = [];
 
   beforeEach(() => {
     eventLog = [];
@@ -38,7 +38,7 @@ describe.skip('Decision Engine Platform - Integration (OLD ARCHITECTURE - DEPREC
 
     // Capture events for verification
     const originalPublish = eventPublisher.publish.bind(eventPublisher);
-    eventPublisher.publish = async (event: any) => {
+    eventPublisher.publish = async (event: unknown) => {
       eventLog.push(event);
       return originalPublish(event);
     };
