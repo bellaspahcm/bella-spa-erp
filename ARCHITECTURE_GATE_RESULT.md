@@ -28,7 +28,7 @@ Source-of-truth evidence:
 | Babycare and Nail provide reuse lessons | `src/modules/spa/*`, `src/products/nail/*` | Reuse Beauty OS; avoid new contracts/tables when product delta fits existing contracts. |
 | Real DB proof must be fresh | Bella Constitution and Nail/Haircut real DB patterns | Credential-gated tests may be added; skipped Real DB remains `NOT_VERIFIED`, not PASS. |
 
-Gate conclusion: `PASS_WITH_BOUNDARY` for product identity, product orchestration service, product tests, and evidence docs. `BLOCKED` for any attempt to alter Beauty OS frozen schema/contracts or invent Finance/accounting/payroll policy.
+Gate conclusion: `PASS_WITH_BOUNDARY` for product identity, product orchestration service, product UI evidence route, reuse-boundary tests, workflow tests, and evidence docs. `BLOCKED` for any attempt to alter Beauty OS frozen schema/contracts or invent Finance/accounting/payroll policy.
 
 ## 2. Product Manifest
 
@@ -102,6 +102,18 @@ Staff + Time + Branch + Room/Resource
         -> Capacity / conflict prevention
         -> Waitlist or blocked booking
 ```
+
+Beauty OS inheritance direction:
+
+```text
+Beauty OS public contracts/services/capabilities
+        -> Bella Beauty Spa v2 product orchestration
+        -> Beauty products and operational workflows
+```
+
+Beauty Spa v2 must reuse Beauty OS public capability surfaces. It must not fork
+Beauty OS, duplicate sibling product implementations, or bypass Beauty OS with
+direct database access.
 
 ## 5. Change Authority
 
@@ -190,12 +202,16 @@ Implemented inside this branch:
   - session check-in/check-out completion,
   - tenant-scoped resource conflict behavior,
   - waitlist fallback without false operational success.
+- Product reuse-boundary tests for:
+  - Beauty OS public service/contract reuse,
+  - no direct DB/Supabase/generated-type bypass,
+  - no Nail/Haircut/modules/spa implementation dependency.
 
 Fresh local verification:
 
 ```text
-npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/beauty-spa-v2.workflow.test.ts" --runInBand
-PASS - 1 suite, 4 tests
+npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" --runInBand
+PASS - 2 suites, 6 tests
 
 npx tsc -p tsconfig.beauty.json --noEmit
 PASS
