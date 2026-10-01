@@ -185,6 +185,7 @@ export class BeautySpaV2Service {
   }
 
   public async completeSession(input: CompleteBeautySpaSessionInput): Promise<SessionRecord> {
+    this.assertSessionOutcome(input);
     const started = await this.sessionService.start(input.session, input.performerId);
     return this.sessionService.complete(started, JSON.stringify(input.outcome));
   }
@@ -242,6 +243,18 @@ export class BeautySpaV2Service {
       if (!available) {
         throw new BeautySpaV2Error('STAFF_TIME_BRANCH_CONFLICT', 'Staff is not available for the requested branch and interval.');
       }
+    }
+  }
+
+  private assertSessionOutcome(input: CompleteBeautySpaSessionInput): void {
+    if (input.performerId.trim().length === 0) {
+      throw new BeautySpaV2Error('REQUIRED_ID_MISSING', 'Beauty Spa v2 session completion requires a performer ID.');
+    }
+    if (input.outcome.customerHistoryNote.trim().length === 0) {
+      throw new BeautySpaV2Error('CUSTOMER_HISTORY_REQUIRED', 'Beauty Spa v2 session completion requires a customer history note.');
+    }
+    if (input.outcome.auditTags.length === 0 || input.outcome.auditTags.some((tag) => tag.trim().length === 0)) {
+      throw new BeautySpaV2Error('AUDIT_TAGS_REQUIRED', 'Beauty Spa v2 session completion requires non-empty audit tags.');
     }
   }
 

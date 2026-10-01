@@ -206,6 +206,7 @@ Implemented inside this branch:
   - room/bed/device allocation,
   - rollback of earlier resource allocations when a later resource in the same booking fails,
   - session check-in/check-out completion,
+  - checkout customer-history and audit-tag evidence validation before session side effects,
   - tenant-scoped resource conflict behavior,
   - waitlist fallback without false operational success.
 - Product reuse-boundary tests for:
@@ -220,7 +221,7 @@ Fresh local verification:
 
 ```text
 npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
-PASS - 3 suites, 45 tests
+PASS - 3 suites, 46 tests
 
 npx tsc -p tsconfig.beauty.json --noEmit
 PASS
@@ -253,7 +254,7 @@ is cancelled before the original failure is rethrown.
 
 VERIFY
 npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
-PASS - 3 suites, 45 tests
+PASS - 3 suites, 46 tests
 
 npx tsc -p tsconfig.beauty.json --noEmit
 PASS
@@ -283,7 +284,7 @@ Beauty OS conflict.
 
 VERIFY
 npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
-PASS - 3 suites, 45 tests
+PASS - 3 suites, 46 tests
 
 Duplicate staff/resource validation verification:
 
@@ -299,7 +300,7 @@ appointments, assignments, allocations, or waitlist entries.
 
 VERIFY
 npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
-PASS - 3 suites, 45 tests
+PASS - 3 suites, 46 tests
 
 Invalid interval/capacity validation verification:
 
@@ -318,7 +319,7 @@ waitlist side effects.
 
 VERIFY
 npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
-PASS - 3 suites, 45 tests
+PASS - 3 suites, 46 tests
 
 npx tsc -p tsconfig.beauty.json --noEmit
 PASS
@@ -345,7 +346,7 @@ disrupts assignments during booking rollback.
 
 VERIFY
 npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
-PASS - 3 suites, 45 tests
+PASS - 3 suites, 46 tests
 
 Required operational ID validation verification:
 
@@ -362,7 +363,33 @@ assignment, allocation, or waitlist side effects.
 
 VERIFY
 npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
-PASS - 3 suites, 45 tests
+PASS - 3 suites, 46 tests
+
+Checkout evidence validation verification:
+
+```text
+ROOT_CAUSE
+Beauty Spa v2 session completion accepted empty customer history notes or empty
+audit tags. That could complete a session without the customer-history and audit
+handoff evidence required by the product workflow.
+
+MINIMAL_FIX
+Beauty Spa v2 validates performer ID, customer history note, and non-empty audit
+tags before invoking Beauty OS session start/complete services.
+
+VERIFY
+npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
+PASS - 3 suites, 46 tests
+
+npx tsc -p tsconfig.beauty.json --noEmit
+PASS
+
+npx eslint src/products/beauty-spa-v2 src/app/dashboard/beauty-spa-v2 src/platform/registry/product-registry.ts src/platform/registry/__tests__/product-resolver.test.ts
+PASS
+
+npm run arch:guard
+PASS
+```
 
 npx tsc -p tsconfig.beauty.json --noEmit
 PASS
@@ -435,12 +462,12 @@ Evidence classification:
 | Definition of Done item | Status | Evidence |
 |---|---|---|
 | Feature discovery | PASS | Gate capability map plus product workflow tests. |
-| Workflow design | PASS_WITH_BOUNDARY | Product orchestration covers Customer/Booking/Walk-in/Scheduling/Staff/Branch/Room/Bed/Resource/Session/Check-in/Check-out/Waitlist/handoff classification, rejects missing IDs, invalid interval/capacity, and duplicate staff/resource inputs before side effects, and records rollback history for staff/resource failures. |
+| Workflow design | PASS_WITH_BOUNDARY | Product orchestration covers Customer/Booking/Walk-in/Scheduling/Staff/Branch/Room/Bed/Resource/Session/Check-in/Check-out/Waitlist/handoff classification, rejects missing IDs, invalid interval/capacity, duplicate staff/resource inputs, and incomplete checkout evidence before side effects, and records rollback history for staff/resource failures. |
 | Architecture | PASS_WITH_BOUNDARY | No `src/platform/beauty/**`, Core, Healthcare, Education, or Logistics modification. |
 | Contracts | PASS_WITH_BOUNDARY | Reuses Beauty OS service/port contracts. |
 | Implementation | PASS_WITH_BOUNDARY | Product-layer service, tests, and browser evidence route pass scoped verification. |
 | Typecheck | PASS_SCOPED | `tsconfig.beauty.json` scoped typecheck includes `src/products/beauty-spa-v2/**` and `src/app/dashboard/beauty-spa-v2/**`. Full repository typecheck not run in this checkpoint. |
-| Targeted tests | PASS | Focused Jest suite pass, including missing-ID validation, invalid-input validation, duplicate-input validation, assignment rollback history, and partial allocation rollback regressions. |
+| Targeted tests | PASS | Focused Jest suite pass, including missing-ID validation, invalid-input validation, duplicate-input validation, checkout evidence validation, assignment rollback history, and partial allocation rollback regressions. |
 | Security / tenant isolation | PASS_SCOPED | Tenant-scoped application conflict test; H8 RLS migration reused. |
 | Concurrency | PARTIAL / NOT_REAL_DB_PROVEN | Product service prevents overlapping active allocations in repository contract. Existing H8 migration has no DB-level exclusion/transaction lock proof for concurrent Real DB writes. |
 | Real DB E2E | NOT_VERIFIED | No fresh credentialed Real DB run recorded in this checkpoint. |

@@ -268,6 +268,52 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
     expect(outcome.auditTags).toContain('CHAIN_V2');
   });
 
+  it('rejects incomplete checkout handoff evidence before session side effects', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+    const plannedSession: SessionRecord = {
+      id: 'session-invalid-outcome',
+      tenantId: 'tenant-spa-a',
+      appointmentId: 'appointment-invalid-outcome',
+      serviceCommitmentId: 'commitment-invalid-outcome',
+      status: 'PLANNED',
+      actualStartAt: null,
+      actualEndAt: null,
+      actualPerformerId: null,
+      outcome: null,
+    };
+
+    await expect(service.completeSession({
+      session: plannedSession,
+      performerId: 'therapist-lead-1',
+      outcome: {
+        checkedOutBy: 'manager-spa',
+        customerHistoryNote: ' ',
+        packageSessionUsed: true,
+        paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+        inventoryHandoff: 'INVENTORY_HANDOFF_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: ['CHAIN_V2'],
+      },
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'CUSTOMER_HISTORY_REQUIRED' });
+
+    await expect(service.completeSession({
+      session: plannedSession,
+      performerId: 'therapist-lead-1',
+      outcome: {
+        checkedOutBy: 'manager-spa',
+        customerHistoryNote: 'Skin barrier improved.',
+        packageSessionUsed: true,
+        paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+        inventoryHandoff: 'INVENTORY_HANDOFF_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: [],
+      },
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'AUDIT_TAGS_REQUIRED' });
+
+    expect(harness.sessions).toHaveLength(0);
+  });
+
   it('prevents staff and resource conflicts while preserving tenant boundaries', async () => {
     const harness = new BeautySpaHarness();
     const service = harness.createService();
