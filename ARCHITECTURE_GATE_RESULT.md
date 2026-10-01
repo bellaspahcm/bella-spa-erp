@@ -206,12 +206,15 @@ Implemented inside this branch:
   - Beauty OS public service/contract reuse,
   - no direct DB/Supabase/generated-type bypass,
   - no Nail/Haircut/modules/spa implementation dependency.
+- Product resolver test for:
+  - `bella_spa` resolves to `/dashboard/beauty-spa-v2`,
+  - Beauty Spa v2 identity remains distinct from module fallback.
 
 Fresh local verification:
 
 ```text
-npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" --runInBand
-PASS - 2 suites, 6 tests
+npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
+PASS - 3 suites, 40 tests
 
 npx tsc -p tsconfig.beauty.json --noEmit
 PASS

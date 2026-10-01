@@ -458,4 +458,28 @@ describe('ProductResolver', () => {
       expect(resolved.product.navigationProfile).toBe('nail');
     });
   });
+
+  describe('Bella Beauty Spa v2 Product Resolution', () => {
+    it('should resolve bella_spa to Beauty Spa v2 default route without module fallback', () => {
+      const spa: ProductDefinition = {
+        productKey: 'bella_spa',
+        displayName: 'Bella Beauty Spa v2',
+        subtitle: 'Spa Chain Management',
+        requiredModules: ['beauty_spa'],
+        serviceProfile: 'spa',
+        defaultRoute: '/dashboard/beauty-spa-v2',
+        navigationProfile: 'spa'
+      };
+      productRegistry.register(spa);
+
+      const tenant = createMockTenant('tenant-spa-v2', 'bella_spa');
+      const resolved = productResolver.resolve(tenant);
+
+      expect(resolved.product.productKey).toBe('bella_spa');
+      expect(resolved.product.requiredModules).toEqual(['beauty_spa']);
+      expect(resolved.product.serviceProfile).toBe('spa');
+      expect(resolved.product.defaultRoute).toBe('/dashboard/beauty-spa-v2');
+      expect(resolved.product.navigationProfile).toBe('spa');
+    });
+  });
 });
