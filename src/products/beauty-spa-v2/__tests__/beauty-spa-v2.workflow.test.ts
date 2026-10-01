@@ -56,6 +56,7 @@ class BeautySpaHarness {
   public readonly sessions: SessionRecord[] = [];
   public readonly waitlistEntries: Array<{ tenantId: string; customerId: string; reason: string }> = [];
   public readonly unavailableStaff = new Set<string>();
+  public readonly malformedStaffAvailability = new Map<string, unknown>();
   public readonly assignmentCreateFailures = new Set<string>();
   public readonly assignmentUpdateFailures = new Set<string>();
   public readonly allocationActivationFailures = new Set<string>();
@@ -161,7 +162,13 @@ class BeautySpaHarness {
   };
 
   public readonly staffAvailability: SpaStaffAvailabilityPort = {
-    isAvailable: async (scope) => !this.unavailableStaff.has(this.staffKey(scope.tenantId, scope.branchId, scope.professionalId, scope.interval)),
+    isAvailable: async (scope) => {
+      const key = this.staffKey(scope.tenantId, scope.branchId, scope.professionalId, scope.interval);
+      if (this.malformedStaffAvailability.has(key)) {
+        return this.malformedStaffAvailability.get(key) as boolean;
+      }
+      return !this.unavailableStaff.has(key);
+    },
   };
 
   public readonly waitlist: SpaWaitlistPort = {
@@ -553,6 +560,32 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
     expect(harness.allocations.filter((allocation) => allocation.tenantId === 'tenant-spa-a')).toHaveLength(1);
     expect(harness.allocations.filter((allocation) => allocation.tenantId === 'tenant-spa-b')).toHaveLength(1);
     expect(harness.appointments.find((appointment) => appointment.customerId === 'customer-overlap')?.status).toBe('CANCELLED');
+  });
+
+  it('rejects malformed staff availability evidence before creating side effects', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+    harness.malformedStaffAvailability.set(
+      harness.staffKey('tenant-spa-a', 'branch-d1', 'therapist-malformed', chainInterval),
+      'false',
+    );
+
+    await expect(service.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-malformed-staff-availability',
+      serviceId: 'service-body-therapy',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-malformed',
+      resources: [{ resourceId: 'room-d1-02', resourceType: 'ROOM' }],
+      actorId: 'manager-spa',
+      bookingMode: 'WALK_IN',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'STAFF_AVAILABILITY_HANDOFF_FAILED' });
+
+    expect(harness.appointments).toHaveLength(0);
+    expect(harness.assignments).toHaveLength(0);
+    expect(harness.allocations).toHaveLength(0);
+    expect(harness.waitlistEntries).toHaveLength(0);
   });
 
   it('rejects duplicate staff and resource requirements before creating operational side effects', async () => {

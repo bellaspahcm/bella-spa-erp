@@ -222,7 +222,7 @@ Fresh local verification:
 
 ```text
 npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
-PASS - 3 suites, 54 tests
+PASS - 3 suites, 55 tests
 
 npx tsc -p tsconfig.beauty.json --noEmit
 PASS
@@ -254,6 +254,7 @@ Product-layer root-cause fixes verified in the focused suite:
 | Allocation activation failure | A resource allocation created as `PROPOSED` could fail while being activated and remain outside the rollback list. | Track the proposed allocation immediately, then replace it with the active allocation only after activation succeeds. |
 | Checkout completion failure | Session start could persist `IN_PROGRESS` before checkout completion failed. | Roll back the started session to the original planned session when completion fails; report `SESSION_ROLLBACK_FAILED` only if cleanup also fails. |
 | Waitlist handoff evidence | Waitlist integration could return malformed acceptance evidence and still be reported as operational success. | Validate returned waitlist ID and position before building waitlisted appointment output. |
+| Staff availability evidence | Staff availability integration could return non-boolean evidence and be interpreted by truthiness, creating booking side effects. | Require strict boolean availability evidence before appointment, assignment, allocation, or waitlist side effects. |
 Previously recorded GitHub PR evidence for PR #188:
 
 ```text
