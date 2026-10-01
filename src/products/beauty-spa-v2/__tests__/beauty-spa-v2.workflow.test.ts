@@ -57,6 +57,8 @@ class BeautySpaHarness {
   public readonly waitlistEntries: Array<{ tenantId: string; customerId: string; reason: string }> = [];
   public readonly unavailableStaff = new Set<string>();
   public readonly assignmentCreateFailures = new Set<string>();
+  public readonly assignmentUpdateFailures = new Set<string>();
+  public readonly allocationUpdateFailures = new Set<string>();
   public readonly appointmentUpdateFailures = new Set<string>();
 
   public readonly appointmentRepository: AppointmentRepository = {
@@ -85,6 +87,9 @@ class BeautySpaHarness {
       return value;
     },
     update: async (value) => {
+      if (value.status === 'DISRUPTED' && this.assignmentUpdateFailures.has(value.professionalId)) {
+        throw new Error(`assignment update failed for ${value.professionalId}`);
+      }
       this.replace(this.assignments, value);
       return value;
     },
@@ -105,6 +110,9 @@ class BeautySpaHarness {
       return value;
     },
     update: async (value) => {
+      if (value.status === 'DISRUPTED' && this.allocationUpdateFailures.has(value.resourceId)) {
+        throw new Error(`allocation update failed for ${value.resourceId}`);
+      }
       this.replace(this.allocations, value);
       return value;
     },
@@ -856,6 +864,46 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
     expect(harness.waitlistEntries).toHaveLength(0);
   });
 
+  it('continues later assignment rollback when an earlier assignment cleanup fails', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+    harness.assignmentCreateFailures.add('assistant-fails');
+    harness.assignmentUpdateFailures.add('therapist-lead-1');
+
+    await expect(service.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-assignment-cleanup-failure',
+      serviceId: 'service-facial-team',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-lead-1',
+      supportProfessionalIds: ['assistant-cleanup-survives', 'assistant-fails'],
+      resources: [{ resourceId: 'room-d1-03', resourceType: 'ROOM' }],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'BOOKING_ROLLBACK_FAILED' });
+
+    expect(harness.assignments.find((assignment) => (
+      assignment.professionalId === 'therapist-lead-1'
+    ))?.status).toBe('ACCEPTED');
+    expect(harness.assignments.find((assignment) => (
+      assignment.professionalId === 'assistant-cleanup-survives'
+    ))).toMatchObject({
+      status: 'DISRUPTED',
+      reason: 'BOOKING_ORCHESTRATION_FAILED',
+      actorId: 'manager-spa',
+    });
+    expect(harness.assignmentHistory).toEqual([
+      expect.objectContaining({
+        assignmentId: harness.assignments.find((assignment) => (
+          assignment.professionalId === 'assistant-cleanup-survives'
+        ))?.id,
+        eventType: 'BOOKING_ASSIGNMENT_ROLLED_BACK',
+      }),
+    ]);
+    expect(harness.waitlistEntries).toHaveLength(0);
+  });
+
   it('rolls back allocations created earlier in the same booking when a later resource conflicts', async () => {
     const harness = new BeautySpaHarness();
     const service = harness.createService();
@@ -923,6 +971,63 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
         actorId: 'manager-spa',
       }),
     ]);
+  });
+
+  it('continues later allocation rollback when an earlier allocation cleanup fails', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+    harness.allocationUpdateFailures.add('room-d1-royal-suite');
+
+    harness.allocations.push({
+      id: 'existing-device-allocation',
+      tenantId: 'tenant-spa-a',
+      serviceCommitmentId: 'existing-commitment',
+      segmentId: 'existing-device',
+      resourceId: 'device-hifu-01',
+      interval: chainInterval,
+      capacityUnits: 1,
+      status: 'ACTIVE',
+      replacementForId: null,
+      reason: null,
+      actorId: null,
+    });
+
+    await expect(service.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-allocation-cleanup-failure',
+      serviceId: 'service-hifu-combo',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-hifu',
+      resources: [
+        { resourceId: 'room-d1-royal-suite', resourceType: 'ROOM', segmentId: 'facial-suite' },
+        { resourceId: 'bed-d1-thermal', resourceType: 'BED', segmentId: 'thermal-bed' },
+        { resourceId: 'device-hifu-01', resourceType: 'DEVICE', segmentId: 'hifu-device' },
+      ],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'ALLOCATION_ROLLBACK_FAILED' });
+
+    expect(harness.allocations.find((allocation) => (
+      allocation.resourceId === 'room-d1-royal-suite'
+    ))?.status).toBe('ACTIVE');
+    expect(harness.allocations.find((allocation) => (
+      allocation.resourceId === 'bed-d1-thermal'
+    ))).toMatchObject({
+      status: 'DISRUPTED',
+      reason: 'BOOKING_RESOURCE_ALLOCATION_FAILED',
+      actorId: 'manager-spa',
+    });
+    expect(harness.allocationHistory).toEqual([
+      expect.objectContaining({
+        allocationId: harness.allocations.find((allocation) => (
+          allocation.resourceId === 'bed-d1-thermal'
+        ))?.id,
+        eventType: 'BOOKING_ALLOCATION_ROLLED_BACK',
+      }),
+    ]);
+    expect(harness.assignments.every((assignment) => assignment.status === 'DISRUPTED')).toBe(true);
+    expect(harness.waitlistEntries).toHaveLength(0);
   });
 
   it('routes conflicted walk-ins to waitlist without creating false operational success', async () => {

@@ -393,26 +393,34 @@ export class BeautySpaV2Service {
     actorId: string,
     reason: string,
   ): Promise<void> {
+    const rollbackErrors: unknown[] = [];
     for (const allocation of allocations) {
-      const disrupted = await this.allocationRepo.update({
-        ...allocation,
-        status: 'DISRUPTED',
-        actorId,
-        reason,
-      });
-      await this.allocationRepo.appendHistory({
-        id: this.ids.next('allocation-history'),
-        tenantId: disrupted.tenantId,
-        allocationId: disrupted.id,
-        replacementAllocationId: null,
-        oldResourceId: disrupted.resourceId,
-        newResourceId: disrupted.resourceId,
-        segmentId: disrupted.segmentId,
-        eventType: 'BOOKING_ALLOCATION_ROLLED_BACK',
-        reason,
-        actorId,
-        occurredAt: this.clock.now(),
-      });
+      try {
+        const disrupted = await this.allocationRepo.update({
+          ...allocation,
+          status: 'DISRUPTED',
+          actorId,
+          reason,
+        });
+        await this.allocationRepo.appendHistory({
+          id: this.ids.next('allocation-history'),
+          tenantId: disrupted.tenantId,
+          allocationId: disrupted.id,
+          replacementAllocationId: null,
+          oldResourceId: disrupted.resourceId,
+          newResourceId: disrupted.resourceId,
+          segmentId: disrupted.segmentId,
+          eventType: 'BOOKING_ALLOCATION_ROLLED_BACK',
+          reason,
+          actorId,
+          occurredAt: this.clock.now(),
+        });
+      } catch (error) {
+        rollbackErrors.push(error);
+      }
+    }
+    if (rollbackErrors.length > 0) {
+      throw new BeautySpaV2Error('ALLOCATION_ROLLBACK_FAILED', 'Beauty Spa v2 allocation rollback did not complete cleanly.');
     }
   }
 
@@ -421,25 +429,33 @@ export class BeautySpaV2Service {
     actorId: string,
     reason: string,
   ): Promise<void> {
+    const rollbackErrors: unknown[] = [];
     for (const assignment of assignments) {
-      const disrupted = await this.assignmentRepo.update({
-        ...assignment,
-        status: 'DISRUPTED',
-        actorId,
-        reason,
-        decidedAt: this.clock.now(),
-      });
-      await this.assignmentRepo.appendHistory({
-        id: this.ids.next('assignment-history'),
-        tenantId: disrupted.tenantId,
-        assignmentId: disrupted.id,
-        fromProfessionalId: disrupted.professionalId,
-        toProfessionalId: disrupted.professionalId,
-        eventType: 'BOOKING_ASSIGNMENT_ROLLED_BACK',
-        reason,
-        actorId,
-        occurredAt: this.clock.now(),
-      });
+      try {
+        const disrupted = await this.assignmentRepo.update({
+          ...assignment,
+          status: 'DISRUPTED',
+          actorId,
+          reason,
+          decidedAt: this.clock.now(),
+        });
+        await this.assignmentRepo.appendHistory({
+          id: this.ids.next('assignment-history'),
+          tenantId: disrupted.tenantId,
+          assignmentId: disrupted.id,
+          fromProfessionalId: disrupted.professionalId,
+          toProfessionalId: disrupted.professionalId,
+          eventType: 'BOOKING_ASSIGNMENT_ROLLED_BACK',
+          reason,
+          actorId,
+          occurredAt: this.clock.now(),
+        });
+      } catch (error) {
+        rollbackErrors.push(error);
+      }
+    }
+    if (rollbackErrors.length > 0) {
+      throw new BeautySpaV2Error('ASSIGNMENT_ROLLBACK_FAILED', 'Beauty Spa v2 assignment rollback did not complete cleanly.');
     }
   }
 
