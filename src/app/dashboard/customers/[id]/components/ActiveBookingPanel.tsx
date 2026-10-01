@@ -147,6 +147,7 @@ export function ActiveBookingPanel({
                       {!isDepositOnly && remainingBalance > 0 && (
                         <button
                           onClick={() => onPayRemaining(remainingBalance)}
+                          data-testid="booking-pay-remaining-button"
                           className="w-full bg-white text-rose-600 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-50 transition-all shadow-md active:scale-95 border border-white sm:w-auto"
                         >
                           Thanh toán nốt

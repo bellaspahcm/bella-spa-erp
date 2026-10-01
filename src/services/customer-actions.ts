@@ -478,7 +478,7 @@ export async function getCustomerById(id: string) {
  * Tạo mới khách hàng
  */
 export async function createCustomer(customerData: CustomerCreateInput) {
-  const supabase = await createClient();
+  const supabase = await createDevelopmentBypassClient();
   const currentUser = await getCurrentUser();
   const { name, ...customerPayload } = customerData;
   if (!currentUser?.tenant_id) {

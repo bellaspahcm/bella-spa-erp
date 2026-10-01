@@ -10,6 +10,7 @@ Product: `bella_nail`
 NAIL_SHOP_OPERATIONAL_READINESS = PROVEN
 NAIL_SHOP_GO_LIVE_DECISION      = APPROVED
 NAIL_SHOP_RELEASE_STATUS        = GO-LIVE RELEASE COMMITTED
+NAIL_SHOP_UI_E2E                = SEALED
 NAIL_SHOP_PRODUCTION_SMOKE      = NEXT
 NAIL_SHOP_GO_LIVE_VERIFIED      = NOT_YET
 ```
@@ -76,6 +77,30 @@ Human release decision:
 GO-LIVE DECISION = APPROVED
 ```
 
+Full UI E2E release evidence:
+
+```text
+Customer            PASS
+Service / Package   PASS
+Booking             PASS
+Attendance          PASS
+Completed Session   PASS
+Payment / Revenue   PASS
+Payroll             PASS
+Finance read-back   PASS
+Cleanup             PASS
+
+NAIL_SHOP_UI_E2E    SEALED
+```
+
+Core change authority opened during E2E:
+
+```text
+ACR-2026-012 = APPROVED / VERIFIED
+Scope        = Finance approval for payroll salary expense when salary record is already finalized or paid
+Out of scope = Payroll redesign, Finance redesign, Nail-specific workaround
+```
+
 ## Release Boundary
 
 This release does not reopen:
@@ -89,7 +114,6 @@ Finance redesign
 Payroll redesign
 Commission redesign
 TypeScript any cleanup
-Full click-through UI action E2E
 ```
 
 This release does not claim:
@@ -97,7 +121,6 @@ This release does not claim:
 ```text
 Production smoke PASS
 Production monitoring clean
-Full UI action chain completed end-to-end
 ```
 
 Those are post-deployment verification gates.
@@ -130,6 +153,7 @@ NAIL_SHOP_GO_LIVE_VERIFIED = VERIFIED
 ```text
 NAIL_SHOP_GO_LIVE = APPROVED
 NAIL_SHOP_RELEASE = COMMITTED
+NAIL_SHOP_UI_E2E  = SEALED
 NEXT_ACTION        = DEPLOY_AND_PRODUCTION_SMOKE
 ```
 
