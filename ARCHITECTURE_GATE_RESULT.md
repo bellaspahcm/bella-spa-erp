@@ -109,6 +109,7 @@ Authorized:
 
 - Add `bella_spa` Product Registry definition.
 - Add product-layer service and tests under `src/products/beauty-spa-v2/**`.
+- Add product-owned browser evidence route under `src/app/dashboard/beauty-spa-v2/**` mapped to the product service.
 - Add focused docs/evidence for this product gate.
 - Update beauty-focused TypeScript config include list if needed for verification.
 
@@ -124,7 +125,18 @@ Not authorized:
 
 Existing `/beauty-spa` is a marketing page with static services and simulated booking success. It is not operational readiness evidence for v2.
 
-This PR does not claim a full operational UI redesign. It establishes the canonical product/service orchestration and product identity so future UI can consume verified contracts. Any future data/action-bound UI must map each field/action to this gate and product service before rendering operational success.
+This PR does not claim a full operational UI redesign. It establishes the canonical product/service orchestration, product identity, and a browser evidence route whose data/actions are backed by the product service harness rather than simulated success.
+
+UI route reconciliation:
+
+| UI action / field | Contract-backed source |
+|---|---|
+| Chain booking action | `BeautySpaV2Service.bookService` |
+| Lead/support staff acceptance | `ProfessionalAssignmentService` through product orchestration |
+| Room/bed/device allocation | `ResourceAllocationService` through product orchestration |
+| Conflict prevention / waitlist | `BeautySpaV2Service.bookOrWaitlist` |
+| Tenant isolation evidence | Tenant-scoped resource allocation repository contract |
+| Checkout handoff | `BeautySpaV2Service.completeSession` outcome facts |
 
 ## 7. Additive Migration Plan
 
@@ -169,6 +181,7 @@ Implemented inside this branch:
 
 - `bella_spa` Product Registry identity.
 - `src/products/beauty-spa-v2` product orchestration service.
+- `src/app/dashboard/beauty-spa-v2` product browser evidence route mapped to the service workflow.
 - Product workflow tests for:
   - product discovery/identity,
   - multi-branch spa booking,
@@ -188,6 +201,9 @@ npx tsc -p tsconfig.beauty.json --noEmit
 PASS
 
 npx eslint src/products/beauty-spa-v2 src/platform/registry/product-registry.ts
+PASS
+
+npx eslint src/products/beauty-spa-v2 src/app/dashboard/beauty-spa-v2 src/platform/registry/product-registry.ts
 PASS
 
 npm run arch:guard
@@ -228,8 +244,8 @@ Evidence classification:
 | Workflow design | PASS_WITH_BOUNDARY | Product orchestration covers Customer/Booking/Walk-in/Scheduling/Staff/Branch/Room/Bed/Resource/Session/Check-in/Check-out/Waitlist/handoff classification. |
 | Architecture | PASS_WITH_BOUNDARY | No `src/platform/beauty/**`, Core, Healthcare, Education, or Logistics modification. |
 | Contracts | PASS_WITH_BOUNDARY | Reuses Beauty OS service/port contracts. |
-| Implementation | PASS_WITH_BOUNDARY | Product-layer service and tests pass. |
-| Typecheck | PASS_SCOPED | `tsconfig.beauty.json` scoped typecheck pass. Full repository typecheck not run in this checkpoint. |
+| Implementation | PASS_WITH_BOUNDARY | Product-layer service, tests, and browser evidence route pass scoped verification. |
+| Typecheck | PASS_SCOPED | `tsconfig.beauty.json` scoped typecheck includes `src/products/beauty-spa-v2/**` and `src/app/dashboard/beauty-spa-v2/**`. Full repository typecheck not run in this checkpoint. |
 | Targeted tests | PASS | Focused Jest suite pass. |
 | Security / tenant isolation | PASS_SCOPED | Tenant-scoped application conflict test; H8 RLS migration reused. |
 | Concurrency | PARTIAL / NOT_REAL_DB_PROVEN | Product service prevents overlapping active allocations in repository contract. Existing H8 migration has no DB-level exclusion/transaction lock proof for concurrent Real DB writes. |
