@@ -281,6 +281,16 @@ export class BeautySpaV2Service {
   }
 
   private assertSessionOutcome(input: CompleteBeautySpaSessionInput): void {
+    if (!isRecord(input)) {
+      throw new BeautySpaV2Error('INVALID_CHECKOUT_OUTCOME', 'Beauty Spa v2 session completion requires checkout evidence.');
+    }
+    if (!isRecord(input.session)) {
+      throw new BeautySpaV2Error('REQUIRED_SESSION_ID_MISSING', 'Beauty Spa v2 session completion requires session, tenant, appointment, and service commitment IDs.');
+    }
+    if (!isRecord(input.outcome)) {
+      throw new BeautySpaV2Error('INVALID_CHECKOUT_OUTCOME', 'Beauty Spa v2 session completion requires checkout evidence.');
+    }
+
     const requiredSessionIds: unknown[] = [
       input.session.id,
       input.session.tenantId,

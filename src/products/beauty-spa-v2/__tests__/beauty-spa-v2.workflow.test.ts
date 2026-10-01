@@ -286,6 +286,29 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
       outcome: null,
     };
 
+    await expect(service.completeSession(null as never))
+      .rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_CHECKOUT_OUTCOME' });
+
+    await expect(service.completeSession({
+      session: null as never,
+      performerId: 'therapist-lead-1',
+      outcome: {
+        checkedOutBy: 'manager-spa',
+        customerHistoryNote: 'Skin barrier improved.',
+        packageSessionUsed: true,
+        paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+        inventoryHandoff: 'INVENTORY_HANDOFF_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: ['CHAIN_V2'],
+      },
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'REQUIRED_SESSION_ID_MISSING' });
+
+    await expect(service.completeSession({
+      session: plannedSession,
+      performerId: 'therapist-lead-1',
+      outcome: null as never,
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_CHECKOUT_OUTCOME' });
+
     await expect(service.completeSession({
       session: { ...plannedSession, appointmentId: ' ' },
       performerId: 'therapist-lead-1',
