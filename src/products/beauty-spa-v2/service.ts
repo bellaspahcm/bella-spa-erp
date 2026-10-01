@@ -250,6 +250,9 @@ export class BeautySpaV2Service {
     if (input.performerId.trim().length === 0) {
       throw new BeautySpaV2Error('REQUIRED_ID_MISSING', 'Beauty Spa v2 session completion requires a performer ID.');
     }
+    if (input.outcome.checkedOutBy.trim().length === 0) {
+      throw new BeautySpaV2Error('CHECKOUT_ACTOR_REQUIRED', 'Beauty Spa v2 session completion requires a checkout actor.');
+    }
     if (input.outcome.customerHistoryNote.trim().length === 0) {
       throw new BeautySpaV2Error('CUSTOMER_HISTORY_REQUIRED', 'Beauty Spa v2 session completion requires a customer history note.');
     }

@@ -285,6 +285,34 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
 
     await expect(service.completeSession({
       session: plannedSession,
+      performerId: ' ',
+      outcome: {
+        checkedOutBy: 'manager-spa',
+        customerHistoryNote: 'Skin barrier improved.',
+        packageSessionUsed: true,
+        paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+        inventoryHandoff: 'INVENTORY_HANDOFF_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: ['CHAIN_V2'],
+      },
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'REQUIRED_ID_MISSING' });
+
+    await expect(service.completeSession({
+      session: plannedSession,
+      performerId: 'therapist-lead-1',
+      outcome: {
+        checkedOutBy: ' ',
+        customerHistoryNote: 'Skin barrier improved.',
+        packageSessionUsed: true,
+        paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+        inventoryHandoff: 'INVENTORY_HANDOFF_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: ['CHAIN_V2'],
+      },
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'CHECKOUT_ACTOR_REQUIRED' });
+
+    await expect(service.completeSession({
+      session: plannedSession,
       performerId: 'therapist-lead-1',
       outcome: {
         checkedOutBy: 'manager-spa',
