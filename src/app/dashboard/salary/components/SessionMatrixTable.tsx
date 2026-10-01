@@ -101,6 +101,8 @@ export default function SessionMatrixTable({
                   'hover:bg-slate-50/50 transition-colors group',
                   ktv.isConfirmed && 'bg-emerald-50/30 opacity-90'
                 )}
+                data-testid="salary-matrix-row"
+                data-ktv-id={ktv.id}
               >
                 <td className="px-8 py-6 whitespace-nowrap bg-white group-hover:bg-slate-50/50 transition-colors">
                   <div className="flex items-center gap-4">
@@ -187,6 +189,7 @@ export default function SessionMatrixTable({
                           <button
                             onClick={() => handleFinalizeOne(ktv.id, ktv.name)}
                             disabled={isActionBlocked}
+                            data-testid="salary-finalize-one-button"
                             className={`${actionButtonClassName} bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white`}
                           >
                             <Lock className="w-3 h-3" />
@@ -199,6 +202,7 @@ export default function SessionMatrixTable({
                           <button
                             onClick={() => handleConfirmOnBehalf(ktv.id, ktv.name)}
                             disabled={isActionBlocked}
+                            data-testid="salary-confirm-one-button"
                             className={`${actionButtonClassName} bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white`}
                           >
                             <UserCheck className="w-3 h-3" />
@@ -211,6 +215,7 @@ export default function SessionMatrixTable({
                           <button
                             onClick={() => handlePublishOne(ktv.id, ktv.name)}
                             disabled={isActionBlocked}
+                            data-testid="salary-publish-one-button"
                             className={`${actionButtonClassName} bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white`}
                           >
                             <Send className="w-3 h-3" />
@@ -222,6 +227,7 @@ export default function SessionMatrixTable({
                         <button
                           onClick={() => handlePublishOne(ktv.id, ktv.name)}
                           disabled={isActionBlocked}
+                          data-testid="salary-publish-one-button"
                           className={`${actionButtonClassName} bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white`}
                         >
                           <Send className="w-3 h-3" />

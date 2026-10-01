@@ -209,6 +209,7 @@ export default function ServicesPage() {
             onClick={openAddModal}
             disabled={!canManageServices}
             title={canManageServices ? undefined : 'Dang tai cau hinh nganh kinh doanh'}
+            data-testid="services-add-button"
             className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 font-bold text-white shadow-xl shadow-rose-200 transition-all hover:bg-rose-600 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none dark:shadow-none sm:px-6"
           >
             <Plus className="w-5 h-5" />
@@ -670,6 +671,7 @@ export default function ServicesPage() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              data-testid="service-modal"
               className="relative flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-[2rem] bg-white dark:bg-[#1C1410] shadow-2xl sm:rounded-[3rem]"
             >
               <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
@@ -707,6 +709,7 @@ export default function ServicesPage() {
                         required
                         value={name}
                         onChange={(e) => setName(e.target.value)}
+                        data-testid="service-name-input"
                         className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                         placeholder={
                           enabledModules.bella_healthcare
@@ -724,6 +727,7 @@ export default function ServicesPage() {
                         required
                         value={price}
                         onChange={(e) => setPrice(formatMoneyInput(e.target.value))}
+                        data-testid="service-price-input"
                         className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                         placeholder="VD: 15,500,000"
                       />
@@ -735,6 +739,7 @@ export default function ServicesPage() {
                         required
                         value={duration}
                         onChange={(e) => setDuration(e.target.value)}
+                        data-testid="service-duration-input"
                         className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                         placeholder="VD: 90"
                       />
@@ -753,6 +758,7 @@ export default function ServicesPage() {
                           const value = e.target.value;
                           setSessions(value === '' ? '' : String(parseIntegerInput(value, { min: 1, max: 100, fallback: 1 })));
                         }}
+                        data-testid="service-sessions-input"
                         className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                         placeholder="VD: 15"
                       />
@@ -768,6 +774,7 @@ export default function ServicesPage() {
                         required
                         value={formatMoneyInput(ktvCommission)}
                         onChange={(e) => setKtvCommission(formatMoneyInput(e.target.value))}
+                        data-testid="service-commission-input"
                         className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                         placeholder="VD: 150,000"
                       />
@@ -967,6 +974,7 @@ export default function ServicesPage() {
                           <input
                             value={serviceCategory}
                             onChange={(event) => setServiceCategory(event.target.value)}
+                            data-testid="service-category-input"
                             className="w-full rounded-2xl border-none bg-white px-5 py-4 text-sm font-bold text-slate-700 outline-none transition focus:ring-4 focus:ring-primary/10"
                             placeholder={enabledModules.bella_healthcare ? (isDental ? "VD: implant, invisalign, dental, porcelain, nhổ răng" : "VD: nội khoa, ngoại khoa, nhi khoa, siêu âm, xét nghiệm") : isHaircut ? "VD: haircut, styling, coloring" : "VD: facial, body, laser"}
                           />
@@ -1256,7 +1264,7 @@ export default function ServicesPage() {
                   <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-black rounded-[2rem] transition-all uppercase tracking-widest text-xs">
                     Hủy bỏ
                   </button>
-                  <button type="submit" className="flex-1 py-5 bg-primary hover:bg-rose-600 text-white font-black rounded-[2rem] shadow-2xl shadow-rose-200 dark:shadow-none transition-all uppercase tracking-widest text-xs">
+                  <button type="submit" data-testid="service-submit-button" className="flex-1 py-5 bg-primary hover:bg-rose-600 text-white font-black rounded-[2rem] shadow-2xl shadow-rose-200 dark:shadow-none transition-all uppercase tracking-widest text-xs">
                     {modalMode === 'add' ? 'Lưu dịch vụ' : 'Cập nhật dịch vụ'}
                   </button>
                 </div>

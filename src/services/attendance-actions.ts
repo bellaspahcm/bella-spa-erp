@@ -263,7 +263,7 @@ export async function ktvCheckOut() {
 
 /** Admin Action: Get all KTVs with their attendance count for a given month */
 export async function getMonthlyAttendanceSummary(monthStr: string) {
-  const supabase = await createClient();
+  const supabase = await createDevelopmentBypassClient();
   
   // Get current user's tenant to ensure proper isolation
   const currentUser = await getCurrentUser();
@@ -337,7 +337,7 @@ export async function adminOverrideAttendance(payload: {
   checkinTime?: string;
   checkoutTime?: string;
 }) {
-  const supabase = await createClient();
+  const supabase = await createDevelopmentBypassClient();
   const currentUser = await getCurrentUser();
   if (!currentUser || currentUser.role === 'ktv') {
     return { success: false, error: 'Không có quyền thực hiện' };

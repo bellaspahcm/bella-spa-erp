@@ -669,6 +669,7 @@ export default function CustomersPage() {
           <PremiumExportButton />
           <button 
             onClick={handleAddNew}
+            data-testid="customer-add-button"
             className="beauty-customer-add-cta flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-rose-500 px-4 py-3 font-bold text-white shadow-lg shadow-rose-200 transition-all hover:bg-rose-600 active:scale-95 dark:shadow-none sm:px-6"
           >
             <UserPlus className="w-5 h-5 shrink-0" />
@@ -746,6 +747,8 @@ export default function CustomersPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.05 }}
+            data-testid="customer-row"
+            data-customer-id={customer.id}
             className="group luxury-card-white customer-card relative flex flex-col gap-4 rounded-3xl p-4 transition-all sm:p-6 lg:flex-row lg:items-center lg:gap-6"
           >
             <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform sm:h-14 sm:w-14">
@@ -835,6 +838,7 @@ export default function CustomersPage() {
               </button>
               <button 
                 onClick={() => router.push(`/dashboard/customers/${customer.id}`)}
+                data-testid="customer-detail-button"
                 className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white shadow-lg shadow-rose-200 transition-all hover:bg-rose-600 hover:shadow-xl hover:shadow-rose-300 active:scale-95 active:shadow-md dark:shadow-none sm:flex-none sm:px-5"
               >
                 Chi tiết
@@ -1009,6 +1013,7 @@ export default function CustomersPage() {
                         required
                         value={formData.name_mother}
                         onChange={handleInputChange}
+                        data-testid="customer-name-input"
                         className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none" 
                         placeholder={customerLabels.primaryNamePlaceholder}
                       />
@@ -1021,6 +1026,7 @@ export default function CustomersPage() {
                         required
                         value={formData.phone}
                         onChange={handleInputChange}
+                        data-testid="customer-phone-input"
                         className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none" 
                         placeholder="VD: 0901234567" 
                       />
@@ -1032,6 +1038,7 @@ export default function CustomersPage() {
                         name="name_baby"
                         value={formData.name_baby}
                         onChange={handleInputChange}
+                        data-testid="customer-secondary-name-input"
                         className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none transition-all" 
                         placeholder={customerLabels.secondaryNamePlaceholder}
                       />
@@ -1076,6 +1083,7 @@ export default function CustomersPage() {
                       required
                       value={formData.address}
                       onChange={handleInputChange}
+                      data-testid="customer-address-input"
                       className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none resize-none h-24" 
                       placeholder="Nhập địa chỉ chi tiết..."
                     ></textarea>
@@ -1088,6 +1096,7 @@ export default function CustomersPage() {
                     <button 
                       type="submit" 
                       disabled={isSubmitting}
+                      data-testid="customer-submit-button"
                       className={cn(
                         "flex-1 py-4 text-white font-bold rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2",
                         isSubmitting ? "bg-slate-400 cursor-not-allowed" : "bg-primary hover:bg-rose-600 shadow-rose-200 dark:shadow-none"

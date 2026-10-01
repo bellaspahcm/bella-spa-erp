@@ -569,6 +569,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
+          data-testid="booking-modal"
           className="relative w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white"
         >
           {/* Header */}
@@ -814,6 +815,8 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                         <button
                           key={pkg.id}
                           onClick={() => handleSelectService(pkg)}
+                          data-testid="booking-package-option"
+                          data-package-id={pkg.id}
                           className={cn(
                             "p-4 rounded-2xl border text-left transition-all relative group",
                             formData.package_id === pkg.id
@@ -869,6 +872,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                       value={formData.start_date}
                       min={getLocalDateString()}
                       onChange={(e) => setFormData({...formData, start_date: e.target.value})}
+                      data-testid="booking-start-date-input"
                       className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-sm"
                     />
                   </div>
@@ -880,6 +884,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                       type="time" 
                       value={formData.preferred_time}
                       onChange={(e) => setFormData({...formData, preferred_time: e.target.value})}
+                      data-testid="booking-time-input"
                       className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-sm"
                     />
                   </div>
@@ -903,6 +908,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                         max="100"
                         value={formData.total_sessions}
                         onChange={(e) => setFormData({...formData, total_sessions: parseIntegerInput(e.target.value, { min: 1, max: 100, fallback: 1 })})}
+                        data-testid="booking-total-sessions-input"
                         className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-sm"
                       />
                     </div>
@@ -938,6 +944,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                         onChange={(e) => {
                           setFormData({...formData, deposit_amount: parseMoneyInput(e.target.value)});
                         }}
+                        data-testid="booking-deposit-input"
                         className="w-full pl-5 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold"
                       />
                       <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">đ</span>
@@ -1019,6 +1026,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                 if (step === 1) setStep(2);
                 else handleSubmit();
               }}
+              data-testid={step === 1 ? "booking-next-button" : "booking-submit-button"}
               className={cn(
                 "flex-1 px-8 py-4 bg-primary text-white rounded-2xl font-black transition-all shadow-xl shadow-primary/20 uppercase tracking-widest active:scale-95 flex items-center justify-center gap-3",
                 ((step === 1 && mode === 'search') || 

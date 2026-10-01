@@ -143,6 +143,8 @@ export default function AttendanceCalendar({
                   <button
                     key={day}
                     onClick={() => handleDayClick(dateStr, log)}
+                    data-testid="attendance-day-button"
+                    data-date={dateStr}
                     className={cn(
                       "relative flex aspect-square flex-col justify-between rounded-xl p-2 font-black transition-all sm:rounded-2xl sm:p-3",
                       bgClass,
@@ -209,6 +211,7 @@ export default function AttendanceCalendar({
                     type="datetime-local"
                     value={overrideCheckin}
                     onChange={e => setOverrideCheckin(e.target.value)}
+                    data-testid="attendance-checkin-input"
                     className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-900 outline-none"
                   />
                 </div>
@@ -219,6 +222,7 @@ export default function AttendanceCalendar({
                     type="datetime-local"
                     value={overrideCheckout}
                     onChange={e => setOverrideCheckout(e.target.value)}
+                    data-testid="attendance-checkout-input"
                     className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-900 outline-none"
                   />
                 </div>
@@ -240,6 +244,7 @@ export default function AttendanceCalendar({
               <button
                 onClick={handleSaveOverride}
                 disabled={isSaving}
+                data-testid="attendance-save-button"
                 className="flex-1 py-3 bg-primary text-white font-black rounded-xl text-xs uppercase tracking-wider hover:bg-primary-hover transition-all disabled:opacity-50 flex items-center justify-center"
               >
                 {isSaving ? 'Đang lưu...' : 'Lưu công'}

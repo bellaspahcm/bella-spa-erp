@@ -104,6 +104,8 @@ export function SessionCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: idx * 0.05 }}
       onClick={onSelect}
+      data-testid="session-card"
+      data-booking-id={booking.id}
       className="group luxury-card-white customer-card relative flex cursor-pointer flex-col gap-5 rounded-[2rem] border border-slate-100 p-4 transition-all hover:shadow-lg sm:p-6 lg:flex-row lg:items-center lg:gap-8 lg:rounded-[2.5rem]"
     >
       {/* Background blur container with overflow-hidden */}
@@ -224,6 +226,7 @@ export function SessionCard({
               value={quickNote}
               onChange={(e) => setQuickNote(e.target.value)}
               onClick={(e) => e.stopPropagation()}
+              data-testid="session-quick-note-input"
               className="w-full pl-9 pr-3 py-2 bg-slate-50 border-none rounded-xl text-[11px] font-bold outline-none focus:ring-1 focus:ring-primary/20 transition-all"
             />
           </div>
@@ -245,6 +248,7 @@ export function SessionCard({
             <button 
               onClick={handleUpdateClick}
               disabled={isUpdating}
+              data-testid="session-complete-button"
               className={cn(
                 "flex w-full items-center justify-center gap-3 rounded-2xl px-4 py-4 text-[10px] font-black uppercase tracking-widest shadow-lg transition-all active:scale-95 sm:px-8",
                 (alreadyDoneToday || (!isScheduledForToday && userRole !== 'admin')) 

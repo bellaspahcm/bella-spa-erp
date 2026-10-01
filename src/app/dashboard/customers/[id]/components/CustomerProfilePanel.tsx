@@ -99,6 +99,7 @@ export function CustomerProfilePanel({
 
               <button
                 onClick={onOpenBooking}
+                data-testid="customer-open-booking-button"
                 className={cn(
                   "w-full mt-4 flex items-center justify-center gap-3 text-white py-4 rounded-2xl font-black transition-all shadow-lg dark:shadow-none active:scale-95",
                   tenantModuleKey === 'beauty_spa' 
