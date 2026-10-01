@@ -20,6 +20,8 @@ import {
   InvalidStatusTransitionError,
   GovernanceValidationError,
 } from '../types';
+import type { RegisterPolicyInput } from '../types';
+import type { PolicyRegistryDbRow } from '../database-types';
 import {
   createTestClient,
   cleanupTestData,
@@ -35,6 +37,9 @@ jest.mock('@/lib/supabase-server', () => {
     createClient: jest.fn(async () => createTestClient()),
   };
 });
+
+type MissingGovernanceInput = Omit<RegisterPolicyInput, 'businessOwner' | 'businessOwnerEmail'> &
+  Partial<Pick<RegisterPolicyInput, 'businessOwner' | 'businessOwnerEmail'>>;
 
 describe.skip('PolicyRegistry - Integration Tests', () => {
   // SKIPPED: Requires policy_registry table migration
@@ -225,7 +230,7 @@ describe.skip('PolicyRegistry - Integration Tests', () => {
         .order('version', { ascending: true });
 
       expect(allVersions.length).toBe(2);
-      const activeCount = allVersions.filter((p: any) => p.is_active).length;
+      const activeCount = (allVersions as PolicyRegistryDbRow[]).filter((p) => p.is_active).length;
       expect(activeCount).toBe(1);
     }, 30000);
 
@@ -313,10 +318,10 @@ describe.skip('PolicyRegistry - Integration Tests', () => {
     it('should reject publish without required governance fields', async () => {
       testPolicyId = generateTestPolicyId('governance');
 
-      const inputWithoutOwner = createMockPolicyInput(testPolicyId, '1.0.0');
+      const inputWithoutOwner: MissingGovernanceInput = createMockPolicyInput(testPolicyId, '1.0.0');
       // Remove required governance fields
-      delete (inputWithoutOwner as any).businessOwner;
-      delete (inputWithoutOwner as any).businessOwnerEmail;
+      delete inputWithoutOwner.businessOwner;
+      delete inputWithoutOwner.businessOwnerEmail;
 
       await PolicyRegistry.register(inputWithoutOwner, testUserId);
 
@@ -348,7 +353,7 @@ describe.skip('PolicyRegistry - Integration Tests', () => {
 
       const expiredInput = createMockPolicyInput(testPolicyId, '1.0.0');
       expiredInput.effectiveDate = '2025-01-01';
-      (expiredInput as any).expireDate = '2025-12-31'; // Past date
+      expiredInput.expireDate = '2025-12-31'; // Past date
 
       await PolicyRegistry.register(expiredInput, testUserId);
 

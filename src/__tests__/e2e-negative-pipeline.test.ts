@@ -20,6 +20,7 @@ type SalaryRecord = Database['public']['Tables']['salary_records']['Row'];
 type SessionReview = Database['public']['Tables']['session_reviews']['Row'];
 type Tenant = Database['public']['Tables']['tenants']['Row'];
 type Package = Database['public']['Tables']['packages']['Row'];
+type BookingRuntimePayload = Partial<Parameters<typeof createBooking>[0]>;
 
 // --- Global Mock Store ---
 interface MockStore {
@@ -53,6 +54,10 @@ function resetMockStore() {
       { id: 'pkg-1', tenant_id: 'tenant-a', module_key: 'babycare', name: 'Goi Triet Long' },
     ],
   };
+}
+
+function createBookingFromRuntimePayload(formData: BookingRuntimePayload) {
+  return createBooking(formData as Parameters<typeof createBooking>[0]);
 }
 
 class MockQueryBuilder<T = Record<string, unknown>> {
@@ -423,8 +428,7 @@ describe('E2E Negative Business Pipeline Suite', () => {
       deposit_amount: 1000000,
     };
 
-     
-    const result = await createBooking(bookingFormData as any);
+    const result = await createBookingFromRuntimePayload(bookingFormData);
     expect(result.error).toBeDefined();
     expect(result.error).toContain('Dữ liệu booking không hợp lệ');
   });

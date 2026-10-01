@@ -20,6 +20,12 @@ import { Client } from 'pg';
 
 jest.setTimeout(30000);
 
+type IdRow = { id: string };
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 describe('F3.1 Accounts Receivable Database & RLS Tests', () => {
   let supabaseAdmin: ReturnType<typeof createSupabaseClient<Database>>;
   let pgClientAdmin: Client; // service_role equivalent
@@ -122,8 +128,8 @@ describe('F3.1 Accounts Receivable Database & RLS Tests', () => {
     let ledgerUpdateErr: string | null = null;
     try {
       await pgClientAdmin.query(`UPDATE public.finance_receivable_ledger SET amount_minor = 500 WHERE id = '${ledgerId}';`);
-    } catch (e: any) {
-      ledgerUpdateErr = e.message;
+    } catch (e: unknown) {
+      ledgerUpdateErr = getErrorMessage(e);
     }
     expect(ledgerUpdateErr).toContain('DIRECT_AR_MUTATION_PROHIBITED');
 
@@ -131,8 +137,8 @@ describe('F3.1 Accounts Receivable Database & RLS Tests', () => {
     let ledgerDeleteErr: string | null = null;
     try {
       await pgClientAdmin.query(`DELETE FROM public.finance_receivable_ledger WHERE id = '${ledgerId}';`);
-    } catch (e: any) {
-      ledgerDeleteErr = e.message;
+    } catch (e: unknown) {
+      ledgerDeleteErr = getErrorMessage(e);
     }
     expect(ledgerDeleteErr).toContain('DIRECT_AR_MUTATION_PROHIBITED');
 
@@ -147,8 +153,8 @@ describe('F3.1 Accounts Receivable Database & RLS Tests', () => {
     let allocUpdateErr: string | null = null;
     try {
       await pgClientAdmin.query(`UPDATE public.finance_receivable_allocations SET allocated_amount_minor = 100 WHERE id = '${allocId}';`);
-    } catch (e: any) {
-      allocUpdateErr = e.message;
+    } catch (e: unknown) {
+      allocUpdateErr = getErrorMessage(e);
     }
     expect(allocUpdateErr).toContain('DIRECT_AR_MUTATION_PROHIBITED');
 
@@ -156,8 +162,8 @@ describe('F3.1 Accounts Receivable Database & RLS Tests', () => {
     let allocDeleteErr: string | null = null;
     try {
       await pgClientAdmin.query(`DELETE FROM public.finance_receivable_allocations WHERE id = '${allocId}';`);
-    } catch (e: any) {
-      allocDeleteErr = e.message;
+    } catch (e: unknown) {
+      allocDeleteErr = getErrorMessage(e);
     }
     expect(allocDeleteErr).toContain('DIRECT_AR_MUTATION_PROHIBITED');
   });
@@ -176,8 +182,8 @@ describe('F3.1 Accounts Receivable Database & RLS Tests', () => {
     let immutabilityErr: string | null = null;
     try {
       await pgClientAdmin.query(`UPDATE public.finance_invoices SET total_invoice_amount_minor = 500000 WHERE id = '${invoiceId}';`);
-    } catch (e: any) {
-      immutabilityErr = e.message;
+    } catch (e: unknown) {
+      immutabilityErr = getErrorMessage(e);
     }
     expect(immutabilityErr).toContain('INVOICE_IMMUTABLE');
   });
@@ -209,7 +215,7 @@ describe('F3.1 Accounts Receivable Database & RLS Tests', () => {
       SELECT id FROM public.finance_invoices;
     `);
     // Rows returned should only be Invoice A
-    const invoiceIdsA = resA[3].rows.map((r: any) => r.id);
+    const invoiceIdsA = (resA[3].rows as IdRow[]).map((row) => row.id);
     expect(invoiceIdsA).toContain(invoiceAId);
     expect(invoiceIdsA).not.toContain(invoiceBId);
     await pgClientAdmin.query('COMMIT;');
@@ -221,7 +227,7 @@ describe('F3.1 Accounts Receivable Database & RLS Tests', () => {
       SET LOCAL role = 'authenticated';
       SELECT id FROM public.finance_invoices;
     `);
-    const invoiceIdsB = resB[3].rows.map((r: any) => r.id);
+    const invoiceIdsB = (resB[3].rows as IdRow[]).map((row) => row.id);
     expect(invoiceIdsB).toContain(invoiceBId);
     expect(invoiceIdsB).not.toContain(invoiceAId);
     await pgClientAdmin.query('COMMIT;');
@@ -239,8 +245,8 @@ describe('F3.1 Accounts Receivable Database & RLS Tests', () => {
         VALUES ('${tenantAId}', '${customerAId}', 'INV-T05', 'DRAFT', 'VND', 900000, 100000, 1000000, NOW(), NOW() + interval '30 days');
         COMMIT;
       `);
-    } catch (e: any) {
-      insertErr = e.message;
+    } catch (e: unknown) {
+      insertErr = getErrorMessage(e);
       await pgClientAdmin.query('ROLLBACK;');
     }
     // Authenticated role doesn't have INSERT permission (revoked), which results in permission denied
@@ -273,8 +279,8 @@ describe('F3.1 Accounts Receivable Database & RLS Tests', () => {
         INSERT INTO public.finance_receivable_ledger (id, tenant_id, invoice_id, entry_type, amount_minor, source_type, source_id)
         VALUES ('${factId2}', '${tenantAId}', '${invoiceId}', 'DEBIT_ACCRUAL', 1000000, 'INVOICE', '${invoiceId}');
       `);
-    } catch (e: any) {
-      duplicateErr = e.message;
+    } catch (e: unknown) {
+      duplicateErr = getErrorMessage(e);
     }
     expect(duplicateErr).toContain('unique constraint');
   });
@@ -305,8 +311,8 @@ describe('F3.1 Accounts Receivable Database & RLS Tests', () => {
         INSERT INTO public.finance_receivable_allocations (tenant_id, invoice_id, cash_movement_id, allocated_amount_minor, allocation_type, reversal_ref_id, rate_source, rate_timestamp)
         VALUES ('${tenantAId}', '${invoiceId}', '${crypto.randomUUID()}', 500000, 'REVERSAL', '${standardAllocId}', 'TREASURY', NOW());
       `);
-    } catch (e: any) {
-      secondReversalErr = e.message;
+    } catch (e: unknown) {
+      secondReversalErr = getErrorMessage(e);
     }
     expect(secondReversalErr).toContain('uq_reversal_once_per_allocation');
   });
@@ -322,8 +328,8 @@ describe('F3.1 Accounts Receivable Database & RLS Tests', () => {
     let transitionErr: string | null = null;
     try {
       await pgClientAdmin.query(`UPDATE public.finance_invoices SET status = 'VOIDED' WHERE id = '${invoiceId}';`);
-    } catch (e: any) {
-      transitionErr = e.message;
+    } catch (e: unknown) {
+      transitionErr = getErrorMessage(e);
     }
     expect(transitionErr).toContain('INVALID_INVOICE_STATUS_TRANSITION');
   });

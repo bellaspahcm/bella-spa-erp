@@ -232,7 +232,7 @@ describe('Service Commission Flow - Integration Tests (Task 35)', () => {
     it('should handle null/undefined override gracefully', () => {
       const commission = calculateServiceCommission({
         subtotal: 500000,
-        overrideType: null as any,
+        overrideType: null,
         overrideValue: undefined,
         defaultType: 'fixed',
         defaultValue: 150000,

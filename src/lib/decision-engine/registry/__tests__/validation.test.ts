@@ -306,8 +306,13 @@ describe('Validation Utilities', () => {
     });
 
     it('should handle invalid status values', () => {
-      expect(validateStatusTransition('invalid' as any, 'active')).toBe(false);
-      expect(validateStatusTransition('active', 'invalid' as any)).toBe(false);
+      const validateRuntimeStatusTransition = validateStatusTransition as (
+        currentStatus: string,
+        newStatus: string
+      ) => boolean;
+
+      expect(validateRuntimeStatusTransition('invalid', 'active')).toBe(false);
+      expect(validateRuntimeStatusTransition('active', 'invalid')).toBe(false);
     });
   });
 });

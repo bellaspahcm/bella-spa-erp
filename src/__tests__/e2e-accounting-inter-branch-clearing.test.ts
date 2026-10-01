@@ -15,6 +15,10 @@ import crypto from 'crypto';
 
 jest.setTimeout(60_000);
 
+type JournalEntryWithLines = Database['public']['Tables']['journal_entries']['Row'] & {
+  journal_lines?: Database['public']['Tables']['journal_lines']['Row'][] | null;
+};
+
 describe('E2E Inter-Branch Clearing (Accounting Test)', () => {
   let supabase: ReturnType<typeof createSupabaseClient<Database>>;
   let branchAId: string;
@@ -86,7 +90,8 @@ describe('E2E Inter-Branch Clearing (Accounting Test)', () => {
       // Branch B: Dr. Cash/Receivable 150k
       // Branch B: Cr. Inter-Branch Payable 150k (Liability account, money FROM A)
 
-      const allLines = journalEntries.flatMap((e: any) => e.journal_lines || []);
+      const entries = journalEntries as JournalEntryWithLines[];
+      const allLines = entries.flatMap((entry) => entry.journal_lines || []);
       expect(allLines.length).toBeGreaterThanOrEqual(2); // At least 2 lines (reciprocal)
 
       console.log('✅ Step 2a: Reciprocal entries verified', { totalLines: allLines.length });

@@ -1,11 +1,25 @@
 import { supabase } from '@/lib/supabase';
 import { metadataEngine } from './metadata-engine';
 
+type MetadataQueryBuilder = {
+  select: jest.Mock;
+  eq: jest.Mock;
+  order: jest.Mock;
+  limit: jest.Mock;
+  maybeSingle: jest.Mock;
+  single: jest.Mock;
+  insert: jest.Mock;
+};
+
+type MetadataSupabaseMock = {
+  from: (table: string) => MetadataQueryBuilder;
+};
+
 describe('MetadataEngine', () => {
   const tenantId = 'tenant-123';
   const configKey = 're.product.status';
 
-  const mockQueryBuilder = {
+  const mockQueryBuilder: MetadataQueryBuilder = {
     select: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
     order: jest.fn().mockReturnThis(),
@@ -15,11 +29,12 @@ describe('MetadataEngine', () => {
     insert: jest.fn().mockReturnThis(),
   };
 
-  let spyFrom: jest.SpyInstance;
+  const mockSupabase = supabase as MetadataSupabaseMock;
+  let spyFrom: jest.SpiedFunction<MetadataSupabaseMock['from']>;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    spyFrom = jest.spyOn(supabase as any, 'from').mockReturnValue(mockQueryBuilder as any);
+    spyFrom = jest.spyOn(mockSupabase, 'from').mockReturnValue(mockQueryBuilder);
   });
 
   afterEach(() => {

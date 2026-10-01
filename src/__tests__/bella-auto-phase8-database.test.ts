@@ -5,11 +5,19 @@
 
 import { describe, it, expect, beforeAll } from '@jest/globals';
 import { createClient } from '@supabase/supabase-js';
-import { Database } from '@/types/database.types';
+import type { Database, Json } from '@/types/database.types';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY!;
 const randSuffix = Math.floor(100000 + Math.random() * 900000);
+
+function readJsonObject(value: Json | null | undefined): { [key: string]: Json | undefined } | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return undefined;
+  }
+
+  return value;
+}
 
 describe('Bella Auto Phase 8 - Finance Center', () => {
   let supabase: ReturnType<typeof createClient<Database>>;
@@ -106,7 +114,7 @@ describe('Bella Auto Phase 8 - Finance Center', () => {
         employment_certificate: false,
         vehicle_registration: false,
         other_documents: [],
-      };
+      } satisfies Json;
 
       const { data, error } = await supabase
         .from('auto_loan_applications')
@@ -119,7 +127,7 @@ describe('Bella Auto Phase 8 - Finance Center', () => {
           loan_term_months: 36,
           interest_rate: 9.0,
           bank_name: 'VPBank',
-          documents_checklist: documentsChecklist as any,
+          documents_checklist: documentsChecklist,
           status: 'documents_pending',
         })
         .select()
@@ -127,7 +135,7 @@ describe('Bella Auto Phase 8 - Finance Center', () => {
 
       expect(error).toBeNull();
       expect(data?.documents_checklist).toBeDefined();
-      expect((data?.documents_checklist as any).id_card).toBe(true);
+      expect(readJsonObject(data?.documents_checklist)?.id_card).toBe(true);
     });
 
     it('should transition through loan workflow states', async () => {
@@ -252,7 +260,7 @@ describe('Bella Auto Phase 8 - Finance Center', () => {
         third_party_liability: true,
         personal_accident: true,
         passenger_accident: false,
-      };
+      } satisfies Json;
 
       const { data, error } = await supabase
         .from('auto_insurance_policies')
@@ -263,7 +271,7 @@ describe('Bella Auto Phase 8 - Finance Center', () => {
           vehicle_id: '00000000-0000-0000-0000-000000000003',
           insurance_company: 'PVI',
           policy_type: 'comprehensive',
-          coverage_items: coverageItems as any,
+          coverage_items: coverageItems,
           premium_amount: 18000000,
           effective_date: '2026-08-01',
           expiry_date: '2027-08-01',
@@ -274,8 +282,8 @@ describe('Bella Auto Phase 8 - Finance Center', () => {
 
       expect(error).toBeNull();
       expect(data?.coverage_items).toBeDefined();
-      expect((data?.coverage_items as any).collision).toBe(true);
-      expect((data?.coverage_items as any).passenger_accident).toBe(false);
+      expect(readJsonObject(data?.coverage_items)?.collision).toBe(true);
+      expect(readJsonObject(data?.coverage_items)?.passenger_accident).toBe(false);
     });
 
     it('should support different policy types', async () => {
@@ -290,7 +298,7 @@ describe('Bella Auto Phase 8 - Finance Center', () => {
             customer_id: '00000000-0000-0000-0000-000000000001',
             vehicle_id: '00000000-0000-0000-0000-000000000004',
             insurance_company: 'MIC',
-            policy_type: policyType as any,
+            policy_type: policyType,
             premium_amount: 10000000,
             effective_date: '2026-08-01',
             expiry_date: '2027-08-01',

@@ -5,10 +5,22 @@
 
 import { describe, it, expect, beforeAll } from '@jest/globals';
 import { createClient } from '@supabase/supabase-js';
-import { Database } from '@/types/database.types';
+import type { Database, Json } from '@/types/database.types';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY!;
+
+function readJsonObject(value: Json | null | undefined): { [key: string]: Json | undefined } | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return undefined;
+  }
+
+  return value;
+}
+
+function readJsonArray(value: Json | null | undefined): Json[] | undefined {
+  return Array.isArray(value) ? value : undefined;
+}
 
 describe('Bella Auto Phase 7 - Trade-In Center', () => {
   let supabase: ReturnType<typeof createClient<Database>>;
@@ -102,7 +114,7 @@ describe('Bella Auto Phase 7 - Trade-In Center', () => {
           no_smoke: true,
           no_leaks: true,
         },
-      };
+      } satisfies Json;
 
       const { data, error } = await supabase
         .from('auto_trade_in_appraisals')
@@ -113,7 +125,7 @@ describe('Bella Auto Phase 7 - Trade-In Center', () => {
           model: 'Civic',
           year: 2019,
           mileage: 60000,
-          engine_condition: engineCondition as any,
+          engine_condition: engineCondition,
           status: 'draft',
         })
         .select()
@@ -122,7 +134,7 @@ describe('Bella Auto Phase 7 - Trade-In Center', () => {
       expect(error).toBeNull();
       expect(data).toBeDefined();
       expect(data?.engine_condition).toBeDefined();
-      expect((data?.engine_condition as any).status).toBe('good');
+      expect(readJsonObject(data?.engine_condition)?.status).toBe('good');
     });
   });
 
@@ -239,7 +251,7 @@ describe('Bella Auto Phase 7 - Trade-In Center', () => {
       const damageMarkers = [
         { x: 100, y: 200, label: 'Scratch', severity: 'minor' },
         { x: 300, y: 150, label: 'Dent', severity: 'moderate' },
-      ];
+      ] satisfies Json;
 
       const { data, error } = await supabase
         .from('auto_trade_in_photos')
@@ -248,14 +260,14 @@ describe('Bella Auto Phase 7 - Trade-In Center', () => {
           appraisal_id: appraisal!.id,
           photo_category: 'damage_specific',
           photo_url: 'https://example.com/photos/damage.jpg',
-          damage_markers: damageMarkers as any,
+          damage_markers: damageMarkers,
         })
         .select()
         .single();
 
       expect(error).toBeNull();
       expect(data?.damage_markers).toBeDefined();
-      expect((data?.damage_markers as any).length).toBe(2);
+      expect(readJsonArray(data?.damage_markers)).toHaveLength(2);
     });
   });
 

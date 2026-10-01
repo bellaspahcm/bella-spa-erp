@@ -60,6 +60,8 @@ describe('CommissionProvider - Performance Tests', () => {
   });
 
   it('should evaluate 100 commissions in <200ms (bulk)', async () => {
+    const positionTiers = ['junior', 'senior', 'lead'] as const;
+
     const createInput = (index: number): CommissionDecisionInput => ({
       tenantId: 'test-tenant',
       employeeId: `ktv-${index}`,
@@ -76,7 +78,7 @@ describe('CommissionProvider - Performance Tests', () => {
       completedSessions: 30 + (index % 50),
       avgRating: 4.0 + (index % 10) / 10,
 
-      positionTier: ['junior', 'senior', 'lead'][index % 3] as any,
+      positionTier: positionTiers[index % positionTiers.length],
       hireDate: new Date(2020 + (index % 5), 0, 1),
 
       config: {

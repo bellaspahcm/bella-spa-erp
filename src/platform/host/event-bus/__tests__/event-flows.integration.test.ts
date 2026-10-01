@@ -10,6 +10,7 @@
 
 import { eventBus } from '../event-bus.service';
 import { MemoryEventBusAdapter } from '../memory-adapter';
+import type { DomainEvent } from '../types';
 
 describe('Event Bus Integration Tests', () => {
   let adapter: MemoryEventBusAdapter;
@@ -200,9 +201,23 @@ describe('Event Bus Integration Tests', () => {
     });
 
     it('should pass correct event data to subscribers', async () => {
-      let receivedEvent: any = null;
+      type VitalsRecordedPayload = {
+        vitalsId: string;
+        patientId: string;
+        encounterId: string;
+        recordedBy: string;
+        recordedAt: string;
+        bloodPressureSystolic: number;
+        bloodPressureDiastolic: number;
+        heartRate: number;
+        temperature: number;
+        respiratoryRate: number;
+        oxygenSaturation: number;
+      };
 
-      const unsub = eventBus.subscribe('VitalsRecorded', (event) => {
+      let receivedEvent: DomainEvent<VitalsRecordedPayload> | null = null;
+
+      const unsub = eventBus.subscribe<VitalsRecordedPayload>('VitalsRecorded', (event) => {
         receivedEvent = event;
       });
 
@@ -232,6 +247,7 @@ describe('Event Bus Integration Tests', () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
 
       expect(receivedEvent).not.toBeNull();
+      if (!receivedEvent) throw new Error('VitalsRecorded event was not received');
       expect(receivedEvent.eventType).toBe('VitalsRecorded');
       expect(receivedEvent.payload.bloodPressureSystolic).toBe(210);
       expect(receivedEvent.tenantId).toBe('tenant-1');

@@ -1,6 +1,8 @@
 import { queryBus, Query } from './query-bus';
 
 describe('QueryBus', () => {
+  const cleanupHandlers: Array<() => void> = [];
+
   interface GetProductPayload {
     sku: string;
   }
@@ -11,12 +13,15 @@ describe('QueryBus', () => {
   };
 
   afterEach(() => {
-    (queryBus as any).handlers.clear();
+    while (cleanupHandlers.length > 0) {
+      cleanupHandlers.pop()?.();
+    }
   });
 
   it('should register handler and return query results', async () => {
     const mockHandler = jest.fn().mockResolvedValue({ sku: 'PROD-100', stock: 12 });
     const unsubscribe = queryBus.register('product.get_details', mockHandler);
+    cleanupHandlers.push(unsubscribe);
 
     const result = await queryBus.execute(getProductQuery);
 
@@ -28,7 +33,7 @@ describe('QueryBus', () => {
   });
 
   it('should throw error when registering duplicate query handler', () => {
-    queryBus.register('product.get_details', async () => {});
+    cleanupHandlers.push(queryBus.register('product.get_details', async () => {}));
     expect(() => {
       queryBus.register('product.get_details', async () => {});
     }).toThrow('[QueryBus] Duplicate handler registered for query: "product.get_details"');

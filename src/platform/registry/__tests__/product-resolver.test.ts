@@ -16,6 +16,10 @@ import {
 } from '../product-resolver';
 
 describe('ProductResolver', () => {
+  type RuntimeTenantIdentityFixture = Omit<TenantIdentity, 'product_key'> & {
+    product_key?: string | null;
+  };
+
   // Test fixtures
   const createMockTenant = (
     id: string,
@@ -24,6 +28,18 @@ describe('ProductResolver', () => {
     id,
     product_key
   });
+
+  const createRuntimeTenantFixture = (
+    id: string,
+    product_key?: string | null
+  ): TenantIdentity => {
+    const tenant: RuntimeTenantIdentityFixture = {
+      id,
+      product_key
+    };
+
+    return tenant as TenantIdentity;
+  };
 
   const createTestProduct = (productKey: string): ProductDefinition => ({
     productKey,
@@ -97,10 +113,7 @@ describe('ProductResolver', () => {
     });
 
     it('should throw when product_key is undefined', () => {
-      const tenant: TenantIdentity = {
-        id: 'unclassified-tenant',
-        product_key: undefined as any
-      };
+      const tenant = createRuntimeTenantFixture('unclassified-tenant', undefined);
 
       expect(() => productResolver.resolve(tenant)).toThrow(TenantNotClassifiedError);
     });
@@ -171,10 +184,7 @@ describe('ProductResolver', () => {
     });
 
     it('should return false when product_key is undefined', () => {
-      const tenant: TenantIdentity = {
-        id: 'tenant-id',
-        product_key: undefined as any
-      };
+      const tenant = createRuntimeTenantFixture('tenant-id', undefined);
 
       expect(productResolver.hasValidProduct(tenant)).toBe(false);
     });

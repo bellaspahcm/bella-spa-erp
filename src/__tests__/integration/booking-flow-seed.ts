@@ -36,7 +36,7 @@ export const testSupabase = (SUPABASE_URL && SUPABASE_SERVICE_KEY && !SUPABASE_U
         persistSession: false,
       },
     })
-  : (null as any);
+  : null;
 
 // Test data IDs (fixed UUIDs for predictable testing)
 export const TEST_IDS = {
