@@ -208,7 +208,10 @@ export class BeautySpaV2Service {
       throw new BeautySpaV2Error('DUPLICATE_RESOURCE_REQUIREMENT', 'Beauty Spa v2 bookings cannot require the same resource more than once.');
     }
 
-    if (input.resources.some((resource) => resource.capacityUnits !== undefined && resource.capacityUnits <= 0)) {
+    if (input.resources.some((resource) => (
+      resource.capacityUnits !== undefined
+      && (!Number.isFinite(resource.capacityUnits) || resource.capacityUnits <= 0)
+    ))) {
       throw new BeautySpaV2Error('INVALID_RESOURCE_CAPACITY', 'Beauty Spa v2 resource capacity units must be greater than zero.');
     }
   }

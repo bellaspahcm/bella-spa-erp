@@ -311,8 +311,9 @@ disrupted assignment instead of being rejected before side effects.
 
 MINIMAL_FIX
 Beauty Spa v2 now validates the interval with the Beauty OS public
-`validateInterval` invariant and validates resource capacity before appointment,
-assignment, allocation, or waitlist side effects.
+`validateInterval` invariant and validates resource capacity, including
+non-finite numeric values, before appointment, assignment, allocation, or
+waitlist side effects.
 
 VERIFY
 npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand

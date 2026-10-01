@@ -400,25 +400,27 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
     expect(intervalHarness.allocations).toHaveLength(0);
     expect(intervalHarness.waitlistEntries).toHaveLength(0);
 
-    const capacityHarness = new BeautySpaHarness();
-    const capacityService = capacityHarness.createService();
+    for (const capacityUnits of [0, Number.NaN]) {
+      const capacityHarness = new BeautySpaHarness();
+      const capacityService = capacityHarness.createService();
 
-    await expect(capacityService.bookOrWaitlist({
-      tenantId: 'tenant-spa-a',
-      branchId: 'branch-d1',
-      customerId: 'customer-invalid-capacity',
-      serviceId: 'service-invalid-capacity',
-      interval: chainInterval,
-      leadProfessionalId: 'therapist-capacity',
-      resources: [{ resourceId: 'device-rf-01', resourceType: 'DEVICE', capacityUnits: 0 }],
-      actorId: 'manager-spa',
-      bookingMode: 'WALK_IN',
-    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_RESOURCE_CAPACITY' });
+      await expect(capacityService.bookOrWaitlist({
+        tenantId: 'tenant-spa-a',
+        branchId: 'branch-d1',
+        customerId: `customer-invalid-capacity-${String(capacityUnits)}`,
+        serviceId: 'service-invalid-capacity',
+        interval: chainInterval,
+        leadProfessionalId: 'therapist-capacity',
+        resources: [{ resourceId: 'device-rf-01', resourceType: 'DEVICE', capacityUnits }],
+        actorId: 'manager-spa',
+        bookingMode: 'WALK_IN',
+      })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_RESOURCE_CAPACITY' });
 
-    expect(capacityHarness.appointments).toHaveLength(0);
-    expect(capacityHarness.assignments).toHaveLength(0);
-    expect(capacityHarness.allocations).toHaveLength(0);
-    expect(capacityHarness.waitlistEntries).toHaveLength(0);
+      expect(capacityHarness.appointments).toHaveLength(0);
+      expect(capacityHarness.assignments).toHaveLength(0);
+      expect(capacityHarness.allocations).toHaveLength(0);
+      expect(capacityHarness.waitlistEntries).toHaveLength(0);
+    }
   });
 
   it('cancels the appointment and disrupts accepted staff when assignment orchestration fails mid-booking', async () => {
