@@ -198,6 +198,7 @@ Implemented inside this branch:
   - product discovery/identity,
   - multi-branch spa booking,
   - staff + time + branch conflict prevention,
+  - rollback of appointment/staff assignments when booking orchestration fails mid-assignment,
   - room/bed/device allocation,
   - rollback of earlier resource allocations when a later resource in the same booking fails,
   - session check-in/check-out completion,
@@ -215,7 +216,7 @@ Fresh local verification:
 
 ```text
 npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
-PASS - 3 suites, 41 tests
+PASS - 3 suites, 42 tests
 
 npx tsc -p tsconfig.beauty.json --noEmit
 PASS
@@ -224,6 +225,36 @@ npx eslint src/products/beauty-spa-v2 src/platform/registry/product-registry.ts
 PASS
 
 npx eslint src/products/beauty-spa-v2 src/app/dashboard/beauty-spa-v2 src/platform/registry/product-registry.ts
+PASS
+
+npm run arch:guard
+PASS
+
+git diff --check
+PASS
+```
+
+Assignment orchestration rollback verification:
+
+```text
+ROOT_CAUSE
+If a booking created the appointment and accepted an earlier staff assignment, then
+a later assignment failed, the product orchestration could leave a failed booking
+with a PENDING appointment and ACCEPTED staff assignment.
+
+MINIMAL_FIX
+Beauty Spa v2 now wraps staff assignment and resource allocation in one booking
+orchestration rollback path. Any created assignment is disrupted and the appointment
+is cancelled before the original failure is rethrown.
+
+VERIFY
+npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
+PASS - 3 suites, 42 tests
+
+npx tsc -p tsconfig.beauty.json --noEmit
+PASS
+
+npx eslint src/products/beauty-spa-v2 src/app/dashboard/beauty-spa-v2 src/platform/registry/product-registry.ts src/platform/registry/__tests__/product-resolver.test.ts
 PASS
 
 npm run arch:guard
@@ -248,7 +279,7 @@ Beauty OS conflict.
 
 VERIFY
 npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
-PASS - 3 suites, 41 tests
+PASS - 3 suites, 42 tests
 
 npx tsc -p tsconfig.beauty.json --noEmit
 PASS
@@ -296,7 +327,7 @@ Evidence classification:
 | Contracts | PASS_WITH_BOUNDARY | Reuses Beauty OS service/port contracts. |
 | Implementation | PASS_WITH_BOUNDARY | Product-layer service, tests, and browser evidence route pass scoped verification. |
 | Typecheck | PASS_SCOPED | `tsconfig.beauty.json` scoped typecheck includes `src/products/beauty-spa-v2/**` and `src/app/dashboard/beauty-spa-v2/**`. Full repository typecheck not run in this checkpoint. |
-| Targeted tests | PASS | Focused Jest suite pass, including partial allocation rollback regression. |
+| Targeted tests | PASS | Focused Jest suite pass, including assignment rollback and partial allocation rollback regressions. |
 | Security / tenant isolation | PASS_SCOPED | Tenant-scoped application conflict test; H8 RLS migration reused. |
 | Concurrency | PARTIAL / NOT_REAL_DB_PROVEN | Product service prevents overlapping active allocations in repository contract. Existing H8 migration has no DB-level exclusion/transaction lock proof for concurrent Real DB writes. |
 | Real DB E2E | NOT_VERIFIED | No fresh credentialed Real DB run recorded in this checkpoint. |

@@ -141,14 +141,15 @@ export class BeautySpaV2Service {
       interval: input.interval,
     });
 
-    const assignments = await this.createAcceptedAssignments(input, serviceCommitmentId);
+    const assignments: ProfessionalAssignmentRecord[] = [];
 
     try {
+      await this.createAcceptedAssignments(input, serviceCommitmentId, assignments);
       const allocations = await this.allocateActiveResources(input, serviceCommitmentId);
       return { appointment, serviceCommitmentId, assignments, allocations };
     } catch (error) {
       await this.appointmentRepo.update({ ...appointment, status: 'CANCELLED' });
-      await this.markAssignmentsDisrupted(assignments, input.actorId, 'RESOURCE_ALLOCATION_FAILED');
+      await this.markAssignmentsDisrupted(assignments, input.actorId, 'BOOKING_ORCHESTRATION_FAILED');
       throw error;
     }
   }
@@ -211,9 +212,9 @@ export class BeautySpaV2Service {
   private async createAcceptedAssignments(
     input: BookBeautySpaServiceInput,
     serviceCommitmentId: string,
-  ): Promise<ProfessionalAssignmentRecord[]> {
+    assignments: ProfessionalAssignmentRecord[],
+  ): Promise<void> {
     const professionalIds = [input.leadProfessionalId, ...(input.supportProfessionalIds ?? [])];
-    const assignments: ProfessionalAssignmentRecord[] = [];
 
     for (const professionalId of professionalIds) {
       const proposed = await this.assignmentService.propose({
@@ -221,10 +222,10 @@ export class BeautySpaV2Service {
         serviceCommitmentId,
         professionalId,
       });
-      assignments.push(await this.assignmentService.decide(proposed, 'ACCEPTED', input.actorId));
+      assignments.push(proposed);
+      const accepted = await this.assignmentService.decide(proposed, 'ACCEPTED', input.actorId);
+      assignments[assignments.length - 1] = accepted;
     }
-
-    return assignments;
   }
 
   private async allocateActiveResources(
@@ -293,7 +294,7 @@ export class BeautySpaV2Service {
         status: 'DISRUPTED',
         actorId,
         reason,
-        decidedAt: new Date().toISOString(),
+        decidedAt: this.clock.now(),
       });
     }
   }

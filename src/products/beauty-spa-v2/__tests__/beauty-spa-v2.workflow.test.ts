@@ -53,6 +53,7 @@ class BeautySpaHarness {
   public readonly sessions: SessionRecord[] = [];
   public readonly waitlistEntries: Array<{ tenantId: string; customerId: string; reason: string }> = [];
   public readonly unavailableStaff = new Set<string>();
+  public readonly assignmentCreateFailures = new Set<string>();
 
   public readonly appointmentRepository: AppointmentRepository = {
     create: async (value) => {
@@ -70,6 +71,9 @@ class BeautySpaHarness {
 
   public readonly assignmentRepository: ProfessionalAssignmentRepository = {
     create: async (value) => {
+      if (this.assignmentCreateFailures.has(value.professionalId)) {
+        throw new Error(`assignment create failed for ${value.professionalId}`);
+      }
       this.assignments.push(value);
       return value;
     },
@@ -324,6 +328,38 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
     expect(harness.allocations.filter((allocation) => allocation.tenantId === 'tenant-spa-a')).toHaveLength(1);
     expect(harness.allocations.filter((allocation) => allocation.tenantId === 'tenant-spa-b')).toHaveLength(1);
     expect(harness.appointments.find((appointment) => appointment.customerId === 'customer-overlap')?.status).toBe('CANCELLED');
+  });
+
+  it('cancels the appointment and disrupts accepted staff when assignment orchestration fails mid-booking', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+    harness.assignmentCreateFailures.add('assistant-fails');
+
+    await expect(service.bookService({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-assignment-failure',
+      serviceId: 'service-facial-team',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-lead-1',
+      supportProfessionalIds: ['assistant-fails'],
+      resources: [{ resourceId: 'room-d1-03', resourceType: 'ROOM' }],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    })).rejects.toThrow('assignment create failed for assistant-fails');
+
+    expect(harness.appointments.find((appointment) => (
+      appointment.customerId === 'customer-assignment-failure'
+    ))?.status).toBe('CANCELLED');
+    expect(harness.assignments).toEqual([
+      expect.objectContaining({
+        professionalId: 'therapist-lead-1',
+        status: 'DISRUPTED',
+        reason: 'BOOKING_ORCHESTRATION_FAILED',
+        actorId: 'manager-spa',
+      }),
+    ]);
+    expect(harness.allocations).toHaveLength(0);
   });
 
   it('rolls back allocations created earlier in the same booking when a later resource conflicts', async () => {
