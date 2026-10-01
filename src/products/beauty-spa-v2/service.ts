@@ -119,7 +119,7 @@ export class BeautySpaV2Service {
     availability: ResourceAvailabilityPort,
     private readonly staffAvailability: SpaStaffAvailabilityPort,
     private readonly ids: IdGenerator,
-    clock: Clock,
+    private readonly clock: Clock,
     private readonly waitlist?: SpaWaitlistPort,
   ) {
     this.appointmentService = new AppointmentService(appointmentRepo, ids);
@@ -233,20 +233,53 @@ export class BeautySpaV2Service {
   ): Promise<ResourceAllocationRecord[]> {
     const allocations: ResourceAllocationRecord[] = [];
 
-    for (const resource of input.resources) {
-      const proposed = await this.allocationService.allocate({
-        tenantId: input.tenantId,
-        serviceCommitmentId,
-        segmentId: resource.segmentId ?? `${serviceCommitmentId}-${resource.resourceType.toLowerCase()}`,
-        resourceId: resource.resourceId,
-        interval: input.interval,
-        capacityUnits: resource.capacityUnits ?? 1,
-      });
-      const active = await this.allocationRepo.update({ ...proposed, status: 'ACTIVE' });
-      allocations.push(active);
+    try {
+      for (const resource of input.resources) {
+        const proposed = await this.allocationService.allocate({
+          tenantId: input.tenantId,
+          serviceCommitmentId,
+          segmentId: resource.segmentId ?? `${serviceCommitmentId}-${resource.resourceType.toLowerCase()}`,
+          resourceId: resource.resourceId,
+          interval: input.interval,
+          capacityUnits: resource.capacityUnits ?? 1,
+        });
+        const active = await this.allocationRepo.update({ ...proposed, status: 'ACTIVE' });
+        allocations.push(active);
+      }
+    } catch (error) {
+      await this.markAllocationsDisrupted(allocations, input.actorId, 'BOOKING_RESOURCE_ALLOCATION_FAILED');
+      throw error;
     }
 
     return allocations;
+  }
+
+  private async markAllocationsDisrupted(
+    allocations: ResourceAllocationRecord[],
+    actorId: string,
+    reason: string,
+  ): Promise<void> {
+    for (const allocation of allocations) {
+      const disrupted = await this.allocationRepo.update({
+        ...allocation,
+        status: 'DISRUPTED',
+        actorId,
+        reason,
+      });
+      await this.allocationRepo.appendHistory({
+        id: this.ids.next('allocation-history'),
+        tenantId: disrupted.tenantId,
+        allocationId: disrupted.id,
+        replacementAllocationId: null,
+        oldResourceId: disrupted.resourceId,
+        newResourceId: disrupted.resourceId,
+        segmentId: disrupted.segmentId,
+        eventType: 'BOOKING_ALLOCATION_ROLLED_BACK',
+        reason,
+        actorId,
+        occurredAt: this.clock.now(),
+      });
+    }
   }
 
   private async markAssignmentsDisrupted(

@@ -326,6 +326,68 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
     expect(harness.appointments.find((appointment) => appointment.customerId === 'customer-overlap')?.status).toBe('CANCELLED');
   });
 
+  it('rolls back allocations created earlier in the same booking when a later resource conflicts', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+
+    harness.allocations.push({
+      id: 'existing-device-allocation',
+      tenantId: 'tenant-spa-a',
+      serviceCommitmentId: 'existing-commitment',
+      segmentId: 'existing-device',
+      resourceId: 'device-hifu-01',
+      interval: chainInterval,
+      capacityUnits: 1,
+      status: 'ACTIVE',
+      replacementForId: null,
+      reason: null,
+      actorId: null,
+    });
+
+    await expect(service.bookService({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-partial-conflict',
+      serviceId: 'service-hifu-combo',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-hifu',
+      resources: [
+        { resourceId: 'room-d1-royal-suite', resourceType: 'ROOM', segmentId: 'facial-suite' },
+        { resourceId: 'device-hifu-01', resourceType: 'DEVICE', segmentId: 'hifu-device' },
+      ],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    })).rejects.toMatchObject({ code: 'RESOURCE_CAPACITY_CONFLICT' });
+
+    const failedAppointment = harness.appointments.find((appointment) => (
+      appointment.customerId === 'customer-partial-conflict'
+    ));
+    expect(failedAppointment?.status).toBe('CANCELLED');
+
+    const rolledBackRoom = harness.allocations.find((allocation) => (
+      allocation.resourceId === 'room-d1-royal-suite'
+      && allocation.serviceCommitmentId !== 'existing-commitment'
+    ));
+    expect(rolledBackRoom).toMatchObject({
+      status: 'DISRUPTED',
+      actorId: 'manager-spa',
+      reason: 'BOOKING_RESOURCE_ALLOCATION_FAILED',
+    });
+    expect(harness.allocations.filter((allocation) => (
+      allocation.resourceId === 'room-d1-royal-suite'
+      && allocation.status === 'ACTIVE'
+    ))).toHaveLength(0);
+    expect(harness.allocationHistory).toEqual([
+      expect.objectContaining({
+        allocationId: rolledBackRoom?.id,
+        eventType: 'BOOKING_ALLOCATION_ROLLED_BACK',
+        reason: 'BOOKING_RESOURCE_ALLOCATION_FAILED',
+        actorId: 'manager-spa',
+      }),
+    ]);
+    expect(harness.assignments.every((assignment) => assignment.status === 'DISRUPTED')).toBe(true);
+  });
+
   it('routes conflicted walk-ins to waitlist without creating false operational success', async () => {
     const harness = new BeautySpaHarness();
     const service = harness.createService();
