@@ -11,7 +11,13 @@
  * @module src/products/bella-hospital/services/hospital-admission.service
  */
 
-import { IAdmissionContract, InpatientAdmissionDTO, BedTransferDTO } from '../../../platform/healthcare/contracts/admission-engine.contract';
+import {
+  IAdmissionContract,
+  InpatientAdmissionDTO,
+  InpatientAdmissionResultDTO,
+  BedTransferDTO,
+  BedTransferResultDTO
+} from '../../../platform/healthcare/contracts/admission-engine.contract';
 import { ITemporalContract } from '../../../platform/healthcare/contracts/temporal-engine.contract';
 import { IAuditComplianceContract, AuditEntryInputDTO } from '../../../platform/healthcare/contracts/audit-compliance.contract';
 
@@ -44,7 +50,7 @@ export class HospitalAdmissionProductService {
   /**
    * Admits a patient to an inpatient bed via Public Contract
    */
-  async admitInpatient(dto: InpatientAdmissionDTO): Promise<any> {
+  async admitInpatient(dto: InpatientAdmissionDTO): Promise<InpatientAdmissionResultDTO> {
     if (!dto.tenantId) throw new Error('TENANT_ISOLATION_VIOLATION: tenantId is required');
     if (!dto.encounterId) throw new Error('ENCOUNTER_BOUNDARY_VIOLATION: encounterId is required');
 
@@ -54,8 +60,9 @@ export class HospitalAdmissionProductService {
   /**
    * Transfers a patient bed and records a H9 Bitemporal Timeline Event
    */
-  async transferBed(dto: BedTransferDTO): Promise<any> {
+  async transferBed(dto: BedTransferDTO): Promise<BedTransferResultDTO> {
     if (!dto.tenantId) throw new Error('TENANT_ISOLATION_VIOLATION: tenantId is required');
+    if (!dto.encounterId) throw new Error('ENCOUNTER_BOUNDARY_VIOLATION: encounterId is required');
 
     // 1. Execute bed transfer via Kernel Public Contract
     const transferResult = await this.admissionContract.transferBed(dto);
@@ -63,11 +70,13 @@ export class HospitalAdmissionProductService {
     // 2. Record Bitemporal Event in H9 Temporal Engine
     await this.temporalContract.recordTemporalEvent({
       tenantId: dto.tenantId,
-      entityId: dto.admissionId,
-      entityType: 'INPATIENT_BED_TRANSFER',
+      encounterId: dto.encounterId,
+      patientId: dto.patientId,
+      aggregateType: 'Admission',
+      aggregateId: dto.admissionId,
       eventType: 'BED_TRANSFERRED',
-      validFrom: dto.timestamp || new Date().toISOString(),
-      payload: {
+      validTime: dto.timestamp || new Date().toISOString(),
+      deltaPayload: {
         admissionId: dto.admissionId,
         targetBedId: dto.targetBedId,
         transferReason: dto.transferReason,

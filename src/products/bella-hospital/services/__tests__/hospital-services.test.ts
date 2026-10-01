@@ -74,6 +74,8 @@ describe('Bella Hospital Product Services Unit Tests', () => {
     const res = await admissionService.transferBed({
       admissionId: 'adm-101',
       tenantId: 'tenant-1',
+      encounterId: 'enc-1',
+      patientId: 'pat-1',
       targetBedId: 'bed-2',
       transferReason: 'ICU Upgrade',
       transferredBy: 'dr-1'
@@ -83,7 +85,8 @@ describe('Bella Hospital Product Services Unit Tests', () => {
     expect(mockTemporalContract.recordTemporalEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         tenantId: 'tenant-1',
-        entityId: 'adm-101',
+        encounterId: 'enc-1',
+        aggregateId: 'adm-101',
         eventType: 'BED_TRANSFERRED'
       })
     );
