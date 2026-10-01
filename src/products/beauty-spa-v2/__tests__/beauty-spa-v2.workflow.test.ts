@@ -20,6 +20,9 @@ import type {
   TimeInterval,
 } from '../../../platform/beauty/contracts';
 import {
+  type BeautySpaBookingMode,
+  type BeautySpaOperationalOutcome,
+  type BeautySpaResourceRequirement,
   BeautySpaV2Error,
   BeautySpaV2Service,
   type SpaStaffAvailabilityPort,
@@ -311,6 +314,36 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
       },
     })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'CHECKOUT_ACTOR_REQUIRED' });
 
+    const invalidPackageOutcome = {
+      checkedOutBy: 'manager-spa',
+      customerHistoryNote: 'Skin barrier improved.',
+      packageSessionUsed: 'yes',
+      paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+      inventoryHandoff: 'INVENTORY_HANDOFF_REQUIRED',
+      payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+      auditTags: ['CHAIN_V2'],
+    } as BeautySpaOperationalOutcome;
+
+    await expect(service.completeSession({
+      session: plannedSession,
+      performerId: 'therapist-lead-1',
+      outcome: invalidPackageOutcome,
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_CHECKOUT_OUTCOME' });
+
+    await expect(service.completeSession({
+      session: plannedSession,
+      performerId: 'therapist-lead-1',
+      outcome: {
+        checkedOutBy: 'manager-spa',
+        customerHistoryNote: 'Skin barrier improved.',
+        packageSessionUsed: true,
+        paymentStatus: 'SETTLED' as BeautySpaOperationalOutcome['paymentStatus'],
+        inventoryHandoff: 'INVENTORY_HANDOFF_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: ['CHAIN_V2'],
+      },
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_CHECKOUT_OUTCOME' });
+
     await expect(service.completeSession({
       session: plannedSession,
       performerId: 'therapist-lead-1',
@@ -448,6 +481,51 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
     expect(resourceHarness.assignments).toHaveLength(0);
     expect(resourceHarness.allocations).toHaveLength(0);
     expect(resourceHarness.waitlistEntries).toHaveLength(0);
+  });
+
+  it('rejects unsupported booking modes and resource types before creating side effects', async () => {
+    const bookingModeHarness = new BeautySpaHarness();
+    const bookingModeService = bookingModeHarness.createService();
+
+    await expect(bookingModeService.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-invalid-mode',
+      serviceId: 'service-suite-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-resource',
+      resources: [{ resourceId: 'suite-d1-03', resourceType: 'SUITE' }],
+      actorId: 'manager-spa',
+      bookingMode: 'RESCHEDULE' as BeautySpaBookingMode,
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_BOOKING_MODE' });
+
+    expect(bookingModeHarness.appointments).toHaveLength(0);
+    expect(bookingModeHarness.assignments).toHaveLength(0);
+    expect(bookingModeHarness.allocations).toHaveLength(0);
+    expect(bookingModeHarness.waitlistEntries).toHaveLength(0);
+
+    const resourceTypeHarness = new BeautySpaHarness();
+    const resourceTypeService = resourceTypeHarness.createService();
+
+    await expect(resourceTypeService.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-invalid-resource-type',
+      serviceId: 'service-suite-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-resource',
+      resources: [{
+        resourceId: 'suite-d1-03',
+        resourceType: 'LOCKER' as BeautySpaResourceRequirement['resourceType'],
+      }],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_RESOURCE_TYPE' });
+
+    expect(resourceTypeHarness.appointments).toHaveLength(0);
+    expect(resourceTypeHarness.assignments).toHaveLength(0);
+    expect(resourceTypeHarness.allocations).toHaveLength(0);
+    expect(resourceTypeHarness.waitlistEntries).toHaveLength(0);
   });
 
   it('rejects missing operational IDs before creating side effects', async () => {

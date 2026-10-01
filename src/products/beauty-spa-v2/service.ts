@@ -23,7 +23,13 @@ import type {
 } from '../../platform/beauty/contracts';
 import { validateInterval } from '../../platform/beauty/contracts';
 
-export type BeautySpaBookingMode = 'BOOKING' | 'WALK_IN';
+const BEAUTY_SPA_BOOKING_MODES = ['BOOKING', 'WALK_IN'] as const;
+const BEAUTY_SPA_RESOURCE_TYPES = ['ROOM', 'BED', 'DEVICE', 'SUITE', 'OTHER'] as const;
+const BEAUTY_SPA_PAYMENT_STATUSES = ['NOT_COLLECTED', 'DEPOSIT_COLLECTED', 'PAID', 'FINANCE_HANDOFF_REQUIRED'] as const;
+const BEAUTY_SPA_INVENTORY_HANDOFFS = ['NOT_REQUIRED', 'INVENTORY_HANDOFF_REQUIRED'] as const;
+const BEAUTY_SPA_PAYROLL_HANDOFFS = ['PAYROLL_HANDOFF_REQUIRED'] as const;
+
+export type BeautySpaBookingMode = (typeof BEAUTY_SPA_BOOKING_MODES)[number];
 
 export interface SpaStaffAvailabilityPort {
   isAvailable(scope: {
@@ -48,7 +54,7 @@ export interface SpaWaitlistPort {
 
 export interface BeautySpaResourceRequirement {
   resourceId: string;
-  resourceType: 'ROOM' | 'BED' | 'DEVICE' | 'SUITE' | 'OTHER';
+  resourceType: (typeof BEAUTY_SPA_RESOURCE_TYPES)[number];
   segmentId?: string;
   capacityUnits?: number;
 }
@@ -191,6 +197,14 @@ export class BeautySpaV2Service {
   }
 
   private assertBookableInput(input: BookBeautySpaServiceInput): void {
+    if (!isOneOf(BEAUTY_SPA_BOOKING_MODES, input.bookingMode)) {
+      throw new BeautySpaV2Error('INVALID_BOOKING_MODE', 'Beauty Spa v2 bookings require a supported booking mode.');
+    }
+
+    if (input.resources.some((resource) => !isOneOf(BEAUTY_SPA_RESOURCE_TYPES, resource.resourceType))) {
+      throw new BeautySpaV2Error('INVALID_RESOURCE_TYPE', 'Beauty Spa v2 bookings require supported resource types.');
+    }
+
     const requiredIds = [
       input.tenantId,
       input.branchId,
@@ -249,6 +263,18 @@ export class BeautySpaV2Service {
   private assertSessionOutcome(input: CompleteBeautySpaSessionInput): void {
     if (input.performerId.trim().length === 0) {
       throw new BeautySpaV2Error('REQUIRED_ID_MISSING', 'Beauty Spa v2 session completion requires a performer ID.');
+    }
+    if (typeof input.outcome.packageSessionUsed !== 'boolean') {
+      throw new BeautySpaV2Error('INVALID_CHECKOUT_OUTCOME', 'Beauty Spa v2 session completion requires a boolean package session flag.');
+    }
+    if (!isOneOf(BEAUTY_SPA_PAYMENT_STATUSES, input.outcome.paymentStatus)) {
+      throw new BeautySpaV2Error('INVALID_CHECKOUT_OUTCOME', 'Beauty Spa v2 session completion requires a supported payment status.');
+    }
+    if (!isOneOf(BEAUTY_SPA_INVENTORY_HANDOFFS, input.outcome.inventoryHandoff)) {
+      throw new BeautySpaV2Error('INVALID_CHECKOUT_OUTCOME', 'Beauty Spa v2 session completion requires a supported inventory handoff.');
+    }
+    if (!isOneOf(BEAUTY_SPA_PAYROLL_HANDOFFS, input.outcome.payrollHandoff)) {
+      throw new BeautySpaV2Error('INVALID_CHECKOUT_OUTCOME', 'Beauty Spa v2 session completion requires a supported payroll handoff.');
     }
     if (input.outcome.checkedOutBy.trim().length === 0) {
       throw new BeautySpaV2Error('CHECKOUT_ACTOR_REQUIRED', 'Beauty Spa v2 session completion requires a checkout actor.');
@@ -383,4 +409,11 @@ export class BeautySpaV2Service {
       status: 'PENDING',
     };
   }
+}
+
+function isOneOf<const TValues extends readonly string[]>(
+  values: TValues,
+  value: string,
+): value is TValues[number] {
+  return values.includes(value);
 }
