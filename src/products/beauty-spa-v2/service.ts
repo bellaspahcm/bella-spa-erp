@@ -209,8 +209,16 @@ export class BeautySpaV2Service {
       throw new BeautySpaV2Error('INVALID_RESOURCE_REQUIREMENTS', 'Beauty Spa v2 resource requirements must be provided as a list.');
     }
 
+    if (input.resources.some((resource) => !isRecord(resource))) {
+      throw new BeautySpaV2Error('INVALID_RESOURCE_REQUIREMENTS', 'Beauty Spa v2 resource requirements must be objects.');
+    }
+
     if (input.resources.some((resource) => !isOneOf(BEAUTY_SPA_RESOURCE_TYPES, resource.resourceType))) {
       throw new BeautySpaV2Error('INVALID_RESOURCE_TYPE', 'Beauty Spa v2 bookings require supported resource types.');
+    }
+
+    if (!isRecord(input.interval)) {
+      throw new BeautySpaV2Error('INVALID_INTERVAL', 'Beauty Spa v2 bookings require a valid start and end time.');
     }
 
     const requiredIds: unknown[] = [
@@ -225,6 +233,10 @@ export class BeautySpaV2Service {
     ];
     if (requiredIds.some(isMissingString)) {
       throw new BeautySpaV2Error('REQUIRED_ID_MISSING', 'Beauty Spa v2 bookings require tenant, branch, customer, service, staff, actor, and resource IDs.');
+    }
+
+    if (input.resources.some((resource) => resource.segmentId !== undefined && isMissingString(resource.segmentId))) {
+      throw new BeautySpaV2Error('INVALID_RESOURCE_REQUIREMENTS', 'Beauty Spa v2 resource segment IDs must be strings when provided.');
     }
 
     if (validateInterval(input.interval)) {
@@ -441,4 +453,8 @@ function isOneOf<const TValues extends readonly string[]>(
 
 function isMissingString(value: unknown): boolean {
   return typeof value !== 'string' || value.trim().length === 0;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
 }

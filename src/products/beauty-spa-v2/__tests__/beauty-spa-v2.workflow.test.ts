@@ -509,6 +509,26 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
     expect(resourceHarness.assignments).toHaveLength(0);
     expect(resourceHarness.allocations).toHaveLength(0);
     expect(resourceHarness.waitlistEntries).toHaveLength(0);
+
+    const resourceItemHarness = new BeautySpaHarness();
+    const resourceItemService = resourceItemHarness.createService();
+
+    await expect(resourceItemService.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-null-resource',
+      serviceId: 'service-suite-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-resource',
+      resources: [null as never],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_RESOURCE_REQUIREMENTS' });
+
+    expect(resourceItemHarness.appointments).toHaveLength(0);
+    expect(resourceItemHarness.assignments).toHaveLength(0);
+    expect(resourceItemHarness.allocations).toHaveLength(0);
+    expect(resourceItemHarness.waitlistEntries).toHaveLength(0);
   });
 
   it('rejects unsupported booking modes and resource types before creating side effects', async () => {
@@ -639,6 +659,26 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
     expect(nonStringHarness.assignments).toHaveLength(0);
     expect(nonStringHarness.allocations).toHaveLength(0);
     expect(nonStringHarness.waitlistEntries).toHaveLength(0);
+
+    const segmentHarness = new BeautySpaHarness();
+    const segmentService = segmentHarness.createService();
+
+    await expect(segmentService.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-numeric-segment',
+      serviceId: 'service-suite-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-resource',
+      resources: [{ resourceId: 'suite-d1-04', resourceType: 'SUITE', segmentId: 123 as never }],
+      actorId: 'manager-spa',
+      bookingMode: 'WALK_IN',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_RESOURCE_REQUIREMENTS' });
+
+    expect(segmentHarness.appointments).toHaveLength(0);
+    expect(segmentHarness.assignments).toHaveLength(0);
+    expect(segmentHarness.allocations).toHaveLength(0);
+    expect(segmentHarness.waitlistEntries).toHaveLength(0);
   });
 
   it('rejects invalid interval and capacity before creating operational side effects', async () => {
@@ -664,6 +704,26 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
     expect(intervalHarness.assignments).toHaveLength(0);
     expect(intervalHarness.allocations).toHaveLength(0);
     expect(intervalHarness.waitlistEntries).toHaveLength(0);
+
+    const malformedIntervalHarness = new BeautySpaHarness();
+    const malformedIntervalService = malformedIntervalHarness.createService();
+
+    await expect(malformedIntervalService.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-null-interval',
+      serviceId: 'service-invalid-interval',
+      interval: null as never,
+      leadProfessionalId: 'therapist-interval',
+      resources: [{ resourceId: 'room-d1-06', resourceType: 'ROOM' }],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_INTERVAL' });
+
+    expect(malformedIntervalHarness.appointments).toHaveLength(0);
+    expect(malformedIntervalHarness.assignments).toHaveLength(0);
+    expect(malformedIntervalHarness.allocations).toHaveLength(0);
+    expect(malformedIntervalHarness.waitlistEntries).toHaveLength(0);
 
     for (const capacityUnits of [0, Number.NaN]) {
       const capacityHarness = new BeautySpaHarness();

@@ -249,7 +249,7 @@ Product-layer root-cause fixes verified in the focused suite:
 | Assignment rollback history | Staff rollback had no provenance while resource rollback did. | Write `BOOKING_ASSIGNMENT_ROLLED_BACK` through Beauty OS assignment history port. |
 | Checkout evidence | Session completion could miss session identity, actors, customer history, or audit tags. | Validate session identity, performer, checkout actor, customer history, and audit tag arrays before Beauty OS session services. |
 | Runtime enum values | Runtime callers could bypass TypeScript unions for booking/resource/outcome values. | Validate booking mode, resource type, package-session flag, payment status, inventory handoff, and payroll handoff before side effects. |
-| Malformed runtime lists | Runtime callers could pass scalar staff/resource lists and trigger raw property access or partial orchestration. | Validate support-professional and resource requirements as arrays before appointment, assignment, allocation, or waitlist side effects. |
+| Malformed runtime shapes | Runtime callers could pass scalar staff/resource lists, null resource entries, malformed intervals, or non-string resource segments and trigger raw property access or partial orchestration. | Validate support-professional/resource lists, resource entries, interval shape, and optional segment IDs before appointment, assignment, allocation, or waitlist side effects. |
 Previously recorded GitHub PR evidence for PR #188:
 
 ```text
