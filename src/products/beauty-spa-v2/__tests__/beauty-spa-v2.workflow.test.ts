@@ -330,6 +330,52 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
     expect(harness.appointments.find((appointment) => appointment.customerId === 'customer-overlap')?.status).toBe('CANCELLED');
   });
 
+  it('rejects duplicate staff and resource requirements before creating operational side effects', async () => {
+    const staffHarness = new BeautySpaHarness();
+    const staffService = staffHarness.createService();
+
+    await expect(staffService.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-duplicate-staff',
+      serviceId: 'service-team-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-dup',
+      supportProfessionalIds: ['therapist-dup'],
+      resources: [{ resourceId: 'room-d1-05', resourceType: 'ROOM' }],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'DUPLICATE_STAFF_ASSIGNMENT' });
+
+    expect(staffHarness.appointments).toHaveLength(0);
+    expect(staffHarness.assignments).toHaveLength(0);
+    expect(staffHarness.allocations).toHaveLength(0);
+    expect(staffHarness.waitlistEntries).toHaveLength(0);
+
+    const resourceHarness = new BeautySpaHarness();
+    const resourceService = resourceHarness.createService();
+
+    await expect(resourceService.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-duplicate-resource',
+      serviceId: 'service-suite-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-resource',
+      resources: [
+        { resourceId: 'suite-d1-02', resourceType: 'SUITE', segmentId: 'main-suite' },
+        { resourceId: 'suite-d1-02', resourceType: 'SUITE', segmentId: 'duplicate-suite' },
+      ],
+      actorId: 'manager-spa',
+      bookingMode: 'WALK_IN',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'DUPLICATE_RESOURCE_REQUIREMENT' });
+
+    expect(resourceHarness.appointments).toHaveLength(0);
+    expect(resourceHarness.assignments).toHaveLength(0);
+    expect(resourceHarness.allocations).toHaveLength(0);
+    expect(resourceHarness.waitlistEntries).toHaveLength(0);
+  });
+
   it('cancels the appointment and disrupts accepted staff when assignment orchestration fails mid-booking', async () => {
     const harness = new BeautySpaHarness();
     const service = harness.createService();

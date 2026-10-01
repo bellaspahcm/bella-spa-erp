@@ -192,6 +192,16 @@ export class BeautySpaV2Service {
     if (input.resources.length === 0) {
       throw new BeautySpaV2Error('RESOURCE_REQUIRED', 'Beauty Spa v2 bookings require at least one room, bed, suite, or device resource.');
     }
+
+    const professionalIds = [input.leadProfessionalId, ...(input.supportProfessionalIds ?? [])];
+    if (new Set(professionalIds).size !== professionalIds.length) {
+      throw new BeautySpaV2Error('DUPLICATE_STAFF_ASSIGNMENT', 'Beauty Spa v2 bookings cannot assign the same staff member more than once.');
+    }
+
+    const resourceIds = input.resources.map((resource) => resource.resourceId);
+    if (new Set(resourceIds).size !== resourceIds.length) {
+      throw new BeautySpaV2Error('DUPLICATE_RESOURCE_REQUIREMENT', 'Beauty Spa v2 bookings cannot require the same resource more than once.');
+    }
   }
 
   private async assertStaffAvailable(input: BookBeautySpaServiceInput): Promise<void> {
