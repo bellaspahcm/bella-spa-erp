@@ -160,7 +160,7 @@ WORKFLOW DESIGN: PASS_WITH_BOUNDARY
 ARCHITECTURE: PASS_WITH_BOUNDARY
 CONTRACTS: PASS_WITH_BOUNDARY
 IMPLEMENTATION AUTHORITY: PRODUCT LAYER ONLY
-REAL DB E2E: PLANNED, NOT CLAIMED UNTIL FRESH RUN
+REAL DB E2E: SKIPPED_IN_CI / NOT_VERIFIED
 ```
 
 ## 9. Implementation Evidence - 2026-10-01
@@ -197,6 +197,29 @@ git diff --check
 PASS
 ```
 
+Fresh GitHub PR evidence for PR #188:
+
+```text
+gh pr checks 188
+PASS - All Required Gates Passed
+PASS - Architecture Guard Verification
+PASS - Baseline Comparison
+PASS - Beauty OS - No New Debt
+PASS - Changed-file Lint
+PASS - CodeQL
+PASS - Frozen File Check
+PASS - Logistics Kernel Regression
+PASS - Relevant App Build
+PASS - Security Gates
+PASS - Type Check (affected)
+PASS - Vercel
+
+SKIPPED - Real Database Business E2E
+SKIPPED - Migration Gates
+SKIPPED - Core Freeze Verification
+SKIPPED - Education Constitution Enforcement
+```
+
 Evidence classification:
 
 | Definition of Done item | Status | Evidence |
@@ -211,7 +234,7 @@ Evidence classification:
 | Security / tenant isolation | PASS_SCOPED | Tenant-scoped application conflict test; H8 RLS migration reused. |
 | Concurrency | PARTIAL / NOT_REAL_DB_PROVEN | Product service prevents overlapping active allocations in repository contract. Existing H8 migration has no DB-level exclusion/transaction lock proof for concurrent Real DB writes. |
 | Real DB E2E | NOT_VERIFIED | No fresh credentialed Real DB run recorded in this checkpoint. |
-| Required gates | PARTIAL | Focused test/typecheck/lint/arch/diff pass; full CI/PR green not yet available. |
+| Required gates | PASS_CI | PR #188 reports `All Required Gates Passed`; merge state is `CLEAN` and `MERGEABLE`. |
 
 Architectural gap classification:
 
