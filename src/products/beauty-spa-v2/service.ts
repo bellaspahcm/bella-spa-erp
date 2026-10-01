@@ -155,8 +155,20 @@ export class BeautySpaV2Service {
       const allocations = await this.allocateActiveResources(input, serviceCommitmentId);
       return { appointment, serviceCommitmentId, assignments, allocations };
     } catch (error) {
-      await this.appointmentRepo.update({ ...appointment, status: 'CANCELLED' });
-      await this.markAssignmentsDisrupted(assignments, input.actorId, 'BOOKING_ORCHESTRATION_FAILED');
+      const rollbackErrors: unknown[] = [];
+      try {
+        await this.appointmentRepo.update({ ...appointment, status: 'CANCELLED' });
+      } catch (rollbackError) {
+        rollbackErrors.push(rollbackError);
+      }
+      try {
+        await this.markAssignmentsDisrupted(assignments, input.actorId, 'BOOKING_ORCHESTRATION_FAILED');
+      } catch (rollbackError) {
+        rollbackErrors.push(rollbackError);
+      }
+      if (rollbackErrors.length > 0) {
+        throw new BeautySpaV2Error('BOOKING_ROLLBACK_FAILED', 'Beauty Spa v2 booking rollback did not complete cleanly.');
+      }
       throw error;
     }
   }

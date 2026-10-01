@@ -57,6 +57,7 @@ class BeautySpaHarness {
   public readonly waitlistEntries: Array<{ tenantId: string; customerId: string; reason: string }> = [];
   public readonly unavailableStaff = new Set<string>();
   public readonly assignmentCreateFailures = new Set<string>();
+  public readonly appointmentUpdateFailures = new Set<string>();
 
   public readonly appointmentRepository: AppointmentRepository = {
     create: async (value) => {
@@ -67,6 +68,9 @@ class BeautySpaHarness {
       appointment.tenantId === scope.tenantId && appointment.id === scope.appointmentId
     )) ?? null,
     update: async (value) => {
+      if (this.appointmentUpdateFailures.has(value.customerId)) {
+        throw new Error(`appointment update failed for ${value.customerId}`);
+      }
       this.replace(this.appointments, value);
       return value;
     },
@@ -809,6 +813,47 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
       }),
     ]);
     expect(harness.allocations).toHaveLength(0);
+  });
+
+  it('continues assignment rollback when appointment cancellation fails', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+    harness.assignmentCreateFailures.add('assistant-fails');
+    harness.appointmentUpdateFailures.add('customer-rollback-failure');
+
+    await expect(service.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-rollback-failure',
+      serviceId: 'service-facial-team',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-lead-1',
+      supportProfessionalIds: ['assistant-fails'],
+      resources: [{ resourceId: 'room-d1-03', resourceType: 'ROOM' }],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'BOOKING_ROLLBACK_FAILED' });
+
+    expect(harness.appointments.find((appointment) => (
+      appointment.customerId === 'customer-rollback-failure'
+    ))?.status).toBe('PENDING');
+    expect(harness.assignments).toEqual([
+      expect.objectContaining({
+        professionalId: 'therapist-lead-1',
+        status: 'DISRUPTED',
+        reason: 'BOOKING_ORCHESTRATION_FAILED',
+        actorId: 'manager-spa',
+      }),
+    ]);
+    expect(harness.assignmentHistory).toEqual([
+      expect.objectContaining({
+        assignmentId: harness.assignments[0]?.id,
+        eventType: 'BOOKING_ASSIGNMENT_ROLLED_BACK',
+        reason: 'BOOKING_ORCHESTRATION_FAILED',
+        actorId: 'manager-spa',
+      }),
+    ]);
+    expect(harness.waitlistEntries).toHaveLength(0);
   });
 
   it('rolls back allocations created earlier in the same booking when a later resource conflicts', async () => {
