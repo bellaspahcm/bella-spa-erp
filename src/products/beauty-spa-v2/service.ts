@@ -261,6 +261,15 @@ export class BeautySpaV2Service {
   }
 
   private assertSessionOutcome(input: CompleteBeautySpaSessionInput): void {
+    const requiredSessionIds = [
+      input.session.id,
+      input.session.tenantId,
+      input.session.appointmentId,
+      input.session.serviceCommitmentId,
+    ];
+    if (requiredSessionIds.some((value) => value.trim().length === 0)) {
+      throw new BeautySpaV2Error('REQUIRED_SESSION_ID_MISSING', 'Beauty Spa v2 session completion requires session, tenant, appointment, and service commitment IDs.');
+    }
     if (input.performerId.trim().length === 0) {
       throw new BeautySpaV2Error('REQUIRED_ID_MISSING', 'Beauty Spa v2 session completion requires a performer ID.');
     }

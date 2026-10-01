@@ -370,13 +370,15 @@ Checkout evidence validation verification:
 
 ```text
 ROOT_CAUSE
-Beauty Spa v2 session completion accepted empty performer IDs, checkout actor IDs,
-customer history notes, or audit tags. That could complete a session without the
-actor, customer-history, and audit handoff evidence required by the product workflow.
+Beauty Spa v2 session completion accepted empty session identity fields, performer
+IDs, checkout actor IDs, customer history notes, or audit tags. That could complete
+a session without the session, actor, customer-history, and audit handoff evidence
+required by the product workflow.
 
 MINIMAL_FIX
-Beauty Spa v2 validates performer ID, checkout actor ID, customer history note,
-and non-empty audit tags before invoking Beauty OS session start/complete services.
+Beauty Spa v2 validates session, tenant, appointment, service commitment, performer,
+checkout actor, customer history note, and non-empty audit tags before invoking
+Beauty OS session start/complete services.
 
 VERIFY
 npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
