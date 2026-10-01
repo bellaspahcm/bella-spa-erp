@@ -9,7 +9,7 @@ Approver: User explicit approval in Codex thread for Nail Shop full UI E2E Go-Li
   "version": 1,
   "acrId": "ACR-2026-012",
   "status": "APPROVED",
-  "pr": "178",
+  "pr": "181",
   "approvedCoreFiles": [
     "src/core/services/finance/transaction-mutations.ts"
   ],
