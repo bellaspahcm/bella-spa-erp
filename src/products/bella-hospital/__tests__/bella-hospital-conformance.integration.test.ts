@@ -29,35 +29,128 @@ describe('BELLA HOSPITAL — 11 AUTOMATED VERIFICATION GATES', () => {
   let alertService: HospitalClinicalAlertProductService;
   let bedProjection: BedOccupancyReadModelProjection;
 
-  const mockAdmissionContract: any = {
-    admitInpatient: jest.fn().mockResolvedValue({ admissionId: 'adm-hosp-001', status: 'admitted' }),
-    transferBed: jest.fn().mockResolvedValue({ admissionId: 'adm-hosp-001', status: 'transferred' }),
-    dischargeInpatient: jest.fn().mockResolvedValue({ admissionId: 'adm-hosp-001', status: 'discharged' })
+  const mockAdmissionContract = {
+    createAdmission: jest.fn().mockResolvedValue({
+      success: true,
+      data: {
+        id: 'adm-hosp-001',
+        tenantId: 'tenant-hosp-a',
+        encounterId: 'enc-hosp-101',
+        patientPartyId: 'pat-101',
+        wardId: 'ward-hosp-101',
+        bedId: 'bed-101',
+        admittingDoctorId: 'doc-101',
+        attendingDoctorId: 'doc-101',
+        status: 'admitted',
+        admissionDiagnosis: [{ icd10Code: 'Z00.0', icd10NameVi: 'Khám tổng quát', isPrimary: true }],
+        admittedAt: '2026-08-13T12:00:00Z',
+        version: 1,
+      },
+    }),
+    dischargeAdmission: jest.fn().mockResolvedValue({
+      success: true,
+      data: {
+        id: 'adm-hosp-001',
+        tenantId: 'tenant-hosp-a',
+        encounterId: 'enc-hosp-101',
+        patientPartyId: 'pat-101',
+        wardId: 'ward-hosp-101',
+        bedId: 'bed-101',
+        admittingDoctorId: 'doc-101',
+        attendingDoctorId: 'doc-101',
+        status: 'discharged',
+        admissionDiagnosis: [{ icd10Code: 'Z00.0', icd10NameVi: 'Khám tổng quát', isPrimary: true }],
+        admittedAt: '2026-08-13T12:00:00Z',
+        dischargedAt: '2026-08-13T12:00:00Z',
+        version: 2,
+      },
+    }),
   };
 
-  const mockTemporalContract: any = {
-    recordTemporalEvent: jest.fn().mockResolvedValue({ id: 'temp-event-001', sequenceNumber: 101 })
+  const mockBedContract = {
+    transferBed: jest.fn().mockResolvedValue({
+      success: true,
+      data: {
+        fromBed: { id: 'bed-101' },
+        toBed: { id: 'bed-icu-02' },
+        transferId: 'trf-hosp-001',
+      },
+    }),
   };
 
-  const mockAuditContract: any = {
+  const mockTemporalContract = {
+    recordTemporalEvent: jest.fn().mockResolvedValue({
+      success: true,
+      data: { id: 'temp-event-001', sequenceNumber: 101 },
+    }),
+  };
+
+  const mockAuditContract = {
     recordAuditEntry: jest.fn().mockResolvedValue({
-      id: 'audit-pkg-001',
-      sha256Fingerprint: 'SHA256:4a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b'
-    })
+      success: true,
+      data: {
+        id: 'audit-pkg-001',
+        tenantId: 'tenant-hosp-a',
+        encounterId: 'enc-hosp-101',
+        patientId: 'pat-101',
+        actionType: 'INPATIENT_DISCHARGE_EXECUTE',
+        performerId: 'dr-attending-99',
+        performerRole: 'PHYSICIAN',
+        complianceStatus: 'COMPLIANT',
+        evidenceIntegrity: 'COMPLETE',
+        createdAt: '2026-08-13T12:00:00Z',
+      },
+    }),
+    issueEvidencePackage: jest.fn().mockResolvedValue({
+      success: true,
+      data: {
+        id: 'evidence-pkg-001',
+        tenantId: 'tenant-hosp-a',
+        auditId: 'audit-pkg-001',
+        schemaVersion: '1.0.0',
+        sourceReferences: { encounterId: 'enc-hosp-101' },
+        canonicalPayload: {
+          actionType: 'INPATIENT_DISCHARGE_EXECUTE',
+          timestamp: '2026-08-13T12:00:00Z',
+          performer: { id: 'dr-attending-99', role: 'PHYSICIAN' },
+          complianceStatus: 'COMPLIANT',
+          evidenceIntegrity: 'COMPLETE',
+        },
+        fingerprint: 'SHA256:4a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b',
+        createdAt: '2026-08-13T12:00:00Z',
+      },
+    }),
   };
 
-  const mockCdsContract: any = {
-    evaluateOrderSafety: jest.fn().mockResolvedValue({
-      hasAbsoluteBlock: false,
-      contraindications: [],
-      warnings: [{ severity: 'WARNING', message: 'High dosage threshold reached' }]
-    })
+  const mockCdsContract = {
+    generateCdsSummary: jest.fn().mockResolvedValue({
+      success: true,
+      data: {
+        passed: true,
+        hardBlocked: false,
+        alerts: [
+          {
+            alertId: 'alert-hosp-001',
+            alertType: 'PROTOCOL',
+            severity: 'WARNING',
+            enforcement: 'ACKNOWLEDGE',
+            canOverride: true,
+            message: 'High dosage threshold reached',
+          },
+        ],
+        calculationId: 'calc-hosp-001',
+        knowledgeBaseVersion: 'kb-v1',
+        policyVersion: 'policy-v1',
+        evaluatedAt: '2026-08-13T12:00:00Z',
+      },
+    }),
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
     admissionService = new HospitalAdmissionProductService(
       mockAdmissionContract,
+      mockBedContract,
       mockTemporalContract,
       mockAuditContract
     );
@@ -77,11 +170,14 @@ describe('BELLA HOSPITAL — 11 AUTOMATED VERIFICATION GATES', () => {
       tenantId: 'tenant-hosp-a',
       encounterId: 'enc-hosp-101',
       patientId: 'pat-101',
+      wardId: 'ward-hosp-101',
       bedId: 'bed-101',
-      admittingPhysicianId: 'doc-101'
+      admittingPhysicianId: 'doc-101',
+      attendingPhysicianId: 'doc-101',
+      admissionDiagnosis: [{ icd10Code: 'Z00.0', icd10NameVi: 'Khám tổng quát', isPrimary: true }],
     });
     expect(res.status).toBe('admitted');
-    expect(mockAdmissionContract.admitInpatient).toHaveBeenCalledWith(
+    expect(mockAdmissionContract.createAdmission).toHaveBeenCalledWith(
       expect.objectContaining({ tenantId: 'tenant-hosp-a', encounterId: 'enc-hosp-101' })
     );
   });
@@ -93,8 +189,11 @@ describe('BELLA HOSPITAL — 11 AUTOMATED VERIFICATION GATES', () => {
         tenantId: '',
         encounterId: 'enc-101',
         patientId: 'pat-101',
+        wardId: 'ward-101',
         bedId: 'bed-101',
-        admittingPhysicianId: 'doc-101'
+        admittingPhysicianId: 'doc-101',
+        attendingPhysicianId: 'doc-101',
+        admissionDiagnosis: [{ icd10Code: 'Z00.0', icd10NameVi: 'Khám tổng quát', isPrimary: true }],
       })
     ).rejects.toThrow('TENANT_ISOLATION_VIOLATION');
   });
@@ -105,6 +204,7 @@ describe('BELLA HOSPITAL — 11 AUTOMATED VERIFICATION GATES', () => {
       admissionId: 'adm-hosp-001',
       tenantId: 'tenant-hosp-a',
       encounterId: 'enc-hosp-101',
+      patientId: 'pat-101',
       dischargingPhysicianId: 'dr-attending-99',
       dischargeDisposition: 'HOME',
       dischargeSummary: 'Stable and discharged',
@@ -125,6 +225,7 @@ describe('BELLA HOSPITAL — 11 AUTOMATED VERIFICATION GATES', () => {
       tenantId: 'tenant-hosp-a',
       encounterId: 'enc-hosp-101',
       patientId: 'pat-101',
+      sourceBedId: 'bed-101',
       targetBedId: 'bed-icu-02',
       transferReason: 'Condition deterioration',
       transferredBy: 'dr-101'
@@ -145,7 +246,7 @@ describe('BELLA HOSPITAL — 11 AUTOMATED VERIFICATION GATES', () => {
       route: 'IV'
     });
     expect(alertRes.decision).toBe('REQUIRES_OVERRIDE');
-    expect(mockCdsContract.evaluateOrderSafety).toHaveBeenCalled();
+    expect(mockCdsContract.generateCdsSummary).toHaveBeenCalled();
   });
 
   // Gate 8: Temporal Provenance Test (H9 Timeline)
@@ -155,6 +256,7 @@ describe('BELLA HOSPITAL — 11 AUTOMATED VERIFICATION GATES', () => {
       tenantId: 'tenant-hosp-a',
       encounterId: 'enc-hosp-101',
       patientId: 'pat-101',
+      sourceBedId: 'bed-101',
       targetBedId: 'bed-icu-02',
       transferReason: 'Condition deterioration',
       transferredBy: 'dr-101',
@@ -177,6 +279,7 @@ describe('BELLA HOSPITAL — 11 AUTOMATED VERIFICATION GATES', () => {
       admissionId: 'adm-hosp-001',
       tenantId: 'tenant-hosp-a',
       encounterId: 'enc-hosp-101',
+      patientId: 'pat-101',
       dischargingPhysicianId: 'dr-attending-99',
       dischargeDisposition: 'HOME',
       dischargeSummary: 'Stable and discharged',
@@ -184,7 +287,7 @@ describe('BELLA HOSPITAL — 11 AUTOMATED VERIFICATION GATES', () => {
     });
     expect(mockAuditContract.recordAuditEntry).toHaveBeenCalledWith(
       expect.objectContaining({
-        governedRuleChecksum: expect.stringMatching(/^SHA256:/)
+        h10RuleChecksum: expect.stringMatching(/^SHA256:/)
       })
     );
   });
@@ -195,12 +298,13 @@ describe('BELLA HOSPITAL — 11 AUTOMATED VERIFICATION GATES', () => {
       admissionId: 'adm-hosp-001',
       tenantId: 'tenant-hosp-a',
       encounterId: 'enc-hosp-101',
+      patientId: 'pat-101',
       dischargingPhysicianId: 'dr-attending-99',
       dischargeDisposition: 'HOME',
       dischargeSummary: 'Stable and discharged',
       timestamp: '2026-08-13T12:00:00Z'
     });
-    expect(res.evidencePackageId).toBe('audit-pkg-001');
+    expect(res.evidencePackageId).toBe('evidence-pkg-001');
     expect(res.sha256Fingerprint).toBe('SHA256:4a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b');
   });
 

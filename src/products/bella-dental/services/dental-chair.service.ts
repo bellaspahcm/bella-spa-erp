@@ -11,9 +11,13 @@
  * @module src/products/bella-dental/services/dental-chair.service
  */
 
-import { ITemporalContract } from '../../../platform/healthcare/contracts/temporal-engine.contract';
-import { IAuditComplianceContract, AuditEntryInputDTO } from '../../../platform/healthcare/contracts/audit-compliance.contract';
-import { ICdsContract } from '../../../platform/healthcare/contracts/cds-engine.contract';
+import type { CdsEngineContract } from '../../../platform/healthcare/contracts/cds-engine.contract';
+import type {
+  IClinicalAuditContract,
+  IRecordAuditInput,
+} from '../../../platform/healthcare/contracts/clinical-audit.contract';
+import type { ITemporalContract } from '../../../platform/healthcare/contracts/temporal-engine.contract';
+import type { EngineResponse } from '../../../platform/healthcare/shared-kernel/types';
 
 export interface DentalChairReservationDTO {
   reservationId?: string;
@@ -64,9 +68,9 @@ const PRODUCT_CHAIR_RESERVATIONS = new Map<string, DentalChairReservationResultD
 
 export class DentalChairProductService {
   constructor(
-    private readonly temporalContract?: ITemporalContract,
-    private readonly auditContract?: IAuditComplianceContract,
-    private readonly cdsContract?: ICdsContract
+    private readonly temporalContract?: Pick<ITemporalContract, 'recordTemporalEvent'>,
+    private readonly auditContract?: Pick<IClinicalAuditContract, 'recordAuditEntry' | 'issueEvidencePackage'>,
+    private readonly cdsContract?: Pick<CdsEngineContract, 'generateCdsSummary'>
   ) {}
 
   /**
@@ -144,27 +148,33 @@ export class DentalChairProductService {
     let sha256Fingerprint = 'SHA256:DENTAL_PROCEDURE_EVIDENCE_FINGERPRINT_DEFAULT';
 
     if (this.auditContract) {
-      const auditInput: AuditEntryInputDTO = {
+      const auditInput: IRecordAuditInput = {
         tenantId: dto.tenantId,
         encounterId: dto.encounterId,
         patientId: dto.patientId,
-        actorId: dto.practitionerId,
-        actorRole: 'DENTIST',
-        action: 'DENTAL_PROCEDURE_COMPLETE',
-        resourceType: 'DENTAL_PROCEDURE',
-        resourceId: dto.reservationId,
-        reason: dto.clinicalNotes,
-        clinicalDataHash: 'SHA256:' + Buffer.from(`${dto.reservationId}:${dto.procedureCode}`).toString('hex'),
-        decisionSupportSummary: {
-          safetyEvaluationStatus: 'PASSED',
-          absoluteBlockTriggered: false
+        actionType: 'DENTAL_PROCEDURE_COMPLETE',
+        performerId: dto.practitionerId,
+        performerRole: 'DENTIST',
+        h10RuleCode: 'DENTAL_PROCEDURE_RULE',
+        h10RuleVersion: '1.0.0',
+        h10RuleChecksum: 'SHA256:DENTAL_PROCEDURE_RULE_V1.0',
+        metadata: {
+          reservationId: dto.reservationId,
+          procedureCode: dto.procedureCode,
+          clinicalNotes: dto.clinicalNotes,
         },
-        governedRuleChecksum: 'SHA256:DENTAL_PROCEDURE_RULE_V1.0'
       };
 
-      const auditRecord = await this.auditContract.recordAuditEntry(auditInput);
-      evidencePackageId = auditRecord.id;
-      sha256Fingerprint = auditRecord.sha256Fingerprint;
+      const auditRecord = unwrapEngineResponse(
+        await this.auditContract.recordAuditEntry(auditInput),
+        'DENTAL_AUDIT_RECORD_FAILED'
+      );
+      const evidencePackage = unwrapEngineResponse(
+        await this.auditContract.issueEvidencePackage(dto.tenantId, auditRecord.id),
+        'DENTAL_EVIDENCE_PACKAGE_FAILED'
+      );
+      evidencePackageId = evidencePackage.id;
+      sha256Fingerprint = evidencePackage.fingerprint;
     }
 
     return {
@@ -189,4 +199,14 @@ export class DentalChairProductService {
     });
     return results;
   }
+}
+
+function unwrapEngineResponse<T>(response: EngineResponse<T>, fallbackCode: string): T {
+  if (response.success && response.data) {
+    return response.data;
+  }
+
+  const code = response.error?.code ?? fallbackCode;
+  const message = response.error?.message ?? fallbackCode;
+  throw new Error(`${code}: ${message}`);
 }

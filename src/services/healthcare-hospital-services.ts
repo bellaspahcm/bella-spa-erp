@@ -247,6 +247,34 @@ export class BedEngineService {
 }
 
 import { HospitalAdmissionProductService } from '../products/bella-hospital/services/hospital-admission.service';
+import type {
+  AdmissionEngineContract,
+} from '@/platform/healthcare/contracts/admission-engine.contract';
+import type { BedEngineContract } from '@/platform/healthcare/contracts/bed-engine.contract';
+import type {
+  IClinicalAuditContract,
+} from '@/platform/healthcare/contracts/clinical-audit.contract';
+import type { ITemporalContract } from '@/platform/healthcare/contracts/temporal-engine.contract';
+import type { Bed as KernelBed, EngineResponse } from '@/platform/healthcare/shared-kernel/types';
+
+function successResponse<T>(data: T): EngineResponse<T> {
+  return { success: true, data };
+}
+
+function createMockBed(tenantId: string, bedId: string, status: KernelBed['status']): KernelBed {
+  const timestamp = new Date().toISOString();
+  return {
+    id: bedId,
+    tenantId,
+    bedNumber: bedId,
+    wardId: 'ward-dev-fallback',
+    bedType: 'standard',
+    status,
+    features: [],
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  };
+}
 
 /**
  * Inpatient Admission Service — Admission, Discharge & MAR Engine
@@ -258,22 +286,102 @@ export class InpatientAdmissionService {
   private static getProductService(): HospitalAdmissionProductService {
     if (!this.productAdmissionService) {
       // Mock contracts wrapping verified services in dev fallback
-      const mockAdmissionContract: any = {
-        admitInpatient: async (dto: any) => ({ admissionId: `adm-${Date.now()}`, status: 'admitted', ...dto }),
-        transferBed: async (dto: any) => ({ admissionId: dto.admissionId, status: 'transferred', ...dto }),
-        dischargeInpatient: async (dto: any) => ({ admissionId: dto.admissionId, status: 'discharged', ...dto })
+      const mockAdmissionContract: Pick<AdmissionEngineContract, 'createAdmission' | 'dischargeAdmission'> = {
+        createAdmission: async (request) => successResponse({
+          id: `adm-${Date.now()}`,
+          tenantId: request.tenantId,
+          encounterId: request.encounterId,
+          patientPartyId: request.patientPartyId,
+          wardId: request.wardId,
+          bedId: request.bedId,
+          admittingDoctorId: request.admittingDoctorId,
+          attendingDoctorId: request.attendingDoctorId,
+          status: 'admitted',
+          admissionDiagnosis: request.admissionDiagnosis,
+          admittedAt: new Date().toISOString(),
+          version: 1,
+        }),
+        dischargeAdmission: async (request) => successResponse({
+          id: request.admissionId,
+          tenantId: request.tenantId,
+          encounterId: 'enc-dev-fallback',
+          patientPartyId: 'pat-dev-fallback',
+          wardId: 'ward-dev-fallback',
+          bedId: 'bed-dev-fallback',
+          admittingDoctorId: request.userId ?? 'doctor-dev-fallback',
+          attendingDoctorId: request.userId ?? 'doctor-dev-fallback',
+          status: 'discharged',
+          admissionDiagnosis: [{ icd10Code: 'Z00.0', icd10NameVi: 'Khám tổng quát', isPrimary: true }],
+          dischargeSummary: request.dischargeSummary,
+          admittedAt: new Date().toISOString(),
+          dischargedAt: new Date().toISOString(),
+          version: 2,
+        }),
       };
-      const mockTemporalContract: any = {
-        recordTemporalEvent: async (input: any) => ({ id: `temp-${Date.now()}`, sequenceNumber: 1, ...input })
+      const mockBedContract: Pick<BedEngineContract, 'transferBed'> = {
+        transferBed: async (request) => successResponse({
+          fromBed: createMockBed(request.tenantId, request.fromBedId, 'available'),
+          toBed: createMockBed(request.tenantId, request.toBedId, 'occupied'),
+          transferId: `trf-${Date.now()}`,
+        }),
       };
-      const mockAuditContract: any = {
-        recordAuditEntry: async (input: any) => ({
+      const mockTemporalContract: Pick<ITemporalContract, 'recordTemporalEvent'> = {
+        recordTemporalEvent: async (input) => successResponse({
+          id: `temp-${Date.now()}`,
+          tenantId: input.tenantId,
+          encounterId: input.encounterId,
+          patientId: input.patientId,
+          aggregateType: input.aggregateType,
+          aggregateId: input.aggregateId,
+          eventType: input.eventType,
+          validTime: input.validTime,
+          transactionTime: input.transactionTime ?? new Date().toISOString(),
+          sequenceNumber: 1,
+          deltaPayload: input.deltaPayload,
+          createdAt: new Date().toISOString(),
+        }),
+      };
+      const mockAuditContract: Pick<IClinicalAuditContract, 'recordAuditEntry' | 'issueEvidencePackage'> = {
+        recordAuditEntry: async (input) => successResponse({
           id: `aud-${Date.now()}`,
-          sha256Fingerprint: 'SHA256:HOSPITAL_DISCHARGE_EVIDENCE_FINGERPRINT'
-        })
+          tenantId: input.tenantId,
+          encounterId: input.encounterId,
+          patientId: input.patientId,
+          actionType: input.actionType,
+          performerId: input.performerId,
+          performerRole: input.performerRole,
+          h8DecisionId: input.h8DecisionId,
+          h9SnapshotId: input.h9SnapshotId,
+          h10RuleCode: input.h10RuleCode,
+          h10RuleVersion: input.h10RuleVersion,
+          h10RuleChecksum: input.h10RuleChecksum,
+          complianceStatus: 'COMPLIANT',
+          evidenceIntegrity: 'COMPLETE',
+          metadata: input.metadata,
+          createdAt: new Date().toISOString(),
+        }),
+        issueEvidencePackage: async (tenantId, auditId) => successResponse({
+          id: `evidence-${Date.now()}`,
+          tenantId,
+          auditId,
+          schemaVersion: '1.0.0',
+          sourceReferences: {
+            encounterId: 'enc-dev-fallback',
+          },
+          canonicalPayload: {
+            actionType: 'INPATIENT_DISCHARGE_EXECUTE',
+            timestamp: new Date().toISOString(),
+            performer: { id: 'doctor-dev-fallback', role: 'PHYSICIAN' },
+            complianceStatus: 'COMPLIANT',
+            evidenceIntegrity: 'COMPLETE',
+          },
+          fingerprint: 'SHA256:HOSPITAL_DISCHARGE_EVIDENCE_FINGERPRINT',
+          createdAt: new Date().toISOString(),
+        }),
       };
       this.productAdmissionService = new HospitalAdmissionProductService(
         mockAdmissionContract,
+        mockBedContract,
         mockTemporalContract,
         mockAuditContract
       );
@@ -290,8 +398,15 @@ export class InpatientAdmissionService {
       tenantId: input.tenantId,
       encounterId: input.encounterId,
       patientId: input.patientId,
+      wardId: input.wardId,
       bedId: input.bedId,
-      admittingPhysicianId: input.admittingDoctorId
+      admittingPhysicianId: input.admittingDoctorId,
+      attendingPhysicianId: input.attendingDoctorId,
+      admissionDiagnosis: input.admissionDiagnosis.map((diagnosis) => ({
+        icd10Code: diagnosis.icd10_code,
+        icd10NameVi: diagnosis.icd10_name_vi,
+        isPrimary: diagnosis.is_primary,
+      })),
     });
 
     const newAdmission: InpatientAdmission = {
@@ -324,6 +439,7 @@ export class InpatientAdmissionService {
       admissionId,
       tenantId: admission.tenant_id,
       encounterId: admission.encounter_id,
+      patientId: admission.patient_id,
       dischargingPhysicianId: admission.attending_doctor_id,
       dischargeDisposition: 'HOME',
       dischargeSummary,

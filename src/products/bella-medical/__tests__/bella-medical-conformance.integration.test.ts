@@ -9,26 +9,43 @@
 
 import { MedicalConsultationProductService } from '../services/medical-consultation.service';
 import { MedicalOrderProductService } from '../services/medical-order.service';
-import { MedicalBillingProductService } from '../services/medical-billing.service';
+import { MedicalBillingProductService, type IRevenueContract } from '../services/medical-billing.service';
 import { medicalProductManifest } from '../manifest';
+import type { IEncounterEngine } from '../../../platform/healthcare/contracts/encounter-engine.contract';
+import type { IClinicalAuditContract } from '../../../platform/healthcare/contracts/clinical-audit.contract';
+import type { ILaboratoryEngine } from '../../../platform/healthcare/contracts/laboratory-engine.contract';
+import type { OrderEngineContract } from '../../../platform/healthcare/contracts/order-engine.contract';
+import type { ITemporalContract } from '../../../platform/healthcare/contracts/temporal-engine.contract';
+import { LabOrder } from '../../../platform/healthcare/engines/laboratory-engine/domain/lab-order.entity';
 
 describe('BELLA MEDICAL CLINIC V2 — 11 AUTOMATED CONFORMANCE GATES', () => {
   let consultationService: MedicalConsultationProductService;
   let orderService: MedicalOrderProductService;
   let billingService: MedicalBillingProductService;
 
-  const mockEncounterEngine: any = {
+  const mockEncounterEngine: Pick<IEncounterEngine, 'createEncounter' | 'updateStatus' | 'addDiagnosis'> = {
     createEncounter: jest.fn().mockResolvedValue({
       success: true,
-      encounter: { id: 'enc-med-101', tenantId: 'tenant-med-a', status: 'planned' }
+      encounter: {
+        id: 'enc-med-101',
+        tenantId: 'tenant-med-a',
+        patientId: 'pat-101',
+        status: 'planned',
+        encounterClass: 'AMB',
+        encounterType: 'outpatient',
+        diagnoses: [],
+        participants: [],
+        createdAt: '2026-08-13T09:00:00Z',
+        updatedAt: '2026-08-13T09:00:00Z',
+        createdBy: 'nurse-101',
+        updatedBy: 'nurse-101',
+      },
     }),
     updateStatus: jest.fn().mockResolvedValue({ success: true }),
     addDiagnosis: jest.fn().mockResolvedValue({ success: true }),
-    getEncounter: jest.fn(),
-    searchEncounters: jest.fn()
   };
 
-  const mockOrderEngine: any = {
+  const mockOrderEngine: Pick<OrderEngineContract, 'createOrder'> = {
     createOrder: jest.fn().mockImplementation((req) => {
       // Simulate non-bypassable CDS block inside Kernel order engine
       if (req.orderType === 'MEDICATION' && req.orderDetails.drugCode === 'MED-WARFARIN-AMIO') {
@@ -36,7 +53,8 @@ describe('BELLA MEDICAL CLINIC V2 — 11 AUTOMATED CONFORMANCE GATES', () => {
           success: false,
           error: {
             code: 'CDS_ABSOLUTE_BLOCK',
-            message: 'Order blocked by absolute clinical safety constraint. Override not permitted.'
+            message: 'Order blocked by absolute clinical safety constraint. Override not permitted.',
+            timestamp: '2026-08-13T09:00:00Z',
           }
         });
       }
@@ -49,7 +67,13 @@ describe('BELLA MEDICAL CLINIC V2 — 11 AUTOMATED CONFORMANCE GATES', () => {
             encounterId: req.encounterId,
             orderType: req.orderType,
             orderStatus: 'VALIDATED',
-            cdsCheckStatus: 'PASSED'
+            priority: req.priority,
+            orderedBy: req.orderedBy,
+            orderedAt: '2026-08-13T09:00:00Z',
+            cdsCheckStatus: 'PASSED',
+            orderDetails: req.orderDetails,
+            createdAt: '2026-08-13T09:00:00Z',
+            updatedAt: '2026-08-13T09:00:00Z',
           },
           cdsAlerts: [],
           cdsCheckStatus: 'PASSED'
@@ -58,33 +82,82 @@ describe('BELLA MEDICAL CLINIC V2 — 11 AUTOMATED CONFORMANCE GATES', () => {
     })
   };
 
-  const mockLaboratoryEngine: any = {
-    recordResult: jest.fn().mockResolvedValue({ status: 'completed' }),
-    verifyResult: jest.fn().mockResolvedValue({ status: 'verified' })
+  const mockLabOrder = LabOrder.create({
+    id: 'lab-order-101',
+    tenantId: 'tenant-med-a',
+    encounterId: 'enc-med-101',
+    clinicalOrderId: 'ord-med-101',
+    patientId: 'pat-101',
+    testCode: 'CBC',
+    testName: 'Complete Blood Count',
+    status: 'VERIFIED',
+    safetyState: 'NORMAL',
+    version: 1,
+  });
+
+  const mockLaboratoryEngine: Pick<ILaboratoryEngine, 'recordResult' | 'verifyResult'> = {
+    recordResult: jest.fn().mockResolvedValue(mockLabOrder),
+    verifyResult: jest.fn().mockResolvedValue(mockLabOrder),
   };
 
-  const mockTemporalContract: any = {
-    recordTemporalEvent: jest.fn().mockResolvedValue({ id: 'temp-event-101', sequenceNumber: 201 })
+  const mockTemporalContract: Pick<ITemporalContract, 'recordTemporalEvent'> = {
+    recordTemporalEvent: jest.fn().mockResolvedValue({
+      success: true,
+      data: {
+        id: 'temp-event-101',
+        tenantId: 'tenant-med-a',
+        encounterId: 'enc-med-101',
+        patientId: 'pat-101',
+        aggregateType: 'Encounter',
+        aggregateId: 'enc-med-101',
+        eventType: 'CONSULTATION_STARTED',
+        validTime: '2026-08-13T09:00:00Z',
+        transactionTime: '2026-08-13T09:00:00Z',
+        sequenceNumber: 201,
+        deltaPayload: {},
+        createdAt: '2026-08-13T09:00:00Z',
+      },
+    }),
   };
 
-  const mockAuditContract: any = {
+  const mockAuditContract: Pick<IClinicalAuditContract, 'recordAuditEntry' | 'issueEvidencePackage'> = {
     recordAuditEntry: jest.fn().mockResolvedValue({
       success: true,
       data: {
         id: 'audit-ledger-101',
-        complianceStatus: 'COMPLIANT'
+        tenantId: 'tenant-med-a',
+        encounterId: 'enc-med-101',
+        patientId: 'pat-101',
+        actionType: 'CONSULTATION_COMPLETE_EXECUTE',
+        performerId: 'doc-101',
+        performerRole: 'PHYSICIAN',
+        complianceStatus: 'COMPLIANT',
+        evidenceIntegrity: 'COMPLETE',
+        createdAt: '2026-08-13T09:30:00Z',
       }
     }),
     issueEvidencePackage: jest.fn().mockResolvedValue({
       success: true,
       data: {
         id: 'evidence-pkg-101',
-        fingerprint: 'SHA256:4a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b'
+        tenantId: 'tenant-med-a',
+        auditId: 'audit-ledger-101',
+        schemaVersion: '1.0.0',
+        sourceReferences: { encounterId: 'enc-med-101' },
+        canonicalPayload: {
+          actionType: 'CONSULTATION_COMPLETE_EXECUTE',
+          timestamp: '2026-08-13T09:30:00Z',
+          performer: { id: 'doc-101', role: 'PHYSICIAN' },
+          complianceStatus: 'COMPLIANT',
+          evidenceIntegrity: 'COMPLETE',
+        },
+        fingerprint: 'SHA256:4a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b',
+        createdAt: '2026-08-13T09:30:00Z',
       }
     })
   };
 
-  const mockRevenueContract: any = {
+  const mockRevenueContract: IRevenueContract = {
     recordRevenue: jest.fn().mockResolvedValue(undefined)
   };
 

@@ -44,9 +44,9 @@ export interface CompleteConsultationDTO {
 
 export class MedicalConsultationProductService {
   constructor(
-    private readonly encounterEngine: IEncounterEngine,
-    private readonly temporalContract: ITemporalContract,
-    private readonly auditContract: IClinicalAuditContract
+    private readonly encounterEngine: Pick<IEncounterEngine, 'createEncounter' | 'updateStatus' | 'addDiagnosis'>,
+    private readonly temporalContract: Pick<ITemporalContract, 'recordTemporalEvent'>,
+    private readonly auditContract: Pick<IClinicalAuditContract, 'recordAuditEntry' | 'issueEvidencePackage'>
   ) {}
 
   private assertCapability(capabilityId: string) {
