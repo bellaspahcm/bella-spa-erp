@@ -308,12 +308,23 @@ export class BeautySpaV2Service {
     reason: string,
   ): Promise<void> {
     for (const assignment of assignments) {
-      await this.assignmentRepo.update({
+      const disrupted = await this.assignmentRepo.update({
         ...assignment,
         status: 'DISRUPTED',
         actorId,
         reason,
         decidedAt: this.clock.now(),
+      });
+      await this.assignmentRepo.appendHistory({
+        id: this.ids.next('assignment-history'),
+        tenantId: disrupted.tenantId,
+        assignmentId: disrupted.id,
+        fromProfessionalId: disrupted.professionalId,
+        toProfessionalId: disrupted.professionalId,
+        eventType: 'BOOKING_ASSIGNMENT_ROLLED_BACK',
+        reason,
+        actorId,
+        occurredAt: this.clock.now(),
       });
     }
   }

@@ -450,6 +450,14 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
         actorId: 'manager-spa',
       }),
     ]);
+    expect(harness.assignmentHistory).toEqual([
+      expect.objectContaining({
+        assignmentId: harness.assignments[0]?.id,
+        eventType: 'BOOKING_ASSIGNMENT_ROLLED_BACK',
+        reason: 'BOOKING_ORCHESTRATION_FAILED',
+        actorId: 'manager-spa',
+      }),
+    ]);
     expect(harness.allocations).toHaveLength(0);
   });
 
@@ -513,6 +521,13 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
       }),
     ]);
     expect(harness.assignments.every((assignment) => assignment.status === 'DISRUPTED')).toBe(true);
+    expect(harness.assignmentHistory).toEqual([
+      expect.objectContaining({
+        eventType: 'BOOKING_ASSIGNMENT_ROLLED_BACK',
+        reason: 'BOOKING_ORCHESTRATION_FAILED',
+        actorId: 'manager-spa',
+      }),
+    ]);
   });
 
   it('routes conflicted walk-ins to waitlist without creating false operational success', async () => {
