@@ -1311,5 +1311,39 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
       customerId: 'customer-walk-in-malformed-waitlist',
       reason: 'RESOURCE_CAPACITY_CONFLICT',
     }]);
+
+    const paddedHarness = new BeautySpaHarness();
+    const paddedService = paddedHarness.createService();
+    paddedHarness.malformedWaitlistResponse = { waitlistId: ' waitlist-1 ', position: 1 };
+
+    await paddedService.bookService({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-booked-padded-waitlist',
+      serviceId: 'service-vip-suite',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-a',
+      resources: [{ resourceId: 'suite-d1-01', resourceType: 'SUITE' }],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    });
+
+    await expect(paddedService.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-walk-in-padded-waitlist',
+      serviceId: 'service-vip-suite',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-b',
+      resources: [{ resourceId: 'suite-d1-01', resourceType: 'SUITE' }],
+      actorId: 'manager-spa',
+      bookingMode: 'WALK_IN',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'WAITLIST_HANDOFF_FAILED' });
+
+    expect(paddedHarness.waitlistEntries).toEqual([{
+      tenantId: 'tenant-spa-a',
+      customerId: 'customer-walk-in-padded-waitlist',
+      reason: 'RESOURCE_CAPACITY_CONFLICT',
+    }]);
   });
 });
