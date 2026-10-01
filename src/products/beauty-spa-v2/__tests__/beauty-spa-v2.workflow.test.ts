@@ -383,6 +383,23 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
       outcome: null as never,
     })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_CHECKOUT_OUTCOME' });
 
+    const circularOutcome: BeautySpaOperationalOutcome & { self?: unknown } = {
+      checkedOutBy: 'manager-spa',
+      customerHistoryNote: 'Skin barrier improved.',
+      packageSessionUsed: true,
+      paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+      inventoryHandoff: 'INVENTORY_HANDOFF_REQUIRED',
+      payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+      auditTags: ['CHAIN_V2'],
+    };
+    circularOutcome.self = circularOutcome;
+
+    await expect(service.completeSession({
+      session: plannedSession,
+      performerId: 'therapist-lead-1',
+      outcome: circularOutcome,
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_CHECKOUT_OUTCOME' });
+
     await expect(service.completeSession({
       session: { ...plannedSession, appointmentId: ' ' },
       performerId: 'therapist-lead-1',

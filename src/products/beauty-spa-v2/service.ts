@@ -207,9 +207,10 @@ export class BeautySpaV2Service {
 
   public async completeSession(input: CompleteBeautySpaSessionInput): Promise<SessionRecord> {
     this.assertSessionOutcome(input);
+    const serializedOutcome = this.serializeOutcome(input.outcome);
     const started = await this.sessionService.start(input.session, input.performerId);
     try {
-      return await this.sessionService.complete(started, JSON.stringify(input.outcome));
+      return await this.sessionService.complete(started, serializedOutcome);
     } catch (error) {
       try {
         await this.sessionRepo.update(input.session);
@@ -217,6 +218,14 @@ export class BeautySpaV2Service {
         throw new BeautySpaV2Error('SESSION_ROLLBACK_FAILED', 'Beauty Spa v2 session rollback did not complete cleanly.');
       }
       throw error;
+    }
+  }
+
+  private serializeOutcome(outcome: BeautySpaOperationalOutcome): string {
+    try {
+      return JSON.stringify(outcome);
+    } catch {
+      throw new BeautySpaV2Error('INVALID_CHECKOUT_OUTCOME', 'Beauty Spa v2 session completion requires serializable checkout evidence.');
     }
   }
 
