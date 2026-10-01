@@ -1,4 +1,5 @@
 import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
+import { createClient } from '@/lib/supabase-server';
 import type { Database } from '@/types/database.types';
 import {
   UNLIMITED_QUOTA,
