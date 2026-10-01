@@ -122,7 +122,7 @@ export class BeautySpaV2Service {
     private readonly appointmentRepo: AppointmentRepository,
     private readonly assignmentRepo: ProfessionalAssignmentRepository,
     private readonly allocationRepo: ResourceAllocationRepository,
-    sessionRepo: SessionRepository,
+    private readonly sessionRepo: SessionRepository,
     availability: ResourceAvailabilityPort,
     private readonly staffAvailability: SpaStaffAvailabilityPort,
     private readonly ids: IdGenerator,
@@ -132,7 +132,7 @@ export class BeautySpaV2Service {
     this.appointmentService = new AppointmentService(appointmentRepo, ids);
     this.assignmentService = new ProfessionalAssignmentService(assignmentRepo, ids, clock);
     this.allocationService = new ResourceAllocationService(allocationRepo, availability, ids, clock);
-    this.sessionService = new SessionTrackingService(sessionRepo, clock);
+    this.sessionService = new SessionTrackingService(this.sessionRepo, clock);
   }
 
   public async bookService(input: BookBeautySpaServiceInput): Promise<BookBeautySpaServiceOutput> {
@@ -205,7 +205,16 @@ export class BeautySpaV2Service {
   public async completeSession(input: CompleteBeautySpaSessionInput): Promise<SessionRecord> {
     this.assertSessionOutcome(input);
     const started = await this.sessionService.start(input.session, input.performerId);
-    return this.sessionService.complete(started, JSON.stringify(input.outcome));
+    try {
+      return await this.sessionService.complete(started, JSON.stringify(input.outcome));
+    } catch (error) {
+      try {
+        await this.sessionRepo.update(input.session);
+      } catch {
+        throw new BeautySpaV2Error('SESSION_ROLLBACK_FAILED', 'Beauty Spa v2 session rollback did not complete cleanly.');
+      }
+      throw error;
+    }
   }
 
   private assertBookableInput(input: BookBeautySpaServiceInput): void {

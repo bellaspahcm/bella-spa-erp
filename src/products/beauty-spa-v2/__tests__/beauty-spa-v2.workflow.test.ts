@@ -61,6 +61,7 @@ class BeautySpaHarness {
   public readonly allocationActivationFailures = new Set<string>();
   public readonly allocationUpdateFailures = new Set<string>();
   public readonly appointmentUpdateFailures = new Set<string>();
+  public readonly sessionCompletionFailures = new Set<string>();
 
   public readonly appointmentRepository: AppointmentRepository = {
     create: async (value) => {
@@ -137,6 +138,9 @@ class BeautySpaHarness {
       return value;
     },
     update: async (value) => {
+      if (value.status === 'COMPLETED' && this.sessionCompletionFailures.has(value.id)) {
+        throw new Error(`session completion failed for ${value.id}`);
+      }
       this.replace(this.sessions, value);
       return value;
     },
@@ -285,6 +289,49 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
     const outcome = JSON.parse(completed.outcome as string) as { paymentStatus: string; auditTags: string[] };
     expect(outcome.paymentStatus).toBe('FINANCE_HANDOFF_REQUIRED');
     expect(outcome.auditTags).toContain('CHAIN_V2');
+  });
+
+  it('rolls back session start when checkout completion fails', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+    harness.sessionCompletionFailures.add('session-completion-fails');
+
+    const plannedSession: SessionRecord = {
+      id: 'session-completion-fails',
+      tenantId: 'tenant-spa-a',
+      appointmentId: 'appointment-completion-fails',
+      serviceCommitmentId: 'commitment-completion-fails',
+      status: 'PLANNED',
+      actualStartAt: null,
+      actualEndAt: null,
+      actualPerformerId: null,
+      outcome: null,
+    };
+
+    await expect(service.completeSession({
+      session: plannedSession,
+      performerId: 'therapist-lead-1',
+      outcome: {
+        checkedOutBy: 'manager-spa',
+        customerHistoryNote: 'Skin barrier improved.',
+        packageSessionUsed: true,
+        paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+        inventoryHandoff: 'INVENTORY_HANDOFF_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: ['CHAIN_V2'],
+      },
+    })).rejects.toThrow('session completion failed for session-completion-fails');
+
+    expect(harness.sessions).toEqual([
+      expect.objectContaining({
+        id: 'session-completion-fails',
+        status: 'PLANNED',
+        actualStartAt: null,
+        actualEndAt: null,
+        actualPerformerId: null,
+        outcome: null,
+      }),
+    ]);
   });
 
   it('rejects incomplete checkout handoff evidence before session side effects', async () => {
