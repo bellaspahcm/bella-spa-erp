@@ -12,6 +12,8 @@
     "src/platform/contracts/v1/waitlist-engine.contract.ts",
     "src/products/nail/**/*.ts",
     "src/products/nail/**/*.tsx",
+    "src/products/beauty-spa-v2/**/*.ts",
+    "src/products/beauty-spa-v2/**/*.tsx",
     "src/app/dashboard/nail/**/*.ts",
     "src/app/dashboard/nail/**/*.tsx"
   ],
