@@ -222,7 +222,7 @@ Fresh local verification:
 
 ```text
 npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
-PASS - 3 suites, 55 tests
+PASS - 3 suites, 56 tests
 
 npx tsc -p tsconfig.beauty.json --noEmit
 PASS
@@ -255,6 +255,7 @@ Product-layer root-cause fixes verified in the focused suite:
 | Checkout completion failure | Session start could persist `IN_PROGRESS` before checkout completion failed. | Roll back the started session to the original planned session when completion fails; report `SESSION_ROLLBACK_FAILED` only if cleanup also fails. |
 | Waitlist handoff evidence | Waitlist integration could return malformed or whitespace-padded acceptance evidence and still be reported as operational success. | Validate returned waitlist ID as a clean operational ID and require a positive integer position before building waitlisted appointment output. |
 | Staff availability evidence | Staff availability integration could return non-boolean evidence and be interpreted by truthiness, creating booking side effects. | Require strict boolean availability evidence before appointment, assignment, allocation, or waitlist side effects. |
+| Staff availability preflight latency | Independent staff availability checks were serialized before any booking side effect. | Run staff availability checks in parallel, then validate ordered results before appointment, assignment, allocation, or waitlist side effects. |
 Previously recorded GitHub PR evidence for PR #188:
 
 ```text

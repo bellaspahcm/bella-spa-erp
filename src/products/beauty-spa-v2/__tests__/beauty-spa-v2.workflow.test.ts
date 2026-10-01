@@ -57,6 +57,9 @@ class BeautySpaHarness {
   public readonly waitlistEntries: Array<{ tenantId: string; customerId: string; reason: string }> = [];
   public readonly unavailableStaff = new Set<string>();
   public readonly malformedStaffAvailability = new Map<string, unknown>();
+  public staffAvailabilityDelay: Promise<void> | null = null;
+  public staffAvailabilityInFlight = 0;
+  public maxConcurrentStaffAvailability = 0;
   public readonly assignmentCreateFailures = new Set<string>();
   public readonly assignmentUpdateFailures = new Set<string>();
   public readonly allocationActivationFailures = new Set<string>();
@@ -163,11 +166,23 @@ class BeautySpaHarness {
 
   public readonly staffAvailability: SpaStaffAvailabilityPort = {
     isAvailable: async (scope) => {
-      const key = this.staffKey(scope.tenantId, scope.branchId, scope.professionalId, scope.interval);
-      if (this.malformedStaffAvailability.has(key)) {
-        return this.malformedStaffAvailability.get(key) as boolean;
+      this.staffAvailabilityInFlight += 1;
+      this.maxConcurrentStaffAvailability = Math.max(
+        this.maxConcurrentStaffAvailability,
+        this.staffAvailabilityInFlight,
+      );
+      try {
+        if (this.staffAvailabilityDelay) {
+          await this.staffAvailabilityDelay;
+        }
+        const key = this.staffKey(scope.tenantId, scope.branchId, scope.professionalId, scope.interval);
+        if (this.malformedStaffAvailability.has(key)) {
+          return this.malformedStaffAvailability.get(key) as boolean;
+        }
+        return !this.unavailableStaff.has(key);
+      } finally {
+        this.staffAvailabilityInFlight -= 1;
       }
-      return !this.unavailableStaff.has(key);
     },
   };
 
@@ -300,6 +315,33 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
     const outcome = JSON.parse(completed.outcome as string) as { paymentStatus: string; auditTags: string[] };
     expect(outcome.paymentStatus).toBe('FINANCE_HANDOFF_REQUIRED');
     expect(outcome.auditTags).toContain('CHAIN_V2');
+  });
+
+  it('checks independent staff availability in parallel before booking side effects', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+    harness.staffAvailabilityDelay = Promise.resolve();
+
+    const booking = await service.bookService({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-team-parallel',
+      serviceId: 'service-team-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-lead-parallel',
+      supportProfessionalIds: ['assistant-parallel-1', 'assistant-parallel-2'],
+      resources: [{ resourceId: 'room-d1-parallel', resourceType: 'ROOM' }],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    });
+
+    expect(harness.maxConcurrentStaffAvailability).toBe(3);
+    expect(booking.assignments.map((assignment) => assignment.professionalId)).toEqual([
+      'therapist-lead-parallel',
+      'assistant-parallel-1',
+      'assistant-parallel-2',
+    ]);
+    expect(booking.allocations).toHaveLength(1);
   });
 
   it('rolls back session start when checkout completion fails', async () => {

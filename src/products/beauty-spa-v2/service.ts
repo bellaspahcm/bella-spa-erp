@@ -304,13 +304,17 @@ export class BeautySpaV2Service {
 
   private async assertStaffAvailable(input: BookBeautySpaServiceInput): Promise<void> {
     const professionalIds = [input.leadProfessionalId, ...(input.supportProfessionalIds ?? [])];
-    for (const professionalId of professionalIds) {
-      const available: unknown = await this.staffAvailability.isAvailable({
+    const availabilityResults = await Promise.all(professionalIds.map(async (professionalId) => ({
+      professionalId,
+      available: await this.staffAvailability.isAvailable({
         tenantId: input.tenantId,
         branchId: input.branchId,
         professionalId,
         interval: input.interval,
-      });
+      }) as unknown,
+    })));
+
+    for (const { available } of availabilityResults) {
       if (typeof available !== 'boolean') {
         throw new BeautySpaV2Error('STAFF_AVAILABILITY_HANDOFF_FAILED', 'Beauty Spa v2 staff availability handoff did not return boolean evidence.');
       }
