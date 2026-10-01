@@ -201,6 +201,45 @@ npm test -- tests/baseline/adversarial-verification.test.ts
 
 ---
 
+### Baseline Checkpoint Governance
+
+Use a baseline checkpoint before any workstream that may touch many contracts,
+generated types, cleanup batches, or baseline findings.
+
+Required checkpoint evidence:
+
+- Clean working tree or an isolated worktree.
+- Fresh full typecheck, or an explicit `TIMEOUT / NOT_VERIFIED` record.
+- Baseline comparison result.
+- Relevant architecture/security guards for the touched scope.
+- Commit checkpoint and PR checkpoint when the user authorizes them.
+
+A baseline is valid evidence only when its command, commit, branch, scope, and
+artifact provenance are recorded. Historical artifacts are worklists until they
+are refreshed or explicitly tied to the current checkpoint.
+
+### Residual Boundary Governance
+
+The baseline system distinguishes new debt from inherited debt. It does not
+authorize cleanup across ownership or contract boundaries.
+
+When remaining findings are classified as any of the following, stop the cleanup
+campaign and seal a residual-boundary record instead of chasing raw count:
+
+- Frozen scope.
+- Contract gap or contract drift.
+- Generated artifact.
+- DB, RLS, or business contract.
+- Core-adjacent boundary.
+- Governance-required decision.
+
+The residual-boundary record must include the official sealed baseline, raw
+scanner count, classification by ownership/root cause, and the approval or
+separate workstream required for each residual class. A non-zero baseline can be
+the correct sealed state when all remaining findings require separate authority.
+
+---
+
 ### Why This Exists
 
 **Problem:** CI blocked clean PR #116 (Logistics hardening) due to pre-existing debt in unrelated scopes.
