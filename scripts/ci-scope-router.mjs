@@ -111,6 +111,7 @@ const DB_RUNTIME_SURFACE_PATTERN = /^(src\/(app|core|lib|modules|platform|produc
 const SECURITY_SCRIPT_PATTERN = /^scripts\/(audit-production|check-secret-leaks|check-ci-quality-env)\.mjs$/;
 const BELLA_AUTO_REAL_DB_SURFACE_PATTERN = /^src\/modules\/bella-auto\/services\//;
 const REAL_DB_TEST_CONFIG_PATTERN = /^jest\.real-db\.(config|setup)\.ts$/;
+const REAL_DB_TEST_FILE_PATTERN = /^(src\/__tests__\/bella-auto-phase5-experience\.test\.ts|src\/__tests__\/e2e-(order-lifecycle-real|refund-full|accounting-gl-verification|payroll-month-close)\.test\.ts|src\/app\/api\/english-center\/__tests__\/post-rc-real-db-validation\.test\.ts|src\/__tests__\/haircut-f3-debt-real-db-diagnostic\.test\.ts)$/;
 
 function normalize(file) {
   return file.replace(/\\/g, '/').replace(/^\.\//, '').trim();
@@ -195,6 +196,7 @@ export function classifyFiles(files) {
   let hasDbRuntimeSurface = false;
   let hasBellaAutoRealDbSurface = false;
   let hasRealDbTestConfig = false;
+  let hasRealDbTestFile = false;
 
   for (const file of normalizedFiles) {
     hasCode ||= CODE_PATTERN.test(file);
@@ -212,6 +214,7 @@ export function classifyFiles(files) {
     hasDbRuntimeSurface ||= DB_RUNTIME_SURFACE_PATTERN.test(file);
     hasBellaAutoRealDbSurface ||= BELLA_AUTO_REAL_DB_SURFACE_PATTERN.test(file);
     hasRealDbTestConfig ||= REAL_DB_TEST_CONFIG_PATTERN.test(file);
+    hasRealDbTestFile ||= REAL_DB_TEST_FILE_PATTERN.test(file);
 
     for (const [key, scope] of Object.entries(PRODUCT_SCOPES)) {
       if (matchesAny(file, scope.patterns)) {
@@ -266,7 +269,7 @@ export function classifyFiles(files) {
   const needsTests = (hasCode || hasTest) && !docsOnly;
   const needsBuild = (hasCode || hasDependencies || scopeLevel === 'platform') && !hasMigration && !docsOnly;
   const needsArchitectureGuard = hasCode && !docsOnly;
-  const needsRealDbE2e = hasMigration || hasBellaAutoRealDbSurface || hasRealDbTestConfig || (scopeLevel === 'platform' && hasDbRuntimeSurface);
+  const needsRealDbE2e = hasMigration || hasBellaAutoRealDbSurface || hasRealDbTestConfig || hasRealDbTestFile || (scopeLevel === 'platform' && hasDbRuntimeSurface);
   const needsE2e = scopeLevel === 'platform' || products.size > 0 || hasDependencies;
   const needsMigrationGates = hasMigration;
   const needsApiDocs = hasApiDocs;
@@ -313,6 +316,7 @@ export function classifyFiles(files) {
     has_db_runtime_surface: hasDbRuntimeSurface,
     has_bella_auto_real_db_surface: hasBellaAutoRealDbSurface,
     has_real_db_test_config: hasRealDbTestConfig,
+    has_real_db_test_file: hasRealDbTestFile,
     needs_typecheck: needsTypecheck,
     needs_tests: needsTests,
     needs_build: needsBuild,

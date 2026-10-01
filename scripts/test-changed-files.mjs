@@ -3,6 +3,12 @@ import { writeFileSync } from 'node:fs';
 
 const CODE_FILE_PATTERN = /\.(ts|tsx|js|jsx)$/;
 const TEST_FILE_PATTERN = /\.(test|spec)\.(ts|tsx|js|jsx)$/;
+const DIRECT_TEST_EXCLUDED_PATTERNS = [
+  /^src\/__tests__\/bella-auto-phase5-experience\.test\.ts$/,
+  /^src\/__tests__\/e2e-(order-lifecycle-real|refund-full|accounting-gl-verification|payroll-month-close)\.test\.ts$/,
+  /^src\/app\/api\/english-center\/__tests__\/post-rc-real-db-validation\.test\.ts$/,
+  /^src\/__tests__\/haircut-f3-debt-real-db-diagnostic\.test\.ts$/,
+];
 const EXCLUDED_PATTERNS = [
   /^scripts\//,
   /^\.github\//,
@@ -141,7 +147,10 @@ const sourceFiles = changedFiles.filter((file) => (
   CODE_FILE_PATTERN.test(file)
   && !EXCLUDED_PATTERNS.some((pattern) => pattern.test(file))
 ));
-const testFiles = changedFiles.filter((file) => TEST_FILE_PATTERN.test(file));
+const testFiles = changedFiles.filter((file) => (
+  TEST_FILE_PATTERN.test(file)
+  && !DIRECT_TEST_EXCLUDED_PATTERNS.some((pattern) => pattern.test(file))
+));
 
 if (sourceFiles.length === 0) {
   if (testFiles.length > 0) {
