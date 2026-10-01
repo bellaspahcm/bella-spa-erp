@@ -205,7 +205,7 @@ export class BeautySpaV2Service {
       throw new BeautySpaV2Error('INVALID_RESOURCE_TYPE', 'Beauty Spa v2 bookings require supported resource types.');
     }
 
-    const requiredIds = [
+    const requiredIds: unknown[] = [
       input.tenantId,
       input.branchId,
       input.customerId,
@@ -215,7 +215,7 @@ export class BeautySpaV2Service {
       ...(input.supportProfessionalIds ?? []),
       ...input.resources.map((resource) => resource.resourceId),
     ];
-    if (requiredIds.some((value) => value.trim().length === 0)) {
+    if (requiredIds.some(isMissingString)) {
       throw new BeautySpaV2Error('REQUIRED_ID_MISSING', 'Beauty Spa v2 bookings require tenant, branch, customer, service, staff, actor, and resource IDs.');
     }
 
@@ -261,16 +261,16 @@ export class BeautySpaV2Service {
   }
 
   private assertSessionOutcome(input: CompleteBeautySpaSessionInput): void {
-    const requiredSessionIds = [
+    const requiredSessionIds: unknown[] = [
       input.session.id,
       input.session.tenantId,
       input.session.appointmentId,
       input.session.serviceCommitmentId,
     ];
-    if (requiredSessionIds.some((value) => value.trim().length === 0)) {
+    if (requiredSessionIds.some(isMissingString)) {
       throw new BeautySpaV2Error('REQUIRED_SESSION_ID_MISSING', 'Beauty Spa v2 session completion requires session, tenant, appointment, and service commitment IDs.');
     }
-    if (input.performerId.trim().length === 0) {
+    if (isMissingString(input.performerId)) {
       throw new BeautySpaV2Error('REQUIRED_ID_MISSING', 'Beauty Spa v2 session completion requires a performer ID.');
     }
     if (typeof input.outcome.packageSessionUsed !== 'boolean') {
@@ -285,13 +285,17 @@ export class BeautySpaV2Service {
     if (!isOneOf(BEAUTY_SPA_PAYROLL_HANDOFFS, input.outcome.payrollHandoff)) {
       throw new BeautySpaV2Error('INVALID_CHECKOUT_OUTCOME', 'Beauty Spa v2 session completion requires a supported payroll handoff.');
     }
-    if (input.outcome.checkedOutBy.trim().length === 0) {
+    if (isMissingString(input.outcome.checkedOutBy)) {
       throw new BeautySpaV2Error('CHECKOUT_ACTOR_REQUIRED', 'Beauty Spa v2 session completion requires a checkout actor.');
     }
-    if (input.outcome.customerHistoryNote.trim().length === 0) {
+    if (isMissingString(input.outcome.customerHistoryNote)) {
       throw new BeautySpaV2Error('CUSTOMER_HISTORY_REQUIRED', 'Beauty Spa v2 session completion requires a customer history note.');
     }
-    if (input.outcome.auditTags.length === 0 || input.outcome.auditTags.some((tag) => tag.trim().length === 0)) {
+    if (
+      !Array.isArray(input.outcome.auditTags)
+      || input.outcome.auditTags.length === 0
+      || input.outcome.auditTags.some(isMissingString)
+    ) {
       throw new BeautySpaV2Error('AUDIT_TAGS_REQUIRED', 'Beauty Spa v2 session completion requires non-empty audit tags.');
     }
   }
@@ -425,4 +429,8 @@ function isOneOf<const TValues extends readonly string[]>(
   value: string,
 ): value is TValues[number] {
   return values.includes(value);
+}
+
+function isMissingString(value: unknown): boolean {
+  return typeof value !== 'string' || value.trim().length === 0;
 }

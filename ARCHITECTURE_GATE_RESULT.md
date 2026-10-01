@@ -353,14 +353,14 @@ Required operational ID validation verification:
 
 ```text
 ROOT_CAUSE
-Beauty Spa v2 accepted blank tenant, branch, customer, service, staff, actor, or
-resource IDs because TypeScript `string` does not prevent empty runtime values.
-That could create appointment, assignment, allocation, or waitlist records with
-invalid identity references.
+Beauty Spa v2 accepted blank or non-string tenant, branch, customer, service,
+staff, actor, or resource IDs because TypeScript `string` does not prevent invalid
+runtime values. That could create appointment, assignment, allocation, or waitlist
+records with invalid identity references or throw raw runtime errors.
 
 MINIMAL_FIX
-Beauty Spa v2 now rejects missing required operational IDs before appointment,
-assignment, allocation, or waitlist side effects.
+Beauty Spa v2 now rejects missing or non-string required operational IDs before
+appointment, assignment, allocation, or waitlist side effects.
 
 VERIFY
 npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
@@ -370,15 +370,16 @@ Checkout evidence validation verification:
 
 ```text
 ROOT_CAUSE
-Beauty Spa v2 session completion accepted empty session identity fields, performer
-IDs, checkout actor IDs, customer history notes, or audit tags. That could complete
-a session without the session, actor, customer-history, and audit handoff evidence
-required by the product workflow.
+Beauty Spa v2 session completion accepted empty or structurally invalid session
+identity fields, performer IDs, checkout actor IDs, customer history notes, or
+audit tags. That could complete a session without the session, actor,
+customer-history, and audit handoff evidence required by the product workflow or
+throw raw runtime errors.
 
 MINIMAL_FIX
 Beauty Spa v2 validates session, tenant, appointment, service commitment, performer,
-checkout actor, customer history note, and non-empty audit tags before invoking
-Beauty OS session start/complete services.
+checkout actor, customer history note, and non-empty audit tag arrays before
+invoking Beauty OS session start/complete services.
 
 VERIFY
 npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand

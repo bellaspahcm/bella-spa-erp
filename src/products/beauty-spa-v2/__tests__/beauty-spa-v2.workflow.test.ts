@@ -382,6 +382,20 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
         paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
         inventoryHandoff: 'INVENTORY_HANDOFF_REQUIRED',
         payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: 'CHAIN_V2' as never,
+      },
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'AUDIT_TAGS_REQUIRED' });
+
+    await expect(service.completeSession({
+      session: plannedSession,
+      performerId: 'therapist-lead-1',
+      outcome: {
+        checkedOutBy: 'manager-spa',
+        customerHistoryNote: 'Skin barrier improved.',
+        packageSessionUsed: true,
+        paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+        inventoryHandoff: 'INVENTORY_HANDOFF_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
         auditTags: [],
       },
     })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'AUDIT_TAGS_REQUIRED' });
@@ -562,6 +576,26 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
     expect(harness.assignments).toHaveLength(0);
     expect(harness.allocations).toHaveLength(0);
     expect(harness.waitlistEntries).toHaveLength(0);
+
+    const nonStringHarness = new BeautySpaHarness();
+    const nonStringService = nonStringHarness.createService();
+
+    await expect(nonStringService.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-numeric-resource',
+      serviceId: 'service-suite-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-resource',
+      resources: [{ resourceId: 123 as never, resourceType: 'SUITE' }],
+      actorId: 'manager-spa',
+      bookingMode: 'WALK_IN',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'REQUIRED_ID_MISSING' });
+
+    expect(nonStringHarness.appointments).toHaveLength(0);
+    expect(nonStringHarness.assignments).toHaveLength(0);
+    expect(nonStringHarness.allocations).toHaveLength(0);
+    expect(nonStringHarness.waitlistEntries).toHaveLength(0);
   });
 
   it('rejects invalid interval and capacity before creating operational side effects', async () => {
