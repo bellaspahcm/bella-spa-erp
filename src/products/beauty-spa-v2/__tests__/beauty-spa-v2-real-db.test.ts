@@ -33,6 +33,8 @@ import {
   SupabaseBeautySessionRepository,
   type BeautyH8Database,
 } from '@/platform/beauty/infrastructure';
+import { SupabaseReceivableChargeGateway } from '@/platform/finance/gateways/supabase-receivable-charge.gateway';
+import { SemanticReceivableChargeService } from '@/platform/finance/services/semantic-receivable-charge.service';
 
 import {
   BeautySpaV2Service,
@@ -191,6 +193,7 @@ describeWithRealSupabase('Bella Beauty Spa v2 Real DB business proof', () => {
   const created = {
     tenants: [] as string[],
     customers: [] as string[],
+    financeTenants: [] as string[],
   };
 
   let seedClient: SeedClient;
@@ -245,11 +248,15 @@ describeWithRealSupabase('Bella Beauty Spa v2 Real DB business proof', () => {
       await cleanup('beauty_appointments', beautyClient.from('beauty_appointments').delete().eq('tenant_id', tenantId));
     }
 
-    if (!retainedImmutableHistory && created.customers.length > 0) {
+    if (!retainedImmutableHistory && created.financeTenants.length === 0 && created.customers.length > 0) {
       await cleanup('customers', seedClient.from('customers').delete().in('id', created.customers));
     } else if (retainedImmutableHistory && created.customers.length > 0) {
       console.warn(
         `[Beauty Spa V2 Real DB cleanup] retained customer fixture(s) because immutable Beauty history references the booking chain: ${created.customers.join(', ')}`,
+      );
+    } else if (created.financeTenants.length > 0 && created.customers.length > 0) {
+      console.warn(
+        `[Beauty Spa V2 Real DB cleanup] retained customer fixture(s) because immutable Finance control facts reference the Beauty AR chain: ${created.customers.join(', ')}`,
       );
     }
     if (created.tenants.length > 0) {
@@ -416,6 +423,8 @@ describeWithRealSupabase('Bella Beauty Spa v2 Real DB business proof', () => {
       });
       expect(error).toBeNull();
     }
+
+    created.financeTenants.push(tenantId);
   }
 
   function createService(
@@ -930,5 +939,197 @@ describeWithRealSupabase('Bella Beauty Spa v2 Real DB business proof', () => {
       actual_performer_id: null,
       outcome: null,
     }));
+  });
+
+  it('routes Beauty completed-service receivables through F5 AR control with case, severity, idempotency, and tenant isolation evidence', async () => {
+    const tenantA = await insertTenant('finance-f5-tenant-a');
+    const tenantB = await insertTenant('finance-f5-tenant-b');
+    const customerA = await insertCustomer(tenantA, 'finance-f5-customer-a');
+    await seedFinanceFoundation(tenantA);
+
+    const { service, appointmentRepo, sessionRepo } = createService();
+    const interval: TimeInterval = {
+      startsAt: '2026-10-02T18:00:00.000Z',
+      endsAt: '2026-10-02T19:00:00.000Z',
+    };
+    const appointment = await appointmentRepo.create({
+      id: randomUUID(),
+      tenantId: tenantA,
+      branchId: randomUUID(),
+      customerId: customerA,
+      serviceId: randomUUID(),
+      interval,
+      status: 'PENDING',
+    });
+    const plannedSession = await sessionRepo.create({
+      id: randomUUID(),
+      tenantId: tenantA,
+      appointmentId: appointment.id,
+      serviceCommitmentId: randomUUID(),
+      status: 'PLANNED',
+      actualStartAt: null,
+      actualEndAt: null,
+      actualPerformerId: null,
+      outcome: null,
+    });
+    const completed = await service.completeSession({
+      session: plannedSession,
+      performerId: randomUUID(),
+      outcome: {
+        checkedOutBy: randomUUID(),
+        customerHistoryNote: 'Beauty F5 AR control evidence.',
+        packageSessionUsed: false,
+        paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+        inventoryHandoff: 'NOT_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: ['BEAUTY_V2_REAL_DB', 'F5_AR_CONTROL'],
+      },
+    });
+    expect(completed.status).toBe('COMPLETED');
+
+    const financeService = new SemanticReceivableChargeService(
+      new SupabaseReceivableChargeGateway(seedClient),
+    );
+    const matchedReceivable = await financeService.recognizeServiceReceivable({
+      tenantId: tenantA,
+      customerId: customerA,
+      amountMinor: 180_000,
+      currency: 'VND',
+      servicePeriodStart: '2026-10-02',
+      servicePeriodEnd: '2026-10-02',
+      recognitionDate: '2026-10-02',
+      dueDate: '2026-10-09',
+      businessSourceType: 'BEAUTY_V2_SESSION_COMPLETED',
+      businessSourceId: completed.id,
+      description: `${marker} Beauty V2 completed service receivable`,
+      metadata: {
+        product_key: 'bella_spa',
+        beauty_session_id: completed.id,
+        beauty_appointment_id: appointment.id,
+      },
+    });
+    expect(matchedReceivable.receivableLedgerEntryCount).toBe(1);
+    expect(matchedReceivable.transactionLineCount).toBe(2);
+
+    const passBasisId = randomUUID();
+    const passParams = {
+      p_tenant_id: tenantA,
+      p_domain: 'AR',
+      p_control_type: 'AR_GL_BALANCE',
+      p_basis_id: passBasisId,
+      p_basis_version: 'AR_GL_BALANCE:v1',
+      p_reconciliation_as_of: '2026-10-02T23:59:59.000Z',
+    } as const;
+    const passRun = await seedClient.rpc('f5_run_reconciliation', passParams);
+    const duplicatePassRun = await seedClient.rpc('f5_run_reconciliation', passParams);
+    expect(passRun.error).toBeNull();
+    expect(duplicatePassRun.error).toBeNull();
+    expect(passRun.data.run_id).toBe(duplicatePassRun.data.run_id);
+
+    const { data: passResult, error: passResultError } = await seedClient
+      .from('f5_control_results')
+      .select('result_id, financial_result, severity, expected_amount, actual_amount, case_id')
+      .eq('tenant_id', tenantA)
+      .eq('run_id', passRun.data.run_id)
+      .eq('source_id', matchedReceivable.invoiceId)
+      .single();
+    expect(passResultError).toBeNull();
+    expect(passResult).toMatchObject({
+      financial_result: 'MATCHED',
+      severity: 'LOW',
+      expected_amount: 180_000,
+      actual_amount: 180_000,
+      case_id: null,
+    });
+
+    const mismatchReceivable = await financeService.recognizeServiceReceivable({
+      tenantId: tenantA,
+      customerId: customerA,
+      amountMinor: 150_000,
+      currency: 'VND',
+      servicePeriodStart: '2026-10-02',
+      servicePeriodEnd: '2026-10-02',
+      recognitionDate: '2026-10-02',
+      dueDate: '2026-10-09',
+      businessSourceType: 'BEAUTY_V2_SESSION_COMPLETED_MISMATCH',
+      businessSourceId: randomUUID(),
+      description: `${marker} Beauty V2 mismatch receivable`,
+      metadata: {
+        product_key: 'bella_spa',
+        beauty_session_id: completed.id,
+        mismatch_probe: true,
+      },
+    });
+    const { error: mismatchFactError } = await seedClient
+      .from('finance_receivable_ledger')
+      .insert({
+        id: randomUUID(),
+        tenant_id: tenantA,
+        invoice_id: mismatchReceivable.invoiceId,
+        entry_type: 'CREDIT_ALLOCATION',
+        amount_minor: 150_000,
+        source_type: 'ALLOCATION',
+        source_id: randomUUID(),
+        created_at: '2026-10-02T20:00:00.000Z',
+      });
+    expect(mismatchFactError).toBeNull();
+
+    const { data: mismatchRun, error: mismatchRunError } = await seedClient.rpc('f5_run_reconciliation', {
+      p_tenant_id: tenantA,
+      p_domain: 'AR',
+      p_control_type: 'AR_GL_BALANCE',
+      p_basis_id: randomUUID(),
+      p_basis_version: 'AR_GL_BALANCE:v1',
+      p_reconciliation_as_of: '2026-10-02T23:59:59.000Z',
+    });
+    expect(mismatchRunError).toBeNull();
+
+    const { data: mismatchResult, error: mismatchResultError } = await seedClient
+      .from('f5_control_results')
+      .select('result_id, financial_result, severity, expected_amount, actual_amount, variance_amount, case_id')
+      .eq('tenant_id', tenantA)
+      .eq('run_id', mismatchRun.run_id)
+      .eq('source_id', mismatchReceivable.invoiceId)
+      .single();
+    expect(mismatchResultError).toBeNull();
+    expect(mismatchResult).toMatchObject({
+      financial_result: 'VARIANCE',
+      severity: 'MEDIUM',
+      expected_amount: 0,
+      actual_amount: 150_000,
+    });
+    expect(Number(mismatchResult!.variance_amount)).toBe(150_000);
+    expect(mismatchResult!.case_id).toBeTruthy();
+
+    const { data: caseRow, error: caseError } = await seedClient
+      .from('f5_control_cases')
+      .select('case_state, result_id, tenant_id')
+      .eq('case_id', mismatchResult!.case_id)
+      .single();
+    expect(caseError).toBeNull();
+    expect(caseRow).toMatchObject({
+      case_state: 'OPEN',
+      result_id: mismatchResult!.result_id,
+      tenant_id: tenantA,
+    });
+
+    const { data: tenantBRun, error: tenantBRunError } = await seedClient.rpc('f5_run_reconciliation', {
+      p_tenant_id: tenantB,
+      p_domain: 'AR',
+      p_control_type: 'AR_GL_BALANCE',
+      p_basis_id: randomUUID(),
+      p_basis_version: 'AR_GL_BALANCE:v1',
+      p_reconciliation_as_of: '2026-10-02T23:59:59.000Z',
+    });
+    expect(tenantBRunError).toBeNull();
+    expect(tenantBRun.total_checked).toBe(0);
+
+    const { count: crossTenantResults, error: crossTenantError } = await seedClient
+      .from('f5_control_results')
+      .select('result_id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantB)
+      .in('source_id', [matchedReceivable.invoiceId, mismatchReceivable.invoiceId]);
+    expect(crossTenantError).toBeNull();
+    expect(crossTenantResults).toBe(0);
   });
 });
