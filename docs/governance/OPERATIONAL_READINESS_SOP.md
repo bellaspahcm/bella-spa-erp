@@ -3,7 +3,7 @@
 **Status:** ACTIVE
 **Owner:** Bella Engineering Governance
 **Authority:** `docs/governance/BELLA_AI_CODING_CONSTITUTION.md`
-**Scope:** Read-only operational readiness audits for Bella products preparing for real customer operation.
+**Scope:** Read-only operational readiness audits for Bella products preparing for real customer operation, including product-to-Finance readiness when the selected workflow declares or creates financial facts.
 
 This SOP defines how Bella evaluates whether a product can support real daily business operation. It does not replace the Bella Engineering Constitution, vertical constitutions, freeze policies, ACR/ADR processes, deployment governance, or product-specific evidence packs. Stricter rules still win.
 
@@ -100,6 +100,10 @@ If the chain breaks, classify the exact break. Do not infer missing links.
 
 Do not call a workflow operationally ready when only one layer is proven. Backend PASS does not prove UI PASS. UI render does not prove persistence. Read path does not prove write path.
 
+For Finance-integrated workflows, Finance engine existence does not prove product
+finance readiness. The product's own business event must be traced through the
+finance handoff chain before the workflow can be called Finance Integrated.
+
 ### Rule 7: One Operational Owner
 
 Each operational workflow must identify one accountable product owner for readiness decisions. Shared capabilities can participate, but readiness ownership cannot be ambiguous.
@@ -127,6 +131,100 @@ When a workflow is `BLOCKED`, the next implementation task must target the prove
 ### Rule 13: Verify, Seal, Stop
 
 After a minimal fix, rerun the exact workflow evidence chain, record the result, seal the checkpoint, and stop. Do not continue into adjacent workflows without a new decision.
+
+## Finance Integration Evidence
+
+Use this section only when the selected workflow declares Finance Integration as
+a go-live requirement or when a vertical business event is expected to create a
+financial fact. Do not use it to create product-specific finance gates or to
+expand readiness into Finance Kernel redesign.
+
+### Mandatory Gate: Vertical -> Finance Wiring Integrity
+
+A vertical must not be classified as `Finance Integrated` merely because Finance
+engines, contracts, workers, migrations, or tables exist.
+
+The readiness gate is generic:
+
+```text
+Business Event
+  -> Accounting Outbox
+  -> Finance Processing
+  -> Financial Fact
+  -> Control / read-back evidence
+```
+
+`PASS` requires Real DB evidence for the vertical's own business event. Static
+code existence, mocked workers, old artifacts, or another product's successful
+finance flow are insufficient and must be classified as `NOT_PROVEN`.
+
+Required evidence:
+
+| Evidence point | Required proof |
+|---|---|
+| Business event | The selected vertical emits or persists the canonical business event after the business state transition. |
+| Accounting outbox | The event creates the expected accounting outbox row with tenant, aggregate, idempotency, and payload evidence. |
+| Finance processing | The accounting worker or canonical processing boundary consumes that outbox row without bypassing Finance contracts. |
+| Financial fact | The expected F1/F2/F3 financial fact is created, with tenant-scoped read-back evidence. |
+| Duplicate defense | Replaying or retrying the same business event does not create duplicate financial facts. |
+| Missing defense | Missing or delayed financial processing is observable as `NOT_PROVEN` or `BLOCKED`, not hidden success. |
+| Tenant isolation | Cross-tenant event, outbox, processing, and fact visibility remain isolated. |
+
+Classification rules:
+
+- `PASS`: Real DB evidence proves the complete chain for this vertical and workflow.
+- `BLOCKED`: Evidence proves false success, duplicate fact generation, missing required fact, tenant leakage, permission bypass, or contract drift.
+- `NOT_PROVEN`: Any chain link lacks fresh evidence.
+- `DEFERRED`: Finance integration is valid but explicitly outside the selected workflow or release scope.
+
+### Candidate Rule: Financial Control / F5 Evidence
+
+If a vertical declares financial control as a go-live requirement, its evidence
+should cover both financial generation and financial control:
+
+- financial fact created;
+- duplicate fact rejected or reconciled;
+- missing fact detected;
+- mismatch or delay detected;
+- severity classified;
+- alert or routing follows the control contract;
+- tenant isolation preserved.
+
+This is a candidate rule, not a mandatory global gate for every vertical. Promote
+it to a mandatory gate only after repeated evidence shows that product readiness
+is being overclaimed after F1/F2/F3 generation but before control is proven.
+
+### Candidate Rule: Production Schema Compatibility
+
+A feature should not be called `Production Ready` when the production target has
+not verified the canonical schema, constraints, RLS, triggers, and migration
+ledger required by that feature.
+
+This rule is especially relevant when the workflow depends on:
+
+- concurrency constraints;
+- append-only history;
+- RLS;
+- foreign-key or unique constraints;
+- database triggers;
+- production migration ledger evidence.
+
+This is a candidate rule until recurring cross-vertical evidence proves it must
+become a mandatory global readiness gate. Until then, classify missing production
+schema evidence as `NOT_PROVEN` for the specific workflow instead of creating a
+new universal gate.
+
+## Readiness Layers
+
+Use these four layers as a summary frame. They do not replace the workflow
+template and they do not authorize extra gates by themselves.
+
+| Layer | Evidence focus |
+|---|---|
+| Business Contract | Identity, tenant isolation, permission, workflow, state transition. |
+| Runtime / DB Integrity | Persistence, constraints, concurrency, idempotency, immutable history, rollback, Real DB proof. |
+| Financial Integrity | Accounting outbox, F1/F2/F3 wiring, financial fact, F5/control evidence when in scope, severity, alerting, reconciliation. |
+| Production Go-Live Integrity | Migration, production schema, read-back, backup evidence, CI, baseline, security, architecture, production verification. |
 
 ## Operational Audit Template
 

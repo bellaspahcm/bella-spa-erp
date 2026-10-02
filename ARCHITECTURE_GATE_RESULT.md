@@ -1,327 +1,108 @@
-# ARCHITECTURE GATE RESULT - BELLA BEAUTY SPA V2 CHAIN PRODUCT
+# ARCHITECTURE GATE RESULT - FINANCE READINESS GOVERNANCE
 
-> **Status:** PASS_WITH_BOUNDARY - product-layer orchestration may proceed; Beauty OS frozen contracts/tables, Finance policy, Healthcare, Education, Logistics, and Core remain out of scope.
-> **Date:** 2026-10-01
-> **Scope:** Build Bella Beauty Spa v2 as a multi-branch spa-chain product by composing existing Beauty OS H8 operational contracts and existing product/module facades. No Beauty OS structural change.
-
----
+Date: 2026-10-02
+Status: PASS
 
 ## 1. Bella OS/Product Development Process Gate
 
-Business mission:
+Scope:
 
 ```text
-Bella Beauty Spa v2 = production-oriented multi-branch Spa Chain Management product
-for customer booking, walk-in intake, scheduling, staff/resource assignment,
-service session execution, conflict prevention, package/customer history,
-and operational handoff to existing Finance/Payroll/Inventory/reporting surfaces.
+Codify the narrowly proven governance lesson from recent product readiness work:
+Vertical finance readiness must prove the product-to-finance wiring chain, not
+only the existence of Finance OS engines, contracts, workers, or tables.
 ```
 
-Source-of-truth evidence:
+Non-goals:
 
-| Truth | Source | Gate result |
-|---|---|---|
-| Product identity is owned by Product Registry | `src/platform/registry/product-registry.ts` | Existing registry has Haircut and Babycare, missing full `bella_spa`; additive product identity allowed. |
-| Beauty OS reusable operational contracts exist | `src/platform/beauty/contracts/*`, `src/platform/beauty/application/*` | Appointment, assignment, resource allocation, session, capacity conflict, disruption history exist. |
-| Beauty OS persistence exists and is RLS-enabled | `supabase/migrations/20260916000000_beauty_os_h8_persistence.sql` | Reuse only; no schema mutation needed for v2 operational slice. |
-| Beauty industry pack is frozen | `src/platform/industry-registry.ts` | Blocks Beauty OS structural/kernel changes. Product-layer composition remains allowed. |
-| Babycare and Nail provide reuse lessons | `src/modules/spa/*`, `src/products/nail/*` | Reuse Beauty OS; avoid new contracts/tables when product delta fits existing contracts. |
-| Real DB proof must be fresh | Bella Constitution and Nail/Haircut real DB patterns | Credential-gated tests may be added; skipped Real DB remains `NOT_VERIFIED`, not PASS. |
+- No runtime code.
+- No product vertical implementation.
+- No Finance Kernel implementation or posting-rule change.
+- No Healthcare, Education, Logistics, Beauty OS, or Core changes.
+- No new scanner, CI job, framework, migration, or automation.
+- No Beauty-specific Finance gate.
+- No immediate gate expansion for F5 or production schema compatibility without more recurring evidence.
 
-Gate conclusion: `PASS_WITH_BOUNDARY` for product identity, product orchestration service, product UI evidence route, reuse-boundary tests, workflow tests, and evidence docs. `BLOCKED` for any attempt to alter Beauty OS frozen schema/contracts or invent Finance/accounting/payroll policy.
+Gate conclusion:
+
+```text
+PASS - documentation-only governance clarification may proceed.
+```
 
 ## 2. Product Manifest
 
-Product:
+No product is being implemented or modified.
 
-```text
-productKey: bella_spa
-displayName: Bella Beauty Spa v2
-requiredModules: [beauty_spa]
-serviceProfile: spa
-navigationProfile: spa
-defaultRoute: /dashboard/beauty-spa-v2
-```
-
-Capabilities discovered for v2:
-
-| Capability | Owner | v2 status |
-|---|---|---|
-| Customer / customer history | Platform/Core customer services | Reuse / integrate by ID. |
-| Booking / walk-in | Beauty OS appointment + product orchestration | Implement product orchestration. |
-| Scheduling | Beauty OS appointment interval | Reuse. |
-| Staff | Platform user / Beauty OS assignment | Reuse by professional ID. |
-| Branch | Product/tenant operational dimension | Reuse `branchId` contract in appointment. |
-| Room / bed / resource | Beauty OS resource allocation | Reuse multi-resource allocation. |
-| Service / package | Service Catalog / Spa package facade | Reuse by service/package ID. |
-| Service session | Beauty OS session tracking | Reuse. |
-| Check-in / check-out | Beauty OS session status transition | Implement workflow orchestration. |
-| Payment / revenue | Existing order/Finance actions | Reuse only; no Finance policy change. |
-| Commission / payroll | Existing HR Salary/Spa Salary facade | Reuse only; no payroll engine change. |
-| Inventory | Existing inventory/product sale surfaces | Defer direct implementation unless contract is proven. |
-| Membership | Existing package/customer history surfaces | Defer direct implementation unless contract is proven. |
-| Reporting | Existing read/reporting surfaces | Product summary only in this PR. |
-| Permission / audit | Existing tenant/auth/audit gates | Tests prove tenant scoping; no new auth model. |
-| Chain management | Product orchestration over branch/resource/staff/time | Implement deterministic chain workflow model. |
-| AI / EIP / EOS automation | Existing intelligence/integration runtime only | Defer operational automation implementation. |
+This scope applies to future products or verticals only when they declare Finance
+Integration as a go-live requirement or when their business workflow creates a
+financial fact.
 
 ## 3. Ownership Map
 
-| Data / action | Owner | Product access rule |
+| Data / decision | Owner | Change authority in this scope |
 |---|---|---|
-| `tenant_id`, product identity | Platform / Product Registry | Product reads registry; no module fallback identity. |
-| Customer ID/history | Platform customer services | Product references customer ID, does not duplicate customer entity. |
-| Appointment interval/branch/service | Beauty OS | Product calls `AppointmentService`. |
-| Staff assignment | Beauty OS | Product calls `ProfessionalAssignmentService`. |
-| Resource allocation/capacity | Beauty OS | Product calls `ResourceAllocationService`. |
-| Session lifecycle | Beauty OS | Product calls `SessionTrackingService`. |
-| Payment / revenue / F3 AR | Finance / existing order services | Product may hand off; no new accounting mapping. |
-| Payroll / commission | HR Salary / Spa Salary facade | Product may classify/report; no new payroll engine. |
-| Inventory movement | Inventory module | Product must not invent inventory write semantics. |
+| Operational readiness workflow evidence | Bella Engineering Governance | Clarify SOP evidence requirements only. |
+| Product business event | Owning Product / Vertical | No product code change. |
+| Accounting outbox and worker evidence | Finance integration boundary | No implementation change. |
+| F1/F2/F3/F5 facts and controls | Finance OS | No kernel/control implementation change. |
+| Production schema / RLS / trigger evidence | Deployment / DB governance | Candidate rule only, no gate automation. |
 
 ## 4. Contract Dependency Map
 
 ```text
-Bella Beauty Spa v2 Product
-  -> ProductRegistry productKey `bella_spa`
-  -> Beauty OS application services
-     -> AppointmentRepository
-     -> ProfessionalAssignmentRepository
-     -> ResourceAllocationRepository
-     -> ResourceAvailabilityPort
-     -> SessionRepository
-  -> existing Spa facades for package/salary
-  -> existing Finance/order contracts for payment/revenue where proven
+Vertical business workflow
+  -> product business event
+  -> accounting outbox
+  -> accounting worker / Finance integration boundary
+  -> Finance OS fact generation (F1/F2/F3 as applicable)
+  -> control / reconciliation evidence when declared required
+  -> operational readiness decision
 ```
 
-Critical invariant:
-
-```text
-Staff + Time + Branch + Room/Resource
-        -> Availability
-        -> Capacity / conflict prevention
-        -> Waitlist or blocked booking
-```
-
-Beauty OS inheritance direction:
-
-```text
-Beauty OS public contracts/services/capabilities
-        -> Bella Beauty Spa v2 product orchestration
-        -> Beauty products and operational workflows
-```
-
-Beauty Spa v2 must reuse Beauty OS public capability surfaces. It must not fork
-Beauty OS, duplicate sibling product implementations, or bypass Beauty OS with
-direct database access.
+This change defines readiness evidence language only. It does not create or alter
+any runtime contract.
 
 ## 5. Change Authority
 
 Authorized:
 
-- Add `bella_spa` Product Registry definition.
-- Add product-layer service and tests under `src/products/beauty-spa-v2/**`.
-- Add product-owned browser evidence route under `src/app/dashboard/beauty-spa-v2/**` mapped to the product service.
-- Add focused docs/evidence for this product gate.
-- Update beauty-focused TypeScript config include list if needed for verification.
+- Update governance documentation for generic Finance Wiring Integrity evidence.
+- Preserve `PASS`, `BLOCKED`, `DEFERRED`, and `NOT_PROVEN` status semantics.
+- Record F5 Control and Production Schema Compatibility as candidate evidence
+  rules, not mandatory global gates.
 
 Not authorized:
 
-- Modify `src/platform/beauty/**` contracts, services, invariants, or migrations.
-- Modify Healthcare H1-H12, Education Kernel, Logistics E7.1/E7.2/E7.3, or `src/core/**`.
-- Add accounting/legal posting rules.
-- Edit generated DB types to satisfy consumers.
-- Use `any`, suppressions, fake green tests, or schema invention.
+- Add new runtime Product, OS, Platform, Finance, Healthcare, Education, or Logistics code.
+- Modify frozen kernels or sealed contracts.
+- Add new CI gates, scanners, scripts, workflows, schema, or migrations.
+- Declare a vertical Finance Integrated from engine existence alone.
+- Claim F5 or production schema compatibility is globally gated without repeated evidence.
 
 ## 6. UI -> Contract Reconciliation
 
-Existing `/beauty-spa` is a marketing page with static services and simulated booking success. It is not operational readiness evidence for v2.
-
-This PR does not claim a full operational UI redesign. It establishes the canonical product/service orchestration, product identity, and a browser evidence route whose data/actions are backed by the product service harness rather than simulated success.
-
-UI route reconciliation:
-
-| UI action / field | Contract-backed source |
-|---|---|
-| Chain booking action | `BeautySpaV2Service.bookService` |
-| Lead/support staff acceptance | `ProfessionalAssignmentService` through product orchestration |
-| Room/bed/device allocation | `ResourceAllocationService` through product orchestration |
-| Conflict prevention / waitlist | `BeautySpaV2Service.bookOrWaitlist` |
-| Tenant isolation evidence | Tenant-scoped resource allocation repository contract |
-| Checkout handoff | `BeautySpaV2Service.completeSession` outcome facts |
+Not applicable. No UI change.
 
 ## 7. Additive Migration Plan
 
-No migration in this PR.
-
-Reason:
-
-- Existing H8 Beauty OS persistence already provides appointment/session/assignment/resource tables with RLS.
-- Product-local chain workflow can be represented through existing contracts.
-- New product-specific tables for membership, inventory, or AI automation are `DEFER` until canonical owner and read/write semantics are proven.
+Not applicable. No database migration.
 
 ## 8. 11 Automated Verification Gates Plan
 
-| Gate | Plan |
-|---|---|
-| 1 Architecture compliance | Product code only; no frozen OS/Core files. |
-| 2 Contract boundary | Tests import Beauty OS public application/services and ports only. |
-| 3 Tenant isolation | Product tests prove tenant-scoped conflict checks. Real DB test verifies tenant read-back when credentials exist. |
-| 4 RLS & authorization | Reuse H8 RLS migration; Real DB proof is credential-gated. |
-| 5 Migration safety | No migration. |
-| 6 Event-after-persistence | No new event producer. Finance/order side effects remain existing contracts. |
-| 7 Domain safety/rules | Conflict prevention uses Beauty OS capacity invariants. |
-| 8 Temporal/provenance | No new temporal engine. Assignment/resource history reuse covered. |
-| 9 Rule governance | No new governed rule. |
-| 10 Audit/evidence integrity | Disruption history and service outcomes are persisted through existing contracts; no new audit ledger. |
-| 11 Regression | Focused Jest/typecheck/architecture guard; full typecheck may be `TIMEOUT/NOT_VERIFIED` if it does not complete. |
+This is a documentation-only governance update. Runtime gates are not applicable.
 
-Final gate result:
+Required verification:
 
 ```text
-FEATURE DISCOVERY: PASS
-WORKFLOW DESIGN: PASS_WITH_BOUNDARY
-ARCHITECTURE: PASS_WITH_BOUNDARY
-CONTRACTS: PASS_WITH_BOUNDARY
-IMPLEMENTATION AUTHORITY: PRODUCT LAYER ONLY
-REAL DB E2E: SKIPPED_IN_CI / NOT_VERIFIED
+git diff -- ARCHITECTURE_GATE_RESULT.md docs/governance/OPERATIONAL_READINESS_SOP.md
+git diff --check -- ARCHITECTURE_GATE_RESULT.md docs/governance/OPERATIONAL_READINESS_SOP.md
 ```
 
-## 9. Implementation Evidence - 2026-10-01
-
-Implemented inside this branch:
-
-- `bella_spa` Product Registry identity.
-- `src/products/beauty-spa-v2` product orchestration service.
-- `src/app/dashboard/beauty-spa-v2` product browser evidence route mapped to the service workflow.
-- Product workflow tests for:
-  - product discovery/identity,
-  - multi-branch spa booking,
-  - runtime booking mode/resource type/outcome enum rejection before side effects,
-  - required operational ID rejection before side effects,
-  - invalid interval/capacity rejection using Beauty OS invariants before side effects,
-  - duplicate staff/resource input rejection before side effects,
-  - staff + time + branch conflict prevention,
-  - assignment rollback history for failed booking orchestration,
-  - rollback of appointment/staff assignments when booking orchestration fails mid-assignment,
-  - room/bed/device allocation,
-  - rollback of earlier resource allocations when a later resource in the same booking fails,
-  - session check-in/check-out completion,
-  - checkout customer-history and audit-tag evidence validation before session side effects,
-  - tenant-scoped resource conflict behavior,
-  - waitlist fallback without false operational success.
-- Product reuse-boundary tests for:
-  - Beauty OS public service/contract reuse,
-  - no direct DB/Supabase/generated-type bypass,
-  - no Nail/Haircut/modules/spa implementation dependency.
-- Product resolver test for:
-  - `bella_spa` resolves to `/dashboard/beauty-spa-v2`,
-  - Beauty Spa v2 identity remains distinct from module fallback.
-
-Fresh local verification:
+## Decision
 
 ```text
-npx jest --testMatch "**/src/products/beauty-spa-v2/__tests__/*.test.ts" "**/src/platform/registry/__tests__/product-resolver.test.ts" --runInBand
-PASS - 3 suites, 57 tests
-
-npx tsc -p tsconfig.beauty.json --noEmit
-PASS
-
-npx eslint src/products/beauty-spa-v2 src/app/dashboard/beauty-spa-v2 src/platform/registry/product-registry.ts src/platform/registry/__tests__/product-resolver.test.ts
-PASS
-
-npm run arch:guard
-PASS
-
-git diff --check
 PASS
 ```
 
-Product-layer root-cause fixes verified in the focused suite:
-
-| Area | Root cause | Minimal fix |
-|---|---|---|
-| Assignment orchestration rollback | Failed mid-booking assignment could leave `PENDING` appointment and `ACCEPTED` staff. | Cancel appointment, disrupt created assignments, and rethrow original failure. |
-| Partial allocation rollback | Later resource conflict could leave earlier resource `ACTIVE`. | Disrupt allocations created by the same booking attempt and write allocation history. |
-| Duplicate staff/resource inputs | Duplicate IDs could create double assignment or false conflict/waitlist. | Reject duplicate staff/resource requirements before side effects. |
-| Required operational IDs | Blank, non-string, or whitespace-padded IDs could create records with invalid identity references, bypass duplicate checks, or trigger raw runtime errors. | Reject missing, non-string, and padded tenant, branch, customer, service, staff, actor, resource, and session IDs before side effects. |
-| Invalid interval/capacity | Invalid interval or non-finite capacity could reach later orchestration stages. | Reuse Beauty OS `validateInterval`; reject invalid/non-finite capacity before side effects. |
-| Assignment rollback history | Staff rollback had no provenance while resource rollback did. | Write `BOOKING_ASSIGNMENT_ROLLED_BACK` through Beauty OS assignment history port. |
-| Checkout evidence | Session completion could miss session identity, actors, customer history, clean audit tags, serializable outcome evidence, or valid request/outcome shape. | Validate request/session/outcome shape, session identity, performer, checkout actor, customer history, non-padded audit tag arrays, and JSON-serializable outcome before Beauty OS session services. |
-| Runtime enum values | Runtime callers could bypass TypeScript unions for booking/resource/outcome values. | Validate booking mode, resource type, package-session flag, payment status, inventory handoff, and payroll handoff before side effects. |
-| Malformed runtime shapes | Runtime callers could pass null booking requests, scalar staff/resource lists, null resource entries, malformed intervals, or non-string resource segments and trigger raw property access or partial orchestration. | Validate booking request shape, support-professional/resource lists, resource entries, interval shape, and optional segment IDs before appointment, assignment, allocation, or waitlist side effects. |
-| Rollback cleanup failure | Appointment cancellation failure or per-item assignment/allocation cleanup failure could stop later cleanup and leave accepted staff or active resources after a failed booking. | Attempt appointment cancellation, assignment disruption, and allocation disruption independently; continue per item and report rollback-failed codes when cleanup does not complete cleanly. |
-| Allocation activation failure | A resource allocation created as `PROPOSED` could fail while being activated and remain outside the rollback list. | Track the proposed allocation immediately, then replace it with the active allocation only after activation succeeds. |
-| Checkout completion failure | Session start could persist `IN_PROGRESS` before checkout completion failed. | Roll back the started session to the original planned session when completion fails; report `SESSION_ROLLBACK_FAILED` only if cleanup also fails. |
-| Waitlist handoff evidence | Waitlist integration could return malformed or whitespace-padded acceptance evidence and still be reported as operational success. | Validate returned waitlist ID as a clean operational ID and require a positive integer position before building waitlisted appointment output. |
-| Staff availability evidence | Staff availability integration could return non-boolean evidence and be interpreted by truthiness, creating booking side effects. | Require strict boolean availability evidence before appointment, assignment, allocation, or waitlist side effects. |
-| Staff availability preflight latency | Independent staff availability checks were serialized before any booking side effect. | Run staff availability checks in parallel, then validate ordered results before appointment, assignment, allocation, or waitlist side effects. |
-| Retry after clean rollback | A failed booking could leave side effects that block a later retry of the same request. | Verify clean rollback leaves cancelled/disrupted records only and a later retry can create fresh accepted assignments and active allocations. |
-
-Workflow completeness audit:
-
-| Workflow | Status | Local evidence / boundary |
-|---|---|---|
-| Customer identity | PASS_SCOPED | Customer ID is required, non-padded, tenant-scoped in booking and session evidence. |
-| Booking / walk-in | PASS | Booking happy path, walk-in waitlist fallback, invalid mode, malformed request, missing IDs, duplicate inputs. |
-| Availability | PASS | Staff availability runs as parallel preflight; malformed availability evidence and staff conflict fail before side effects. |
-| Resource / room / bed / device | PASS_WITH_BOUNDARY | Multi-resource allocation happy path, invalid type/capacity, duplicate resource, partial rollback, activation rollback. Real DB concurrency remains not proven. |
-| Staff assignment | PASS | Lead/support staff happy path, duplicate rejection, mid-assignment rollback, per-item cleanup failure handling, assignment history. |
-| Appointment | PASS | Appointment creation, cancellation on booking failures, retry after clean rollback. |
-| Session | PASS | Session start/checkout completion happy path, completion failure rollback to planned session. |
-| Checkout | PASS | Customer history, actor, package flag, payment/inventory/payroll handoff status, audit tags, and serializable outcome evidence validated before side effects. |
-| Payment / inventory / payroll | PASS_AS_HANDOFF_EVIDENCE | Product records handoff status only. Canonical Finance/Inventory/Payroll execution remains outside product-layer authority. |
-| Waitlist / fallback | PASS | Capacity conflict routes to waitlist; malformed/padded waitlist evidence fails without false success. |
-| History / audit | PASS_SCOPED | Assignment/allocation rollback history appended through Beauty OS ports; checkout audit tags validated. |
-| Retry | PASS_SCOPED | Retry after clean rollback succeeds without leftover active resources or accepted staff from failed attempt. |
-| Idempotency key | DEFER_CONTRACT | No canonical Beauty OS idempotency-key contract exists in this slice. Do not invent product-local persistence semantics. |
-| Permission / tenant boundary | PASS_SCOPED | Actor IDs required; tenant-scoped resource conflict covered. Full auth/RLS proof remains credential-gated Real DB evidence. |
-| Performance | PASS_SCOPED | Independent staff availability preflight is parallelized. Dependent assignment/allocation/session side effects remain ordered for invariants and rollback. |
-
-Previously recorded GitHub PR evidence for PR #188:
-
-```text
-gh pr checks 188
-PASS - All Required Gates Passed
-PASS - Architecture Guard Verification
-PASS - Baseline Comparison
-PASS - Beauty OS - No New Debt
-PASS - Changed-file Lint
-PASS - CodeQL
-PASS - Frozen File Check
-PASS - Logistics Kernel Regression
-PASS - Relevant App Build
-PASS - Security Gates
-PASS - Type Check (affected)
-PASS - Vercel
-
-SKIPPED - Real Database Business E2E
-SKIPPED - Migration Gates
-SKIPPED - Core Freeze Verification
-SKIPPED - Education Constitution Enforcement
-```
-
-Evidence classification:
-
-| Definition of Done item | Status | Evidence |
-|---|---|---|
-| Feature discovery | PASS | Gate capability map plus product workflow tests. |
-| Workflow design | PASS_WITH_BOUNDARY | Product orchestration covers Customer/Booking/Walk-in/Scheduling/Staff/Branch/Room/Bed/Resource/Session/Check-in/Check-out/Waitlist/handoff classification, rejects unsupported runtime enum values, missing IDs, invalid interval/capacity, duplicate staff/resource inputs, and incomplete checkout evidence before side effects, and records rollback history for staff/resource failures. |
-| Architecture | PASS_WITH_BOUNDARY | No `src/platform/beauty/**`, Core, Healthcare, Education, or Logistics modification. |
-| Contracts | PASS_WITH_BOUNDARY | Reuses Beauty OS service/port contracts. |
-| Implementation | PASS_WITH_BOUNDARY | Product-layer service, tests, and browser evidence route pass scoped verification. |
-| Typecheck | PASS_SCOPED | `tsconfig.beauty.json` scoped typecheck includes `src/products/beauty-spa-v2/**` and `src/app/dashboard/beauty-spa-v2/**`. Full repository typecheck not run in this checkpoint. |
-| Targeted tests | PASS | Focused Jest suite pass, including runtime enum validation, missing-ID validation, invalid-input validation, duplicate-input validation, checkout evidence validation, assignment rollback history, and partial allocation rollback regressions. |
-| Security / tenant isolation | PASS_SCOPED | Tenant-scoped application conflict test; H8 RLS migration reused. |
-| Concurrency | PARTIAL / NOT_REAL_DB_PROVEN | Product service prevents overlapping active allocations in repository contract. Existing H8 migration has no DB-level exclusion/transaction lock proof for concurrent Real DB writes. |
-| Real DB E2E | NOT_VERIFIED | No fresh credentialed Real DB run recorded in this checkpoint. |
-| Required gates | NOT_REFRESHED_AFTER_FOLLOW_UP_COMMITS | PR #188 previously reported `All Required Gates Passed` and merge state `CLEAN` / `MERGEABLE`; per current operating rule, CI was not polled after follow-up product-layer commits. Refresh at final milestone seal. |
-
-Architectural gap classification:
-
-```text
-STATUS: BLOCKED_FOR_FULL_DOD
-GAP: Real DB concurrency conflict prevention is not proven at the database/transaction boundary.
-REASON: Existing Beauty OS persistence uses tenant/resource/time indexes and application-level checks, but no canonical DB-level overlapping allocation exclusion or transactional reservation contract is proven.
-ACTION: Human Architect Review required before modifying frozen Beauty OS persistence or adding a new canonical concurrency contract.
-```
+Proceed with documentation-only governance clarification. Stop after the SOP is
+updated and diff-checked.
