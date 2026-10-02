@@ -11,6 +11,7 @@ Truth:
 - F5 reads AR facts through `finance_ar_facts_as_of(F3_AR:v1)` and GL facts through `finance_journal_entries_as_of(F1_GL:v1)`.
 - F5 writes only `f5_control_results` and `f5_control_cases`.
 - Beauty V2 completion persists operational checkout facts, but Finance AR control proof is not currently tied to Beauty V2 business facts.
+- CI Real DB proof exposed an E2E database parity gap: PostgREST did not expose `public.f5_run_reconciliation` even though the frozen F5 contract and generated DB types define it.
 
 Source of truth:
 - `docs/architecture/ARCHITECTURE_GATE_RESULT_F5.md`
@@ -19,6 +20,7 @@ Source of truth:
 - `supabase/migrations/20260819020000_f5_reconstruction_engine.sql`
 - `supabase/migrations/20260823000000_f5_ar_reconciliation.sql`
 - `supabase/migrations/20260823010000_f5_ar_reconciliation_fix.sql`
+- `supabase/migrations/20261002000000_restore_f5_reconciliation_rpc.sql`
 - `src/__tests__/f5-ar-reconciliation.integration.test.ts`
 - `src/products/beauty-spa-v2/__tests__/beauty-spa-v2-real-db.test.ts`
 - `src/platform/finance/services/semantic-receivable-charge.service.ts`
@@ -80,12 +82,13 @@ Authorized:
 - Add architecture gate evidence for this workstream.
 - Add focused Real DB proof using existing Beauty V2 and Finance contracts.
 - Register the Real DB proof in the existing real-db Jest boundary if required.
+- Add an idempotent F5 RPC restore migration when Real DB E2E proves the exposed F5 contract is absent from the isolated database schema cache.
 
 Not authorized:
 - Runtime Beauty V2 workflow mutation.
 - Finance F1/F2/F3 engine mutation.
 - New Finance subsystem, scheduler, notification engine, or transport.
-- Schema migration unless audit proves a missing additive F5 contract. Current audit did not prove that need.
+- Broad schema migration, F5 contract redesign, or new F5 control domain.
 
 ## UI To Contract Reconciliation
 
@@ -93,7 +96,12 @@ No UI change.
 
 ## Additive Migration Plan
 
-No migration. F5.5 AR control and Finance semantic receivable contracts already exist.
+Add one idempotent restore migration:
+- `supabase/migrations/20261002000000_restore_f5_reconciliation_rpc.sql`
+- Recreates the already-frozen `public.f5_run_reconciliation(UUID, TEXT, TEXT, UUID, TEXT, TIMESTAMPTZ)` body from `20260823010000_f5_ar_reconciliation_fix.sql`.
+- Grants execute to `service_role`.
+- Sends `NOTIFY pgrst, 'reload schema'` so Real DB E2E can resolve the RPC through PostgREST.
+- Does not create or mutate Beauty, H8, booking, session rollback, immutable history, F1, F2, or F3 runtime behavior.
 
 ## 11 Automated Verification Gates Plan
 
@@ -110,4 +118,4 @@ No migration. F5.5 AR control and Finance semantic receivable contracts already 
 11. CI / PR proof before merge; no merge without terminal checks.
 
 Conclusion:
-PASS. Current evidence shows F5.5 exists. The minimal work is Beauty business-fact proof/wiring through existing public contracts, not a new F5.5 contract extension.
+PASS. Current evidence shows F5.5 exists. The minimal work is Beauty business-fact proof/wiring through existing public contracts plus an idempotent RPC restore migration to make the frozen F5 contract available in the isolated Real DB E2E environment.
