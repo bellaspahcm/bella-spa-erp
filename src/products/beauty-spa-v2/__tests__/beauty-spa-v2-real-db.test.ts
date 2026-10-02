@@ -14,6 +14,7 @@ import type {
   IdGenerator,
   ResourceAllocationRepository,
   ResourceAvailabilityPort,
+  SessionRepository,
 } from '@/platform/beauty/application/ports';
 import type {
   ResourceAllocationHistoryRecord,
@@ -150,6 +151,36 @@ class BarrieredResourceAllocationRepository implements ResourceAllocationReposit
   }
 }
 
+class FailingCompletionSessionRepository implements SessionRepository {
+  private failedCompletion = false;
+
+  public constructor(
+    private readonly inner: SessionRepository,
+    private readonly sessionId: string,
+  ) {}
+
+  public create(session: SessionRecord): Promise<SessionRecord> {
+    return this.inner.create(session);
+  }
+
+  public update(session: SessionRecord): Promise<SessionRecord> {
+    if (
+      session.id === this.sessionId
+      && session.status === 'COMPLETED'
+      && !this.failedCompletion
+    ) {
+      this.failedCompletion = true;
+      throw new Error('session completion failed after start persisted');
+    }
+
+    return this.inner.update(session);
+  }
+
+  public getById(scope: { tenantId: string; sessionId: string }): Promise<SessionRecord | null> {
+    return this.inner.getById(scope);
+  }
+}
+
 describeWithRealSupabase('Bella Beauty Spa v2 Real DB business proof', () => {
   const marker = `beauty-v2-real-db-${Date.now()}`;
   const created = {
@@ -263,10 +294,12 @@ describeWithRealSupabase('Bella Beauty Spa v2 Real DB business proof', () => {
     return data!.id;
   }
 
-  function createService(allocationRepo: ResourceAllocationRepository = new SupabaseBeautyResourceAllocationRepository(beautyClient)) {
+  function createService(
+    allocationRepo: ResourceAllocationRepository = new SupabaseBeautyResourceAllocationRepository(beautyClient),
+    sessionRepo: SessionRepository = new SupabaseBeautySessionRepository(beautyClient),
+  ) {
     const appointmentRepo = new SupabaseBeautyAppointmentRepository(beautyClient);
     const assignmentRepo = new SupabaseBeautyProfessionalAssignmentRepository(beautyClient);
-    const sessionRepo = new SupabaseBeautySessionRepository(beautyClient);
     const service = new BeautySpaV2Service(
       appointmentRepo,
       assignmentRepo,
@@ -540,5 +573,73 @@ describeWithRealSupabase('Bella Beauty Spa v2 Real DB business proof', () => {
       .eq('resource_id', resourceId);
     expect(allRowsError).toBeNull();
     expect(allRows?.map((row) => row.status).sort()).toEqual(['ACTIVE', 'DISRUPTED']);
+  });
+
+  it('rolls back a persisted session start when Real DB completion update fails', async () => {
+    const tenantA = await insertTenant('session-rollback-tenant');
+    const customerA = await insertCustomer(tenantA, 'session-rollback-customer');
+    const realSessionRepo = new SupabaseBeautySessionRepository(beautyClient);
+    const { appointmentRepo } = createService();
+
+    const interval: TimeInterval = {
+      startsAt: '2026-10-02T16:00:00.000Z',
+      endsAt: '2026-10-02T17:00:00.000Z',
+    };
+    const appointment = await appointmentRepo.create({
+      id: randomUUID(),
+      tenantId: tenantA,
+      branchId: randomUUID(),
+      customerId: customerA,
+      serviceId: randomUUID(),
+      interval,
+      status: 'PENDING',
+    });
+    const plannedSession = await realSessionRepo.create({
+      id: randomUUID(),
+      tenantId: tenantA,
+      appointmentId: appointment.id,
+      serviceCommitmentId: randomUUID(),
+      status: 'PLANNED',
+      actualStartAt: null,
+      actualEndAt: null,
+      actualPerformerId: null,
+      outcome: null,
+    });
+    const failingSessionRepo = new FailingCompletionSessionRepository(realSessionRepo, plannedSession.id);
+    const { service } = createService(
+      new SupabaseBeautyResourceAllocationRepository(beautyClient),
+      failingSessionRepo,
+    );
+
+    await expect(service.completeSession({
+      session: plannedSession,
+      performerId: randomUUID(),
+      outcome: {
+        checkedOutBy: randomUUID(),
+        customerHistoryNote: 'Completion failure should restore the planned session state.',
+        packageSessionUsed: false,
+        paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+        inventoryHandoff: 'NOT_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: ['BEAUTY_V2_REAL_DB', 'SESSION_ROLLBACK'],
+      },
+    })).rejects.toThrow('session completion failed after start persisted');
+
+    const { data: sessionReadback, error: sessionReadbackError } = await beautyClient
+      .from('beauty_sessions')
+      .select('id, tenant_id, status, actual_start_at, actual_end_at, actual_performer_id, outcome')
+      .eq('tenant_id', tenantA)
+      .eq('id', plannedSession.id)
+      .single();
+    expect(sessionReadbackError).toBeNull();
+    expect(sessionReadback).toEqual(expect.objectContaining({
+      id: plannedSession.id,
+      tenant_id: tenantA,
+      status: 'PLANNED',
+      actual_start_at: null,
+      actual_end_at: null,
+      actual_performer_id: null,
+      outcome: null,
+    }));
   });
 });
