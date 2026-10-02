@@ -1,0 +1,113 @@
+# Architecture Gate Result - Finance F5 AR Control
+
+Date: 2026-10-02
+Scope: FINANCE F5 AR CONTROL for Beauty business facts
+Status: PASS
+
+## Bella OS / Product Development Process Gate
+
+Truth:
+- F5.5 AR_GL_BALANCE already exists as a Finance OS control domain.
+- F5 reads AR facts through `finance_ar_facts_as_of(F3_AR:v1)` and GL facts through `finance_journal_entries_as_of(F1_GL:v1)`.
+- F5 writes only `f5_control_results` and `f5_control_cases`.
+- Beauty V2 completion persists operational checkout facts, but Finance AR control proof is not currently tied to Beauty V2 business facts.
+
+Source of truth:
+- `docs/architecture/ARCHITECTURE_GATE_RESULT_F5.md`
+- `supabase/migrations/20260819000000_f5_schema.sql`
+- `supabase/migrations/20260819010000_f5_read_contracts.sql`
+- `supabase/migrations/20260819020000_f5_reconstruction_engine.sql`
+- `supabase/migrations/20260823000000_f5_ar_reconciliation.sql`
+- `supabase/migrations/20260823010000_f5_ar_reconciliation_fix.sql`
+- `src/__tests__/f5-ar-reconciliation.integration.test.ts`
+- `src/products/beauty-spa-v2/__tests__/beauty-spa-v2-real-db.test.ts`
+- `src/platform/finance/services/semantic-receivable-charge.service.ts`
+
+Canonical contract:
+- Beauty product fact must enter Finance through the Finance semantic receivable contract, not by direct F1/F3 writes from Product.
+- F5 AR control consumes only Finance public DB read contracts and writes only F5 evidence/case tables.
+- Alert routing for this slice is the existing F5 case route: `VARIANCE` or `QUARANTINED` result creates an `OPEN` `f5_control_cases` row linked by `case_id`.
+
+## Product Manifest
+
+In scope:
+- Audit current F5 AR capability.
+- Prove Beauty V2 completed-service business facts can be controlled by F5 AR.
+- Prove PASS and mismatch/failure cases on Real DB.
+- Prove severity routing through F5 result severity.
+- Prove alert/case routing through `f5_control_cases`.
+- Prove idempotent rerun of the same F5 AR control identity.
+- Prove tenant isolation for the control evidence.
+- Seal with focused verification.
+
+Out of scope:
+- Beauty H8 core changes.
+- Booking/resource concurrency changes.
+- Session rollback changes.
+- Immutable history changes.
+- F1/F2/F3 engine changes.
+- BabyCare production.
+- New Finance subsystem.
+- New notification/Slack/alert transport.
+- Auto-posting Finance side effects inside `BeautySpaV2Service.completeSession`.
+
+## Ownership Map
+
+| Data / capability | Owner | Authorized action |
+| --- | --- | --- |
+| Beauty appointment/session operational facts | Beauty OS / Beauty V2 Product | Reuse existing Real DB proof path |
+| Service receivable recognition | Finance OS F3 semantic contract | Reuse public `SemanticReceivableChargeService` |
+| AR/GL reconciliation | Finance OS F5 | Reuse `f5_run_reconciliation` |
+| Severity classification | Finance OS F5 | Verify existing routing |
+| Alert/case routing | Finance OS F5 | Verify `f5_control_cases` creation |
+| F1/F2/F3 persistence engines | Finance OS | Read only through existing public contracts |
+
+## Contract Dependency Map
+
+```text
+Beauty V2 completed session
+  -> Finance OS semantic service receivable contract
+  -> F3 invoice / receivable ledger / receivable position
+  -> F1 posted transaction
+  -> F5 AR_GL_BALANCE control
+  -> f5_control_results
+  -> f5_control_cases when VARIANCE or QUARANTINED
+```
+
+## Change Authority
+
+Authorized:
+- Add architecture gate evidence for this workstream.
+- Add focused Real DB proof using existing Beauty V2 and Finance contracts.
+- Register the Real DB proof in the existing real-db Jest boundary if required.
+
+Not authorized:
+- Runtime Beauty V2 workflow mutation.
+- Finance F1/F2/F3 engine mutation.
+- New Finance subsystem, scheduler, notification engine, or transport.
+- Schema migration unless audit proves a missing additive F5 contract. Current audit did not prove that need.
+
+## UI To Contract Reconciliation
+
+No UI change.
+
+## Additive Migration Plan
+
+No migration. F5.5 AR control and Finance semantic receivable contracts already exist.
+
+## 11 Automated Verification Gates Plan
+
+1. `git diff --check`.
+2. Focused Real DB Beauty V2 F5 AR control proof.
+3. Existing F5.5 AR integration proof when Real DB credentials are available.
+4. PASS case: Beauty receivable reconciles to MATCHED.
+5. Failure/mismatch case: Beauty receivable mismatch routes to VARIANCE.
+6. Severity routing: mismatch result carries expected severity.
+7. Alert routing: mismatch result creates `OPEN` `f5_control_cases`.
+8. Idempotency: same run identity returns the same `run_id` and no duplicate result.
+9. Tenant isolation: cross-tenant F5 run cannot see source tenant facts.
+10. Static scope scan: no Beauty H8 core, booking concurrency, session rollback, F1/F2/F3 engine edits.
+11. CI / PR proof before merge; no merge without terminal checks.
+
+Conclusion:
+PASS. Current evidence shows F5.5 exists. The minimal work is Beauty business-fact proof/wiring through existing public contracts, not a new F5.5 contract extension.
