@@ -1068,7 +1068,7 @@ describeWithRealSupabase('Bella Beauty Spa v2 Real DB business proof', () => {
         invoice_id: mismatchReceivable.invoiceId,
         entry_type: 'CREDIT_ALLOCATION',
         amount_minor: 150_000,
-        source_type: 'F5_AR_CONTROL_PROBE',
+        source_type: 'ALLOCATION',
         source_id: randomUUID(),
         created_at: '2026-10-02T20:00:00.000Z',
       });
