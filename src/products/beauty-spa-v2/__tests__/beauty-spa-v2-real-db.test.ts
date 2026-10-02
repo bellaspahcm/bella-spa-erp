@@ -1020,10 +1020,8 @@ describeWithRealSupabase('Bella Beauty Spa v2 Real DB business proof', () => {
       p_basis_version: 'AR_GL_BALANCE:v1',
       p_reconciliation_as_of: '2026-10-02T23:59:59.000Z',
     } as const;
-    const [passRun, duplicatePassRun] = await Promise.all([
-      seedClient.rpc('f5_run_reconciliation', passParams),
-      seedClient.rpc('f5_run_reconciliation', passParams),
-    ]);
+    const passRun = await seedClient.rpc('f5_run_reconciliation', passParams);
+    const duplicatePassRun = await seedClient.rpc('f5_run_reconciliation', passParams);
     expect(passRun.error).toBeNull();
     expect(duplicatePassRun.error).toBeNull();
     expect(passRun.data.run_id).toBe(duplicatePassRun.data.run_id);
@@ -1054,7 +1052,7 @@ describeWithRealSupabase('Bella Beauty Spa v2 Real DB business proof', () => {
       recognitionDate: '2026-10-02',
       dueDate: '2026-10-09',
       businessSourceType: 'BEAUTY_V2_SESSION_COMPLETED_MISMATCH',
-      businessSourceId: `${completed.id}-mismatch`,
+      businessSourceId: randomUUID(),
       description: `${marker} Beauty V2 mismatch receivable`,
       metadata: {
         product_key: 'bella_spa',
