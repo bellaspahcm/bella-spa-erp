@@ -12,9 +12,12 @@ import type { Database } from '@/types/database.types';
 import type {
   Clock,
   IdGenerator,
+  ResourceAllocationRepository,
   ResourceAvailabilityPort,
 } from '@/platform/beauty/application/ports';
 import type {
+  ResourceAllocationHistoryRecord,
+  ResourceAllocationRecord,
   ResourceCapacityWindow,
   SessionRecord,
   TimeInterval,
@@ -82,6 +85,68 @@ class FixedAvailability implements ResourceAvailabilityPort {
 class AlwaysAvailableStaff implements SpaStaffAvailabilityPort {
   public async isAvailable(): Promise<boolean> {
     return true;
+  }
+}
+
+function isFulfilled<T>(result: PromiseSettledResult<T>): result is PromiseFulfilledResult<T> {
+  return result.status === 'fulfilled';
+}
+
+function isRejected<T>(result: PromiseSettledResult<T>): result is PromiseRejectedResult {
+  return result.status === 'rejected';
+}
+
+class TwoPartyBarrier {
+  private arrivals = 0;
+  private readonly released: Promise<void>;
+  private release: (() => void) | null = null;
+
+  public constructor(private readonly label: string) {
+    this.released = new Promise((resolve) => {
+      this.release = resolve;
+    });
+  }
+
+  public async wait(): Promise<void> {
+    this.arrivals += 1;
+    if (this.arrivals === 2) {
+      this.release?.();
+    }
+
+    await Promise.race([
+      this.released,
+      new Promise<void>((_, reject) => {
+        setTimeout(() => reject(new Error(`${this.label} barrier timed out`)), 10_000);
+      }),
+    ]);
+  }
+}
+
+class BarrieredResourceAllocationRepository implements ResourceAllocationRepository {
+  private readonly barrier = new TwoPartyBarrier('Beauty V2 concurrent resource activation');
+
+  public constructor(
+    private readonly inner: ResourceAllocationRepository,
+    private readonly resourceId: string,
+  ) {}
+
+  public create(allocation: ResourceAllocationRecord): Promise<ResourceAllocationRecord> {
+    return this.inner.create(allocation);
+  }
+
+  public async update(allocation: ResourceAllocationRecord): Promise<ResourceAllocationRecord> {
+    if (allocation.resourceId === this.resourceId && allocation.status === 'ACTIVE') {
+      await this.barrier.wait();
+    }
+    return this.inner.update(allocation);
+  }
+
+  public appendHistory(history: ResourceAllocationHistoryRecord): Promise<ResourceAllocationHistoryRecord> {
+    return this.inner.appendHistory(history);
+  }
+
+  public listActive(scope: { tenantId: string; resourceId: string }): Promise<ResourceAllocationRecord[]> {
+    return this.inner.listActive(scope);
   }
 }
 
@@ -174,10 +239,9 @@ describeWithRealSupabase('Bella Beauty Spa v2 Real DB business proof', () => {
     return data!.id;
   }
 
-  function createService() {
+  function createService(allocationRepo: ResourceAllocationRepository = new SupabaseBeautyResourceAllocationRepository(beautyClient)) {
     const appointmentRepo = new SupabaseBeautyAppointmentRepository(beautyClient);
     const assignmentRepo = new SupabaseBeautyProfessionalAssignmentRepository(beautyClient);
-    const allocationRepo = new SupabaseBeautyResourceAllocationRepository(beautyClient);
     const sessionRepo = new SupabaseBeautySessionRepository(beautyClient);
     const service = new BeautySpaV2Service(
       appointmentRepo,
@@ -381,5 +445,76 @@ describeWithRealSupabase('Bella Beauty Spa v2 Real DB business proof', () => {
     };
     expect(checkoutOutcome.paymentStatus).toBe('PAID');
     expect(checkoutOutcome.auditTags).toEqual(expect.arrayContaining(['BEAUTY_V2_REAL_DB']));
+  });
+
+  it('proves Real DB rejects concurrent active allocations for the same resource and interval', async () => {
+    const tenantA = await insertTenant('concurrency-tenant');
+    const customerA = await insertCustomer(tenantA, 'concurrency-customer');
+    const resourceId = randomUUID();
+    const allocationRepo = new BarrieredResourceAllocationRepository(
+      new SupabaseBeautyResourceAllocationRepository(beautyClient),
+      resourceId,
+    );
+    const { service } = createService(allocationRepo);
+
+    const interval: TimeInterval = {
+      startsAt: '2026-10-02T14:00:00.000Z',
+      endsAt: '2026-10-02T15:00:00.000Z',
+    };
+    const branchId = randomUUID();
+    const serviceId = randomUUID();
+    const actorId = randomUUID();
+
+    const book = (label: string) => service.bookService({
+      tenantId: tenantA,
+      branchId,
+      customerId: customerA,
+      serviceId,
+      interval,
+      leadProfessionalId: randomUUID(),
+      resources: [{
+        resourceId,
+        resourceType: 'ROOM',
+        segmentId: randomUUID(),
+      }],
+      actorId,
+      bookingMode: label === 'request-a' ? 'BOOKING' : 'WALK_IN',
+    });
+
+    const results = await Promise.allSettled([
+      book('request-a'),
+      book('request-b'),
+    ]);
+
+    const fulfilled = results.filter(isFulfilled);
+    const rejected = results.filter(isRejected);
+    expect(fulfilled).toHaveLength(1);
+    expect(rejected).toHaveLength(1);
+    expect(String(rejected[0]?.reason)).toMatch(/resource allocation|conflict|overlap|constraint/i);
+
+    const { data: activeRows, error: activeRowsError } = await beautyClient
+      .from('beauty_resource_allocations')
+      .select('id, tenant_id, resource_id, starts_at, ends_at, status')
+      .eq('tenant_id', tenantA)
+      .eq('resource_id', resourceId)
+      .eq('status', 'ACTIVE');
+    expect(activeRowsError).toBeNull();
+    expect(activeRows).toHaveLength(1);
+    const activeRow = activeRows![0];
+    expect(activeRow).toEqual(expect.objectContaining({
+      tenant_id: tenantA,
+      resource_id: resourceId,
+      status: 'ACTIVE',
+    }));
+    expect(new Date(activeRow.starts_at).toISOString()).toBe(interval.startsAt);
+    expect(new Date(activeRow.ends_at).toISOString()).toBe(interval.endsAt);
+
+    const { data: allRows, error: allRowsError } = await beautyClient
+      .from('beauty_resource_allocations')
+      .select('status')
+      .eq('tenant_id', tenantA)
+      .eq('resource_id', resourceId);
+    expect(allRowsError).toBeNull();
+    expect(allRows?.map((row) => row.status).sort()).toEqual(['ACTIVE', 'DISRUPTED']);
   });
 });

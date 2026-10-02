@@ -3,8 +3,8 @@
 Date: 2026-10-02
 Scope: Bella Beauty Spa v2 Pilot Go-Live closure
 Branch: `codex/beauty-spa-v2-chain-product`
-Latest evidence commit: `bcdf8f433`
-Status: `READY_FOR_HUMAN_ARCHITECT_DECISION`
+Latest prior evidence commit: `03ce1a9cb`
+Status: `READY_FOR_REMAINING_PILOT_BOUNDARY_DECISIONS`
 
 ## Current Truth
 
@@ -35,21 +35,29 @@ Beauty V2 Product Service
 No Beauty V2 product runtime bypass to direct Supabase/DB is authorized or
 needed for the proof.
 
+## Production Data Safety - BabyCare
+
+Bella Mommy BabyCare is an active production tenant with real operational data.
+It may be used only as read-only business evidence for Beauty V2 discovery and
+design.
+
+BabyCare production must not be used as a Beauty V2 proof, migration, cleanup,
+seed, or concurrency-test environment. This packet does not authorize trial
+migrations, reset/drop/recreate operations, test data seeding, real-data
+cleanup, fake bookings, test transactions, concurrency tests, or schema/data
+changes against BabyCare production.
+
+Beauty V2 migration, concurrency, idempotency, and E2E proofs must run on an
+E2E, staging, or dedicated test database with explicit ownership. BabyCare
+Production, the Beauty V2 E2E database, and local development databases are
+separate environments. If an operation might mutate BabyCare production, stop
+and verify the boundary before executing it.
+
 ## Boundary 1: Concurrency
 
 ### Evidence
 
-Beauty OS currently prevents resource conflicts in application logic by reading
-active allocations and rejecting overlapping capacity exhaustion before creating
-the next allocation.
-
-Beauty V2 then orchestrates appointment, professional assignments, resource
-allocations, rollback, and history through Beauty OS services and ports.
-
-The H8 persistence migration contains table constraints, indexes, RLS, and
-tenant-scoped policies for `beauty_*`, but it does not define a DB-level
-overlap exclusion constraint, advisory-lock contract, serializable transaction
-contract, or RPC that atomically proves:
+Beauty V2 now has a Real DB proof for the same-resource active allocation race:
 
 ```text
 Request A preflight PASS
@@ -58,56 +66,72 @@ Request B preflight PASS
 Only one conflicting allocation can commit
 ```
 
-The Real DB Business E2E proof validates business persistence, read-back,
-tenant-scoped repository reads, rollback, retry, history/audit, and checkout
-evidence. It does not claim parallel commit race proof.
+The proof was executed against the owned Beauty V2 E2E Supabase project, not
+against BabyCare production.
+
+Resource allocation DB evidence:
+
+- `btree_gist` extension present.
+- `beauty_resource_allocations_no_active_overlap` exclusion constraint present.
+- Migration ledger records
+  `20261002010000_beauty_h8_resource_overlap_concurrency`.
+- Real DB concurrent booking test result: one request fulfilled, one request
+  rejected, and exactly one `ACTIVE` allocation was read back from
+  `beauty_resource_allocations`.
+- Current concurrency slice CI is not claimed until the pushed commit runs CI.
+
+The remaining concurrency boundary is staff-time DB enforcement. Current H8
+professional assignment records do not carry the same interval fields required
+to express a staff overlap exclusion constraint at the persistence boundary.
+Beauty V2 still uses application-level staff availability checks through Beauty
+OS services.
 
 ### Classification
 
 ```text
-DB_CONCURRENCY = HUMAN_ARCHITECT_REVIEW_REQUIRED
+RESOURCE_ALLOCATION_DB_CONCURRENCY = PASS
+STAFF_INTERVAL_DB_CONCURRENCY = CONTRACT_GAP_IF_REQUIRED_FOR_PILOT
 ```
 
 ### Pilot Decision Options
 
-Option A: Accept current application-level conflict prevention for a controlled
-pilot.
+Option A: Accept the current pilot boundary.
 
 Conditions:
 
-- Pilot tenant has controlled operator volume.
-- No claim of DB-level conflict guarantee is made.
-- Operational monitoring treats double-booking reports as P0.
-- Full DB concurrency contract remains required before higher-volume or
-  self-serve booking rollout.
+- Resource allocation conflict is protected at the Real DB commit boundary.
+- Staff availability remains application-level for the controlled pilot.
+- No claim is made that staff-time conflict has DB-level enforcement.
+- Operational monitoring treats staff double-booking reports as P0.
+- Staff interval DB contract remains required before higher-volume or
+  self-serve staff booking rollout if that risk is not accepted.
 
 Result if approved:
 
 ```text
-CONCURRENCY_BOUNDARY_FOR_PILOT = ACCEPTED_RISK
+CONCURRENCY_BOUNDARY_FOR_PILOT = RESOURCE_DB_PROVEN_STAFF_APP_LEVEL_ACCEPTED
 ```
 
-Option B: Require DB-level concurrency guarantee before pilot.
+Option B: Require staff-time DB concurrency guarantee before pilot.
 
 Allowed next work only after architecture approval:
 
-- Define canonical Beauty OS concurrency contract.
-- Choose DB-level mechanism such as exclusion constraint, transactional RPC,
-  serializable transaction, or advisory lock.
-- Add Real DB parallel-commit proof.
+- Define canonical Beauty OS staff interval persistence contract.
+- Add staff-time DB enforcement at the correct OS boundary.
+- Add Real DB parallel-commit proof for staff overlap.
 
 Result if selected:
 
 ```text
-GO_LIVE = BLOCKED_UNTIL_DB_CONCURRENCY_PROOF
+GO_LIVE = BLOCKED_UNTIL_STAFF_DB_CONCURRENCY_PROOF
 ```
 
 AI recommendation:
 
 ```text
-Do not claim DB-level concurrency today.
-For a controlled pilot, Option A is operationally acceptable only if Human
-Architect explicitly accepts the risk.
+Claim resource DB concurrency only.
+Do not claim staff-time DB concurrency until Beauty OS has a canonical staff
+interval contract and Real DB proof.
 ```
 
 ## Boundary 2: Idempotency
@@ -201,17 +225,19 @@ Audit/history evidence                PASS
 Rollback/retry evidence               PASS
 Architecture guard                    PASS
 Type check affected                   PASS
-Required gates                        PASS
-DB concurrency boundary               HUMAN_ARCHITECT_REVIEW_REQUIRED
+Required local gates                  PASS
+Current commit PR CI                  NOT_CLAIMED
+Resource DB concurrency               PASS
+Staff DB concurrency                  HUMAN_ARCHITECT_DECISION_REQUIRED
 Idempotency boundary                  HUMAN_ARCHITECT_DECISION_REQUIRED
 ```
 
 ## Final Classification
 
 ```text
-BEAUTY_V2_GO_LIVE_PROOF = PASS
+BEAUTY_V2_GO_LIVE_PROOF = PASS_WITH_RESOURCE_DB_CONCURRENCY
 BEAUTY_V2_GO_LIVE_READY = BLOCKED_ON_PILOT_BOUNDARY_DECISIONS
 ```
 
 Beauty V2 can move to pilot go-live only after Human Architect records which
-pilot boundary option is accepted for concurrency and idempotency.
+pilot boundary option is accepted for staff concurrency and idempotency.
