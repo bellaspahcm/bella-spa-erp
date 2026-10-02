@@ -24,6 +24,7 @@ Source of truth:
 - `supabase/migrations/20261001980000_restore_f5_read_contracts.sql`
 - `supabase/migrations/20261001990000_restore_f5_reconstruction_engine.sql`
 - `supabase/migrations/20261002000000_restore_f5_reconciliation_rpc.sql`
+- `supabase/migrations/20261002010000_restore_f5_ar_reconciliation_rpc.sql`
 - `src/__tests__/f5-ar-reconciliation.integration.test.ts`
 - `src/products/beauty-spa-v2/__tests__/beauty-spa-v2-real-db.test.ts`
 - `src/platform/finance/services/semantic-receivable-charge.service.ts`
@@ -104,7 +105,9 @@ Add idempotent restore migrations:
 - `supabase/migrations/20261001980000_restore_f5_read_contracts.sql`
 - `supabase/migrations/20261001990000_restore_f5_reconstruction_engine.sql`
 - `supabase/migrations/20261002000000_restore_f5_reconciliation_rpc.sql`
+- `supabase/migrations/20261002010000_restore_f5_ar_reconciliation_rpc.sql`
 - Recreates the already-frozen F5 schema, F5 read contracts, F5 reconstruction RPCs, and final `public.f5_run_reconciliation(UUID, TEXT, TEXT, UUID, TEXT, TIMESTAMPTZ)` body from the existing F5 migrations.
+- Re-applies the final AR-capable RPC with a later migration version so an isolated E2E database that already recorded an earlier restore still receives the F5.5 body after F5.1 reconstruction restore.
 - Grants the same service/auth access as the frozen migrations.
 - Sends `NOTIFY pgrst, 'reload schema'` so Real DB E2E can resolve the restored schema/RPCs through PostgREST.
 - Does not create or mutate Beauty, H8, booking, session rollback, immutable history, F1, F2, or F3 runtime behavior.
