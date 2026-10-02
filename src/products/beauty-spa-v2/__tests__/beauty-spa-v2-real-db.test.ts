@@ -170,6 +170,10 @@ describeWithRealSupabase('Bella Beauty Spa v2 Real DB business proof', () => {
     });
   });
 
+  function isAppendOnlyHistoryError(error: { message: string } | null): boolean {
+    return Boolean(error?.message.match(/Beauty OS history tables are append-only|append-only/i));
+  }
+
   async function cleanup(label: string, result: PromiseLike<{ error: { message: string } | null }>): Promise<void> {
     const { error } = await result;
     if (error) {
@@ -180,21 +184,41 @@ describeWithRealSupabase('Bella Beauty Spa v2 Real DB business proof', () => {
   afterAll(async () => {
     if (!beautyClient || !seedClient) return;
 
+    let retainedImmutableHistory = false;
+
     for (const tenantId of created.tenants) {
-      await cleanup('beauty_resource_allocation_history', beautyClient.from('beauty_resource_allocation_history').delete().eq('tenant_id', tenantId));
-      await cleanup('beauty_professional_assignment_history', beautyClient.from('beauty_professional_assignment_history').delete().eq('tenant_id', tenantId));
+      const resourceHistoryCleanup = await beautyClient.from('beauty_resource_allocation_history').delete().eq('tenant_id', tenantId);
+      const assignmentHistoryCleanup = await beautyClient.from('beauty_professional_assignment_history').delete().eq('tenant_id', tenantId);
+
+      if (isAppendOnlyHistoryError(resourceHistoryCleanup.error) || isAppendOnlyHistoryError(assignmentHistoryCleanup.error)) {
+        retainedImmutableHistory = true;
+        console.warn(
+          `[Beauty Spa V2 Real DB cleanup] retained immutable Beauty history fixture for tenant ${tenantId}; append-only contract rejects runtime cleanup.`,
+        );
+        continue;
+      }
+      if (resourceHistoryCleanup.error) {
+        throw new Error(`beauty_resource_allocation_history cleanup failed: ${resourceHistoryCleanup.error.message}`);
+      }
+      if (assignmentHistoryCleanup.error) {
+        throw new Error(`beauty_professional_assignment_history cleanup failed: ${assignmentHistoryCleanup.error.message}`);
+      }
       await cleanup('beauty_sessions', beautyClient.from('beauty_sessions').delete().eq('tenant_id', tenantId));
       await cleanup('beauty_resource_allocations', beautyClient.from('beauty_resource_allocations').delete().eq('tenant_id', tenantId));
       await cleanup('beauty_professional_assignments', beautyClient.from('beauty_professional_assignments').delete().eq('tenant_id', tenantId));
       await cleanup('beauty_appointments', beautyClient.from('beauty_appointments').delete().eq('tenant_id', tenantId));
     }
 
-    if (created.customers.length > 0) {
+    if (!retainedImmutableHistory && created.customers.length > 0) {
       await cleanup('customers', seedClient.from('customers').delete().in('id', created.customers));
+    } else if (retainedImmutableHistory && created.customers.length > 0) {
+      console.warn(
+        `[Beauty Spa V2 Real DB cleanup] retained customer fixture(s) because immutable Beauty history references the booking chain: ${created.customers.join(', ')}`,
+      );
     }
     if (created.tenants.length > 0) {
       console.warn(
-        `[Beauty Spa V2 Real DB cleanup] retained tenant fixture(s) after owned Beauty/customer rows cleanup: ${created.tenants.join(', ')}`,
+        `[Beauty Spa V2 Real DB cleanup] retained tenant fixture(s): ${created.tenants.join(', ')}`,
       );
     }
   });
