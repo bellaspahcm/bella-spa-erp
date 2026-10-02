@@ -1,0 +1,522 @@
+{
+  "marker": "babycare-server-action-baseline-1790914882004",
+  "status": "PASS_ACTION_WRAPPER_ONLY",
+  "cleanupStatus": "PASS",
+  "environment": {
+    "envFile": ".env.e2e",
+    "host": "bmnbqbcdbuklhopfbopv.supabase.co",
+    "safety": "E2E_ONLY_MUTATION_BASELINE"
+  },
+  "measurementLimits": {
+    "productionMutation": "FORBIDDEN",
+    "runtimeCodeChanges": "NONE",
+    "browserUiLatency": "NOT_MEASURED",
+    "directExportedServerAction": "NOT_MEASURED",
+    "actionWrapper": "MEASURED",
+    "note": "Wrapper mirrors the server action sequence with proof-scoped service-role client; audit is measured as equivalent audit insert because recordAuditLog requires request current-user context."
+  },
+  "summary": {
+    "create_booking_action": {
+      "serverActionTotalMs": 2919.83,
+      "dbMs": 2055.5,
+      "auditMs": 300.7,
+      "outboxMs": 134.03,
+      "validationMs": 1.9,
+      "revalidationMs": 224.23,
+      "responseMs": 0.06,
+      "failed": 0,
+      "slowest": [
+        {
+          "flow": "create_booking_action",
+          "name": "insert_initial_session_logs",
+          "category": "db",
+          "durationMs": 306.93,
+          "ok": true
+        },
+        {
+          "flow": "create_booking_action",
+          "name": "safe_revalidate_paths",
+          "category": "revalidation",
+          "durationMs": 224.23,
+          "ok": true
+        },
+        {
+          "flow": "create_booking_action",
+          "name": "insert_deposit_revenue",
+          "category": "db",
+          "durationMs": 197.95,
+          "ok": true
+        },
+        {
+          "flow": "create_booking_action",
+          "name": "audit_customers_insert",
+          "category": "audit",
+          "durationMs": 184.15,
+          "ok": true
+        },
+        {
+          "flow": "create_booking_action",
+          "name": "find_pending_booking_for_customer",
+          "category": "db",
+          "durationMs": 169.33,
+          "ok": true
+        },
+        {
+          "flow": "create_booking_action",
+          "name": "tenant_resolution_probe",
+          "category": "db",
+          "durationMs": 164.22,
+          "ok": true
+        },
+        {
+          "flow": "create_booking_action",
+          "name": "existing_session_logs_count",
+          "category": "db",
+          "durationMs": 157.93,
+          "ok": true
+        },
+        {
+          "flow": "create_booking_action",
+          "name": "package_scope_package_select",
+          "category": "db",
+          "durationMs": 154.12,
+          "ok": true
+        }
+      ]
+    },
+    "complete_session_action": {
+      "serverActionTotalMs": 1109.76,
+      "dbMs": 1021.97,
+      "auditMs": 0,
+      "outboxMs": 82.93,
+      "validationMs": 0.06,
+      "revalidationMs": 2.1,
+      "responseMs": 0.04,
+      "failed": 0,
+      "slowest": [
+        {
+          "flow": "complete_session_action",
+          "name": "fetch_booking_for_completion",
+          "category": "db",
+          "durationMs": 154.2,
+          "ok": true
+        },
+        {
+          "flow": "complete_session_action",
+          "name": "fetch_existing_session_security_check",
+          "category": "db",
+          "durationMs": 125.69,
+          "ok": true
+        },
+        {
+          "flow": "complete_session_action",
+          "name": "update_session_completed",
+          "category": "db",
+          "durationMs": 105.05,
+          "ok": true
+        },
+        {
+          "flow": "complete_session_action",
+          "name": "fetch_current_booking_for_progress",
+          "category": "db",
+          "durationMs": 102.89,
+          "ok": true
+        },
+        {
+          "flow": "complete_session_action",
+          "name": "insert_salary_record_probe",
+          "category": "db",
+          "durationMs": 100.75,
+          "ok": true
+        },
+        {
+          "flow": "complete_session_action",
+          "name": "update_booking_progress",
+          "category": "db",
+          "durationMs": 98.07,
+          "ok": true
+        },
+        {
+          "flow": "complete_session_action",
+          "name": "count_completed_sessions",
+          "category": "db",
+          "durationMs": 96.23,
+          "ok": true
+        },
+        {
+          "flow": "complete_session_action",
+          "name": "insert_session_review_placeholder",
+          "category": "db",
+          "durationMs": 95.73,
+          "ok": true
+        }
+      ]
+    }
+  },
+  "records": [
+    {
+      "flow": "setup",
+      "name": "insert_tenant",
+      "category": "db",
+      "durationMs": 749.76,
+      "ok": true
+    },
+    {
+      "flow": "setup",
+      "name": "insert_admin_user",
+      "category": "db",
+      "durationMs": 320.13,
+      "ok": true
+    },
+    {
+      "flow": "setup",
+      "name": "insert_ktv_user",
+      "category": "db",
+      "durationMs": 124.8,
+      "ok": true
+    },
+    {
+      "flow": "setup",
+      "name": "insert_package",
+      "category": "db",
+      "durationMs": 186.05,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_action",
+      "name": "validation_booking_schema",
+      "category": "validation",
+      "durationMs": 1.86,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_action",
+      "name": "tenant_resolution_probe",
+      "category": "db",
+      "durationMs": 164.22,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_action",
+      "name": "package_scope_package_select",
+      "category": "db",
+      "durationMs": 154.12,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_action",
+      "name": "package_scope_tenant_select",
+      "category": "db",
+      "durationMs": 127.88,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_action",
+      "name": "insert_customer_select",
+      "category": "db",
+      "durationMs": 135.29,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_action",
+      "name": "audit_customers_insert",
+      "category": "audit",
+      "durationMs": 184.15,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_action",
+      "name": "find_pending_booking_for_customer",
+      "category": "db",
+      "durationMs": 169.33,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_action",
+      "name": "construct_tenant_context",
+      "category": "db",
+      "durationMs": 131.59,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_action",
+      "name": "adapter_validation_noop",
+      "category": "validation",
+      "durationMs": 0.04,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_action",
+      "name": "pricing_package_select",
+      "category": "db",
+      "durationMs": 125.3,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_action",
+      "name": "insert_booking_select",
+      "category": "db",
+      "durationMs": 135.95,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_action",
+      "name": "audit_bookings_insert",
+      "category": "audit",
+      "durationMs": 116.55,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_action",
+      "name": "deposit_accounting_period_probe",
+      "category": "db",
+      "durationMs": 151.83,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_action",
+      "name": "insert_deposit_revenue",
+      "category": "db",
+      "durationMs": 197.95,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_action",
+      "name": "enqueue_deposit_outbox_rpc",
+      "category": "outbox",
+      "durationMs": 134.03,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_action",
+      "name": "existing_session_logs_count",
+      "category": "db",
+      "durationMs": 157.93,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_action",
+      "name": "package_default_duration_select",
+      "category": "db",
+      "durationMs": 97.18,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_action",
+      "name": "insert_initial_session_logs",
+      "category": "db",
+      "durationMs": 306.93,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_action",
+      "name": "safe_revalidate_paths",
+      "category": "revalidation",
+      "durationMs": 224.23,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_action",
+      "name": "response_shape",
+      "category": "response",
+      "durationMs": 0.06,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_action",
+      "name": "server_action_total",
+      "category": "wrapper",
+      "durationMs": 2919.83,
+      "ok": true
+    },
+    {
+      "flow": "complete_session_action",
+      "name": "fetch_existing_session_security_check",
+      "category": "db",
+      "durationMs": 125.69,
+      "ok": true
+    },
+    {
+      "flow": "complete_session_action",
+      "name": "fetch_booking_for_completion",
+      "category": "db",
+      "durationMs": 154.2,
+      "ok": true
+    },
+    {
+      "flow": "complete_session_action",
+      "name": "completion_validation",
+      "category": "validation",
+      "durationMs": 0.06,
+      "ok": true
+    },
+    {
+      "flow": "complete_session_action",
+      "name": "update_session_completed",
+      "category": "db",
+      "durationMs": 105.05,
+      "ok": true
+    },
+    {
+      "flow": "complete_session_action",
+      "name": "completion_accounting_period_probe",
+      "category": "db",
+      "durationMs": 69.4,
+      "ok": true
+    },
+    {
+      "flow": "complete_session_action",
+      "name": "count_completed_sessions",
+      "category": "db",
+      "durationMs": 96.23,
+      "ok": true
+    },
+    {
+      "flow": "complete_session_action",
+      "name": "fetch_current_booking_for_progress",
+      "category": "db",
+      "durationMs": 102.89,
+      "ok": true
+    },
+    {
+      "flow": "complete_session_action",
+      "name": "update_booking_progress",
+      "category": "db",
+      "durationMs": 98.07,
+      "ok": true
+    },
+    {
+      "flow": "complete_session_action",
+      "name": "insert_salary_record_probe",
+      "category": "db",
+      "durationMs": 100.75,
+      "ok": true
+    },
+    {
+      "flow": "complete_session_action",
+      "name": "insert_session_review_placeholder",
+      "category": "db",
+      "durationMs": 95.73,
+      "ok": true
+    },
+    {
+      "flow": "complete_session_action",
+      "name": "fetch_revenue_for_session_done_outbox",
+      "category": "db",
+      "durationMs": 73.96,
+      "ok": true
+    },
+    {
+      "flow": "complete_session_action",
+      "name": "enqueue_session_done_outbox_rpc",
+      "category": "outbox",
+      "durationMs": 82.93,
+      "ok": true
+    },
+    {
+      "flow": "complete_session_action",
+      "name": "safe_revalidate_paths",
+      "category": "revalidation",
+      "durationMs": 2.1,
+      "ok": true
+    },
+    {
+      "flow": "complete_session_action",
+      "name": "response_shape",
+      "category": "response",
+      "durationMs": 0.04,
+      "ok": true
+    },
+    {
+      "flow": "complete_session_action",
+      "name": "server_action_total",
+      "category": "wrapper",
+      "durationMs": 1109.76,
+      "ok": true
+    },
+    {
+      "flow": "cleanup",
+      "name": "delete_accounting_outbox_by_tenant",
+      "category": "cleanup",
+      "durationMs": 74.03,
+      "ok": true
+    },
+    {
+      "flow": "cleanup",
+      "name": "delete_session_reviews",
+      "category": "cleanup",
+      "durationMs": 83.56,
+      "ok": true
+    },
+    {
+      "flow": "cleanup",
+      "name": "delete_session_logs",
+      "category": "cleanup",
+      "durationMs": 87.68,
+      "ok": true
+    },
+    {
+      "flow": "cleanup",
+      "name": "delete_salary_records",
+      "category": "cleanup",
+      "durationMs": 96.07,
+      "ok": true
+    },
+    {
+      "flow": "cleanup",
+      "name": "delete_revenue",
+      "category": "cleanup",
+      "durationMs": 84.07,
+      "ok": true
+    },
+    {
+      "flow": "cleanup",
+      "name": "delete_bookings",
+      "category": "cleanup",
+      "durationMs": 120.24,
+      "ok": true
+    },
+    {
+      "flow": "cleanup",
+      "name": "delete_audit_logs",
+      "category": "cleanup",
+      "durationMs": 77.63,
+      "ok": true
+    },
+    {
+      "flow": "cleanup",
+      "name": "delete_packages",
+      "category": "cleanup",
+      "durationMs": 90.98,
+      "ok": true
+    },
+    {
+      "flow": "cleanup",
+      "name": "delete_customers",
+      "category": "cleanup",
+      "durationMs": 123.95,
+      "ok": true
+    },
+    {
+      "flow": "cleanup",
+      "name": "delete_user_59b6e71e",
+      "category": "cleanup",
+      "durationMs": 7273.42,
+      "ok": true
+    },
+    {
+      "flow": "cleanup",
+      "name": "delete_user_0cc5080d",
+      "category": "cleanup",
+      "durationMs": 4121.01,
+      "ok": true
+    },
+    {
+      "flow": "cleanup",
+      "name": "delete_tenant_f8e0d56f",
+      "category": "cleanup",
+      "durationMs": 2854.39,
+      "ok": true
+    }
+  ]
+}

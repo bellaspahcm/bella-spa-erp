@@ -1,0 +1,350 @@
+{
+  "marker": "babycare-correlated-create-booking-trace-1790924315399",
+  "status": "PASS_CORRELATED_TRACE",
+  "cleanupStatus": "PASS",
+  "environment": {
+    "envFile": ".env.e2e",
+    "host": "bmnbqbcdbuklhopfbopv.supabase.co",
+    "safety": "E2E_ONLY_CORRELATED_TRACE",
+    "runtimePerformanceChange": "SKIP_PENDING_LOOKUP_FOR_NEW_CUSTOMER_APPLIED"
+  },
+  "uiBaseline": {
+    "marker": "babycare-direct-ui-baseline-1790924281618",
+    "status": "PASS_UI_BASELINE",
+    "cleanupStatus": "PASS",
+    "browserSubmitMs": 2924.73,
+    "likelySubmitNextActionPost": {
+      "url": "http://localhost:3217/dashboard",
+      "method": "POST",
+      "status": 200,
+      "nextAction": "409cb6a7f328d223426c5cfa0769cef243c33dd686",
+      "durationMs": 2075.98
+    },
+    "submitPostInference": "last Next-Action POST in latest direct UI baseline; not cryptographically mapped to function name"
+  },
+  "actionEquivalentSummary": {
+    "actionEquivalentTotalMs": 1925.38,
+    "dbMs": 1239.04,
+    "auditMs": 159.43,
+    "outboxMs": 79.89,
+    "validationMs": 1.81,
+    "serviceMs": 0.2,
+    "revalidationMs": 229.05,
+    "responseMs": 0.12,
+    "failed": 0,
+    "slowest": [
+      {
+        "flow": "create_booking_correlated_trace",
+        "name": "insert_initial_session_logs",
+        "category": "db",
+        "durationMs": 232.46,
+        "ok": true
+      },
+      {
+        "flow": "create_booking_correlated_trace",
+        "name": "safe_revalidate_paths_probe",
+        "category": "revalidation",
+        "durationMs": 229.05,
+        "ok": true
+      },
+      {
+        "flow": "create_booking_correlated_trace",
+        "name": "resolve_booking_tenant_probe",
+        "category": "db",
+        "durationMs": 183.32,
+        "ok": true
+      },
+      {
+        "flow": "create_booking_correlated_trace",
+        "name": "deposit_accounting_period_probe",
+        "category": "db",
+        "durationMs": 92.92,
+        "ok": true
+      },
+      {
+        "flow": "create_booking_correlated_trace",
+        "name": "insert_deposit_revenue",
+        "category": "db",
+        "durationMs": 92.31,
+        "ok": true
+      },
+      {
+        "flow": "create_booking_correlated_trace",
+        "name": "package_scope_package_select",
+        "category": "db",
+        "durationMs": 85.38,
+        "ok": true
+      },
+      {
+        "flow": "create_booking_correlated_trace",
+        "name": "audit_customers_insert",
+        "category": "audit",
+        "durationMs": 84.1,
+        "ok": true
+      },
+      {
+        "flow": "create_booking_correlated_trace",
+        "name": "insert_booking_select",
+        "category": "db",
+        "durationMs": 83.64,
+        "ok": true
+      },
+      {
+        "flow": "create_booking_correlated_trace",
+        "name": "existing_session_logs_count",
+        "category": "db",
+        "durationMs": 83.35,
+        "ok": true
+      },
+      {
+        "flow": "create_booking_correlated_trace",
+        "name": "pricing_package_select",
+        "category": "db",
+        "durationMs": 81.09,
+        "ok": true
+      }
+    ]
+  },
+  "dominantCandidate": {
+    "name": "db",
+    "durationMs": 1239.04,
+    "sharePct": 64.4
+  },
+  "cleanupVerification": {
+    "customers": 0,
+    "bookings": 0,
+    "revenue": 0,
+    "sessions": 0
+  },
+  "interpretation": {
+    "rootCause": "NOT_PROVEN",
+    "why": "This trace correlates latest UI timing with an action-equivalent per-step trace, but does not instrument the exported Next server action internals in the same request.",
+    "nextAction": "If optimizing is approved later, prove the dominant bucket in a same-request trace or choose one minimal DB/audit/outbox fix only after evidence."
+  },
+  "records": [
+    {
+      "flow": "setup",
+      "name": "insert_trace_package",
+      "category": "db",
+      "durationMs": 84.98,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_correlated_trace",
+      "name": "rate_limit_not_measured_request_context",
+      "category": "validation",
+      "durationMs": 0.02,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_correlated_trace",
+      "name": "validation_booking_schema",
+      "category": "validation",
+      "durationMs": 1.77,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_correlated_trace",
+      "name": "resolve_booking_tenant_probe",
+      "category": "db",
+      "durationMs": 183.32,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_correlated_trace",
+      "name": "package_scope_package_select",
+      "category": "db",
+      "durationMs": 85.38,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_correlated_trace",
+      "name": "package_scope_tenant_select",
+      "category": "db",
+      "durationMs": 79.92,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_correlated_trace",
+      "name": "insert_customer_select",
+      "category": "db",
+      "durationMs": 75.32,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_correlated_trace",
+      "name": "audit_customers_insert",
+      "category": "audit",
+      "durationMs": 84.1,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_correlated_trace",
+      "name": "find_pending_booking_for_customer_skipped_new_customer",
+      "category": "service",
+      "durationMs": 0.03,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_correlated_trace",
+      "name": "construct_tenant_context_select",
+      "category": "db",
+      "durationMs": 77.21,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_correlated_trace",
+      "name": "construct_tenant_context_shape",
+      "category": "service",
+      "durationMs": 0.06,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_correlated_trace",
+      "name": "pricing_package_select",
+      "category": "db",
+      "durationMs": 81.09,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_correlated_trace",
+      "name": "build_booking_payload",
+      "category": "service",
+      "durationMs": 0.11,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_correlated_trace",
+      "name": "adapter_validation_noop",
+      "category": "validation",
+      "durationMs": 0.02,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_correlated_trace",
+      "name": "insert_booking_select",
+      "category": "db",
+      "durationMs": 83.64,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_correlated_trace",
+      "name": "audit_bookings_insert",
+      "category": "audit",
+      "durationMs": 75.33,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_correlated_trace",
+      "name": "deposit_accounting_period_probe",
+      "category": "db",
+      "durationMs": 92.92,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_correlated_trace",
+      "name": "insert_deposit_revenue",
+      "category": "db",
+      "durationMs": 92.31,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_correlated_trace",
+      "name": "enqueue_deposit_outbox_rpc",
+      "category": "outbox",
+      "durationMs": 79.89,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_correlated_trace",
+      "name": "existing_session_logs_count",
+      "category": "db",
+      "durationMs": 83.35,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_correlated_trace",
+      "name": "package_default_duration_select",
+      "category": "db",
+      "durationMs": 72.12,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_correlated_trace",
+      "name": "insert_initial_session_logs",
+      "category": "db",
+      "durationMs": 232.46,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_correlated_trace",
+      "name": "safe_revalidate_paths_probe",
+      "category": "revalidation",
+      "durationMs": 229.05,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_correlated_trace",
+      "name": "response_shape",
+      "category": "response",
+      "durationMs": 0.12,
+      "ok": true
+    },
+    {
+      "flow": "create_booking_correlated_trace",
+      "name": "action_equivalent_total",
+      "category": "wrapper",
+      "durationMs": 1925.38,
+      "ok": true
+    },
+    {
+      "flow": "cleanup",
+      "name": "delete_accounting_outbox_by_reference_ids",
+      "category": "cleanup",
+      "durationMs": 89.68,
+      "ok": true
+    },
+    {
+      "flow": "cleanup",
+      "name": "delete_session_logs",
+      "category": "cleanup",
+      "durationMs": 85.2,
+      "ok": true
+    },
+    {
+      "flow": "cleanup",
+      "name": "delete_revenue",
+      "category": "cleanup",
+      "durationMs": 90.44,
+      "ok": true
+    },
+    {
+      "flow": "cleanup",
+      "name": "delete_bookings",
+      "category": "cleanup",
+      "durationMs": 70.95,
+      "ok": true
+    },
+    {
+      "flow": "cleanup",
+      "name": "delete_audit_logs",
+      "category": "cleanup",
+      "durationMs": 81.31,
+      "ok": true
+    },
+    {
+      "flow": "cleanup",
+      "name": "delete_packages",
+      "category": "cleanup",
+      "durationMs": 71.25,
+      "ok": true
+    },
+    {
+      "flow": "cleanup",
+      "name": "delete_customers",
+      "category": "cleanup",
+      "durationMs": 87.44,
+      "ok": true
+    }
+  ]
+}

@@ -1,0 +1,290 @@
+{
+  "marker": "babycare-direct-ui-baseline-1790922970612",
+  "status": "PASS_UI_BASELINE",
+  "cleanupStatus": "PASS",
+  "environment": {
+    "envFile": ".env.e2e",
+    "host": "bmnbqbcdbuklhopfbopv.supabase.co",
+    "baseUrl": "http://localhost:3217",
+    "safety": "E2E_ONLY_UI_MUTATION_BASELINE"
+  },
+  "scope": {
+    "productionMutation": "FORBIDDEN",
+    "runtimeContractContext": "PACKAGE_MODULE_KEY_CONTRACT_FIX_APPLIED",
+    "performanceCodeChanges": "NONE",
+    "browserSubmitLatency": "MEASURED",
+    "directNextDevServer": "PRE_SUBMIT_MEASURED",
+    "directExportedServerAction": "NOT_MEASURED"
+  },
+  "uiResult": {
+    "browserSubmitToSaveCompleteMs": 2962.97,
+    "customerPhone": "0743628233",
+    "customerName": "babycare-direct-ui-baseline-1790922970612 UI customer",
+    "proofTenantMode": "REUSE_EXISTING_E2E_BABYCARE_BASELINE_TENANT",
+    "proofTenantId": "bbc4c4d0-e001-439c-8121-cd4d2a5180e0",
+    "proofTenantName": "babycare-save-baseline-1790914296924 tenant",
+    "proofAuthRole": "admin"
+  },
+  "nextActionPosts": [
+    {
+      "url": "http://localhost:3217/dashboard",
+      "method": "POST",
+      "status": 200,
+      "nextAction": "004b278249e2e797b0908ed3809ee12e2723c72b45",
+      "durationMs": 766.97
+    },
+    {
+      "url": "http://localhost:3217/dashboard",
+      "method": "POST",
+      "status": 200,
+      "nextAction": "7f25d4d11f82fbf2b3252c0ce8a5c4dfaa87393524",
+      "durationMs": 304.9
+    },
+    {
+      "url": "http://localhost:3217/dashboard",
+      "method": "POST",
+      "status": 200,
+      "nextAction": "00b3b7e14f1f8631bfbc3fbc9e6f00e16b0c4dd38e",
+      "durationMs": 1242.48
+    },
+    {
+      "url": "http://localhost:3217/dashboard",
+      "method": "POST",
+      "status": 200,
+      "nextAction": "00b3b7e14f1f8631bfbc3fbc9e6f00e16b0c4dd38e",
+      "durationMs": 1111.35
+    },
+    {
+      "url": "http://localhost:3217/dashboard",
+      "method": "POST",
+      "status": 200,
+      "nextAction": "00b3b7e14f1f8631bfbc3fbc9e6f00e16b0c4dd38e",
+      "durationMs": 1166.31
+    },
+    {
+      "url": "http://localhost:3217/dashboard",
+      "method": "POST",
+      "status": 200,
+      "nextAction": "00b3b7e14f1f8631bfbc3fbc9e6f00e16b0c4dd38e",
+      "durationMs": 1104.25
+    },
+    {
+      "url": "http://localhost:3217/dashboard",
+      "method": "POST",
+      "status": 200,
+      "nextAction": "7090a15606043f5dca6563331c55ee146b47af0ca5",
+      "durationMs": 654.61
+    },
+    {
+      "url": "http://localhost:3217/dashboard",
+      "method": "POST",
+      "status": 200,
+      "nextAction": "0094d735db05be39f4afc7c9c078141abe0e8bca24",
+      "durationMs": 1148.24
+    },
+    {
+      "url": "http://localhost:3217/dashboard",
+      "method": "POST",
+      "status": 200,
+      "nextAction": "40634e7c11ddce5d638b11d7e60f07f03cfabbebce",
+      "durationMs": 444.13
+    },
+    {
+      "url": "http://localhost:3217/dashboard",
+      "method": "POST",
+      "status": 200,
+      "nextAction": "004927b239e1d7ca73f62b40f75b17c505562c00b9",
+      "durationMs": 401.9
+    },
+    {
+      "url": "http://localhost:3217/dashboard",
+      "method": "POST",
+      "status": 200,
+      "nextAction": "0024df18ebbdd8f9bd5d4778cf1812b38d2942ab48",
+      "durationMs": 498.71
+    },
+    {
+      "url": "http://localhost:3217/dashboard",
+      "method": "POST",
+      "status": 200,
+      "nextAction": "409cb6a7f328d223426c5cfa0769cef243c33dd686",
+      "durationMs": 2350.82
+    }
+  ],
+  "networkTimings": [
+    {
+      "url": "http://localhost:3217/monitoring?o=4511424569868288&p=4511424571768832&r=us",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 608.62
+    },
+    {
+      "url": "http://localhost:3217/monitoring?o=4511424569868288&p=4511424571768832&r=us",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 660.03
+    },
+    {
+      "url": "http://localhost:3217/dashboard",
+      "method": "POST",
+      "status": 200,
+      "nextAction": "004b278249e2e797b0908ed3809ee12e2723c72b45",
+      "durationMs": 766.97
+    },
+    {
+      "url": "http://localhost:3217/dashboard",
+      "method": "POST",
+      "status": 200,
+      "nextAction": "7f25d4d11f82fbf2b3252c0ce8a5c4dfaa87393524",
+      "durationMs": 304.9
+    },
+    {
+      "url": "http://localhost:3217/dashboard",
+      "method": "POST",
+      "status": 200,
+      "nextAction": "00b3b7e14f1f8631bfbc3fbc9e6f00e16b0c4dd38e",
+      "durationMs": 1242.48
+    },
+    {
+      "url": "http://localhost:3217/dashboard",
+      "method": "POST",
+      "status": 200,
+      "nextAction": "00b3b7e14f1f8631bfbc3fbc9e6f00e16b0c4dd38e",
+      "durationMs": 1111.35
+    },
+    {
+      "url": "http://localhost:3217/dashboard",
+      "method": "POST",
+      "status": 200,
+      "nextAction": "00b3b7e14f1f8631bfbc3fbc9e6f00e16b0c4dd38e",
+      "durationMs": 1166.31
+    },
+    {
+      "url": "http://localhost:3217/dashboard",
+      "method": "POST",
+      "status": 200,
+      "nextAction": "00b3b7e14f1f8631bfbc3fbc9e6f00e16b0c4dd38e",
+      "durationMs": 1104.25
+    },
+    {
+      "url": "http://localhost:3217/dashboard",
+      "method": "POST",
+      "status": 200,
+      "nextAction": "7090a15606043f5dca6563331c55ee146b47af0ca5",
+      "durationMs": 654.61
+    },
+    {
+      "url": "http://localhost:3217/dashboard",
+      "method": "POST",
+      "status": 200,
+      "nextAction": "0094d735db05be39f4afc7c9c078141abe0e8bca24",
+      "durationMs": 1148.24
+    },
+    {
+      "url": "http://localhost:3217/dashboard",
+      "method": "POST",
+      "status": 200,
+      "nextAction": "40634e7c11ddce5d638b11d7e60f07f03cfabbebce",
+      "durationMs": 444.13
+    },
+    {
+      "url": "http://localhost:3217/dashboard",
+      "method": "POST",
+      "status": 200,
+      "nextAction": "004927b239e1d7ca73f62b40f75b17c505562c00b9",
+      "durationMs": 401.9
+    },
+    {
+      "url": "http://localhost:3217/dashboard",
+      "method": "POST",
+      "status": 200,
+      "nextAction": "0024df18ebbdd8f9bd5d4778cf1812b38d2942ab48",
+      "durationMs": 498.71
+    },
+    {
+      "url": "http://localhost:3217/__nextjs_original-stack-frames",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 26.1
+    },
+    {
+      "url": "http://localhost:3217/dashboard",
+      "method": "POST",
+      "status": 200,
+      "nextAction": "409cb6a7f328d223426c5cfa0769cef243c33dd686",
+      "durationMs": 2350.82
+    }
+  ],
+  "steps": [
+    {
+      "name": "setup_proof_tenant",
+      "durationMs": 1965.83,
+      "ok": true
+    },
+    {
+      "name": "wait_for_dev_server",
+      "durationMs": 8171.2,
+      "ok": true
+    },
+    {
+      "name": "browser_goto_dashboard",
+      "durationMs": 3897.23,
+      "ok": true
+    },
+    {
+      "name": "open_booking_modal",
+      "durationMs": 261.63,
+      "ok": true
+    },
+    {
+      "name": "fill_customer_step",
+      "durationMs": 797.92,
+      "ok": true
+    },
+    {
+      "name": "fill_booking_step",
+      "durationMs": 8235.8,
+      "ok": true
+    },
+    {
+      "name": "submit_create_booking_until_success_visible_and_business_rows",
+      "durationMs": 2962.96,
+      "ok": true
+    },
+    {
+      "name": "run_browser_create_booking_flow",
+      "durationMs": 17463.25,
+      "ok": true
+    },
+    {
+      "name": "cleanup_delete_accounting_outbox_by_reference_ids",
+      "durationMs": 79.51,
+      "ok": true
+    },
+    {
+      "name": "cleanup_delete_session_logs",
+      "durationMs": 102.84,
+      "ok": true
+    },
+    {
+      "name": "cleanup_delete_revenue",
+      "durationMs": 88.03,
+      "ok": true
+    },
+    {
+      "name": "cleanup_delete_bookings",
+      "durationMs": 122.78,
+      "ok": true
+    },
+    {
+      "name": "cleanup_delete_packages",
+      "durationMs": 86.22,
+      "ok": true
+    },
+    {
+      "name": "cleanup_delete_customers",
+      "durationMs": 173.53,
+      "ok": true
+    }
+  ]
+}

@@ -118,9 +118,9 @@ export async function createCustomerForBookingIfNeeded(
   validatedData: ValidatedBookingData,
   formData: CreateBookingFormData,
   tenantId: string
-): Promise<{ customerId: string } | ActionError> {
+): Promise<{ customerId: string; created: boolean } | ActionError> {
   if (validatedData.customer_id !== 'new' || !formData.newCustomer) {
-    return { customerId: String(validatedData.customer_id) };
+    return { customerId: String(validatedData.customer_id), created: false };
   }
 
   const customerPayload: CustomerInsert = {
@@ -156,7 +156,7 @@ export async function createCustomerForBookingIfNeeded(
     };
   }
 
-  return { customerId: customer.id };
+  return { customerId: customer.id, created: true };
 }
 
 export async function findPendingBookingForCustomer(
