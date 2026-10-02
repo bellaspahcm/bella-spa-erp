@@ -443,8 +443,8 @@ export default function BeautySpaV2DashboardPage() {
           <h2 className="text-base font-semibold text-slate-950">Governance Boundary</h2>
           <div className="mt-4 grid gap-3 text-sm text-slate-700 md:grid-cols-3">
             <p>Beauty OS kernel changes: 0</p>
-            <p>Database migrations: 0</p>
-            <p>Real DB concurrency: known architecture boundary, not part of this route evidence slice</p>
+            <p>H8 resource migration: applied in E2E proof</p>
+            <p>Resource DB concurrency: Real DB proven; staff interval remains contract boundary</p>
           </div>
         </section>
       </div>
