@@ -128,7 +128,9 @@ describeWithRealSupabase('Bella Beauty Spa v2 Real DB business proof', () => {
       await cleanup('customers', seedClient.from('customers').delete().in('id', created.customers));
     }
     if (created.tenants.length > 0) {
-      await cleanup('tenants', seedClient.from('tenants').delete().in('id', created.tenants));
+      console.warn(
+        `[Beauty Spa V2 Real DB cleanup] retained tenant fixture(s) after owned Beauty/customer rows cleanup: ${created.tenants.join(', ')}`,
+      );
     }
   });
 

@@ -106,6 +106,12 @@ read-back under the approved Real DB proof path. It does not re-claim new
 authenticated RLS runtime evidence; existing Beauty H8 RLS proof remains owned
 by the prior H8 migration/closure evidence.
 
+The Real DB test cleans up rows owned by the Beauty V2 proof itself
+(`beauty_*` and `customers`). It intentionally does not delete parent `tenants`
+fixtures in CI because tenant deletion is a broad cross-product parent-table
+operation and was observed to hit statement timeout after owned rows were
+removed. Retained proof tenant IDs are logged for operational visibility.
+
 ## Boundary Classification
 
 `BEAUTY_V2_PRODUCT_LAYER = SEALED`
