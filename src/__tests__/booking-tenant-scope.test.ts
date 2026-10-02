@@ -165,7 +165,7 @@ describe('booking tenant scope guards', () => {
       'tenant-1',
     );
 
-    expect(result).toEqual({ customerId: 'customer-1' });
+    expect(result).toEqual({ customerId: 'customer-1', created: true });
     expect(operations[0]).toEqual(expect.objectContaining({
       table: 'customers',
       method: 'insert',

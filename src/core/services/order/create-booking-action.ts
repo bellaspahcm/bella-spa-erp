@@ -229,7 +229,9 @@ export async function createBooking(formData: CreateBookingInput): Promise<Creat
   }
   */
 
-  const existingBooking = await findPendingBookingForCustomer(supabase, customerId, tenantId);
+  const existingBooking = customerResult.created
+    ? null
+    : await findPendingBookingForCustomer(supabase, customerId, tenantId);
 
   // Task 19.1 & 19.2: Construct tenant context for adapter integration
   const tenantContext = await constructTenantContextForBooking(supabase, tenantId);

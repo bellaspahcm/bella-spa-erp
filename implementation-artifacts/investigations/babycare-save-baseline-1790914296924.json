@@ -1,0 +1,471 @@
+{
+  "marker": "babycare-save-baseline-1790914296924",
+  "status": "PASS_DB_CRITICAL_PATH_ONLY",
+  "environment": {
+    "envFile": ".env.e2e",
+    "host": "bmnbqbcdbuklhopfbopv.supabase.co",
+    "safety": "E2E_ONLY_MUTATION_BASELINE"
+  },
+  "created": {
+    "tenants": [
+      "bbc4c4d0..."
+    ],
+    "users": [
+      "66e57deb...",
+      "5b961c57..."
+    ],
+    "customers": [
+      "7b4c1cf9..."
+    ],
+    "packages": [
+      "9c1f06d5..."
+    ],
+    "bookings": [
+      "fbcdb8d3..."
+    ],
+    "sessionLogs": [
+      "3c90ffaf...",
+      "84c70c41...",
+      "db5ededc..."
+    ],
+    "revenue": [
+      "e9263fe1..."
+    ],
+    "auditLogs": [
+      "5ba64b58...",
+      "d2fa37bf...",
+      "2fe61eb3..."
+    ],
+    "sessionReviews": [
+      "671b5786..."
+    ],
+    "salaryRecords": [
+      "7015b950..."
+    ]
+  },
+  "steps": [
+    {
+      "flow": "setup",
+      "name": "insert_tenant",
+      "durationMs": 1246.85,
+      "ok": true
+    },
+    {
+      "flow": "setup",
+      "name": "insert_admin_user",
+      "durationMs": 373.54,
+      "ok": true
+    },
+    {
+      "flow": "setup",
+      "name": "insert_ktv_user",
+      "durationMs": 138.43,
+      "ok": true
+    },
+    {
+      "flow": "setup",
+      "name": "insert_package",
+      "durationMs": 175.28,
+      "ok": true
+    },
+    {
+      "flow": "create_booking",
+      "name": "package_scope_package_select",
+      "durationMs": 197.12,
+      "ok": true
+    },
+    {
+      "flow": "create_booking",
+      "name": "package_scope_tenant_select",
+      "durationMs": 129.36,
+      "ok": true
+    },
+    {
+      "flow": "create_booking",
+      "name": "insert_customer_select",
+      "durationMs": 137.48,
+      "ok": true
+    },
+    {
+      "flow": "create_booking",
+      "name": "audit_customers_insert",
+      "durationMs": 139.74,
+      "ok": true
+    },
+    {
+      "flow": "create_booking",
+      "name": "find_pending_booking_for_customer",
+      "durationMs": 174.93,
+      "ok": true
+    },
+    {
+      "flow": "create_booking",
+      "name": "construct_tenant_context",
+      "durationMs": 118.39,
+      "ok": true
+    },
+    {
+      "flow": "create_booking",
+      "name": "pricing_package_select",
+      "durationMs": 163.85,
+      "ok": true
+    },
+    {
+      "flow": "create_booking",
+      "name": "insert_booking_select",
+      "durationMs": 591.34,
+      "ok": true
+    },
+    {
+      "flow": "create_booking",
+      "name": "audit_bookings_insert",
+      "durationMs": 135.75,
+      "ok": true
+    },
+    {
+      "flow": "create_booking",
+      "name": "accounting_period_probe",
+      "durationMs": 154.26,
+      "ok": true
+    },
+    {
+      "flow": "create_booking",
+      "name": "insert_deposit_revenue",
+      "durationMs": 231.55,
+      "ok": true
+    },
+    {
+      "flow": "create_booking",
+      "name": "enqueue_deposit_outbox_rpc",
+      "durationMs": 157.63,
+      "ok": true
+    },
+    {
+      "flow": "create_booking",
+      "name": "existing_session_logs_count",
+      "durationMs": 129.15,
+      "ok": true
+    },
+    {
+      "flow": "create_booking",
+      "name": "package_default_duration_select",
+      "durationMs": 122.39,
+      "ok": true
+    },
+    {
+      "flow": "create_booking",
+      "name": "insert_initial_session_logs",
+      "durationMs": 281.2,
+      "ok": true
+    },
+    {
+      "flow": "update_booking",
+      "name": "fetch_old_booking_for_audit",
+      "durationMs": 104.79,
+      "ok": true
+    },
+    {
+      "flow": "update_booking",
+      "name": "construct_tenant_context_for_validation",
+      "durationMs": 80.76,
+      "ok": true
+    },
+    {
+      "flow": "update_booking",
+      "name": "fetch_scheduled_sessions_for_conflict",
+      "durationMs": 106.29,
+      "ok": true
+    },
+    {
+      "flow": "update_booking",
+      "name": "update_booking_select",
+      "durationMs": 89.09,
+      "ok": true
+    },
+    {
+      "flow": "update_booking",
+      "name": "audit_bookings_update",
+      "durationMs": 81.53,
+      "ok": true
+    },
+    {
+      "flow": "update_booking",
+      "name": "sync_scheduled_session_times",
+      "durationMs": 87.12,
+      "ok": true
+    },
+    {
+      "flow": "update_booking",
+      "name": "progress_completed_count",
+      "durationMs": 70.72,
+      "ok": true
+    },
+    {
+      "flow": "complete_session",
+      "name": "fetch_existing_session",
+      "durationMs": 75.15,
+      "ok": true
+    },
+    {
+      "flow": "complete_session",
+      "name": "fetch_booking_for_completion",
+      "durationMs": 238.72,
+      "ok": true
+    },
+    {
+      "flow": "complete_session",
+      "name": "update_session_completed",
+      "durationMs": 97.23,
+      "ok": true
+    },
+    {
+      "flow": "complete_session",
+      "name": "completion_accounting_period_probe",
+      "durationMs": 71.82,
+      "ok": true
+    },
+    {
+      "flow": "complete_session",
+      "name": "count_completed_sessions",
+      "durationMs": 91.48,
+      "ok": true
+    },
+    {
+      "flow": "complete_session",
+      "name": "fetch_current_booking_for_progress",
+      "durationMs": 118.48,
+      "ok": true
+    },
+    {
+      "flow": "complete_session",
+      "name": "update_booking_progress",
+      "durationMs": 238.86,
+      "ok": true
+    },
+    {
+      "flow": "complete_session",
+      "name": "insert_salary_record_probe",
+      "durationMs": 95.16,
+      "ok": true
+    },
+    {
+      "flow": "complete_session",
+      "name": "insert_session_review_placeholder",
+      "durationMs": 100.38,
+      "ok": true
+    },
+    {
+      "flow": "complete_session",
+      "name": "fetch_revenue_for_session_done_outbox",
+      "durationMs": 84.42,
+      "ok": true
+    },
+    {
+      "flow": "complete_session",
+      "name": "enqueue_session_done_outbox_rpc",
+      "durationMs": 97.03,
+      "ok": true
+    }
+  ],
+  "summaryByFlow": {
+    "setup": {
+      "totalMs": 1934.1,
+      "steps": 4,
+      "failed": 0,
+      "slowest": [
+        {
+          "flow": "setup",
+          "name": "insert_tenant",
+          "durationMs": 1246.85,
+          "ok": true
+        },
+        {
+          "flow": "setup",
+          "name": "insert_admin_user",
+          "durationMs": 373.54,
+          "ok": true
+        },
+        {
+          "flow": "setup",
+          "name": "insert_package",
+          "durationMs": 175.28,
+          "ok": true
+        },
+        {
+          "flow": "setup",
+          "name": "insert_ktv_user",
+          "durationMs": 138.43,
+          "ok": true
+        }
+      ]
+    },
+    "create_booking": {
+      "totalMs": 2864.14,
+      "steps": 15,
+      "failed": 0,
+      "slowest": [
+        {
+          "flow": "create_booking",
+          "name": "insert_booking_select",
+          "durationMs": 591.34,
+          "ok": true
+        },
+        {
+          "flow": "create_booking",
+          "name": "insert_initial_session_logs",
+          "durationMs": 281.2,
+          "ok": true
+        },
+        {
+          "flow": "create_booking",
+          "name": "insert_deposit_revenue",
+          "durationMs": 231.55,
+          "ok": true
+        },
+        {
+          "flow": "create_booking",
+          "name": "package_scope_package_select",
+          "durationMs": 197.12,
+          "ok": true
+        },
+        {
+          "flow": "create_booking",
+          "name": "find_pending_booking_for_customer",
+          "durationMs": 174.93,
+          "ok": true
+        }
+      ]
+    },
+    "update_booking": {
+      "totalMs": 620.3,
+      "steps": 7,
+      "failed": 0,
+      "slowest": [
+        {
+          "flow": "update_booking",
+          "name": "fetch_scheduled_sessions_for_conflict",
+          "durationMs": 106.29,
+          "ok": true
+        },
+        {
+          "flow": "update_booking",
+          "name": "fetch_old_booking_for_audit",
+          "durationMs": 104.79,
+          "ok": true
+        },
+        {
+          "flow": "update_booking",
+          "name": "update_booking_select",
+          "durationMs": 89.09,
+          "ok": true
+        },
+        {
+          "flow": "update_booking",
+          "name": "sync_scheduled_session_times",
+          "durationMs": 87.12,
+          "ok": true
+        },
+        {
+          "flow": "update_booking",
+          "name": "audit_bookings_update",
+          "durationMs": 81.53,
+          "ok": true
+        }
+      ]
+    },
+    "complete_session": {
+      "totalMs": 1308.73,
+      "steps": 11,
+      "failed": 0,
+      "slowest": [
+        {
+          "flow": "complete_session",
+          "name": "update_booking_progress",
+          "durationMs": 238.86,
+          "ok": true
+        },
+        {
+          "flow": "complete_session",
+          "name": "fetch_booking_for_completion",
+          "durationMs": 238.72,
+          "ok": true
+        },
+        {
+          "flow": "complete_session",
+          "name": "fetch_current_booking_for_progress",
+          "durationMs": 118.48,
+          "ok": true
+        },
+        {
+          "flow": "complete_session",
+          "name": "insert_session_review_placeholder",
+          "durationMs": 100.38,
+          "ok": true
+        },
+        {
+          "flow": "complete_session",
+          "name": "update_session_completed",
+          "durationMs": 97.23,
+          "ok": true
+        }
+      ]
+    }
+  },
+  "cleanup": [
+    {
+      "name": "delete_accounting_outbox_by_tenant",
+      "ok": true,
+      "durationMs": 78.19
+    },
+    {
+      "name": "delete_session_reviews",
+      "ok": true,
+      "durationMs": 88.86
+    },
+    {
+      "name": "delete_session_logs",
+      "ok": true,
+      "durationMs": 112.87
+    },
+    {
+      "name": "delete_salary_records",
+      "ok": true,
+      "durationMs": 95.68
+    },
+    {
+      "name": "delete_revenue",
+      "ok": true,
+      "durationMs": 81.38
+    },
+    {
+      "name": "delete_bookings",
+      "ok": true,
+      "durationMs": 113.09
+    },
+    {
+      "name": "delete_audit_logs",
+      "ok": true,
+      "durationMs": 80.91
+    },
+    {
+      "name": "delete_packages",
+      "ok": true,
+      "durationMs": 95.86
+    },
+    {
+      "name": "delete_customers",
+      "ok": true,
+      "durationMs": 183.6
+    },
+    {
+      "name": "delete_users",
+      "ok": true,
+      "durationMs": 8642.07
+    },
+    {
+      "name": "delete_tenants",
+      "ok": true,
+      "durationMs": 6276.14
+    }
+  ]
+}
