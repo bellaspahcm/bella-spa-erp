@@ -2,12 +2,15 @@ import { randomUUID } from 'node:crypto';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { NextRequest } from 'next/server';
 
+import { GET as runAccountingWorker } from '@/app/api/cron/accounting-worker/route';
 import {
   getSupabaseAdminKey,
   getSupabaseAdminUrl,
   requireSupabaseAdminEnv,
 } from '@/lib/supabase-admin-env';
+import { FINANCE_RECEIVABLE_SEMANTICS } from '@/platform/finance/contracts/receivable-charge.contract';
 import type { Database } from '@/types/database.types';
 import type {
   Clock,
@@ -33,8 +36,10 @@ import {
 
 import {
   BeautySpaV2Service,
+  type BeautySpaSessionFinanceOutboxPort,
   type SpaStaffAvailabilityPort,
 } from '../service';
+import { BeautySpaAccountingOutboxPort } from '../finance-outbox';
 
 jest.setTimeout(120_000);
 
@@ -294,9 +299,129 @@ describeWithRealSupabase('Bella Beauty Spa v2 Real DB business proof', () => {
     return data!.id;
   }
 
+  async function seedFinanceFoundation(tenantId: string): Promise<void> {
+    const { error: accountingAccountsError } = await seedClient
+      .from('accounting_accounts')
+      .insert([
+        {
+          tenant_id: tenantId,
+          account_code: '3387',
+          account_name: `${marker} unearned revenue`,
+          account_type: 'LIABILITY',
+          is_active: true,
+        },
+        {
+          tenant_id: tenantId,
+          account_code: '131',
+          account_name: `${marker} receivable`,
+          account_type: 'ASSET',
+          is_active: true,
+        },
+        {
+          tenant_id: tenantId,
+          account_code: '5113',
+          account_name: `${marker} service revenue`,
+          account_type: 'REVENUE',
+          is_active: true,
+        },
+        {
+          tenant_id: tenantId,
+          account_code: '6421',
+          account_name: `${marker} commission expense`,
+          account_type: 'EXPENSE',
+          is_active: true,
+        },
+        {
+          tenant_id: tenantId,
+          account_code: '334',
+          account_name: `${marker} payroll payable`,
+          account_type: 'LIABILITY',
+          is_active: true,
+        },
+      ]);
+    expect(accountingAccountsError).toBeNull();
+
+    const { error: periodError } = await seedClient
+      .from('finance_accounting_periods')
+      .insert({
+        tenant_id: tenantId,
+        name: `${marker}-FY2026`,
+        period_start: '2026-01-01',
+        period_end: '2026-12-31',
+        status: 'OPEN',
+      });
+    expect(periodError).toBeNull();
+
+    const { data: accounts, error: accountsError } = await seedClient
+      .from('finance_accounts')
+      .insert([
+        {
+          tenant_id: tenantId,
+          code: '131',
+          name: `${marker} finance receivable`,
+          type: 'ASSET',
+          normal_balance: 'DEBIT',
+          currency: 'VND',
+          is_active: true,
+        },
+        {
+          tenant_id: tenantId,
+          code: '511',
+          name: `${marker} finance service revenue`,
+          type: 'REVENUE',
+          normal_balance: 'CREDIT',
+          currency: 'VND',
+          is_active: true,
+        },
+        {
+          tenant_id: tenantId,
+          code: '112',
+          name: `${marker} finance bank`,
+          type: 'ASSET',
+          normal_balance: 'DEBIT',
+          currency: 'VND',
+          is_active: true,
+        },
+      ])
+      .select('id, code');
+    expect(accountsError).toBeNull();
+
+    const bankAccount = accounts?.find((account) => account.code === '112');
+    expect(bankAccount?.id).toBeTruthy();
+
+    const { error: bankError } = await seedClient
+      .from('finance_bank_accounts')
+      .insert({
+        tenant_id: tenantId,
+        account_number: `${marker}-${tenantId.slice(0, 8)}-112`,
+        account_name: `${marker} Beauty bank`,
+        bank_name: 'Beauty Proof Bank',
+        currency: 'VND',
+        linked_finance_account_id: bankAccount!.id,
+        is_active: true,
+      });
+    expect(bankError).toBeNull();
+
+    for (const [semanticKey, accountCode] of [
+      [FINANCE_RECEIVABLE_SEMANTICS.TRADE_RECEIVABLE, '131'],
+      [FINANCE_RECEIVABLE_SEMANTICS.SERVICE_REVENUE, '511'],
+    ] as const) {
+      const { error } = await seedClient.from('finance_control_account_mappings').insert({
+          tenant_id: tenantId,
+          control_type: semanticKey,
+          account_code: accountCode,
+          effective_from: '2026-01-01',
+          effective_to: null,
+          authority_version: 'VI_TT99_2025|99/2025/TT-BTC|PROVEN',
+      });
+      expect(error).toBeNull();
+    }
+  }
+
   function createService(
     allocationRepo: ResourceAllocationRepository = new SupabaseBeautyResourceAllocationRepository(beautyClient),
     sessionRepo: SessionRepository = new SupabaseBeautySessionRepository(beautyClient),
+    financeOutbox?: BeautySpaSessionFinanceOutboxPort,
   ) {
     const appointmentRepo = new SupabaseBeautyAppointmentRepository(beautyClient);
     const assignmentRepo = new SupabaseBeautyProfessionalAssignmentRepository(beautyClient);
@@ -309,6 +434,8 @@ describeWithRealSupabase('Bella Beauty Spa v2 Real DB business proof', () => {
       new AlwaysAvailableStaff(),
       new UuidIds(),
       new IncrementingClock(),
+      undefined,
+      financeOutbox,
     );
     return { service, appointmentRepo, sessionRepo };
   }
@@ -573,6 +700,168 @@ describeWithRealSupabase('Bella Beauty Spa v2 Real DB business proof', () => {
       .eq('resource_id', resourceId);
     expect(allRowsError).toBeNull();
     expect(allRows?.map((row) => row.status).sort()).toEqual(['ACTIVE', 'DISRUPTED']);
+  });
+
+  it('wires a completed H8 session to SESSION_DONE outbox, worker, journal, and F3 receivable facts', async () => {
+    const tenantA = await insertTenant('finance-wiring-tenant');
+    await seedFinanceFoundation(tenantA);
+    const customerA = await insertCustomer(tenantA, 'finance-wiring-customer');
+    const financeOutbox = new BeautySpaAccountingOutboxPort(seedClient);
+    const { service, appointmentRepo, sessionRepo } = createService(
+      new SupabaseBeautyResourceAllocationRepository(beautyClient),
+      new SupabaseBeautySessionRepository(beautyClient),
+      financeOutbox,
+    );
+    const branchId = randomUUID();
+    const serviceId = randomUUID();
+    const therapistId = randomUUID();
+    const actorId = randomUUID();
+
+    const appointment = await appointmentRepo.create({
+      id: randomUUID(),
+      tenantId: tenantA,
+      branchId,
+      customerId: customerA,
+      serviceId,
+      interval: {
+        startsAt: '2026-10-02T18:00:00.000Z',
+        endsAt: '2026-10-02T19:00:00.000Z',
+      },
+      status: 'PENDING',
+    });
+    const plannedSession = await sessionRepo.create({
+      id: randomUUID(),
+      tenantId: tenantA,
+      appointmentId: appointment.id,
+      serviceCommitmentId: randomUUID(),
+      status: 'PLANNED',
+      actualStartAt: null,
+      actualEndAt: null,
+      actualPerformerId: null,
+      outcome: null,
+    });
+
+    const completed = await service.completeSession({
+      session: plannedSession,
+      performerId: therapistId,
+      outcome: {
+        checkedOutBy: actorId,
+        customerHistoryNote: 'Beauty V2 finance wiring proof persisted.',
+        packageSessionUsed: false,
+        paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+        inventoryHandoff: 'NOT_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: ['BEAUTY_V2_FINANCE_WIRING_PROOF'],
+      },
+      financeHandoff: {
+        earnedRevenueAmount: 150000,
+        deferredRevenueAmount: 0,
+        receivableAmount: 150000,
+        commissionAmount: 0,
+        description: `${marker} Beauty V2 H8 SESSION_DONE`,
+      },
+    });
+    expect(completed.status).toBe('COMPLETED');
+
+    const { data: outboxBeforeWorker, error: outboxBeforeWorkerError } = await seedClient
+      .from('accounting_outbox')
+      .select('id, tenant_id, event_type, reference_type, reference_id, status, payload')
+      .eq('tenant_id', tenantA)
+      .eq('event_type', 'SESSION_DONE')
+      .eq('reference_type', 'BEAUTY_SESSION')
+      .eq('reference_id', plannedSession.id)
+      .single();
+    expect(outboxBeforeWorkerError).toBeNull();
+    expect(outboxBeforeWorker).toEqual(expect.objectContaining({
+      tenant_id: tenantA,
+      event_type: 'SESSION_DONE',
+      reference_type: 'BEAUTY_SESSION',
+      reference_id: plannedSession.id,
+      status: 'PENDING',
+    }));
+
+    const priorCronSecret = process.env.CRON_SECRET;
+    process.env.CRON_SECRET = `${marker}-cron-secret`;
+    try {
+      const response = await runAccountingWorker(new NextRequest('http://localhost/api/cron/accounting-worker', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${process.env.CRON_SECRET}`,
+        },
+      }));
+      const json = await response.json();
+      expect(response.status).toBe(200);
+      expect(json.success).toBe(true);
+      expect(json.successCount).toBeGreaterThanOrEqual(1);
+    } finally {
+      if (priorCronSecret === undefined) {
+        delete process.env.CRON_SECRET;
+      } else {
+        process.env.CRON_SECRET = priorCronSecret;
+      }
+    }
+
+    const { data: outboxAfterWorker, error: outboxAfterWorkerError } = await seedClient
+      .from('accounting_outbox')
+      .select('id, status, journal_entry_id')
+      .eq('tenant_id', tenantA)
+      .eq('id', outboxBeforeWorker!.id)
+      .single();
+    expect(outboxAfterWorkerError).toBeNull();
+    expect(outboxAfterWorker).toEqual(expect.objectContaining({
+      status: 'COMPLETED',
+    }));
+    expect(outboxAfterWorker?.journal_entry_id).toBeTruthy();
+
+    const { data: journal, error: journalError } = await seedClient
+      .from('journal_entries')
+      .select('id, tenant_id, reference_type, reference_id, status')
+      .eq('tenant_id', tenantA)
+      .eq('reference_type', 'SESSION_DONE')
+      .eq('reference_id', plannedSession.id)
+      .single();
+    expect(journalError).toBeNull();
+    expect(journal).toEqual(expect.objectContaining({
+      tenant_id: tenantA,
+      reference_type: 'SESSION_DONE',
+      reference_id: plannedSession.id,
+      status: 'POSTED',
+    }));
+
+    const { data: invoice, error: invoiceError } = await seedClient
+      .from('finance_invoices')
+      .select('id, tenant_id, status, metadata')
+      .eq('tenant_id', tenantA)
+      .eq('metadata->>business_source_type', 'BEAUTY_SESSION_DONE')
+      .eq('metadata->>business_source_id', plannedSession.id)
+      .single();
+    expect(invoiceError).toBeNull();
+    expect(invoice).toEqual(expect.objectContaining({
+      tenant_id: tenantA,
+      status: 'FINALIZED',
+    }));
+
+    const { data: position, error: positionError } = await seedClient
+      .from('finance_receivable_positions')
+      .select('id, invoice_id, customer_id, original_amount_minor, outstanding_amount_minor')
+      .eq('tenant_id', tenantA)
+      .eq('invoice_id', invoice!.id)
+      .single();
+    expect(positionError).toBeNull();
+    expect(position).toEqual(expect.objectContaining({
+      invoice_id: invoice!.id,
+      customer_id: customerA,
+      original_amount_minor: 150000,
+      outstanding_amount_minor: 150000,
+    }));
+
+    const { count: ledgerCount, error: ledgerError } = await seedClient
+      .from('finance_receivable_ledger')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantA)
+      .eq('invoice_id', invoice!.id);
+    expect(ledgerError).toBeNull();
+    expect(ledgerCount).toBeGreaterThanOrEqual(1);
   });
 
   it('rolls back a persisted session start when Real DB completion update fails', async () => {
