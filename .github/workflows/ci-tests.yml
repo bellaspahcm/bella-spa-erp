@@ -202,6 +202,7 @@ jobs:
 
       - name: Supabase migration drift (E2E baseline)
         env:
+          BASE_REF: ${{ steps.migration-base.outputs.base }}
           SUPABASE_DB_URL: ${{ secrets.E2E_SUPABASE_DB_URL }}
         run: npm run db:migration:check
 

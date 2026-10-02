@@ -11,6 +11,25 @@ function listLocalMigrationVersions(migrationsDir = join(process.cwd(), 'supabas
     .sort();
 }
 
+function listGitMigrationVersions(ref) {
+  if (!ref) return null;
+
+  const result = spawnSync('git', ['ls-tree', '-r', '--name-only', ref, 'supabase/migrations'], {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+  });
+
+  if (result.status !== 0) {
+    throw new Error((result.stderr || result.stdout || `Could not read migrations at ${ref}`).trim());
+  }
+
+  return String(result.stdout || '')
+    .split(/\r?\n/)
+    .map((name) => name.split('/').pop()?.match(MIGRATION_FILE_PATTERN)?.[1] || null)
+    .filter(Boolean)
+    .sort();
+}
+
 function parseSupabaseMigrationList(output) {
   const rows = [];
 
@@ -30,18 +49,27 @@ function parseSupabaseMigrationList(output) {
   return rows;
 }
 
-function analyzeMigrationState(localVersions, remoteVersions) {
+function analyzeMigrationState(localVersions, remoteVersions, baselineLocalVersions = null) {
   const localSet = new Set(localVersions);
   const remoteSet = new Set(remoteVersions);
+  const baselineLocalSet = baselineLocalVersions ? new Set(baselineLocalVersions) : null;
   const pendingLocal = localVersions.filter((version) => !remoteSet.has(version));
+  const grandfatheredPendingLocal = baselineLocalSet
+    ? pendingLocal.filter((version) => baselineLocalSet.has(version))
+    : [];
+  const newPendingLocal = baselineLocalSet
+    ? pendingLocal.filter((version) => !baselineLocalSet.has(version))
+    : pendingLocal;
   const remoteOnly = remoteVersions.filter((version) => !localSet.has(version));
 
   return {
     latestLocal: localVersions.at(-1) || null,
     latestRemote: remoteVersions.at(-1) || null,
     pendingLocal,
+    grandfatheredPendingLocal,
+    newPendingLocal,
     remoteOnly,
-    isSynced: pendingLocal.length === 0 && remoteOnly.length === 0,
+    isSynced: newPendingLocal.length === 0 && remoteOnly.length === 0,
   };
 }
 
@@ -105,6 +133,20 @@ function main() {
     process.exit(1);
   }
 
+  const baselineRef = process.env.MIGRATION_BASE_REF || process.env.BASE_REF || null;
+  let baselineLocalVersions = null;
+  if (baselineRef) {
+    try {
+      baselineLocalVersions = listGitMigrationVersions(baselineRef);
+      console.log(`Migration baseline ref: ${baselineRef}`);
+      console.log(`Baseline local migrations: ${baselineLocalVersions.length}`);
+    } catch (error) {
+      console.error('Could not read baseline Supabase migrations.');
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+  }
+
   let rows;
   try {
     rows = parseSupabaseMigrationList(runSupabaseMigrationList());
@@ -115,7 +157,7 @@ function main() {
   }
 
   const remoteVersions = rows.map((row) => row.remote).filter(Boolean).sort();
-  const state = analyzeMigrationState(localVersions, remoteVersions);
+  const state = analyzeMigrationState(localVersions, remoteVersions, baselineLocalVersions);
   printState(state);
 
   // Allow empty remote database (fresh installation scenario)
@@ -126,9 +168,15 @@ function main() {
     return;
   }
 
-  if (state.pendingLocal.length > 0) {
-    console.error('Remote Supabase database is missing local migrations:');
-    for (const version of state.pendingLocal) {
+  if (state.grandfatheredPendingLocal.length > 0) {
+    console.warn(
+      `Grandfathered pending local migrations already present at baseline: ${state.grandfatheredPendingLocal.length}`,
+    );
+  }
+
+  if (state.newPendingLocal.length > 0) {
+    console.error('Remote Supabase database is missing new local migrations:');
+    for (const version of state.newPendingLocal) {
       console.error(`- ${version}`);
     }
   }
@@ -141,8 +189,13 @@ function main() {
   }
 
   if (!state.isSynced) {
-    console.error('Run `npx supabase db push --linked --yes` or apply the missing migrations before deploy.');
+    console.error('Apply new migrations to the E2E database before deploy. Historical pending-local drift must stay tracked as a baseline boundary.');
     process.exit(1);
+  }
+
+  if (state.grandfatheredPendingLocal.length > 0) {
+    console.log('Supabase migrations have no new drift beyond the baseline boundary.');
+    return;
   }
 
   console.log('Supabase migrations are in sync.');
@@ -154,6 +207,7 @@ if (require.main === module) {
 
 module.exports = {
   analyzeMigrationState,
+  listGitMigrationVersions,
   listLocalMigrationVersions,
   parseSupabaseMigrationList,
 };

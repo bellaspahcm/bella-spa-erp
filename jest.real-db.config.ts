@@ -18,6 +18,7 @@ const config: Config = {
     '<rootDir>/src/__tests__/e2e-payroll-month-close.test.ts',
     '<rootDir>/src/app/api/english-center/__tests__/post-rc-real-db-validation.test.ts',
     '<rootDir>/src/__tests__/haircut-f3-debt-real-db-diagnostic.test.ts',
+    '<rootDir>/src/products/beauty-spa-v2/__tests__/beauty-spa-v2-real-db.test.ts',
   ],
 }
 

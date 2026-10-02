@@ -458,7 +458,26 @@ const bellaNailProduct: ProductDefinition = {
   navigationProfile: 'nail'
 };
 
+/**
+ * Bella Beauty Spa v2 Product Definition.
+ *
+ * @remarks
+ * Full spa-chain product identity for multi-branch spa operations.
+ * Reuses the frozen `beauty_spa` industry capability without introducing a
+ * new Beauty OS contract or table.
+ */
+const bellaSpaProduct: ProductDefinition = {
+  productKey: 'bella_spa',
+  displayName: 'Bella Beauty Spa v2',
+  subtitle: 'Spa Chain Management',
+  requiredModules: ['beauty_spa'],
+  serviceProfile: 'spa',
+  defaultRoute: '/dashboard/beauty-spa-v2',
+  navigationProfile: 'spa'
+};
+
 // Register products
 productRegistry.register(bellaHaircutProduct);
 productRegistry.register(bellaBabycareProduct);
 productRegistry.register(bellaNailProduct);
+productRegistry.register(bellaSpaProduct);
