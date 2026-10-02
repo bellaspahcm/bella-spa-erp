@@ -106,6 +106,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
@@ -114,13 +116,43 @@ jobs:
 
       - run: npm ci
 
+      - name: Resolve migration comparison base
+        id: migration-base
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          base="$PR_BASE_SHA"
+          if [ -z "$base" ]; then
+            base="$PUSH_BEFORE_SHA"
+          fi
+          if [ -z "$base" ] || printf '%s' "$base" | grep -Eq '^0+$'; then
+            base="HEAD^"
+          fi
+          git rev-parse --verify "$base^{commit}" > /dev/null
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+
       - name: Require isolated E2E database credentials
         env:
           SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.E2E_SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_DB_URL: ${{ secrets.E2E_SUPABASE_DB_URL }}
         run: |
           test -n "$SUPABASE_URL"
           test -n "$SUPABASE_SERVICE_ROLE_KEY"
+          test -n "$SUPABASE_DB_URL"
+
+      - name: Validate changed migrations before E2E apply
+        env:
+          BASE_REF: ${{ steps.migration-base.outputs.base }}
+        run: npm run db:migration:zero-downtime -- --base "$BASE_REF"
+
+      - name: Apply changed migrations to isolated E2E database
+        env:
+          ALLOW_E2E_MIGRATION_APPLY: '1'
+          BASE_REF: ${{ steps.migration-base.outputs.base }}
+          SUPABASE_DB_URL: ${{ secrets.E2E_SUPABASE_DB_URL }}
+        run: node scripts/apply-e2e-pr-migrations.cjs --base "$BASE_REF"
 
       - name: Run real database business E2E
         env:
