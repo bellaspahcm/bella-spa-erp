@@ -23,6 +23,7 @@ import {
   type BookBeautySpaServiceInput,
   type BeautySpaBookingMode,
   type BeautySpaOperationalOutcome,
+  type BeautySpaSessionFinanceOutboxPort,
   type BeautySpaResourceRequirement,
   BeautySpaV2Error,
   BeautySpaV2Service,
@@ -56,6 +57,7 @@ class BeautySpaHarness {
   public readonly allocationHistory: ResourceAllocationHistoryRecord[] = [];
   public readonly sessions: SessionRecord[] = [];
   public readonly waitlistEntries: Array<{ tenantId: string; customerId: string; reason: string }> = [];
+  public readonly financeHandoffs: Array<Parameters<BeautySpaSessionFinanceOutboxPort['enqueueCompletedSession']>[0]> = [];
   public readonly unavailableStaff = new Set<string>();
   public readonly malformedStaffAvailability = new Map<string, unknown>();
   public staffAvailabilityDelay: Promise<void> | null = null;
@@ -204,7 +206,13 @@ class BeautySpaHarness {
     },
   };
 
-  public createService(): BeautySpaV2Service {
+  public readonly financeOutbox: BeautySpaSessionFinanceOutboxPort = {
+    enqueueCompletedSession: async (input) => {
+      this.financeHandoffs.push(input);
+    },
+  };
+
+  public createService(financeOutbox: BeautySpaSessionFinanceOutboxPort = this.financeOutbox): BeautySpaV2Service {
     return new BeautySpaV2Service(
       this.appointmentRepository,
       this.assignmentRepository,
@@ -215,6 +223,7 @@ class BeautySpaHarness {
       new WorkflowIds(),
       new WorkflowClock(),
       this.waitlist,
+      financeOutbox,
     );
   }
 
@@ -343,6 +352,134 @@ describe('Bella Beauty Spa v2 product discovery and workflow', () => {
       'assistant-parallel-2',
     ]);
     expect(booking.allocations).toHaveLength(1);
+  });
+
+  it('emits Beauty finance handoff after H8 session completion persists', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+    const appointment = await harness.appointmentRepository.create({
+      id: 'appointment-finance-handoff',
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-finance',
+      customerId: 'customer-finance',
+      serviceId: 'service-finance',
+      interval: {
+        startsAt: '2026-10-01T10:00:00.000Z',
+        endsAt: '2026-10-01T11:00:00.000Z',
+      },
+      status: 'PENDING',
+    });
+    const plannedSession: SessionRecord = {
+      id: 'session-finance-handoff',
+      tenantId: appointment.tenantId,
+      appointmentId: appointment.id,
+      serviceCommitmentId: 'commitment-finance',
+      status: 'PLANNED',
+      actualStartAt: null,
+      actualEndAt: null,
+      actualPerformerId: null,
+      outcome: null,
+    };
+
+    const completed = await service.completeSession({
+      session: plannedSession,
+      performerId: 'therapist-finance',
+      outcome: {
+        checkedOutBy: 'manager-spa',
+        customerHistoryNote: 'Finance handoff required.',
+        packageSessionUsed: false,
+        paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+        inventoryHandoff: 'NOT_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: ['FINANCE_HANDOFF'],
+      },
+      financeHandoff: {
+        earnedRevenueAmount: 120000,
+        deferredRevenueAmount: 0,
+        receivableAmount: 120000,
+        commissionAmount: 0,
+        description: 'Beauty V2 finance handoff',
+      },
+    });
+
+    expect(completed.status).toBe('COMPLETED');
+    expect(harness.financeHandoffs).toHaveLength(1);
+    expect(harness.financeHandoffs[0]).toMatchObject({
+      completedSession: {
+        id: 'session-finance-handoff',
+        status: 'COMPLETED',
+        actualPerformerId: 'therapist-finance',
+      },
+      appointment: {
+        id: 'appointment-finance-handoff',
+        customerId: 'customer-finance',
+        serviceId: 'service-finance',
+        branchId: 'branch-finance',
+      },
+      financeHandoff: {
+        earnedRevenueAmount: 120000,
+        receivableAmount: 120000,
+      },
+    });
+  });
+
+  it('does not roll back completed H8 session when Finance handoff enqueue fails', async () => {
+    const harness = new BeautySpaHarness();
+    const failingFinanceOutbox: BeautySpaSessionFinanceOutboxPort = {
+      enqueueCompletedSession: async () => {
+        throw new Error('finance outbox unavailable');
+      },
+    };
+    const service = harness.createService(failingFinanceOutbox);
+    const appointment = await harness.appointmentRepository.create({
+      id: 'appointment-finance-fails',
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-finance',
+      customerId: 'customer-finance-fails',
+      serviceId: 'service-finance',
+      interval: {
+        startsAt: '2026-10-01T10:00:00.000Z',
+        endsAt: '2026-10-01T11:00:00.000Z',
+      },
+      status: 'PENDING',
+    });
+    const plannedSession: SessionRecord = {
+      id: 'session-finance-fails',
+      tenantId: appointment.tenantId,
+      appointmentId: appointment.id,
+      serviceCommitmentId: 'commitment-finance-fails',
+      status: 'PLANNED',
+      actualStartAt: null,
+      actualEndAt: null,
+      actualPerformerId: null,
+      outcome: null,
+    };
+
+    await expect(service.completeSession({
+      session: plannedSession,
+      performerId: 'therapist-finance',
+      outcome: {
+        checkedOutBy: 'manager-spa',
+        customerHistoryNote: 'Finance handoff failed after H8 completion.',
+        packageSessionUsed: false,
+        paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+        inventoryHandoff: 'NOT_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: ['FINANCE_HANDOFF'],
+      },
+      financeHandoff: {
+        earnedRevenueAmount: 120000,
+        receivableAmount: 120000,
+      },
+    })).rejects.toThrow('finance outbox unavailable');
+
+    expect(harness.sessions).toEqual([
+      expect.objectContaining({
+        id: 'session-finance-fails',
+        status: 'COMPLETED',
+        actualPerformerId: 'therapist-finance',
+      }),
+    ]);
   });
 
   it('rolls back session start when checkout completion fails', async () => {

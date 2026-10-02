@@ -39,7 +39,7 @@ export type AccountingEventType =
  *
  *   1. Source-record types (used by outbox enqueue calls) — what kind of
  *      business row the event originated from:
- *        BOOKING, REVENUE, EXPENSE, SESSION_LOG, SALARY_RECORD, INVENTORY_LOG
+ *        BOOKING, REVENUE, EXPENSE, SESSION_LOG, BEAUTY_SESSION, SALARY_RECORD, INVENTORY_LOG
  *
  *   2. Event-flavor types (used by AccountingEngineService/RevenueRecognition
  *      when posting the actual journal entry) — what business event the entry
@@ -54,6 +54,7 @@ export type AccountingReferenceType =
   | 'REVENUE'
   | 'EXPENSE'
   | 'SESSION_LOG'
+  | 'BEAUTY_SESSION'
   | 'SALARY_RECORD'
   | 'INVENTORY_LOG'
   | 'INTER_BRANCH_CLEARING_RECORD'

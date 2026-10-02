@@ -586,6 +586,171 @@ describe('Accounting Outbox Worker API', () => {
       });
     });
 
+    it('recognizes Beauty H8 SESSION_DONE receivable without using the legacy session_logs source', async () => {
+      const mockBatch = [
+        {
+          id: 'outbox-id-beauty-session',
+          tenant_id: 'tenant-beauty',
+          event_type: 'SESSION_DONE',
+          reference_type: 'BEAUTY_SESSION',
+          reference_id: 'beauty-session-1',
+          payload: {
+            sourceSystem: 'BEAUTY_V2',
+            businessSourceType: 'BEAUTY_SESSION_DONE',
+            appointmentId: 'beauty-appointment-1',
+            customerId: 'customer-beauty-1',
+            serviceId: 'service-beauty-1',
+            earnedRevenueAmount: 120000,
+            deferredRevenueAmount: 0,
+            receivableAmount: 120000,
+            commissionAmount: 0,
+            ktvId: 'therapist-1',
+            performerId: 'therapist-1',
+            branchId: 'branch-beauty-1',
+            description: 'Hoàn thành Beauty V2 H8 session',
+          },
+          retry_count: 0,
+        },
+      ];
+
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'beauty_sessions') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            maybeSingle: jest.fn().mockResolvedValue({
+              data: {
+                id: 'beauty-session-1',
+                status: 'COMPLETED',
+                appointment_id: 'beauty-appointment-1',
+                actual_end_at: '2026-10-02T10:15:00+07:00',
+                actual_start_at: '2026-10-02T09:45:00+07:00',
+                actual_performer_id: 'therapist-1',
+                created_at: '2026-10-02T09:40:00+07:00',
+              },
+              error: null,
+            }),
+          };
+        }
+
+        if (table === 'beauty_appointments') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            maybeSingle: jest.fn().mockResolvedValue({
+              data: {
+                id: 'beauty-appointment-1',
+                customer_id: 'customer-beauty-1',
+                service_id: 'service-beauty-1',
+                branch_id: 'branch-beauty-1',
+              },
+              error: null,
+            }),
+          };
+        }
+
+        if (table === 'session_logs') {
+          throw new Error('Beauty H8 worker route must not query legacy session_logs');
+        }
+
+        if (table === 'journal_entries') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            neq: jest.fn().mockReturnThis(),
+            maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+          };
+        }
+
+        if (table === 'accounting_worker_runs') {
+          return {
+            insert: mockWorkerRunInsert,
+          };
+        }
+
+        if (table === 'accounting_outbox') {
+          return {
+            update: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockResolvedValue({ error: null }),
+          };
+        }
+
+        throw new Error(`Unexpected table ${table}`);
+      });
+
+      mockRpc.mockResolvedValueOnce({ data: mockBatch, error: null });
+      mockRecognizeServiceReceivable.mockResolvedValueOnce({
+        invoiceId: 'invoice-beauty-1',
+        invoiceNumber: 'FRC-BEAUTY',
+        transactionId: 'txn-beauty-1',
+        receivableLedgerEntryCount: 1,
+        receivablePositionId: 'position-beauty-1',
+        transactionLineCount: 2,
+        duplicate: false,
+        policyEvidence: {
+          legalSource: '99/2025/TT-BTC',
+          effectiveFrom: '2026-01-01',
+          applicableRegime: 'VI_TT99_2025',
+          businessSemantic: 'SERVICE_RECEIVABLE_RECOGNIZED',
+          verificationStatus: 'PROVEN',
+        },
+      });
+      (RevenueRecognitionService.handleSessionDone as jest.Mock).mockResolvedValueOnce('journal-beauty-session');
+      mockRpc.mockResolvedValueOnce({ error: null });
+
+      const req = new NextRequest('http://localhost/api/cron/accounting-worker', {
+        method: 'GET',
+        headers: {
+          Authorization: 'Bearer test-cron-secret-123',
+        },
+      });
+
+      const response = await GET(req);
+      const json = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(json.success).toBe(true);
+      expect(json.successCount).toBe(1);
+      expect(json.failureCount).toBe(0);
+      expect(mockRecognizeServiceReceivable).toHaveBeenCalledWith({
+        tenantId: 'tenant-beauty',
+        customerId: 'customer-beauty-1',
+        amountMinor: 120000,
+        currency: 'VND',
+        servicePeriodStart: '2026-10-02',
+        servicePeriodEnd: '2026-10-02',
+        recognitionDate: '2026-10-02',
+        dueDate: '2026-10-02',
+        businessSourceType: 'BEAUTY_SESSION_DONE',
+        businessSourceId: 'beauty-session-1',
+        description: 'Hoàn thành Beauty V2 H8 session',
+        metadata: {
+          beauty_session_id: 'beauty-session-1',
+          appointment_id: 'beauty-appointment-1',
+          service_id: 'service-beauty-1',
+          accounting_outbox_id: 'outbox-id-beauty-session',
+          performer_id: 'therapist-1',
+          branch_id: 'branch-beauty-1',
+          source_system: 'BEAUTY_V2',
+        },
+      });
+      expect(RevenueRecognitionService.handleSessionDone).toHaveBeenCalledWith({
+        tenantId: 'tenant-beauty',
+        sessionLogId: 'beauty-session-1',
+        earnedRevenueAmount: 120000,
+        deferredRevenueAmount: 0,
+        receivableAmount: 120000,
+        commissionAmount: 0,
+        ktvId: 'therapist-1',
+        branchId: 'branch-beauty-1',
+        description: 'Hoàn thành Beauty V2 H8 session',
+      });
+      expect(mockRpc).toHaveBeenCalledWith('mark_outbox_completed', {
+        p_outbox_id: 'outbox-id-beauty-session',
+        p_journal_entry_id: 'journal-beauty-session',
+      });
+    });
+
     it('dead-letters stale SESSION_DONE events when the source session is no longer completed', async () => {
       const outboxUpdate = jest.fn().mockReturnThis();
       const outboxEq = jest.fn().mockResolvedValue({ error: null });

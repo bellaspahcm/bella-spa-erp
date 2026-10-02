@@ -90,10 +90,30 @@ export interface BeautySpaOperationalOutcome {
   auditTags: string[];
 }
 
+export interface BeautySpaFinanceCompletionHandoff {
+  earnedRevenueAmount: number;
+  deferredRevenueAmount?: number;
+  receivableAmount?: number;
+  commissionAmount?: number;
+  description?: string;
+}
+
 export interface CompleteBeautySpaSessionInput {
   session: SessionRecord;
   performerId: string;
   outcome: BeautySpaOperationalOutcome;
+  financeHandoff?: BeautySpaFinanceCompletionHandoff;
+}
+
+export interface BeautySpaSessionFinanceOutboxPort {
+  enqueueCompletedSession(input: {
+    session: SessionRecord;
+    completedSession: SessionRecord;
+    appointment: AppointmentRecord;
+    performerId: string;
+    outcome: BeautySpaOperationalOutcome;
+    financeHandoff: BeautySpaFinanceCompletionHandoff;
+  }): Promise<void>;
 }
 
 export class BeautySpaV2Error extends Error {
@@ -128,6 +148,7 @@ export class BeautySpaV2Service {
     private readonly ids: IdGenerator,
     private readonly clock: Clock,
     private readonly waitlist?: SpaWaitlistPort,
+    private readonly financeOutbox?: BeautySpaSessionFinanceOutboxPort,
   ) {
     this.appointmentService = new AppointmentService(appointmentRepo, ids);
     this.assignmentService = new ProfessionalAssignmentService(assignmentRepo, ids, clock);
@@ -209,8 +230,9 @@ export class BeautySpaV2Service {
     this.assertSessionOutcome(input);
     const serializedOutcome = this.serializeOutcome(input.outcome);
     const started = await this.sessionService.start(input.session, input.performerId);
+    let completed: SessionRecord;
     try {
-      return await this.sessionService.complete(started, serializedOutcome);
+      completed = await this.sessionService.complete(started, serializedOutcome);
     } catch (error) {
       try {
         await this.sessionRepo.update(input.session);
@@ -219,6 +241,41 @@ export class BeautySpaV2Service {
       }
       throw error;
     }
+
+    const financeHandoff = input.financeHandoff;
+    const financeOutbox = this.financeOutbox;
+    if (financeHandoff && financeOutbox) {
+      await this.enqueueFinanceHandoff(input, completed, financeHandoff, financeOutbox);
+    }
+    return completed;
+  }
+
+  private async enqueueFinanceHandoff(
+    input: CompleteBeautySpaSessionInput,
+    completedSession: SessionRecord,
+    financeHandoff: BeautySpaFinanceCompletionHandoff,
+    financeOutbox: BeautySpaSessionFinanceOutboxPort,
+  ): Promise<void> {
+    const appointment = await this.appointmentRepo.getById({
+      tenantId: completedSession.tenantId,
+      appointmentId: completedSession.appointmentId,
+    });
+
+    if (!appointment) {
+      throw new BeautySpaV2Error(
+        'FINANCE_HANDOFF_SOURCE_NOT_FOUND',
+        'Beauty Spa v2 finance handoff requires the completed session appointment.',
+      );
+    }
+
+    await financeOutbox.enqueueCompletedSession({
+      session: input.session,
+      completedSession,
+      appointment,
+      performerId: input.performerId,
+      outcome: input.outcome,
+      financeHandoff,
+    });
   }
 
   private serializeOutcome(outcome: BeautySpaOperationalOutcome): string {

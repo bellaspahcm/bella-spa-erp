@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Database, Json } from '@/types/database.types';
 import { RevenueRecognitionService } from '@/services/revenue-recognition';
 import { AccountingEngineService, type JournalEntryInput } from '@/services/accounting-engine';
 import { requireSupabaseAdminEnv } from '@/lib/supabase-admin-env';
 import { SemanticReceivableChargeService } from '@/platform/finance/services/semantic-receivable-charge.service';
 import { SupabaseReceivableChargeGateway } from '@/platform/finance/gateways/supabase-receivable-charge.gateway';
+import type { BeautyH8Database } from '@/platform/beauty/infrastructure';
 
 export const dynamic = 'force-dynamic';
 
 type AdminClient = ReturnType<typeof getAdminClient>;
+type BeautyH8Client = SupabaseClient<BeautyH8Database>;
 type OutboxEvent = Database['public']['Functions']['claim_outbox_batch']['Returns'][number];
 type OutboxPayload = Record<string, Json | undefined>;
 type WorkerEventResult = {
@@ -41,13 +43,30 @@ type HaircutBookingReceivableSource = Pick<
   Database['public']['Tables']['bookings']['Row'],
   'id' | 'customer_id' | 'booking_number' | 'package_name'
 >;
+type BeautySessionReceivableSource = Pick<
+  BeautyH8Database['public']['Tables']['beauty_sessions']['Row'],
+  'id' | 'status' | 'appointment_id' | 'actual_end_at' | 'actual_start_at' | 'actual_performer_id' | 'created_at'
+>;
+type BeautyAppointmentReceivableSource = Pick<
+  BeautyH8Database['public']['Tables']['beauty_appointments']['Row'],
+  'id' | 'customer_id' | 'service_id' | 'branch_id'
+>;
 
 const HAIRCUT_SESSION_DONE_SOURCE_TYPE = 'HAIRCUT_SESSION_DONE';
 const HAIRCUT_PRODUCT_KEY = 'bella_haircut';
+const BEAUTY_SESSION_REFERENCE_TYPE = 'BEAUTY_SESSION';
+const BEAUTY_SESSION_DONE_SOURCE_TYPE = 'BEAUTY_SESSION_DONE';
 
 function getAdminClient() {
   const { url, adminKey } = requireSupabaseAdminEnv();
   return createClient<Database>(url, adminKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+function getBeautyH8Client(): BeautyH8Client {
+  const { url, adminKey } = requireSupabaseAdminEnv();
+  return createClient<BeautyH8Database>(url, adminKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
@@ -302,11 +321,40 @@ async function findExistingActiveJournal(
   return data ? { id: data.id, status: data.status } : null;
 }
 
-async function assertSessionDoneStillValid(supabase: AdminClient, tenantId: string, sessionLogId: string) {
+async function assertSessionDoneStillValid(
+  supabase: AdminClient,
+  beautySupabase: BeautyH8Client,
+  tenantId: string,
+  sessionId: string,
+  referenceType: string,
+) {
+  if (referenceType === BEAUTY_SESSION_REFERENCE_TYPE) {
+    const { data, error } = await beautySupabase
+      .from('beauty_sessions')
+      .select('id,status')
+      .eq('id', sessionId)
+      .eq('tenant_id', tenantId)
+      .maybeSingle<Pick<BeautySessionReceivableSource, 'id' | 'status'>>();
+
+    if (error) {
+      throw new Error(`Failed to validate Beauty SESSION_DONE source: ${error.message}`);
+    }
+
+    if (!data) {
+      return `Stale Beauty SESSION_DONE outbox: session ${sessionId} no longer exists.`;
+    }
+
+    if (data.status !== 'COMPLETED') {
+      return `Stale Beauty SESSION_DONE outbox: session ${sessionId} is ${data.status}, not COMPLETED.`;
+    }
+
+    return null;
+  }
+
   const { data, error } = await supabase
     .from('session_logs')
     .select('id,status')
-    .eq('id', sessionLogId)
+    .eq('id', sessionId)
     .eq('tenant_id', tenantId)
     .maybeSingle();
 
@@ -315,11 +363,11 @@ async function assertSessionDoneStillValid(supabase: AdminClient, tenantId: stri
   }
 
   if (!data) {
-    return `Stale SESSION_DONE outbox: session ${sessionLogId} no longer exists.`;
+    return `Stale SESSION_DONE outbox: session ${sessionId} no longer exists.`;
   }
 
   if (data.status !== 'completed') {
-    return `Stale SESSION_DONE outbox: session ${sessionLogId} is ${data.status}, not completed.`;
+    return `Stale SESSION_DONE outbox: session ${sessionId} is ${data.status}, not completed.`;
   }
 
   return null;
@@ -389,6 +437,56 @@ async function loadHaircutBookingReceivableSource(
   return data;
 }
 
+async function loadBeautySessionReceivableSource(
+  beautySupabase: BeautyH8Client,
+  tenantId: string,
+  sessionId: string,
+): Promise<BeautySessionReceivableSource> {
+  const { data, error } = await beautySupabase
+    .from('beauty_sessions')
+    .select('id,status,appointment_id,actual_end_at,actual_start_at,actual_performer_id,created_at')
+    .eq('id', sessionId)
+    .eq('tenant_id', tenantId)
+    .maybeSingle<BeautySessionReceivableSource>();
+
+  if (error) {
+    throw new Error(`Failed to load Beauty session receivable source: ${error.message}`);
+  }
+
+  if (!data) {
+    throw new Error(`Beauty receivable source session ${sessionId} no longer exists.`);
+  }
+
+  if (data.status !== 'COMPLETED') {
+    throw new Error(`Beauty receivable source session ${sessionId} is ${data.status}, not COMPLETED.`);
+  }
+
+  return data;
+}
+
+async function loadBeautyAppointmentReceivableSource(
+  beautySupabase: BeautyH8Client,
+  tenantId: string,
+  appointmentId: string,
+): Promise<BeautyAppointmentReceivableSource> {
+  const { data, error } = await beautySupabase
+    .from('beauty_appointments')
+    .select('id,customer_id,service_id,branch_id')
+    .eq('id', appointmentId)
+    .eq('tenant_id', tenantId)
+    .maybeSingle<BeautyAppointmentReceivableSource>();
+
+  if (error) {
+    throw new Error(`Failed to load Beauty appointment receivable source: ${error.message}`);
+  }
+
+  if (!data) {
+    throw new Error(`Beauty receivable source appointment ${appointmentId} no longer exists for tenant ${tenantId}.`);
+  }
+
+  return data;
+}
+
 function toDateOnly(value: string | null, fieldName: string): string {
   if (typeof value !== 'string' || value.trim() === '') {
     throw new Error(`Haircut receivable source is missing ${fieldName}.`);
@@ -446,6 +544,58 @@ async function recognizeHaircutSessionReceivable(
       accounting_outbox_id: outboxId,
       ktv_id: readOptionalString(payload, 'ktvId') ?? null,
       branch_id: readOptionalString(payload, 'branchId') ?? null,
+    },
+  });
+}
+
+async function recognizeBeautySessionReceivable(
+  supabase: AdminClient,
+  beautySupabase: BeautyH8Client,
+  tenantId: string,
+  sessionId: string,
+  outboxId: string,
+  payload: OutboxPayload,
+): Promise<void> {
+  const receivableAmount = readOptionalNumber(payload, 'receivableAmount', undefined);
+  if (receivableAmount === undefined || receivableAmount <= 0) return;
+
+  const session = await loadBeautySessionReceivableSource(beautySupabase, tenantId, sessionId);
+  const payloadAppointmentId = readOptionalString(payload, 'appointmentId');
+  if (payloadAppointmentId && payloadAppointmentId !== session.appointment_id) {
+    throw new Error(`Beauty SESSION_DONE payload appointment ${payloadAppointmentId} does not match session appointment ${session.appointment_id}.`);
+  }
+
+  const appointment = await loadBeautyAppointmentReceivableSource(beautySupabase, tenantId, session.appointment_id);
+  const recognitionDate = toDateOnly(
+    session.actual_end_at ?? session.actual_start_at ?? session.created_at,
+    'actual_end_at',
+  );
+  const description = readRequiredString(payload, 'description');
+  const performerId = readOptionalString(payload, 'performerId') ?? readOptionalString(payload, 'ktvId') ?? session.actual_performer_id;
+  const financeReceivable = new SemanticReceivableChargeService(
+    new SupabaseReceivableChargeGateway(supabase),
+  );
+
+  await financeReceivable.recognizeServiceReceivable({
+    tenantId,
+    customerId: appointment.customer_id,
+    amountMinor: receivableAmount,
+    currency: 'VND',
+    servicePeriodStart: recognitionDate,
+    servicePeriodEnd: recognitionDate,
+    recognitionDate,
+    dueDate: recognitionDate,
+    businessSourceType: BEAUTY_SESSION_DONE_SOURCE_TYPE,
+    businessSourceId: session.id,
+    description,
+    metadata: {
+      beauty_session_id: session.id,
+      appointment_id: appointment.id,
+      service_id: appointment.service_id,
+      accounting_outbox_id: outboxId,
+      performer_id: performerId ?? null,
+      branch_id: appointment.branch_id,
+      source_system: readOptionalString(payload, 'sourceSystem') ?? 'BEAUTY_V2',
     },
   });
 }
@@ -521,6 +671,7 @@ export async function GET(req: NextRequest) {
 
   try {
     supabase = getAdminClient();
+    const beautySupabase = getBeautyH8Client();
 
     // 1. Claim next batch of events to process
     const { data: batch, error: claimError } = await supabase.rpc('claim_outbox_batch', {
@@ -593,7 +744,13 @@ export async function GET(req: NextRequest) {
         }
 
         if (eventType === 'SESSION_DONE') {
-          const staleReason = await assertSessionDoneStillValid(supabase, tenantId, refId);
+          const staleReason = await assertSessionDoneStillValid(
+            supabase,
+            beautySupabase,
+            tenantId,
+            refId,
+            event.reference_type,
+          );
           if (staleReason) {
             const { error: deadErr } = await markOutboxDead(supabase, event.id, staleReason);
             if (deadErr) {
@@ -676,7 +833,11 @@ export async function GET(req: NextRequest) {
             break;
 
           case 'SESSION_DONE':
-            await recognizeHaircutSessionReceivable(supabase, tenantId, refId, event.id, payload);
+            if (event.reference_type === BEAUTY_SESSION_REFERENCE_TYPE) {
+              await recognizeBeautySessionReceivable(supabase, beautySupabase, tenantId, refId, event.id, payload);
+            } else {
+              await recognizeHaircutSessionReceivable(supabase, tenantId, refId, event.id, payload);
+            }
             journalEntryId = await RevenueRecognitionService.handleSessionDone({
               tenantId,
               sessionLogId: refId,
