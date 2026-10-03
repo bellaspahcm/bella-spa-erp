@@ -1398,12 +1398,12 @@ html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item:not(.beauty-er
 
 /* luxury_navy — ACTIVE (canonical) */
 html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item-active {
-  background: linear-gradient(90deg, rgba(16, 185, 129, 0.28) 0%, rgba(16, 185, 129, 0.13) 100%) !important;
+  background: linear-gradient(90deg, rgba(96, 165, 250, 0.28) 0%, rgba(96, 165, 250, 0.13) 100%) !important;
   border-color: transparent !important;
-  border-left-color: #10b981 !important;
+  border-left-color: #60a5fa !important;
   border-left-width: 3px !important;
   color: #ffffff !important;
-  box-shadow: 0 2px 12px rgba(16, 185, 129, 0.20) !important;
+  box-shadow: 0 2px 12px rgba(96, 165, 250, 0.20) !important;
 }
 html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item-active svg {
   color: #f59e0b !important;
@@ -1416,7 +1416,7 @@ html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item-active span {
 
 /* luxury_navy — ACTIVE + HOVER (only brightens bg, text/icon MUST remain) */
 html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item-active:hover {
-  background: linear-gradient(90deg, rgba(16, 185, 129, 0.38) 0%, rgba(16, 185, 129, 0.22) 100%) !important;
+  background: linear-gradient(90deg, rgba(96, 165, 250, 0.38) 0%, rgba(96, 165, 250, 0.22) 100%) !important;
 }
 html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item-active:hover svg { color: #f59e0b !important; }
 html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item-active:hover span { color: #ffffff !important; }
