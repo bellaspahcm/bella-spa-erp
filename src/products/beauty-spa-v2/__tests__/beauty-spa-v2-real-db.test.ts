@@ -1011,14 +1011,27 @@ describeWithRealSupabase('Bella Beauty Spa v2 Real DB business proof', () => {
     expect(matchedReceivable.receivableLedgerEntryCount).toBe(1);
     expect(matchedReceivable.transactionLineCount).toBe(2);
 
+    const { data: matchedFact, error: matchedFactError } = await seedClient
+      .from('finance_receivable_ledger')
+      .select('created_at')
+      .eq('tenant_id', tenantA)
+      .eq('invoice_id', matchedReceivable.invoiceId)
+      .eq('entry_type', 'DEBIT_ACCRUAL')
+      .single();
+    expect(matchedFactError).toBeNull();
+    expect(matchedFact).not.toBeNull();
+
     const passBasisId = randomUUID();
+    const passReconciliationAsOf = new Date(
+      new Date(matchedFact!.created_at).getTime() + 1_000,
+    ).toISOString();
     const passParams = {
       p_tenant_id: tenantA,
       p_domain: 'AR',
       p_control_type: 'AR_GL_BALANCE',
       p_basis_id: passBasisId,
       p_basis_version: 'AR_GL_BALANCE:v1',
-      p_reconciliation_as_of: '2026-10-02T23:59:59.000Z',
+      p_reconciliation_as_of: passReconciliationAsOf,
     } as const;
     const passRun = await seedClient.rpc('f5_run_reconciliation', passParams);
     const duplicatePassRun = await seedClient.rpc('f5_run_reconciliation', passParams);
@@ -1074,13 +1087,26 @@ describeWithRealSupabase('Bella Beauty Spa v2 Real DB business proof', () => {
       });
     expect(mismatchFactError).toBeNull();
 
+    const { data: mismatchDebitFact, error: mismatchDebitFactError } = await seedClient
+      .from('finance_receivable_ledger')
+      .select('created_at')
+      .eq('tenant_id', tenantA)
+      .eq('invoice_id', mismatchReceivable.invoiceId)
+      .eq('entry_type', 'DEBIT_ACCRUAL')
+      .single();
+    expect(mismatchDebitFactError).toBeNull();
+    expect(mismatchDebitFact).not.toBeNull();
+    const mismatchReconciliationAsOf = new Date(
+      new Date(mismatchDebitFact!.created_at).getTime() + 1_000,
+    ).toISOString();
+
     const { data: mismatchRun, error: mismatchRunError } = await seedClient.rpc('f5_run_reconciliation', {
       p_tenant_id: tenantA,
       p_domain: 'AR',
       p_control_type: 'AR_GL_BALANCE',
       p_basis_id: randomUUID(),
       p_basis_version: 'AR_GL_BALANCE:v1',
-      p_reconciliation_as_of: '2026-10-02T23:59:59.000Z',
+      p_reconciliation_as_of: mismatchReconciliationAsOf,
     });
     expect(mismatchRunError).toBeNull();
 

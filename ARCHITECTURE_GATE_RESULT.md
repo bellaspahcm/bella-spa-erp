@@ -1,3 +1,88 @@
+# ARCHITECTURE GATE RESULT - BEAUTY F5 REAL DB IDEMPOTENCY FIXTURE DRIFT
+
+> **Status:** PASS - fixture-only repair for Beauty/F5 Real DB idempotency proof
+> **Date:** 2026-10-03
+> **Scope:** `src/products/beauty-spa-v2/__tests__/beauty-spa-v2-real-db.test.ts` F5 AR reconciliation windows plus affected-test selector alignment for this Real DB file. No F5 RPC, Finance schema, Beauty business logic, tenant data, production DB, Healthcare H1-H12, or Logistics E7.1-E7.3 changes.
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+CI Real Database Business E2E failed because the Beauty/F5 idempotency proof called `f5_run_reconciliation` with an as-of timestamp before the AR ledger facts created by the fixture. The F5 AR read contract uses `finance_receivable_ledger.created_at <= p_reconciliation_as_of`, so the pass run could produce no persisted `f5_control_results` row for idempotent read-back and the mismatch leg could reconstruct AR from an incomplete F3 window. Gate decision: `PASS` for a fixture-only correction that derives the F5 as-of timestamp from the created AR ledger fact.
+
+## 2. Product Manifest
+
+In scope:
+- Beauty/F5 Real DB test fixture windows for the matched and mismatch AR control runs.
+- Preserve the same `passParams` object for duplicate idempotency proof.
+- Keep `src/products/beauty-spa-v2/__tests__/beauty-spa-v2-real-db.test.ts` in the Real DB E2E lane, not the default unit Jest lane.
+
+Out of scope:
+- F5 RPC or schema changes.
+- Finance F1/F3 posting semantics.
+- Beauty session completion business logic.
+- PR #200 HQ Identity Separation branch.
+- Production or E2E database mutation outside the test run.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Role |
+|---|---|---|
+| `finance_receivable_ledger.created_at` | Finance F3 AR canonical read basis | Timestamp used by F5 AR read contract |
+| `finance_ar_facts_as_of` | Finance/F5 read contract | Filters AR facts by `created_at <= as_of` |
+| Beauty/F5 Real DB test | Product integration proof | Must create a valid fixture inside the reconciliation window |
+| `scripts/test-changed-files.mjs` | CI affected-test routing | Keeps Real DB files out of default Jest lane |
+
+## 4. Contract Dependency Map
+
+```text
+Beauty completed service
+  -> SemanticReceivableChargeService
+  -> finance_receivable_ledger.created_at
+  -> finance_ar_facts_as_of(as_of)
+  -> f5_run_reconciliation
+  -> f5_control_results idempotent read-back
+```
+
+## 5. Change Authority
+
+Authorized:
+- Adjust only the test fixture's F5 AR reconciliation timestamps.
+- Add read-back of AR ledger timestamps inside the test if needed for deterministic fixture setup.
+- Align affected-test direct exclusion with the existing Real DB scope router for the Beauty Real DB file.
+
+Not authorized:
+- Change F5 RPC behavior.
+- Add migrations, constraints, or schema.
+- Change Finance posting/ledger semantics.
+- Change Beauty business logic or HQ PR #200.
+
+## 6. UI -> Contract Reconciliation
+
+No UI change.
+
+## 7. Additive Migration Plan
+
+No migration.
+
+## 8. 11 Automated Verification Gates Plan
+
+1. Confirm duplicate pass calls use the same params.
+2. Confirm F5 AR read contract uses `finance_receivable_ledger.created_at <= as_of`.
+3. Confirm Finance AR ledger facts are created before the test's F5 as-of timestamps.
+4. Modify only the fixture timestamp/read-back.
+5. Run Beauty/F5 targeted Real DB test.
+6. Run Real DB E2E if credentials/environment are available.
+7. Verify `passRun.run_id === duplicatePassRun.run_id`.
+8. Run `git diff --check`.
+9. Run affected tests where practical.
+10. Keep PR #200 unchanged.
+11. Stop after evidence; do not refactor F5 or Beauty logic.
+
+Gate result: `PASS`.
+
+---
+
 # ARCHITECTURE GATE RESULT - BEAUTY SPA V2 TENANT DASHBOARD UI REDESIGN
 
 > **Status:** PASS - Pure UI redesign for Beauty Spa V2 tenant dashboard matching reference design without changing any business logic or kernel contracts
