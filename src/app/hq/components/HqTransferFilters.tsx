@@ -1,4 +1,5 @@
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import { isOperatingTenant } from '@/lib/business-rules/hq-tenant';
 import type { HqTenantRecord } from '@/types/domain';
 
 type TransferFilterStatus = 'all' | 'pending' | 'shipped' | 'completed' | 'cancelled';
@@ -32,7 +33,7 @@ export function HqTransferFilters({
   const branchOptions = [
     { value: 'all', label: 'Tất cả chi nhánh' },
     ...tenants
-      .filter((tenant) => tenant.name !== 'Bella Spa Headquarter')
+      .filter(isOperatingTenant)
       .map((tenant) => ({ value: tenant.id, label: tenant.name })),
   ];
 

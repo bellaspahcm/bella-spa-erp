@@ -68,6 +68,7 @@ type SubscriptionUsageFeatureSnapshot = {
 type SubscriptionUsageSnapshot = {
   tenant_id: string;
   tenant_name: string;
+  product_key: string | null;
   plan_code: string;
   plan_name: string;
   is_franchise: boolean;
@@ -392,6 +393,7 @@ function buildSubscriptionUsageSnapshots(input: {
     return {
       tenant_id: tenant.id,
       tenant_name: tenant.name,
+      product_key: tenant.product_key,
       plan_code: planCode,
       plan_name: tierName,
       is_franchise: isFranchise,
@@ -428,7 +430,7 @@ export async function getHqSubscriptionOverview() {
 
   const { data: tenants, error: tenantsError } = await supabase
     .from('tenants')
-    .select('id,name,status,subscription_tier,subscription_expires_at,sms_allotment_used,franchise_agreement_date,created_at,updated_at')
+    .select('id,name,status,product_key,subscription_tier,subscription_expires_at,sms_allotment_used,franchise_agreement_date,created_at,updated_at')
     .order('name', { ascending: true });
 
   if (tenantsError) {

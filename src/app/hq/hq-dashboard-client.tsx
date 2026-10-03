@@ -35,6 +35,7 @@ import { toast } from 'sonner';
 import { HqDashboardStats, HqTenantRecord, CurrentUser, HqAuditLogRecord, HqPackageTemplate } from '@/types/domain';
 import { getHqAuditLogs, getAuditTables, getAuditUsers } from '@/services/audit-actions';
 import { getDefaultTenantModuleKey } from '@/lib/business-rules/tenant-modules';
+import { isOperatingTenant } from '@/lib/business-rules/hq-tenant';
 import { 
   getHqPackageTemplates, 
   createHqPackageTemplate, 
@@ -175,7 +176,7 @@ export default function HqDashboardClient({
     template_id: string;
     status: string;
   }[]>([]);
-  const [matrixTenants, setMatrixTenants] = useState<{ id: string; name: string }[]>([]);
+  const [matrixTenants, setMatrixTenants] = useState<{ id: string; name: string; product_key?: string | null }[]>([]);
   const [loadingServices, setLoadingServices] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [showDistributionModal, setShowDistributionModal] = useState(false);
@@ -433,7 +434,7 @@ export default function HqDashboardClient({
       const matrix = await getBrandDistributionMatrix();
       setDistributedList(matrix.distributed);
       // Exclude HQ branch itself when listing target branches to distribute
-      const filteredTenantsForMatrix = matrix.tenants.filter((t: { id: string; name: string }) => t.name !== 'Bella Spa Headquarter');
+      const filteredTenantsForMatrix = matrix.tenants.filter(isOperatingTenant);
       setMatrixTenants(filteredTenantsForMatrix);
     } catch (err: unknown) {
       toast.error('Không thể tải danh sách liệu trình và ma trận phân phối: ' + getErrorMessage(err));

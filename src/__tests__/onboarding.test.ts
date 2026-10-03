@@ -169,7 +169,7 @@ describe('Branch Onboarding System (Owned vs Franchise)', () => {
   it('should block Beauty Spa onboarding outside Admin HQ before auth and database writes', async () => {
     mockCheckHqAuth.mockResolvedValueOnce({
       authorized: false,
-      error: 'Trang này chỉ dành cho quản trị viên Bella Spa Headquarter.',
+      error: 'Trang này chỉ dành cho quản trị viên Tổng bộ.',
     });
 
     const result = await registerNewTenant({

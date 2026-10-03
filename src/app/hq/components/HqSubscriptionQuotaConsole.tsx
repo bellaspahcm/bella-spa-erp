@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatCurrency } from '@bella/shared';;
+import { isOperatingTenant } from '@/lib/business-rules/hq-tenant';
 import {
   getHqSubscriptionOverview,
   resetTenantUsageCounter,
@@ -170,7 +171,7 @@ export function HqSubscriptionQuotaConsole({
   const [resettingCounterKey, setResettingCounterKey] = useState<string | null>(null);
 
   const activeTenants = useMemo(
-    () => overview.tenants.filter((tenant) => tenant.name !== 'Bella Spa Headquarter'),
+    () => overview.tenants.filter(isOperatingTenant),
     [overview.tenants]
   );
   const hasActiveTenants = activeTenants.length > 0;
@@ -190,7 +191,7 @@ export function HqSubscriptionQuotaConsole({
 
   const visibleUsageSnapshots = useMemo(() => {
     return overview.usageSnapshots
-      .filter((snapshot) => snapshot.tenant_name !== 'Bella Spa Headquarter')
+      .filter(isOperatingTenant)
       .sort((a, b) => {
         const statusDelta =
           (usageStatusPriority[b.overall_status] || 0) - (usageStatusPriority[a.overall_status] || 0);
@@ -246,7 +247,7 @@ export function HqSubscriptionQuotaConsole({
       setCatalogPlanCode((current) => current || firstPlanCode);
       setEntitlementPlanCode((current) => current || firstPlanCode);
 
-      const firstTenant = data.tenants.find((tenant) => tenant.name !== 'Bella Spa Headquarter');
+      const firstTenant = data.tenants.find(isOperatingTenant);
       if (firstTenant) {
         setSelectedTenantId((current) => current || firstTenant.id);
         setOverrideTenantId((current) => current || firstTenant.id);

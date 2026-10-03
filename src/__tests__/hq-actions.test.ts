@@ -73,12 +73,30 @@ describe('HQ actions data loading', () => {
     );
   });
 
+  it('authorizes HQ admins by bella_hq product_key instead of tenant name', async () => {
+    mockFrom.mockReturnValueOnce(new MockQueryBuilder({ product_key: 'bella_hq' }, null));
+
+    await expect(checkHqAuth()).resolves.toEqual({
+      authorized: true,
+      user: expect.objectContaining({ id: 'hq-admin' }),
+    });
+  });
+
+  it('denies BabyCare admins even when they have admin role', async () => {
+    mockFrom.mockReturnValueOnce(new MockQueryBuilder({ product_key: 'bella_babycare' }, null));
+
+    await expect(checkHqAuth()).resolves.toEqual({
+      authorized: false,
+      error: 'Trang này chỉ dành cho quản trị viên Tổng bộ.',
+    });
+  });
+
   it('counts the same tenant set returned to the HQ branch table', async () => {
-    const hqTenant = { id: 'hq-tenant', name: 'Bella Spa Headquarter', status: 'active', created_at: '2026-05-01' };
-    const branchTenant = { id: 'branch-1', name: 'Bella Spa HCM', status: 'suspended', created_at: '2026-05-02' };
+    const hqTenant = { id: 'hq-tenant', name: 'Bella HQ Renamed', product_key: 'bella_hq', status: 'active', created_at: '2026-05-01' };
+    const branchTenant = { id: 'branch-1', name: 'Bella Spa HCM', product_key: 'bella_spa', status: 'suspended', created_at: '2026-05-02' };
 
     mockFrom
-      .mockReturnValueOnce(new MockQueryBuilder({ name: 'Bella Spa Headquarter' }, null))
+      .mockReturnValueOnce(new MockQueryBuilder({ product_key: 'bella_hq' }, null))
       .mockReturnValueOnce(new MockQueryBuilder([hqTenant, branchTenant], null))
       .mockReturnValueOnce(new MockQueryBuilder([{ amount: 1000000 }], null))
       .mockReturnValueOnce(new MockQueryBuilder(null, null, 7))
@@ -94,10 +112,10 @@ describe('HQ actions data loading', () => {
   });
 
   it('propagates aggregate failures instead of returning tenants with fake zero counts', async () => {
-    const hqTenant = { id: 'hq-tenant', name: 'Bella Spa Headquarter', status: 'active', created_at: '2026-05-01' };
+    const hqTenant = { id: 'hq-tenant', name: 'Bella HQ Renamed', product_key: 'bella_hq', status: 'active', created_at: '2026-05-01' };
 
     mockFrom
-      .mockReturnValueOnce(new MockQueryBuilder({ name: 'Bella Spa Headquarter' }, null))
+      .mockReturnValueOnce(new MockQueryBuilder({ product_key: 'bella_hq' }, null))
       .mockReturnValueOnce(new MockQueryBuilder([hqTenant], null))
       .mockReturnValueOnce(new MockQueryBuilder(null, { message: 'staff count failed' }));
 
@@ -116,7 +134,7 @@ describe('HQ actions data loading', () => {
 
     mockRecordAuditLog.mockRejectedValueOnce(new Error('audit unavailable'));
     mockFrom
-      .mockReturnValueOnce(new MockQueryBuilder({ name: 'Bella Spa Headquarter' }, null))
+      .mockReturnValueOnce(new MockQueryBuilder({ product_key: 'bella_hq' }, null))
       .mockReturnValueOnce(new MockQueryBuilder(tenant, null))
       .mockReturnValueOnce(new MockQueryBuilder(null, null))
       .mockReturnValueOnce(new MockQueryBuilder(null, null));
@@ -136,5 +154,23 @@ describe('HQ actions data loading', () => {
       expect.objectContaining({ status: 'suspended' }),
       { status: 'active', updated_at: 'old-date' },
     ]);
+  });
+
+  it('does not allow suspending the HQ tenant', async () => {
+    mockFrom
+      .mockReturnValueOnce(new MockQueryBuilder({ product_key: 'bella_hq' }, null))
+      .mockReturnValueOnce(new MockQueryBuilder({
+        id: 'hq-tenant',
+        name: 'Bella HQ',
+        product_key: 'bella_hq',
+        status: 'active',
+        updated_at: 'old-date',
+      }, null));
+
+    const res = await toggleTenantStatus('hq-tenant', 'suspended');
+
+    expect(res.success).toBe(false);
+    expect(res.error).toBe('Không thể khóa tenant Tổng bộ.');
+    expect(updatePayloads).toEqual([]);
   });
 });

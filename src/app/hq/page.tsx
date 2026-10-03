@@ -12,7 +12,7 @@ export default async function HqPage() {
   // 1. Verify Super Admin authorization on server side
   const auth = await checkHqAuth();
   if (!auth.authorized || !auth.user) {
-    redirect('/dashboard');
+    redirect('/hq/login');
   }
 
   // 2. Fetch all system-wide stats and tenants

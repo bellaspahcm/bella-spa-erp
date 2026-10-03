@@ -16,7 +16,7 @@ import type { Database } from '@/types/database.types';
 type PackageRow = Database['public']['Tables']['packages']['Row'];
 type PackageInsert = Database['public']['Tables']['packages']['Insert'];
 type PackageUpdate = Database['public']['Tables']['packages']['Update'];
-type TenantRow = Pick<Database['public']['Tables']['tenants']['Row'], 'id' | 'name'>;
+type TenantRow = Pick<Database['public']['Tables']['tenants']['Row'], 'id' | 'name' | 'product_key'>;
 type DistributionResult =
   | { tenantId: string; success: true; action: 'updated' | 'created'; packageId: string }
   | { tenantId: string; success: false; error: string };
@@ -494,7 +494,7 @@ export async function getBrandDistributionMatrix() {
 
   const { data: tenants, error: tenantsError } = await supabase
     .from('tenants')
-    .select('id, name')
+    .select('id, name, product_key')
     .order('name', { ascending: true });
 
   if (tenantsError) {

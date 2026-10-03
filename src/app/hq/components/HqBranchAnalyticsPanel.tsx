@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { TrendingUp } from 'lucide-react';
 import { formatCurrency } from '@bella/shared';;
+import { isOperatingTenant } from '@/lib/business-rules/hq-tenant';
 import type { HqDashboardStats, HqTenantRecord } from '@/types/domain';
 
 interface HqBranchAnalyticsPanelProps {
@@ -20,6 +21,8 @@ export function HqBranchAnalyticsPanel({
   compareMetric,
   onCompareMetricChange,
 }: HqBranchAnalyticsPanelProps) {
+  const operatingTenants = tenants.filter(isOperatingTenant);
+
   return (
     <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-2 bg-white p-4 sm:p-8 rounded-[2rem] sm:rounded-[3rem] border border-slate-100 shadow-sm space-y-6 overflow-hidden">
@@ -99,7 +102,7 @@ export function HqBranchAnalyticsPanel({
 
           <div className="space-y-4">
             {tenants
-              .filter(t => t.name !== 'Bella Spa Headquarter')
+              .filter(isOperatingTenant)
               .sort((a, b) => {
                 if (compareMetric === 'revenue') {
                   return (b.revenueSum || 0) - (a.revenueSum || 0);
@@ -111,8 +114,8 @@ export function HqBranchAnalyticsPanel({
                 const cleanName = branch.name.replace('Bella Spa ', '');
                 const val = compareMetric === 'revenue' ? (branch.revenueSum || 0) : (branch.customerCount || 0);
                 const maxVal = compareMetric === 'revenue'
-                  ? Math.max(...tenants.filter(t => t.name !== 'Bella Spa Headquarter').map(t => t.revenueSum || 0), 1)
-                  : Math.max(...tenants.filter(t => t.name !== 'Bella Spa Headquarter').map(t => t.customerCount || 0), 1);
+                  ? Math.max(...operatingTenants.map(t => t.revenueSum || 0), 1)
+                  : Math.max(...operatingTenants.map(t => t.customerCount || 0), 1);
 
                 const ratio = (val / maxVal) * 100;
                 const rankColor = index === 0
