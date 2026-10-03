@@ -24,7 +24,8 @@
 import { Result } from './core/result';
 import { InventoryDomain } from './inventory.domain';
 import { MovementDomain } from './movement.domain';
-import type { Inventory, Movement } from './inventory.types';
+import type { Inventory } from './inventory.types';
+import type { InventoryMovement } from './movement.types';
 
 export class InventoryOperationsDomain {
   /**
@@ -52,7 +53,7 @@ export class InventoryOperationsDomain {
       referenceType?: string;
       referenceId?: string;
     }
-  ): Result<{ inventory: Inventory; movement: Movement }> {
+  ): Result<{ inventory: Inventory; movement: InventoryMovement }> {
     // Step 1: Reserve inventory
     const reserveResult = InventoryDomain.reserveOperation(inventory, params.quantity, {
       reason: params.reason,
@@ -79,7 +80,7 @@ export class InventoryOperationsDomain {
       fromLocationId: inventory.locationId,
       toLocationId: null, // Outbound reservation (not yet shipped)
       quantity: params.quantity,
-      unitOfMeasure: inventory.uomId,
+      unitOfMeasure: 'EA',
       direction: 'OUTBOUND',
       movementType: 'ISSUE', // E7.1 frozen enum - use ISSUE for reservation
       sourceDocumentType: params.referenceType || 'INVENTORY_RESERVATION',
@@ -118,12 +119,9 @@ export class InventoryOperationsDomain {
       referenceType?: string;
       referenceId?: string;
     }
-  ): Result<{ inventory: Inventory; movement: Movement }> {
+  ): Result<{ inventory: Inventory; movement: InventoryMovement }> {
     // Step 1: Ship inventory
-    const shipResult = InventoryDomain.shipOperation(inventory, {
-      shippedBy: params.shippedBy,
-      shippedAt: params.shippedAt,
-    });
+    const shipResult = InventoryDomain.shipOperation(inventory);
 
     if (shipResult.isFailure) {
       return Result.fail(
@@ -145,7 +143,7 @@ export class InventoryOperationsDomain {
       fromLocationId: inventory.locationId,
       toLocationId: params.toLocationId,
       quantity: inventory.quantityReserved, // Ship reserved quantity
-      unitOfMeasure: inventory.uomId,
+      unitOfMeasure: 'EA',
       direction: 'OUTBOUND',
       movementType: 'SHIPMENT', // E7.1 frozen enum
       sourceDocumentType: params.referenceType || 'INVENTORY_SHIPMENT',
@@ -184,12 +182,9 @@ export class InventoryOperationsDomain {
       referenceType?: string;
       referenceId?: string;
     }
-  ): Result<{ inventory: Inventory; movement: Movement }> {
+  ): Result<{ inventory: Inventory; movement: InventoryMovement }> {
     // Step 1: Cancel reservation
-    const cancelResult = InventoryDomain.cancelOperation(inventory, params.quantity, {
-      reason: params.reason,
-      cancelledBy: params.cancelledBy,
-    });
+    const cancelResult = InventoryDomain.cancelOperation(inventory, params.quantity, params.reason);
 
     if (cancelResult.isFailure) {
       return Result.fail(
@@ -211,7 +206,7 @@ export class InventoryOperationsDomain {
       fromLocationId: null, // Reversal (no source)
       toLocationId: inventory.locationId,
       quantity: params.quantity,
-      unitOfMeasure: inventory.uomId,
+      unitOfMeasure: 'EA',
       direction: 'INBOUND',
       movementType: 'RETURN_RECEIPT', // E7.1 frozen enum - use RETURN_RECEIPT for reversal
       sourceDocumentType: params.referenceType || 'INVENTORY_CANCELLATION',

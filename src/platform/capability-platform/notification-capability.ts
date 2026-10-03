@@ -3,9 +3,11 @@
  * Handles In-App Alerts, Zalo OA Messages, and Email Notifications for Resource SLA & Rotations
  */
 
-import { supabase } from '@/lib/supabase';
+import { createServiceClient } from '@/lib/supabase-service-client';
 import { ResourceRef, UniversalExecutionContext } from './types';
 import { resourceDBService } from './resource-db-service';
+
+const supabase = createServiceClient();
 
 export interface NotificationPayload {
   tenantId: string;

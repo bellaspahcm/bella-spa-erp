@@ -120,17 +120,17 @@ export interface SerialNumber {
 export interface Inventory {
   // ========== Identity ==========
   /** Unique inventory record identifier */
-  id: InventoryId;
-  
+  id: string;
+
   /** Tenant ID (P0 Gate - tenant isolation) */
   tenantId: string;
-  
+
   /** Item reference */
-  itemId: ItemId;
-  
+  itemId: string;
+
   // ========== Location ==========
   /** Generic location identifier */
-  locationId: LocationId;
+  locationId: string;
   
   /** Location type (for filtering/reporting) */
   locationType: LocationType;
@@ -147,13 +147,13 @@ export interface Inventory {
   
   // ========== Traceability ==========
   /** Lot/batch number (if item.lotTracked = true) */
-  lotNumber?: LotNumber;
+  lotNumber?: string | null;
   
   /** Serial number (if item.serialTracked = true) */
-  serialNumber?: SerialNumber;
+  serialNumber?: string | null;
   
   /** Expiry date (if item.expiryTracked = true) */
-  expiryDate?: Date;
+  expiryDate?: Date | null;
   
   // ========== Status ==========
   /** Current inventory status */
@@ -173,11 +173,13 @@ export interface Inventory {
  * Input for creating a new inventory record
  */
 export interface CreateInventoryProps {
+  id?: string;
   tenantId: string;
   itemId: string;
   locationId: string;
   locationType: LocationType;
   quantityOnHand: number;
+  quantityReserved?: number;
   lotNumber?: string;
   serialNumber?: string;
   expiryDate?: Date;
@@ -190,9 +192,12 @@ export interface CreateInventoryProps {
  * Input for updating inventory quantities
  */
 export interface UpdateInventoryQuantityProps {
-  /** Change to on-hand quantity (can be negative) */
-  quantity_delta: number;
-  
+  /** New on-hand quantity */
+  quantityOnHand: number;
+
+  /** New reserved quantity */
+  quantityReserved?: number;
+
   /** Reason for adjustment */
   reason?: string;
 }
@@ -207,10 +212,10 @@ export interface ReserveInventoryProps {
   quantity: number;
   
   /** Reference to order/allocation */
-  reference_id: string;
+  reference_id?: string;
   
   /** Reference type (e.g., "ORDER", "TRANSFER") */
-  reference_type: string;
+  reference_type?: string;
 }
 
 /**

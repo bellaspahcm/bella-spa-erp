@@ -33,10 +33,12 @@ import {
 } from '@/services/healthcare/healthcare-actions';
 import { issuePrescriptionAction } from '@/services/healthcare/pharmacy-actions';
 import { createClient } from '@/lib/supabase-client';
+import type { EncounterViewModel } from '@/services/healthcare/healthcare-actions';
 
 interface EncounterRecord {
   id: string;
   patientName: string;
+  doctorName?: string;
   chiefComplaint: string;
   status: 'planned' | 'arrived' | 'in_progress' | 'finished' | 'in_consultation' | 'orders_pending' | 'completed';
   startedAt: string;
@@ -143,27 +145,28 @@ export default function EncountersPage() {
       const res = await getAllEncountersAction(dateStr || undefined, careSetting);
       if (res.success && res.data && res.data.length > 0) {
         // Enhance data with mock EMR attributes for rich UI presentation
-        const enhancedData: EncounterRecord[] = (res.data as Record<string, unknown>[]).map((e, index) => ({
-          id: String(e.id ?? ''),
-          patientName: String(e.patientName ?? ''),
-          chiefComplaint: String(e.chiefComplaint ?? ''),
-          status: (e.status as EncounterRecord['status']) || 'planned',
-          startedAt: String(e.startedAt ?? ''),
-          subjective: e.subjective ? String(e.subjective) : undefined,
-          objective: e.objective ? String(e.objective) : undefined,
-          assessment: e.assessment ? String(e.assessment) : undefined,
-          plan: e.plan ? String(e.plan) : undefined,
-          age: e.age ? Number(e.age) : (32 + (index * 7) % 30),
-          gender: (e.gender as EncounterRecord['gender']) || (index % 2 === 0 ? 'Nam' : 'Nữ'),
-          insuranceType: (e.insuranceType as EncounterRecord['insuranceType']) || (index % 3 === 0 ? 'Khám Dịch Vụ' : index % 3 === 1 ? 'BHYT (80%)' : 'BHYT (100%)'),
-          visitType: (e.visitType as EncounterRecord['visitType']) || (index % 2 === 0 ? 'Khám lần đầu' : 'Tái khám'),
-          waitTimeMinutes: e.waitTimeMinutes !== undefined ? Number(e.waitTimeMinutes) : (8 + (index * 5)),
-          allergies: Array.isArray(e.allergies) ? e.allergies.map(String) : (index % 2 === 0 ? ['Dị ứng Penicillin', 'Tăng Huyết Áp'] : ['Tiểu đường Tuýp 2']),
-          timeline: Array.isArray(e.timeline) ? e.timeline : [
+        const enhancedData: EncounterRecord[] = res.data.map((e: EncounterViewModel, index) => ({
+          id: e.id,
+          patientName: e.patientName,
+          doctorName: e.doctorName,
+          chiefComplaint: e.chiefComplaint,
+          status: e.status,
+          startedAt: e.startedAt ?? e.scheduledAt,
+          subjective: e.subjective,
+          objective: e.objective,
+          assessment: e.assessment,
+          plan: e.plan,
+          age: 32 + (index * 7) % 30,
+          gender: index % 2 === 0 ? 'Nam' : 'Nữ',
+          insuranceType: index % 3 === 0 ? 'Khám Dịch Vụ' : index % 3 === 1 ? 'BHYT (80%)' : 'BHYT (100%)',
+          visitType: index % 2 === 0 ? 'Khám lần đầu' : 'Tái khám',
+          waitTimeMinutes: 8 + (index * 5),
+          allergies: index % 2 === 0 ? ['Dị ứng Penicillin', 'Tăng Huyết Áp'] : ['Tiểu đường Tuýp 2'],
+          timeline: [
             { time: '09:15', label: 'Check-in', done: true },
             { time: '09:20', label: 'Đón Tiếp', done: true },
             { time: '09:25', label: 'Sinh Hiệu', done: true },
-            { time: '09:32', label: 'Bác Sĩ Khám', done: e.status === 'completed' || e.status === 'finished' || e.status === 'in_consultation' },
+            { time: '09:32', label: 'Bác Sĩ Khám', done: e.status === 'finished' || e.status === 'in_progress' },
           ]
         }));
         setEncounters(enhancedData);

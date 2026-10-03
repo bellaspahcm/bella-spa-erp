@@ -1,3 +1,102 @@
+# Full System Typecheck Architecture Gate
+
+> **Status:** DEFER for frozen/kernel-owned diagnostics; PASS for non-frozen, contract-proven, local cleanup batches
+> **Date:** 2026-10-03
+> **Scope:** System-wide TypeScript/typecheck cleanup. No new product capability, no schema/RPC invention, no strictness reduction, no suppressions.
+
+## Baseline
+
+- Canonical full command: `npm run typecheck:full`
+- Raw full diagnostics: `849`
+- Raw full warnings: `0`
+- Raw full affected files: `91`
+- CI script result: allowed by reviewed baseline, but this is `FAIL` for the zero-debt target.
+- Adjunct mobile command: `npm run mobile:typecheck` fails before compiler because `apps/mobile` is not registered as an npm workspace.
+- Direct mobile compiler diagnostics: `30`, mostly missing Expo/React Native dependency/type resolution.
+- `npm run shared:typecheck`: PASS.
+- `mcp-server/tsconfig.json`: PASS.
+
+## Bella OS/Product Development Process Gate
+
+- Problem: eliminate TypeScript/typecheck debt across the repository without suppressions, weakened strictness, or unrelated refactors.
+- Truth: current diagnostics come from compiler output and scoped typecheck commands.
+- Source of Truth: `package.json`, `tsconfig*.json`, `.github/workflows/type-check.yml`, `scripts/ci-run-typecheck.mjs`, generated DB types, frozen-layer policies, and vertical constitutions.
+- Canonical Contract: consumers must follow public Platform/OS/generated DB contracts; generated types are evidence, not a repair surface.
+- Boundary: cleanup may fix stale consumers, config resolution, or mapper typing only when the canonical contract is proven.
+- Stop Conditions: frozen Logistics/Healthcare kernel edits without required governance process; schema/RPC invention; public-contract widening; suppressions/casts to hide mismatch.
+
+## Product Manifest
+
+This is not a new product or UI redesign. It covers:
+
+- Root web/app TypeScript surface from `tsconfig.json`.
+- Scoped platform/product configs.
+- Workspace package scopes: `packages/shared`, `apps/mobile`, `mcp-server`.
+
+Non-goals:
+
+- No new OS/product capability.
+- No database migration.
+- No production mutation.
+- No broad refactor.
+
+## Ownership Map
+
+- Typecheck orchestration: CI/platform tooling.
+- Generated DB contracts: database/generated types source of truth.
+- Logistics E7.1/E7.2/E7.3: sealed Logistics OS kernel; modifications require ACR/ADR/unlock/regression/re-seal.
+- Healthcare H1-H12: frozen Healthcare OS kernel; Product/legacy services must use public contracts.
+- Mobile app workspace: app/tooling configuration.
+- Shared package: package-owned TypeScript config/source.
+- Decision-engine archive: Platform/legacy service ownership; archive inclusion must be justified rather than patched as live product code.
+
+## Contract Dependency Map
+
+- Product/UI/legacy services -> public Platform/OS contracts -> generated DB types.
+- Logistics consumers -> Logistics public/domain contracts; no sealed artifact edits without governance process.
+- Healthcare product/legacy surfaces -> Healthcare public contracts; no H1-H12 internal table bypass.
+- Mobile typecheck -> npm workspace registration -> mobile package dependencies -> Expo/React Native tsconfig.
+
+## Change Authority
+
+Authorized:
+
+- Type-only cleanup and config fixes required to make compiler commands run correctly.
+- Stale consumer repairs when canonical contract is proven.
+- Tests/tooling fixes that do not hide diagnostics or reduce strictness.
+
+Not authorized without explicit architecture unlock:
+
+- Frozen Healthcare kernel changes.
+- Sealed Logistics E7.1/E7.2/E7.3 artifact changes outside approved process.
+- Generated type hand edits.
+- Schema/RPC inventions.
+- Compatibility aliases that change public contracts.
+
+## UI To Contract Reconciliation
+
+No UI redesign requested. UI diagnostics must still trace data/action assumptions to canonical API/service/generated DB contracts before repair.
+
+## Additive Migration Plan
+
+No migrations planned. Any diagnostic implying missing table/column/RPC is a contract/schema gap until proven by migrations/generated types.
+
+## 11 Automated Verification Gates Plan
+
+1. Canonical full typecheck: `npm run typecheck:full`
+2. Changed typecheck: `npm run typecheck:changed`
+3. Relevant scoped typechecks for touched configs.
+4. `npm run healthcare:verify` if Healthcare code changes.
+5. `npm run logistics:verify` if Logistics code changes.
+6. Relevant unit/integration tests for touched areas.
+7. `git diff --check`.
+8. Diff inspection.
+9. No new `as any`.
+10. No new `@ts-ignore` / `@ts-expect-error`.
+11. No abnormal tsconfig/source exclusions.
+
+---
+
 # ARCHITECTURE GATE RESULT - PLATFORM PWA CONTRACT V1
 
 > **Status:** PASS - Platform-owned PWA V1 contract for manifest identity and installability only

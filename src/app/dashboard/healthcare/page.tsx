@@ -29,6 +29,7 @@ import {
   seedDefaultHealthcareDataAction,
   getActiveHealthcarePluginAction
 } from '@/services/healthcare/healthcare-actions';
+import type { PatientViewModel } from '@/services/healthcare/healthcare-actions';
 
 import { EncounterSaga } from '@/modules/bella-healthcare/contexts/shared/EncounterSaga';
 import { aiRegistry } from '@/modules/bella-healthcare/contexts/shared/AiEngineRegistry';
@@ -48,6 +49,18 @@ import { PluginLoader } from '@/core/plugins/plugin-loader';
 import { BellaMedicalPlugin } from '@/products/bella-medical';
 import { BellaDentalPlugin } from '@/products/bella-dental';
 import type { ProductManifest } from '@/core/plugins/manifest';
+
+const mapPatientViewModel = (patient: PatientViewModel): PatientInfo => ({
+  id: patient.id,
+  recordNumber: patient.recordNumber,
+  name: patient.name,
+  gender: patient.gender,
+  dob: patient.dob,
+  age: patient.age,
+  bloodType: patient.bloodType,
+  allergies: patient.allergies,
+  phone: patient.phone,
+});
 
 export default function HealthcareDashboardPage() {
   const { user } = useUser();
@@ -127,7 +140,7 @@ export default function HealthcareDashboardPage() {
       const dbPatientsRes = await getAllPatientProfilesAction();
       let finalPatients: PatientInfo[] = [];
       if (dbPatientsRes.success && dbPatientsRes.data) {
-        finalPatients = dbPatientsRes.data;
+        finalPatients = dbPatientsRes.data.map(mapPatientViewModel);
       }
 
       const dbEncountersRes = await getAllEncountersAction();
@@ -223,7 +236,7 @@ export default function HealthcareDashboardPage() {
             ? `⚡ Mời BN ${waitingEncounter.patientName} vào ${availableChair.code}`
             : `⚡ Mời BN ${waitingEncounter.patientName} vào Phòng ${availableChair.code}`,
         description: isDental
-          ? `${availableChair.code} (${availableChair.locationZone || 'Khu A'}) đang trống. Gợi ý điều phối ngay cho BN ${waitingEncounter.patientName}.`
+          ? `${availableChair.code} (${availableChair.zone || 'Khu A'}) đang trống. Gợi ý điều phối ngay cho BN ${waitingEncounter.patientName}.`
           : `Phòng ${availableChair.code} đang trống. Gợi ý mời BN ${waitingEncounter.patientName} vào phòng khám.`,
         actionLabel: isDental ? `Phân ${availableChair.code} ngay` : `Mở phòng ${availableChair.code} ngay`,
         actionType: isDental ? 'assign_chair' : 'assign_room',

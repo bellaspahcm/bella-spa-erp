@@ -31,8 +31,8 @@ export interface EngineResponse<T> {
 export interface EngineError {
   code: string;
   message: string;
-  details?: Record<string, unknown>;
-  timestamp: string;
+  details?: Record<string, unknown> | unknown[];
+  timestamp?: string;
 }
 
 export interface EngineResponseMetadata {
@@ -476,9 +476,11 @@ export interface EngineContract {
 }
 
 export interface EngineHealthStatus {
-  status: 'healthy' | 'degraded' | 'unhealthy';
-  timestamp: string;
-  checks: {
+  status?: 'healthy' | 'degraded' | 'unhealthy';
+  healthy?: boolean;
+  version?: string;
+  timestamp: string | Date;
+  checks?: {
     database?: 'ok' | 'error';
     eventBus?: 'ok' | 'error';
     dependencies?: Record<string, 'ok' | 'error'>;

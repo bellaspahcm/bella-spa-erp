@@ -7,12 +7,113 @@
  */
 
 import { getPrimaryClient } from '@/lib/database/read-replica';
-import { Database } from '@/types/database.types';
+import { Database, type Json } from '@/types/database.types';
 
 type NextBestAction = Database['public']['Tables']['auto_next_best_actions']['Row'];
 type NextBestActionInsert = Database['public']['Tables']['auto_next_best_actions']['Insert'];
 type NextBestActionUpdate = Database['public']['Tables']['auto_next_best_actions']['Update'];
-type CustomerJourney = Database['public']['Tables']['auto_customer_journeys']['Row'];
+
+interface QueryResult<Row> {
+  data: Row[] | null;
+  error: { message: string } | null;
+}
+
+interface SingleResult<Row> {
+  data: Row | null;
+  error: { message: string } | null;
+}
+
+interface AutoQuery<Row> extends PromiseLike<QueryResult<Row>> {
+  eq(column: string, value: unknown): AutoQuery<Row>;
+  gte(column: string, value: unknown): AutoQuery<Row>;
+  limit(count: number): AutoQuery<Row>;
+  order(column: string, options?: { ascending?: boolean }): AutoQuery<Row>;
+  select<NextRow = Row>(columns?: string): AutoQuery<NextRow>;
+  single(): PromiseLike<SingleResult<Row>>;
+}
+
+interface AutoTable {
+  select<Row>(columns?: string): AutoQuery<Row>;
+}
+
+interface AutoClient {
+  from(table: string): AutoTable;
+}
+
+interface QuotationRow {
+  created_at: string;
+  id: string;
+  total_amount: number | null;
+}
+
+interface TestDriveRow {
+  completed_at: string | null;
+  customer_feedback: string | null;
+  id: string;
+  scheduled_date: string;
+  status: string | null;
+  vehicle_model: string | null;
+}
+
+interface TouchpointRow {
+  interacted_at: string;
+}
+
+interface ServiceAppointmentRow {
+  appointment_date: string;
+  service_type: string | null;
+}
+
+interface JourneyStageReferenceRow {
+  current_stage_id: string;
+}
+
+interface JourneyStageRow {
+  code: string;
+}
+
+interface VehicleRow {
+  created_at: string;
+  id: string;
+  metadata?: Json | null;
+  model?: string | null;
+  model_name?: string | null;
+  variant_id?: string | null;
+}
+
+function autoClient(client: unknown): AutoClient {
+  return client as AutoClient;
+}
+
+function toJson(value: unknown): Json {
+  const serialized: unknown = JSON.parse(JSON.stringify(value));
+  return serialized as Json;
+}
+
+function readMetadataString(metadata: Json | null | undefined, keys: string[]): string | null {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+    return null;
+  }
+
+  for (const key of keys) {
+    const value = metadata[key];
+    if (typeof value === 'string') {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+function vehicleDisplayName(vehicle: VehicleRow): string {
+  return (
+    vehicle.model ??
+    vehicle.model_name ??
+    readMetadataString(vehicle.metadata, ['model', 'model_name', 'modelName']) ??
+    vehicle.variant_id ??
+    vehicle.id
+  );
+}
 
 export interface ActionRecommendation {
   actionType: string;
@@ -79,14 +180,14 @@ export class NextBestActionEngine {
     customerId: string,
     journeyId?: string
   ): Promise<ActionRecommendation[]> {
-    const supabase = getPrimaryClient();
+    const supabase = autoClient(getPrimaryClient());
     const recommendations: ActionRecommendation[] = [];
     const now = new Date();
 
     // Check for quotations sent but not followed up
     const { data: quotations } = await supabase
       .from('auto_quotations')
-      .select('*, auto_customer_journeys(assigned_to)')
+      .select<QuotationRow>('*')
       .eq('tenant_id', tenantId)
       .eq('customer_id', customerId)
       .eq('status', 'sent')
@@ -145,14 +246,14 @@ export class NextBestActionEngine {
     customerId: string,
     journeyId?: string
   ): Promise<ActionRecommendation[]> {
-    const supabase = getPrimaryClient();
+    const supabase = autoClient(getPrimaryClient());
     const recommendations: ActionRecommendation[] = [];
     const now = new Date();
 
     // Check test drive appointments
     const { data: testDrives } = await supabase
       .from('auto_test_drives')
-      .select('*')
+      .select<TestDriveRow>('*')
       .eq('tenant_id', tenantId)
       .eq('customer_id', customerId)
       .order('scheduled_date', { ascending: false });
@@ -170,7 +271,7 @@ export class NextBestActionEngine {
         // Check if quotation was sent after test drive
         const { data: postTestDriveQuotation } = await supabase
           .from('auto_quotations')
-          .select('id')
+          .select<{ id: string }>('id')
           .eq('tenant_id', tenantId)
           .eq('customer_id', customerId)
           .gte('created_at', latestTestDrive.completed_at || latestTestDrive.scheduled_date)
@@ -238,14 +339,14 @@ export class NextBestActionEngine {
       // No test drive scheduled yet, but in consideration stage
       const { data: journey } = await supabase
         .from('auto_customer_journeys')
-        .select('current_stage_id')
+        .select<JourneyStageReferenceRow>('current_stage_id')
         .eq('id', journeyId)
         .single();
 
       const { data: currentStage } = journey
         ? await supabase
             .from('auto_journey_stages')
-            .select('code')
+            .select<JourneyStageRow>('code')
             .eq('id', journey.current_stage_id)
             .single()
         : { data: null };
@@ -284,10 +385,10 @@ export class NextBestActionEngine {
     // Get recent touchpoints
     const { data: touchpoints } = await supabase
       .from('auto_touchpoints')
-      .select('*')
+      .select('id')
       .eq('tenant_id', tenantId)
       .eq('customer_id', customerId)
-      .gte('occurred_at', thirtyDaysAgo.toISOString());
+      .gte('interacted_at', thirtyDaysAgo.toISOString());
 
     const touchpointCount = touchpoints?.length || 0;
 
@@ -295,16 +396,16 @@ export class NextBestActionEngine {
     if (touchpointCount === 0) {
       const { data: lastTouchpoint } = await supabase
         .from('auto_touchpoints')
-        .select('occurred_at')
+        .select('interacted_at')
         .eq('tenant_id', tenantId)
         .eq('customer_id', customerId)
-        .order('occurred_at', { ascending: false })
+        .order('interacted_at', { ascending: false })
         .limit(1)
         .single();
 
       if (lastTouchpoint) {
         const daysSinceLastContact = Math.floor(
-          (now.getTime() - new Date(lastTouchpoint.occurred_at).getTime()) / (24 * 60 * 60 * 1000)
+          (now.getTime() - new Date(lastTouchpoint.interacted_at).getTime()) / (24 * 60 * 60 * 1000)
         );
 
         if (daysSinceLastContact >= 30 && daysSinceLastContact <= 90) {
@@ -350,14 +451,14 @@ export class NextBestActionEngine {
     tenantId: string,
     customerId: string
   ): Promise<ActionRecommendation[]> {
-    const supabase = getPrimaryClient();
+    const supabase = autoClient(getPrimaryClient());
     const recommendations: ActionRecommendation[] = [];
     const now = new Date();
 
     // Get customer vehicles
     const { data: vehicles } = await supabase
       .from('auto_vehicles')
-      .select('*, auto_vehicle_owners!inner(customer_id)')
+      .select<VehicleRow>('*, auto_vehicle_owners!inner(customer_id)')
       .eq('tenant_id', tenantId)
       .eq('auto_vehicle_owners.customer_id', customerId);
 
@@ -366,7 +467,7 @@ export class NextBestActionEngine {
         // Check last service date
         const { data: lastService } = await supabase
           .from('auto_service_appointments')
-          .select('appointment_date, service_type')
+          .select<ServiceAppointmentRow>('appointment_date, service_type')
           .eq('tenant_id', tenantId)
           .eq('vehicle_id', vehicle.id)
           .eq('status', 'completed')
@@ -385,12 +486,12 @@ export class NextBestActionEngine {
               actionType: 'schedule_maintenance',
               priority: 'medium',
               title: 'Nhắc lịch bảo dưỡng định kỳ',
-              description: `Xe ${vehicle.model} đã ${daysSinceService} ngày kể từ lần bảo dưỡng cuối. Đề xuất đặt lịch bảo dưỡng.`,
+              description: `Xe ${vehicleDisplayName(vehicle)} đã ${daysSinceService} ngày kể từ lần bảo dưỡng cuối. Đề xuất đặt lịch bảo dưỡng.`,
               reason: 'Vehicle due for scheduled maintenance based on time interval',
               confidenceScore: 0.85,
               dataPoints: {
                 vehicle_id: vehicle.id,
-                vehicle_model: vehicle.model,
+                vehicle_model: vehicleDisplayName(vehicle),
                 days_since_service: daysSinceService,
               },
               validUntil: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
@@ -407,12 +508,12 @@ export class NextBestActionEngine {
               actionType: 'first_service_reminder',
               priority: 'high',
               title: 'Nhắc bảo dưỡng lần đầu',
-              description: `Xe ${vehicle.model} đã ${vehicleAge} ngày nhưng chưa từng bảo dưỡng. Liên hệ khách hàng ngay.`,
+              description: `Xe ${vehicleDisplayName(vehicle)} đã ${vehicleAge} ngày nhưng chưa từng bảo dưỡng. Liên hệ khách hàng ngay.`,
               reason: 'Vehicle never serviced - critical for customer retention',
               confidenceScore: 0.90,
               dataPoints: {
                 vehicle_id: vehicle.id,
-                vehicle_model: vehicle.model,
+                vehicle_model: vehicleDisplayName(vehicle),
                 vehicle_age_days: vehicleAge,
               },
               validUntil: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
@@ -439,15 +540,18 @@ export class NextBestActionEngine {
     // Check purchase history for upgrade cycle
     const { data: purchases } = await supabase
       .from('auto_customer_journeys')
-      .select('created_at, vehicle_id')
+      .select('created_at, metadata')
       .eq('tenant_id', tenantId)
       .eq('customer_id', customerId)
-      .eq('status', 'completed')
-      .not('vehicle_id', 'is', null)
       .order('created_at', { ascending: false });
 
-    if (purchases && purchases.length > 0) {
-      const lastPurchase = purchases[0];
+    const completedPurchases = (purchases ?? []).filter((purchase) =>
+      readMetadataString(purchase.metadata, ['status']) === 'completed' &&
+      Boolean(readMetadataString(purchase.metadata, ['vehicle_id', 'vehicleId']))
+    );
+
+    if (completedPurchases.length > 0) {
+      const lastPurchase = completedPurchases[0];
       const daysSinceLastPurchase = Math.floor(
         (now.getTime() - new Date(lastPurchase.created_at).getTime()) / (24 * 60 * 60 * 1000)
       );
@@ -489,11 +593,13 @@ export class NextBestActionEngine {
     if (journeyId) {
       const { data: journey } = await supabase
         .from('auto_customer_journeys')
-        .select('assigned_to')
+        .select('metadata')
         .eq('id', journeyId)
         .single();
       
-      assignedTo = journey?.assigned_to || null;
+      assignedTo = journey
+        ? readMetadataString(journey.metadata, ['assigned_to', 'assignedTo', 'sales_consultant_id'])
+        : null;
     }
 
     const actionData: NextBestActionInsert = {
@@ -506,7 +612,7 @@ export class NextBestActionEngine {
       action_description: recommendation.description,
       reason: recommendation.reason,
       confidence_score: recommendation.confidenceScore,
-      data_points: recommendation.dataPoints as unknown,
+      data_points: toJson(recommendation.dataPoints),
       assigned_to: assignedTo,
       status: 'pending',
       valid_until: recommendation.validUntil.toISOString(),

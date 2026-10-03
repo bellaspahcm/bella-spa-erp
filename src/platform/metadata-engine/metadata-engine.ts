@@ -1,5 +1,34 @@
 import { supabase as typedSupabase } from '@/lib/supabase';
-const supabase = typedSupabase as unknown;
+
+type MetadataDbError = { message: string };
+
+interface MetadataConfigRow {
+  id: string;
+  tenant_id: string;
+  config_key: string;
+  config_values: Record<string, unknown>;
+  version: number;
+  updated_at: string;
+  updated_by: string | null;
+  correlation_id: string | null;
+}
+
+interface MetadataQuery<Row> extends PromiseLike<{ data: Row | Row[] | null; error: MetadataDbError | null }> {
+  select(columns?: string): MetadataQuery<Row>;
+  insert(payload: Record<string, unknown>): MetadataQuery<Row>;
+  eq(column: string, value: string | number): MetadataQuery<Row>;
+  order(column: string, options: { ascending: boolean }): MetadataQuery<Row>;
+  limit(count: number): MetadataQuery<Row>;
+  single(): PromiseLike<{ data: Row; error: MetadataDbError | null }>;
+  maybeSingle(): PromiseLike<{ data: Row | null; error: MetadataDbError | null }>;
+}
+
+interface MetadataSupabaseClient {
+  from(table: 'metadata_configs'): MetadataQuery<MetadataConfigRow>;
+  from(table: 'metadata_config_history'): MetadataQuery<Record<string, unknown>>;
+}
+
+const supabase = typedSupabase as MetadataSupabaseClient;
 
 export interface MetadataConfig {
   readonly id?: string;
@@ -51,8 +80,8 @@ export class MetadataEngine {
       configValues: data.config_values,
       version: data.version,
       updatedAt: new Date(data.updated_at),
-      updatedBy: data.updated_by,
-      correlationId: data.correlation_id,
+      updatedBy: data.updated_by ?? undefined,
+      correlationId: data.correlation_id ?? undefined,
     };
   }
 
@@ -86,8 +115,8 @@ export class MetadataEngine {
       configValues: data.config_values,
       version: data.version,
       updatedAt: new Date(data.updated_at),
-      updatedBy: data.updated_by,
-      correlationId: data.correlation_id,
+      updatedBy: data.updated_by ?? undefined,
+      correlationId: data.correlation_id ?? undefined,
     };
   }
 
@@ -155,8 +184,8 @@ export class MetadataEngine {
       configValues: configData.config_values,
       version: configData.version,
       updatedAt: new Date(configData.updated_at),
-      updatedBy: configData.updated_by,
-      correlationId: configData.correlation_id,
+      updatedBy: configData.updated_by ?? undefined,
+      correlationId: configData.correlation_id ?? undefined,
     };
   }
 }

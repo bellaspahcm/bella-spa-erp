@@ -15,9 +15,9 @@ import type {
   InventorySummary 
 } from './inventory.repository.interface';
 
-type LogisticsInventory = Database['logistics']['Tables']['inventory']['Row'];
-type LogisticsInventoryInsert = Database['logistics']['Tables']['inventory']['Insert'];
-type LogisticsInventoryUpdate = Database['logistics']['Tables']['inventory']['Update'];
+type LogisticsInventory = Database['public']['Tables']['inventory']['Row'];
+type LogisticsInventoryInsert = Database['public']['Tables']['inventory']['Insert'];
+type LogisticsInventoryUpdate = Database['public']['Tables']['inventory']['Update'];
 
 export class InventoryRepository implements IInventoryRepository {
   constructor(private db: SupabaseClient<Database>) {}
@@ -295,7 +295,7 @@ export class InventoryRepository implements IInventoryRepository {
   async save(inventory: Inventory): Promise<Result<Inventory>> {
     try {
       // Check if inventory exists
-      const existsResult = await this.findById(inventory.tenant_id, inventory.id.value);
+      const existsResult = await this.findById(inventory.tenantId, inventory.id);
       if (existsResult.isFailure) {
         return existsResult as Result<Inventory>;
       }
@@ -308,8 +308,8 @@ export class InventoryRepository implements IInventoryRepository {
         const { data, error } = await this.db
           .from('inventory')
           .update(updateData)
-          .eq('tenant_id', inventory.tenant_id)
-          .eq('id', inventory.id.value)
+          .eq('tenant_id', inventory.tenantId)
+          .eq('id', inventory.id)
           .select()
           .single();
 
@@ -449,23 +449,23 @@ export class InventoryRepository implements IInventoryRepository {
   private mapToInsert(inventory: Inventory): LogisticsInventoryInsert {
     return {
       id: inventory.id,
-      tenant_id: inventory.tenant_id,
-      item_id: inventory.item_id.value,
-      location_id: inventory.location_id.value,
-      location_type: inventory.location_type,
+      tenant_id: inventory.tenantId,
+      item_id: inventory.itemId,
+      location_id: inventory.locationId,
+      location_type: inventory.locationType,
 
-      quantity_on_hand: inventory.quantity_on_hand,
-      quantity_reserved: inventory.quantity_reserved,
-      quantity_available: inventory.quantity_available,
+      quantity_on_hand: inventory.quantityOnHand,
+      quantity_reserved: inventory.quantityReserved,
+      quantity_available: inventory.quantityAvailable,
 
-      lot_number: inventory.lot_number?.value ?? null,
-      serial_number: inventory.serial_number?.value ?? null,
-      expiry_date: inventory.expiry_date?.toISOString() ?? null,
+      lot_number: inventory.lotNumber ?? null,
+      serial_number: inventory.serialNumber ?? null,
+      expiry_date: inventory.expiryDate?.toISOString() ?? null,
 
       status: inventory.status,
 
-      created_at: inventory.created_at.toISOString(),
-      updated_at: inventory.updated_at.toISOString(),
+      created_at: inventory.createdAt.toISOString(),
+      updated_at: inventory.updatedAt.toISOString(),
     };
   }
 
@@ -474,15 +474,15 @@ export class InventoryRepository implements IInventoryRepository {
    */
   private mapToUpdate(inventory: Inventory): LogisticsInventoryUpdate {
     return {
-      quantity_on_hand: inventory.quantity_on_hand,
-      quantity_reserved: inventory.quantity_reserved,
-      quantity_available: inventory.quantity_available,
+      quantity_on_hand: inventory.quantityOnHand,
+      quantity_reserved: inventory.quantityReserved,
+      quantity_available: inventory.quantityAvailable,
 
-      expiry_date: inventory.expiry_date?.toISOString() ?? null,
+      expiry_date: inventory.expiryDate?.toISOString() ?? null,
 
       status: inventory.status,
 
-      updated_at: inventory.updated_at.toISOString(),
+      updated_at: inventory.updatedAt.toISOString(),
     };
   }
 }

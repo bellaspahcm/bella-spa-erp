@@ -6,6 +6,50 @@
 import { getPrimaryClient } from '@/lib/database/read-replica';
 import { SupabaseClient } from '@supabase/supabase-js';
 
+interface DbError {
+  message: string;
+}
+
+interface QueryResult<Row> {
+  data: Row[] | null;
+  error: DbError | null;
+}
+
+interface SingleResult<Row> {
+  data: Row | null;
+  error: DbError | null;
+}
+
+interface LegacyQuery<Row> extends PromiseLike<QueryResult<Row>> {
+  eq(column: string, value: unknown): LegacyQuery<Row>;
+  order(column: string, options?: { ascending?: boolean }): LegacyQuery<Row>;
+  select<NextRow = Row>(columns?: string): LegacyQuery<NextRow>;
+  single(): PromiseLike<SingleResult<Row>>;
+}
+
+interface LegacyTable<Row> {
+  delete(): LegacyQuery<Row>;
+  insert(values: unknown): LegacyQuery<Row>;
+  select<NextRow = Row>(columns?: string): LegacyQuery<NextRow>;
+  update(values: unknown): LegacyQuery<Row>;
+}
+
+interface BusinessRollbackClient {
+  from(table: string): LegacyTable<unknown>;
+}
+
+interface TransactionStepRow {
+  id: string;
+  action: string;
+  entity_id: string;
+  entity_type: string;
+  snapshot_before?: unknown;
+}
+
+function businessRollbackClient(client: unknown): BusinessRollbackClient {
+  return client as BusinessRollbackClient;
+}
+
 export interface RollbackStep {
   id: string;
   table_name: string;
@@ -51,12 +95,12 @@ export class BusinessRollbackEngine {
     executedBy: string;
     executedByEmail: string;
   }): Promise<{ success: boolean; error?: string; stepsRolledBack?: number }> {
-    const client = this.supabaseClient;
+    const client = businessRollbackClient(this.supabaseClient);
     try {
       // 1. Fetch steps for the transaction
       const { data: steps, error: stepsError } = await client
         .from('auto_transaction_steps')
-        .select('*')
+        .select<TransactionStepRow>('*')
         .eq('transaction_id', params.transactionId)
         .order('step_order', { ascending: false }); // execute in reverse order
 
@@ -169,7 +213,7 @@ export class BusinessRollbackEngine {
   static async executeRollback(
     transaction: RollbackTransaction
   ): Promise<RollbackResult> {
-    const supabase = getPrimaryClient();
+    const supabase = businessRollbackClient(getPrimaryClient());
     let stepsExecuted = 0;
     let stepsFailed = 0;
 
@@ -300,7 +344,7 @@ export class BusinessRollbackEngine {
     reason: string,
     userId: string
   ): Promise<RollbackTransaction> {
-    const supabase = getPrimaryClient();
+    const supabase = businessRollbackClient(getPrimaryClient());
 
     // Analyze cascades
     const steps = await this.analyzeDependentCascades(tenantId, entityType, entityId);
@@ -316,7 +360,7 @@ export class BusinessRollbackEngine {
         status: 'pending',
         created_by: userId,
       })
-      .select()
+      .select<{ id: string }>()
       .single();
 
     if (error || !data) {
@@ -350,10 +394,10 @@ export class BusinessRollbackEngine {
     // Example validation rules
     if (entityType === 'booking') {
       // Check if booking has been invoiced
-      const supabase = getPrimaryClient();
+      const supabase = businessRollbackClient(getPrimaryClient());
       const { data: invoices } = await supabase
         .from('auto_invoices')
-        .select('id')
+        .select<{ id: string }>('id')
         .eq('booking_id', entityId)
         .eq('tenant_id', tenantId)
         .eq('status', 'paid');

@@ -19,6 +19,78 @@ import { eventBus } from '@/platform/host/event-bus';
 import type { DomainEvent, EventType } from '@/platform/host/event-bus/types';
 import crypto from 'crypto';
 
+type Json = Database['public']['Tables']['platform_business_transactions']['Insert']['metadata'];
+type AutoVehicleStatus = Database['public']['Enums']['auto_vehicle_status'];
+type DbMutationResult = { error: Error | null };
+type MutationFilter = {
+  eq(column: string, value: string): MutationFilter & PromiseLike<DbMutationResult>;
+};
+type LegacyUpdateTable<TUpdate> = {
+  update(values: TUpdate): MutationFilter & PromiseLike<DbMutationResult>;
+};
+type LegacyInsertTable<TInsert> = {
+  insert(values: TInsert): PromiseLike<DbMutationResult>;
+};
+type BedAllocationUpdate = {
+  status: 'RELEASED';
+  discharge_at: string;
+  notes: string;
+};
+type CommissionInsert = {
+  tenant_id: string;
+  ktv_id: string;
+  session_id: string;
+  amount: number;
+  type: 'rollback_adjustment';
+  notes: string;
+  created_at: string;
+};
+type LegacyRollbackClient = {
+  from(table: 'hc_bed_allocations'): LegacyUpdateTable<BedAllocationUpdate>;
+  from(table: 'commission'): LegacyInsertTable<CommissionInsert>;
+};
+
+const AUTO_VEHICLE_STATUSES: readonly AutoVehicleStatus[] = [
+  'in_transit',
+  'warehouse',
+  'showroom',
+  'allocated',
+  'delivered',
+  'returned',
+  'scrapped',
+];
+
+function toJson(value: Record<string, unknown> | Array<Record<string, unknown>>): Json {
+  return JSON.parse(JSON.stringify(value)) as Json;
+}
+
+function readString(params: Record<string, unknown>, key: string, fallback?: string): string {
+  const value = params[key];
+  if (typeof value === 'string' && value.length > 0) {
+    return value;
+  }
+  if (fallback !== undefined) {
+    return fallback;
+  }
+  throw new Error(`Missing rollback parameter: ${key}`);
+}
+
+function readNumber(params: Record<string, unknown>, key: string): number {
+  const value = params[key];
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  throw new Error(`Missing numeric rollback parameter: ${key}`);
+}
+
+function readAutoVehicleStatus(params: Record<string, unknown>): AutoVehicleStatus {
+  const status = readString(params, 'status');
+  if (AUTO_VEHICLE_STATUSES.includes(status as AutoVehicleStatus)) {
+    return status as AutoVehicleStatus;
+  }
+  throw new Error(`Invalid rollback vehicle status: ${status}`);
+}
+
 // ─────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────
@@ -123,7 +195,7 @@ const COMPENSATING_HANDLERS: Record<string, CompensatingHandler> = {
   revert_vehicle_status: async (supabase, tenantId, entityId, params) => {
     const { error } = await supabase
       .from('auto_vehicles')
-      .update({ status: params['status'] as string })
+      .update({ status: readAutoVehicleStatus(params) })
       .eq('id', entityId)
       .eq('tenant_id', tenantId);
     if (error) throw new Error(`revert_vehicle_status failed: ${error.message}`);
@@ -132,7 +204,7 @@ const COMPENSATING_HANDLERS: Record<string, CompensatingHandler> = {
   revert_journey_stage: async (supabase, tenantId, entityId, params) => {
     const { error } = await supabase
       .from('auto_customer_journeys')
-      .update({ current_stage_id: params['previous_stage'] as string })
+      .update({ current_stage_id: readString(params, 'previous_stage') })
       .eq('id', entityId)
       .eq('tenant_id', tenantId);
     if (error) throw new Error(`revert_journey_stage failed: ${error.message}`);
@@ -142,8 +214,8 @@ const COMPENSATING_HANDLERS: Record<string, CompensatingHandler> = {
     const { error } = await supabase
       .from('hc_clinical_orders')
       .update({
-        status: 'DISCONTINUED',
-        notes: `[ROLLBACK] ${params['reason'] as string ?? 'Transaction rolled back'}`,
+        order_status: 'DISCONTINUED',
+        notes: `[ROLLBACK] ${readString(params, 'reason', 'Transaction rolled back')}`,
         updated_at: new Date().toISOString(),
       })
       .eq('id', entityId)
@@ -153,12 +225,12 @@ const COMPENSATING_HANDLERS: Record<string, CompensatingHandler> = {
 
   revert_bed_allocation: async (supabase, tenantId, entityId, params) => {
     const { error } = await supabase
-      .from('hc_bed_allocations')
+      .from('hc_bed_allocations' as never)
       .update({
         status: 'RELEASED',
         discharge_at: new Date().toISOString(),
-        notes: `[ROLLBACK] ${params['reason'] as string ?? 'Transaction rolled back'}`,
-      })
+        notes: `[ROLLBACK] ${readString(params, 'reason', 'Transaction rolled back')}`,
+      } as never)
       .eq('id', entityId)
       .eq('tenant_id', tenantId);
     if (error) throw new Error(`revert_bed_allocation failed: ${error.message}`);
@@ -179,16 +251,16 @@ const COMPENSATING_HANDLERS: Record<string, CompensatingHandler> = {
   revert_commission: async (supabase, tenantId, entityId, params) => {
     // Create negative commission entry (additive, never delete)
     const { error } = await supabase
-      .from('commission')
+      .from('commission' as never)
       .insert({
         tenant_id: tenantId,
-        ktv_id: params['ktv_id'] as string,
-        session_id: params['session_id'] as string ?? entityId,
-        amount: -(params['original_amount'] as number),
+        ktv_id: readString(params, 'ktv_id'),
+        session_id: readString(params, 'session_id', entityId),
+        amount: -readNumber(params, 'original_amount'),
         type: 'rollback_adjustment',
         notes: `[ROLLBACK] Reversal of commission for ${entityId}`,
         created_at: new Date().toISOString(),
-      });
+      } as never);
     if (error) throw new Error(`revert_commission failed: ${error.message}`);
   },
 
@@ -224,10 +296,10 @@ export class RollbackEngineService {
         entity_id: params.entityId,
         status: 'STARTED',
         created_by: params.createdBy ?? null,
-        metadata: {
+        metadata: toJson({
           correlationId: params.correlationId ?? crypto.randomUUID(),
           ...(params.metadata ?? {}),
-        },
+        }),
       })
       .select()
       .single();
@@ -282,13 +354,13 @@ export class RollbackEngineService {
         action: params.action,
         entity_type: params.entityType,
         entity_id: params.entityId,
-        snapshot_before: params.snapshotBefore ?? null,
-        snapshot_after: params.snapshotAfter ?? null,
+        snapshot_before: params.snapshotBefore ? toJson(params.snapshotBefore) : null,
+        snapshot_after: params.snapshotAfter ? toJson(params.snapshotAfter) : null,
         compensating_action: params.compensatingAction,
-        compensating_params: params.compensatingParams,
+        compensating_params: toJson(params.compensatingParams),
         status: 'EXECUTED',
         executed_at: new Date().toISOString(),
-        metadata: params.metadata ?? {},
+        metadata: toJson(params.metadata ?? {}),
       })
       .select()
       .single();
@@ -531,7 +603,7 @@ export class RollbackEngineService {
         steps_total: stepsTotal,
         steps_succeeded: stepsSucceeded,
         steps_failed: stepsFailed,
-        affected_entities: affectedEntities,
+        affected_entities: toJson(affectedEntities),
         rollback_reason: rollbackReason ?? null,
         triggered_by: triggeredBy ?? null,
         outcome,

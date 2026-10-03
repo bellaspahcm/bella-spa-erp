@@ -36,7 +36,7 @@ export class LotValidityRule implements Rule<LotValidityContext> {
 
     const evidenceInput = {
       item_id: item.id.value,
-      sku_code: item.skuCode.value,
+      sku_code: item.skuCode,
       lot_tracked: item.lotTracked,
       lot_number: lot_number || null,
     };
@@ -61,7 +61,7 @@ export class LotValidityRule implements Rule<LotValidityContext> {
         this.version,
         createViolation(
           RuleViolationCodes.LOT_NUMBER_REQUIRED,
-          `Lot number required for lot-tracked item ${item.skuCode.value}`,
+          `Lot number required for lot-tracked item ${item.skuCode}`,
           'ERROR',
           {
             field: 'lot_number',
@@ -108,7 +108,7 @@ export class SerialValidityRule implements Rule<SerialValidityContext> {
 
     const evidenceInput = {
       item_id: item.id.value,
-      sku_code: item.skuCode.value,
+      sku_code: item.skuCode,
       serial_tracked: item.serialTracked,
       serial_number: serial_number || null,
     };
@@ -133,7 +133,7 @@ export class SerialValidityRule implements Rule<SerialValidityContext> {
         this.version,
         createViolation(
           RuleViolationCodes.SERIAL_NUMBER_REQUIRED,
-          `Serial number required for serial-tracked item ${item.skuCode.value}`,
+          `Serial number required for serial-tracked item ${item.skuCode}`,
           'ERROR',
           {
             field: 'serial_number',
@@ -178,13 +178,13 @@ export class ChainIntegrityRule implements Rule<ChainIntegrityContext> {
     const { traceability, requiredEvents } = context;
     const evaluationDate = new Date();
 
-    const actualActions = traceability.custodyEvents.map(e => e.action);
+    const actualActions: string[] = traceability.custodyEvents.map(e => e.action);
     const missing = requiredEvents.filter(req => !actualActions.includes(req));
 
     const evidenceInput = {
       traceability_id: traceability.id.value,
-      lot_number: traceability.lotNumber?.value || null,
-      serial_number: traceability.serialNumber?.value || null,
+      lot_number: traceability.lotNumber || null,
+      serial_number: traceability.serialNumber || null,
       required_events: requiredEvents,
       actual_events: actualActions,
     };

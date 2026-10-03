@@ -40,6 +40,73 @@ interface JournalEntry {
   journal_lines?: JournalLine[] | null;
 }
 
+const ACCOUNTING_TABS = [
+  { id: 'journals', label: 'Bút Toán Sổ Nhật Ký (Double Entry)' },
+  { id: 'sync', label: 'Giám Sát Đồng Bộ Outbox Events' },
+] as const;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function getString(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function getNullableString(value: unknown): string | null {
+  return typeof value === 'string' ? value : null;
+}
+
+function getNumber(value: unknown): number | null {
+  return typeof value === 'number' ? value : null;
+}
+
+function normalizeJournalLine(value: unknown): JournalLine | null {
+  if (!isRecord(value) || typeof value.id !== 'string') return null;
+  const account = isRecord(value.accounting_accounts) ? value.accounting_accounts : null;
+
+  return {
+    id: value.id,
+    accounting_accounts: account
+      ? {
+          account_code: getNullableString(account.account_code),
+          account_name: getNullableString(account.account_name),
+        }
+      : null,
+    debit_amount: getNumber(value.debit_amount),
+    credit_amount: getNumber(value.credit_amount),
+  };
+}
+
+function normalizeJournalEntry(value: unknown): JournalEntry | null {
+  if (!isRecord(value) || typeof value.id !== 'string') return null;
+  const lines = Array.isArray(value.journal_lines)
+    ? value.journal_lines.map(normalizeJournalLine).filter((line): line is JournalLine => line !== null)
+    : null;
+
+  return {
+    id: value.id,
+    reference_type: getNullableString(value.reference_type),
+    description: getNullableString(value.description),
+    entry_date: getNullableString(value.entry_date),
+    journal_lines: lines,
+  };
+}
+
+function normalizeAccountingOutboxEvent(value: unknown): Record<string, unknown> {
+  const event = isRecord(value) ? value : {};
+  const payload = isRecord(event.payload) ? event.payload : { description: 'Đồng bộ sự kiện y tế Outbox' };
+
+  return {
+    id: getString(event.id, 'evt-unknown'),
+    event_type: getString(event.event_type, 'Encounter.Completed.v1'),
+    created_at: getString(event.created_at),
+    payload,
+    status: getString(event.status, 'completed'),
+    aggregate_id: getString(event.aggregate_id, 'ref-001'),
+  };
+}
+
 export default function HealthcareAccountingPage() {
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
     const now = new Date();
@@ -66,18 +133,14 @@ export default function HealthcareAccountingPage() {
         return;
       }
 
-      setDbJournalEntries(res.journals || []);
+      const journals = (res.journals || [])
+        .map(normalizeJournalEntry)
+        .filter((entry): entry is JournalEntry => entry !== null);
+      setDbJournalEntries(journals);
 
       const accountingAdapter = new HealthcareAccountingAdapter();
-      const mapped = (res.outboxEvents || []).map((evt: Record<string, unknown>) =>
-        accountingAdapter.map({
-          id: evt.id,
-          event_type: evt.event_type || 'Encounter.Completed.v1',
-          created_at: evt.created_at,
-          payload: evt.payload || { description: 'Đồng bộ sự kiện y tế Outbox' },
-          status: evt.status || 'completed',
-          aggregate_id: evt.aggregate_id || 'ref-001',
-        })
+      const mapped = (res.outboxEvents || []).map((evt) =>
+        accountingAdapter.map(normalizeAccountingOutboxEvent(evt))
       );
 
       setMappedEvents(mapped);
@@ -108,7 +171,7 @@ export default function HealthcareAccountingPage() {
       toast.success('Đồng bộ hóa Outbox Event thành công! Các bút toán đã được đưa vào Sổ cái.');
     } catch (err: unknown) {
       console.error(err);
-      toast.error('Lỗi khi đồng bộ: ' + err.message);
+      toast.error('Lỗi khi đồng bộ: ' + (err instanceof Error ? err.message : 'Lỗi hệ thống'));
     } finally {
       setIsSyncing(false);
     }
@@ -125,13 +188,10 @@ export default function HealthcareAccountingPage() {
         {/* Navigation Tabs Bar */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 rounded-[24px] bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm text-left">
           <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800">
-            {[
-              { id: 'journals', label: 'Bút Toán Sổ Nhật Ký (Double Entry)' },
-              { id: 'sync', label: 'Giám Sát Đồng Bộ Outbox Events' },
-            ].map((tab) => (
+            {ACCOUNTING_TABS.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as unknown)}
+                onClick={() => setActiveTab(tab.id)}
                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
                   activeTab === tab.id
                     ? 'bg-white dark:bg-slate-950 text-teal-600 dark:text-teal-400 shadow-sm font-black'
@@ -229,7 +289,7 @@ export default function HealthcareAccountingPage() {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-bold text-slate-600 dark:text-slate-400">
-                            {(entry.journal_lines || []).map((line: Record<string, unknown>) => (
+                            {(entry.journal_lines || []).map((line) => (
                               <tr key={line.id}>
                                 <td className="px-5 py-3 text-slate-900 dark:text-white font-black">{line.accounting_accounts?.account_code}</td>
                                 <td className="px-5 py-3 text-slate-500">{line.accounting_accounts?.account_name}</td>

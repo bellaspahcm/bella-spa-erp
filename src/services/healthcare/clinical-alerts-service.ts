@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase as rawSupabase } from '@/lib/supabase';
 import type { ClinicalAlert } from '@/components/hospital/ClinicalActionModal';
 import { HospitalClinicalAlertProductService } from '@/products/bella-hospital/services/hospital-clinical-alert.service';
 import type { CdsEngineContract } from '@/platform/healthcare/contracts/cds-engine.contract';
@@ -39,6 +39,28 @@ export interface ClinicalAlertRecord {
   created_at: string;
   updated_at: string;
 }
+
+type ClinicalAlertDbError = { message: string };
+
+interface ClinicalAlertQuery extends PromiseLike<{ data: ClinicalAlertRecord[] | null; error: ClinicalAlertDbError | null; count?: number | null }> {
+  select(columns?: string, options?: { count?: 'exact'; head?: boolean }): ClinicalAlertQuery;
+  eq(column: string, value: string): ClinicalAlertQuery;
+  order(column: string, options: { ascending: boolean }): ClinicalAlertQuery;
+  single(): PromiseLike<{ data: ClinicalAlertRecord | null; error: ClinicalAlertDbError | null }>;
+  update(payload: Partial<ClinicalAlertRecord>): ClinicalAlertMutation;
+}
+
+interface ClinicalAlertMutation {
+  eq(column: string, value: string): ClinicalAlertMutation;
+  select(columns?: string): ClinicalAlertMutation;
+  single(): PromiseLike<{ data: ClinicalAlertRecord | null; error: ClinicalAlertDbError | null }>;
+}
+
+interface ClinicalAlertsSupabaseClient {
+  from(table: 'hc_clinical_alerts'): ClinicalAlertQuery;
+}
+
+const supabase = rawSupabase as ClinicalAlertsSupabaseClient;
 
 // Mock in-memory store for demo
 const MOCK_ALERTS: ClinicalAlertRecord[] = [
@@ -140,7 +162,7 @@ export class ClinicalAlertsService {
         return MOCK_ALERTS.map((alert) => this.mapToAlert(alert));
       }
 
-      return data.map((record) => this.mapToAlert(record as ClinicalAlertRecord));
+      return data.map((record) => this.mapToAlert(record));
     } catch {
       // Fallback to mock data
       return MOCK_ALERTS.map((alert) => this.mapToAlert(alert));
@@ -164,7 +186,7 @@ export class ClinicalAlertsService {
         return mockAlert ? this.mapToAlert(mockAlert) : null;
       }
 
-      return this.mapToAlert(data as ClinicalAlertRecord);
+      return this.mapToAlert(data);
     } catch {
       // Fallback to mock data
       const mockAlert = MOCK_ALERTS.find((a) => a.id === alertId);
@@ -266,7 +288,7 @@ export class ClinicalAlertsService {
         return MOCK_ALERTS.filter((a) => a.status === status).length;
       }
 
-      return count;
+      return count ?? MOCK_ALERTS.filter((a) => a.status === status).length;
     } catch {
       // Fallback to mock count
       return MOCK_ALERTS.filter((a) => a.status === status).length;

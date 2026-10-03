@@ -1,4 +1,5 @@
 import { createClient as createBrowserClient } from '@/lib/supabase-client';
+import type { Database, Json } from '@/types/database.types';
 
 async function createClient() {
   if (typeof window !== 'undefined') {
@@ -32,6 +33,7 @@ import type {
   TimelineEvent,
   AppendEventInput,
   TimelineFilter,
+  TimelineEventCategory,
 } from '@/platform/timeline';
 import type {
   IKnowledgeRepository,
@@ -47,6 +49,7 @@ import type {
 import type {
   IAssetRepository,
   Asset,
+  AssetEvent,
   CreateAssetInput,
   UpdateAssetStatusInput,
   AssetFilter,
@@ -54,14 +57,184 @@ import type {
 import type {
   IContractRepository,
   Contract,
+  ContractLineItem,
+  ContractParty,
   CreateContractInput,
   ContractFilter,
   ContractStatus,
+  PaymentSchedule,
 } from '@/platform/contract';
 
 // Helper to convert DB date/string types to Date object
 const toDate = (d: string | null | undefined): Date | undefined => (d ? new Date(d) : undefined);
 const toRequiredDate = (d: string): Date => new Date(d);
+type PublicTables = Database['public']['Tables'];
+type JourneyRow = PublicTables['journey_journeys']['Row'];
+type JourneySubJourneyRow = PublicTables['journey_sub_journeys']['Row'];
+type JourneyMilestoneRow = PublicTables['journey_milestones']['Row'];
+type AssetRow = PublicTables['asset_assets']['Row'];
+type ContractRow = PublicTables['contract_contracts']['Row'];
+type KnowledgeEntryRow = PublicTables['knowledge_entries']['Row'];
+type KnowledgeGraphEdgeRow = PublicTables['knowledge_graph_edges']['Row'];
+type InferenceRuleRow = PublicTables['knowledge_inference_rules']['Row'];
+
+type JourneyRowWithRelations = JourneyRow & {
+  journey_sub_journeys?: Array<JourneySubJourneyRow & {
+    journey_milestones?: JourneyMilestoneRow[];
+  }>;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const isJsonRecord = (value: Json): value is { [key: string]: Json | undefined } =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const toJson = (value: unknown): Json => {
+  if (
+    value === null ||
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+  ) {
+    return value;
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => toJson(item));
+  }
+
+  if (isRecord(value)) {
+    const result: { [key: string]: Json | undefined } = {};
+    for (const [key, nestedValue] of Object.entries(value)) {
+      if (nestedValue !== undefined) {
+        result[key] = toJson(nestedValue);
+      }
+    }
+    return result;
+  }
+
+  return String(value);
+};
+
+const toJsonRecord = (value: Record<string, unknown> | undefined): Json => toJson(value ?? {});
+const toJsonArray = (value: readonly unknown[] | undefined): Json => toJson(value ?? []);
+
+const jsonToRecord = (value: Json | null | undefined): Record<string, unknown> =>
+  isRecord(value) ? value : {};
+
+const jsonToRecordArray = (value: Json | null | undefined): Record<string, unknown>[] =>
+  Array.isArray(value) ? value.filter(isJsonRecord).map((item) => ({ ...item })) : [];
+
+const jsonToTimelineCategory = (value: string): TimelineEventCategory => {
+  if (value === 'audit' || value === 'ai' || value === 'system' || value === 'business') {
+    return value;
+  }
+  return 'business';
+};
+
+const isContractParty = (value: unknown): value is ContractParty =>
+  isRecord(value) &&
+  typeof value.partyId === 'string' &&
+  (value.role === 'provider' || value.role === 'client' || value.role === 'guarantor' || value.role === 'insurer');
+
+const isContractLineItem = (value: unknown): value is ContractLineItem =>
+  isRecord(value) &&
+  typeof value.code === 'string' &&
+  typeof value.description === 'string' &&
+  typeof value.quantity === 'number' &&
+  typeof value.unitPrice === 'number' &&
+  typeof value.subtotal === 'number' &&
+  (value.discount === undefined || typeof value.discount === 'number');
+
+const jsonToContractParties = (value: Json | null | undefined): ContractParty[] => {
+  const parties: ContractParty[] = [];
+  for (const item of jsonToRecordArray(value)) {
+    if (isContractParty(item)) {
+      parties.push(item);
+    }
+  }
+  return parties;
+};
+
+const jsonToContractLineItems = (value: Json | null | undefined): ContractLineItem[] => {
+  const lineItems: ContractLineItem[] = [];
+  for (const item of jsonToRecordArray(value)) {
+    if (isContractLineItem(item)) {
+      lineItems.push(item);
+    }
+  }
+  return lineItems;
+};
+
+const jsonToPaymentSchedule = (value: Json | null | undefined): PaymentSchedule | undefined => {
+  if (!isRecord(value)) return undefined;
+  const frequency = value.frequency;
+  if (
+    frequency !== 'one_time' &&
+    frequency !== 'weekly' &&
+    frequency !== 'monthly' &&
+    frequency !== 'quarterly' &&
+    frequency !== 'annually'
+  ) {
+    return undefined;
+  }
+
+  const schedule: PaymentSchedule = {
+    frequency,
+    installments: typeof value.installments === 'number' ? value.installments : undefined,
+    amountPerInstallment: typeof value.amountPerInstallment === 'number' ? value.amountPerInstallment : undefined,
+    dueDay: typeof value.dueDay === 'number' ? value.dueDay : undefined,
+    nextDueDate: typeof value.nextDueDate === 'string' ? new Date(value.nextDueDate) : undefined,
+  };
+  return schedule;
+};
+
+const jsonToAssetEvents = (value: Json | null | undefined): AssetEvent[] =>
+  jsonToRecordArray(value)
+    .filter((event) => typeof event.eventType === 'string' && typeof event.description === 'string')
+    .map((event) => ({
+      eventType: String(event.eventType),
+      description: String(event.description),
+      recordedBy: typeof event.recordedBy === 'string' ? event.recordedBy : undefined,
+      occurredAt: typeof event.occurredAt === 'string' ? new Date(event.occurredAt) : new Date(),
+      metadata: isRecord(event.metadata) ? event.metadata : undefined,
+    }));
+
+const inferenceOperators = ['eq', 'neq', 'gt', 'lt', 'contains', 'in', 'not_in'] as const;
+const inferenceActionTypes = ['block', 'warn', 'require', 'suggest', 'calculate'] as const;
+
+const jsonToInferenceConditions = (value: Json | null | undefined): InferenceRule['conditions'] =>
+  jsonToRecordArray(value)
+    .filter((condition) =>
+      typeof condition.field === 'string' &&
+      typeof condition.operator === 'string' &&
+      inferenceOperators.includes(condition.operator as InferenceRule['conditions'][number]['operator'])
+    )
+    .map((condition) => ({
+      field: String(condition.field),
+      operator: condition.operator as InferenceRule['conditions'][number]['operator'],
+      value: condition.value,
+    }));
+
+const jsonToInferenceAction = (value: Json | null | undefined): InferenceRule['action'] => {
+  if (
+    isRecord(value) &&
+    typeof value.type === 'string' &&
+    inferenceActionTypes.includes(value.type as InferenceRule['action']['type'])
+  ) {
+    return {
+      type: value.type as InferenceRule['action']['type'],
+      payload: isRecord(value.payload) ? value.payload : {},
+    };
+  }
+
+  return { type: 'warn', payload: {} };
+};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 1. SUPABASE PARTY REPOSITORY
@@ -100,7 +273,7 @@ export class SupabasePartyRepository implements IPartyRepository {
           party_id: partyData.id,
           vertical: input.initialRole.vertical,
           role_type: input.initialRole.roleType,
-          attributes: input.initialRole.attributes ?? {},
+          attributes: toJsonRecord(input.initialRole.attributes),
           active_from: input.initialRole.activeFrom ? input.initialRole.activeFrom.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
           active_to: input.initialRole.activeTo ? input.initialRole.activeTo.toISOString().split('T')[0] : null,
         });
@@ -164,17 +337,17 @@ export class SupabasePartyRepository implements IPartyRepository {
         issuedAt: toDate(i.issued_at),
         expiresAt: toDate(i.expires_at),
       })),
-      roles: (party.party_roles || []).map((r: { vertical: string; role_type: string; attributes: Record<string, unknown>; active_from: string | null; active_to: string | null }) => ({
+      roles: (party.party_roles || []).map((r) => ({
         vertical: r.vertical,
         roleType: r.role_type,
-        attributes: r.attributes || {},
+        attributes: jsonToRecord(r.attributes),
         activeFrom: toDate(r.active_from),
         activeTo: toDate(r.active_to),
       })),
-      relationships: (party.party_relationships || []).map((rel: { target_party_id: string; relationship_type: string; attributes: Record<string, unknown>; active_from: string | null; active_to: string | null }) => ({
+      relationships: (party.party_relationships || []).map((rel) => ({
         targetPartyId: rel.target_party_id,
         type: rel.relationship_type,
-        attributes: rel.attributes,
+        attributes: jsonToRecord(rel.attributes),
         activeFrom: toDate(rel.active_from),
         activeTo: toDate(rel.active_to),
       })),
@@ -240,9 +413,9 @@ export class SupabasePartyRepository implements IPartyRepository {
         party_id: input.partyId,
         vertical: input.vertical,
         role_type: input.roleType,
-        attributes: input.attributes ?? {},
-        active_from: input.active_from ? input.active_from.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-        active_to: input.active_to ? input.active_to.toISOString().split('T')[0] : null,
+        attributes: toJsonRecord(input.attributes),
+        active_from: input.activeFrom ? input.activeFrom.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        active_to: input.activeTo ? input.activeTo.toISOString().split('T')[0] : null,
       });
 
     if (error) throw error;
@@ -262,7 +435,7 @@ export class SupabasePartyRepository implements IPartyRepository {
         source_party_id: input.sourcePartyId,
         target_party_id: input.targetPartyId,
         relationship_type: input.type,
-        attributes: input.attributes ?? {},
+        attributes: toJsonRecord(input.attributes),
       });
 
     if (error) throw error;
@@ -271,7 +444,7 @@ export class SupabasePartyRepository implements IPartyRepository {
   async update(tenantId: string, partyId: string, patch: Partial<CreatePartyInput>, expectedVersion: number, actorId: string): Promise<Party> {
     const supabase = await createClient();
 
-    const updateObj: Record<string, unknown> = {
+    const updateObj: PublicTables['party_parties']['Update'] = {
       version: expectedVersion + 1,
       updated_by: actorId,
       updated_at: new Date().toISOString(),
@@ -334,8 +507,7 @@ export class SupabaseJourneyRepository implements IJourneyRepository {
         journey_type: input.journeyType,
         primary_party_id: input.primaryPartyId,
         status: 'active',
-        expected_end_at: input.expectedEndAt ? input.expectedEndAt.toISOString() : null,
-        metadata: input.metadata ?? {},
+        metadata: toJsonRecord(input.metadata),
       })
       .select()
       .single();
@@ -400,47 +572,24 @@ export class SupabaseJourneyRepository implements IJourneyRepository {
 
     if (error || !journey) return null;
 
+    const journeyRow = journey as JourneyRowWithRelations;
+
     return {
-      id: journey.id,
-      tenantId: journey.tenant_id,
-      vertical: journey.vertical,
-      journeyType: journey.journey_type,
-      primaryPartyId: journey.primary_party_id,
-      status: journey.status as JourneyStatus,
-      startedAt: toRequiredDate(journey.started_at),
-      expectedEndAt: toDate(journey.expected_end_at),
-      completedAt: toDate(journey.completed_at),
-      aiSummary: journey.ai_summary || undefined,
-      metadata: journey.metadata || {},
-      subJourneys: (journey.journey_sub_journeys || []).map((sj: {
-        id: string;
-        journey_id: string;
-        tenant_id: string;
-        name: string;
-        description: string | null;
-        status: string;
-        started_at: string | null;
-        completed_at: string | null;
-        version: number;
-        created_at: string;
-        journey_milestones: Array<{
-          id: string;
-          journey_id: string;
-          sub_journey_id: string | null;
-          name: string;
-          description: string | null;
-          status: string;
-          target_date: string | null;
-          completed_at: string | null;
-          ai_validation_details: Record<string, unknown>;
-          created_at: string;
-        }>;
-      }) => ({
+      id: journeyRow.id,
+      tenantId: journeyRow.tenant_id,
+      vertical: journeyRow.vertical,
+      journeyType: journeyRow.journey_type,
+      primaryPartyId: journeyRow.primary_party_id,
+      status: journeyRow.status as JourneyStatus,
+      startedAt: toRequiredDate(journeyRow.started_at),
+      completedAt: toDate(journeyRow.completed_at),
+      aiSummary: journeyRow.ai_summary || undefined,
+      metadata: jsonToRecord(journeyRow.metadata),
+      subJourneys: (journeyRow.journey_sub_journeys || []).map((sj) => ({
         id: sj.id,
         journeyId: sj.journey_id,
         tenantId: sj.tenant_id,
         name: sj.name,
-        description: sj.description || undefined,
         status: sj.status as 'pending' | 'active' | 'completed' | 'cancelled',
         startedAt: toDate(sj.started_at),
         completedAt: toDate(sj.completed_at),
@@ -449,20 +598,18 @@ export class SupabaseJourneyRepository implements IJourneyRepository {
           journeyId: ms.journey_id,
           subJourneyId: ms.sub_journey_id || undefined,
           name: ms.name,
-          description: ms.description || undefined,
           status: ms.status as 'pending' | 'in_progress' | 'completed' | 'skipped',
           targetDate: toDate(ms.target_date),
           completedAt: toDate(ms.completed_at),
-          aiValidationDetails: ms.ai_validation_details || {},
+          aiValidationDetails: jsonToRecord(ms.ai_validation_details),
           createdAt: toRequiredDate(ms.created_at),
         })),
         version: sj.version,
         createdAt: toRequiredDate(sj.created_at),
       })),
-      version: journey.version,
-      createdAt: toRequiredDate(journey.created_at),
-      updatedAt: toDate(journey.updated_at),
-      deletedAt: toDate(journey.deleted_at),
+      version: journeyRow.version,
+      createdAt: toRequiredDate(journeyRow.created_at),
+      deletedAt: toDate(journeyRow.deleted_at),
     };
   }
 
@@ -529,7 +676,6 @@ export class SupabaseJourneyRepository implements IJourneyRepository {
         tenant_id: tenantId,
         journey_id: journeyId,
         name,
-        description,
         status: 'pending',
       })
       .select()
@@ -542,7 +688,6 @@ export class SupabaseJourneyRepository implements IJourneyRepository {
       journeyId: data.journey_id,
       tenantId: data.tenant_id,
       name: data.name,
-      description: data.description || undefined,
       status: 'pending',
       milestones: [],
       version: data.version,
@@ -577,30 +722,17 @@ export class SupabaseJourneyRepository implements IJourneyRepository {
       journeyId: data.journey_id,
       tenantId: data.tenant_id,
       name: data.name,
-      description: data.description || undefined,
       status: 'active',
       startedAt: toDate(data.started_at),
-      milestones: (milestones || []).map((m: {
-        id: string;
-        journey_id: string;
-        sub_journey_id: string | null;
-        name: string;
-        description: string | null;
-        status: string;
-        target_date: string | null;
-        completed_at: string | null;
-        ai_validation_details: Record<string, unknown>;
-        created_at: string;
-      }) => ({
+      milestones: (milestones || []).map((m) => ({
         id: m.id,
         journeyId: m.journey_id,
         subJourneyId: m.sub_journey_id || undefined,
         name: m.name,
-        description: m.description || undefined,
         status: m.status as 'pending' | 'in_progress' | 'completed' | 'skipped',
         targetDate: toDate(m.target_date),
         completedAt: toDate(m.completed_at),
-        aiValidationDetails: m.ai_validation_details,
+        aiValidationDetails: jsonToRecord(m.ai_validation_details),
         createdAt: toRequiredDate(m.created_at),
       })),
       version: data.version,
@@ -634,31 +766,18 @@ export class SupabaseJourneyRepository implements IJourneyRepository {
       journeyId: data.journey_id,
       tenantId: data.tenant_id,
       name: data.name,
-      description: data.description || undefined,
       status: 'completed',
       startedAt: toDate(data.started_at),
       completedAt: toDate(data.completed_at),
-      milestones: (milestones || []).map((m: {
-        id: string;
-        journey_id: string;
-        sub_journey_id: string | null;
-        name: string;
-        description: string | null;
-        status: string;
-        target_date: string | null;
-        completed_at: string | null;
-        ai_validation_details: Record<string, unknown>;
-        created_at: string;
-      }) => ({
+      milestones: (milestones || []).map((m) => ({
         id: m.id,
         journeyId: m.journey_id,
         subJourneyId: m.sub_journey_id || undefined,
         name: m.name,
-        description: m.description || undefined,
         status: m.status as 'pending' | 'in_progress' | 'completed' | 'skipped',
         targetDate: toDate(m.target_date),
         completedAt: toDate(m.completed_at),
-        aiValidationDetails: m.ai_validation_details,
+        aiValidationDetails: jsonToRecord(m.ai_validation_details),
         createdAt: toRequiredDate(m.created_at),
       })),
       version: data.version,
@@ -674,7 +793,7 @@ export class SupabaseJourneyRepository implements IJourneyRepository {
       .update({
         status: input.status,
         completed_at: input.status === 'completed' ? new Date().toISOString() : null,
-        ai_validation_details: input.aiValidationDetails ?? {},
+        ai_validation_details: toJsonRecord(input.aiValidationDetails),
       })
       .eq('tenant_id', tenantId)
       .eq('id', input.milestoneId)
@@ -688,11 +807,10 @@ export class SupabaseJourneyRepository implements IJourneyRepository {
       journeyId: data.journey_id,
       subJourneyId: data.sub_journey_id || undefined,
       name: data.name,
-      description: data.description || undefined,
       status: data.status as 'pending' | 'in_progress' | 'completed' | 'skipped',
       targetDate: toDate(data.target_date),
       completedAt: toDate(data.completed_at),
-      aiValidationDetails: data.ai_validation_details,
+      aiValidationDetails: jsonToRecord(data.ai_validation_details),
       createdAt: toRequiredDate(data.created_at),
     };
   }
@@ -750,7 +868,7 @@ export class SupabaseTimelineRepository implements ITimelineRepository {
         sequence_number: sequenceNumber,
         event_hash: eventHash,
         summary: input.summary,
-        event_data: input.eventData,
+        event_data: toJsonRecord(input.eventData),
         recorded_by: input.recordedBy || null,
         occurred_at: input.occurredAt ? input.occurredAt.toISOString() : new Date().toISOString(),
       })
@@ -767,7 +885,7 @@ export class SupabaseTimelineRepository implements ITimelineRepository {
       journeyId: data.journey_id || undefined,
       correlationId: data.correlation_id,
       causationId: data.causation_id || undefined,
-      eventCategory: data.event_category as 'clinical' | 'administrative' | 'operational' | 'financial',
+      eventCategory: jsonToTimelineCategory(data.event_category),
       eventType: data.event_type,
       eventVersion: data.event_version,
       schemaVersion: data.schema_version,
@@ -777,7 +895,7 @@ export class SupabaseTimelineRepository implements ITimelineRepository {
       eventHash: data.event_hash,
       summary: data.summary,
       aiInsight: data.ai_insight || undefined,
-      eventData: data.event_data as Record<string, unknown>,
+      eventData: jsonToRecord(data.event_data),
       recordedBy: data.recorded_by || undefined,
       occurredAt: toRequiredDate(data.occurred_at),
     };
@@ -828,28 +946,7 @@ export class SupabaseTimelineRepository implements ITimelineRepository {
 
     if (error || !data) return [];
 
-    return data.map((d: {
-      id: string;
-      tenant_id: string;
-      vertical: string;
-      primary_party_id: string;
-      journey_id: string | null;
-      correlation_id: string;
-      causation_id: string | null;
-      event_category: string;
-      event_type: string;
-      event_version: number;
-      schema_version: string;
-      aggregate_id: string;
-      aggregate_type: string;
-      sequence_number: number;
-      event_hash: string;
-      summary: string;
-      ai_insight: string | null;
-      event_data: Record<string, unknown>;
-      recorded_by: string | null;
-      occurred_at: string;
-    }) => ({
+    return data.map((d) => ({
       id: d.id,
       tenantId: d.tenant_id,
       vertical: d.vertical,
@@ -857,7 +954,7 @@ export class SupabaseTimelineRepository implements ITimelineRepository {
       journeyId: d.journey_id || undefined,
       correlationId: d.correlation_id,
       causationId: d.causation_id || undefined,
-      eventCategory: d.event_category as 'clinical' | 'administrative' | 'operational' | 'financial',
+      eventCategory: jsonToTimelineCategory(d.event_category),
       eventType: d.event_type,
       eventVersion: d.event_version,
       schemaVersion: d.schema_version,
@@ -867,7 +964,7 @@ export class SupabaseTimelineRepository implements ITimelineRepository {
       eventHash: d.event_hash,
       summary: d.summary,
       aiInsight: d.ai_insight || undefined,
-      eventData: d.event_data as Record<string, unknown>,
+      eventData: jsonToRecord(d.event_data),
       recordedBy: d.recorded_by || undefined,
       occurredAt: toRequiredDate(d.occurred_at),
     }));
@@ -886,28 +983,7 @@ export class SupabaseTimelineRepository implements ITimelineRepository {
 
     if (error || !data) return [];
 
-    return data.map((d: {
-      id: string;
-      tenant_id: string;
-      vertical: string;
-      primary_party_id: string;
-      journey_id: string | null;
-      correlation_id: string;
-      causation_id: string | null;
-      event_category: string;
-      event_type: string;
-      event_version: number;
-      schema_version: string;
-      aggregate_id: string;
-      aggregate_type: string;
-      sequence_number: number;
-      event_hash: string;
-      summary: string;
-      ai_insight: string | null;
-      event_data: Record<string, unknown>;
-      recorded_by: string | null;
-      occurred_at: string;
-    }) => ({
+    return data.map((d) => ({
       id: d.id,
       tenantId: d.tenant_id,
       vertical: d.vertical,
@@ -915,7 +991,7 @@ export class SupabaseTimelineRepository implements ITimelineRepository {
       journeyId: d.journey_id || undefined,
       correlationId: d.correlation_id,
       causationId: d.causation_id || undefined,
-      eventCategory: d.event_category as 'clinical' | 'administrative' | 'operational' | 'financial',
+      eventCategory: jsonToTimelineCategory(d.event_category),
       eventType: d.event_type,
       eventVersion: d.event_version,
       schemaVersion: d.schema_version,
@@ -925,7 +1001,7 @@ export class SupabaseTimelineRepository implements ITimelineRepository {
       eventHash: d.event_hash,
       summary: d.summary,
       aiInsight: d.ai_insight || undefined,
-      eventData: d.event_data as Record<string, unknown>,
+      eventData: jsonToRecord(d.event_data),
       recordedBy: d.recorded_by || undefined,
       occurredAt: toRequiredDate(d.occurred_at),
     }));
@@ -964,7 +1040,7 @@ export class SupabaseAssetRepository implements IAssetRepository {
         description: input.description,
         owner_party_id: input.ownerPartyId || null,
         status: input.status || 'active',
-        metadata: input.metadata ?? {},
+        metadata: toJsonRecord(input.metadata),
         created_by: actorId,
         updated_by: actorId,
       })
@@ -1050,7 +1126,7 @@ export class SupabaseAssetRepository implements IAssetRepository {
       .from('asset_assets')
       .update({
         status: input.status,
-        events: newEvents as Array<Record<string, unknown>>,
+        events: toJsonArray(newEvents),
         version: input.expectedVersion + 1,
         updated_by: actorId,
         updated_at: new Date().toISOString(),
@@ -1105,30 +1181,7 @@ export class SupabaseAssetRepository implements IAssetRepository {
     if (error) throw error;
   }
 
-  private mapAsset(d: {
-    id: string;
-    tenant_id: string;
-    vertical: string;
-    asset_type: string;
-    name: string;
-    description: string | null;
-    owner_party_id: string | null;
-    status: string;
-    metadata: Record<string, unknown>;
-    events: Array<{
-      eventType: string;
-      description: string;
-      recordedBy?: string;
-      occurredAt: string;
-      metadata: Record<string, unknown>;
-    }>;
-    version: number;
-    created_at: string;
-    updated_at: string;
-    deleted_at: string | null;
-    created_by: string | null;
-    updated_by: string | null;
-  }): Asset {
+  private mapAsset(d: AssetRow): Asset {
     return {
       id: d.id,
       tenantId: d.tenant_id,
@@ -1138,14 +1191,8 @@ export class SupabaseAssetRepository implements IAssetRepository {
       description: d.description || undefined,
       ownerPartyId: d.owner_party_id || undefined,
       status: d.status as 'active' | 'inactive' | 'maintenance' | 'retired',
-      metadata: d.metadata || {},
-      events: (d.events || []).map((e) => ({
-        eventType: e.eventType,
-        description: e.description,
-        recordedBy: e.recordedBy || undefined,
-        occurredAt: toRequiredDate(e.occurredAt),
-        metadata: e.metadata,
-      })),
+      metadata: jsonToRecord(d.metadata),
+      events: jsonToAssetEvents(d.events),
       version: d.version,
       createdAt: toRequiredDate(d.created_at),
       updatedAt: toRequiredDate(d.updated_at),
@@ -1171,16 +1218,16 @@ export class SupabaseContractRepository implements IContractRepository {
         vertical: input.vertical,
         contract_type: input.contractType,
         contract_number: input.contractNumber || null,
-        parties: input.parties as unknown[],
+        parties: toJsonArray(input.parties),
         journey_id: input.journeyId || null,
         status: 'draft',
         start_date: input.startDate ? input.startDate.toISOString().split('T')[0] : null,
         end_date: input.endDate ? input.endDate.toISOString().split('T')[0] : null,
         total_value: input.totalValue || null,
         currency: input.currency || 'VND',
-        payment_schedule: input.paymentSchedule as Record<string, unknown> | null,
-        line_items: input.lineItems as unknown[] ?? [],
-        terms: input.terms ?? {},
+        payment_schedule: input.paymentSchedule ? toJson(input.paymentSchedule) : null,
+        line_items: toJsonArray(input.lineItems),
+        terms: toJsonRecord(input.terms),
         created_by: actorId,
         updated_by: actorId,
       })
@@ -1314,46 +1361,23 @@ export class SupabaseContractRepository implements IContractRepository {
     return this.mapContract(data);
   }
 
-  private mapContract(d: {
-    id: string;
-    tenant_id: string;
-    vertical: string;
-    contract_type: string;
-    contract_number: string | null;
-    parties: unknown[];
-    journey_id: string | null;
-    status: string;
-    start_date: string | null;
-    end_date: string | null;
-    total_value: number | string | null;
-    currency: string;
-    payment_schedule: Record<string, unknown> | null;
-    line_items: unknown[];
-    terms: Record<string, unknown>;
-    signed_at: string | null;
-    signed_by: string | null;
-    version: number;
-    created_at: string;
-    updated_at: string;
-    deleted_at: string | null;
-    created_by: string | null;
-  }): Contract {
+  private mapContract(d: ContractRow): Contract {
     return {
       id: d.id,
       tenantId: d.tenant_id,
       vertical: d.vertical,
       contractType: d.contract_type as 'service' | 'product' | 'subscription' | 'employment',
       contractNumber: d.contract_number || undefined,
-      parties: d.parties || [],
+      parties: jsonToContractParties(d.parties),
       journeyId: d.journey_id || undefined,
       status: d.status as 'draft' | 'active' | 'completed' | 'cancelled' | 'expired',
       startDate: toDate(d.start_date),
       endDate: toDate(d.end_date),
       totalValue: d.total_value ? Number(d.total_value) : undefined,
       currency: d.currency,
-      paymentSchedule: d.payment_schedule || undefined,
-      lineItems: d.line_items || [],
-      terms: d.terms || {},
+      paymentSchedule: jsonToPaymentSchedule(d.payment_schedule),
+      lineItems: jsonToContractLineItems(d.line_items),
+      terms: jsonToRecord(d.terms),
       signedAt: toDate(d.signed_at),
       signedBy: d.signed_by || undefined,
       version: d.version,
@@ -1387,7 +1411,7 @@ export class SupabaseKnowledgeRepository implements IKnowledgeRepository {
         effective_to: entry.effectiveTo ? entry.effectiveTo.toISOString() : null,
         source: entry.source,
         approved_by: entry.approvedBy || null,
-        metadata: entry.metadata ?? {},
+        metadata: toJsonRecord(entry.metadata),
       })
       .select()
       .single();
@@ -1452,21 +1476,13 @@ export class SupabaseKnowledgeRepository implements IKnowledgeRepository {
 
     if (error || !data) return [];
 
-    return data.map((d: {
-      source_code: string;
-      source_type: string;
-      target_code: string;
-      target_type: string;
-      relationship_type: string;
-      strength: number | string;
-      evidence_source: string | null;
-    }) => ({
+    return data.map((d: KnowledgeGraphEdgeRow) => ({
       sourceCode: d.source_code,
       sourceType: d.source_type as KnowledgeDomain,
       targetCode: d.target_code,
       targetType: d.target_type as KnowledgeDomain,
       relationshipType: d.relationship_type,
-      strength: Number(d.strength),
+      strength: d.strength ?? undefined,
       evidenceSource: d.evidence_source || undefined,
     }));
   }
@@ -1487,7 +1503,7 @@ export class SupabaseKnowledgeRepository implements IKnowledgeRepository {
 
     if (error || !data) return [];
 
-    return data.map((d: Record<string, unknown>) => ({
+    return data.map((d) => ({
       entry: this.mapEntry(d),
       score: 0.95, // mock score for text search fallback
     }));
@@ -1504,8 +1520,8 @@ export class SupabaseKnowledgeRepository implements IKnowledgeRepository {
         code: rule.code,
         name: rule.name,
         trigger_type: rule.triggerType,
-        conditions: rule.conditions as unknown,
-        action: rule.action as unknown,
+        conditions: toJsonArray(rule.conditions),
+        action: toJson(rule.action),
         version: rule.version,
         effective_from: rule.effectiveFrom.toISOString(),
         effective_to: rule.effectiveTo ? rule.effectiveTo.toISOString() : null,
@@ -1626,22 +1642,7 @@ export class SupabaseKnowledgeRepository implements IKnowledgeRepository {
     return [];
   }
 
-  private mapEntry(d: {
-    id: string;
-    tenant_id: string;
-    vertical: string;
-    domain: string;
-    code: string;
-    label: string;
-    description: string | null;
-    version: number;
-    effective_from: string;
-    effective_to: string | null;
-    source: string | null;
-    approved_by: string | null;
-    metadata: Record<string, unknown>;
-    created_at: string;
-  }): KnowledgeEntry {
+  private mapEntry(d: KnowledgeEntryRow): KnowledgeEntry {
     return {
       id: d.id,
       tenantId: d.tenant_id,
@@ -1655,25 +1656,12 @@ export class SupabaseKnowledgeRepository implements IKnowledgeRepository {
       effectiveTo: toDate(d.effective_to),
       source: d.source || undefined,
       approvedBy: d.approved_by || undefined,
-      metadata: d.metadata || {},
+      metadata: jsonToRecord(d.metadata),
       createdAt: toRequiredDate(d.created_at),
     };
   }
 
-  private mapInferenceRule(d: {
-    id: string;
-    tenant_id: string;
-    vertical: string;
-    code: string;
-    name: string;
-    trigger_type: string;
-    conditions: Array<Record<string, unknown>>;
-    action: Record<string, unknown>;
-    version: number;
-    effective_from: string;
-    effective_to: string | null;
-    created_at: string;
-  }): InferenceRule {
+  private mapInferenceRule(d: InferenceRuleRow): InferenceRule {
     return {
       id: d.id,
       tenantId: d.tenant_id,
@@ -1681,8 +1669,8 @@ export class SupabaseKnowledgeRepository implements IKnowledgeRepository {
       code: d.code,
       name: d.name,
       triggerType: d.trigger_type as 'pre_action' | 'post_action' | 'periodic',
-      conditions: d.conditions || [],
-      action: d.action || {},
+      conditions: jsonToInferenceConditions(d.conditions),
+      action: jsonToInferenceAction(d.action),
       version: d.version,
       effectiveFrom: toRequiredDate(d.effective_from),
       effectiveTo: toDate(d.effective_to),

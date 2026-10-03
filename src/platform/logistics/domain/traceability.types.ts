@@ -12,8 +12,7 @@
  * @module logistics/domain/traceability
  */
 
-import { ItemId } from './item.types';
-import { LocationId, LocationType, LotNumber, SerialNumber } from './inventory.types';
+import { LocationType } from './inventory.types';
 
 /**
  * Traceability ID
@@ -26,9 +25,9 @@ export interface TraceabilityId {
  * Supplier Reference
  */
 export interface SupplierReference {
-  supplier_id: string;
-  supplier_name: string;
-  supplier_lotNumber?: string;
+  supplierId: string;
+  supplierName: string;
+  supplierLotNumber?: string | null;
 }
 
 /**
@@ -39,10 +38,10 @@ export interface SupplierReference {
 export interface CustodyEvent {
   timestamp: Date;
   locationId: string;
-  locationType: LocationType;
-  action: 'RECEIVED' | 'MOVED' | 'QUARANTINED' | 'RELEASED' | 'SHIPPED' | 'DAMAGED' | 'DESTROYED';
-  user_id?: string;
-  notes?: string;
+  locationType: LocationType | null;
+  action: 'RECEIVED' | 'MOVED' | 'TRANSFERRED' | 'QUARANTINED' | 'RELEASED' | 'SHIPPED' | 'DAMAGED' | 'DESTROYED';
+  userId?: string | null;
+  notes?: string | null;
 }
 
 /**
@@ -72,28 +71,30 @@ export type Traceability = TraceabilityRecord;
 export interface TraceabilityRecord {
   id: TraceabilityId;
   tenantId: string;
-  itemId: ItemId;
+  itemId: string;
   
   // Identifiers
-  lotNumber?: LotNumber;
-  serialNumber?: SerialNumber;
+  lotNumber?: string | null;
+  serialNumber?: string | null;
   
   // Lifecycle
-  manufactured_date?: Date;
-  expiryDate?: Date;
-  received_date: Date;
+  manufacturedDate?: Date | null;
+  expiryDate?: Date | null;
+  receivedDate: Date;
   
   // Origin
-  supplier?: SupplierReference;
+  supplierId?: string | null;
+  supplierName?: string | null;
+  supplierLotNumber?: string | null;
   
   // Chain of custody
-  custody_events: CustodyEvent[];
+  custodyEvents: CustodyEvent[];
   
   // Compliance
-  compliance_status: ComplianceStatus;
-  recall_status: RecallStatus;
-  recall_reason?: string;
-  recall_date?: Date;
+  complianceStatus: ComplianceStatus;
+  recallStatus: RecallStatus;
+  recallReason?: string | null;
+  recallDate?: Date | null;
   
   // Audit
   createdAt: Date;
@@ -105,10 +106,10 @@ export interface TraceabilityRecord {
  */
 export interface AddCustodyEventProps {
   locationId: string;
-  locationType?: LocationType;
-  action: string;
-  user_id?: string;
-  notes?: string;
+  locationType?: LocationType | null;
+  action: CustodyEvent['action'];
+  userId?: string | null;
+  notes?: string | null;
   timestamp?: Date;
 }
 
@@ -116,14 +117,20 @@ export interface AddCustodyEventProps {
  * Create Traceability Props
  */
 export interface CreateTraceabilityProps {
+  id?: string;
   tenantId: string;
   itemId: string;
   lotNumber?: string;
   serialNumber?: string;
-  manufactured_date?: Date;
+  manufacturedDate?: Date;
   expiryDate?: Date;
-  received_date?: Date;
-  supplier?: SupplierReference;
+  receivedDate?: Date;
+  supplierId?: string;
+  supplierName?: string;
+  supplierLotNumber?: string;
+  custodyEvents?: CustodyEvent[];
+  complianceStatus?: ComplianceStatus;
+  recallStatus?: RecallStatus;
 }
 
 /**
@@ -133,11 +140,11 @@ export interface TraceabilityFilters {
   itemId?: string | string[];
   lotNumber?: string;
   serialNumber?: string;
-  expiry_before?: Date;
-  expiry_after?: Date;
-  recall_status?: RecallStatus;
-  compliance_status?: ComplianceStatus;
-  supplier_id?: string;
+  expiryBefore?: Date;
+  expiryAfter?: Date;
+  recallStatus?: RecallStatus;
+  complianceStatus?: ComplianceStatus;
+  supplierId?: string;
 }
 
 /**

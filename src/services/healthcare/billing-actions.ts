@@ -3,10 +3,15 @@
 import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
 import { getCurrentUser } from '@/services/user-actions';
 import { createHealthcareEvent, HEALTHCARE_EVENT_CATALOG } from '@/lib/events/healthcare-events';
+import type { Json } from '@/types/database.types';
 
 async function getTenantIdOrThrow(): Promise<string> {
   const user = await getCurrentUser();
   return user?.tenant_id || '88888888-8888-8888-8888-888888888888';
+}
+
+function toJson(value: unknown): Json {
+  return JSON.parse(JSON.stringify(value)) as Json;
 }
 
 export interface MedicalBillingCalculation {
@@ -134,7 +139,9 @@ export async function processMedicalPaymentAction(input: {
     await supabase.from('audit_logs').insert({
       tenant_id: tenantId,
       action: 'ACCOUNTING_EVENT_OUTBOX_PUSH',
-      details: {
+      table_name: 'healthcare_invoice_events',
+      record_id: invoiceId,
+      new_data: toJson({
         eventType: 'HEALTHCARE_INVOICE_CREATED',
         ledgerAccounts: {
           debit: input.paymentMethod === 'cash' ? '1111' : '1121', // Tiền mặt hoặc Tiền gửi NH
@@ -142,7 +149,7 @@ export async function processMedicalPaymentAction(input: {
           credit: '5113' // Doanh thu dịch vụ y tế
         },
         payload: domainEvent
-      } as unknown as Record<string, unknown>
+      })
     });
 
     return { success: true, invoiceId };

@@ -30,28 +30,28 @@ export interface LocationCode {
  * Generic location concept
  */
 export interface Location {
-  id: LocationId;
+  id: string;
   tenantId: string;
   
   // Identity
-  location_code: LocationCode;
-  location_name: string;
+  locationCode: string;
+  locationName: string;
   locationType: LocationType;
   
   // Hierarchy (optional, generic)
-  parent_locationId?: LocationId;
+  parentLocationId?: string | null;
   
   // Address (optional)
-  address?: {
+  addressJson?: {
     street?: string;
     city?: string;
     state?: string;
-    postal_code?: string;
+    postalCode?: string;
     country?: string;
-  };
+  } | null;
   
   // Status
-  status: 'ACTIVE' | 'INACTIVE' | 'CLOSED';
+  status: LocationStatus;
   
   // Audit
   createdAt: Date;
@@ -62,22 +62,24 @@ export interface Location {
  * Create Location Props
  */
 export interface CreateLocationProps {
+  id?: string;
   tenantId: string;
-  location_code: string;
-  location_name: string;
+  locationCode: string;
+  locationName: string;
   locationType: LocationType;
-  parent_locationId?: string;
-  address?: Location['address'];
+  parentLocationId?: string;
+  addressJson?: Location['addressJson'];
+  status?: LocationStatus;
 }
 
 /**
  * Update Location Props
  */
 export interface UpdateLocationProps {
-  location_name?: string;
+  locationName?: string;
   locationType?: LocationType;
-  parent_locationId?: string;
-  address?: Location['address'];
+  parentLocationId?: string;
+  addressJson?: Location['addressJson'];
   status?: Location['status'];
 }
 
@@ -87,10 +89,12 @@ export interface UpdateLocationProps {
 export interface LocationFilters {
   locationType?: LocationType | LocationType[];
   status?: Location['status'];
-  parent_locationId?: string;
-  location_code_like?: string;
-  location_name_like?: string;
+  parentLocationId?: string;
+  locationCodeLike?: string;
+  locationNameLike?: string;
 }
+
+export type LocationStatus = 'ACTIVE' | 'INACTIVE' | 'CLOSED';
 
 /**
  * Location Domain Error

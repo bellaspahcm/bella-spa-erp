@@ -36,6 +36,23 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+const WINDOW_PRESETS = [
+  { key: 'BRAIN', label: 'Brain W/L' },
+  { key: 'BONE', label: 'Bone' },
+  { key: 'SOFT_TISSUE', label: 'Soft Tissue' },
+  { key: 'LUNG', label: 'Lung' },
+] as const;
+
+type WindowPreset = (typeof WINDOW_PRESETS)[number]['key'];
+
+const SIDEBAR_TABS = [
+  { id: 'AI_FINDINGS', label: '🤖 AI Findings' },
+  { id: 'REPORT_WRITER', label: '📝 Báo Cáo' },
+  { id: 'AUDIT_TIMELINE', label: '⏱️ Timeline' },
+] as const;
+
+type SidebarTab = (typeof SIDEBAR_TABS)[number]['id'];
+
 function DICOMViewerContent() {
   const [studyUid, setStudyUid] = useState('1.2.840.113619.2.100.20260806.102');
   
@@ -51,7 +68,7 @@ function DICOMViewerContent() {
   const [currentSlice, setCurrentSlice] = useState(48);
   const [totalSlices, setTotalSlices] = useState(192);
   const [zoomLevel, setZoomLevel] = useState(125);
-  const [windowPreset, setWindowPreset] = useState<'BRAIN' | 'BONE' | 'SOFT_TISSUE' | 'LUNG'>('BRAIN');
+  const [windowPreset, setWindowPreset] = useState<WindowPreset>('BRAIN');
   const [isPlayingCine, setIsPlayingCine] = useState(false);
   const [showAIOverlay, setShowAIOverlay] = useState(true);
   const [activeSeries, setActiveSeries] = useState(2);
@@ -63,7 +80,7 @@ function DICOMViewerContent() {
   const [mprLayout, setMprLayout] = useState<'SINGLE' | 'QUAD_MPR'>('SINGLE'); // Single vs 4-Plane
   const [priorSlice, setPriorSlice] = useState(48); // Synced slice for prior study
   const [isDictating, setIsDictating] = useState(false);
-  const [activeTabSidebar, setActiveTabSidebar] = useState<'AI_FINDINGS' | 'SERIES' | 'REPORT_WRITER' | 'AUDIT_TIMELINE'>('AI_FINDINGS');
+  const [activeTabSidebar, setActiveTabSidebar] = useState<SidebarTab>('AI_FINDINGS');
 
   // Measure & Annotation Mock Store
   const [measurements, setMeasurements] = useState<Array<{ type: string; value: string; slice: number }>>([
@@ -126,7 +143,7 @@ function DICOMViewerContent() {
 
   // Cine Playback Loop
   useEffect(() => {
-    let interval: unknown;
+    let interval: ReturnType<typeof setInterval> | undefined;
     if (isPlayingCine) {
       interval = setInterval(() => {
         setCurrentSlice((prev) => {
@@ -136,7 +153,9 @@ function DICOMViewerContent() {
         });
       }, 100);
     }
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [isPlayingCine, totalSlices, isCompareMode]);
 
   // Voice Dictation Simulation
@@ -344,15 +363,10 @@ function DICOMViewerContent() {
 
             {/* Window Preset Selector Pills */}
             <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[10px] font-bold">
-              {[
-                { key: 'BRAIN', label: 'Brain W/L' },
-                { key: 'BONE', label: 'Bone' },
-                { key: 'SOFT_TISSUE', label: 'Soft Tissue' },
-                { key: 'LUNG', label: 'Lung' },
-              ].map((preset) => (
+              {WINDOW_PRESETS.map((preset) => (
                 <button
                   key={preset.key}
-                  onClick={() => setWindowPreset(preset.key as unknown)}
+                  onClick={() => setWindowPreset(preset.key)}
                   className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
                     windowPreset === preset.key
                       ? 'bg-indigo-600 text-white shadow-xs'
@@ -515,14 +529,10 @@ function DICOMViewerContent() {
         <div className="w-80 bg-white border-l border-slate-200 flex flex-col shrink-0 overflow-hidden text-left shadow-xs">
           {/* Sub-Header Tabs */}
           <div className="flex items-center border-b border-slate-200 bg-slate-50 text-[11px] font-bold">
-            {[
-              { id: 'AI_FINDINGS', label: '🤖 AI Findings' },
-              { id: 'REPORT_WRITER', label: '📝 Báo Cáo' },
-              { id: 'AUDIT_TIMELINE', label: '⏱️ Timeline' },
-            ].map((tab) => (
+            {SIDEBAR_TABS.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTabSidebar(tab.id as unknown)}
+                onClick={() => setActiveTabSidebar(tab.id)}
                 className={`flex-1 py-3 text-center transition-all cursor-pointer border-b-2 ${
                   activeTabSidebar === tab.id
                     ? 'border-indigo-600 text-indigo-700 bg-white font-black shadow-xs'

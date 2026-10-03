@@ -19,6 +19,38 @@ export interface ExpiryRuleContext {
   evaluationDate: Date;
 }
 
+type LegacyValueRef = {
+  value: string;
+};
+
+type InventoryBoundaryRecord = Omit<Inventory, 'id' | 'expiryDate'> & {
+  id: string | LegacyValueRef;
+  expiryDate?: Date | string | null;
+  expiry_date?: Date | string | null;
+};
+
+function inventoryRecord(inventory: Inventory): InventoryBoundaryRecord {
+  return inventory as InventoryBoundaryRecord;
+}
+
+function stringValue(value: string | LegacyValueRef): string {
+  return typeof value === 'string' ? value : value.value;
+}
+
+function inventoryId(inventory: Inventory): string {
+  return stringValue(inventoryRecord(inventory).id);
+}
+
+function inventoryExpiryDate(inventory: Inventory): Date | null {
+  const expiryDate = inventoryRecord(inventory).expiryDate ?? inventoryRecord(inventory).expiry_date;
+
+  if (!expiryDate) {
+    return null;
+  }
+
+  return expiryDate instanceof Date ? expiryDate : new Date(expiryDate);
+}
+
 /**
  * Inventory Expiry Check Rule
  * 
@@ -36,16 +68,17 @@ export class InventoryExpiryRule implements Rule<ExpiryRuleContext> {
 
   evaluate(context: ExpiryRuleContext): RuleResult {
     const { inventory, evaluationDate } = context;
+    const expiryDate = inventoryExpiryDate(inventory);
 
     // Evidence input
     const evidenceInput = {
-      inventory_id: inventory.id.value,
-      expiry_date: inventory.expiry_date?.toISOString() || null,
+      inventory_id: inventoryId(inventory),
+      expiry_date: expiryDate?.toISOString() || null,
       evaluation_date: evaluationDate.toISOString(),
     };
 
     // No expiry date → PASS (not expiry-tracked)
-    if (!inventory.expiry_date) {
+    if (!expiryDate) {
       return pass(
         this.id,
         this.version,
@@ -54,7 +87,6 @@ export class InventoryExpiryRule implements Rule<ExpiryRuleContext> {
       );
     }
 
-    const expiryDate = new Date(inventory.expiry_date);
     const isExpired = expiryDate < evaluationDate;
 
     if (isExpired) {

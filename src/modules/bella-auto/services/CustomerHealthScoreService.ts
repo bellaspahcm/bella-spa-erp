@@ -38,6 +38,21 @@ function riskFactorsToJson(riskFactors: RiskFactor[]): Json {
   }));
 }
 
+function readMetadataString(metadata: Json | null, keys: string[]): string | null {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+    return null;
+  }
+
+  for (const key of keys) {
+    const value = metadata[key];
+    if (typeof value === 'string') {
+      return value;
+    }
+  }
+
+  return null;
+}
+
 export class CustomerHealthScoreService {
   /**
    * Calculate and save customer health score
@@ -142,10 +157,10 @@ export class CustomerHealthScoreService {
     // Get journey status
     const { data: activeJourney } = await supabase
       .from('auto_customer_journeys')
-      .select('current_stage, last_interaction_at')
+      .select('current_stage_id, updated_at, metadata')
       .eq('tenant_id', tenantId)
       .eq('customer_id', customerId)
-      .eq('status', 'active')
+      .contains('metadata', { status: 'active' })
       .single();
 
     let score = 0;
@@ -166,9 +181,9 @@ export class CustomerHealthScoreService {
       score += 10;
       
       // Bonus for recent interaction
-      if (activeJourney.last_interaction_at) {
+      if (activeJourney.updated_at) {
         const daysSinceInteraction = Math.floor(
-          (now.getTime() - new Date(activeJourney.last_interaction_at).getTime()) / (24 * 60 * 60 * 1000)
+          (now.getTime() - new Date(activeJourney.updated_at).getTime()) / (24 * 60 * 60 * 1000)
         );
         
         if (daysSinceInteraction <= 7) score += 10;
@@ -268,20 +283,11 @@ export class CustomerHealthScoreService {
     // Get all completed journeys (purchases)
     const { data: completedJourneys } = await supabase
       .from('auto_customer_journeys')
-      .select('id, created_at')
+      .select('id, created_at, metadata')
       .eq('tenant_id', tenantId)
       .eq('customer_id', customerId)
-      .eq('status', 'completed')
+      .contains('metadata', { status: 'completed' })
       .gte('created_at', oneYearAgo.toISOString());
-
-    // Get vehicle purchases (assuming there's a vehicle sales table or journey has vehicle_id)
-    const { data: purchases } = await supabase
-      .from('auto_customer_journeys')
-      .select('id, vehicle_id')
-      .eq('tenant_id', tenantId)
-      .eq('customer_id', customerId)
-      .eq('status', 'completed')
-      .not('vehicle_id', 'is', null);
 
     // Get service appointments
     const { data: serviceAppointments } = await supabase
@@ -295,7 +301,9 @@ export class CustomerHealthScoreService {
     let score = 0;
 
     // Vehicle purchases (0-50 points)
-    const purchaseCount = purchases?.length || 0;
+    const purchaseCount = (completedJourneys || []).filter((journey) =>
+      Boolean(readMetadataString(journey.metadata, ['vehicle_id', 'vehicleId']))
+    ).length;
     if (purchaseCount >= 3) score += 50;
     else if (purchaseCount >= 2) score += 40;
     else if (purchaseCount >= 1) score += 30;
@@ -343,7 +351,7 @@ export class CustomerHealthScoreService {
       return 0;
     }
 
-    const customerAge = now.getTime() - new Date(customer.created_at).getTime();
+    const customerAge = now.getTime() - new Date(customer.created_at || now.toISOString()).getTime();
     const daysSinceCreation = Math.floor(customerAge / (24 * 60 * 60 * 1000));
     const yearsSinceCreation = daysSinceCreation / 365;
 
@@ -363,7 +371,7 @@ export class CustomerHealthScoreService {
       .select('id')
       .eq('tenant_id', tenantId)
       .eq('customer_id', customerId)
-      .eq('status', 'completed');
+      .contains('metadata', { status: 'completed' });
 
     const completedCount = completedJourneys?.length || 0;
     if (completedCount >= 5) score += 30;
@@ -487,7 +495,7 @@ export class CustomerHealthScoreService {
       .select('id')
       .eq('tenant_id', tenantId)
       .eq('customer_id', customerId)
-      .eq('status', 'completed')
+      .contains('metadata', { status: 'completed' })
       .gte('created_at', new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000).toISOString());
 
     if (!recentPurchases || recentPurchases.length === 0) {
@@ -540,7 +548,7 @@ export class CustomerHealthScoreService {
       .select('created_at')
       .eq('tenant_id', tenantId)
       .eq('customer_id', customerId)
-      .eq('status', 'completed')
+      .contains('metadata', { status: 'completed' })
       .order('created_at', { ascending: false })
       .limit(1)
       .single();

@@ -164,6 +164,7 @@ export async function updateAppointmentStatusAction(
               })
               .eq('id', encId);
           } else {
+            const now = new Date().toISOString();
             const { data: newEnc } = await supabase
               .from('hc_encounters')
               .insert({
@@ -171,8 +172,10 @@ export async function updateAppointmentStatusAction(
                 care_journey_id: careJourneyId,
                 patient_party_id: partyId,
                 encounter_class: 'walk_in',
+                encounter_type: 'outpatient',
                 status: 'arrived',
-                arrived_at: new Date().toISOString(),
+                arrived_at: now,
+                period_start: now,
                 chief_complaint: appData.notes || appData.specialty || 'Khám theo lịch hẹn',
               })
               .select()

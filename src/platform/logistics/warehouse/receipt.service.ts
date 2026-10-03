@@ -8,7 +8,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { EngineResponse } from '@/core/types/engine';
+import type { EngineResponse } from '../shared-kernel/types';
 import {
   CreateReceiptInput,
   CreateReceiptResult,

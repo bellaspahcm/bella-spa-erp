@@ -12,6 +12,47 @@ type WarrantyClaim = Database['public']['Tables']['auto_warranty_claims']['Row']
 type WarrantyClaimInsert = Database['public']['Tables']['auto_warranty_claims']['Insert'];
 type WarrantyClaimUpdate = Database['public']['Tables']['auto_warranty_claims']['Update'];
 
+type RuntimeWarrantyClaimUpdate = WarrantyClaimUpdate & {
+  actual_repair_cost?: number | null;
+  cancellation_reason?: string | null;
+  cancelled_at?: string | null;
+  cancelled_by?: string | null;
+  completed_at?: string | null;
+  completion_notes?: string | null;
+  estimated_repair_cost?: number | null;
+  inspection_completed_date?: string | null;
+  inspection_findings?: string | null;
+  inspection_notes?: string | null;
+  inspection_photos?: string[] | null;
+  inspection_scheduled_date?: string | null;
+  inspector_assigned?: string | null;
+};
+
+type WarrantyClaimWithRuntimeCost = WarrantyClaim & {
+  actual_repair_cost?: number | null;
+};
+
+interface RuntimeMutation<Row> extends PromiseLike<{ data: Row | null; error: { message: string } | null }> {
+  eq(column: string, value: unknown): RuntimeMutation<Row>;
+  select(columns?: string): RuntimeSelection<Row>;
+}
+
+interface RuntimeSelection<Row> {
+  single(): PromiseLike<{ data: Row; error: { message: string } | null }>;
+}
+
+interface RuntimeWarrantyTable {
+  update(values: RuntimeWarrantyClaimUpdate): RuntimeMutation<WarrantyClaim>;
+}
+
+interface RuntimeWarrantyClient {
+  from(table: 'auto_warranty_claims'): RuntimeWarrantyTable;
+}
+
+function runtimeWarrantyClient(client: unknown): RuntimeWarrantyClient {
+  return client as RuntimeWarrantyClient;
+}
+
 interface AutoSaleWarrantyInfo {
   warranty_start_date?: string | null;
   warranty_end_date?: string | null;
@@ -213,7 +254,7 @@ export class WarrantyService {
       updateData.denial_reason = data.reviewNotes;
     }
 
-    const { data: claim, error } = await supabase
+    const { data: claim, error } = await runtimeWarrantyClient(supabase)
       .from('auto_warranty_claims')
       .update(updateData)
       .eq('id', claimId)
@@ -245,14 +286,16 @@ export class WarrantyService {
   ): Promise<WarrantyClaim> {
     const supabase = getPrimaryClient();
 
-    const { data: claim, error } = await supabase
+    const updateData: RuntimeWarrantyClaimUpdate = {
+      status: 'inspection_scheduled',
+      inspector_assigned: data.inspectorId,
+      inspection_scheduled_date: data.scheduledDate.toISOString().split('T')[0],
+      inspection_notes: data.notes,
+    };
+
+    const { data: claim, error } = await runtimeWarrantyClient(supabase)
       .from('auto_warranty_claims')
-      .update({
-        status: 'inspection_scheduled',
-        inspector_assigned: data.inspectorId,
-        inspection_scheduled_date: data.scheduledDate.toISOString().split('T')[0],
-        inspection_notes: data.notes,
-      })
+      .update(updateData)
       .eq('id', claimId)
       .eq('tenant_id', tenantId)
       .select()
@@ -281,7 +324,7 @@ export class WarrantyService {
   ): Promise<WarrantyClaim> {
     const supabase = getPrimaryClient();
 
-    const updateData: WarrantyClaimUpdate = {
+    const updateData: RuntimeWarrantyClaimUpdate = {
       inspection_completed_date: new Date().toISOString().split('T')[0],
       inspection_findings: data.findings,
       inspection_photos: data.photos,
@@ -297,7 +340,7 @@ export class WarrantyService {
       updateData.denial_reason = data.findings;
     }
 
-    const { data: claim, error } = await supabase
+    const { data: claim, error } = await runtimeWarrantyClient(supabase)
       .from('auto_warranty_claims')
       .update(updateData)
       .eq('id', claimId)
@@ -365,14 +408,16 @@ export class WarrantyService {
   ): Promise<WarrantyClaim> {
     const supabase = getPrimaryClient();
 
-    const { data: claim, error } = await supabase
+    const updateData: RuntimeWarrantyClaimUpdate = {
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+      actual_repair_cost: data.actualRepairCost,
+      completion_notes: data.completionNotes,
+    };
+
+    const { data: claim, error } = await runtimeWarrantyClient(supabase)
       .from('auto_warranty_claims')
-      .update({
-        status: 'completed',
-        completed_at: new Date().toISOString(),
-        actual_repair_cost: data.actualRepairCost,
-        completion_notes: data.completionNotes,
-      })
+      .update(updateData)
       .eq('id', claimId)
       .eq('tenant_id', tenantId)
       .select()
@@ -396,14 +441,16 @@ export class WarrantyService {
   ): Promise<WarrantyClaim> {
     const supabase = getPrimaryClient();
 
-    const { data: claim, error } = await supabase
+    const updateData: RuntimeWarrantyClaimUpdate = {
+      status: 'cancelled',
+      cancellation_reason: reason,
+      cancelled_by: cancelledBy,
+      cancelled_at: new Date().toISOString(),
+    };
+
+    const { data: claim, error } = await runtimeWarrantyClient(supabase)
       .from('auto_warranty_claims')
-      .update({
-        status: 'cancelled',
-        cancellation_reason: reason,
-        cancelled_by: cancelledBy,
-        cancelled_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', claimId)
       .eq('tenant_id', tenantId)
       .select()
@@ -514,7 +561,9 @@ export class WarrantyService {
     let totalCost = 0;
     let completedCount = 0;
 
-    for (const claim of claims) {
+    const claimRows: WarrantyClaimWithRuntimeCost[] = claims;
+
+    for (const claim of claimRows) {
       if (claim.status) {
         byStatus[claim.status] = (byStatus[claim.status] || 0) + 1;
       }

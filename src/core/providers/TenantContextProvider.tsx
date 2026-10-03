@@ -3,6 +3,7 @@
 import { useEffect, useState, ReactNode } from 'react';
 import type { TenantContext } from '@/core/types/tenant';
 import { TenantContextContext } from '@/core/hooks/useTenantContext';
+import { isModuleId } from '@/core/types/module';
 
 /**
  * Error message displayed when tenant configuration fails to load.
@@ -51,7 +52,7 @@ const TENANT_LOADING_MESSAGE = 'Đang tải cấu hình chi nhánh...';
  * @param props.children - Child components that will have access to tenant context
  */
 function getDevFallbackContext(): TenantContext {
-  let moduleKey = 'bella_healthcare';
+  let moduleKey: TenantContext['enabledModules'][number] = 'bella_healthcare';
   let name = 'Bella Medical Clinic (Dev)';
 
   if (typeof window !== 'undefined') {
@@ -156,20 +157,20 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!context) return;
 
-    const enabledModules = context.enabledModules;
+    const enabledModules: unknown = context.enabledModules;
     let moduleKey: string = 'baby_care'; // Default fallback
 
     let modulesArray: string[] = [];
     
     if (Array.isArray(enabledModules)) {
-      modulesArray = enabledModules;
+      modulesArray = enabledModules.filter(isModuleId);
     } else if (typeof enabledModules === 'object' && enabledModules !== null) {
       const hasNumericKeys = Object.keys(enabledModules).some(key => /^\d+$/.test(key));
       
       if (hasNumericKeys) {
         modulesArray = Object.values(enabledModules).filter((v): v is string => typeof v === 'string');
       } else {
-        const modules = enabledModules as unknown;
+        const modules = enabledModules as Record<string, unknown>;
         
         if (modules.real_estate === true) {
           moduleKey = 'real_estate';

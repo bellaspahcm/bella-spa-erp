@@ -4,10 +4,59 @@ import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server'
 import { getCurrentUser } from '@/services/user-actions';
 import { LabOrderItem, ImagingOrderItem } from '@/types/healthcare';
 import { createHealthcareEvent, HEALTHCARE_EVENT_CATALOG } from '@/lib/events/healthcare-events';
+import type { Database, Json } from '@/types/database.types';
 
-async function getTenantIdOrThrow(): Promise<string> {
+type HealthcareTables = Database['public']['Tables'];
+type ClinicalOrderInsert = HealthcareTables['hc_clinical_orders']['Insert'];
+type LabOrderInsert = HealthcareTables['hc_lab_orders']['Insert'];
+type LabOrderRow = HealthcareTables['hc_lab_orders']['Row'];
+type ImagingOrderInsert = HealthcareTables['hc_imaging_orders']['Insert'];
+type ImagingOrderRow = HealthcareTables['hc_imaging_orders']['Row'];
+
+const SYSTEM_HEALTHCARE_USER_ID = 'system-healthcare-user';
+
+async function getCurrentHealthcareContext(): Promise<{ tenantId: string; userId: string }> {
   const user = await getCurrentUser();
-  return user?.tenant_id || '88888888-8888-8888-8888-888888888888';
+  return {
+    tenantId: user?.tenant_id || '88888888-8888-8888-8888-888888888888',
+    userId: user?.id || SYSTEM_HEALTHCARE_USER_ID,
+  };
+}
+
+function toJson(value: unknown): Json {
+  return JSON.parse(JSON.stringify(value)) as Json;
+}
+
+function toLabOrderItem(row: LabOrderRow): LabOrderItem {
+  return {
+    id: row.id,
+    order_id: row.clinical_order_id,
+    test_code: row.test_code,
+    test_name: row.test_name,
+    sample_type: row.sample_type ?? undefined,
+    tube_color: row.tube_color ?? undefined,
+    result_value: row.result_value ?? undefined,
+    result_unit: row.result_unit ?? undefined,
+    reference_range: row.reference_range ?? undefined,
+    is_abnormal: row.is_abnormal ?? undefined,
+    is_panic_value: row.is_panic_value ?? undefined,
+    verified_by: row.verified_by ?? undefined,
+    verified_at: row.verified_at ?? undefined,
+  };
+}
+
+function toImagingOrderItem(row: ImagingOrderRow): ImagingOrderItem {
+  return {
+    id: row.id,
+    order_id: row.clinical_order_id || '',
+    modality: row.modality as ImagingOrderItem['modality'],
+    body_site: row.body_site,
+    dcm_study_uid: row.dcm_study_uid ?? undefined,
+    viewer_link: row.viewer_link ?? undefined,
+    radiologist_report: row.radiologist_report ?? undefined,
+    radiologist_id: row.radiologist_id ?? undefined,
+    verified_at: row.verified_at ?? undefined,
+  };
 }
 
 /**
@@ -22,19 +71,30 @@ export async function createLabOrdersAction(input: {
 }): Promise<{ success: boolean; data?: LabOrderItem[]; error?: string }> {
   try {
     const supabase = await createDevelopmentBypassClient();
-    const tenantId = await getTenantIdOrThrow();
+    const { tenantId, userId } = await getCurrentHealthcareContext();
 
     // 1. Insert parent Clinical Order
+    const clinicalOrderPayload: ClinicalOrderInsert = {
+      tenant_id: tenantId,
+      encounter_id: input.encounterId,
+      patient_party_id: input.patientId,
+      ordered_by: userId,
+      order_type: 'laboratory',
+      order_status: 'placed',
+      priority: 'routine',
+      order_details: toJson({
+        tests: input.testItems.map((item) => ({
+          testCode: item.testCode,
+          testName: item.testName,
+          sampleType: item.sampleType,
+          tubeColor: item.tubeColor,
+        })),
+      }),
+    };
+
     const { data: clinicalOrder, error: orderError } = await supabase
       .from('hc_clinical_orders')
-      .insert({
-        tenant_id: tenantId,
-        encounter_id: input.encounterId,
-        patient_id: input.patientId,
-        order_type: 'laboratory',
-        status: 'placed',
-        priority: 'routine'
-      })
+      .insert(clinicalOrderPayload)
       .select()
       .single();
 
@@ -44,7 +104,7 @@ export async function createLabOrdersAction(input: {
     }
 
     // 2. Insert Lab Order Items
-    const labItemsPayload = input.testItems.map((item) => ({
+    const labItemsPayload: LabOrderInsert[] = input.testItems.map((item) => ({
       tenant_id: tenantId,
       clinical_order_id: clinicalOrder.id,
       encounter_id: input.encounterId,
@@ -89,10 +149,12 @@ export async function createLabOrdersAction(input: {
     await supabase.from('audit_logs').insert({
       tenant_id: tenantId,
       action: 'HEALTHCARE_EVENT_EMITTED',
-      details: domainEvent as unknown as Record<string, unknown>
+      table_name: 'hc_clinical_orders',
+      record_id: clinicalOrder.id,
+      new_data: toJson(domainEvent),
     });
 
-    return { success: true, data: (insertedItems || []) as LabOrderItem[] };
+    return { success: true, data: (insertedItems || []).map(toLabOrderItem) };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : 'Lỗi hệ thống khi tạo chỉ định xét nghiệm' };
   }
@@ -102,7 +164,7 @@ export async function createLabOrdersAction(input: {
 export async function getLabOrdersAction(encounterId: string): Promise<{ success: boolean; data?: LabOrderItem[]; error?: string }> {
   try {
     const supabase = await createDevelopmentBypassClient();
-    const tenantId = await getTenantIdOrThrow();
+    const { tenantId } = await getCurrentHealthcareContext();
 
     const { data, error } = await supabase
       .from('hc_lab_orders')
@@ -115,7 +177,7 @@ export async function getLabOrdersAction(encounterId: string): Promise<{ success
       return { success: false, error: error.message };
     }
 
-    return { success: true, data: (data || []) as LabOrderItem[] };
+    return { success: true, data: (data || []).map(toLabOrderItem) };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : 'Lỗi lấy thông tin xét nghiệm' };
   }
@@ -133,7 +195,7 @@ export async function verifyLabResultAction(input: {
 }): Promise<{ success: boolean; isPanicValue?: boolean; error?: string }> {
   try {
     const supabase = await createDevelopmentBypassClient();
-    const tenantId = await getTenantIdOrThrow();
+    const { tenantId } = await getCurrentHealthcareContext();
 
     const { data: labOrder, error: updateError } = await supabase
       .from('hc_lab_orders')
@@ -158,7 +220,7 @@ export async function verifyLabResultAction(input: {
     // Update parent clinical order status to completed if all items verified
     await supabase
       .from('hc_clinical_orders')
-      .update({ status: 'completed' })
+      .update({ order_status: 'completed' })
       .eq('id', labOrder.clinical_order_id);
 
     // Emit Event LabResultVerified.v1
@@ -180,10 +242,12 @@ export async function verifyLabResultAction(input: {
     await supabase.from('audit_logs').insert({
       tenant_id: tenantId,
       action: 'HEALTHCARE_EVENT_EMITTED',
-      details: domainEvent as unknown as Record<string, unknown>
+      table_name: 'hc_lab_orders',
+      record_id: labOrder.id,
+      new_data: toJson(domainEvent),
     });
 
-    return { success: true, isPanicValue: labOrder.is_panic_value };
+    return { success: true, isPanicValue: labOrder.is_panic_value ?? undefined };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : 'Lỗi hệ thống khi duyệt kết quả xét nghiệm' };
   }
@@ -202,19 +266,26 @@ export async function createImagingOrderAction(input: {
 }): Promise<{ success: boolean; data?: ImagingOrderItem; error?: string }> {
   try {
     const supabase = await createDevelopmentBypassClient();
-    const tenantId = await getTenantIdOrThrow();
+    const { tenantId, userId } = await getCurrentHealthcareContext();
 
     // Insert parent Clinical Order
+    const clinicalOrderPayload: ClinicalOrderInsert = {
+      tenant_id: tenantId,
+      encounter_id: input.encounterId,
+      patient_party_id: input.patientId,
+      ordered_by: userId,
+      order_type: 'imaging',
+      order_status: 'placed',
+      priority: 'routine',
+      order_details: toJson({
+        modality: input.modality,
+        bodySite: input.bodySite,
+      }),
+    };
+
     const { data: clinicalOrder, error: orderError } = await supabase
       .from('hc_clinical_orders')
-      .insert({
-        tenant_id: tenantId,
-        encounter_id: input.encounterId,
-        patient_id: input.patientId,
-        order_type: 'imaging',
-        status: 'placed',
-        priority: 'routine'
-      })
+      .insert(clinicalOrderPayload)
       .select()
       .single();
 
@@ -223,17 +294,19 @@ export async function createImagingOrderAction(input: {
     }
 
     // Insert Imaging Order Item
+    const imagingOrderPayload: ImagingOrderInsert = {
+      tenant_id: tenantId,
+      clinical_order_id: clinicalOrder.id,
+      encounter_id: input.encounterId,
+      modality: input.modality,
+      body_site: input.bodySite,
+      dcm_study_uid: `1.2.840.113619.2.${Date.now()}`,
+      viewer_link: `https://pacs.bella.vn/viewer?study=${clinicalOrder.id}`,
+    };
+
     const { data: imagingOrder, error: imgError } = await supabase
       .from('hc_imaging_orders')
-      .insert({
-        tenant_id: tenantId,
-        clinical_order_id: clinicalOrder.id,
-        encounter_id: input.encounterId,
-        modality: input.modality,
-        body_site: input.bodySite,
-        dcm_study_uid: `1.2.840.113619.2.${Date.now()}`,
-        viewer_link: `https://pacs.bella.vn/viewer?study=${clinicalOrder.id}`
-      })
+      .insert(imagingOrderPayload)
       .select()
       .single();
 
@@ -241,7 +314,7 @@ export async function createImagingOrderAction(input: {
       return { success: false, error: imgError?.message || 'Lỗi tạo chi tiết CĐHA' };
     }
 
-    return { success: true, data: imagingOrder as ImagingOrderItem };
+    return { success: true, data: toImagingOrderItem(imagingOrder) };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : 'Lỗi tạo Y lệnh CĐHA' };
   }
@@ -255,7 +328,7 @@ export async function updateImagingReportAction(input: {
 }): Promise<{ success: boolean; error?: string }> {
   try {
     const supabase = await createDevelopmentBypassClient();
-    const tenantId = await getTenantIdOrThrow();
+    const { tenantId } = await getCurrentHealthcareContext();
 
     const { error } = await supabase
       .from('hc_imaging_orders')

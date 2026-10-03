@@ -6,6 +6,10 @@ import { toast } from 'sonner';
 import { getPatientQueueAction, createQueueTicketAction, callTicketAction } from '@/services/healthcare/healthcare-actions';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
+const QUEUE_TYPES = ['service', 'bhyt', 'priority'] as const;
+const QUEUE_STATIONS = ['registration', 'vitals', 'consultation', 'lab', 'imaging', 'billing', 'pharmacy'] as const;
+const QUEUE_STATUSES = ['waiting', 'called', 'in_service', 'completed'] as const;
+
 const QUEUE_TYPE_OPTIONS = [
   { value: 'service', label: '⭐ Khám Dịch Vụ / Khám Thường' },
   { value: 'bhyt', label: '🏥 Đón Tiếp BHYT (Hưởng 80/20%)' },
@@ -21,6 +25,40 @@ const STATION_OPTIONS = [
   { value: 'billing', label: 'Quầy Thu Ngân Viện Phí (Billing)' },
   { value: 'pharmacy', label: 'Quầy Cấp Phát Dược BHYT (Pharmacy)' },
 ];
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function getString(value: unknown, fallback: string): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function toQueueType(value: unknown): QueueItem['queueType'] {
+  return QUEUE_TYPES.includes(value as QueueItem['queueType']) ? value as QueueItem['queueType'] : 'service';
+}
+
+function toQueueStation(value: unknown): QueueItem['station'] {
+  return QUEUE_STATIONS.includes(value as QueueItem['station']) ? value as QueueItem['station'] : 'consultation';
+}
+
+function toQueueStatus(value: unknown): QueueItem['status'] {
+  return QUEUE_STATUSES.includes(value as QueueItem['status']) ? value as QueueItem['status'] : 'waiting';
+}
+
+function normalizeQueueItem(value: unknown): QueueItem | null {
+  if (!isRecord(value) || typeof value.id !== 'string') return null;
+
+  return {
+    id: value.id,
+    ticketNumber: getString(value.ticket_number, ''),
+    patientName: getString(value.patient_name, 'Bệnh nhân'),
+    station: toQueueStation(value.current_station),
+    status: toQueueStatus(value.status),
+    queueType: toQueueType(value.queue_type),
+    calledAt: typeof value.called_at === 'string' ? new Date(value.called_at).toLocaleTimeString('vi-VN') : undefined,
+  };
+}
 
 interface QueueItem {
   id: string;
@@ -44,15 +82,9 @@ export default function PatientQueuePage() {
       const res = await getPatientQueueAction();
       if (res.success && res.data) {
         // Map database queue model to frontend QueueItem model
-        const mapped: QueueItem[] = res.data.map((q: Record<string, unknown>) => ({
-          id: q.id,
-          ticketNumber: q.ticket_number,
-          patientName: q.patient_name,
-          station: q.current_station,
-          status: q.status,
-          queueType: q.queue_type,
-          calledAt: q.called_at ? new Date(q.called_at).toLocaleTimeString('vi-VN') : undefined,
-        }));
+        const mapped = res.data
+          .map(normalizeQueueItem)
+          .filter((item): item is QueueItem => item !== null);
         setQueues(mapped);
 
         // Find the most recently called ticket
@@ -271,7 +303,7 @@ export default function PatientQueuePage() {
                 <PremiumSelect
                   options={QUEUE_TYPE_OPTIONS}
                   value={newTicket.queueType}
-                  onChange={(val) => setNewTicket({ ...newTicket, queueType: val as unknown })}
+                  onChange={(val) => setNewTicket({ ...newTicket, queueType: toQueueType(val) })}
                   buttonClassName="px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 font-bold text-slate-900 dark:text-white text-xs h-10"
                 />
               </div>
@@ -281,7 +313,7 @@ export default function PatientQueuePage() {
                 <PremiumSelect
                   options={STATION_OPTIONS}
                   value={newTicket.station}
-                  onChange={(val) => setNewTicket({ ...newTicket, station: val as QueueItem['station'] })}
+                  onChange={(val) => setNewTicket({ ...newTicket, station: toQueueStation(val) })}
                   buttonClassName="px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 font-bold text-slate-900 dark:text-white text-xs h-10"
                 />
               </div>

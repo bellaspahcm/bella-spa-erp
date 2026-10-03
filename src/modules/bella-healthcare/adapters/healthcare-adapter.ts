@@ -104,6 +104,21 @@ const getTransactionType = (dto: Record<string, unknown>): 'revenue' | 'expense'
   return value;
 };
 
+const getAccountingStatus = (dto: Record<string, unknown>): HealthcareAccountingVM['status'] => {
+  const value = dto.status;
+  return value === 'completed' || value === 'failed' || value === 'pending' ? value : 'pending';
+};
+
+const getPayloadDescription = (dto: Record<string, unknown>): string | undefined => {
+  const payload = dto.payload;
+  if (payload && typeof payload === 'object' && 'description' in payload) {
+    const description = (payload as { description?: unknown }).description;
+    return typeof description === 'string' && description.length > 0 ? description : undefined;
+  }
+
+  return undefined;
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Healthcare Adapter Implementation
 // ─────────────────────────────────────────────────────────────────────────────
@@ -199,14 +214,16 @@ export class HealthcareAccountingAdapter implements IndustryAccountingAdapter<Re
       REVENUE_CONFIRMED: 'Payment.Received.v1',
     };
 
+    const eventType = getString(dto, 'event_type', '');
+
     return {
-      id: dto.id,
-      eventName: eventNameMap[dto.event_type] || dto.event_type || 'Unknown.Event.v1',
-      timestamp: dto.created_at || dto.occurred_at || '',
-      description: dto.payload?.description || dto.description || 'Đồng bộ bút toán y khoa',
-      status: dto.status || 'pending',
-      referenceType: dto.reference_type || '',
-      referenceId: dto.reference_id || '',
+      id: requireString(dto, 'id'),
+      eventName: eventNameMap[eventType] || eventType || 'Unknown.Event.v1',
+      timestamp: firstString(dto, ['created_at', 'occurred_at'], ''),
+      description: getPayloadDescription(dto) || getString(dto, 'description', 'Đồng bộ bút toán y khoa'),
+      status: getAccountingStatus(dto),
+      referenceType: getString(dto, 'reference_type', ''),
+      referenceId: getString(dto, 'reference_id', ''),
     };
   }
 }

@@ -6,6 +6,37 @@
 import { eventBus } from '../event-bus.service';
 import { BedAllocatedPayload } from '../types';
 import { createClient } from '@/lib/supabase-client';
+import type { Json } from '@/types/database.types';
+
+interface InsertResult<Row> {
+  data: Row | null;
+  error: { message: string } | null;
+}
+
+interface InsertSelection<Row> {
+  single(): PromiseLike<InsertResult<Row>>;
+}
+
+interface InsertQuery<Row> {
+  select(): InsertSelection<Row>;
+}
+
+interface InsertTable<Row> {
+  insert(values: unknown): InsertQuery<Row>;
+}
+
+interface BillingChargeInsertClient {
+  from(table: 'billing_charges'): InsertTable<{ id: string }>;
+}
+
+function billingChargeInsertClient(client: unknown): BillingChargeInsertClient {
+  return client as BillingChargeInsertClient;
+}
+
+function toJson(value: unknown): Json {
+  const serialized: unknown = JSON.parse(JSON.stringify(value));
+  return serialized as Json;
+}
 
 /**
  * When a bed is allocated, create a room charge in billing
@@ -24,7 +55,7 @@ export function wireBedToBilling(): () => void {
         const supabase = createClient();
 
         // Create billing charge for room occupancy
-        const { data, error } = await supabase
+        const { data, error } = await billingChargeInsertClient(supabase)
           .from('billing_charges')
           .insert({
             tenant_id: event.tenantId,
@@ -38,14 +69,14 @@ export function wireBedToBilling(): () => void {
             total_amount: event.payload.dailyRate,
             charge_date: event.payload.allocatedAt,
             status: 'pending',
-            metadata: {
+            metadata: toJson({
               bedId: event.payload.bedId,
               bedCode: event.payload.bedCode,
               bedType: event.payload.bedType,
               wardId: event.payload.wardId,
               admissionId: event.payload.admissionId,
               eventId: event.eventId,
-            },
+            }),
           })
           .select()
           .single();
@@ -53,6 +84,10 @@ export function wireBedToBilling(): () => void {
         if (error) {
           console.error('[Wiring] Failed to create billing charge:', error);
           // TODO: Publish BillingChargeFailed event for compensation
+          return;
+        }
+        if (!data) {
+          console.error('[Wiring] Billing charge insert returned no data');
           return;
         }
 

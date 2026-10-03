@@ -39,12 +39,51 @@ interface SegmentBookingRow {
   mv_customer_segments: { segment: string | null } | null;
 }
 
+interface CustomerSegmentRow {
+  segment: string | null;
+  recency_score: number;
+  frequency_score: number;
+  monetary_score: number;
+  total_orders: number;
+  avg_order_value: number | string | null;
+  last_purchase_date: string | null;
+}
+
+interface CustomerItemInteractionRow {
+  item_id: string;
+}
+
 interface FitScore {
   overall: number;
   budgetFit: number;
   preferenceFit: number;
   valueFit: number;
   similarCustomerAdoption: number;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function parsePopularPackageRows(value: unknown): PopularPackageRow[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((row): PopularPackageRow[] => {
+    if (!isRecord(row)) {
+      return [];
+    }
+
+    const packageId = row.package_id;
+    const purchaseCount = row.purchase_count;
+
+    if (typeof packageId !== 'string' || typeof purchaseCount !== 'number') {
+      return [];
+    }
+
+    return [{ package_id: packageId, purchase_count: purchaseCount }];
+  });
 }
 
 interface PackageRow {
@@ -301,20 +340,21 @@ async function collaborativePackageRecommendations(
   const segment = context.customerSegment || 'Unknown';
   
   // Get popular packages in segment
-  // Note: RPC not in generated types yet, using type cast
-  const { data: popularPackages } = await supabase.rpc('get_popular_packages_by_segment' as never, {
+  // RPC is not in generated types yet; keep the ungenerated boundary explicit.
+  const { data: popularPackagesData } = await supabase.rpc('get_popular_packages_by_segment' as never, {
     p_tenant_id: tenantId,
     p_segment: segment,
     p_limit: 20,
-  });
+  } as never);
+  const popularPackages = parsePopularPackageRows(popularPackagesData);
   
-  if (!popularPackages || (popularPackages as unknown[]).length === 0) {
+  if (!popularPackages || popularPackages.length === 0) {
     // Fallback to content-based
     return [];
   }
   
   const popularityMap = new Map<string, { purchaseCount: number; rank: number }>(
-    (popularPackages as unknown as PopularPackageRow[]).map((p, index: number) => [
+    popularPackages.map((p, index: number) => [
       p.package_id,
       { purchaseCount: p.purchase_count, rank: index },
     ])
@@ -325,7 +365,7 @@ async function collaborativePackageRecommendations(
     if (!popularity) continue;
     
     // Score based on popularity rank
-    const score = 1 - (popularity.rank / (popularPackages as unknown[]).length) * 0.5;
+    const score = 1 - (popularity.rank / popularPackages.length) * 0.5;
     const confidence = Math.min(1.0, popularity.purchaseCount / 20);
     
     const fitScore: FitScore = {
@@ -596,21 +636,23 @@ async function fetchCustomerContext(
     .eq('customer_id', customerId)
     .single();
   
-  if (!segment) {
+  const segmentRow = segment as CustomerSegmentRow | null;
+
+  if (!segmentRow) {
     return {};
   }
   
   return {
-    customerSegment: segment.segment || 'Unknown',
+    customerSegment: segmentRow.segment || 'Unknown',
     rfmScores: {
-      recency: segment.recency_score,
-      frequency: segment.frequency_score,
-      monetary: segment.monetary_score,
+      recency: segmentRow.recency_score,
+      frequency: segmentRow.frequency_score,
+      monetary: segmentRow.monetary_score,
     },
     purchaseHistory: {
-      totalOrders: segment.total_orders,
-      avgOrderValue: Number(segment.avg_order_value) || 0,
-      lastPurchaseDate: segment.last_purchase_date,
+      totalOrders: segmentRow.total_orders,
+      avgOrderValue: Number(segmentRow.avg_order_value) || 0,
+      lastPurchaseDate: segmentRow.last_purchase_date || '',
       topCategories: [],
     },
   };
@@ -634,5 +676,6 @@ async function fetchFavoriteServices(
     return new Set();
   }
   
-  return new Set(interactions.map((i: Record<string, unknown>) => i.item_id));
+  const rows = interactions as CustomerItemInteractionRow[];
+  return new Set(rows.map((i) => i.item_id));
 }

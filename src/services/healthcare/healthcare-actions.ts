@@ -154,6 +154,97 @@ import { getCurrentUser } from '@/services/user-actions';
 import type { PatientProfile, Encounter } from '@/types/healthcare';
 import { createHealthcareEvent, HEALTHCARE_EVENT_CATALOG } from '@/lib/events/healthcare-events';
 
+type CustomerRow = Database['public']['Tables']['customers']['Row'];
+type EncounterRow = Database['public']['Tables']['hc_encounters']['Row'];
+type EncounterInsert = Database['public']['Tables']['hc_encounters']['Insert'];
+type EncounterUpdate = Database['public']['Tables']['hc_encounters']['Update'];
+type ClinicalOrderInsert = Database['public']['Tables']['hc_clinical_orders']['Insert'];
+type ImagingStatus = ImagingOrderViewModel['status'];
+type InvoiceStatus = HealthcareInvoiceViewModel['status'];
+type DbMutationResult = { error: Error | null };
+type AccountingOutboxRpcClient = {
+  rpc(functionName: 'process_accounting_outbox'): PromiseLike<DbMutationResult>;
+};
+
+function toJson(value: unknown): Json {
+  return JSON.parse(JSON.stringify(value)) as Json;
+}
+
+function getCustomerDisplayName(customer: CustomerRow | undefined): string {
+  return customer?.name_mother || customer?.name_baby || 'Chưa rõ';
+}
+
+function buildEncounterInsert(input: Omit<EncounterInsert, 'encounter_type' | 'period_start'> & Partial<Pick<EncounterInsert, 'encounter_type' | 'period_start'>>): EncounterInsert {
+  const now = new Date().toISOString();
+  return {
+    ...input,
+    encounter_type: input.encounter_type ?? 'outpatient',
+    period_start: input.period_start ?? input.started_at ?? input.scheduled_at ?? now,
+  };
+}
+
+function mapEncounterRowToContract(row: EncounterRow): Encounter {
+  return {
+    id: row.id,
+    tenant_id: row.tenant_id,
+    patient_id: row.patient_party_id,
+    customer_id: row.patient_party_id,
+    practitioner_id: row.doctor_party_id ?? '',
+    facility_id: row.location_id ?? '',
+    department_id: row.department_id ?? undefined,
+    room_id: row.location_id ?? undefined,
+    status: row.status as Encounter['status'],
+    priority: 'routine',
+    chief_complaint: row.chief_complaint ?? undefined,
+    subjective_notes: row.notes ?? undefined,
+    objective_notes: undefined,
+    assessment_notes: undefined,
+    plan_notes: undefined,
+    diagnoses: [],
+    timeline_events: [],
+    started_at: row.started_at ?? row.period_start,
+    completed_at: row.completed_at ?? row.finished_at ?? undefined,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+function mapImagingStatus(order: Database['public']['Tables']['hc_imaging_orders']['Row']): ImagingStatus {
+  if (order.radiologist_report) return 'reported';
+  if (order.verified_at) return 'captured';
+  return 'pending';
+}
+
+function mapInvoiceStatus(status: string | null): InvoiceStatus {
+  return status === 'confirmed' ? 'paid' : 'unpaid';
+}
+
+function normalizeEncounterViewStatus(value: unknown): EncounterViewModel['status'] {
+  return value === 'arrived' || value === 'in_progress' || value === 'finished' ? value : 'planned';
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function firstRecord(value: unknown): Record<string, unknown> {
+  return Array.isArray(value) ? asRecord(value[0]) : {};
+}
+
+async function refreshFinanceViews(supabase: Awaited<ReturnType<typeof createDevelopmentBypassClient>>, label: string): Promise<void> {
+  const { error } = await supabase.rpc('refresh_all_finance_mvs');
+  if (error) {
+    console.warn(`[${label}] Failed to refresh materialized views:`, error);
+  }
+}
+
+async function processAccountingOutbox(supabase: Awaited<ReturnType<typeof createDevelopmentBypassClient>>): Promise<void> {
+  const { error } = await supabase.rpc('process_accounting_outbox' as never);
+  if (error) {
+    console.warn('[syncHealthcareAccountingOutboxAction] Failed to process accounting outbox:', error);
+  }
+}
+
 async function getTenantIdOrThrow(): Promise<string> {
   const user = await getCurrentUser();
   return user?.tenant_id || '88888888-8888-8888-8888-888888888888';
@@ -314,11 +405,11 @@ export async function startEncounterAction(input: {
     // Get customer name for queue ticket
     const { data: customer } = await supabase
       .from('customers')
-      .select('full_name')
+      .select('name_mother, name_baby')
       .eq('id', input.customerId)
       .single();
 
-    const patientName = customer?.full_name || 'Bệnh nhân';
+    const patientName = customer?.name_mother || customer?.name_baby || 'Bệnh nhân';
 
     // Determine encounter_class based on care setting
     // ambulatory = outpatient clinic (Medical module)
@@ -328,11 +419,12 @@ export async function startEncounterAction(input: {
     // Insert Encounter Record
     const { data: encounter, error: encError } = await supabase
       .from('hc_encounters')
-      .insert({
+      .insert(buildEncounterInsert({
         tenant_id: tenantId,
         patient_party_id: '00000000-0000-0000-0000-000000000000',
         care_journey_id: '00000000-0000-0000-0000-000000000000',
         encounter_class: encounterClass,
+        encounter_type: input.careSetting === 'inpatient' ? 'inpatient' : 'outpatient',
         status: 'in_consultation',
         chief_complaint: input.chiefComplaint || '',
         notes: JSON.stringify({
@@ -344,7 +436,7 @@ export async function startEncounterAction(input: {
           diagnoses: []
         }),
         started_at: new Date().toISOString()
-      })
+      }))
       .select()
       .single();
 
@@ -386,10 +478,12 @@ export async function startEncounterAction(input: {
     await supabase.from('audit_logs').insert({
       tenant_id: tenantId,
       action: 'HEALTHCARE_EVENT_EMITTED',
-      details: domainEvent as unknown as Json
+      table_name: 'hc_encounters',
+      record_id: encounter.id,
+      new_data: toJson(domainEvent),
     });
 
-    return { success: true, data: encounter as Encounter };
+    return { success: true, data: mapEncounterRowToContract(encounter) };
   } catch (err: unknown) {
     return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi tạo lượt khám' };
   }
@@ -423,7 +517,7 @@ export async function updateEncounterSOAPAction(input: {
       diagnoses: input.diagnoses || [],
     };
 
-    const updatePayload: Record<string, unknown> = {
+    const updatePayload: EncounterUpdate = {
       notes: JSON.stringify(soapPayload),
       updated_at: new Date().toISOString()
     };
@@ -503,7 +597,7 @@ export async function completeEncounterAction(encounterId: string): Promise<{ su
       'clinical',
       {
         encounterId: encounter.id,
-        patientId: encounter.patient_id,
+        patientId: encounter.patient_party_id,
         completedAt: encounter.completed_at
       }
     );
@@ -511,7 +605,9 @@ export async function completeEncounterAction(encounterId: string): Promise<{ su
     await supabase.from('audit_logs').insert({
       tenant_id: tenantId,
       action: 'HEALTHCARE_EVENT_EMITTED',
-      details: domainEvent as unknown as Json
+      table_name: 'hc_encounters',
+      record_id: encounter.id,
+      new_data: toJson(domainEvent),
     });
 
     return { success: true };
@@ -546,7 +642,7 @@ export async function getAllPatientProfilesAction(): Promise<{ success: boolean;
       .select('*')
       .eq('tenant_id', tenantId);
 
-    const custMap = new Map<string, Database['public']['Tables']['customers']['Row']>((customers || []).map((c) => [c.id, c]));
+    const custMap = new Map<string, CustomerRow>((customers || []).map((c) => [c.id, c]));
 
     // Map to PatientInfo ViewModel structure
     const mapped: PatientViewModel[] = (profiles || []).map((p) => {
@@ -555,17 +651,17 @@ export async function getAllPatientProfilesAction(): Promise<{ success: boolean;
         if (Array.isArray(jsonVal)) return jsonVal.map(String);
         return [];
       };
-      const cust = custMap.get(p.customer_id) || {};
+      const cust = custMap.get(p.customer_id);
       return {
         id: p.id,
         recordNumber: p.bhyt_code || `BN-${p.id?.substring(0, 6).toUpperCase() || 'NEW'}`,
-        name: cust.name_mother || 'Chưa rõ',
-        gender: cust.gender_baby === 'female' ? 'female' : 'male',
-        dob: cust.dob_baby || '1995-10-12',
+        name: getCustomerDisplayName(cust),
+        gender: cust?.gender_baby === 'female' ? 'female' : 'male',
+        dob: cust?.dob_baby || '1995-10-12',
         age: 30, // Default age fallback
         bloodType: p.blood_type || 'O+',
         allergies: parseJsonArray(p.known_allergies),
-        phone: cust.phone || '',
+        phone: cust?.phone || '',
         bhytCode: p.bhyt_code,
         bhytBenefitRate: p.bhyt_benefit_rate,
         toothData: {},
@@ -810,7 +906,7 @@ export async function getAllEncountersAction(
       const endTimeMs = completedAtIso ? new Date(completedAtIso).getTime() : Date.now();
       const dynamicWaitTime = Math.max(1, Math.floor((endTimeMs - arrivalTimeMs) / 60000));
 
-      const isCompleted = mappedStatus === 'completed';
+      const isCompleted = mappedStatus === 'finished';
       const isInProgress = mappedStatus === 'in_progress' || isCompleted;
       const isArrived = mappedStatus === 'arrived' || isInProgress;
 
@@ -830,15 +926,15 @@ export async function getAllEncountersAction(
         queueNumber: e.queue_number || (101 + idx),
         scheduledAt: createdAtIso,
         arrivedAt: arrivedAtIso,
-        startedAt: startedAtIso,
-        completedAt: completedAtIso,
+        startedAt: startedAtIso ?? undefined,
+        completedAt: completedAtIso ?? undefined,
         priority: prioritiesList[idx % prioritiesList.length],
         waitTimeMinutes: dynamicWaitTime,
         timeline: dynamicTimeline,
-        subjective: parsedSoap.subjective || e.subjective_notes || template.subjective,
-        objective: parsedSoap.objective || e.objective_notes || template.objective,
-        assessment: parsedSoap.assessment || e.assessment_notes || template.assessment,
-        plan: parsedSoap.plan || e.plan_notes || template.plan,
+        subjective: parsedSoap.subjective || template.subjective,
+        objective: parsedSoap.objective || template.objective,
+        assessment: parsedSoap.assessment || template.assessment,
+        plan: parsedSoap.plan || template.plan,
       };
     });
 
@@ -851,12 +947,13 @@ export async function getAllEncountersAction(
 /**
  * 9. Cập nhật trạng thái lượt khám trong Database
  */
-export async function updateEncounterStatusAction(encounterId: string, newStatus: EncounterStatus): Promise<{ success: boolean; error?: string }> {
+export async function updateEncounterStatusAction(encounterId: string, newStatus: unknown): Promise<{ success: boolean; error?: string }> {
   try {
     const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
-    const dbStatus = newStatus === 'finished' ? 'finished' : (newStatus === 'in_progress' ? 'in_progress' : (newStatus === 'arrived' ? 'arrived' : 'planned'));
+    const viewStatus = normalizeEncounterViewStatus(newStatus);
+    const dbStatus = viewStatus === 'finished' ? 'finished' : (viewStatus === 'in_progress' ? 'in_progress' : (viewStatus === 'arrived' ? 'arrived' : 'planned'));
 
     const { error } = await supabase
       .from('hc_encounters')
@@ -928,7 +1025,7 @@ export async function seedDefaultHealthcareDataAction(options?: { force?: boolea
     if (!journey) {
       const { data: newJ } = await supabase
         .from('journey_journeys')
-        .insert({ tenant_id: tenantId, name: 'Hành Trình Khám Đa Khoa Standard', steps_config: [] })
+        .insert({ tenant_id: tenantId, vertical: 'healthcare', journey_type: 'clinical', primary_party_id: '00000000-0000-0000-0000-000000000000', status: 'active' })
         .select()
         .single();
       journey = newJ;
@@ -1052,7 +1149,7 @@ export async function seedDefaultHealthcareDataAction(options?: { force?: boolea
       if (!encId) {
         const { data: newE } = await supabase
           .from('hc_encounters')
-          .insert({
+          .insert(buildEncounterInsert({
             tenant_id: tenantId,
             care_journey_id: journeyId,
             patient_party_id: partyId,
@@ -1068,7 +1165,7 @@ export async function seedDefaultHealthcareDataAction(options?: { force?: boolea
             }),
             queue_number: enc.qNum,
             scheduled_at: new Date().toISOString(),
-          })
+          }))
           .select()
           .single();
         encId = newE?.id;
@@ -1087,9 +1184,9 @@ export async function seedDefaultHealthcareDataAction(options?: { force?: boolea
           await supabase.from('hc_patient_queues').insert({
             tenant_id: tenantId,
             encounter_id: encId,
-            patient_party_id: partyId,
-            queue_number: `STT-${enc.qNum}`,
-            station_code: 'consultation',
+            patient_name: enc.patientName,
+            ticket_number: `STT-${enc.qNum}`,
+            current_station: 'consultation',
             status: 'calling',
           });
         }
@@ -1107,6 +1204,7 @@ export async function seedDefaultHealthcareDataAction(options?: { force?: boolea
     for (const lab of labSeedList) {
       const partyId = partyMap.get(lab.pName);
       const custId = customerMap.get(lab.pName);
+      if (!partyId) continue;
 
       const { data: enc } = await supabase
         .from('hc_encounters')
@@ -1115,15 +1213,18 @@ export async function seedDefaultHealthcareDataAction(options?: { force?: boolea
         .eq('patient_party_id', partyId)
         .limit(1)
         .maybeSingle();
+      if (!enc) continue;
 
       const { data: cOrder } = await supabase
         .from('hc_clinical_orders')
         .insert({
           tenant_id: tenantId,
-          encounter_id: enc?.id || null,
-          customer_id: custId || null,
+          encounter_id: enc.id,
+          patient_party_id: partyId,
+          ordered_by: defaultDoctorId ?? partyId,
           order_type: 'laboratory',
-          status: 'placed',
+          order_status: 'placed',
+          order_details: toJson({ customerId: custId ?? null, testCode: lab.code, testName: lab.name }),
         })
         .select()
         .single();
@@ -1132,7 +1233,7 @@ export async function seedDefaultHealthcareDataAction(options?: { force?: boolea
         await supabase.from('hc_lab_orders').insert({
           tenant_id: tenantId,
           clinical_order_id: cOrder.id,
-          encounter_id: enc?.id || null,
+          encounter_id: enc.id,
           test_code: lab.code,
           test_name: lab.name,
           sample_type: lab.sample,
@@ -1158,6 +1259,7 @@ export async function seedDefaultHealthcareDataAction(options?: { force?: boolea
     for (const img of imgSeedList) {
       const partyId = partyMap.get(img.pName);
       const custId = customerMap.get(img.pName);
+      if (!partyId) continue;
 
       const { data: enc } = await supabase
         .from('hc_encounters')
@@ -1166,15 +1268,18 @@ export async function seedDefaultHealthcareDataAction(options?: { force?: boolea
         .eq('patient_party_id', partyId)
         .limit(1)
         .maybeSingle();
+      if (!enc) continue;
 
       const { data: cOrder } = await supabase
         .from('hc_clinical_orders')
         .insert({
           tenant_id: tenantId,
-          encounter_id: enc?.id || null,
-          customer_id: custId || null,
+          encounter_id: enc.id,
+          patient_party_id: partyId,
+          ordered_by: defaultDoctorId ?? partyId,
           order_type: 'imaging',
-          status: 'placed',
+          order_status: 'placed',
+          order_details: toJson({ customerId: custId ?? null, modality: img.mod, bodySite: img.site }),
         })
         .select()
         .single();
@@ -1281,7 +1386,7 @@ export async function createQueueTicketAction(input: {
     // 4. Create encounter first to satisfy foreign key
     const { data: encounter, error: encErr } = await supabase
       .from('hc_encounters')
-      .insert({
+      .insert(buildEncounterInsert({
         tenant_id: tenantId,
         care_journey_id: careJourneyId,
         patient_party_id: party.id,
@@ -1289,7 +1394,7 @@ export async function createQueueTicketAction(input: {
         encounter_class: 'walk_in',
         status: 'planned',
         chief_complaint: 'Đón tiếp hàng đợi',
-      })
+      }))
       .select()
       .single();
 
@@ -1439,7 +1544,7 @@ export async function createEMREncounterAction(input: {
     // 4. Insert Encounter Record
     const { error: encError } = await supabase
       .from('hc_encounters')
-      .insert({
+      .insert(buildEncounterInsert({
         tenant_id: tenantId,
         care_journey_id: careJourneyId,
         patient_party_id: party.id,
@@ -1453,7 +1558,7 @@ export async function createEMREncounterAction(input: {
           assessment: input.assessment || '',
           plan: '',
         }),
-      });
+      }));
 
     if (encError) {
       console.error('Error creating EMR encounter:', encError);
@@ -1508,7 +1613,7 @@ export async function getLabOrdersAction(dateFilter?: string): Promise<{ success
 
     const mapped = (labOrders || []).map((l): LabOrderViewModel => {
       const enc = encMap.get(l.encounter_id) || { id: '', queue_number: null, patient_party_id: '' };
-      const patientName = (enc.patient_party_id ? partyMap.get(enc.patient_party_id) : null) || l.patient_name || 'Bệnh nhân';
+      const patientName = (enc.patient_party_id ? partyMap.get(enc.patient_party_id) : null) || 'Bệnh nhân';
       return {
         id: l.id,
         ticketNumber: enc.queue_number ? `STT-${enc.queue_number}` : 'STT-100',
@@ -1569,6 +1674,9 @@ export async function createLabOrderAction(input: {
         .single();
       party = newParty;
     }
+    if (!party) {
+      throw new Error('Không thể tạo hồ sơ bệnh nhân');
+    }
 
     // 2. Find or create encounter
     let { data: encounter } = await supabase
@@ -1583,24 +1691,27 @@ export async function createLabOrderAction(input: {
     if (!encounter) {
       const { data: newEnc } = await supabase
         .from('hc_encounters')
-        .insert({
+        .insert(buildEncounterInsert({
           tenant_id: tenantId,
-          patient_party_id: party?.id,
+          patient_party_id: party.id,
           care_journey_id: '99999999-9999-9999-9999-999999999999',
           encounter_class: 'walk_in',
           status: 'planned',
           chief_complaint: 'Chỉ định cận lâm sàng',
-        })
+        }))
         .select()
         .single();
       encounter = newEnc;
+    }
+    if (!encounter) {
+      throw new Error('Không thể tạo lượt khám');
     }
 
     // Find customer for BHYT benefit rate or default BHYT check
     const { data: profile } = await supabase
       .from('patient_profiles')
       .select('customer_id')
-      .eq('id', party?.id)
+      .eq('id', party.id)
       .maybeSingle();
     let customerId = profile ? profile.customer_id : null;
     if (!customerId) {
@@ -1615,15 +1726,23 @@ export async function createLabOrderAction(input: {
     }
 
     // 3. Insert clinical order
+    const orderInsert: ClinicalOrderInsert = {
+      tenant_id: tenantId,
+      encounter_id: encounter.id,
+      patient_party_id: party.id,
+      ordered_by: party.id,
+      order_type: 'laboratory',
+      order_status: 'placed',
+      order_details: toJson({
+        customerId,
+        testCode: input.testCode,
+        testName: input.testName,
+      }),
+    };
+
     const { data: clinicalOrder, error: oErr } = await supabase
       .from('hc_clinical_orders')
-      .insert({
-        tenant_id: tenantId,
-        encounter_id: encounter?.id,
-        customer_id: customerId,
-        order_type: 'laboratory',
-        status: 'placed',
-      })
+      .insert(orderInsert)
       .select()
       .single();
 
@@ -1637,11 +1756,11 @@ export async function createLabOrderAction(input: {
       .insert({
         tenant_id: tenantId,
         clinical_order_id: clinicalOrder.id,
-        encounter_id: encounter?.id,
+        encounter_id: encounter.id,
         test_code: input.testCode,
         test_name: input.testName,
         sample_type: input.sampleType,
-        tubeColor: input.tubeColor,
+        tube_color: input.tubeColor,
         reference_range: '3.5 - 5.0 mmol/L',
         result_unit: 'mmol/L',
       });
@@ -1692,7 +1811,7 @@ export async function verifyLabResultAction(
     if (labOrder?.clinical_order_id) {
       await supabase
         .from('hc_clinical_orders')
-        .update({ status: 'completed' })
+        .update({ order_status: 'completed' })
         .eq('id', labOrder.clinical_order_id);
     }
 
@@ -1743,8 +1862,8 @@ export async function getImagingOrdersAction(dateFilter?: string): Promise<{ suc
     const partyMap = new Map<string, string>((parties || []).map((p) => [p.id, p.display_name]));
 
     const mapped = (imagingOrders || []).map((i, idx: number): ImagingOrderViewModel => {
-      const enc = encMap.get(i.encounter_id) || { id: '', queue_number: null, patient_party_id: '' };
-      const patientName = (enc.patient_party_id ? partyMap.get(enc.patient_party_id) : null) || i.patient_name || 'Bệnh nhân';
+      const enc = i.encounter_id ? encMap.get(i.encounter_id) : undefined;
+      const patientName = (enc?.patient_party_id ? partyMap.get(enc.patient_party_id) : null) || i.patient_name || 'Bệnh nhân';
       const isTranMinhHoang = patientName.includes('Trần Minh Hoàng');
       const isNguyenVanHung = patientName.includes('Nguyễn Văn Hùng');
       
@@ -1764,7 +1883,7 @@ export async function getImagingOrdersAction(dateFilter?: string): Promise<{ suc
 
       return {
         id: i.id,
-        ticketNumber: i.ticket_number || (enc.queue_number ? `STT-${enc.queue_number}` : `STT-10${idx + 1}`),
+        ticketNumber: i.ticket_number || (enc?.queue_number ? `STT-${enc.queue_number}` : `STT-10${idx + 1}`),
         patientName,
         modality: i.modality,
         bodySite: i.body_site,
@@ -1772,13 +1891,13 @@ export async function getImagingOrdersAction(dateFilter?: string): Promise<{ suc
         viewerLink: i.viewer_link && !i.viewer_link.includes('pacs.bella.vn') 
           ? i.viewer_link 
           : `/dashboard/healthcare/imaging/viewer?study=${i.dcm_study_uid || '1.2.840.113619.2.100'}`,
-        status: i.radiologist_report ? 'reported' : (i.verified_at ? 'captured' : 'pending'),
+        status: mapImagingStatus(i),
         radiologistReport: i.radiologist_report,
         priority: (i.priority || (idx % 2 === 0 ? 'STAT' : 'ROUTINE')) as 'STAT' | 'URGENT' | 'ROUTINE' | 'SCREENING',
         radiologistStatus: i.radiologist_report ? 'released' : (i.verified_at ? 'reading' : 'unassigned'),
-        seriesCount: i.series_count || 8,
-        imageCount: i.image_count || 192,
-        storageSize: i.storage_size || '284 MB',
+        seriesCount: 8,
+        imageCount: 192,
+        storageSize: '284 MB',
         aiFindings,
         timeline: [
           { step: 'Chỉ định', time: '09:00', done: true },
@@ -1794,7 +1913,7 @@ export async function getImagingOrdersAction(dateFilter?: string): Promise<{ suc
     });
 
     if (mapped.length === 0) {
-      const demoResult = [
+      const demoResult: ImagingOrderViewModel[] = [
         {
           id: 'demo-img-102',
           ticketNumber: 'STT-103',
@@ -1804,7 +1923,7 @@ export async function getImagingOrdersAction(dateFilter?: string): Promise<{ suc
           dcmStudyUid: '1.2.840.113619.2.100.20260806.102',
           viewerLink: '/dashboard/healthcare/imaging/viewer?study=1.2.840.113619.2.100.20260806.102',
           status: 'captured',
-          radiologistReport: undefined,
+          radiologistReport: null,
           priority: 'STAT' as const,
           radiologistStatus: 'reading' as const,
           seriesCount: 8,
@@ -1836,7 +1955,7 @@ export async function getImagingOrdersAction(dateFilter?: string): Promise<{ suc
           status: 'reported',
           radiologistReport: 'Thoái hóa đĩa đệm L4-L5, L5-S1. Thoát vị đĩa đệm thể sau trung tâm L5-S1 chèn ép nhẹ rễ thần kinh S1 bên trái.',
           priority: 'URGENT' as const,
-          radiologistStatus: 'signed' as const,
+          radiologistStatus: 'released' as const,
           seriesCount: 12,
           imageCount: 368,
           storageSize: '512 MB',
@@ -1893,7 +2012,7 @@ export async function getImagingOrdersAction(dateFilter?: string): Promise<{ suc
           dcmStudyUid: '1.2.840.113619.2.100.20260806.104',
           viewerLink: '/dashboard/healthcare/imaging/viewer?study=1.2.840.113619.2.100.20260806.104',
           status: 'pending',
-          radiologistReport: undefined,
+          radiologistReport: null,
           priority: 'SCREENING' as const,
           radiologistStatus: 'unassigned' as const,
           seriesCount: 2,
@@ -1924,7 +2043,7 @@ export async function getImagingOrdersAction(dateFilter?: string): Promise<{ suc
           status: 'reported',
           radiologistReport: 'Viêm sung huyết hang vị dạ dày mức độ vừa. Thử test CLO (Campylobacter Like Organism) âm tính HP.',
           priority: 'ROUTINE' as const,
-          radiologistStatus: 'need_opinion' as const,
+          radiologistStatus: 'reading' as const,
           seriesCount: 4,
           imageCount: 24,
           storageSize: '88 MB',
@@ -1985,6 +2104,9 @@ export async function createImagingOrderAction(input: {
         .single();
       party = newParty;
     }
+    if (!party) {
+      throw new Error('Không thể tạo hồ sơ bệnh nhân');
+    }
 
     // 2. Find or create encounter
     let { data: encounter } = await supabase
@@ -1999,24 +2121,27 @@ export async function createImagingOrderAction(input: {
     if (!encounter) {
       const { data: newEnc } = await supabase
         .from('hc_encounters')
-        .insert({
+        .insert(buildEncounterInsert({
           tenant_id: tenantId,
-          patient_party_id: party?.id,
+          patient_party_id: party.id,
           care_journey_id: '99999999-9999-9999-9999-999999999999',
           encounter_class: 'walk_in',
           status: 'planned',
           chief_complaint: 'Chỉ định CĐHA',
-        })
+        }))
         .select()
         .single();
       encounter = newEnc;
+    }
+    if (!encounter) {
+      throw new Error('Không thể tạo lượt khám');
     }
 
     // Find customer
     const { data: profile } = await supabase
       .from('patient_profiles')
       .select('customer_id')
-      .eq('id', party?.id)
+      .eq('id', party.id)
       .maybeSingle();
     let customerId = profile ? profile.customer_id : null;
     if (!customerId) {
@@ -2031,15 +2156,23 @@ export async function createImagingOrderAction(input: {
     }
 
     // 3. Insert clinical order
+    const imagingOrderInsert: ClinicalOrderInsert = {
+      tenant_id: tenantId,
+      encounter_id: encounter.id,
+      patient_party_id: party.id,
+      ordered_by: party.id,
+      order_type: 'imaging',
+      order_status: 'placed',
+      order_details: toJson({
+        customerId,
+        modality: input.modality,
+        bodySite: input.bodySite,
+      }),
+    };
+
     const { data: clinicalOrder, error: oErr } = await supabase
       .from('hc_clinical_orders')
-      .insert({
-        tenant_id: tenantId,
-        encounter_id: encounter?.id,
-        customer_id: customerId,
-        order_type: 'imaging',
-        status: 'placed',
-      })
+      .insert(imagingOrderInsert)
       .select()
       .single();
 
@@ -2370,13 +2503,16 @@ export async function createPrescriptionAction(input: {
         .single();
       party = newParty;
     }
+    if (!party) {
+      throw new Error('Không thể tạo hồ sơ bệnh nhân');
+    }
 
     // 2. Find or create encounter
     let { data: encounter } = await supabase
       .from('hc_encounters')
       .select('id')
       .eq('tenant_id', tenantId)
-      .eq('patient_party_id', party?.id)
+      .eq('patient_party_id', party.id)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -2384,17 +2520,20 @@ export async function createPrescriptionAction(input: {
     if (!encounter) {
       const { data: newEnc } = await supabase
         .from('hc_encounters')
-        .insert({
+        .insert(buildEncounterInsert({
           tenant_id: tenantId,
-          patient_party_id: party?.id,
+          patient_party_id: party.id,
           care_journey_id: '99999999-9999-9999-9999-999999999999',
           encounter_class: 'walk_in',
           status: 'planned',
           chief_complaint: 'Kê đơn thuốc',
-        })
+        }))
         .select()
         .single();
       encounter = newEnc;
+    }
+    if (!encounter) {
+      throw new Error('Không thể tạo lượt khám');
     }
 
     // 3. Find drug profile & inventory item to update stock
@@ -2407,33 +2546,60 @@ export async function createPrescriptionAction(input: {
     if (!drugProfile) throw new Error('Không tìm thấy thuốc trong danh mục');
 
     const invItem = drugProfile.inventory_items;
-    if (invItem.stock_qty < input.qty) {
-      throw new Error(`Tồn kho không đủ! Thuốc chỉ còn ${invItem.stock_qty} ${invItem.unit}.`);
+    if (!invItem) {
+      throw new Error('Không tìm thấy tồn kho thuốc');
+    }
+    if (invItem.stock_level < input.qty) {
+      throw new Error(`Tồn kho không đủ! Thuốc chỉ còn ${invItem.stock_level} ${invItem.unit}.`);
     }
 
     // 4. Update stock in inventory_items
     const { error: stockErr } = await supabase
       .from('inventory_items')
-      .update({ stock_qty: invItem.stock_qty - input.qty })
+      .update({ stock_level: invItem.stock_level - input.qty })
       .eq('id', invItem.id);
 
     if (stockErr) throw stockErr;
+
+    const prescriptionOrder: ClinicalOrderInsert = {
+      tenant_id: tenantId,
+      encounter_id: encounter.id,
+      patient_party_id: party.id,
+      ordered_by: party.id,
+      order_type: 'medication',
+      order_status: 'placed',
+      order_details: toJson({
+        drugId: input.drugId,
+        drugName: invItem.name,
+        qty: input.qty,
+      }),
+    };
+    const { data: clinicalOrder, error: clinicalOrderErr } = await supabase
+      .from('hc_clinical_orders')
+      .insert(prescriptionOrder)
+      .select()
+      .single();
+    if (clinicalOrderErr || !clinicalOrder) {
+      throw new Error(clinicalOrderErr?.message || 'Không thể tạo chỉ định thuốc');
+    }
 
     // 5. Insert prescription
     const { error: rxErr } = await supabase
       .from('hc_prescriptions')
       .insert({
         tenant_id: tenantId,
-        encounter_id: encounter?.id,
-        patient_party_id: party?.id,
-        drugs: [
+        clinical_order_id: clinicalOrder.id,
+        encounter_id: encounter.id,
+        patient_party_id: party.id,
+        doctor_party_id: party.id,
+        drugs: toJson([
           {
             drugId: input.drugId,
             drugName: invItem.name,
             qty: input.qty,
             dosageInstruction: input.dosageInstruction,
           }
-        ],
+        ]),
       });
 
     if (rxErr) throw rxErr;
@@ -2479,7 +2645,7 @@ export async function getInvoicesAction(): Promise<{ success: boolean; data?: He
           totalAmount: Number(r.amount),
           bhytCovered: typeof meta.bhytCovered === 'number' ? meta.bhytCovered : Math.round(Number(r.amount) * (typeof meta.benefitRate === 'number' ? meta.benefitRate : 80) / 100),
           patientPay: typeof meta.patientPay === 'number' ? meta.patientPay : (Number(r.amount) - Math.round(Number(r.amount) * (typeof meta.benefitRate === 'number' ? meta.benefitRate : 80) / 100)),
-          status: r.status === 'confirmed' ? 'paid' : 'unpaid',
+          status: mapInvoiceStatus(r.status),
           itemsCount: typeof meta.itemsCount === 'number' ? meta.itemsCount : 1,
         };
       });
@@ -2510,7 +2676,7 @@ export async function getInvoicesAction(): Promise<{ success: boolean; data?: He
           status: inv.status,
           received_date: new Date().toISOString().split('T')[0],
           notes: 'healthcare_invoice',
-          accounting_metadata: {
+        accounting_metadata: toJson({
             encounterId: inv.encounterId,
             patientName: inv.patientName,
             bhytCode: inv.bhytCode,
@@ -2518,7 +2684,7 @@ export async function getInvoicesAction(): Promise<{ success: boolean; data?: He
             bhytCovered,
             patientPay,
             itemsCount: inv.itemsCount,
-          },
+        }),
         });
       if (insErr) {
         console.error('Error seeding default invoice:', insErr);
@@ -2527,9 +2693,7 @@ export async function getInvoicesAction(): Promise<{ success: boolean; data?: He
     }
 
     // Refresh database materialized views
-    await supabase.rpc('refresh_all_finance_mvs').catch((err: unknown) => {
-      console.warn('[importMockInvoicesAction] Failed to refresh materialized views:', err);
-    });
+    await refreshFinanceViews(supabase, 'importMockInvoicesAction');
 
     // Clear cache for this tenant
     try {
@@ -2563,7 +2727,7 @@ export async function getInvoicesAction(): Promise<{ success: boolean; data?: He
           totalAmount: Number(r.amount),
           bhytCovered: typeof meta.bhytCovered === 'number' ? meta.bhytCovered : Math.round(Number(r.amount) * (typeof meta.benefitRate === 'number' ? meta.benefitRate : 80) / 100),
           patientPay: typeof meta.patientPay === 'number' ? meta.patientPay : (Number(r.amount) - Math.round(Number(r.amount) * (typeof meta.benefitRate === 'number' ? meta.benefitRate : 80) / 100)),
-          status: r.status === 'confirmed' ? 'paid' : 'unpaid',
+          status: mapInvoiceStatus(r.status),
           itemsCount: typeof meta.itemsCount === 'number' ? meta.itemsCount : 1,
         };
       });
@@ -2602,7 +2766,7 @@ export async function createInvoiceAction(input: {
         status: 'pending',
         received_date: new Date().toISOString().split('T')[0],
         notes: 'healthcare_invoice',
-        accounting_metadata: {
+        accounting_metadata: toJson({
           encounterId: `EC-${Math.floor(100 + Math.random() * 900)}`,
           patientName: input.patientName,
           bhytCode: input.bhytCode,
@@ -2610,7 +2774,7 @@ export async function createInvoiceAction(input: {
           bhytCovered,
           patientPay,
           itemsCount: 1,
-        },
+        }),
       });
 
     if (error) {
@@ -2663,9 +2827,7 @@ export async function payInvoiceAction(
     }
 
     // Refresh database materialized views
-    await supabase.rpc('refresh_all_finance_mvs').catch((err: unknown) => {
-      console.warn('[payInvoiceAction] Failed to refresh materialized views:', err);
-    });
+    await refreshFinanceViews(supabase, 'payInvoiceAction');
 
     // Clear cache for this tenant
     try {
@@ -2687,7 +2849,7 @@ export async function getEncounterByIdAction(id: string) {
     const tenantId = await getTenantIdOrThrow();
 
     const { data, error } = await supabase
-      .from('encounters')
+      .from('hc_encounters')
       .select('*')
       .eq('id', id)
       .eq('tenant_id', tenantId)
@@ -2718,10 +2880,11 @@ export async function getEncounterByIdAction(id: string) {
     const enriched = {
       ...data,
       chief_complaint: data.chief_complaint || defaultSoap.chief_complaint,
-      subjective: data.subjective || defaultSoap.subjective,
-      objective: data.objective || defaultSoap.objective,
-      assessment: data.assessment || defaultSoap.assessment,
-      plan: data.plan || defaultSoap.plan,
+      ...asRecord(typeof data.notes === 'string' ? JSON.parse(data.notes) : data.notes),
+      subjective: asRecord(typeof data.notes === 'string' ? JSON.parse(data.notes) : data.notes).subjective || defaultSoap.subjective,
+      objective: asRecord(typeof data.notes === 'string' ? JSON.parse(data.notes) : data.notes).objective || defaultSoap.objective,
+      assessment: asRecord(typeof data.notes === 'string' ? JSON.parse(data.notes) : data.notes).assessment || defaultSoap.assessment,
+      plan: asRecord(typeof data.notes === 'string' ? JSON.parse(data.notes) : data.notes).plan || defaultSoap.plan,
     };
 
     return { success: true, data: enriched };
@@ -2830,11 +2993,11 @@ export async function getHealthcarePayrollAction(monthYear: string): Promise<{ s
 
     const result = usersData.map((u): HealthcareStaffPayroll => {
       const saved = savedRecordsMap.get(u.id);
-      const baseSalary = saved ? saved.base_salary : (u.base_salary || 15000000);
-      const commission = saved ? saved.service_percentage_bonus : 8000000;
+      const baseSalary = saved ? (saved.base_salary ?? 15000000) : (u.base_salary || 15000000);
+      const commission = saved ? (saved.service_percentage_bonus ?? 8000000) : 8000000;
       const kpiBonus = saved ? (saved.kpi_bonus || 0) : 2000000;
-      const totalSalary = saved ? saved.total_salary : (baseSalary + commission + kpiBonus);
-      const status = saved ? saved.status : 'draft';
+      const totalSalary = saved ? (saved.total_salary ?? baseSalary + commission + kpiBonus) : (baseSalary + commission + kpiBonus);
+      const status = saved ? (saved.status ?? 'draft') : 'draft';
 
       return {
         id: u.id,
@@ -3006,11 +3169,7 @@ export async function getHealthcareAccountingJournalAction(monthYear: string): P
 export async function syncHealthcareAccountingOutboxAction(): Promise<{ success: boolean; error?: string }> {
   try {
     const supabase = await createDevelopmentBypassClient();
-    try {
-      await (supabase as any).rpc('process_accounting_outbox');
-    } catch (_e) {
-      // Continue if RPC not defined
-    }
+    await processAccountingOutbox(supabase);
     return { success: true };
   } catch (err: unknown) {
     return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi tái đồng bộ Outbox' };
@@ -3077,7 +3236,7 @@ export async function confirmLabDoctorNotificationAction(
     if (labOrder?.clinical_order_id) {
       await supabase
         .from('hc_clinical_orders')
-        .update({ status: 'completed' })
+        .update({ order_status: 'completed' })
         .eq('id', labOrder.clinical_order_id);
     }
 
@@ -3122,7 +3281,7 @@ export async function confirmImagingDoctorNotificationAction(
     if (imgOrder?.clinical_order_id) {
       await supabase
         .from('hc_clinical_orders')
-        .update({ status: 'completed' })
+        .update({ order_status: 'completed' })
         .eq('id', imgOrder.clinical_order_id);
     }
 
@@ -3256,9 +3415,7 @@ export async function getPrescriptionsAction(): Promise<{ success: boolean; data
         status,
         drugs,
         notes,
-        created_at,
-        patient:patient_party_id(display_name),
-        doctor:doctor_party_id(display_name)
+        created_at
       `)
       .eq('tenant_id', tenantId)
       .order('created_at', { ascending: false });
@@ -3268,21 +3425,31 @@ export async function getPrescriptionsAction(): Promise<{ success: boolean; data
       return { success: false, error: error.message };
     }
 
+    const partyIds = Array.from(new Set((data || []).flatMap((rx) => [rx.patient_party_id, rx.doctor_party_id]).filter((id): id is string => Boolean(id))));
+    const { data: parties } = partyIds.length > 0
+      ? await supabase
+          .from('party_parties')
+          .select('id, display_name')
+          .in('id', partyIds)
+      : { data: [] };
+    const partyNameMap = new Map<string, string>((parties || []).map((party) => [party.id, party.display_name]));
+
     const mapped = (data || []).map((rx): PrescriptionViewModel => {
-      const drugsList = rx.drugs || [];
-      const drug = drugsList[0] || {};
-      const alerts = rx.notes ? JSON.parse(rx.notes) : [];
+      const drug = firstRecord(rx.drugs);
+      const parsedAlerts = rx.notes ? JSON.parse(rx.notes) : [];
+      const alerts = Array.isArray(parsedAlerts) ? parsedAlerts.map(String) : [];
+      const qty = typeof drug.qty === 'number' ? drug.qty : 10;
       return {
         id: rx.id,
         ticketNumber: `STT-${rx.encounter_id ? rx.encounter_id.substring(0, 4).toUpperCase() : '101'}`,
-        patientName: rx.patient?.display_name || 'Bệnh nhân',
+        patientName: partyNameMap.get(rx.patient_party_id) || 'Bệnh nhân',
         patientAge: 35,
         patientWeight: 60,
-        doctorName: rx.doctor?.display_name || 'BS. Trực Lâm Sàng',
-        drugName: drug.drugName || 'Thuốc',
-        qty: drug.qty || 10,
+        doctorName: partyNameMap.get(rx.doctor_party_id) || 'BS. Trực Lâm Sàng',
+        drugName: typeof drug.drugName === 'string' ? drug.drugName : 'Thuốc',
+        qty,
         unit: 'Viên',
-        dosageInstruction: drug.dosageInstruction || 'Uống theo chỉ dẫn',
+        dosageInstruction: typeof drug.dosageInstruction === 'string' ? drug.dosageInstruction : 'Uống theo chỉ dẫn',
         status: rx.status || 'pending_review',
         createdAt: new Date(rx.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
         cdssAlerts: alerts.length > 0 ? alerts : ['🟢 CDSS Guard Verified'],

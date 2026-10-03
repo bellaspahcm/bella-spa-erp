@@ -307,7 +307,6 @@ const MOCK_INCIDENTS: Incident[] = [
       { time: minsAgo(890), type: 'action',       actor: 'TP. Xét nghiệm',       description: 'Yêu cầu lấy mẫu lại cả 2 BN' },
       { time: minsAgo(810), type: 'resolved',     actor: 'TP. Xét nghiệm',       description: 'Sự cố đóng — không có tổn hại BN' },
     ],
-    closedAt: minsAgo(810),
   },
   {
     id: 'INC-2026-0037',
@@ -882,7 +881,11 @@ export default function IncidentManagementPage() {
                     ...Object.entries(SEVERITY_CFG).map(([v, c]) => ({ value: v, label: c.label }))
                   ]}
                   value={filterSeverity}
-                  onChange={setFilterSeverity}
+                  onChange={(value) => {
+                    if (value === 'all' || value in SEVERITY_CFG) {
+                      setFilterSeverity(value as IncidentSeverity | 'all');
+                    }
+                  }}
                   placeholder="Severity"
                   buttonClassName="text-xs py-1.5"
                   className="w-auto min-w-[140px]"
@@ -893,7 +896,11 @@ export default function IncidentManagementPage() {
                     ...Object.entries(STATUS_CFG).map(([v, c]) => ({ value: v, label: c.label }))
                   ]}
                   value={filterStatus}
-                  onChange={setFilterStatus}
+                  onChange={(value) => {
+                    if (value === 'all' || value in STATUS_CFG) {
+                      setFilterStatus(value as IncidentStatus | 'all');
+                    }
+                  }}
                   placeholder="Status"
                   buttonClassName="text-xs py-1.5"
                   className="w-auto min-w-[140px]"

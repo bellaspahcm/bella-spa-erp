@@ -54,6 +54,14 @@ interface LabWorkItem {
   qcStatus?: 'Passed (Westgard OK)' | 'Pending QC';
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function getString(value: unknown, fallback: string): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
 export default function LaboratoryPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -81,15 +89,15 @@ export default function LaboratoryPage() {
         { value: 'URI-10', label: 'URI-10 — Tổng phân tích nước tiểu (10 thông số)', name: 'Tổng phân tích nước tiểu (10 thông số)', sample: 'Nước tiểu tươi', color: 'Trong' },
       ];
       if (res.success && res.data && res.data.length > 0) {
-        const dbOptions = res.data.map((item: { id: string; name: string; metadata?: { lisCode?: string; lisSampleType?: string; lisTubeColor?: string } }) => {
-          const meta = item.metadata || {};
-          const code = meta.lisCode || item.id.slice(0, 8).toUpperCase();
+        const dbOptions = res.data.map((item) => {
+          const meta = isRecord(item.metadata) ? item.metadata : {};
+          const code = getString(meta.lisCode, item.id.slice(0, 8).toUpperCase());
           return {
             value: code,
             label: `${code} — ${item.name}`,
             name: item.name,
-            sample: meta.lisSampleType || 'Máu toàn phần',
-            color: meta.lisTubeColor || 'Đỏ',
+            sample: getString(meta.lisSampleType, 'Máu toàn phần'),
+            color: getString(meta.lisTubeColor, 'Đỏ'),
           };
         });
         // Merge to avoid overriding default seed data if not added
