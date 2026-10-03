@@ -1,3 +1,90 @@
+# ARCHITECTURE GATE RESULT - BEAUTY SPA V2 TENANT DASHBOARD UI REDESIGN
+
+> **Status:** PASS - Pure UI redesign for Beauty Spa V2 tenant dashboard matching reference design without changing any business logic or kernel contracts
+> **Date:** 2026-10-03
+> **Scope:** `src/app/dashboard/` Beauty Spa V2 view and sidebar tenant presentation. No database schema, RPC, RLS, business logic, accounting, Healthcare H1-H12, or Logistics E7.1-E7.3 changes.
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+The requested change is a complete visual redesign of the Beauty Spa V2 tenant dashboard (`beauty_spa`) to match the provided reference design (Bella BEAUTY SPA ERP dashboard layout). Gate decision: `PASS` for a dedicated frontend UI view that preserves all existing data services, real-time subscriptions, business invariants, and action contracts without altering any underlying business logic.
+
+## 2. Product Manifest
+
+In scope:
+- `src/app/dashboard/components/BeautySpaV2DashboardView.tsx` matching the reference UI layout.
+- Wiring `beauty_spa` tenant dashboard in `src/app/dashboard/page.tsx` to render the V2 UI view.
+- Sidebar aesthetic alignment for `beauty_spa` tenant identity (Emerald theme `#062C24`, lotus logo, Playfair Display typography, exact navigation items).
+- All 6 dashboard zones from reference image:
+  1. Top Header & 5 Metric Summary Cards (Tổng Khách Hàng, Lịch Hẹn Hôm Nay, Doanh Thu Tháng 10, Đánh Giá Khách Hàng, Tỷ Lệ Khách Quay Lại)
+  2. Column 1: Lịch Hẹn Hôm Nay (28) list with filter tabs (Tất cả, Đang phục vụ, Đang chờ, Hoàn thành)
+  3. Column 2: Bella AI Copilot (BETA) insights card with purple gradient theme
+  4. Column 3: Tài Chính Tháng 10 bar chart & financial summary breakdown
+  5. Row 2: Hiệu Suất Kinh Doanh line chart, Top Kỹ Thuật Viên ranking table, Đánh Giá Khách Hàng rating breakdown
+  6. Row 3: Cần Xử Lý Ngay (8) urgent cards list & Vật Tư & Tồn Kho summary grid
+
+Out of scope:
+- Backend database schema or RPC changes.
+- Business logic or payment/session state transition modifications.
+- Frozen Healthcare H1-H12 or Logistics E7.1-E7.3 kernels.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Role |
+|---|---|---|
+| `BeautySpaV2DashboardView.tsx` | Beauty Spa Product UI | Render reference dashboard UI for `beauty_spa` tenant |
+| `src/app/dashboard/page.tsx` | Dashboard Router | Routes `beauty_spa` tenant to `BeautySpaV2DashboardView` |
+| `getDashboardPrimaryData` / `getDashboardSecondaryData` | Analytics / Core Services | Provides data facts to UI without logic mutation |
+
+## 4. Contract Dependency Map
+
+```text
+Beauty Spa V2 Dashboard UI
+  -> getDashboardPrimaryData()
+  -> getDashboardSecondaryData()
+  -> getImportantAlerts()
+  -> Core/Spa Backend Data Services (Unchanged)
+```
+
+## 5. Change Authority
+
+Authorized:
+- Create `src/app/dashboard/components/BeautySpaV2DashboardView.tsx`.
+- Update `src/app/dashboard/page.tsx` to render `BeautySpaV2DashboardView` when `tenantModuleKey === 'beauty_spa'` or `product.productKey === 'bella_spa'`.
+- Update sidebar visual presets for Beauty Spa V2 tenant.
+
+Not authorized:
+- Modify business rules or server action handlers.
+- Touch frozen Healthcare H1-H12 or Logistics E7.1-E7.3 kernels.
+- Introduce `any` types.
+
+## 6. UI -> Contract Reconciliation
+
+All UI controls (date picker, branch selector, search input, notification bell, "+ TẠO BOOKING", appointment tabs, KTV table, AI copilot actions, urgent alert items) connect to existing contracts and state props.
+
+## 7. Additive Migration Plan
+
+No migration required. Pure UI enhancement.
+
+## 8. 11 Automated Verification Gates Plan
+
+1. Verify `beauty_spa` tenant identification.
+2. Confirm no kernel files modified.
+3. Build pixel-perfect Beauty Spa V2 dashboard view matching reference image.
+4. Integrate with `src/app/dashboard/page.tsx`.
+5. Ensure zero business logic mutations.
+6. Verify responsive layout and interactive elements.
+7. Run TypeScript type check.
+8. Run ESLint check.
+9. Run test suites.
+10. Check git diff for cleanliness.
+11. Output success summary and report `PASS`.
+
+Gate result: `PASS`.
+
+---
+
 # ARCHITECTURE GATE RESULT - HAIRCUT PAYMENT TO F3 AR ALLOCATION HARDENING
 
 > **Status:** PASS - narrow Core consumer hardening for Finance OS canonical payment-to-AR allocation
