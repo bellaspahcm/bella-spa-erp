@@ -1,3 +1,132 @@
+# ARCHITECTURE GATE RESULT - PLATFORM PWA CONTRACT V1
+
+> **Status:** PASS - Platform-owned PWA V1 contract for manifest identity and installability only
+> **Date:** 2026-10-03
+> **Scope:** Platform PWA identity, generated manifest, Product Registry default route integration, tenant brand display overlay, PWA install copy, and focused automated tests. No Beauty V2-specific PWA, offline strategy, runtime cache, Workbox/Serwist, database migration, or product business logic changes.
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+The requested change standardizes PWA as a Bella Platform capability consumed by products. Gate decision: `PASS` for a narrow Platform App Shell contract that generates a manifest from canonical Product Registry identity and tenant display branding while keeping offline/cache behavior explicitly out of V1.
+
+## 2. Product Manifest
+
+In scope:
+- Platform PWA identity contract.
+- Generated manifest route.
+- Product Registry linkage for `productKey`, `displayName`, `subtitle`, and `defaultRoute`.
+- Tenant brand overlay for display fields only.
+- Root app manifest linkage.
+- `PwaRegister` install copy without Bella Spa hard-code.
+- Focused tests for manifest contract, start URL, scope, tenant overlay, PwaRegister source, SW boundary, and Beauty V2 shared consumption.
+
+Out of scope:
+- Product-specific PWA manifests.
+- Beauty V2-specific PWA implementation.
+- Runtime caching, precache, offline fallback, offline queue, Workbox, or Serwist.
+- Database schema, auth, tenant provisioning, or product business logic changes.
+- Healthcare H1-H12, Education OS, or Logistics E7.1/E7.2/E7.3 kernel changes.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Role |
+|---|---|---|
+| Product Registry | Platform product identity | Canonical `productKey`, display identity, subtitle, and `defaultRoute` |
+| Tenant brand theme | Tenant configuration | Display overlay only: brand name, logo, and primary color |
+| Platform PWA contract | Platform App Shell | Manifest fields, installability identity, fixed scope/display/security boundary |
+| Service worker | Platform App Shell | Registration-only V1; no cache/offline capability |
+
+## 4. Contract Dependency Map
+
+```text
+Authenticated tenant
+  -> tenants.product_key
+  -> ProductRegistry.get(productKey)
+  -> ProductDefinition.defaultRoute
+  -> PlatformPwaIdentity.startUrl
+  -> generated manifest
+  -> PwaRegister install copy
+```
+
+Tenant display brand may influence only display fields:
+
+```text
+tenant.brand_theme.brandName / logoUrl / primaryColor
+  -> manifest name/short_name/theme_color
+```
+
+Tenant brand must not control:
+
+```text
+start_url
+scope
+display
+service worker scope
+manifest architecture
+```
+
+## 5. Change Authority
+
+Authorized:
+- Add Platform PWA resolver/contract if needed.
+- Add generated manifest route matching current Next.js architecture.
+- Update root manifest metadata to use generated manifest.
+- Update `PwaRegister` install UI/copy to consume manifest identity.
+- Add focused tests and source guards.
+
+Not authorized:
+- Add new PWA framework or offline engine.
+- Modify product vertical business logic.
+- Create Beauty V2-specific manifest or service worker.
+- Allow tenant-provided start URLs or service worker scope.
+- Change database schema or runtime tenant data.
+
+## 6. UI -> Contract Reconciliation
+
+The install banner is a Platform UI surface. Current implementation hard-codes Bella Spa copy and claims offline behavior while the service worker explicitly disables caching. V1 must map install display text to the generated Platform PWA identity and remove unsupported offline claims.
+
+## 7. Additive Migration Plan
+
+No migration.
+
+## 8. 11 Automated Verification Gates Plan
+
+1. Confirm Product Registry remains the canonical source for `defaultRoute`.
+2. Confirm tenant brand overlay only affects display/branding fields.
+3. Add generated manifest with required PWA fields.
+4. Keep `scope = "/"` and `display = "standalone"`.
+5. Confirm missing product falls back to `/dashboard`.
+6. Confirm Beauty V2 uses shared `bella_spa` Product Registry default route rather than a product-specific PWA.
+7. Confirm `PwaRegister` has no Bella Spa hard-code.
+8. Confirm service worker remains no-cache/no-offline V1.
+9. Run focused PWA tests.
+10. Run targeted lint/typecheck where practical.
+11. Run `git diff --check` and stop at V1.
+
+## 9. Verification Evidence
+
+Implemented V1:
+- Added `src/platform/pwa/platform-pwa-contract.ts` as the Platform-owned resolver for `PlatformPwaIdentity`.
+- Added generated `/manifest.webmanifest` route that resolves current tenant `product_key` through Product Registry and applies tenant brand overlay only to display fields.
+- Updated root layout manifest metadata to `/manifest.webmanifest`.
+- Kept `public/manifest.json` as neutral static fallback with `start_url = /dashboard`, `scope = /`, and `display = standalone`.
+- Updated `PwaRegister` to fetch manifest identity for install UI/copy and removed Bella Spa/offline install copy.
+- Simplified `public/sw.js` to registration/installability only: no precache, no runtime cache, no offline fallback.
+
+Automated/local:
+- `npx jest src/platform/pwa/platform-pwa-contract.test.ts --runInBand` -> PASS, 1 suite / 8 tests.
+- `npx eslint src/platform/pwa/platform-pwa-contract.ts src/platform/pwa/platform-pwa-contract.test.ts src/app/manifest.webmanifest/route.ts src/app/layout.tsx src/components/common/PwaRegister.tsx` -> PASS.
+- `rg "Bella Spa ERP|làm việc offline|Workbox|Serwist|cache\.addAll|caches\.open|respondWith"` over runtime PWA files -> runtime matches none; only test assertions contain the blocked strings.
+- `git diff --check` -> PASS.
+
+Not verified:
+- `npm run typecheck:changed` invoked repository-wide strict `tsc`; stopped after 90 seconds without diagnostics. `TYPECHECK = NOT_VERIFIED`.
+
+Gate result: `PLATFORM_PWA_CONTRACT = IMPLEMENTED_V1`.
+
+---
+
 # ARCHITECTURE GATE RESULT - HQ IDENTITY SEPARATION
 
 > **Status:** PASS - HQ Identity Separation sealed; `TYPECHECK_NOT_VERIFIED`

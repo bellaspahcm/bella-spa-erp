@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { Download, X } from 'lucide-react';
 
@@ -11,6 +11,48 @@ type BeforeInstallPromptEvent = Event & {
     platform?: string;
   }>;
 };
+
+type InstallIdentity = {
+  name: string;
+  shortName: string;
+  description: string;
+  themeColor: string;
+};
+
+const DEFAULT_INSTALL_IDENTITY: InstallIdentity = {
+  name: 'Bella Platform',
+  shortName: 'Bella',
+  description: 'Bella Platform workspace',
+  themeColor: '#0f172a',
+};
+
+const LOCAL_PWA_CACHE_PREFIXES = ['bella-platform', 'bella-spa-erp'] as const;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function readString(value: unknown): string | null {
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
+}
+
+function readThemeColor(value: unknown): string {
+  const text = readString(value);
+  return text && /^#[0-9a-fA-F]{6}$/.test(text) ? text : DEFAULT_INSTALL_IDENTITY.themeColor;
+}
+
+function resolveInstallIdentity(payload: unknown): InstallIdentity {
+  if (!isRecord(payload)) {
+    return DEFAULT_INSTALL_IDENTITY;
+  }
+
+  return {
+    name: readString(payload.name) ?? DEFAULT_INSTALL_IDENTITY.name,
+    shortName: readString(payload.short_name) ?? DEFAULT_INSTALL_IDENTITY.shortName,
+    description: readString(payload.description) ?? DEFAULT_INSTALL_IDENTITY.description,
+    themeColor: readThemeColor(payload.theme_color),
+  };
+}
 
 function isBeforeInstallPromptEvent(event: Event): event is BeforeInstallPromptEvent {
   return 'prompt' in event && 'userChoice' in event;
@@ -28,6 +70,32 @@ export default function PwaRegister() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showBanner, setShowBanner] = useState<boolean>(false);
   const [isIOS] = useState<boolean>(() => isIOSInstallCandidate());
+  const [installIdentity, setInstallIdentity] = useState<InstallIdentity>(DEFAULT_INSTALL_IDENTITY);
+  const installIdentityRef = useRef<InstallIdentity>(DEFAULT_INSTALL_IDENTITY);
+
+  useEffect(() => {
+    installIdentityRef.current = installIdentity;
+  }, [installIdentity]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let isMounted = true;
+    fetch('/manifest.webmanifest', { cache: 'no-store' })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload: unknown) => {
+        if (isMounted) {
+          setInstallIdentity(resolveInstallIdentity(payload));
+        }
+      })
+      .catch((error) => {
+        console.warn('[PWA] Failed to load install identity:', error);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -48,7 +116,7 @@ export default function PwaRegister() {
         const cacheNames = await caches.keys();
         await Promise.all(
           cacheNames
-            .filter((cacheName) => cacheName.startsWith('bella-spa-erp'))
+            .filter((cacheName) => LOCAL_PWA_CACHE_PREFIXES.some((prefix) => cacheName.startsWith(prefix)))
             .map((cacheName) => caches.delete(cacheName))
         );
       }
@@ -113,7 +181,7 @@ export default function PwaRegister() {
       console.log('[PWA] App successfully installed!');
       setShowBanner(false);
       setDeferredPrompt(null);
-      toast.success('Cài đặt ứng dụng Bella Spa ERP thành công!');
+      toast.success(`Cài đặt ${installIdentityRef.current.name} thành công!`);
     };
 
     window.addEventListener('appinstalled', handleAppInstalled);
@@ -158,7 +226,7 @@ export default function PwaRegister() {
   if (!showBanner) return null;
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-[360px] md:left-auto md:right-6 md:translate-x-0 md:w-[380px] z-[9999] p-5 rounded-2xl border border-pink-200/50 bg-white/90 dark:bg-zinc-900/90 shadow-2xl backdrop-blur-md transition-all duration-300 animate-in slide-in-from-bottom-5">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-[360px] md:left-auto md:right-6 md:translate-x-0 md:w-[380px] z-[9999] p-5 rounded-2xl border border-slate-200/70 bg-white/90 dark:bg-zinc-900/90 shadow-2xl backdrop-blur-md transition-all duration-300 animate-in slide-in-from-bottom-5">
       <button 
         onClick={handleDismiss}
         className="absolute top-3 right-3 p-1 rounded-full text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
@@ -167,25 +235,32 @@ export default function PwaRegister() {
       </button>
 
       <div className="flex gap-4">
-        <div className="w-12 h-12 rounded-xl bg-pink-100 dark:bg-pink-900/30 text-pink-500 flex items-center justify-center flex-shrink-0 shadow-inner">
+        <div
+          className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-inner"
+          style={{
+            backgroundColor: `${installIdentity.themeColor}1A`,
+            color: installIdentity.themeColor,
+          }}
+        >
           <Download size={22} />
         </div>
         
         <div className="flex-grow pr-4">
           <h4 className="font-bold text-sm text-zinc-800 dark:text-zinc-100">
-            Cài đặt Bella Spa ERP
+            Cài đặt {installIdentity.name}
           </h4>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 leading-relaxed">
             {isIOS 
-              ? 'Để cài đặt trên iPhone, nhấn vào biểu tượng chia sẻ ⇧ ở chân Safari rồi chọn "Thêm vào màn hình chính" (Add to Home Screen).' 
-              : 'Cài đặt ứng dụng trực tiếp lên màn hình điện thoại để thao tác nhanh hơn, nhận ca tức thì và làm việc offline.'
+              ? `Để cài đặt ${installIdentity.shortName} trên iPhone, nhấn vào biểu tượng chia sẻ ⇧ ở chân Safari rồi chọn "Thêm vào màn hình chính" (Add to Home Screen).`
+              : `Cài đặt ${installIdentity.shortName} lên màn hình chính để mở nhanh không gian làm việc của bạn.`
             }
           </p>
           
           {!isIOS && (
             <button
               onClick={handleInstallClick}
-              className="mt-3 px-4 py-2 w-full text-xs font-semibold text-white bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 active:scale-95 transition-all duration-200 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-pink-500/20 dark:shadow-none"
+              className="mt-3 px-4 py-2 w-full text-xs font-semibold text-white active:scale-95 transition-all duration-200 rounded-xl flex items-center justify-center gap-1.5 shadow-md dark:shadow-none"
+              style={{ backgroundColor: installIdentity.themeColor }}
             >
               <Download size={14} />
               Cài đặt ứng dụng ngay
