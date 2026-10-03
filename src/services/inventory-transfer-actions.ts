@@ -7,6 +7,7 @@ import { revalidatePath } from 'next/cache';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { BUSINESS_RULES } from '@bella/shared';
 import { InventoryError } from '@/core/lib/errors';
+import { HQ_PRODUCT_KEY } from '@/lib/business-rules/hq-tenant';
 import type { Database, Json } from '@/types/database.types';
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
@@ -381,11 +382,11 @@ export async function approveAndShipTransfer(transferId: string, carrier: string
       return { success: false, error: `Lệnh chuyển kho đang ở trạng thái "${order.status}", không thể giao hàng` };
     }
 
-    // 2. Tìm Tenant ID của HQ (Bella Spa Headquarter)
+    // 2. Resolve stable HQ tenant identity for central warehouse stock.
     const { data: hqTenant, error: hqTenantErr } = await supabase
       .from('tenants')
       .select('id')
-      .eq('name', 'Bella Spa Headquarter')
+      .eq('product_key', HQ_PRODUCT_KEY)
       .single();
 
     if (hqTenantErr || !hqTenant) {

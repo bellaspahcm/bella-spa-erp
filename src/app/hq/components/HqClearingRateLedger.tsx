@@ -1,5 +1,6 @@
 import { Edit, Settings } from 'lucide-react';
 import { formatCurrency } from '@bella/shared';;
+import { isOperatingTenant } from '@/lib/business-rules/hq-tenant';
 import type { HqTenantRecord } from '@/types/domain';
 
 interface HqClearingRateLedgerProps {
@@ -11,11 +12,13 @@ export function HqClearingRateLedger({
   tenants,
   onOpenClearingRate,
 }: HqClearingRateLedgerProps) {
+  const operatingTenants = tenants.filter(isOperatingTenant);
+
   return (
             <section className="bg-white rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden">
               <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center">
                 <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">
-                  Cấu hình Đơn giá Đối soát Liệu trình Nội bộ ({tenants.filter(t => t.name !== 'Bella Spa Headquarter').length})
+                  Cấu hình Đơn giá Đối soát Liệu trình Nội bộ ({operatingTenants.length})
                 </h4>
                 <span className="text-[10px] bg-slate-100 text-slate-500 px-3 py-1 rounded-full font-black uppercase flex items-center gap-1">
                   <Settings size={10} /> Đơn giá hoàn lại creditor
@@ -32,8 +35,7 @@ export function HqClearingRateLedger({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                    {tenants
-                      .filter(t => t.name !== 'Bella Spa Headquarter')
+                    {operatingTenants
                       .map((t) => (
                         <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
                           <td className="px-8 py-5">

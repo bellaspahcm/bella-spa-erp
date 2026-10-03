@@ -16,7 +16,7 @@ export default async function HqFinancialOverviewPage({
 }) {
   const auth = await checkHqAuth();
   if (!auth.authorized || !auth.user) {
-    redirect('/dashboard');
+    redirect('/hq/login');
   }
 
   // Default: current month

@@ -1,3 +1,134 @@
+# ARCHITECTURE GATE RESULT - HQ IDENTITY SEPARATION
+
+> **Status:** PASS - HQ Identity Separation sealed; `TYPECHECK_NOT_VERIFIED`
+> **Date:** 2026-10-03
+> **Scope:** `/hq` identity and authorization only. Replace the experimental `tenant_type` slice with canonical `tenant.product_key = 'bella_hq'`, add direct HQ login, provision a separate HQ admin, and keep BabyCare data unchanged.
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+The requested change separates HQ portal identity from the BabyCare operating tenant. Gate decision: `PASS` for a narrow HQ auth/login change that reuses the existing Product Identity contract.
+
+## 2. Product Manifest
+
+In scope:
+- HQ portal authorization.
+- HQ direct login route.
+- HQ tenant recognition by `product_key = 'bella_hq'`.
+- HQ UI filters that exclude the HQ tenant from operating-tenant workflows.
+- Inventory transfer central warehouse HQ tenant lookup.
+- Runtime DB/Auth provisioning for HQ tenant/admin on the authorized target.
+- Runtime smoke for HQ allow and BabyCare deny.
+
+Out of scope:
+- KPI/mock metric cleanup.
+- Dashboard redesign.
+- Healthcare H1-H12, Logistics E7.1/E7.2/E7.3, or product vertical kernel changes.
+- Schema migration execution or changing the existing BabyCare tenant.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Role |
+|---|---|---|
+| `tenants.product_key` | Platform product identity | Canonical tenant product identity |
+| `checkHqAuth` | Platform/HQ auth boundary | Server-side HQ portal authorization |
+| `/hq/login` | HQ portal auth entry | Direct HQ admin login |
+| `/hq` components | HQ portal UI | Consume canonical identity for filters and labels |
+
+## 4. Contract Dependency Map
+
+```text
+HQ Portal
+  -> users.role
+  -> users.tenant_id
+  -> tenants.product_key = 'bella_hq'
+  -> operating tenants where product_key != 'bella_hq'
+```
+
+## 5. Change Authority
+
+Authorized:
+- Replace experimental `tenant_type` consumers with `product_key = 'bella_hq'`.
+- HQ server-action authorization update.
+- Direct `/hq/login` route.
+- HQ UI identity filters.
+- Focused tests.
+- Authorized runtime provisioning of `bella_hq` HQ tenant and HQ admin Auth user.
+- Runtime smoke for `/hq/login`, `/hq`, `/hq/financial-overview`, and BabyCare admin denial.
+
+Not authorized:
+- New hardcoded HQ UUID.
+- BabyCare-specific HQ identity.
+- New `tenant_type` schema.
+- Schema migration execution.
+- BabyCare tenant mutation.
+- KPI/mock data cleanup.
+- Product vertical or kernel refactor.
+
+## 6. UI -> Contract Reconciliation
+
+Existing UI/action code treats `tenant.name === 'Bella Spa Headquarter'` as HQ identity. Tenant name is mutable display data and the current production record is also `product_key = 'bella_babycare'`. Canonical target for the separated HQ tenant is `product_key = 'bella_hq'`.
+
+## 7. DB Provisioning Result
+
+No migration in this code slice.
+
+Completed with explicit runtime provisioning authority:
+- Created HQ tenant `d33dd246-9d9c-4a95-bfff-03b4b51d4072` with `product_key = 'bella_hq'`.
+- Created separate HQ Auth/public user `hq-admin@bellaspa.vn` with `role = 'admin'`.
+- Bound HQ admin to tenant `d33dd246-9d9c-4a95-bfff-03b4b51d4072`.
+- Left BabyCare tenant `0e66365b-42b0-420e-acca-f7d7692e125e` unchanged with `product_key = 'bella_babycare'`.
+- Generated runtime smoke password was random, temporary, and not printed or stored in repo/docs/logs/commit.
+
+## 8. 11 Automated Verification Gates Plan
+
+1. Confirm no Healthcare/Logistics frozen kernel files changed.
+2. Confirm no `tenant_type` code or migration remains in the HQ slice.
+3. Confirm `checkHqAuth()` uses `product_key = 'bella_hq'`.
+4. Confirm `/hq` pages redirect unauthorized users to `/hq/login`.
+5. Confirm `/hq/login` verifies HQ auth after Supabase sign-in.
+6. Confirm BabyCare admin with `product_key = 'bella_babycare'` is denied.
+7. Confirm inventory HQ warehouse lookup uses `product_key = 'bella_hq'`.
+8. Confirm `/hq` operating-tenant filters use canonical helper.
+9. Run focused HQ auth/action tests.
+10. Run `git diff --check`.
+11. Provision HQ tenant/admin only after explicit authority, then run runtime smoke and stop.
+
+## 9. Verification Evidence
+
+Read-only/preflight:
+- `.env.local` REST target read-back found `product_key = 'bella_hq'` count `0`.
+- Existing BabyCare/HQ-shared tenant remains `product_key = 'bella_babycare'`; no DB mutation was executed.
+- `supabase/migrations/20261003010000_add_hq_tenant_identity.sql` removed from the working tree; no replacement migration added.
+
+Runtime provisioning:
+- Target project ref: `lvnvkpyxtuilhrabtlwv`.
+- HQ tenant created/read back: `d33dd246-9d9c-4a95-bfff-03b4b51d4072`, `name = Bella Spa Headquarter`, `status = active`, `product_key = bella_hq`.
+- HQ admin created/read back: `hq-admin@bellaspa.vn`, `role = admin`, `tenant_id = d33dd246-9d9c-4a95-bfff-03b4b51d4072`.
+- BabyCare admin read-back: `admin@bellaspa.vn`, `role = admin`, `tenant_id = 0e66365b-42b0-420e-acca-f7d7692e125e`, `product_key = bella_babycare`.
+- Password was not printed or persisted.
+
+Automated/local:
+- `npx jest src/__tests__/hq-actions.test.ts src/__tests__/onboarding.test.ts --runInBand` -> PASS, 2 suites / 15 tests.
+- `npx jest src/__tests__/inventory-transfer.test.ts --runInBand` -> PASS, 1 suite / 29 tests.
+- `git diff --check` -> PASS.
+- Focused `npx eslint` on HQ login/auth/action files -> PASS.
+- `rg tenant_type` over HQ/auth/onboarding/domain slice -> no matches.
+
+Runtime smoke:
+- `hq-admin@bellaspa.vn` -> `/hq/login` -> `/hq` -> PASS.
+- `hq-admin@bellaspa.vn` -> `/hq/financial-overview` -> PASS.
+- `admin@bellaspa.vn` with BabyCare tenant context -> `/hq` -> `/hq/login` redirect -> DENIED/PASS.
+
+Not verified:
+- `npm run typecheck:changed` invoked repository-wide strict `tsc`; stopped after 90 seconds without diagnostics. `TYPECHECK = NOT_VERIFIED`.
+
+Gate result: `HQ_IDENTITY_SEPARATION = SEALED`.
+Residual: `TYPECHECK_NOT_VERIFIED`; rotate/change the temporary HQ admin password before operational handoff.
+
+---
+
 # ARCHITECTURE GATE RESULT - BEAUTY F5 REAL DB IDEMPOTENCY FIXTURE DRIFT
 
 > **Status:** PASS - fixture-only repair for Beauty/F5 Real DB idempotency proof

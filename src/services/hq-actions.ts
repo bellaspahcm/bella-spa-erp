@@ -5,6 +5,7 @@ import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server'
 import { getCurrentUser } from './user-actions';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { recordAuditLog } from './audit-actions';
+import { isHqTenant } from '@/lib/business-rules/hq-tenant';
 import type { Database } from '@/types/database.types';
 
 type TenantRow = Database['public']['Tables']['tenants']['Row'];
@@ -50,7 +51,7 @@ export async function checkHqAuth() {
   const supabase = await createDevelopmentBypassClient();
   const { data: tenant, error: tenantError } = await supabase
     .from('tenants')
-    .select('name')
+    .select('product_key')
     .eq('id', currentUser.tenant_id)
     .single();
 
@@ -58,8 +59,8 @@ export async function checkHqAuth() {
     throw new Error(`Failed to verify HQ tenant: ${tenantError.message}`);
   }
      
-  if (!tenant || tenant.name !== 'Bella Spa Headquarter') {
-    return { authorized: false, error: 'Trang này chỉ dành cho quản trị viên Bella Spa Headquarter.' };
+  if (!isHqTenant(tenant)) {
+    return { authorized: false, error: 'Trang này chỉ dành cho quản trị viên Tổng bộ.' };
   }
   
   return { authorized: true, user: currentUser };
@@ -220,8 +221,8 @@ export async function toggleTenantStatus(tenantId: string, status: 'active' | 's
     return { success: false, error: 'Không tìm thấy chi nhánh cần cập nhật trạng thái.' };
   }
 
-  if (tenant && tenant.name === 'Bella Spa Headquarter') {
-    return { success: false, error: 'Không thể khóa chi nhánh trụ sở chính Bella Spa Headquarter.' };
+  if (isHqTenant(tenant)) {
+    return { success: false, error: 'Không thể khóa tenant Tổng bộ.' };
   }
 
   const updatePayload: TenantUpdate = {

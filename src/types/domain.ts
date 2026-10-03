@@ -147,6 +147,7 @@ export interface HqTenantRecord {
   internal_clearing_rate?: number | null;
   subscription_tier?: string | null;
   subscription_expires_at?: string | null;
+  product_key?: string | null;
   parent_tenant_id?: string | null;
   franchise_agreement_date?: string | null;
   enabled_modules?: TenantEnabledModules | Json | null;

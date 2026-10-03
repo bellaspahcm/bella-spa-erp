@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import { Lock, MapPin, Phone, Plus, RefreshCw, Unlock } from 'lucide-react';
 import { formatCurrency } from '@bella/shared';;
+import { isHqTenant } from '@/lib/business-rules/hq-tenant';
 import { getDefaultTenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import type { HqTenantRecord } from '@/types/domain';
 
@@ -81,7 +82,7 @@ export function HqBranchTable({
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                       {tenants.map((t) => {
-                        const isHeadquarter = t.name === 'Bella Spa Headquarter';
+                        const isHeadquarter = isHqTenant(t);
                         const isFranchise = t.franchise_agreement_date !== null || t.royalty_type !== null;
                         const businessModuleBadge = getTenantBusinessModuleBadge(t);
                         return (

@@ -6,7 +6,7 @@
  *   2. Returns rows sorted by net_profit DESC
  *   3. Propagates RPC errors from get_consolidated_pnl
  *   4. Returns empty array gracefully when no branches active
- *   5. checkHqAuth gate enforces HQ admin via tenant name lookup
+ *   5. checkHqAuth gate enforces HQ admin via tenant product_key lookup
  */
 
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
@@ -50,13 +50,13 @@ const BRANCH_ADMIN = { id: 'branch-uuid', tenant_id: 'branch-tenant-uuid', role:
 const KTV = { id: 'ktv-uuid', tenant_id: 'branch-tenant-uuid', role: 'ktv' };
 
 // Helper: mock tenant lookup in checkHqAuth
-function mockTenantLookup(tenantName: string) {
+function mockTenantLookup(productKey: string) {
   mockTenantQuery.from.mockImplementation((table: string) => {
     if (table === 'tenants') {
       return {
         select: () => ({
           eq: () => ({
-            single: () => Promise.resolve({ data: { name: tenantName }, error: null }),
+            single: () => Promise.resolve({ data: { product_key: productKey }, error: null }),
           }),
         }),
       };
@@ -79,7 +79,7 @@ describe('getConsolidatedPnLReport', () => {
 
   it('returns rows sorted by net_profit DESC for HQ admin', async () => {
     mockGetCurrentUser.mockResolvedValue(HQ_ADMIN);
-    mockTenantLookup('Bella Spa Headquarter');
+    mockTenantLookup('bella_hq');
 
     const unsorted = [
       { tenant_id: 'b1', tenant_name: 'Quận 1', net_revenue: 5_000_000, net_profit: 800_000, operating_expense: 3_000_000, net_margin_percent: 16, total_bookings_count: 12, total_sessions_completed: 30, gross_revenue: 5_500_000, deductions: 500_000, cost_of_goods_sold: 0, gross_profit: 5_000_000, financial_income: 0, financial_expense: 0, operating_profit: 800_000, other_income: 0, other_expense: 0, profit_before_tax: 800_000, tax_expense: 0 },
@@ -103,18 +103,18 @@ describe('getConsolidatedPnLReport', () => {
 
   it('returns empty array gracefully when no branches active', async () => {
     mockGetCurrentUser.mockResolvedValue(HQ_ADMIN);
-    mockTenantLookup('Bella Spa Headquarter');
+    mockTenantLookup('bella_hq');
     mockRpc.mockResolvedValueOnce({ data: [], error: null });
 
     const result = await getConsolidatedPnLReport(FROM, TO);
     expect(result).toEqual([]);
   });
 
-  it('rejects non-HQ branch admin (tenant name != Headquarter)', async () => {
+  it('rejects non-HQ branch admin (tenant product_key != bella_hq)', async () => {
     mockGetCurrentUser.mockResolvedValue(BRANCH_ADMIN);
-    mockTenantLookup('Bella Spa Quận 7'); // Not HQ
+    mockTenantLookup('bella_babycare'); // Not HQ
 
-    await expect(getConsolidatedPnLReport(FROM, TO)).rejects.toThrow(/Bella Spa Headquarter/);
+    await expect(getConsolidatedPnLReport(FROM, TO)).rejects.toThrow(/Tổng bộ/);
     expect(mockRpc).not.toHaveBeenCalled();
   });
 
@@ -134,7 +134,7 @@ describe('getConsolidatedPnLReport', () => {
 
   it('propagates RPC errors (e.g., function does not exist)', async () => {
     mockGetCurrentUser.mockResolvedValue(HQ_ADMIN);
-    mockTenantLookup('Bella Spa Headquarter');
+    mockTenantLookup('bella_hq');
     mockRpc.mockResolvedValueOnce({
       data: null,
       error: { message: 'Function get_consolidated_pnl does not exist' },
@@ -147,7 +147,7 @@ describe('getConsolidatedPnLReport', () => {
 
   it('returns empty array when RPC data is null', async () => {
     mockGetCurrentUser.mockResolvedValue(HQ_ADMIN);
-    mockTenantLookup('Bella Spa Headquarter');
+    mockTenantLookup('bella_hq');
     mockRpc.mockResolvedValueOnce({ data: null, error: null });
 
     const result = await getConsolidatedPnLReport(FROM, TO);
