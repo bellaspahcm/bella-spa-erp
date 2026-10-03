@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     template: "%s | Bella EIP",
   },
   description: "Nền tảng Quản trị Doanh nghiệp Đa ngành Bella EIP",
-  manifest: "/manifest.json",
+  manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

@@ -1,27 +1,10 @@
-const CACHE_NAME = 'bella-spa-erp-v3-color-fix';
-const IS_LOCAL_DEV =
-  self.location.hostname === 'localhost' ||
-  self.location.hostname === '127.0.0.1' ||
-  self.location.hostname === '::1';
-const PRECACHE_ASSETS = [
-  '/',
-  '/manifest.json',
-  '/logo.png',
-  '/FullLogo_Transparent_NoBuffer.png',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
-  '/favicon.ico'
-];
-
-// Install Event - Precache static assets
+// Install Event - activate immediately. V1 does not precache assets.
 self.addEventListener('install', (event) => {
-  // Skip precaching - just activate immediately
   event.waitUntil(self.skipWaiting());
 });
 
-// Activate Event - Clean up old caches
+// Activate Event - clean up legacy caches from older PWA experiments.
 self.addEventListener('activate', (event) => {
-  // Clear all caches and claim clients immediately
   event.waitUntil(
     caches.keys()
       .then((cacheNames) => Promise.all(cacheNames.map((cache) => caches.delete(cache))))
@@ -29,7 +12,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch Event - Disable all caching temporarily
+// Fetch Event - registration/installability only. No offline or runtime cache strategy in V1.
 self.addEventListener('fetch', (event) => {
   // Let browser handle all requests normally (no caching)
   return;
