@@ -192,7 +192,7 @@ export function BeautySpaV2DashboardView({
   const dateString = now.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' });
 
   return (
-    <div className="flex-1 bg-[#F4F6F8] min-h-screen p-4 md:p-6 lg:p-8 space-y-6 text-slate-800 font-sans">
+    <div className="flex-1 bg-[#F4F6F8] min-h-screen p-4 md:p-6 lg:p-8 pb-24 md:pb-28 lg:pb-32 space-y-6 text-slate-800 font-sans">
       {/* ─── TOP HEADER BAR ──────────────────────────────────────────────────────── */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white/60 backdrop-blur-md p-4 rounded-2xl border border-slate-200/60 shadow-xs">
         <div>
