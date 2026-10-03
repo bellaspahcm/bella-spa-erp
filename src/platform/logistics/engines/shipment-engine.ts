@@ -38,8 +38,13 @@ import type {
   EngineResponse,
   EngineHealthStatus,
   Shipment,
+  ShipmentItem,
   TrackingEvent,
   ShipmentStatus,
+  Location,
+  LocationType,
+  Weight,
+  Volume,
 } from '../shared-kernel/types';
 import { eventBus } from '@/platform/host/event-bus';
 
@@ -88,6 +93,107 @@ interface TrackingEventRow {
 interface IdempotencyKeyRow {
   id: string;
   response_data: Record<string, unknown>;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function stringField(record: Record<string, unknown>, key: string, fallback = ''): string {
+  const value = record[key];
+  return typeof value === 'string' ? value : fallback;
+}
+
+function numberField(record: Record<string, unknown>, key: string, fallback = 0): number {
+  const value = record[key];
+  return typeof value === 'number' ? value : fallback;
+}
+
+function booleanField(record: Record<string, unknown>, key: string, fallback = false): boolean {
+  const value = record[key];
+  return typeof value === 'boolean' ? value : fallback;
+}
+
+function isLocationType(value: unknown): value is LocationType {
+  return (
+    value === 'warehouse' ||
+    value === 'distribution-center' ||
+    value === 'store' ||
+    value === 'customer' ||
+    value === 'port' ||
+    value === 'airport' ||
+    value === 'pickup-point'
+  );
+}
+
+function mapLocationJson(value: Record<string, unknown>): Location {
+  const addressValue = value.address;
+  const address = isRecord(addressValue) ? addressValue : {};
+  const typeValue = value.type;
+
+  return {
+    type: isLocationType(typeValue) ? typeValue : 'warehouse',
+    name: stringField(value, 'name') || undefined,
+    address: {
+      line1: stringField(address, 'line1'),
+      line2: stringField(address, 'line2') || undefined,
+      city: stringField(address, 'city'),
+      state: stringField(address, 'state') || undefined,
+      postalCode: stringField(address, 'postalCode'),
+      country: stringField(address, 'country'),
+      countryCode: stringField(address, 'countryCode'),
+    },
+    contactPerson: stringField(value, 'contactPerson') || undefined,
+    contactPhone: stringField(value, 'contactPhone') || undefined,
+    contactEmail: stringField(value, 'contactEmail') || undefined,
+    specialInstructions: stringField(value, 'specialInstructions') || undefined,
+  };
+}
+
+function mapWeightJson(value: Record<string, unknown> | null): Weight | null {
+  if (!value) {
+    return null;
+  }
+
+  const unit = value.unit;
+  if (unit !== 'kg' && unit !== 'lb' && unit !== 'g' && unit !== 'oz' && unit !== 't') {
+    return null;
+  }
+
+  return {
+    value: numberField(value, 'value'),
+    unit,
+  };
+}
+
+function mapVolumeJson(value: Record<string, unknown> | null): Volume | null {
+  if (!value) {
+    return null;
+  }
+
+  const unit = value.unit;
+  if (unit !== 'm3' && unit !== 'ft3' && unit !== 'l' && unit !== 'gal') {
+    return null;
+  }
+
+  return {
+    value: numberField(value, 'value'),
+    unit,
+  };
+}
+
+function mapShipmentItemJson(value: Record<string, unknown>): ShipmentItem {
+  return {
+    id: stringField(value, 'id'),
+    sku: stringField(value, 'sku') || undefined,
+    description: stringField(value, 'description'),
+    quantity: numberField(value, 'quantity'),
+    weight: isRecord(value.weight) ? mapWeightJson(value.weight) ?? undefined : undefined,
+    hazardous: booleanField(value, 'hazardous'),
+    requiresRefrigeration: booleanField(value, 'requiresRefrigeration'),
+    fragile: booleanField(value, 'fragile'),
+    metadata: isRecord(value.metadata) ? value.metadata : undefined,
+  };
 }
 
 // ============================================================================
@@ -1209,17 +1315,17 @@ export class ShipmentEngineService implements ShipmentManagementContract {
       status: row.status as ShipmentStatus,
       type: row.type as Shipment['type'],
       priority: row.priority as Shipment['priority'],
-      origin: row.origin as Shipment['origin'],
-      destination: row.destination as Shipment['destination'],
+      origin: mapLocationJson(row.origin),
+      destination: mapLocationJson(row.destination),
       plannedPickupDate: row.planned_pickup_date,
       actualPickupDate: row.actual_pickup_date ?? undefined,
       plannedDeliveryDate: row.planned_delivery_date,
       actualDeliveryDate: row.actual_delivery_date ?? undefined,
       carrierId: row.carrier_id ?? undefined,
       routeId: row.route_id ?? undefined,
-      items: row.items as Shipment['items'],
-      totalWeight: row.total_weight as Shipment['totalWeight'],
-      totalVolume: row.total_volume as Shipment['totalVolume'],
+      items: row.items.map(mapShipmentItemJson),
+      totalWeight: mapWeightJson(row.total_weight) ?? undefined,
+      totalVolume: mapVolumeJson(row.total_volume) ?? undefined,
       specialInstructions: row.special_instructions ?? undefined,
       trackingEvents,
       createdAt: row.created_at,
@@ -1236,7 +1342,7 @@ export class ShipmentEngineService implements ShipmentManagementContract {
       eventType: row.event_type as TrackingEvent['eventType'],
       status: row.status as ShipmentStatus,
       timestamp: row.timestamp,
-      location: row.location as TrackingEvent['location'],
+      location: row.location ? mapLocationJson(row.location) : undefined,
       description: row.description,
       performedBy: row.performed_by ?? undefined,
       metadata: row.metadata as TrackingEvent['metadata'],

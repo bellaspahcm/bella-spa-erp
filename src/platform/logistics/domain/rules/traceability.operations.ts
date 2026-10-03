@@ -100,6 +100,131 @@ export interface CustodyEventContext {
   userId?: string;
 }
 
+type LegacyValueRef = {
+  value: string;
+};
+
+type MovementBoundaryRecord = Omit<
+  InventoryMovement,
+  | 'id'
+  | 'tenantId'
+  | 'movementDate'
+  | 'createdBy'
+  | 'movementType'
+  | 'fromLocationId'
+  | 'fromLocationType'
+  | 'toLocationId'
+  | 'toLocationType'
+  | 'lotNumber'
+  | 'serialNumber'
+> & {
+  id: string | LegacyValueRef;
+  tenantId?: string;
+  tenant_id?: string;
+  movementDate?: Date | string;
+  movement_date?: Date | string;
+  createdBy?: string | null;
+  created_by?: string | null;
+  movementType?: string;
+  movement_type?: string;
+  fromLocationId?: string | null;
+  from_location_id?: string | LegacyValueRef | null;
+  fromLocationType?: InventoryMovement['fromLocationType'];
+  from_location_type?: InventoryMovement['fromLocationType'];
+  toLocationId?: string | null;
+  to_location_id?: string | LegacyValueRef | null;
+  toLocationType?: InventoryMovement['toLocationType'];
+  to_location_type?: InventoryMovement['toLocationType'];
+  lotNumber?: string | null;
+  lot_number?: string | LegacyValueRef | null;
+  serialNumber?: string | null;
+  serial_number?: string | LegacyValueRef | null;
+};
+
+type LegacyCustodyEventAliases = {
+  location_id: string;
+  location_type: CustodyEvent['locationType'];
+  user_id?: string | null;
+};
+
+function movementRecord(movement: InventoryMovement): MovementBoundaryRecord {
+  return movement as MovementBoundaryRecord;
+}
+
+function stringValue(value: string | LegacyValueRef | null | undefined): string | undefined {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  return value?.value;
+}
+
+function dateValue(value: Date | string | null | undefined): Date {
+  if (value instanceof Date) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    return new Date(value);
+  }
+
+  return new Date(0);
+}
+
+function movementId(movement: InventoryMovement): string {
+  return stringValue(movementRecord(movement).id) ?? '';
+}
+
+function movementTenantId(movement: InventoryMovement): string | undefined {
+  const record = movementRecord(movement);
+  return record.tenantId ?? record.tenant_id;
+}
+
+function movementDate(movement: InventoryMovement): Date {
+  const record = movementRecord(movement);
+  return dateValue(record.movementDate ?? record.movement_date);
+}
+
+function movementCreatedBy(movement: InventoryMovement): string | null | undefined {
+  const record = movementRecord(movement);
+  return record.createdBy ?? record.created_by;
+}
+
+function movementType(movement: InventoryMovement): string {
+  const record = movementRecord(movement);
+  return record.movementType ?? record.movement_type ?? '';
+}
+
+function movementFromLocationId(movement: InventoryMovement): string | undefined {
+  const record = movementRecord(movement);
+  return record.fromLocationId ?? stringValue(record.from_location_id);
+}
+
+function movementToLocationId(movement: InventoryMovement): string | undefined {
+  const record = movementRecord(movement);
+  return record.toLocationId ?? stringValue(record.to_location_id);
+}
+
+function movementFromLocationType(movement: InventoryMovement): InventoryMovement['fromLocationType'] {
+  const record = movementRecord(movement);
+  return record.fromLocationType ?? record.from_location_type;
+}
+
+function movementToLocationType(movement: InventoryMovement): InventoryMovement['toLocationType'] {
+  const record = movementRecord(movement);
+  return record.toLocationType ?? record.to_location_type;
+}
+
+function movementLotNumber(movement: InventoryMovement): string | undefined {
+  const record = movementRecord(movement);
+  return record.lotNumber ?? stringValue(record.lot_number);
+}
+
+function movementSerialNumber(movement: InventoryMovement): string | undefined {
+  const record = movementRecord(movement);
+  return record.serialNumber ?? stringValue(record.serial_number);
+}
+
 /**
  * Generate Custody Event from Movement
  * 
@@ -112,31 +237,36 @@ export interface CustodyEventContext {
  */
 export function generateCustodyEvent(
   context: CustodyEventContext
-): CustodyEvent {
+): CustodyEvent & LegacyCustodyEventAliases {
   const { movement, userId } = context;
   
   // Map movement type to custody action
-  const action = mapMovementTypeToCustodyAction(movement.movement_type);
+  const action = mapMovementTypeToCustodyAction(movementType(movement));
   
   // Determine location (prefer destination for inbound, source for outbound)
   const locationId = movement.direction === 'INBOUND'
-    ? movement.to_location_id?.value
-    : movement.from_location_id?.value;
+    ? movementToLocationId(movement)
+    : movementFromLocationId(movement);
   
   const locationType = movement.direction === 'INBOUND'
-    ? movement.to_location_type
-    : movement.from_location_type;
+    ? movementToLocationType(movement)
+    : movementFromLocationType(movement);
   
   if (!locationId || !locationType) {
     throw new Error('Cannot generate custody event: location missing');
   }
+
+  const actorId = userId || movementCreatedBy(movement);
   
   return {
-    timestamp: movement.movement_date,
+    timestamp: movementDate(movement),
+    locationId,
+    locationType,
     location_id: locationId,
     location_type: locationType,
     action,
-    user_id: userId || movement.created_by,
+    userId: actorId,
+    user_id: actorId,
     notes: movement.notes,
   };
 }
@@ -214,11 +344,11 @@ export function traceUpstream(
   let maxDepthExceeded = false;
   
   // Filter tenant-isolated movements
-  const tenantMovements = movements.filter(m => m.tenant_id === tenantId);
+  const tenantMovements = movements.filter(m => movementTenantId(m) === tenantId);
   
   // Find movements with this lot number
   let currentLotMovements = tenantMovements.filter(
-    m => m.lot_number?.value === lotNumber.value && m.status === 'COMPLETED'
+    m => movementLotNumber(m) === lotNumber.value && m.status === 'COMPLETED'
   );
   
   while (currentLotMovements.length > 0 && currentDepth < options.maxDepth) {
@@ -229,25 +359,29 @@ export function traceUpstream(
       movementsScanned++;
       
       // Cycle detection
-      if (visited.has(movement.id.value)) {
+      const currentMovementId = movementId(movement);
+
+      if (visited.has(currentMovementId)) {
         cycles.push({
-          movements: [movement.id],
+          movements: [currentMovementId],
           reference: lotNumber.value,
         });
         continue;
       }
       
-      visited.add(movement.id.value);
+      visited.add(currentMovementId);
       result.push(movement);
       
       // Trace further upstream
-      if (movement.from_location_id) {
+      const fromLocationId = movementFromLocationId(movement);
+
+      if (fromLocationId) {
         const upstream = tenantMovements.filter(
           m =>
-            m.to_location_id?.value === movement.from_location_id?.value &&
-            m.lot_number?.value === lotNumber.value &&
+            movementToLocationId(m) === fromLocationId &&
+            movementLotNumber(m) === lotNumber.value &&
             m.status === 'COMPLETED' &&
-            !visited.has(m.id.value)
+            !visited.has(movementId(m))
         );
         
         nextBatch.push(...upstream);
@@ -310,14 +444,14 @@ export function traceDownstream(
   let maxDepthExceeded = false;
   
   // Filter tenant-isolated movements
-  const tenantMovements = movements.filter(m => m.tenant_id === tenantId);
+  const tenantMovements = movements.filter(m => movementTenantId(m) === tenantId);
   
   // Find origin movements (RECEIPT, no from_location)
   let currentLotMovements = tenantMovements.filter(
     m =>
-      m.lot_number?.value === lotNumber.value &&
+      movementLotNumber(m) === lotNumber.value &&
       m.status === 'COMPLETED' &&
-      !m.from_location_id
+      !movementFromLocationId(m)
   );
   
   while (currentLotMovements.length > 0 && currentDepth < options.maxDepth) {
@@ -328,25 +462,29 @@ export function traceDownstream(
       movementsScanned++;
       
       // Cycle detection
-      if (visited.has(movement.id.value)) {
+      const currentMovementId = movementId(movement);
+
+      if (visited.has(currentMovementId)) {
         cycles.push({
-          movements: [movement.id],
+          movements: [currentMovementId],
           reference: lotNumber.value,
         });
         continue;
       }
       
-      visited.add(movement.id.value);
+      visited.add(currentMovementId);
       result.push(movement);
       
       // Trace further downstream
-      if (movement.to_location_id) {
+      const toLocationId = movementToLocationId(movement);
+
+      if (toLocationId) {
         const downstream = tenantMovements.filter(
           m =>
-            m.from_location_id?.value === movement.to_location_id?.value &&
-            m.lot_number?.value === lotNumber.value &&
+            movementFromLocationId(m) === toLocationId &&
+            movementLotNumber(m) === lotNumber.value &&
             m.status === 'COMPLETED' &&
-            !visited.has(m.id.value)
+            !visited.has(movementId(m))
         );
         
         nextBatch.push(...downstream);
@@ -401,11 +539,11 @@ export function getLotHistory(
   return movements
     .filter(
       m =>
-        m.tenant_id === tenantId &&
-        m.lot_number?.value === lotNumber.value &&
+        movementTenantId(m) === tenantId &&
+        movementLotNumber(m) === lotNumber.value &&
         m.status === 'COMPLETED'
     )
-    .sort((a, b) => a.movement_date.getTime() - b.movement_date.getTime());
+    .sort((a, b) => movementDate(a).getTime() - movementDate(b).getTime());
 }
 
 /**
@@ -430,11 +568,11 @@ export function getSerialHistory(
   return movements
     .filter(
       m =>
-        m.tenant_id === tenantId &&
-        m.serial_number?.value === serialNumber.value &&
+        movementTenantId(m) === tenantId &&
+        movementSerialNumber(m) === serialNumber.value &&
         m.status === 'COMPLETED'
     )
-    .sort((a, b) => a.movement_date.getTime() - b.movement_date.getTime());
+    .sort((a, b) => movementDate(a).getTime() - movementDate(b).getTime());
 }
 
 /**
@@ -498,7 +636,7 @@ export function validateTraceabilityChain(
   
   // Sort chronologically
   const sorted = [...movements].sort(
-    (a, b) => a.movement_date.getTime() - b.movement_date.getTime()
+    (a, b) => movementDate(a).getTime() - movementDate(b).getTime()
   );
   
   // Check for gaps (destination of movement N ≠ source of movement N+1)
@@ -507,14 +645,19 @@ export function validateTraceabilityChain(
     const next = sorted[i + 1];
     
     if (
-      current.to_location_id &&
-      next.from_location_id &&
-      current.to_location_id.value !== next.from_location_id.value
+      movementToLocationId(current) &&
+      movementFromLocationId(next) &&
+      movementToLocationId(current) !== movementFromLocationId(next)
     ) {
+      const currentToLocationId = movementToLocationId(current) ?? '';
+      const nextFromLocationId = movementFromLocationId(next) ?? '';
+      const currentMovementId = movementId(current);
+      const nextMovementId = movementId(next);
+
       gaps.push({
-        afterMovement: current.id,
-        expectedLocation: current.to_location_id.value,
-        reason: `Gap detected: movement ${current.id.value} ends at ${current.to_location_id.value}, but next movement ${next.id.value} starts at ${next.from_location_id.value}`,
+        afterMovement: currentMovementId,
+        expectedLocation: currentToLocationId,
+        reason: `Gap detected: movement ${currentMovementId} ends at ${currentToLocationId}, but next movement ${nextMovementId} starts at ${nextFromLocationId}`,
       });
     }
   }
@@ -527,8 +670,8 @@ export function validateTraceabilityChain(
     overlaps,
     metadata: {
       totalMovements: movements.length,
-      startDate: sorted[0].movement_date,
-      endDate: sorted[sorted.length - 1].movement_date,
+      startDate: movementDate(sorted[0]),
+      endDate: movementDate(sorted[sorted.length - 1]),
     },
   };
 }

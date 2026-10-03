@@ -7,12 +7,27 @@
  */
 
 import { getPrimaryClient } from '@/lib/database/read-replica';
-import { Database } from '@/types/database.types';
+import type { Database, Json } from '@/types/database.types';
 
 type AutoSurvey = Database['public']['Tables']['auto_surveys']['Row'];
 type AutoSurveyInsert = Database['public']['Tables']['auto_surveys']['Insert'];
 type AutoNPSScore = Database['public']['Tables']['auto_nps_scores']['Row'];
 type AutoNPSScoreInsert = Database['public']['Tables']['auto_nps_scores']['Insert'];
+
+function readMetadataString(metadata: Json | null, keys: string[]): string | null {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+    return null;
+  }
+
+  for (const key of keys) {
+    const value = metadata[key];
+    if (typeof value === 'string') {
+      return value;
+    }
+  }
+
+  return null;
+}
 
 export interface NPSSurveyTriggerContext {
   tenantId: string;
@@ -269,7 +284,7 @@ export class NPSSurveyService {
     // Get customer journey to find assigned sales consultant
     const { data: journey } = await supabase
       .from('auto_customer_journeys')
-      .select('assigned_to')
+      .select('metadata')
       .eq('id', survey.journey_id || '')
       .single();
 
@@ -290,7 +305,9 @@ export class NPSSurveyService {
         survey_type: survey.survey_type,
         feedback: npsScore.feedback_text,
       },
-      assigned_to: journey?.assigned_to,
+      assigned_to: journey
+        ? readMetadataString(journey.metadata, ['assigned_to', 'assignedTo', 'sales_consultant_id'])
+        : null,
       status: 'pending',
       valid_until: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(), // 48 hours
     });

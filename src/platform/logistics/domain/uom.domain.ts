@@ -129,7 +129,7 @@ export class UOMDomain {
     }
 
     // Conversion factor validation
-    if (updates.conversionFactor !== undefined && updates.conversionFactor <= 0) {
+    if (updates.conversionFactor !== undefined && updates.conversionFactor !== null && updates.conversionFactor <= 0) {
       return Result.fail(
         'Conversion factor must be positive',
         'UOM_CONVERSION_FACTOR_INVALID'

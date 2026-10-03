@@ -79,10 +79,10 @@ const ROLE_CFG: Record<ClinicalRole, { label: string; labelVN: string; icon: Rea
 };
 
 const SHIFT_CFG: Record<ShiftType, { label: string; labelShort: string; color: string; border: string; bgGradient: string }> = {
-  morning:   { label: 'Ca sáng (07:00–15:00)',  labelShort: 'Ca Sáng',  color: 'text-amber-800 bg-amber-50 border-amber-200', bgGradient: 'from-amber-50 to-amber-100/30' },
-  afternoon: { label: 'Ca chiều (13:00–21:00)', labelShort: 'Ca Chiều', color: 'text-blue-800 bg-blue-50 border-blue-200',     bgGradient: 'from-blue-50 to-blue-100/30' },
-  night:     { label: 'Ca đêm (21:00–07:00)',   labelShort: 'Ca Đêm',   color: 'text-violet-800 bg-violet-50 border-violet-200', bgGradient: 'from-violet-50 to-violet-100/30' },
-  on_call:   { label: 'Trực phòng / Dự phòng',  labelShort: 'Trực Phòng',color: 'text-rose-800 bg-rose-50 border-rose-200', bgGradient: 'from-rose-50 to-rose-100/30' },
+  morning:   { label: 'Ca sáng (07:00–15:00)',  labelShort: 'Ca Sáng',  color: 'text-amber-800 bg-amber-50 border-amber-200', border: 'border-amber-200', bgGradient: 'from-amber-50 to-amber-100/30' },
+  afternoon: { label: 'Ca chiều (13:00–21:00)', labelShort: 'Ca Chiều', color: 'text-blue-800 bg-blue-50 border-blue-200', border: 'border-blue-200', bgGradient: 'from-blue-50 to-blue-100/30' },
+  night:     { label: 'Ca đêm (21:00–07:00)',   labelShort: 'Ca Đêm',   color: 'text-violet-800 bg-violet-50 border-violet-200', border: 'border-violet-200', bgGradient: 'from-violet-50 to-violet-100/30' },
+  on_call:   { label: 'Trực phòng / Dự phòng',  labelShort: 'Trực Phòng',color: 'text-rose-800 bg-rose-50 border-rose-200', border: 'border-rose-200', bgGradient: 'from-rose-50 to-rose-100/30' },
 };
 
 const STATUS_CFG: Record<StaffStatus, { label: string; color: string; dot: string; bg: string }> = {

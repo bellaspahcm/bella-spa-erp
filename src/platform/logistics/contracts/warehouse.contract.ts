@@ -8,7 +8,7 @@
  * Boundary: Warehouse operations isolated from transportation/freight
  */
 
-import { EngineResponse, EngineHealthStatus } from '@/core/types/engine';
+import type { EngineResponse, EngineHealthStatus } from '../shared-kernel/types';
 
 // ============================================================================
 // REQUEST/RESPONSE TYPES

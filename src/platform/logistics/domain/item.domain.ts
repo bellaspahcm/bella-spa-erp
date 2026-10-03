@@ -18,7 +18,6 @@ import type {
   UpdateItemProps,
   ItemType,
   ItemStatus,
-  UnitOfMeasure,
 } from './item.types';
 
 export class ItemDomain {
@@ -84,7 +83,7 @@ export class ItemDomain {
     const now = new Date();
 
     const item: Item = {
-      id: props.id || crypto.randomUUID(),
+      id: { value: props.id || crypto.randomUUID() },
       tenantId: props.tenantId,
       skuCode: props.skuCode.trim(),
       name: props.name.trim(),
@@ -250,7 +249,7 @@ export class ItemDomain {
   /**
    * Validate dimensions JSON structure
    */
-  private static validateDimensions(dimensionsJson: Record<string, unknown>): Result<void> {
+  private static validateDimensions(dimensionsJson: { length?: number; width?: number; height?: number; unit?: string }): Result<void> {
     const { length, width, height, unit } = dimensionsJson;
 
     if (typeof length === 'number' && length < 0) {

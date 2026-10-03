@@ -63,7 +63,7 @@ export class TraceabilityDomain {
     const now = new Date();
 
     const traceability: Traceability = {
-      id: props.id || crypto.randomUUID(),
+      id: { value: props.id || crypto.randomUUID() },
       tenantId: props.tenantId,
       itemId: props.itemId,
 
@@ -116,11 +116,19 @@ export class TraceabilityDomain {
       );
     }
 
+    const action = props.action.trim();
+    if (!isCustodyAction(action)) {
+      return Result.fail(
+        `Unsupported custody action: ${action}`,
+        'CUSTODY_EVENT_ACTION_INVALID'
+      );
+    }
+
     const custodyEvent: CustodyEvent = {
       timestamp: props.timestamp || new Date(),
       locationId: props.locationId,
       locationType: props.locationType || null,
-      action: props.action.trim(),
+      action,
       userId: props.userId || null,
       notes: props.notes?.trim() || null,
     };
@@ -336,4 +344,17 @@ export class TraceabilityDomain {
     const remaining = 100 - (timeElapsed / totalShelfLife * 100);
     return Math.max(0, Math.min(100, remaining));
   }
+}
+
+function isCustodyAction(action: string): action is CustodyEvent['action'] {
+  return [
+    'RECEIVED',
+    'MOVED',
+    'TRANSFERRED',
+    'QUARANTINED',
+    'RELEASED',
+    'SHIPPED',
+    'DAMAGED',
+    'DESTROYED',
+  ].includes(action);
 }

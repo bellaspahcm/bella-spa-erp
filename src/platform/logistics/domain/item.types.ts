@@ -37,6 +37,7 @@ export interface SkuCode {
 export type ItemType =
   | 'GOODS'        // Physical goods (default)
   | 'SERVICE'      // Service item (labor, consultation, etc.)
+  | 'ASSET'        // Durable tracked asset
   | 'KIT'          // Kit/bundle (composed of multiple items)
   | 'BUNDLE'       // Bundle (sold as unit, but tracked separately)
   | 'VIRTUAL';     // Digital/virtual goods
@@ -128,35 +129,35 @@ export interface Item {
   tenantId: string;
   
   /** Stock Keeping Unit code (unique per tenant) */
-  skuCode: SkuCode;
+  skuCode: string;
   
   // ========== Description ==========
   /** Item name */
   name: string;
   
   /** Detailed description (optional) */
-  description?: string;
+  description?: string | null;
   
   // ========== Classification ==========
   /** Item type (GOODS, SERVICE, KIT, etc.) */
   type: ItemType;
   
   /** Business category (optional, tenant-defined) */
-  category?: string;
+  category?: string | null;
   
   // ========== Measurement ==========
   /** Base unit of measure */
   baseUom: UnitOfMeasure;
   
   /** Weight in kilograms (optional) */
-  weightKg?: number;
+  weightKg?: number | null;
   
   /** Physical dimensions (optional) */
-  dimensions?: ItemDimensions;
+  dimensionsJson?: ItemDimensions | null;
   
   // ========== Costing (Hints for Finance OS) ==========
   /** Standard cost (optional, for reference only) */
-  standardCost?: number;
+  standardCost?: number | null;
   
   /** Currency (ISO 4217, default: tenant currency) */
   currency?: string;
@@ -183,10 +184,10 @@ export interface Item {
   updatedAt: Date;
   
   /** Created by user ID (optional) */
-  createdBy?: string;
+  createdBy?: string | null;
   
   /** Last updated by user ID (optional) */
-  updatedBy?: string;
+  updatedBy?: string | null;
 }
 
 /**
@@ -195,6 +196,7 @@ export interface Item {
  * Input for creating a new item
  */
 export interface CreateItemProps {
+  id?: string;
   tenantId: string;
   skuCode: string;
   name: string;
@@ -203,13 +205,15 @@ export interface CreateItemProps {
   category?: string;
   baseUom: UnitOfMeasure;
   weightKg?: number;
-  dimensions?: ItemDimensions;
+  dimensionsJson?: ItemDimensions;
   standardCost?: number;
   currency?: string;
   lotTracked?: boolean;
   serialTracked?: boolean;
   expiryTracked?: boolean;
+  status?: ItemStatus;
   createdBy?: string;
+  updatedBy?: string;
 }
 
 /**
@@ -224,7 +228,7 @@ export interface UpdateItemProps {
   category?: string;
   baseUom?: UnitOfMeasure;
   weightKg?: number;
-  dimensions?: ItemDimensions;
+  dimensionsJson?: ItemDimensions;
   standardCost?: number;
   currency?: string;
   lotTracked?: boolean;

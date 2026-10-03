@@ -7,7 +7,7 @@
  */
 
 import { getPrimaryClient } from '@/lib/database/read-replica';
-import { Database } from '@/types/database.types';
+import { Database, type Json } from '@/types/database.types';
 
 type LostAnalysis = Database['public']['Tables']['auto_lost_analysis']['Row'];
 type LostAnalysisInsert = Database['public']['Tables']['auto_lost_analysis']['Insert'];
@@ -20,6 +20,19 @@ interface AIAnalysisRecord {
   preventionSuggestions: string[];
   recommendedActions: string[];
   similarCases: number;
+}
+
+function toJson(value: unknown): Json {
+  const serialized: unknown = JSON.parse(JSON.stringify(value));
+  return serialized as Json;
+}
+
+function toJsonObject(value: Json | null): { [key: string]: Json | undefined } {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {};
+  }
+
+  return value;
 }
 
 export interface LostReason {
@@ -96,13 +109,25 @@ export class LostAnalysisAIService {
       throw new Error(`Failed to record lost opportunity: ${error.message}`);
     }
 
-    // Update journey status to lost
+    const { data: journey } = await supabase
+      .from('auto_customer_journeys')
+      .select('metadata')
+      .eq('id', data.journeyId)
+      .eq('tenant_id', tenantId)
+      .single();
+
+    const journeyMetadata = toJson({
+      ...toJsonObject(journey?.metadata ?? null),
+      status: 'lost',
+      lost_at_stage: data.lostAtStage,
+      lost_reason: data.reason.primary,
+    });
+
+    // Update journey status to lost in metadata; journey state fields live there in the current contract.
     await supabase
       .from('auto_customer_journeys')
       .update({
-        status: 'lost',
-        lost_at_stage: data.lostAtStage,
-        lost_reason: data.reason.primary,
+        metadata: journeyMetadata,
         updated_at: new Date().toISOString(),
       })
       .eq('id', data.journeyId)
@@ -146,8 +171,8 @@ export class LostAnalysisAIService {
       .from('auto_lost_analysis')
       .update({
         ai_analyzed: true,
-        ai_analysis_result: analysis as LostAnalysisUpdate['ai_analysis_result'],
-        ai_prevention_suggestions: analysis.preventionSuggestions as LostAnalysisUpdate['ai_prevention_suggestions'],
+        ai_analysis_result: toJson(analysis),
+        ai_prevention_suggestions: toJson(analysis.preventionSuggestions),
         updated_at: new Date().toISOString(),
       })
       .eq('id', lostAnalysisId)

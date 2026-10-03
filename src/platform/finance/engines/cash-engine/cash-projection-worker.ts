@@ -16,7 +16,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database.types';
+import type { Database, Json } from '@/types/database.types';
 import { eventBus } from '@/platform/host/event-bus';
 import type {
   DomainEvent,
@@ -24,6 +24,11 @@ import type {
   FinanceTransactionReversedV2Payload,
   CandidateCashLeg
 } from '@/platform/host/event-bus/types';
+
+function toJson(value: unknown): Json {
+  const serialized: unknown = JSON.parse(JSON.stringify(value));
+  return serialized as Json;
+}
 
 export class CashProjectionWorker {
   private client: SupabaseClient<Database>;
@@ -453,7 +458,7 @@ export class CashProjectionWorker {
         p_tenant_id: tenantId,
         p_f1_transaction_id: f1TransactionId,
         p_base_idempotency: baseIdempotency,
-        p_legs: legs
+        p_legs: toJson(legs)
       }
     );
 
@@ -487,7 +492,7 @@ export class CashProjectionWorker {
         p_tenant_id: tenantId,
         p_event_id: eventId,
         p_event_type: eventType,
-        p_payload: payload,
+        p_payload: toJson(payload),
         p_failure_reason: failureReason,
         p_failure_code: failureCode
       }

@@ -12,6 +12,11 @@
 
 import { useTenantContext } from '@/core/hooks/useTenantContext';
 
+const getSettingString = (settings: Readonly<Record<string, unknown>>, key: string): string | undefined => {
+  const value = settings[key];
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+};
+
 /**
  * Example: Basic tenant information display.
  * 
@@ -19,6 +24,7 @@ import { useTenantContext } from '@/core/hooks/useTenantContext';
  */
 export function TenantInfoExample() {
   const context = useTenantContext();
+  const currency = getSettingString(context.settings, 'currency') || 'VND';
 
   return (
     <div className="p-4 border rounded-lg bg-gray-50">
@@ -37,7 +43,7 @@ export function TenantInfoExample() {
         
         <p>
           <span className="font-medium">Currency:</span>{' '}
-          {context.settings.currency || 'VND'}
+          {currency}
         </p>
       </div>
     </div>
@@ -142,9 +148,9 @@ export function ModuleSpecificExample() {
 export function BrandingExample() {
   const context = useTenantContext();
   
-  const logoUrl = context.settings.logoUrl;
-  const primaryColor = context.settings.primaryColor || '#3B82F6';
-  const companyName = context.settings.companyName || context.tenantName;
+  const logoUrl = getSettingString(context.settings, 'logoUrl');
+  const primaryColor = getSettingString(context.settings, 'primaryColor') || '#3B82F6';
+  const companyName = getSettingString(context.settings, 'companyName') || context.tenantName;
 
   return (
     <div 

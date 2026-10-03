@@ -216,7 +216,7 @@ export default function JourneysPage() {
         if (packages && packages.length > 0) {
           const options = packages.map(p => ({
             value: p.name,
-            label: `${p.name} (${new Intl.NumberFormat('vi-VN').format(p.price)}đ)`,
+            label: `${p.name} (${new Intl.NumberFormat('vi-VN').format(p.price ?? 0)}đ)`,
           }));
           setCustomServices(options);
         }
@@ -296,9 +296,9 @@ export default function JourneysPage() {
               // Calculate if sub-journey status changes
               const allDone = updatedMs.every((m) => m.status === 'completed');
               const anyActive = updatedMs.some((m) => m.status === 'in_progress' || m.status === 'completed');
-              const sjStatus = allDone ? 'completed' : anyActive ? 'active' : 'pending';
+              const sjStatus: SubJourney['status'] = allDone ? 'completed' : anyActive ? 'active' : 'pending';
 
-              return { ...sj, status: sjStatus as unknown, milestones: updatedMs };
+              return { ...sj, status: sjStatus, milestones: updatedMs };
             }
             return sj;
           });

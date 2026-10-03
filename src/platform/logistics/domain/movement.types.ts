@@ -157,7 +157,7 @@ export interface InventoryMovement {
   createdAt: Date;
   
   /** Created by user ID */
-  createdBy?: string;
+  createdBy?: string | null;
   
   // ========== Classification ==========
   /** Type of movement */
@@ -172,16 +172,16 @@ export interface InventoryMovement {
   
   // ========== Locations ==========
   /** Source location (optional for inbound) */
-  fromLocationId?: string;
+  fromLocationId?: string | null;
   
   /** Source location type */
-  fromLocationType?: LocationType;
+  fromLocationType?: LocationType | null;
   
   /** Destination location (optional for outbound) */
-  toLocationId?: string;
+  toLocationId?: string | null;
   
   /** Destination location type */
-  toLocationType?: LocationType;
+  toLocationType?: LocationType | null;
   
   // ========== Quantity ==========
   /** Movement quantity (always positive) */
@@ -192,61 +192,61 @@ export interface InventoryMovement {
   
   // ========== Traceability ==========
   /** Lot/batch number */
-  lotNumber?: string;
+  lotNumber?: string | null;
   
   /** Serial number */
-  serialNumber?: string;
+  serialNumber?: string | null;
   
   /** Expiry date */
-  expiryDate?: Date;
+  expiryDate?: Date | null;
   
   // ========== Costing (Hints for Finance OS) ==========
   /** Unit cost (optional, for reference) */
-  unitCost?: number;
+  unitCost?: number | null;
   
   /** Total cost (quantity * unitCost) */
-  totalCost?: number;
+  totalCost?: number | null;
   
   /** Currency (ISO 4217) */
-  currency?: string;
+  currency?: string | null;
   
   // ========== Source Document ==========
   /** Reference to originating document */
-  sourceDocumentType?: string;
-  sourceDocumentId?: string;
-  sourceDocumentNumber?: string;
-  sourceLineItemId?: string;
+  sourceDocumentType?: string | null;
+  sourceDocumentId?: string | null;
+  sourceDocumentNumber?: string | null;
+  sourceLineItemId?: string | null;
   
   // ========== Reason & Notes ==========
   /** Reason for movement (especially for adjustments) */
-  reason?: string;
+  reason?: string | null;
   
   /** Additional notes */
-  notes?: string;
+  notes?: string | null;
   
   // ========== Batch Processing ==========
   /** Batch ID (for bulk operations) */
-  batchId?: string;
+  batchId?: string | null;
   
   // ========== Approval ==========
   /** Approved by user ID (for adjustments) */
-  approvedBy?: string;
+  approvedBy?: string | null;
   
   /** Approval timestamp */
-  approvedAt?: Date;
+  approvedAt?: Date | null;
   
   // ========== Status ==========
   /** Processing status */
   status: MovementStatus;
   
   /** Completion timestamp (when status → COMPLETED) */
-  completedAt?: Date;
+  completedAt?: Date | null;
   
   /** Cancellation timestamp (when status → CANCELLED) */
-  cancelledAt?: Date;
+  cancelledAt?: Date | null;
   
   /** Cancellation reason */
-  cancellationReason?: string;
+  cancellationReason?: string | null;
 }
 
 /**
@@ -262,10 +262,10 @@ export interface CreateMovementProps {
   movementType: MovementType;
   direction: MovementDirection;
   itemId: string;
-  fromLocationId?: string;
-  fromLocationType?: LocationType;
-  toLocationId?: string;
-  toLocationType?: LocationType;
+  fromLocationId?: string | null;
+  fromLocationType?: LocationType | null;
+  toLocationId?: string | null;
+  toLocationType?: LocationType | null;
   quantity: number;
   unitOfMeasure: string;
   lotNumber?: string;

@@ -45,6 +45,42 @@ export interface UOMDefinition {
   decimals?: number; // Decimal precision
 }
 
+export type UOMStatus = 'ACTIVE' | 'INACTIVE';
+
+export interface UnitOfMeasure {
+  id: string;
+  tenantId: string;
+  uomCode: string;
+  uomName: string;
+  category: UOMCategory;
+  baseUomCode?: string | null;
+  conversionFactor?: number | null;
+  decimals: number;
+  status: UOMStatus;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateUOMProps {
+  id?: string;
+  tenantId: string;
+  uomCode: string;
+  uomName: string;
+  category: UOMCategory;
+  baseUomCode?: string;
+  conversionFactor?: number;
+  decimals?: number;
+  status?: UOMStatus;
+}
+
+export interface UpdateUOMProps {
+  uomName?: string;
+  baseUomCode?: string | null;
+  conversionFactor?: number | null;
+  decimals?: number;
+  status?: UOMStatus;
+}
+
 /**
  * UOM Conversion (Future enhancement)
  */

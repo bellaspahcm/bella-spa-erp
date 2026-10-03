@@ -116,7 +116,7 @@ export const FinancialIntentSchema = z.object({
   effectiveDate: z.date(),
   source: z.string().min(1),
   correlationId: z.string().min(1),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
   policyReference: z.string().optional(),
 }).strict();  // ✅ STRICT: Reject unknown fields
 

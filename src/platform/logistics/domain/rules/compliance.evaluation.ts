@@ -158,7 +158,11 @@ export function evaluateCompliance(
   const { entity, rules, evaluatedAt, additionalContext = {} } = context;
   
   // Extract entity ID
-  const entityId = 'id' in entity ? entity.id.value : 'unknown';
+  const entityId = 'id' in entity
+    ? typeof entity.id === 'string'
+      ? entity.id
+      : entity.id.value
+    : 'unknown';
   const entityType = 'lot_number' in entity || 'serial_number' in entity
     ? 'TraceabilityRecord'
     : 'Inventory';

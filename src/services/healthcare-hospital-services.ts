@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { createBrowserClient } from '@/lib/supabase-browser-client';
 import type {
   Ward,
   Bed,
@@ -9,6 +9,10 @@ import type {
   SecurityBreakGlassLog,
   ICD10Diagnosis,
 } from '@/types/healthcare';
+import type { Database } from '@/types/database.types';
+
+type HealthcareTables = Database['public']['Tables'];
+type MedicationAdministrationRecordInsert = HealthcareTables['hc_medication_administration_records']['Insert'];
 
 // Input Interfaces with Strict Typing (NO 'any')
 export interface CreateAdmissionInput {
@@ -177,12 +181,17 @@ const MOCK_ADMISSIONS: InpatientAdmission[] = [
 
 const MOCK_BREAK_GLASS_LOGS: SecurityBreakGlassLog[] = [];
 
+function getHospitalSupabase() {
+  return createBrowserClient();
+}
+
 /**
  * Bed Engine Service — Hospital Facility & Bed Allocation Engine
  */
 export class BedEngineService {
   static async getHospitalWards(tenantId: string): Promise<Ward[]> {
     try {
+      const supabase = getHospitalSupabase();
       const { data, error } = await supabase
         .from('hc_wards')
         .select('*')
@@ -199,6 +208,7 @@ export class BedEngineService {
 
   static async getHospitalBeds(tenantId: string, wardId?: string): Promise<Bed[]> {
     try {
+      const supabase = getHospitalSupabase();
       let query = supabase.from('hc_beds').select('*').eq('tenant_id', tenantId);
       if (wardId) {
         query = query.eq('ward_id', wardId);
@@ -218,6 +228,7 @@ export class BedEngineService {
 
   static async updateBedStatus(bedId: string, status: BedStatus): Promise<Bed> {
     try {
+      const supabase = getHospitalSupabase();
       const { data, error } = await supabase
         .from('hc_beds')
         .update({ status, updated_at: new Date().toISOString() })
@@ -477,6 +488,7 @@ export class BreakGlassSecurityService {
     MOCK_BREAK_GLASS_LOGS.unshift(log);
 
     try {
+      const supabase = getHospitalSupabase();
       await supabase
         .from('hc_security_break_glass_logs')
         .insert(log);
@@ -489,6 +501,7 @@ export class BreakGlassSecurityService {
 
   static async getBreakGlassLogs(tenantId: string): Promise<SecurityBreakGlassLog[]> {
     try {
+      const supabase = getHospitalSupabase();
       const { data, error } = await supabase
         .from('hc_security_break_glass_logs')
         .select('*')
@@ -530,6 +543,7 @@ const MOCK_VITAL_SIGNS: NursingVitalSigns[] = [
 export class NursingVitalsService {
   static async getVitalSignsByAdmission(admissionId: string): Promise<NursingVitalSigns[]> {
     try {
+      const supabase = getHospitalSupabase();
       const { data, error } = await supabase
         .from('hc_nursing_vital_signs')
         .select('*')
@@ -566,6 +580,7 @@ export class NursingVitalsService {
     MOCK_VITAL_SIGNS.unshift(newVital);
 
     try {
+      const supabase = getHospitalSupabase();
       const { data, error } = await supabase
         .from('hc_nursing_vital_signs')
         .insert(newVital)
@@ -633,6 +648,7 @@ const MOCK_MAR_RECORDS: MedicationAdministrationRecord[] = [
 export class MARService {
   static async getMARByAdmission(admissionId: string): Promise<MedicationAdministrationRecord[]> {
     try {
+      const supabase = getHospitalSupabase();
       const { data, error } = await supabase
         .from('hc_medication_administration_records')
         .select('*')
@@ -664,9 +680,22 @@ export class MARService {
     MOCK_MAR_RECORDS.unshift(newMAR);
 
     try {
+      const dbPayload: MedicationAdministrationRecordInsert = {
+        id: newMAR.id,
+        tenant_id: newMAR.tenant_id,
+        inpatient_admission_id: newMAR.inpatient_admission_id,
+        prescription_item_id: newMAR.prescription_item_id,
+        drug_name: newMAR.drug_name,
+        dosage: newMAR.dosage,
+        route: newMAR.route,
+        scheduled_time: newMAR.scheduled_time,
+        status: newMAR.status,
+      };
+
+      const supabase = getHospitalSupabase();
       const { data, error } = await supabase
         .from('hc_medication_administration_records')
-        .insert(newMAR)
+        .insert(dbPayload)
         .select()
         .single();
 
@@ -690,6 +719,7 @@ export class MARService {
     MOCK_MAR_RECORDS[marIndex].notes = input.notes;
 
     try {
+      const supabase = getHospitalSupabase();
       const { data, error } = await supabase
         .from('hc_medication_administration_records')
         .update({

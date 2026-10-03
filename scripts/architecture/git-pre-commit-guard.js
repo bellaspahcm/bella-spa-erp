@@ -134,39 +134,55 @@ function getStagedFiles() {
  */
 function checkACRAuthorization() {
   const fs = require('fs');
-  const acrPath = path.join(process.cwd(), 'docs/architecture/acr/ACR-2026-001-logistics-domain-type-contract.md');
-  
+  const approvedAcrs = [
+    {
+      id: 'ACR-2026-015',
+      path: 'docs/architecture/acr/ACR-2026-015-logistics-sealed-e7-generated-db-contract-drift.md',
+      scope: 'Logistics E7 repository/adapter/contract-boundary fix',
+    },
+    {
+      id: 'ACR-2026-001',
+      path: 'docs/architecture/acr/ACR-2026-001-logistics-domain-type-contract.md',
+      scope: 'Logistics E7.1 entities',
+    },
+  ];
+
   try {
-    if (!fs.existsSync(acrPath)) {
-      return false;
+    for (const acr of approvedAcrs) {
+      const acrPath = path.join(process.cwd(), acr.path);
+      if (!fs.existsSync(acrPath)) {
+        continue;
+      }
+
+      const acrContent = fs.readFileSync(acrPath, 'utf-8');
+
+      // Check if ACR is APPROVED
+      if (!acrContent.includes('**Status:** APPROVED')) {
+        continue;
+      }
+
+      // Check if ACR date is recent (within last 7 days to prevent stale ACRs)
+      const approvalDateMatch = acrContent.match(/\*\*Date Submitted:\*\* (\d{4}-\d{2}-\d{2})/);
+      if (!approvalDateMatch) {
+        continue;
+      }
+
+      const acrDate = new Date(approvalDateMatch[1]);
+      const daysSinceACR = (Date.now() - acrDate.getTime()) / (1000 * 60 * 60 * 24);
+
+      if (daysSinceACR > 7) {
+        console.log(`   ⚠️  ${acr.id} found but expired (>7 days old)\n`);
+        continue;
+      }
+
+      console.log(`   ✅ ${acr.id} APPROVED authorization detected`);
+      console.log(`   ✅ Frozen file modifications authorized for ${acr.scope}`);
+      console.log('   ✅ Commit allowed under ACR governance\n');
+
+      return true;
     }
-    
-    const acrContent = fs.readFileSync(acrPath, 'utf-8');
-    
-    // Check if ACR is APPROVED
-    if (!acrContent.includes('**Status:** APPROVED')) {
-      return false;
-    }
-    
-    // Check if ACR date is recent (within last 7 days to prevent stale ACRs)
-    const approvalDateMatch = acrContent.match(/\*\*Date Submitted:\*\* (\d{4}-\d{2}-\d{2})/);
-    if (!approvalDateMatch) {
-      return false;
-    }
-    
-    const acrDate = new Date(approvalDateMatch[1]);
-    const daysSinceACR = (Date.now() - acrDate.getTime()) / (1000 * 60 * 60 * 24);
-    
-    if (daysSinceACR > 7) {
-      console.log('   ⚠️  ACR-2026-001 found but expired (>7 days old)\n');
-      return false;
-    }
-    
-    console.log('   ✅ ACR-2026-001 APPROVED authorization detected');
-    console.log('   ✅ Frozen file modifications authorized for E7.1 entities');
-    console.log('   ✅ Commit allowed under ACR governance\n');
-    
-    return true;
+
+    return false;
   } catch (error) {
     return false;
   }

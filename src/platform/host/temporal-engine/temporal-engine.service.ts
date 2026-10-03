@@ -14,10 +14,15 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { Database } from '@/types/database.types';
+import { Database, type Json } from '@/types/database.types';
 import { eventBus } from '@/platform/host/event-bus';
 import type { DomainEvent } from '@/platform/host/event-bus/types';
 import crypto from 'crypto';
+
+function toJson(value: unknown): Json {
+  const serialized: unknown = JSON.parse(JSON.stringify(value));
+  return serialized as Json;
+}
 
 // ─────────────────────────────────────────────────────────────────
 // Types
@@ -98,17 +103,17 @@ export class TemporalEngineService {
         tenant_id: this.tenantId,
         entity_type: params.entityType,
         entity_id: params.entityId,
-        snapshot_data: params.snapshotData,
+        snapshot_data: toJson(params.snapshotData),
         change_type: params.changeType,
         change_summary: params.changeSummary ?? null,
-        changed_fields: params.changedFields ? { fields: params.changedFields } : null,
+        changed_fields: params.changedFields ? toJson({ fields: params.changedFields }) : null,
         captured_by: params.capturedBy ?? null,
         source_event_id: params.sourceEventId ?? null,
         source_event_type: params.sourceEventType ?? null,
         correlation_id: params.correlationId ?? null,
         causation_id: params.causationId ?? null,
         transaction_id: params.transactionId ?? null,
-        metadata: params.metadata ?? {},
+        metadata: toJson(params.metadata ?? {}),
       })
       .select()
       .single();

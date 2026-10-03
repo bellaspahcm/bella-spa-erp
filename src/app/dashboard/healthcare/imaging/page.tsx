@@ -73,6 +73,21 @@ interface ImagingWorkItem {
   modality: 'XRAY' | 'CT' | 'MRI' | 'ULTRASOUND' | 'ENDOSCOPY';
 }
 
+type ImagingModality = ImagingWorkItem['modality'];
+const IMAGING_MODALITIES: readonly ImagingModality[] = ['XRAY', 'CT', 'MRI', 'ULTRASOUND', 'ENDOSCOPY'];
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function getString(value: unknown, fallback: string): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function toImagingModality(value: unknown): ImagingModality {
+  return IMAGING_MODALITIES.includes(value as ImagingModality) ? value as ImagingModality : 'XRAY';
+}
+
 export default function ImagingPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -116,14 +131,14 @@ export default function ImagingPage() {
         { value: 'ENDO-STOMACH', name: 'Nội soi Dạ dày - Tá tràng', modality: 'ENDOSCOPY' as const, bodySite: 'Nội soi Dạ dày - Tá tràng' },
       ];
       if (res.success && res.data && res.data.length > 0) {
-        const dbOptions = res.data.map((item: { id: string; name: string; metadata?: { risCode?: string; risModality?: string; risBodySite?: string } }) => {
-          const meta = item.metadata || {};
-          const code = meta.risCode || item.id.slice(0, 8).toUpperCase();
+        const dbOptions = res.data.map((item) => {
+          const meta = isRecord(item.metadata) ? item.metadata : {};
+          const code = getString(meta.risCode, item.id.slice(0, 8).toUpperCase());
           return {
             value: code,
             name: item.name,
-            modality: (meta.risModality || 'XRAY') as 'XRAY' | 'CT' | 'MRI' | 'ULTRASOUND' | 'ENDOSCOPY',
-            bodySite: meta.risBodySite || item.name,
+            modality: toImagingModality(meta.risModality),
+            bodySite: getString(meta.risBodySite, item.name),
           };
         });
         const merged = [...dbOptions];

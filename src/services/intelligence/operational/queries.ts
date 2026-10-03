@@ -34,6 +34,37 @@ import type {
 } from '@/types/materialized-views.types';
 import { getSupabaseAdminUrl, getSupabaseAdminKey } from '@/lib/supabase-admin-env';
 
+interface ViewQueryResult<Row> {
+  data: Row[] | null;
+  error: Error | null;
+}
+
+interface ViewSingleResult<Row> {
+  data: Row | null;
+  error: Error | null;
+}
+
+interface ViewQuery<Row> extends PromiseLike<ViewQueryResult<Row>> {
+  eq(column: string, value: unknown): ViewQuery<Row>;
+  gte(column: string, value: unknown): ViewQuery<Row>;
+  limit(count: number): ViewQuery<Row>;
+  lte(column: string, value: unknown): ViewQuery<Row>;
+  order(column: string, options?: { ascending?: boolean }): ViewQuery<Row>;
+  single(): PromiseLike<ViewSingleResult<Row>>;
+}
+
+interface ViewTable {
+  select<Row>(columns?: string): ViewQuery<Row>;
+}
+
+interface ViewClient {
+  from(table: string): ViewTable;
+}
+
+function materializedViewClient(client: unknown): ViewClient {
+  return client as ViewClient;
+}
+
 /**
  * Create server-side Supabase client with service role key (bypasses RLS).
  * 
@@ -268,9 +299,9 @@ export async function getKtvPerformance(
     const range = parseDateRange(dateRange);
     
     // Query materialized view (use rpc or type-safe approach)
-    const { data, error } = await supabase
-      .from('mv_ktv_performance_summary' as unknown)
-      .select('*')
+    const { data, error } = await materializedViewClient(supabase)
+      .from('mv_ktv_performance_summary')
+      .select<MvKtvPerformanceSummary>('*')
       .eq('ktv_id', ktvId)
       .gte('month', formatDate(range.startDate))
       .lte('month', formatDate(range.endDate))
@@ -284,7 +315,7 @@ export async function getKtvPerformance(
     }
     
     // Map database columns to camelCase (type-safe with MV interface, use unknown bridge for Supabase MV inference)
-    return ((data || []) as unknown as MvKtvPerformanceSummary[]).map((row) => ({
+    return (data || []).map((row) => ({
       ktvId: row.ktv_id,
       tenantId: row.tenant_id,
       ktvName: row.ktv_name,
@@ -353,9 +384,9 @@ export async function getKtvLeaderboard(
       : 'avg_rating';
     
     // Query materialized view (type-cast needed for MV support)
-    const { data, error } = await supabase
-      .from('mv_ktv_performance_summary' as unknown)
-      .select('*')
+    const { data, error } = await materializedViewClient(supabase)
+      .from('mv_ktv_performance_summary')
+      .select<MvKtvPerformanceSummary>('*')
       .eq('tenant_id', tenantId)
       .gte('month', formatDate(range.startDate))
       .lte('month', formatDate(range.endDate))
@@ -380,7 +411,7 @@ export async function getKtvLeaderboard(
       ratingCount: number;
     }>();
     
-    ((data || []) as unknown as MvKtvPerformanceSummary[]).forEach((row) => {
+    (data || []).forEach((row) => {
       const existing = ktvMap.get(row.ktv_id);
       if (existing) {
         existing.totalSessionsCompleted += row.total_sessions_completed;
@@ -445,9 +476,9 @@ export async function getInventoryStatus(
     const supabase = await createServiceRoleClient();
     
     // Build query (type-cast needed for MV support)
-    let query = supabase
-      .from('mv_inventory_status' as unknown)
-      .select('*')
+    let query = materializedViewClient(supabase)
+      .from('mv_inventory_status')
+      .select<MvInventoryStatus>('*')
       .eq('tenant_id', tenantId);
     
     // Apply stock status filter if provided
@@ -468,7 +499,7 @@ export async function getInventoryStatus(
     }
     
     // Map database columns to camelCase (type-safe with MV interface, use unknown bridge)
-    return ((data || []) as unknown as MvInventoryStatus[]).map((row) => ({
+    return (data || []).map((row) => ({
       productId: row.product_id,
       tenantId: row.tenant_id,
       productName: row.product_name,
@@ -524,9 +555,9 @@ export async function getInventoryForecast(
     const supabase = await createServiceRoleClient();
     
     // Query materialized view for product (type-cast needed for MV support)
-    const { data, error } = await supabase
-      .from('mv_inventory_status' as unknown)
-      .select('*')
+    const { data, error } = await materializedViewClient(supabase)
+      .from('mv_inventory_status')
+      .select<MvInventoryStatus>('*')
       .eq('product_id', productId)
       .single();
     
@@ -542,7 +573,7 @@ export async function getInventoryForecast(
     }
     
     // Type-safe cast to MV interface
-    const row = data as unknown as MvInventoryStatus;
+    const row = data;
     
     // Calculate forecast
     const avgDailyUsage = row.avg_daily_usage || 0;
@@ -606,9 +637,9 @@ export async function getSessionAnalytics(
     const range = parseDateRange(dateRange);
     
     // Query materialized view (type-cast needed for MV support)
-    const { data, error } = await supabase
-      .from('mv_session_analytics' as unknown)
-      .select('*')
+    const { data, error } = await materializedViewClient(supabase)
+      .from('mv_session_analytics')
+      .select<MvSessionAnalytics>('*')
       .eq('tenant_id', tenantId)
       .gte('date', formatDate(range.startDate))
       .lte('date', formatDate(range.endDate))
@@ -622,7 +653,7 @@ export async function getSessionAnalytics(
     }
     
     // Map database columns to camelCase (type-safe with MV interface, use unknown bridge)
-    return ((data || []) as unknown as MvSessionAnalytics[]).map((row) => ({
+    return (data || []).map((row) => ({
       tenantId: row.tenant_id,
       date: row.date,
       totalSessions: row.total_sessions,
@@ -686,9 +717,9 @@ export async function getCapacityUtilization(
     const range = parseDateRange(dateRange);
     
     // Query session analytics for capacity metrics (type-cast needed for MV support)
-    const { data: sessionData, error: sessionError } = await supabase
-      .from('mv_session_analytics' as unknown)
-      .select('*')
+    const { data: sessionData, error: sessionError } = await materializedViewClient(supabase)
+      .from('mv_session_analytics')
+      .select<MvSessionAnalytics>('*')
       .eq('tenant_id', tenantId)
       .gte('date', formatDate(range.startDate))
       .lte('date', formatDate(range.endDate))
@@ -718,7 +749,7 @@ export async function getCapacityUtilization(
     const totalCapacityPerDay = activeKtvs * 32;
     
     // Calculate utilization for each day (type-safe with MV interface, use unknown bridge)
-    return ((sessionData || []) as unknown as MvSessionAnalytics[]).map((row) => {
+    return (sessionData || []).map((row) => {
       const bookedSessions = row.total_sessions;
       const utilizationRatePct = Math.round((bookedSessions / totalCapacityPerDay) * 100);
       

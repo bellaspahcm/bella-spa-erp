@@ -6,11 +6,26 @@
  */
 
 import { getPrimaryClient } from '@/lib/database/read-replica';
-import { Database } from '@/types/database.types';
+import type { Database, Json } from '@/types/database.types';
 
 type AutoCSIScore = Database['public']['Tables']['auto_csi_scores']['Row'];
 type AutoCSIScoreInsert = Database['public']['Tables']['auto_csi_scores']['Insert'];
 type AutoSurvey = Database['public']['Tables']['auto_surveys']['Row'];
+
+function readMetadataString(metadata: Json | null, keys: string[]): string | null {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+    return null;
+  }
+
+  for (const key of keys) {
+    const value = metadata[key];
+    if (typeof value === 'string') {
+      return value;
+    }
+  }
+
+  return null;
+}
 
 export interface CSIDimensions {
   salesConsultantScore: number; // 1-5
@@ -205,11 +220,13 @@ export class CSISurveyService {
     if (survey.journey_id) {
       const { data: journey } = await supabase
         .from('auto_customer_journeys')
-        .select('assigned_to')
+        .select('metadata')
         .eq('id', survey.journey_id)
         .single();
       
-      salesConsultantId = journey?.assigned_to || null;
+      salesConsultantId = journey
+        ? readMetadataString(journey.metadata, ['assigned_to', 'assignedTo', 'sales_consultant_id'])
+        : null;
     }
 
     // Create CSI score record

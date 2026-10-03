@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getAllPatientProfilesAction, createPatientRecordAction } from '@/services/healthcare/healthcare-actions';
+import type { PatientViewModel } from '@/services/healthcare/healthcare-actions';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 const GENDER_OPTIONS = [
@@ -254,18 +255,17 @@ export default function PatientsPage() {
           'bg-gradient-to-br from-amber-500 to-orange-700',
         ];
 
-        // Type parameter explicitly mapped to eliminate any
-        const enhanced: PatientRecordItem[] = res.data.map((p: Record<string, unknown>, idx: number) => ({
-          id: String(p.id ?? ''),
-          recordNumber: String(p.recordNumber ?? ''),
-          name: String(p.name ?? ''),
-          gender: String(p.gender ?? 'Nam'),
-          age: Number(p.age ?? 30),
-          phone: String(p.phone ?? ''),
-          bloodType: String(p.bloodType ?? 'O+'),
-          allergies: Array.isArray(p.allergies) ? p.allergies.map(String) : [],
-          bhytCode: p.bhytCode ? String(p.bhytCode) : undefined,
-          bhytBenefitRate: p.bhytBenefitRate ? Number(p.bhytBenefitRate) : undefined,
+        const enhanced: PatientRecordItem[] = res.data.map((p: PatientViewModel, idx: number) => ({
+          id: p.id,
+          recordNumber: p.recordNumber,
+          name: p.name,
+          gender: p.gender === 'female' ? 'Nữ' : 'Nam',
+          age: p.age,
+          phone: p.phone,
+          bloodType: p.bloodType,
+          allergies: p.allergies,
+          bhytCode: p.bhytCode || undefined,
+          bhytBenefitRate: p.bhytBenefitRate || undefined,
           mpiId: `MPI-2026-${9000 + idx}`,
           citizenId: `03609${Math.floor(1000000 + Math.random() * 9000000)}`,
           isVNeIDVerified: true,
@@ -329,10 +329,8 @@ export default function PatientsPage() {
 
     try {
       const res = await createPatientRecordAction({
-        recordNumber: newPatient.recordNumber,
         name: newPatient.name,
         gender: newPatient.gender,
-        age: Number(newPatient.age),
         phone: newPatient.phone,
         bloodType: newPatient.bloodType,
         allergies: allergiesArr,

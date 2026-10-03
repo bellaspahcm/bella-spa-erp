@@ -32,6 +32,25 @@ interface QueueItem {
   waitTime: string;
 }
 
+interface ResponsiveVoice {
+  speak: (
+    text: string,
+    voice: string,
+    options: {
+      rate: number;
+      pitch: number;
+      onstart: () => void;
+      onerror: (err: unknown) => void;
+    }
+  ) => void;
+}
+
+type BellaQueueWindow = Window & {
+  AudioContext?: typeof AudioContext;
+  responsiveVoice?: ResponsiveVoice;
+  webkitAudioContext?: typeof AudioContext;
+};
+
 export default function QueueTVScreenPage() {
   const [queueList, setQueueList] = useState<QueueItem[]>([
     { stt: 102, patientName: 'Trần Minh Hoàng', roomName: 'Phòng Khám Số 3 - Tim Mạch', doctorName: 'BS. CKII Nguyễn Văn Minh', status: 'calling', waitTime: '2 phút' },
@@ -125,7 +144,7 @@ export default function QueueTVScreenPage() {
   };
 
   // SoundOfText CORS-friendly API fallback to play Google Vietnamese TTS voice without referrer limits
-  const playSoundOfText = (textToSpeak: string, onSuccess: () => void, onError: (err: Record<string, unknown>) => void) => {
+  const playSoundOfText = (textToSpeak: string, onSuccess: () => void, onError: (err: unknown) => void) => {
     fetch('https://api.soundoftext.com/sounds', {
       method: 'POST',
       headers: {
@@ -168,7 +187,7 @@ export default function QueueTVScreenPage() {
   };
 
   // Primary High-Reliability Google TTS Proxy fetching raw MP3 via open CORS Proxy (AllOrigins)
-  const playViaCorsProxy = (textToSpeak: string, onSuccess: () => void, onError: (err: Record<string, unknown>) => void) => {
+  const playViaCorsProxy = (textToSpeak: string, onSuccess: () => void, onError: (err: unknown) => void) => {
     try {
       const googleTtsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=vi&q=${encodeURIComponent(textToSpeak)}`;
       const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(googleTtsUrl)}`;
@@ -202,7 +221,7 @@ export default function QueueTVScreenPage() {
   };
 
   // 100% Reliable Local Next.js Server-Side TTS Proxy (immune to client-side CORS/referrer blocks)
-  const playViaLocalProxy = (textToSpeak: string, onSuccess: () => void, onError: (err: Record<string, unknown>) => void) => {
+  const playViaLocalProxy = (textToSpeak: string, onSuccess: () => void, onError: (err: unknown) => void) => {
     try {
       const localUrl = `/api/tts?text=${encodeURIComponent(textToSpeak)}`;
       const audio = document.getElementById('tts-audio') as HTMLAudioElement;
@@ -266,16 +285,17 @@ export default function QueueTVScreenPage() {
 
             // 3. Try ResponsiveVoice (CDN Cloud TTS with natural native Vietnamese voice)
             setDebugStatus('Đang kết nối...');
-            if (typeof window !== 'undefined' && (window as unknown).responsiveVoice) {
+            const responsiveWindow = window as BellaQueueWindow;
+            if (typeof window !== 'undefined' && responsiveWindow.responsiveVoice) {
               try {
-                (window as unknown).responsiveVoice.speak(textToSpeak, "Vietnamese Female", {
+                responsiveWindow.responsiveVoice.speak(textToSpeak, "Vietnamese Female", {
                   rate: 0.9,
                   pitch: 1.0,
                   onstart: () => {
                     setDebugStatus('Giọng Việt (Cloud 2)');
                     toast.success(`🔊 [ResponsiveVoice] AI Voice đang phát thông báo: "${textToSpeak}"`);
                   },
-                  onerror: (rvErr: Record<string, unknown>) => {
+                  onerror: (rvErr: unknown) => {
                     console.warn('ResponsiveVoice playback failed, trying SoundOfText:', rvErr);
 
                     // 4. Try SoundOfText API
@@ -323,7 +343,8 @@ export default function QueueTVScreenPage() {
       window.speechSynthesis.cancel();
     }
     try {
-      const AudioContextClass = window.AudioContext || (window as unknown).webkitAudioContext;
+      const audioWindow = window as BellaQueueWindow;
+      const AudioContextClass = audioWindow.AudioContext || audioWindow.webkitAudioContext;
       if (AudioContextClass) {
         const context = new AudioContextClass();
         if (context.state === 'suspended') {

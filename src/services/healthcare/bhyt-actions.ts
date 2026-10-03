@@ -79,14 +79,37 @@ export interface BHYTXml130ExportPayload {
   xml5: XML5ClinicalProgress[];
 }
 
+interface BhytEncounterRow {
+  id: string;
+  tenant_id: string;
+  patient_id: string;
+  encounter_type: string;
+  started_at: string;
+  ended_at: string | null;
+  status: string;
+  diagnoses: ICD10Diagnosis[] | null;
+  patient: Record<string, unknown> | null;
+}
+
+interface BhytEncounterQuery extends PromiseLike<{ data: BhytEncounterRow | null; error: { message: string } | null }> {
+  eq(column: string, value: unknown): BhytEncounterQuery;
+  select(columns: string): BhytEncounterQuery;
+  single(): Promise<{ data: BhytEncounterRow | null; error: { message: string } | null }>;
+}
+
+interface BhytSupabaseClient {
+  from(table: 'hc_encounters'): BhytEncounterQuery;
+}
+
 /**
  * BHYT XML 130 Claim Generator Service
  */
 export class BHYTXml130Service {
   static async generateClaimPayload(encounterId: string): Promise<BHYTXml130ExportPayload> {
     try {
+      const bhytSupabase = supabase as BhytSupabaseClient;
       // 1. Fetch encounter, patient profile, and bills
-      const { data: encounter, error: encError } = await supabase
+      const { data: encounter, error: encError } = await bhytSupabase
         .from('hc_encounters')
         .select(`
           id,
@@ -106,7 +129,7 @@ export class BHYTXml130Service {
         throw new Error('Không tìm thấy lượt khám để kết xuất BHYT');
       }
 
-      const patient = (encounter as Record<string, unknown>).patient as Record<string, unknown> | null;
+      const patient = encounter.patient;
       const diagnoses = (encounter.diagnoses || []) as ICD10Diagnosis[];
       const primaryDiag = diagnoses.find((d) => d.is_primary) || diagnoses[0];
       const secondaryDiags = diagnoses.filter((d) => !d.is_primary);

@@ -5,6 +5,16 @@ const getBrowserSupabase = () => {
   return createBrowserClient();
 };
 
+interface LegacyHealthcareQuery<T> extends PromiseLike<{ data: T[] | null; error: unknown }> {
+  eq(column: string, value: unknown): LegacyHealthcareQuery<T>;
+  order(column: string, options?: { ascending?: boolean }): LegacyHealthcareQuery<T>;
+  select(columns: string): LegacyHealthcareQuery<T>;
+}
+
+interface LegacyHealthcareSupabase {
+  from(table: 'inpatient_admissions'): LegacyHealthcareQuery<ICUPatient>;
+}
+
 export interface ICUStats {
   totalBeds: number;
   occupiedBeds: number;
@@ -120,7 +130,7 @@ export class ICUService {
     try {
       const supabase = getBrowserSupabase();
       const { data, error } = await supabase
-        .from('inpatient_admissions')
+        .from('inpatient_admissions' as never)
         .select('*, patients(*), beds(*)')
         .eq('tenant_id', tenantId)
         .eq('status', 'admitted')

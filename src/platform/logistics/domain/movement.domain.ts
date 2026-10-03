@@ -355,7 +355,7 @@ export class MovementDomain {
    * Calculate total cost if unit cost provided
    */
   static calculateTotalCost(movement: InventoryMovement): number | null {
-    if (movement.unitCost === null) return null;
+    if (movement.unitCost === null || movement.unitCost === undefined) return null;
     return movement.unitCost * movement.quantity;
   }
 

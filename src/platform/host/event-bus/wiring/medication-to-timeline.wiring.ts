@@ -6,6 +6,37 @@
 import { eventBus } from '../event-bus.service';
 import { MedicationAdministeredPayload } from '../types';
 import { createClient } from '@/lib/supabase-client';
+import type { Json } from '@/types/database.types';
+
+interface InsertResult<Row> {
+  data: Row | null;
+  error: { message: string } | null;
+}
+
+interface InsertSelection<Row> {
+  single(): PromiseLike<InsertResult<Row>>;
+}
+
+interface InsertQuery<Row> {
+  select(): InsertSelection<Row>;
+}
+
+interface InsertTable<Row> {
+  insert(values: unknown): InsertQuery<Row>;
+}
+
+interface TimelineInsertClient {
+  from(table: 'clinical_timeline'): InsertTable<{ id: string }>;
+}
+
+function timelineInsertClient(client: unknown): TimelineInsertClient {
+  return client as TimelineInsertClient;
+}
+
+function toJson(value: unknown): Json {
+  const serialized: unknown = JSON.parse(JSON.stringify(value));
+  return serialized as Json;
+}
 
 /**
  * When medication is administered, record in clinical timeline
@@ -15,16 +46,16 @@ export function wireMedicationToTimeline(): () => void {
     'MedicationAdministered',
     async (event) => {
       console.log('[Wiring] MedicationAdministered → Timeline: Recording event', {
-        medicationName: event.payload.medicationName,
+        medicationName: event.payload.drugName,
         patientId: event.payload.patientId,
-        dose: event.payload.dose,
+        dose: event.payload.dosage,
       });
 
       try {
         const supabase = createClient();
 
         // Insert into clinical timeline
-        const { data, error } = await supabase
+        const { data, error } = await timelineInsertClient(supabase)
           .from('clinical_timeline')
           .insert({
             tenant_id: event.tenantId,
@@ -32,19 +63,20 @@ export function wireMedicationToTimeline(): () => void {
             encounter_id: event.payload.encounterId,
             event_type: 'medication_administered',
             event_category: 'pharmacy',
-            event_title: `Medication Administered: ${event.payload.medicationName}`,
-            event_description: `${event.payload.dose} ${event.payload.route} - Administered by ${event.payload.administeredBy}`,
+            event_title: `Medication Administered: ${event.payload.drugName}`,
+            event_description: `${event.payload.dosage} ${event.payload.route} - Administered by ${event.payload.practitionerId}`,
             event_timestamp: event.payload.administeredAt,
             severity: 'info',
-            metadata: {
-              orderId: event.payload.orderId,
-              medicationName: event.payload.medicationName,
-              dose: event.payload.dose,
+            metadata: toJson({
+              marId: event.payload.marId,
+              medicationId: event.payload.medicationId,
+              medicationName: event.payload.drugName,
+              dose: event.payload.dosage,
               route: event.payload.route,
-              administeredBy: event.payload.administeredBy,
+              administeredBy: event.payload.practitionerId,
               notes: event.payload.notes,
               eventId: event.eventId,
-            },
+            }),
             created_by: event.userId,
           })
           .select()
@@ -52,6 +84,10 @@ export function wireMedicationToTimeline(): () => void {
 
         if (error) {
           console.error('[Wiring] Failed to insert timeline entry:', error);
+          return;
+        }
+        if (!data) {
+          console.error('[Wiring] Timeline insert returned no data');
           return;
         }
 
