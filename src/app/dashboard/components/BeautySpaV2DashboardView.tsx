@@ -192,9 +192,9 @@ export function BeautySpaV2DashboardView({
   const dateString = now.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' });
 
   return (
-    <div className="flex-1 bg-[#F4F6F8] min-h-screen p-4 md:p-6 lg:p-8 pb-24 md:pb-28 lg:pb-32 space-y-6 text-slate-800 font-sans">
+    <div className="flex-1 bg-[#F4F6F8] min-h-screen p-6 md:p-8 lg:p-12 pb-32 space-y-8 text-slate-800 font-sans">
       {/* ─── TOP HEADER BAR ──────────────────────────────────────────────────────── */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white/60 backdrop-blur-md p-4 rounded-2xl border border-slate-200/60 shadow-xs">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white/60 backdrop-blur-md p-4 md:p-6 rounded-2xl border border-slate-200/60 shadow-xs">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
             Chào buổi sáng{userRole === 'admin' ? ', Admin' : ''}! <span className="animate-bounce inline-block">👋</span>
@@ -772,6 +772,9 @@ export function BeautySpaV2DashboardView({
           </div>
         </div>
       </div>
+
+      {/* Spacer to guarantee scroll clearance at the bottom of the viewport */}
+      <div className="h-24 md:h-32 w-full shrink-0" />
     </div>
   );
 }
