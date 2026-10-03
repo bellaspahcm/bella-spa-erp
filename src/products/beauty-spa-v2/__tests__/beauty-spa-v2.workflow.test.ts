@@ -1,0 +1,1576 @@
+import { productRegistry } from '../../../platform/registry/product-registry';
+import type {
+  AppointmentRepository,
+  Clock,
+  IdGenerator,
+  ProfessionalAssignmentRepository,
+  ResourceAllocationRepository,
+  ResourceAvailabilityPort,
+  SessionRepository,
+} from '../../../platform/beauty/application/ports';
+import type {
+  AppointmentRecord,
+  ProfessionalAssignmentHistoryRecord,
+  ProfessionalAssignmentRecord,
+  ResourceAllocationHistoryRecord,
+  ResourceAllocationRecord,
+  ResourceCapacityWindow,
+  SessionRecord,
+  TenantScoped,
+  TimeInterval,
+} from '../../../platform/beauty/contracts';
+import {
+  type BookBeautySpaServiceInput,
+  type BeautySpaBookingMode,
+  type BeautySpaOperationalOutcome,
+  type BeautySpaSessionFinanceOutboxPort,
+  type BeautySpaResourceRequirement,
+  BeautySpaV2Error,
+  BeautySpaV2Service,
+  type SpaStaffAvailabilityPort,
+  type SpaWaitlistPort,
+} from '../service';
+
+class WorkflowIds implements IdGenerator {
+  private value = 0;
+
+  public next(prefix: string): string {
+    this.value += 1;
+    return `${prefix}-${this.value}`;
+  }
+}
+
+class WorkflowClock implements Clock {
+  private value = 0;
+
+  public now(): string {
+    this.value += 1;
+    return `2026-10-01T09:${String(this.value).padStart(2, '0')}:00.000Z`;
+  }
+}
+
+class BeautySpaHarness {
+  public readonly appointments: AppointmentRecord[] = [];
+  public readonly assignments: ProfessionalAssignmentRecord[] = [];
+  public readonly assignmentHistory: ProfessionalAssignmentHistoryRecord[] = [];
+  public readonly allocations: ResourceAllocationRecord[] = [];
+  public readonly allocationHistory: ResourceAllocationHistoryRecord[] = [];
+  public readonly sessions: SessionRecord[] = [];
+  public readonly waitlistEntries: Array<{ tenantId: string; customerId: string; reason: string }> = [];
+  public readonly financeHandoffs: Array<Parameters<BeautySpaSessionFinanceOutboxPort['enqueueCompletedSession']>[0]> = [];
+  public readonly unavailableStaff = new Set<string>();
+  public readonly malformedStaffAvailability = new Map<string, unknown>();
+  public staffAvailabilityDelay: Promise<void> | null = null;
+  public staffAvailabilityInFlight = 0;
+  public maxConcurrentStaffAvailability = 0;
+  public readonly assignmentCreateFailures = new Set<string>();
+  public readonly assignmentUpdateFailures = new Set<string>();
+  public readonly allocationActivationFailures = new Set<string>();
+  public readonly allocationUpdateFailures = new Set<string>();
+  public readonly appointmentUpdateFailures = new Set<string>();
+  public readonly sessionCompletionFailures = new Set<string>();
+  public malformedWaitlistResponse: { waitlistId: unknown; position: unknown } | null = null;
+
+  public readonly appointmentRepository: AppointmentRepository = {
+    create: async (value) => {
+      this.appointments.push(value);
+      return value;
+    },
+    getById: async (scope) => this.appointments.find((appointment) => (
+      appointment.tenantId === scope.tenantId && appointment.id === scope.appointmentId
+    )) ?? null,
+    update: async (value) => {
+      if (this.appointmentUpdateFailures.has(value.customerId)) {
+        throw new Error(`appointment update failed for ${value.customerId}`);
+      }
+      this.replace(this.appointments, value);
+      return value;
+    },
+  };
+
+  public readonly assignmentRepository: ProfessionalAssignmentRepository = {
+    create: async (value) => {
+      if (this.assignmentCreateFailures.has(value.professionalId)) {
+        throw new Error(`assignment create failed for ${value.professionalId}`);
+      }
+      this.assignments.push(value);
+      return value;
+    },
+    update: async (value) => {
+      if (value.status === 'DISRUPTED' && this.assignmentUpdateFailures.has(value.professionalId)) {
+        throw new Error(`assignment update failed for ${value.professionalId}`);
+      }
+      this.replace(this.assignments, value);
+      return value;
+    },
+    appendHistory: async (value) => {
+      this.assignmentHistory.push(value);
+      return value;
+    },
+    listActive: async (scope) => this.assignments.filter((assignment) => (
+      assignment.tenantId === scope.tenantId
+      && assignment.serviceCommitmentId === scope.serviceCommitmentId
+      && assignment.status === 'ACCEPTED'
+    )),
+  };
+
+  public readonly allocationRepository: ResourceAllocationRepository = {
+    create: async (value) => {
+      this.allocations.push(value);
+      return value;
+    },
+    update: async (value) => {
+      if (value.status === 'ACTIVE' && this.allocationActivationFailures.has(value.resourceId)) {
+        throw new Error(`allocation activation failed for ${value.resourceId}`);
+      }
+      if (value.status === 'DISRUPTED' && this.allocationUpdateFailures.has(value.resourceId)) {
+        throw new Error(`allocation update failed for ${value.resourceId}`);
+      }
+      this.replace(this.allocations, value);
+      return value;
+    },
+    appendHistory: async (value) => {
+      this.allocationHistory.push(value);
+      return value;
+    },
+    listActive: async (scope) => this.allocations.filter((allocation) => (
+      allocation.tenantId === scope.tenantId
+      && allocation.resourceId === scope.resourceId
+      && allocation.status === 'ACTIVE'
+    )),
+  };
+
+  public readonly sessionRepository: SessionRepository = {
+    create: async (value) => {
+      this.sessions.push(value);
+      return value;
+    },
+    update: async (value) => {
+      if (value.status === 'COMPLETED' && this.sessionCompletionFailures.has(value.id)) {
+        throw new Error(`session completion failed for ${value.id}`);
+      }
+      this.replace(this.sessions, value);
+      return value;
+    },
+    getById: async (scope) => this.sessions.find((session) => (
+      session.tenantId === scope.tenantId && session.id === scope.sessionId
+    )) ?? null,
+  };
+
+  public readonly availability: ResourceAvailabilityPort = {
+    getWindow: async (scope): Promise<ResourceCapacityWindow> => ({
+      tenantId: scope.tenantId,
+      resourceId: scope.resourceId,
+      interval: scope.interval,
+      capacityUnits: 1,
+      unavailable: false,
+    }),
+  };
+
+  public readonly staffAvailability: SpaStaffAvailabilityPort = {
+    isAvailable: async (scope) => {
+      this.staffAvailabilityInFlight += 1;
+      this.maxConcurrentStaffAvailability = Math.max(
+        this.maxConcurrentStaffAvailability,
+        this.staffAvailabilityInFlight,
+      );
+      try {
+        if (this.staffAvailabilityDelay) {
+          await this.staffAvailabilityDelay;
+        }
+        const key = this.staffKey(scope.tenantId, scope.branchId, scope.professionalId, scope.interval);
+        if (this.malformedStaffAvailability.has(key)) {
+          return this.malformedStaffAvailability.get(key) as boolean;
+        }
+        return !this.unavailableStaff.has(key);
+      } finally {
+        this.staffAvailabilityInFlight -= 1;
+      }
+    },
+  };
+
+  public readonly waitlist: SpaWaitlistPort = {
+    add: async (request) => {
+      this.waitlistEntries.push({
+        tenantId: request.tenantId,
+        customerId: request.customerId,
+        reason: request.reason,
+      });
+      if (this.malformedWaitlistResponse) {
+        return this.malformedWaitlistResponse as { waitlistId: string; position: number };
+      }
+      return {
+        waitlistId: `waitlist-${this.waitlistEntries.length}`,
+        position: this.waitlistEntries.length,
+      };
+    },
+  };
+
+  public readonly financeOutbox: BeautySpaSessionFinanceOutboxPort = {
+    enqueueCompletedSession: async (input) => {
+      this.financeHandoffs.push(input);
+    },
+  };
+
+  public createService(financeOutbox: BeautySpaSessionFinanceOutboxPort = this.financeOutbox): BeautySpaV2Service {
+    return new BeautySpaV2Service(
+      this.appointmentRepository,
+      this.assignmentRepository,
+      this.allocationRepository,
+      this.sessionRepository,
+      this.availability,
+      this.staffAvailability,
+      new WorkflowIds(),
+      new WorkflowClock(),
+      this.waitlist,
+      financeOutbox,
+    );
+  }
+
+  public staffKey(tenantId: string, branchId: string, professionalId: string, interval: TimeInterval): string {
+    return `${tenantId}:${branchId}:${professionalId}:${interval.startsAt}:${interval.endsAt}`;
+  }
+
+  private replace<TRecord extends TenantScoped & { id: string }>(records: TRecord[], value: TRecord): void {
+    const index = records.findIndex((record) => record.tenantId === value.tenantId && record.id === value.id);
+    if (index >= 0) records[index] = value;
+    else records.push(value);
+  }
+}
+
+const chainInterval: TimeInterval = {
+  startsAt: '2026-10-01T10:00:00.000Z',
+  endsAt: '2026-10-01T11:30:00.000Z',
+};
+
+describe('Bella Beauty Spa v2 product discovery and workflow', () => {
+  it('registers full Beauty Spa product identity without module fallback', () => {
+    const product = productRegistry.getRequired('bella_spa');
+
+    expect(product).toMatchObject({
+      productKey: 'bella_spa',
+      displayName: 'Bella Beauty Spa v2',
+      requiredModules: ['beauty_spa'],
+      serviceProfile: 'spa',
+      navigationProfile: 'spa',
+      defaultRoute: '/dashboard/beauty-spa-v2',
+    });
+  });
+
+  it('runs a multi-branch spa booking through staff, room, bed, session, and handoff facts', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+
+    const booking = await service.bookService({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-vip-1',
+      serviceId: 'service-facial-signature',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-lead-1',
+      supportProfessionalIds: ['assistant-1'],
+      resources: [
+        { resourceId: 'room-d1-royal-suite', resourceType: 'ROOM', segmentId: 'facial-suite' },
+        { resourceId: 'bed-d1-01', resourceType: 'BED', segmentId: 'facial-bed' },
+        { resourceId: 'device-hifu-01', resourceType: 'DEVICE', segmentId: 'hifu-device' },
+      ],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    });
+
+    expect(booking.appointment).toMatchObject({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-vip-1',
+      serviceId: 'service-facial-signature',
+      status: 'PENDING',
+    });
+    expect(booking.assignments.map((assignment) => assignment.professionalId)).toEqual(['therapist-lead-1', 'assistant-1']);
+    expect(booking.assignments.every((assignment) => assignment.status === 'ACCEPTED')).toBe(true);
+    expect(booking.allocations.map((allocation) => allocation.resourceId)).toEqual([
+      'room-d1-royal-suite',
+      'bed-d1-01',
+      'device-hifu-01',
+    ]);
+    expect(booking.allocations.every((allocation) => allocation.status === 'ACTIVE')).toBe(true);
+
+    const plannedSession: SessionRecord = {
+      id: 'session-spa-1',
+      tenantId: booking.appointment.tenantId,
+      appointmentId: booking.appointment.id,
+      serviceCommitmentId: booking.serviceCommitmentId,
+      status: 'PLANNED',
+      actualStartAt: null,
+      actualEndAt: null,
+      actualPerformerId: null,
+      outcome: null,
+    };
+
+    const completed = await service.completeSession({
+      session: plannedSession,
+      performerId: 'therapist-lead-1',
+      outcome: {
+        checkedOutBy: 'manager-spa',
+        customerHistoryNote: 'Skin hydration improved; recommend monthly HIFU maintenance.',
+        packageSessionUsed: true,
+        paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+        inventoryHandoff: 'INVENTORY_HANDOFF_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: ['CHAIN_V2', 'ROOM_BED_DEVICE_CONFIRMED'],
+      },
+    });
+
+    expect(completed.status).toBe('COMPLETED');
+    expect(completed.actualPerformerId).toBe('therapist-lead-1');
+    const outcome = JSON.parse(completed.outcome as string) as { paymentStatus: string; auditTags: string[] };
+    expect(outcome.paymentStatus).toBe('FINANCE_HANDOFF_REQUIRED');
+    expect(outcome.auditTags).toContain('CHAIN_V2');
+  });
+
+  it('checks independent staff availability in parallel before booking side effects', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+    harness.staffAvailabilityDelay = Promise.resolve();
+
+    const booking = await service.bookService({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-team-parallel',
+      serviceId: 'service-team-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-lead-parallel',
+      supportProfessionalIds: ['assistant-parallel-1', 'assistant-parallel-2'],
+      resources: [{ resourceId: 'room-d1-parallel', resourceType: 'ROOM' }],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    });
+
+    expect(harness.maxConcurrentStaffAvailability).toBe(3);
+    expect(booking.assignments.map((assignment) => assignment.professionalId)).toEqual([
+      'therapist-lead-parallel',
+      'assistant-parallel-1',
+      'assistant-parallel-2',
+    ]);
+    expect(booking.allocations).toHaveLength(1);
+  });
+
+  it('emits Beauty finance handoff after H8 session completion persists', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+    const appointment = await harness.appointmentRepository.create({
+      id: 'appointment-finance-handoff',
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-finance',
+      customerId: 'customer-finance',
+      serviceId: 'service-finance',
+      interval: {
+        startsAt: '2026-10-01T10:00:00.000Z',
+        endsAt: '2026-10-01T11:00:00.000Z',
+      },
+      status: 'PENDING',
+    });
+    const plannedSession: SessionRecord = {
+      id: 'session-finance-handoff',
+      tenantId: appointment.tenantId,
+      appointmentId: appointment.id,
+      serviceCommitmentId: 'commitment-finance',
+      status: 'PLANNED',
+      actualStartAt: null,
+      actualEndAt: null,
+      actualPerformerId: null,
+      outcome: null,
+    };
+
+    const completed = await service.completeSession({
+      session: plannedSession,
+      performerId: 'therapist-finance',
+      outcome: {
+        checkedOutBy: 'manager-spa',
+        customerHistoryNote: 'Finance handoff required.',
+        packageSessionUsed: false,
+        paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+        inventoryHandoff: 'NOT_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: ['FINANCE_HANDOFF'],
+      },
+      financeHandoff: {
+        earnedRevenueAmount: 120000,
+        deferredRevenueAmount: 0,
+        receivableAmount: 120000,
+        commissionAmount: 0,
+        description: 'Beauty V2 finance handoff',
+      },
+    });
+
+    expect(completed.status).toBe('COMPLETED');
+    expect(harness.financeHandoffs).toHaveLength(1);
+    expect(harness.financeHandoffs[0]).toMatchObject({
+      completedSession: {
+        id: 'session-finance-handoff',
+        status: 'COMPLETED',
+        actualPerformerId: 'therapist-finance',
+      },
+      appointment: {
+        id: 'appointment-finance-handoff',
+        customerId: 'customer-finance',
+        serviceId: 'service-finance',
+        branchId: 'branch-finance',
+      },
+      financeHandoff: {
+        earnedRevenueAmount: 120000,
+        receivableAmount: 120000,
+      },
+    });
+  });
+
+  it('does not roll back completed H8 session when Finance handoff enqueue fails', async () => {
+    const harness = new BeautySpaHarness();
+    const failingFinanceOutbox: BeautySpaSessionFinanceOutboxPort = {
+      enqueueCompletedSession: async () => {
+        throw new Error('finance outbox unavailable');
+      },
+    };
+    const service = harness.createService(failingFinanceOutbox);
+    const appointment = await harness.appointmentRepository.create({
+      id: 'appointment-finance-fails',
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-finance',
+      customerId: 'customer-finance-fails',
+      serviceId: 'service-finance',
+      interval: {
+        startsAt: '2026-10-01T10:00:00.000Z',
+        endsAt: '2026-10-01T11:00:00.000Z',
+      },
+      status: 'PENDING',
+    });
+    const plannedSession: SessionRecord = {
+      id: 'session-finance-fails',
+      tenantId: appointment.tenantId,
+      appointmentId: appointment.id,
+      serviceCommitmentId: 'commitment-finance-fails',
+      status: 'PLANNED',
+      actualStartAt: null,
+      actualEndAt: null,
+      actualPerformerId: null,
+      outcome: null,
+    };
+
+    await expect(service.completeSession({
+      session: plannedSession,
+      performerId: 'therapist-finance',
+      outcome: {
+        checkedOutBy: 'manager-spa',
+        customerHistoryNote: 'Finance handoff failed after H8 completion.',
+        packageSessionUsed: false,
+        paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+        inventoryHandoff: 'NOT_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: ['FINANCE_HANDOFF'],
+      },
+      financeHandoff: {
+        earnedRevenueAmount: 120000,
+        receivableAmount: 120000,
+      },
+    })).rejects.toThrow('finance outbox unavailable');
+
+    expect(harness.sessions).toEqual([
+      expect.objectContaining({
+        id: 'session-finance-fails',
+        status: 'COMPLETED',
+        actualPerformerId: 'therapist-finance',
+      }),
+    ]);
+  });
+
+  it('rolls back session start when checkout completion fails', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+    harness.sessionCompletionFailures.add('session-completion-fails');
+
+    const plannedSession: SessionRecord = {
+      id: 'session-completion-fails',
+      tenantId: 'tenant-spa-a',
+      appointmentId: 'appointment-completion-fails',
+      serviceCommitmentId: 'commitment-completion-fails',
+      status: 'PLANNED',
+      actualStartAt: null,
+      actualEndAt: null,
+      actualPerformerId: null,
+      outcome: null,
+    };
+
+    await expect(service.completeSession({
+      session: plannedSession,
+      performerId: 'therapist-lead-1',
+      outcome: {
+        checkedOutBy: 'manager-spa',
+        customerHistoryNote: 'Skin barrier improved.',
+        packageSessionUsed: true,
+        paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+        inventoryHandoff: 'INVENTORY_HANDOFF_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: ['CHAIN_V2'],
+      },
+    })).rejects.toThrow('session completion failed for session-completion-fails');
+
+    expect(harness.sessions).toEqual([
+      expect.objectContaining({
+        id: 'session-completion-fails',
+        status: 'PLANNED',
+        actualStartAt: null,
+        actualEndAt: null,
+        actualPerformerId: null,
+        outcome: null,
+      }),
+    ]);
+  });
+
+  it('rejects incomplete checkout handoff evidence before session side effects', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+    const plannedSession: SessionRecord = {
+      id: 'session-invalid-outcome',
+      tenantId: 'tenant-spa-a',
+      appointmentId: 'appointment-invalid-outcome',
+      serviceCommitmentId: 'commitment-invalid-outcome',
+      status: 'PLANNED',
+      actualStartAt: null,
+      actualEndAt: null,
+      actualPerformerId: null,
+      outcome: null,
+    };
+
+    await expect(service.completeSession(null as never))
+      .rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_CHECKOUT_OUTCOME' });
+
+    await expect(service.completeSession({
+      session: null as never,
+      performerId: 'therapist-lead-1',
+      outcome: {
+        checkedOutBy: 'manager-spa',
+        customerHistoryNote: 'Skin barrier improved.',
+        packageSessionUsed: true,
+        paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+        inventoryHandoff: 'INVENTORY_HANDOFF_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: ['CHAIN_V2'],
+      },
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'REQUIRED_SESSION_ID_MISSING' });
+
+    await expect(service.completeSession({
+      session: plannedSession,
+      performerId: 'therapist-lead-1',
+      outcome: null as never,
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_CHECKOUT_OUTCOME' });
+
+    const circularOutcome: BeautySpaOperationalOutcome & { self?: unknown } = {
+      checkedOutBy: 'manager-spa',
+      customerHistoryNote: 'Skin barrier improved.',
+      packageSessionUsed: true,
+      paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+      inventoryHandoff: 'INVENTORY_HANDOFF_REQUIRED',
+      payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+      auditTags: ['CHAIN_V2'],
+    };
+    circularOutcome.self = circularOutcome;
+
+    await expect(service.completeSession({
+      session: plannedSession,
+      performerId: 'therapist-lead-1',
+      outcome: circularOutcome,
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_CHECKOUT_OUTCOME' });
+
+    await expect(service.completeSession({
+      session: { ...plannedSession, appointmentId: ' ' },
+      performerId: 'therapist-lead-1',
+      outcome: {
+        checkedOutBy: 'manager-spa',
+        customerHistoryNote: 'Skin barrier improved.',
+        packageSessionUsed: true,
+        paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+        inventoryHandoff: 'INVENTORY_HANDOFF_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: ['CHAIN_V2'],
+      },
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'REQUIRED_SESSION_ID_MISSING' });
+
+    await expect(service.completeSession({
+      session: plannedSession,
+      performerId: ' ',
+      outcome: {
+        checkedOutBy: 'manager-spa',
+        customerHistoryNote: 'Skin barrier improved.',
+        packageSessionUsed: true,
+        paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+        inventoryHandoff: 'INVENTORY_HANDOFF_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: ['CHAIN_V2'],
+      },
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'REQUIRED_ID_MISSING' });
+
+    await expect(service.completeSession({
+      session: plannedSession,
+      performerId: 'therapist-lead-1',
+      outcome: {
+        checkedOutBy: ' ',
+        customerHistoryNote: 'Skin barrier improved.',
+        packageSessionUsed: true,
+        paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+        inventoryHandoff: 'INVENTORY_HANDOFF_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: ['CHAIN_V2'],
+      },
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'CHECKOUT_ACTOR_REQUIRED' });
+
+    await expect(service.completeSession({
+      session: plannedSession,
+      performerId: 'therapist-lead-1',
+      outcome: {
+        checkedOutBy: 'manager-spa ',
+        customerHistoryNote: 'Skin barrier improved.',
+        packageSessionUsed: true,
+        paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+        inventoryHandoff: 'INVENTORY_HANDOFF_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: ['CHAIN_V2'],
+      },
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'CHECKOUT_ACTOR_REQUIRED' });
+
+    const invalidPackageOutcome = {
+      checkedOutBy: 'manager-spa',
+      customerHistoryNote: 'Skin barrier improved.',
+      packageSessionUsed: 'yes',
+      paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+      inventoryHandoff: 'INVENTORY_HANDOFF_REQUIRED',
+      payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+      auditTags: ['CHAIN_V2'],
+    } as BeautySpaOperationalOutcome;
+
+    await expect(service.completeSession({
+      session: plannedSession,
+      performerId: 'therapist-lead-1',
+      outcome: invalidPackageOutcome,
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_CHECKOUT_OUTCOME' });
+
+    await expect(service.completeSession({
+      session: plannedSession,
+      performerId: 'therapist-lead-1',
+      outcome: {
+        checkedOutBy: 'manager-spa',
+        customerHistoryNote: 'Skin barrier improved.',
+        packageSessionUsed: true,
+        paymentStatus: 'SETTLED' as BeautySpaOperationalOutcome['paymentStatus'],
+        inventoryHandoff: 'INVENTORY_HANDOFF_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: ['CHAIN_V2'],
+      },
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_CHECKOUT_OUTCOME' });
+
+    await expect(service.completeSession({
+      session: plannedSession,
+      performerId: 'therapist-lead-1',
+      outcome: {
+        checkedOutBy: 'manager-spa',
+        customerHistoryNote: ' ',
+        packageSessionUsed: true,
+        paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+        inventoryHandoff: 'INVENTORY_HANDOFF_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: ['CHAIN_V2'],
+      },
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'CUSTOMER_HISTORY_REQUIRED' });
+
+    await expect(service.completeSession({
+      session: plannedSession,
+      performerId: 'therapist-lead-1',
+      outcome: {
+        checkedOutBy: 'manager-spa',
+        customerHistoryNote: 'Skin barrier improved.',
+        packageSessionUsed: true,
+        paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+        inventoryHandoff: 'INVENTORY_HANDOFF_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: 'CHAIN_V2' as never,
+      },
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'AUDIT_TAGS_REQUIRED' });
+
+    await expect(service.completeSession({
+      session: plannedSession,
+      performerId: 'therapist-lead-1',
+      outcome: {
+        checkedOutBy: 'manager-spa',
+        customerHistoryNote: 'Skin barrier improved.',
+        packageSessionUsed: true,
+        paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+        inventoryHandoff: 'INVENTORY_HANDOFF_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: [],
+      },
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'AUDIT_TAGS_REQUIRED' });
+
+    await expect(service.completeSession({
+      session: plannedSession,
+      performerId: 'therapist-lead-1',
+      outcome: {
+        checkedOutBy: 'manager-spa',
+        customerHistoryNote: 'Skin barrier improved.',
+        packageSessionUsed: true,
+        paymentStatus: 'FINANCE_HANDOFF_REQUIRED',
+        inventoryHandoff: 'INVENTORY_HANDOFF_REQUIRED',
+        payrollHandoff: 'PAYROLL_HANDOFF_REQUIRED',
+        auditTags: [' CHAIN_V2 '],
+      },
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'AUDIT_TAGS_REQUIRED' });
+
+    expect(harness.sessions).toHaveLength(0);
+  });
+
+  it('prevents staff and resource conflicts while preserving tenant boundaries', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+    harness.unavailableStaff.add(harness.staffKey('tenant-spa-a', 'branch-d1', 'therapist-lead-1', chainInterval));
+
+    await expect(service.bookService({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-conflict-staff',
+      serviceId: 'service-body-therapy',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-lead-1',
+      resources: [{ resourceId: 'room-d1-02', resourceType: 'ROOM' }],
+      actorId: 'manager-spa',
+      bookingMode: 'WALK_IN',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'STAFF_TIME_BRANCH_CONFLICT' });
+
+    expect(harness.appointments).toHaveLength(0);
+    harness.unavailableStaff.clear();
+
+    await service.bookService({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-first',
+      serviceId: 'service-body-therapy',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-a',
+      resources: [{ resourceId: 'room-d1-02', resourceType: 'ROOM' }],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    });
+
+    await expect(service.bookService({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-overlap',
+      serviceId: 'service-body-therapy',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-b',
+      resources: [{ resourceId: 'room-d1-02', resourceType: 'ROOM' }],
+      actorId: 'manager-spa',
+      bookingMode: 'WALK_IN',
+    })).rejects.toMatchObject({ code: 'RESOURCE_CAPACITY_CONFLICT' });
+
+    const tenantBBooking = await service.bookService({
+      tenantId: 'tenant-spa-b',
+      branchId: 'branch-d1',
+      customerId: 'customer-tenant-b',
+      serviceId: 'service-body-therapy',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-b',
+      resources: [{ resourceId: 'room-d1-02', resourceType: 'ROOM' }],
+      actorId: 'manager-spa-b',
+      bookingMode: 'BOOKING',
+    });
+
+    expect(tenantBBooking.allocations).toHaveLength(1);
+    expect(harness.allocations.filter((allocation) => allocation.tenantId === 'tenant-spa-a')).toHaveLength(1);
+    expect(harness.allocations.filter((allocation) => allocation.tenantId === 'tenant-spa-b')).toHaveLength(1);
+    expect(harness.appointments.find((appointment) => appointment.customerId === 'customer-overlap')?.status).toBe('CANCELLED');
+  });
+
+  it('rejects malformed staff availability evidence before creating side effects', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+    harness.malformedStaffAvailability.set(
+      harness.staffKey('tenant-spa-a', 'branch-d1', 'therapist-malformed', chainInterval),
+      'false',
+    );
+
+    await expect(service.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-malformed-staff-availability',
+      serviceId: 'service-body-therapy',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-malformed',
+      resources: [{ resourceId: 'room-d1-02', resourceType: 'ROOM' }],
+      actorId: 'manager-spa',
+      bookingMode: 'WALK_IN',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'STAFF_AVAILABILITY_HANDOFF_FAILED' });
+
+    expect(harness.appointments).toHaveLength(0);
+    expect(harness.assignments).toHaveLength(0);
+    expect(harness.allocations).toHaveLength(0);
+    expect(harness.waitlistEntries).toHaveLength(0);
+  });
+
+  it('rejects duplicate staff and resource requirements before creating operational side effects', async () => {
+    const staffHarness = new BeautySpaHarness();
+    const staffService = staffHarness.createService();
+
+    await expect(staffService.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-duplicate-staff',
+      serviceId: 'service-team-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-dup',
+      supportProfessionalIds: ['therapist-dup'],
+      resources: [{ resourceId: 'room-d1-05', resourceType: 'ROOM' }],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'DUPLICATE_STAFF_ASSIGNMENT' });
+
+    expect(staffHarness.appointments).toHaveLength(0);
+    expect(staffHarness.assignments).toHaveLength(0);
+    expect(staffHarness.allocations).toHaveLength(0);
+    expect(staffHarness.waitlistEntries).toHaveLength(0);
+
+    const resourceHarness = new BeautySpaHarness();
+    const resourceService = resourceHarness.createService();
+
+    await expect(resourceService.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-duplicate-resource',
+      serviceId: 'service-suite-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-resource',
+      resources: [
+        { resourceId: 'suite-d1-02', resourceType: 'SUITE', segmentId: 'main-suite' },
+        { resourceId: 'suite-d1-02', resourceType: 'SUITE', segmentId: 'duplicate-suite' },
+      ],
+      actorId: 'manager-spa',
+      bookingMode: 'WALK_IN',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'DUPLICATE_RESOURCE_REQUIREMENT' });
+
+    expect(resourceHarness.appointments).toHaveLength(0);
+    expect(resourceHarness.assignments).toHaveLength(0);
+    expect(resourceHarness.allocations).toHaveLength(0);
+    expect(resourceHarness.waitlistEntries).toHaveLength(0);
+
+    const resourceItemHarness = new BeautySpaHarness();
+    const resourceItemService = resourceItemHarness.createService();
+
+    await expect(resourceItemService.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-null-resource',
+      serviceId: 'service-suite-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-resource',
+      resources: [null as never],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_RESOURCE_REQUIREMENTS' });
+
+    expect(resourceItemHarness.appointments).toHaveLength(0);
+    expect(resourceItemHarness.assignments).toHaveLength(0);
+    expect(resourceItemHarness.allocations).toHaveLength(0);
+    expect(resourceItemHarness.waitlistEntries).toHaveLength(0);
+  });
+
+  it('rejects unsupported booking modes and resource types before creating side effects', async () => {
+    const bookingModeHarness = new BeautySpaHarness();
+    const bookingModeService = bookingModeHarness.createService();
+
+    await expect(bookingModeService.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-invalid-mode',
+      serviceId: 'service-suite-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-resource',
+      resources: [{ resourceId: 'suite-d1-03', resourceType: 'SUITE' }],
+      actorId: 'manager-spa',
+      bookingMode: 'RESCHEDULE' as BeautySpaBookingMode,
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_BOOKING_MODE' });
+
+    expect(bookingModeHarness.appointments).toHaveLength(0);
+    expect(bookingModeHarness.assignments).toHaveLength(0);
+    expect(bookingModeHarness.allocations).toHaveLength(0);
+    expect(bookingModeHarness.waitlistEntries).toHaveLength(0);
+
+    const resourceTypeHarness = new BeautySpaHarness();
+    const resourceTypeService = resourceTypeHarness.createService();
+
+    await expect(resourceTypeService.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-invalid-resource-type',
+      serviceId: 'service-suite-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-resource',
+      resources: [{
+        resourceId: 'suite-d1-03',
+        resourceType: 'LOCKER' as BeautySpaResourceRequirement['resourceType'],
+      }],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_RESOURCE_TYPE' });
+
+    expect(resourceTypeHarness.appointments).toHaveLength(0);
+    expect(resourceTypeHarness.assignments).toHaveLength(0);
+    expect(resourceTypeHarness.allocations).toHaveLength(0);
+    expect(resourceTypeHarness.waitlistEntries).toHaveLength(0);
+  });
+
+  it('rejects malformed staff and resource lists before creating side effects', async () => {
+    const requestHarness = new BeautySpaHarness();
+    const requestService = requestHarness.createService();
+
+    await expect(requestService.bookOrWaitlist(null as never))
+      .rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_BOOKING_REQUEST' });
+
+    expect(requestHarness.appointments).toHaveLength(0);
+    expect(requestHarness.assignments).toHaveLength(0);
+    expect(requestHarness.allocations).toHaveLength(0);
+    expect(requestHarness.waitlistEntries).toHaveLength(0);
+
+    const staffHarness = new BeautySpaHarness();
+    const staffService = staffHarness.createService();
+
+    await expect(staffService.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-scalar-support',
+      serviceId: 'service-suite-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-resource',
+      supportProfessionalIds: 'assistant-one' as never,
+      resources: [{ resourceId: 'suite-d1-04', resourceType: 'SUITE' }],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_STAFF_ASSIGNMENT' });
+
+    expect(staffHarness.appointments).toHaveLength(0);
+    expect(staffHarness.assignments).toHaveLength(0);
+    expect(staffHarness.allocations).toHaveLength(0);
+    expect(staffHarness.waitlistEntries).toHaveLength(0);
+
+    const resourceHarness = new BeautySpaHarness();
+    const resourceService = resourceHarness.createService();
+
+    await expect(resourceService.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-scalar-resource',
+      serviceId: 'service-suite-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-resource',
+      resources: 'suite-d1-04' as never,
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_RESOURCE_REQUIREMENTS' });
+
+    expect(resourceHarness.appointments).toHaveLength(0);
+    expect(resourceHarness.assignments).toHaveLength(0);
+    expect(resourceHarness.allocations).toHaveLength(0);
+    expect(resourceHarness.waitlistEntries).toHaveLength(0);
+  });
+
+  it('rejects missing operational IDs before creating side effects', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+
+    await expect(service.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-missing-resource',
+      serviceId: 'service-suite-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-resource',
+      resources: [{ resourceId: ' ', resourceType: 'SUITE' }],
+      actorId: 'manager-spa',
+      bookingMode: 'WALK_IN',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'REQUIRED_ID_MISSING' });
+
+    expect(harness.appointments).toHaveLength(0);
+    expect(harness.assignments).toHaveLength(0);
+    expect(harness.allocations).toHaveLength(0);
+    expect(harness.waitlistEntries).toHaveLength(0);
+
+    const nonStringHarness = new BeautySpaHarness();
+    const nonStringService = nonStringHarness.createService();
+
+    await expect(nonStringService.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-numeric-resource',
+      serviceId: 'service-suite-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-resource',
+      resources: [{ resourceId: 123 as never, resourceType: 'SUITE' }],
+      actorId: 'manager-spa',
+      bookingMode: 'WALK_IN',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'REQUIRED_ID_MISSING' });
+
+    expect(nonStringHarness.appointments).toHaveLength(0);
+    expect(nonStringHarness.assignments).toHaveLength(0);
+    expect(nonStringHarness.allocations).toHaveLength(0);
+    expect(nonStringHarness.waitlistEntries).toHaveLength(0);
+
+    const paddedHarness = new BeautySpaHarness();
+    const paddedService = paddedHarness.createService();
+
+    await expect(paddedService.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-padded-staff',
+      serviceId: 'service-suite-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-resource ',
+      resources: [{ resourceId: 'suite-d1-04', resourceType: 'SUITE' }],
+      actorId: 'manager-spa',
+      bookingMode: 'WALK_IN',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'REQUIRED_ID_MISSING' });
+
+    expect(paddedHarness.appointments).toHaveLength(0);
+    expect(paddedHarness.assignments).toHaveLength(0);
+    expect(paddedHarness.allocations).toHaveLength(0);
+    expect(paddedHarness.waitlistEntries).toHaveLength(0);
+
+    const segmentHarness = new BeautySpaHarness();
+    const segmentService = segmentHarness.createService();
+
+    await expect(segmentService.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-numeric-segment',
+      serviceId: 'service-suite-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-resource',
+      resources: [{ resourceId: 'suite-d1-04', resourceType: 'SUITE', segmentId: 123 as never }],
+      actorId: 'manager-spa',
+      bookingMode: 'WALK_IN',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_RESOURCE_REQUIREMENTS' });
+
+    expect(segmentHarness.appointments).toHaveLength(0);
+    expect(segmentHarness.assignments).toHaveLength(0);
+    expect(segmentHarness.allocations).toHaveLength(0);
+    expect(segmentHarness.waitlistEntries).toHaveLength(0);
+  });
+
+  it('rejects invalid interval and capacity before creating operational side effects', async () => {
+    const intervalHarness = new BeautySpaHarness();
+    const intervalService = intervalHarness.createService();
+
+    await expect(intervalService.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-invalid-interval',
+      serviceId: 'service-invalid-interval',
+      interval: {
+        startsAt: '2026-10-01T11:30:00.000Z',
+        endsAt: '2026-10-01T10:00:00.000Z',
+      },
+      leadProfessionalId: 'therapist-interval',
+      resources: [{ resourceId: 'room-d1-06', resourceType: 'ROOM' }],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_INTERVAL' });
+
+    expect(intervalHarness.appointments).toHaveLength(0);
+    expect(intervalHarness.assignments).toHaveLength(0);
+    expect(intervalHarness.allocations).toHaveLength(0);
+    expect(intervalHarness.waitlistEntries).toHaveLength(0);
+
+    const malformedIntervalHarness = new BeautySpaHarness();
+    const malformedIntervalService = malformedIntervalHarness.createService();
+
+    await expect(malformedIntervalService.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-null-interval',
+      serviceId: 'service-invalid-interval',
+      interval: null as never,
+      leadProfessionalId: 'therapist-interval',
+      resources: [{ resourceId: 'room-d1-06', resourceType: 'ROOM' }],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_INTERVAL' });
+
+    expect(malformedIntervalHarness.appointments).toHaveLength(0);
+    expect(malformedIntervalHarness.assignments).toHaveLength(0);
+    expect(malformedIntervalHarness.allocations).toHaveLength(0);
+    expect(malformedIntervalHarness.waitlistEntries).toHaveLength(0);
+
+    for (const capacityUnits of [0, Number.NaN]) {
+      const capacityHarness = new BeautySpaHarness();
+      const capacityService = capacityHarness.createService();
+
+      await expect(capacityService.bookOrWaitlist({
+        tenantId: 'tenant-spa-a',
+        branchId: 'branch-d1',
+        customerId: `customer-invalid-capacity-${String(capacityUnits)}`,
+        serviceId: 'service-invalid-capacity',
+        interval: chainInterval,
+        leadProfessionalId: 'therapist-capacity',
+        resources: [{ resourceId: 'device-rf-01', resourceType: 'DEVICE', capacityUnits }],
+        actorId: 'manager-spa',
+        bookingMode: 'WALK_IN',
+      })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'INVALID_RESOURCE_CAPACITY' });
+
+      expect(capacityHarness.appointments).toHaveLength(0);
+      expect(capacityHarness.assignments).toHaveLength(0);
+      expect(capacityHarness.allocations).toHaveLength(0);
+      expect(capacityHarness.waitlistEntries).toHaveLength(0);
+    }
+  });
+
+  it('cancels the appointment and disrupts accepted staff when assignment orchestration fails mid-booking', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+    harness.assignmentCreateFailures.add('assistant-fails');
+
+    await expect(service.bookService({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-assignment-failure',
+      serviceId: 'service-facial-team',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-lead-1',
+      supportProfessionalIds: ['assistant-fails'],
+      resources: [{ resourceId: 'room-d1-03', resourceType: 'ROOM' }],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    })).rejects.toThrow('assignment create failed for assistant-fails');
+
+    expect(harness.appointments.find((appointment) => (
+      appointment.customerId === 'customer-assignment-failure'
+    ))?.status).toBe('CANCELLED');
+    expect(harness.assignments).toEqual([
+      expect.objectContaining({
+        professionalId: 'therapist-lead-1',
+        status: 'DISRUPTED',
+        reason: 'BOOKING_ORCHESTRATION_FAILED',
+        actorId: 'manager-spa',
+      }),
+    ]);
+    expect(harness.assignmentHistory).toEqual([
+      expect.objectContaining({
+        assignmentId: harness.assignments[0]?.id,
+        eventType: 'BOOKING_ASSIGNMENT_ROLLED_BACK',
+        reason: 'BOOKING_ORCHESTRATION_FAILED',
+        actorId: 'manager-spa',
+      }),
+    ]);
+    expect(harness.allocations).toHaveLength(0);
+  });
+
+  it('continues assignment rollback when appointment cancellation fails', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+    harness.assignmentCreateFailures.add('assistant-fails');
+    harness.appointmentUpdateFailures.add('customer-rollback-failure');
+
+    await expect(service.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-rollback-failure',
+      serviceId: 'service-facial-team',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-lead-1',
+      supportProfessionalIds: ['assistant-fails'],
+      resources: [{ resourceId: 'room-d1-03', resourceType: 'ROOM' }],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'BOOKING_ROLLBACK_FAILED' });
+
+    expect(harness.appointments.find((appointment) => (
+      appointment.customerId === 'customer-rollback-failure'
+    ))?.status).toBe('PENDING');
+    expect(harness.assignments).toEqual([
+      expect.objectContaining({
+        professionalId: 'therapist-lead-1',
+        status: 'DISRUPTED',
+        reason: 'BOOKING_ORCHESTRATION_FAILED',
+        actorId: 'manager-spa',
+      }),
+    ]);
+    expect(harness.assignmentHistory).toEqual([
+      expect.objectContaining({
+        assignmentId: harness.assignments[0]?.id,
+        eventType: 'BOOKING_ASSIGNMENT_ROLLED_BACK',
+        reason: 'BOOKING_ORCHESTRATION_FAILED',
+        actorId: 'manager-spa',
+      }),
+    ]);
+    expect(harness.waitlistEntries).toHaveLength(0);
+  });
+
+  it('continues later assignment rollback when an earlier assignment cleanup fails', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+    harness.assignmentCreateFailures.add('assistant-fails');
+    harness.assignmentUpdateFailures.add('therapist-lead-1');
+
+    await expect(service.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-assignment-cleanup-failure',
+      serviceId: 'service-facial-team',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-lead-1',
+      supportProfessionalIds: ['assistant-cleanup-survives', 'assistant-fails'],
+      resources: [{ resourceId: 'room-d1-03', resourceType: 'ROOM' }],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'BOOKING_ROLLBACK_FAILED' });
+
+    expect(harness.assignments.find((assignment) => (
+      assignment.professionalId === 'therapist-lead-1'
+    ))?.status).toBe('ACCEPTED');
+    expect(harness.assignments.find((assignment) => (
+      assignment.professionalId === 'assistant-cleanup-survives'
+    ))).toMatchObject({
+      status: 'DISRUPTED',
+      reason: 'BOOKING_ORCHESTRATION_FAILED',
+      actorId: 'manager-spa',
+    });
+    expect(harness.assignmentHistory).toEqual([
+      expect.objectContaining({
+        assignmentId: harness.assignments.find((assignment) => (
+          assignment.professionalId === 'assistant-cleanup-survives'
+        ))?.id,
+        eventType: 'BOOKING_ASSIGNMENT_ROLLED_BACK',
+      }),
+    ]);
+    expect(harness.waitlistEntries).toHaveLength(0);
+  });
+
+  it('rolls back allocations created earlier in the same booking when a later resource conflicts', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+
+    harness.allocations.push({
+      id: 'existing-device-allocation',
+      tenantId: 'tenant-spa-a',
+      serviceCommitmentId: 'existing-commitment',
+      segmentId: 'existing-device',
+      resourceId: 'device-hifu-01',
+      interval: chainInterval,
+      capacityUnits: 1,
+      status: 'ACTIVE',
+      replacementForId: null,
+      reason: null,
+      actorId: null,
+    });
+
+    await expect(service.bookService({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-partial-conflict',
+      serviceId: 'service-hifu-combo',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-hifu',
+      resources: [
+        { resourceId: 'room-d1-royal-suite', resourceType: 'ROOM', segmentId: 'facial-suite' },
+        { resourceId: 'device-hifu-01', resourceType: 'DEVICE', segmentId: 'hifu-device' },
+      ],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    })).rejects.toMatchObject({ code: 'RESOURCE_CAPACITY_CONFLICT' });
+
+    const failedAppointment = harness.appointments.find((appointment) => (
+      appointment.customerId === 'customer-partial-conflict'
+    ));
+    expect(failedAppointment?.status).toBe('CANCELLED');
+
+    const rolledBackRoom = harness.allocations.find((allocation) => (
+      allocation.resourceId === 'room-d1-royal-suite'
+      && allocation.serviceCommitmentId !== 'existing-commitment'
+    ));
+    expect(rolledBackRoom).toMatchObject({
+      status: 'DISRUPTED',
+      actorId: 'manager-spa',
+      reason: 'BOOKING_RESOURCE_ALLOCATION_FAILED',
+    });
+    expect(harness.allocations.filter((allocation) => (
+      allocation.resourceId === 'room-d1-royal-suite'
+      && allocation.status === 'ACTIVE'
+    ))).toHaveLength(0);
+    expect(harness.allocationHistory).toEqual([
+      expect.objectContaining({
+        allocationId: rolledBackRoom?.id,
+        eventType: 'BOOKING_ALLOCATION_ROLLED_BACK',
+        reason: 'BOOKING_RESOURCE_ALLOCATION_FAILED',
+        actorId: 'manager-spa',
+      }),
+    ]);
+    expect(harness.assignments.every((assignment) => assignment.status === 'DISRUPTED')).toBe(true);
+    expect(harness.assignmentHistory).toEqual([
+      expect.objectContaining({
+        eventType: 'BOOKING_ASSIGNMENT_ROLLED_BACK',
+        reason: 'BOOKING_ORCHESTRATION_FAILED',
+        actorId: 'manager-spa',
+      }),
+    ]);
+  });
+
+  it('rolls back a proposed allocation when activation fails', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+    harness.allocationActivationFailures.add('room-d1-activation-fails');
+
+    await expect(service.bookService({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-allocation-activation-failure',
+      serviceId: 'service-suite-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-suite',
+      resources: [{ resourceId: 'room-d1-activation-fails', resourceType: 'ROOM' }],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    })).rejects.toThrow('allocation activation failed for room-d1-activation-fails');
+
+    const failedAppointment = harness.appointments.find((appointment) => (
+      appointment.customerId === 'customer-allocation-activation-failure'
+    ));
+    expect(failedAppointment?.status).toBe('CANCELLED');
+
+    expect(harness.allocations).toEqual([
+      expect.objectContaining({
+        resourceId: 'room-d1-activation-fails',
+        status: 'DISRUPTED',
+        reason: 'BOOKING_RESOURCE_ALLOCATION_FAILED',
+        actorId: 'manager-spa',
+      }),
+    ]);
+    expect(harness.allocationHistory).toEqual([
+      expect.objectContaining({
+        allocationId: harness.allocations[0]?.id,
+        eventType: 'BOOKING_ALLOCATION_ROLLED_BACK',
+        reason: 'BOOKING_RESOURCE_ALLOCATION_FAILED',
+        actorId: 'manager-spa',
+      }),
+    ]);
+    expect(harness.assignments.every((assignment) => assignment.status === 'DISRUPTED')).toBe(true);
+  });
+
+  it('allows retry after a clean booking rollback without leftover side effects', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+    harness.allocationActivationFailures.add('room-d1-retry-after-rollback');
+
+    const retryableBooking = {
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-retry-after-rollback',
+      serviceId: 'service-suite-treatment',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-suite-retry',
+      resources: [{ resourceId: 'room-d1-retry-after-rollback', resourceType: 'ROOM' }],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    } satisfies BookBeautySpaServiceInput;
+
+    await expect(service.bookService(retryableBooking))
+      .rejects.toThrow('allocation activation failed for room-d1-retry-after-rollback');
+
+    expect(harness.appointments.find((appointment) => (
+      appointment.customerId === 'customer-retry-after-rollback'
+    ))?.status).toBe('CANCELLED');
+    expect(harness.assignments.every((assignment) => assignment.status === 'DISRUPTED')).toBe(true);
+    expect(harness.allocations.every((allocation) => allocation.status === 'DISRUPTED')).toBe(true);
+
+    harness.allocationActivationFailures.clear();
+    const retried = await service.bookService(retryableBooking);
+
+    expect(retried.appointment).toMatchObject({
+      customerId: 'customer-retry-after-rollback',
+      status: 'PENDING',
+    });
+    expect(retried.assignments).toEqual([
+      expect.objectContaining({
+        professionalId: 'therapist-suite-retry',
+        status: 'ACCEPTED',
+      }),
+    ]);
+    expect(retried.allocations).toEqual([
+      expect.objectContaining({
+        resourceId: 'room-d1-retry-after-rollback',
+        status: 'ACTIVE',
+      }),
+    ]);
+  });
+
+  it('continues later allocation rollback when an earlier allocation cleanup fails', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+    harness.allocationUpdateFailures.add('room-d1-royal-suite');
+
+    harness.allocations.push({
+      id: 'existing-device-allocation',
+      tenantId: 'tenant-spa-a',
+      serviceCommitmentId: 'existing-commitment',
+      segmentId: 'existing-device',
+      resourceId: 'device-hifu-01',
+      interval: chainInterval,
+      capacityUnits: 1,
+      status: 'ACTIVE',
+      replacementForId: null,
+      reason: null,
+      actorId: null,
+    });
+
+    await expect(service.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-allocation-cleanup-failure',
+      serviceId: 'service-hifu-combo',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-hifu',
+      resources: [
+        { resourceId: 'room-d1-royal-suite', resourceType: 'ROOM', segmentId: 'facial-suite' },
+        { resourceId: 'bed-d1-thermal', resourceType: 'BED', segmentId: 'thermal-bed' },
+        { resourceId: 'device-hifu-01', resourceType: 'DEVICE', segmentId: 'hifu-device' },
+      ],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'ALLOCATION_ROLLBACK_FAILED' });
+
+    expect(harness.allocations.find((allocation) => (
+      allocation.resourceId === 'room-d1-royal-suite'
+    ))?.status).toBe('ACTIVE');
+    expect(harness.allocations.find((allocation) => (
+      allocation.resourceId === 'bed-d1-thermal'
+    ))).toMatchObject({
+      status: 'DISRUPTED',
+      reason: 'BOOKING_RESOURCE_ALLOCATION_FAILED',
+      actorId: 'manager-spa',
+    });
+    expect(harness.allocationHistory).toEqual([
+      expect.objectContaining({
+        allocationId: harness.allocations.find((allocation) => (
+          allocation.resourceId === 'bed-d1-thermal'
+        ))?.id,
+        eventType: 'BOOKING_ALLOCATION_ROLLED_BACK',
+      }),
+    ]);
+    expect(harness.assignments.every((assignment) => assignment.status === 'DISRUPTED')).toBe(true);
+    expect(harness.waitlistEntries).toHaveLength(0);
+  });
+
+  it('routes conflicted walk-ins to waitlist without creating false operational success', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+
+    await service.bookService({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-booked',
+      serviceId: 'service-vip-suite',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-a',
+      resources: [{ resourceId: 'suite-d1-01', resourceType: 'SUITE' }],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    });
+
+    const waitlisted = await service.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-walk-in',
+      serviceId: 'service-vip-suite',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-b',
+      resources: [{ resourceId: 'suite-d1-01', resourceType: 'SUITE' }],
+      actorId: 'manager-spa',
+      bookingMode: 'WALK_IN',
+    });
+
+    expect(waitlisted.waitlist).toMatchObject({
+      waitlistId: 'waitlist-1',
+      position: 1,
+      reason: 'RESOURCE_CAPACITY_CONFLICT',
+    });
+    expect(waitlisted.allocations).toHaveLength(0);
+    expect(harness.waitlistEntries).toEqual([{
+      tenantId: 'tenant-spa-a',
+      customerId: 'customer-walk-in',
+      reason: 'RESOURCE_CAPACITY_CONFLICT',
+    }]);
+    expect(harness.appointments.find((appointment) => appointment.customerId === 'customer-walk-in')?.status).toBe('CANCELLED');
+  });
+
+  it('rejects malformed waitlist handoff evidence without returning false success', async () => {
+    const harness = new BeautySpaHarness();
+    const service = harness.createService();
+    harness.malformedWaitlistResponse = { waitlistId: ' ', position: 0 };
+
+    await service.bookService({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-booked',
+      serviceId: 'service-vip-suite',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-a',
+      resources: [{ resourceId: 'suite-d1-01', resourceType: 'SUITE' }],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    });
+
+    await expect(service.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-walk-in-malformed-waitlist',
+      serviceId: 'service-vip-suite',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-b',
+      resources: [{ resourceId: 'suite-d1-01', resourceType: 'SUITE' }],
+      actorId: 'manager-spa',
+      bookingMode: 'WALK_IN',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'WAITLIST_HANDOFF_FAILED' });
+
+    expect(harness.waitlistEntries).toEqual([{
+      tenantId: 'tenant-spa-a',
+      customerId: 'customer-walk-in-malformed-waitlist',
+      reason: 'RESOURCE_CAPACITY_CONFLICT',
+    }]);
+
+    const paddedHarness = new BeautySpaHarness();
+    const paddedService = paddedHarness.createService();
+    paddedHarness.malformedWaitlistResponse = { waitlistId: ' waitlist-1 ', position: 1 };
+
+    await paddedService.bookService({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-booked-padded-waitlist',
+      serviceId: 'service-vip-suite',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-a',
+      resources: [{ resourceId: 'suite-d1-01', resourceType: 'SUITE' }],
+      actorId: 'manager-spa',
+      bookingMode: 'BOOKING',
+    });
+
+    await expect(paddedService.bookOrWaitlist({
+      tenantId: 'tenant-spa-a',
+      branchId: 'branch-d1',
+      customerId: 'customer-walk-in-padded-waitlist',
+      serviceId: 'service-vip-suite',
+      interval: chainInterval,
+      leadProfessionalId: 'therapist-b',
+      resources: [{ resourceId: 'suite-d1-01', resourceType: 'SUITE' }],
+      actorId: 'manager-spa',
+      bookingMode: 'WALK_IN',
+    })).rejects.toMatchObject<BeautySpaV2Error>({ code: 'WAITLIST_HANDOFF_FAILED' });
+
+    expect(paddedHarness.waitlistEntries).toEqual([{
+      tenantId: 'tenant-spa-a',
+      customerId: 'customer-walk-in-padded-waitlist',
+      reason: 'RESOURCE_CAPACITY_CONFLICT',
+    }]);
+  });
+});

@@ -40,6 +40,20 @@ export interface BranchEnrollmentDetail {
   status: string;
 }
 
+interface BranchEnrollmentJoinRow {
+  enrollment_id: string;
+  student_id: string;
+  course_id: string;
+  enrollment_date: string;
+  status: string;
+  students?: { student_name?: string | null } | { student_name?: string | null }[] | null;
+  courses?: { course_name?: string | null } | { course_name?: string | null }[] | null;
+}
+
+function firstJoin<T>(value: T | T[] | null | undefined): T | null {
+  return Array.isArray(value) ? value[0] ?? null : value ?? null;
+}
+
 // ============================================================================
 // REPOSITORY
 // ============================================================================
@@ -142,15 +156,20 @@ export class EnglishBranchRepository {
       return [];
     }
 
-    return (data || []).map((row: any) => ({
-      enrollmentId: row.enrollment_id,
-      studentId: row.student_id,
-      studentName: row.students?.student_name || 'Unknown',
-      courseId: row.course_id,
-      courseName: row.courses?.course_name || 'Unknown',
-      enrollmentDate: row.enrollment_date,
-      status: row.status,
-    }));
+    return (data || []).map((row: BranchEnrollmentJoinRow) => {
+      const student = firstJoin(row.students);
+      const course = firstJoin(row.courses);
+
+      return {
+        enrollmentId: row.enrollment_id,
+        studentId: row.student_id,
+        studentName: student?.student_name || 'Unknown',
+        courseId: row.course_id,
+        courseName: course?.course_name || 'Unknown',
+        enrollmentDate: row.enrollment_date,
+        status: row.status,
+      };
+    });
   }
 
   /**

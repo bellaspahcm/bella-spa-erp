@@ -46,6 +46,7 @@ test.describe("Bella Nail Product RC UI", () => {
         id: tenantId,
         name: `E2E Nail UI Tenant ${marker}`,
         status: "active",
+        product_key: "bella_nail",
         enabled_modules: { beauty_spa: true, babycare: false },
         brand_theme: { displayName: "Bella Nail" },
       } satisfies Database["public"]["Tables"]["tenants"]["Insert"]);

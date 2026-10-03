@@ -30,6 +30,36 @@ describe('Supabase migration check script', () => {
     expect(state.latestLocal).toBe('20260606113000');
     expect(state.latestRemote).toBe('20260606100000');
     expect(state.pendingLocal).toEqual(['20260606103000', '20260606113000']);
+    expect(state.newPendingLocal).toEqual(['20260606103000', '20260606113000']);
+    expect(state.grandfatheredPendingLocal).toEqual([]);
+    expect(state.remoteOnly).toEqual([]);
+  });
+
+  it('grandfathers local migration drift already present at the baseline ref', () => {
+    const state = analyzeMigrationState(
+      ['20260606100000', '20260606103000'],
+      ['20260606100000'],
+      ['20260606100000', '20260606103000']
+    );
+
+    expect(state.isSynced).toBe(true);
+    expect(state.pendingLocal).toEqual(['20260606103000']);
+    expect(state.newPendingLocal).toEqual([]);
+    expect(state.grandfatheredPendingLocal).toEqual(['20260606103000']);
+    expect(state.remoteOnly).toEqual([]);
+  });
+
+  it('still detects new local migration drift beyond the baseline ref', () => {
+    const state = analyzeMigrationState(
+      ['20260606100000', '20260606103000', '20260606113000'],
+      ['20260606100000'],
+      ['20260606100000', '20260606103000']
+    );
+
+    expect(state.isSynced).toBe(false);
+    expect(state.pendingLocal).toEqual(['20260606103000', '20260606113000']);
+    expect(state.grandfatheredPendingLocal).toEqual(['20260606103000']);
+    expect(state.newPendingLocal).toEqual(['20260606113000']);
     expect(state.remoteOnly).toEqual([]);
   });
 
@@ -41,6 +71,8 @@ describe('Supabase migration check script', () => {
 
     expect(state.isSynced).toBe(false);
     expect(state.pendingLocal).toEqual([]);
+    expect(state.newPendingLocal).toEqual([]);
+    expect(state.grandfatheredPendingLocal).toEqual([]);
     expect(state.remoteOnly).toEqual(['20260606104500']);
   });
 

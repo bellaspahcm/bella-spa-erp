@@ -1,30 +1,79 @@
 import { supabase } from '@/lib/supabase';
 import { accountingOutboxListener, OutboxClaimedEvent } from '../application/AccountingOutboxListener';
 
+type QueryResult<T> = {
+  data?: T;
+  error: Error | null;
+};
+
+type AccountRow = {
+  id: string;
+  account_code: string;
+};
+
+type JournalEntryRow = {
+  id: string;
+};
+
+type AccountsBuilder = {
+  select: jest.MockedFunction<() => AccountsBuilder>;
+  eq: jest.MockedFunction<(column: string, value: string) => AccountsBuilder>;
+  in: jest.MockedFunction<(column: string, values: string[]) => Promise<QueryResult<AccountRow[]>>>;
+};
+
+type EntriesBuilder = {
+  insert: jest.MockedFunction<(payload: Record<string, unknown>) => EntriesBuilder>;
+  select: jest.MockedFunction<(columns: string) => EntriesBuilder>;
+  single: jest.MockedFunction<() => Promise<QueryResult<JournalEntryRow>>>;
+  update: jest.MockedFunction<(payload: Record<string, unknown>) => EntriesBuilder>;
+  eq: jest.MockedFunction<(column: string, value: string) => Promise<QueryResult<unknown>>>;
+};
+
+type LinesBuilder = {
+  insert: jest.MockedFunction<(payload: Record<string, unknown>[]) => Promise<QueryResult<unknown>>>;
+};
+
+type MockTableBuilder = AccountsBuilder | EntriesBuilder | LinesBuilder;
+
+type SupabaseMockTarget = {
+  from: (table: string) => MockTableBuilder;
+  rpc: (functionName: string, args: Record<string, unknown>) => Promise<QueryResult<unknown>>;
+};
+
+function assertSupabaseMockTarget(value: unknown): asserts value is SupabaseMockTarget {
+  if (!value || typeof value !== 'object') {
+    throw new Error('Supabase mock target is not available');
+  }
+
+  const candidate = value as Record<string, unknown>;
+  if (typeof candidate.from !== 'function' || typeof candidate.rpc !== 'function') {
+    throw new Error('Supabase mock target is missing required methods');
+  }
+}
+
 describe('AccountingOutboxListener', () => {
   const tenantId = 'tenant-123';
   const outboxId = 'outbox-456';
   const referenceId = 'ref-789';
 
-  let spyFrom: jest.SpyInstance;
-  let spyRpc: jest.SpyInstance;
+  let spyFrom: jest.SpiedFunction<SupabaseMockTarget['from']>;
+  let spyRpc: jest.SpiedFunction<SupabaseMockTarget['rpc']>;
 
-  // Define separate builders for each table to prevent mock method pollution
-  const accountsBuilder: any = {
-    select: jest.fn().mockReturnThis(),
-    eq: jest.fn().mockReturnThis(),
+  const accountsBuilder: AccountsBuilder = {
+    select: jest.fn(() => accountsBuilder),
+    eq: jest.fn(() => accountsBuilder),
     in: jest.fn(),
   };
 
-  const entriesBuilder: any = {
-    insert: jest.fn().mockReturnThis(),
-    select: jest.fn().mockReturnThis(),
+  const entriesBuilder: EntriesBuilder = {
+    insert: jest.fn(() => entriesBuilder),
+    select: jest.fn(() => entriesBuilder),
     single: jest.fn(),
-    update: jest.fn().mockReturnThis(),
+    update: jest.fn(() => entriesBuilder),
     eq: jest.fn(),
   };
 
-  const linesBuilder: any = {
+  const linesBuilder: LinesBuilder = {
     insert: jest.fn(),
   };
 
@@ -38,14 +87,15 @@ describe('AccountingOutboxListener', () => {
     entriesBuilder.select.mockReturnThis();
     entriesBuilder.update.mockReturnThis();
 
-    spyFrom = jest.spyOn(supabase as any, 'from').mockImplementation((table: string) => {
+    assertSupabaseMockTarget(supabase);
+    spyFrom = jest.spyOn(supabase, 'from').mockImplementation((table: string) => {
       if (table === 'accounting_accounts') return accountsBuilder;
       if (table === 'journal_entries') return entriesBuilder;
       if (table === 'journal_lines') return linesBuilder;
       throw new Error(`Unexpected table mock: ${table}`);
     });
 
-    spyRpc = jest.spyOn(supabase as any, 'rpc');
+    spyRpc = jest.spyOn(supabase, 'rpc');
   });
 
   afterEach(() => {

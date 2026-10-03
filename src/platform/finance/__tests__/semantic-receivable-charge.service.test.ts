@@ -281,7 +281,10 @@ class FakeReceivableChargeGateway implements FinanceReceivableChargeGateway {
     return { allocationId: 'allocation-created' };
   }
 
-  async findOpenReceivables(): Promise<readonly FinanceOpenReceivable[]> {
+  async findOpenReceivables(input: { readonly match?: { readonly invoiceId?: string } } = {}): Promise<readonly FinanceOpenReceivable[]> {
+    if (input.match?.invoiceId) {
+      return this.openReceivables.filter((receivable) => receivable.invoiceId === input.match?.invoiceId);
+    }
     return [...this.openReceivables];
   }
 
@@ -478,6 +481,7 @@ describe('SemanticReceivableChargeService', () => {
         invoiceId: 'invoice-created',
         cashMovementId: 'cash-movement-1',
         allocatedAmountMinor: 60000,
+        rateSource: 'CENTRAL_BANK',
       }),
     ]);
   });
@@ -519,6 +523,7 @@ describe('SemanticReceivableChargeService', () => {
         invoiceId: 'invoice-created',
         cashMovementId: 'cash-movement-1',
         allocatedAmountMinor: 60000,
+        rateSource: 'MANUAL_AUTHORIZED',
       }),
     ]);
     expect(result).toMatchObject({
@@ -562,6 +567,135 @@ describe('SemanticReceivableChargeService', () => {
     expect(result.duplicate).toBe(true);
     expect(result.allocations).toEqual([
       expect.objectContaining({
+        allocationId: 'allocation-existing',
+        duplicate: true,
+      }),
+    ]);
+  });
+
+  test('allocates confirmed payment to one exact invoice receivable', async () => {
+    const gateway = new FakeReceivableChargeGateway({
+      openReceivables: [
+        {
+          invoiceId: 'invoice-created',
+          receivablePositionId: 'position-created',
+          outstandingAmountMinor: 60000,
+          currency: 'VND',
+          issueDate: '2026-09-30',
+          createdAt: '2026-09-30T00:00:00.000Z',
+        },
+        {
+          invoiceId: 'invoice-other',
+          receivablePositionId: 'position-other',
+          outstandingAmountMinor: 90000,
+          currency: 'VND',
+          issueDate: '2026-09-30',
+          createdAt: '2026-09-30T00:00:00.000Z',
+        },
+      ],
+    });
+    const service = new SemanticReceivableChargeService(gateway);
+
+    const result = await service.allocateConfirmedPaymentToInvoiceReceivable({
+      tenantId,
+      invoiceId: 'invoice-created',
+      paymentSourceType: 'HAIRCUT_F3_DEBT_COLLECTION',
+      paymentSourceId: 'invoice-created',
+      amountMinor: 60000,
+      currency: 'VND',
+      paymentMethod: 'bank_transfer',
+      receivedAt: '2026-09-30',
+      idempotencyKey: 'haircut-f3:invoice-created:60000',
+      description: 'Haircut F3 customer debt collection',
+    });
+
+    expect(gateway.calls.postCashReceipt).toHaveLength(1);
+    expect(gateway.calls.projectCashReceipt).toEqual([{
+      tenantId,
+      transactionId: 'transaction-payment',
+    }]);
+    expect(gateway.calls.allocatePayment).toEqual([
+      expect.objectContaining({
+        tenantId,
+        invoiceId: 'invoice-created',
+        cashMovementId: 'cash-movement-1',
+        allocatedAmountMinor: 60000,
+        rateSource: 'MANUAL_AUTHORIZED',
+      }),
+    ]);
+    expect(result).toMatchObject({
+      transactionId: 'transaction-payment',
+      cashMovementId: 'cash-movement-1',
+      allocatedAmountMinor: 60000,
+      duplicate: false,
+    });
+    expect(result.allocations).toEqual([
+      expect.objectContaining({
+        invoiceId: 'invoice-created',
+        receivablePositionId: 'position-created',
+        allocatedAmountMinor: 60000,
+        duplicate: false,
+      }),
+    ]);
+  });
+
+  test('exact invoice collection blocks overpayment before F1 cash receipt posting', async () => {
+    const gateway = new FakeReceivableChargeGateway({
+      openReceivables: [{
+        invoiceId: 'invoice-created',
+        receivablePositionId: 'position-created',
+        outstandingAmountMinor: 10000,
+        currency: 'VND',
+        issueDate: '2026-09-30',
+        createdAt: '2026-09-30T00:00:00.000Z',
+      }],
+    });
+    const service = new SemanticReceivableChargeService(gateway);
+
+    await expect(service.allocateConfirmedPaymentToInvoiceReceivable({
+      tenantId,
+      invoiceId: 'invoice-created',
+      paymentSourceType: 'HAIRCUT_F3_DEBT_COLLECTION',
+      paymentSourceId: 'invoice-created',
+      amountMinor: 60000,
+      currency: 'VND',
+      paymentMethod: 'cash',
+      receivedAt: '2026-09-30',
+      idempotencyKey: 'haircut-f3:invoice-created:60000',
+      description: 'Haircut F3 customer debt collection',
+    })).rejects.toMatchObject<Partial<FinanceSemanticReceivableChargeError>>({
+      code: 'BLOCKED_BY_RECEIVABLE_RESOLUTION_GAP',
+    });
+    expect(gateway.calls.postCashReceipt).toHaveLength(0);
+    expect(gateway.calls.allocatePayment).toHaveLength(0);
+  });
+
+  test('exact invoice collection retry returns existing allocation without duplicate receipt or allocation', async () => {
+    const gateway = new FakeReceivableChargeGateway({
+      existingCashReceipt: true,
+      existingAllocation: true,
+    });
+    const service = new SemanticReceivableChargeService(gateway);
+
+    const result = await service.allocateConfirmedPaymentToInvoiceReceivable({
+      tenantId,
+      invoiceId: 'invoice-created',
+      paymentSourceType: 'HAIRCUT_F3_DEBT_COLLECTION',
+      paymentSourceId: 'invoice-created',
+      amountMinor: 60000,
+      currency: 'VND',
+      paymentMethod: 'cash',
+      receivedAt: '2026-09-30',
+      idempotencyKey: 'haircut-f3:invoice-created:60000',
+      description: 'Haircut F3 customer debt collection retry',
+    });
+
+    expect(gateway.calls.postCashReceipt).toHaveLength(0);
+    expect(gateway.calls.allocatePayment).toHaveLength(0);
+    expect(result.duplicate).toBe(true);
+    expect(result.allocations).toEqual([
+      expect.objectContaining({
+        invoiceId: 'invoice-created',
         allocationId: 'allocation-existing',
         duplicate: true,
       }),

@@ -13,6 +13,25 @@ import { CryptographicAuditLedger, AuditBlock } from '../audit-ledger';
 import { KmsSecretManager } from '../kms-secret-manager';
 import { TelemetryTracer } from '../telemetry-tracer';
 
+type MutableAuditBlock = {
+  -readonly [Key in keyof AuditBlock]: AuditBlock[Key];
+};
+
+type LedgerTestState = {
+  ledgers: Map<string, MutableAuditBlock[]>;
+};
+
+function getTenantBlocks(tenantId: string): MutableAuditBlock[] {
+  const rawLedgersMap = (CryptographicAuditLedger as typeof CryptographicAuditLedger & LedgerTestState).ledgers;
+  const tenantBlocks = rawLedgersMap.get(tenantId);
+
+  if (!tenantBlocks) {
+    throw new Error(`Missing test ledger blocks for tenant ${tenantId}`);
+  }
+
+  return tenantBlocks;
+}
+
 describe('BELLA PLATFORM V2 — SECURITY CONFORMANCE INTEGRATION TESTS', () => {
   let ledger: CryptographicAuditLedger;
   let kms: KmsSecretManager;
@@ -87,8 +106,7 @@ describe('BELLA PLATFORM V2 — SECURITY CONFORMANCE INTEGRATION TESTS', () => {
 
     test('Attack 2: Deleting a block breaks sequence continuity', async () => {
       // Fetch private ledger blocks directly and simulate deletion of block 2
-      const rawLedgersMap = (CryptographicAuditLedger as any).ledgers;
-      const tenantBlocks = rawLedgersMap.get(TENANT_A) as AuditBlock[];
+      const tenantBlocks = getTenantBlocks(TENANT_A);
       
       // Remove middle block (index 1)
       tenantBlocks.splice(1, 1);
@@ -99,11 +117,10 @@ describe('BELLA PLATFORM V2 — SECURITY CONFORMANCE INTEGRATION TESTS', () => {
     });
 
     test('Attack 3: Injecting a fake block breaks sequence and hash chain', async () => {
-      const rawLedgersMap = (CryptographicAuditLedger as any).ledgers;
-      const tenantBlocks = rawLedgersMap.get(TENANT_A) as AuditBlock[];
+      const tenantBlocks = getTenantBlocks(TENANT_A);
 
       // Insert a rogue record in the middle
-      const fakeBlock: AuditBlock = {
+      const fakeBlock: MutableAuditBlock = {
         sequence: 2,
         tenantId: TENANT_A,
         payload: 'Injected fake transaction',
@@ -117,8 +134,7 @@ describe('BELLA PLATFORM V2 — SECURITY CONFORMANCE INTEGRATION TESTS', () => {
     });
 
     test('Attack 4: Reordering historical blocks breaks hash chain integrity', async () => {
-      const rawLedgersMap = (CryptographicAuditLedger as any).ledgers;
-      const tenantBlocks = rawLedgersMap.get(TENANT_A) as AuditBlock[];
+      const tenantBlocks = getTenantBlocks(TENANT_A);
 
       // Swap blocks 1 and 2 (indices 0 and 1)
       const temp = tenantBlocks[0];
@@ -130,22 +146,20 @@ describe('BELLA PLATFORM V2 — SECURITY CONFORMANCE INTEGRATION TESTS', () => {
     });
 
     test('Attack 5: Altering tenantId of a block breaks validation', async () => {
-      const rawLedgersMap = (CryptographicAuditLedger as any).ledgers;
-      const tenantBlocks = rawLedgersMap.get(TENANT_A) as AuditBlock[];
+      const tenantBlocks = getTenantBlocks(TENANT_A);
 
       // Spoof tenantId of block index 1 to Tenant B
-      (tenantBlocks[1] as any).tenantId = TENANT_B;
+      tenantBlocks[1].tenantId = TENANT_B;
 
       const integrity = await ledger.verifyLedgerIntegrity(TENANT_A);
       expect(integrity.valid).toBe(false);
     });
 
     test('Attack 6: Changing the payload directly breaks calculated hash validation', async () => {
-      const rawLedgersMap = (CryptographicAuditLedger as any).ledgers;
-      const tenantBlocks = rawLedgersMap.get(TENANT_A) as AuditBlock[];
+      const tenantBlocks = getTenantBlocks(TENANT_A);
 
       // Directly manipulate string value in memory without updating the hash link
-      (tenantBlocks[2] as any).payload = 'Altered text';
+      tenantBlocks[2].payload = 'Altered text';
 
       const integrity = await ledger.verifyLedgerIntegrity(TENANT_A);
       expect(integrity.valid).toBe(false);

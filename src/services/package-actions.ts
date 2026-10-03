@@ -125,6 +125,16 @@ function buildPackageUpdate(packageData: Partial<PackageActionInput>): PackageUp
   return buildServicePackageUpdatePayload(packageData);
 }
 
+function isMissingPackageMetadataColumnError(error: { message?: string } | null) {
+  return typeof error?.message === 'string'
+    && error.message.includes("'metadata' column of 'packages'");
+}
+
+function withoutPackageMetadata<T extends { metadata?: Json | null }>(payload: T): Omit<T, 'metadata'> {
+  const { metadata: _metadata, ...rest } = payload;
+  return rest;
+}
+
 async function getTenantModuleScope(
   supabase: SupabaseClient,
   tenantId: string,
@@ -296,10 +306,17 @@ export async function createPackage(packageData: PackageActionInput): Promise<Pa
     module_key: scopedModule.moduleKey,
   });
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from('packages')
     .insert([dbData])
     .select();
+
+  if (isMissingPackageMetadataColumnError(error) && dbData.metadata !== undefined) {
+    ({ data, error } = await supabase
+      .from('packages')
+      .insert([withoutPackageMetadata(dbData)])
+      .select());
+  }
 
   if (error) {
     return { error: error.message };
@@ -382,12 +399,21 @@ export async function updatePackage(
     dbData.module_key = nextModule.moduleKey as PackageUpdate['module_key'];
   }
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from('packages')
     .update(dbData)
     .eq('id', id)
     .eq('tenant_id', auth.tenantId)
     .select();
+
+  if (isMissingPackageMetadataColumnError(error) && dbData.metadata !== undefined) {
+    ({ data, error } = await supabase
+      .from('packages')
+      .update(withoutPackageMetadata(dbData))
+      .eq('id', id)
+      .eq('tenant_id', auth.tenantId)
+      .select());
+  }
 
   if (error) {
     return { error: error.message };

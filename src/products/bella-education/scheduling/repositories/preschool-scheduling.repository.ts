@@ -5,6 +5,7 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
 import {
   ShiftTemplate,
   RatioPolicy,
@@ -15,7 +16,12 @@ import {
   CaregiverRole,
   ShiftAssignmentStatus,
   ComplianceState,
+  LeaveType,
 } from '../domain/scheduling.types';
+
+type ShiftAssignmentRow = Database['public']['Tables']['edu_sched_shift_assignments']['Row'];
+type LeaveRequestRow = Database['public']['Tables']['edu_sched_leave_requests']['Row'];
+type SubstitutionRow = Database['public']['Tables']['edu_sched_substitutions']['Row'];
 
 export class PreschoolSchedulingRepository {
   private client: SupabaseClient;
@@ -316,7 +322,106 @@ export class PreschoolSchedulingRepository {
     return this.mapAssignment(data);
   }
 
-  // --- 5. Compliance Snapshots ---
+  // --- 5. Leave & Substitution ---
+  async createLeaveRequest(input: {
+    tenantId: string;
+    staffPartyId: string;
+    startDate: string;
+    endDate: string;
+    leaveType: LeaveType;
+    reason?: string;
+  }): Promise<LeaveRequestRow> {
+    const { data, error } = await this.client
+      .from('edu_sched_leave_requests')
+      .insert({
+        tenant_id: input.tenantId,
+        staff_party_id: input.staffPartyId,
+        start_date: input.startDate,
+        end_date: input.endDate,
+        leave_type: input.leaveType,
+        reason: input.reason || null,
+        status: 'PENDING',
+      })
+      .select()
+      .single();
+
+    if (error || !data) {
+      throw new Error(`FAILED_TO_APPLY_LEAVE: ${error?.message}`);
+    }
+
+    return data;
+  }
+
+  async approveLeaveRequest(input: {
+    tenantId: string;
+    leaveRequestId: string;
+    approvedByPartyId: string;
+  }): Promise<LeaveRequestRow> {
+    const { data, error } = await this.client
+      .from('edu_sched_leave_requests')
+      .update({
+        status: 'APPROVED',
+        approved_by_party_id: input.approvedByPartyId,
+        approved_at: new Date().toISOString(),
+      })
+      .eq('tenant_id', input.tenantId)
+      .eq('id', input.leaveRequestId)
+      .select()
+      .single();
+
+    if (error || !data) {
+      throw new Error(`FAILED_TO_APPROVE_LEAVE: ${error?.message}`);
+    }
+
+    return data;
+  }
+
+  async listScheduledAssignmentsForStaffLeave(input: {
+    tenantId: string;
+    staffPartyId: string;
+    startDate: string;
+    endDate: string;
+  }): Promise<ShiftAssignment[]> {
+    const { data } = await this.client
+      .from('edu_sched_shift_assignments')
+      .select('*')
+      .eq('tenant_id', input.tenantId)
+      .eq('staff_party_id', input.staffPartyId)
+      .gte('assignment_date', input.startDate)
+      .lte('assignment_date', input.endDate)
+      .eq('status', 'SCHEDULED');
+
+    return (data || []).map((d) => this.mapAssignment(d));
+  }
+
+  async createSubstitution(input: {
+    tenantId: string;
+    originalAssignmentId: string;
+    leaveRequestId?: string;
+    substituteStaffPartyId: string;
+    assignedByPartyId: string;
+  }): Promise<SubstitutionRow> {
+    const { data, error } = await this.client
+      .from('edu_sched_substitutions')
+      .insert({
+        tenant_id: input.tenantId,
+        original_assignment_id: input.originalAssignmentId,
+        leave_request_id: input.leaveRequestId || null,
+        substitute_staff_party_id: input.substituteStaffPartyId,
+        assigned_by_party_id: input.assignedByPartyId,
+        status: 'CONFIRMED',
+      })
+      .select()
+      .single();
+
+    if (error || !data) {
+      throw new Error(`FAILED_TO_ASSIGN_SUBSTITUTE: ${error?.message}`);
+    }
+
+    return data;
+  }
+
+  // --- 6. Compliance Snapshots ---
   async createComplianceSnapshot(input: {
     tenantId: string;
     classroomId: string;
@@ -402,7 +507,7 @@ export class PreschoolSchedulingRepository {
     };
   }
 
-  private mapAssignment(data: any): ShiftAssignment {
+  private mapAssignment(data: ShiftAssignmentRow): ShiftAssignment {
     return {
       id: data.id,
       tenantId: data.tenant_id,
@@ -413,7 +518,7 @@ export class PreschoolSchedulingRepository {
       assignmentDate: data.assignment_date,
       status: data.status as ShiftAssignmentStatus,
       amendmentVersion: data.amendment_version,
-      supersededAssignmentId: data.superseded_assignment_id,
+      supersededAssignmentId: data.superseded_assignment_id ?? undefined,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     };

@@ -53,14 +53,14 @@ export function getAverageQueryTime(queryName: string): number {
 // QUERY BATCHING
 // ============================================================================
 
-interface BatchedQuery<T> {
-  query: () => Promise<T>;
-  resolve: (value: T) => void;
+interface BatchedQuery {
+  query: () => Promise<unknown>;
+  resolve: (value: unknown) => void;
   reject: (error: unknown) => void;
 }
 
  
-const queryBatches = new Map<string, BatchedQuery<any>[]>();
+const queryBatches = new Map<string, BatchedQuery[]>();
 const batchTimers = new Map<string, NodeJS.Timeout>();
 
 export function batchQuery<T>(
@@ -74,7 +74,11 @@ export function batchQuery<T>(
       queryBatches.set(batchKey, []);
     }
     
-    queryBatches.get(batchKey)!.push({ query, resolve, reject });
+    queryBatches.get(batchKey)!.push({
+      query,
+      resolve: (value) => resolve(value as T),
+      reject,
+    });
     
     // Clear existing timer
     if (batchTimers.has(batchKey)) {

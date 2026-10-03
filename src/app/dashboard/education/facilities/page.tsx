@@ -38,6 +38,7 @@ import { MaintenanceJobService } from '@/products/bella-education/facilities/ser
 import { FacilitiesProjectionBridge } from '@/products/bella-education/facilities/bridges/facilities-projection.bridge';
 import { ParentCommunicationRepository } from '@/products/bella-education/parent-engagement/repositories/parent-communication.repository';
 import { CommunicationExceptionService } from '@/products/bella-education/parent-engagement/services/communication-exception.service';
+import type { CommunicationException } from '@/products/bella-education/parent-engagement/domain/communication.types';
 import { 
   Facility, 
   FacilityZone, 
@@ -75,7 +76,7 @@ export default function FacilitiesPage() {
   const [assets, setAssets] = useState<FacilityAsset[]>([]);
   const [inspections, setInspections] = useState<InspectionLog[]>([]);
   const [maintenanceJobs, setMaintenanceJobs] = useState<MaintenanceJob[]>([]);
-  const [exceptions, setExceptions] = useState<any[]>([]);
+  const [exceptions, setExceptions] = useState<CommunicationException[]>([]);
   const [zoneAvailability, setZoneAvailability] = useState<ZoneAvailabilityDTO | null>(null);
 
   // Services

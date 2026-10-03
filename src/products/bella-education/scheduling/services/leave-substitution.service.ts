@@ -41,34 +41,18 @@ export class LeaveSubstitutionService {
       throw new Error('INVALID_LEAVE_DATES_ERROR: End date cannot be before start date');
     }
 
-    const { data, error } = await (this.repo as any)['client']
-      .from('edu_sched_leave_requests')
-      .insert({
-        tenant_id: input.tenantId,
-        staff_party_id: input.staffPartyId,
-        start_date: input.startDate,
-        end_date: input.endDate,
-        leave_type: input.leaveType,
-        reason: input.reason || null,
-        status: 'PENDING',
-      })
-      .select()
-      .single();
-
-    if (error || !data) {
-      throw new Error(`FAILED_TO_APPLY_LEAVE: ${error?.message}`);
-    }
+    const leave = await this.repo.createLeaveRequest(input);
 
     return {
-      id: data.id,
-      tenantId: data.tenant_id,
-      staffPartyId: data.staff_party_id,
-      startDate: data.start_date,
-      endDate: data.end_date,
-      leaveType: data.leave_type as LeaveType,
-      reason: data.reason,
-      status: data.status as LeaveStatus,
-      createdAt: data.created_at,
+      id: leave.id,
+      tenantId: leave.tenant_id,
+      staffPartyId: leave.staff_party_id,
+      startDate: leave.start_date,
+      endDate: leave.end_date,
+      leaveType: leave.leave_type as LeaveType,
+      reason: leave.reason,
+      status: leave.status as LeaveStatus,
+      createdAt: leave.created_at,
     };
   }
 
@@ -79,32 +63,15 @@ export class LeaveSubstitutionService {
     classroomAgeGroupMap?: Record<string, AgeGroup>; // Map classroomId -> AgeGroup
   }) {
     // 1. Update Leave Request Status
-    const client = (this.repo as any)['client'];
-    const { data: leave, error } = await client
-      .from('edu_sched_leave_requests')
-      .update({
-        status: 'APPROVED',
-        approved_by_party_id: input.approvedByPartyId,
-        approved_at: new Date().toISOString(),
-      })
-      .eq('tenant_id', input.tenantId)
-      .eq('id', input.leaveRequestId)
-      .select()
-      .single();
-
-    if (error || !leave) {
-      throw new Error(`FAILED_TO_APPROVE_LEAVE: ${error?.message}`);
-    }
+    const leave = await this.repo.approveLeaveRequest(input);
 
     // 2. Fetch all shift assignments for this staff during the leave period
-    const { data: assignments } = await client
-      .from('edu_sched_shift_assignments')
-      .select('*')
-      .eq('tenant_id', input.tenantId)
-      .eq('staff_party_id', leave.staff_party_id)
-      .gte('assignment_date', leave.start_date)
-      .lte('assignment_date', leave.end_date)
-      .eq('status', 'SCHEDULED');
+    const assignments = await this.repo.listScheduledAssignmentsForStaffLeave({
+      tenantId: input.tenantId,
+      staffPartyId: leave.staff_party_id,
+      startDate: leave.start_date,
+      endDate: leave.end_date,
+    });
 
     const affectedSnapshots: RatioComplianceSnapshot[] = [];
 
@@ -113,14 +80,14 @@ export class LeaveSubstitutionService {
       for (const assign of assignments) {
         await this.repo.updateShiftAssignmentStatus(input.tenantId, assign.id, 'CANCELLED');
 
-        const ageGroup = (input.classroomAgeGroupMap && input.classroomAgeGroupMap[assign.classroom_id]) || 'TODDLER';
+        const ageGroup = (input.classroomAgeGroupMap && input.classroomAgeGroupMap[assign.classroomId]) || 'TODDLER';
 
         // 4. Recalculate Coverage for the classroom and date
         const snapshot = await this.complianceService.calculateAndRecordCompliance({
           tenantId: input.tenantId,
-          classroomId: assign.classroom_id,
-          snapshotDate: assign.assignment_date,
-          shiftTemplateId: assign.shift_template_id,
+          classroomId: assign.classroomId,
+          snapshotDate: assign.assignmentDate,
+          shiftTemplateId: assign.shiftTemplateId,
           ageGroup,
           counts: { enrolledChildren: 10, expectedChildren: 10, presentChildren: 10 },
         });
@@ -162,23 +129,7 @@ export class LeaveSubstitutionService {
     if (!original) throw new Error('ORIGINAL_ASSIGNMENT_NOT_FOUND');
 
     // 2. Record substitution record
-    const client = (this.repo as any)['client'];
-    const { data: sub, error } = await client
-      .from('edu_sched_substitutions')
-      .insert({
-        tenant_id: input.tenantId,
-        original_assignment_id: input.originalAssignmentId,
-        leave_request_id: input.leaveRequestId || null,
-        substitute_staff_party_id: input.substituteStaffPartyId,
-        assigned_by_party_id: input.assignedByPartyId,
-        status: 'CONFIRMED',
-      })
-      .select()
-      .single();
-
-    if (error || !sub) {
-      throw new Error(`FAILED_TO_ASSIGN_SUBSTITUTE: ${error?.message}`);
-    }
+    const sub = await this.repo.createSubstitution(input);
 
     // 3. Assign substitute staff member to the shift
     const substituteAssignment = await this.rosterService.assignShift({

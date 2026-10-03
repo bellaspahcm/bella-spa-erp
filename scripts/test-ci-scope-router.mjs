@@ -149,6 +149,16 @@ const cases = [
     },
   },
   {
+    name: 'RUN real database E2E when real-db test file changes',
+    files: ['src/products/beauty-spa-v2/__tests__/beauty-spa-v2-real-db.test.ts'],
+    expect(result) {
+      assert.equal(result.scope_status, 'ALLOW');
+      assert.equal(result.needs_tests, true);
+      assert.equal(result.needs_real_db_e2e, true);
+      assert.equal(result.has_real_db_test_file, true);
+    },
+  },
+  {
     name: 'BLOCK multi-product product-only contamination',
     files: [
       'src/products/bella-english-center/services/class.service.ts',

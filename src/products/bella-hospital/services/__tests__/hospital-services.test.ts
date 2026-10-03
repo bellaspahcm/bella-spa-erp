@@ -14,13 +14,56 @@ describe('Bella Hospital Product Services Unit Tests', () => {
   let alertService: HospitalClinicalAlertProductService;
 
   const mockAdmissionContract = {
-    admitInpatient: jest.fn().mockResolvedValue({ admissionId: 'adm-101', status: 'ADMITTED' }),
-    transferBed: jest.fn().mockResolvedValue({ admissionId: 'adm-101', status: 'TRANSFERRED' }),
-    dischargeInpatient: jest.fn().mockResolvedValue({ admissionId: 'adm-101', status: 'DISCHARGED' })
+    createAdmission: jest.fn().mockResolvedValue({
+      success: true,
+      data: {
+        id: 'adm-101',
+        tenantId: 'tenant-1',
+        encounterId: 'enc-1',
+        patientPartyId: 'pat-1',
+        wardId: 'ward-1',
+        bedId: 'bed-1',
+        admittingDoctorId: 'dr-1',
+        attendingDoctorId: 'dr-1',
+        status: 'admitted',
+        admissionDiagnosis: [{ icd10Code: 'Z00.0', icd10NameVi: 'Khám tổng quát', isPrimary: true }],
+        admittedAt: '2026-08-13T10:00:00Z',
+        version: 1,
+      },
+    }),
+    dischargeAdmission: jest.fn().mockResolvedValue({
+      success: true,
+      data: {
+        id: 'adm-101',
+        tenantId: 'tenant-1',
+        encounterId: 'enc-1',
+        patientPartyId: 'pat-1',
+        wardId: 'ward-1',
+        bedId: 'bed-1',
+        admittingDoctorId: 'dr-1',
+        attendingDoctorId: 'dr-1',
+        status: 'discharged',
+        admissionDiagnosis: [{ icd10Code: 'Z00.0', icd10NameVi: 'Khám tổng quát', isPrimary: true }],
+        admittedAt: '2026-08-13T10:00:00Z',
+        dischargedAt: '2026-08-13T10:00:00Z',
+        version: 2,
+      },
+    }),
+  };
+
+  const mockBedContract = {
+    transferBed: jest.fn().mockResolvedValue({
+      success: true,
+      data: {
+        fromBed: { id: 'bed-1' },
+        toBed: { id: 'bed-2' },
+        transferId: 'trf-101',
+      },
+    }),
   };
 
   const mockTemporalContract = {
-    recordTemporalEvent: jest.fn().mockResolvedValue({ id: 'temp-1', sequenceNumber: 1 }),
+    recordTemporalEvent: jest.fn().mockResolvedValue({ success: true, data: { id: 'temp-1', sequenceNumber: 1 } }),
     reconstructStateAt: jest.fn(),
     getDecisionTemporalContext: jest.fn(),
     queryHistoricalState: jest.fn()
@@ -28,31 +71,77 @@ describe('Bella Hospital Product Services Unit Tests', () => {
 
   const mockAuditContract = {
     recordAuditEntry: jest.fn().mockResolvedValue({
-      id: 'aud-101',
-      sha256Fingerprint: 'SHA256:MOCK_DISCHARGE_FINGERPRINT_12345'
+      success: true,
+      data: {
+        id: 'aud-101',
+        tenantId: 'tenant-1',
+        encounterId: 'enc-1',
+        patientId: 'pat-1',
+        actionType: 'INPATIENT_DISCHARGE_EXECUTE',
+        performerId: 'dr-1',
+        performerRole: 'PHYSICIAN',
+        complianceStatus: 'COMPLIANT',
+        evidenceIntegrity: 'COMPLETE',
+        createdAt: '2026-08-13T10:00:00Z',
+      },
+    }),
+    issueEvidencePackage: jest.fn().mockResolvedValue({
+      success: true,
+      data: {
+        id: 'evidence-101',
+        tenantId: 'tenant-1',
+        auditId: 'aud-101',
+        schemaVersion: '1.0.0',
+        sourceReferences: { encounterId: 'enc-1' },
+        canonicalPayload: {
+          actionType: 'INPATIENT_DISCHARGE_EXECUTE',
+          timestamp: '2026-08-13T10:00:00Z',
+          performer: { id: 'dr-1', role: 'PHYSICIAN' },
+          complianceStatus: 'COMPLIANT',
+          evidenceIntegrity: 'COMPLETE',
+        },
+        fingerprint: 'SHA256:MOCK_DISCHARGE_FINGERPRINT_12345',
+        createdAt: '2026-08-13T10:00:00Z',
+      },
     }),
     evaluateActionCompliance: jest.fn(),
-    issueEvidencePackage: jest.fn(),
     investigateClinicalAction: jest.fn(),
     getComplianceReportSummary: jest.fn()
   };
 
   const mockCdsContract = {
-    evaluateOrderSafety: jest.fn().mockResolvedValue({
-      hasAbsoluteBlock: false,
-      contraindications: [],
-      warnings: [{ severity: 'WARNING', message: 'Dose warning' }]
-    })
+    generateCdsSummary: jest.fn().mockResolvedValue({
+      success: true,
+      data: {
+        passed: true,
+        hardBlocked: false,
+        alerts: [
+          {
+            alertId: 'alert-1',
+            alertType: 'PROTOCOL',
+            severity: 'WARNING',
+            enforcement: 'ACKNOWLEDGE',
+            canOverride: true,
+            message: 'Dose warning',
+          },
+        ],
+        calculationId: 'calc-1',
+        knowledgeBaseVersion: 'kb-v1',
+        policyVersion: 'policy-v1',
+        evaluatedAt: '2026-08-13T10:00:00Z',
+      },
+    }),
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
     admissionService = new HospitalAdmissionProductService(
-      mockAdmissionContract as any,
-      mockTemporalContract as any,
-      mockAuditContract as any
+      mockAdmissionContract,
+      mockBedContract,
+      mockTemporalContract,
+      mockAuditContract
     );
-    alertService = new HospitalClinicalAlertProductService(mockCdsContract as any);
+    alertService = new HospitalClinicalAlertProductService(mockCdsContract);
   });
 
   test('admitInpatient delegates to IAdmissionContract via Public Contract', async () => {
@@ -60,12 +149,15 @@ describe('Bella Hospital Product Services Unit Tests', () => {
       tenantId: 'tenant-1',
       encounterId: 'enc-1',
       patientId: 'pat-1',
+      wardId: 'ward-1',
       bedId: 'bed-1',
-      admittingPhysicianId: 'dr-1'
+      admittingPhysicianId: 'dr-1',
+      attendingPhysicianId: 'dr-1',
+      admissionDiagnosis: [{ icd10Code: 'Z00.0', icd10NameVi: 'Khám tổng quát', isPrimary: true }],
     });
 
-    expect(res.status).toBe('ADMITTED');
-    expect(mockAdmissionContract.admitInpatient).toHaveBeenCalledWith(
+    expect(res.status).toBe('admitted');
+    expect(mockAdmissionContract.createAdmission).toHaveBeenCalledWith(
       expect.objectContaining({ tenantId: 'tenant-1', encounterId: 'enc-1' })
     );
   });
@@ -74,16 +166,20 @@ describe('Bella Hospital Product Services Unit Tests', () => {
     const res = await admissionService.transferBed({
       admissionId: 'adm-101',
       tenantId: 'tenant-1',
+      encounterId: 'enc-1',
+      patientId: 'pat-1',
+      sourceBedId: 'bed-1',
       targetBedId: 'bed-2',
       transferReason: 'ICU Upgrade',
       transferredBy: 'dr-1'
     });
 
-    expect(res.status).toBe('TRANSFERRED');
+    expect(res.status).toBe('transferred');
     expect(mockTemporalContract.recordTemporalEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         tenantId: 'tenant-1',
-        entityId: 'adm-101',
+        encounterId: 'enc-1',
+        aggregateId: 'adm-101',
         eventType: 'BED_TRANSFERRED'
       })
     );
@@ -94,6 +190,7 @@ describe('Bella Hospital Product Services Unit Tests', () => {
       admissionId: 'adm-101',
       tenantId: 'tenant-1',
       encounterId: 'enc-1',
+      patientId: 'pat-1',
       dischargingPhysicianId: 'dr-1',
       dischargeDisposition: 'HOME',
       dischargeSummary: 'Recovered completely',
@@ -106,9 +203,10 @@ describe('Bella Hospital Product Services Unit Tests', () => {
       expect.objectContaining({
         tenantId: 'tenant-1',
         encounterId: 'enc-1',
-        action: 'INPATIENT_DISCHARGE_EXECUTE'
+        actionType: 'INPATIENT_DISCHARGE_EXECUTE'
       })
     );
+    expect(mockAuditContract.issueEvidencePackage).toHaveBeenCalledWith('tenant-1', 'aud-101');
   });
 
   test('evaluateOrderSafety routes through H8 CDS Contract and detects warnings', async () => {
@@ -124,6 +222,6 @@ describe('Bella Hospital Product Services Unit Tests', () => {
     });
 
     expect(res.decision).toBe('REQUIRES_OVERRIDE');
-    expect(mockCdsContract.evaluateOrderSafety).toHaveBeenCalled();
+    expect(mockCdsContract.generateCdsSummary).toHaveBeenCalled();
   });
 });

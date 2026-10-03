@@ -32,6 +32,7 @@ type UpdateCall = {
 function createCompleteSessionSupabaseMock(options: {
   sessionLog?: Record<string, unknown>;
   booking?: Record<string, unknown>;
+  tenant?: Record<string, unknown>;
   rollbackError?: { message: string };
 } = {}) {
   const updateCalls: UpdateCall[] = [];
@@ -49,6 +50,13 @@ function createCompleteSessionSupabaseMock(options: {
     full_price: 6000000,
     discount_percent: 25,
     total_sessions: 30,
+  };
+  const tenant = options.tenant ?? {
+    id: 'tenant-1',
+    enabled_modules: {
+      payroll: true,
+      beauty_spa: true,
+    },
   };
 
   class QueryBuilder {
@@ -119,6 +127,14 @@ function createCompleteSessionSupabaseMock(options: {
             : null,
           error: this.matchesFilters(scopedBooking) ? null : { message: 'booking not found in tenant' },
         });
+      }
+
+      if (this.table === 'tenants') {
+        return Promise.resolve(
+          this.matchesFilters(tenant)
+            ? { data: tenant, error: null }
+            : { data: null, error: { message: 'tenant not found' } }
+        );
       }
 
       return Promise.resolve({ data: null, error: { message: 'Unexpected table' } });
@@ -203,6 +219,27 @@ describe('completeSession wrapper rollback and revalidation', () => {
       expect.stringMatching(/^\d{4}-\d{2}-01$/),
       'tenant-1'
     );
+    expect(mockSafeRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('skips rollback salary recalculation when tenant payroll is disabled', async () => {
+    const { supabase, updateCalls } = createCompleteSessionSupabaseMock({
+      tenant: {
+        id: 'tenant-1',
+        enabled_modules: {
+          payroll: false,
+          beauty_spa: true,
+        },
+      },
+    });
+    mockCreateDevelopmentBypassClient.mockResolvedValue(supabase);
+    mockProcessSessionCompletion.mockResolvedValueOnce({ error: 'engine failed' });
+
+    const result = await completeSession('session-1', 'booking-1', 'Hoan thanh');
+
+    expect(result).toEqual({ error: 'engine failed' });
+    expect(updateCalls).toHaveLength(2);
+    expect(mockRecalculateAndSaveSalaryRecord).not.toHaveBeenCalled();
     expect(mockSafeRevalidatePath).not.toHaveBeenCalled();
   });
 

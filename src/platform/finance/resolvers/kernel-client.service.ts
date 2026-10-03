@@ -24,6 +24,25 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
 import type { FinanceKernelClient, PostingInstruction, FinanceTransaction } from '../finance-event-handler';
 
+type JournalLineInsert = Database['public']['Tables']['journal_lines']['Insert'];
+
+interface KernelJournalLine {
+  account_id: JournalLineInsert['account_id'];
+  debit_amount: NonNullable<JournalLineInsert['debit_amount']>;
+  credit_amount: NonNullable<JournalLineInsert['credit_amount']>;
+  memo: string;
+}
+
+interface KernelJournalRequest {
+  tenant_id: PostingInstruction['tenant_id'];
+  description: string;
+  entry_date: string;
+  reference_type: 'FINANCE_EVENT';
+  reference_id: null;
+  status: 'POSTED';
+  lines: KernelJournalLine[];
+}
+
 /**
  * Default Finance Kernel Client
  * 
@@ -70,7 +89,7 @@ export class DefaultFinanceKernelClient implements FinanceKernelClient {
     const { error: linesError } = await this.supabase
       .from('journal_lines')
       .insert(
-        kernelRequest.lines.map((line: any) => ({
+        kernelRequest.lines.map((line) => ({
           entry_id: journalEntry.id,
           account_id: line.account_id,
           debit_amount: line.debit_amount,
@@ -129,7 +148,7 @@ export class DefaultFinanceKernelClient implements FinanceKernelClient {
    * - Source: reference_id (UUID) + reference_type
    * - Event ID: Stored in description for traceability
    */
-  private async convertToKernelRequest(instruction: PostingInstruction): Promise<any> {
+  private async convertToKernelRequest(instruction: PostingInstruction): Promise<KernelJournalRequest> {
     // Resolve account_code → account_id for each entry
     const linesWithAccountIds = await Promise.all(
       instruction.entries.map(async (entry) => {

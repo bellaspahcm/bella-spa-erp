@@ -5,6 +5,23 @@ import {
   ICheckMealSafetyCommand,
 } from "./allergy-safety.contract";
 
+interface LinkedAllergen {
+  name?: string | null;
+}
+
+interface IngredientAllergenRelation {
+  allergen_id: string;
+  edu_allergens?: LinkedAllergen | LinkedAllergen[] | null;
+}
+
+function getAllergenName(relation: IngredientAllergenRelation): string {
+  const allergen = Array.isArray(relation.edu_allergens)
+    ? relation.edu_allergens[0]
+    : relation.edu_allergens;
+
+  return allergen?.name || "Unknown Allergen";
+}
+
 export class AllergySafetyService implements IAllergySafetyContract {
   constructor(private readonly supabase: SupabaseClient) {}
 
@@ -65,7 +82,7 @@ export class AllergySafetyService implements IAllergySafetyContract {
         if (!ia) continue;
         if (childAllergenIds.has(ia.allergen_id)) {
           // Found a conflict!
-          const allergenName = (ia as any).edu_allergens?.name || "Unknown Allergen";
+          const allergenName = getAllergenName(ia);
           if (!conflictingAllergens.includes(allergenName)) {
             conflictingAllergens.push(allergenName);
           }

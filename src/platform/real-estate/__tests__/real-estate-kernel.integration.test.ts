@@ -15,16 +15,120 @@ import { PropertyService } from '../engines/property.service';
 import { CommissionService } from '../engines/commission.service';
 import { AccountingService } from '../../accounting/engines/accounting.service';
 
+type TestSupabaseClient = ConstructorParameters<typeof ReservationService>[1];
+type FilterValue = string | number | readonly string[] | null | undefined;
+type FilterMap = Record<string, FilterValue>;
+type MockError = { code?: string; message: string };
+
+interface MockProductRow {
+  id: string;
+  tenant_id: string;
+  project_id: string;
+  product_code: string;
+  product_type: string;
+  unit_code: string;
+  area: number;
+  unit_price: number;
+  status: string;
+  owner_name: string | null;
+}
+
+interface MockReservationRow {
+  id: string;
+  tenant_id: string;
+  product_id: string;
+  user_id: string;
+  customer_id: string;
+  duration_minutes?: number;
+  status: string;
+  expires_at: string;
+}
+
+interface MockContractRow {
+  id: string;
+  tenant_id: string;
+  product_id: string;
+  customer_id: string;
+  contract_no?: string;
+  contract_number?: string;
+  contract_price: number;
+  state: string;
+  installments?: unknown;
+}
+
+interface MockCommissionRow {
+  id: string;
+  tenant_id?: string;
+  contract_id?: string;
+  commission_amount?: number;
+  status?: string;
+}
+
+interface MockAccountRow {
+  id: string;
+  tenant_id: string;
+  account_code: string;
+  account_name: string;
+  account_type: string;
+}
+
+interface MockJournalEntryRow {
+  id: string;
+  tenant_id?: string;
+  description?: string;
+  reference_type?: string;
+  reference_id?: string;
+  entry_date?: string;
+}
+
+interface MockJournalLineRow {
+  id: string;
+  journal_entry_id?: string;
+  account_id?: string;
+  debit_amount: number;
+  credit_amount: number;
+}
+
+type MockDbRow =
+  | MockProductRow
+  | MockReservationRow
+  | MockContractRow
+  | MockCommissionRow
+  | MockAccountRow
+  | MockJournalEntryRow
+  | MockJournalLineRow;
+
+type MockInsertRow = Partial<MockDbRow> & Record<string, unknown>;
+type QueryData = MockDbRow | MockDbRow[] | null;
+type QueryResult<T extends QueryData = QueryData> = { data: T; error: MockError | null };
+
+interface MockInsertResult extends PromiseLike<QueryResult<MockDbRow>> {
+  select(): {
+    single(): Promise<QueryResult<MockDbRow>>;
+  };
+}
+
+interface MockQueryBuilder extends PromiseLike<QueryResult> {
+  select(): MockQueryBuilder;
+  eq(col: string, val: FilterValue): MockQueryBuilder;
+  in(col: string, vals: readonly string[]): MockQueryBuilder;
+  order(): Promise<QueryResult<MockProductRow[]>>;
+  single(): Promise<QueryResult<MockDbRow | null>>;
+  update(patch: Partial<MockDbRow>): MockQueryBuilder;
+  insert(rows: MockInsertRow | MockInsertRow[]): MockInsertResult;
+  delete(): Promise<{ error: null }>;
+}
+
 describe('Real Estate Kernel & Accounting Kernel — Integration Tests', () => {
   let repository: PropertyUnitRepository;
-  let mockSupabase: any;
-  let mockProductsDb: any[];
-  let mockReservationsDb: any[];
-  let mockContractsDb: any[];
-  let mockCommissionsDb: any[];
-  let mockAccountsDb: any[];
-  let mockJournalEntriesDb: any[];
-  let mockJournalLinesDb: any[];
+  let mockSupabase: TestSupabaseClient;
+  let mockProductsDb: MockProductRow[];
+  let mockReservationsDb: MockReservationRow[];
+  let mockContractsDb: MockContractRow[];
+  let mockCommissionsDb: MockCommissionRow[];
+  let mockAccountsDb: MockAccountRow[];
+  let mockJournalEntriesDb: MockJournalEntryRow[];
+  let mockJournalLinesDb: MockJournalLineRow[];
 
   beforeEach(() => {
     mockProductsDb = [
@@ -56,29 +160,29 @@ describe('Real Estate Kernel & Accounting Kernel — Integration Tests', () => {
 
     // Mock Supabase Chain Client using stateful builder pattern to support complex chain calls (.select().eq().eq().single())
     mockSupabase = {
-      from: jest.fn().mockImplementation((table: string) => {
-        const filters: Record<string, any> = {};
-        let patchData: any = null;
+      from: (table: string) => {
+        const filters: FilterMap = {};
+        let patchData: Partial<MockDbRow> | null = null;
 
-        const chain: any = {
-          select: jest.fn().mockImplementation(() => chain),
-          eq: jest.fn().mockImplementation((col: string, val: any) => {
+        const chain: MockQueryBuilder = {
+          select: () => chain,
+          eq: (col: string, val: FilterValue) => {
             filters[col] = val;
             return chain;
-          }),
-          in: jest.fn().mockImplementation((col: string, vals: any[]) => {
+          },
+          in: (col: string, vals: readonly string[]) => {
             filters[col] = vals;
             return chain;
-          }),
-          order: jest.fn().mockImplementation(() => {
+          },
+          order: () => {
             const matches = mockProductsDb.filter(p => {
               if (filters.project_id && p.project_id !== filters.project_id) return false;
               if (filters.tenant_id && p.tenant_id !== filters.tenant_id) return false;
               return true;
             });
             return Promise.resolve({ data: matches, error: null });
-          }),
-          single: jest.fn().mockImplementation(() => {
+          },
+          single: () => {
             if (table === 'real_estate_products') {
               const match = mockProductsDb.find(p => {
                 if (filters.id && p.id !== filters.id) return false;
@@ -96,77 +200,80 @@ describe('Real Estate Kernel & Accounting Kernel — Integration Tests', () => {
               return Promise.resolve(match ? { data: match, error: null } : { data: null, error: { code: 'PGRST116', message: 'Not found' } });
             }
             return Promise.resolve({ data: null, error: { code: 'PGRST116', message: 'Not found' } });
-          }),
-          update: jest.fn().mockImplementation((patch: any) => {
+          },
+          update: (patch: Partial<MockDbRow>) => {
             patchData = patch;
             return chain;
-          }),
-          insert: jest.fn().mockImplementation((rows: any) => {
+          },
+          insert: (rows: MockInsertRow | MockInsertRow[]) => {
             const arr = Array.isArray(rows) ? rows : [rows];
             const createdRows = arr.map(row => {
               const created = { id: `id-${Math.floor(1000 + Math.random() * 9000)}`, ...row };
-              if (table === 're_reservations') mockReservationsDb.push(created);
-              if (table === 're_contracts') mockContractsDb.push(created);
-              if (table === 're_commissions') mockCommissionsDb.push(created);
-              if (table === 'journal_entries') mockJournalEntriesDb.push(created);
-              if (table === 'journal_lines') mockJournalLinesDb.push(created);
+              if (table === 're_reservations') mockReservationsDb.push(created as MockReservationRow);
+              if (table === 're_contracts') mockContractsDb.push(created as MockContractRow);
+              if (table === 're_commissions') mockCommissionsDb.push(created as MockCommissionRow);
+              if (table === 'journal_entries') mockJournalEntriesDb.push(created as MockJournalEntryRow);
+              if (table === 'journal_lines') mockJournalLinesDb.push(created as MockJournalLineRow);
               return created;
             });
 
-            const resultPromise: any = Promise.resolve({ data: createdRows[0], error: null });
+            const resultPromise = Promise.resolve({ data: createdRows[0] as MockDbRow, error: null }) as MockInsertResult;
             resultPromise.select = () => ({
-              single: () => Promise.resolve({ data: createdRows[0], error: null })
+              single: () => Promise.resolve({ data: createdRows[0] as MockDbRow, error: null })
             });
             return resultPromise;
-          }),
-          delete: jest.fn().mockImplementation(() => {
+          },
+          delete: () => {
             return Promise.resolve({ error: null });
-          })
-        };
+          },
+          then: (onfulfilled, onrejected) => {
+            if (patchData) {
+              if (table === 'real_estate_products') {
+                const match = mockProductsDb.find(p => {
+                  if (filters.id && p.id !== filters.id) return false;
+                  if (filters.tenant_id && p.tenant_id !== filters.tenant_id) return false;
+                  return true;
+                });
+                if (match) Object.assign(match, patchData);
+              }
+              if (table === 're_contracts') {
+                const match = mockContractsDb.find(c => {
+                  if (filters.id && c.id !== filters.id) return false;
+                  if (filters.tenant_id && c.tenant_id !== filters.tenant_id) return false;
+                  return true;
+                });
+                if (match) Object.assign(match, patchData);
+              }
+              if (table === 're_reservations') {
+                const match = mockReservationsDb.find(r => {
+                  if (filters.id && r.id !== filters.id) return false;
+                  if (filters.tenant_id && r.tenant_id !== filters.tenant_id) return false;
+                  return true;
+                });
+                if (match) Object.assign(match, patchData);
+              }
+              return Promise.resolve({ data: null, error: null } satisfies QueryResult<null>).then(onfulfilled, onrejected);
+            }
 
-        chain.then = (onfulfilled: any) => {
-          if (patchData) {
-            if (table === 'real_estate_products') {
-              const match = mockProductsDb.find(p => {
-                if (filters.id && p.id !== filters.id) return false;
-                if (filters.tenant_id && p.tenant_id !== filters.tenant_id) return false;
-                return true;
-              });
-              if (match) Object.assign(match, patchData);
-            }
-            if (table === 're_contracts') {
-              const match = mockContractsDb.find(c => {
-                if (filters.id && c.id !== filters.id) return false;
-                if (filters.tenant_id && c.tenant_id !== filters.tenant_id) return false;
-                return true;
-              });
-              if (match) Object.assign(match, patchData);
-            }
-            if (table === 're_reservations') {
-              const match = mockReservationsDb.find(r => {
-                if (filters.id && r.id !== filters.id) return false;
-                if (filters.tenant_id && r.tenant_id !== filters.tenant_id) return false;
-                return true;
-              });
-              if (match) Object.assign(match, patchData);
-            }
-            return Promise.resolve({ error: null }).then(onfulfilled);
-          } else {
             if (table === 'accounting_accounts') {
+              const accountCodes = Array.isArray(filters.account_code)
+                ? filters.account_code.map(String)
+                : null;
               const matches = mockAccountsDb.filter(a => {
                 if (filters.tenant_id && a.tenant_id !== filters.tenant_id) return false;
-                if (filters.account_code && !filters.account_code.includes(a.account_code)) return false;
+                if (accountCodes && !accountCodes.includes(a.account_code)) return false;
                 return true;
               });
-              return Promise.resolve({ data: matches, error: null }).then(onfulfilled);
+              return Promise.resolve({ data: matches, error: null } satisfies QueryResult<MockAccountRow[]>).then(onfulfilled, onrejected);
             }
-            return Promise.resolve({ data: [], error: null }).then(onfulfilled);
-          }
+
+            return Promise.resolve({ data: [], error: null } satisfies QueryResult<MockDbRow[]>).then(onfulfilled, onrejected);
+          },
         };
 
         return chain;
-      })
-    };
+      },
+    } as TestSupabaseClient;
 
     repository = new PropertyUnitRepository();
   });

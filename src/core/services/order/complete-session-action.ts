@@ -4,7 +4,10 @@ import { getLocalDateString } from '@bella/shared';;
 import { safeRevalidatePath } from '@/lib/revalidate';
 import type { Database } from '@/types/database.types';
 import { processSessionCompletion } from './session-completion-engine';
-import { buildCompletedSessionAccountingUpdate } from './session-completion-helpers';
+import {
+  buildCompletedSessionAccountingUpdate,
+  getTenantPayrollCapability,
+} from './session-completion-helpers';
 
 function getErrorMessage(error: unknown, fallback = 'Lỗi hệ thống') {
   if (error instanceof Error) return error.message;
@@ -146,6 +149,15 @@ export async function completeSession(sessionId: string, bookingId: string, cust
     }
 
     if (ktvId && tenantId) {
+      const payrollCapability = await getTenantPayrollCapability(supabase, tenantId);
+      if ('error' in payrollCapability) {
+        return { error: `${result.error}; rollback salary capability check failed: ${payrollCapability.error}` };
+      }
+
+      if (!payrollCapability.enabled) {
+        return { error: result.error };
+      }
+
       try {
         const { recalculateAndSaveSalaryRecord } = await import('@/modules/hr-salary/actions/admin-salary-actions');
         const monthYear = `${today.substring(0, 7)}-01`;

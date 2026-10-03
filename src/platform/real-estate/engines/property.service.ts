@@ -11,7 +11,14 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { IPropertyContract, ContractRow, InstallmentInput } from '../contracts/property.contract';
 import { PropertyUnitRepository } from '../repositories/property-unit.repository';
 import { IAccountingContract } from '../../accounting/contracts/accounting.contract';
-import type { Database } from '@/types/database.types';
+import type { Database, Json } from '@/types/database.types';
+
+function toInstallmentsJson(installments: InstallmentInput[]): Json[] {
+  return installments.map((installment): Json => ({
+    dueDate: installment.dueDate,
+    percentage: installment.percentage
+  }));
+}
 
 export class PropertyService implements IPropertyContract {
   constructor(
@@ -48,7 +55,7 @@ export class PropertyService implements IPropertyContract {
         contract_number: contractNo,
         contract_price: params.contractPrice,
         state: 'DRAFT',
-        installments: params.installments
+        installments: toInstallmentsJson(params.installments)
       })
       .select('*')
       .single();

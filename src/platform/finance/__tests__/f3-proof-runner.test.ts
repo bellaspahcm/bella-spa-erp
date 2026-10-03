@@ -6,7 +6,7 @@
  * Writes detailed proof markdown audit logs on pass.
  *
  * Compliance:
- * - TypeSafety-NoAny: Strictly typed with zero 'any' usages.
+ * - TypeSafety: Strictly typed without unsafe escape hatches.
  */
 
 jest.mock('server-only', () => ({}), { virtual: true });
@@ -23,6 +23,19 @@ import * as path from 'path';
 import { createHash } from 'crypto';
 
 jest.setTimeout(60000);
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function getErrorCode(error: unknown): string | undefined {
+  if (typeof error !== 'object' || error === null || !('code' in error)) {
+    return undefined;
+  }
+
+  const code = (error as { code?: unknown }).code;
+  return typeof code === 'string' ? code : undefined;
+}
 
 describe('F3 Pre-Coding Proof Runner', () => {
   let supabase: ReturnType<typeof createSupabaseClient<Database>>;
@@ -75,19 +88,25 @@ describe('F3 Pre-Coding Proof Runner', () => {
       ('${testTenantId}', '1111', 'Cash VND', 'ASSET', 'DEBIT', 'VND', true);
     `);
 
-    // 4. Seed F1 Accounting Period
-    const { data: period, error: pErr } = await supabase
-      .from('finance_accounting_periods')
-      .insert({
-        tenant_id: testTenantId,
-        name: '2026-08',
-        period_start: '2026-08-01T00:00:00Z',
-        period_end: '2026-08-31T23:59:59Z',
-        status: 'OPEN'
-      })
-      .select('id')
-      .single();
-    if (pErr || !period) throw pErr || new Error('Period setup failed');
+    // 4. Seed F1 Accounting Period covering the database timestamp used by proof RPCs.
+    const periodResult = await pgClient.query(
+      `
+        INSERT INTO public.finance_accounting_periods (
+          tenant_id, name, period_start, period_end, status
+        )
+        VALUES (
+          $1,
+          $2,
+          date_trunc('month', NOW()),
+          date_trunc('month', NOW()) + interval '1 month - 1 microsecond',
+          'OPEN'
+        )
+        RETURNING id;
+      `,
+      [testTenantId, `CURRENT-${RUN_ID}`]
+    );
+    const period = periodResult.rows[0];
+    if (!period) throw new Error('Period setup failed');
     sharedPeriodId = period.id;
 
     // 5. Seed F2 Bank Account
@@ -563,7 +582,7 @@ describe('F3 Pre-Coding Proof Runner', () => {
     // Connection B attempts to allocate 500,000. It must block because Connection A holds the advisory lock.
     // We run Connection B's call asynchronously.
     let connBCompleted = false;
-    let connBError: any = null;
+    let connBError: unknown = null;
 
     const connBPromise = pgClient2.query(`
       SELECT public.tmp_f3_proof_allocate_payment(
@@ -571,7 +590,7 @@ describe('F3 Pre-Coding Proof Runner', () => {
       ) as result;
     `).then(() => {
       connBCompleted = true;
-    }).catch(err => {
+    }).catch((err: unknown) => {
       connBError = err;
       connBCompleted = true;
     });
@@ -588,7 +607,7 @@ describe('F3 Pre-Coding Proof Runner', () => {
 
     expect(connBCompleted).toBe(true);
     expect(connBError).not.toBeNull();
-    expect(connBError.message).toContain('OVER_ALLOCATION'); // Connection B correctly rejected!
+    expect(getErrorMessage(connBError)).toContain('OVER_ALLOCATION'); // Connection B correctly rejected!
 
     // Rollback Connection B's transaction
     await pgClient2.query('ROLLBACK;');
@@ -625,7 +644,7 @@ describe('F3 Pre-Coding Proof Runner', () => {
 
 ## Observed
 - Connection B blocked immediately: YES
-- Connection B rejection error: ${connBError?.message}
+- Connection B rejection error: ${getErrorMessage(connBError)}
 - Active Allocations Count: ${allocs.rows.length}
 - Invoice A allocated: ${posA.rows[0].allocated_amount_minor} minor units
 - Invoice B allocated: ${posB.rows[0].allocated_amount_minor} minor units
@@ -644,8 +663,8 @@ describe('F3 Pre-Coding Proof Runner', () => {
     let triggerBlocked = false;
     try {
       await pgClient.query('UPDATE public.tmp_f3_proof_receivable_ledger SET amount_minor = 100;');
-    } catch (e: any) {
-      if (e.code === 'F3001') {
+    } catch (e: unknown) {
+      if (getErrorCode(e) === 'F3001') {
         triggerBlocked = true;
       }
     }

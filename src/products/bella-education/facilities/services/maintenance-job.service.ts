@@ -28,65 +28,15 @@ export class MaintenanceJobService {
     priority: JobPriority;
     reportedByPartyId: string;
   }): Promise<MaintenanceJob> {
-    const { data, error } = await (this.repo as any).supabase
-      .from('edu_fac_maintenance_jobs')
-      .insert({
-        tenant_id: params.tenantId,
-        zone_id: params.zoneId,
-        asset_id: params.assetId,
-        title: params.title,
-        priority: params.priority,
-        status: 'SUBMITTED',
-        reported_by_party_id: params.reportedByPartyId,
-      })
-      .select('*')
-      .single();
-
-    if (error || !data) {
-      throw new Error(`Failed to create maintenance job: ${error?.message}`);
-    }
-
-    return this.mapJob(data);
+    return this.repo.createMaintenanceJob(params);
   }
 
   async assignTechnician(tenantId: string, jobId: string, technicianPartyId: string): Promise<MaintenanceJob> {
-    const { data, error } = await (this.repo as any).supabase
-      .from('edu_fac_maintenance_jobs')
-      .update({
-        assigned_technician_party_id: technicianPartyId,
-        status: 'IN_PROGRESS',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('tenant_id', tenantId)
-      .eq('id', jobId)
-      .select('*')
-      .single();
-
-    if (error || !data) {
-      throw new Error(`Failed to assign technician to maintenance job: ${error?.message}`);
-    }
-
-    return this.mapJob(data);
+    return this.repo.assignMaintenanceTechnician(tenantId, jobId, technicianPartyId);
   }
 
   async completeJob(tenantId: string, jobId: string, completionNotes: string): Promise<MaintenanceJob> {
-    const { data, error } = await (this.repo as any).supabase
-      .from('edu_fac_maintenance_jobs')
-      .update({
-        completion_notes: completionNotes,
-        status: 'COMPLETED',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('tenant_id', tenantId)
-      .eq('id', jobId)
-      .select('*')
-      .single();
-
-    if (error || !data) {
-      throw new Error(`Failed to complete maintenance job: ${error?.message}`);
-    }
-
-    return this.mapJob(data);
+    return this.repo.completeMaintenanceJob(tenantId, jobId, completionNotes);
   }
 
   /**
@@ -94,51 +44,10 @@ export class MaintenanceJobService {
    * NOTE: This marks the job as VERIFIED, but DOES NOT alter asset/zone operational status!
    */
   async verifyJob(tenantId: string, jobId: string, verifiedByPartyId: string): Promise<MaintenanceJob> {
-    const { data, error } = await (this.repo as any).supabase
-      .from('edu_fac_maintenance_jobs')
-      .update({
-        verified_by_party_id: verifiedByPartyId,
-        status: 'VERIFIED',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('tenant_id', tenantId)
-      .eq('id', jobId)
-      .select('*')
-      .single();
-
-    if (error || !data) {
-      throw new Error(`Failed to verify maintenance job: ${error?.message}`);
-    }
-
-    return this.mapJob(data);
+    return this.repo.verifyMaintenanceJob(tenantId, jobId, verifiedByPartyId);
   }
 
   async getJob(tenantId: string, jobId: string): Promise<MaintenanceJob | null> {
-    const { data } = await (this.repo as any).supabase
-      .from('edu_fac_maintenance_jobs')
-      .select('*')
-      .eq('tenant_id', tenantId)
-      .eq('id', jobId)
-      .maybeSingle();
-
-    return data ? this.mapJob(data) : null;
-  }
-
-  private mapJob(d: any): MaintenanceJob {
-    return {
-      id: d.id,
-      tenantId: d.tenant_id,
-      zoneId: d.zone_id,
-      assetId: d.asset_id,
-      title: d.title,
-      priority: d.priority,
-      status: d.status,
-      reportedByPartyId: d.reported_by_party_id,
-      assignedTechnicianPartyId: d.assigned_technician_party_id,
-      completionNotes: d.completion_notes,
-      verifiedByPartyId: d.verified_by_party_id,
-      createdAt: d.created_at,
-      updatedAt: d.updated_at,
-    };
+    return this.repo.getMaintenanceJob(tenantId, jobId);
   }
 }

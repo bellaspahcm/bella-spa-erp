@@ -21,27 +21,83 @@
  */
 
 import { DentalChairProductService } from '../services/dental-chair.service';
+import type { CdsEngineContract } from '../../../platform/healthcare/contracts/cds-engine.contract';
+import type { IClinicalAuditContract } from '../../../platform/healthcare/contracts/clinical-audit.contract';
+import type { ITemporalContract } from '../../../platform/healthcare/contracts/temporal-engine.contract';
 
 describe('BELLA DENTAL — 11 AUTOMATED VERIFICATION GATES', () => {
   let dentalService: DentalChairProductService;
 
-  const mockTemporalContract: any = {
-    recordTemporalEvent: jest.fn().mockResolvedValue({ id: 'temp-event-den-001', sequenceNumber: 201 })
+  const mockTemporalContract: Pick<ITemporalContract, 'recordTemporalEvent'> = {
+    recordTemporalEvent: jest.fn().mockResolvedValue({
+      success: true,
+      data: {
+        id: 'temp-event-den-001',
+        tenantId: 'tenant-dental-a',
+        encounterId: 'PRE_ENCOUNTER_SCHEDULING',
+        patientId: 'pat-201',
+        aggregateType: 'Patient',
+        aggregateId: 'res-den-001',
+        eventType: 'DENTAL_CHAIR_RESERVED',
+        validTime: '2026-08-13T10:00:00Z',
+        transactionTime: '2026-08-13T10:00:00Z',
+        sequenceNumber: 201,
+        deltaPayload: {},
+        createdAt: '2026-08-13T10:00:00Z',
+      },
+    }),
   };
 
-  const mockAuditContract: any = {
+  const mockAuditContract: Pick<IClinicalAuditContract, 'recordAuditEntry' | 'issueEvidencePackage'> = {
     recordAuditEntry: jest.fn().mockResolvedValue({
-      id: 'audit-den-pkg-001',
-      sha256Fingerprint: 'SHA256:d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9'
-    })
+      success: true,
+      data: {
+        id: 'audit-den-pkg-001',
+        tenantId: 'tenant-dental-a',
+        encounterId: 'enc-dental-101',
+        patientId: 'pat-201',
+        actionType: 'DENTAL_PROCEDURE_COMPLETE',
+        performerId: 'dentist-101',
+        performerRole: 'DENTIST',
+        complianceStatus: 'COMPLIANT',
+        evidenceIntegrity: 'COMPLETE',
+        createdAt: '2026-08-13T10:30:00Z',
+      },
+    }),
+    issueEvidencePackage: jest.fn().mockResolvedValue({
+      success: true,
+      data: {
+        id: 'evidence-den-pkg-001',
+        tenantId: 'tenant-dental-a',
+        auditId: 'audit-den-pkg-001',
+        schemaVersion: '1.0.0',
+        sourceReferences: { encounterId: 'enc-dental-101' },
+        canonicalPayload: {
+          actionType: 'DENTAL_PROCEDURE_COMPLETE',
+          timestamp: '2026-08-13T10:30:00Z',
+          performer: { id: 'dentist-101', role: 'DENTIST' },
+          complianceStatus: 'COMPLIANT',
+          evidenceIntegrity: 'COMPLETE',
+        },
+        fingerprint: 'SHA256:d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9',
+        createdAt: '2026-08-13T10:30:00Z',
+      },
+    }),
   };
 
-  const mockCdsContract: any = {
-    evaluateOrderSafety: jest.fn().mockResolvedValue({
-      hasAbsoluteBlock: false,
-      contraindications: [],
-      warnings: []
-    })
+  const mockCdsContract: Pick<CdsEngineContract, 'generateCdsSummary'> = {
+    generateCdsSummary: jest.fn().mockResolvedValue({
+      success: true,
+      data: {
+        passed: true,
+        hardBlocked: false,
+        alerts: [],
+        calculationId: 'calc-den-001',
+        knowledgeBaseVersion: 'kb-v1',
+        policyVersion: 'policy-v1',
+        evaluatedAt: '2026-08-13T10:00:00Z',
+      },
+    }),
   };
 
   beforeEach(async () => {
@@ -168,7 +224,7 @@ describe('BELLA DENTAL — 11 AUTOMATED VERIFICATION GATES', () => {
     });
     expect(mockAuditContract.recordAuditEntry).toHaveBeenCalledWith(
       expect.objectContaining({
-        governedRuleChecksum: expect.stringMatching(/^SHA256:/)
+        h10RuleChecksum: expect.stringMatching(/^SHA256:/)
       })
     );
   });
@@ -185,7 +241,7 @@ describe('BELLA DENTAL — 11 AUTOMATED VERIFICATION GATES', () => {
       clinicalNotes: 'Cleaned teeth successfully',
       timestamp: '2026-08-13T10:30:00Z'
     });
-    expect(res.evidencePackageId).toBe('audit-den-pkg-001');
+    expect(res.evidencePackageId).toBe('evidence-den-pkg-001');
     expect(res.sha256Fingerprint).toBe('SHA256:d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9');
   });
 

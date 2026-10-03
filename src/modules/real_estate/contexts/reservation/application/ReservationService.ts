@@ -1,7 +1,8 @@
 import { supabase as typedSupabase } from '@/lib/supabase';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
  
-const supabase = typedSupabase as unknown as SupabaseClient<any>;
+const supabase = typedSupabase as SupabaseClient<Database>;
 
 export interface ReservationResult {
   readonly success: boolean;
@@ -28,15 +29,15 @@ export class ReservationService {
   public async reserveProduct(params: {
     tenantId: string;
     productId: string;
-    userId?: string;
+    userId: string;
     customerId?: string;
     durationMinutes: number;
   }): Promise<ReservationResult> {
     const { data, error } = await supabase.rpc('reserve_product', {
       p_tenant_id: params.tenantId,
       p_product_id: params.productId,
-      p_user_id: params.userId || null,
-      p_customer_id: params.customerId || null,
+      p_user_id: params.userId,
+      p_customer_id: params.customerId,
       p_duration_minutes: params.durationMinutes,
     });
 

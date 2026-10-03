@@ -466,6 +466,77 @@ describe('ProductRegistry', () => {
     });
   });
 
+  describe('Bella Nail Product Registration', () => {
+    it('should have bella_nail registered at module initialization', async () => {
+      jest.resetModules();
+      const freshRegistryModule = await import('../product-registry');
+
+      const retrieved = freshRegistryModule.productRegistry.getRequired('bella_nail');
+
+      expect(retrieved.productKey).toBe('bella_nail');
+      expect(retrieved.displayName).toBe('Bella Nail Shop');
+      expect(retrieved.requiredModules).toEqual(['beauty_spa']);
+      expect(retrieved.serviceProfile).toBe('nail');
+      expect(retrieved.defaultRoute).toBe('/dashboard/nail');
+      expect(retrieved.navigationProfile).toBe('nail');
+    });
+
+    it('should register bella_nail product on Beauty OS', () => {
+      const product: ProductDefinition = {
+        productKey: 'bella_nail',
+        displayName: 'Bella Nail Shop',
+        subtitle: 'Nail Shop Management',
+        requiredModules: ['beauty_spa'],
+        serviceProfile: 'nail',
+        defaultRoute: '/dashboard/nail',
+        navigationProfile: 'nail'
+      };
+
+      productRegistry.register(product);
+
+      const retrieved = productRegistry.getRequired('bella_nail');
+      expect(retrieved.productKey).toBe('bella_nail');
+      expect(retrieved.displayName).toBe('Bella Nail Shop');
+      expect(retrieved.subtitle).toBe('Nail Shop Management');
+      expect(retrieved.requiredModules).toEqual(['beauty_spa']);
+      expect(retrieved.serviceProfile).toBe('nail');
+      expect(retrieved.defaultRoute).toBe('/dashboard/nail');
+      expect(retrieved.navigationProfile).toBe('nail');
+    });
+
+    it('should keep Bella Nail distinct from Haircut while sharing Beauty OS', () => {
+      const haircut: ProductDefinition = {
+        productKey: 'bella_haircut',
+        displayName: 'Bella Haircut Shop',
+        requiredModules: ['beauty_spa'],
+        serviceProfile: 'haircut',
+        defaultRoute: '/dashboard',
+        navigationProfile: 'haircut'
+      };
+      const nail: ProductDefinition = {
+        productKey: 'bella_nail',
+        displayName: 'Bella Nail Shop',
+        requiredModules: ['beauty_spa'],
+        serviceProfile: 'nail',
+        defaultRoute: '/dashboard/nail',
+        navigationProfile: 'nail'
+      };
+
+      productRegistry.register(haircut);
+      productRegistry.register(nail);
+
+      const retrievedHaircut = productRegistry.getRequired('bella_haircut');
+      const retrievedNail = productRegistry.getRequired('bella_nail');
+
+      expect(retrievedHaircut.requiredModules).toEqual(['beauty_spa']);
+      expect(retrievedNail.requiredModules).toEqual(['beauty_spa']);
+      expect(retrievedHaircut.productKey).not.toBe(retrievedNail.productKey);
+      expect(retrievedHaircut.serviceProfile).toBe('haircut');
+      expect(retrievedNail.serviceProfile).toBe('nail');
+      expect(retrievedNail.defaultRoute).toBe('/dashboard/nail');
+    });
+  });
+
   describe('Error Message Quality', () => {
     it('should provide clear error message for duplicate product', () => {
       const product1 = createTestProduct('test_product', 'First');

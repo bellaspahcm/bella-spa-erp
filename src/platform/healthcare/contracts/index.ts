@@ -19,6 +19,8 @@ export * from './or-readiness-engine.contract';
 export * from '../engines/icu-engine/contracts/icu-engine.contract';
 export * from './emergency-engine.contract';
 export * from './blood-bank-engine.contract';
+export * from './admission-engine.contract';
+export * from './audit-compliance.contract';
 export * from './cds-engine.contract';
 export * from './order-engine.contract';
 export * from './sterilization.contract';

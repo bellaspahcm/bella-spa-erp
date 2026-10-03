@@ -13,6 +13,102 @@ import { PropertyCatalogProductService } from '../services/property-catalog.serv
 import { ReservationProductService } from '../services/reservation.service';
 import { ContractProductService, CreateContractDTO } from '../services/contract.service';
 import { CommissionProductService } from '../services/commission.service';
+import type {
+  IPropertyInventoryContract,
+  PropertyUnitRow,
+} from '../../../platform/real-estate/contracts/property-inventory.contract';
+import type { IReservationContract } from '../../../platform/real-estate/contracts/reservation.contract';
+import type { IPropertyContract, ContractRow } from '../../../platform/real-estate/contracts/property.contract';
+import type { ICommissionContract, CommissionRow } from '../../../platform/real-estate/contracts/commission.contract';
+
+const TIMESTAMP = '2026-10-01T00:00:00.000Z';
+type UnitStateStatus = 'available' | 'reserved' | 'contracted';
+
+function productStatusFromUnit(status: UnitStateStatus): PropertyUnitRow['status'] {
+  if (status === 'reserved') return 'booked';
+  return status;
+}
+
+function productRow(overrides: Partial<PropertyUnitRow> = {}): PropertyUnitRow {
+  return {
+    area: 75,
+    area_m2: null,
+    block: null,
+    created_at: TIMESTAMP,
+    created_by: null,
+    customer_id: null,
+    deleted_at: null,
+    direction: null,
+    floor: null,
+    floor_number: null,
+    id: 'unit-RE-A101',
+    metadata: null,
+    owner_name: null,
+    product_code: 'A1-101',
+    product_type: 'apartment',
+    project_id: 'proj-001',
+    status: 'available',
+    tenant_id: 'tenant-alpha',
+    unit_price: 60000000,
+    updated_at: TIMESTAMP,
+    updated_by: null,
+    ...overrides,
+  };
+}
+
+function contractRow(overrides: Partial<ContractRow> = {}): ContractRow {
+  return {
+    activated_at: null,
+    booking_id: null,
+    contract_number: null,
+    contract_price: 4500000000,
+    created_at: TIMESTAMP,
+    created_by: null,
+    customer_id: 'cust-1',
+    deleted_at: null,
+    end_date: null,
+    id: 'ctr-unit-RE-A101',
+    installments: null,
+    metadata: null,
+    notes: null,
+    product_id: 'unit-RE-A101',
+    signed_date: null,
+    start_date: null,
+    state: 'DRAFT',
+    state_changed_at: null,
+    submitted_at: null,
+    tenant_id: 'tenant-alpha',
+    terminated_at: null,
+    updated_at: TIMESTAMP,
+    updated_by: null,
+    ...overrides,
+  };
+}
+
+function commissionRow(overrides: Partial<CommissionRow> = {}): CommissionRow {
+  return {
+    agent_id: 'agent-001',
+    approved_at: null,
+    base_amount: 4500000000,
+    booking_id: null,
+    commission_amount: 90000000,
+    commission_percentage: null,
+    contract_id: 'ctr-unit-RE-A101',
+    created_at: TIMESTAMP,
+    created_by: null,
+    deleted_at: null,
+    earned_at: null,
+    id: 'comm-888',
+    metadata: null,
+    notes: null,
+    paid_at: null,
+    status: 'pending',
+    tenant_id: 'tenant-alpha',
+    updated_at: TIMESTAMP,
+    updated_by: null,
+    ...overrides,
+  };
+}
 
 describe('BELLA LAND V2 — HARDENED INVARIANTS & RECONCILIATION SUITE', () => {
   let catalogService: PropertyCatalogProductService;
@@ -21,23 +117,27 @@ describe('BELLA LAND V2 — HARDENED INVARIANTS & RECONCILIATION SUITE', () => {
   let commissionService: CommissionProductService;
 
   // In-memory state mock simulating atomic DB transaction for double-hold locking & tenant checks
-  const unitState: Record<string, { tenant_id: string; status: 'available' | 'reserved' | 'contracted'; held_by?: string }> = {
+  const unitState: Record<string, { tenant_id: string; status: UnitStateStatus; held_by?: string }> = {
     'unit-RE-A101': { tenant_id: 'tenant-alpha', status: 'available' },
     'unit-RE-B202': { tenant_id: 'tenant-alpha', status: 'reserved', held_by: 'res-agent-1' },
     'unit-RE-C303': { tenant_id: 'tenant-beta', status: 'available' },
   };
 
-  const mockInventoryContract: any = {
+  const mockInventoryContract: jest.Mocked<IPropertyInventoryContract> = {
     getProducts: jest.fn().mockImplementation((tenantId: string) => {
       if (!tenantId) throw new Error('TENANT_ISOLATION_VIOLATION: tenantId is required');
       const products = Object.entries(unitState)
         .filter(([_, u]) => u.tenant_id === tenantId)
-        .map(([id, u]) => ({ id, tenant_id: u.tenant_id, status: u.status }));
+        .map(([id, u]) => productRow({
+          id,
+          tenant_id: u.tenant_id,
+          status: productStatusFromUnit(u.status),
+        }));
       return Promise.resolve(products);
     })
   };
 
-  const mockReservationContract: any = {
+  const mockReservationContract: jest.Mocked<IReservationContract> = {
     reserveProduct: jest.fn().mockImplementation((req: { tenantId: string; productId: string; userId: string; customerId: string; durationMinutes: number }) => {
       if (!req.tenantId) {
         return Promise.reject(new Error('TENANT_ISOLATION_VIOLATION: tenantId is required'));
@@ -86,20 +186,20 @@ describe('BELLA LAND V2 — HARDENED INVARIANTS & RECONCILIATION SUITE', () => {
     })
   };
 
-  const mockPropertyContract: any = {
+  const mockPropertyContract: jest.Mocked<IPropertyContract> = {
     createContract: jest.fn().mockImplementation((dto: CreateContractDTO) => {
       if (!dto.tenantId) throw new Error('TENANT_ISOLATION_VIOLATION: tenantId is required');
       const unit = unitState[dto.productId];
       if (!unit || unit.tenant_id !== dto.tenantId) {
         throw new Error('UNAUTHORIZED_CROSS_TENANT_ACCESS: Cross tenant contract creation denied');
       }
-      return Promise.resolve({
+      return Promise.resolve(contractRow({
         id: `ctr-${dto.productId}`,
         tenant_id: dto.tenantId,
         product_id: dto.productId,
-        state: 'DRAFT',
+        customer_id: dto.customerId,
         contract_price: dto.contractPrice || 4500000000
-      });
+      }));
     }),
     signContract: jest.fn().mockImplementation((tenantId: string, contractId: string) => {
       if (!tenantId) throw new Error('TENANT_ISOLATION_VIOLATION: tenantId is required');
@@ -107,14 +207,8 @@ describe('BELLA LAND V2 — HARDENED INVARIANTS & RECONCILIATION SUITE', () => {
     })
   };
 
-  const mockCommissionContract: any = {
-    calculateCommission: jest.fn().mockResolvedValue({
-      id: 'comm-888',
-      tenant_id: 'tenant-alpha',
-      contract_id: 'ctr-unit-RE-A101',
-      commission_amount: 90000000,
-      status: 'pending'
-    })
+  const mockCommissionContract: jest.Mocked<ICommissionContract> = {
+    calculateCommission: jest.fn().mockResolvedValue(commissionRow())
   };
 
   beforeEach(() => {

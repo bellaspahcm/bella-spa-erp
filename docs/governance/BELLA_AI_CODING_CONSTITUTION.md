@@ -751,6 +751,7 @@ Classify as:
 CODE BUG
 STALE CONSUMER
 CONTRACT DRIFT
+TYPE_ONLY_CHANGE_WITH_UNATTRIBUTED_RUNTIME_FAILURE
 SCHEMA DRIFT
 FIXTURE DRIFT
 ENVIRONMENT
@@ -760,6 +761,60 @@ CASCADE
 ```
 
 Then apply one root cause, one minimal fix, targeted verification, stop.
+
+### Type-Only Failure Triage
+
+A type-local change is not automatically a runtime regression.
+
+If a runtime test fails after a type-only or cleanup change:
+
+```text
+1. Reproduce and capture the first/root failure.
+2. Classify patch-induced vs pre-existing vs baseline vs fixture drift.
+3. Do not update fixtures, expected values, mocks, or runtime code merely to make the test pass.
+4. Open a contract/runtime change only when evidence proves the type-local patch exposed or caused that contract issue.
+```
+
+Until attribution is proven, the status is:
+
+```text
+TYPE_ONLY_CHANGE_WITH_UNATTRIBUTED_RUNTIME_FAILURE
+```
+
+### Test Fixture Validity
+
+Fixtures are contracts too. Before treating a failing fixture as a product regression, verify whether the fixture is still valid for the canonical execution environment.
+
+Fixtures that depend on current period, current state, active tenant data, DB clock, generated schema, RLS policy, or runtime business contract must either:
+
+```text
+derive from DB/application clock and canonical state
+```
+
+or be:
+
+```text
+intentionally frozen, documented, and executed only in the environment that satisfies that freeze
+```
+
+Do not classify failures such as stale period lookup, stale tenant setup, or stale generated schema as a regression until the fixture has been proven current. A stale fixture is `FIXTURE DRIFT`; fix or defer the fixture according to ownership and change authority.
+
+### Contract Drift Classification
+
+`CONTRACT DRIFT` means a consumer expects a public path, symbol, DTO, interface, export, enum, schema field, RPC, or method shape that does not match the current canonical contract.
+
+Before modifying a consumer or producer, identify:
+
+```text
+Consumer expectation
+Canonical public path
+Canonical symbol/export
+DTO/interface/schema/RPC owner
+Runtime semantics
+Allowed compatibility model, if any
+```
+
+Do not create compatibility aliases, fake interfaces, widened DTOs, casts, or fallback fields merely to make TypeScript, tests, or CI pass. Compatibility is a contract decision and must be approved in the owning layer.
 
 ### CI Failure Process
 
@@ -1212,6 +1267,46 @@ BAD_NEW = 0 -> checkpoint may be valid
 
 Raw diagnostic count is useful only when no new bad diagnostics are introduced. The final target remains absolute diagnostics = 0.
 
+Residual cleanup is not authorized merely because raw violations remain.
+
+If remaining violations belong to any of these categories:
+
+```text
+frozen scope
+contract gap or contract drift
+generated artifact
+DB / RLS / business contract
+core-adjacent boundary
+governance-required decision
+```
+
+then the cleanup campaign must stop at that boundary unless the user explicitly authorizes the owning workstream. Create or update a residual-boundary record that includes:
+
+```text
+official sealed baseline
+raw scanner count
+classification by ownership/root cause
+required approval or workstream for each residual class
+commands/evidence used
+```
+
+A non-zero official baseline can be a sealed governance boundary. It must not be reported as unfinished cleanup when all remaining items are classified residuals that require separate authority.
+
+### Baseline Checkpoint Before Broad Cleanup
+
+Before a workstream that can touch many contracts, generated types, baseline findings, or cleanup batches, create a checkpoint:
+
+```text
+clean working tree or isolated worktree
+fresh full typecheck or explicit TIMEOUT / NOT_VERIFIED status
+baseline comparison
+relevant architecture/security guards
+commit checkpoint when authorized
+PR checkpoint when authorized
+```
+
+Historical artifacts do not prove current readiness. A baseline checkpoint is valid only when its commands, commit, branch, and scope are recorded.
+
 ## 26. Fresh Full Verification Is Final Authority
 
 Targeted checks save time, but important closure requires fresh evidence:
@@ -1270,6 +1365,7 @@ ContractDefinition -> Platform architecture decision
 quantity_reserved  -> Inventory behavior decision
 journey.status     -> lifecycle semantics unclear
 TS2589             -> query/type-system complexity
+residual any-types -> sealed baseline with classified residual boundary
 ```
 
 Deferred debt belongs in an appropriate workstream, not forced through TypeScript cleanup.
@@ -1422,6 +1518,8 @@ Requested change does not authorize modifying the required layer
 Read/write semantics are not proven
 Fix requires frozen/core/kernel modification
 Fix requires inventing schema, RPC, API, field, or type
+Fix requires unapproved compatibility alias or public contract expansion
+Residual cleanup crosses a classified residual-boundary record
 UI requires an unverified status, action, KPI, or workflow
 New business semantics would need to be invented
 Execution environment cannot satisfy the test contract

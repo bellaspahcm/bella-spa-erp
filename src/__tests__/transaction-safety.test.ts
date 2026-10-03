@@ -171,7 +171,7 @@ class MockQueryBuilder {
       return Promise.resolve({
         data: {
           id: 'tenant-a',
-          enabled_modules: { babycare: true, beauty_spa: false }
+          enabled_modules: { babycare: true, beauty_spa: false, payroll: true }
         },
         error: null
       });

@@ -10,7 +10,13 @@
  * @module src/products/bella-hospital/services/hospital-clinical-alert.service
  */
 
-import { ICdsContract, OrderSafetyCheckInputDTO, SafetyEvaluationResultDTO } from '../../../platform/healthcare/contracts/cds-engine.contract';
+import type {
+  CdsAlert,
+  CdsCheckResult,
+  CdsEngineContract,
+  GenerateCdsSummaryRequest,
+} from '../../../platform/healthcare/contracts/cds-engine.contract';
+import type { EngineResponse } from '../../../platform/healthcare/shared-kernel/types';
 
 export interface HospitalOrderSafetyRequestDTO {
   tenantId: string;
@@ -31,8 +37,25 @@ export interface HospitalOrderSafetyResponseDTO {
   timestamp: string;
 }
 
+export interface SafetyEvaluationResultDTO {
+  hasAbsoluteBlock: boolean;
+  contraindications: Array<{
+    severity: 'FATAL' | 'HIGH';
+    message: string;
+    sourceAlert: CdsAlert;
+  }>;
+  warnings: Array<{
+    severity: 'WARNING' | 'INFO';
+    message: string;
+    sourceAlert: CdsAlert;
+  }>;
+  calculationId: string;
+  knowledgeBaseVersion: string;
+  policyVersion: string;
+}
+
 export class HospitalClinicalAlertProductService {
-  constructor(private readonly cdsContract: ICdsContract) {}
+  constructor(private readonly cdsContract: Pick<CdsEngineContract, 'generateCdsSummary'>) {}
 
   /**
    * Evaluates medication order safety via H8 CDS Public Contract
@@ -41,25 +64,26 @@ export class HospitalClinicalAlertProductService {
     if (!request.tenantId) throw new Error('TENANT_ISOLATION_VIOLATION: tenantId is required');
     if (!request.encounterId) throw new Error('ENCOUNTER_BOUNDARY_VIOLATION: encounterId is required');
 
-    const cdsInput: OrderSafetyCheckInputDTO = {
+    const cdsInput: GenerateCdsSummaryRequest = {
+      requestId: `hospital-order-safety:${request.tenantId}:${request.encounterId}:${request.medicationCode}`,
       tenantId: request.tenantId,
       encounterId: request.encounterId,
       patientId: request.patientId,
-      orderType: 'MEDICATION',
-      medicationCode: request.medicationCode,
-      dosage: `${request.dosageMg}mg ${request.route}`,
-      knownAllergies: request.knownAllergies || [],
-      activeMedications: request.activeMedications || []
+      proposedDrugCode: request.medicationCode,
+      currentMedicationCodes: request.activeMedications || [],
+      proposedDoseMg: request.dosageMg,
     };
 
-    const safetyResult = await this.cdsContract.evaluateOrderSafety(cdsInput);
+    const safetyResult = mapCdsResult(
+      unwrapEngineResponse(await this.cdsContract.generateCdsSummary(cdsInput), 'CDS_SUMMARY_FAILED')
+    );
 
     // Enforce Non-Bypassable ABSOLUTE_BLOCK (Law 15)
     let decision: 'APPROVED' | 'REQUIRES_OVERRIDE' | 'ABSOLUTE_BLOCK' = 'APPROVED';
 
-    if (safetyResult.hasAbsoluteBlock || safetyResult.contraindications.some(c => c.severity === 'FATAL' || c.severity === 'HIGH')) {
+    if (safetyResult.hasAbsoluteBlock) {
       decision = 'ABSOLUTE_BLOCK';
-    } else if (safetyResult.warnings.length > 0) {
+    } else if (safetyResult.contraindications.length > 0 || safetyResult.warnings.length > 0) {
       decision = 'REQUIRES_OVERRIDE';
     }
 
@@ -69,4 +93,41 @@ export class HospitalClinicalAlertProductService {
       timestamp: new Date().toISOString()
     };
   }
+}
+
+function mapCdsResult(result: CdsCheckResult): SafetyEvaluationResultDTO {
+  const contraindications = result.alerts
+    .filter((alert) => alert.enforcement === 'ABSOLUTE_BLOCK' || alert.enforcement === 'BLOCK')
+    .map((alert) => ({
+      severity: alert.enforcement === 'ABSOLUTE_BLOCK' ? 'FATAL' as const : 'HIGH' as const,
+      message: alert.message,
+      sourceAlert: alert,
+    }));
+
+  const warnings = result.alerts
+    .filter((alert) => alert.enforcement === 'ACKNOWLEDGE' || alert.enforcement === 'INFORMATIONAL')
+    .map((alert) => ({
+      severity: alert.enforcement === 'ACKNOWLEDGE' ? 'WARNING' as const : 'INFO' as const,
+      message: alert.message,
+      sourceAlert: alert,
+    }));
+
+  return {
+    hasAbsoluteBlock: result.hardBlocked,
+    contraindications,
+    warnings,
+    calculationId: result.calculationId,
+    knowledgeBaseVersion: result.knowledgeBaseVersion,
+    policyVersion: result.policyVersion,
+  };
+}
+
+function unwrapEngineResponse<T>(response: EngineResponse<T>, fallbackCode: string): T {
+  if (response.success && response.data) {
+    return response.data;
+  }
+
+  const code = response.error?.code ?? fallbackCode;
+  const message = response.error?.message ?? fallbackCode;
+  throw new Error(`${code}: ${message}`);
 }

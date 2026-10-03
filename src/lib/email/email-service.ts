@@ -31,6 +31,29 @@ if (SENDGRID_API_KEY) {
   sgMail.setApiKey(SENDGRID_API_KEY);
 }
 
+function stripHtmlTags(html: string): string {
+  let text = '';
+  let insideTag = false;
+
+  for (const char of html) {
+    if (char === '<') {
+      insideTag = true;
+      continue;
+    }
+
+    if (char === '>') {
+      insideTag = false;
+      continue;
+    }
+
+    if (!insideTag) {
+      text += char;
+    }
+  }
+
+  return text;
+}
+
 /**
  * Send email via SendGrid or console log in dev
  */
@@ -75,7 +98,7 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
       from: from || DEFAULT_FROM_EMAIL,
       subject,
       html,
-      text: text || html.replace(/<[^>]*>/g, ''), // Strip HTML tags for text fallback
+      text: text || stripHtmlTags(html),
     };
 
     const response = await sgMail.send(msg);

@@ -434,4 +434,52 @@ describe('ProductResolver', () => {
       expect(resolved).toBeUndefined();
     });
   });
+
+  describe('Bella Nail Product Resolution', () => {
+    it('should resolve bella_nail as a Beauty OS product identity', () => {
+      const nail: ProductDefinition = {
+        productKey: 'bella_nail',
+        displayName: 'Bella Nail Shop',
+        subtitle: 'Nail Shop Management',
+        requiredModules: ['beauty_spa'],
+        serviceProfile: 'nail',
+        defaultRoute: '/dashboard/nail',
+        navigationProfile: 'nail'
+      };
+      productRegistry.register(nail);
+
+      const tenant = createMockTenant('tenant-nail', 'bella_nail');
+      const resolved = productResolver.resolve(tenant);
+
+      expect(resolved.product.productKey).toBe('bella_nail');
+      expect(resolved.product.requiredModules).toEqual(['beauty_spa']);
+      expect(resolved.product.serviceProfile).toBe('nail');
+      expect(resolved.product.defaultRoute).toBe('/dashboard/nail');
+      expect(resolved.product.navigationProfile).toBe('nail');
+    });
+  });
+
+  describe('Bella Beauty Spa v2 Product Resolution', () => {
+    it('should resolve bella_spa to Beauty Spa v2 default route without module fallback', () => {
+      const spa: ProductDefinition = {
+        productKey: 'bella_spa',
+        displayName: 'Bella Beauty Spa v2',
+        subtitle: 'Spa Chain Management',
+        requiredModules: ['beauty_spa'],
+        serviceProfile: 'spa',
+        defaultRoute: '/dashboard/beauty-spa-v2',
+        navigationProfile: 'spa'
+      };
+      productRegistry.register(spa);
+
+      const tenant = createMockTenant('tenant-spa-v2', 'bella_spa');
+      const resolved = productResolver.resolve(tenant);
+
+      expect(resolved.product.productKey).toBe('bella_spa');
+      expect(resolved.product.requiredModules).toEqual(['beauty_spa']);
+      expect(resolved.product.serviceProfile).toBe('spa');
+      expect(resolved.product.defaultRoute).toBe('/dashboard/beauty-spa-v2');
+      expect(resolved.product.navigationProfile).toBe('spa');
+    });
+  });
 });

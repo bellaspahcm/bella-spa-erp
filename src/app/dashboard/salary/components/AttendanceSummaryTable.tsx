@@ -78,8 +78,10 @@ export default function AttendanceSummaryTable({
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.05 }}
                   className="hover:bg-slate-50/50 transition-colors"
+                  data-testid="attendance-summary-row"
+                  data-ktv-id={ktv.id}
                 >
-                  <td className="px-8 py-6 whitespace-nowrap">
+                  <td className="px-8 py-6 whitespace-nowrap" data-testid="attendance-employee-name">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 font-black">
                         {ktv.name.charAt(0)}
@@ -90,10 +92,10 @@ export default function AttendanceSummaryTable({
                       </div>
                     </div>
                   </td>
-                  <td className="px-8 py-6 text-center whitespace-nowrap font-black text-slate-700">
+                  <td className="px-8 py-6 text-center whitespace-nowrap font-black text-slate-700" data-testid="attendance-total-days">
                     {ktv.totalDays}
                   </td>
-                  <td className="px-8 py-6 text-center whitespace-nowrap font-black text-emerald-600">
+                  <td className="px-8 py-6 text-center whitespace-nowrap font-black text-emerald-600" data-testid="attendance-present-days">
                     +{ktv.present}
                   </td>
                   <td className="px-8 py-6 text-center whitespace-nowrap font-black text-amber-600">
@@ -111,6 +113,7 @@ export default function AttendanceSummaryTable({
                   <td className="px-8 py-6 text-center whitespace-nowrap">
                     <button
                       onClick={() => openKtvCalendar(ktv)}
+                      data-testid="attendance-open-calendar-button"
                       className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all"
                     >
                       Chi tiết & Sửa

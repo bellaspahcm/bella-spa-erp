@@ -103,6 +103,40 @@ export interface CdsCheckResult {
   evaluatedAt: string;
 }
 
+/**
+ * Product-facing medication order safety request.
+ * This is the public H8 boundary used by Healthcare Product Verticals before
+ * mapping into concrete CDS sub-engine checks.
+ */
+export interface OrderSafetyCheckInputDTO {
+  tenantId: string;
+  encounterId: string;
+  patientId: string;
+  orderType: 'MEDICATION' | 'PROCEDURE' | 'LABORATORY' | 'IMAGING' | string;
+  medicationCode: string;
+  dosage: string;
+  knownAllergies: string[];
+  activeMedications: string[];
+}
+
+export interface SafetyContraindicationDTO {
+  severity: 'FATAL' | 'HIGH' | 'MEDIUM' | 'LOW' | CdsSeverity | string;
+  message: string;
+  code?: string;
+}
+
+export interface SafetyWarningDTO {
+  severity: 'WARNING' | 'INFO' | CdsSeverity | string;
+  message: string;
+  code?: string;
+}
+
+export interface SafetyEvaluationResultDTO {
+  hasAbsoluteBlock: boolean;
+  contraindications: SafetyContraindicationDTO[];
+  warnings: SafetyWarningDTO[];
+}
+
 // ============================================================================
 // CDS Request Types
 // ============================================================================
@@ -280,6 +314,15 @@ export interface CdsEngineContract {
   ): Promise<EngineResponse<PatientAllergy[]>>;
 
   healthCheck(): Promise<EngineHealthStatus>;
+}
+
+/**
+ * Product-facing CDS contract used by Healthcare Product Verticals.
+ * This keeps Product -> Public Contract -> Kernel access explicit while the
+ * concrete implementation may delegate to CdsEngineContract.generateCdsSummary.
+ */
+export interface ICdsContract {
+  evaluateOrderSafety(input: OrderSafetyCheckInputDTO): Promise<SafetyEvaluationResultDTO>;
 }
 
 /**

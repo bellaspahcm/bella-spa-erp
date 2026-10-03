@@ -763,6 +763,62 @@ describe('finance transaction mutation outbox rollbacks', () => {
     ]);
   });
 
+  it('approves salary expense without mutating immutable finalized salary record', async () => {
+    const calls = installScriptedSupabase([
+      {
+        table: 'expenses',
+        op: 'select',
+        data: {
+          id: 'exp-salary-finalized',
+          category: 'salary',
+          amount: 7000000,
+          description: 'salary [salary_record_id:salary-1] [ktv_id:ktv-1]',
+          tenant_id: 'tenant-1',
+          status: 'submitted',
+          expense_date: '2026-05-31',
+          business_event_type: null,
+          accounting_review_status: null,
+          accounting_metadata: null,
+        },
+      },
+      {
+        table: 'expenses',
+        op: 'update',
+        data: {
+          id: 'exp-salary-finalized',
+          category: 'salary',
+          amount: 7000000,
+          description: 'salary [salary_record_id:salary-1] [ktv_id:ktv-1]',
+          tenant_id: 'tenant-1',
+        },
+      },
+      {
+        table: 'salary_records',
+        op: 'select',
+        data: {
+          status: 'finalized',
+          paid_date: null,
+          paid_method: null,
+          business_event_type: null,
+          accounting_review_status: null,
+          accounting_metadata: null,
+        },
+      },
+    ]);
+
+    await confirmTransaction('exp-salary-finalized', 'expense');
+
+    expect(calls.filter(c => c.table === 'salary_records' && c.op === 'update')).toEqual([]);
+    expect(calls.filter(c => c.table === 'expenses' && c.op === 'update').map(c => c.payload)).toEqual([
+      expect.objectContaining({ status: 'approved' }),
+    ]);
+    expect(mockEnqueueWithAutoClient).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ eventType: 'SALARY_PAID' }),
+      '[confirmTransaction]'
+    );
+  });
+
   it('reports salary and expense rollback failures when salary paid outbox enqueue fails', async () => {
     mockEnqueueWithAutoClient.mockResolvedValueOnce(false);
     installScriptedSupabase([

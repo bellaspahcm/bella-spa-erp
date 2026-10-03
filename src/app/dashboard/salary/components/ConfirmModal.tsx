@@ -34,6 +34,7 @@ export default function ConfirmModal({
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
+        data-testid="salary-confirm-modal"
         className="max-h-[92vh] w-full max-w-md overflow-hidden rounded-[28px] border border-slate-100 bg-white shadow-2xl sm:rounded-[32px]"
       >
         <div className="max-h-[calc(92vh-6.5rem)] overflow-y-auto p-5 sm:p-8">
@@ -68,6 +69,7 @@ export default function ConfirmModal({
           <button
             onClick={onConfirm}
             disabled={isLoading}
+            data-testid="salary-confirm-modal-submit"
             className={cn(
               "flex-1 py-4 text-white font-black rounded-2xl transition-all text-xs uppercase tracking-wider flex items-center justify-center gap-2",
               isDanger 

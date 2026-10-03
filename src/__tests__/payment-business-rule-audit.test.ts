@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { calculatePortalPaymentSummary } from '@/app/portal/[token]/payment-utils';
 import {
   calculateBookingPaymentState,
@@ -174,49 +174,64 @@ describe('payment business rule audit', () => {
     expect(paymentHelperSource).toContain(".eq('tenant_id', tenantId)");
   });
 
-  it('keeps Haircut debt collection from claiming persistence without the Finance contract', () => {
+  it('keeps Haircut debt collection on the F3 receivable contract', () => {
     const haircutReconciliationSource = readSource(
       'src/app/dashboard/finance/reconciliation/components/HaircutReconciliationView.tsx'
     );
+    const haircutF3ActionSource = readSource('src/services/haircut-f3-reconciliation-actions.ts');
 
-    expect(haircutReconciliationSource).toContain('HAIRCUT_DEBT_COLLECTION_GAP_MESSAGE');
-    expect(haircutReconciliationSource).toContain('Chưa thể xác nhận thu');
-    expect(haircutReconciliationSource).not.toContain('Đã thu thành công');
-    expect(haircutReconciliationSource).not.toContain('Sổ cái & Dòng tiền đã được cập nhật');
+    expect(haircutReconciliationSource).toContain('getHaircutF3OpenReceivables');
+    expect(haircutReconciliationSource).toContain('collectHaircutF3ReceivablePayment');
+    expect(haircutReconciliationSource).not.toContain('MOCK_CUSTOMER_DEBTS');
+    expect(haircutReconciliationSource).not.toContain('HAIRCUT_DEBT_COLLECTION_GAP_MESSAGE');
+    expect(haircutF3ActionSource).toContain('finance_receivable_positions');
+    expect(haircutF3ActionSource).toContain('outstanding_amount_minor');
+    expect(haircutF3ActionSource).toContain('allocateConfirmedPaymentToInvoiceReceivable');
+    expect(haircutF3ActionSource).not.toContain('collectDebtPayment(');
+    expect(haircutF3ActionSource).not.toContain('recordRemainingPayment(');
     expect(haircutReconciliationSource).not.toContain('value="mpos"');
   });
 
-  it('keeps Haircut salary static rows from driving canonical Payroll writes', () => {
+  it('keeps Haircut salary routed through the canonical Payroll read-write contract', () => {
     const haircutSalarySource = readSource('src/app/dashboard/salary/HaircutSalaryView.tsx');
     const salaryPageSource = readSource('src/app/dashboard/salary/page.tsx');
+    const adminSalaryActionsSource = readSource('src/modules/hr-salary/actions/admin-salary-actions.ts');
+    const salaryWorkflowHelpersSource = readSource('src/modules/hr-salary/actions/admin-salary-workflow-helpers.ts');
 
-    expect(haircutSalarySource).toContain('SALARY_LIST');
-    expect(haircutSalarySource).toContain('HAIRCUT_SALARY_WRITE_GAP_MESSAGE');
-    expect(haircutSalarySource).not.toContain('onPublishAll');
-    expect(haircutSalarySource).not.toContain('onFinalizeAll');
-    expect(haircutSalarySource).not.toContain('onEditKtv');
-    expect(haircutSalarySource).not.toContain('onFixAttendance');
+    expect(existsSync('src/app/dashboard/salary/HaircutSalaryView.tsx')).toBe(true);
+    expect(haircutSalarySource).not.toContain('SALARY_LIST');
+    expect(haircutSalarySource).not.toContain('HAIRCUT_SALARY_WRITE_GAP_MESSAGE');
+    expect(haircutSalarySource).not.toContain('export function HaircutSalaryView');
+    expect(haircutSalarySource).toContain('shared canonical salary/payroll page');
     expect(salaryPageSource).not.toContain('HaircutSalaryView');
     expect(salaryPageSource).not.toContain("product?.productKey === 'bella_haircut'");
     expect(salaryPageSource).toContain('getSalaryData');
     expect(salaryPageSource).toContain('publishAllSalaryRecords');
     expect(salaryPageSource).toContain('finalizeAllSalaryRecords');
     expect(salaryPageSource).toContain('SalaryTable');
-    expect(salaryPageSource).not.toContain('onPublishAll={');
-    expect(salaryPageSource).not.toContain('onFinalizeAll={');
+    expect(salaryPageSource).toContain('handlePublishAll');
+    expect(salaryPageSource).toContain('handleFinalizeAll');
+    expect(salaryPageSource).toContain('SessionMatrixTable');
+    expect(salaryPageSource).toContain('AttendanceSummaryTable');
+    expect(adminSalaryActionsSource).toContain('export async function publishAllSalaryRecords');
+    expect(adminSalaryActionsSource).toContain('export async function finalizeAllSalaryRecords');
+    expect(adminSalaryActionsSource).toContain('createSalaryExpense({');
+    expect(adminSalaryActionsSource).toContain('revalidateApprovedSalaryViews');
+    expect(salaryWorkflowHelpersSource).toContain("sourceTable: 'expenses'");
+    expect(salaryWorkflowHelpersSource).toContain("category: 'salary'");
   });
 
-  it('keeps Haircut booking static rows from driving canonical booking writes', () => {
+  it('keeps Haircut booking routed through the canonical booking read-write contract', () => {
     const haircutBookingsSource = readSource('src/app/dashboard/bookings/HaircutBookingsView.tsx');
     const bookingsPageSource = readSource('src/app/dashboard/bookings/page.tsx');
+    const bookingsDataSource = readSource('src/app/dashboard/bookings/hooks/useBookingsPageData.ts');
+    const bookingsActionsSource = readSource('src/app/dashboard/bookings/hooks/useBookingsPageActions.ts');
 
-    expect(haircutBookingsSource).toContain('timelineGridData');
-    expect(haircutBookingsSource).toContain('HAIRCUT_BOOKING_WRITE_GAP_MESSAGE');
-    expect(haircutBookingsSource).toContain('session_log_id');
-    expect(haircutBookingsSource).toContain('booking_id canonical');
-    expect(haircutBookingsSource).not.toContain('onSessionSelect(b)');
-    expect(haircutBookingsSource).not.toContain('onEmptySlotClick(parseInt');
-    expect(haircutBookingsSource).not.toContain('onCreateClick');
+    expect(existsSync('src/app/dashboard/bookings/HaircutBookingsView.tsx')).toBe(true);
+    expect(haircutBookingsSource).not.toContain('timelineGridData');
+    expect(haircutBookingsSource).not.toContain('HAIRCUT_BOOKING_WRITE_GAP_MESSAGE');
+    expect(haircutBookingsSource).not.toContain('export function HaircutBookingsView');
+    expect(haircutBookingsSource).toContain('shared canonical bookings page');
     expect(bookingsPageSource).not.toContain('HaircutBookingsView');
     expect(bookingsPageSource).not.toContain("product?.productKey === 'bella_haircut'");
     expect(bookingsPageSource).toContain('BookingsTimelineGrid');
@@ -224,7 +239,16 @@ describe('payment business rule audit', () => {
     expect(bookingsPageSource).toContain('BookingCreateScheduleModal');
     expect(bookingsPageSource).toContain('handleUpdatePlan');
     expect(bookingsPageSource).toContain('handleCreateScheduleSubmit');
+    expect(bookingsPageSource).toContain('onSessionSelect={(session) => {');
+    expect(bookingsPageSource).toContain('openSessionDetail(session);');
+    expect(bookingsPageSource).toContain('onEmptySlotClick={(hour) => {');
     expect(bookingsPageSource).not.toContain('openSessionDetail(session as unknown');
+    expect(bookingsDataSource).toContain('getCalendarSessions');
+    expect(bookingsActionsSource).toContain('checkBookingConflicts({');
+    expect(bookingsActionsSource).toContain('createSessionLog({');
+    expect(bookingsActionsSource).toContain('updateSessionLog(modalData.id');
+    expect(bookingsActionsSource).toContain('updateBooking(modalData.bookingId');
+    expect(bookingsActionsSource).not.toContain('HAIRCUT_BOOKING_WRITE_GAP_MESSAGE');
   });
 
   it('keeps Haircut package static rows from driving canonical package writes', () => {

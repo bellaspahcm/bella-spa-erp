@@ -115,8 +115,10 @@ export default function SalaryTable({
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
                 className="hover:bg-slate-50/50 transition-colors group"
+                data-testid="salary-row"
+                data-salary-id={s.id}
               >
-                <td className="px-8 py-6 whitespace-nowrap">
+                <td className="px-8 py-6 whitespace-nowrap" data-testid="salary-employee-name">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center text-primary font-black shadow-sm group-hover:scale-110 transition-transform">
                       {s.name.charAt(0)}
@@ -124,7 +126,7 @@ export default function SalaryTable({
                     <span className="font-bold text-slate-900">{s.name}</span>
                   </div>
                 </td>
-                <td className="px-8 py-6 whitespace-nowrap">
+                <td className="px-8 py-6 whitespace-nowrap" data-testid="salary-session-count">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-slate-600">{s.sessions}</span>
                     {s.isConfirmed && (
@@ -135,7 +137,7 @@ export default function SalaryTable({
                     )}
                   </div>
                 </td>
-                <td className="px-8 py-6 whitespace-nowrap">
+                <td className="px-8 py-6 whitespace-nowrap" data-testid="salary-actual-days">
                   <div className="flex items-center gap-1.5">
                     <span className="font-bold text-slate-600">{s.actualDays ?? '—'}</span>
                     <span className="text-[10px] text-slate-400 font-medium">/26</span>
@@ -155,22 +157,22 @@ export default function SalaryTable({
                   )}
                 </td>
                 <td className="px-8 py-6 font-bold text-slate-600 whitespace-nowrap">{s.baseSalary.toLocaleString()}đ</td>
-                <td className="px-8 py-6 font-bold text-emerald-600 whitespace-nowrap">+{s.sessionBonus.toLocaleString()}đ</td>
+                <td className="px-8 py-6 font-bold text-emerald-600 whitespace-nowrap" data-testid="salary-session-bonus">+{s.sessionBonus.toLocaleString()}đ</td>
                 <td className="px-8 py-6 font-bold text-amber-600 whitespace-nowrap">+{s.ratingBonus?.toLocaleString() || 0}đ</td>
                 <td className="px-8 py-6 font-bold text-primary whitespace-nowrap">+{s.kpiBonus.toLocaleString()}đ</td>
                 {/* Advanced commission columns - always show for Beauty Spa */}
-                <td className="px-8 py-6 font-bold text-emerald-600 whitespace-nowrap">
+                <td className="px-8 py-6 font-bold text-emerald-600 whitespace-nowrap" data-testid="salary-product-commission">
                   +{(s.productSalesCommission || 0).toLocaleString()}đ
                 </td>
-                <td className="px-8 py-6 font-bold text-emerald-600 whitespace-nowrap">
+                <td className="px-8 py-6 font-bold text-emerald-600 whitespace-nowrap" data-testid="salary-service-commission">
                   +{(s.serviceCommission || 0).toLocaleString()}đ
                 </td>
                 <td className="px-8 py-6 font-bold text-rose-500 whitespace-nowrap">-{s.deductions.toLocaleString()}đ</td>
                 <td className="px-8 py-6 font-bold text-rose-500 whitespace-nowrap">-{s.advances.toLocaleString()}đ</td>
-                <td className="px-8 py-6 whitespace-nowrap">
+                <td className="px-8 py-6 whitespace-nowrap" data-testid="salary-total">
                   <span className="text-lg font-black text-slate-900">{s.totalSalary.toLocaleString()}đ</span>
                 </td>
-                <td className="px-8 py-6 whitespace-nowrap">
+                <td className="px-8 py-6 whitespace-nowrap" data-testid="salary-status">
                   <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest inline-flex ${
                     s.status === 'finalized' || s.status === 'approved' ? 'bg-emerald-50 text-emerald-600' :
                     s.status === 'confirmed' ? 'bg-blue-50 text-blue-600' :

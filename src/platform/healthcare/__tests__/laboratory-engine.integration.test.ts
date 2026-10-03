@@ -358,7 +358,7 @@ describe('Laboratory Engine Integration Tests (6 Gates)', () => {
 
     const brokenRepository = new SupabaseLaboratoryRepository(supabase);
     // Force save to reject
-    brokenRepository.save = jest.fn<any>().mockRejectedValue(new Error('Simulated network database collapse'));
+    brokenRepository.save = jest.fn<SupabaseLaboratoryRepository['save']>().mockRejectedValue(new Error('Simulated network database collapse'));
     const brokenService = new LaboratoryEngineService(brokenRepository);
 
     clearPublishedEvents();

@@ -41,6 +41,8 @@ import { SchedulingProjectionBridge } from '@/products/bella-education/schedulin
 import { ParentCommunicationRepository } from '@/products/bella-education/parent-engagement/repositories/parent-communication.repository';
 import { CommunicationExceptionService } from '@/products/bella-education/parent-engagement/services/communication-exception.service';
 import { ShiftAssignment, RatioComplianceSnapshot, ShiftTemplate } from '@/products/bella-education/scheduling/domain/scheduling.types';
+import type { CommunicationException } from '@/products/bella-education/parent-engagement/domain/communication.types';
+import type { Database } from '@/types/database.types';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://lvnvkpyxtuilhrabtlwv.supabase.co';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -55,6 +57,8 @@ const DEFAULT_CLASSROOM_ID = '00000000-0000-0000-0000-000000000091';
 
 const LEAVE_TYPES = ['SICK_LEAVE', 'ANNUAL_LEAVE', 'EMERGENCY_LEAVE'] as const;
 type LeaveType = (typeof LEAVE_TYPES)[number];
+type LeaveRequestRow = Database['public']['Tables']['edu_sched_leave_requests']['Row'];
+type SubstitutionRow = Database['public']['Tables']['edu_sched_substitutions']['Row'];
 
 function isLeaveType(value: string): value is LeaveType {
   return LEAVE_TYPES.includes(value as LeaveType);
@@ -78,9 +82,9 @@ export default function SchedulingPage() {
   const [shiftTemplates, setShiftTemplates] = useState<ShiftTemplate[]>([]);
   const [assignments, setAssignments] = useState<ShiftAssignment[]>([]);
   const [complianceSnapshots, setComplianceSnapshots] = useState<RatioComplianceSnapshot[]>([]);
-  const [leaveRequests, setLeaveRequests] = useState<any[]>([]);
-  const [substitutions, setSubstitutions] = useState<any[]>([]);
-  const [exceptions, setExceptions] = useState<any[]>([]);
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequestRow[]>([]);
+  const [substitutions, setSubstitutions] = useState<SubstitutionRow[]>([]);
+  const [exceptions, setExceptions] = useState<CommunicationException[]>([]);
 
   // Form & Selection State
   const [selectedDate, setSelectedDate] = useState<string>('2026-09-25');

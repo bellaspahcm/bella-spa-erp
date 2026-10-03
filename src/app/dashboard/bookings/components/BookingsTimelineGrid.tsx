@@ -249,9 +249,12 @@ export function BookingsTimelineGrid({
                                             ? 'bg-rose-50/40 border-rose-100/50 hover:border-rose-200 hover:bg-rose-50'
                                             : 'bg-slate-50 border-slate-100 hover:bg-slate-100'
                                   }`}
+                                  data-testid="booking-session-row"
+                                  data-session-id={session.id}
                                 >
                                   <div className="flex items-center justify-between gap-1.5 mb-1">
                                     <span
+                                      data-testid="booking-session-status"
                                       className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
                                         isCompleted
                                           ? 'bg-emerald-100 text-emerald-700'
@@ -271,7 +274,7 @@ export function BookingsTimelineGrid({
                                       {session.assigned_time || session.bookings?.preferred_time || '09:00'}
                                     </span>
                                   </div>
-                                  <h4 className="font-extrabold text-slate-800 text-xs truncate">
+                                  <h4 className="font-extrabold text-slate-800 text-xs truncate" data-testid="booking-customer-name">
                                     {formatBookingCustomerLabel({
                                       moduleKey: tenantModuleKey,
                                       primaryName: session.bookings?.customers?.name_mother,
@@ -303,7 +306,7 @@ export function BookingsTimelineGrid({
                                       </span>
                                     </div>
                                   )}
-                                  <p className="text-[9px] font-bold text-slate-400 truncate mt-0.5">
+                                  <p className="text-[9px] font-bold text-slate-400 truncate mt-0.5" data-testid="booking-package-name">
                                     {session.bookings?.packages?.name || session.bookings?.package_name || 'Liệu trình'}
                                   </p>
                                   {session.booking_resource?.name && (

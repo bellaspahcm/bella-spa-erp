@@ -37,6 +37,10 @@ function withRollbackFailure(error: unknown, rollbackError: string) {
   return rollbackError ? `${message}; rollback failed: ${rollbackError}` : message;
 }
 
+function isImmutableSalaryPaymentState(status: string | null | undefined) {
+  return status === 'finalized' || status === 'paid';
+}
+
 async function rollbackRevenueConfirmation(
   supabase: SupabaseClient,
   id: string,
@@ -314,26 +318,28 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
             accounting_review_status: resolveReviewStatus(salaryBusinessEventType, salaryAccountingPayload),
             accounting_metadata: salaryAccountingPayload,
           };
-          const salaryRecordRollbackPayload: SalaryRecordUpdate = {
+          const shouldUpdateSalaryRecord = !isImmutableSalaryPaymentState(existingSalaryRecord?.status);
+          const salaryRecordRollbackPayload: SalaryRecordUpdate | null = shouldUpdateSalaryRecord ? {
             status: existingSalaryRecord?.status,
             paid_date: existingSalaryRecord?.paid_date,
             paid_method: existingSalaryRecord?.paid_method,
             business_event_type: existingSalaryRecord?.business_event_type,
             accounting_review_status: existingSalaryRecord?.accounting_review_status,
             accounting_metadata: existingSalaryRecord?.accounting_metadata,
-          };
+          } : null;
 
-          // Update salary record status to 'paid'
-          const { error: salaryRecordUpdateError } = await supabase
-            .from('salary_records')
-            .update(salaryRecordUpdatePayload)
-            .eq('id', salaryRecordId)
-            .eq('tenant_id', tenantId);
+          if (shouldUpdateSalaryRecord) {
+            const { error: salaryRecordUpdateError } = await supabase
+              .from('salary_records')
+              .update(salaryRecordUpdatePayload)
+              .eq('id', salaryRecordId)
+              .eq('tenant_id', tenantId);
 
-          if (salaryRecordUpdateError) {
-            console.error('[confirmTransaction] Failed to update salary record status:', salaryRecordUpdateError);
-            const rollbackError = await rollbackExpenseConfirmation(supabase, id, tenantId, expenseRollbackPayload);
-            throw new Error(withRollbackFailure(salaryRecordUpdateError, rollbackError));
+            if (salaryRecordUpdateError) {
+              console.error('[confirmTransaction] Failed to update salary record status:', salaryRecordUpdateError);
+              const rollbackError = await rollbackExpenseConfirmation(supabase, id, tenantId, expenseRollbackPayload);
+              throw new Error(withRollbackFailure(salaryRecordUpdateError, rollbackError));
+            }
           }
 
           try {
@@ -351,7 +357,9 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
             );
             assertOutboxEnqueued(enqueued, 'SALARY_PAID');
           } catch (outboxError) {
-            const salaryRollbackError = await rollbackSalaryRecord(supabase, salaryRecordId, tenantId, salaryRecordRollbackPayload);
+            const salaryRollbackError = salaryRecordRollbackPayload
+              ? await rollbackSalaryRecord(supabase, salaryRecordId, tenantId, salaryRecordRollbackPayload)
+              : '';
             const expenseRollbackError = await rollbackExpenseConfirmation(supabase, id, tenantId, expenseRollbackPayload);
             const rollbackError = [salaryRollbackError, expenseRollbackError].filter(Boolean).join('; ');
             throw new Error(withRollbackFailure(outboxError, rollbackError));

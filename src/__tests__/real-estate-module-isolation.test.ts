@@ -1,6 +1,38 @@
 import { describe, it, expect } from '@jest/globals';
 import { moduleRegistry } from '@/core/adapters/registry';
 import { ALL_MODULE_IDS } from '@/core/types/module';
+import type { Database } from '@/types/database.types';
+import type { SupabaseClient } from '@supabase/supabase-js';
+
+type RealEstateProductRow = Database['public']['Tables']['real_estate_products']['Row'];
+type RealEstateTestClient = SupabaseClient<Database>;
+
+function makeRealEstateProductRow(
+  overrides: Partial<RealEstateProductRow> &
+    Pick<RealEstateProductRow, 'id' | 'tenant_id' | 'product_code' | 'status'>
+): RealEstateProductRow {
+  const now = new Date().toISOString();
+  return {
+    area: 75,
+    area_m2: null,
+    block: null,
+    created_at: now,
+    created_by: null,
+    customer_id: null,
+    deleted_at: null,
+    direction: null,
+    floor: null,
+    floor_number: null,
+    metadata: null,
+    owner_name: null,
+    product_type: 'apartment',
+    project_id: 'project-1',
+    unit_price: 60000000,
+    updated_at: now,
+    updated_by: null,
+    ...overrides,
+  };
+}
 
 describe('Real Estate Module Isolation & Registration Tests', () => {
   describe('Test 1: Module Registry', () => {
@@ -123,7 +155,7 @@ describe('Real Estate Module Isolation & Registration Tests', () => {
     it('should allow valid transitions according to the state machine dict', async () => {
       // Mock supabase client
       const mockSingle = jest.fn().mockImplementation(() => Promise.resolve({
-        data: { id: 'prod-1', tenant_id: 'tenant-a', status: 'available', product_code: 'A1-101' },
+        data: makeRealEstateProductRow({ id: 'prod-1', tenant_id: 'tenant-a', status: 'available', product_code: 'A1-101' }),
         error: null,
       }));
       const mockSelect = jest.fn().mockImplementation(() => ({
@@ -134,7 +166,7 @@ describe('Real Estate Module Isolation & Registration Tests', () => {
         })),
       }));
       const mockUpdateSingle = jest.fn().mockImplementation(() => Promise.resolve({
-        data: { id: 'prod-1', tenant_id: 'tenant-a', status: 'booked', product_code: 'A1-101' },
+        data: makeRealEstateProductRow({ id: 'prod-1', tenant_id: 'tenant-a', status: 'booked', product_code: 'A1-101' }),
         error: null,
       }));
       const mockUpdate = jest.fn().mockImplementation(() => ({
@@ -147,7 +179,7 @@ describe('Real Estate Module Isolation & Registration Tests', () => {
         })),
       }));
       const mockSupabase = {
-        from: jest.fn().mockImplementation((table) => {
+        from: jest.fn().mockImplementation((table: string) => {
           if (table === 'real_estate_products') {
             return {
               select: mockSelect,
@@ -156,7 +188,7 @@ describe('Real Estate Module Isolation & Registration Tests', () => {
           }
           return {};
         }),
-      } as any;
+      } as RealEstateTestClient;
 
       const { ProductService } = require('@/modules/real_estate/services/ProductService');
       const updatedProduct = await ProductService.updateProductStatus(
@@ -173,7 +205,7 @@ describe('Real Estate Module Isolation & Registration Tests', () => {
 
     it('should block invalid transitions and throw error', async () => {
       const mockSingle = jest.fn().mockImplementation(() => Promise.resolve({
-        data: { id: 'prod-1', tenant_id: 'tenant-a', status: 'deposited', product_code: 'A1-101' },
+        data: makeRealEstateProductRow({ id: 'prod-1', tenant_id: 'tenant-a', status: 'deposited', product_code: 'A1-101' }),
         error: null,
       }));
       const mockSelect = jest.fn().mockImplementation(() => ({
@@ -184,13 +216,13 @@ describe('Real Estate Module Isolation & Registration Tests', () => {
         })),
       }));
       const mockSupabase = {
-        from: jest.fn().mockImplementation((table) => {
+        from: jest.fn().mockImplementation((table: string) => {
           if (table === 'real_estate_products') {
             return { select: mockSelect };
           }
           return {};
         }),
-      } as any;
+      } as RealEstateTestClient;
 
       const { ProductService } = require('@/modules/real_estate/services/ProductService');
       
@@ -244,13 +276,13 @@ describe('Real Estate Module Isolation & Registration Tests', () => {
 
   describe('Test 7: Reservation Hold Expiration & Accounting Outbox Events', () => {
     it('should identify and auto-release expired booked units older than hold threshold', async () => {
-      const mockExpiredBookedUnit = {
+      const mockExpiredBookedUnit = makeRealEstateProductRow({
         id: 'prod-expired-1',
         product_code: 'A1-909',
         status: 'booked',
         tenant_id: 'tenant-a',
         updated_at: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(), // 48h ago
-      };
+      });
 
       const mockSelect = jest.fn().mockImplementation(() => ({
         eq: jest.fn().mockImplementation(() => ({
@@ -283,7 +315,7 @@ describe('Real Estate Module Isolation & Registration Tests', () => {
           select: mockSelect,
           update: mockUpdate,
         })),
-      } as any;
+      } as RealEstateTestClient;
 
       const { ReservationExpiryEngine } = require('@/modules/real_estate/services/ReservationExpiryEngine');
       const released = await ReservationExpiryEngine.checkAndReleaseExpiredHoldings(
@@ -300,7 +332,7 @@ describe('Real Estate Module Isolation & Registration Tests', () => {
       const mockTenantId = '00000000-0000-0000-0000-000000000001';
       const mockProductId = '00000000-0000-0000-0000-000000000100';
       const mockProjectId = '00000000-0000-0000-0000-000000000010';
-      const mockProduct = {
+      const mockProduct = makeRealEstateProductRow({
         id: mockProductId,
         product_code: 'A1-100',
         project_id: mockProjectId,
@@ -309,18 +341,18 @@ describe('Real Estate Module Isolation & Registration Tests', () => {
         unit_price: 60000000,
         status: 'deposited',
         owner_name: 'Khách Hàng B',
-      };
+      });
 
       const { RealEstateAccountingService } = require('@/modules/real_estate/services/RealEstateAccountingService');
       
       const mockSupabase = {
         rpc: jest.fn().mockImplementation(() => Promise.resolve({ data: 'outbox-id-123', error: null })),
-      } as any;
+      } as RealEstateTestClient;
 
       const result = await RealEstateAccountingService.emitStatusChangeEvent(
         mockSupabase,
         mockTenantId,
-        mockProduct as any,
+        mockProduct,
         'deposited'
       );
 

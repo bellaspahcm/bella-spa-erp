@@ -10,7 +10,7 @@
  * @module src/products/bella-medical/services/medical-consultation.service
  */
 
-import type { IEncounterEngine } from '../../../platform/healthcare/contracts/encounter-engine.contract';
+import type { EncounterDTO, IEncounterEngine } from '../../../platform/healthcare/contracts/encounter-engine.contract';
 import type { ITemporalContract } from '../../../platform/healthcare/contracts/temporal-engine.contract';
 import type { IClinicalAuditContract } from '../../../platform/healthcare/contracts/clinical-audit.contract';
 import { medicalProductManifest } from '../manifest';
@@ -44,9 +44,9 @@ export interface CompleteConsultationDTO {
 
 export class MedicalConsultationProductService {
   constructor(
-    private readonly encounterEngine: IEncounterEngine,
-    private readonly temporalContract: ITemporalContract,
-    private readonly auditContract: IClinicalAuditContract
+    private readonly encounterEngine: Pick<IEncounterEngine, 'createEncounter' | 'updateStatus' | 'addDiagnosis'>,
+    private readonly temporalContract: Pick<ITemporalContract, 'recordTemporalEvent'>,
+    private readonly auditContract: Pick<IClinicalAuditContract, 'recordAuditEntry' | 'issueEvidencePackage'>
   ) {}
 
   private assertCapability(capabilityId: string) {
@@ -66,7 +66,7 @@ export class MedicalConsultationProductService {
   /**
    * Begins a new medical consultation (arrived -> in-progress) and registers it in the temporal ledger
    */
-  async startConsultation(dto: StartOutpatientConsultationDTO): Promise<any> {
+  async startConsultation(dto: StartOutpatientConsultationDTO): Promise<EncounterDTO> {
     this.assertCapability('medical_resource_command');
     this.assertWorkflow('outpatient_consultation_flow');
     if (!dto.tenantId) throw new Error('TENANT_ISOLATION_VIOLATION: tenantId is required');

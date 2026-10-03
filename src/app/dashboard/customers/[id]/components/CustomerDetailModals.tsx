@@ -300,6 +300,7 @@ export function BookingPaymentModal({
                 onChange={(e) => {
                   setData({ ...data, amount: parseMoneyInput(e.target.value) });
                 }}
+                data-testid="payment-amount-input"
                 className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-black text-lg text-primary"
               />
               <span className="absolute right-6 top-1/2 -translate-y-1/2 font-black text-slate-300">VNĐ</span>
@@ -318,6 +319,7 @@ export function BookingPaymentModal({
                 <button
                   key={m.id}
                   onClick={() => setData({ ...data, method: m.id })}
+                  data-testid={`payment-method-${m.id}`}
                   className={cn(
                     "py-3 px-4 rounded-xl font-bold text-sm transition-all border",
                     data.method === m.id
@@ -381,6 +383,7 @@ export function BookingPaymentModal({
                   placeholder="Hoặc dán link ảnh trực tiếp..."
                   value={data.receipt_url}
                   onChange={(e) => setData({ ...data, receipt_url: e.target.value })}
+                  data-testid="payment-receipt-url-input"
                   className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-xs"
                 />
               </div>
@@ -395,6 +398,7 @@ export function BookingPaymentModal({
               placeholder="Nhập ghi chú thanh toán..."
               value={data.notes}
               onChange={(e) => setData({ ...data, notes: e.target.value })}
+              data-testid="payment-notes-input"
               className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-sm h-24 resize-none"
             />
           </div>
@@ -432,6 +436,7 @@ export function BookingPaymentModal({
           <button
             disabled={isSubmitting || data.amount <= 0}
             onClick={onConfirm}
+            data-testid="payment-submit-button"
             className="flex-1 py-4 bg-primary text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
           >
             {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}

@@ -17,6 +17,11 @@ const config: Config = {
     '<rootDir>/src/__tests__/e2e-accounting-gl-verification.test.ts',
     '<rootDir>/src/__tests__/e2e-payroll-month-close.test.ts',
     '<rootDir>/src/app/api/english-center/__tests__/post-rc-real-db-validation.test.ts',
+    '<rootDir>/src/__tests__/haircut-f3-debt-real-db-diagnostic.test.ts',
+    '<rootDir>/src/__tests__/inventory-session-consumption-real-db.test.ts',
+    '<rootDir>/src/__tests__/beauty-v2-go-live-payroll-commission-real-db.test.ts',
+    '<rootDir>/src/platform/beauty/application/__tests__/beauty-history-real-db.test.ts',
+    '<rootDir>/src/products/beauty-spa-v2/__tests__/beauty-spa-v2-real-db.test.ts',
   ],
 }
 

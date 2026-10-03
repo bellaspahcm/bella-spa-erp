@@ -1,3 +1,4 @@
+import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
 import { createClient } from '@/lib/supabase-server';
 import type { Database } from '@/types/database.types';
 import {
@@ -21,9 +22,10 @@ type SubscriptionPlanDisplay = Pick<
   Database['public']['Tables']['subscription_plans']['Row'],
   'plan_code' | 'display_name'
 >;
+type SubscriptionSupabaseClient = Awaited<ReturnType<typeof createDevelopmentBypassClient>>;
 
 async function getEffectiveEntitlements(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: SubscriptionSupabaseClient,
   tenantId: string,
   limitType: SubscriptionFeatureKey
 ) {
@@ -48,7 +50,7 @@ async function getEffectiveEntitlements(
 }
 
 async function getSubscriptionPlanDisplayName(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: SubscriptionSupabaseClient,
   tier: string
 ) {
   const { data, error } = await (supabase
@@ -65,7 +67,7 @@ async function getSubscriptionPlanDisplayName(
 }
 
 async function getCurrentSmsUsage(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: SubscriptionSupabaseClient,
   tenantId: string
 ) {
   const { data, error } = await supabase.rpc('get_tenant_sms_usage', {
@@ -91,7 +93,7 @@ export async function checkSubscriptionLimit(
   tenantId: string,
   limitType: SubscriptionFeatureKey
 ) {
-  const supabase = await createClient();
+  const supabase = await createDevelopmentBypassClient();
 
   interface TenantSubscriptionRow {
     subscription_tier: string | null;

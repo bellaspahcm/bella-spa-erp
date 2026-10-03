@@ -135,6 +135,43 @@ function isJsonObject(value: Json | null | undefined): value is { [key: string]:
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+export function isPayrollCapabilityEnabled(enabledModules: Json | null | undefined) {
+  if (Array.isArray(enabledModules)) {
+    return enabledModules.some((moduleKey) => moduleKey === 'payroll');
+  }
+
+  if (isJsonObject(enabledModules)) {
+    const payroll = enabledModules.payroll;
+    return payroll === true || payroll === 'true' || payroll === 1 || payroll === '1';
+  }
+
+  if (typeof enabledModules === 'string') {
+    return enabledModules
+      .split(',')
+      .map((moduleKey) => moduleKey.trim())
+      .includes('payroll');
+  }
+
+  return false;
+}
+
+export async function getTenantPayrollCapability(
+  supabase: Pick<SupabaseServerClient, 'from'>,
+  tenantId: string
+): Promise<{ enabled: boolean } | { error: string }> {
+  const { data, error } = await supabase
+    .from('tenants')
+    .select('enabled_modules')
+    .eq('id', tenantId)
+    .single();
+
+  if (error) {
+    return { error: 'Không thể kiểm tra cấu hình payroll của chi nhánh: ' + error.message };
+  }
+
+  return { enabled: isPayrollCapabilityEnabled(data?.enabled_modules ?? null) };
+}
+
 function asFiniteNumber(value: number | string | null | undefined, fallback = 0) {
   const numeric = Number(value ?? fallback);
   return Number.isFinite(numeric) ? numeric : fallback;
@@ -482,6 +519,15 @@ export async function syncKtvSalaryAfterCompletion(params: {
 
   if (!ktvId || !tenantId) {
     return { success: true };
+  }
+
+  const payrollCapability = await getTenantPayrollCapability(supabase, tenantId);
+  if ('error' in payrollCapability) {
+    return { error: payrollCapability.error };
+  }
+
+  if (!payrollCapability.enabled) {
+    return { success: true, skipped: 'PAYROLL_DISABLED' as const };
   }
 
   const monthYear = `${today.substring(0, 7)}-01`;

@@ -1,17 +1,38 @@
 import { supabase } from '@/lib/supabase';
 import { salesOutboxService } from '../infrastructure/SalesOutboxService';
 
+type QueryResult<T> = {
+  data: T | null;
+  error: Error | null;
+};
+
+type SupabaseMockTarget = {
+  rpc: (functionName: string, args: Record<string, unknown>) => Promise<QueryResult<unknown>>;
+};
+
+function assertSupabaseMockTarget(value: unknown): asserts value is SupabaseMockTarget {
+  if (!value || typeof value !== 'object') {
+    throw new Error('Supabase mock target is not available');
+  }
+
+  const candidate = value as Record<string, unknown>;
+  if (typeof candidate.rpc !== 'function') {
+    throw new Error('Supabase mock target is missing rpc');
+  }
+}
+
 describe('SalesOutboxService', () => {
   const tenantId = 'tenant-abc';
   const productId = 'prod-123';
   const customerId = 'cust-456';
   const referenceId = 'ref-789';
 
-  let spyRpc: jest.SpyInstance;
+  let spyRpc: jest.SpiedFunction<SupabaseMockTarget['rpc']>;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    spyRpc = jest.spyOn(supabase as any, 'rpc');
+    assertSupabaseMockTarget(supabase);
+    spyRpc = jest.spyOn(supabase, 'rpc');
   });
 
   afterEach(() => {
