@@ -83,6 +83,10 @@ const HaircutDashboardView = dynamic(
   () => import('@/app/dashboard/components/HaircutDashboardView').then(m => ({ default: m.HaircutDashboardView })),
   { ssr: false }
 );
+const BeautySpaV2DashboardView = dynamic(
+  () => import('@/app/dashboard/components/BeautySpaV2DashboardView').then(m => ({ default: m.BeautySpaV2DashboardView })),
+  { ssr: false }
+);
 
 function StandardDashboardPage() {
   const router = useRouter();
@@ -393,6 +397,38 @@ function StandardDashboardPage() {
       setQuickNoteValue('');
     }
   };
+
+  if (tenantModuleKey === 'beauty_spa' || tenantModuleKey === 'babycare' || product?.productKey === 'bella_spa' || !tenantModuleKey) {
+    return (
+      <>
+        <BeautySpaV2DashboardView
+          stats={stats}
+          sessions={sessions}
+          topKTVs={topKTVs}
+          alerts={alerts}
+          performanceData={performanceData}
+          inventorySummary={inventorySummary}
+          selectedMonth={selectedMonth}
+          setSelectedMonth={setSelectedMonth}
+          selectedYear={selectedYear}
+          setSelectedYear={setSelectedYear}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          isLoading={isLoading}
+          isSecondaryLoading={isSecondaryLoading}
+          onOpenBookingModal={() => setIsBookingModalOpen(true)}
+          userRole={userRole}
+          handleCompleteSession={handleCompleteSession}
+          updatingId={updatingId}
+        />
+        <BookingModal
+          isOpen={isBookingModalOpen}
+          onClose={() => setIsBookingModalOpen(false)}
+        />
+        <OnboardingTour brandName={businessLabel} tenantModuleKey={tenantModuleKey} />
+      </>
+    );
+  }
 
   return (
     <div className="flex-1 overflow-auto bg-background/30 p-6 md:p-10">
