@@ -4,6 +4,22 @@
 > **Date:** 2026-10-04
 > **Scope:** Reduce pre-existing repo-wide `npm run lint` errors without touching Bella English business logic, product contracts, database schema, or frozen kernels.
 
+## Additional Architecture Gate - Vercel Production Promote Scope
+
+> **Status:** PASS - minimal production workflow promotion fix authorized
+> **Date:** 2026-10-04
+> **Scope:** Production workflow run `37214892483` passed validate, immutable preview build, exact preview health, and authenticated smoke, then failed `Promote Verified Preview` because `vercel promote` ran without the team scope used by the canonical rollback tooling.
+
+- Bella OS/Product Development Process Gate: PASS. This is Platform/CI production promotion configuration, not Product Vertical behavior, schema, tenant model, auth architecture, or English business logic.
+- Truth / Source of Truth: run `37214892483` failed at `npx vercel promote "$DEPLOYMENT_URL" --yes --token="$VERCEL_TOKEN"` with Vercel CLI `User not found (404)` after smoke success; `scripts/emergency-rollback.sh` and rollback documentation already use Vercel scope `bella-spa-s-projects` for promote/inspect operations.
+- Canonical Contract: verified preview deployment must be promoted in the same Vercel team/project scope used by operational rollback.
+- Ownership Map: `.github/workflows/deploy-production.yml` owns controlled production promotion; Vercel project/team configuration remains external production configuration.
+- Change Authority: add explicit `VERCEL_SCOPE` workflow env with the existing team-scope default and pass it to `vercel promote`.
+- UI -> Contract Reconciliation: no UI change.
+- Additive Migration Plan: none; no DDL, DML, tenant provisioning, production data mutation, or credential change.
+- Verification Gates Plan: workflow diff review, `git diff --check`, security/architecture gates, PR CI, then re-dispatch `Deploy to Production`.
+- Explicit non-goals: no runtime code, no English business code, no secret change, no auth bypass, no production gate weakening, no migration, no Vercel project recreation.
+
 ## Additional Architecture Gate - Production Smoke Client Monitoring Hardening
 
 > **Status:** PASS - minimal monitoring runtime and smoke-harness fix authorized
