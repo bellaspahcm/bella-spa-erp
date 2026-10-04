@@ -158,7 +158,52 @@ jobs:
       VERCEL_PROJECT_ID: ${{ vars.VERCEL_PRODUCTION_PROJECT_ID }}
       DEPLOYMENT_URL: ${{ needs.preview.outputs.deployment_url }}
     steps:
-      - run: npx vercel promote "$DEPLOYMENT_URL" --scope "$VERCEL_SCOPE" --yes --token="$VERCEL_TOKEN"
+      - name: Promote verified preview through Vercel API
+        run: |
+          node --input-type=module <<'NODE'
+          const required = ['VERCEL_TOKEN', 'VERCEL_ORG_ID', 'VERCEL_PROJECT_ID', 'DEPLOYMENT_URL'];
+          for (const name of required) {
+            if (!process.env[name]) {
+              throw new Error(`${name} is required`);
+            }
+          }
+
+          const deploymentHost = new URL(process.env.DEPLOYMENT_URL).hostname;
+          const teamQuery = `teamId=${encodeURIComponent(process.env.VERCEL_ORG_ID)}`;
+          const deploymentResponse = await fetch(
+            `https://api.vercel.com/v13/deployments/${encodeURIComponent(deploymentHost)}?${teamQuery}`,
+            {
+              headers: {
+                Authorization: `Bearer ${process.env.VERCEL_TOKEN}`,
+              },
+            },
+          );
+
+          if (!deploymentResponse.ok) {
+            throw new Error(`Unable to resolve Vercel deployment: HTTP ${deploymentResponse.status}`);
+          }
+
+          const deployment = await deploymentResponse.json();
+          if (!deployment.id) {
+            throw new Error('Resolved Vercel deployment is missing id');
+          }
+
+          const promoteResponse = await fetch(
+            `https://api.vercel.com/v10/projects/${encodeURIComponent(process.env.VERCEL_PROJECT_ID)}/promote/${encodeURIComponent(deployment.id)}?${teamQuery}`,
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${process.env.VERCEL_TOKEN}`,
+              },
+            },
+          );
+
+          if (!promoteResponse.ok) {
+            throw new Error(`Vercel promote failed: HTTP ${promoteResponse.status}`);
+          }
+
+          console.log(`Promoted verified deployment ${deployment.id}`);
+          NODE
 
   verify:
     name: Verify Promoted Release

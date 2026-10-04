@@ -20,6 +20,22 @@
 - Verification Gates Plan: workflow diff review, `git diff --check`, security/architecture gates, PR CI, then re-dispatch `Deploy to Production`.
 - Explicit non-goals: no runtime code, no English business code, no secret change, no auth bypass, no production gate weakening, no migration, no Vercel project recreation.
 
+## Additional Architecture Gate - Vercel Production Promote API Path
+
+> **Status:** PASS - minimal production workflow promotion API fix authorized
+> **Date:** 2026-10-05
+> **Scope:** Production workflow run `37216425595` passed validate, immutable preview build, exact preview health, and authenticated smoke, then failed `Promote Verified Preview` even with `--scope` because Vercel CLI still attempted to load a user and returned `User not found (404)`.
+
+- Bella OS/Product Development Process Gate: PASS. This is Platform/CI production promotion transport, not Product Vertical behavior, schema, tenant model, auth architecture, or English business logic.
+- Truth / Source of Truth: run `37216425595` shows `Smoke Exact Preview = PASS` and `vercel promote "$DEPLOYMENT_URL" --scope "$VERCEL_SCOPE"` failing with Vercel CLI user-loading error. Vercel REST API documents Bearer token auth, team resource access with `teamId`, deployment lookup by ID/URL, and project deployment promotion through `POST /v10/projects/{projectId}/promote/{deploymentId}`.
+- Canonical Contract: verified preview deployment must be promoted using the existing Vercel token, project ID, team ID, and deployment ID without relying on CLI user profile resolution.
+- Ownership Map: `.github/workflows/deploy-production.yml` owns controlled production promotion; Vercel project/team/token configuration remains external production configuration.
+- Change Authority: replace only the promotion transport in the production workflow with direct Vercel REST API calls that resolve the deployment ID from the exact preview host and promote that deployment for the configured production project/team.
+- UI -> Contract Reconciliation: no UI change.
+- Additive Migration Plan: none; no DDL, DML, tenant provisioning, production data mutation, or credential change.
+- Verification Gates Plan: workflow diff review, `git diff --check`, security/architecture gates, PR CI, then re-dispatch `Deploy to Production`.
+- Explicit non-goals: no runtime code, no English business code, no secret change, no auth bypass, no production gate weakening, no migration, no Vercel project recreation.
+
 ## Additional Architecture Gate - Production Smoke Client Monitoring Hardening
 
 > **Status:** PASS - minimal monitoring runtime and smoke-harness fix authorized
