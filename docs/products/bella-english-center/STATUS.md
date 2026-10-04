@@ -98,6 +98,13 @@ English regression                PASS / real .env.test / 10 suites, 74 tests
 E2/E3/E4 Real DB                  PASS / real .env.test / 3 suites, 26 tests
 Post-RC Real DB validation        PASS / real .env.test / 1 suite, 1 test
 Mock Supabase harness guard       PASS / REAL_DB_ENV_REQUIRED fail-fast
+CI isolated Real DB E2/E3/E4      NOT_SUITABLE / BASELINE_SCHEMA_GAP
+  Evidence: PR #204 attempted to route E2/E3/E4 service suites into the shared
+  CI Real Database Business E2E job. The CI E2E database failed before English
+  business execution because `public.org_units` was missing, so the job cannot
+  be treated as an English E2/E3/E4 proof channel without first provisioning the
+  Platform Foundation and Education canonical schema. This is classified as CI
+  E2E baseline schema gap, not English business regression.
 
 Migration remote verification     PARTIAL_REMEDIATED_ON_TEST_DB / STILL_FAIL_DRIFT
   Evidence: the migration checker false-green was fixed. On the test DB,

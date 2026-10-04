@@ -154,12 +154,6 @@ jobs:
           SUPABASE_DB_URL: ${{ secrets.E2E_SUPABASE_DB_URL }}
         run: node scripts/apply-e2e-pr-migrations.cjs --base "$BASE_REF"
 
-      - name: Ensure English E2E schema
-        env:
-          ALLOW_E2E_MIGRATION_APPLY: '1'
-          SUPABASE_DB_URL: ${{ secrets.E2E_SUPABASE_DB_URL }}
-        run: node scripts/ensure-english-e2e-schema.cjs
-
       - name: Run real database business E2E
         env:
           NODE_ENV: test
