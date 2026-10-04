@@ -85,6 +85,9 @@ jobs:
       - run: npm ci
       - run: npx vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
       - run: npx vercel build --prod --token="$VERCEL_TOKEN"
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL || vars.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
       - name: Deploy exact build without promotion
         id: deploy
         run: |
