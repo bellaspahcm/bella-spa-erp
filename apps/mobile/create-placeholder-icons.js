@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
 // Quick script to create placeholder PNG files
 const fs = require('fs');
 const path = require('path');

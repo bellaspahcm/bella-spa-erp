@@ -1,3 +1,89 @@
+# ARCHITECTURE GATE RESULT - GLOBAL LINT BASELINE REMEDIATION
+
+> **Status:** PASS - Platform/CI lint error baseline remediated
+> **Date:** 2026-10-04
+> **Scope:** Reduce pre-existing repo-wide `npm run lint` errors without touching Bella English business logic, product contracts, database schema, or frozen kernels.
+
+## Bella OS/Product Development Process Gate
+
+- Problem: production workflow is blocked by a pre-existing global lint baseline (`53 errors + 73 warnings` in CI), proven unchanged before and after PR #204.
+- Truth / Source of Truth: `npm run lint`, GitHub production workflow run `37171535585`, and parent comparison against `89e9c4b14da8cd358c9aed0ca3f22a7641268919`.
+- Ownership: Platform/CI governance and repository hygiene. This is not Bella English product work.
+- Boundary: fix only local lint errors whose runtime semantics are obvious and do not require product/domain contract changes.
+- Gate result: `PASS`; `npm run lint` now exits 0 with `0 errors / 73 warnings`.
+
+## Product Manifest
+
+No new product capability. No UI redesign. No production data mutation.
+
+In scope:
+- Mobile tooling inline ESLint rule drift.
+- Playwright fixture parameter false-positive from React Hooks lint.
+- Malformed legacy utility/docs scripts that currently cannot parse.
+- Mechanical JSX entity escaping for text nodes.
+- Minimal React compiler compliance where functions were used before declaration, a tooltip component was created during render, or refs were updated during render.
+
+Out of scope:
+- Bella English business code.
+- Education, Healthcare, Logistics, Finance business behavior.
+- Schema, RPC, API, RLS, tenant, auth, or migration changes.
+- Workflow/gate weakening or lint bypass.
+
+## Ownership Map
+
+| Artifact | Owner Context | Role |
+|---|---|---|
+| `npm run lint` | Platform/CI Governance | Production workflow quality gate |
+| `apps/mobile/*.js` | Mobile tooling | CommonJS tooling scripts, not product runtime contracts |
+| `e2e/fixtures/auth.ts` | E2E harness | Playwright fixture setup; no auth semantics change |
+| `docs/reference/scripts/*`, `scripts/*` | Repository utility/archive scripts | Must be parseable or excluded by a deliberate governance decision |
+| JSX text nodes | UI rendering surface | Preserve displayed text while satisfying `react/no-unescaped-entities` |
+| React hooks/compiler checks | React runtime contract | Preserve hook order and behavior while satisfying compiler constraints |
+
+## Contract Dependency Map
+
+```text
+production workflow
+  -> npm run lint
+  -> repository source parse/rule checks
+  -> production workflow continuation
+```
+
+No Product -> Contract -> Kernel dependency is modified.
+
+## Change Authority
+
+Authorized:
+- Local syntax repairs for malformed scripts.
+- Local lint-rule naming repair where the referenced rule is unavailable.
+- E2E fixture naming repair if Playwright fixture semantics remain unchanged.
+- JSX text escaping that preserves rendered content.
+- Function ordering / component extraction / effect-based ref updates for React compiler compliance.
+
+Not authorized:
+- Disabling `npm run lint` globally.
+- Adding `continue-on-error`.
+- Broad ESLint ignores for product source.
+- Product behavior or business contract changes.
+
+## UI -> Contract Reconciliation
+
+No UI change.
+
+## Additive Migration Plan
+
+No migration.
+
+## Verification Plan
+
+1. Focused ESLint on Batch 1 files: `PASS`.
+2. `npm run lint -- --quiet`: `PASS` (`0 errors`).
+3. `npm run lint`: `PASS` (`0 errors / 73 warnings`).
+4. `npm run typecheck:changed`: `PASS`, zero diagnostics.
+5. `git diff --check`: `PASS`.
+
+---
+
 # Full System Typecheck Architecture Gate
 
 > **Status:** DEFER for frozen/kernel-owned diagnostics; PASS for non-frozen, contract-proven, local cleanup batches

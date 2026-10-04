@@ -250,7 +250,7 @@ export default function PartnerApplicationDetailPage() {
           <div className="bg-white rounded-lg shadow-sm p-8 text-center">
             <h2 className="text-xl font-semibold text-gray-900">Application Not Found</h2>
             <p className="mt-2 text-gray-600">
-              The application you're looking for doesn't exist or has been deleted.
+              The application you&apos;re looking for doesn&apos;t exist or has been deleted.
             </p>
             <button
               onClick={() => router.push('/admin/partner-applications')}

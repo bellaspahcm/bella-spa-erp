@@ -40,7 +40,7 @@ export function CurrencyInputDemo() {
               1. Basic Usage
             </h2>
             <p className="text-xs text-slate-600 dark:text-[#CDBCAB]/80 mb-4">
-              Standard currency input with auto-formatting. Try typing "199500" - it will display as "199.500đ"
+              Standard currency input with auto-formatting. Try typing &quot;199500&quot; - it will display as &quot;199.500đ&quot;
             </p>
           </div>
           
@@ -203,7 +203,7 @@ export function CurrencyInputDemo() {
               placeholder="Nhập số tiền (có thể âm)"
             />
             <div className="mt-2 text-xs text-slate-500 dark:text-[#CDBCAB]/60">
-              Type "-" to enter negative amount.
+              Type &quot;-&quot; to enter negative amount.
             </div>
           </div>
         </div>
@@ -308,7 +308,7 @@ export function CurrencyInputDemo() {
                 <div><code className="text-primary">min?</code>: number - Minimum allowed value</div>
                 <div><code className="text-primary">max?</code>: number - Maximum allowed value</div>
                 <div><code className="text-primary">allowNegative?</code>: boolean - Allow negative values</div>
-                <div><code className="text-primary">showCurrency?</code>: boolean - Show "đ" suffix (default: true)</div>
+                <div><code className="text-primary">showCurrency?</code>: boolean - Show &quot;đ&quot; suffix (default: true)</div>
                 <div><code className="text-primary">error?</code>: boolean - Error state styling</div>
                 <div><code className="text-primary">className?</code>: string - Additional CSS classes</div>
               </div>

@@ -339,9 +339,6 @@ export default function NursingVitalsPage() {
     } catch { /* ignore */ } finally { setLoading(false); }
   }
 
-  useEffect(() => { loadData(); }, []);
-  useEffect(() => { if (selectedAdmissionId) loadVitals(selectedAdmissionId); }, [selectedAdmissionId]);
-
   async function loadVitals(id: string) {
     try {
       const result = await getVitalSigns('bella_healthcare', id);
@@ -353,6 +350,9 @@ export default function NursingVitalsPage() {
       }
     } catch { setVitals(MOCK_VITALS); }
   }
+
+  useEffect(() => { loadData(); }, []);
+  useEffect(() => { if (selectedAdmissionId) loadVitals(selectedAdmissionId); }, [selectedAdmissionId]);
 
   const handleRecordVitals = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -103,6 +103,31 @@ function CustomerSegmentationDashboard() {
   // Fetch customer segmentation
   // ───────────────────────────────────────────────────────────────────────────
 
+  const calculateDistribution = (segments: CustomerSegment[]): SegmentDistribution[] => {
+    const segmentMap: Record<string, { count: number; revenue: number; rfmScore: number }> = {};
+
+    segments.forEach(customer => {
+      if (!segmentMap[customer.segment]) {
+        segmentMap[customer.segment] = { count: 0, revenue: 0, rfmScore: 0 };
+      }
+      segmentMap[customer.segment].count++;
+      segmentMap[customer.segment].revenue += customer.totalRevenue;
+      segmentMap[customer.segment].rfmScore += customer.rfmScore;
+    });
+
+    const totalCustomers = segments.length;
+
+    return Object.entries(segmentMap).map(([segment, data]) => ({
+      tenantId: tenantId!,
+      segment,
+      customerCount: data.count,
+      totalRevenue: data.revenue,
+      avgRfmScore: data.rfmScore / data.count,
+      avgLifetimeValue: data.revenue / data.count,
+      percentageOfTotal: (data.count / totalCustomers) * 100,
+    }));
+  };
+
   const fetchSegmentation = async (refresh = false) => {
     if (!tenantId) return;
 
@@ -161,31 +186,6 @@ function CustomerSegmentationDashboard() {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
     }).format(value);
-  };
-
-  const calculateDistribution = (segments: CustomerSegment[]): SegmentDistribution[] => {
-    const segmentMap: Record<string, { count: number; revenue: number; rfmScore: number }> = {};
-    
-    segments.forEach(customer => {
-      if (!segmentMap[customer.segment]) {
-        segmentMap[customer.segment] = { count: 0, revenue: 0, rfmScore: 0 };
-      }
-      segmentMap[customer.segment].count++;
-      segmentMap[customer.segment].revenue += customer.totalRevenue;
-      segmentMap[customer.segment].rfmScore += customer.rfmScore;
-    });
-
-    const totalCustomers = segments.length;
-
-    return Object.entries(segmentMap).map(([segment, data]) => ({
-      tenantId: tenantId!,
-      segment,
-      customerCount: data.count,
-      totalRevenue: data.revenue,
-      avgRfmScore: data.rfmScore / data.count,
-      avgLifetimeValue: data.revenue / data.count,
-      percentageOfTotal: (data.count / totalCustomers) * 100,
-    }));
   };
 
   const getFilteredCustomers = () => {

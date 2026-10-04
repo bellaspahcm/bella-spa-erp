@@ -1,4 +1,4 @@
-xong chưa#!/usr/bin/env node
+#!/usr/bin/env node
 /**
  * R4.4.3 — INCIDENT/RECOVERY AUDIT VERIFICATION
  * 

@@ -160,7 +160,7 @@ ${exampleScenario ? `\nVí dụ:\n${exampleScenario.customer} đặt ${exampleSc
             {exampleScenario.sms && (
               <div className="pt-2 mt-2 border-t border-gray-100">
                 <p className="text-xs text-gray-500">→ SMS gửi:</p>
-                <p className="text-xs text-gray-700 italic">"{exampleScenario.sms}"</p>
+                <p className="text-xs text-gray-700 italic">&quot;{exampleScenario.sms}&quot;</p>
               </div>
             )}
           </div>

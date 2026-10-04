@@ -14,6 +14,30 @@ interface RetentionCurveChartProps {
   height?: number;
 }
 
+interface RetentionTooltipProps {
+  active?: boolean;
+  payload?: Array<{ value: number; payload: { cohort: string; size: number } }>;
+}
+
+function CustomTooltip({ active, payload }: RetentionTooltipProps) {
+  if (active && payload && payload.length) {
+    const entry = payload[0];
+    return (
+      <div className="bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl border border-slate-200/50 shadow-xl text-xs font-bold text-slate-800">
+        <p className="text-slate-500 mb-1 uppercase tracking-wider">Cohort: {entry.payload.cohort}</p>
+        <p className="text-sm font-black text-slate-900 mb-1">
+          Giữ chân: <span className="text-primary">{entry.value.toFixed(1)}%</span>
+        </p>
+        <p className="text-[10px] text-slate-400 font-normal">
+          Quy mô ban đầu: {entry.payload.size} KH
+        </p>
+      </div>
+    );
+  }
+
+  return null;
+}
+
 export function RetentionCurveChart({ data, height = 350 }: RetentionCurveChartProps) {
   const chartData = data
     .sort((a, b) => a.cohortMonth.localeCompare(b.cohortMonth))
@@ -22,25 +46,6 @@ export function RetentionCurveChart({ data, height = 350 }: RetentionCurveChartP
       retention: d.retentionRate, // Changed from retentionRatePct to retentionRate
       size: d.cohortSize,
     }));
-
-  // Custom tooltips matching glassmorphism
-  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ value: number; payload: { cohort: string; size: number } }> }) => {
-    if (active && payload && payload.length) {
-      const entry = payload[0];
-      return (
-        <div className="bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl border border-slate-200/50 shadow-xl text-xs font-bold text-slate-800">
-          <p className="text-slate-500 mb-1 uppercase tracking-wider">Cohort: {entry.payload.cohort}</p>
-          <p className="text-sm font-black text-slate-900 mb-1">
-            Giữ chân: <span className="text-primary">{entry.value.toFixed(1)}%</span>
-          </p>
-          <p className="text-[10px] text-slate-400 font-normal">
-            Quy mô ban đầu: {entry.payload.size} KH
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
 
   return (
     <ResponsiveContainer width="100%" height={height}>
