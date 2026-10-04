@@ -3238,3 +3238,78 @@ No migration. No schema change. No production data mutation.
 - Gate 9 Secret Hygiene: diagnostics exclude headers, cookies, tokens, and secrets.
 - Gate 10 CI Governance: artifacts retained for failed smoke RCA.
 - Gate 11 Regression: run targeted lint/typecheck/diff checks.
+
+---
+
+# Additional Architecture Gate - Tenant Context Route Session Resolution
+
+> **Status:** PASS - minimal runtime fix authorized
+> **Date:** 2026-10-04
+> **Scope:** `/api/tenant/context` production smoke authentication blocker
+
+## 1. Bella OS/Product Development Process Gate
+
+Truth: production workflow run `37192393312` passed immutable config, lint, critical tests, security, migration, build, exact preview deploy, and exact preview health, then failed in `Smoke Exact Preview` because `/api/tenant/context` returned `401` while `/dashboard` loaded as an authenticated document.
+
+Source of Truth: GitHub Actions smoke artifact `production-smoke-artifacts`, sanitized Playwright network evidence, and the Supabase SSR cookie contract.
+
+Canonical Contract: `/api/tenant/context` must resolve a verified Supabase Auth user from the request session and then read that user's tenant profile. It must not bypass authentication, hard-code tenant/user identity, or convert health/auth smoke into a fake PASS.
+
+Ownership: `src/app/api/tenant/context/route.ts` owns the tenant-context API route session resolution. Supabase Auth remains the authentication source of truth. `public.users.tenant_id` remains the tenant ownership source.
+
+Boundary: route-handler session handling only. No English business logic, tenant model, schema, migration, credential, middleware redesign, or broad auth abstraction is changed.
+
+## 2. Product Manifest
+
+This change adds no product capability. It restores the existing tenant context route's ability to read production Supabase SSR auth cookies, including chunked cookies.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `src/app/api/tenant/context/route.ts` | Platform tenant context API | Authenticated user -> tenant context read |
+| `src/__tests__/api-tenant-context.test.ts` | Route regression coverage | Unauthenticated and authenticated cookie/session paths |
+
+## 4. Contract Dependency Map
+
+```text
+Browser Supabase Auth cookie
+        ↓
+Supabase SSR Route Handler client
+        ↓
+Verified auth user
+        ↓
+public.users.tenant_id
+        ↓
+public.tenants
+        ↓
+TenantContext response
+```
+
+No Product -> Education Kernel contract is modified.
+
+## 5. Change Authority
+
+Authorized by Production Smoke RCA for a hẹp runtime blocker: valid authenticated production session reaches `/api/tenant/context` as `401`. The allowed change is limited to session/cookie resolution in the route handler.
+
+## 6. UI -> Contract Reconciliation
+
+Not applicable. No UI behavior or visual contract changes.
+
+## 7. Additive Migration Plan
+
+No migration. No schema change. No production data mutation.
+
+## 8. 11 Automated Verification Gates Plan
+
+- Gate 1 Architecture Compliance: no Healthcare, Logistics, Finance, or Education Kernel files changed.
+- Gate 2 Contract Boundary: route continues to require verified Supabase Auth user.
+- Gate 3 Tenant Isolation: tenant context still derives from authenticated user's `tenant_id`.
+- Gate 4 Permission: unauthenticated request must remain `401`.
+- Gate 5 Database Migration Safety: no migration.
+- Gate 6 Event-After-Persistence: not applicable.
+- Gate 7 Business Flow: English business logic not modified.
+- Gate 8 Runtime Evidence: production smoke should move past `/api/tenant/context 401`.
+- Gate 9 Secret Hygiene: no credential logging or fixture secrets.
+- Gate 10 CI Governance: targeted route test, lint, typecheck, architecture, security.
+- Gate 11 Regression: production workflow remains final authority after merge.
