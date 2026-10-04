@@ -34,6 +34,8 @@ const RELATED_TEST_EXCLUDED_PATTERNS = [
   'src/__tests__/integration',
   'real-estate-module-isolation.test',
   'bella-english-center/__tests__/enrollment.service.test',
+  'bella-english-center/__tests__/program-course-class.service.test',
+  'bella-english-center/__tests__/teacher.service.test',
   'verification-gates',
   'phase_d',
   'performance-slo-benchmark',
@@ -69,6 +71,9 @@ const RELATED_TEST_EXCLUDED_PATTERNS = [
   '/src/platform/finance/__tests__/finance-f2-reconstruction\\.test\\.ts$',
   '/src/platform/finance/__tests__/finance-f2-reporting-api\\.test\\.ts$',
   '/src/platform/real-estate/__tests__/real-estate-kernel\\.integration\\.test\\.ts$',
+  '/src/products/bella-english-center/__tests__/enrollment\\.service\\.test\\.ts$',
+  '/src/products/bella-english-center/__tests__/program-course-class\\.service\\.test\\.ts$',
+  '/src/products/bella-english-center/__tests__/teacher\\.service\\.test\\.ts$',
 ];
 
 function run(command, args, options = {}) {

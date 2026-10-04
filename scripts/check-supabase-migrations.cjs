@@ -31,14 +31,35 @@ function listGitMigrationVersions(ref) {
 }
 
 function parseSupabaseMigrationList(output) {
+  const rawOutput = String(output || '');
+  const jsonStart = rawOutput.indexOf('{');
+  const jsonEnd = rawOutput.lastIndexOf('}');
+  if (jsonStart >= 0 && jsonEnd > jsonStart) {
+    try {
+      const parsed = JSON.parse(rawOutput.slice(jsonStart, jsonEnd + 1));
+      if (Array.isArray(parsed.migrations)) {
+        return parsed.migrations
+          .map((row) => ({
+            local: row.local ? String(row.local).trim() || null : null,
+            remote: row.remote ? String(row.remote).trim() || null : null,
+          }))
+          .filter((row) => row.local || row.remote);
+      }
+    } catch {
+      // Fall through to the table parser for older Supabase CLI output.
+    }
+  }
+
   const rows = [];
 
-  for (const line of String(output || '').split(/\r?\n/)) {
-    const columns = line.split('|').map((column) => column.trim());
+  for (const line of rawOutput.split(/\r?\n/)) {
+    const columns = line
+      .split('|')
+      .map((column) => column.trim().replace(/^`|`$/g, '').trim());
     if (columns.length < 2) continue;
 
-    const localMatch = columns[0].match(/^(\d{14})/);
-    const remoteMatch = columns[1].match(/^(\d{14})/);
+    const localMatch = columns[0].match(/^(\d{8,14})/);
+    const remoteMatch = columns[1].match(/^(\d{8,14})/);
     const local = localMatch ? localMatch[1] : null;
     const remote = remoteMatch ? remoteMatch[1] : null;
     if (!local && !remote) continue;

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getPrimaryClient } from '@/lib/database/read-replica';
+import { getHealthRuntimeEnvironment } from './runtime-environment';
 
 /**
  * Application Health Check
@@ -77,7 +78,7 @@ export async function GET() {
       status: 'healthy',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      environment: process.env.DEPLOYMENT_ENV || 'development',
+      environment: getHealthRuntimeEnvironment(),
       checks: { database: 'ok' },
       // Timing breakdown exposed in response body for K6 / curl inspection
       _timing: {

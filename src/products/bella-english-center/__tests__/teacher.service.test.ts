@@ -2,12 +2,11 @@ import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { createClient } from '@supabase/supabase-js';
 import { TeacherService } from '../services/teacher.service';
 import { CreateTeacherInput, UpdateTeacherInput } from '../types/teacher.types';
+import { requireRunnableSupabaseEnv } from './real-db-env';
 
-const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
-const describeIfSupabase = supabaseUrl && supabaseKey ? describe : describe.skip;
+const { supabaseUrl, supabaseKey } = requireRunnableSupabaseEnv('E4 Teacher Service');
 
-describeIfSupabase('E4 — Teacher Service', () => {
+describe('E4 — Teacher Service', () => {
   let service: TeacherService;
   let testTenantId: string;
   let testBranchId: string;
