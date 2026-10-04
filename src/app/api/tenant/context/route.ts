@@ -6,6 +6,7 @@ import { createClient as createSupabaseJsClient } from '@supabase/supabase-js';
 import { getSupabaseAdminUrl, getSupabaseAdminKey } from '@/lib/supabase-admin-env';
 import type { TenantContext } from '@/core/types/tenant';
 import type { Database } from '@/types/database.types';
+import type { SupabaseClient, User } from '@supabase/supabase-js';
 
 /**
  * Create a fresh Supabase server client for this Route Handler.
@@ -41,6 +42,102 @@ async function createRouteHandlerClient() {
   );
 }
 
+function getProjectRefFromSupabaseUrl() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!url) return null;
+
+  try {
+    return new URL(url).hostname.split('.')[0] || null;
+  } catch {
+    return null;
+  }
+}
+
+function readAccessTokenFromCookieValue(value: string | undefined) {
+  if (!value) return null;
+
+  try {
+    const encoded = value.startsWith('base64-') ? value.slice('base64-'.length) : null;
+    if (!encoded) return null;
+
+    const decoded = Buffer.from(encoded, 'base64url').toString('utf8');
+    const parsed: unknown = JSON.parse(decoded);
+
+    if (typeof parsed !== 'object' || parsed === null) return null;
+
+    const accessToken = (parsed as { access_token?: unknown }).access_token;
+    return typeof accessToken === 'string' && accessToken.length > 0 ? accessToken : null;
+  } catch {
+    return null;
+  }
+}
+
+function getSupabaseAccessTokenFromRequest(request: NextRequest) {
+  const projectRef = getProjectRefFromSupabaseUrl();
+  const preferredCookieName = projectRef ? `sb-${projectRef}-auth-token` : null;
+  const preferredCookieValue = preferredCookieName
+    ? request.cookies.get(preferredCookieName)?.value
+    : undefined;
+  const preferredToken = readAccessTokenFromCookieValue(preferredCookieValue);
+
+  if (preferredToken) return preferredToken;
+
+  for (const cookie of request.cookies.getAll()) {
+    if (!cookie.name.startsWith('sb-') || !cookie.name.endsWith('-auth-token')) continue;
+
+    const token = readAccessTokenFromCookieValue(cookie.value);
+    if (token) return token;
+  }
+
+  return null;
+}
+
+function createBearerClient(accessToken: string): SupabaseClient<Database> {
+  return createSupabaseJsClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      },
+    },
+  );
+}
+
+async function resolveAuthenticatedUser(
+  request: NextRequest,
+  supabase: SupabaseClient<Database>,
+): Promise<{ user: User | null; authError: unknown; queryClient: SupabaseClient<Database> }> {
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (user && !authError) {
+    return { user, authError: null, queryClient: supabase };
+  }
+
+  const accessToken = getSupabaseAccessTokenFromRequest(request);
+  if (!accessToken) {
+    return { user: null, authError, queryClient: supabase };
+  }
+
+  const bearerClient = createBearerClient(accessToken);
+  const {
+    data: { user: tokenUser },
+    error: tokenAuthError,
+  } = await bearerClient.auth.getUser(accessToken);
+
+  return {
+    user: tokenUser,
+    authError: tokenAuthError,
+    queryClient: tokenUser && !tokenAuthError ? bearerClient : supabase,
+  };
+}
+
 /**
  * Type for tenant row from database.
  */
@@ -71,7 +168,7 @@ type TenantRow = Database['public']['Tables']['tenants']['Row'];
  * @param request - Next.js request object
  * @returns JSON response with TenantContext or error
  */
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     // ── Development mock bypass ──────────────────────────────────────────────
     // proxy.ts injects x-mock-user-email when mock_user_email cookie is set.
@@ -140,10 +237,7 @@ export async function GET(_request: NextRequest) {
     const supabase = await createRouteHandlerClient();
 
     // Get authenticated user from session
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { user, authError, queryClient } = await resolveAuthenticatedUser(request, supabase);
 
     if (authError || !user) {
       if (process.env.NODE_ENV === 'development') {
@@ -173,7 +267,7 @@ export async function GET(_request: NextRequest) {
     }
 
     // Fetch user profile to get tenant_id
-    const { data: userProfile, error: userError } = await supabase
+    const { data: userProfile, error: userError } = await queryClient
       .from('users')
       .select('tenant_id')
       .eq('id', user.id)
@@ -212,7 +306,7 @@ export async function GET(_request: NextRequest) {
     const tenantId = userProfile.tenant_id;
 
     // Fetch tenant configuration from database
-    const { data: tenant, error: tenantError } = await supabase
+    const { data: tenant, error: tenantError } = await queryClient
       .from('tenants')
       .select('*')
       .eq('id', tenantId)

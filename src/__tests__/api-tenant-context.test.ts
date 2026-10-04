@@ -45,6 +45,15 @@ jest.mock('@supabase/ssr', () => ({
   })),
 }));
 
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn(() => ({
+    from: mockFrom,
+    auth: {
+      getUser: mockGetUser,
+    },
+  })),
+}));
+
 describe('GET /api/tenant/context', () => {
   const mockUser = {
     id: 'user-123',
@@ -84,6 +93,8 @@ describe('GET /api/tenant/context', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://project-ref.supabase.co';
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'anon-key';
     
     // Setup default mock chain
     mockGetUser.mockResolvedValue({ data: { user: mockUser }, error: null });
@@ -101,6 +112,52 @@ describe('GET /api/tenant/context', () => {
     expect(response.status).toBe(401);
     const data = await response.json();
     expect(data.error).toContain('Unauthorized');
+  });
+
+  it('resolves authenticated user from Supabase auth cookie when route handler SSR session is unavailable', async () => {
+    const accessToken = 'valid-cookie-access-token';
+    const cookieValue = `base64-${Buffer.from(JSON.stringify({ access_token: accessToken })).toString('base64url')}`;
+
+    mockGetUser
+      .mockResolvedValueOnce({ data: { user: null }, error: { message: 'Auth session missing' } })
+      .mockResolvedValueOnce({ data: { user: mockUser }, error: null });
+
+    mockSingle
+      .mockResolvedValueOnce({
+        data: mockUserProfile,
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: mockTenant,
+        error: null,
+      });
+
+    const request = new NextRequest('http://localhost:3000/api/tenant/context', {
+      headers: {
+        Cookie: `sb-project-ref-auth-token=${cookieValue}`,
+      },
+    });
+    const response = await GET(request);
+
+    expect(response.status).toBe(200);
+    expect(mockGetUser).toHaveBeenNthCalledWith(2, accessToken);
+    const { createClient: mockCreateSupabaseJsClient } = jest.requireMock('@supabase/supabase-js') as {
+      createClient: jest.Mock;
+    };
+    expect(mockCreateSupabaseJsClient).toHaveBeenCalledWith(
+      'https://project-ref.supabase.co',
+      'anon-key',
+      expect.objectContaining({
+        global: {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      }),
+    );
+    const data = await response.json();
+    expect(data.tenantId).toBe('tenant-123');
+    expect(data.tenantName).toBe('Test Spa');
   });
 
   it('returns 403 when user has no tenant assigned', async () => {
