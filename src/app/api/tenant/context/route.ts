@@ -52,7 +52,8 @@ function readAccessTokenFromCookieValue(value: string | undefined) {
   if (!value) return null;
 
   try {
-    const encoded = value.startsWith('base64-') ? value.slice('base64-'.length) : null;
+    const normalizedValue = decodeCookieValue(value);
+    const encoded = normalizedValue.startsWith('base64-') ? normalizedValue.slice('base64-'.length) : null;
     if (!encoded) return null;
 
     const decoded = Buffer.from(encoded, 'base64url').toString('utf8');
@@ -67,6 +68,49 @@ function readAccessTokenFromCookieValue(value: string | undefined) {
   }
 }
 
+function decodeCookieValue(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function parseRawCookieHeader(cookieHeader: string | null) {
+  if (!cookieHeader) return [];
+
+  return cookieHeader
+    .split(';')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => {
+      const separatorIndex = part.indexOf('=');
+      if (separatorIndex < 1) return null;
+
+      return {
+        name: part.slice(0, separatorIndex).trim(),
+        value: part.slice(separatorIndex + 1).trim(),
+      };
+    })
+    .filter((cookie): cookie is { name: string; value: string } => Boolean(cookie?.name));
+}
+
+function getRequestCookies(request: NextRequest) {
+  const cookiesByName = new Map<string, string>();
+
+  for (const cookie of request.cookies.getAll()) {
+    cookiesByName.set(cookie.name, cookie.value);
+  }
+
+  for (const cookie of parseRawCookieHeader(request.headers.get('cookie'))) {
+    if (!cookiesByName.has(cookie.name)) {
+      cookiesByName.set(cookie.name, cookie.value);
+    }
+  }
+
+  return Array.from(cookiesByName, ([name, value]) => ({ name, value }));
+}
+
 async function readAccessTokenFromChunkedCookie(
   cookieName: string,
   requestCookies: ReturnType<NextRequest['cookies']['getAll']>,
@@ -79,7 +123,7 @@ async function readAccessTokenFromChunkedCookie(
 }
 
 async function getSupabaseAccessTokenFromRequest(request: NextRequest) {
-  const requestCookies = request.cookies.getAll();
+  const requestCookies = getRequestCookies(request);
   const projectRef = getProjectRefFromSupabaseUrl();
   const preferredCookieName = projectRef ? `sb-${projectRef}-auth-token` : null;
   const preferredToken = preferredCookieName

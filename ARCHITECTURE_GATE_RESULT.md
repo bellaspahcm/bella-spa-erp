@@ -3313,3 +3313,78 @@ No migration. No schema change. No production data mutation.
 - Gate 9 Secret Hygiene: no credential logging or fixture secrets.
 - Gate 10 CI Governance: targeted route test, lint, typecheck, architecture, security.
 - Gate 11 Regression: production workflow remains final authority after merge.
+
+---
+
+# Additional Architecture Gate - Tenant Context Raw Cookie Header Fallback
+
+> **Status:** PASS - route-only follow-up authorized
+> **Date:** 2026-10-04
+> **Scope:** `/api/tenant/context` production smoke authentication blocker follow-up
+
+## 1. Bella OS/Product Development Process Gate
+
+Truth: production workflow run `37198145961` deployed merge SHA `9bd313b8c9398788234f2cc8ef182f012c1e922f`; validate/build/preview health passed, but `Smoke Exact Preview` still failed with `/api/tenant/context` returning `401`. Sanitized trace evidence shows the request includes a Supabase Auth cookie named `sb-lvnvkpyxtuilhrabtlwv-auth-token`; decoded JWT metadata confirms the token is unexpired, `aud=authenticated`, `role=authenticated`, and issued by the matching Supabase project. The blocker is therefore narrower than credential, cookie-domain, or English business logic.
+
+Source of Truth: GitHub Actions smoke artifact `production-smoke-artifacts` from run `37198145961`, sanitized Playwright trace network headers, and `/api/tenant/context` route session resolution code.
+
+Canonical Contract: `/api/tenant/context` may only return tenant context after resolving a verified Supabase Auth user. It may read the raw `Cookie` header only as an additional source of the same Supabase Auth cookie already present on the request, then still validate the access token through Supabase Auth.
+
+Ownership: `src/app/api/tenant/context/route.ts` owns this fallback. Supabase Auth remains the authentication source of truth. `public.users.tenant_id` remains the tenant ownership source.
+
+Boundary: route-only cookie candidate resolution. No provider change, middleware redesign, schema/migration, credential, tenant model, permission redesign, English business logic, or auth bypass.
+
+## 2. Product Manifest
+
+No product capability is added. This follow-up hardens existing production Route Handler session resolution when `Cookie` is present in the HTTP request but the route cookie abstraction does not expose the auth cookie.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `src/app/api/tenant/context/route.ts` | Platform tenant context API | Raw Cookie header fallback to verified Supabase Auth user |
+| `src/__tests__/api-tenant-context.test.ts` | Route regression coverage | Header-present/cookie-abstraction-empty authenticated request |
+
+## 4. Contract Dependency Map
+
+```text
+HTTP Cookie header
+        ↓
+Supabase auth cookie candidate
+        ↓
+Decoded access token
+        ↓
+Supabase auth.getUser(accessToken)
+        ↓
+public.users.tenant_id
+        ↓
+TenantContext response
+```
+
+No Product -> Education Kernel contract is modified.
+
+## 5. Change Authority
+
+Authorized by production smoke RCA after the first route session fix merged cleanly but the same production 401 remained. The new evidence shows the auth cookie is present in the browser request; the minimal permitted change is to read that raw request header as a fallback and still verify the token through Supabase.
+
+## 6. UI -> Contract Reconciliation
+
+Not applicable. No UI behavior or visual contract changes.
+
+## 7. Additive Migration Plan
+
+No migration. No schema change. No production data mutation.
+
+## 8. 11 Automated Verification Gates Plan
+
+- Gate 1 Architecture Compliance: no Healthcare, Logistics, Finance, or Education Kernel files changed.
+- Gate 2 Contract Boundary: route still requires Supabase Auth verification.
+- Gate 3 Tenant Isolation: tenant context still derives from authenticated user's `tenant_id`.
+- Gate 4 Permission: unauthenticated request must remain `401`.
+- Gate 5 Database Migration Safety: no migration.
+- Gate 6 Event-After-Persistence: not applicable.
+- Gate 7 Business Flow: English business logic not modified.
+- Gate 8 Runtime Evidence: production smoke should move past `/api/tenant/context 401`.
+- Gate 9 Secret Hygiene: no credential, cookie, or token value logging.
+- Gate 10 CI Governance: targeted route test, lint, typecheck, architecture, security.
+- Gate 11 Regression: production workflow remains final authority after merge.
