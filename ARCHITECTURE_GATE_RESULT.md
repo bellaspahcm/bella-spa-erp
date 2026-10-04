@@ -20,6 +20,23 @@
 - Verification Gates Plan: targeted API regression, lint/typecheck where available, `git diff --check`, CI, then production smoke workflow after merge.
 - Explicit non-goals: no auth redesign, middleware redesign, hard-coded tenant/user, credential change, English business logic change, bypass auth, migration, or `any` introduction.
 
+## Additional Architecture Gate - Tenant Context Web Runtime Cookie Decoder
+
+> **Status:** PASS - route-only runtime decoder fix authorized
+> **Date:** 2026-10-04
+> **Scope:** Production smoke blocker after PR #217 where `/api/tenant/context` still returns `401` even though sanitized Playwright trace shows same-origin requests carry the Supabase auth cookie.
+
+- Bella OS/Product Development Process Gate: PASS. This is a minimal Platform tenant-context API runtime compatibility repair, not an auth architecture change, Product Vertical feature, UI redesign, Kernel change, or schema change.
+- Truth / Source of Truth: production workflow run `37204581799` on SHA `cec170c56fa0bfe1dc12f6a7fff8d25c2c16edd5` passed validate/build/immutable preview health but failed `Smoke Exact Preview`; sanitized trace metadata shows `/api/tenant/context` requests returned `401` with `cookie` header present.
+- Product Manifest: no product capability change. Preserve existing contract `authenticated Supabase cookie -> verified user -> public.users.tenant_id -> public.tenants -> TenantContext`.
+- Ownership Map: `src/app/api/tenant/context/route.ts` owns tenant-context route behavior; Supabase Auth remains authentication source of truth; `users`/`tenants` remain existing data owners.
+- Contract Dependency Map: protected UI -> `TenantContextProvider` -> `/api/tenant/context` -> Supabase Auth cookie decode -> `auth.getUser(accessToken)` -> tenant profile lookup.
+- Change Authority: `src/app/api/tenant/context/route.ts`, targeted regression test in `src/__tests__/api-tenant-context.test.ts`, and this gate note only.
+- UI -> Contract Reconciliation: no UI change; existing protected pages depend on successful tenant context resolution after real auth login.
+- Additive Migration Plan: none; no DDL, DML, tenant provisioning, or production data mutation.
+- Verification Gates Plan: unauthenticated request remains `401`; authenticated Supabase cookie decodes in a runtime without Node `Buffer`; targeted API regression; lint/typecheck; security/architecture gates; CI; production workflow after merge.
+- Explicit non-goals: no auth redesign, middleware redesign, hard-coded tenant/user, credential change, English business logic change, bypass auth, migration, broad abstraction, or `any` introduction.
+
 ## Additional Architecture Gate - Vercel Exact Preview Archive Deploy
 
 > **Status:** PASS - Minimal production workflow packaging fix authorized

@@ -245,6 +245,51 @@ describe('GET /api/tenant/context', () => {
     expect(data.tenantId).toBe('tenant-123');
   });
 
+  it('decodes Supabase auth cookies without relying on Node Buffer at runtime', async () => {
+    const accessToken = 'valid-web-runtime-access-token';
+    const cookieValue = `base64-${Buffer.from(JSON.stringify({ access_token: accessToken })).toString('base64url')}`;
+    const originalBuffer = globalThis.Buffer;
+
+    mockGetUser
+      .mockResolvedValueOnce({ data: { user: null }, error: { message: 'Auth session missing' } })
+      .mockResolvedValueOnce({ data: { user: mockUser }, error: null });
+
+    mockSingle
+      .mockResolvedValueOnce({
+        data: mockUserProfile,
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: mockTenant,
+        error: null,
+      });
+
+    const request = new NextRequest('http://localhost:3000/api/tenant/context', {
+      headers: {
+        Cookie: `sb-project-ref-auth-token=${cookieValue}`,
+      },
+    });
+
+    Object.defineProperty(globalThis, 'Buffer', {
+      configurable: true,
+      value: undefined,
+    });
+
+    try {
+      const response = await GET(request);
+
+      expect(response.status).toBe(200);
+      expect(mockGetUser).toHaveBeenNthCalledWith(2, accessToken);
+      const data = await response.json();
+      expect(data.tenantId).toBe('tenant-123');
+    } finally {
+      Object.defineProperty(globalThis, 'Buffer', {
+        configurable: true,
+        value: originalBuffer,
+      });
+    }
+  });
+
   it('returns 403 when user has no tenant assigned', async () => {
     // First call for user profile - returns user with no tenant
     mockSingle.mockResolvedValueOnce({
