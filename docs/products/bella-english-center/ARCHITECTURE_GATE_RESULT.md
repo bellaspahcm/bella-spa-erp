@@ -140,3 +140,48 @@ E2/E3/E4 are bounded verified + sealed by governance acceptance. The bounded
 seal accepts `DEBT-EDU-ARCH-01` and `DEBT-MIG-HISTORY-01` as governed debt /
 accepted risk, without claiming full `education:verify` PASS or full
 migration-history integrity.
+
+---
+
+## 2026-10-04 Go-Live Test Harness Guard
+
+**Scope:** Bella English Center Go-Live audit evidence for E2/E3/E4 service
+regression tests.
+
+**Problem:** E2 Enrollment, E3 Program/Course/Class, and E4 Teacher test files
+used `describeIfSupabase = supabaseUrl && supabaseKey ? describe : describe.skip`.
+The shared Jest setup supplies mock fallback values
+(`https://mock.supabase.co`, `mock-service-role-key`), so those suites treated a
+mock Supabase configuration as runnable Real DB evidence and failed later with
+DB setup timeout / `fetch failed`.
+
+**Truth / Source of Truth:** Go-Live evidence requires a real Supabase database
+environment. Mock Supabase values are not Real DB evidence and must not be
+classified as PASS, SKIP-for-green, or business regression.
+
+**Ownership:** Test harness only, under Bella English Center product evidence.
+No Education Kernel, Platform contract, database migration, product service, or
+business logic change is authorized.
+
+**Change Authority:** Replace the permissive test env truthiness guard with a
+fail-fast Real DB guard for E2/E3/E4 service regression suites.
+
+**Contract Dependency Map:**
+
+```text
+E2/E3/E4 Jest suites
+  -> Real Supabase URL/key from test environment
+  -> English Center product tables + canonical Platform/Education rows
+  -> DB read/write/read-back assertions
+```
+
+**Verification Plan:**
+
+```text
+Mock Supabase env -> REAL_DB_ENV_REQUIRED fail-fast, no DB fetch
+Real Supabase env -> E2/E3/E4 service regression executes against DB
+```
+
+**Gate Decision:** `PASS` for test-harness-only fix. This does not prove the
+English business chain. It prevents false evidence and keeps
+`BELLA_ENGLISH_GO_LIVE = NOT_READY / NOT_PROVEN` until Real DB rerun passes.

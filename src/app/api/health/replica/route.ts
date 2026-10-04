@@ -1,5 +1,6 @@
 import { checkReplicaHealth } from '@/lib/database/read-replica';
 import { NextResponse } from 'next/server';
+import { getHealthRuntimeEnvironment } from '../runtime-environment';
 
 /**
  * Database Read Replica Health Check
@@ -23,7 +24,7 @@ export async function GET() {
     const response = {
       ...health,
       timestamp: new Date().toISOString(),
-      environment: process.env.DEPLOYMENT_ENV || 'development',
+      environment: getHealthRuntimeEnvironment(),
     };
     
     // Return 503 Service Unavailable if unhealthy

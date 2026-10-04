@@ -153,6 +153,7 @@ jobs:
       - name: Sample production health
         run: |
           for sample in 1 2 3; do
-            curl --fail --silent --show-error "$PRODUCTION_BASE_URL/api/health" > /dev/null
+            body="$(curl --fail --silent --show-error "$PRODUCTION_BASE_URL/api/health")"
+            HEALTH_BODY="$body" node -e "const body = JSON.parse(process.env.HEALTH_BODY || '{}'); if (body.status !== 'healthy') throw new Error('Expected healthy production status, got ' + (body.status || 'missing')); if (body.environment !== 'production') throw new Error('Expected production runtime environment, got ' + (body.environment || 'missing')); if (body.checks?.database !== 'ok') throw new Error('Expected database ok, got ' + (body.checks?.database || 'missing'));"
             sleep 20
           done
