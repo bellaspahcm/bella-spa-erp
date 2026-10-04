@@ -4,6 +4,7 @@ import { cookies, headers } from 'next/headers';
 import { combineChunks, createServerClient as createSupabaseServerClient } from '@supabase/ssr';
 import { createClient as createSupabaseJsClient } from '@supabase/supabase-js';
 import { getSupabaseAdminUrl, getSupabaseAdminKey } from '@/lib/supabase-admin-env';
+import { getSupabasePublicUrl, requireSupabasePublicEnv } from '@/lib/supabase-public-env';
 import type { TenantContext } from '@/core/types/tenant';
 import type { Database } from '@/types/database.types';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
@@ -15,9 +16,11 @@ import type { SupabaseClient, User } from '@supabase/supabase-js';
  */
 async function createRouteHandlerClient() {
   const cookieStore = await cookies();
+  const { url, publicKey } = requireSupabasePublicEnv();
+
   return createSupabaseServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    url,
+    publicKey,
     {
       cookies: {
         getAll() {
@@ -38,7 +41,7 @@ async function createRouteHandlerClient() {
 }
 
 function getProjectRefFromSupabaseUrl() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const url = getSupabasePublicUrl();
   if (!url) return null;
 
   try {
@@ -167,9 +170,11 @@ async function getSupabaseAccessTokenFromRequest(request: NextRequest) {
 }
 
 function createBearerClient(accessToken: string): SupabaseClient<Database> {
+  const { url, publicKey } = requireSupabasePublicEnv();
+
   return createSupabaseJsClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    url,
+    publicKey,
     {
       auth: { persistSession: false, autoRefreshToken: false },
       global: {
