@@ -346,7 +346,7 @@ export default function GradesPage() {
                           </span>
                         </div>
                         <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-                          "{comp.progressNote}"
+                          &quot;{comp.progressNote}&quot;
                         </p>
 
                         {/* Evidence & Next Goal */}
@@ -382,7 +382,7 @@ export default function GradesPage() {
                       Trợ lý AI gợi ý tổng hợp từ 5 nhật ký quan sát:
                     </span>
                     <p className="text-purple-800 dark:text-purple-400 text-[11px] italic">
-                      "{card.aiSuggestedSummary}"
+                      &quot;{card.aiSuggestedSummary}&quot;
                     </p>
                   </div>
                 )}
@@ -393,7 +393,7 @@ export default function GradesPage() {
                     Lời nhắn cô giáo gửi Phụ huynh:
                   </p>
                   <p className="text-rose-800 dark:text-rose-400 italic leading-relaxed">
-                    "{card.teacherComment}"
+                    &quot;{card.teacherComment}&quot;
                   </p>
                 </div>
               </div>
