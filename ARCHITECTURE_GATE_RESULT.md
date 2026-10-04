@@ -4,6 +4,22 @@
 > **Date:** 2026-10-04
 > **Scope:** Reduce pre-existing repo-wide `npm run lint` errors without touching Bella English business logic, product contracts, database schema, or frozen kernels.
 
+## Additional Architecture Gate - Production Smoke Client Monitoring Hardening
+
+> **Status:** PASS - minimal monitoring runtime and smoke-harness fix authorized
+> **Date:** 2026-10-04
+> **Scope:** Production workflow run `37211453061` passed validate/build/immutable preview health but failed `Smoke Exact Preview` after real-auth login because client-side routine Sentry tunnel traffic emitted a transient `/monitoring` 503 console error; the first attempt also hit the single-test timeout while the page snapshot showed the system monitor content had rendered.
+
+- Bella OS/Product Development Process Gate: PASS. This is Platform production smoke/runtime monitoring hardening, not Product Vertical behavior, schema, tenant model, auth architecture, or English business logic.
+- Truth / Source of Truth: Playwright artifact from run `37211453061` shows `/api/tenant/context` returned `200`, dashboard routes rendered, one `/monitoring` request returned `503` while surrounding Sentry tunnel requests returned `200`, and the single smoke test timed out after serially visiting many routes.
+- Canonical Contract: production smoke must prove authenticated core routes render without app runtime errors; routine client telemetry must not create false route failures. Real application errors still remain captured by browser `pageerror`, app error text checks, failed app routes, and Sentry error replay.
+- Ownership Map: `instrumentation-client.ts` owns client-side monitoring sampling; `e2e/tests/12-authenticated-core-routes-smoke.spec.ts` owns read-only production smoke route evidence.
+- Change Authority: reduce routine browser telemetry traffic by disabling client traces/session replay while keeping error replay enabled; split the core route smoke into route-level cases so each route has independent timeout/evidence.
+- UI -> Contract Reconciliation: no UI change.
+- Additive Migration Plan: none; no DDL, DML, tenant provisioning, production data mutation, or credential change.
+- Verification Gates Plan: targeted Sentry instrumentation test, targeted Playwright smoke syntax/lint, `typecheck:changed`, `git diff --check`, security/architecture gates as needed, PR CI, then production workflow after merge.
+- Explicit non-goals: no auth bypass, no production credential change, no English business code, no monitoring tunnel removal, no broad E2E rewrite, no workflow gate bypass.
+
 ## Additional Architecture Gate - Tenant Context Runtime Auth Cookie Fix
 
 > **Status:** PASS - Minimal runtime boundary fix authorized
