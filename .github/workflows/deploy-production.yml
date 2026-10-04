@@ -91,7 +91,7 @@ jobs:
       - name: Deploy exact build without promotion
         id: deploy
         run: |
-          output="$(npx vercel deploy --prebuilt --prod --skip-domain --yes --token="$VERCEL_TOKEN")"
+          output="$(npx vercel deploy --prebuilt --prod --skip-domain --archive=tgz --yes --token="$VERCEL_TOKEN")"
           printf '%s\n' "$output"
           deployment_url="$(printf '%s\n' "$output" | grep -Eo 'https://[^[:space:]]+\.vercel\.app' | tail -1)"
           printf '%s' "$deployment_url" | grep -Eq '^https://[^/]+\.vercel\.app$'
