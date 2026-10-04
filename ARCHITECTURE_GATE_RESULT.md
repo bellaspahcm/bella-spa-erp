@@ -3159,3 +3159,82 @@ No existing accounting or business tables will be deleted or modified. The migra
 | **Gate F-8** | Event-After-Persistence | Verify that `finance_outbox_events` has the event record committed in the same transaction, and the dispatcher publishes it successfully. |
 | **Gate F-9** | Full Regression | Run all Finance OS test suites to ensure 100% test coverage. |
 | **Gate F-10** | Financial State Reconstruction | Rebuild materialized state from authoritative records and verify equality. |
+
+---
+
+# Additional Architecture Gate - Production Smoke Network Evidence
+
+> **Status:** PASS - production workflow diagnostics only
+> **Date:** 2026-10-04
+> **Scope:** `Deploy to Production` smoke evidence for exact preview gate
+
+## 1. Bella OS/Product Development Process Gate
+
+Truth: production workflow run `37189982072` passed immutable config, lint, critical tests, security, migration, build, exact preview deploy, and exact preview health, then failed in `Smoke Exact Preview` because `/dashboard` stayed on the TenantContextProvider loading screen.
+
+Source of Truth: GitHub Actions run logs and the existing Playwright smoke route contract.
+
+Canonical Contract: production smoke must use real authentication and must not bypass app auth, mutate business data, or infer readiness from health alone.
+
+Ownership: `.github/workflows/deploy-production.yml` is Repository CI/Production Ops governance. `e2e/tests/12-authenticated-core-routes-smoke.spec.ts` is read-only production smoke evidence.
+
+Boundary: diagnostic-only. No runtime route, auth architecture, tenant model, database, credential, or English business logic is changed.
+
+## 2. Product Manifest
+
+This change adds no product capability. It improves failure evidence for the existing production smoke gate by:
+
+- recording sanitized app network status metadata for the smoke browser session;
+- surfacing `/api/tenant/context` status/path evidence when a route remains stuck before expected content renders;
+- uploading Playwright artifacts from the production smoke job for RCA.
+- keeping Playwright E2E specs out of the direct Jest changed-test runner.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `.github/workflows/deploy-production.yml` | Platform/CI Governance | Production workflow artifact collection |
+| `e2e/tests/12-authenticated-core-routes-smoke.spec.ts` | Production Ops Evidence | Read-only browser smoke diagnostics |
+| `scripts/test-changed-files.mjs` | CI Governance | Changed-file Jest routing only |
+
+## 4. Contract Dependency Map
+
+```text
+Deploy to Production workflow
+        ↓
+Exact preview
+        ↓
+Real-auth Playwright smoke
+        ↓
+Sanitized browser network evidence
+        ↓
+RCA for first failing production gate
+```
+
+No Product -> Contract -> Kernel path is modified.
+
+## 5. Change Authority
+
+Authorized by Production Ops Go-Live audit boundary. The change is limited to evidence collection for the current production smoke blocker.
+
+## 6. UI -> Contract Reconciliation
+
+Not applicable. No UI behavior, route content, or user-facing component is changed.
+
+## 7. Additive Migration Plan
+
+No migration. No schema change. No production data mutation.
+
+## 8. 11 Automated Verification Gates Plan
+
+- Gate 1 Architecture Compliance: no Healthcare, Education, Logistics, Finance, or Product runtime code changed.
+- Gate 2 Contract Boundary: production smoke remains real-auth and read-only.
+- Gate 3 Tenant Isolation: no tenant query or policy change.
+- Gate 4 Permission: no auth bypass or credential change.
+- Gate 5 Database Migration Safety: no migration.
+- Gate 6 Event-After-Persistence: not applicable.
+- Gate 7 Business Flow: not modified.
+- Gate 8 Runtime Evidence: exact preview smoke gets sanitized network diagnostics.
+- Gate 9 Secret Hygiene: diagnostics exclude headers, cookies, tokens, and secrets.
+- Gate 10 CI Governance: artifacts retained for failed smoke RCA.
+- Gate 11 Regression: run targeted lint/typecheck/diff checks.
