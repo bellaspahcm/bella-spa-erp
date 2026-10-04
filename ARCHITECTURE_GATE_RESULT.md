@@ -37,6 +37,23 @@
 - Verification Gates Plan: unauthenticated request remains `401`; authenticated Supabase cookie decodes in a runtime without Node `Buffer`; targeted API regression; lint/typecheck; security/architecture gates; CI; production workflow after merge.
 - Explicit non-goals: no auth redesign, middleware redesign, hard-coded tenant/user, credential change, English business logic change, bypass auth, migration, broad abstraction, or `any` introduction.
 
+## Additional Architecture Gate - Tenant Context Public Env Contract
+
+> **Status:** PASS - route-only stale env consumer fix authorized
+> **Date:** 2026-10-04
+> **Scope:** Production smoke blocker after PR #218 where `/api/tenant/context` still returns `401` even though sanitized Playwright trace proves the Supabase auth cookie is present, base64-decodable, contains a non-expired `access_token`, and reaches the exact preview route.
+
+- Bella OS/Product Development Process Gate: PASS. This is a minimal Platform tenant-context API env-contract repair, not an auth architecture change, Product Vertical feature, UI redesign, Kernel change, or schema change.
+- Truth / Source of Truth: production workflow run `37206117376` on SHA `458ca060b73b0119b687bab17571897869db02dc` passed validate/build/immutable preview health but failed `Smoke Exact Preview`; sanitized trace shows `/api/tenant/context` requests include `sb-[project]-auth-token`, the cookie payload has `access_token`, and the token is not expired.
+- Canonical Contract: browser Supabase clients use `requireSupabasePublicEnv()`, whose public key contract is `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+- Stale Consumer: `/api/tenant/context` used `NEXT_PUBLIC_SUPABASE_ANON_KEY` directly for both SSR and bearer clients, diverging from production workflow/build config where publishable key is the canonical public key.
+- Ownership Map: `src/app/api/tenant/context/route.ts` owns tenant-context route behavior; `src/lib/supabase-public-env.ts` owns public Supabase env resolution; Supabase Auth remains authentication source of truth.
+- Contract Dependency Map: protected UI -> `TenantContextProvider` -> `/api/tenant/context` -> Supabase public env -> Supabase Auth token verification -> `users`/`tenants`.
+- Change Authority: `src/app/api/tenant/context/route.ts`, targeted regression test in `src/__tests__/api-tenant-context.test.ts`, and this gate note only.
+- Additive Migration Plan: none; no DDL, DML, tenant provisioning, or production data mutation.
+- Verification Gates Plan: targeted API regression proving publishable-key-only env works; lint/typecheck; security/architecture gates; CI; production workflow after merge.
+- Explicit non-goals: no auth redesign, middleware redesign, hard-coded tenant/user, credential change, English business logic change, bypass auth, migration, broad abstraction, or `any` introduction.
+
 ## Additional Architecture Gate - Vercel Exact Preview Archive Deploy
 
 > **Status:** PASS - Minimal production workflow packaging fix authorized

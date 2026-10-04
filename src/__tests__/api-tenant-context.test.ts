@@ -107,7 +107,8 @@ describe('GET /api/tenant/context', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://project-ref.supabase.co';
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'anon-key';
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'publishable-key';
+    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     
     // Setup default mock chain
     mockGetUser.mockResolvedValue({ data: { user: mockUser }, error: null });
@@ -153,13 +154,21 @@ describe('GET /api/tenant/context', () => {
     const response = await GET(request);
 
     expect(response.status).toBe(200);
+    const { createServerClient: mockCreateServerClient } = jest.requireMock('@supabase/ssr') as {
+      createServerClient: jest.Mock;
+    };
+    expect(mockCreateServerClient).toHaveBeenCalledWith(
+      'https://project-ref.supabase.co',
+      'publishable-key',
+      expect.any(Object),
+    );
     expect(mockGetUser).toHaveBeenNthCalledWith(2, accessToken);
     const { createClient: mockCreateSupabaseJsClient } = jest.requireMock('@supabase/supabase-js') as {
       createClient: jest.Mock;
     };
     expect(mockCreateSupabaseJsClient).toHaveBeenCalledWith(
       'https://project-ref.supabase.co',
-      'anon-key',
+      'publishable-key',
       expect.objectContaining({
         global: {
           headers: {
