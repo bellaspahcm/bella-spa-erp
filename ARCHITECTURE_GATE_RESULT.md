@@ -4,6 +4,22 @@
 > **Date:** 2026-10-04
 > **Scope:** Reduce pre-existing repo-wide `npm run lint` errors without touching Bella English business logic, product contracts, database schema, or frozen kernels.
 
+## Additional Architecture Gate - Tenant Context Runtime Auth Cookie Fix
+
+> **Status:** PASS - Minimal runtime boundary fix authorized
+> **Date:** 2026-10-04
+> **Scope:** Production smoke blocker where `/api/tenant/context` receives a valid Supabase browser auth cookie but returns `401`.
+
+- Bella OS/Product Development Process Gate: PASS. This is an existing Platform runtime/auth API boundary repair, not a Product Vertical feature, UI redesign, Kernel change, or schema change.
+- Product Manifest: no new product capability; preserve existing contract `authenticated request -> Supabase user -> public.users.tenant_id -> public.tenants -> TenantContext`.
+- Ownership Map: Platform runtime/auth API owns the route behavior; `users` and `tenants` remain the existing data owners.
+- Contract Dependency Map: protected UI -> `TenantContextProvider` -> `/api/tenant/context` -> Supabase Auth + RLS-backed `users`/`tenants`.
+- Change Authority: `src/app/api/tenant/context/route.ts` and targeted API route regression test only.
+- UI -> Contract Reconciliation: no UI change; existing protected pages depend on successful tenant context resolution after real auth login.
+- Additive Migration Plan: none; no DDL, DML, tenant provisioning, or production data mutation.
+- Verification Gates Plan: targeted API regression, lint/typecheck where available, `git diff --check`, CI, then production smoke workflow after merge.
+- Explicit non-goals: no auth redesign, middleware redesign, hard-coded tenant/user, credential change, English business logic change, bypass auth, migration, or `any` introduction.
+
 ## Bella OS/Product Development Process Gate
 
 - Problem: production workflow is blocked by a pre-existing global lint baseline (`53 errors + 73 warnings` in CI), proven unchanged before and after PR #204.
