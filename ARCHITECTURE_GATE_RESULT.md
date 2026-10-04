@@ -20,6 +20,21 @@
 - Verification Gates Plan: targeted API regression, lint/typecheck where available, `git diff --check`, CI, then production smoke workflow after merge.
 - Explicit non-goals: no auth redesign, middleware redesign, hard-coded tenant/user, credential change, English business logic change, bypass auth, migration, or `any` introduction.
 
+## Additional Architecture Gate - Vercel Exact Preview Archive Deploy
+
+> **Status:** PASS - Minimal production workflow packaging fix authorized
+> **Date:** 2026-10-04
+> **Scope:** Production workflow exact preview deploy fails after successful Vercel build because `vercel deploy --prebuilt` hits Vercel upload request limits (`api-upload-free`, more than 5000); Vercel CLI recommends `--archive=tgz`.
+
+- Bella OS/Product Development Process Gate: PASS. This is production workflow packaging, not Product Vertical code, UI, schema, Kernel, auth, tenant, or business logic.
+- Product Manifest: no product capability change and no runtime contract change.
+- Ownership Map: Platform/CI production deployment workflow owns exact preview packaging.
+- Contract Dependency Map: `Deploy to Production` workflow -> immutable preview build -> exact preview deployment -> smoke -> promote.
+- Change Authority: `.github/workflows/deploy-production.yml` deploy command only, plus this gate note.
+- Additive Migration Plan: none.
+- Verification Gates Plan: workflow syntax/diff review, `git diff --check`, PR CI, then re-dispatch `Deploy to Production`.
+- Explicit non-goals: no Vercel project change, no secret change, no production domain promotion bypass, no application/runtime code change.
+
 ## Bella OS/Product Development Process Gate
 
 - Problem: production workflow is blocked by a pre-existing global lint baseline (`53 errors + 73 warnings` in CI), proven unchanged before and after PR #204.
