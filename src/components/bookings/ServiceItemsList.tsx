@@ -76,7 +76,7 @@ export function ServiceItemsList({ serviceItems, packages, bookingId, tenantId }
     return (
       <div className="rounded-lg border border-dashed p-12 text-center">
         <p className="text-muted-foreground">
-          Chưa có dịch vụ nào. Nhấn nút "Thêm dịch vụ" để bắt đầu.
+          Chưa có dịch vụ nào. Nhấn nút &quot;Thêm dịch vụ&quot; để bắt đầu.
         </p>
       </div>
     );

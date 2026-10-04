@@ -787,7 +787,7 @@ export default function HospitalBHYTPage() {
                     </div>
                   ) : (
                     <div className="text-center py-12 text-slate-400 text-xs">
-                      Hãy nhấp vào nút **"Tạo file XML 130"** ở trên để kết xuất và kiểm duyệt dữ liệu thẻ XML mẫu.
+                      Hãy nhấp vào nút **&quot;Tạo file XML 130&quot;** ở trên để kết xuất và kiểm duyệt dữ liệu thẻ XML mẫu.
                     </div>
                   )}
                 </div>

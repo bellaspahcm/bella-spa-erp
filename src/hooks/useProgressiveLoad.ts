@@ -33,7 +33,7 @@
  * ```
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface UseProgressiveLoadOptions {
   /** Critical data loader — runs immediately, clears the main spinner when done. */
@@ -82,50 +82,50 @@ export function useProgressiveLoad({
   const criticalRef = useRef(critical);
   const secondaryRef = useRef(secondary);
 
-  // Keep refs up-to-date so the effect closure always calls the latest version
-  criticalRef.current = critical;
-  secondaryRef.current = secondary;
-
-  const runLoad = useCallback(async () => {
-    // Reset state for re-runs (e.g. on dep change)
-    setCriticalReady(false);
-    setCriticalError(null);
-    setSecondaryReady(!secondaryRef.current);
-    setSecondaryError(null);
-
-    // ── Phase 1: Critical ────────────────────────────────────────────────────
-    try {
-      await criticalRef.current();
-    } catch (err: unknown) {
-      setCriticalError(err instanceof Error ? err : new Error(String(err)));
-    } finally {
-      setCriticalReady(true);
-    }
-
-    // ── Phase 2: Secondary (deferred) ────────────────────────────────────────
-    if (!secondaryRef.current) return;
-
-    secondaryTimerRef.current = setTimeout(async () => {
-      try {
-        await secondaryRef.current!();
-      } catch (err: unknown) {
-        setSecondaryError(err instanceof Error ? err : new Error(String(err)));
-      } finally {
-        setSecondaryReady(true);
-      }
-    }, secondaryDelayMs);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+  useEffect(() => {
+    criticalRef.current = critical;
+    secondaryRef.current = secondary;
+  }, [critical, secondary]);
 
   useEffect(() => {
+    async function runLoad() {
+      // Reset state for re-runs (e.g. on dep change)
+      setCriticalReady(false);
+      setCriticalError(null);
+      setSecondaryReady(!secondaryRef.current);
+      setSecondaryError(null);
+
+      // ── Phase 1: Critical ────────────────────────────────────────────────────
+      try {
+        await criticalRef.current();
+      } catch (err: unknown) {
+        setCriticalError(err instanceof Error ? err : new Error(String(err)));
+      } finally {
+        setCriticalReady(true);
+      }
+
+      // ── Phase 2: Secondary (deferred) ────────────────────────────────────────
+      if (!secondaryRef.current) return;
+
+      secondaryTimerRef.current = setTimeout(async () => {
+        try {
+          await secondaryRef.current!();
+        } catch (err: unknown) {
+          setSecondaryError(err instanceof Error ? err : new Error(String(err)));
+        } finally {
+          setSecondaryReady(true);
+        }
+      }, secondaryDelayMs);
+    }
+
     void runLoad();
     return () => {
       if (secondaryTimerRef.current) {
         clearTimeout(secondaryTimerRef.current);
       }
     };
-   
-  }, [runLoad]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [secondaryDelayMs, ...deps]);
 
   return {
     criticalReady,

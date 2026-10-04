@@ -1,66 +1,84 @@
 const fs = require('fs');
 const path = require('path');
 
+const outputPath = path.resolve(__dirname, '..', 'codebase-review.html');
+
+const sections = [
+  {
+    title: 'Executive Summary',
+    body: 'Bella ERP codebase review evidence is maintained in the reference documentation set. This generated HTML provides a lightweight, parseable entry point for local review.',
+  },
+  {
+    title: 'Review Boundary',
+    body: 'This report is a documentation artifact only. It does not execute product logic, mutate data, or change production readiness classifications.',
+  },
+  {
+    title: 'Generated Artifact',
+    body: 'Use the canonical markdown and evidence files as source of truth when making release or governance decisions.',
+  },
+];
+
+const escapeHtml = (value) =>
+  value.replace(/[&<>"']/g, (char) => {
+    const entities = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    };
+
+    return entities[char];
+  });
+
+const sectionHtml = sections
+  .map(
+    (section) => `
+      <section>
+        <h2>${escapeHtml(section.title)}</h2>
+        <p>${escapeHtml(section.body)}</p>
+      </section>`
+  )
+  .join('\n');
+
 const html = `<!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bella ERP - Đánh Giá Chất Lượng Codebase 2026</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            line-height: 1.6;
-            color: #1f2937;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-        
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-        
-        header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 4rem 2rem;
-            text-align: center;
-            border-radius: 24px;
-            margin-bottom: 3rem;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        }
-        
-        h1 {
-            font-size: 3.5rem;
-            font-weight: 800;
-            margin-bottom: 1rem;
-            letter-spacing: -0.02em;
-        }
-        
-        .subtitle {
-            font-size: 1.25rem;
-            opacity: 0.95;
-            max-width: 800px;
-            margin: 0 auto 2rem;
-        }
-        
-        .meta-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-top: 2rem;
-        }
-        
-        .meta-card {
-            background: rgba(255,255,255,0.15);
-            backdrop-filter: blur(10px);
-            padding: 1.5rem;
-            border-radius: 16px;
-            text-align: center;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bella ERP - Codebase Review</title>
+  <style>
+    body {
+      background: #f8fafc;
+      color: #172033;
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 2rem;
+    }
+
+    main {
+      margin: 0 auto;
+      max-width: 920px;
+    }
+
+    section {
+      background: #ffffff;
+      border: 1px solid #d9e2ec;
+      border-radius: 8px;
+      margin-top: 1rem;
+      padding: 1rem 1.25rem;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Bella ERP Codebase Review</h1>
+    ${sectionHtml}
+  </main>
+</body>
+</html>
+`;
+
+fs.writeFileSync(outputPath, html, 'utf8');
+console.log(`Generated ${outputPath}`);

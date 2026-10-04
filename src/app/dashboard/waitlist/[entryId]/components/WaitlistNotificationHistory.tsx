@@ -92,7 +92,7 @@ export function WaitlistNotificationHistory({
 
                 {notification.message_content && (
                   <div className="mb-2 rounded bg-white p-2 text-xs text-gray-600">
-                    "{notification.message_content}"
+                    &quot;{notification.message_content}&quot;
                   </div>
                 )}
 

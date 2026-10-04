@@ -266,7 +266,7 @@ export function CSIOverview() {
                         ⚠ Chiều yếu nhất: {caseItem.lowestDimension} ({caseItem.lowestScore}/5)
                       </div>
                       <div className="text-slate-600 dark:text-slate-300">
-                        Phản hồi: "{caseItem.feedback}"
+                        Phản hồi: &quot;{caseItem.feedback}&quot;
                       </div>
                       <div className="text-slate-400">
                         Tư vấn viên: {caseItem.consultant}

@@ -235,7 +235,7 @@ export function PublishConfirmModal({
                 <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
                   <li>Tất cả {vocab.worker.plural.toLowerCase()} sẽ nhận được thông báo trên app</li>
                   <li>{vocab.worker.plural} có thể xem chi tiết và xác nhận bảng lương</li>
-                  <li>Trạng thái chuyển sang "Chờ {vocab.worker.short} xác nhận"</li>
+                  <li>Trạng thái chuyển sang &quot;Chờ {vocab.worker.short} xác nhận&quot;</li>
                   <li>Bạn có thể theo dõi tiến độ xác nhận tại màn hình này</li>
                 </ul>
               </div>
