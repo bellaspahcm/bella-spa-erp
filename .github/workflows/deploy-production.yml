@@ -12,6 +12,7 @@ concurrency:
 
 env:
   PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL || vars.E2E_BASE_URL || 'https://bella-spa-erp.vercel.app' }}
+  VERCEL_SCOPE: ${{ vars.VERCEL_SCOPE || 'bella-spa-s-projects' }}
 
 jobs:
   validate:
@@ -157,7 +158,7 @@ jobs:
       VERCEL_PROJECT_ID: ${{ vars.VERCEL_PRODUCTION_PROJECT_ID }}
       DEPLOYMENT_URL: ${{ needs.preview.outputs.deployment_url }}
     steps:
-      - run: npx vercel promote "$DEPLOYMENT_URL" --yes --token="$VERCEL_TOKEN"
+      - run: npx vercel promote "$DEPLOYMENT_URL" --scope "$VERCEL_SCOPE" --yes --token="$VERCEL_TOKEN"
 
   verify:
     name: Verify Promoted Release
