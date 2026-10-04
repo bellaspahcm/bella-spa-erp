@@ -149,7 +149,7 @@
     "mobile:dev": "npm run start --workspace=apps/mobile",
     "mobile:ios": "npm run ios --workspace=apps/mobile",
     "mobile:android": "npm run android --workspace=apps/mobile",
-    "mobile:typecheck": "npm run typecheck --workspace=apps/mobile",
+    "mobile:typecheck": "npm install --prefix apps/mobile --no-package-lock --ignore-scripts && npx tsc -p apps/mobile/tsconfig.json --noEmit",
     "shared:typecheck": "npm run typecheck --workspace=packages/shared",
     "smoke:test": "npx tsx scripts/smoke-test-position-tier-hire-date.ts",
     "smoke:test:bash": "bash scripts/smoke-test.sh",
