@@ -153,25 +153,20 @@ function formatRouteDiagnostics(input: {
 }
 
 test.describe("Authenticated core route smoke", () => {
-  test.setTimeout(180_000);
-
   test.skip(
     !canAuthenticateAdminPage(),
     "Requires E2E admin credentials or localhost Supabase admin env.",
   );
 
-  test("core operating pages render read-only without production errors", async ({ adminPage }) => {
-    const pageErrors: string[] = [];
-    const networkEvidence: NetworkEvidence[] = [];
-    const collectors = attachRuntimeCollectors(pageErrors, networkEvidence, getAppOrigin());
-    adminPage.on("console", collectors.console);
-    adminPage.on("pageerror", collectors.pageerror);
-    adminPage.on("response", collectors.response);
-    adminPage.on("requestfailed", collectors.requestfailed);
-
-    for (const route of coreRoutes) {
-      pageErrors.length = 0;
-      networkEvidence.length = 0;
+  for (const route of coreRoutes) {
+    test(`${route.name} renders read-only without production errors`, async ({ adminPage }) => {
+      const pageErrors: string[] = [];
+      const networkEvidence: NetworkEvidence[] = [];
+      const collectors = attachRuntimeCollectors(pageErrors, networkEvidence, getAppOrigin());
+      adminPage.on("console", collectors.console);
+      adminPage.on("pageerror", collectors.pageerror);
+      adminPage.on("response", collectors.response);
+      adminPage.on("requestfailed", collectors.requestfailed);
 
       const response = await adminPage.goto(route.path, { waitUntil: "domcontentloaded" });
       await adminPage.waitForLoadState("load", { timeout: 8_000 }).catch(() => {});
@@ -210,6 +205,6 @@ test.describe("Authenticated core route smoke", () => {
       }
 
       expect(pageErrors, `${route.name} should not emit browser/runtime errors`).toEqual([]);
-    }
-  });
+    });
+  }
 });
