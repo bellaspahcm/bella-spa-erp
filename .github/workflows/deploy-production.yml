@@ -55,6 +55,7 @@ jobs:
       - run: npm run db:migration:zero-downtime -- --base HEAD^
       - run: npm run db:migration:check
         env:
+          BASE_REF: HEAD^
           SUPABASE_DB_URL: ${{ secrets.PRODUCTION_SUPABASE_DB_URL }}
       - run: npm run build
         env:
