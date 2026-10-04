@@ -3422,3 +3422,79 @@ No migration. No schema change. No production data mutation.
 - Gate 9 Secret Hygiene: no credential, cookie, or token value logging.
 - Gate 10 CI Governance: targeted route test, lint, typecheck, architecture, security.
 - Gate 11 Regression: production workflow remains final authority after merge.
+
+---
+
+# Additional Architecture Gate - Supabase Server Client Public Env Contract
+
+> **Status:** PASS - runtime client follow-up authorized
+> **Date:** 2026-10-04
+> **Scope:** Dashboard production smoke server-action authentication blocker
+
+## 1. Bella OS/Product Development Process Gate
+
+Truth: production workflow run `37208465631` deployed merge SHA `fec5eb0110833cd50e9c00010159849f446e54e7`; validate/build immutable preview passed, `/api/tenant/context` returned `200`, and `X-Environment` was `production`. The remaining blocker is `Smoke Exact Preview`, where the dashboard layout server-action sequence returned one `/dashboard` POST `200` followed by one `/dashboard` POST `500` with React Server Component digest `2492357065`.
+
+Source of Truth: GitHub Actions run `37208465631`, sanitized Playwright trace artifact `production-smoke-artifacts`, dashboard layout client chunk mapping, and `src/lib/supabase-server.ts`.
+
+Canonical Contract: server-side Supabase clients must use the shared public environment contract: `NEXT_PUBLIC_SUPABASE_URL` plus `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` with legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY` fallback. Runtime auth must continue to validate the Supabase session through Supabase Auth; no mock, bypass, hard-coded user, or credential fallback is allowed.
+
+Ownership: `src/lib/supabase-server.ts` owns the server-side SSR Supabase client. `src/lib/supabase-public-env.ts` owns public Supabase environment resolution. `src/services/user-actions.ts` consumes the server client but does not own environment resolution.
+
+Boundary: shared runtime client environment resolution only. No English business code, schema/migration, production data mutation, credential logging, auth bypass, tenant model, or dashboard UX redesign.
+
+## 2. Product Manifest
+
+No product capability is added. This change aligns the server-action auth path with the existing production public-env contract already used by browser and tenant-context code.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `src/lib/supabase-server.ts` | Platform runtime Supabase SSR client | Server-side Supabase URL/key resolution and cookie-bound auth client |
+| `src/lib/supabase-public-env.ts` | Platform env contract | Canonical public URL/key fallback logic |
+| `src/__tests__/supabase-server-env.test.ts` | Runtime env regression coverage | Server SSR client must work when only publishable key is configured |
+
+## 4. Contract Dependency Map
+
+```text
+DashboardLayout client
+        ↓
+getCurrentUser server action
+        ↓
+createClient() / Supabase SSR client
+        ↓
+Canonical public env contract
+        ↓
+Supabase auth.getUser()
+        ↓
+public.users.tenant_id
+```
+
+No Product -> Education Kernel contract is modified.
+
+## 5. Change Authority
+
+Authorized by production smoke RCA after tenant-context moved from `401` to `200` and the first failing runtime boundary became dashboard server-action auth. The minimal permitted change is to reuse the shared public Supabase env resolver in the server client.
+
+## 6. UI -> Contract Reconciliation
+
+Not applicable. No UI behavior or visual contract changes.
+
+## 7. Additive Migration Plan
+
+No migration. No schema change. No production data mutation.
+
+## 8. 11 Automated Verification Gates Plan
+
+- Gate 1 Architecture Compliance: no Healthcare, Logistics, Finance, or Education Kernel files changed.
+- Gate 2 Contract Boundary: runtime continues to require verified Supabase Auth session.
+- Gate 3 Tenant Isolation: current user still derives `tenant_id` from `public.users`.
+- Gate 4 Permission: unauthenticated behavior remains login redirect / unauthorized.
+- Gate 5 Database Migration Safety: no migration.
+- Gate 6 Event-After-Persistence: not applicable.
+- Gate 7 Business Flow: English business logic not modified.
+- Gate 8 Runtime Evidence: production smoke should move past `/dashboard` server-action auth 500.
+- Gate 9 Secret Hygiene: no credential, cookie, or token value logging.
+- Gate 10 CI Governance: targeted auth test, lint, typecheck, architecture, security.
+- Gate 11 Regression: production workflow remains final authority after merge.

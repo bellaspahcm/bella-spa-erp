@@ -17,6 +17,7 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/database.types';
 import type { User } from '@supabase/supabase-js';
 import { cache } from 'react';
+import { requireSupabasePublicEnv } from './supabase-public-env';
 
 export const createServerClient = cache(() => {
   // TEST ENVIRONMENT: Use service role client (no cookies needed)
@@ -55,9 +56,10 @@ export const createServerClient = cache(() => {
   }
 
   // PRODUCTION: Use SSR client with cookies
+  const { url, publicKey } = requireSupabasePublicEnv();
   const client = createSupabaseServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    url,
+    publicKey,
     {
       cookies: {
         async get(name: string) {
