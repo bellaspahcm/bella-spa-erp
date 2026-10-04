@@ -206,7 +206,7 @@ export function NPSOverview() {
                     )}
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">
-                    "{detractor.feedback}"
+                    &quot;{detractor.feedback}&quot;
                   </p>
                   <p className="text-[11px] text-slate-400">
                     {new Date(detractor.date).toLocaleDateString('vi-VN')}
