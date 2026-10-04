@@ -508,7 +508,7 @@ export default function TeacherDetailPage() {
                   </span>
                 </div>
                 <p className="text-slate-600 dark:text-slate-300 italic">
-                  "{ev.feedback}"
+                  &quot;{ev.feedback}&quot;
                 </p>
                 <div className="text-slate-400 font-medium text-[11px] pt-1">
                   Người đánh giá: {ev.evaluator}
