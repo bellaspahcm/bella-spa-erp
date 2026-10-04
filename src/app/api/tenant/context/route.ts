@@ -48,6 +48,19 @@ function getProjectRefFromSupabaseUrl() {
   }
 }
 
+function decodeBase64UrlToUtf8(encoded: string) {
+  const base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
+
+  if (typeof atob === 'function') {
+    const binary = atob(padded);
+    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  }
+
+  return Buffer.from(encoded, 'base64url').toString('utf8');
+}
+
 function readAccessTokenFromCookieValue(value: string | undefined) {
   if (!value) return null;
 
@@ -56,7 +69,7 @@ function readAccessTokenFromCookieValue(value: string | undefined) {
     const encoded = normalizedValue.startsWith('base64-') ? normalizedValue.slice('base64-'.length) : null;
     if (!encoded) return null;
 
-    const decoded = Buffer.from(encoded, 'base64url').toString('utf8');
+    const decoded = decodeBase64UrlToUtf8(encoded);
     const parsed: unknown = JSON.parse(decoded);
 
     if (typeof parsed !== 'object' || parsed === null) return null;
