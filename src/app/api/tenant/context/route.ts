@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { cookies, headers } from 'next/headers';
-import { createServerClient as createSupabaseServerClient } from '@supabase/ssr';
+import { combineChunks, createServerClient as createSupabaseServerClient } from '@supabase/ssr';
 import { createClient as createSupabaseJsClient } from '@supabase/supabase-js';
 import { getSupabaseAdminUrl, getSupabaseAdminKey } from '@/lib/supabase-admin-env';
 import type { TenantContext } from '@/core/types/tenant';
@@ -20,21 +20,16 @@ async function createRouteHandlerClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
+        getAll() {
+          return cookieStore.getAll();
         },
-        set(name: string, value: string, options) {
+        setAll(cookiesToSet) {
           try {
-            cookieStore.set({ name, value, ...options });
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set({ name, value, ...options });
+            });
           } catch {
-            // Route handlers cannot always set cookies; ignore
-          }
-        },
-        remove(name: string, options) {
-          try {
-            cookieStore.set({ name, value: '', ...options });
-          } catch {
-            // Route handlers cannot always remove cookies; ignore
+            // Route handlers cannot always set cookies after response work has started.
           }
         },
       },
@@ -72,20 +67,42 @@ function readAccessTokenFromCookieValue(value: string | undefined) {
   }
 }
 
-function getSupabaseAccessTokenFromRequest(request: NextRequest) {
+async function readAccessTokenFromChunkedCookie(
+  cookieName: string,
+  requestCookies: ReturnType<NextRequest['cookies']['getAll']>,
+) {
+  const cookieValue = await combineChunks(cookieName, (chunkName) => {
+    return requestCookies.find((cookie) => cookie.name === chunkName)?.value;
+  });
+
+  return readAccessTokenFromCookieValue(cookieValue ?? undefined);
+}
+
+async function getSupabaseAccessTokenFromRequest(request: NextRequest) {
+  const requestCookies = request.cookies.getAll();
   const projectRef = getProjectRefFromSupabaseUrl();
   const preferredCookieName = projectRef ? `sb-${projectRef}-auth-token` : null;
-  const preferredCookieValue = preferredCookieName
-    ? request.cookies.get(preferredCookieName)?.value
-    : undefined;
-  const preferredToken = readAccessTokenFromCookieValue(preferredCookieValue);
+  const preferredToken = preferredCookieName
+    ? await readAccessTokenFromChunkedCookie(preferredCookieName, requestCookies)
+    : null;
 
   if (preferredToken) return preferredToken;
 
-  for (const cookie of request.cookies.getAll()) {
-    if (!cookie.name.startsWith('sb-') || !cookie.name.endsWith('-auth-token')) continue;
+  const authCookieNames = new Set<string>();
 
-    const token = readAccessTokenFromCookieValue(cookie.value);
+  for (const cookie of requestCookies) {
+    const match = cookie.name.match(/^(sb-.+-auth-token)(?:\.\d+)?$/);
+    if (!match?.[1]) continue;
+
+    authCookieNames.add(match[1]);
+  }
+
+  if (preferredCookieName) {
+    authCookieNames.delete(preferredCookieName);
+  }
+
+  for (const cookieName of authCookieNames) {
+    const token = await readAccessTokenFromChunkedCookie(cookieName, requestCookies);
     if (token) return token;
   }
 
@@ -120,7 +137,7 @@ async function resolveAuthenticatedUser(
     return { user, authError: null, queryClient: supabase };
   }
 
-  const accessToken = getSupabaseAccessTokenFromRequest(request);
+  const accessToken = await getSupabaseAccessTokenFromRequest(request);
   if (!accessToken) {
     return { user: null, authError, queryClient: supabase };
   }
