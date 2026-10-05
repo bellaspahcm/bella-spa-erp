@@ -6,6 +6,7 @@ import { validateBookingResourceSchedule } from './booking-resource-schedule-gua
 import type { Database } from '@/types/database.types';
 
 type SessionLogInsert = Database['public']['Tables']['session_logs']['Insert'];
+type SessionLogInsertWithBranch = SessionLogInsert & { branch_id?: string | null };
 type CreateSessionLogInput = Pick<SessionLogInsert, 'booking_id'> &
   Partial<Pick<SessionLogInsert, 'assigned_date' | 'assigned_time' | 'booking_resource_id' | 'notes' | 'status'>>;
 
@@ -22,7 +23,7 @@ export async function createSessionLog(data: CreateSessionLogInput) {
 
   const { data: bookingRow, error: bookingError } = await supabase
     .from('bookings')
-    .select('tenant_id')
+    .select('tenant_id, branch_id')
     .eq('id', data.booking_id)
     .eq('tenant_id', tenantId)
     .single();
@@ -59,7 +60,7 @@ export async function createSessionLog(data: CreateSessionLogInput) {
     return { error: resourceScheduleResult.error };
   }
 
-  const sessionPayload: SessionLogInsert = {
+  const sessionPayload: SessionLogInsertWithBranch = {
     booking_id: data.booking_id,
     session_number: (count || 0) + 1,
     assigned_date: data.assigned_date || null,
@@ -69,6 +70,10 @@ export async function createSessionLog(data: CreateSessionLogInput) {
     status: data.status || 'scheduled',
     tenant_id: tenantId
   };
+  const bookingBranchId = (bookingRow as { branch_id?: string | null } | null)?.branch_id || null;
+  if (bookingBranchId) {
+    sessionPayload.branch_id = bookingBranchId;
+  }
 
   const { data: session, error } = await supabase
     .from('session_logs')

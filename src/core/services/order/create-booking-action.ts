@@ -19,6 +19,10 @@ import {
   constructTenantContextForBooking,
   invokeAdapterValidation,
 } from './create-booking-helpers';
+import {
+  readRequestedBranchId,
+  resolveHaircutBranchContext,
+} from './haircut-branch-context';
 
 type CreateBookingInput = z.input<typeof bookingSchema> & {
   newCustomer?: Omit<Database['public']['Tables']['customers']['Insert'], 'tenant_id'> &
@@ -193,10 +197,21 @@ export async function createBooking(formData: CreateBookingInput): Promise<Creat
     return { error: tenantResult.error };
   }
   const tenantId = tenantResult.tenantId;
+  const currentUserId = tenantResult.currentUserId;
 
   const packageScopeResult = await validateBookingPackageScope(supabase, tenantId, validatedData.package_id);
   if ('error' in packageScopeResult) {
     return { error: packageScopeResult.error };
+  }
+
+  const branchContext = await resolveHaircutBranchContext({
+    supabase,
+    tenantId,
+    currentUserId,
+    requestedBranchId: readRequestedBranchId(validatedData),
+  });
+  if ('error' in branchContext) {
+    return { error: branchContext.error };
   }
 
   const customerResult = await createCustomerForBookingIfNeeded(supabase, validatedData, formData, tenantId);
@@ -246,6 +261,7 @@ export async function createBooking(formData: CreateBookingInput): Promise<Creat
     tenantId,
     existingBooking,
     tenantContext: tenantContext.context,
+    branchContext,
   });
   
   // Task 19.1: Integrate adapter validation

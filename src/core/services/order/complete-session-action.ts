@@ -56,7 +56,7 @@ export async function completeSession(sessionId: string, bookingId: string, cust
   // 1. Get current booking to check assigned KTV and package
   const { data: bookingData, error: bookingError } = await supabase
     .from('bookings')
-    .select('assigned_ktv_id, package_id, status, full_price, discount_percent, total_sessions')
+    .select('assigned_ktv_id, package_id, status, branch_id, full_price, discount_percent, total_sessions')
     .eq('id', bookingId)
     .eq('tenant_id', tenantId)
     .single();
@@ -93,6 +93,7 @@ export async function completeSession(sessionId: string, bookingId: string, cust
       fullPrice: bookingData.full_price,
       discountPercent: bookingData.discount_percent,
       totalSessions: bookingData.total_sessions,
+      branchId: (bookingData as { branch_id?: string | null }).branch_id || null,
       existingAccountingMetadata: existingLog.accounting_metadata,
       existingAccountingReviewStatus: existingLog.accounting_review_status,
     }),
@@ -161,7 +162,12 @@ export async function completeSession(sessionId: string, bookingId: string, cust
       try {
         const { recalculateAndSaveSalaryRecord } = await import('@/modules/hr-salary/actions/admin-salary-actions');
         const monthYear = `${today.substring(0, 7)}-01`;
-        await recalculateAndSaveSalaryRecord(supabase, ktvId, monthYear, tenantId);
+        const branchId = (bookingData as { branch_id?: string | null }).branch_id || null;
+        if (branchId) {
+          await recalculateAndSaveSalaryRecord(supabase, ktvId, monthYear, tenantId, undefined, branchId);
+        } else {
+          await recalculateAndSaveSalaryRecord(supabase, ktvId, monthYear, tenantId);
+        }
       } catch (salaryRollbackError) {
         return { error: `${result.error}; rollback salary failed: ${getErrorMessage(salaryRollbackError)}` };
       }

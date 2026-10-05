@@ -17,6 +17,7 @@ export function buildPackageSaleOutboxEvent(input: {
   totalAmount: number;
   paymentMethod?: string | null;
   description?: string | null;
+  branchId?: string | null;
 }): EnqueueAccountingEventParams {
   return {
     tenantId: input.tenantId,
@@ -28,7 +29,7 @@ export function buildPackageSaleOutboxEvent(input: {
       vatRate: 0,
       ...(input.paymentMethod ? { paymentMethod: input.paymentMethod } : {}),
       description: input.description || 'Xác nhận thanh toán gói dịch vụ',
-      branchId: input.tenantId,
+      branchId: input.branchId || input.tenantId,
     },
   };
 }
@@ -128,6 +129,7 @@ export function buildSessionDoneOutboxEvent(input: {
   sessionLogId: string;
   bookingId: string;
   ktvId?: string | null;
+  branchId?: string | null;
   earnedRevenueAmount: number;
   deferredRevenueAmount: number;
   receivableAmount: number;
@@ -146,7 +148,7 @@ export function buildSessionDoneOutboxEvent(input: {
       bookingId: input.bookingId,
       commissionAmount: input.commissionAmount,
       ktvId: input.ktvId,
-      branchId: input.tenantId,
+      branchId: input.branchId || input.tenantId,
       ...(input.description ? { description: input.description } : {}),
     },
   };

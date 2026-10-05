@@ -92,6 +92,7 @@ interface KpiBonusRow {
 
 export interface SalaryRecordDbAdmin {
   id: string;
+  branch_id?: string | null;
   ktv_id: string;
   month_year: string;
   base_salary: number | null;
@@ -206,7 +207,8 @@ export async function recalculateAndSaveSalaryRecordEngine(
   ktvId: string,
   monthYear: string,
   tenantId: string,
-  overrides?: SalaryRecalculationOverrides
+  overrides?: SalaryRecalculationOverrides,
+  branchId?: string | null
 ) {
   const { data: ktvData, error: ktvError } = await supabase
     .from('users')
@@ -293,7 +295,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
   const startOfMonthStr = monthYear;
   const endOfMonthStr = getLocalDateString(new Date(new Date(monthYear).getFullYear(), new Date(monthYear).getMonth() + 1, 1));
 
-  const { data: attendanceList, error: attError } = await supabase
+  let attendanceQuery = supabase
     .from('attendance')
     .select('status, date')
     .eq('ktv_id', ktvId)
@@ -301,10 +303,16 @@ export async function recalculateAndSaveSalaryRecordEngine(
     .gte('date', startOfMonthStr)
     .lt('date', endOfMonthStr);
 
+  if (branchId) {
+    attendanceQuery = attendanceQuery.eq('branch_id', branchId);
+  }
+
+  const { data: attendanceList, error: attError } = await attendanceQuery;
+
   if (attError) throw attError;
   const attendanceListTyped = (attendanceList || []) as unknown as AttendanceLogAdmin[];
 
-  const { data: sessions, error: sessionsError } = await supabase
+  let sessionsQuery = supabase
     .from('session_logs')
     .select('id, rating, bookings(ktv_commission, package_name), session_reviews(rating, status)')
     .eq('completed_by_ktv_id', ktvId)
@@ -312,6 +320,12 @@ export async function recalculateAndSaveSalaryRecordEngine(
     .eq('status', 'completed')
     .gte('completed_date', startOfMonthStr)
     .lt('completed_date', endOfMonthStr);
+
+  if (branchId) {
+    sessionsQuery = sessionsQuery.eq('branch_id', branchId);
+  }
+
+  const { data: sessions, error: sessionsError } = await sessionsQuery;
 
   if (sessionsError) throw sessionsError;
   const sessionsTyped = (sessions || []) as unknown as SessionLogAdmin[];
@@ -1127,7 +1141,14 @@ export async function recalculateAndSaveSalaryRecordEngine(
       : calculatedTotalSalary;
   const status = overrides?.status || existing?.status || 'draft';
 
-  const payload: Database['public']['Tables']['salary_records']['Insert'] = {
+  type SalaryRecordInsertWithBranch = Database['public']['Tables']['salary_records']['Insert'] & {
+    branch_id?: string | null;
+  };
+  type SalaryRecordUpdateWithBranch = Database['public']['Tables']['salary_records']['Update'] & {
+    branch_id?: string | null;
+  };
+
+  const payload: SalaryRecordInsertWithBranch = {
     ktv_id: ktvId,
     month_year: monthYear,
     base_salary: finalBaseSalary,
@@ -1152,13 +1173,16 @@ export async function recalculateAndSaveSalaryRecordEngine(
     position_bonus: finalPositionBonusValue,
     seniority_bonus: finalSeniorityBonusValue,
     manual_adjustments: finalManualAdjustments,
-  } satisfies Database['public']['Tables']['salary_records']['Update'];
+  };
+  if (branchId) {
+    payload.branch_id = branchId;
+  }
 
   let result;
   if (existing) {
     result = await supabase
       .from('salary_records')
-      .update(payload as Database['public']['Tables']['salary_records']['Update'])
+      .update(payload as SalaryRecordUpdateWithBranch)
       .eq('id', existing.id);
   } else {
     result = await supabase

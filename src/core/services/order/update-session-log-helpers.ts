@@ -10,6 +10,7 @@ type CurrentUser = Awaited<ReturnType<typeof getCurrentUser>>;
 type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
 type SessionLogUpdate = Database['public']['Tables']['session_logs']['Update'];
 type BookingUpdate = Database['public']['Tables']['bookings']['Update'];
+type SessionLogRowWithBranch = SessionLogRow & { branch_id?: string | null };
 
 type AllowedUpdateKey =
   | 'assigned_date'
@@ -96,12 +97,24 @@ export async function reverseCompletedSessionSideEffects(params: {
     try {
       const { recalculateAndSaveSalaryRecord } = await import('@/modules/hr-salary/actions/admin-salary-actions');
       const monthYear = `${String(existingLog.completed_date).substring(0, 7)}-01`;
-      await recalculateAndSaveSalaryRecord(
-        supabase,
-        existingLog.completed_by_ktv_id,
-        monthYear,
-        tenantId
-      );
+      const branchId = (existingLog as SessionLogRowWithBranch).branch_id || null;
+      if (branchId) {
+        await recalculateAndSaveSalaryRecord(
+          supabase,
+          existingLog.completed_by_ktv_id,
+          monthYear,
+          tenantId,
+          undefined,
+          branchId,
+        );
+      } else {
+        await recalculateAndSaveSalaryRecord(
+          supabase,
+          existingLog.completed_by_ktv_id,
+          monthYear,
+          tenantId
+        );
+      }
     } catch (salaryError) {
       rollbackErrors.push(`salary rollback failed: ${getErrorMessage(salaryError)}`);
     }
@@ -144,6 +157,7 @@ export async function applyCompletionDefaults(
 
   let completionBooking: {
     assigned_ktv_id: string | null;
+    branch_id?: string | null;
     full_price: number | string | null;
     discount_percent: number | string | null;
     total_sessions: number | string | null;
@@ -152,7 +166,7 @@ export async function applyCompletionDefaults(
   if (!completedUpdates.completed_by_ktv_id) {
     const { data: bookingData, error } = await supabase
       .from('bookings')
-      .select('assigned_ktv_id, full_price, discount_percent, total_sessions')
+      .select('assigned_ktv_id, branch_id, full_price, discount_percent, total_sessions')
       .eq('id', bookingId)
       .eq('tenant_id', tenantId)
       .single();
@@ -165,7 +179,7 @@ export async function applyCompletionDefaults(
   } else {
     const { data: bookingData, error } = await supabase
       .from('bookings')
-      .select('assigned_ktv_id, full_price, discount_percent, total_sessions')
+      .select('assigned_ktv_id, branch_id, full_price, discount_percent, total_sessions')
       .eq('id', bookingId)
       .eq('tenant_id', tenantId)
       .single();
@@ -189,6 +203,7 @@ export async function applyCompletionDefaults(
     fullPrice: completionBooking?.full_price,
     discountPercent: completionBooking?.discount_percent,
     totalSessions: completionBooking?.total_sessions,
+    branchId: completionBooking?.branch_id || null,
     existingAccountingMetadata: existingLog.accounting_metadata,
     existingAccountingReviewStatus: existingLog.accounting_review_status,
   }));
@@ -216,7 +231,7 @@ export async function processCompletedSessionUpdate(params: {
 
   const { data: bookingData, error: bookingError } = await supabase
     .from('bookings')
-    .select('assigned_ktv_id, package_id')
+    .select('assigned_ktv_id, package_id, branch_id')
     .eq('id', bookingId)
     .eq('tenant_id', tenantId)
     .single();
@@ -263,7 +278,14 @@ export async function processCompletedSessionUpdate(params: {
       try {
         const { recalculateAndSaveSalaryRecord } = await import('@/modules/hr-salary/actions/admin-salary-actions');
         const monthYear = `${today.substring(0, 7)}-01`;
-        await recalculateAndSaveSalaryRecord(supabase, ktvId, monthYear, tenantId);
+        const branchId = (bookingData as { branch_id?: string | null } | null)?.branch_id
+          || (existingLog as SessionLogRowWithBranch).branch_id
+          || null;
+        if (branchId) {
+          await recalculateAndSaveSalaryRecord(supabase, ktvId, monthYear, tenantId, undefined, branchId);
+        } else {
+          await recalculateAndSaveSalaryRecord(supabase, ktvId, monthYear, tenantId);
+        }
       } catch (salaryRollbackError) {
         return { error: `${result.error}; rollback salary failed: ${getErrorMessage(salaryRollbackError)}` };
       }

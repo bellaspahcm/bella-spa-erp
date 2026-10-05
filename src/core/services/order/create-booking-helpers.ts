@@ -8,6 +8,7 @@ import { assertOpenAccountingPeriod } from '@/core/services/accounting/period-gu
 import { buildRevenueAccountingMetadata, inferBusinessEventType } from '@/core/services/accounting/template-rules';
 import { resolveAccountingReviewStatus } from './accounting-review';
 import { resolveKtvCommission } from './commission-actions';
+import { attachBranchToJsonMetadata, type HaircutBranchContext } from './haircut-branch-context';
 import { moduleRegistry } from '@/core/adapters/registry';
 import type { TenantContext } from '@/core/types/tenant';
 import type { CoreBookingOrder, BookingOrderStatus } from '@/core/types/booking-order';
@@ -30,6 +31,11 @@ type TenantModuleScopeRow = Pick<Database['public']['Tables']['tenants']['Row'],
 type ValidatedBookingData = z.infer<typeof bookingSchema>;
 type ActionError = { error: string };
 type ActionSuccess = { success: true };
+type BookingRowWithBranch = BookingRow & { branch_id?: string | null };
+type BookingInsertWithBranch = BookingInsert & { branch_id?: string | null };
+type BookingUpdateWithBranch = BookingUpdate & { branch_id?: string | null };
+type SessionLogInsertWithBranch = SessionLogInsert & { branch_id?: string | null };
+type RevenueInsertWithBranch = RevenueInsert & { branch_id?: string | null };
 
 type CreateBookingFormData = {
   newCustomer?: Omit<CustomerInsert, 'tenant_id'> & Partial<Pick<CustomerInsert, 'tenant_id'>>;
@@ -177,12 +183,16 @@ export async function findPendingBookingForCustomer(
   return data;
 }
 
-export async function resolveBookingTenant(supabase: SupabaseServerClient): Promise<{ tenantId: string } | ActionError> {
+export async function resolveBookingTenant(supabase: SupabaseServerClient): Promise<{
+  tenantId: string;
+  currentUserId: string | null;
+} | ActionError> {
   const { getCurrentUser } = await import('@/services/user-actions');
   const currentUser = await getCurrentUser();
 
   let tenantId: string | null = null;
   let userEmail: string | null = null;
+  let currentUserId: string | null = currentUser?.id || null;
   let isLoggedIn = false;
 
   if (currentUser) {
@@ -198,6 +208,7 @@ export async function resolveBookingTenant(supabase: SupabaseServerClient): Prom
     const { data: { user: authUser } } = await supabase.auth.getUser();
     if (authUser) {
       isLoggedIn = true;
+      currentUserId = currentUserId || authUser.id;
       userEmail = authUser.email ?? null;
       console.log('[createBooking] Level2 authUser authenticated | id:', authUser.id);
       const { data: userProfile } = await supabase
@@ -225,7 +236,7 @@ export async function resolveBookingTenant(supabase: SupabaseServerClient): Prom
   }
 
   console.log('[createBooking] Final tenantId:', tenantId, '| user:', userEmail);
-  return { tenantId };
+  return { tenantId, currentUserId };
 }
 
 export async function buildBookingPayload(params: {
@@ -234,8 +245,9 @@ export async function buildBookingPayload(params: {
   tenantId: string;
   existingBooking: BookingRow | null;
   tenantContext: TenantContext;
-}): Promise<BookingInsert> {
-  const { validatedData, customerId, tenantId, existingBooking, tenantContext } = params;
+  branchContext: HaircutBranchContext;
+}): Promise<BookingInsertWithBranch> {
+  const { validatedData, customerId, tenantId, existingBooking, tenantContext, branchContext } = params;
   const confirmedDepositAmount = (existingBooking?.deposit_amount || 0) + (validatedData.deposit_amount || 0);
   const hasConfirmedDeposit = confirmedDepositAmount > 0;
   const lockedCommission = validatedData.ktv_commission || await resolveKtvCommission(validatedData);
@@ -352,7 +364,7 @@ export async function buildBookingPayload(params: {
   //   bookingStatus = hasConfirmedDeposit ? 'booked' : 'deposit_pending';
   // }
   
-  const payload: BookingInsert = {
+  const payload: BookingInsertWithBranch = {
     customer_id: customerId,
     booking_number: existingBooking?.booking_number || `BK-${new Date().getTime()}`,
     package_id: validatedData.package_id || null,
@@ -367,8 +379,14 @@ export async function buildBookingPayload(params: {
     assigned_ktv_id: validatedData.assigned_ktv_id || null,
     preferred_time: validatedData.preferred_time || null,
     tenant_id: tenantId,
-    metadata: (validatedData.metadata as Database['public']['Tables']['bookings']['Insert']['metadata']) || null,
+    metadata: attachBranchToJsonMetadata(
+      (validatedData.metadata as Database['public']['Tables']['bookings']['Insert']['metadata']) || null,
+      branchContext.branchId,
+    ),
   };
+  if (branchContext.requiresBranch) {
+    payload.branch_id = branchContext.branchId;
+  }
 
   return payload;
 }
@@ -376,12 +394,12 @@ export async function buildBookingPayload(params: {
 export async function upsertBookingRecord(params: {
   supabase: SupabaseServerClient;
   existingBooking: BookingRow | null;
-  bookingPayload: BookingInsert;
-}): Promise<{ booking: BookingRow } | ActionError> {
+  bookingPayload: BookingInsertWithBranch;
+}): Promise<{ booking: BookingRowWithBranch } | ActionError> {
   const { supabase, existingBooking, bookingPayload } = params;
 
   if (existingBooking) {
-    const updatePayload: BookingUpdate = bookingPayload;
+    const updatePayload: BookingUpdateWithBranch = bookingPayload;
     const { data: updated, error } = await supabase
       .from('bookings')
       .update(updatePayload)
@@ -451,7 +469,7 @@ export async function upsertBookingRecord(params: {
 
 export async function recordBookingDepositRevenue(params: {
   supabase: SupabaseServerClient;
-  booking: BookingRow;
+  booking: BookingRowWithBranch;
   tenantId: string;
   depositAmount: number;
 }): Promise<ActionSuccess | ActionError> {
@@ -476,6 +494,9 @@ export async function recordBookingDepositRevenue(params: {
     bookingId: booking.id,
     reason: `Cọc gói ${resolvePackageName(booking)}`,
   });
+  if (booking.branch_id) {
+    accountingPayload.branch_id = booking.branch_id;
+  }
 
   try {
     await assertOpenAccountingPeriod(supabase, {
@@ -492,7 +513,7 @@ export async function recordBookingDepositRevenue(params: {
     };
   }
 
-  const revenuePayload: RevenueInsert = {
+  const revenuePayload: RevenueInsertWithBranch = {
     booking_id: booking.id,
     amount: depositAmount,
     revenue_type: revenueType,
@@ -505,6 +526,9 @@ export async function recordBookingDepositRevenue(params: {
     accounting_review_status: resolveAccountingReviewStatus(businessEventType, accountingPayload),
     accounting_metadata: accountingPayload,
   };
+  if (booking.branch_id) {
+    revenuePayload.branch_id = booking.branch_id;
+  }
 
   const { data: revenueData, error: revenueError } = await supabase
     .from('revenue')
@@ -557,6 +581,7 @@ export async function recordBookingDepositRevenue(params: {
         revenueId: insertedRevenue.id,
         totalAmount: depositAmount,
         description: `Cọc gói ${resolvePackageName(booking)}`,
+        branchId: booking.branch_id || null,
       }),
       '[createBooking]'
     );
@@ -572,7 +597,7 @@ export async function recordBookingDepositRevenue(params: {
 
 export async function createInitialSessionLogs(params: {
   supabase: SupabaseServerClient;
-  booking: BookingRow;
+  booking: BookingRowWithBranch;
   validatedData: ValidatedBookingData;
   tenantId: string;
 }): Promise<ActionSuccess | ActionError> {
@@ -606,14 +631,14 @@ export async function createInitialSessionLogs(params: {
     }
   }
 
-  const sessionLogs: SessionLogInsert[] = Array.from({ length: totalSessions }, (_, index) => {
+  const sessionLogs: SessionLogInsertWithBranch[] = Array.from({ length: totalSessions }, (_, index) => {
     const [year, month, day] = startDateStr.split('-').map(Number);
     const date = new Date(year, month - 1, day);
     date.setDate(date.getDate() + index);
 
     const assignedDate = getLocalDateString(date);
 
-    return {
+    const sessionPayload: SessionLogInsertWithBranch = {
       booking_id: booking.id,
       session_number: index + 1,
       status: 'scheduled',
@@ -622,6 +647,10 @@ export async function createInitialSessionLogs(params: {
       tenant_id: tenantId,
       standard_duration: defaultDuration,
     };
+    if (booking.branch_id) {
+      sessionPayload.branch_id = booking.branch_id;
+    }
+    return sessionPayload;
   });
 
   const { error: sessionsError } = await supabase

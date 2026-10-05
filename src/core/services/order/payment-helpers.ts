@@ -12,6 +12,7 @@ import type { Database } from '@/types/database.types';
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 type BookingUpdate = Database['public']['Tables']['bookings']['Update'];
 type RevenueRow = Database['public']['Tables']['revenue']['Row'];
+type BookingRowWithBranch = Database['public']['Tables']['bookings']['Row'] & { branch_id?: string | null };
 
 export type RecordRemainingPaymentParams = {
   booking_id: string;
@@ -27,6 +28,7 @@ export type RecordRemainingPaymentParams = {
 
 type PaymentBookingSnapshot = {
   id: string;
+  branch_id?: string | null;
   deposit_amount: number | null;
   full_price: number | null;
   status: string | null;
@@ -69,7 +71,7 @@ export async function getBookingPaymentSnapshot(
 ) {
   const { data: booking, error } = await supabase
     .from('bookings')
-    .select('id, deposit_amount, full_price, total_sessions, metadata, status, tenant_id, discount_percent, packages!bookings_package_id_fkey(name, price, total_sessions), revenue(amount, status, revenue_type)')
+    .select('id, branch_id, deposit_amount, full_price, total_sessions, metadata, status, tenant_id, discount_percent, packages!bookings_package_id_fkey(name, price, total_sessions), revenue(amount, status, revenue_type)')
     .eq('id', bookingId)
     .eq('tenant_id', tenantId)
     .single();
@@ -99,7 +101,7 @@ export async function getBookingPaymentSnapshot(
     booking: {
       ...booking,
       full_price: computedFullPrice,
-    } as PaymentBookingSnapshot,
+    } as BookingRowWithBranch & PaymentBookingSnapshot,
   };
 }
 
@@ -139,9 +141,10 @@ export async function recordBookingPaymentRpc(params: {
   supabase: SupabaseServerClient;
   payment: RecordRemainingPaymentParams;
   tenantId: string | null;
+  branchId?: string | null;
   actorId: string | null;
 }) {
-  const { supabase, payment, tenantId, actorId } = params;
+  const { supabase, payment, tenantId, branchId, actorId } = params;
   const receivedDate = getLocalDateString();
   const revenueType = payment.revenue_type || 'remaining_payment';
   const manualPaymentIdempotencyKey = payment.idempotency_key
@@ -159,6 +162,9 @@ export async function recordBookingPaymentRpc(params: {
   });
   accountingPayload.manual_payment_idempotency_key = manualPaymentIdempotencyKey;
   accountingPayload.payment_source = 'manual_remaining_payment';
+  if (branchId) {
+    accountingPayload.branch_id = branchId;
+  }
 
   const rpcClient = supabase as unknown as {
     rpc: (
@@ -186,7 +192,7 @@ export async function recordBookingPaymentRpc(params: {
         totalAmount: payment.amount,
         vatRate: 0,
         description: payment.notes || 'Thanh toán nốt phần còn lại.',
-        branchId: tenantId,
+        branchId: branchId || tenantId,
         idempotencyKey: manualPaymentIdempotencyKey,
       },
     }

@@ -95,9 +95,10 @@ export async function recalculateAndSaveSalaryRecord(
   ktvId: string,
   monthYear: string,
   tenantId: string,
-  overrides?: SalaryRecalculationOverrides
+  overrides?: SalaryRecalculationOverrides,
+  branchId?: string | null
 ) {
-  return recalculateAndSaveSalaryRecordEngine(supabase, ktvId, monthYear, tenantId, overrides);
+  return recalculateAndSaveSalaryRecordEngine(supabase, ktvId, monthYear, tenantId, overrides, branchId);
 }
 
 function getCurrentSalaryMonth() {
