@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto';
-import { spawnSync } from 'node:child_process';
 
 import { createClient as createSupabaseClient, type SupabaseClient } from '@supabase/supabase-js';
 import { NextRequest } from 'next/server';
@@ -8,6 +7,7 @@ import { GET as runAccountingWorker } from '@/app/api/cron/accounting-worker/rou
 import { confirmTransaction } from '@/core/services/finance/transaction-mutations';
 import { getSupabaseAdminKey, getSupabaseAdminUrl, requireSupabaseAdminEnv } from '@/lib/supabase-admin-env';
 import type { Database, Json } from '@/types/database.types';
+import { runRealDbSql } from './utils/real-db-sql';
 
 jest.mock('next/cache', () => ({
   revalidatePath: jest.fn(),
@@ -43,7 +43,6 @@ jest.setTimeout(180_000);
 type SeedClient = SupabaseClient<Database>;
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const PROJECT_REF_PATTERN = /^[a-z0-9]{20}$/;
 
 const hasRealSupabaseAdminEnv = () => {
   const url = getSupabaseAdminUrl();
@@ -58,41 +57,6 @@ const hasRealSupabaseAdminEnv = () => {
 };
 
 const describeWithRealSupabase = hasRealSupabaseAdminEnv() ? describe : describe.skip;
-
-function resolveProjectRefFromEnv(): string {
-  const explicitRef = process.env.SUPABASE_PROJECT_REF;
-  if (explicitRef && PROJECT_REF_PATTERN.test(explicitRef)) {
-    return explicitRef;
-  }
-
-  const adminUrl = getSupabaseAdminUrl();
-  const projectRef = new URL(adminUrl).hostname.split('.')[0];
-  if (!PROJECT_REF_PATTERN.test(projectRef)) {
-    throw new Error(`Unable to resolve Supabase project ref from ${adminUrl}`);
-  }
-
-  return projectRef;
-}
-
-function runSupabaseSql(label: string, sql: string) {
-  const projectRef = resolveProjectRefFromEnv();
-  const normalizedSql = sql.replace(/\s+/g, ' ').trim();
-  const supabaseArgs = ['db', 'query', '--linked', '--project-ref', projectRef, normalizedSql];
-  const command = process.platform === 'win32' ? 'cmd.exe' : 'supabase';
-  const args = process.platform === 'win32'
-    ? ['/d', '/s', '/c', 'supabase', ...supabaseArgs]
-    : supabaseArgs;
-  const result = spawnSync(command, args, {
-    encoding: 'utf8',
-    timeout: 130_000,
-  });
-
-  if (result.error || result.status !== 0) {
-    const stderr = result.stderr?.trim();
-    const stdout = result.stdout?.trim();
-    throw new Error(`${label} failed: ${result.error?.message || stdout || stderr || 'unknown supabase CLI failure'}`);
-  }
-}
 
 function requireUuid(value: string, label: string): string {
   if (!UUID_PATTERN.test(value)) {
@@ -168,7 +132,7 @@ describeWithRealSupabase('Beauty V2 Finance SALARY_PAID branch Real DB proof', (
       .map((id, index) => quoteUuid(id, `expense cleanup id ${index}`))
       .join(', ');
 
-    runSupabaseSql('current finance proof SQL cleanup', `
+    await runRealDbSql('current finance proof SQL cleanup', `
       SET statement_timeout = '120s';
       DELETE FROM public.accounting_worker_runs
       WHERE tenant_ids::text LIKE '%${requireUuid(tenantId, 'tenant worker cleanup id')}%'

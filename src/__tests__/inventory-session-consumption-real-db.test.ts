@@ -52,6 +52,8 @@ describeWithRealSupabase('Inventory session consumption Real DB proof', () => {
   const sessionId = randomUUID();
   const unauthorizedSessionId = randomUUID();
   const itemId = randomUUID();
+  const branchId = randomUUID();
+  const adminPersonId = randomUUID();
   const today = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Ho_Chi_Minh',
     year: 'numeric',
@@ -107,6 +109,9 @@ describeWithRealSupabase('Inventory session consumption Real DB proof', () => {
     await cleanupStep('customers', supabase.from('customers').delete().eq('id', customerId));
     await cleanupStep('inventory_items', supabase.from('inventory_items').delete().eq('id', itemId));
     await cleanupStep('accounting_periods', supabase.from('accounting_periods').delete().eq('tenant_id', tenantId));
+    await cleanupStep('org_relationships', supabase.from('org_relationships').delete().eq('from_id', adminPersonId));
+    await cleanupStep('people_directory', supabase.from('people_directory').delete().eq('id', adminPersonId));
+    await cleanupStep('org_units', supabase.from('org_units').delete().eq('id', branchId));
   }
 
   beforeAll(async () => {
@@ -154,6 +159,35 @@ describeWithRealSupabase('Inventory session consumption Real DB proof', () => {
       },
     ], { onConflict: 'id' });
     expect(userInsert.error).toBeNull();
+
+    const branchInsert = await supabase.from('org_units').insert({
+      id: branchId,
+      tenant_id: tenantId,
+      unit_type: 'branch',
+      name: `${marker} branch`,
+      is_active: true,
+    });
+    expect(branchInsert.error).toBeNull();
+
+    const personInsert = await supabase.from('people_directory').insert({
+      id: adminPersonId,
+      tenant_id: tenantId,
+      user_id: adminUserId,
+      display_name: 'Inventory Proof Admin',
+      person_type: 'employee',
+      is_active: true,
+    });
+    expect(personInsert.error).toBeNull();
+
+    const relationshipInsert = await supabase.from('org_relationships').insert({
+      tenant_id: tenantId,
+      from_id: adminPersonId,
+      from_type: 'person',
+      to_id: branchId,
+      to_type: 'unit',
+      rel_type: 'belongs_to',
+    });
+    expect(relationshipInsert.error).toBeNull();
 
     mockCurrentUser = {
       id: adminUserId,
@@ -220,6 +254,7 @@ describeWithRealSupabase('Inventory session consumption Real DB proof', () => {
       booking_id: bookingId,
       session_number: 1,
       assigned_date: today,
+      branch_id: branchId,
       status: 'scheduled',
     });
     expect(sessionInsert.error).toBeNull();
@@ -351,6 +386,7 @@ describeWithRealSupabase('Inventory session consumption Real DB proof', () => {
       booking_id: bookingId,
       session_number: 2,
       assigned_date: today,
+      branch_id: branchId,
       status: 'cancelled',
     });
     expect(unauthorizedSessionInsert.error).toBeNull();
