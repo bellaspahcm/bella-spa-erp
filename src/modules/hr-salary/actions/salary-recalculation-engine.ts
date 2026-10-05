@@ -114,7 +114,6 @@ export interface SalaryRecordDbAdmin {
   published_at?: string | null;
   notes?: string | null;
   tenant_id: string;
-  branch_id?: string | null;
   users?: { full_name: string | null } | null;
   // Advanced commission system columns (Beauty Spa)
   service_commission?: number | null;
