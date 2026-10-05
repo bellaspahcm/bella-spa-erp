@@ -12,7 +12,6 @@ import type { Database } from '@/types/database.types';
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 type BookingUpdate = Database['public']['Tables']['bookings']['Update'];
 type RevenueRow = Database['public']['Tables']['revenue']['Row'];
-type BookingRowWithBranch = Database['public']['Tables']['bookings']['Row'] & { branch_id?: string | null };
 
 export type RecordRemainingPaymentParams = {
   booking_id: string;
@@ -97,12 +96,18 @@ export async function getBookingPaymentSnapshot(
       .eq('tenant_id', tenantId);
   }
 
-  return {
-    booking: {
-      ...booking,
-      full_price: computedFullPrice,
-    } as BookingRowWithBranch & PaymentBookingSnapshot,
+  const snapshot: PaymentBookingSnapshot = {
+    id: booking.id,
+    branch_id: booking.branch_id,
+    deposit_amount: booking.deposit_amount,
+    full_price: computedFullPrice,
+    status: booking.status,
+    tenant_id: booking.tenant_id,
+    discount_percent: booking.discount_percent,
+    revenue: booking.revenue,
   };
+
+  return { booking: snapshot };
 }
 
 export function validateRemainingPaymentAmount(

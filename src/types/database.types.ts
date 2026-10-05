@@ -1365,6 +1365,7 @@ export type Database = {
       }
       attendance: {
         Row: {
+          branch_id: string | null
           checkin_time: string | null
           checkout_time: string | null
           date: string
@@ -1375,6 +1376,7 @@ export type Database = {
           tenant_id: string | null
         }
         Insert: {
+          branch_id?: string | null
           checkin_time?: string | null
           checkout_time?: string | null
           date: string
@@ -1385,6 +1387,7 @@ export type Database = {
           tenant_id?: string | null
         }
         Update: {
+          branch_id?: string | null
           checkin_time?: string | null
           checkout_time?: string | null
           date?: string
@@ -7658,6 +7661,7 @@ export type Database = {
           assigned_ktv_id: string | null
           assigned_room_id: string | null
           booking_number: string
+          branch_id: string | null
           completed_sessions: number | null
           contract_signed: boolean | null
           contract_url: string | null
@@ -7689,6 +7693,7 @@ export type Database = {
           assigned_ktv_id?: string | null
           assigned_room_id?: string | null
           booking_number: string
+          branch_id?: string | null
           completed_sessions?: number | null
           contract_signed?: boolean | null
           contract_url?: string | null
@@ -7720,6 +7725,7 @@ export type Database = {
           assigned_ktv_id?: string | null
           assigned_room_id?: string | null
           booking_number?: string
+          branch_id?: string | null
           completed_sessions?: number | null
           contract_signed?: boolean | null
           contract_url?: string | null
@@ -29380,6 +29386,7 @@ export type Database = {
           accounting_template_id: string | null
           amount: number
           booking_id: string | null
+          branch_id: string | null
           business_event_type: string | null
           id: string
           is_locked: boolean | null
@@ -29398,6 +29405,7 @@ export type Database = {
           accounting_template_id?: string | null
           amount: number
           booking_id?: string | null
+          branch_id?: string | null
           business_event_type?: string | null
           id?: string
           is_locked?: boolean | null
@@ -29416,6 +29424,7 @@ export type Database = {
           accounting_template_id?: string | null
           amount?: number
           booking_id?: string | null
+          branch_id?: string | null
           business_event_type?: string | null
           id?: string
           is_locked?: boolean | null
@@ -30449,6 +30458,7 @@ export type Database = {
           accounting_review_status: string
           accounting_template_id: string | null
           base_salary: number | null
+          branch_id: string | null
           business_event_type: string | null
           confirmed_by_admin: boolean | null
           dispute_reason: string | null
@@ -30483,6 +30493,7 @@ export type Database = {
           accounting_review_status?: string
           accounting_template_id?: string | null
           base_salary?: number | null
+          branch_id?: string | null
           business_event_type?: string | null
           confirmed_by_admin?: boolean | null
           dispute_reason?: string | null
@@ -30517,6 +30528,7 @@ export type Database = {
           accounting_review_status?: string
           accounting_template_id?: string | null
           base_salary?: number | null
+          branch_id?: string | null
           business_event_type?: string | null
           confirmed_by_admin?: boolean | null
           dispute_reason?: string | null
@@ -30595,6 +30607,7 @@ export type Database = {
           assigned_time: string | null
           booking_id: string
           booking_resource_id: string | null
+          branch_id: string | null
           business_event_type: string | null
           checkin_lat: number | null
           checkin_lon: number | null
@@ -30630,6 +30643,7 @@ export type Database = {
           assigned_time?: string | null
           booking_id: string
           booking_resource_id?: string | null
+          branch_id?: string | null
           business_event_type?: string | null
           checkin_lat?: number | null
           checkin_lon?: number | null
@@ -30665,6 +30679,7 @@ export type Database = {
           assigned_time?: string | null
           booking_id?: string
           booking_resource_id?: string | null
+          branch_id?: string | null
           business_event_type?: string | null
           checkin_lat?: number | null
           checkin_lon?: number | null
