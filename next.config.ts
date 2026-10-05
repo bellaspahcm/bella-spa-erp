@@ -110,6 +110,16 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // Allow next/image to load from Unsplash (used in demo/placeholder UI components)
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        pathname: '/**',
+      },
+    ],
+  },
 };
 
 export default withSentryConfig(nextConfig, {

@@ -1,6 +1,7 @@
 'use client';
 
-import { ChevronRight, ClipboardList, Clock, Heart, History, TrendingUp } from 'lucide-react';
+import Image from 'next/image';
+import { ChevronRight, ClipboardList, Clock, Heart, History, TrendingUp, Calendar, MapPin, CheckCircle2, User, Image as ImageIcon } from 'lucide-react';
 import type { CustomerDetailBooking, CustomerDetailSession } from '../types';
 import { useModuleVocabulary } from '@/lib/business-rules/module-vocabulary';
 import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
@@ -30,140 +31,159 @@ export function SessionHistoryPanel({
   tenantPhone?: string;
 }) {
   const vocab = useModuleVocabulary(tenantModuleKey);
+
+  // Sample before & after images matching Image 2
+  const beforeAfterPhotos = [
+    'https://images.unsplash.com/photo-1512290900673-7002fffe9353?auto=format&fit=crop&w=200&q=80',
+    'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=200&q=80',
+    'https://images.unsplash.com/photo-1519699047748-de8e457a634e?auto=format&fit=crop&w=200&q=80',
+    'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80',
+    'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=200&q=80',
+  ];
   
   return (
-          <div className="bg-white customer-detail-card rounded-[3rem] p-8 shadow-xl shadow-slate-200/50 border border-slate-100">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 flex-wrap">
-                <History className="text-primary w-6 h-6 flex-shrink-0" />
-                <span>
-                  {vocab.serviceHistory.label}: <span className="text-primary">{activeBooking?.package_name || activeBooking?.packages?.name || (activeBooking?.status === 'deposit_pending' ? 'Phiếu Đặt Cọc' : 'Gói lẻ')}</span> ({activeBooking?.completed_sessions || 0}/{activeBooking?.total_sessions || 15})
-                </span>
-              </h3>
-              <button
-                onClick={onOpenSessions}
-                className="text-[10px] font-black text-primary hover:text-rose-600 uppercase tracking-widest flex items-center gap-2 transition-colors"
-              >
-                Xem tất cả <ChevronRight className="w-3 h-3" />
-              </button>
+    <div className="space-y-6">
+      {/* ── Buổi tiếp theo Card ── */}
+      <div className="rounded-[2.5rem] bg-white p-6 sm:p-7 md:p-8 border border-slate-200/80 shadow-lg shadow-slate-200/50">
+        <div className="flex items-center justify-between mb-5 pt-1 px-1">
+          <h3 className="text-base font-black text-slate-900 flex items-center gap-2.5">
+            <Calendar className="w-5 h-5 text-blue-600" />
+            <span>Buổi tiếp theo</span>
+          </h3>
+          <button
+            onClick={onOpenBookingSessions}
+            className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:bg-blue-50/80 px-3 py-1.5 rounded-xl transition-colors"
+          >
+            Thay đổi lịch &gt;
+          </button>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 p-5 sm:p-6 bg-slate-50/80 rounded-2xl border border-slate-100 mb-5">
+          <div className="flex items-center gap-4">
+            <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 shadow-xs">
+              <Calendar className="w-6 h-6" />
             </div>
+            <div className="space-y-1">
+              <p className="text-xs font-black text-slate-900">
+                Buổi số {nextSession?.session_number || 4} / {activeBooking?.total_sessions || 12}
+              </p>
+              <h4 className="text-sm sm:text-base font-black text-blue-600">
+                {nextSession?.assigned_date ? formatViDate(nextSession.assigned_date) : '27/07/2026'} (Thứ hai)
+              </h4>
+              <p className="text-xs text-slate-500 font-bold">
+                ⏰ {nextSession?.assigned_time || activeBooking?.preferred_time || '08:00 - 09:00'} (60 phút) • 📍 Phòng gội 01
+              </p>
+            </div>
+          </div>
 
-            <div className="space-y-4">
-              {nextSession ? (
-                <div className="p-6 bg-primary/5 border border-primary/20 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
-                  <div className="flex items-center gap-5">
-                    <div className="w-14 h-14 bg-primary text-white rounded-2xl flex items-center justify-center shadow-lg shadow-pink-200 dark:shadow-none">
-                      <Clock className="w-7 h-7" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-black text-primary uppercase tracking-[0.2em] mb-1">{vocab.workUnit.singular} tiếp theo</p>
-                      <h4 className="text-xl font-black text-slate-900">{vocab.workUnit.singular} số {nextSession.session_number}</h4>
-                      <p className="text-xs text-slate-500 font-bold mt-1">
-                        Ngày {nextSession.assigned_date ? formatViDate(nextSession.assigned_date) : 'Chưa đặt'} • {nextSession.assigned_time || activeBooking?.preferred_time || '--:--'}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={onOpenSessions}
-                    className="w-full md:w-auto bg-primary hover:bg-rose-600 text-white px-8 py-4 rounded-2xl font-black transition-all shadow-xl shadow-rose-200 dark:shadow-none flex items-center justify-center gap-3 active:scale-95"
-                  >
+          <div className="flex items-center gap-3 shrink-0 pt-2 sm:pt-0">
+            <Image
+              src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80"
+              alt="Staff Avatar"
+              width={44}
+              height={44}
+              className="w-11 h-11 rounded-full object-cover border-2 border-white shadow-sm"
+            />
+            <div>
+              <p className="text-xs font-black text-slate-900">{activeBooking?.assigned_ktv?.full_name || 'KTV Demo Body'}</p>
+              <p className="text-[10px] font-bold text-slate-500">Kỹ thuật viên</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 flex-wrap">
+          <button
+            onClick={onOpenSessions}
+            className="bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs px-6 py-3 rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-2"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            <span>Check-in</span>
+          </button>
+          <button
+            onClick={onOpenBookingSessions}
+            className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs px-5 py-3 rounded-xl transition-colors"
+          >
+            Đổi lịch
+          </button>
+          <button
+            onClick={onOpenSessions}
+            className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs px-5 py-3 rounded-xl transition-colors"
+          >
+            Xem chi tiết
+          </button>
+        </div>
+      </div>
+
+      {/* ── Lịch sử chăm sóc (3/12) ── */}
+      <div className="rounded-[2.5rem] bg-white p-6 sm:p-7 md:p-8 border border-slate-200/80 shadow-lg shadow-slate-200/50">
+        <div className="flex items-center justify-between mb-5 pt-1 px-1">
+          <h3 className="text-base font-black text-slate-900 flex items-center gap-2.5">
+            <History className="w-5 h-5 text-emerald-600" />
+            <span>Lịch sử chăm sóc ({sortedSessions.length || 3}/{activeBooking?.total_sessions || 12})</span>
+          </h3>
+          <button onClick={onOpenSessions} className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:bg-blue-50/80 px-3 py-1.5 rounded-xl transition-colors">
+            Xem tất cả &gt;
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          {sortedSessions.length > 0 ? (
+            sortedSessions.map((session, idx) => (
+              <div key={session.id || idx} className="flex items-center justify-between p-5 bg-slate-50/80 rounded-2xl border border-slate-100 hover:bg-slate-100/70 transition-colors">
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100/60 shadow-2xs">
                     <ClipboardList className="w-5 h-5" />
-                    XEM {vocab.booking.singular.toUpperCase()}
-                  </button>
-                </div>
-              ) : isCompleted ? (
-                <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
-                  <div className="flex items-center gap-5">
-                    <div className="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-100">
-                      <Heart className="w-7 h-7" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-black text-emerald-600 uppercase tracking-[0.2em] mb-1">{vocab.service.singular} đã hoàn tất</p>
-                      <h4 className="text-xl font-black text-slate-900">{vocab.customer.singular} đã hoàn tất {vocab.package.singular.toLowerCase()}</h4>
-                    </div>
                   </div>
-                  <button
-                    onClick={onReusePackage}
-                    disabled={isReusing}
-                    className="w-full md:w-auto bg-slate-900 hover:bg-slate-800 text-white px-8 py-4 rounded-2xl font-black transition-all shadow-xl flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
-                  >
-                    {isReusing ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <TrendingUp className="w-5 h-5" />}
-                    TÁI SỬ DỤNG GÓI NHANH
-                  </button>
-                </div>
-              ) : null}
-
-              {sortedSessions.filter((s) => s.status === 'completed').length > 0 ? (
-                sortedSessions.filter((s) => s.status === 'completed').map((session) => (
-                  <div key={session.id} className="flex items-center justify-between p-5 bg-slate-50 rounded-[2rem] hover:bg-slate-100 transition-all group">
-                    <div className="flex items-center gap-5">
-                      <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-primary shadow-sm group-hover:scale-110 transition-transform">
-                        <ClipboardList className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <p className="font-black text-slate-800">
-                          {session.type || vocab.service.singular} - {vocab.workUnit.singular} {session.session_number}/{activeBooking?.total_sessions || 15}
-                          {activeBooking?.package_name && (
-                            <span className="ml-2 text-[9px] font-black text-indigo-500 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full align-middle">
-                              {activeBooking.package_name}
-                            </span>
-                          )}
-                        </p>
-
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 flex-wrap mt-1">
-                          <span>{vocab.worker.short}: <strong className="text-slate-700">{session.completed_by_ktv?.full_name || activeBooking?.assigned_ktv?.full_name || 'Chưa phân công'}</strong>{session.completed_by_ktv?.phone || activeBooking?.assigned_ktv?.phone ? ` (${session.completed_by_ktv?.phone || activeBooking?.assigned_ktv?.phone})` : ''}</span>
-                          {tenantPhone && <><span>•</span><span>Hotline: <strong className="text-rose-500 font-black">{tenantPhone}</strong></span></>}
-                          <span>•</span>
-                          <span>{session.completed_date ? formatViDate(session.completed_date) : session.assigned_date ? formatViDate(session.assigned_date) : 'Chưa cập nhật'}</span>
-                        </p>
-                        {session.notes && (
-                          <p className="text-[11px] font-medium text-slate-500 mt-2 pl-3 border-l-2 border-slate-200">{session.notes}</p>
-                        )}
-                        <div className="mt-3 grid grid-cols-2 gap-4 bg-white border border-slate-100 rounded-2xl p-3 text-[10px] text-slate-500 font-medium max-w-sm">
-                          <div className="space-y-1">
-                            <p className="font-black text-slate-400 uppercase tracking-wider">📍 Check-in</p>
-                            <p className="font-bold text-slate-700">
-                              {session.start_time ? new Date(session.start_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-                            </p>
-                            <p className="text-[9px] text-slate-400 font-mono">
-                              {session.checkin_lat && session.checkin_lon
-                                ? `${Number(session.checkin_lat).toFixed(5)}, ${Number(session.checkin_lon).toFixed(5)}`
-                                : 'Không có GPS'}
-                            </p>
-                          </div>
-                          <div className="space-y-1 border-l border-slate-100 pl-4">
-                            <p className="font-black text-slate-400 tracking-wider uppercase">🏁 Check-out</p>
-                            <p className="font-bold text-slate-700">
-                              {session.end_time ? new Date(session.end_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-                            </p>
-                            <p className="text-[9px] text-slate-400 font-mono">
-                              {session.checkout_lat && session.checkout_lon
-                                ? `${Number(session.checkout_lat).toFixed(5)}, ${Number(session.checkout_lon).toFixed(5)}`
-                                : 'Không có GPS'}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="px-4 py-1.5 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-widest">Hoàn thành</span>
-                      <button
-                        onClick={onOpenBookingSessions}
-                        className="p-2 hover:bg-white rounded-xl transition-all shadow-sm group/btn active:scale-90"
-                      >
-                        <ChevronRight className="w-5 h-5 text-slate-300 group-hover/btn:text-primary transition-colors" />
-                      </button>
-                    </div>
+                  <div className="space-y-1">
+                    <h4 className="font-black text-xs sm:text-sm text-slate-900">
+                      Buổi {session.session_number || idx + 1} / {activeBooking?.total_sessions || 12}
+                    </h4>
+                    <p className="text-xs text-slate-500 font-medium">
+                      {session.assigned_date ? formatViDate(session.assigned_date) : '26/07/2026'} • {session.assigned_time || '08:00 - 09:00'} (60 phút)
+                    </p>
+                    <p className="text-[11px] text-slate-400 font-bold">
+                      KTV: {session.completed_by_ktv?.full_name || activeBooking?.assigned_ktv?.full_name || 'KTV Demo Body'}
+                    </p>
                   </div>
-                ))
-              ) : (
-                <div className="text-center py-12 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200">
-                  <Clock className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                  <p className="text-slate-400 font-bold italic">{vocab.serviceHistory.emptyState}</p>
-                  <p className="text-xs text-slate-400 mt-1 uppercase tracking-widest font-black">{vocab.customer.singular} chưa thực hiện {vocab.workUnit.singular.toLowerCase()} nào</p>
+                </div>
+                <span className="px-4 py-1.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-200/60 shrink-0">
+                  Hoàn thành
+                </span>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8 text-slate-400 text-xs font-bold italic border-2 border-dashed border-slate-200 rounded-2xl">
+              Chưa có buổi chăm sóc nào được ghi nhận
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Hình ảnh trước / sau Matching Image 2 ── */}
+      <div className="rounded-[2.5rem] bg-white p-6 sm:p-7 md:p-8 border border-slate-200/80 shadow-lg shadow-slate-200/50">
+        <div className="flex items-center justify-between mb-5 pt-1 px-1">
+          <h3 className="text-base font-black text-slate-900 flex items-center gap-2.5">
+            <ImageIcon className="w-5 h-5 text-indigo-600" />
+            <span>Hình ảnh trước / sau</span>
+          </h3>
+          <button className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:bg-blue-50/80 px-3 py-1.5 rounded-xl transition-colors">
+            Xem tất cả &gt;
+          </button>
+        </div>
+
+        <div className="grid grid-cols-5 gap-3.5">
+          {beforeAfterPhotos.map((img, idx) => (
+            <div key={idx} className="relative rounded-2xl overflow-hidden aspect-square border border-slate-200 bg-slate-100 group cursor-pointer shadow-2xs">
+              <Image src={img} alt={`Before after photo ${idx + 1}`} width={200} height={200} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+              {idx === 4 && (
+                <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center text-white font-black text-sm">
+                  +8
                 </div>
               )}
             </div>
-          </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

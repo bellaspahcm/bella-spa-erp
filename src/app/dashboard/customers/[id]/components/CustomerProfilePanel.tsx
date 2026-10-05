@@ -1,10 +1,188 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { Baby, Heart, MapPin, Phone, PlusCircle, Sparkles, TrendingUp, Award } from 'lucide-react';
+import { Camera, Edit3, Heart, MapPin, Phone, PlusCircle, Share2, Sparkles, TrendingUp, Award, User, Calendar, MessageCircle, CheckCircle2 } from 'lucide-react';
 import { getTenantModulePresentationOrNeutral } from '@/lib/business-rules/tenant-module-presentation';
 import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import type { CustomerDetailRecord } from '../types';
+
+/**
+ * Top Customer Header Banner matching Image 2
+ */
+export function CustomerHeaderBanner({
+  customer,
+  tenantModuleKey,
+  userRole,
+  onEditCustomer,
+  onOpenBooking,
+  onOpenZalo,
+  onSharePortal,
+}: {
+  customer: CustomerDetailRecord;
+  tenantModuleKey: TenantModuleKey | null;
+  userRole: 'admin' | 'ktv';
+  onEditCustomer: () => void;
+  onOpenBooking: () => void;
+  onOpenZalo?: () => void;
+  onSharePortal?: () => void;
+}) {
+  const customerLabels = getTenantModulePresentationOrNeutral(tenantModuleKey);
+  const isBeauty = tenantModuleKey === 'beauty_spa';
+
+  return (
+    <div className="relative overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white p-5 shadow-lg shadow-slate-200/50 sm:p-6 mb-6">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 flex-1 min-w-0">
+          {/* Avatar with Camera badge */}
+          <div className="relative shrink-0">
+            <div className={cn(
+              "flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-[2rem] border-2 border-white shadow-xl",
+              isBeauty
+                ? 'bg-gradient-to-br from-emerald-100 to-teal-50 text-emerald-600 shadow-emerald-200/50'
+                : 'bg-gradient-to-br from-rose-100 to-pink-50 text-rose-600 shadow-rose-200/50'
+            )}>
+              <Heart className="h-10 w-10 sm:h-12 sm:w-12 fill-current/20" />
+            </div>
+            <button
+              onClick={onEditCustomer}
+              className="absolute -bottom-1 -right-1 w-7 h-7 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
+              title="Đổi ảnh đại diện"
+            >
+              <Camera className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Info Details */}
+          <div className="space-y-1.5 min-w-0 flex-1">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                {customer.name_mother}
+              </h1>
+              {userRole === 'admin' && (
+                <span className={cn(
+                  "rounded-full px-3 py-1 text-[9.5px] font-black uppercase tracking-wider shadow-sm",
+                  customer.is_fully_paid ? 'bg-blue-50 text-blue-700 border border-blue-200/60' :
+                  (customer.status === 'active' || customer.status === 'booked' || customer.status === 'in_progress') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' :
+                  customer.status === 'completed' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300/60' :
+                  customer.status === 'deposit_pending' ? 'bg-amber-50 text-amber-700 border border-amber-200/60' :
+                  'bg-slate-100 text-slate-600 border border-slate-200/60'
+                )}>
+                  ● {customer.is_fully_paid ? 'Đã thanh toán đủ' :
+                  (customer.status === 'active' || customer.status === 'booked' || customer.status === 'in_progress') ? customerLabels.activeStatusLabel :
+                  customer.status === 'completed' ? 'Đã hoàn tất' :
+                  customer.status === 'deposit_pending' ? customerLabels.depositStatusLabel :
+                  customerLabels.leadStatusLabel}
+                </span>
+              )}
+              {customer.loyalty_points && customer.loyalty_points > 50 && (
+                <span className="bg-rose-500 text-white font-black text-[9px] px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                  VIP
+                </span>
+              )}
+            </div>
+
+            {/* Line 1 */}
+            <div className="flex items-center gap-3 text-xs font-bold text-slate-600 flex-wrap">
+              <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-slate-400" /> {customer.phone}</span>
+              <span>•</span>
+              <span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-slate-400" /> {customer.baby?.gender || 'Nữ'}</span>
+              <span>•</span>
+              <span className="text-slate-400">Chưa phân nhóm</span>
+            </div>
+
+            {/* Line 2 */}
+            <div className="flex items-center gap-3 text-xs font-bold text-slate-600 flex-wrap">
+              <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-slate-400" /> {customer.address || 'Chưa có địa chỉ'}</span>
+              <span>•</span>
+              <span className="flex items-center gap-1 text-amber-600 font-black"><Award className="w-3.5 h-3.5 text-amber-500" /> {customer.loyalty_points ?? 0} điểm (Loyalty)</span>
+            </div>
+
+            {/* Line 3 - Notes preview */}
+            <p className="text-xs font-medium text-slate-500 line-clamp-1 pt-0.5">
+              📝 <strong className="text-slate-700">Ghi chú:</strong> {customer.notes || 'Khách thân thiết, ưu tiên xếp KTV tay nghề cao.'}
+            </p>
+          </div>
+        </div>
+
+        {/* Quick Action Top Right */}
+        <div className="flex items-center gap-2 self-start md:self-center shrink-0">
+          <button
+            onClick={onEditCustomer}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200/80 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs transition-colors shadow-sm"
+          >
+            <Edit3 className="w-3.5 h-3.5 text-slate-500" />
+            Chỉnh sửa
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Detailed Customer Info Card (Right Column) matching Image 2
+ */
+export function CustomerDetailInfoCard({
+  customer,
+  tenantModuleKey,
+  onEditCustomer,
+}: {
+  customer: CustomerDetailRecord;
+  tenantModuleKey: TenantModuleKey | null;
+  onEditCustomer: () => void;
+}) {
+  const customerLabels = getTenantModulePresentationOrNeutral(tenantModuleKey);
+
+  const items = [
+    { label: 'Họ và tên', value: customer.name_mother },
+    { label: 'Điện thoại', value: customer.phone },
+    { label: 'Giới tính', value: customer.baby?.gender || 'Nữ' },
+    { label: 'Ngày sinh', value: customer.baby?.dob || '--/--/----' },
+    { label: 'Địa chỉ', value: customer.address || 'Chưa cập nhật' },
+    { label: 'Phân nhóm', value: 'Chưa phân nhóm' },
+    { label: 'Điểm tích lũy', value: `${customer.loyalty_points ?? 0} điểm`, isVip: (customer.loyalty_points ?? 0) > 50 },
+    { label: 'Khách thân thiết', value: 'Có', isHighlight: true },
+    { label: 'Nguồn khách', value: 'Giới thiệu' },
+    { label: 'Ngày tạo hồ sơ', value: customer.created_at ? new Date(customer.created_at).toLocaleDateString('vi-VN') : 'Mới tạo' },
+  ];
+
+  return (
+    <div className="rounded-[2.5rem] border border-slate-200/80 bg-white p-6 shadow-xl shadow-slate-200/50">
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="text-base font-black text-slate-900 flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+            <User className="w-4 h-4" />
+          </div>
+          <span>Thông tin khách hàng</span>
+        </h3>
+        <button
+          onClick={onEditCustomer}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 hover:bg-blue-50 transition-colors"
+        >
+          <Edit3 className="w-3.5 h-3.5" />
+          Chỉnh sửa
+        </button>
+      </div>
+
+      <div className="space-y-3">
+        {items.map((item, idx) => (
+          <div key={idx} className="flex items-center justify-between py-2 border-b border-slate-100 text-xs last:border-b-0">
+            <span className="font-bold text-slate-500">{item.label}</span>
+            <span className="font-black text-slate-900 flex items-center gap-1.5">
+              {item.value}
+              {item.isVip && (
+                <span className="bg-rose-500 text-white text-[8px] font-black px-1.5 py-0.2 rounded uppercase">VIP</span>
+              )}
+              {item.isHighlight && (
+                <span className="text-emerald-600 text-[10px] font-black">✓</span>
+              )}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function CustomerProfilePanel({
   customer,
@@ -19,128 +197,11 @@ export function CustomerProfilePanel({
   onEditCustomer: () => void;
   onOpenBooking: () => void;
 }) {
-  const customerLabels = getTenantModulePresentationOrNeutral(tenantModuleKey);
-  const SecondaryIcon = tenantModuleKey === 'babycare' ? Baby : Sparkles;
-
   return (
-        <div className="space-y-6 xl:col-span-1 xl:space-y-8">
-          <div className="relative overflow-hidden customer-detail-card rounded-[2rem] border border-slate-100 bg-white p-5 shadow-xl shadow-slate-200/50 sm:p-8 xl:rounded-[3rem]">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl" />
-            <div className="flex flex-col items-center text-center relative z-10">
-              <div className={cn(
-                "mb-5 flex h-24 w-24 items-center justify-center rounded-[2rem] border-4 border-white shadow-2xl dark:shadow-none sm:mb-6 sm:h-32 sm:w-32 sm:rounded-[2.5rem]",
-                tenantModuleKey === 'beauty_spa' ? 'bg-emerald-50 shadow-emerald-100' : 'bg-rose-50 shadow-rose-100'
-              )}>
-                <Heart className="h-11 w-11 text-primary sm:h-14 sm:w-14" />
-              </div>
-              <h1 className="mb-2 max-w-full break-words text-xl font-black text-slate-900 sm:text-2xl">{customer.name_mother}</h1>
-              {userRole === 'admin' && (
-                <span className={cn(
-                  "mb-6 max-w-full break-words rounded-full px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] sm:mb-8 sm:tracking-[0.2em]",
-                  customer.is_fully_paid ? 'bg-blue-50 text-blue-600' :
-                  (customer.status === 'active' || customer.status === 'booked' || customer.status === 'in_progress') ? 'bg-emerald-50 text-emerald-600' :
-                  customer.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
-                  customer.status === 'deposit_pending' ? 'bg-amber-50 text-amber-600' :
-                  'bg-slate-50 text-slate-500'
-                )}>
-                  {customer.is_fully_paid ? 'Đã thanh toán thành công' :
-                  (customer.status === 'active' || customer.status === 'booked' || customer.status === 'in_progress') ? customerLabels.activeStatusLabel :
-                  customer.status === 'completed' ? 'Đã hoàn tất' :
-                  customer.status === 'deposit_pending' ? customerLabels.depositStatusLabel :
-                  customerLabels.leadStatusLabel}
-                </span>
-              )}
-
-              <div className="w-full space-y-3 sm:space-y-4">
-                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
-                  <div className="w-10 h-10 shrink-0 bg-white rounded-xl flex items-center justify-center text-primary shadow-sm">
-                    <Phone className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0 text-left">
-                    <p className="text-[10px] font-black text-slate-400 uppercase">Điện thoại</p>
-                    <p className="break-all font-bold text-slate-700">{customer.phone}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
-                  <div className="w-10 h-10 shrink-0 bg-white rounded-xl flex items-center justify-center text-amber-500 shadow-sm">
-                    <Award className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0 text-left">
-                    <p className="text-[10px] font-black text-slate-400 uppercase">Điểm tích lũy (Loyalty)</p>
-                    <p className="break-all font-black text-amber-600">{customer.loyalty_points ?? 0} điểm</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4 p-4 bg-slate-50 rounded-2xl">
-                  <div className="w-10 h-10 shrink-0 bg-white rounded-xl flex items-center justify-center text-primary shadow-sm">
-                    <MapPin className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0 text-left">
-                    <p className="text-[10px] font-black text-slate-400 uppercase">Địa chỉ</p>
-                    <p className="break-words font-bold text-slate-700" title={customer.address || undefined}>{customer.address}</p>
-                    {customer.latitude && customer.longitude && (
-                      <p className={cn(
-                        "text-[9px] font-black mt-0.5",
-                        tenantModuleKey === 'beauty_spa' ? 'text-emerald-500' : 'text-rose-500'
-                      )}>
-                        GPS: {customer.latitude.toFixed(4)}, {customer.longitude.toFixed(4)}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <button
-                onClick={onEditCustomer}
-                className="mt-6 flex w-full items-center justify-center gap-3 rounded-2xl bg-slate-900 py-4 font-black text-white shadow-lg transition-all hover:bg-slate-800 active:scale-95 sm:mt-8"
-              >
-                <PlusCircle className="w-5 h-5" />
-                <span>CẬP NHẬT THÔNG TIN</span>
-              </button>
-
-              <button
-                onClick={onOpenBooking}
-                data-testid="customer-open-booking-button"
-                className={cn(
-                  "w-full mt-4 flex items-center justify-center gap-3 text-white py-4 rounded-2xl font-black transition-all shadow-lg dark:shadow-none active:scale-95",
-                  tenantModuleKey === 'beauty_spa' 
-                    ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-200' 
-                    : 'bg-rose-500 hover:bg-rose-600 shadow-rose-200'
-                )}
-              >
-                <TrendingUp className="w-5 h-5" />
-                <span>ĐẶT LỊCH NGAY</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="rounded-[2rem] customer-detail-card border border-slate-100 bg-white p-5 shadow-xl shadow-slate-200/50 sm:p-8 xl:rounded-[3rem]">
-            <h3 className="text-lg font-black text-slate-900 mb-6 flex items-center gap-3">
-              <SecondaryIcon className="text-primary w-6 h-6" />
-              {customerLabels.secondaryInfoTitle}
-            </h3>
-            <div className="space-y-4">
-              <div className={cn(
-                "flex flex-col gap-1 rounded-2xl p-4 sm:flex-row sm:items-center sm:justify-between",
-                tenantModuleKey === 'beauty_spa' 
-                  ? 'border border-emerald-100/50 bg-emerald-50/50' 
-                  : 'border border-rose-100/50 bg-rose-50/50'
-              )}>
-                <span className="text-sm font-bold text-slate-500">{customerLabels.secondaryInfoNameLabel}</span>
-                <span className="break-words font-black text-slate-900">{customer.baby.name}</span>
-              </div>
-              <div className="flex flex-col gap-1 rounded-2xl bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-                <span className="text-sm font-bold text-slate-500">{customerLabels.secondaryInfoDateLabel}</span>
-                <span className="break-words font-black text-slate-900">{customer.baby.dob}</span>
-              </div>
-              {/* Chỉ hiển thị Giới tính cho babycare và beauty_spa, không hiển thị cho industrial_cleaning */}
-              {tenantModuleKey !== 'industrial_cleaning' && (
-                <div className="flex flex-col gap-1 rounded-2xl bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <span className="text-sm font-bold text-slate-500">{customerLabels.secondaryGenderLabel}</span>
-                  <span className="break-words font-black text-slate-900">{customer.baby.gender}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+    <CustomerDetailInfoCard
+      customer={customer}
+      tenantModuleKey={tenantModuleKey}
+      onEditCustomer={onEditCustomer}
+    />
   );
 }
