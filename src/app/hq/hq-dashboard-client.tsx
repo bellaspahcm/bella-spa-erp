@@ -77,6 +77,7 @@ import { HqAuditDetailModal } from './components/HqAuditDetailModal';
 import { HqServiceTemplateModal } from './components/HqServiceTemplateModal';
 import { HqServiceDistributionModal } from './components/HqServiceDistributionModal';
 import { HqSubscriptionQuotaConsole } from './components/HqSubscriptionQuotaConsole';
+import { HqExecutiveOverview } from './components/HqExecutiveOverview';
 import {
   HqBranchRegistrationModal,
   type HqBranchRegistrationInput,
@@ -848,15 +849,7 @@ export default function HqDashboardClient({
 
         {activeTab === 'branches' ? (
           <>
-            <HqBranchKpiCards stats={stats} />
-
-            <HqBranchAnalyticsPanel
-              stats={stats}
-              tenants={tenants}
-              maxGrowth={maxGrowth}
-              compareMetric={compareMetric}
-              onCompareMetricChange={setCompareMetric}
-            />
+            <HqExecutiveOverview stats={stats} tenants={tenants} />
 
             <HqSubscriptionPackageReference />
 
