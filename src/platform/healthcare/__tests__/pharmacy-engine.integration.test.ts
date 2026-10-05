@@ -103,7 +103,7 @@ describe('H6 Pharmacy Verification Integration Test Suite', () => {
     }
 
     await fixtures.cleanup();
-  });
+  }, 15000); // Increased from 5000ms — CI network latency to Supabase test DB
 
   describe('Gate 1: Verify Clear Prescription', () => {
     it('should successfully verify a clear prescription', async () => {
@@ -502,7 +502,7 @@ describe('H6 Pharmacy Verification Integration Test Suite', () => {
       expect(successCount).toBe(1);
       expect(failCount).toBe(1);
       expect(await service['pharmacyRepository'].getStock(fixtures.tenantId, medCode)).toBe(0);
-    });
+    }, 15000); // Increased from 5000ms — multiple sequential verify+dispense DB ops slow in CI
   });
 
   describe('Gate 7: Out-of-bounds MAR Ready check', () => {
