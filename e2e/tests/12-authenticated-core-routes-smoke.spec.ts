@@ -6,12 +6,19 @@
  */
 
 import { canAuthenticateAdminPage, expect, getE2eBaseUrl, test } from "../fixtures/auth";
-import type { ConsoleMessage, Request } from "@playwright/test";
+import type { ConsoleMessage, Request, Response } from "@playwright/test";
 
 type CoreRoute = {
   name: string;
   path: string;
   content: RegExp;
+};
+
+type NetworkEvidence = {
+  method: string;
+  resourceType: string;
+  status: number;
+  path: string;
 };
 
 const coreRoutes: CoreRoute[] = [
@@ -64,46 +71,102 @@ function getAppOrigin(): string {
   }
 }
 
-function attachRuntimeCollectors(pageErrors: string[], appOrigin: string) {
+function getAppPath(url: string, appOrigin: string): string | null {
+  if (url.startsWith("/")) return url.split("?")[0] || "/";
+  if (!url.startsWith(appOrigin)) return null;
+
+  try {
+    return new URL(url).pathname || "/";
+  } catch {
+    return null;
+  }
+}
+
+function pushCapped<T>(items: T[], item: T, maxItems = 40): void {
+  items.push(item);
+  if (items.length > maxItems) items.shift();
+}
+
+function attachRuntimeCollectors(pageErrors: string[], networkEvidence: NetworkEvidence[], appOrigin: string) {
   return {
     console: (message: ConsoleMessage) => {
       if (message.type() !== "error") return;
       const text = message.text();
       if (benignConsoleErrorPatterns.some((pattern) => pattern.test(text))) return;
-      pageErrors.push(`console.error: ${text}`);
+      pushCapped(pageErrors, `console.error: ${text}`);
     },
     pageerror: (error: Error) => {
-      pageErrors.push(`pageerror: ${error.message}`);
+      pushCapped(pageErrors, `pageerror: ${error.message}`);
+    },
+    response: (response: Response) => {
+      const request = response.request();
+      const resourceType = request.resourceType();
+      if (!["document", "fetch", "xhr", "script"].includes(resourceType)) return;
+
+      const path = getAppPath(response.url(), appOrigin);
+      if (!path) return;
+
+      pushCapped(networkEvidence, {
+        method: request.method(),
+        resourceType,
+        status: response.status(),
+        path,
+      });
     },
     requestfailed: (request: Request) => {
       const resourceType = request.resourceType();
       if (!["document", "fetch", "xhr", "script"].includes(resourceType)) return;
-      const url = request.url();
-      if (!url.startsWith(appOrigin) && !url.startsWith("/")) return;
+      const path = getAppPath(request.url(), appOrigin);
+      if (!path) return;
       const failureText = request.failure()?.errorText || "";
       if (resourceType === "fetch" && failureText === "net::ERR_ABORTED") return;
-      pageErrors.push(`requestfailed ${resourceType}: ${url} ${failureText}`.trim());
+      pushCapped(pageErrors, `requestfailed ${resourceType}: ${path} ${failureText}`.trim());
     },
   };
 }
 
-test.describe("Authenticated core route smoke", () => {
-  test.setTimeout(180_000);
+function formatNetworkEvidence(networkEvidence: NetworkEvidence[]): string {
+  if (networkEvidence.length === 0) return "none";
 
+  return networkEvidence
+    .map((event) => `${event.method} ${event.path} ${event.status} ${event.resourceType}`)
+    .join(" | ");
+}
+
+function formatRouteDiagnostics(input: {
+  routeName: string;
+  currentUrl: string;
+  normalizedText: string;
+  pageErrors: string[];
+  networkEvidence: NetworkEvidence[];
+}): string {
+  const tenantContextEvents = input.networkEvidence.filter((event) => event.path === "/api/tenant/context");
+
+  return [
+    `${input.routeName} should render expected content`,
+    `url=${input.currentUrl}`,
+    `body=${input.normalizedText.slice(0, 300)}`,
+    `tenantContext=${formatNetworkEvidence(tenantContextEvents)}`,
+    `recentNetwork=${formatNetworkEvidence(input.networkEvidence)}`,
+    `pageErrors=${input.pageErrors.length > 0 ? input.pageErrors.join(" | ") : "none"}`,
+  ].join("\n");
+}
+
+test.describe("Authenticated core route smoke", () => {
   test.skip(
     !canAuthenticateAdminPage(),
     "Requires E2E admin credentials or localhost Supabase admin env.",
   );
 
-  test("core operating pages render read-only without production errors", async ({ adminPage }) => {
-    const pageErrors: string[] = [];
-    const collectors = attachRuntimeCollectors(pageErrors, getAppOrigin());
-    adminPage.on("console", collectors.console);
-    adminPage.on("pageerror", collectors.pageerror);
-    adminPage.on("requestfailed", collectors.requestfailed);
-
-    for (const route of coreRoutes) {
-      pageErrors.length = 0;
+  for (const route of coreRoutes) {
+    test(`${route.name} renders read-only without production errors`, async ({ adminPage }) => {
+      const pageErrors: string[] = [];
+      const networkEvidence: NetworkEvidence[] = [];
+      const collectors = attachRuntimeCollectors(pageErrors, networkEvidence, getAppOrigin());
+      adminPage.on("console", collectors.console);
+      adminPage.on("pageerror", collectors.pageerror);
+      adminPage.on("response", collectors.response);
+      adminPage.on("requestfailed", collectors.requestfailed);
 
       const response = await adminPage.goto(route.path, { waitUntil: "domcontentloaded" });
       await adminPage.waitForLoadState("load", { timeout: 8_000 }).catch(() => {});
@@ -114,12 +177,25 @@ test.describe("Authenticated core route smoke", () => {
       );
 
       const body = adminPage.locator("body");
-      await expect
-        .poll(
-          async () => normalizeVietnamese(await body.innerText({ timeout: 5_000 }).catch(() => "")),
-          { message: `${route.name} should render expected content`, timeout: 18_000 },
-        )
-        .toMatch(route.content);
+      try {
+        await expect
+          .poll(
+            async () => normalizeVietnamese(await body.innerText({ timeout: 5_000 }).catch(() => "")),
+            { message: `${route.name} should render expected content`, timeout: 18_000 },
+          )
+          .toMatch(route.content);
+      } catch (error) {
+        const normalizedText = normalizeVietnamese(await body.innerText({ timeout: 5_000 }).catch(() => ""));
+        throw new Error(
+          `${formatRouteDiagnostics({
+            routeName: route.name,
+            currentUrl: adminPage.url(),
+            normalizedText,
+            pageErrors,
+            networkEvidence,
+          })}\n${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
 
       await adminPage.waitForLoadState("networkidle", { timeout: 5_000 }).catch(() => {});
 
@@ -129,6 +205,6 @@ test.describe("Authenticated core route smoke", () => {
       }
 
       expect(pageErrors, `${route.name} should not emit browser/runtime errors`).toEqual([]);
-    }
-  });
+    });
+  }
 });

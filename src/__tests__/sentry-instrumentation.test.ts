@@ -76,8 +76,9 @@ describe("Sentry instrumentation bootstrap", () => {
     expect(Sentry.init).toHaveBeenCalledWith(
       expect.objectContaining({
         dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+        tracesSampleRate: 0,
         replaysOnErrorSampleRate: 1.0,
-        replaysSessionSampleRate: 0.1,
+        replaysSessionSampleRate: 0,
       }),
     );
   });

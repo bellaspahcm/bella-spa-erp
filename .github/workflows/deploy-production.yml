@@ -12,6 +12,7 @@ concurrency:
 
 env:
   PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL || vars.E2E_BASE_URL || 'https://bella-spa-erp.vercel.app' }}
+  VERCEL_SCOPE: ${{ vars.VERCEL_SCOPE || 'bella-spa-s-projects' }}
 
 jobs:
   validate:
@@ -91,7 +92,7 @@ jobs:
       - name: Deploy exact build without promotion
         id: deploy
         run: |
-          output="$(npx vercel deploy --prebuilt --prod --skip-domain --yes --token="$VERCEL_TOKEN")"
+          output="$(npx vercel deploy --prebuilt --prod --skip-domain --archive=tgz --yes --token="$VERCEL_TOKEN")"
           printf '%s\n' "$output"
           deployment_url="$(printf '%s\n' "$output" | grep -Eo 'https://[^[:space:]]+\.vercel\.app' | tail -1)"
           printf '%s' "$deployment_url" | grep -Eq '^https://[^/]+\.vercel\.app$'
@@ -131,6 +132,17 @@ jobs:
           E2E_ADMIN_EMAIL: ${{ secrets.PRODUCTION_E2E_ADMIN_EMAIL || secrets.E2E_ADMIN_EMAIL }}
           E2E_ADMIN_PASSWORD: ${{ secrets.PRODUCTION_E2E_ADMIN_PASSWORD || secrets.E2E_ADMIN_PASSWORD }}
           E2E_VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.E2E_VERCEL_AUTOMATION_BYPASS_SECRET }}
+      - name: Upload production smoke artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: production-smoke-artifacts
+          path: |
+            playwright-report/
+            playwright-results.json
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
 
   promote:
     name: Promote Verified Preview
@@ -146,7 +158,52 @@ jobs:
       VERCEL_PROJECT_ID: ${{ vars.VERCEL_PRODUCTION_PROJECT_ID }}
       DEPLOYMENT_URL: ${{ needs.preview.outputs.deployment_url }}
     steps:
-      - run: npx vercel promote "$DEPLOYMENT_URL" --yes --token="$VERCEL_TOKEN"
+      - name: Promote verified preview through Vercel API
+        run: |
+          node --input-type=module <<'NODE'
+          const required = ['VERCEL_TOKEN', 'VERCEL_ORG_ID', 'VERCEL_PROJECT_ID', 'DEPLOYMENT_URL'];
+          for (const name of required) {
+            if (!process.env[name]) {
+              throw new Error(`${name} is required`);
+            }
+          }
+
+          const deploymentHost = new URL(process.env.DEPLOYMENT_URL).hostname;
+          const teamQuery = `teamId=${encodeURIComponent(process.env.VERCEL_ORG_ID)}`;
+          const deploymentResponse = await fetch(
+            `https://api.vercel.com/v13/deployments/${encodeURIComponent(deploymentHost)}?${teamQuery}`,
+            {
+              headers: {
+                Authorization: `Bearer ${process.env.VERCEL_TOKEN}`,
+              },
+            },
+          );
+
+          if (!deploymentResponse.ok) {
+            throw new Error(`Unable to resolve Vercel deployment: HTTP ${deploymentResponse.status}`);
+          }
+
+          const deployment = await deploymentResponse.json();
+          if (!deployment.id) {
+            throw new Error('Resolved Vercel deployment is missing id');
+          }
+
+          const promoteResponse = await fetch(
+            `https://api.vercel.com/v10/projects/${encodeURIComponent(process.env.VERCEL_PROJECT_ID)}/promote/${encodeURIComponent(deployment.id)}?${teamQuery}`,
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${process.env.VERCEL_TOKEN}`,
+              },
+            },
+          );
+
+          if (!promoteResponse.ok) {
+            throw new Error(`Vercel promote failed: HTTP ${promoteResponse.status}`);
+          }
+
+          console.log(`Promoted verified deployment ${deployment.id}`);
+          NODE
 
   verify:
     name: Verify Promoted Release
