@@ -5,6 +5,18 @@ const getBrowserSupabase = () => {
   return createBrowserClient();
 };
 
+interface LegacyHealthcareQuery<T> extends PromiseLike<{ data: T[] | null; error: unknown }> {
+  eq(column: string, value: unknown): LegacyHealthcareQuery<T>;
+  gte(column: string, value: unknown): LegacyHealthcareQuery<T>;
+  lt(column: string, value: unknown): LegacyHealthcareQuery<T>;
+  order(column: string, options?: { ascending?: boolean }): LegacyHealthcareQuery<T>;
+  select(columns: string): LegacyHealthcareQuery<T>;
+}
+
+interface LegacyHealthcareSupabase {
+  from(table: 'surgeries'): LegacyHealthcareQuery<Surgery>;
+}
+
 export interface OperatingRoomStats {
   totalSurgeriesToday: number;
   inProgress: number;
@@ -129,7 +141,7 @@ export class OperatingRoomService {
       tomorrow.setDate(tomorrow.getDate() + 1);
 
       const { data, error } = await supabase
-        .from('surgeries')
+        .from('surgeries' as never)
         .select('*')
         .eq('tenant_id', tenantId)
         .gte('scheduled_start', today.toISOString())

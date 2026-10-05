@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import type { TenantContext } from '@/core/types/tenant';
+import { isModuleId } from '@/core/types/module';
 import type { Database } from '@/types/database.types';
 
 /**
@@ -263,16 +264,18 @@ export async function extractTenantContext(
  */
 function transformTenantRowToContext(tenant: TenantRow): TenantContext {
   // Extract enabled modules from database (stored as text[] or JSON)
-  let enabledModules: string[] = ['spa'];
+  let enabledModules: TenantContext['enabledModules'] = ['spa'];
   if (tenant.enabled_modules) {
     if (Array.isArray(tenant.enabled_modules)) {
-      enabledModules = tenant.enabled_modules.filter((item): item is string => typeof item === 'string');
+      enabledModules = tenant.enabled_modules.filter(isModuleId);
     } else if (typeof tenant.enabled_modules === 'object') {
       enabledModules = Object.entries(tenant.enabled_modules)
         .filter(([_key, value]) => value === true)
-        .map(([key]) => key === 'babycare' ? 'spa' : key);
+        .map(([key]) => key === 'babycare' ? 'spa' : key)
+        .filter(isModuleId);
     } else if (typeof tenant.enabled_modules === 'string') {
-      enabledModules = [tenant.enabled_modules === 'babycare' ? 'spa' : tenant.enabled_modules];
+      const moduleKey = tenant.enabled_modules === 'babycare' ? 'spa' : tenant.enabled_modules;
+      enabledModules = isModuleId(moduleKey) ? [moduleKey] : ['spa'];
     }
   }
   if (enabledModules.length === 0) {
@@ -305,9 +308,10 @@ function transformTenantRowToContext(tenant: TenantRow): TenantContext {
 
   // Merge in any additional settings from database
   if (tenant.brand_theme && typeof tenant.brand_theme === 'object') {
+    const theme = tenant.brand_theme as Record<string, unknown>;
     Object.assign(settings, {
-      logoUrl: (tenant.brand_theme as unknown).logoUrl || tenant.logo_url,
-      primaryColor: (tenant.brand_theme as unknown).primaryColor,
+      logoUrl: theme.logoUrl || tenant.logo_url,
+      primaryColor: theme.primaryColor,
     });
   } else if (tenant.logo_url) {
     // If no brand_theme but logo_url exists, set it
@@ -341,7 +345,7 @@ function transformTenantRowToContext(tenant: TenantRow): TenantContext {
   const context: TenantContext = {
     tenantId: tenant.id,
     tenantName: tenant.name || 'Unnamed Tenant',
-    enabledModules: enabledModules as unknown, // Cast to readonly array
+    enabledModules,
     subscriptionPlan,
     featureFlags,
     settings,

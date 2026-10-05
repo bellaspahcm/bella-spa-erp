@@ -6,6 +6,37 @@
 import { eventBus } from '../event-bus.service';
 import { VitalsRecordedPayload } from '../types';
 import { createClient } from '@/lib/supabase-client';
+import type { Json } from '@/types/database.types';
+
+interface InsertResult<Row> {
+  data: Row | null;
+  error: { message: string } | null;
+}
+
+interface InsertSelection<Row> {
+  single(): PromiseLike<InsertResult<Row>>;
+}
+
+interface InsertQuery<Row> {
+  select(): InsertSelection<Row>;
+}
+
+interface InsertTable<Row> {
+  insert(values: unknown): InsertQuery<Row>;
+}
+
+interface AIAlertInsertClient {
+  from(table: 'ai_alerts'): InsertTable<{ id: string }>;
+}
+
+function aiAlertInsertClient(client: unknown): AIAlertInsertClient {
+  return client as AIAlertInsertClient;
+}
+
+function toJson(value: unknown): Json {
+  const serialized: unknown = JSON.parse(JSON.stringify(value));
+  return serialized as Json;
+}
 
 // Critical thresholds (TODO: Move to tenant config)
 const CRITICAL_THRESHOLDS = {
@@ -170,7 +201,7 @@ export function wireVitalsToAIAlerts(): () => void {
           ? 'critical'
           : 'warning';
 
-        const { data, error } = await supabase
+        const { data, error } = await aiAlertInsertClient(supabase)
           .from('ai_alerts')
           .insert({
             tenant_id: event.tenantId,
@@ -181,13 +212,13 @@ export function wireVitalsToAIAlerts(): () => void {
             title: 'Critical Vitals Detected',
             message: `${criticalFindings.length} critical vital sign(s) detected: ${alertMessage}`,
             source: 'NursingEngine',
-            metadata: {
-              vitalsId: event.payload.vitalsId,
+            metadata: toJson({
+              vitalsId: event.payload.vitalSignsId,
               findings: criticalFindings,
-              recordedBy: event.payload.recordedBy,
+              recordedBy: event.payload.practitionerId,
               recordedAt: event.payload.recordedAt,
               eventId: event.eventId,
-            },
+            }),
             status: 'active',
             requires_action: highestSeverity === 'critical',
           })
@@ -196,6 +227,10 @@ export function wireVitalsToAIAlerts(): () => void {
 
         if (error) {
           console.error('[Wiring] Failed to create AI alert:', error);
+          return;
+        }
+        if (!data) {
+          console.error('[Wiring] AI alert insert returned no data');
           return;
         }
 

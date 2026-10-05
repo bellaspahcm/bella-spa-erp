@@ -8,6 +8,16 @@
 import { createClient } from '@/lib/supabase-server';
 import type { PatientProfile, Encounter, ClinicalOrder, LabOrderItem, Prescription, PatientJourneyQueueItem } from '@/types/healthcare';
 import { createHealthcareEvent, HEALTHCARE_EVENT_CATALOG } from '@/lib/events/healthcare-events';
+import type { Database, Json } from '@/types/database.types';
+
+type HealthcareTables = Database['public']['Tables'];
+type EncounterInsert = HealthcareTables['hc_encounters']['Insert'];
+type ClinicalOrderInsert = HealthcareTables['hc_clinical_orders']['Insert'];
+type PrescriptionInsert = HealthcareTables['hc_prescriptions']['Insert'];
+
+function toJson(value: unknown): Json {
+  return JSON.parse(JSON.stringify(value)) as Json;
+}
 
 /**
  * Get or Create Patient Profile (1-1 Extension of `customers`)
@@ -83,15 +93,18 @@ export async function startEncounter(input: {
   try {
     const supabase = await createClient();
 
-    const encounterPayload = {
+    const now = new Date().toISOString();
+    const encounterPayload: EncounterInsert = {
       tenant_id: input.tenantId,
       patient_party_id: input.patientId,
       doctor_party_id: input.practitionerId,
       care_journey_id: input.facilityId, // Maps to care journey
       encounter_class: 'walk_in',
+      encounter_type: 'outpatient',
       status: 'in_progress',
       chief_complaint: input.chiefComplaint || null,
-      started_at: new Date().toISOString(),
+      period_start: now,
+      started_at: now,
     };
 
     const { data: inserted, error } = await supabase
@@ -146,12 +159,38 @@ export async function issuePrescription(input: {
   try {
     const supabase = await createClient();
 
-    const prescriptionPayload = {
+    const clinicalOrderPayload: ClinicalOrderInsert = {
       tenant_id: input.tenantId,
       encounter_id: input.encounterId,
       patient_party_id: input.patientId,
+      ordered_by: input.doctorId,
+      order_type: 'medication',
+      order_status: 'placed',
+      priority: 'routine',
+      order_details: toJson({
+        drugs: input.drugs,
+        diagnosis: input.diagnosis || null,
+      }),
+    };
+
+    const { data: clinicalOrder, error: clinicalOrderError } = await supabase
+      .from('hc_clinical_orders')
+      .insert(clinicalOrderPayload)
+      .select('id')
+      .single();
+
+    if (clinicalOrderError || !clinicalOrder) {
+      console.error('Error creating prescription clinical order: %s', clinicalOrderError?.message);
+      throw clinicalOrderError || new Error('Failed to create prescription clinical order');
+    }
+
+    const prescriptionPayload: PrescriptionInsert = {
+      tenant_id: input.tenantId,
+      encounter_id: input.encounterId,
+      clinical_order_id: clinicalOrder.id,
+      patient_party_id: input.patientId,
       doctor_party_id: input.doctorId,
-      drugs: input.drugs as Prescription['items'],
+      drugs: toJson(input.drugs),
       diagnosis: input.diagnosis || null,
       notes: input.notes || null,
     };

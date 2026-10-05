@@ -22,9 +22,13 @@
  * - WORKER_VERBOSE: Enable verbose logging (default: false)
  */
 
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database.types';
-import { FinanceOutboxWorker } from './finance-outbox-worker';
+import {
+  claimEvent,
+  processEvent,
+  type FinanceApiClient,
+} from './finance-outbox-worker';
+import { closeAllConnections } from './db-connection';
+import type { FinanceApiResponse } from './types/outbox.types';
 
 // Validate environment
 const FINANCE_OS_URL = process.env.FINANCE_OS_URL || process.env.NEXT_PUBLIC_FINANCE_OS_URL;
@@ -46,29 +50,77 @@ if (!SUPABASE_SERVICE_KEY) {
   process.exit(1);
 }
 
-// Create Supabase client (service role for worker)
-const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+const batchSize = parseInt(process.env.WORKER_BATCH_SIZE || '10');
+const pollIntervalMs = parseInt(process.env.WORKER_POLL_INTERVAL_MS || '5000');
+let shouldStop = false;
 
-// Create worker
-const worker = new FinanceOutboxWorker(supabase, {
-  financeOsEndpoint: FINANCE_OS_URL,
-  workerId: `worker-${process.pid}`,
-  batchSize: parseInt(process.env.WORKER_BATCH_SIZE || '10'),
-  pollIntervalMs: parseInt(process.env.WORKER_POLL_INTERVAL_MS || '5000'),
-  verbose: process.env.WORKER_VERBOSE === 'true',
-});
+const financeApiClient: FinanceApiClient = {
+  async post(endpoint, payload): Promise<FinanceApiResponse> {
+    const response = await fetch(`${FINANCE_OS_URL}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const body: unknown = await response.json().catch(() => ({}));
+    const responseBody = body && typeof body === 'object'
+      ? body as Record<string, unknown>
+      : {};
+
+    if (response.ok) {
+      const transactionId = responseBody.transaction_id;
+      return {
+        status: response.status === 409 ? 'ALREADY_PROCESSED' : 'SUCCESS',
+        transaction_id: typeof transactionId === 'string' ? transactionId : undefined,
+        http_status: response.status,
+      };
+    }
+
+    return {
+      status: 'ERROR',
+      error: typeof responseBody.error === 'string' ? responseBody.error : response.statusText,
+      http_status: response.status,
+    };
+  },
+};
+
+async function processBatch(): Promise<number> {
+  let processed = 0;
+
+  for (let index = 0; index < batchSize; index++) {
+    const event = await claimEvent();
+    if (!event) {
+      break;
+    }
+
+    await processEvent(event, financeApiClient);
+    processed++;
+  }
+
+  return processed;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 // Handle graceful shutdown
-process.on('SIGINT', () => {
-  console.log('\n🛑 Received SIGINT, stopping worker...');
-  worker.stop();
+async function shutdown(signal: string): Promise<void> {
+  console.log(`\n🛑 Received ${signal}, stopping worker...`);
+  shouldStop = true;
+  await closeAllConnections();
   process.exit(0);
+}
+
+process.on('SIGINT', () => {
+  void shutdown('SIGINT');
 });
 
 process.on('SIGTERM', () => {
-  console.log('\n🛑 Received SIGTERM, stopping worker...');
-  worker.stop();
-  process.exit(0);
+  void shutdown('SIGTERM');
 });
 
 // Start worker
@@ -76,7 +128,17 @@ console.log('🚀 Starting Finance Outbox Worker');
 console.log(`   Finance OS: ${FINANCE_OS_URL}`);
 console.log(`   Worker ID: worker-${process.pid}`);
 
-worker.start().catch((error) => {
+async function main(): Promise<void> {
+  while (!shouldStop) {
+    const processed = await processBatch();
+    if (process.env.WORKER_VERBOSE === 'true') {
+      console.log(`Processed ${processed} outbox event(s)`);
+    }
+    await sleep(pollIntervalMs);
+  }
+}
+
+main().catch((error: unknown) => {
   console.error('❌ Worker crashed:', error);
   process.exit(1);
 });

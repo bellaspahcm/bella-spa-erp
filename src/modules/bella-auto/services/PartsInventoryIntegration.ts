@@ -8,6 +8,50 @@
 
 import { getPrimaryClient } from '@/lib/database/read-replica';
 
+interface QueryResult<Row> {
+  data: Row[] | null;
+  error: { message: string } | null;
+}
+
+interface SingleResult<Row> {
+  data: Row | null;
+  error: { message: string } | null;
+}
+
+interface InventoryTransactionQuery<Row> extends PromiseLike<QueryResult<Row>> {
+  eq(column: string, value: unknown): InventoryTransactionQuery<Row>;
+  gte(column: string, value: unknown): InventoryTransactionQuery<Row>;
+  lte(column: string, value: unknown): InventoryTransactionQuery<Row>;
+  select<NextRow = Row>(columns?: string): InventoryTransactionQuery<NextRow>;
+  single(): PromiseLike<SingleResult<Row>>;
+}
+
+interface InventoryTransactionTable {
+  insert(values: unknown): PromiseLike<{ error: { message: string } | null }>;
+  select<Row>(columns?: string): InventoryTransactionQuery<Row>;
+}
+
+interface InventoryTransactionClient {
+  from(table: 'inventory_transactions'): InventoryTransactionTable;
+}
+
+interface ExistingDeductionRow {
+  id: string;
+}
+
+interface InventoryTransactionReportRow {
+  inventory: {
+    item_code: string | null;
+    item_name: string | null;
+  } | null;
+  quantity: number;
+  total_cost: number | null;
+}
+
+function inventoryTransactionClient(client: unknown): InventoryTransactionClient {
+  return client as InventoryTransactionClient;
+}
+
 export interface PartDeduction {
   inventoryItemId: string;
   partNumber: string;
@@ -156,9 +200,9 @@ export class PartsInventoryIntegration {
       }
 
       // Check if already deducted
-      const { data: existingDeduction } = await supabase
+      const { data: existingDeduction } = await inventoryTransactionClient(supabase)
         .from('inventory_transactions')
-        .select('id')
+        .select<ExistingDeductionRow>('id')
         .eq('tenant_id', tenantId)
         .eq('inventory_item_id', item.inventory_item_id)
         .eq('reference_type', 'repair_order')
@@ -198,7 +242,7 @@ export class PartsInventoryIntegration {
       }
 
       // Create inventory transaction
-      const { error: transError } = await supabase
+      const { error: transError } = await inventoryTransactionClient(supabase)
         .from('inventory_transactions')
         .insert({
           tenant_id: tenantId,
@@ -344,9 +388,9 @@ export class PartsInventoryIntegration {
   }>> {
     const supabase = getPrimaryClient();
 
-    const { data: transactions, error } = await supabase
+    const { data: transactions, error } = await inventoryTransactionClient(supabase)
       .from('inventory_transactions')
-      .select(`
+      .select<InventoryTransactionReportRow>(`
         *,
         inventory!inner(item_code, item_name)
       `)
@@ -370,9 +414,8 @@ export class PartsInventoryIntegration {
     }>();
 
     for (const trans of transactions) {
-      const inv = trans.inventory as unknown;
-      const partNumber = inv.item_code || '';
-      const partName = inv.item_name || '';
+      const partNumber = trans.inventory?.item_code || '';
+      const partName = trans.inventory?.item_name || '';
 
       const existing = partsMap.get(partNumber) || {
         partNumber,

@@ -43,6 +43,28 @@ jest.mock('@supabase/ssr', () => ({
       getUser: mockGetUser,
     },
   })),
+  combineChunks: jest.fn(async (key: string, retrieveChunk: (name: string) => string | null | undefined | Promise<string | null | undefined>) => {
+    const value = await retrieveChunk(key);
+    if (value) return value;
+
+    const chunks: string[] = [];
+    for (let index = 0; ; index += 1) {
+      const chunk = await retrieveChunk(`${key}.${index}`);
+      if (!chunk) break;
+      chunks.push(chunk);
+    }
+
+    return chunks.length > 0 ? chunks.join('') : null;
+  }),
+}));
+
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn(() => ({
+    from: mockFrom,
+    auth: {
+      getUser: mockGetUser,
+    },
+  })),
 }));
 
 describe('GET /api/tenant/context', () => {
@@ -84,6 +106,9 @@ describe('GET /api/tenant/context', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://project-ref.supabase.co';
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'publishable-key';
+    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     
     // Setup default mock chain
     mockGetUser.mockResolvedValue({ data: { user: mockUser }, error: null });
@@ -101,6 +126,177 @@ describe('GET /api/tenant/context', () => {
     expect(response.status).toBe(401);
     const data = await response.json();
     expect(data.error).toContain('Unauthorized');
+  });
+
+  it('resolves authenticated user from Supabase auth cookie when route handler SSR session is unavailable', async () => {
+    const accessToken = 'valid-cookie-access-token';
+    const cookieValue = `base64-${Buffer.from(JSON.stringify({ access_token: accessToken })).toString('base64url')}`;
+
+    mockGetUser
+      .mockResolvedValueOnce({ data: { user: null }, error: { message: 'Auth session missing' } })
+      .mockResolvedValueOnce({ data: { user: mockUser }, error: null });
+
+    mockSingle
+      .mockResolvedValueOnce({
+        data: mockUserProfile,
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: mockTenant,
+        error: null,
+      });
+
+    const request = new NextRequest('http://localhost:3000/api/tenant/context', {
+      headers: {
+        Cookie: `sb-project-ref-auth-token=${cookieValue}`,
+      },
+    });
+    const response = await GET(request);
+
+    expect(response.status).toBe(200);
+    const { createServerClient: mockCreateServerClient } = jest.requireMock('@supabase/ssr') as {
+      createServerClient: jest.Mock;
+    };
+    expect(mockCreateServerClient).toHaveBeenCalledWith(
+      'https://project-ref.supabase.co',
+      'publishable-key',
+      expect.any(Object),
+    );
+    expect(mockGetUser).toHaveBeenNthCalledWith(2, accessToken);
+    const { createClient: mockCreateSupabaseJsClient } = jest.requireMock('@supabase/supabase-js') as {
+      createClient: jest.Mock;
+    };
+    expect(mockCreateSupabaseJsClient).toHaveBeenCalledWith(
+      'https://project-ref.supabase.co',
+      'publishable-key',
+      expect.objectContaining({
+        global: {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      }),
+    );
+    const data = await response.json();
+    expect(data.tenantId).toBe('tenant-123');
+    expect(data.tenantName).toBe('Test Spa');
+  });
+
+  it('resolves authenticated user from chunked Supabase auth cookie when route handler SSR session is unavailable', async () => {
+    const accessToken = 'valid-chunked-cookie-access-token';
+    const cookieValue = `base64-${Buffer.from(JSON.stringify({ access_token: accessToken })).toString('base64url')}`;
+    const cookieChunks = [cookieValue.slice(0, 18), cookieValue.slice(18)];
+
+    mockGetUser
+      .mockResolvedValueOnce({ data: { user: null }, error: { message: 'Auth session missing' } })
+      .mockResolvedValueOnce({ data: { user: mockUser }, error: null });
+
+    mockSingle
+      .mockResolvedValueOnce({
+        data: mockUserProfile,
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: mockTenant,
+        error: null,
+      });
+
+    const request = new NextRequest('http://localhost:3000/api/tenant/context', {
+      headers: {
+        Cookie: [
+          `sb-project-ref-auth-token.0=${cookieChunks[0]}`,
+          `sb-project-ref-auth-token.1=${cookieChunks[1]}`,
+        ].join('; '),
+      },
+    });
+    const response = await GET(request);
+
+    expect(response.status).toBe(200);
+    expect(mockGetUser).toHaveBeenNthCalledWith(2, accessToken);
+    const data = await response.json();
+    expect(data.tenantId).toBe('tenant-123');
+  });
+
+  it('falls back to the raw Cookie header when NextRequest cookies do not expose the auth cookie', async () => {
+    const accessToken = 'valid-raw-cookie-header-access-token';
+    const cookieValue = `base64-${Buffer.from(JSON.stringify({ access_token: accessToken })).toString('base64url')}`;
+
+    mockGetUser
+      .mockResolvedValueOnce({ data: { user: null }, error: { message: 'Auth session missing' } })
+      .mockResolvedValueOnce({ data: { user: mockUser }, error: null });
+
+    mockSingle
+      .mockResolvedValueOnce({
+        data: mockUserProfile,
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: mockTenant,
+        error: null,
+      });
+
+    const request = new NextRequest('http://localhost:3000/api/tenant/context', {
+      headers: {
+        Cookie: `sb-project-ref-auth-token=${encodeURIComponent(cookieValue)}`,
+      },
+    });
+    Object.defineProperty(request, 'cookies', {
+      value: {
+        getAll: () => [],
+      },
+    });
+
+    const response = await GET(request);
+
+    expect(response.status).toBe(200);
+    expect(mockGetUser).toHaveBeenNthCalledWith(2, accessToken);
+    const data = await response.json();
+    expect(data.tenantId).toBe('tenant-123');
+  });
+
+  it('decodes Supabase auth cookies without relying on Node Buffer at runtime', async () => {
+    const accessToken = 'valid-web-runtime-access-token';
+    const cookieValue = `base64-${Buffer.from(JSON.stringify({ access_token: accessToken })).toString('base64url')}`;
+    const originalBuffer = globalThis.Buffer;
+
+    mockGetUser
+      .mockResolvedValueOnce({ data: { user: null }, error: { message: 'Auth session missing' } })
+      .mockResolvedValueOnce({ data: { user: mockUser }, error: null });
+
+    mockSingle
+      .mockResolvedValueOnce({
+        data: mockUserProfile,
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: mockTenant,
+        error: null,
+      });
+
+    const request = new NextRequest('http://localhost:3000/api/tenant/context', {
+      headers: {
+        Cookie: `sb-project-ref-auth-token=${cookieValue}`,
+      },
+    });
+
+    Object.defineProperty(globalThis, 'Buffer', {
+      configurable: true,
+      value: undefined,
+    });
+
+    try {
+      const response = await GET(request);
+
+      expect(response.status).toBe(200);
+      expect(mockGetUser).toHaveBeenNthCalledWith(2, accessToken);
+      const data = await response.json();
+      expect(data.tenantId).toBe('tenant-123');
+    } finally {
+      Object.defineProperty(globalThis, 'Buffer', {
+        configurable: true,
+        value: originalBuffer,
+      });
+    }
   });
 
   it('returns 403 when user has no tenant assigned', async () => {

@@ -4,12 +4,33 @@
  */
 
 import { supabase as typedSupabase } from '@/lib/supabase';
-const supabase = typedSupabase as unknown;
 import {
   ResourceRef,
   ResourceSnapshot,
   UniversalExecutionContext,
 } from './types';
+
+type ResourceDbError = { message: string };
+
+interface ResourceAssignmentRow {
+  id: string;
+}
+
+interface ResourceQuery<Row> extends PromiseLike<{ data: Row | Row[] | null; error: ResourceDbError | null }> {
+  insert(payload: Record<string, unknown>): ResourceQuery<Row>;
+  upsert(payload: Record<string, unknown>, options?: { onConflict?: string }): ResourceQuery<Row>;
+  select(columns?: string): ResourceQuery<Row>;
+  single(): PromiseLike<{ data: Row; error: ResourceDbError | null }>;
+}
+
+interface ResourceSupabaseClient {
+  from(table: 'resource_snapshots'): ResourceQuery<Record<string, unknown>>;
+  from(table: 'resource_assignments'): ResourceQuery<ResourceAssignmentRow>;
+  from(table: 'resource_rotations'): ResourceQuery<Record<string, unknown>>;
+  from(table: 'resource_audit_logs'): ResourceQuery<Record<string, unknown>>;
+}
+
+const supabase = typedSupabase as ResourceSupabaseClient;
 
 export class ResourceDBService {
   /**

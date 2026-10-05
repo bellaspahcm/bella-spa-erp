@@ -16,8 +16,8 @@ const config: Config = {
     '^@bella/shared$': '<rootDir>/packages/shared/src/index.ts',
   },
   testMatch: [
-    '<rootDir>/src/**/*.test.[jt]s?(x)',
-    '<rootDir>/tests/**/*.test.[jt]s?(x)',
+    '**/src/**/*.test.[jt]s?(x)',
+    '**/tests/**/*.test.[jt]s?(x)',
   ],
   // Jest chỉ scan src/. Playwright E2E nằm trong e2e/ — chạy bằng `npm run e2e`.
   testPathIgnorePatterns: [

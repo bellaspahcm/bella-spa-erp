@@ -6,14 +6,14 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database.types';
+import type { Database, Json } from '@/types/database.types';
 import { Result } from '../domain/core/result';
 import type { Item } from '../domain/item.types';
 import type { IItemRepository, ItemFilters } from './item.repository.interface';
 
-type LogisticsItem = Database['logistics']['Tables']['items']['Row'];
-type LogisticsItemInsert = Database['logistics']['Tables']['items']['Insert'];
-type LogisticsItemUpdate = Database['logistics']['Tables']['items']['Update'];
+type LogisticsItem = Database['public']['Tables']['items']['Row'];
+type LogisticsItemInsert = Database['public']['Tables']['items']['Insert'];
+type LogisticsItemUpdate = Database['public']['Tables']['items']['Update'];
 
 export class ItemRepository implements IItemRepository {
   constructor(private db: SupabaseClient<Database>) {}
@@ -130,7 +130,7 @@ export class ItemRepository implements IItemRepository {
   async save(item: Item): Promise<Result<Item>> {
     try {
       // Check if item exists
-      const existsResult = await this.findById(item.tenant_id, item.id.value);
+      const existsResult = await this.findById(item.tenantId, item.id.value);
       if (existsResult.isFailure) {
         return existsResult as Result<Item>;
       }
@@ -143,7 +143,7 @@ export class ItemRepository implements IItemRepository {
         const { data, error } = await this.db
           .from('items')
           .update(updateData)
-          .eq('tenant_id', item.tenant_id)
+          .eq('tenant_id', item.tenantId)
           .eq('id', item.id.value)
           .select()
           .single();
@@ -166,7 +166,7 @@ export class ItemRepository implements IItemRepository {
           // Check for unique violation
           if (error.code === '23505') {
             return Result.fail(
-              `Item with SKU code '${item.sku_code.value}' already exists`,
+              `Item with SKU code '${item.skuCode}' already exists`,
               'ITEM_SKU_DUPLICATE'
             );
           }
@@ -241,18 +241,18 @@ export class ItemRepository implements IItemRepository {
    */
   private mapToDomain(row: LogisticsItem): Item {
     return {
-      id: row.id,
+      id: { value: row.id },
       tenantId: row.tenant_id,
       skuCode: row.sku_code,
       name: row.name,
       description: row.description,
       
-      type: row.type as 'GOODS' | 'SERVICE' | 'ASSET' | 'VIRTUAL',
+      type: row.type as Item['type'],
       category: row.category,
       
-      baseUom: row.base_uom,
+      baseUom: row.base_uom as Item['baseUom'],
       weightKg: row.weight_kg,
-      dimensionsJson: row.dimensions_json as Record<string, unknown> | null,
+      dimensionsJson: mapDimensionsFromJson(row.dimensions_json),
       
       standardCost: row.standard_cost,
       currency: row.currency,
@@ -276,31 +276,31 @@ export class ItemRepository implements IItemRepository {
   private mapToInsert(item: Item): LogisticsItemInsert {
     return {
       id: item.id.value,
-      tenant_id: item.tenant_id,
-      sku_code: item.sku_code.value,
+      tenant_id: item.tenantId,
+      sku_code: item.skuCode,
       name: item.name,
       description: item.description,
       
       type: item.type,
       category: item.category,
       
-      base_uom: item.base_uom,
-      weight_kg: item.weight_kg,
-      dimensions_json: (item.dimensions ?? null) as Record<string, unknown> | null,
+      base_uom: item.baseUom,
+      weight_kg: item.weightKg,
+      dimensions_json: mapDimensionsToJson(item.dimensionsJson),
       
-      standard_cost: item.standard_cost,
+      standard_cost: item.standardCost ?? 0,
       currency: item.currency,
       
-      lot_tracked: item.lot_tracked,
-      serial_tracked: item.serial_tracked,
-      expiry_tracked: item.expiry_tracked,
+      lot_tracked: item.lotTracked,
+      serial_tracked: item.serialTracked,
+      expiry_tracked: item.expiryTracked,
       
       status: item.status,
       
-      created_at: item.created_at.toISOString(),
-      updated_at: item.updated_at.toISOString(),
-      created_by: item.created_by,
-      updated_by: item.updated_by,
+      created_at: item.createdAt.toISOString(),
+      updated_at: item.updatedAt.toISOString(),
+      created_by: item.createdBy,
+      updated_by: item.updatedBy,
     };
   }
 
@@ -315,21 +315,54 @@ export class ItemRepository implements IItemRepository {
       type: item.type,
       category: item.category,
       
-      base_uom: item.base_uom,
-      weight_kg: item.weight_kg,
-      dimensions_json: (item.dimensions ?? null) as Record<string, unknown> | null,
+      base_uom: item.baseUom,
+      weight_kg: item.weightKg,
+      dimensions_json: mapDimensionsToJson(item.dimensionsJson),
       
-      standard_cost: item.standard_cost,
+      standard_cost: item.standardCost ?? 0,
       currency: item.currency,
       
-      lot_tracked: item.lot_tracked,
-      serial_tracked: item.serial_tracked,
-      expiry_tracked: item.expiry_tracked,
+      lot_tracked: item.lotTracked,
+      serial_tracked: item.serialTracked,
+      expiry_tracked: item.expiryTracked,
       
       status: item.status,
       
-      updated_at: item.updated_at.toISOString(),
-      updated_by: item.updated_by,
+      updated_at: item.updatedAt.toISOString(),
+      updated_by: item.updatedBy,
     };
   }
+}
+
+function mapDimensionsToJson(dimensions: Item['dimensionsJson']): Json | null {
+  if (!dimensions) {
+    return null;
+  }
+
+  return {
+    length: dimensions.length,
+    width: dimensions.width,
+    height: dimensions.height,
+    unit: dimensions.unit,
+  };
+}
+
+function mapDimensionsFromJson(value: Json | null): Item['dimensionsJson'] {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null;
+  }
+
+  const record = value as Record<string, Json | undefined>;
+  const { length, width, height, unit } = record;
+
+  if (
+    typeof length !== 'number' ||
+    typeof width !== 'number' ||
+    typeof height !== 'number' ||
+    (unit !== 'CM' && unit !== 'IN' && unit !== 'M' && unit !== 'FT')
+  ) {
+    return null;
+  }
+
+  return { length, width, height, unit };
 }

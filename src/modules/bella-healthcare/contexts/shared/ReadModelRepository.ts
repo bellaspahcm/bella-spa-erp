@@ -136,12 +136,3 @@ export class TimelineProjectionService {
     return steps;
   }
 }
-export interface TimelineStep {
-  id: string;
-  time: string;
-  title: string;
-  actor: string;
-  status: 'completed' | 'current' | 'pending';
-  durationMinutes?: number;
-  isBottleneck?: boolean;
-}

@@ -64,7 +64,7 @@ import type {
 import type {
   EngineResponse,
   EngineHealthStatus,
-} from '@/core/types/engine';
+} from '../shared-kernel/types';
 import type {
   FreightInvoice,
   InvoiceLineItem,
@@ -2483,6 +2483,7 @@ export class FreightAuditEngine implements FreightAuditContract {
       variance: row.variance,
       variance_percentage: row.variance_percentage,
       reason: row.reason,
+      reason_code: row.reason,
       status: row.status as DiscrepancyStatus,
       assigned_to: row.assigned_to || undefined,
       assigned_at: row.assigned_at ? new Date(row.assigned_at) : undefined,

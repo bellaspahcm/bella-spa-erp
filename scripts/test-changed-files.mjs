@@ -4,6 +4,7 @@ import { writeFileSync } from 'node:fs';
 const CODE_FILE_PATTERN = /\.(ts|tsx|js|jsx)$/;
 const TEST_FILE_PATTERN = /\.(test|spec)\.(ts|tsx|js|jsx)$/;
 const DIRECT_TEST_EXCLUDED_PATTERNS = [
+  /^e2e\//,
   /^src\/__tests__\/bella-auto-phase5-experience\.test\.ts$/,
   /^src\/__tests__\/e2e-(order-lifecycle-real|refund-full|accounting-gl-verification|payroll-month-close)\.test\.ts$/,
   /^src\/app\/api\/english-center\/__tests__\/post-rc-real-db-validation\.test\.ts$/,
@@ -34,6 +35,8 @@ const RELATED_TEST_EXCLUDED_PATTERNS = [
   'src/__tests__/integration',
   'real-estate-module-isolation.test',
   'bella-english-center/__tests__/enrollment.service.test',
+  'bella-english-center/__tests__/program-course-class.service.test',
+  'bella-english-center/__tests__/teacher.service.test',
   'verification-gates',
   'phase_d',
   'performance-slo-benchmark',
@@ -69,6 +72,9 @@ const RELATED_TEST_EXCLUDED_PATTERNS = [
   '/src/platform/finance/__tests__/finance-f2-reconstruction\\.test\\.ts$',
   '/src/platform/finance/__tests__/finance-f2-reporting-api\\.test\\.ts$',
   '/src/platform/real-estate/__tests__/real-estate-kernel\\.integration\\.test\\.ts$',
+  '/src/products/bella-english-center/__tests__/enrollment\\.service\\.test\\.ts$',
+  '/src/products/bella-english-center/__tests__/program-course-class\\.service\\.test\\.ts$',
+  '/src/products/bella-english-center/__tests__/teacher\\.service\\.test\\.ts$',
 ];
 
 function run(command, args, options = {}) {

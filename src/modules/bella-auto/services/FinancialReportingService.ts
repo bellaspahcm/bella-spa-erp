@@ -14,7 +14,6 @@
  */
 
 import { getPrimaryClient } from '@/lib/database/read-replica';
-import { Database } from '@/types/database.types';
 
 interface DateRange {
   start: string;
@@ -64,6 +63,31 @@ interface ExpenseRow {
 
 interface SalePriceRow {
   sale_price: number | null;
+  salesperson_commission?: number | null;
+}
+
+interface LegacyQueryResult<Row> {
+  data: Row[] | null;
+  error: { message: string } | null;
+}
+
+interface LegacyQuery<Row> extends PromiseLike<LegacyQueryResult<Row>> {
+  eq(column: string, value: unknown): LegacyQuery<Row>;
+  gte(column: string, value: unknown): LegacyQuery<Row>;
+  in(column: string, values: readonly unknown[]): LegacyQuery<Row>;
+  lte(column: string, value: unknown): LegacyQuery<Row>;
+}
+
+interface LegacyTable {
+  select<Row>(columns: string): LegacyQuery<Row>;
+}
+
+interface FinancialReportingClient {
+  from(table: 'auto_sales'): LegacyTable;
+}
+
+function financialReportingClient(client: unknown): FinancialReportingClient {
+  return client as FinancialReportingClient;
 }
 
 interface VehicleProfitMargin {
@@ -136,9 +160,9 @@ export class FinancialReportingService {
   ): Promise<VehicleProfitMargin[]> {
     const supabase = getPrimaryClient();
     
-    let query = supabase
+    let query = financialReportingClient(supabase)
       .from('auto_sales')
-      .select(`
+      .select<SaleRow>(`
         id,
         vehicle_id,
         sale_price,
@@ -281,9 +305,9 @@ export class FinancialReportingService {
     };
     
     // Get vehicle sales commission from auto_sales
-    let salesQuery = supabase
+    let salesQuery = financialReportingClient(supabase)
       .from('auto_sales')
-      .select('salesperson_commission')
+      .select<SalePriceRow>('salesperson_commission')
       .eq('tenant_id', tenantId)
       .eq('status', 'completed');
     
@@ -381,9 +405,9 @@ export class FinancialReportingService {
     };
     
     // Vehicle sales revenue
-    let salesQuery = supabase
+    let salesQuery = financialReportingClient(supabase)
       .from('auto_sales')
-      .select('sale_price')
+      .select<SalePriceRow>('sale_price')
       .eq('tenant_id', tenantId)
       .eq('status', 'completed');
     

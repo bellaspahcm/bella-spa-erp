@@ -585,9 +585,6 @@ export default function MARPage() {
     } catch { /* ignore */ } finally { setLoading(false); }
   }
 
-  useEffect(() => { loadData(); }, []);
-  useEffect(() => { if (selectedAdmissionId) loadMAR(selectedAdmissionId); }, [selectedAdmissionId]);
-
   async function loadMAR(id: string) {
     try {
       const result = await getMedicationOrders('bella_healthcare', id);
@@ -598,6 +595,9 @@ export default function MARPage() {
       }
     } catch { setMarRecords(MOCK_MAR); }
   }
+
+  useEffect(() => { loadData(); }, []);
+  useEffect(() => { if (selectedAdmissionId) loadMAR(selectedAdmissionId); }, [selectedAdmissionId]);
 
   const handleAdministerConfirm = async (notes: string) => {
     if (!fiveRightsMAR) return;

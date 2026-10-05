@@ -6,6 +6,7 @@ import { bookingSchema } from '@/lib/validations';
 import type { Database } from '@/types/database.types';
 import type { z } from 'zod';
 import { invalidateAvailabilityCache } from '@/app/api/bookings/check-ktv-availability/route';
+import type { CommissionConfig } from '@/types/commission-types';
 import {
   buildBookingPayload,
   createCustomerForBookingIfNeeded,
@@ -33,6 +34,11 @@ type BookingValidationDetails = z.inferFlattenedErrors<typeof bookingSchema>['fi
 type CreateBookingResult =
   | { error: string; details?: BookingValidationDetails; data?: undefined }
   | { data: BookingRow; error?: undefined; details?: undefined };
+
+function getCommissionConfig(settings: Readonly<Record<string, unknown>>): CommissionConfig | undefined {
+  const value = settings.commission_config;
+  return typeof value === 'object' && value !== null ? value as CommissionConfig : undefined;
+}
 
 /**
  * Creates a new booking with customer, payment, and session initialization.
@@ -308,7 +314,7 @@ export async function createBooking(formData: CreateBookingInput): Promise<Creat
     const { createBookingServiceItems } = await import('./create-booking-service-items-helper');
     
     // Extract commission defaults from tenant context settings
-    const commissionDefaults = tenantContext.context.settings?.commission_config?.service_commission_default;
+    const commissionDefaults = getCommissionConfig(tenantContext.context.settings)?.service_commission_default;
     
     const serviceItemsResult = await createBookingServiceItems({
       supabase,

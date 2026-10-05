@@ -386,7 +386,7 @@ export default function CommunicationPage() {
                     </div>
 
                     <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed pl-1">
-                      "{msg.content}"
+                      &quot;{msg.content}&quot;
                     </p>
 
                     {/* AI Intent Detection Box */}

@@ -4,9 +4,9 @@ import { aiOrchestrator } from '@/platform';
 // REGISTER HEALTHCARE AI AGENTS
 // ═══════════════════════════════════════════════════════════════════════════
 
-export interface SoapNoteInput {
+export type SoapNoteInput = Record<string, unknown> & {
   readonly rawNotes: string;
-}
+};
 
 export interface SoapNoteOutput {
   readonly subjective: string;
@@ -15,10 +15,10 @@ export interface SoapNoteOutput {
   readonly plan: string;
 }
 
-export interface SafetyCheckInput {
+export type SafetyCheckInput = Record<string, unknown> & {
   readonly allergies: string[];
   readonly drugs: string[];
-}
+};
 
 export interface SafetyCheckOutput {
   readonly status: 'safe' | 'warning' | 'blocked';

@@ -181,12 +181,12 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
     await use(await createAdminStorageState(browser, workerInfo));
   }, { scope: "worker" }],
 
-  storageState: async ({ adminStorageStatePath }, use) => {
-    await use(adminStorageStatePath);
+  storageState: async ({ adminStorageStatePath }, fixtureUse) => {
+    await fixtureUse(adminStorageStatePath);
   },
 
-  adminPage: async ({ page }, use) => {
-    await use(page);
+  adminPage: async ({ page }, fixtureUse) => {
+    await fixtureUse(page);
   },
 });
 

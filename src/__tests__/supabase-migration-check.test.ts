@@ -20,6 +20,31 @@ describe('Supabase migration check script', () => {
     ]);
   });
 
+  it('parses current Supabase CLI JSON output with status prelude', () => {
+    const output = `Connecting to remote database...
+{"migrations":[{"local":"20260912100000","remote":"","time":"2026-09-12 10:00:00"},{"local":"20261002040000","remote":"20261002040000","time":"2026-10-02 04:00:00"}],"message":"Migrations listed"}
+A new version of Supabase CLI is available.`;
+
+    expect(parseSupabaseMigrationList(output)).toEqual([
+      { local: '20260912100000', remote: null },
+      { local: '20261002040000', remote: '20261002040000' },
+    ]);
+  });
+
+  it('parses table output with backtick-wrapped migration ids', () => {
+    const output = `
+      Local            | Remote           | Time (UTC)
+    ------------------|------------------|---------------------
+      \`20260912100000\` | \` \`              | \`2026-09-12 10:00:00\`
+      \`20261002040000\` | \`20261002040000\` | \`2026-10-02 04:00:00\`
+    `;
+
+    expect(parseSupabaseMigrationList(output)).toEqual([
+      { local: '20260912100000', remote: null },
+      { local: '20261002040000', remote: '20261002040000' },
+    ]);
+  });
+
   it('detects local migrations missing from the remote database', () => {
     const state = analyzeMigrationState(
       ['20260606100000', '20260606103000', '20260606113000'],

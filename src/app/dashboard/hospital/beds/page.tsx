@@ -26,6 +26,7 @@ import { useBedEngine } from '@/products/bella-hospital/hooks/use-bed-engine';
 import { BreakGlassSecurityService } from '@/services/healthcare-hospital-services';
 import { createClient } from '@/lib/supabase-client';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import type { BedType } from '@/platform/healthcare/shared-kernel/types';
 
 const WARD_OPTIONS = [
   { value: 'all', label: 'Tất cả khoa' },
@@ -98,6 +99,16 @@ interface BedCardData {
   constraints?: BedConstraint;
   reservedFor?: string;
   lastUpdated: string;
+}
+
+function toContractBedType(bedType: BedCardData['bedType']): BedType {
+  switch (bedType) {
+    case 'vip':
+    case 'recovery':
+      return 'standard';
+    default:
+      return bedType;
+  }
 }
 
 interface QueueItem {
@@ -601,8 +612,8 @@ export default function InpatientBedCommandCenter() {
         admissionId: `ADM-${Date.now()}`, // Generate temporary admission ID
         patientId,
         wardId: allocationTarget.wardId,
-        bedType: allocationTarget.bedType,
-        userId: 'system', // Add current user ID if available
+        bedType: toContractBedType(allocationTarget.bedType),
+        requestedBy: 'system', // Add current user ID if available
       });
 
       if (result.success) {

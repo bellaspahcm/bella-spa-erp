@@ -1,4 +1,5 @@
 import React, { createContext, useContext } from 'react';
+import type { ToothData } from '@/modules/bella-healthcare/components/OdontogramTwin';
 
 export interface PatientContext {
   readonly id: string;
@@ -10,6 +11,7 @@ export interface PatientContext {
   readonly allergies: string[];
   readonly bhytCode?: string;
   readonly benefitRate?: number;
+  readonly toothData?: Record<string, ToothData>;
 }
 
 export interface EncounterContext {

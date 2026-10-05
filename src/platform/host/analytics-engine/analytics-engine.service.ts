@@ -15,10 +15,15 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { Database } from '@/types/database.types';
+import { Database, type Json } from '@/types/database.types';
 import { eventBus } from '@/platform/host/event-bus';
 import type { DomainEvent } from '@/platform/host/event-bus/types';
 import crypto from 'crypto';
+
+function toJson(value: unknown): Json {
+  const serialized: unknown = JSON.parse(JSON.stringify(value));
+  return serialized as Json;
+}
 
 // ─────────────────────────────────────────────────────────────────
 // Types
@@ -120,12 +125,12 @@ export class AnalyticsEngineService {
         metric_domain: params.metricDomain,
         value: params.value,
         unit: params.unit ?? null,
-        dimensions: params.dimensions ?? {},
+        dimensions: toJson(params.dimensions ?? {}),
         source_type: params.sourceType ?? null,
         source_id: params.sourceId ?? null,
         source_event_type: params.sourceEventType ?? null,
         occurred_at: params.occurredAt ?? new Date().toISOString(),
-        metadata: params.metadata ?? {},
+        metadata: toJson(params.metadata ?? {}),
       });
 
     if (error) throw new Error(`recordMetric failed: ${error.message}`);

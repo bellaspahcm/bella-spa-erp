@@ -40,6 +40,25 @@ interface JobResult {
   errors: string[];
 }
 
+type CronDbError = { message: string };
+
+interface CronLogQuery extends PromiseLike<{ error: CronDbError | null }> {
+  insert(payload: {
+    job_name: string;
+    status: string;
+    started_at: string;
+    finished_at: string;
+    duration_ms: number;
+    details: Record<string, unknown>;
+  }): CronLogQuery;
+}
+
+interface CronLogClient {
+  from(table: 'cron_job_logs'): CronLogQuery;
+}
+
+const asCronLogClient = (client: unknown): CronLogClient => client as CronLogClient;
+
 // ─── Helper Functions ───────────────────────────────────────────────────────
 
 interface AdsCredentials {
@@ -100,10 +119,11 @@ async function getTenantsWithAdsCredentials(): Promise<Array<{ id: string; name:
 async function logJobResult(result: JobResult): Promise<void> {
   try {
     const supabase = await createClient();
+    const cronLogClient = asCronLogClient(supabase);
 
     // Check if cron_job_logs table exists
-    const { error } = await supabase
-      .from('cron_job_logs' as unknown)
+    const { error } = await cronLogClient
+      .from('cron_job_logs')
       .insert({
         job_name: 'sync-external-ads',
         status: result.success ? 'success' : 'failed',

@@ -84,7 +84,7 @@ async function verifyBellaBeautyUnchanged() {
   const bellaTenants = await fetchAll('tenants', 'name=ilike.*bella*');
   const beautyTenants = await fetchAll('tenants', 'name=ilike.*beauty*');
   
-  const safeT enants = [...bellaTenants, ...beautyTenants].filter(t => 
+  const safeTenants = [...bellaTenants, ...beautyTenants].filter(t =>
     !t.metadata?.marker || t.metadata.marker !== 'CLEANING_DEMO_TENANT'
   );
 

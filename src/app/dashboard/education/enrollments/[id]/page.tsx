@@ -114,7 +114,7 @@ export default function Student360Page() {
                     {stu.name}
                   </h1>
                   <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                    "{stu.nickname}"
+                    &quot;{stu.nickname}&quot;
                   </span>
                   <span className="text-[11px] font-extrabold px-3 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60">
                     {stu.status}

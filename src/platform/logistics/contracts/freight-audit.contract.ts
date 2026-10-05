@@ -8,7 +8,7 @@
  * Boundary: Freight audit operations isolated from operational logistics
  */
 
-import { EngineResponse, EngineHealthStatus } from '@/core/types/engine';
+import type { EngineResponse, EngineHealthStatus } from '../shared-kernel/types';
 import { 
   FreightInvoice, 
   InvoiceLineItem, 

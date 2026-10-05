@@ -57,10 +57,6 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
   const [seniority3to5, setSeniority3to5] = useState<string>('10');
   const [seniority5plus, setSeniority5plus] = useState<string>('15');
 
-  useEffect(() => {
-    loadCommissionConfig();
-  }, []);
-
   const loadCommissionConfig = async () => {
     setIsLoading(true);
     try {
@@ -102,6 +98,10 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadCommissionConfig();
+  }, []);
 
   const handleSave = async () => {
     setIsSaving(true);

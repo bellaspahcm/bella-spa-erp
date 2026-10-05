@@ -21,8 +21,79 @@ import { ClinicalContextProvider, ClinicalContextType, PatientContext, Encounter
 import { MedicalClinicManifest, DentalClinicManifest, ProductManifest } from '../../components/clinical-manifest';
 import { WorkspaceComponentRegistry } from '../../components/workspace-engine';
 import { getEncounterByIdAction, getAllPatientProfilesAction, updateEncounterStatusAction } from '@/services/healthcare/healthcare-actions';
+import type { PatientViewModel } from '@/services/healthcare/healthcare-actions';
 import { fetchHealthcareChairsAction } from '@/services/healthcare-chairs-actions';
 import { createClient } from '@/lib/supabase-client';
+
+type EncounterWorkspaceSource = {
+  id: string;
+  patientName: string;
+  doctorName?: string;
+  queueNumber?: number;
+  status: EncounterContext['status'];
+  chiefComplaint: string;
+  scheduledAt?: string;
+  startedAt?: string;
+  subjective?: string;
+  objective?: string;
+  assessment?: string;
+  plan?: string;
+};
+
+const CLINICAL_STATUSES: readonly EncounterContext['status'][] = [
+  'planned',
+  'arrived',
+  'triaged',
+  'in_progress',
+  'finished',
+  'cancelled',
+  'no_show',
+  'transferred',
+  'referred',
+  'admission',
+];
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const getString = (source: Record<string, unknown>, key: string): string | undefined => {
+  const value = source[key];
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+};
+
+const getNumber = (source: Record<string, unknown>, key: string): number | undefined => {
+  const value = source[key];
+  return typeof value === 'number' ? value : undefined;
+};
+
+const normalizeEncounterStatus = (value: unknown): EncounterContext['status'] => {
+  return typeof value === 'string' && CLINICAL_STATUSES.includes(value as EncounterContext['status'])
+    ? value as EncounterContext['status']
+    : 'in_progress';
+};
+
+const normalizeEncounter = (
+  value: unknown,
+  encounterId: string,
+  isDental: boolean
+): EncounterWorkspaceSource => {
+  const source = isRecord(value) ? value : {};
+
+  return {
+    id: getString(source, 'id') || encounterId,
+    patientName: getString(source, 'patient_name') || getString(source, 'patientName') || 'Nguyễn Văn Hùng',
+    doctorName: getString(source, 'doctor_name') || getString(source, 'doctorName'),
+    queueNumber: getNumber(source, 'queue_number') || getNumber(source, 'queueNumber') || 102,
+    status: normalizeEncounterStatus(source.status),
+    chiefComplaint: getString(source, 'chief_complaint') || getString(source, 'chiefComplaint') || (isDental ? 'Đau răng hàm trái, sưng nướu' : 'Sốt ho kéo dài 3 ngày, mệt mỏi'),
+    scheduledAt: getString(source, 'scheduled_at') || getString(source, 'scheduledAt'),
+    startedAt: getString(source, 'started_at') || getString(source, 'startedAt'),
+    subjective: getString(source, 'subjective'),
+    objective: getString(source, 'objective'),
+    assessment: getString(source, 'assessment'),
+    plan: getString(source, 'plan'),
+  };
+};
 
 export default function ClinicalWorkspaceEnginePage() {
   const router = useRouter();
@@ -103,16 +174,16 @@ export default function ClinicalWorkspaceEnginePage() {
       
       const dbRes = await getEncounterByIdAction(encounterId);
       if (dbRes.success && dbRes.data) {
-        const encData = dbRes.data;
+        const encData = normalizeEncounter(dbRes.data, encounterId, isDental);
         
         // Map database columns to EncounterContext structure
         const mappedEncounter: EncounterContext = {
           id: encData.id,
-          queueNumber: encData.queue_number || 102,
-          status: encData.status || 'in_progress',
-          chiefComplaint: encData.chief_complaint || (isDental ? 'Đau răng hàm trái, sưng nướu' : 'Sốt ho kéo dài 3 ngày, mệt mỏi'),
-          scheduledAt: encData.scheduled_at,
-          startedAt: encData.started_at,
+          queueNumber: encData.queueNumber,
+          status: encData.status,
+          chiefComplaint: encData.chiefComplaint,
+          scheduledAt: encData.scheduledAt,
+          startedAt: encData.startedAt,
           subjective: encData.subjective || (isDental ? 'Bệnh nhân đau buốt răng hàm dưới bên trái khi ăn đồ nóng lạnh, đau lan lên thái dương.' : 'Bệnh nhân ho kéo dài 3 ngày, sốt nhẹ về chiều, đau mỏi toàn thân. Tiền sử ghi nhận dị ứng Penicillin.'),
           objective: encData.objective || (isDental ? 'Khám lâm sàng phát hiện răng #36 sâu mặt nhai sâu sát tủy, gõ đau nhẹ.' : 'Khám lâm sàng: Phổi nghe rale ẩm rải rác 2 phế trường.'),
           assessment: encData.assessment || (isDental ? 'K04.0 - Viêm tủy răng cấp tính #36' : 'J06.9 - Viêm đường hô hấp trên cấp tính'),
@@ -124,7 +195,7 @@ export default function ClinicalWorkspaceEnginePage() {
         let matchedPatient: PatientContext = {
           id: 'pat-01',
           recordNumber: 'MRN-2026-9812',
-          fullName: encData.patient_name || 'Nguyễn Văn Hùng',
+          fullName: encData.patientName,
           gender: 'male',
           dob: '1992-05-15',
           bloodType: 'O+',
@@ -134,18 +205,18 @@ export default function ClinicalWorkspaceEnginePage() {
         };
 
         if (patRes.success && patRes.data) {
-          const matched = patRes.data.find((p: Record<string, unknown>) => p.name === encData.patient_name);
+          const matched = patRes.data.find((p: PatientViewModel) => p.name === encData.patientName);
           if (matched) {
             matchedPatient = {
               id: matched.id,
-              recordNumber: matched.recordNumber || 'MRN-2026-9812',
+              recordNumber: matched.recordNumber,
               fullName: matched.name,
-              gender: matched.gender || 'male',
-              dob: matched.dob || '1992-05-15',
-              bloodType: matched.bloodType || 'O+',
-              allergies: matched.allergies || ['Penicillin'],
+              gender: matched.gender,
+              dob: matched.dob,
+              bloodType: matched.bloodType,
+              allergies: matched.allergies.length > 0 ? matched.allergies : ['Penicillin'],
               bhytCode: matched.bhytCode || 'GD4797912400215',
-              benefitRate: matched.benefitRate || 80,
+              benefitRate: matched.bhytBenefitRate || 80,
             };
           }
         }
@@ -153,8 +224,8 @@ export default function ClinicalWorkspaceEnginePage() {
         setEncounter(mappedEncounter);
         setPatient(matchedPatient);
         
-        if (encData.doctor_name) {
-          setDoctor({ id: 'doc-1', name: encData.doctor_name });
+        if (encData.doctorName) {
+          setDoctor({ id: 'doc-1', name: encData.doctorName });
         }
 
         await runRuntimeLifecycle(mappedEncounter, matchedPatient, isDental);

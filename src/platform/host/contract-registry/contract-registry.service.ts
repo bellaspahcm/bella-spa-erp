@@ -28,6 +28,38 @@ import type {
   EventDefinition,
 } from './types';
 
+export interface ContractDefinitionSchema extends Omit<JSONSchema, 'properties' | 'items' | 'oneOf' | 'anyOf' | 'allOf' | 'not' | 'additionalProperties'> {
+  properties?: Record<string, ContractDefinitionSchema>;
+  items?: ContractDefinitionSchema;
+  oneOf?: ContractDefinitionSchema[];
+  anyOf?: ContractDefinitionSchema[];
+  allOf?: ContractDefinitionSchema[];
+  not?: ContractDefinitionSchema;
+  additionalProperties?: boolean | ContractDefinitionSchema;
+  nullable?: boolean;
+}
+
+export interface ContractMethodDefinition {
+  name: string;
+  description?: string;
+  inputSchema?: ContractDefinitionSchema;
+  outputSchema?: ContractDefinitionSchema;
+}
+
+export interface ContractDefinition {
+  id: string;
+  name: string;
+  version: string;
+  description: string;
+  provider: string;
+  consumers: readonly string[];
+  methods: readonly ContractMethodDefinition[];
+  events?: readonly string[];
+  featureFlag?: string;
+  status?: ContractStatus;
+  createdAt?: string;
+}
+
 /**
  * Contract Registry Service
  * 

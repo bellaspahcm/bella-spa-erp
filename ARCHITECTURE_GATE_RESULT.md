@@ -1,3 +1,301 @@
+# ARCHITECTURE GATE RESULT - GLOBAL LINT BASELINE REMEDIATION
+
+> **Status:** PASS - Platform/CI lint error baseline remediated
+> **Date:** 2026-10-04
+> **Scope:** Reduce pre-existing repo-wide `npm run lint` errors without touching Bella English business logic, product contracts, database schema, or frozen kernels.
+
+## Additional Architecture Gate - Vercel Production Promote Scope
+
+> **Status:** PASS - minimal production workflow promotion fix authorized
+> **Date:** 2026-10-04
+> **Scope:** Production workflow run `37214892483` passed validate, immutable preview build, exact preview health, and authenticated smoke, then failed `Promote Verified Preview` because `vercel promote` ran without the team scope used by the canonical rollback tooling.
+
+- Bella OS/Product Development Process Gate: PASS. This is Platform/CI production promotion configuration, not Product Vertical behavior, schema, tenant model, auth architecture, or English business logic.
+- Truth / Source of Truth: run `37214892483` failed at `npx vercel promote "$DEPLOYMENT_URL" --yes --token="$VERCEL_TOKEN"` with Vercel CLI `User not found (404)` after smoke success; `scripts/emergency-rollback.sh` and rollback documentation already use Vercel scope `bella-spa-s-projects` for promote/inspect operations.
+- Canonical Contract: verified preview deployment must be promoted in the same Vercel team/project scope used by operational rollback.
+- Ownership Map: `.github/workflows/deploy-production.yml` owns controlled production promotion; Vercel project/team configuration remains external production configuration.
+- Change Authority: add explicit `VERCEL_SCOPE` workflow env with the existing team-scope default and pass it to `vercel promote`.
+- UI -> Contract Reconciliation: no UI change.
+- Additive Migration Plan: none; no DDL, DML, tenant provisioning, production data mutation, or credential change.
+- Verification Gates Plan: workflow diff review, `git diff --check`, security/architecture gates, PR CI, then re-dispatch `Deploy to Production`.
+- Explicit non-goals: no runtime code, no English business code, no secret change, no auth bypass, no production gate weakening, no migration, no Vercel project recreation.
+
+## Additional Architecture Gate - Vercel Production Promote API Path
+
+> **Status:** PASS - minimal production workflow promotion API fix authorized
+> **Date:** 2026-10-05
+> **Scope:** Production workflow run `37216425595` passed validate, immutable preview build, exact preview health, and authenticated smoke, then failed `Promote Verified Preview` even with `--scope` because Vercel CLI still attempted to load a user and returned `User not found (404)`.
+
+- Bella OS/Product Development Process Gate: PASS. This is Platform/CI production promotion transport, not Product Vertical behavior, schema, tenant model, auth architecture, or English business logic.
+- Truth / Source of Truth: run `37216425595` shows `Smoke Exact Preview = PASS` and `vercel promote "$DEPLOYMENT_URL" --scope "$VERCEL_SCOPE"` failing with Vercel CLI user-loading error. Vercel REST API documents Bearer token auth, team resource access with `teamId`, deployment lookup by ID/URL, and project deployment promotion through `POST /v10/projects/{projectId}/promote/{deploymentId}`.
+- Canonical Contract: verified preview deployment must be promoted using the existing Vercel token, project ID, team ID, and deployment ID without relying on CLI user profile resolution.
+- Ownership Map: `.github/workflows/deploy-production.yml` owns controlled production promotion; Vercel project/team/token configuration remains external production configuration.
+- Change Authority: replace only the promotion transport in the production workflow with direct Vercel REST API calls that resolve the deployment ID from the exact preview host and promote that deployment for the configured production project/team.
+- UI -> Contract Reconciliation: no UI change.
+- Additive Migration Plan: none; no DDL, DML, tenant provisioning, production data mutation, or credential change.
+- Verification Gates Plan: workflow diff review, `git diff --check`, security/architecture gates, PR CI, then re-dispatch `Deploy to Production`.
+- Explicit non-goals: no runtime code, no English business code, no secret change, no auth bypass, no production gate weakening, no migration, no Vercel project recreation.
+
+## Additional Architecture Gate - Production Smoke Client Monitoring Hardening
+
+> **Status:** PASS - minimal monitoring runtime and smoke-harness fix authorized
+> **Date:** 2026-10-04
+> **Scope:** Production workflow run `37211453061` passed validate/build/immutable preview health but failed `Smoke Exact Preview` after real-auth login because client-side routine Sentry tunnel traffic emitted a transient `/monitoring` 503 console error; the first attempt also hit the single-test timeout while the page snapshot showed the system monitor content had rendered.
+
+- Bella OS/Product Development Process Gate: PASS. This is Platform production smoke/runtime monitoring hardening, not Product Vertical behavior, schema, tenant model, auth architecture, or English business logic.
+- Truth / Source of Truth: Playwright artifact from run `37211453061` shows `/api/tenant/context` returned `200`, dashboard routes rendered, one `/monitoring` request returned `503` while surrounding Sentry tunnel requests returned `200`, and the single smoke test timed out after serially visiting many routes.
+- Canonical Contract: production smoke must prove authenticated core routes render without app runtime errors; routine client telemetry must not create false route failures. Real application errors still remain captured by browser `pageerror`, app error text checks, failed app routes, and Sentry error replay.
+- Ownership Map: `instrumentation-client.ts` owns client-side monitoring sampling; `e2e/tests/12-authenticated-core-routes-smoke.spec.ts` owns read-only production smoke route evidence.
+- Change Authority: reduce routine browser telemetry traffic by disabling client traces/session replay while keeping error replay enabled; split the core route smoke into route-level cases so each route has independent timeout/evidence.
+- UI -> Contract Reconciliation: no UI change.
+- Additive Migration Plan: none; no DDL, DML, tenant provisioning, production data mutation, or credential change.
+- Verification Gates Plan: targeted Sentry instrumentation test, targeted Playwright smoke syntax/lint, `typecheck:changed`, `git diff --check`, security/architecture gates as needed, PR CI, then production workflow after merge.
+- Explicit non-goals: no auth bypass, no production credential change, no English business code, no monitoring tunnel removal, no broad E2E rewrite, no workflow gate bypass.
+
+## Additional Architecture Gate - Tenant Context Runtime Auth Cookie Fix
+
+> **Status:** PASS - Minimal runtime boundary fix authorized
+> **Date:** 2026-10-04
+> **Scope:** Production smoke blocker where `/api/tenant/context` receives a valid Supabase browser auth cookie but returns `401`.
+
+- Bella OS/Product Development Process Gate: PASS. This is an existing Platform runtime/auth API boundary repair, not a Product Vertical feature, UI redesign, Kernel change, or schema change.
+- Product Manifest: no new product capability; preserve existing contract `authenticated request -> Supabase user -> public.users.tenant_id -> public.tenants -> TenantContext`.
+- Ownership Map: Platform runtime/auth API owns the route behavior; `users` and `tenants` remain the existing data owners.
+- Contract Dependency Map: protected UI -> `TenantContextProvider` -> `/api/tenant/context` -> Supabase Auth + RLS-backed `users`/`tenants`.
+- Change Authority: `src/app/api/tenant/context/route.ts` and targeted API route regression test only.
+- UI -> Contract Reconciliation: no UI change; existing protected pages depend on successful tenant context resolution after real auth login.
+- Additive Migration Plan: none; no DDL, DML, tenant provisioning, or production data mutation.
+- Verification Gates Plan: targeted API regression, lint/typecheck where available, `git diff --check`, CI, then production smoke workflow after merge.
+- Explicit non-goals: no auth redesign, middleware redesign, hard-coded tenant/user, credential change, English business logic change, bypass auth, migration, or `any` introduction.
+
+## Additional Architecture Gate - Tenant Context Web Runtime Cookie Decoder
+
+> **Status:** PASS - route-only runtime decoder fix authorized
+> **Date:** 2026-10-04
+> **Scope:** Production smoke blocker after PR #217 where `/api/tenant/context` still returns `401` even though sanitized Playwright trace shows same-origin requests carry the Supabase auth cookie.
+
+- Bella OS/Product Development Process Gate: PASS. This is a minimal Platform tenant-context API runtime compatibility repair, not an auth architecture change, Product Vertical feature, UI redesign, Kernel change, or schema change.
+- Truth / Source of Truth: production workflow run `37204581799` on SHA `cec170c56fa0bfe1dc12f6a7fff8d25c2c16edd5` passed validate/build/immutable preview health but failed `Smoke Exact Preview`; sanitized trace metadata shows `/api/tenant/context` requests returned `401` with `cookie` header present.
+- Product Manifest: no product capability change. Preserve existing contract `authenticated Supabase cookie -> verified user -> public.users.tenant_id -> public.tenants -> TenantContext`.
+- Ownership Map: `src/app/api/tenant/context/route.ts` owns tenant-context route behavior; Supabase Auth remains authentication source of truth; `users`/`tenants` remain existing data owners.
+- Contract Dependency Map: protected UI -> `TenantContextProvider` -> `/api/tenant/context` -> Supabase Auth cookie decode -> `auth.getUser(accessToken)` -> tenant profile lookup.
+- Change Authority: `src/app/api/tenant/context/route.ts`, targeted regression test in `src/__tests__/api-tenant-context.test.ts`, and this gate note only.
+- UI -> Contract Reconciliation: no UI change; existing protected pages depend on successful tenant context resolution after real auth login.
+- Additive Migration Plan: none; no DDL, DML, tenant provisioning, or production data mutation.
+- Verification Gates Plan: unauthenticated request remains `401`; authenticated Supabase cookie decodes in a runtime without Node `Buffer`; targeted API regression; lint/typecheck; security/architecture gates; CI; production workflow after merge.
+- Explicit non-goals: no auth redesign, middleware redesign, hard-coded tenant/user, credential change, English business logic change, bypass auth, migration, broad abstraction, or `any` introduction.
+
+## Additional Architecture Gate - Tenant Context Public Env Contract
+
+> **Status:** PASS - route-only stale env consumer fix authorized
+> **Date:** 2026-10-04
+> **Scope:** Production smoke blocker after PR #218 where `/api/tenant/context` still returns `401` even though sanitized Playwright trace proves the Supabase auth cookie is present, base64-decodable, contains a non-expired `access_token`, and reaches the exact preview route.
+
+- Bella OS/Product Development Process Gate: PASS. This is a minimal Platform tenant-context API env-contract repair, not an auth architecture change, Product Vertical feature, UI redesign, Kernel change, or schema change.
+- Truth / Source of Truth: production workflow run `37206117376` on SHA `458ca060b73b0119b687bab17571897869db02dc` passed validate/build/immutable preview health but failed `Smoke Exact Preview`; sanitized trace shows `/api/tenant/context` requests include `sb-[project]-auth-token`, the cookie payload has `access_token`, and the token is not expired.
+- Canonical Contract: browser Supabase clients use `requireSupabasePublicEnv()`, whose public key contract is `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+- Stale Consumer: `/api/tenant/context` used `NEXT_PUBLIC_SUPABASE_ANON_KEY` directly for both SSR and bearer clients, diverging from production workflow/build config where publishable key is the canonical public key.
+- Ownership Map: `src/app/api/tenant/context/route.ts` owns tenant-context route behavior; `src/lib/supabase-public-env.ts` owns public Supabase env resolution; Supabase Auth remains authentication source of truth.
+- Contract Dependency Map: protected UI -> `TenantContextProvider` -> `/api/tenant/context` -> Supabase public env -> Supabase Auth token verification -> `users`/`tenants`.
+- Change Authority: `src/app/api/tenant/context/route.ts`, targeted regression test in `src/__tests__/api-tenant-context.test.ts`, and this gate note only.
+- Additive Migration Plan: none; no DDL, DML, tenant provisioning, or production data mutation.
+- Verification Gates Plan: targeted API regression proving publishable-key-only env works; lint/typecheck; security/architecture gates; CI; production workflow after merge.
+- Explicit non-goals: no auth redesign, middleware redesign, hard-coded tenant/user, credential change, English business logic change, bypass auth, migration, broad abstraction, or `any` introduction.
+
+## Additional Architecture Gate - Vercel Exact Preview Archive Deploy
+
+> **Status:** PASS - Minimal production workflow packaging fix authorized
+> **Date:** 2026-10-04
+> **Scope:** Production workflow exact preview deploy fails after successful Vercel build because `vercel deploy --prebuilt` hits Vercel upload request limits (`api-upload-free`, more than 5000); Vercel CLI recommends `--archive=tgz`.
+
+- Bella OS/Product Development Process Gate: PASS. This is production workflow packaging, not Product Vertical code, UI, schema, Kernel, auth, tenant, or business logic.
+- Product Manifest: no product capability change and no runtime contract change.
+- Ownership Map: Platform/CI production deployment workflow owns exact preview packaging.
+- Contract Dependency Map: `Deploy to Production` workflow -> immutable preview build -> exact preview deployment -> smoke -> promote.
+- Change Authority: `.github/workflows/deploy-production.yml` deploy command only, plus this gate note.
+- Additive Migration Plan: none.
+- Verification Gates Plan: workflow syntax/diff review, `git diff --check`, PR CI, then re-dispatch `Deploy to Production`.
+- Explicit non-goals: no Vercel project change, no secret change, no production domain promotion bypass, no application/runtime code change.
+
+## Bella OS/Product Development Process Gate
+
+- Problem: production workflow is blocked by a pre-existing global lint baseline (`53 errors + 73 warnings` in CI), proven unchanged before and after PR #204.
+- Truth / Source of Truth: `npm run lint`, GitHub production workflow run `37171535585`, and parent comparison against `89e9c4b14da8cd358c9aed0ca3f22a7641268919`.
+- Ownership: Platform/CI governance and repository hygiene. This is not Bella English product work.
+- Boundary: fix only local lint errors whose runtime semantics are obvious and do not require product/domain contract changes.
+- Gate result: `PASS`; `npm run lint` now exits 0 with `0 errors / 73 warnings`.
+
+## Product Manifest
+
+No new product capability. No UI redesign. No production data mutation.
+
+In scope:
+- Mobile tooling inline ESLint rule drift.
+- Playwright fixture parameter false-positive from React Hooks lint.
+- Malformed legacy utility/docs scripts that currently cannot parse.
+- Mechanical JSX entity escaping for text nodes.
+- Minimal React compiler compliance where functions were used before declaration, a tooltip component was created during render, or refs were updated during render.
+
+Out of scope:
+- Bella English business code.
+- Education, Healthcare, Logistics, Finance business behavior.
+- Schema, RPC, API, RLS, tenant, auth, or migration changes.
+- Workflow/gate weakening or lint bypass.
+
+## Ownership Map
+
+| Artifact | Owner Context | Role |
+|---|---|---|
+| `npm run lint` | Platform/CI Governance | Production workflow quality gate |
+| `apps/mobile/*.js` | Mobile tooling | CommonJS tooling scripts, not product runtime contracts |
+| `e2e/fixtures/auth.ts` | E2E harness | Playwright fixture setup; no auth semantics change |
+| `docs/reference/scripts/*`, `scripts/*` | Repository utility/archive scripts | Must be parseable or excluded by a deliberate governance decision |
+| JSX text nodes | UI rendering surface | Preserve displayed text while satisfying `react/no-unescaped-entities` |
+| React hooks/compiler checks | React runtime contract | Preserve hook order and behavior while satisfying compiler constraints |
+
+## Contract Dependency Map
+
+```text
+production workflow
+  -> npm run lint
+  -> repository source parse/rule checks
+  -> production workflow continuation
+```
+
+No Product -> Contract -> Kernel dependency is modified.
+
+## Change Authority
+
+Authorized:
+- Local syntax repairs for malformed scripts.
+- Local lint-rule naming repair where the referenced rule is unavailable.
+- E2E fixture naming repair if Playwright fixture semantics remain unchanged.
+- JSX text escaping that preserves rendered content.
+- Function ordering / component extraction / effect-based ref updates for React compiler compliance.
+
+Not authorized:
+- Disabling `npm run lint` globally.
+- Adding `continue-on-error`.
+- Broad ESLint ignores for product source.
+- Product behavior or business contract changes.
+
+## UI -> Contract Reconciliation
+
+No UI change.
+
+## Additive Migration Plan
+
+No migration.
+
+## Verification Plan
+
+1. Focused ESLint on Batch 1 files: `PASS`.
+2. `npm run lint -- --quiet`: `PASS` (`0 errors`).
+3. `npm run lint`: `PASS` (`0 errors / 73 warnings`).
+4. `npm run typecheck:changed`: `PASS`, zero diagnostics.
+5. `git diff --check`: `PASS`.
+
+---
+
+# Full System Typecheck Architecture Gate
+
+> **Status:** DEFER for frozen/kernel-owned diagnostics; PASS for non-frozen, contract-proven, local cleanup batches
+> **Date:** 2026-10-03
+> **Scope:** System-wide TypeScript/typecheck cleanup. No new product capability, no schema/RPC invention, no strictness reduction, no suppressions.
+
+## Baseline
+
+- Canonical full command: `npm run typecheck:full`
+- Raw full diagnostics: `849`
+- Raw full warnings: `0`
+- Raw full affected files: `91`
+- CI script result: allowed by reviewed baseline, but this is `FAIL` for the zero-debt target.
+- Adjunct mobile command: `npm run mobile:typecheck` fails before compiler because `apps/mobile` is not registered as an npm workspace.
+- Direct mobile compiler diagnostics: `30`, mostly missing Expo/React Native dependency/type resolution.
+- `npm run shared:typecheck`: PASS.
+- `mcp-server/tsconfig.json`: PASS.
+
+## Bella OS/Product Development Process Gate
+
+- Problem: eliminate TypeScript/typecheck debt across the repository without suppressions, weakened strictness, or unrelated refactors.
+- Truth: current diagnostics come from compiler output and scoped typecheck commands.
+- Source of Truth: `package.json`, `tsconfig*.json`, `.github/workflows/type-check.yml`, `scripts/ci-run-typecheck.mjs`, generated DB types, frozen-layer policies, and vertical constitutions.
+- Canonical Contract: consumers must follow public Platform/OS/generated DB contracts; generated types are evidence, not a repair surface.
+- Boundary: cleanup may fix stale consumers, config resolution, or mapper typing only when the canonical contract is proven.
+- Stop Conditions: frozen Logistics/Healthcare kernel edits without required governance process; schema/RPC invention; public-contract widening; suppressions/casts to hide mismatch.
+
+## Product Manifest
+
+This is not a new product or UI redesign. It covers:
+
+- Root web/app TypeScript surface from `tsconfig.json`.
+- Scoped platform/product configs.
+- Workspace package scopes: `packages/shared`, `apps/mobile`, `mcp-server`.
+
+Non-goals:
+
+- No new OS/product capability.
+- No database migration.
+- No production mutation.
+- No broad refactor.
+
+## Ownership Map
+
+- Typecheck orchestration: CI/platform tooling.
+- Generated DB contracts: database/generated types source of truth.
+- Logistics E7.1/E7.2/E7.3: sealed Logistics OS kernel; modifications require ACR/ADR/unlock/regression/re-seal.
+- Healthcare H1-H12: frozen Healthcare OS kernel; Product/legacy services must use public contracts.
+- Mobile app workspace: app/tooling configuration.
+- Shared package: package-owned TypeScript config/source.
+- Decision-engine archive: Platform/legacy service ownership; archive inclusion must be justified rather than patched as live product code.
+
+## Contract Dependency Map
+
+- Product/UI/legacy services -> public Platform/OS contracts -> generated DB types.
+- Logistics consumers -> Logistics public/domain contracts; no sealed artifact edits without governance process.
+- Healthcare product/legacy surfaces -> Healthcare public contracts; no H1-H12 internal table bypass.
+- Mobile typecheck -> npm workspace registration -> mobile package dependencies -> Expo/React Native tsconfig.
+
+## Change Authority
+
+Authorized:
+
+- Type-only cleanup and config fixes required to make compiler commands run correctly.
+- Stale consumer repairs when canonical contract is proven.
+- Tests/tooling fixes that do not hide diagnostics or reduce strictness.
+
+Not authorized without explicit architecture unlock:
+
+- Frozen Healthcare kernel changes.
+- Sealed Logistics E7.1/E7.2/E7.3 artifact changes outside approved process.
+- Generated type hand edits.
+- Schema/RPC inventions.
+- Compatibility aliases that change public contracts.
+
+## UI To Contract Reconciliation
+
+No UI redesign requested. UI diagnostics must still trace data/action assumptions to canonical API/service/generated DB contracts before repair.
+
+## Additive Migration Plan
+
+No migrations planned. Any diagnostic implying missing table/column/RPC is a contract/schema gap until proven by migrations/generated types.
+
+## 11 Automated Verification Gates Plan
+
+1. Canonical full typecheck: `npm run typecheck:full`
+2. Changed typecheck: `npm run typecheck:changed`
+3. Relevant scoped typechecks for touched configs.
+4. `npm run healthcare:verify` if Healthcare code changes.
+5. `npm run logistics:verify` if Logistics code changes.
+6. Relevant unit/integration tests for touched areas.
+7. `git diff --check`.
+8. Diff inspection.
+9. No new `as any`.
+10. No new `@ts-ignore` / `@ts-expect-error`.
+11. No abnormal tsconfig/source exclusions.
+
+---
+
 # ARCHITECTURE GATE RESULT - PLATFORM PWA CONTRACT V1
 
 > **Status:** PASS - Platform-owned PWA V1 contract for manifest identity and installability only
@@ -2943,3 +3241,308 @@ No existing accounting or business tables will be deleted or modified. The migra
 | **Gate F-8** | Event-After-Persistence | Verify that `finance_outbox_events` has the event record committed in the same transaction, and the dispatcher publishes it successfully. |
 | **Gate F-9** | Full Regression | Run all Finance OS test suites to ensure 100% test coverage. |
 | **Gate F-10** | Financial State Reconstruction | Rebuild materialized state from authoritative records and verify equality. |
+
+---
+
+# Additional Architecture Gate - Production Smoke Network Evidence
+
+> **Status:** PASS - production workflow diagnostics only
+> **Date:** 2026-10-04
+> **Scope:** `Deploy to Production` smoke evidence for exact preview gate
+
+## 1. Bella OS/Product Development Process Gate
+
+Truth: production workflow run `37189982072` passed immutable config, lint, critical tests, security, migration, build, exact preview deploy, and exact preview health, then failed in `Smoke Exact Preview` because `/dashboard` stayed on the TenantContextProvider loading screen.
+
+Source of Truth: GitHub Actions run logs and the existing Playwright smoke route contract.
+
+Canonical Contract: production smoke must use real authentication and must not bypass app auth, mutate business data, or infer readiness from health alone.
+
+Ownership: `.github/workflows/deploy-production.yml` is Repository CI/Production Ops governance. `e2e/tests/12-authenticated-core-routes-smoke.spec.ts` is read-only production smoke evidence.
+
+Boundary: diagnostic-only. No runtime route, auth architecture, tenant model, database, credential, or English business logic is changed.
+
+## 2. Product Manifest
+
+This change adds no product capability. It improves failure evidence for the existing production smoke gate by:
+
+- recording sanitized app network status metadata for the smoke browser session;
+- surfacing `/api/tenant/context` status/path evidence when a route remains stuck before expected content renders;
+- uploading Playwright artifacts from the production smoke job for RCA.
+- keeping Playwright E2E specs out of the direct Jest changed-test runner.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `.github/workflows/deploy-production.yml` | Platform/CI Governance | Production workflow artifact collection |
+| `e2e/tests/12-authenticated-core-routes-smoke.spec.ts` | Production Ops Evidence | Read-only browser smoke diagnostics |
+| `scripts/test-changed-files.mjs` | CI Governance | Changed-file Jest routing only |
+
+## 4. Contract Dependency Map
+
+```text
+Deploy to Production workflow
+        ↓
+Exact preview
+        ↓
+Real-auth Playwright smoke
+        ↓
+Sanitized browser network evidence
+        ↓
+RCA for first failing production gate
+```
+
+No Product -> Contract -> Kernel path is modified.
+
+## 5. Change Authority
+
+Authorized by Production Ops Go-Live audit boundary. The change is limited to evidence collection for the current production smoke blocker.
+
+## 6. UI -> Contract Reconciliation
+
+Not applicable. No UI behavior, route content, or user-facing component is changed.
+
+## 7. Additive Migration Plan
+
+No migration. No schema change. No production data mutation.
+
+## 8. 11 Automated Verification Gates Plan
+
+- Gate 1 Architecture Compliance: no Healthcare, Education, Logistics, Finance, or Product runtime code changed.
+- Gate 2 Contract Boundary: production smoke remains real-auth and read-only.
+- Gate 3 Tenant Isolation: no tenant query or policy change.
+- Gate 4 Permission: no auth bypass or credential change.
+- Gate 5 Database Migration Safety: no migration.
+- Gate 6 Event-After-Persistence: not applicable.
+- Gate 7 Business Flow: not modified.
+- Gate 8 Runtime Evidence: exact preview smoke gets sanitized network diagnostics.
+- Gate 9 Secret Hygiene: diagnostics exclude headers, cookies, tokens, and secrets.
+- Gate 10 CI Governance: artifacts retained for failed smoke RCA.
+- Gate 11 Regression: run targeted lint/typecheck/diff checks.
+
+---
+
+# Additional Architecture Gate - Tenant Context Route Session Resolution
+
+> **Status:** PASS - minimal runtime fix authorized
+> **Date:** 2026-10-04
+> **Scope:** `/api/tenant/context` production smoke authentication blocker
+
+## 1. Bella OS/Product Development Process Gate
+
+Truth: production workflow run `37192393312` passed immutable config, lint, critical tests, security, migration, build, exact preview deploy, and exact preview health, then failed in `Smoke Exact Preview` because `/api/tenant/context` returned `401` while `/dashboard` loaded as an authenticated document.
+
+Source of Truth: GitHub Actions smoke artifact `production-smoke-artifacts`, sanitized Playwright network evidence, and the Supabase SSR cookie contract.
+
+Canonical Contract: `/api/tenant/context` must resolve a verified Supabase Auth user from the request session and then read that user's tenant profile. It must not bypass authentication, hard-code tenant/user identity, or convert health/auth smoke into a fake PASS.
+
+Ownership: `src/app/api/tenant/context/route.ts` owns the tenant-context API route session resolution. Supabase Auth remains the authentication source of truth. `public.users.tenant_id` remains the tenant ownership source.
+
+Boundary: route-handler session handling only. No English business logic, tenant model, schema, migration, credential, middleware redesign, or broad auth abstraction is changed.
+
+## 2. Product Manifest
+
+This change adds no product capability. It restores the existing tenant context route's ability to read production Supabase SSR auth cookies, including chunked cookies.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `src/app/api/tenant/context/route.ts` | Platform tenant context API | Authenticated user -> tenant context read |
+| `src/__tests__/api-tenant-context.test.ts` | Route regression coverage | Unauthenticated and authenticated cookie/session paths |
+
+## 4. Contract Dependency Map
+
+```text
+Browser Supabase Auth cookie
+        ↓
+Supabase SSR Route Handler client
+        ↓
+Verified auth user
+        ↓
+public.users.tenant_id
+        ↓
+public.tenants
+        ↓
+TenantContext response
+```
+
+No Product -> Education Kernel contract is modified.
+
+## 5. Change Authority
+
+Authorized by Production Smoke RCA for a hẹp runtime blocker: valid authenticated production session reaches `/api/tenant/context` as `401`. The allowed change is limited to session/cookie resolution in the route handler.
+
+## 6. UI -> Contract Reconciliation
+
+Not applicable. No UI behavior or visual contract changes.
+
+## 7. Additive Migration Plan
+
+No migration. No schema change. No production data mutation.
+
+## 8. 11 Automated Verification Gates Plan
+
+- Gate 1 Architecture Compliance: no Healthcare, Logistics, Finance, or Education Kernel files changed.
+- Gate 2 Contract Boundary: route continues to require verified Supabase Auth user.
+- Gate 3 Tenant Isolation: tenant context still derives from authenticated user's `tenant_id`.
+- Gate 4 Permission: unauthenticated request must remain `401`.
+- Gate 5 Database Migration Safety: no migration.
+- Gate 6 Event-After-Persistence: not applicable.
+- Gate 7 Business Flow: English business logic not modified.
+- Gate 8 Runtime Evidence: production smoke should move past `/api/tenant/context 401`.
+- Gate 9 Secret Hygiene: no credential logging or fixture secrets.
+- Gate 10 CI Governance: targeted route test, lint, typecheck, architecture, security.
+- Gate 11 Regression: production workflow remains final authority after merge.
+
+---
+
+# Additional Architecture Gate - Tenant Context Raw Cookie Header Fallback
+
+> **Status:** PASS - route-only follow-up authorized
+> **Date:** 2026-10-04
+> **Scope:** `/api/tenant/context` production smoke authentication blocker follow-up
+
+## 1. Bella OS/Product Development Process Gate
+
+Truth: production workflow run `37198145961` deployed merge SHA `9bd313b8c9398788234f2cc8ef182f012c1e922f`; validate/build/preview health passed, but `Smoke Exact Preview` still failed with `/api/tenant/context` returning `401`. Sanitized trace evidence shows the request includes a Supabase Auth cookie named `sb-lvnvkpyxtuilhrabtlwv-auth-token`; decoded JWT metadata confirms the token is unexpired, `aud=authenticated`, `role=authenticated`, and issued by the matching Supabase project. The blocker is therefore narrower than credential, cookie-domain, or English business logic.
+
+Source of Truth: GitHub Actions smoke artifact `production-smoke-artifacts` from run `37198145961`, sanitized Playwright trace network headers, and `/api/tenant/context` route session resolution code.
+
+Canonical Contract: `/api/tenant/context` may only return tenant context after resolving a verified Supabase Auth user. It may read the raw `Cookie` header only as an additional source of the same Supabase Auth cookie already present on the request, then still validate the access token through Supabase Auth.
+
+Ownership: `src/app/api/tenant/context/route.ts` owns this fallback. Supabase Auth remains the authentication source of truth. `public.users.tenant_id` remains the tenant ownership source.
+
+Boundary: route-only cookie candidate resolution. No provider change, middleware redesign, schema/migration, credential, tenant model, permission redesign, English business logic, or auth bypass.
+
+## 2. Product Manifest
+
+No product capability is added. This follow-up hardens existing production Route Handler session resolution when `Cookie` is present in the HTTP request but the route cookie abstraction does not expose the auth cookie.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `src/app/api/tenant/context/route.ts` | Platform tenant context API | Raw Cookie header fallback to verified Supabase Auth user |
+| `src/__tests__/api-tenant-context.test.ts` | Route regression coverage | Header-present/cookie-abstraction-empty authenticated request |
+
+## 4. Contract Dependency Map
+
+```text
+HTTP Cookie header
+        ↓
+Supabase auth cookie candidate
+        ↓
+Decoded access token
+        ↓
+Supabase auth.getUser(accessToken)
+        ↓
+public.users.tenant_id
+        ↓
+TenantContext response
+```
+
+No Product -> Education Kernel contract is modified.
+
+## 5. Change Authority
+
+Authorized by production smoke RCA after the first route session fix merged cleanly but the same production 401 remained. The new evidence shows the auth cookie is present in the browser request; the minimal permitted change is to read that raw request header as a fallback and still verify the token through Supabase.
+
+## 6. UI -> Contract Reconciliation
+
+Not applicable. No UI behavior or visual contract changes.
+
+## 7. Additive Migration Plan
+
+No migration. No schema change. No production data mutation.
+
+## 8. 11 Automated Verification Gates Plan
+
+- Gate 1 Architecture Compliance: no Healthcare, Logistics, Finance, or Education Kernel files changed.
+- Gate 2 Contract Boundary: route still requires Supabase Auth verification.
+- Gate 3 Tenant Isolation: tenant context still derives from authenticated user's `tenant_id`.
+- Gate 4 Permission: unauthenticated request must remain `401`.
+- Gate 5 Database Migration Safety: no migration.
+- Gate 6 Event-After-Persistence: not applicable.
+- Gate 7 Business Flow: English business logic not modified.
+- Gate 8 Runtime Evidence: production smoke should move past `/api/tenant/context 401`.
+- Gate 9 Secret Hygiene: no credential, cookie, or token value logging.
+- Gate 10 CI Governance: targeted route test, lint, typecheck, architecture, security.
+- Gate 11 Regression: production workflow remains final authority after merge.
+
+---
+
+# Additional Architecture Gate - Supabase Server Client Public Env Contract
+
+> **Status:** PASS - runtime client follow-up authorized
+> **Date:** 2026-10-04
+> **Scope:** Dashboard production smoke server-action authentication blocker
+
+## 1. Bella OS/Product Development Process Gate
+
+Truth: production workflow run `37208465631` deployed merge SHA `fec5eb0110833cd50e9c00010159849f446e54e7`; validate/build immutable preview passed, `/api/tenant/context` returned `200`, and `X-Environment` was `production`. The remaining blocker is `Smoke Exact Preview`, where the dashboard layout server-action sequence returned one `/dashboard` POST `200` followed by one `/dashboard` POST `500` with React Server Component digest `2492357065`.
+
+Source of Truth: GitHub Actions run `37208465631`, sanitized Playwright trace artifact `production-smoke-artifacts`, dashboard layout client chunk mapping, and `src/lib/supabase-server.ts`.
+
+Canonical Contract: server-side Supabase clients must use the shared public environment contract: `NEXT_PUBLIC_SUPABASE_URL` plus `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` with legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY` fallback. Runtime auth must continue to validate the Supabase session through Supabase Auth; no mock, bypass, hard-coded user, or credential fallback is allowed.
+
+Ownership: `src/lib/supabase-server.ts` owns the server-side SSR Supabase client. `src/lib/supabase-public-env.ts` owns public Supabase environment resolution. `src/services/user-actions.ts` consumes the server client but does not own environment resolution.
+
+Boundary: shared runtime client environment resolution only. No English business code, schema/migration, production data mutation, credential logging, auth bypass, tenant model, or dashboard UX redesign.
+
+## 2. Product Manifest
+
+No product capability is added. This change aligns the server-action auth path with the existing production public-env contract already used by browser and tenant-context code.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `src/lib/supabase-server.ts` | Platform runtime Supabase SSR client | Server-side Supabase URL/key resolution and cookie-bound auth client |
+| `src/lib/supabase-public-env.ts` | Platform env contract | Canonical public URL/key fallback logic |
+| `src/__tests__/supabase-server-env.test.ts` | Runtime env regression coverage | Server SSR client must work when only publishable key is configured |
+
+## 4. Contract Dependency Map
+
+```text
+DashboardLayout client
+        ↓
+getCurrentUser server action
+        ↓
+createClient() / Supabase SSR client
+        ↓
+Canonical public env contract
+        ↓
+Supabase auth.getUser()
+        ↓
+public.users.tenant_id
+```
+
+No Product -> Education Kernel contract is modified.
+
+## 5. Change Authority
+
+Authorized by production smoke RCA after tenant-context moved from `401` to `200` and the first failing runtime boundary became dashboard server-action auth. The minimal permitted change is to reuse the shared public Supabase env resolver in the server client.
+
+## 6. UI -> Contract Reconciliation
+
+Not applicable. No UI behavior or visual contract changes.
+
+## 7. Additive Migration Plan
+
+No migration. No schema change. No production data mutation.
+
+## 8. 11 Automated Verification Gates Plan
+
+- Gate 1 Architecture Compliance: no Healthcare, Logistics, Finance, or Education Kernel files changed.
+- Gate 2 Contract Boundary: runtime continues to require verified Supabase Auth session.
+- Gate 3 Tenant Isolation: current user still derives `tenant_id` from `public.users`.
+- Gate 4 Permission: unauthenticated behavior remains login redirect / unauthorized.
+- Gate 5 Database Migration Safety: no migration.
+- Gate 6 Event-After-Persistence: not applicable.
+- Gate 7 Business Flow: English business logic not modified.
+- Gate 8 Runtime Evidence: production smoke should move past `/dashboard` server-action auth 500.
+- Gate 9 Secret Hygiene: no credential, cookie, or token value logging.
+- Gate 10 CI Governance: targeted auth test, lint, typecheck, architecture, security.
+- Gate 11 Regression: production workflow remains final authority after merge.

@@ -533,7 +533,7 @@ export class CashEngineService implements ICashReportingEngine, ICashReconstruct
       return await this.traceOperation(tenantId, 'finance.cash.reconstruct_positions', async () => {
         const { data, error } = await this.client.rpc('finance_reconstruct_cash_positions', {
           p_tenant_id: tenantId,
-          p_bank_account_id: bankAccountId || null
+          p_bank_account_id: bankAccountId || undefined
         });
 
         if (error) {

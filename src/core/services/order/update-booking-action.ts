@@ -8,7 +8,9 @@ import type { Database } from '@/types/database.types';
 import { invalidateAvailabilityCache } from '@/app/api/bookings/check-ktv-availability/route';
 
 type BookingRow = Database['public']['Tables']['bookings']['Row'];
+type BookingInsert = Database['public']['Tables']['bookings']['Insert'];
 type BookingUpdate = Database['public']['Tables']['bookings']['Update'];
+type SessionLogUpdate = Database['public']['Tables']['session_logs']['Update'];
 type SessionLogInsert = Database['public']['Tables']['session_logs']['Insert'];
 type SessionLogSchedulePick = Pick<
   Database['public']['Tables']['session_logs']['Row'],
@@ -77,10 +79,11 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
     
     // Build updated booking data for validation
     // Map update payload fields to BookingInsert format for Decision Engine
-    const updatedBookingData = {
+    const updatedBookingData: BookingInsert = {
       // Core booking fields
       id: oldBooking.id,
       tenant_id: oldBooking.tenant_id,
+      booking_number: oldBooking.booking_number,
       customer_id: oldBooking.customer_id,
       package_id: updatePayload.package_id !== undefined ? updatePayload.package_id : oldBooking.package_id,
       package_name: updatePayload.package_name !== undefined ? updatePayload.package_name : oldBooking.package_name,
@@ -91,7 +94,6 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
       
       // KTV assignment
       assigned_ktv_id: updatePayload.assigned_ktv_id !== undefined ? updatePayload.assigned_ktv_id : oldBooking.assigned_ktv_id,
-      ktv_id: updatePayload.assigned_ktv_id !== undefined ? updatePayload.assigned_ktv_id : oldBooking.assigned_ktv_id,
       
       // Status and payment
       status: updatePayload.status !== undefined ? updatePayload.status : oldBooking.status,
@@ -124,11 +126,7 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
       console.log('[updateBooking] Tenant context loaded, invoking Decision Engine validation...');
 
       // Validate with Decision Engine (includes break time buffer check)
-      const validationResult = await invokeAdapterValidation(
-         
-        updatedBookingData as unknown, // Type assertion since we're mapping fields
-        tenantContext.context
-      );
+      const validationResult = await invokeAdapterValidation(updatedBookingData, tenantContext.context);
 
       if ('error' in validationResult) {
         console.error('[updateBooking] Decision Engine validation failed:', validationResult.error);
@@ -387,7 +385,7 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
 
             // Build update payload dynamically
              
-            const logUpdatePayload: Record<string, unknown> = {};
+            const logUpdatePayload: SessionLogUpdate = {};
             if (assignedDate !== session.assigned_date) {
               logUpdatePayload.assigned_date = assignedDate;
             }
@@ -438,7 +436,7 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
             }
 
              
-            const logUpdatePayload: Record<string, unknown> = {};
+            const logUpdatePayload: SessionLogUpdate = {};
             if (newStatus !== session.status) {
               logUpdatePayload.status = newStatus;
             }

@@ -4,6 +4,13 @@ import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server'
 import { getCurrentUser } from '@/services/user-actions';
 import { PrescriptionItem } from '@/types/healthcare';
 import { createHealthcareEvent, HEALTHCARE_EVENT_CATALOG } from '@/lib/events/healthcare-events';
+import type { Json } from '@/types/database.types';
+
+const jsonArrayToStrings = (value: Json | null): string[] => {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+};
+
+const toJson = (value: unknown): Json => JSON.parse(JSON.stringify(value)) as Json;
 
 async function getTenantIdOrThrow(): Promise<string> {
   const user = await getCurrentUser();
@@ -29,7 +36,7 @@ export async function checkPrescriptionAllergiesAction(input: {
       .eq('tenant_id', tenantId)
       .single();
 
-    const knownAllergies: string[] = patientProfile?.known_allergies || [];
+    const knownAllergies = jsonArrayToStrings(patientProfile?.known_allergies ?? null);
     const warnings: string[] = [];
 
     if (knownAllergies.length === 0) {
@@ -96,11 +103,14 @@ export async function issuePrescriptionAction(input: {
       .insert({
         tenant_id: tenantId,
         encounter_id: input.encounterId,
-        patient_id: input.patientId,
-        ordering_practitioner_id: input.doctorPractitionerId || null,
+        patient_party_id: input.patientId,
+        ordered_by: input.doctorPractitionerId || 'doctor-default',
         order_type: 'medication',
-        status: 'placed',
-        priority: 'routine'
+        order_status: 'placed',
+        priority: 'routine',
+        order_details: {
+          items: input.items,
+        },
       })
       .select()
       .single();
@@ -134,7 +144,9 @@ export async function issuePrescriptionAction(input: {
     await supabase.from('audit_logs').insert({
       tenant_id: tenantId,
       action: 'HEALTHCARE_EVENT_EMITTED',
-      details: domainEvent as unknown as Record<string, unknown>
+      table_name: 'hc_clinical_orders',
+      record_id: clinicalOrder.id,
+      new_data: toJson(domainEvent),
     });
 
     return { success: true, prescriptionId: clinicalOrder.id };
@@ -158,7 +170,7 @@ export async function dispensePrescriptionAction(input: {
     const { error } = await supabase
       .from('hc_clinical_orders')
       .update({
-        status: 'completed',
+        order_status: 'completed',
         updated_at: new Date().toISOString()
       })
       .eq('id', input.prescriptionId)

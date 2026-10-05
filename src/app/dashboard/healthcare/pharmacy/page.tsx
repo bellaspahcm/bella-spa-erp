@@ -86,6 +86,14 @@ function getReviewStatus(status: string): PrescriptionReview['status'] {
   return 'pending_review';
 }
 
+const requireId = (value: string | undefined, label: string): string => {
+  if (!value) {
+    throw new Error(`Không thể khởi tạo dữ liệu mẫu dược: thiếu ${label}`);
+  }
+
+  return value;
+};
+
 export default function PharmacyPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -233,6 +241,7 @@ export default function PharmacyPage() {
       const { data: tenantData } = await supabase.from('tenants').select('id').limit(1).single();
       if (!tenantData) return;
       const tenantId = tenantData.id;
+      const now = new Date().toISOString();
 
       const { count } = await supabase
         .from('hc_prescriptions')
@@ -281,6 +290,8 @@ export default function PharmacyPage() {
               patient_party_id: patientId,
               care_journey_id: '99999999-9999-9999-9999-999999999999',
               encounter_class: 'walk_in',
+              encounter_type: 'pharmacy_seed',
+              period_start: now,
               status: 'finished',
               chief_complaint: 'Khám bệnh',
             })
@@ -308,18 +319,20 @@ export default function PharmacyPage() {
               tenant_id: tenantId,
               sku: code,
               name: name,
-              stock_qty: 100,
+              stock_level: 100,
               unit: 'Viên',
             })
             .select()
             .single();
 
+          const inventoryItemId = requireId(inv?.id, `inventory item ${code}`);
           const { data: newDrug } = await supabase
             .from('hc_drug_profiles')
             .insert({
               tenant_id: tenantId,
-              inventory_item_id: inv?.id,
+              inventory_item_id: inventoryItemId,
               drug_code: code,
+              active_ingredient: name,
             })
             .select()
             .single();
@@ -328,16 +341,56 @@ export default function PharmacyPage() {
         return drug?.id;
       };
 
+      const createClinicalOrder = async (
+        encounterId: string,
+        patientPartyId: string,
+        doctorPartyId: string,
+        drugName: string
+      ) => {
+        const { data: order } = await supabase
+          .from('hc_clinical_orders')
+          .insert({
+            tenant_id: tenantId,
+            encounter_id: encounterId,
+            patient_party_id: patientPartyId,
+            ordered_by: doctorPartyId,
+            order_type: 'prescription',
+            order_details: { drugName },
+            priority: 'routine',
+            order_status: 'active',
+          })
+          .select('id')
+          .single();
+
+        return requireId(order?.id, `clinical order ${drugName}`);
+      };
+
       const augmentinId = await getOrCreateDrug('Augmentin 625mg', 'AUG-625');
       const morphinId = await getOrCreateDrug('Morphin Sulfat 10mg/ml', 'MORPH-10');
       const paracetamolId = await getOrCreateDrug('Paracetamol Kabi 500mg', 'PARA-500');
+      const hungPartyId = requireId(hungId, 'patient Nguyễn Văn Hùng');
+      const hoangPartyId = requireId(hoangId, 'patient Trần Minh Hoàng');
+      const maiPartyId = requireId(maiId, 'patient Lê Thị Mai');
+      const minhDoctorId = requireId(minhId, 'doctor BS. Lê Hoàng Minh');
+      const tungDoctorId = requireId(tungId, 'doctor BS. Phạm Thanh Tùng');
+      const anhDoctorId = requireId(anhId, 'doctor BS. Hoàng Quỳnh Anh');
+      const hungEncounterId = requireId(hungEnc, 'encounter Nguyễn Văn Hùng');
+      const hoangEncounterId = requireId(hoangEnc, 'encounter Trần Minh Hoàng');
+      const maiEncounterId = requireId(maiEnc, 'encounter Lê Thị Mai');
+      const augmentinDrugId = requireId(augmentinId, 'drug Augmentin');
+      const morphinDrugId = requireId(morphinId, 'drug Morphin');
+      const paracetamolDrugId = requireId(paracetamolId, 'drug Paracetamol');
+      const augmentinOrderId = await createClinicalOrder(hungEncounterId, hungPartyId, minhDoctorId, 'Augmentin 625mg');
+      const morphinOrderId = await createClinicalOrder(hoangEncounterId, hoangPartyId, tungDoctorId, 'Morphin Sulfat 10mg/ml');
+      const paracetamolOrderId = await createClinicalOrder(maiEncounterId, maiPartyId, anhDoctorId, 'Paracetamol Kabi 500mg');
 
       await supabase.from('hc_prescriptions').insert([
         {
           tenant_id: tenantId,
-          encounter_id: hungEnc,
-          patient_party_id: hungId,
-          doctor_party_id: minhId,
+          clinical_order_id: augmentinOrderId,
+          encounter_id: hungEncounterId,
+          patient_party_id: hungPartyId,
+          doctor_party_id: minhDoctorId,
           status: 'pending_review',
           notes: JSON.stringify([
             '⚠️ TƯƠNG TÁC THUỐC: Bệnh nhân đang dùng Warfarin (Nguy cơ xuất huyết cao)',
@@ -346,7 +399,7 @@ export default function PharmacyPage() {
           ]),
           drugs: [
             {
-              drugId: augmentinId,
+              drugId: augmentinDrugId,
               drugName: 'Augmentin 625mg',
               qty: 14,
               dosageInstruction: 'Uống 1 viên mỗi 12h sau ăn',
@@ -355,9 +408,10 @@ export default function PharmacyPage() {
         },
         {
           tenant_id: tenantId,
-          encounter_id: hoangEnc,
-          patient_party_id: hoangId,
-          doctor_party_id: tungId,
+          clinical_order_id: morphinOrderId,
+          encounter_id: hoangEncounterId,
+          patient_party_id: hoangPartyId,
+          doctor_party_id: tungDoctorId,
           status: 'pending_review',
           notes: JSON.stringify([
             '⚠️ THUỐC ĐỘC KHUÔN HÀNG: Yêu cầu Ký Số Xác Nhận Kép (Dược Sĩ + Bác Sĩ)',
@@ -365,7 +419,7 @@ export default function PharmacyPage() {
           ]),
           drugs: [
             {
-              drugId: morphinId,
+              drugId: morphinDrugId,
               drugName: 'Morphin Sulfat 10mg/ml',
               qty: 2,
               dosageInstruction: 'Tiêm bắp 1 ống theo lệnh cấp cứu STAT',
@@ -374,14 +428,15 @@ export default function PharmacyPage() {
         },
         {
           tenant_id: tenantId,
-          encounter_id: maiEnc,
-          patient_party_id: maiId,
-          doctor_party_id: anhId,
+          clinical_order_id: paracetamolOrderId,
+          encounter_id: maiEncounterId,
+          patient_party_id: maiPartyId,
+          doctor_party_id: anhDoctorId,
           status: 'completed',
           notes: JSON.stringify(['🟢 Thai kỳ Nhóm B: An toàn cho phụ nữ mang thai']),
           drugs: [
             {
-              drugId: paracetamolId,
+              drugId: paracetamolDrugId,
               drugName: 'Paracetamol Kabi 500mg',
               qty: 10,
               dosageInstruction: 'Uống 1 viên khi sốt > 38.5°C',
