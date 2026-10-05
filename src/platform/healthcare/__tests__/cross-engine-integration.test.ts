@@ -56,7 +56,7 @@ describe('Encounter -> Order Cross-Engine Integration Tests (STEP 9)', () => {
     
     // Cleanup fixtures
     await fixtures.cleanup();
-  });
+  }, 15000); // Increased from 5000ms to 15000ms — CI network latency to Supabase test DB
   
   // ==========================================================================
   // Group A: Cross-Engine Happy Paths
