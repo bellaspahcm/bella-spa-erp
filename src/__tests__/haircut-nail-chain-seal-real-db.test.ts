@@ -250,6 +250,7 @@ describeIfRealDb('Haircut + Nail Platform Chain seal real DB proof', () => {
       `
         INSERT INTO public.customers (id, tenant_id, phone, name_mother, status)
         VALUES ($1::uuid, $2::uuid, $3, $4, 'active')
+
       `,
       [ids.haircutCustomer, ids.haircutTenant, `09${Date.now().toString().slice(-8)}`, `${marker} Haircut Customer`],
     );
@@ -273,6 +274,7 @@ describeIfRealDb('Haircut + Nail Platform Chain seal real DB proof', () => {
       `
         INSERT INTO public.customers (id, tenant_id, phone, name_mother, status)
         VALUES ($1::uuid, $2::uuid, $3, $4, 'active')
+
       `,
       [ids.nailCustomer, ids.nailTenant, `08${Date.now().toString().slice(-8)}`, `${marker} Nail Customer`],
     );

@@ -60,6 +60,25 @@ Definitions:
 - `DEFERRED`: The step is valid but outside the current operational readiness scope, or explicitly not required for the current customer workflow.
 - `NOT_PROVEN`: Evidence is missing or insufficient. `NOT_PROVEN` is not `BLOCKED`, and it is never `PASS`.
 
+## Evidence State Separation
+
+Operational readiness may reference lower-level evidence, but it must keep these states separate:
+
+```text
+NOT_PROVEN
+  -> UNIT_PROVEN
+  -> REAL_DB_LOGIC_PROVEN
+  -> REAL_DB_PROVEN
+  -> ADOPTION_APPROVED
+  -> IMPLEMENTATION_AUTHORIZED
+  -> GO_LIVE_READY
+  -> GO_LIVE
+```
+
+Do not jump from one state to a higher state unless evidence for every required intermediate state exists in the current scope. A proof run can prove logic without proving adoption. Adoption approval can authorize a product to consume a capability, but it does not authorize implementation side effects unless the implementation authority is explicit. `GO_LIVE_READY` is readiness evidence for a human go-live decision; it is not the go-live decision itself.
+
+If another governance artifact uses a narrower state machine, map it to these semantics instead of creating a duplicate state machine.
+
 ## The 13 Rules
 
 ### Rule 1: Operational First
@@ -74,9 +93,20 @@ Operational readiness audit must not modify code, schema, data, fixtures, config
 
 Every status must be backed by repository, UI, API, DB, test, runtime, or documented governance evidence. If evidence is missing, mark `NOT_PROVEN`.
 
+Separate current proof residuals from historical residuals:
+
+```text
+CURRENT_RUN_RESIDUAL
+HISTORICAL_RESIDUAL
+```
+
+Residuals created by the current proof run must be cleaned up or explicitly explained before the proof is called clean. Historical residuals must be tracked separately and must not be presented as current proof failures. A historical residual blocks the current gate only when evidence proves it directly affects the gate being evaluated. Do not require the entire database to be globally zero-residual unless that is the stated gate.
+
 ### Rule 4: Canonical Contract First
 
 Every UI field, action, identity, status, and persisted record must trace to the current canonical contract before it can pass.
+
+The canonical contract must be enforced by the runtime path under audit. A fixture, mock, seed, or manual data arrangement cannot prove an invariant that production/runtime code does not actually enforce.
 
 ### Rule 5: Workflow Evidence Chain
 

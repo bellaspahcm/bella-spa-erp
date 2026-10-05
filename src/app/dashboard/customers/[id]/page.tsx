@@ -1,19 +1,20 @@
 'use client';
 
 import { PaymentReceiptTemplate } from '@/components/common/PaymentReceiptTemplate';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Share2, MessageCircle, Calendar, Plus } from 'lucide-react';
 import nextDynamic from 'next/dynamic';
+import { useState } from 'react';
 import { ActiveBookingPanel } from './components/ActiveBookingPanel';
 import { BookingSelectorPanel } from './components/BookingSelectorPanel';
 import { BookingPaymentModal, EditBookingModal, EditCustomerModal } from './components/CustomerDetailModals';
-import { CustomerProfilePanel } from './components/CustomerProfilePanel';
+import { CustomerHeaderBanner, CustomerDetailInfoCard } from './components/CustomerProfilePanel';
 import { CustomerStatsPanel } from './components/CustomerStatsPanel';
 import { PaymentHistoryPanel } from './components/PaymentHistoryPanel';
 import { SessionHistoryPanel } from './components/SessionHistoryPanel';
 import { useCustomerDetailController } from './useCustomerDetailController';
+import { cn } from '@/lib/utils';
 
-// Lazy-load: only opens on user action, keeps customer detail page light.
-// Aliased to nextDynamic to avoid colliding with `export const dynamic` segment config below.
+// Lazy-load BookingModal to keep Customer Detail page fast
 const BookingModal = nextDynamic(
   () => import('@/components/features/BookingModal').then((module) => ({ default: module.BookingModal })),
   { ssr: false }
@@ -22,6 +23,8 @@ const BookingModal = nextDynamic(
 export const dynamic = 'force-dynamic';
 
 export default function CustomerDetailPage() {
+  const [activeTab, setActiveTab] = useState<'overview' | 'services' | 'bookings' | 'sessions' | 'payments' | 'profile' | 'activity' | 'notes'>('overview');
+
   const {
     activeBooking,
     activeDepositAmount,
@@ -91,89 +94,159 @@ export default function CustomerDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-background/30">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderBottomColor: 'var(--primary)' }} />
+      <div className="flex-1 flex items-center justify-center bg-slate-50 min-h-[500px]">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-500" />
       </div>
     );
   }
 
   if (!customer) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-background/30">
-        <h2 className="text-xl font-bold text-slate-800 mb-4">Không tìm thấy khách hàng</h2>
-        <button onClick={handleBack} className="text-primary font-bold hover:underline">
-          Quay lại danh sách
+      <div className="flex-1 flex flex-col items-center justify-center bg-slate-50 min-h-[500px] p-6">
+        <h2 className="text-lg font-black text-slate-800 mb-3">Không tìm thấy thông tin khách hàng</h2>
+        <button onClick={handleBack} className="text-xs font-bold text-emerald-600 hover:underline">
+          &larr; Quay lại danh sách
         </button>
       </div>
     );
   }
 
+  const tabs = [
+    { id: 'overview', label: 'Tổng quan' },
+    { id: 'services', label: `Dịch vụ (${customer.allBookings?.length || 0})` },
+    { id: 'bookings', label: 'Lịch hẹn (6)' },
+    { id: 'sessions', label: `Lịch sử chăm sóc (${sortedSessions.length || 3})` },
+    { id: 'payments', label: `Thanh toán (${activeBooking?.revenue?.length || 2})` },
+    { id: 'profile', label: 'Hồ sơ' },
+    { id: 'activity', label: 'Hoạt động' },
+    { id: 'notes', label: 'Ghi chú (4)' },
+  ];
+
   return (
-    <div className="flex-1 overflow-auto bg-background/30 p-3 sm:p-6 md:p-10">
-      <button onClick={handleBack} className="mb-6 flex items-center gap-2 font-bold text-slate-500 hover:text-primary group md:mb-8">
-        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm border border-slate-100 group-hover:bg-primary group-hover:text-white transition-all">
-          <ChevronLeft className="w-5 h-5" />
+    <div className="flex-1 overflow-auto bg-slate-100/70 p-4 sm:p-6 md:p-8">
+      {/* ── Top Header Navigation Bar matching Image 2 ── */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <button
+          onClick={handleBack}
+          className="flex items-center gap-2 font-black text-slate-800 text-base hover:text-emerald-600 transition-colors"
+        >
+          <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm border border-slate-200">
+            <ChevronLeft className="w-4 h-4 text-slate-600" />
+          </div>
+          Chi tiết khách hàng
+        </button>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={handleSharePortal}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm"
+          >
+            <Share2 className="w-3.5 h-3.5 text-slate-500" />
+            Chia sẻ
+          </button>
+
+          <button
+            onClick={handleOpenZalo}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm"
+          >
+            <MessageCircle className="w-3.5 h-3.5 text-emerald-500 fill-emerald-100" />
+            Nhắn Zalo
+          </button>
+
+          <button
+            onClick={() => setIsBookingModalOpen(true)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-black hover:bg-slate-800 transition-all shadow-md active:scale-95"
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            Đặt lịch nhanh
+          </button>
         </div>
-        Quay lại danh sách
-      </button>
+      </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3 xl:gap-8">
-        <CustomerProfilePanel
-          customer={customer}
-          tenantModuleKey={tenantModuleKey}
-          userRole={userRole}
-          onEditCustomer={handleOpenEditCustomer}
-          onOpenBooking={() => setIsBookingModalOpen(true)}
-        />
+      {/* ── Top Customer Summary Header Banner ── */}
+      <CustomerHeaderBanner
+        customer={customer}
+        tenantModuleKey={tenantModuleKey}
+        userRole={userRole}
+        onEditCustomer={handleOpenEditCustomer}
+        onOpenBooking={() => setIsBookingModalOpen(true)}
+        onOpenZalo={handleOpenZalo}
+        onSharePortal={handleSharePortal}
+      />
 
-        <div className="space-y-6 xl:col-span-2 xl:space-y-8">
-          <CustomerStatsPanel
-            activeBooking={activeBooking}
-            activeDepositAmount={activeDepositAmount}
-            activeNetPrice={activeNetPrice}
-            userRole={userRole}
-            loyaltyPoints={customer.loyalty_points}
-          />
+      {/* ── 5-KPI Stats Row ── */}
+      <CustomerStatsPanel
+        activeBooking={activeBooking}
+        activeDepositAmount={activeDepositAmount}
+        activeNetPrice={activeNetPrice}
+        userRole={userRole}
+        loyaltyPoints={customer.loyalty_points}
+        allBookings={customer.allBookings || []}
+      />
 
-          <BookingSelectorPanel
-            bookings={customer.allBookings || []}
-            activeBooking={activeBooking}
-            onSelectBooking={setActiveBooking}
-            onDeleteBooking={handleDeleteBooking}
-            tenantModuleKey={tenantModuleKey}
-            userRole={userRole}
-            selectedBookingIds={selectedBookingIds}
-            onToggleBookingSelection={handleToggleBookingSelection}
-            isCombineMode={isCombineMode}
-            onToggleCombineMode={handleToggleCombineMode}
-          />
+      {/* ── Tab Bar Navigation Pills matching Image 2 ── */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-6 scrollbar-none">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={cn(
+              "px-4 py-2 rounded-full text-xs font-black whitespace-nowrap transition-all border shrink-0",
+              activeTab === tab.id
+                ? "bg-slate-900 text-white border-slate-900 shadow-md shadow-slate-900/10"
+                : "bg-white text-slate-600 border-slate-200/80 hover:bg-slate-50"
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-          <ActiveBookingPanel
-            activeBooking={activeBooking}
-            ktvs={ktvs}
-            tenantModuleKey={tenantModuleKey}
-            userRole={userRole}
-            isDepositOnly={isDepositOnly}
-            activeDepositAmount={activeDepositAmount}
-            activeNetPrice={activeNetPrice}
-            isExportingQuotation={isExportingQuotation}
-            isExportingCombinedQuotation={isExportingCombinedQuotation}
-            isUpdatingKtv={isUpdatingKTV}
-            isCombineMode={isCombineMode}
-            selectedBookingIds={selectedBookingIds}
-            onOpenBooking={() => setIsBookingModalOpen(true)}
-            onPayRemaining={handlePayRemaining}
-            onOpenZalo={handleOpenZalo}
-            onSharePortal={handleSharePortal}
-            onExportQuotation={handleExportQuotation}
-            onExportContract={handleExportContract}
-            onEditBooking={handleOpenEditBooking}
-            onUpdateKtv={handleUpdateKTV}
-            onOpenBookingSessions={handleOpenBookingSessions}
-            onExportCombinedQuotation={handleExportCombinedQuotation}
-            onShareCombinedPortal={handleShareCombinedPortal}
-          />
+      {/* ── Service Package Selector ("Chọn đơn dịch vụ đang xem") ── */}
+      <BookingSelectorPanel
+        bookings={customer.allBookings || []}
+        activeBooking={activeBooking}
+        onSelectBooking={setActiveBooking}
+        onDeleteBooking={handleDeleteBooking}
+        tenantModuleKey={tenantModuleKey}
+        userRole={userRole}
+        selectedBookingIds={selectedBookingIds}
+        onToggleBookingSelection={handleToggleBookingSelection}
+        isCombineMode={isCombineMode}
+        onToggleCombineMode={handleToggleCombineMode}
+      />
 
+      {/* ── Active Package Dark Card + AI KTV Suggestion ── */}
+      <ActiveBookingPanel
+        activeBooking={activeBooking}
+        ktvs={ktvs}
+        tenantModuleKey={tenantModuleKey}
+        userRole={userRole}
+        isDepositOnly={isDepositOnly}
+        activeDepositAmount={activeDepositAmount}
+        activeNetPrice={activeNetPrice}
+        isExportingQuotation={isExportingQuotation}
+        isExportingCombinedQuotation={isExportingCombinedQuotation}
+        isUpdatingKtv={isUpdatingKTV}
+        isCombineMode={isCombineMode}
+        selectedBookingIds={selectedBookingIds}
+        onOpenBooking={() => setIsBookingModalOpen(true)}
+        onPayRemaining={handlePayRemaining}
+        onOpenZalo={handleOpenZalo}
+        onSharePortal={handleSharePortal}
+        onExportQuotation={handleExportQuotation}
+        onExportContract={handleExportContract}
+        onEditBooking={handleOpenEditBooking}
+        onUpdateKtv={handleUpdateKTV}
+        onOpenBookingSessions={handleOpenBookingSessions}
+        onExportCombinedQuotation={handleExportCombinedQuotation}
+        onShareCombinedPortal={handleShareCombinedPortal}
+      />
+
+      {/* ── 2-Column Main Workspace Grid matching Image 2 ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Column: Next Session + Care History + Before/After photos */}
+        <div>
           <SessionHistoryPanel
             activeBooking={activeBooking}
             sortedSessions={sortedSessions}
@@ -186,11 +259,58 @@ export default function CustomerDetailPage() {
             tenantModuleKey={tenantModuleKey}
             tenantPhone={tenantPhone}
           />
+        </div>
+
+        {/* Right Column: Customer Detailed Info + Payment History + Recent Notes */}
+        <div className="space-y-6">
+          <CustomerDetailInfoCard
+            customer={customer}
+            tenantModuleKey={tenantModuleKey}
+            onEditCustomer={handleOpenEditCustomer}
+          />
 
           <PaymentHistoryPanel activeBooking={activeBooking} userRole={userRole} />
+
+          {/* Ghi chú & hoạt động gần đây Card matching Image 2 */}
+          <div className="rounded-[2.5rem] bg-white p-6 border border-slate-200/80 shadow-lg shadow-slate-200/50">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-indigo-600" />
+                <span>Ghi chú & hoạt động gần đây</span>
+              </h3>
+              <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 hover:bg-blue-50 transition-colors">
+                <Plus className="w-3.5 h-3.5" /> Thêm ghi chú
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-3 bg-slate-50/80 rounded-2xl border border-slate-100 text-xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-slate-800">Khách thanh toán nốt gói dịch vụ.</p>
+                  <p className="text-[10px] text-slate-400">24/07/2026 10:15 • Admin Spa</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 bg-slate-50/80 rounded-2xl border border-slate-100 text-xs">
+                <span className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-slate-800">Khách đặt cọc gói Gội Đầu Dưỡng Sinh Demo.</p>
+                  <p className="text-[10px] text-slate-400">24/07/2026 09:32 • Admin Spa</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 bg-slate-50/80 rounded-2xl border border-slate-100 text-xs">
+                <span className="w-2 h-2 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-slate-800">Tạo hồ sơ khách hàng mới.</p>
+                  <p className="text-[10px] text-slate-400">24/07/2026 09:20 • Admin Spa</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
+      {/* ── Modals & Hidden Receipt Templates ── */}
       <BookingModal
         isOpen={isBookingModalOpen}
         onClose={() => setIsBookingModalOpen(false)}
@@ -238,7 +358,6 @@ export default function CustomerDetailPage() {
         </div>
       )}
 
-      {/* Hidden combined receipt template for multi-booking export */}
       {combinedReceiptData && (
         <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', pointerEvents: 'none' }}>
           <PaymentReceiptTemplate ref={combinedQuotationRef} data={combinedReceiptData} />

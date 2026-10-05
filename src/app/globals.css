@@ -2848,7 +2848,7 @@ html[data-tenant-module="beauty_spa"] button[class*="from-primary"],
 html[data-tenant-module="beauty_spa"] a[class*="from-primary"] {
   background: linear-gradient(135deg, var(--primary), var(--primary-hover, var(--primary))) !important;
   border-color: color-mix(in srgb, var(--accent, #c8a97a) 50%, transparent) !important;
-  color: #ffffff !important;
+  color: var(--primary-foreground, #ffffff) !important;
   box-shadow: 0 8px 24px color-mix(in srgb, var(--primary) 24%, transparent) !important;
 }
 
@@ -2856,29 +2856,38 @@ html[data-tenant-module="beauty_spa"] button[class*="bg-primary"]:not([class*="b
 html[data-tenant-module="beauty_spa"] a[class*="bg-primary"]:not([class*="bg-primary/"]):hover,
 html[data-tenant-module="beauty_spa"] button[class*="from-primary"]:hover,
 html[data-tenant-module="beauty_spa"] a[class*="from-primary"]:hover {
-  background: linear-gradient(135deg, var(--beauty-sap), var(--beauty-sap-2)) !important;
-  box-shadow: 0 14px 36px rgba(11, 34, 64, 0.2) !important;
+  background: linear-gradient(135deg, var(--primary-hover, var(--primary)), var(--primary)) !important;
+  color: var(--primary-foreground, #ffffff) !important;
+  box-shadow: 0 14px 36px color-mix(in srgb, var(--primary) 35%, transparent) !important;
+}
+
+html[data-tenant-module="beauty_spa"] button[class*="bg-primary"]:not([class*="bg-primary/"]):hover *,
+html[data-tenant-module="beauty_spa"] a[class*="bg-primary"]:not([class*="bg-primary/"]):hover *,
+html[data-tenant-module="beauty_spa"] button[class*="from-primary"]:hover *,
+html[data-tenant-module="beauty_spa"] a[class*="from-primary"]:hover * {
+  color: var(--primary-foreground, #ffffff) !important;
 }
 
 html[data-tenant-module="beauty_spa"] .beauty-customer-add-cta {
-  background: linear-gradient(135deg, var(--beauty-em), var(--beauty-em-2)) !important;
-  border: 1px solid rgba(200, 169, 122, 0.46) !important;
-  color: #ffffff !important;
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover, var(--primary))) !important;
+  border: 1px solid color-mix(in srgb, var(--accent, #c8a97a) 46%, transparent) !important;
+  color: var(--primary-foreground, #ffffff) !important;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.18) inset,
-    0 16px 34px rgba(7, 78, 68, 0.24) !important;
+    0 16px 34px color-mix(in srgb, var(--primary) 24%, transparent) !important;
 }
 
 html[data-tenant-module="beauty_spa"] .beauty-customer-add-cta:hover {
-  background: linear-gradient(135deg, var(--beauty-sap), var(--beauty-sap-2)) !important;
+  background: linear-gradient(135deg, var(--primary-hover, var(--primary)), var(--primary)) !important;
+  color: var(--primary-foreground, #ffffff) !important;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.22) inset,
-    0 20px 42px rgba(7, 78, 68, 0.3) !important;
+    0 20px 42px color-mix(in srgb, var(--primary) 30%, transparent) !important;
 }
 
 html[data-tenant-module="beauty_spa"] .beauty-customer-add-cta svg,
 html[data-tenant-module="beauty_spa"] .beauty-customer-add-cta span {
-  color: #ffffff !important;
+  color: var(--primary-foreground, #ffffff) !important;
 }
 
 html[data-tenant-module="beauty_spa"] .beauty-active-care-badge {

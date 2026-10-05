@@ -1,24 +1,23 @@
 'use client';
 
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import type { CustomerDetailBooking } from '../types';
 import { useModuleVocabulary } from '@/lib/business-rules/module-vocabulary';
 import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
-import { Trash2 } from 'lucide-react';
+import { Sparkles, Trash2, Calendar, ChevronRight } from 'lucide-react';
 
-// Vietnamese status labels
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  'active': { label: 'Đang thực hiện', color: 'text-emerald-600' },
-  'in_progress': { label: 'Đang thực hiện', color: 'text-emerald-600' },
-  'booked': { label: 'Đã đặt', color: 'text-blue-600' },
-  'deposit_pending': { label: 'Chờ đặt cọc', color: 'text-amber-600' },
-  'completed': { label: 'Hoàn thành', color: 'text-slate-500' },
-  'cancelled': { label: 'Đã hủy', color: 'text-red-600' },
-  'refunded': { label: 'Đã hoàn tiền', color: 'text-red-600' },
+const STATUS_LABELS: Record<string, { label: string; bg: string; text: string }> = {
+  'active': { label: 'Đang thực hiện', bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-700' },
+  'in_progress': { label: 'Đang thực hiện', bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-700' },
+  'booked': { label: 'Đã đặt', bg: 'bg-blue-50 border-blue-200', text: 'text-blue-700' },
+  'deposit_pending': { label: 'Chờ bắt đầu', bg: 'bg-amber-50 border-amber-200', text: 'text-amber-700' },
+  'completed': { label: 'Hoàn thành', bg: 'bg-slate-100 border-slate-200', text: 'text-slate-600' },
+  'cancelled': { label: 'Đã hủy', bg: 'bg-red-50 border-red-200', text: 'text-red-700' },
 };
 
 function getStatusDisplay(status: string) {
-  return STATUS_LABELS[status] || { label: status, color: 'text-slate-400' };
+  return STATUS_LABELS[status] || { label: status, bg: 'bg-slate-50 border-slate-200', text: 'text-slate-500' };
 }
 
 export function BookingSelectorPanel({
@@ -45,180 +44,152 @@ export function BookingSelectorPanel({
   onToggleCombineMode?: () => void;
 }) {
   const vocab = useModuleVocabulary(tenantModuleKey);
-  
-  // Show ALL bookings (including cancelled) so admin can delete them
   const visibleBookings = bookings;
-  const cancelledCount = bookings.filter(b => b.status === 'cancelled').length;
   const selectedCount = selectedBookingIds?.size ?? 0;
 
   return (
-          <div className="relative mb-8 overflow-hidden rounded-[2.5rem] customer-detail-card bg-white p-6">
-            <div className="pointer-events-none absolute inset-x-8 top-0 h-1.5 rounded-b-full bg-gradient-to-r from-primary/20 via-primary to-primary/20 animate-pulse" />
-            <div className="flex flex-col gap-3 px-2 mb-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">
-                  Chọn {vocab.booking.singular.toLowerCase()} đang xem
-                </p>
-                {activeBooking && !isCombineMode && (
-                  <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.18em] text-primary">
-                    <span className="h-2 w-2 rounded-full bg-primary animate-ping" />
-                    Đang áp dụng cho dữ liệu bên dưới
+    <div className="relative mb-6 overflow-hidden rounded-[2rem] bg-white p-5 border border-slate-200/80 shadow-md shadow-slate-200/40">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+            <Sparkles className="w-4 h-4" />
+          </div>
+          <h3 className="text-sm font-black text-slate-900 tracking-tight">
+            Chọn đơn dịch vụ đang xem
+          </h3>
+          {userRole === 'admin' && visibleBookings.length >= 2 && onToggleCombineMode && (
+            <button
+              onClick={onToggleCombineMode}
+              className={cn(
+                'ml-2 rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-widest transition-all border',
+                isCombineMode
+                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-100'
+                  : 'bg-indigo-50 text-indigo-600 border-indigo-200 hover:bg-indigo-100'
+              )}
+            >
+              {isCombineMode ? '✓ Đang gộp' : '⊞ Chọn gộp'}
+            </button>
+          )}
+        </div>
+
+        <button className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1">
+          Quản lý tất cả dịch vụ <ChevronRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {/* Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {visibleBookings.length > 0 ? (
+          visibleBookings.map((b) => {
+            const statusDisplay = getStatusDisplay(b.status || '');
+            const isActive = activeBooking?.id === b.id;
+            const isSelected = selectedBookingIds?.has(b.id) ?? false;
+            const completed = b.completed_sessions || 0;
+            const total = b.total_sessions || 12;
+            const percent = Math.min(100, Math.round((completed / Math.max(1, total)) * 100));
+
+            return (
+              <div
+                key={b.id}
+                onClick={() => {
+                  if (isCombineMode && onToggleBookingSelection) {
+                    onToggleBookingSelection(b.id);
+                  } else {
+                    onSelectBooking(b);
+                  }
+                }}
+                className={cn(
+                  "relative cursor-pointer rounded-2xl border p-4 transition-all flex items-start gap-4 shadow-sm hover:shadow-md",
+                  isActive
+                    ? "bg-slate-950 text-white border-slate-900 shadow-xl shadow-slate-900/20"
+                    : isSelected
+                    ? "bg-indigo-50 border-indigo-400 text-slate-900 ring-2 ring-indigo-300"
+                    : "bg-slate-50/60 text-slate-900 border-slate-200 hover:bg-white hover:border-slate-300"
+                )}
+              >
+                {/* Package Thumbnail */}
+                <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-xl overflow-hidden bg-slate-200 relative border border-slate-200">
+                  <Image
+                    src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=300&q=80"
+                    alt={b.package_name || 'Service Package'}
+                    width={80}
+                    height={80}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                {/* Info Content */}
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <h4 className={cn("font-black text-sm line-clamp-1", isActive ? "!text-white" : "text-slate-900")}>
+                      {b.package_name || (b.status === 'deposit_pending' ? 'Phiếu Đặt Cọc' : 'Gói lẻ')}
+                    </h4>
+                    <span className={cn(
+                      "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shrink-0 border",
+                      statusDisplay.bg, statusDisplay.text
+                    )}>
+                      {statusDisplay.label}
+                    </span>
                   </div>
-                )}
-                {isCombineMode && selectedCount >= 2 && (
-                  <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-indigo-100 px-3 py-1 text-[9px] font-black uppercase tracking-[0.18em] text-indigo-600">
-                    <span className="h-2 w-2 rounded-full bg-indigo-500 animate-ping" />
-                    Đã chọn {selectedCount} gói để gộp báo giá
+
+                  {/* Progress Bar */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-[10px]">
+                      <span className={isActive ? "!text-slate-300 font-bold" : "text-slate-500 font-bold"}>
+                        {completed}/{total} buổi
+                      </span>
+                      <span className={isActive ? "!text-emerald-300 font-black" : "text-emerald-600 font-black"}>
+                        {percent}%
+                      </span>
+                    </div>
+                    <div className={cn("h-1.5 w-full rounded-full overflow-hidden", isActive ? "bg-slate-800" : "bg-slate-200")}>
+                      <div
+                        className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
                   </div>
-                )}
-                {isCombineMode && selectedCount < 2 && (
-                  <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-[9px] font-black uppercase tracking-[0.18em] text-amber-600">
-                    Chọn tối thiểu 2 gói để gộp báo giá
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="w-fit rounded-full bg-primary/10 px-3 py-1 text-[9px] font-black uppercase text-primary">
-                  Có {visibleBookings.length} {vocab.package.singular.toLowerCase()}
-                </span>
-                {cancelledCount > 0 && (
-                  <span className="w-fit rounded-full bg-red-100 px-3 py-1 text-[9px] font-black uppercase text-red-600">
-                    {cancelledCount} đã hủy
-                  </span>
-                )}
-                {/* Combine mode toggle — only show for admin with 2+ bookings */}
-                {userRole === 'admin' && visibleBookings.length >= 2 && onToggleCombineMode && (
-                  <button
-                    onClick={onToggleCombineMode}
-                    className={cn(
-                      'rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-widest transition-all border',
-                      isCombineMode
-                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-100'
-                        : 'bg-indigo-50 text-indigo-600 border-indigo-200 hover:bg-indigo-100'
+
+                  {/* Dates / Deposit info */}
+                  <div className="flex items-center gap-2 text-[10px] font-medium pt-0.5 flex-wrap">
+                    <span className={isActive ? "!text-slate-300" : "text-slate-500"}>
+                      📅 Bắt đầu: {b.start_date ? new Date(b.start_date).toLocaleDateString('vi-VN') : '--/--/----'}
+                    </span>
+                    {b.deposit_amount && b.deposit_amount > 0 && (
+                      <span className={isActive ? "!text-amber-300 font-bold" : "text-amber-600 font-bold"}>
+                        • Cọc: {b.deposit_amount.toLocaleString('vi-VN')}đ
+                      </span>
                     )}
+                  </div>
+                </div>
+
+                {/* Delete button for admin */}
+                {!isCombineMode && userRole === 'admin' && onDeleteBooking && b.status === 'cancelled' && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm(`Xác nhận xóa gói "${b.package_name || 'Gói lẻ'}"?`)) {
+                        onDeleteBooking(b.id);
+                      }
+                    }}
+                    className="absolute top-2 right-2 p-1 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Xóa gói"
                   >
-                    {isCombineMode ? '✓ Đang gộp' : '⊞ Chọn gộp'}
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {visibleBookings.length > 0 ? (
-                visibleBookings.map((b) => {
-                  const statusDisplay = getStatusDisplay(b.status || '');
-                  const status = b.status || '';
-                  const isActive = activeBooking?.id === b.id;
-                  const isInProgress = status === 'in_progress' || status === 'active';
-                  const isUpcoming = status === 'booked' || status === 'deposit_pending';
-                  const isCancelled = status === 'cancelled';
-                  const isSelected = selectedBookingIds?.has(b.id) ?? false;
-
-                  let btnClasses = "rounded-2xl border px-4 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2";
-
-                  if (isCombineMode) {
-                    // In combine mode: highlight selected items with indigo
-                    if (isSelected) {
-                      btnClasses = cn(btnClasses, "bg-indigo-600 text-white border-indigo-600 shadow-xl shadow-indigo-200 ring-4 ring-indigo-200/50");
-                    } else {
-                      btnClasses = cn(btnClasses, "bg-slate-50 text-slate-500 border-slate-200 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-600");
-                    }
-                  } else {
-                    if (isActive) {
-                      btnClasses = cn(btnClasses, "bg-primary text-white border-primary shadow-xl shadow-pink-200 ring-4 ring-primary/15 dark:shadow-none");
-                    } else if (isInProgress) {
-                      btnClasses = cn(btnClasses, "bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300");
-                    } else if (isUpcoming) {
-                      if (status === 'deposit_pending') {
-                        btnClasses = cn(btnClasses, "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100 hover:border-amber-300");
-                      } else {
-                        btnClasses = cn(btnClasses, "bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100 hover:border-blue-300");
-                      }
-                    } else {
-                      // completed, cancelled, refunded
-                      btnClasses = cn(
-                        btnClasses,
-                        isCancelled
-                          ? "bg-red-50/50 text-red-400 border-red-100 opacity-40 hover:opacity-80"
-                          : "bg-slate-50 text-slate-400 border-slate-100 opacity-40 hover:opacity-80"
-                      );
-                    }
-                  }
-
-                  return (
-                    <div key={b.id} className="relative group">
-                      <button
-                        onClick={() => {
-                          if (isCombineMode && onToggleBookingSelection) {
-                            onToggleBookingSelection(b.id);
-                          } else {
-                            onSelectBooking(b);
-                          }
-                        }}
-                        aria-current={isActive ? 'true' : undefined}
-                        className={btnClasses}
-                      >
-                        {/* Checkbox indicator in combine mode */}
-                        {isCombineMode && (
-                          <span className={cn(
-                            'w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all',
-                            isSelected
-                              ? 'bg-white border-white'
-                              : 'bg-transparent border-current'
-                          )}>
-                            {isSelected && <span className="text-indigo-600 text-[10px] font-black">✓</span>}
-                          </span>
-                        )}
-                        <span className="text-left flex flex-col gap-0.5">
-                          <span className="font-black block">
-                            {b.package_name || (b.status === 'deposit_pending' ? 'Phiếu Đặt Cọc' : 'Gói lẻ')}
-                          </span>
-                          <span className={cn(
-                            "text-[8.5px] tracking-normal normal-case font-bold block",
-                            isCombineMode
-                              ? isSelected
-                                ? "text-indigo-200"
-                                : "text-slate-400 group-hover:text-indigo-400"
-                              : isActive
-                              ? "text-white/80"
-                              : isInProgress
-                              ? "text-emerald-600"
-                              : statusDisplay.color
-                          )}>
-                            {statusDisplay.label} • {b.completed_sessions || 0}/{b.total_sessions || 15} ca
-                            {b.start_date
-                              ? ` • Bắt đầu: ${new Date(b.start_date).toLocaleDateString('vi-VN')}`
-                              : b.created_at
-                              ? ` • Đăng ký: ${new Date(b.created_at).toLocaleDateString('vi-VN')}`
-                              : ''}
-                          </span>
-                        </span>
-                      </button>
-                      
-                      {/* Delete button - only for admin and cancelled/deposit_pending bookings */}
-                      {!isCombineMode && userRole === 'admin' && onDeleteBooking && (isCancelled || b.status === 'deposit_pending') && (
-                        <button
-                          onClick={() => {
-                            if (confirm(`Xác nhận XÓA VĨNH VIỄN gói "${b.package_name || 'Gói lẻ'}"?\n\nThao tác này KHÔNG THỂ HOÀN TÁC!`)) {
-                              onDeleteBooking(b.id);
-                            }
-                          }}
-                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 hover:scale-110 active:scale-95 shadow-lg"
-                          title="Xóa gói (VĨNH VIỄN)"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      )}
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="w-full py-4 text-center border-2 border-dashed border-slate-100 rounded-2xl">
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                    {vocab.customer.singular} chưa có {vocab.package.singular.toLowerCase()} nào
-                  </p>
-                </div>
-              )}
-            </div>
+            );
+          })
+        ) : (
+          <div className="col-span-2 py-6 text-center border-2 border-dashed border-slate-200 rounded-2xl">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              Khách hàng chưa đăng ký gói dịch vụ nào
+            </p>
           </div>
+        )}
+      </div>
+    </div>
   );
 }
