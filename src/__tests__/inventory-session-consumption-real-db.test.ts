@@ -44,8 +44,8 @@ const describeWithRealSupabase = hasRealSupabaseAdminEnv() ? describe : describe
 
 describeWithRealSupabase('Inventory session consumption Real DB proof', () => {
   const marker = `inventory-real-db-proof-${Date.now()}`;
-  const adminUserId = '11111111-1111-4111-8111-111111111196';
-  const otherUserId = '22222222-2222-4222-8222-222222222196';
+  const adminEmail = `${marker}-admin@example.test`;
+  const otherEmail = `${marker}-other@example.test`;
   const customerId = randomUUID();
   const packageId = randomUUID();
   const bookingId = randomUUID();
@@ -68,6 +68,8 @@ describeWithRealSupabase('Inventory session consumption Real DB proof', () => {
   let supabase: SeedClient;
   let tenantId: string;
   let otherTenantId: string;
+  let adminUserId = '';
+  let otherUserId = '';
 
   async function ensureTenant(name: string) {
     const existing = await supabase
@@ -100,6 +102,8 @@ describeWithRealSupabase('Inventory session consumption Real DB proof', () => {
   }
 
   async function cleanup() {
+    if (!tenantId || !otherTenantId) return;
+
     await cleanupStep('accounting_outbox', supabase.from('accounting_outbox').delete().eq('tenant_id', tenantId));
     await cleanupStep('session_reviews', supabase.from('session_reviews').delete().eq('tenant_id', tenantId));
     await cleanupStep('inventory_logs', supabase.from('inventory_logs').delete().eq('tenant_id', tenantId));
@@ -112,6 +116,31 @@ describeWithRealSupabase('Inventory session consumption Real DB proof', () => {
     await cleanupStep('org_relationships', supabase.from('org_relationships').delete().eq('from_id', adminPersonId));
     await cleanupStep('people_directory', supabase.from('people_directory').delete().eq('id', adminPersonId));
     await cleanupStep('org_units', supabase.from('org_units').delete().eq('id', branchId));
+    if (adminUserId || otherUserId) {
+      await cleanupStep('users', supabase.from('users').delete().in('id', [adminUserId, otherUserId].filter(Boolean)));
+    }
+  }
+
+  async function createAuthUser(email: string) {
+    const result = await supabase.auth.admin.createUser({
+      email,
+      password: randomUUID(),
+      email_confirm: true,
+    });
+    if (result.error || !result.data.user) {
+      throw new Error(`auth user fixture failed for ${email}: ${result.error?.message ?? 'missing auth user'}`);
+    }
+
+    return result.data.user.id;
+  }
+
+  async function deleteAuthUser(userId: string) {
+    if (!userId) return;
+
+    const { error } = await supabase.auth.admin.deleteUser(userId);
+    if (error && !error.message.toLowerCase().includes('user not found')) {
+      throw new Error(`auth user cleanup failed: ${error.message}`);
+    }
   }
 
   beforeAll(async () => {
@@ -126,10 +155,15 @@ describeWithRealSupabase('Inventory session consumption Real DB proof', () => {
 
   afterAll(async () => {
     await cleanup();
+    await deleteAuthUser(adminUserId);
+    await deleteAuthUser(otherUserId);
     mockCurrentUser = null;
   });
 
   it('proves complete session auto-consumes package materials and RLS isolates inventory rows', async () => {
+    adminUserId = await createAuthUser(adminEmail);
+    otherUserId = await createAuthUser(otherEmail);
+
     const tenantInsert = await supabase
       .from('tenants')
       .update({
@@ -144,7 +178,7 @@ describeWithRealSupabase('Inventory session consumption Real DB proof', () => {
       {
         id: adminUserId,
         tenant_id: tenantId,
-        email: 'inventory-real-db-proof-admin@example.test',
+        email: adminEmail,
         full_name: 'Inventory Proof Admin',
         role: 'admin',
         status: 'active',
@@ -152,7 +186,7 @@ describeWithRealSupabase('Inventory session consumption Real DB proof', () => {
       {
         id: otherUserId,
         tenant_id: otherTenantId,
-        email: 'inventory-real-db-proof-other@example.test',
+        email: otherEmail,
         full_name: 'Inventory Proof Other Admin',
         role: 'admin',
         status: 'active',
@@ -192,7 +226,7 @@ describeWithRealSupabase('Inventory session consumption Real DB proof', () => {
     mockCurrentUser = {
       id: adminUserId,
       tenant_id: tenantId,
-      email: 'inventory-real-db-proof-admin@example.test',
+      email: adminEmail,
       full_name: 'Inventory Proof Admin',
       role: 'admin',
       status: 'active',
@@ -331,7 +365,7 @@ describeWithRealSupabase('Inventory session consumption Real DB proof', () => {
     mockCurrentUser = {
       id: otherUserId,
       tenant_id: otherTenantId,
-      email: 'inventory-real-db-proof-other@example.test',
+      email: otherEmail,
       full_name: 'Inventory Proof Other Admin',
       role: 'admin',
       status: 'active',
@@ -375,7 +409,7 @@ describeWithRealSupabase('Inventory session consumption Real DB proof', () => {
     mockCurrentUser = {
       id: adminUserId,
       tenant_id: tenantId,
-      email: 'inventory-real-db-proof-admin@example.test',
+      email: adminEmail,
       full_name: 'Inventory Proof Admin',
       role: 'ktv',
       status: 'active',
