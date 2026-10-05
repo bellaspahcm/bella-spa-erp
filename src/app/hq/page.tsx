@@ -4,8 +4,8 @@ import HqDashboardClient from './hq-dashboard-client';
 import { HqDashboardStats, HqTenantRecord } from '@/types/domain';
 
 export const metadata = {
-  title: 'Bella Spa HQ - Tổng bộ Quản trị Cấp cao',
-  description: 'Bảng điều khiển quản lý và giám sát toàn bộ các chi nhánh hệ thống Bella Spa.',
+  title: 'HQ Portal - Tổng bộ Quản trị Cấp cao',
+  description: 'Bảng điều khiển quản lý và giám sát toàn bộ các chi nhánh hệ thống.',
 };
 
 export default async function HqPage() {

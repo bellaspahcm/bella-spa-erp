@@ -22,7 +22,7 @@ export function HqServiceTemplateList({
       <div className="flex justify-between items-center border-b border-slate-50 pb-4">
         <div>
           <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest">Liệu trình thương hiệu</h4>
-          <p className="text-[9px] text-slate-400 font-bold mt-0.5">Danh mục mẫu chuẩn Bella HQ</p>
+          <p className="text-[9px] text-slate-400 font-bold mt-0.5">Danh mục mẫu chuẩn HQ Portal</p>
         </div>
         <button
           onClick={() => onOpenTemplate(null)}
