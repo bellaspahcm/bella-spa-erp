@@ -4,6 +4,7 @@ const mockProcessSessionCompletion = jest.fn();
 const mockSafeRevalidatePath = jest.fn();
 const mockGetCurrentUser = jest.fn();
 const mockRecalculateAndSaveSalaryRecord = jest.fn();
+const mockResolveSingleStaffBranchContext = jest.fn();
 
 jest.mock('@/core/services/order/session-completion-engine', () => ({
   processSessionCompletion: (...args: unknown[]) => mockProcessSessionCompletion(...args),
@@ -19,6 +20,10 @@ jest.mock('@/services/user-actions', () => ({
 
 jest.mock('@/modules/hr-salary/actions/admin-salary-actions', () => ({
   recalculateAndSaveSalaryRecord: (...args: unknown[]) => mockRecalculateAndSaveSalaryRecord(...args),
+}));
+
+jest.mock('@/services/beauty-branch-context', () => ({
+  resolveSingleStaffBranchContext: (...args: unknown[]) => mockResolveSingleStaffBranchContext(...args),
 }));
 
 import { completeSession } from '@/core/services/order';
@@ -42,6 +47,7 @@ function createCompleteSessionSupabaseMock(options: {
     status: 'scheduled',
     session_number: 1,
     tenant_id: 'tenant-1',
+    branch_id: null,
   };
   const booking = options.booking ?? {
     assigned_ktv_id: 'ktv-1',
@@ -165,6 +171,13 @@ describe('completeSession wrapper rollback and revalidation', () => {
     mockProcessSessionCompletion.mockResolvedValue({ success: true });
     mockSafeRevalidatePath.mockResolvedValue(undefined);
     mockRecalculateAndSaveSalaryRecord.mockResolvedValue({ success: true });
+    mockResolveSingleStaffBranchContext.mockResolvedValue({
+      success: true,
+      context: {
+        branchId: 'branch-a',
+        rootOrgUnitId: 'branch-a',
+      },
+    });
   });
 
   it('rolls back session status and skips revalidation when completion engine fails', async () => {
@@ -181,6 +194,7 @@ describe('completeSession wrapper rollback and revalidation', () => {
         payload: expect.objectContaining({
           status: 'completed',
           completed_by_ktv_id: 'ktv-1',
+          branch_id: 'branch-a',
           notes: 'Hoan thanh',
           business_event_type: 'SESSION_REVENUE_RECOGNIZED',
           accounting_review_status: 'UNREVIEWED',
@@ -203,6 +217,7 @@ describe('completeSession wrapper rollback and revalidation', () => {
           status: 'scheduled',
           completed_date: null,
           completed_by_ktv_id: null,
+          branch_id: null,
           business_event_type: undefined,
           accounting_review_status: undefined,
           accounting_metadata: undefined,
@@ -301,6 +316,7 @@ describe('completeSession wrapper rollback and revalidation', () => {
     expect(result).toEqual({ success: true });
     expect(updateCalls).toHaveLength(1);
     expect(updateCalls[0]?.payload).toEqual(expect.objectContaining({
+      branch_id: 'branch-a',
       business_event_type: 'SESSION_REVENUE_RECOGNIZED',
       accounting_review_status: 'UNREVIEWED',
       accounting_metadata: expect.objectContaining({

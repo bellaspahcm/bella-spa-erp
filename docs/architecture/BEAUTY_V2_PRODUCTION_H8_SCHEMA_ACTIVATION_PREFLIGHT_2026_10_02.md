@@ -6,6 +6,12 @@ Verification tenant: `cf5be9d3-60f2-41e0-bb78-ff2a4f337c67`
 Verification branch: `1f7b3cfc-4292-4c6d-ba98-4eec818ed7a8`
 Status: `STOPPED_AT_DEPLOYMENT_BOUNDARY`
 
+> Superseded status note, 2026-10-05:
+> Read-only production H8 preflight later proved that the current 6-table Beauty H8 runtime schema is present on production for project `lvnvkpyxtuilhrabtlwv`.
+> The old 8-table expectation in this document is stale because `beauty_customer_histories` and `beauty_service_commitments` are not part of the current exact H8 migration/runtime contract.
+> Current blocker is backup / restore-point readiness, not missing current H8 runtime schema or H8 migration deployment.
+> See `docs/architecture/ARCHITECTURE_GATE_RESULT_BEAUTY_V2_PRODUCTION_H8_READ_ONLY_PREFLIGHT_2026_10_05.md`.
+
 ## Trigger
 
 Beauty V2 production field verification stopped at create booking because the

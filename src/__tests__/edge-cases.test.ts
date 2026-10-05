@@ -104,6 +104,10 @@ class MockQueryBuilder {
     return this;
   }
 
+  in(_field: string, _values: unknown[]) {
+    return this;
+  }
+
   single() {
     if (this.table === 'users') {
       return Promise.resolve({
@@ -152,7 +156,11 @@ class MockQueryBuilder {
           id: 'session-1',
           booking_id: 'booking-1',
           status: 'scheduled',
-          session_number: 1
+          session_number: 1,
+          branch_id: 'branch-a',
+          accounting_metadata: null,
+          accounting_review_status: null,
+          business_event_type: null,
         },
         error: null
       });
@@ -161,6 +169,12 @@ class MockQueryBuilder {
   }
 
   maybeSingle() {
+    if (this.table === 'people_directory') {
+      return Promise.resolve({
+        data: { id: 'person-ktv-1' },
+        error: null,
+      });
+    }
     if (this.table === 'salary_records') {
       // Force deductions to be extremely high (e.g. 10,000,000 VND) to test negative cap
       return Promise.resolve({
@@ -197,7 +211,13 @@ class MockQueryBuilder {
   }
 
   then(onfulfilled: MockThenCallback) {
-    const data = this.table === 'attendance' ? [] : [];
+    const data = this.table === 'attendance'
+      ? [{ id: 'attendance-1', status: 'present', date: '2026-06-03', branch_id: 'branch-a' }]
+      : this.table === 'org_relationships'
+        ? [{ rel_type: 'belongs_to', since: null, to_id: 'branch-a', until: null }]
+        : this.table === 'org_units'
+          ? [{ id: 'branch-a', parent_id: null, unit_type: 'branch' }]
+          : [];
     return Promise.resolve({ data, error: null }).then(onfulfilled);
   }
 }

@@ -6,6 +6,8 @@ import {
   getMonthlyAttendanceSummary,
   getPendingLeaveRequests,
   getProcessedLeaveRequests,
+  ktvCheckIn,
+  ktvCheckOut,
 } from '../services/attendance-actions';
 
 jest.mock('next/cache', () => ({
@@ -131,7 +133,21 @@ describe('attendance read actions fail-fast behavior', () => {
   });
 
   it('propagates today attendance query failures', async () => {
-    mockFrom.mockReturnValue(new MockQueryBuilder(null, { message: 'today attendance failed' }));
+    const scripts: ScriptedResult[] = [
+      { table: 'people_directory', op: 'select', data: { id: 'person-1' } },
+      {
+        table: 'org_relationships',
+        op: 'select',
+        data: [{ rel_type: 'belongs_to', since: null, to_id: 'branch-a', until: null }],
+      },
+      {
+        table: 'org_units',
+        op: 'select',
+        data: [{ id: 'branch-a', parent_id: null, unit_type: 'branch' }],
+      },
+      { table: 'attendance', op: 'select', error: { message: 'today attendance failed' } },
+    ];
+    mockFrom.mockImplementation((table: string) => new ScriptedQueryBuilder(table, scripts, []));
 
     await expect(getKTVTodayAttendance()).rejects.toThrow(
       "Failed to fetch today's KTV attendance: today attendance failed"
@@ -544,5 +560,160 @@ describe('attendance leave approval side effects', () => {
       },
     ]);
     expect(mockRecordAuditLog).not.toHaveBeenCalled();
+  });
+});
+
+describe('attendance branch-aware KTV mutations', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockRecordAuditLog.mockResolvedValue({ success: true });
+    mockGetCurrentUser.mockResolvedValue({
+      id: 'ktv-1',
+      role: 'ktv',
+      tenant_id: 'tenant-1',
+    });
+  });
+
+  function installScriptedSupabase(scripts: ScriptedResult[]) {
+    const calls: DbCall[] = [];
+    mockFrom.mockImplementation((table: string) => new ScriptedQueryBuilder(table, scripts, calls));
+    return calls;
+  }
+
+  const branchAccessScripts: ScriptedResult[] = [
+    { table: 'org_units', op: 'select', data: { id: 'branch-a', parent_id: null } },
+    { table: 'people_directory', op: 'select', data: { id: 'person-1' } },
+    {
+      table: 'org_relationships',
+      op: 'select',
+      data: [{ id: 'rel-1', rel_type: 'belongs_to', since: null, to_id: 'branch-a', until: null }],
+    },
+    { table: 'org_units', op: 'select', data: [{ id: 'branch-a', parent_id: null }] },
+  ];
+
+  it('resolves the current KTV branch when check-in omits branchId', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'people_directory', op: 'select', data: { id: 'person-1' } },
+      {
+        table: 'org_relationships',
+        op: 'select',
+        data: [{ rel_type: 'belongs_to', since: null, to_id: 'branch-a', until: null }],
+      },
+      {
+        table: 'org_units',
+        op: 'select',
+        data: [{ id: 'branch-a', parent_id: null, unit_type: 'branch' }],
+      },
+      { table: 'attendance', op: 'select', data: null },
+      { table: 'attendance', op: 'insert', data: { id: 'att-1', branch_id: 'branch-a' } },
+    ]);
+
+    const result = await ktvCheckIn();
+
+    expect(result.success).toBe(true);
+    expect(calls.find(call => call.table === 'attendance' && call.op === 'insert')?.payload)
+      .toMatchObject({
+        ktv_id: 'ktv-1',
+        tenant_id: 'tenant-1',
+        branch_id: 'branch-a',
+      });
+  });
+
+  it('denies ambiguous KTV branch resolution before check-in write', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'people_directory', op: 'select', data: { id: 'person-1' } },
+      {
+        table: 'org_relationships',
+        op: 'select',
+        data: [{ rel_type: 'manages', since: null, to_id: 'region-1', until: null }],
+      },
+      {
+        table: 'org_units',
+        op: 'select',
+        data: [
+          { id: 'region-1', parent_id: null, unit_type: 'region' },
+          { id: 'branch-a', parent_id: 'region-1', unit_type: 'branch' },
+          { id: 'branch-b', parent_id: 'region-1', unit_type: 'branch' },
+        ],
+      },
+    ]);
+
+    const result = await ktvCheckIn();
+
+    expect(result).toEqual({
+      success: false,
+      error: 'KTV có nhiều chi nhánh khả dụng; vui lòng chọn chi nhánh trước khi chấm công',
+    });
+    expect(calls.some(call => call.table === 'attendance' && call.op === 'insert')).toBe(false);
+  });
+
+  it('persists branch_id after Platform branch authorization on check-in', async () => {
+    const calls = installScriptedSupabase([
+      ...branchAccessScripts,
+      { table: 'attendance', op: 'select', data: null },
+      { table: 'attendance', op: 'insert', data: { id: 'att-1', branch_id: 'branch-a' } },
+    ]);
+
+    const result = await ktvCheckIn('branch-a');
+
+    expect(result.success).toBe(true);
+    expect(calls.find(call => call.table === 'attendance' && call.op === 'insert')?.payload)
+      .toMatchObject({
+        ktv_id: 'ktv-1',
+        tenant_id: 'tenant-1',
+        branch_id: 'branch-a',
+      });
+  });
+
+  it('denies cross-branch check-in before attendance write', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'org_units', op: 'select', data: { id: 'branch-b', parent_id: null } },
+      { table: 'people_directory', op: 'select', data: { id: 'person-1' } },
+      {
+        table: 'org_relationships',
+        op: 'select',
+        data: [{ id: 'rel-1', rel_type: 'belongs_to', since: null, to_id: 'branch-a', until: null }],
+      },
+      {
+        table: 'org_units',
+        op: 'select',
+        data: [
+          { id: 'branch-a', parent_id: null },
+          { id: 'branch-b', parent_id: null },
+        ],
+      },
+    ]);
+
+    const result = await ktvCheckIn('branch-b');
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Không có quyền chấm công tại chi nhánh này',
+    });
+    expect(calls.some(call => call.table === 'attendance' && call.op === 'insert')).toBe(false);
+  });
+
+  it('persists branch-scoped checkout only after branch authorization', async () => {
+    const calls = installScriptedSupabase([
+      ...branchAccessScripts,
+      {
+        table: 'attendance',
+        op: 'select',
+        data: {
+          id: 'att-1',
+          branch_id: 'branch-a',
+          checkout_time: null,
+        },
+      },
+      { table: 'attendance', op: 'update', data: { id: 'att-1', branch_id: 'branch-a' } },
+    ]);
+
+    const result = await ktvCheckOut('branch-a');
+
+    expect(result.success).toBe(true);
+    expect(calls.find(call => call.table === 'attendance' && call.op === 'update')?.payload)
+      .toMatchObject({
+        checkout_time: expect.any(String),
+      });
   });
 });

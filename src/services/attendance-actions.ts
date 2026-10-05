@@ -5,6 +5,7 @@ import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server'
 import { getCurrentUser } from './user-actions';
 import { revalidatePath } from 'next/cache';
 import { recordAuditLog } from './audit-actions';
+import { resolveSingleStaffBranchContext } from './beauty-branch-context';
 import { getLocalDateString } from '@bella/shared';;
 import {
   buildAttendanceTimestamp,
@@ -22,6 +23,14 @@ type AttendanceRow = Database['public']['Tables']['attendance']['Row'];
 type AttendanceUpdate = Database['public']['Tables']['attendance']['Update'];
 type BookingRow = Database['public']['Tables']['bookings']['Row'];
 type CustomerRow = Database['public']['Tables']['customers']['Row'];
+type OrgRelationshipRow = Pick<
+  Database['public']['Tables']['org_relationships']['Row'],
+  'id' | 'rel_type' | 'since' | 'to_id' | 'until'
+>;
+type OrgUnitRow = Pick<
+  Database['public']['Tables']['org_units']['Row'],
+  'id' | 'parent_id'
+>;
 type SessionLogUpdate = Database['public']['Tables']['session_logs']['Update'];
 type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
 type StaffLeaveUpdate = Database['public']['Tables']['staff_leaves']['Update'];
@@ -53,6 +62,18 @@ type ReassignmentSnapshot = {
   payload: SessionLogUpdate;
 };
 
+type BranchAccessContext = {
+  branchId: string;
+  rootOrgUnitId: string;
+};
+
+type BranchAccessResult =
+  | { success: true; context: BranchAccessContext | null }
+  | { success: false; error: string };
+
+const ATTENDANCE_BRANCH_REL_TYPES = ['belongs_to', 'manages', 'participates_in'];
+const TENANT_WIDE_BRANCH_ROLES = new Set(['admin', 'super_admin']);
+
 function getErrorMessage(error: unknown, fallback = 'Lá»—i há»‡ thá»‘ng') {
   if (error instanceof Error) return error.message;
   if (typeof error === 'object' && error && 'message' in error) {
@@ -60,6 +81,124 @@ function getErrorMessage(error: unknown, fallback = 'Lá»—i há»‡ thá»�
     if (typeof message === 'string') return message;
   }
   return fallback;
+}
+
+function isEffectiveOrgRelationship(relationship: OrgRelationshipRow, todayStr: string) {
+  const startsBeforeToday = !relationship.since || relationship.since <= todayStr;
+  const endsAfterToday = !relationship.until || relationship.until >= todayStr;
+  return startsBeforeToday && endsAfterToday;
+}
+
+function findAccessibleRootForBranch(
+  branchId: string,
+  relationships: OrgRelationshipRow[],
+  orgUnits: OrgUnitRow[],
+) {
+  const parentByUnit = new Map(orgUnits.map(unit => [unit.id, unit.parent_id]));
+  const accessibleUnits = new Set(relationships.map(relationship => relationship.to_id));
+
+  let currentUnitId: string | null = branchId;
+  while (currentUnitId) {
+    if (accessibleUnits.has(currentUnitId)) {
+      return currentUnitId;
+    }
+    currentUnitId = parentByUnit.get(currentUnitId) ?? null;
+  }
+
+  return null;
+}
+
+async function resolveAttendanceBranchAccess(
+  supabase: SupabaseClient,
+  user: CurrentUser,
+  tenantId: string,
+  branchId?: string | null,
+): Promise<BranchAccessResult> {
+  if (!branchId) {
+    return resolveSingleStaffBranchContext({
+      supabase,
+      tenantId,
+      userId: user.id,
+      asOfDate: await getVNTodayString(),
+      missingMessage: 'Không xác định được chi nhánh chấm công của KTV',
+      ambiguousMessage: 'KTV có nhiều chi nhánh khả dụng; vui lòng chọn chi nhánh trước khi chấm công',
+      unauthorizedMessage: 'Không có quyền chấm công tại chi nhánh này',
+    });
+  }
+
+  const { data: branch, error: branchError } = await supabase
+    .from('org_units')
+    .select('id, parent_id')
+    .eq('id', branchId)
+    .eq('tenant_id', tenantId)
+    .eq('unit_type', 'branch')
+    .eq('is_active', true)
+    .maybeSingle();
+
+  if (branchError) {
+    return { success: false, error: branchError.message };
+  }
+  if (!branch) {
+    return { success: false, error: 'Không có quyền chấm công tại chi nhánh này' };
+  }
+
+  if (TENANT_WIDE_BRANCH_ROLES.has(user.role.toLowerCase())) {
+    return { success: true, context: { branchId, rootOrgUnitId: branch.id } };
+  }
+
+  const { data: person, error: personError } = await supabase
+    .from('people_directory')
+    .select('id')
+    .eq('tenant_id', tenantId)
+    .eq('user_id', user.id)
+    .eq('is_active', true)
+    .maybeSingle();
+
+  if (personError) {
+    return { success: false, error: personError.message };
+  }
+  if (!person) {
+    return { success: false, error: 'Không có quyền chấm công tại chi nhánh này' };
+  }
+
+  const { data: relationships, error: relationshipError } = await supabase
+    .from('org_relationships')
+    .select('id, rel_type, since, to_id, until')
+    .eq('tenant_id', tenantId)
+    .eq('from_id', person.id)
+    .eq('from_type', 'person')
+    .eq('to_type', 'unit')
+    .in('rel_type', ATTENDANCE_BRANCH_REL_TYPES);
+
+  if (relationshipError) {
+    return { success: false, error: relationshipError.message };
+  }
+
+  const { data: orgUnits, error: orgUnitsError } = await supabase
+    .from('org_units')
+    .select('id, parent_id')
+    .eq('tenant_id', tenantId)
+    .eq('is_active', true);
+
+  if (orgUnitsError) {
+    return { success: false, error: orgUnitsError.message };
+  }
+
+  const todayStr = await getVNTodayString();
+  const activeRelationships = (relationships ?? []).filter(relationship =>
+    isEffectiveOrgRelationship(relationship, todayStr),
+  );
+  const rootOrgUnitId = findAccessibleRootForBranch(branch.id, activeRelationships, orgUnits ?? []);
+
+  if (!rootOrgUnitId) {
+    return { success: false, error: 'Không có quyền chấm công tại chi nhánh này' };
+  }
+
+  return { success: true, context: { branchId, rootOrgUnitId } };
+}
+
+function attendanceBranchPayload(branchAccess: BranchAccessContext | null) {
+  return branchAccess ? { branch_id: branchAccess.branchId } : {};
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -130,22 +269,28 @@ export async function getVNTodayString(): Promise<string> {
 }
 
 /** Get KTV's attendance status for today */
-export async function getKTVTodayAttendance(currentUser?: CurrentUser) {
+export async function getKTVTodayAttendance(currentUser?: CurrentUser, branchId?: string) {
   const supabase = await createDevelopmentBypassClient();
   const user = currentUser || await getCurrentUser();
   if (!user || user.role !== 'ktv') return null;
   const tenantId = user.tenant_id;
   if (!tenantId) return null;
 
+  const branchAccess = await resolveAttendanceBranchAccess(supabase, user, tenantId, branchId);
+  if (!branchAccess.success) return null;
+
   const todayStr = await getVNTodayString();
 
-  const { data, error } = await supabase
+  const attendanceQuery = supabase
     .from('attendance')
     .select('*')
     .eq('ktv_id', user.id)
     .eq('tenant_id', tenantId)
-    .eq('date', todayStr)
-    .maybeSingle();
+    .eq('date', todayStr);
+  const scopedAttendanceQuery = branchAccess.context
+    ? attendanceQuery.eq('branch_id', branchAccess.context.branchId)
+    : attendanceQuery;
+  const { data, error } = await scopedAttendanceQuery.maybeSingle();
 
   if (error) {
     throw new Error(`Failed to fetch today's KTV attendance: ${error.message}`);
@@ -153,14 +298,21 @@ export async function getKTVTodayAttendance(currentUser?: CurrentUser) {
   return data;
 }
 
+export async function getKTVTodayAttendanceForBranch(branchId: string, currentUser?: CurrentUser) {
+  return getKTVTodayAttendance(currentUser, branchId);
+}
+
 /** KTV daily Check-in */
-export async function ktvCheckIn() {
+export async function ktvCheckIn(branchId?: string) {
   const supabase = await createDevelopmentBypassClient();
   const user = await getCurrentUser();
   if (!user || user.role !== 'ktv') return { success: false, error: 'Không có quyền truy cập' };
 
   const tenantId = user.tenant_id;
   if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
+
+  const branchAccess = await resolveAttendanceBranchAccess(supabase, user, tenantId, branchId);
+  if (!branchAccess.success) return { success: false, error: branchAccess.error };
 
   const todayStr = await getVNTodayString();
   const now = new Date();
@@ -172,8 +324,9 @@ export async function ktvCheckIn() {
   // Check if already checked in
   const { data: existing, error: existingError } = await supabase
     .from('attendance')
-    .select('id')
+    .select('id, branch_id')
     .eq('ktv_id', user.id)
+    .eq('tenant_id', tenantId)
     .eq('date', todayStr)
     .maybeSingle();
 
@@ -182,6 +335,9 @@ export async function ktvCheckIn() {
   }
 
   if (existing) {
+    if (branchAccess.context && existing.branch_id !== branchAccess.context.branchId) {
+      return { success: false, error: 'Bạn đã có bản ghi chấm công hôm nay ở chi nhánh khác' };
+    }
     return { success: false, error: 'Bạn đã check-in ngày hôm nay rồi!' };
   }
 
@@ -193,6 +349,7 @@ export async function ktvCheckIn() {
       checkin_time: now.toISOString(),
       status,
       tenant_id: tenantId,
+      ...attendanceBranchPayload(branchAccess.context),
     })
     .select()
     .single();
@@ -203,15 +360,25 @@ export async function ktvCheckIn() {
     action: 'INSERT',
     table_name: 'attendance',
     record_id: data.id,
-    new_data: { ktv_id: user.id, date: todayStr, checkin_time: now.toISOString(), status }
+    new_data: {
+      ktv_id: user.id,
+      date: todayStr,
+      checkin_time: now.toISOString(),
+      status,
+      ...attendanceBranchPayload(branchAccess.context),
+    }
   });
 
   revalidatePath('/ktv/dashboard');
   return { success: true, data };
 }
 
+export async function ktvCheckInForBranch(branchId: string) {
+  return ktvCheckIn(branchId);
+}
+
 /** KTV daily Check-out */
-export async function ktvCheckOut() {
+export async function ktvCheckOut(branchId?: string) {
   const supabase = await createDevelopmentBypassClient();
   const user = await getCurrentUser();
   if (!user || user.role !== 'ktv') return { success: false, error: 'Không có quyền truy cập' };
@@ -219,16 +386,22 @@ export async function ktvCheckOut() {
   const tenantId = user.tenant_id;
   if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
 
+  const branchAccess = await resolveAttendanceBranchAccess(supabase, user, tenantId, branchId);
+  if (!branchAccess.success) return { success: false, error: branchAccess.error };
+
   const todayStr = await getVNTodayString();
   const now = new Date();
 
-  const { data: existing, error: fetchErr } = await supabase
+  const existingAttendanceQuery = supabase
     .from('attendance')
     .select('*')
     .eq('ktv_id', user.id)
     .eq('date', todayStr)
-    .eq('tenant_id', tenantId)
-    .maybeSingle();
+    .eq('tenant_id', tenantId);
+  const scopedExistingAttendanceQuery = branchAccess.context
+    ? existingAttendanceQuery.eq('branch_id', branchAccess.context.branchId)
+    : existingAttendanceQuery;
+  const { data: existing, error: fetchErr } = await scopedExistingAttendanceQuery.maybeSingle();
 
   if (fetchErr || !existing) {
     return { success: false, error: 'Bạn cần check-in trước khi check-out!' };
@@ -238,15 +411,17 @@ export async function ktvCheckOut() {
     return { success: false, error: 'Bạn đã check-out ngày hôm nay rồi!' };
   }
 
-  const { data, error } = await supabase
+  const updateAttendanceQuery = supabase
     .from('attendance')
     .update({
       checkout_time: now.toISOString(),
     })
     .eq('id', existing.id)
-    .eq('tenant_id', tenantId)
-    .select()
-    .single();
+    .eq('tenant_id', tenantId);
+  const scopedUpdateAttendanceQuery = branchAccess.context
+    ? updateAttendanceQuery.eq('branch_id', branchAccess.context.branchId)
+    : updateAttendanceQuery;
+  const { data, error } = await scopedUpdateAttendanceQuery.select().single();
 
   if (error) return { success: false, error: error.message };
 
@@ -254,11 +429,18 @@ export async function ktvCheckOut() {
     action: 'UPDATE',
     table_name: 'attendance',
     record_id: data.id,
-    new_data: { checkout_time: now.toISOString() }
+    new_data: {
+      checkout_time: now.toISOString(),
+      ...attendanceBranchPayload(branchAccess.context),
+    }
   });
 
   revalidatePath('/ktv/dashboard');
   return { success: true, data };
+}
+
+export async function ktvCheckOutForBranch(branchId: string) {
+  return ktvCheckOut(branchId);
 }
 
 /** Admin Action: Get all KTVs with their attendance count for a given month */
@@ -334,6 +516,7 @@ export async function adminOverrideAttendance(payload: {
   ktvId: string;
   date: string;
   status: 'present' | 'late' | 'absent' | 'half_day';
+  branchId?: string;
   checkinTime?: string;
   checkoutTime?: string;
 }) {
@@ -346,11 +529,24 @@ export async function adminOverrideAttendance(payload: {
   const tenantId = currentUser.tenant_id;
   if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
 
+  const branchAccess = await resolveSingleStaffBranchContext({
+    supabase,
+    tenantId,
+    userId: payload.ktvId,
+    asOfDate: payload.date,
+    branchId: payload.branchId,
+    missingMessage: 'Không xác định được chi nhánh chấm công của KTV',
+    ambiguousMessage: 'KTV có nhiều chi nhánh khả dụng; vui lòng chọn chi nhánh trước khi ghi chấm công',
+    unauthorizedMessage: 'KTV không thuộc chi nhánh chấm công này',
+  });
+  if (!branchAccess.success) return { success: false, error: branchAccess.error };
+
   // Check if existing record
   const { data: existing, error: existingError } = await supabase
     .from('attendance')
-    .select('id')
+    .select('id, branch_id')
     .eq('ktv_id', payload.ktvId)
+    .eq('tenant_id', tenantId)
     .eq('date', payload.date)
     .maybeSingle();
 
@@ -358,13 +554,18 @@ export async function adminOverrideAttendance(payload: {
     return { success: false, error: existingError.message };
   }
 
-  const recordData = {
+  if (existing && branchAccess.context && existing.branch_id !== branchAccess.context.branchId) {
+    return { success: false, error: 'KTV đã có bản ghi chấm công ở chi nhánh khác trong ngày này' };
+  }
+
+  const recordData: AttendanceInsert = {
     ktv_id: payload.ktvId,
     date: payload.date,
     status: payload.status,
     checkin_time: buildAttendanceTimestamp(payload.checkinTime),
     checkout_time: buildAttendanceTimestamp(payload.checkoutTime),
     tenant_id: tenantId,
+    ...attendanceBranchPayload(branchAccess.context),
   };
 
   let result;
@@ -743,11 +944,16 @@ export async function approveLeaveRequest(
   // - Nghỉ cả ngày (full / full_day) → absent (0 ngày công)
   try {
     const leaveAttendanceStatus = getLeaveAttendanceStatus(leave.leave_type);
+    const leaveTenantId = leave.tenant_id;
+    if (!leaveTenantId) {
+      throw new Error('Leave request is missing tenant_id');
+    }
 
     const { data: existingAtt, error: existingAttError } = await supabase
       .from('attendance')
       .select('id, status')
       .eq('ktv_id', leave.user_id)
+      .eq('tenant_id', leaveTenantId)
       .eq('date', leave.leave_date)
       .maybeSingle();
 
@@ -770,7 +976,7 @@ export async function approveLeaveRequest(
           ktv_id: leave.user_id,
           date: leave.leave_date,
           status: leaveAttendanceStatus,
-          tenant_id: leave.tenant_id,
+          tenant_id: leaveTenantId,
         } satisfies AttendanceInsert);
       if (insertErr) throw insertErr;
     }

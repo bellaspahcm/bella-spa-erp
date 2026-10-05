@@ -3,9 +3,10 @@ import { randomUUID } from 'node:crypto';
 import { createClient as createSupabaseClient, type SupabaseClient } from '@supabase/supabase-js';
 
 import { completeSession } from '@/core/services/order';
-import { requireSupabaseAdminEnv } from '@/lib/supabase-admin-env';
+import { getSupabaseAdminKey, getSupabaseAdminUrl, requireSupabaseAdminEnv } from '@/lib/supabase-admin-env';
 import type { Database } from '@/types/database.types';
 import { createAuthenticatedClient } from '../../tests/utils/test-jwt-helper';
+import { runRealDbSql } from './utils/real-db-sql';
 
 jest.mock('server-only', () => ({}), { virtual: true });
 
@@ -28,9 +29,11 @@ jest.setTimeout(90_000);
 
 type SeedClient = SupabaseClient<Database>;
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 const hasRealSupabaseAdminEnv = () => {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const adminKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = getSupabaseAdminUrl();
+  const adminKey = getSupabaseAdminKey();
 
   return Boolean(
     url
@@ -42,15 +45,25 @@ const hasRealSupabaseAdminEnv = () => {
 
 const describeWithRealSupabase = hasRealSupabaseAdminEnv() ? describe : describe.skip;
 
+function requireUuid(value: string, label: string): string {
+  if (!UUID_PATTERN.test(value)) {
+    throw new Error(`Invalid ${label}: ${value}`);
+  }
+
+  return value;
+}
+
 describeWithRealSupabase('Beauty V2 go-live payroll and commission Real DB proof', () => {
   const marker = `beauty-v2-payroll-proof-${Date.now()}`;
-  const adminUserId = '11111111-1111-4111-8111-111111111296';
-  const ktvUserId = '11111111-1111-4111-8111-111111111297';
-  const otherUserId = '22222222-2222-4222-8222-222222222296';
+  const adminEmail = `${marker}-admin@example.test`;
+  const ktvEmail = `${marker}-ktv@example.test`;
+  const otherEmail = `${marker}-other@example.test`;
   const customerId = randomUUID();
   const bookingId = randomUUID();
   const sessionId = randomUUID();
   const attendanceId = randomUUID();
+  const branchId = randomUUID();
+  const ktvPersonId = randomUUID();
   const today = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Ho_Chi_Minh',
     year: 'numeric',
@@ -66,6 +79,9 @@ describeWithRealSupabase('Beauty V2 go-live payroll and commission Real DB proof
   let supabase: SeedClient;
   let tenantId: string;
   let otherTenantId: string;
+  let adminUserId = '';
+  let ktvUserId = '';
+  let otherUserId = '';
 
   async function ensureTenant(name: string) {
     const existing = await supabase
@@ -105,15 +121,75 @@ describeWithRealSupabase('Beauty V2 go-live payroll and commission Real DB proof
     if (error) throw new Error(`${label} cleanup failed: ${error.message}`);
   }
 
+  async function createAuthUser(email: string) {
+    const result = await supabase.auth.admin.createUser({
+      email,
+      password: randomUUID(),
+      email_confirm: true,
+    });
+    if (result.error || !result.data.user) {
+      throw new Error(`auth user fixture failed for ${email}: ${result.error?.message ?? 'missing auth user'}`);
+    }
+
+    return result.data.user.id;
+  }
+
+  async function deleteAuthUser(userId: string) {
+    if (!userId) return;
+    const { error } = await supabase.auth.admin.deleteUser(userId);
+    if (error && !error.message.toLowerCase().includes('user not found')) {
+      throw new Error(`auth user cleanup failed: ${error.message}`);
+    }
+  }
+
   async function cleanup() {
-    await cleanupStep('accounting_outbox', supabase.from('accounting_outbox').delete().eq('tenant_id', tenantId));
-    await cleanupStep('session_reviews', supabase.from('session_reviews').delete().eq('tenant_id', tenantId));
-    await cleanupStep('salary_records', supabase.from('salary_records').delete().eq('tenant_id', tenantId));
-    await cleanupStep('attendance', supabase.from('attendance').delete().eq('tenant_id', tenantId));
-    await cleanupStep('session_logs', supabase.from('session_logs').delete().eq('id', sessionId));
-    await cleanupStep('bookings', supabase.from('bookings').delete().eq('id', bookingId));
-    await cleanupStep('customers', supabase.from('customers').delete().eq('id', customerId));
-    await cleanupStep('accounting_periods', supabase.from('accounting_periods').delete().eq('tenant_id', tenantId));
+    const userIds = [adminUserId, ktvUserId, otherUserId].filter(Boolean);
+    const currentUserIds = userIds
+      .map((id, index) => requireUuid(id, `user cleanup id ${index}`))
+      .map((id) => `'${id}'`)
+      .join(', ');
+    const currentUserFilter = currentUserIds
+      ? `id IN (${currentUserIds}) OR email IN ('${adminEmail}', '${ktvEmail}', '${otherEmail}')`
+      : `email IN ('${adminEmail}', '${ktvEmail}', '${otherEmail}')`;
+
+    await runRealDbSql('current go-live payroll proof SQL cleanup', `
+      SET statement_timeout = '120s';
+      DELETE FROM public.accounting_outbox
+      WHERE tenant_id = '${requireUuid(tenantId, 'tenant cleanup id')}'
+         OR reference_id = '${requireUuid(sessionId, 'session cleanup id')}';
+      DELETE FROM public.session_reviews
+      WHERE tenant_id = '${requireUuid(tenantId, 'tenant cleanup id')}';
+      DELETE FROM public.salary_records
+      WHERE tenant_id = '${requireUuid(tenantId, 'tenant cleanup id')}'
+         OR ${currentUserIds ? `ktv_id IN (${currentUserIds})` : 'false'};
+      DELETE FROM public.attendance
+      WHERE tenant_id = '${requireUuid(tenantId, 'tenant cleanup id')}'
+         OR ${currentUserIds ? `ktv_id IN (${currentUserIds})` : 'false'};
+      DELETE FROM public.session_logs
+      WHERE id = '${requireUuid(sessionId, 'session cleanup id')}'
+         OR booking_id = '${requireUuid(bookingId, 'booking cleanup id')}';
+      DELETE FROM public.bookings
+      WHERE id = '${requireUuid(bookingId, 'booking cleanup id')}';
+      DELETE FROM public.customers
+      WHERE id = '${requireUuid(customerId, 'customer cleanup id')}';
+      DELETE FROM public.accounting_periods
+      WHERE tenant_id = '${requireUuid(tenantId, 'tenant cleanup id')}'
+        AND name LIKE '${marker}%';
+      DELETE FROM public.org_relationships
+      WHERE from_id = '${requireUuid(ktvPersonId, 'person cleanup id')}'
+         OR to_id = '${requireUuid(branchId, 'branch cleanup id')}';
+      DELETE FROM public.people_directory
+      WHERE id = '${requireUuid(ktvPersonId, 'person cleanup id')}';
+      DELETE FROM public.users WHERE ${currentUserFilter};
+      DELETE FROM public.org_units
+      WHERE id = '${requireUuid(branchId, 'branch cleanup id')}';
+    `);
+
+    if (userIds.length > 0) {
+      for (const userId of userIds) {
+        await deleteAuthUser(userId);
+      }
+    }
   }
 
   beforeAll(async () => {
@@ -150,11 +226,15 @@ describeWithRealSupabase('Beauty V2 go-live payroll and commission Real DB proof
       .in('id', [tenantId, otherTenantId]);
     expect(tenantUpdate.error).toBeNull();
 
+    adminUserId = await createAuthUser(adminEmail);
+    ktvUserId = await createAuthUser(ktvEmail);
+    otherUserId = await createAuthUser(otherEmail);
+
     const userInsert = await supabase.from('users').upsert([
       {
         id: adminUserId,
         tenant_id: tenantId,
-        email: 'beauty-v2-payroll-proof-admin@example.test',
+        email: adminEmail,
         full_name: 'Beauty Payroll Proof Admin',
         role: 'admin',
         status: 'active',
@@ -163,7 +243,7 @@ describeWithRealSupabase('Beauty V2 go-live payroll and commission Real DB proof
       {
         id: ktvUserId,
         tenant_id: tenantId,
-        email: 'beauty-v2-payroll-proof-ktv@example.test',
+        email: ktvEmail,
         full_name: 'Beauty Payroll Proof KTV',
         role: 'ktv',
         status: 'active',
@@ -174,7 +254,7 @@ describeWithRealSupabase('Beauty V2 go-live payroll and commission Real DB proof
       {
         id: otherUserId,
         tenant_id: otherTenantId,
-        email: 'beauty-v2-payroll-proof-other@example.test',
+        email: otherEmail,
         full_name: 'Beauty Payroll Proof Other Admin',
         role: 'admin',
         status: 'active',
@@ -183,10 +263,39 @@ describeWithRealSupabase('Beauty V2 go-live payroll and commission Real DB proof
     ], { onConflict: 'id' });
     expect(userInsert.error).toBeNull();
 
+    const branchInsert = await supabase.from('org_units').insert({
+      id: branchId,
+      tenant_id: tenantId,
+      unit_type: 'branch',
+      name: `${marker} branch`,
+      is_active: true,
+    });
+    expect(branchInsert.error).toBeNull();
+
+    const personInsert = await supabase.from('people_directory').insert({
+      id: ktvPersonId,
+      tenant_id: tenantId,
+      user_id: ktvUserId,
+      display_name: 'Beauty Payroll Proof KTV',
+      person_type: 'employee',
+      is_active: true,
+    });
+    expect(personInsert.error).toBeNull();
+
+    const relationshipInsert = await supabase.from('org_relationships').insert({
+      tenant_id: tenantId,
+      from_id: ktvPersonId,
+      from_type: 'person',
+      to_id: branchId,
+      to_type: 'unit',
+      rel_type: 'belongs_to',
+    });
+    expect(relationshipInsert.error).toBeNull();
+
     mockCurrentUser = {
       id: adminUserId,
       tenant_id: tenantId,
-      email: 'beauty-v2-payroll-proof-admin@example.test',
+      email: adminEmail,
       full_name: 'Beauty Payroll Proof Admin',
       role: 'admin',
       status: 'active',
@@ -232,6 +341,7 @@ describeWithRealSupabase('Beauty V2 go-live payroll and commission Real DB proof
       id: attendanceId,
       tenant_id: tenantId,
       ktv_id: ktvUserId,
+      branch_id: branchId,
       date: today,
       status: 'present',
       checkin_time: `${today}T08:45:00+07:00`,
@@ -263,7 +373,7 @@ describeWithRealSupabase('Beauty V2 go-live payroll and commission Real DB proof
 
     const attendanceReadback = await supabase
       .from('attendance')
-      .select('id, ktv_id, tenant_id, date, status')
+      .select('id, ktv_id, tenant_id, branch_id, date, status')
       .eq('id', attendanceId)
       .single();
     expect(attendanceReadback.error).toBeNull();
@@ -271,19 +381,21 @@ describeWithRealSupabase('Beauty V2 go-live payroll and commission Real DB proof
       id: attendanceId,
       ktv_id: ktvUserId,
       tenant_id: tenantId,
+      branch_id: branchId,
       date: today,
       status: 'present',
     });
 
     const completedSession = await supabase
       .from('session_logs')
-      .select('id, tenant_id, status, completed_by_ktv_id, completed_date')
+      .select('id, tenant_id, branch_id, status, completed_by_ktv_id, completed_date')
       .eq('id', sessionId)
       .single();
     expect(completedSession.error).toBeNull();
     expect(completedSession.data).toMatchObject({
       id: sessionId,
       tenant_id: tenantId,
+      branch_id: branchId,
       status: 'completed',
       completed_by_ktv_id: ktvUserId,
       completed_date: today,
@@ -291,7 +403,7 @@ describeWithRealSupabase('Beauty V2 go-live payroll and commission Real DB proof
 
     const salaryReadback = await supabase
       .from('salary_records')
-      .select('id, tenant_id, ktv_id, month_year, total_sessions, session_bonus, base_salary, total_salary, status')
+      .select('id, tenant_id, ktv_id, month_year, branch_id, total_sessions, session_bonus, base_salary, total_salary, status')
       .eq('tenant_id', tenantId)
       .eq('ktv_id', ktvUserId)
       .eq('month_year', monthYear)
@@ -301,6 +413,7 @@ describeWithRealSupabase('Beauty V2 go-live payroll and commission Real DB proof
       tenant_id: tenantId,
       ktv_id: ktvUserId,
       month_year: monthYear,
+      branch_id: branchId,
       total_sessions: 1,
       session_bonus: 120000,
       status: 'draft',
@@ -329,7 +442,7 @@ describeWithRealSupabase('Beauty V2 go-live payroll and commission Real DB proof
     mockCurrentUser = {
       id: otherUserId,
       tenant_id: otherTenantId,
-      email: 'beauty-v2-payroll-proof-other@example.test',
+      email: otherEmail,
       full_name: 'Beauty Payroll Proof Other Admin',
       role: 'admin',
       status: 'active',

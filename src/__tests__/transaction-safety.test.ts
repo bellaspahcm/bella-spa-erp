@@ -151,7 +151,11 @@ class MockQueryBuilder {
           id: 'mock-session-id',
           booking_id: 'mock-booking-id',
           status: 'scheduled',
-          session_number: 1
+          session_number: 1,
+          branch_id: 'branch-a',
+          accounting_metadata: null,
+          accounting_review_status: null,
+          business_event_type: null,
         },
         error: null
       });
@@ -180,6 +184,12 @@ class MockQueryBuilder {
   }
 
   maybeSingle() {
+    if (this.table === 'people_directory') {
+      return Promise.resolve({
+        data: { id: 'person-ktv-1' },
+        error: null,
+      });
+    }
     if (this.table === 'salary_records') {
       return Promise.resolve({
         data: {
@@ -260,7 +270,13 @@ class MockQueryBuilder {
   }
 
   then(onfulfilled: (value: MockChainResult) => unknown) {
-    const data = this.table === 'bookings' ? null : [];
+    const data = this.table === 'org_relationships'
+      ? [{ rel_type: 'belongs_to', since: null, to_id: 'branch-a', until: null }]
+      : this.table === 'org_units'
+        ? [{ id: 'branch-a', parent_id: null, unit_type: 'branch' }]
+        : this.table === 'bookings'
+          ? null
+          : [];
     return Promise.resolve({ data, error: null }).then(onfulfilled);
   }
 }

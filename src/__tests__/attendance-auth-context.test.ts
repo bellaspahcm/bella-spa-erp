@@ -46,7 +46,8 @@ describe('attendance auth context and tenant scope', () => {
 
     expect(body).toContain('const user = await getCurrentUser()');
     expect(body).toContain('const tenantId = user.tenant_id');
-    expect(body).toMatch(/\.from\('attendance'\)[\s\S]*?\.select\('id'\)[\s\S]*?\.eq\('ktv_id', user\.id\)[\s\S]*?\.eq\('date', todayStr\)[\s\S]*?\.maybeSingle\(\)/);
+    expect(body).toContain('await resolveAttendanceBranchAccess(supabase, user, tenantId, branchId)');
+    expect(body).toMatch(/\.from\('attendance'\)[\s\S]*?\.select\('id, branch_id'\)[\s\S]*?\.eq\('ktv_id', user\.id\)[\s\S]*?\.eq\('tenant_id', tenantId\)[\s\S]*?\.eq\('date', todayStr\)[\s\S]*?\.maybeSingle\(\)/);
     expect(body).toMatch(/\.insert\(\{[\s\S]*?ktv_id: user\.id,[\s\S]*?date: todayStr,[\s\S]*?checkin_time: now\.toISOString\(\),[\s\S]*?status,[\s\S]*?tenant_id: tenantId,[\s\S]*?\}\)/);
   });
 
@@ -65,6 +66,7 @@ describe('attendance auth context and tenant scope', () => {
 
     expect(body).toContain('const user = await getCurrentUser()');
     expect(body).toContain('const tenantId = user.tenant_id');
+    expect(body).toContain('await resolveAttendanceBranchAccess(supabase, user, tenantId, branchId)');
     expect(body).toMatch(/\.from\('attendance'\)[\s\S]*?\.select\('\*'\)[\s\S]*?\.eq\('ktv_id', user\.id\)[\s\S]*?\.eq\('date', todayStr\)[\s\S]*?\.eq\('tenant_id', tenantId\)[\s\S]*?\.maybeSingle\(\)/);
     expect(body).toMatch(/\.from\('attendance'\)[\s\S]*?\.update\(\{[\s\S]*?checkout_time: now\.toISOString\(\),[\s\S]*?\}\)[\s\S]*?\.eq\('id', existing\.id\)[\s\S]*?\.eq\('tenant_id', tenantId\)[\s\S]*?\.select\(\)/);
   });

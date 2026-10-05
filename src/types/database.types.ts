@@ -1399,6 +1399,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "attendance_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "attendance_ktv_id_fkey"
             columns: ["ktv_id"]
             isOneToOne: false
@@ -7551,6 +7558,7 @@ export type Database = {
       }
       booking_service_items: {
         Row: {
+          branch_id: string | null
           booking_id: string
           calculated_commission: number
           completed_date: string | null
@@ -7571,6 +7579,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          branch_id?: string | null
           booking_id: string
           calculated_commission?: number
           completed_date?: string | null
@@ -7591,6 +7600,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          branch_id?: string | null
           booking_id?: string
           calculated_commission?: number
           completed_date?: string | null
@@ -7611,6 +7621,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "booking_service_items_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "booking_service_items_booking_id_fkey"
             columns: ["booking_id"]
@@ -26678,6 +26695,7 @@ export type Database = {
       product_sales: {
         Row: {
           booking_id: string | null
+          branch_id: string | null
           calculated_commission: number
           created_at: string
           customer_id: string | null
@@ -26700,6 +26718,7 @@ export type Database = {
         }
         Insert: {
           booking_id?: string | null
+          branch_id?: string | null
           calculated_commission?: number
           created_at?: string
           customer_id?: string | null
@@ -26722,6 +26741,7 @@ export type Database = {
         }
         Update: {
           booking_id?: string | null
+          branch_id?: string | null
           calculated_commission?: number
           created_at?: string
           customer_id?: string | null
@@ -26743,6 +26763,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "product_sales_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "product_sales_booking_id_fkey"
             columns: ["booking_id"]
@@ -30567,6 +30594,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "salary_records_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "salary_records_ktv_id_fkey"
             columns: ["ktv_id"]
             isOneToOne: false
@@ -30706,6 +30740,13 @@ export type Database = {
           zalo_reminder_time?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "session_logs_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "session_logs_accounting_template_id_fkey"
             columns: ["accounting_template_id"]

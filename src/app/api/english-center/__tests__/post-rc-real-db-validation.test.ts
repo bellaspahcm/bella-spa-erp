@@ -16,7 +16,6 @@ type RlsRow = {
 const dbUrl =
   process.env.DATABASE_URL ||
   process.env.SUPABASE_DATABASE_URL ||
-  process.env.SUPABASE_DB_URL ||
   '';
 
 function isRunnableDbUrl(value: string): boolean {
@@ -126,6 +125,6 @@ if (!hasRunnableDbUrl) {
   // Jest reports this suite as skipped. Keep the reason close to the gate so a
   // missing DB URL is not confused with a real database PASS.
   console.warn(
-    'Skipping English Center Post-RC real database validation: no runnable DATABASE_URL, SUPABASE_DATABASE_URL, or SUPABASE_DB_URL is configured.',
+    'Skipping English Center Post-RC real database validation: no runnable DATABASE_URL or SUPABASE_DATABASE_URL is configured.',
   );
 }

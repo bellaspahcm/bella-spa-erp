@@ -290,7 +290,7 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
         if (salaryRecordId && ktvId) {
           const { data: existingSalaryRecord, error: salaryRecordFetchError } = await supabase
             .from('salary_records')
-            .select('status, paid_date, paid_method, business_event_type, accounting_review_status, accounting_metadata')
+            .select('status, paid_date, paid_method, business_event_type, accounting_review_status, accounting_metadata, branch_id')
             .eq('id', salaryRecordId)
             .eq('tenant_id', tenantId)
             .single();
@@ -298,6 +298,15 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
           if (salaryRecordFetchError) {
             const rollbackError = await rollbackExpenseConfirmation(supabase, id, tenantId, expenseRollbackPayload);
             throw new Error(withRollbackFailure(salaryRecordFetchError, rollbackError));
+          }
+
+          const salaryBranchId = existingSalaryRecord?.branch_id;
+          if (!salaryBranchId) {
+            const rollbackError = await rollbackExpenseConfirmation(supabase, id, tenantId, expenseRollbackPayload);
+            throw new Error(withRollbackFailure(
+              new Error(`Salary record ${salaryRecordId} is missing branch_id for SALARY_PAID.`),
+              rollbackError,
+            ));
           }
 
           const salaryBusinessEventType = inferBusinessEventType({
@@ -349,6 +358,7 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
                 tenantId: updatedExpense.tenant_id,
                 salaryRecordId,
                 amount: Number(updatedExpense.amount),
+                branchId: salaryBranchId,
                 paymentMethod: 'bank_transfer',
                 description: updatedExpense.description || 'Thanh toán lương',
                 ktvId,

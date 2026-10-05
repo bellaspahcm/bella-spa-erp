@@ -86,6 +86,7 @@ export function buildSalaryPaidOutboxEvent(input: {
   tenantId: string;
   salaryRecordId: string;
   amount: number;
+  branchId: string;
   paymentMethod?: string | null;
   description?: string | null;
   ktvId?: string | null;
@@ -100,7 +101,7 @@ export function buildSalaryPaidOutboxEvent(input: {
       paymentMethod: input.paymentMethod || 'bank_transfer',
       description: input.description || 'Thanh toán lương',
       ktvId: input.ktvId,
-      branchId: input.tenantId,
+      branchId: input.branchId,
     },
   };
 }

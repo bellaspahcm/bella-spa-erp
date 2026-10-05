@@ -10,6 +10,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
 import { calculateServiceCommission } from '@/lib/business-rules/commission';
+import { resolveSingleStaffBranchContext } from '@/services/beauty-branch-context';
 
 type BookingRow = Database['public']['Tables']['bookings']['Row'];
 
@@ -18,6 +19,7 @@ interface ServiceItemInsert {
   id?: string;
   booking_id: string;
   tenant_id: string;
+  branch_id?: string | null;
   service_name: string;
   package_id?: string | null;
   quantity: number;
@@ -162,11 +164,39 @@ export async function createBookingServiceItems(
 
       totalCommission += calculatedCommission;
 
+      const targetKtvId = item.ktvId || booking.assigned_ktv_id || null;
+      let branchId: string | null = null;
+      if (targetKtvId && completedDate) {
+        const branchContext = await resolveSingleStaffBranchContext({
+          supabase,
+          tenantId,
+          userId: targetKtvId,
+          asOfDate: completedDate,
+          missingMessage: 'Không xác định được chi nhánh cho dịch vụ phát sinh commission',
+          ambiguousMessage: 'KTV có nhiều chi nhánh khả dụng; vui lòng chọn chi nhánh cho dịch vụ phát sinh commission',
+          unauthorizedMessage: 'KTV không thuộc chi nhánh của dịch vụ phát sinh commission này',
+        });
+
+        if (!branchContext.success) {
+          return {
+            success: false,
+            error: branchContext.error,
+          };
+        }
+        branchId = branchContext.context.branchId;
+      } else if (targetKtvId && itemStatus === 'completed') {
+        return {
+          success: false,
+          error: 'Dịch vụ hoàn tất thiếu ngày hoàn tất nên không thể xác định branch_id.',
+        };
+      }
+
       // Build insert payload
       const payload: ServiceItemInsert = {
         booking_id: booking.id,
         tenant_id: tenantId,
-        ktv_id: item.ktvId || booking.assigned_ktv_id || null,
+        branch_id: branchId,
+        ktv_id: targetKtvId,
         service_name: item.serviceName,
         package_id: item.packageId || null,
         quantity: item.quantity,
