@@ -74,9 +74,22 @@ jobs:
       
       - name: Run unit tests
         run: node scripts/test-changed-files.mjs
-      
+
+      - name: Check coverage artifact
+        id: coverage
+        shell: bash
+        run: |
+          if [ -s ./coverage/coverage-final.json ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "No coverage artifact produced by changed-file unit tests; skipping Codecov upload."
+          fi
+
       - name: Upload coverage
+        if: steps.coverage.outputs.present == 'true'
         uses: codecov/codecov-action@v3
+        continue-on-error: true
         with:
           files: ./coverage/coverage-final.json
           flags: unittests

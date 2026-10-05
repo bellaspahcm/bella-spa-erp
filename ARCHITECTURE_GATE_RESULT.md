@@ -4,6 +4,21 @@
 > **Date:** 2026-10-04
 > **Scope:** Reduce pre-existing repo-wide `npm run lint` errors without touching Bella English business logic, product contracts, database schema, or frozen kernels.
 
+## Additional Architecture Gate - Real Estate Unit Test Coverage Upload Stability
+
+> **Status:** PASS - CI plumbing fix authorized
+> **Date:** 2026-10-05
+> **Scope:** Prevent the Real Estate `Unit Tests` job from failing after the unit-test command succeeds solely because the optional external Codecov upload has no artifact or hits a transient TLS/upload failure.
+
+- Bella OS/Product Development Process Gate: PASS. This is CI workflow plumbing only; no Bella OS/Product runtime, schema, contract, or frozen kernel behavior is modified.
+- Product Manifest: no new product capability.
+- Ownership Map: `.github/workflows/ci-real-estate.yml` is owned by CI/repository governance. `node scripts/test-changed-files.mjs` remains the unit-test authority.
+- Contract Dependency Map: GitHub Actions `Unit Tests` -> changed-file Jest runner -> optional coverage artifact -> optional Codecov upload.
+- Change Authority: limited to the Real Estate workflow coverage-upload step. Unit-test execution remains mandatory.
+- UI -> Contract Reconciliation: none.
+- Additive Migration Plan: none.
+- Verification Gates Plan: workflow syntax inspection, `git diff --check`, rerun CI.
+
 ## Additional Architecture Gate - Tenant Context Runtime Auth Cookie Fix
 
 > **Status:** PASS - Minimal runtime boundary fix authorized
