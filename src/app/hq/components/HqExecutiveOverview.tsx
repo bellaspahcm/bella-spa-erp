@@ -88,6 +88,25 @@ export function HqExecutiveOverview({
   const [tableSearch, setTableSearch] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [tablePage, setTablePage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Helper to sanitize messy test tenant names
+  const cleanTenantName = (rawName: string) => {
+    let name = rawName.replace(/^Bella\s+Spa\s+/i, '');
+    if (name.toLowerCase().includes('beauty-v2') || name.toLowerCase().includes('tenant')) {
+      const parts = name.split(/[-_]/);
+      const cleanParts = parts.filter(
+        p => !p.match(/^\d+$/) && !['beauty', 'v2', 'real', 'db', 'tenant', 'other', 'branch', 'commission'].includes(p.toLowerCase())
+      );
+      if (cleanParts.length > 0) {
+        name = cleanParts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+      } else {
+        name = 'Chi nhánh ' + rawName.slice(-4).toUpperCase();
+      }
+    }
+    return name || rawName;
+  };
 
   // Parse branches for table
   const branchesList = useMemo(() => {
@@ -97,7 +116,7 @@ export function HqExecutiveOverview({
         return {
           id: t.id,
           rank: idx + 1,
-          name: t.name.replace(/^Bella\s+Spa\s+/i, ''),
+          name: cleanTenantName(t.name),
           region: t.address?.includes('Hà Nội') ? 'Hà Nội' : t.address?.includes('Đà Nẵng') ? 'Đà Nẵng' : 'TP. HCM',
           revenue: Number(revTỷ.toFixed(2)),
           profit: Number((revTỷ * 0.2).toFixed(2)),
@@ -130,8 +149,14 @@ export function HqExecutiveOverview({
       });
   }, [branchesList, tableSearch, selectedRegion, selectedStatus, tableSortTab]);
 
+  const totalPages = Math.ceil(filteredBranches.length / itemsPerPage) || 1;
+  const paginatedBranches = useMemo(() => {
+    const start = (tablePage - 1) * itemsPerPage;
+    return filteredBranches.slice(start, start + itemsPerPage);
+  }, [filteredBranches, tablePage, itemsPerPage]);
+
   return (
-    <div className="space-y-8 font-sans antialiased text-slate-900 pb-16">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 font-sans antialiased text-slate-900 pb-16">
       
       {/* ── TOP HEADER BAR & SUB-NAV ── */}
       <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-5">
@@ -624,7 +649,10 @@ export function HqExecutiveOverview({
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setTableSortTab(tab.id as typeof tableSortTab)}
+                onClick={() => {
+                  setTableSortTab(tab.id as typeof tableSortTab);
+                  setTablePage(1);
+                }}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all shrink-0 border ${
                   tableSortTab === tab.id
                     ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
@@ -647,7 +675,10 @@ export function HqExecutiveOverview({
                 type="text"
                 placeholder="Tìm kiếm chi nhánh..."
                 value={tableSearch}
-                onChange={(e) => setTableSearch(e.target.value)}
+                onChange={(e) => {
+                  setTableSearch(e.target.value);
+                  setTablePage(1);
+                }}
                 className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-blue-500"
               />
             </div>
@@ -655,7 +686,10 @@ export function HqExecutiveOverview({
             {/* Region Dropdown */}
             <select
               value={selectedRegion}
-              onChange={(e) => setSelectedRegion(e.target.value)}
+              onChange={(e) => {
+                setSelectedRegion(e.target.value);
+                setTablePage(1);
+              }}
               className="px-3 py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs font-bold text-slate-700 outline-none cursor-pointer"
             >
               <option value="all">Khu vực (Tất cả)</option>
@@ -702,7 +736,7 @@ export function HqExecutiveOverview({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-bold">
-              {filteredBranches.map((item, idx) => (
+              {paginatedBranches.map((item, idx) => (
                 <tr
                   key={idx}
                   onClick={() => onSelectBranch && 'id' in item && typeof item.id === 'string' && onSelectBranch(item.id)}
@@ -747,14 +781,44 @@ export function HqExecutiveOverview({
         </div>
 
         {/* Table Pagination */}
-        <div className="flex items-center justify-between text-xs font-bold text-slate-500 pt-3 border-t border-slate-100">
-          <span>Hiển thị 1 - {filteredBranches.length} / {branchesList.length} chi nhánh</span>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-bold text-slate-500 pt-3 border-t border-slate-100">
+          <span>
+            Hiển thị {filteredBranches.length === 0 ? 0 : (tablePage - 1) * itemsPerPage + 1} - {Math.min(tablePage * itemsPerPage, filteredBranches.length)} / {filteredBranches.length} chi nhánh
+          </span>
           <div className="flex items-center gap-1.5">
-            <button className="w-7 h-7 rounded-lg bg-blue-600 text-white font-black flex items-center justify-center">1</button>
-            <button className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center justify-center">2</button>
-            <button className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center justify-center">3</button>
-            <span>...</span>
-            <button className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center justify-center">24</button>
+            <button
+              disabled={tablePage === 1}
+              onClick={() => setTablePage((p) => Math.max(1, p - 1))}
+              className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 font-bold"
+            >
+              Trang trước
+            </button>
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let pageNum = i + 1;
+              if (totalPages > 5 && tablePage > 3) {
+                pageNum = Math.min(tablePage - 2 + i, totalPages - 4 + i);
+              }
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => setTablePage(pageNum)}
+                  className={`w-7 h-7 rounded-lg font-black flex items-center justify-center transition-colors ${
+                    tablePage === pageNum
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+            <button
+              disabled={tablePage === totalPages}
+              onClick={() => setTablePage((p) => Math.min(totalPages, p + 1))}
+              className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 font-bold"
+            >
+              Trang sau
+            </button>
           </div>
         </div>
       </div>
