@@ -72,13 +72,19 @@ interface AttendanceLogAdmin {
   ktv_id: string;
   date: string;
   status: 'present' | 'late' | 'absent' | 'half_day';
+  branch_id: string | null;
 }
 
 interface SessionLogAdmin {
   id: string;
   rating: number | null;
+  branch_id: string | null;
   bookings: { ktv_commission: number | null; package_name: string | null } | null;
   session_reviews: { rating: number | null; status: string | null }[];
+}
+
+interface CommissionSourceBranchRow {
+  branch_id: string | null;
 }
 
 interface PackageMultiplierRow {
@@ -107,6 +113,7 @@ export interface SalaryRecordDbAdmin {
   published_at?: string | null;
   notes?: string | null;
   tenant_id: string;
+  branch_id?: string | null;
   users?: { full_name: string | null } | null;
   // Advanced commission system columns (Beauty Spa)
   service_commission?: number | null;
@@ -123,6 +130,85 @@ export interface SalaryRecalculationOverrides {
   service_percentage_bonus?: number;
   status?: string;
   total_sessions?: number;
+  expectedBranchId?: string;
+}
+
+export const PAYROLL_BRANCH_MAPPING_ERRORS = {
+  BRANCH_NOT_PROVEN: 'PAYROLL_BRANCH_MAPPING_NOT_PROVEN',
+  BRANCH_CONTEXT_MISMATCH: 'PAYROLL_BRANCH_CONTEXT_MISMATCH',
+  MULTI_BRANCH_PERIOD_NOT_SUPPORTED: 'PAYROLL_MULTI_BRANCH_PERIOD_NOT_SUPPORTED',
+} as const;
+
+export const COMMISSION_BRANCH_MAPPING_ERRORS = {
+  SOURCE_BRANCH_NOT_PROVEN: 'COMMISSION_SOURCE_BRANCH_NOT_PROVEN',
+  SOURCE_BRANCH_CONTEXT_MISMATCH: 'COMMISSION_SOURCE_BRANCH_CONTEXT_MISMATCH',
+  MULTI_BRANCH_SOURCE_NOT_SUPPORTED: 'COMMISSION_MULTI_BRANCH_SOURCE_NOT_SUPPORTED',
+} as const;
+
+export function resolvePayrollBranchIdFromAttendance(
+  attendanceRows: Pick<AttendanceLogAdmin, 'branch_id'>[],
+  expectedBranchId?: string,
+) {
+  const distinctBranchIds = new Set<string>();
+  let hasNullBranch = false;
+
+  for (const row of attendanceRows) {
+    if (!row.branch_id) {
+      hasNullBranch = true;
+      continue;
+    }
+    distinctBranchIds.add(row.branch_id);
+  }
+
+  if (attendanceRows.length === 0 || hasNullBranch || distinctBranchIds.size === 0) {
+    throw new Error(`${PAYROLL_BRANCH_MAPPING_ERRORS.BRANCH_NOT_PROVEN}: Payroll V1 requires branch-aware attendance rows.`);
+  }
+
+  if (distinctBranchIds.size > 1) {
+    throw new Error(`${PAYROLL_BRANCH_MAPPING_ERRORS.MULTI_BRANCH_PERIOD_NOT_SUPPORTED}: Payroll V1 supports exactly one branch per KTV payroll period.`);
+  }
+
+  const [branchId] = Array.from(distinctBranchIds);
+  if (expectedBranchId && expectedBranchId !== branchId) {
+    throw new Error(`${PAYROLL_BRANCH_MAPPING_ERRORS.BRANCH_CONTEXT_MISMATCH}: Payroll branch context does not match attendance branch.`);
+  }
+
+  return branchId;
+}
+
+export function assertCommissionSourceBranchesMatchPayroll(
+  sourceRows: CommissionSourceBranchRow[],
+  payrollBranchId: string,
+) {
+  if (sourceRows.length === 0) {
+    return null;
+  }
+
+  const distinctBranchIds = new Set<string>();
+  let hasNullBranch = false;
+
+  for (const row of sourceRows) {
+    if (!row.branch_id) {
+      hasNullBranch = true;
+      continue;
+    }
+    distinctBranchIds.add(row.branch_id);
+  }
+
+  if (hasNullBranch || distinctBranchIds.size === 0) {
+    throw new Error(`${COMMISSION_BRANCH_MAPPING_ERRORS.SOURCE_BRANCH_NOT_PROVEN}: Commission V1 requires branch-aware source rows.`);
+  }
+
+  if (distinctBranchIds.size > 1) {
+    throw new Error(`${COMMISSION_BRANCH_MAPPING_ERRORS.MULTI_BRANCH_SOURCE_NOT_SUPPORTED}: Commission V1 supports exactly one source branch per KTV payroll period.`);
+  }
+
+  const [sourceBranchId] = Array.from(distinctBranchIds);
+  if (sourceBranchId !== payrollBranchId) {
+    throw new Error(`${COMMISSION_BRANCH_MAPPING_ERRORS.SOURCE_BRANCH_CONTEXT_MISMATCH}: Commission source branch does not match payroll branch.`);
+  }
+
+  return sourceBranchId;
 }
 
 /**
@@ -295,7 +381,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
 
   const { data: attendanceList, error: attError } = await supabase
     .from('attendance')
-    .select('status, date')
+    .select('id, status, date, branch_id')
     .eq('ktv_id', ktvId)
     .eq('tenant_id', tenantId)
     .gte('date', startOfMonthStr)
@@ -303,10 +389,14 @@ export async function recalculateAndSaveSalaryRecordEngine(
 
   if (attError) throw attError;
   const attendanceListTyped = (attendanceList || []) as unknown as AttendanceLogAdmin[];
+  const payrollBranchId = resolvePayrollBranchIdFromAttendance(
+    attendanceListTyped,
+    overrides?.expectedBranchId,
+  );
 
   const { data: sessions, error: sessionsError } = await supabase
     .from('session_logs')
-    .select('id, rating, bookings(ktv_commission, package_name), session_reviews(rating, status)')
+    .select('id, rating, branch_id, bookings(ktv_commission, package_name), session_reviews(rating, status)')
     .eq('completed_by_ktv_id', ktvId)
     .eq('tenant_id', tenantId)
     .eq('status', 'completed')
@@ -315,6 +405,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
 
   if (sessionsError) throw sessionsError;
   const sessionsTyped = (sessions || []) as unknown as SessionLogAdmin[];
+  assertCommissionSourceBranchesMatchPayroll(sessionsTyped, payrollBranchId);
 
   const { data: packagesData, error: packagesError } = await supabase
     .from('packages')
@@ -581,7 +672,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
   const rawClient = supabase as unknown as SupabaseClient;
   const { data: serviceItems, error: serviceItemsError } = await rawClient
     .from('booking_service_items')
-    .select('calculated_commission')
+    .select('calculated_commission, branch_id')
     .eq('ktv_id', ktvId)
     .eq('tenant_id', tenantId)
     .eq('status', 'completed')
@@ -589,13 +680,14 @@ export async function recalculateAndSaveSalaryRecordEngine(
     .lt('completed_date', endOfMonthStr);
 
   if (serviceItemsError) console.error('Error querying service items:', serviceItemsError);
-  const serviceItemsTyped = (serviceItems || []) as { calculated_commission: number | null }[];
+  const serviceItemsTyped = (serviceItems || []) as { calculated_commission: number | null; branch_id: string | null }[];
+  assertCommissionSourceBranchesMatchPayroll(serviceItemsTyped, payrollBranchId);
   const liveServiceCommission = serviceItemsTyped.reduce((sum, item) => sum + Number(item.calculated_commission || 0), 0);
 
   // Product sales commission from product_sales
   const { data: productSales, error: productSalesError } = await rawClient
     .from('product_sales')
-    .select('calculated_commission')
+    .select('calculated_commission, branch_id')
     .eq('ktv_id', ktvId)
     .eq('tenant_id', tenantId)
     .eq('status', 'completed')
@@ -603,7 +695,8 @@ export async function recalculateAndSaveSalaryRecordEngine(
     .lt('sale_date', endOfMonthStr);
 
   if (productSalesError) console.error('Error querying product sales:', productSalesError);
-  const productSalesTyped = (productSales || []) as { calculated_commission: number | null }[];
+  const productSalesTyped = (productSales || []) as { calculated_commission: number | null; branch_id: string | null }[];
+  assertCommissionSourceBranchesMatchPayroll(productSalesTyped, payrollBranchId);
   const liveProductCommission = productSalesTyped.reduce((sum, sale) => sum + Number(sale.calculated_commission || 0), 0);
 
   // Manual adjustments from salary_adjustments
@@ -663,7 +756,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
           package_name: s.bookings?.package_name,
         })),
         attendance: attendanceListTyped.map(a => ({
-          id: `${ktvId}-${a.date}`,
+          id: a.id,
           ktv_id: ktvId,
           date: a.date,
           status: a.status,
@@ -871,7 +964,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
       // Query full service items and product sales for Decision Engine
       const { data: fullServiceItems } = await rawClient
         .from('booking_service_items')
-        .select('id, ktv_id, subtotal, calculated_commission, override_commission_type, override_commission_value, status, completed_date')
+        .select('id, ktv_id, branch_id, subtotal, calculated_commission, override_commission_type, override_commission_value, status, completed_date')
         .eq('ktv_id', ktvId)
         .eq('tenant_id', tenantId)
         .eq('status', 'completed')
@@ -880,7 +973,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
 
       const { data: fullProductSales } = await rawClient
         .from('product_sales')
-        .select('id, ktv_id, sales_amount, calculated_commission, override_commission_type, override_commission_value, status, sale_date, product_sku')
+        .select('id, ktv_id, branch_id, sales_amount, calculated_commission, override_commission_type, override_commission_value, status, sale_date, product_sku')
         .eq('ktv_id', ktvId)
         .eq('tenant_id', tenantId)
         .eq('status', 'completed')
@@ -890,6 +983,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
       interface RawProductSale {
         id: string;
         ktv_id: string;
+        branch_id: string | null;
         sales_amount: number;
         calculated_commission: number;
         override_commission_type: string | null;
@@ -1146,6 +1240,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
     published_at: overrides?.status === 'published' ? new Date().toISOString() : (existing?.published_at || null),
     notes: proRataNote || null,
     tenant_id: tenantId,
+    branch_id: payrollBranchId,
     // Advanced commission components (Task 28-32)
     service_commission: finalServiceCommissionValue,
     product_sales_commission: finalProductCommission,

@@ -898,7 +898,7 @@ describe('Accounting Outbox Worker API', () => {
           tenant_id: 'tenant-uuid-1',
           event_type: 'SALARY_PAID',
           reference_id: 'ref-id-4',
-          payload: { amount: 8000000, paymentMethod: 'bank_transfer', description: 'Trả lương KTV', ktvId: 'ktv-1' },
+          payload: { amount: 8000000, paymentMethod: 'bank_transfer', description: 'Trả lương KTV', ktvId: 'ktv-1', branchId: 'branch-a-id' },
         },
         {
           id: 'outbox-id-5',
@@ -946,7 +946,10 @@ describe('Accounting Outbox Worker API', () => {
       expect(json.successCount).toBe(4);
 
       expect(RevenueRecognitionService.handleExpenseRecorded).toHaveBeenCalledWith(expect.objectContaining({ expenseId: 'ref-id-3' }));
-      expect(RevenueRecognitionService.handleSalaryPaid).toHaveBeenCalledWith(expect.objectContaining({ salaryRecordId: 'ref-id-4' }));
+      expect(RevenueRecognitionService.handleSalaryPaid).toHaveBeenCalledWith(expect.objectContaining({
+        salaryRecordId: 'ref-id-4',
+        branchId: 'branch-a-id',
+      }));
       expect(RevenueRecognitionService.handleInventoryConsumed).toHaveBeenCalledWith(expect.objectContaining({ sessionLogId: 'ref-id-5' }));
       expect(RevenueRecognitionService.handleRefundIssued).toHaveBeenCalledWith(expect.objectContaining({
         refundId: 'ref-id-6',

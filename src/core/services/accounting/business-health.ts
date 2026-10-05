@@ -141,6 +141,7 @@ type SalaryRecordRow = Pick<
   | 'paid_date'
   | 'paid_method'
   | 'notes'
+  | 'branch_id'
   | 'total_sessions'
   | 'base_salary'
   | 'session_bonus'
@@ -551,7 +552,7 @@ async function loadBusinessHealthDataset(supabase: SupabaseClient, tenantId: str
     queryRows<SalaryRecordRow>(
       supabase
         .from('salary_records')
-        .select('id, ktv_id, month_year, tenant_id, status, paid_date, paid_method, notes, total_sessions, base_salary, session_bonus, rating_bonus, kpi_bonus, violations_deduction, service_percentage_bonus, total_salary, business_event_type, accounting_review_status')
+        .select('id, ktv_id, month_year, tenant_id, status, paid_date, paid_method, notes, branch_id, total_sessions, base_salary, session_bonus, rating_bonus, kpi_bonus, violations_deduction, service_percentage_bonus, total_salary, business_event_type, accounting_review_status')
         .eq('tenant_id', tenantId)
         .limit(MAX_ROWS),
       'salary_records'
@@ -1431,7 +1432,7 @@ async function enqueueMissingSalaryPaidAccounting(salaryRecordId: string): Promi
   const { supabase, tenantId } = await resolveTenantContext();
   const { data: salaryRecord, error: salaryError } = await supabase
     .from('salary_records')
-    .select('id, ktv_id, month_year, tenant_id, status, paid_date, paid_method, notes, total_sessions, base_salary, session_bonus, rating_bonus, kpi_bonus, violations_deduction, service_percentage_bonus, total_salary, business_event_type, accounting_review_status')
+    .select('id, ktv_id, month_year, tenant_id, status, paid_date, paid_method, notes, branch_id, total_sessions, base_salary, session_bonus, rating_bonus, kpi_bonus, violations_deduction, service_percentage_bonus, total_salary, business_event_type, accounting_review_status')
     .eq('id', salaryRecordId)
     .eq('tenant_id', tenantId)
     .single();
@@ -1452,6 +1453,10 @@ async function enqueueMissingSalaryPaidAccounting(salaryRecordId: string): Promi
 
   if (!currentSalary.ktv_id) {
     throw new Error('Bản ghi lương thiếu KTV nên không thể tạo side-effect SALARY_PAID.');
+  }
+
+  if (!currentSalary.branch_id) {
+    throw new Error('Bản ghi lương thiếu branch_id nên không thể tạo side-effect SALARY_PAID.');
   }
 
   const existingOutbox = await queryRows<AccountingOutboxRow>(
@@ -1490,6 +1495,7 @@ async function enqueueMissingSalaryPaidAccounting(salaryRecordId: string): Promi
     tenantId,
     salaryRecordId: currentSalary.id,
     amount: totalSalary,
+    branchId: currentSalary.branch_id,
     paymentMethod,
     description: currentSalary.notes ||
       `Đối soát bổ sung: thanh toán lương kỳ ${currentSalary.month_year} cho KTV ${currentSalary.ktv_id}`,

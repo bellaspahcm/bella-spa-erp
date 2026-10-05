@@ -1365,6 +1365,7 @@ export type Database = {
       }
       attendance: {
         Row: {
+          branch_id: string | null
           checkin_time: string | null
           checkout_time: string | null
           date: string
@@ -1375,6 +1376,7 @@ export type Database = {
           tenant_id: string | null
         }
         Insert: {
+          branch_id?: string | null
           checkin_time?: string | null
           checkout_time?: string | null
           date: string
@@ -1385,6 +1387,7 @@ export type Database = {
           tenant_id?: string | null
         }
         Update: {
+          branch_id?: string | null
           checkin_time?: string | null
           checkout_time?: string | null
           date?: string
@@ -1395,6 +1398,13 @@ export type Database = {
           tenant_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "attendance_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "attendance_ktv_id_fkey"
             columns: ["ktv_id"]
@@ -7548,6 +7558,7 @@ export type Database = {
       }
       booking_service_items: {
         Row: {
+          branch_id: string | null
           booking_id: string
           calculated_commission: number
           completed_date: string | null
@@ -7568,6 +7579,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          branch_id?: string | null
           booking_id: string
           calculated_commission?: number
           completed_date?: string | null
@@ -7588,6 +7600,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          branch_id?: string | null
           booking_id?: string
           calculated_commission?: number
           completed_date?: string | null
@@ -7608,6 +7621,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "booking_service_items_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "booking_service_items_booking_id_fkey"
             columns: ["booking_id"]
@@ -26672,6 +26692,7 @@ export type Database = {
       product_sales: {
         Row: {
           booking_id: string | null
+          branch_id: string | null
           calculated_commission: number
           created_at: string
           customer_id: string | null
@@ -26694,6 +26715,7 @@ export type Database = {
         }
         Insert: {
           booking_id?: string | null
+          branch_id?: string | null
           calculated_commission?: number
           created_at?: string
           customer_id?: string | null
@@ -26716,6 +26738,7 @@ export type Database = {
         }
         Update: {
           booking_id?: string | null
+          branch_id?: string | null
           calculated_commission?: number
           created_at?: string
           customer_id?: string | null
@@ -26737,6 +26760,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "product_sales_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "product_sales_booking_id_fkey"
             columns: ["booking_id"]
@@ -30449,6 +30479,7 @@ export type Database = {
           accounting_review_status: string
           accounting_template_id: string | null
           base_salary: number | null
+          branch_id: string | null
           business_event_type: string | null
           confirmed_by_admin: boolean | null
           dispute_reason: string | null
@@ -30483,6 +30514,7 @@ export type Database = {
           accounting_review_status?: string
           accounting_template_id?: string | null
           base_salary?: number | null
+          branch_id?: string | null
           business_event_type?: string | null
           confirmed_by_admin?: boolean | null
           dispute_reason?: string | null
@@ -30517,6 +30549,7 @@ export type Database = {
           accounting_review_status?: string
           accounting_template_id?: string | null
           base_salary?: number | null
+          branch_id?: string | null
           business_event_type?: string | null
           confirmed_by_admin?: boolean | null
           dispute_reason?: string | null
@@ -30552,6 +30585,13 @@ export type Database = {
             columns: ["accounting_template_id"]
             isOneToOne: false
             referencedRelation: "accounting_event_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salary_records_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
             referencedColumns: ["id"]
           },
           {
@@ -30595,6 +30635,7 @@ export type Database = {
           assigned_time: string | null
           booking_id: string
           booking_resource_id: string | null
+          branch_id: string | null
           business_event_type: string | null
           checkin_lat: number | null
           checkin_lon: number | null
@@ -30630,6 +30671,7 @@ export type Database = {
           assigned_time?: string | null
           booking_id: string
           booking_resource_id?: string | null
+          branch_id?: string | null
           business_event_type?: string | null
           checkin_lat?: number | null
           checkin_lon?: number | null
@@ -30665,6 +30707,7 @@ export type Database = {
           assigned_time?: string | null
           booking_id?: string
           booking_resource_id?: string | null
+          branch_id?: string | null
           business_event_type?: string | null
           checkin_lat?: number | null
           checkin_lon?: number | null
@@ -30691,6 +30734,13 @@ export type Database = {
           zalo_reminder_time?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "session_logs_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "session_logs_accounting_template_id_fkey"
             columns: ["accounting_template_id"]

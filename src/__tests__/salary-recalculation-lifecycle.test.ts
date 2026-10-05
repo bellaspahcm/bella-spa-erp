@@ -1,4 +1,8 @@
-import { recalculateAndSaveSalaryRecordEngine } from '@/modules/hr-salary/actions/salary-recalculation-engine';
+import {
+  COMMISSION_BRANCH_MAPPING_ERRORS,
+  PAYROLL_BRANCH_MAPPING_ERRORS,
+  recalculateAndSaveSalaryRecordEngine,
+} from '@/modules/hr-salary/actions/salary-recalculation-engine';
 
 jest.mock('@/modules/hr-salary/actions/base-salary-actions', () => ({
   calcProRataBaseSalary: jest.fn(async () => 0),
@@ -112,6 +116,7 @@ const savedPublishedRecord = {
   is_locked: false,
   total_sessions: 4,
   base_salary: 6_000_000,
+  branch_id: 'branch-a',
   session_bonus: 400_000,
   rating_bonus: 75_000,
   kpi_bonus: 500_000,
@@ -122,7 +127,38 @@ const savedPublishedRecord = {
   notes: 'saved payroll snapshot',
 };
 
-function baseScripts(existingRecord: unknown, includeWrite = true): ScriptedResult[] {
+function baseScripts(
+  existingRecord: unknown,
+  includeWrite = true,
+  attendanceRows: Array<{ id: string; status: string; date: string; branch_id: string | null }> = [
+    { id: 'attendance-1', status: 'present', date: '2026-06-03', branch_id: 'branch-a' },
+    { id: 'attendance-2', status: 'present', date: '2026-06-04', branch_id: 'branch-a' },
+  ],
+  sessionRows: Array<{
+    id: string;
+    rating: number | null;
+    branch_id: string | null;
+    bookings: { ktv_commission: number | null; package_name: string | null } | null;
+    session_reviews: Array<{ rating: number | null; status: string | null }>;
+  }> = [
+    {
+      id: 'session-1',
+      rating: 5,
+      branch_id: 'branch-a',
+      bookings: { ktv_commission: 300_000, package_name: 'VIP Package' },
+      session_reviews: [{ rating: 5, status: 'published' }],
+    },
+    {
+      id: 'session-2',
+      rating: 5,
+      branch_id: 'branch-a',
+      bookings: { ktv_commission: 300_000, package_name: 'VIP Package' },
+      session_reviews: [{ rating: 5, status: 'published' }],
+    },
+  ],
+  serviceItems: Array<{ calculated_commission: number | null; branch_id: string | null }> = [],
+  productSales: Array<{ calculated_commission: number | null; branch_id: string | null }> = [],
+): ScriptedResult[] {
   return [
     {
       table: 'users',
@@ -147,36 +183,26 @@ function baseScripts(existingRecord: unknown, includeWrite = true): ScriptedResu
     {
       table: 'attendance',
       op: 'select',
-      data: [
-        { status: 'present', date: '2026-06-03' },
-        { status: 'present', date: '2026-06-04' },
-      ],
+      data: attendanceRows,
     },
     {
       table: 'session_logs',
       op: 'select',
-      data: [
-        {
-          id: 'session-1',
-          rating: 5,
-          bookings: { ktv_commission: 300_000, package_name: 'VIP Package' },
-          session_reviews: [{ rating: 5, status: 'published' }],
-        },
-        {
-          id: 'session-2',
-          rating: 5,
-          bookings: { ktv_commission: 300_000, package_name: 'VIP Package' },
-          session_reviews: [{ rating: 5, status: 'published' }],
-        },
-      ],
+      data: sessionRows,
     },
     { table: 'packages', op: 'select', data: [{ name: 'VIP Package', session_multiplier: 2 }] },
     { table: 'kpi_records', op: 'select', data: [{ bonus_amount: 999_000 }] },
-    { table: 'booking_service_items', op: 'select', data: [] },
-    { table: 'product_sales', op: 'select', data: [] },
+    { table: 'booking_service_items', op: 'select', data: serviceItems },
+    { table: 'product_sales', op: 'select', data: productSales },
     { table: 'salary_adjustments', op: 'select', data: [] },
     { table: 'salary_records', op: 'select', data: existingRecord },
-    ...(includeWrite ? [{ table: 'salary_records', op: 'update', data: null } satisfies ScriptedResult] : []),
+    ...(includeWrite
+      ? [{
+        table: 'salary_records',
+        op: existingRecord ? 'update' : 'insert',
+        data: null,
+      } satisfies ScriptedResult]
+      : []),
   ];
 }
 
@@ -202,7 +228,64 @@ function salaryUpdatePayload(calls: DbCall[]) {
   return calls.find((call) => call.table === 'salary_records' && call.op === 'update')?.payload as Record<string, unknown> | undefined;
 }
 
+function salaryWritePayload(calls: DbCall[]) {
+  return calls.find((call) => call.table === 'salary_records' && (call.op === 'update' || call.op === 'insert'))?.payload as Record<string, unknown> | undefined;
+}
+
 describe('recalculateAndSaveSalaryRecordEngine lifecycle guards', () => {
+  it('creates a draft salary record with the branch proven by attendance', async () => {
+    const { supabase, calls } = setupEngineDb(baseScripts(null));
+
+    await expect(recalculateAndSaveSalaryRecordEngine(
+      supabase as never,
+      'ktv-1',
+      '2026-06-01',
+      'tenant-1',
+    )).resolves.toMatchObject({ success: true });
+
+    expect(salaryWritePayload(calls)).toMatchObject({
+      ktv_id: 'ktv-1',
+      month_year: '2026-06-01',
+      tenant_id: 'tenant-1',
+      branch_id: 'branch-a',
+      status: 'draft',
+    });
+  });
+
+  it('persists branch-proven service and product commission components', async () => {
+    const { supabase, calls } = setupEngineDb(baseScripts(
+      null,
+      true,
+      [
+        { id: 'attendance-1', status: 'present', date: '2026-06-03', branch_id: 'branch-a' },
+      ],
+      [
+        {
+          id: 'session-1',
+          rating: 5,
+          branch_id: 'branch-a',
+          bookings: { ktv_commission: 300_000, package_name: 'VIP Package' },
+          session_reviews: [{ rating: 5, status: 'published' }],
+        },
+      ],
+      [{ calculated_commission: 150_000, branch_id: 'branch-a' }],
+      [{ calculated_commission: 25_000, branch_id: 'branch-a' }],
+    ));
+
+    await expect(recalculateAndSaveSalaryRecordEngine(
+      supabase as never,
+      'ktv-1',
+      '2026-06-01',
+      'tenant-1',
+    )).resolves.toMatchObject({ success: true });
+
+    expect(salaryWritePayload(calls)).toMatchObject({
+      branch_id: 'branch-a',
+      service_commission: 150_000,
+      product_sales_commission: 25_000,
+    });
+  });
+
   it('preserves saved published financials when live sessions, KPI, and attendance change later', async () => {
     const { supabase, calls } = setupEngineDb(baseScripts(savedPublishedRecord));
 
@@ -225,6 +308,7 @@ describe('recalculateAndSaveSalaryRecordEngine lifecycle guards', () => {
       service_percentage_bonus: 50_000,
       total_salary: 6_825_000,
       notes: 'saved payroll snapshot',
+      branch_id: 'branch-a',
     });
   });
 
@@ -256,7 +340,147 @@ describe('recalculateAndSaveSalaryRecordEngine lifecycle guards', () => {
       violations_deduction: 50_000,
       service_percentage_bonus: 0,
       total_salary: 5_525_000,
+      branch_id: 'branch-a',
     });
+  });
+
+  it('rejects payroll branch context mismatch before salary write', async () => {
+    const { supabase, calls } = setupEngineDb(baseScripts(savedPublishedRecord, false));
+
+    await expect(recalculateAndSaveSalaryRecordEngine(
+      supabase as never,
+      'ktv-1',
+      '2026-06-01',
+      'tenant-1',
+      { expectedBranchId: 'branch-b' },
+    )).rejects.toThrow(PAYROLL_BRANCH_MAPPING_ERRORS.BRANCH_CONTEXT_MISMATCH);
+
+    expect(salaryUpdatePayload(calls)).toBeUndefined();
+  });
+
+  it('rejects commission source branch mismatch before salary write', async () => {
+    const { supabase, calls } = setupEngineDb(baseScripts(
+      savedPublishedRecord,
+      false,
+      [
+        { id: 'attendance-1', status: 'present', date: '2026-06-03', branch_id: 'branch-a' },
+      ],
+      [
+        {
+          id: 'session-branch-b',
+          rating: 5,
+          branch_id: 'branch-b',
+          bookings: { ktv_commission: 300_000, package_name: 'VIP Package' },
+          session_reviews: [{ rating: 5, status: 'published' }],
+        },
+      ],
+    ));
+
+    await expect(recalculateAndSaveSalaryRecordEngine(
+      supabase as never,
+      'ktv-1',
+      '2026-06-01',
+      'tenant-1',
+    )).rejects.toThrow(COMMISSION_BRANCH_MAPPING_ERRORS.SOURCE_BRANCH_CONTEXT_MISMATCH);
+
+    expect(salaryUpdatePayload(calls)).toBeUndefined();
+  });
+
+  it('rejects legacy null commission source branch before salary write', async () => {
+    const { supabase, calls } = setupEngineDb(baseScripts(
+      savedPublishedRecord,
+      false,
+      [
+        { id: 'attendance-1', status: 'present', date: '2026-06-03', branch_id: 'branch-a' },
+      ],
+      [
+        {
+          id: 'session-legacy',
+          rating: 5,
+          branch_id: null,
+          bookings: { ktv_commission: 300_000, package_name: 'VIP Package' },
+          session_reviews: [{ rating: 5, status: 'published' }],
+        },
+      ],
+    ));
+
+    await expect(recalculateAndSaveSalaryRecordEngine(
+      supabase as never,
+      'ktv-1',
+      '2026-06-01',
+      'tenant-1',
+    )).rejects.toThrow(COMMISSION_BRANCH_MAPPING_ERRORS.SOURCE_BRANCH_NOT_PROVEN);
+
+    expect(salaryUpdatePayload(calls)).toBeUndefined();
+  });
+
+  it('rejects multi-branch commission source sets before salary write', async () => {
+    const { supabase, calls } = setupEngineDb(baseScripts(
+      savedPublishedRecord,
+      false,
+      [
+        { id: 'attendance-1', status: 'present', date: '2026-06-03', branch_id: 'branch-a' },
+      ],
+      [
+        {
+          id: 'session-branch-a',
+          rating: 5,
+          branch_id: 'branch-a',
+          bookings: { ktv_commission: 300_000, package_name: 'VIP Package' },
+          session_reviews: [{ rating: 5, status: 'published' }],
+        },
+      ],
+      [
+        { calculated_commission: 150_000, branch_id: 'branch-a' },
+        { calculated_commission: 25_000, branch_id: 'branch-b' },
+      ],
+    ));
+
+    await expect(recalculateAndSaveSalaryRecordEngine(
+      supabase as never,
+      'ktv-1',
+      '2026-06-01',
+      'tenant-1',
+    )).rejects.toThrow(COMMISSION_BRANCH_MAPPING_ERRORS.MULTI_BRANCH_SOURCE_NOT_SUPPORTED);
+
+    expect(salaryUpdatePayload(calls)).toBeUndefined();
+  });
+
+  it('rejects legacy null attendance branch before salary write', async () => {
+    const { supabase, calls } = setupEngineDb(baseScripts(
+      savedPublishedRecord,
+      false,
+      [{ id: 'attendance-legacy', status: 'present', date: '2026-06-03', branch_id: null }],
+    ));
+
+    await expect(recalculateAndSaveSalaryRecordEngine(
+      supabase as never,
+      'ktv-1',
+      '2026-06-01',
+      'tenant-1',
+    )).rejects.toThrow(PAYROLL_BRANCH_MAPPING_ERRORS.BRANCH_NOT_PROVEN);
+
+    expect(salaryUpdatePayload(calls)).toBeUndefined();
+  });
+
+  it('rejects multi-branch payroll periods before salary write', async () => {
+    const { supabase, calls } = setupEngineDb(baseScripts(
+      savedPublishedRecord,
+      false,
+      [
+        { id: 'attendance-a', status: 'present', date: '2026-06-03', branch_id: 'branch-a' },
+        { id: 'attendance-b', status: 'present', date: '2026-06-04', branch_id: 'branch-b' },
+      ],
+    ));
+
+    await expect(recalculateAndSaveSalaryRecordEngine(
+      supabase as never,
+      'ktv-1',
+      '2026-06-01',
+      'tenant-1',
+    )).rejects.toThrow(PAYROLL_BRANCH_MAPPING_ERRORS.MULTI_BRANCH_PERIOD_NOT_SUPPORTED);
+
+    expect(salaryUpdatePayload(calls)).toBeUndefined();
   });
 
   it('blocks recalculation for locked salary records', async () => {

@@ -5,6 +5,12 @@ Project ref: `lvnvkpyxtuilhrabtlwv`
 Scope: Production verification tenant creation and Beauty V2 field verification
 Status: `BLOCKED_ON_PRODUCTION_H8_SCHEMA`
 
+> Superseded status note, 2026-10-05:
+> Read-only production H8 preflight later proved that the current 6-table Beauty H8 runtime schema is present on production for project `lvnvkpyxtuilhrabtlwv`.
+> The old 8-table expectation in this document is stale because `beauty_customer_histories` and `beauty_service_commitments` are not part of the current exact H8 migration/runtime contract.
+> Current blocker is backup / restore-point readiness, not missing current H8 runtime schema.
+> See `docs/architecture/ARCHITECTURE_GATE_RESULT_BEAUTY_V2_PRODUCTION_H8_READ_ONLY_PREFLIGHT_2026_10_05.md`.
+
 ## Target Identity
 
 ```text
