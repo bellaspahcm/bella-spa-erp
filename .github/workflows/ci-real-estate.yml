@@ -76,7 +76,9 @@ jobs:
         run: node scripts/test-changed-files.mjs
       
       - name: Upload coverage
+        if: ${{ hashFiles('coverage/coverage-final.json') != '' }}
         uses: codecov/codecov-action@v3
+        continue-on-error: true
         with:
           files: ./coverage/coverage-final.json
           flags: unittests
