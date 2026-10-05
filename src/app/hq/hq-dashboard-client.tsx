@@ -108,6 +108,8 @@ export default function HqDashboardClient({
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended'>('all');
   const [typeFilter, setTypeFilter] = useState<'all' | 'direct' | 'franchise'>('all');
   const [moduleFilter, setModuleFilter] = useState<'all' | 'babycare' | 'beauty_spa'>('all');
+  const [tierFilter, setTierFilter] = useState('all');
+  const [regionFilter, setRegionFilter] = useState('all');
   const [loading, setLoading] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showBranchRegistrationModal, setShowBranchRegistrationModal] = useState(false);
@@ -756,8 +758,10 @@ export default function HqDashboardClient({
                       (typeFilter === 'franchise' && isFranchise);
     const tenantModule = getDefaultTenantModuleKey(t.enabled_modules);
     const matchModule = moduleFilter === 'all' || tenantModule === moduleFilter;
+    const matchTier = tierFilter === 'all' || (t.subscription_tier || 'free_trial') === tierFilter;
+    const matchRegion = regionFilter === 'all' || (t.address && t.address.includes(regionFilter));
 
-    return matchSearch && matchStatus && matchType && matchModule;
+    return matchSearch && matchStatus && matchType && matchModule && matchTier && matchRegion;
   });
 
   const getTierBadge = (tier?: string | null) => {
@@ -851,17 +855,25 @@ export default function HqDashboardClient({
           <>
             <HqExecutiveOverview stats={stats} tenants={tenants} />
 
-            <HqSubscriptionPackageReference />
+            <HqSubscriptionPackageReference onSelectTierFilter={(tier) => setTierFilter(tier)} />
 
             <HqBranchFilters
               searchTerm={searchTerm}
               typeFilter={typeFilter}
               statusFilter={statusFilter}
               moduleFilter={moduleFilter}
+              tierFilter={tierFilter}
+              regionFilter={regionFilter}
               onSearchTermChange={setSearchTerm}
               onTypeFilterChange={setTypeFilter}
               onStatusFilterChange={setStatusFilter}
               onModuleFilterChange={setModuleFilter}
+              onTierFilterChange={setTierFilter}
+              onRegionFilterChange={setRegionFilter}
+              onClearAllFilters={() => {
+                setTierFilter('all');
+                setRegionFilter('all');
+              }}
             />
 
             <HqBranchTable
