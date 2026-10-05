@@ -74,8 +74,8 @@ function PerfChart({
       >
         <defs>
           <linearGradient id="perfAreaGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#10B981" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#10B981" stopOpacity="0.0" />
+            <stop offset="0%" stopColor="var(--primary, #10B981)" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="var(--primary, #10B981)" stopOpacity="0.0" />
           </linearGradient>
         </defs>
 
@@ -86,7 +86,7 @@ function PerfChart({
         <path
           d={linePath}
           fill="none"
-          stroke="#10B981"
+          stroke="var(--primary, #10B981)"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -116,7 +116,7 @@ function PerfChart({
 
               {/* Dot (always visible on hover) */}
               {isHov && (
-                <circle cx={x} cy={y} r="4" fill="white" stroke="#10B981" strokeWidth="2" />
+                <circle cx={x} cy={y} r="4" fill="white" stroke="var(--primary, #10B981)" strokeWidth="2" />
               )}
 
               {/* Tooltip */}
@@ -202,7 +202,7 @@ export function BeautySpaV2DashboardView({
           <p className="text-xs md:text-sm font-medium text-slate-500 mt-1 flex items-center gap-2">
             <span>{dateString}</span>
             <span className="text-slate-300">•</span>
-            <span className="text-emerald-700 font-semibold">Dashboard</span>
+            <span className="text-primary font-semibold">Dashboard</span>
           </p>
         </div>
 
@@ -214,12 +214,12 @@ export function BeautySpaV2DashboardView({
               placeholder="Tìm kiếm nhanh..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 w-44 md:w-56 shadow-2xs"
+              className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary w-44 md:w-56 shadow-2xs"
             />
           </div>
 
-          <div className="relative p-2 bg-emerald-50/80 hover:bg-emerald-100 border border-emerald-100 rounded-xl text-emerald-800 cursor-pointer transition-colors">
-            <Bell className="w-4 h-4 text-emerald-700" />
+          <div className="relative p-2 bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl text-primary cursor-pointer transition-colors">
+            <Bell className="w-4 h-4 text-primary" />
             {alerts.length > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-2xs">
                 {alerts.length}
@@ -229,7 +229,7 @@ export function BeautySpaV2DashboardView({
 
           <button
             onClick={onOpenBookingModal}
-            className="flex items-center gap-2 bg-[#074E44] hover:bg-[#053B33] text-white px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 cursor-pointer"
+            className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-primary-foreground px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>TẠO BOOKING</span>
@@ -268,14 +268,14 @@ export function BeautySpaV2DashboardView({
           <div>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                   <Calendar className="w-4 h-4" />
                 </div>
                 <h2 className="text-base font-bold text-slate-900 tracking-tight">
                   LỊCH HẸN HÔM NAY <span className="text-slate-400 font-semibold text-sm">({sessions.length})</span>
                 </h2>
               </div>
-              <Link href="/dashboard/bookings" className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1">
+              <Link href="/dashboard/bookings" className="text-xs font-bold text-primary hover:opacity-80 flex items-center gap-1">
                 Xem tất cả <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -283,7 +283,7 @@ export function BeautySpaV2DashboardView({
             {/* Filter Tabs */}
             <div className="flex items-center gap-1.5 mb-4 overflow-x-auto pb-1 scrollbar-none">
               {[
-                { key: 'all', label: 'Tất cả', count: sessions.length, activeClass: 'bg-[#074E44] text-white', inactiveClass: 'bg-slate-100 text-slate-600' },
+                { key: 'all', label: 'Tất cả', count: sessions.length, activeClass: 'bg-primary text-primary-foreground', inactiveClass: 'bg-slate-100 text-slate-600' },
                 { key: 'serving', label: 'Đang phục vụ', count: sessions.filter(s => s.status === 'in_progress' || s.status === 'serving').length, activeClass: 'bg-emerald-600 text-white', inactiveClass: 'bg-emerald-50 text-emerald-700' },
                 { key: 'waiting', label: 'Đang chờ', count: sessions.filter(s => s.status === 'pending' || s.status === 'waiting' || s.status === null).length, activeClass: 'bg-amber-500 text-white', inactiveClass: 'bg-amber-50 text-amber-700' },
                 { key: 'done', label: 'Hoàn thành', count: sessions.filter(s => s.status === 'completed').length, activeClass: 'bg-blue-600 text-white', inactiveClass: 'bg-blue-50 text-blue-700' },
@@ -354,7 +354,7 @@ export function BeautySpaV2DashboardView({
           <div>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-xs">
+                <div className="w-8 h-8 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-xs">
                   <Sparkles className="w-4 h-4" />
                 </div>
                 <h2 className="text-base font-bold text-purple-950 tracking-tight flex items-center gap-1.5">
@@ -364,7 +364,7 @@ export function BeautySpaV2DashboardView({
                   </span>
                 </h2>
               </div>
-              <Link href="/dashboard/ai-copilot" className="text-xs font-bold text-purple-700 hover:text-purple-800 flex items-center gap-1">
+              <Link href="/dashboard/ai-copilot" className="text-xs font-bold text-primary hover:opacity-80 flex items-center gap-1">
                 Xem chi tiết <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -397,7 +397,7 @@ export function BeautySpaV2DashboardView({
 
           <Link
             href="/dashboard/ai-copilot"
-            className="w-full py-3 px-4 bg-[#074E44] hover:bg-[#053B33] text-white rounded-xl text-xs font-bold tracking-wide transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+            className="w-full py-3 px-4 bg-primary hover:bg-primary-hover text-primary-foreground rounded-xl text-xs font-bold tracking-wide transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-95"
           >
             <span>Xem gợi ý & hành động</span>
             <ChevronRight className="w-4 h-4" />
@@ -409,7 +409,7 @@ export function BeautySpaV2DashboardView({
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                   <DollarSign className="w-4 h-4" />
                 </div>
                 <h2 className="text-base font-bold text-slate-900 tracking-tight">TÀI CHÍNH</h2>
@@ -496,7 +496,7 @@ export function BeautySpaV2DashboardView({
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                   <TrendingUp className="w-4 h-4" />
                 </div>
                 <h2 className="text-base font-bold text-slate-900 tracking-tight">HIỆU SUẤT KINH DOANH</h2>
@@ -508,7 +508,7 @@ export function BeautySpaV2DashboardView({
               <button
                 onClick={() => setActivePerfTab('revenue')}
                 className={`px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer whitespace-nowrap transition-colors ${
-                  activePerfTab === 'revenue' ? 'bg-[#074E44] text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  activePerfTab === 'revenue' ? 'bg-primary text-primary-foreground' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 Doanh thu
@@ -516,7 +516,7 @@ export function BeautySpaV2DashboardView({
               <button
                 onClick={() => setActivePerfTab('booking')}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer whitespace-nowrap transition-colors ${
-                  activePerfTab === 'booking' ? 'bg-[#074E44] text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  activePerfTab === 'booking' ? 'bg-primary text-primary-foreground' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 Khách hàng
@@ -568,7 +568,7 @@ export function BeautySpaV2DashboardView({
                 </div>
                 <h2 className="text-base font-bold text-slate-900 tracking-tight">TOP KỸ THUẬT VIÊN</h2>
               </div>
-              <Link href="/dashboard/hr" className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1">
+              <Link href="/dashboard/hr" className="text-xs font-bold text-primary hover:opacity-80 flex items-center gap-1">
                 Xem tất cả <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -620,7 +620,7 @@ export function BeautySpaV2DashboardView({
                 </div>
                 <h2 className="text-base font-bold text-slate-900 tracking-tight">ĐÁNH GIÁ KHÁCH HÀNG</h2>
               </div>
-              <Link href="/dashboard/crm" className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1">
+              <Link href="/dashboard/crm" className="text-xs font-bold text-primary hover:opacity-80 flex items-center gap-1">
                 Xem chi tiết <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -704,7 +704,7 @@ export function BeautySpaV2DashboardView({
                     )}
                   </div>
 
-                  <Link href={item.link || '#'} className="w-full py-1.5 px-3 bg-white border border-slate-200 text-slate-700 hover:text-emerald-700 hover:border-emerald-300 rounded-lg text-[11px] font-bold transition-colors cursor-pointer text-center inline-block">
+                  <Link href={item.link || '#'} className="w-full py-1.5 px-3 bg-white border border-slate-200 text-slate-700 hover:text-primary hover:border-primary/40 rounded-lg text-[11px] font-bold transition-colors cursor-pointer text-center inline-block">
                     Xem & xử lý
                   </Link>
                 </div>
@@ -726,7 +726,7 @@ export function BeautySpaV2DashboardView({
                 </div>
                 <h2 className="text-base font-bold text-slate-900 tracking-tight">VẬT TƯ & TỒN KHO</h2>
               </div>
-              <Link href="/dashboard/inventory" className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1">
+              <Link href="/dashboard/inventory" className="text-xs font-bold text-primary hover:opacity-80 flex items-center gap-1">
                 Quản lý kho <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -746,26 +746,26 @@ export function BeautySpaV2DashboardView({
               </div>
 
               {/* Box 2: Total Items */}
-              <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-100 flex flex-col justify-between">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700">
+              <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 flex flex-col justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-primary">
                   <Package className="w-3.5 h-3.5" />
                   <span>TỔNG MẶT HÀNG</span>
                 </div>
                 <div className="mt-3">
-                  <span className="text-2xl font-black text-emerald-950 block">{inventorySummary.totalItems}</span>
-                  <span className="text-[11px] font-medium text-emerald-700">loại</span>
+                  <span className="text-2xl font-black text-slate-900 dark:text-white block">{inventorySummary.totalItems}</span>
+                  <span className="text-[11px] font-medium text-primary">loại</span>
                 </div>
               </div>
 
               {/* Box 3: Total Stock Value */}
-              <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-100 flex flex-col justify-between">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700">
+              <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 flex flex-col justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-primary">
                   <TrendingUp className="w-3.5 h-3.5" />
                   <span>GIÁ TRỊ TỒN KHO</span>
                 </div>
                 <div className="mt-3">
-                  <span className="text-xl font-black text-emerald-950 block">{(inventorySummary.totalValue / 1000000).toFixed(1)}M</span>
-                  <span className="text-[11px] font-medium text-emerald-700">VNĐ</span>
+                  <span className="text-xl font-black text-slate-900 dark:text-white block">{(inventorySummary.totalValue / 1000000).toFixed(1)}M</span>
+                  <span className="text-[11px] font-medium text-primary">VNĐ</span>
                 </div>
               </div>
             </div>

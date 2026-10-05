@@ -311,6 +311,104 @@ No migrations planned. Any diagnostic implying missing table/column/RPC is a con
 
 ---
 
+# ARCHITECTURE GATE RESULT - BEAUTY SPA CRM CUSTOMER PAGE UI REDESIGN
+
+> **Status:** PASS - Pure UI redesign for Beauty Spa CRM Customer Page (`/dashboard/customers`) matching the provided reference layout without changing any business logic, database schema, or kernel contracts
+> **Date:** 2026-10-05
+> **Scope:** `src/app/dashboard/customers/page.tsx` and customer list card components. No database schema, RPC, RLS, server action, business logic, accounting, Healthcare H1-H12, or Logistics E7.1-E7.3 changes.
+
+---
+
+## 1. Bella OS/Product Development Process Gate
+
+The requested change is a visual redesign of the CRM Customer Page (`src/app/dashboard/customers/page.tsx`) for `beauty_spa` and default tenants to match the provided reference design. Gate decision: `PASS` for a dedicated frontend UI redesign that preserves all existing data services (`getCustomers`, `createCustomer`, `updateCustomer`, `deleteCustomer`), pagination, search, status filtering, and business invariants without changing any underlying business logic.
+
+## 2. Product Manifest
+
+In scope:
+- Redesigning `src/app/dashboard/customers/page.tsx` layout and customer cards matching reference image.
+- 4 Top Summary Metric Cards:
+  1. "Tổng khách hàng": total customer count with trend badge & subtitle.
+  2. "Đang sử dụng dịch vụ": customers with active care packages count, trend badge & subtitle.
+  3. "Khách mới tháng này": new customer count this month, trend badge & subtitle.
+  4. "Cần chăm sóc": care attention needed count, trend badge & subtitle.
+- Filter & Control Bar:
+  - Search input ("Tìm khách hàng, SĐT, liệu trình...")
+  - Status filter ("Tất cả trạng thái", "Đang có gói liệu trình", "Đang chăm sóc", "Đã đặt cọc", "Tiềm năng", "Đã kết thúc")
+  - Subgroup filter ("Tất cả phân nhóm")
+  - Service Package filter ("Tất cả gói dịch vụ")
+  - Year filter ("2026")
+  - Date filter button & More filters button
+  - View switcher ("Danh sách thẻ" card view vs "Bảng dữ liệu" data table view)
+  - Sort dropdown ("Sắp xếp: Mới nhất") & Pagination counter/controls ("1-20 của 1.248")
+- Customer Card Item Component Layout:
+  - Left Section: Avatar with online status dot, customer name, status badge ("ĐANG CÓ LIỆU TRÌNH", "MỚI"), group/VIP badge ("VIP", "Khách thân thiết"), phone, group, gender badge ("Nữ" pink / "Nam" blue), location, loyalty points, total spend, and last visit date.
+  - Middle Section: Current active service package card with thumbnail, package name, demo badge, completed/total sessions ("8 / 10 buổi"), progress bar, and percentage.
+  - Right Section: Next appointment box with calendar icon, next appointment date & time ("28/07/2026 10:00 - 11:00"), quick calendar button, primary CTA button ("Chi tiết >"), and dropdown menu (`...`).
+- Color Theme Compliance: All primary buttons, badges, links, focus rings, and active states strictly use theme preset CSS tokens (`bg-primary`, `text-primary`, `border-primary`, `hover:bg-primary-hover`, `text-primary-foreground`, `var(--primary)`).
+
+Out of scope:
+- Backend database schema or RPC changes.
+- Server action logic or state transition modifications.
+- Frozen Healthcare H1-H12 or Logistics E7.1-E7.3 kernels.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Role |
+|---|---|---|
+| `src/app/dashboard/customers/page.tsx` | Beauty Spa / CRM Product UI | Render redesigned CRM Customer Page UI |
+| `getCustomers` / `createCustomer` / `updateCustomer` | Customer Services | Provides data and actions to UI without logic mutation |
+
+## 4. Contract Dependency Map
+
+```text
+Beauty Spa CRM Customer Page UI
+  -> getCustomers({ limit, offset })
+  -> selectCustomerDisplayBooking()
+  -> calculateBookingPaymentState()
+  -> getCustomerGenderPresentation()
+  -> getCustomerSecondarySummary()
+  -> Core/CRM Backend Services (Unchanged)
+```
+
+## 5. Change Authority
+
+Authorized:
+- Redesign UI elements in `src/app/dashboard/customers/page.tsx`.
+- Update customer card item component styling and layout.
+- Bind all UI elements to existing state and backend actions.
+
+Not authorized:
+- Modify business rules, server action logic, or database schemas.
+- Touch frozen Healthcare H1-H12 or Logistics E7.1-E7.3 kernels.
+- Introduce `any` types.
+
+## 6. UI -> Contract Reconciliation
+
+All UI controls (search input, status filter, subgroup filter, package filter, view switch, pagination buttons, add customer modal, detail button, Zalo button, edit/delete menu) map directly to existing state variables and server actions (`loadCustomers`, `handleAddNew`, `handleEdit`, `handleDelete`, `handleZalo`).
+
+## 7. Additive Migration Plan
+
+No migration required. Pure UI redesign.
+
+## 8. 11 Automated Verification Gates Plan
+
+1. Confirm no frozen kernel files modified.
+2. Build redesigned CRM Customer Page view matching reference layout.
+3. Integrate with existing customer data state and server actions.
+4. Ensure zero business logic or schema mutations.
+5. Verify theme preset color compliance (`bg-primary`, `text-primary`, etc.).
+6. Verify responsive layout and interactive elements.
+7. Run TypeScript type check.
+8. Run ESLint check.
+9. Run test suites.
+10. Check git diff for cleanliness.
+11. Output success summary and report `PASS`.
+
+Gate result: `PASS`.
+
+---
+
 # ARCHITECTURE GATE RESULT - PLATFORM PWA CONTRACT V1
 
 > **Status:** PASS - Platform-owned PWA V1 contract for manifest identity and installability only
