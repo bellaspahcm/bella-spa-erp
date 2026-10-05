@@ -2,13 +2,21 @@ const { spawnSync } = require('node:child_process');
 const { readdirSync } = require('node:fs');
 const { join } = require('node:path');
 
-const MIGRATION_FILE_PATTERN = /^(\d{14})_.+\.sql$/;
+const MIGRATION_FILE_PATTERN = /^(\d{8}|\d{14})_.+\.sql$/;
+
+function normalizeMigrationVersion(version) {
+  const value = String(version || '').trim();
+  if (/^\d{8}$/.test(value)) {
+    return `${value}000000`;
+  }
+  return /^\d{14}$/.test(value) ? value : null;
+}
 
 function listLocalMigrationVersions(migrationsDir = join(process.cwd(), 'supabase', 'migrations')) {
-  return readdirSync(migrationsDir)
-    .map((name) => name.match(MIGRATION_FILE_PATTERN)?.[1] || null)
-    .filter(Boolean)
-    .sort();
+  const versions = readdirSync(migrationsDir)
+    .map((name) => normalizeMigrationVersion(name.match(MIGRATION_FILE_PATTERN)?.[1]))
+    .filter(Boolean);
+  return Array.from(new Set(versions)).sort();
 }
 
 function listGitMigrationVersions(ref) {
@@ -23,11 +31,11 @@ function listGitMigrationVersions(ref) {
     throw new Error((result.stderr || result.stdout || `Could not read migrations at ${ref}`).trim());
   }
 
-  return String(result.stdout || '')
+  const versions = String(result.stdout || '')
     .split(/\r?\n/)
-    .map((name) => name.split('/').pop()?.match(MIGRATION_FILE_PATTERN)?.[1] || null)
-    .filter(Boolean)
-    .sort();
+    .map((name) => normalizeMigrationVersion(name.split('/').pop()?.match(MIGRATION_FILE_PATTERN)?.[1]))
+    .filter(Boolean);
+  return Array.from(new Set(versions)).sort();
 }
 
 function parseSupabaseMigrationList(output) {
@@ -40,8 +48,8 @@ function parseSupabaseMigrationList(output) {
       if (Array.isArray(parsed.migrations)) {
         return parsed.migrations
           .map((row) => ({
-            local: row.local ? String(row.local).trim() || null : null,
-            remote: row.remote ? String(row.remote).trim() || null : null,
+            local: row.local ? normalizeMigrationVersion(row.local) : null,
+            remote: row.remote ? normalizeMigrationVersion(row.remote) : null,
           }))
           .filter((row) => row.local || row.remote);
       }
@@ -60,8 +68,8 @@ function parseSupabaseMigrationList(output) {
 
     const localMatch = columns[0].match(/^(\d{8,14})/);
     const remoteMatch = columns[1].match(/^(\d{8,14})/);
-    const local = localMatch ? localMatch[1] : null;
-    const remote = remoteMatch ? remoteMatch[1] : null;
+    const local = localMatch ? normalizeMigrationVersion(localMatch[1]) : null;
+    const remote = remoteMatch ? normalizeMigrationVersion(remoteMatch[1]) : null;
     if (!local && !remote) continue;
 
     rows.push({ local, remote });
