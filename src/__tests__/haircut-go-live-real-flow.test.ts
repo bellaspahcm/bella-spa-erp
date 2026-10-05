@@ -79,6 +79,7 @@ describeWithRealSupabase('Haircut Go-Live real operational flow', () => {
   const marker = `haircut-go-live-${Date.now()}`;
   const created = {
     tenants: [] as string[],
+    branches: [] as string[],
     users: [] as string[],
     customers: [] as string[],
     packages: [] as string[],
@@ -118,6 +119,9 @@ describeWithRealSupabase('Haircut Go-Live real operational flow', () => {
     if (created.users.length > 0) {
       await mockSupabaseAdminClient.from('users').delete().in('id', created.users);
     }
+    if (created.branches.length > 0) {
+      await mockSupabaseAdminClient.from('branches').delete().in('id', created.branches);
+    }
     if (created.tenants.length > 0) {
       await mockSupabaseAdminClient.from('tenants').delete().in('id', created.tenants);
     }
@@ -142,6 +146,22 @@ describeWithRealSupabase('Haircut Go-Live real operational flow', () => {
     expect(error).toBeNull();
     expect(data?.id).toBeTruthy();
     created.tenants.push(data!.id);
+
+    const { data: branchData } = await mockSupabaseAdminClient
+      .from('branches')
+      .insert({
+        tenant_id: data!.id,
+        name: `${marker}-${label} Branch`,
+        code: `BR-${label.toUpperCase()}-${Math.floor(Math.random() * 10000)}`,
+        status: 'active',
+      })
+      .select('id')
+      .single();
+
+    if (branchData?.id) {
+      created.branches.push(branchData.id);
+    }
+
     return data!.id;
   }
 
