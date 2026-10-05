@@ -1,7 +1,11 @@
 const {
   analyzeMigrationState,
+  listLocalMigrationVersions,
   parseSupabaseMigrationList,
 } = require('../../scripts/check-supabase-migrations.cjs');
+const { mkdtempSync, rmSync, writeFileSync } = require('node:fs');
+const { tmpdir } = require('node:os');
+const { join } = require('node:path');
 
 describe('Supabase migration check script', () => {
   it('parses Supabase CLI migration list output', () => {
@@ -43,6 +47,33 @@ A new version of Supabase CLI is available.`;
       { local: '20260912100000', remote: null },
       { local: '20261002040000', remote: '20261002040000' },
     ]);
+  });
+
+  it('normalizes legacy 8-digit migration versions to the Supabase ledger version', () => {
+    const output = `
+      Local          | Remote         | Time (UTC)
+    ----------------|----------------|---------------------
+      20260914       | 20260914000000 | 2026-09-14 00:00:00
+    `;
+
+    expect(parseSupabaseMigrationList(output)).toEqual([
+      { local: '20260914000000', remote: '20260914000000' },
+    ]);
+  });
+
+  it('includes legacy 8-digit local migration filenames in repository history comparison', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'bella-migrations-'));
+    try {
+      writeFileSync(join(dir, '20260914_create_user_org_unit_access_projection.sql'), '-- legacy migration');
+      writeFileSync(join(dir, '20261004010000_add_branch_id_to_attendance.sql'), '-- standard migration');
+
+      expect(listLocalMigrationVersions(dir)).toEqual([
+        '20260914000000',
+        '20261004010000',
+      ]);
+    } finally {
+      rmSync(dir, { force: true, recursive: true });
+    }
   });
 
   it('detects local migrations missing from the remote database', () => {
