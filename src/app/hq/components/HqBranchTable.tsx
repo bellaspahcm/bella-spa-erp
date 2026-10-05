@@ -17,6 +17,13 @@ interface HqBranchTableProps {
 }
 
 function getTenantBusinessModuleBadge(tenant: HqTenantRecord) {
+  if (!tenant.enabled_modules) {
+    return {
+      label: 'Chưa xác định',
+      className: 'bg-slate-50 text-slate-500 border-slate-100',
+    };
+  }
+
   const moduleKey = getDefaultTenantModuleKey(tenant.enabled_modules);
   if (moduleKey === 'beauty_spa') {
     return {
@@ -62,6 +69,8 @@ export function HqBranchTable({
   const [openActionId, setOpenActionId] = useState<string | null>(null);
 
   const totalPages = Math.ceil(tenants.length / itemsPerPage) || 1;
+  const visibleStart = tenants.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+  const visibleEnd = Math.min(currentPage * itemsPerPage, tenants.length);
   const paginatedTenants = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     return tenants.slice(start, start + itemsPerPage);
@@ -90,7 +99,7 @@ export function HqBranchTable({
             <Building2 size={18} />
           </div>
           <h3 className="text-sm md:text-base font-black text-slate-900 uppercase tracking-tight">
-            DANH SÁCH CHI NHÁNH SPA HỆ THỐNG ({tenants.length > 0 ? tenants.length.toLocaleString('vi-VN') : '1.000'})
+            DANH SÁCH CHI NHÁNH SPA HỆ THỐNG ({tenants.length.toLocaleString('vi-VN')})
           </h3>
         </div>
 
@@ -138,7 +147,7 @@ export function HqBranchTable({
                 <th scope="col" className="px-4 py-4">LIÊN HỆ & ĐỊA CHỈ</th>
                 <th scope="col" className="px-4 py-4 text-center">NHÂN SỰ</th>
                 <th scope="col" className="px-4 py-4 text-center">KHÁCH HÀNG</th>
-                <th scope="col" className="px-4 py-4 text-right">DOANH THU (T9/2026)</th>
+                <th scope="col" className="px-4 py-4 text-right">DOANH THU</th>
                 <th scope="col" className="px-4 py-4 text-center">TRẠNG THÁI</th>
                 <th scope="col" className="pr-6 pl-4 py-4 text-right">THAO TÁC</th>
               </tr>
@@ -150,6 +159,24 @@ export function HqBranchTable({
                 const businessModuleBadge = getTenantBusinessModuleBadge(t);
                 const isChecked = selectedIds.includes(t.id);
                 const cleanName = cleanTenantName(t.name);
+                const regionLabel = t.address?.includes('Hà Nội')
+                  ? 'Hà Nội'
+                  : t.address?.includes('Đà Nẵng')
+                    ? 'Đà Nẵng'
+                    : t.address
+                      ? 'TP. HCM'
+                      : 'Chưa cập nhật';
+                const statusLabel = t.status === 'active'
+                  ? 'Hoạt động'
+                  : t.status === 'suspended'
+                    ? 'Bị khóa'
+                    : 'Chưa xác định';
+                const statusClass = t.status === 'active'
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                  : t.status === 'suspended'
+                    ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                    : 'bg-slate-50 text-slate-500 border border-slate-200';
+                const canToggleStatus = !isHeadquarter && (t.status === 'active' || t.status === 'suspended');
 
                 return (
                   <tr key={t.id} className="hover:bg-slate-50/70 transition-colors">
@@ -185,7 +212,7 @@ export function HqBranchTable({
                             )}
                           </h5>
                           <span className="text-[10px] text-slate-400 font-medium block mt-0.5">
-                            {t.address?.includes('Hà Nội') ? 'Hà Nội' : t.address?.includes('Đà Nẵng') ? 'Đà Nẵng' : 'TP. HCM'}
+                            {regionLabel}
                           </span>
                         </div>
                       </div>
@@ -221,40 +248,36 @@ export function HqBranchTable({
                       <div className="space-y-1 text-xs">
                         <p className="flex items-center gap-1.5 text-slate-600 font-bold">
                           <Phone size={12} className="text-slate-400 shrink-0" />
-                          <span>{t.contact_phone || '0903 123 456'}</span>
+                          <span>{t.contact_phone || 'Chưa cập nhật'}</span>
                         </p>
                         <p className="flex items-center gap-1.5 text-slate-400 font-medium text-[11px] truncate max-w-[200px]">
                           <MapPin size={12} className="text-slate-400 shrink-0" />
-                          <span>{t.address || 'Quận 1, TP. HCM'}</span>
+                          <span>{t.address || 'Chưa cập nhật'}</span>
                         </p>
                       </div>
                     </td>
 
                     {/* Staff count */}
                     <td className="px-4 py-4 text-center font-black text-slate-900 text-xs">
-                      {t.staffCount || 8}
+                      {t.staffCount.toLocaleString('vi-VN')}
                     </td>
 
                     {/* Customer count */}
                     <td className="px-4 py-4 text-center font-black text-slate-900 text-xs">
-                      {t.customerCount || 436}
+                      {t.customerCount.toLocaleString('vi-VN')}
                     </td>
 
                     {/* Revenue */}
                     <td className="px-4 py-4 text-right font-black text-slate-900 text-xs font-mono">
-                      {t.revenueSum > 0 ? `${(t.revenueSum / 1_000_000_000).toFixed(2).replace('.', ',')} tỷ` : '1,86 tỷ'}
+                      {formatCurrency(t.revenueSum)}
                     </td>
 
                     {/* Status Badge */}
                     <td className="px-4 py-4 text-center">
                       <span
-                        className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1 ${
-                          t.status === 'active'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : 'bg-rose-50 text-rose-700 border border-rose-200'
-                        }`}
+                        className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1 ${statusClass}`}
                       >
-                        ● {t.status === 'active' ? 'Hoạt động' : 'Bị khóa'}
+                        ● {statusLabel}
                       </span>
                     </td>
 
@@ -267,7 +290,7 @@ export function HqBranchTable({
                         <MoreVertical size={16} />
                       </button>
 
-                      {openActionId === t.id && (
+                      {openActionId === t.id && canToggleStatus && (
                         <div className="absolute right-6 top-12 z-20 w-40 bg-white rounded-2xl shadow-xl border border-slate-200/80 p-1 text-left text-xs font-bold text-slate-700">
                           <button
                             onClick={() => {
@@ -292,7 +315,7 @@ export function HqBranchTable({
       {/* Pagination Footer matching Image 1 */}
       <div className="px-6 md:px-8 py-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold text-slate-500">
         <div>
-          Hiển thị {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, tenants.length)} / {tenants.length > 0 ? tenants.length.toLocaleString('vi-VN') : '1.000'} chi nhánh
+          Hiển thị {visibleStart} - {visibleEnd} / {tenants.length.toLocaleString('vi-VN')} chi nhánh
         </div>
 
         {/* Page Buttons */}

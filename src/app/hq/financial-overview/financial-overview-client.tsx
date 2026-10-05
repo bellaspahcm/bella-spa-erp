@@ -33,22 +33,22 @@ export default function FinancialOverviewClient({
     return initialRows.map((r) => ({
       id: r.tenant_id,
       name: r.tenant_name.replace(/^Bella\s+Spa\s+/i, ''),
-      status: 'active',
+      status: null,
       revenueSum: Number(r.net_revenue) || 0,
       customerCount: Number(r.total_bookings_count) || 0,
-      staffCount: 15,
-      address: 'TP. HCM',
+      staffCount: 0,
+      address: null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       franchise_agreement_date: null,
       royalty_type: null,
       royalty_rate: null,
       royalty_fixed_amount: null,
-      internal_clearing_rate: 150000,
-      subscription_tier: 'enterprise',
+      internal_clearing_rate: null,
+      subscription_tier: null,
       subscription_expires_at: null,
-      enabled_modules: ['beauty_spa'],
-      contact_phone: '0903 123 456',
+      enabled_modules: null,
+      contact_phone: null,
       email: null,
     }));
   }, [initialRows]);
@@ -59,14 +59,21 @@ export default function FinancialOverviewClient({
         t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (t.contact_phone && t.contact_phone.includes(searchTerm));
       const matchStatus = statusFilter === 'all' || t.status === statusFilter;
+      const hasBranchMetadata =
+        t.status !== null ||
+        t.enabled_modules !== null ||
+        t.subscription_tier !== null ||
+        t.address !== null ||
+        t.contact_phone !== null ||
+        t.staffCount > 0;
       const isFranchise = t.franchise_agreement_date !== null || t.royalty_type !== null;
       const matchType =
         typeFilter === 'all' ||
-        (typeFilter === 'direct' && !isFranchise) ||
-        (typeFilter === 'franchise' && isFranchise);
-      const tenantModule = getDefaultTenantModuleKey(t.enabled_modules);
+        (hasBranchMetadata && typeFilter === 'direct' && !isFranchise) ||
+        (hasBranchMetadata && typeFilter === 'franchise' && isFranchise);
+      const tenantModule = t.enabled_modules ? getDefaultTenantModuleKey(t.enabled_modules, t.name) : null;
       const matchModule = moduleFilter === 'all' || tenantModule === moduleFilter;
-      const matchTier = tierFilter === 'all' || (t.subscription_tier || 'free_trial') === tierFilter;
+      const matchTier = tierFilter === 'all' || t.subscription_tier === tierFilter;
       const matchRegion = regionFilter === 'all' || (t.address && t.address.includes(regionFilter));
 
       return matchSearch && matchStatus && matchType && matchModule && matchTier && matchRegion;
@@ -74,6 +81,15 @@ export default function FinancialOverviewClient({
   }, [tenantsFromRows, searchTerm, statusFilter, typeFilter, moduleFilter, tierFilter, regionFilter]);
 
   const getTierBadge = (tier?: string | null) => {
+    if (!tier) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-100 text-slate-500 border border-slate-200/50 select-none">
+          <Info size={10} className="text-slate-400" />
+          Chưa có gói
+        </span>
+      );
+    }
+
     const activeTier = tier || 'free_trial';
     switch (activeTier) {
       case 'enterprise':
@@ -156,7 +172,7 @@ export default function FinancialOverviewClient({
 
         {/* Section 3: HqBranchTable (Arrow 2 in Image 2 matching Image 1) */}
         <HqBranchTable
-          tenants={filteredTenants.length > 0 ? filteredTenants : tenantsFromRows}
+          tenants={filteredTenants}
           updatingId={null}
           onToggleStatus={() => {}}
           onOpenBranchRegistration={() => {}}

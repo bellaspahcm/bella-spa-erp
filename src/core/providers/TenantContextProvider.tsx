@@ -95,19 +95,22 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
 
     async function loadTenantContext() {
       const isHqRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/hq');
+      const allowNonProductionFallback = process.env.NODE_ENV !== 'production';
 
-      // For HQ portal in dev/test mode, immediately apply HQ fallback context so UI never hangs
-      if (isHqRoute && process.env.NODE_ENV === 'development') {
+      // For HQ portal in non-production mode, immediately apply HQ fallback context so UI never hangs.
+      if (isHqRoute && allowNonProductionFallback) {
         console.info('[TenantContextProvider] Instant HQ fallback activated for /hq route');
         setContext(getDevFallbackContext());
         setLoading(false);
         return;
       }
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-      }, 2000);
+      const controller = allowNonProductionFallback ? new AbortController() : null;
+      const timeoutId = controller
+        ? setTimeout(() => {
+            controller.abort();
+          }, 2000)
+        : null;
 
       try {
         setLoading(true);
@@ -119,15 +122,15 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
             'Content-Type': 'application/json',
           },
           credentials: 'same-origin',
-          signal: controller.signal,
+          ...(controller ? { signal: controller.signal } : {}),
         });
 
-        clearTimeout(timeoutId);
+        if (timeoutId) clearTimeout(timeoutId);
 
         // 1. If 401 Unauthorized, redirect to login page gracefully
         if (response.status === 401) {
-          // In development, or on /hq route, use dev fallback context instead of redirecting
-          if (process.env.NODE_ENV === 'development' || isHqRoute) {
+          // In non-production, use dev fallback context instead of redirecting.
+          if (allowNonProductionFallback) {
             console.info('[TenantContextProvider] Dev mode / HQ route: Using fallback tenant context');
             if (isMounted) {
               setContext(getDevFallbackContext());
@@ -145,8 +148,8 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
           const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}: ${response.statusText}` }));
           const msg = errorData.error || `HTTP ${response.status}: ${response.statusText}`;
 
-          // In development mode or /hq routes, fallback to default tenant context
-          if (process.env.NODE_ENV === 'development' || isHqRoute) {
+          // In non-production, fallback to default tenant context.
+          if (allowNonProductionFallback) {
             console.info('[TenantContextProvider] Dev fallback tenant context activated due to:', msg);
             if (isMounted) {
               setContext(getDevFallbackContext());
@@ -168,10 +171,10 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
           setContext(data as TenantContext);
         }
       } catch (err: unknown) {
-        clearTimeout(timeoutId);
+        if (timeoutId) clearTimeout(timeoutId);
         const errorMessage = err instanceof Error ? err.message : String(err);
         
-        if (process.env.NODE_ENV === 'development' || isHqRoute) {
+        if (allowNonProductionFallback) {
           console.info('[TenantContextProvider] Fallback context activated on error/timeout:', errorMessage);
           if (isMounted) {
             setContext(getDevFallbackContext());
