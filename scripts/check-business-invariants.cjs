@@ -1,7 +1,13 @@
 // @turbopackIgnore: filesystem operations for .env loading
-const { loadLocalEnv } = require(/*turbopackIgnore: true*/ './load-local-env.cjs');
-
-loadLocalEnv();
+try {
+  const path = require('node:path');
+  const { loadLocalEnv } = require(/*turbopackIgnore: true*/ path.resolve(__dirname, 'load-local-env.cjs'));
+  if (typeof loadLocalEnv === 'function') {
+    loadLocalEnv();
+  }
+} catch {
+  // Environment variables are already provided by Next.js in SSR runtime
+}
 
 const CRITICAL = 'critical';
 const WARNING = 'warning';
