@@ -81,6 +81,7 @@ describe('recordRemainingPayment idempotency ordering', () => {
         full_price: 300_000,
         deposit_amount: 300_000,
         discount_percent: 0,
+        branch_id: null,
         status: 'booked',
         revenue: [{ amount: 300_000, status: 'confirmed', revenue_type: 'remaining_payment' }],
       },
@@ -240,6 +241,7 @@ describe('recordRemainingPayment idempotency ordering', () => {
       supabase: mockSupabase,
       payment: paymentInput({ idempotency_key: 'manual-payment:new-valid' }),
       tenantId: 'tenant-1',
+      branchId: null,
       actorId: 'user-1',
     });
     expect(mockAllocateConfirmedBookingPaymentToFinanceAr).toHaveBeenCalledWith(
@@ -289,6 +291,7 @@ describe('recordRemainingPayment idempotency ordering', () => {
       supabase: mockSupabase,
       payment: paymentInput(),
       tenantId: 'tenant-1',
+      branchId: null,
       actorId: 'user-1',
     });
   });
