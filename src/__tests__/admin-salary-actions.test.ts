@@ -277,6 +277,7 @@ describe('recalculateSalaryRecord draft-only operation', () => {
       'ktv-1',
       '2026-06-01',
       'tenant-1',
+      undefined,
       undefined
     );
     expect(mockRecordAuditLog).not.toHaveBeenCalled();
@@ -371,7 +372,8 @@ describe('publishSalaryRecord audit rollback', () => {
       'ktv-1',
       '2026-06-01',
       'tenant-1',
-      { status: 'published' }
+      { status: 'published' },
+      undefined
     );
     expect(mockRecordAuditLog).toHaveBeenCalledWith({
       action: 'UPDATE',
@@ -502,7 +504,8 @@ describe('updateSalaryConfig audit rollback', () => {
         violations_deduction: 150000,
         service_percentage_bonus: 250000,
         status: 'pending_approval',
-      }
+      },
+      undefined
     );
     expect(mockRecordAuditLog).toHaveBeenCalledWith({
       action: 'UPDATE',
@@ -795,7 +798,8 @@ describe('confirmKtvSessions salary rollback', () => {
       {
         total_sessions: 12.5,
         status: 'pending_approval',
-      }
+      },
+      undefined
     );
     expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/salary');
   });
@@ -1240,7 +1244,8 @@ describe('approveSalary audit rollback', () => {
       'ktv-1',
       '2026-06-01',
       'tenant-1',
-      { status: 'approved' }
+      { status: 'approved' },
+      undefined
     );
     expect(calls[2]).toEqual({
       table: 'salary_records',

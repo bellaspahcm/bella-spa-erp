@@ -69,19 +69,19 @@ BEGIN
   END IF;
 END $$;
 
-CREATE INDEX IF NOT EXISTS idx_bookings_tenant_branch
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_bookings_tenant_branch
   ON public.bookings (tenant_id, branch_id);
 
-CREATE INDEX IF NOT EXISTS idx_revenue_tenant_branch
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_revenue_tenant_branch
   ON public.revenue (tenant_id, branch_id);
 
-CREATE INDEX IF NOT EXISTS idx_session_logs_tenant_branch
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_session_logs_tenant_branch
   ON public.session_logs (tenant_id, branch_id);
 
-CREATE INDEX IF NOT EXISTS idx_attendance_tenant_branch
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_attendance_tenant_branch
   ON public.attendance (tenant_id, branch_id);
 
-CREATE INDEX IF NOT EXISTS idx_salary_records_tenant_branch
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_salary_records_tenant_branch
   ON public.salary_records (tenant_id, branch_id);
 
 CREATE OR REPLACE FUNCTION public.haircut_branch_access_allowed(
