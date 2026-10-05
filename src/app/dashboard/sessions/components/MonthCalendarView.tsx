@@ -1,13 +1,98 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Image from 'next/image';
-import { cn } from '@/lib/utils';
-import { Calendar as CalendarIcon, Users, Clock, AlertTriangle, ChevronLeft, ChevronRight, MoreHorizontal, Filter } from 'lucide-react';
+import { cn, formatViDate } from '@/lib/utils';
+import { 
+  Calendar as CalendarIcon, 
+  Users, 
+  Clock, 
+  AlertTriangle, 
+  ChevronLeft, 
+  ChevronRight, 
+  MoreHorizontal, 
+  Filter,
+  Sparkles,
+  CheckCircle2
+} from 'lucide-react';
 import type { SessionBooking } from '../types';
 
+export interface MappedAppointment {
+  id: string;
+  bookingId: string;
+  dateStr: string;
+  timeStr: string;
+  customerName: string;
+  customerPhone: string;
+  serviceName: string;
+  ktvId: string | null;
+  ktvName: string | null;
+  status: 'completed' | 'in_progress' | 'confirmed' | 'pending' | 'cancelled';
+  rawBooking: SessionBooking;
+}
+
+function getAppointmentsFromSessions(sessions: SessionBooking[]): MappedAppointment[] {
+  const result: MappedAppointment[] = [];
+
+  sessions.forEach(booking => {
+    const custName = booking.customers?.name_mother || 'Khách hàng';
+    const custPhone = booking.customers?.phone || '--';
+    const serviceName = booking.package_name || 'Liệu trình chăm sóc';
+
+    if (booking.session_logs && booking.session_logs.length > 0) {
+      booking.session_logs.forEach(log => {
+        const rawDate = log.assigned_date || log.completed_date || booking.next_session_date || booking.created_at?.slice(0, 10);
+        if (!rawDate) return;
+        const dateStr = rawDate.slice(0, 10);
+        const timeStr = log.assigned_time || log.start_time || '09:00';
+        
+        let st: MappedAppointment['status'] = 'confirmed';
+        if (log.status === 'completed') st = 'completed';
+        else if (log.status === 'in_progress') st = 'in_progress';
+        else if (log.status === 'cancelled') st = 'cancelled';
+        else if (!log.ktv?.id && !booking.assigned_ktv_id) st = 'pending';
+
+        result.push({
+          id: log.id || `${booking.id}-${log.session_number}`,
+          bookingId: booking.id,
+          dateStr,
+          timeStr,
+          customerName: custName,
+          customerPhone: custPhone,
+          serviceName,
+          ktvId: log.ktv?.id || booking.assigned_ktv_id || null,
+          ktvName: log.ktv?.full_name || booking.assigned_ktv_name || null,
+          status: st,
+          rawBooking: booking,
+        });
+      });
+    } else {
+      const rawDate = booking.next_session_date || booking.start_date || booking.created_at?.slice(0, 10);
+      if (rawDate) {
+        const dateStr = rawDate.slice(0, 10);
+        const st: MappedAppointment['status'] = booking.status === 'completed' ? 'completed' : booking.assigned_ktv_id ? 'confirmed' : 'pending';
+        result.push({
+          id: booking.id,
+          bookingId: booking.id,
+          dateStr,
+          timeStr: '09:00',
+          customerName: custName,
+          customerPhone: custPhone,
+          serviceName,
+          ktvId: booking.assigned_ktv_id || null,
+          ktvName: booking.assigned_ktv_name || null,
+          status: st,
+          rawBooking: booking,
+        });
+      }
+    }
+  });
+
+  return result;
+}
+
 export function MonthCalendarView({
-  sessions,
+  sessions = [],
   onSelectBooking,
   onOpenBookingModal,
 }: {
@@ -15,63 +100,178 @@ export function MonthCalendarView({
   onSelectBooking: (booking: SessionBooking) => void;
   onOpenBookingModal?: () => void;
 }) {
-  const [selectedDay, setSelectedDay] = useState(5);
-  const [agendaTab, setAgendaTab] = useState<'all' | 'confirmed' | 'pending' | 'in_progress' | 'cancelled'>('all');
+  const today = useMemo(() => new Date(), []);
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date(today.getFullYear(), today.getMonth(), 1));
+  const [selectedDateStr, setSelectedDateStr] = useState<string>(() => {
+    const y = today.getFullYear();
+    const m = String(today.getMonth() + 1).padStart(2, '0');
+    const d = String(today.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  });
+  const [agendaTab, setAgendaTab] = useState<'all' | 'confirmed' | 'pending' | 'in_progress' | 'completed'>('all');
 
-  // Days in October 2026 matching Image 2
-  const monthDays = [
-    { day: 27, isOtherMonth: true },
-    { day: 28, isOtherMonth: true },
-    { day: 29, isOtherMonth: true },
-    { day: 30, isOtherMonth: true },
-    { day: 1, count: 8, cap: 72, dotColor: 'bg-emerald-500' },
-    { day: 2, count: 12, cap: 90, dotColor: 'bg-blue-500' },
-    { day: 4, count: 11, cap: 68, dotColor: 'bg-amber-500' },
+  // Parse all appointments from real sessions prop
+  const allAppointments = useMemo(() => getAppointmentsFromSessions(sessions), [sessions]);
 
-    { day: 5, count: 18, cap: 73, isSelected: selectedDay === 5, dotColor: 'bg-emerald-500' },
-    { day: 6, count: 14, cap: 71, dotColor: 'bg-emerald-500' },
-    { day: 7, count: 10, cap: 55, dotColor: 'bg-blue-500' },
-    { day: 8, count: 16, cap: 80, dotColor: 'bg-purple-500' },
-    { day: 9, count: 12, cap: 65, dotColor: 'bg-amber-500' },
-    { day: 10, count: 20, cap: 95, dotColor: 'bg-rose-500' },
-    { day: 11, count: 18, cap: 88, dotColor: 'bg-rose-500' },
+  // Handle Month Navigation
+  const prevMonth = () => {
+    setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  };
+  const nextMonth = () => {
+    setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
+  const goToday = () => {
+    const now = new Date();
+    setCurrentMonth(new Date(now.getFullYear(), now.getMonth(), 1));
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    setSelectedDateStr(`${y}-${m}-${d}`);
+  };
 
-    { day: 12, count: 8, cap: 48, dotColor: 'bg-emerald-500' },
-    { day: 13, count: 11, cap: 60, dotColor: 'bg-amber-500' },
-    { day: 14, count: 13, cap: 72, dotColor: 'bg-blue-500' },
-    { day: 15, count: 12, cap: 66, dotColor: 'bg-emerald-500' },
-    { day: 16, count: 17, cap: 82, dotColor: 'bg-rose-500' },
-    { day: 17, count: 21, cap: 100, dotColor: 'bg-rose-500' },
-    { day: 18, count: 16, cap: 78, dotColor: 'bg-blue-500' },
+  const currentYear = currentMonth.getFullYear();
+  const currentMonthIdx = currentMonth.getMonth(); // 0 - 11
 
-    { day: 19, count: 8, cap: 51, dotColor: 'bg-emerald-500' },
-    { day: 20, count: 12, cap: 63, dotColor: 'bg-amber-500' },
-    { day: 21, count: 15, cap: 75, dotColor: 'bg-blue-500' },
-    { day: 22, count: 12, cap: 69, dotColor: 'bg-purple-500' },
-    { day: 23, count: 18, cap: 88, dotColor: 'bg-rose-500' },
-    { day: 24, count: 20, cap: 94, dotColor: 'bg-rose-500' },
-    { day: 25, count: 14, cap: 73, dotColor: 'bg-emerald-500' },
+  // Generate Month Heatmap Grid
+  const calendarGrid = useMemo(() => {
+    const daysInMonth = new Date(currentYear, currentMonthIdx + 1, 0).getDate();
+    const firstDayOfWeek = (new Date(currentYear, currentMonthIdx, 1).getDay() + 6) % 7; // 0 = Mon, 6 = Sun
+    const prevMonthDaysCount = new Date(currentYear, currentMonthIdx, 0).getDate();
 
-    { day: 26, count: 10, cap: 56, dotColor: 'bg-blue-500' },
-    { day: 27, count: 12, cap: 67, dotColor: 'bg-amber-500' },
-    { day: 28, count: 11, cap: 61, dotColor: 'bg-emerald-500' },
-    { day: 29, count: 15, cap: 79, dotColor: 'bg-purple-500' },
-    { day: 30, count: 17, cap: 85, dotColor: 'bg-rose-500' },
-    { day: 31, count: 19, cap: 91, dotColor: 'bg-rose-500' },
-    { day: 1, isOtherMonth: true },
-  ];
+    const cells = [];
 
-  // Daily agenda items matching Image 2
-  const agendaItems = [
-    { time: '08:00 - 09:00', customer: 'Nguyễn Thị Mai', phone: '0908 102 601', service: 'Chăm sóc da mặt (Facial chuyên sâu)', ktv: 'Demo Facial', status: 'Đã check-in', statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-    { time: '09:00 - 10:00', customer: 'Trần Ngọc An', phone: '0908 102 602', service: 'Gội đầu dưỡng sinh (Dưỡng sinh)', ktv: 'Demo Body', status: 'Đã xác nhận', statusColor: 'bg-blue-50 text-blue-700 border-blue-200' },
-    { time: '10:00 - 11:00', customer: 'Lê Thị Hạnh', phone: '0908 102 603', service: 'Triệt lông Diode (Công nghệ)', ktv: 'Demo An', status: 'Chờ xác nhận', statusColor: 'bg-amber-50 text-amber-700 border-amber-200' },
-    { time: '11:00 - 12:00', customer: 'Phạm Thu Trang', phone: '0908 102 604', service: 'Massage body (Body thư giãn)', ktv: 'Demo Body', status: 'Đã xác nhận', statusColor: 'bg-blue-50 text-blue-700 border-blue-200' },
-    { time: '12:00 - 13:00', customer: 'Võ Minh Tuấn', phone: '0908 102 605', service: 'Chăm sóc da mặt (Facial cơ bản)', ktv: '--', status: 'Chưa phân công', statusColor: 'bg-rose-50 text-rose-700 border-rose-200' },
-    { time: '13:00 - 14:00', customer: 'Ngô Bảo Trân', phone: '0908 102 606', service: 'Gội đầu dưỡng sinh (Dưỡng sinh)', ktv: 'Demo Facial', status: 'Đã xác nhận', statusColor: 'bg-blue-50 text-blue-700 border-blue-200' },
-    { time: '14:00 - 15:00', customer: 'Đặng Khánh Vy', phone: '0908 102 607', service: 'Triệt lông Diode (Công nghệ)', ktv: 'Demo An', status: 'Đã xác nhận', statusColor: 'bg-blue-50 text-blue-700 border-blue-200' },
-    { time: '15:00 - 16:00', customer: 'Bùi Hoài Nam', phone: '0908 102 608', service: 'Chăm sóc da mặt (Facial nâng cao)', ktv: 'Demo Facial', status: 'Đang thực hiện', statusColor: 'bg-purple-50 text-purple-700 border-purple-200' },
-  ];
+    // Previous month padding
+    for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+      cells.push({
+        day: prevMonthDaysCount - i,
+        dateStr: '',
+        isOtherMonth: true,
+        count: 0,
+        cap: 0,
+        dotColor: null,
+      });
+    }
+
+    // Current month days
+    for (let d = 1; d <= daysInMonth; d++) {
+      const monthStr = String(currentMonthIdx + 1).padStart(2, '0');
+      const dayStr = String(d).padStart(2, '0');
+      const dateStr = `${currentYear}-${monthStr}-${dayStr}`;
+
+      const dayApps = allAppointments.filter(app => app.dateStr === dateStr);
+      const count = dayApps.length;
+      const dailyCap = 20; // benchmark capacity per day
+      const cap = Math.min(100, Math.round((count / dailyCap) * 100));
+
+      let dotColor: string | null = null;
+      if (count > 0) {
+        if (count <= 3) dotColor = 'bg-emerald-500';
+        else if (count <= 7) dotColor = 'bg-blue-500';
+        else if (count <= 12) dotColor = 'bg-amber-500';
+        else dotColor = 'bg-rose-500';
+      }
+
+      cells.push({
+        day: d,
+        dateStr,
+        isOtherMonth: false,
+        count,
+        cap,
+        dotColor,
+      });
+    }
+
+    // Next month padding to reach 35 or 42 cells
+    const totalCells = cells.length <= 35 ? 35 : 42;
+    const remaining = totalCells - cells.length;
+    for (let i = 1; i <= remaining; i++) {
+      cells.push({
+        day: i,
+        dateStr: '',
+        isOtherMonth: true,
+        count: 0,
+        cap: 0,
+        dotColor: null,
+      });
+    }
+
+    return cells;
+  }, [currentYear, currentMonthIdx, allAppointments]);
+
+  // Monthly KPIs
+  const monthAppointments = useMemo(() => {
+    const prefix = `${currentYear}-${String(currentMonthIdx + 1).padStart(2, '0')}`;
+    return allAppointments.filter(app => app.dateStr.startsWith(prefix));
+  }, [allAppointments, currentYear, currentMonthIdx]);
+
+  const monthlyTotalBookings = monthAppointments.length;
+  const monthlyUniqueCustomers = useMemo(() => {
+    const set = new Set(monthAppointments.map(a => a.customerPhone));
+    return set.size;
+  }, [monthAppointments]);
+
+  const monthlyAvgCapacity = useMemo(() => {
+    if (monthlyTotalBookings === 0) return 0;
+    const activeDays = new Set(monthAppointments.map(a => a.dateStr)).size;
+    return Math.min(100, Math.round(((monthlyTotalBookings / (activeDays * 20)) * 100)));
+  }, [monthlyTotalBookings, monthAppointments]);
+
+  const monthlyUnassignedCount = useMemo(() => {
+    return monthAppointments.filter(a => !a.ktvId).length;
+  }, [monthAppointments]);
+
+  // Selected Day Appointments & Agenda Items
+  const selectedDayApps = useMemo(() => {
+    return allAppointments.filter(app => app.dateStr === selectedDateStr);
+  }, [allAppointments, selectedDateStr]);
+
+  const agendaFilteredApps = useMemo(() => {
+    if (agendaTab === 'all') return selectedDayApps;
+    return selectedDayApps.filter(app => app.status === agendaTab);
+  }, [selectedDayApps, agendaTab]);
+
+  const confirmedCount = selectedDayApps.filter(a => a.status === 'confirmed').length;
+  const pendingCount = selectedDayApps.filter(a => a.status === 'pending').length;
+  const inProgressCount = selectedDayApps.filter(a => a.status === 'in_progress').length;
+  const completedCount = selectedDayApps.filter(a => a.status === 'completed').length;
+  const unassignedDayCount = selectedDayApps.filter(a => !a.ktvId).length;
+
+  // Distribution Widgets for Selected Day
+  const serviceDistribution = useMemo(() => {
+    if (selectedDayApps.length === 0) return [];
+    const map: Record<string, number> = {};
+    selectedDayApps.forEach(app => {
+      const name = app.serviceName;
+      map[name] = (map[name] || 0) + 1;
+    });
+    const colors = ['bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-purple-500', 'bg-rose-500'];
+    return Object.entries(map).map(([service, count], idx) => ({
+      service,
+      count,
+      percent: Math.round((count / selectedDayApps.length) * 100),
+      color: colors[idx % colors.length],
+    }));
+  }, [selectedDayApps]);
+
+  const ktvDistribution = useMemo(() => {
+    if (selectedDayApps.length === 0) return [];
+    const map: Record<string, number> = {};
+    selectedDayApps.forEach(app => {
+      const name = app.ktvName || 'Chưa phân công';
+      map[name] = (map[name] || 0) + 1;
+    });
+    return Object.entries(map).map(([ktvName, count]) => {
+      const cap = Math.min(100, Math.round((count / 8) * 100)); // 8 slots max per day per KTV
+      return {
+        ktvName,
+        count,
+        cap,
+      };
+    });
+  }, [selectedDayApps]);
+
+  const formattedMonthTitle = `Tháng ${currentMonthIdx + 1} Năm ${currentYear}`;
+  const formattedSelectedDate = formatViDate(selectedDateStr);
 
   return (
     <div className="space-y-6">
@@ -83,10 +283,10 @@ export function MonthCalendarView({
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="text-2xl font-black text-slate-900 leading-none">286</span>
-              <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">↑ 12%</span>
+              <span className="text-2xl font-black text-slate-900 leading-none">{monthlyTotalBookings}</span>
+              <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">Tất cả</span>
             </div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mt-1">Tổng lịch hẹn (Tháng 10/2026)</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mt-1">Tổng lịch ({formattedMonthTitle})</p>
           </div>
         </div>
 
@@ -96,8 +296,8 @@ export function MonthCalendarView({
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="text-2xl font-black text-slate-900 leading-none">214</span>
-              <span className="text-[9px] font-black text-pink-600 bg-pink-50 px-1.5 py-0.5 rounded-full">↑ 8%</span>
+              <span className="text-2xl font-black text-slate-900 leading-none">{monthlyUniqueCustomers}</span>
+              <span className="text-[9px] font-black text-pink-600 bg-pink-50 px-1.5 py-0.5 rounded-full">Khách</span>
             </div>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mt-1">Khách hàng unique</p>
           </div>
@@ -108,7 +308,7 @@ export function MonthCalendarView({
             <Clock className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-2xl font-black text-slate-900 leading-none">71%</span>
+            <span className="text-2xl font-black text-slate-900 leading-none">{monthlyAvgCapacity}%</span>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mt-1">Công suất trung bình</p>
           </div>
         </div>
@@ -118,7 +318,7 @@ export function MonthCalendarView({
             <AlertTriangle className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-2xl font-black text-rose-600 leading-none">12</span>
+            <span className="text-2xl font-black text-rose-600 leading-none">{monthlyUnassignedCount}</span>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mt-1">Chưa phân công</p>
           </div>
         </div>
@@ -128,26 +328,40 @@ export function MonthCalendarView({
       <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
-            <button className="p-1.5 hover:bg-white rounded-lg text-slate-600 transition-colors">
+            <button 
+              onClick={prevMonth}
+              className="p-1.5 hover:bg-white rounded-lg text-slate-600 transition-colors"
+              title="Tháng trước"
+            >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <button className="p-1.5 hover:bg-white rounded-lg text-slate-600 transition-colors">
+            <button 
+              onClick={nextMonth}
+              className="p-1.5 hover:bg-white rounded-lg text-slate-600 transition-colors"
+              title="Tháng sau"
+            >
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
-          <h3 className="text-lg font-black text-slate-900">Tháng 10 Năm 2026</h3>
+          <h3 className="text-lg font-black text-slate-900">{formattedMonthTitle}</h3>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <button className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-black transition-colors">
+          <button 
+            onClick={goToday}
+            className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-black transition-colors"
+          >
             Hôm nay
           </button>
-          <select className="px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 outline-none">
-            <option>Tất cả chi nhánh</option>
-          </select>
-          <select className="px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 outline-none">
-            <option>Tất cả KTV</option>
-          </select>
+          {onOpenBookingModal && (
+            <button 
+              onClick={onOpenBookingModal}
+              className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black transition-colors flex items-center gap-1.5 shadow-sm"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Tạo lịch mới
+            </button>
+          )}
         </div>
       </div>
 
@@ -167,40 +381,51 @@ export function MonthCalendarView({
 
           {/* Day Grid */}
           <div className="grid grid-cols-7 gap-2">
-            {monthDays.map((item, idx) => (
-              <div
-                key={idx}
-                onClick={() => !item.isOtherMonth && setSelectedDay(item.day)}
-                className={cn(
-                  "min-h-[84px] p-3 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between relative",
-                  item.isOtherMonth
-                    ? "bg-slate-50/40 border-slate-100 text-slate-300 pointer-events-none"
-                    : item.isSelected
-                    ? "bg-slate-950 text-white border-slate-900 shadow-xl shadow-slate-900/20"
-                    : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/60"
-                )}
-              >
-                <div className="flex items-center justify-between">
-                  <span className={cn("text-base font-black", item.isSelected ? "text-white" : "text-slate-900")}>
-                    {item.day}
-                  </span>
-                  {item.dotColor && (
-                    <span className={cn("w-2 h-2 rounded-full", item.dotColor)} />
+            {calendarGrid.map((item, idx) => {
+              const isSelected = item.dateStr === selectedDateStr && !item.isOtherMonth;
+              return (
+                <div
+                  key={idx}
+                  onClick={() => {
+                    if (!item.isOtherMonth && item.dateStr) {
+                      setSelectedDateStr(item.dateStr);
+                    }
+                  }}
+                  className={cn(
+                    "min-h-[84px] p-3 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between relative",
+                    item.isOtherMonth
+                      ? "bg-slate-50/40 border-slate-100 text-slate-300 pointer-events-none"
+                      : isSelected
+                      ? "bg-slate-950 text-white border-slate-900 shadow-xl shadow-slate-900/20"
+                      : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/60"
                   )}
-                </div>
-
-                {!item.isOtherMonth && item.count && (
-                  <div className="space-y-0.5">
-                    <p className={cn("text-[10px] font-black", item.isSelected ? "text-slate-300" : "text-slate-700")}>
-                      • {item.count} lịch
-                    </p>
-                    <p className={cn("text-[9px] font-bold", item.isSelected ? "text-emerald-400" : "text-emerald-600")}>
-                      ● {item.cap}%
-                    </p>
+                >
+                  <div className="flex items-center justify-between">
+                    <span className={cn("text-base font-black", isSelected ? "text-white" : "text-slate-900")}>
+                      {item.day}
+                    </span>
+                    {item.dotColor && (
+                      <span className={cn("w-2 h-2 rounded-full", item.dotColor)} />
+                    )}
                   </div>
-                )}
-              </div>
-            ))}
+
+                  {!item.isOtherMonth && item.count > 0 ? (
+                    <div className="space-y-0.5">
+                      <p className={cn("text-[10px] font-black", isSelected ? "text-slate-300" : "text-slate-700")}>
+                        • {item.count} lịch
+                      </p>
+                      <p className={cn("text-[9px] font-bold", isSelected ? "text-emerald-400" : "text-emerald-600")}>
+                        ● {item.cap}%
+                      </p>
+                    </div>
+                  ) : !item.isOtherMonth ? (
+                    <p className={cn("text-[9px] font-medium", isSelected ? "text-slate-500" : "text-slate-300")}>
+                      Trống
+                    </p>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -212,16 +437,15 @@ export function MonthCalendarView({
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-black text-slate-900">Thứ Hai, 05/10/2026</h3>
-                <span className="bg-blue-50 text-blue-700 text-[10px] font-black px-2.5 py-0.5 rounded-full">Hôm nay</span>
+                <h3 className="text-lg font-black text-slate-900">{formattedSelectedDate}</h3>
+                {selectedDateStr === `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}` && (
+                  <span className="bg-blue-50 text-blue-700 text-[10px] font-black px-2.5 py-0.5 rounded-full">Hôm nay</span>
+                )}
               </div>
               <p className="text-xs font-bold text-slate-500 mt-0.5">
-                18 lịch hẹn • 12 khách hàng • 73% công suất • <span className="text-rose-600 font-black">🔴 2 chưa phân công</span>
+                {selectedDayApps.length} lịch hẹn • {unassignedDayCount > 0 ? <span className="text-rose-600 font-black">🔴 {unassignedDayCount} chưa phân công</span> : <span className="text-emerald-600 font-black">✓ Đã phân công đủ</span>}
               </p>
             </div>
-            <button className="text-xs font-bold text-blue-600 hover:underline shrink-0">
-              Xem theo Timeline &gt;
-            </button>
           </div>
 
           {/* Filter Tabs */}
@@ -229,89 +453,122 @@ export function MonthCalendarView({
             <button
               onClick={() => setAgendaTab('all')}
               className={cn(
-                "px-3.5 py-1.5 rounded-full text-xs font-black transition-all border",
+                "px-3.5 py-1.5 rounded-full text-xs font-black transition-all border shrink-0",
                 agendaTab === 'all' ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-600 border-slate-200"
               )}
             >
-              Tất cả (18)
+              Tất cả ({selectedDayApps.length})
             </button>
             <button
               onClick={() => setAgendaTab('confirmed')}
               className={cn(
-                "px-3.5 py-1.5 rounded-full text-xs font-black transition-all border",
+                "px-3.5 py-1.5 rounded-full text-xs font-black transition-all border shrink-0",
                 agendaTab === 'confirmed' ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-600 border-slate-200"
               )}
             >
-              Đã xác nhận (14)
+              Đã xác nhận ({confirmedCount})
             </button>
             <button
               onClick={() => setAgendaTab('pending')}
               className={cn(
-                "px-3.5 py-1.5 rounded-full text-xs font-black transition-all border",
+                "px-3.5 py-1.5 rounded-full text-xs font-black transition-all border shrink-0",
                 agendaTab === 'pending' ? "bg-amber-600 text-white border-amber-600" : "bg-white text-slate-600 border-slate-200"
               )}
             >
-              Chờ xác nhận (2)
+              Chờ xác nhận ({pendingCount})
             </button>
             <button
               onClick={() => setAgendaTab('in_progress')}
               className={cn(
-                "px-3.5 py-1.5 rounded-full text-xs font-black transition-all border",
-                agendaTab === 'in_progress' ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-slate-600 border-slate-200"
+                "px-3.5 py-1.5 rounded-full text-xs font-black transition-all border shrink-0",
+                agendaTab === 'in_progress' ? "bg-purple-600 text-white border-purple-600" : "bg-white text-slate-600 border-slate-200"
               )}
             >
-              Đang thực hiện (2)
+              Đang thực hiện ({inProgressCount})
+            </button>
+            <button
+              onClick={() => setAgendaTab('completed')}
+              className={cn(
+                "px-3.5 py-1.5 rounded-full text-xs font-black transition-all border shrink-0",
+                agendaTab === 'completed' ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-slate-600 border-slate-200"
+              )}
+            >
+              Đã xong ({completedCount})
             </button>
           </div>
 
           {/* Agenda Table */}
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-slate-200 text-[10px] font-black uppercase text-slate-400 tracking-wider">
-                  <th className="py-2.5 px-3">Giờ</th>
-                  <th className="py-2.5 px-3">Khách hàng</th>
-                  <th className="py-2.5 px-3">Dịch vụ</th>
-                  <th className="py-2.5 px-3">KTV</th>
-                  <th className="py-2.5 px-3">Trạng thái</th>
-                  <th className="py-2.5 px-3 text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-bold">
-                {agendaItems.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3 px-3 text-slate-900 whitespace-nowrap">{item.time}</td>
-                    <td className="py-3 px-3">
-                      <div className="flex items-center gap-2.5">
-                        <Image
-                          src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=100&q=80"
-                          alt={item.customer}
-                          width={32}
-                          height={32}
-                          className="w-8 h-8 rounded-full object-cover border border-slate-200"
-                        />
-                        <div>
-                          <p className="font-black text-slate-900">{item.customer}</p>
-                          <p className="text-[10px] text-slate-400 font-medium">{item.phone}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-3 px-3 text-slate-700">{item.service}</td>
-                    <td className="py-3 px-3 text-slate-800">{item.ktv}</td>
-                    <td className="py-3 px-3 whitespace-nowrap">
-                      <span className={cn("px-2.5 py-1 rounded-full text-[9.5px] font-black border", item.statusColor)}>
-                        {item.status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 text-right">
-                      <button className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </button>
-                    </td>
+            {agendaFilteredApps.length === 0 ? (
+              <div className="text-center py-10 space-y-2">
+                <CalendarIcon className="w-10 h-10 text-slate-300 mx-auto" />
+                <p className="text-sm font-bold text-slate-500">Không có lịch hẹn cho ngày này</p>
+              </div>
+            ) : (
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                    <th className="py-2.5 px-3">Giờ</th>
+                    <th className="py-2.5 px-3">Khách hàng</th>
+                    <th className="py-2.5 px-3">Dịch vụ</th>
+                    <th className="py-2.5 px-3">KTV</th>
+                    <th className="py-2.5 px-3">Trạng thái</th>
+                    <th className="py-2.5 px-3 text-right">Thao tác</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-bold">
+                  {agendaFilteredApps.map((item) => {
+                    let statusLabel = 'Đã xác nhận';
+                    let statusStyle = 'bg-blue-50 text-blue-700 border-blue-200';
+
+                    if (item.status === 'completed') {
+                      statusLabel = 'Đã hoàn thành';
+                      statusStyle = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                    } else if (item.status === 'in_progress') {
+                      statusLabel = 'Đang thực hiện';
+                      statusStyle = 'bg-purple-50 text-purple-700 border-purple-200';
+                    } else if (item.status === 'pending' || !item.ktvName) {
+                      statusLabel = 'Chưa phân công';
+                      statusStyle = 'bg-rose-50 text-rose-700 border-rose-200';
+                    }
+
+                    return (
+                      <tr 
+                        key={item.id} 
+                        onClick={() => onSelectBooking(item.rawBooking)}
+                        className="hover:bg-slate-50/80 transition-colors cursor-pointer"
+                      >
+                        <td className="py-3 px-3 text-slate-900 whitespace-nowrap font-black">{item.timeStr}</td>
+                        <td className="py-3 px-3">
+                          <div>
+                            <p className="font-black text-slate-900">{item.customerName}</p>
+                            <p className="text-[10px] text-slate-400 font-medium">{item.customerPhone}</p>
+                          </div>
+                        </td>
+                        <td className="py-3 px-3 text-slate-700">{item.serviceName}</td>
+                        <td className="py-3 px-3 text-slate-800">{item.ktvName || '--'}</td>
+                        <td className="py-3 px-3 whitespace-nowrap">
+                          <span className={cn("px-2.5 py-1 rounded-full text-[9.5px] font-black border", statusStyle)}>
+                            {statusLabel}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-right">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onSelectBooking(item.rawBooking);
+                            }}
+                            className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500"
+                          >
+                            <MoreHorizontal className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
 
@@ -327,99 +584,86 @@ export function MonthCalendarView({
             <div className="space-y-2.5 text-xs font-bold">
               <div className="flex justify-between py-1.5 border-b border-slate-100">
                 <span className="text-slate-500">Tổng lịch hẹn</span>
-                <span className="text-slate-900 font-black">18</span>
+                <span className="text-slate-900 font-black">{selectedDayApps.length}</span>
               </div>
               <div className="flex justify-between py-1.5 border-b border-slate-100">
-                <span className="text-slate-500">Khách hàng</span>
-                <span className="text-slate-900 font-black">12</span>
+                <span className="text-slate-500">Khách hàng unique</span>
+                <span className="text-slate-900 font-black">
+                  {new Set(selectedDayApps.map(a => a.customerPhone)).size}
+                </span>
               </div>
               <div className="flex justify-between py-1.5 border-b border-slate-100">
                 <span className="text-slate-500">KTV làm việc</span>
-                <span className="text-slate-900 font-black">3 / 3</span>
+                <span className="text-slate-900 font-black">
+                  {new Set(selectedDayApps.filter(a => a.ktvName).map(a => a.ktvName)).size}
+                </span>
               </div>
               <div className="flex justify-between py-1.5 border-b border-slate-100">
-                <span className="text-slate-500">Công suất</span>
-                <span className="text-emerald-600 font-black">73%</span>
-              </div>
-              <div className="flex justify-between py-1.5 border-b border-slate-100">
-                <span className="text-slate-500">Chưa phân công</span>
-                <span className="text-rose-600 font-black">2</span>
+                <span className="text-slate-500">Công suất dự kiến</span>
+                <span className="text-emerald-600 font-black">
+                  {Math.min(100, Math.round((selectedDayApps.length / 20) * 100))}%
+                </span>
               </div>
               <div className="flex justify-between py-1.5">
-                <span className="text-slate-500">Lịch trễ</span>
-                <span className="text-amber-600 font-black">1</span>
+                <span className="text-slate-500">Chưa phân công</span>
+                <span className={cn("font-black", unassignedDayCount > 0 ? "text-rose-600" : "text-emerald-600")}>
+                  {unassignedDayCount}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Phân bổ dịch vụ (Service distribution) */}
+          {/* Service Distribution */}
           <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-lg shadow-slate-200/50 space-y-4">
             <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
               <Filter className="w-5 h-5 text-indigo-600" />
               <span>Phân bổ dịch vụ</span>
             </h3>
 
-            <div className="space-y-3">
-              <div className="flex justify-between items-center text-xs font-bold">
-                <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Chăm sóc da mặt</span>
-                <span className="text-slate-900 font-black">7 (33%)</span>
+            {serviceDistribution.length === 0 ? (
+              <p className="text-xs text-slate-400 font-medium">Chưa có dữ liệu cho ngày này</p>
+            ) : (
+              <div className="space-y-3">
+                {serviceDistribution.map((item, idx) => (
+                  <div key={idx} className="flex justify-between items-center text-xs font-bold">
+                    <span className="flex items-center gap-2">
+                      <span className={cn("w-2.5 h-2.5 rounded-full", item.color)} />
+                      <span className="truncate max-w-[150px]">{item.service}</span>
+                    </span>
+                    <span className="text-slate-900 font-black">{item.count} ({item.percent}%)</span>
+                  </div>
+                ))}
               </div>
-              <div className="flex justify-between items-center text-xs font-bold">
-                <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Chăm sóc body</span>
-                <span className="text-slate-900 font-black">5 (28%)</span>
-              </div>
-              <div className="flex justify-between items-center text-xs font-bold">
-                <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> Triệt lông / CN</span>
-                <span className="text-slate-900 font-black">4 (22%)</span>
-              </div>
-              <div className="flex justify-between items-center text-xs font-bold">
-                <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-purple-500" /> Gội đầu / Dưỡng sinh</span>
-                <span className="text-slate-900 font-black">3 (17%)</span>
-              </div>
-            </div>
+            )}
           </div>
 
-          {/* Phân bổ theo KTV */}
+          {/* KTV Distribution */}
           <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-lg shadow-slate-200/50 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                <Users className="w-5 h-5 text-blue-600" />
-                <span>Phân bổ theo KTV</span>
-              </h3>
-              <button className="text-xs font-bold text-blue-600 hover:underline">Chi tiết &gt;</button>
-            </div>
+            <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+              <Users className="w-5 h-5 text-blue-600" />
+              <span>Phân bổ theo KTV</span>
+            </h3>
 
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs font-black">
-                  <span className="text-slate-900">Demo Facial</span>
-                  <span className="text-blue-600">7 lịch • 82%</span>
-                </div>
-                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-500 rounded-full" style={{ width: '82%' }} />
-                </div>
+            {ktvDistribution.length === 0 ? (
+              <p className="text-xs text-slate-400 font-medium">Chưa có dữ liệu KTV cho ngày này</p>
+            ) : (
+              <div className="space-y-3">
+                {ktvDistribution.map((item, idx) => (
+                  <div key={idx} className="space-y-1">
+                    <div className="flex justify-between text-xs font-black">
+                      <span className="text-slate-900">{item.ktvName}</span>
+                      <span className="text-blue-600">{item.count} lịch • {item.cap}%</span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <div 
+                        className={cn("h-full rounded-full", item.cap >= 80 ? "bg-rose-500" : "bg-blue-500")} 
+                        style={{ width: `${item.cap}%` }} 
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
-
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs font-black">
-                  <span className="text-slate-900">Demo Body</span>
-                  <span className="text-rose-600">8 lịch • 75%</span>
-                </div>
-                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-rose-500 rounded-full" style={{ width: '75%' }} />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs font-black">
-                  <span className="text-slate-900">Demo An</span>
-                  <span className="text-amber-600">3 lịch • 50%</span>
-                </div>
-                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-amber-500 rounded-full" style={{ width: '50%' }} />
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
