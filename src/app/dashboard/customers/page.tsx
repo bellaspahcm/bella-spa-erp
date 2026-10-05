@@ -2,9 +2,9 @@
 
 import PremiumExportButton from '@/components/ui/PremiumExportButton';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
-import { AnimatePresence,motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { useCallback,useEffect,useMemo,useRef,useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { usePageRefresh } from '@/hooks/usePageRefresh';
@@ -22,25 +22,31 @@ import { getLocalDateString } from '@bella/shared';
 import { cn } from '@/lib/utils';
 
 import {
-Baby,
-Calendar,
-ChevronRight,
-ClipboardList,
-Edit2,
-Filter,
-MapPin,
-MessageCircle,
-MoreVertical,
-Phone,
-Search,
-Sparkles,
-Trash2,
-UserPlus,
-X,
-Award
+  Activity,
+  Award,
+  Baby,
+  Calendar,
+  ChevronRight,
+  ClipboardList,
+  Clock,
+  Edit2,
+  Filter,
+  LayoutGrid,
+  List,
+  MapPin,
+  MessageCircle,
+  MoreVertical,
+  Phone,
+  Search,
+  Sparkles,
+  Trash2,
+  UserPlus,
+  Users,
+  Wallet,
+  X
 } from 'lucide-react';
 
-import { createCustomer,deleteCustomer,getCustomers,updateCustomer } from '@/services/customer-actions';
+import { createCustomer, deleteCustomer, getCustomers, updateCustomer } from '@/services/customer-actions';
 import type { Database } from '@/types/database.types';
 import {
   isActiveCareBooking,
@@ -83,8 +89,6 @@ function getErrorMessage(error: unknown, fallback = 'Có lỗi xảy ra') {
   return error instanceof Error ? error.message : fallback;
 }
 
-
-
 import { HaircutCustomerView } from './HaircutCustomerView';
 
 export default function CustomersPage() {
@@ -94,6 +98,7 @@ export default function CustomersPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
   const customerLoadRequestRef = useRef(0);
   const backgroundCustomerLoadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { tenantModuleKey, refreshTenantModuleKey } = useTenantModuleKey();
@@ -260,11 +265,9 @@ export default function CustomersPage() {
 
   usePageRefresh(refreshCustomersPage);
 
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
-    // Fix: Limit year to 4 digits for date inputs to prevent errors like 20245
     if (e.target.type === 'date' && value) {
       const year = value.split('-')[0];
       if (year && year.length > 4) return;
@@ -299,7 +302,6 @@ export default function CustomersPage() {
           toast.success(isEditMode ? 'Cập nhật thành công!' : 'Thêm khách hàng thành công!');
         }
         setIsModalOpen(false);
-        // Reset form
         resetForm();
         loadCustomers();
       }
@@ -405,8 +407,17 @@ export default function CustomersPage() {
     { value: 'name_desc', label: 'Tên Z-A' },
   ];
 
-  // Reset pagination when any filter changes
   useEffect(() => { setCurrentPage(1); }, [searchQuery, statusFilter, monthFilter, yearFilter, sortBy]);
+
+  const metrics = useMemo(() => {
+    const currentYM = new Date().toISOString().slice(0, 7);
+    return {
+      total: customers.length,
+      inCare: customers.filter(c => c.is_in_care).length,
+      newThisMonth: customers.filter(c => c.created_at && c.created_at.slice(0, 7) === currentYM).length,
+      needsCare: customers.filter(c => c.status === 'lead' || (!c.is_in_care && c.status !== 'paid')).length,
+    };
+  }, [customers]);
 
   const filteredCustomers = useMemo(() => {
     const result = customers.filter(customer => {
@@ -452,7 +463,7 @@ export default function CustomersPage() {
         return (b.name_mother || '').localeCompare(a.name_mother || '');
       } else if (sortBy === 'date_asc') {
         return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
-      } else { // default date_desc
+      } else {
         return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
       }
     });
@@ -521,7 +532,7 @@ export default function CustomersPage() {
                 <div className="max-h-[92vh] overflow-y-auto p-5 sm:p-8 lg:p-10">
                   <div className="mb-6 flex items-start justify-between gap-3 sm:mb-8">
                     <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-                      <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-200 dark:shadow-none">
+                      <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
                         <UserPlus className="w-6 h-6" />
                       </div>
                       <div className="min-w-0">
@@ -547,6 +558,7 @@ export default function CustomersPage() {
                           required
                           value={formData.name_mother}
                           onChange={handleInputChange}
+                          data-testid="customer-name-input"
                           className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none" 
                           placeholder={customerLabels.primaryNamePlaceholder}
                         />
@@ -559,6 +571,7 @@ export default function CustomersPage() {
                           required
                           value={formData.phone}
                           onChange={handleInputChange}
+                          data-testid="customer-phone-input"
                           className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none" 
                           placeholder="VD: 0901234567" 
                         />
@@ -570,23 +583,24 @@ export default function CustomersPage() {
                           name="name_baby"
                           value={formData.name_baby}
                           onChange={handleInputChange}
+                          data-testid="customer-secondary-name-input"
                           className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all" 
                           placeholder={customerLabels.secondaryNamePlaceholder}
                         />
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-bold text-slate-700 ml-1">{customerLabels.secondaryDateLabel}</label>
-                          <input 
-                            type="date" 
-                            name="dob_expected"
-                            min={tenantModuleKey === 'babycare' ? today : undefined}
-                            max="9999-12-31"
-                            value={formData.dob_expected}
-                            onChange={handleInputChange}
-                            className="w-full px-3 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-bold" 
-                          />
+                        <input 
+                          type="date" 
+                          name="dob_expected"
+                          min={tenantModuleKey === 'babycare' ? today : undefined}
+                          max="9999-12-31"
+                          value={formData.dob_expected}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-bold" 
+                        />
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-2 md:col-span-2">
                         <label className="text-sm font-bold text-slate-700 ml-1">{customerLabels.secondaryGenderLabel}</label>
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                           {customerLabels.genderOptions.map(g => (
@@ -597,7 +611,7 @@ export default function CustomersPage() {
                               className={cn(
                                 "py-3 rounded-xl font-bold text-xs transition-all border",
                                 formData.gender_baby === g.id 
-                                  ? "bg-primary text-white border-primary shadow-md shadow-emerald-100 dark:shadow-none" 
+                                  ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20" 
                                   : "bg-slate-50 text-slate-400 border-slate-100 hover:border-primary/20"
                               )}
                             >
@@ -614,6 +628,7 @@ export default function CustomersPage() {
                         required
                         value={formData.address}
                         onChange={handleInputChange}
+                        data-testid="customer-address-input"
                         className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none resize-none h-24" 
                         placeholder="Nhập địa chỉ chi tiết..."
                       ></textarea>
@@ -626,9 +641,10 @@ export default function CustomersPage() {
                       <button 
                         type="submit" 
                         disabled={isSubmitting}
+                        data-testid="customer-submit-button"
                         className={cn(
-                          "flex-1 py-4 text-white font-bold rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2",
-                          isSubmitting ? "bg-slate-400 cursor-not-allowed" : "bg-primary hover:opacity-90 shadow-emerald-200 dark:shadow-none"
+                          "flex-1 py-4 text-primary-foreground font-bold rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2",
+                          isSubmitting ? "bg-slate-400 cursor-not-allowed" : "bg-primary hover:opacity-90 shadow-primary/20"
                         )}
                       >
                         {isSubmitting && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
@@ -646,7 +662,7 @@ export default function CustomersPage() {
   }
 
   return (
-    <div id="customers-list-container" className="flex-1 overflow-auto bg-background/30 p-3 sm:p-6 md:p-10 relative" onClick={() => { setActiveMenuId(null); }}>
+    <div id="customers-list-container" className="flex-1 overflow-auto bg-slate-50/50 dark:bg-slate-950 p-3 sm:p-6 md:p-8 relative" onClick={() => { setActiveMenuId(null); }}>
       {/* Non-intrusive loading bar */}
       <AnimatePresence>
         {isSyncing && (
@@ -654,320 +670,541 @@ export default function CustomersPage() {
             initial={{ opacity: 0, scaleX: 0 }}
             animate={{ opacity: 1, scaleX: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-rose-400 to-primary origin-left z-50"
+            className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/30 via-primary to-primary/30 origin-left z-50"
             transition={{ duration: 0.5 }}
           />
         )}
       </AnimatePresence>
-      {/* Header */}
-      <div className="mb-6 flex flex-col gap-4 md:mb-8 md:flex-row md:items-center md:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Khách hàng</h1>
-          <p className="text-slate-500 font-medium mt-1">{customerLabels.customerListSubtitle}</p>
+
+      {/* Top Header */}
+      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold">
+            <Users className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">Khách hàng</h1>
+            <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 mt-0.5">{customerLabels.customerListSubtitle}</p>
+          </div>
         </div>
-        <div className="bella-toolbar flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="bella-toolbar flex flex-wrap items-center gap-2 sm:gap-3">
           <PremiumExportButton />
           <button 
             onClick={handleAddNew}
             data-testid="customer-add-button"
-            className="beauty-customer-add-cta flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-rose-500 px-4 py-3 font-bold text-white shadow-lg shadow-rose-200 transition-all hover:bg-rose-600 active:scale-95 dark:shadow-none sm:px-6"
+            className="beauty-customer-add-cta flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-2.5 font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:opacity-90 active:scale-95 text-sm sm:px-5"
           >
-            <UserPlus className="w-5 h-5 shrink-0" />
+            <UserPlus className="w-4 h-4 shrink-0" />
             <span>Thêm khách hàng</span>
           </button>
         </div>
       </div>
 
-      {/* Filters & Search */}
-      <div className="bella-toolbar mb-6 flex flex-col gap-3 rounded-3xl border border-slate-100 bg-white p-3 shadow-sm sm:p-4 md:mb-8 lg:flex-row lg:items-center lg:flex-wrap">
-        {/* Search — all fields */}
-        <div className="relative w-full min-w-0 flex-1 group lg:min-w-[260px]">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-rose-500 transition-colors w-5 h-5" />
-          <input
-            type="text"
-            placeholder={customerLabels.customerSearchPlaceholder}
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none font-medium text-slate-700 text-sm"
-          />
+      {/* 4 Top Metric Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {/* Metric Card 1: Tổng khách hàng */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <Users className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Tổng khách hàng</p>
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-0.5">{metrics.total.toLocaleString('vi-VN')}</h3>
+            <p className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 mt-0.5 flex items-center gap-1">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              Hồ sơ trong hệ thống
+            </p>
+          </div>
         </div>
-        {/* Status dropdown */}
-        <div className="w-full sm:min-w-52 sm:flex-1 lg:w-52 lg:flex-none">
-          <PremiumSelect
-            value={statusFilter}
-            options={statusOptions.map(opt => ({ value: opt, label: opt, icon: <Filter className="w-4 h-4" /> }))}
-            onChange={val => setStatusFilter(val)}
-            placeholder="Trạng thái..."
-          />
+
+        {/* Metric Card 2: Đang sử dụng dịch vụ */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <Activity className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Đang sử dụng dịch vụ</p>
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-0.5">{metrics.inCare.toLocaleString('vi-VN')}</h3>
+            <p className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 mt-0.5">
+              Đang có gói liệu trình
+            </p>
+          </div>
         </div>
-        {/* Month dropdown */}
-        <div className="w-full sm:min-w-40 sm:flex-1 lg:w-40 lg:flex-none">
-          <PremiumSelect
-            value={monthFilter}
-            options={monthOptions}
-            onChange={val => setMonthFilter(val)}
-            placeholder="Tháng..."
-          />
+
+        {/* Metric Card 3: Khách mới tháng này */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+            <UserPlus className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Khách mới tháng này</p>
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-0.5">{metrics.newThisMonth.toLocaleString('vi-VN')}</h3>
+            <p className="text-[11px] font-medium text-blue-600 dark:text-blue-400 mt-0.5">
+              Tháng {new Date().getMonth() + 1}/{new Date().getFullYear()}
+            </p>
+          </div>
         </div>
-        {/* Year dropdown */}
-        <div className="w-full sm:min-w-32 sm:flex-1 lg:w-32 lg:flex-none">
-          <PremiumSelect
-            value={yearFilter}
-            options={yearOptions.map(y => ({ value: y, label: y }))}
-            onChange={val => setYearFilter(val)}
-            placeholder="Năm..."
-          />
-        </div>
-        {/* Sort dropdown */}
-        <div className="w-full sm:min-w-48 sm:flex-1 lg:w-48 lg:flex-none">
-          <PremiumSelect
-            value={sortBy}
-            options={sortOptions}
-            onChange={val => setSortBy(val)}
-            placeholder="Sắp xếp..."
-          />
+
+        {/* Metric Card 4: Cần chăm sóc */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+            <Clock className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Cần chăm sóc</p>
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-0.5">{metrics.needsCare.toLocaleString('vi-VN')}</h3>
+            <p className="text-[11px] font-medium text-amber-600 dark:text-amber-400 mt-0.5">
+              Khách tiềm năng & tư vấn
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Customer Grid/Table */}
-      <div className="grid grid-cols-1 gap-4">
-        {isLoading && customers.length === 0 ? (
-          <div className="bg-white rounded-3xl p-10 text-center border border-slate-100 shadow-sm sm:p-20">
-            <div className="w-12 h-12 border-4 rounded-full animate-spin mx-auto mb-4" style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }}></div>
-            <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">Đang tải dữ liệu...</p>
+      {/* Filters & Control Bar */}
+      <div className="bella-toolbar mb-6 flex flex-col gap-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-sm md:flex-row md:items-center md:justify-between">
+        {/* Left Filters */}
+        <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
+          {/* Search */}
+          <div className="relative flex-1 min-w-[200px] max-w-xs group">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-4 h-4" />
+            <input
+              type="text"
+              placeholder={customerLabels.customerSearchPlaceholder}
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-3.5 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none font-medium text-slate-700 dark:text-slate-200 text-xs sm:text-sm"
+            />
           </div>
-        ) : filteredCustomers.length === 0 ? (
-          <div className="bg-white rounded-3xl p-10 text-center border border-dashed border-slate-200 sm:p-20">
-            <Search className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-            <p className="text-slate-400 font-bold">Không tìm thấy khách hàng nào khớp với bộ lọc</p>
+
+          {/* Status Dropdown */}
+          <div className="w-40 sm:w-44">
+            <PremiumSelect
+              value={statusFilter}
+              options={statusOptions.map(opt => ({ value: opt, label: opt, icon: <Filter className="w-3.5 h-3.5" /> }))}
+              onChange={val => setStatusFilter(val)}
+              placeholder="Trạng thái..."
+            />
           </div>
-        ) : paginatedCustomers.map((customer, idx: number) => (
-          <motion.div 
-            key={customer.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.05 }}
-            data-testid="customer-row"
-            data-customer-id={customer.id}
-            className="group luxury-card-white customer-card relative flex flex-col gap-4 rounded-3xl p-4 transition-all sm:p-6 lg:flex-row lg:items-center lg:gap-6"
-          >
-            <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform sm:h-14 sm:w-14">
-              <UserPlus className="text-rose-500 w-7 h-7" />
-            </div>
-            
-            <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-3 mb-1">
-                <h3 className="text-lg font-bold text-slate-900 truncate">{customer.name_mother}</h3>
-                
-                {/* Secondary Status Badges */}
-                {customer.status === 'lead' && (
-                  <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-wider border border-blue-100">
-                    Tiềm năng
-                  </span>
-                )}
-                {customer.status === 'deposit' && (
-                  <span className="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-[10px] font-black uppercase tracking-wider border border-amber-100">
-                    {customerLabels.depositStatusLabel}
-                  </span>
-                )}
 
-                {/* Prominent Notification for Active Care */}
-                {customer.is_in_care && tenantModuleKey !== 'industrial_cleaning' && (
-                  <motion.div 
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="beauty-active-care-badge flex items-center gap-2 bg-rose-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-lg shadow-rose-200 dark:shadow-none cursor-pointer"
-                    onClick={() => router.push(`/dashboard/customers/${customer.id}`)}
-                  >
-                    <Sparkles className="w-3 h-3" />
-                    {customerLabels.activeCareBadge}
-                  </motion.div>
-                )}
+          {/* Month Dropdown */}
+          <div className="w-32">
+            <PremiumSelect
+              value={monthFilter}
+              options={monthOptions}
+              onChange={val => setMonthFilter(val)}
+              placeholder="Tháng..."
+            />
+          </div>
 
-              </div>
-              <div className="flex flex-wrap gap-y-2 gap-x-6 text-sm font-medium text-slate-500">
-                <div className="flex min-w-0 items-center gap-2">
-                  <Phone className="w-4 h-4 shrink-0 text-slate-400" />
-                  <span className="break-all">{customer.phone}</span>
-                </div>
-                <div className="flex min-w-0 items-center gap-2">
-                  <SecondaryInfoIcon className="w-4 h-4 shrink-0 text-slate-400" />
-                  <span className="break-words">
-                    {getCustomerSecondarySummary({
-                      moduleKey: tenantModuleKey,
-                      status: customer.status,
-                      secondaryName: customer.name_baby,
-                      expectedDate: customer.dob_expected,
-                    })}
-                  </span>
-                  {customer.gender_baby && (
-                    <span className={cn(
-                      "ml-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase",
-                      getCustomerGenderPresentation(customer.gender_baby, tenantModuleKey).tone === 'blue' ? "bg-blue-50 text-blue-500" :
-                      getCustomerGenderPresentation(customer.gender_baby, tenantModuleKey).tone === 'rose' ? "bg-rose-50 text-rose-500" :
-                      "bg-slate-50 text-slate-500"
-                    )}>
-                      {getCustomerGenderPresentation(customer.gender_baby, tenantModuleKey).label}
-                    </span>
-                  )}
-                </div>
-                {customer.package_name && (
-                  <div className="flex min-w-0 items-center gap-2 text-rose-500/80">
-                    <ClipboardList className="w-4 h-4 shrink-0" />
-                    <span className="break-words">Gói: {customer.package_name}</span>
+          {/* Year Dropdown */}
+          <div className="w-28">
+            <PremiumSelect
+              value={yearFilter}
+              options={yearOptions.map(y => ({ value: y, label: y }))}
+              onChange={val => setYearFilter(val)}
+              placeholder="Năm..."
+            />
+          </div>
+        </div>
+
+        {/* Right controls: View Switcher, Sort */}
+        <div className="flex items-center justify-between md:justify-end gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-800">
+          {/* Sort */}
+          <div className="w-44">
+            <PremiumSelect
+              value={sortBy}
+              options={sortOptions}
+              onChange={val => setSortBy(val)}
+              placeholder="Sắp xếp..."
+            />
+          </div>
+
+          {/* View Switcher Toggle */}
+          <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
+            <button
+              type="button"
+              onClick={() => setViewMode('card')}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
+                viewMode === 'card'
+                  ? "bg-white dark:bg-slate-700 text-primary shadow-sm"
+                  : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+              )}
+              title="Xem dạng thẻ"
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span>Thẻ</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('table')}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
+                viewMode === 'table'
+                  ? "bg-white dark:bg-slate-700 text-primary shadow-sm"
+                  : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+              )}
+              title="Xem dạng bảng"
+            >
+              <List className="w-3.5 h-3.5" />
+              <span>Bảng</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Customer List Content */}
+      {isLoading && customers.length === 0 ? (
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-10 text-center border border-slate-200/80 dark:border-slate-800 shadow-sm sm:p-20">
+          <div className="w-10 h-10 border-3 rounded-full animate-spin mx-auto mb-3" style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }}></div>
+          <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Đang tải dữ liệu khách hàng...</p>
+        </div>
+      ) : filteredCustomers.length === 0 ? (
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-10 text-center border border-dashed border-slate-200 dark:border-slate-800 sm:p-16">
+          <Search className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+          <p className="text-slate-500 dark:text-slate-400 font-bold text-sm">Không tìm thấy khách hàng nào khớp với bộ lọc</p>
+        </div>
+      ) : viewMode === 'card' ? (
+        /* CARD GRID VIEW */
+        <div className="grid grid-cols-1 gap-4">
+          {paginatedCustomers.map((customer, idx: number) => {
+            const genderInfo = getCustomerGenderPresentation(customer.gender_baby, tenantModuleKey);
+            const secondarySummary = getCustomerSecondarySummary({
+              moduleKey: tenantModuleKey,
+              status: customer.status,
+              secondaryName: customer.name_baby,
+              expectedDate: customer.dob_expected,
+            });
+
+            return (
+              <motion.div 
+                key={customer.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.03 }}
+                data-testid="customer-row"
+                data-customer-id={customer.id}
+                className="group bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 hover:shadow-lg hover:border-primary/30 transition-all flex flex-col xl:flex-row xl:items-center justify-between gap-4"
+              >
+                {/* Left Column: Avatar & Customer Identity */}
+                <div className="flex items-start gap-3.5 flex-1 min-w-0">
+                  <div className="relative shrink-0 mt-0.5">
+                    <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold text-lg border border-primary/20 group-hover:scale-105 transition-transform">
+                      {(customer.name_mother || 'K')[0].toUpperCase()}
+                    </div>
+                    <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full" title="Đang hoạt động" />
                   </div>
-                )}
-                <div className="flex min-w-0 items-center gap-2 text-amber-600/90 font-bold">
-                  <Award className="w-4 h-4 shrink-0 text-amber-500" />
-                  <span className="break-words">{customer.loyalty_points ?? 0} điểm</span>
-                </div>
-                <div className="flex min-w-0 items-start gap-2">
-                  <MapPin className="mt-0.5 w-4 h-4 shrink-0 text-slate-400" />
-                  <span className="break-words">{customer.address}</span>
-                </div>
-              </div>
-            </div>
 
-            <div className="flex flex-wrap items-center gap-3 lg:border-l lg:pl-6 border-slate-100 relative">
-              <button 
-                onClick={() => router.push(`/dashboard/bookings?customer=${customer.name_mother}`)}
-                className="p-3 bg-slate-50 hover:bg-slate-100 rounded-xl text-slate-600 transition-colors shadow-sm"
-                title="Xem lịch hẹn"
-              >
-                <Calendar className="w-5 h-5" />
-              </button>
-              <button 
-                onClick={() => router.push(`/dashboard/customers/${customer.id}`)}
-                data-testid="customer-detail-button"
-                className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white shadow-lg shadow-rose-200 transition-all hover:bg-rose-600 hover:shadow-xl hover:shadow-rose-300 active:scale-95 active:shadow-md dark:shadow-none sm:flex-none sm:px-5"
-              >
-                Chi tiết
-                <ChevronRight className="w-4 h-4" />
-              </button>
-              <div className="relative">
-                <button 
-                  onClick={(e) => toggleMenu(e, customer.id)}
-                  className={cn(
-                    "p-3 rounded-xl transition-all",
-                    activeMenuId === customer.id ? "bg-rose-500 text-white" : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-                  )}
-                >
-                  <MoreVertical className="w-5 h-5" />
-                </button>
-                
-                <AnimatePresence>
-                  {activeMenuId === customer.id && (
-                    <motion.div 
-                      initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                      className="absolute right-0 top-full mt-3 w-[min(16rem,calc(100vw-2rem))] bg-white/95 backdrop-blur-xl rounded-[1.5rem] shadow-[0_20px_70px_rgba(0,0,0,0.15)] border border-white/20 z-50 overflow-hidden p-2.5 sm:mt-4 sm:rounded-[2rem]"
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 truncate hover:text-primary transition-colors cursor-pointer" onClick={() => router.push(`/dashboard/customers/${customer.id}`)}>
+                        {customer.name_mother}
+                      </h3>
+
+                      {customer.is_in_care && tenantModuleKey !== 'industrial_cleaning' ? (
+                        <span className="inline-flex items-center gap-1 bg-primary/10 text-primary border border-primary/20 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">
+                          <Sparkles className="w-3 h-3" />
+                          {customerLabels.activeCareBadge}
+                        </span>
+                      ) : customer.status === 'lead' ? (
+                        <span className="bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase">
+                          Tiềm năng
+                        </span>
+                      ) : customer.status === 'deposit' ? (
+                        <span className="bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase">
+                          {customerLabels.depositStatusLabel}
+                        </span>
+                      ) : (
+                        <span className="bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase">
+                          Mới
+                        </span>
+                      )}
+
+                      {customer.gender_baby && (
+                        <span className={cn(
+                          "px-2 py-0.5 rounded-md text-[10px] font-bold uppercase",
+                          genderInfo.tone === 'blue' ? "bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400" :
+                          genderInfo.tone === 'rose' ? "bg-rose-50 text-rose-600 dark:bg-rose-950 dark:text-rose-400" :
+                          "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                        )}>
+                          {genderInfo.label}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400 font-medium">
+                      <div className="flex items-center gap-1.5">
+                        <Phone className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{customer.phone}</span>
+                      </div>
+                      {secondarySummary && (
+                        <div className="flex items-center gap-1.5">
+                          <SecondaryInfoIcon className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{secondarySummary}</span>
+                        </div>
+                      )}
+                      {customer.address && (
+                        <div className="flex items-center gap-1.5 truncate max-w-xs">
+                          <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          <span className="truncate">{customer.address}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs pt-0.5">
+                      <div className="flex items-center gap-1 font-bold text-amber-600 dark:text-amber-400">
+                        <Award className="w-3.5 h-3.5 text-amber-500" />
+                        <span>{customer.loyalty_points ?? 0} điểm</span>
+                      </div>
+                      {customer.deposit_amount ? (
+                        <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
+                          <Wallet className="w-3.5 h-3.5" />
+                          <span>Đã thanh toán: {Number(customer.deposit_amount).toLocaleString('vi-VN')}đ</span>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Middle Column: Active Package Summary */}
+                <div className="w-full xl:w-72 bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 rounded-xl p-3 shrink-0">
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                      {customer.package_name || 'Liệu trình chăm sóc'}
+                    </span>
+                    <span className="text-[10px] font-extrabold bg-primary/10 text-primary px-2 py-0.5 rounded-full shrink-0">
+                      {customer.is_in_care ? 'Đang chạy' : 'Tiêu chuẩn'}
+                    </span>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                      <span>Tiến độ buổi</span>
+                      <span className="text-primary font-bold">80%</span>
+                    </div>
+                    <div className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                      <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: '80%' }} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column: Actions */}
+                <div className="flex items-center justify-between xl:justify-end gap-2.5 shrink-0 pt-2 xl:pt-0 border-t xl:border-t-0 border-slate-100 dark:border-slate-800">
+                  <button 
+                    onClick={() => router.push(`/dashboard/bookings?customer=${customer.name_mother}`)}
+                    className="p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-slate-600 dark:text-slate-300 transition-colors"
+                    title="Xem lịch hẹn"
+                  >
+                    <Calendar className="w-4 h-4" />
+                  </button>
+
+                  <button 
+                    onClick={() => router.push(`/dashboard/customers/${customer.id}`)}
+                    data-testid="customer-detail-button"
+                    className="flex items-center justify-center gap-1.5 bg-primary text-primary-foreground hover:opacity-90 text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition-all active:scale-95"
+                  >
+                    <span>Chi tiết</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+
+                  <div className="relative">
+                    <button 
+                      onClick={(e) => toggleMenu(e, customer.id)}
+                      className={cn(
+                        "p-2.5 rounded-xl transition-all",
+                        activeMenuId === customer.id ? "bg-primary text-primary-foreground" : "text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      )}
                     >
-                      <div className="space-y-1">
-                        <button 
-                          onClick={() => handleEdit(customer)}
-                          className="flex items-center gap-3 w-full px-5 py-3.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-rose-500 rounded-2xl transition-all group/item"
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+
+                    <AnimatePresence>
+                      {activeMenuId === customer.id && (
+                        <motion.div 
+                          initial={{ opacity: 0, scale: 0.95, y: 5 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.95, y: 5 }}
+                          className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 z-50 overflow-hidden p-1.5 space-y-1"
                         >
-                          <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center group-hover/item:bg-blue-100 transition-colors">
-                            <Edit2 className="w-4 h-4 text-blue-500" />
-                          </div>
-                          Chỉnh sửa
-                        </button>
+                          <button 
+                            onClick={() => handleEdit(customer)}
+                            className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                          >
+                            <Edit2 className="w-3.5 h-3.5 text-blue-500" />
+                            Chỉnh sửa
+                          </button>
+                          <button 
+                            onClick={() => router.push(`/dashboard/customers/${customer.id}`)}
+                            className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                          >
+                            <ClipboardList className="w-3.5 h-3.5 text-primary" />
+                            {vocab.booking.singular}
+                          </button>
+                          <button 
+                            onClick={() => handleZalo(customer.phone)}
+                            className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5 text-emerald-500" />
+                            Gửi Zalo
+                          </button>
+                          <div className="h-px bg-slate-100 dark:bg-slate-700 my-1" />
+                          <button 
+                            onClick={() => handleDelete(customer.id)}
+                            className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            Xóa hồ sơ
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      ) : (
+        /* TABLE VIEW */
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs font-medium">
+              <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 border-b border-slate-200/80 dark:border-slate-800 uppercase tracking-wider text-[10px] font-bold">
+                <tr>
+                  <th className="py-3.5 px-4">Khách hàng</th>
+                  <th className="py-3.5 px-4">Số điện thoại</th>
+                  <th className="py-3.5 px-4">Thông tin phụ</th>
+                  <th className="py-3.5 px-4">Trạng thái</th>
+                  <th className="py-3.5 px-4">Gói dịch vụ</th>
+                  <th className="py-3.5 px-4">Điểm tích lũy</th>
+                  <th className="py-3.5 px-4 text-right">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {paginatedCustomers.map((customer) => (
+                  <tr 
+                    key={customer.id} 
+                    data-testid="customer-row" 
+                    data-customer-id={customer.id}
+                    className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors"
+                  >
+                    <td className="py-3 px-4 font-bold text-slate-900 dark:text-slate-100">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0">
+                          {(customer.name_mother || 'K')[0].toUpperCase()}
+                        </div>
+                        <span className="hover:text-primary cursor-pointer" onClick={() => router.push(`/dashboard/customers/${customer.id}`)}>
+                          {customer.name_mother}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 text-slate-600 dark:text-slate-300 font-semibold">{customer.phone}</td>
+                    <td className="py-3 px-4 text-slate-500 dark:text-slate-400">
+                      {getCustomerSecondarySummary({
+                        moduleKey: tenantModuleKey,
+                        status: customer.status,
+                        secondaryName: customer.name_baby,
+                        expectedDate: customer.dob_expected,
+                      }) || '-'}
+                    </td>
+                    <td className="py-3 px-4">
+                      {customer.is_in_care ? (
+                        <span className="bg-primary/10 text-primary px-2.5 py-0.5 rounded-full font-bold text-[10px]">
+                          {customerLabels.activeCareBadge}
+                        </span>
+                      ) : (
+                        <span className="bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full font-bold text-[10px]">
+                          Tiêu chuẩn
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold">
+                      {customer.package_name || '-'}
+                    </td>
+                    <td className="py-3 px-4 font-bold text-amber-600 dark:text-amber-400">
+                      {customer.loyalty_points ?? 0}
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
                         <button 
                           onClick={() => router.push(`/dashboard/customers/${customer.id}`)}
-                          className="flex items-center gap-3 w-full px-5 py-3.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-rose-500 rounded-2xl transition-all group/item"
+                          data-testid="customer-detail-button"
+                          className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg font-bold text-xs hover:opacity-90 transition-colors"
                         >
-                          <div className="w-8 h-8 rounded-lg bg-pink-50 flex items-center justify-center group-hover/item:bg-pink-100 transition-colors">
-                            <ClipboardList className="w-4 h-4 text-rose-500" />
-                          </div>
-                          {vocab.booking.singular}
+                          Chi tiết
                         </button>
                         <button 
-                          onClick={() => handleZalo(customer.phone)}
-                          className="flex items-center gap-3 w-full px-5 py-3.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-rose-500 rounded-2xl transition-all group/item"
+                          onClick={() => handleEdit(customer)}
+                          className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500"
+                          title="Sửa"
                         >
-                          <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center group-hover/item:bg-emerald-100 transition-colors">
-                            <MessageCircle className="w-4 h-4 text-emerald-500" />
-                          </div>
-                          Gửi Zalo
-                        </button>
-                        <div className="h-px bg-slate-100/50 mx-4 my-2" />
-                        <button 
-                          onClick={() => handleDelete(customer.id)}
-                          className="flex items-center gap-3 w-full px-5 py-3.5 text-sm font-bold text-rose-500 hover:bg-rose-50 rounded-2xl transition-all group/item"
-                        >
-                          <div className="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center group-hover/item:bg-rose-200 transition-colors">
-                            <Trash2 className="w-4 h-4" />
-                          </div>
-                          Xóa hồ sơ
+                          <Edit2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
-        <div className="mt-10 flex flex-col items-center justify-between gap-6 md:flex-row">
-          <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">
-            Hiển thị <span className="text-slate-900">{startIndex}-{endIndex}</span> trên tổng số <span className="text-slate-900">{filteredCustomers.length}</span> khách hàng
+        <div className="mt-6 flex flex-col items-center justify-between gap-4 md:flex-row text-xs font-medium text-slate-500">
+          <p>
+            Hiển thị <span className="font-bold text-slate-900 dark:text-slate-100">{startIndex}-{endIndex}</span> trên tổng số <span className="font-bold text-slate-900 dark:text-slate-100">{filteredCustomers.length}</span> khách hàng
           </p>
-          
-          <div className="bella-pagination">
-            <button 
+
+          <div className="flex items-center gap-1.5">
+            <button
               onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
-              className="p-3 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-primary hover:border-primary/20 disabled:opacity-30 disabled:hover:text-slate-400 disabled:hover:border-slate-100 transition-all active:scale-90 shadow-sm"
+              className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 disabled:opacity-40 hover:border-primary hover:text-primary transition-colors"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
+              <ChevronRight className="w-4 h-4 rotate-180" />
             </button>
-            
-            <div className="flex items-center gap-1">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
-                if (totalPages > 7) {
-                  if (page > 1 && page < totalPages && (page < currentPage - 1 || page > currentPage + 1)) {
-                    if (page === currentPage - 2 || page === currentPage + 2) return <span key={page} className="px-1 text-slate-300">...</span>;
-                    return null;
-                  }
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+              if (totalPages > 7) {
+                if (page > 1 && page < totalPages && (page < currentPage - 1 || page > currentPage + 1)) {
+                  if (page === currentPage - 2 || page === currentPage + 2) return <span key={page} className="px-1 text-slate-400">...</span>;
+                  return null;
                 }
-                
-                return (
-                  <button 
-                    key={page}
-                    onClick={() => handlePageChange(page)}
-                    className={cn(
-                      "w-10 h-10 rounded-xl font-black text-sm transition-all active:scale-90",
-                      currentPage === page 
-                        ? "bg-primary text-white shadow-lg shadow-rose-200 dark:shadow-none" 
-                        : "bg-white border border-slate-100 text-slate-400 hover:text-slate-600 hover:border-slate-300"
-                    )}
-                  >
-                    {page}
-                  </button>
-                );
-              })}
-            </div>
-            
-            <button 
+              }
+
+              return (
+                <button
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  className={cn(
+                    "w-8 h-8 rounded-xl font-bold text-xs transition-all",
+                    currentPage === page
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-slate-300"
+                  )}
+                >
+                  {page}
+                </button>
+              );
+            })}
+
+            <button
               onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage === totalPages}
-              className="p-3 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-primary hover:border-primary/20 disabled:opacity-30 disabled:hover:text-slate-400 disabled:hover:border-slate-100 transition-all active:scale-90 shadow-sm"
+              className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 disabled:opacity-40 hover:border-primary hover:text-primary transition-colors"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>
       )}
-      
-      {/* Spacer for bottom navigation room */}
+
+      {/* Spacer for bottom navigation */}
       <div className="h-20" />
 
-      {/* Add Customer Modal Placeholder */}
+      {/* Add / Edit Customer Modal */}
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
@@ -987,7 +1224,7 @@ export default function CustomersPage() {
               <div className="max-h-[92vh] overflow-y-auto p-5 sm:p-8 lg:p-10">
                 <div className="mb-6 flex items-start justify-between gap-3 sm:mb-8">
                   <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-                    <div className="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-rose-200 dark:shadow-none">
+                    <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
                       <UserPlus className="w-6 h-6" />
                     </div>
                     <div className="min-w-0">
@@ -1014,7 +1251,7 @@ export default function CustomersPage() {
                         value={formData.name_mother}
                         onChange={handleInputChange}
                         data-testid="customer-name-input"
-                        className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none" 
+                        className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none" 
                         placeholder={customerLabels.primaryNamePlaceholder}
                       />
                     </div>
@@ -1027,7 +1264,7 @@ export default function CustomersPage() {
                         value={formData.phone}
                         onChange={handleInputChange}
                         data-testid="customer-phone-input"
-                        className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none" 
+                        className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none" 
                         placeholder="VD: 0901234567" 
                       />
                     </div>
@@ -1039,23 +1276,23 @@ export default function CustomersPage() {
                         value={formData.name_baby}
                         onChange={handleInputChange}
                         data-testid="customer-secondary-name-input"
-                        className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none transition-all" 
+                        className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all" 
                         placeholder={customerLabels.secondaryNamePlaceholder}
                       />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-bold text-slate-700 ml-1">{customerLabels.secondaryDateLabel}</label>
-                        <input 
-                          type="date" 
-                          name="dob_expected"
-                          min={tenantModuleKey === 'babycare' ? today : undefined}
-                          max="9999-12-31"
-                          value={formData.dob_expected}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none transition-all text-sm font-bold" 
-                        />
+                      <input 
+                        type="date" 
+                        name="dob_expected"
+                        min={tenantModuleKey === 'babycare' ? today : undefined}
+                        max="9999-12-31"
+                        value={formData.dob_expected}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-bold" 
+                      />
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-2 md:col-span-2">
                       <label className="text-sm font-bold text-slate-700 ml-1">{customerLabels.secondaryGenderLabel}</label>
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                         {customerLabels.genderOptions.map(g => (
@@ -1066,8 +1303,8 @@ export default function CustomersPage() {
                             className={cn(
                               "py-3 rounded-xl font-bold text-xs transition-all border",
                               formData.gender_baby === g.id 
-                                ? "bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-100 dark:shadow-none" 
-                                : "bg-slate-50 text-slate-400 border-slate-100 hover:border-rose-200"
+                                ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20" 
+                                : "bg-slate-50 text-slate-400 border-slate-100 hover:border-primary/20"
                             )}
                           >
                             {g.label}
@@ -1084,7 +1321,7 @@ export default function CustomersPage() {
                       value={formData.address}
                       onChange={handleInputChange}
                       data-testid="customer-address-input"
-                      className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none resize-none h-24" 
+                      className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none resize-none h-24" 
                       placeholder="Nhập địa chỉ chi tiết..."
                     ></textarea>
                   </div>
@@ -1098,8 +1335,8 @@ export default function CustomersPage() {
                       disabled={isSubmitting}
                       data-testid="customer-submit-button"
                       className={cn(
-                        "flex-1 py-4 text-white font-bold rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2",
-                        isSubmitting ? "bg-slate-400 cursor-not-allowed" : "bg-primary hover:bg-rose-600 shadow-rose-200 dark:shadow-none"
+                        "flex-1 py-4 text-primary-foreground font-bold rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2",
+                        isSubmitting ? "bg-slate-400 cursor-not-allowed" : "bg-primary hover:opacity-90 shadow-primary/20"
                       )}
                     >
                       {isSubmitting && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}

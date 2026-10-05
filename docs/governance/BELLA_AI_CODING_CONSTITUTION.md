@@ -268,6 +268,41 @@ When a product moves from implementation correctness toward real customer operat
 
 Operational readiness work is read-only first and must audit real business workflows rather than source folders, modules, or cleanup opportunities. The SOP defines operational statuses, workflow evidence chains, the `NOT_PROVEN` vs `BLOCKED` distinction, and the rule that operational audit must stop at the decision boundary before any implementation.
 
+### Evidence and Boundary Leaf Controls
+
+These controls clarify existing Bella principles. They are not a new governance framework and do not create new parent gates by themselves.
+
+Evidence states must not be collapsed into each other:
+
+```text
+LOGIC_PROVEN
+PROOF_RUN_CLEAN
+GATE_PROVEN
+ADOPTION_APPROVED
+IMPLEMENTATION_AUTHORIZED
+GO_LIVE_READY
+GO_LIVE
+```
+
+A lower state creates evidence for the next decision only. It does not imply the next decision has been made. For example, `REAL_DB_LOGIC_PROVEN` or `GATE_PROVEN` does not imply `ADOPTION_APPROVED`, and `ADOPTION_APPROVED` does not imply `IMPLEMENTATION_AUTHORIZED` or `GO_LIVE`.
+
+For tenant, branch, organization, or product-scoped mutation, the required order is:
+
+```text
+Resolve context
+  -> authorize
+  -> mutate
+  -> emit side effects
+```
+
+If context resolution or authorization fails, the workflow must not perform a business mutation and must not emit downstream side effects. This applies to booking, session, attendance, inventory, payroll, commission, finance handoff, and equivalent workflows.
+
+When a shared Platform or OS capability is already proven, mapped for the Product, and adoption-approved, the Product must consume the canonical contract instead of creating a duplicate subsystem. Product-local duplication is permitted only when new evidence proves the shared contract is missing or insufficient for the real workflow.
+
+When a gate fails, fix the owning boundary only. Do not modify another subsystem or consumer merely to make the gate pass. A consumer workaround is valid only when the consumer is the proven owner of the root cause.
+
+Proof must match runtime enforcement. Test fixtures, mocks, seeded arrangements, or static code paths can support evidence, but they do not prove a capability unless the runtime path enforces the same invariant and the evidence observes that enforcement.
+
 ### Mandatory Entry Gate for New OS/Product Work
 
 Before coding any new OS, new Product, Product vertical, or Product UI redesign, the AI coding agent must produce or update `ARCHITECTURE_GATE_RESULT.md` for the current work scope.
