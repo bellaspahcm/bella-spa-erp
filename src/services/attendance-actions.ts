@@ -5,6 +5,7 @@ import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server'
 import { getCurrentUser } from './user-actions';
 import { revalidatePath } from 'next/cache';
 import { recordAuditLog } from './audit-actions';
+import { resolveSingleStaffBranchContext } from './beauty-branch-context';
 import { getLocalDateString } from '@bella/shared';;
 import {
   buildAttendanceTimestamp,
@@ -114,7 +115,15 @@ async function resolveAttendanceBranchAccess(
   branchId?: string | null,
 ): Promise<BranchAccessResult> {
   if (!branchId) {
-    return { success: true, context: null };
+    return resolveSingleStaffBranchContext({
+      supabase,
+      tenantId,
+      userId: user.id,
+      asOfDate: await getVNTodayString(),
+      missingMessage: 'Không xác định được chi nhánh chấm công của KTV',
+      ambiguousMessage: 'KTV có nhiều chi nhánh khả dụng; vui lòng chọn chi nhánh trước khi chấm công',
+      unauthorizedMessage: 'Không có quyền chấm công tại chi nhánh này',
+    });
   }
 
   const { data: branch, error: branchError } = await supabase
@@ -520,7 +529,16 @@ export async function adminOverrideAttendance(payload: {
   const tenantId = currentUser.tenant_id;
   if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
 
-  const branchAccess = await resolveAttendanceBranchAccess(supabase, currentUser, tenantId, payload.branchId);
+  const branchAccess = await resolveSingleStaffBranchContext({
+    supabase,
+    tenantId,
+    userId: payload.ktvId,
+    asOfDate: payload.date,
+    branchId: payload.branchId,
+    missingMessage: 'Không xác định được chi nhánh chấm công của KTV',
+    ambiguousMessage: 'KTV có nhiều chi nhánh khả dụng; vui lòng chọn chi nhánh trước khi ghi chấm công',
+    unauthorizedMessage: 'KTV không thuộc chi nhánh chấm công này',
+  });
   if (!branchAccess.success) return { success: false, error: branchAccess.error };
 
   // Check if existing record

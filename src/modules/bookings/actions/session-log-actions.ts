@@ -25,6 +25,7 @@ import {
   autoAssignKtv,
   checkBookingConflicts,
 } from '@/services/booking-decision.service';
+import { resolveSingleStaffBranchContext } from '@/services/beauty-branch-context';
 import { DecisionEngineContext } from '@/lib/decision-engine/DecisionEngineContext';
 
 // ============================================================================
@@ -706,6 +707,24 @@ export async function updateSessionLog(
       }
     }
 
+    let branchIdForCompletedSource: string | undefined;
+    if ((isTransitioningToCompleted || isCompletedKtvChanging || isCompletedDateChanging) && targetKtvId && targetCompletedDate) {
+      const branchContext = await resolveSingleStaffBranchContext({
+        supabase,
+        tenantId,
+        userId: targetKtvId,
+        asOfDate: targetCompletedDate,
+        branchId: existingLog.branch_id,
+        missingMessage: 'Không xác định được chi nhánh cho buổi dịch vụ hoàn tất',
+        ambiguousMessage: 'KTV có nhiều chi nhánh khả dụng; vui lòng chọn chi nhánh cho buổi dịch vụ',
+        unauthorizedMessage: 'KTV không thuộc chi nhánh của buổi dịch vụ này',
+      });
+      if (!branchContext.success) {
+        return { success: false, error: branchContext.error };
+      }
+      branchIdForCompletedSource = branchContext.context.branchId;
+    }
+
     // Update session log
     const { error: updateError } = await supabase
       .from('session_logs')
@@ -716,6 +735,7 @@ export async function updateSessionLog(
         standard_duration: updates.durationMinutes,
         status: updates.status,
         notes: updates.notes,
+        ...(branchIdForCompletedSource ? { branch_id: branchIdForCompletedSource } : {}),
         ...(updates.status === 'completed' && !existingLog.completed_date ? { completed_date: updates.assignedDate || existingLog.assigned_date } : {})
       })
       .eq('id', sessionId)
@@ -762,6 +782,7 @@ export async function updateSessionLog(
             assigned_date: existingLog.assigned_date,
             assigned_time: existingLog.assigned_time,
             completed_by_ktv_id: existingLog.completed_by_ktv_id,
+            branch_id: existingLog.branch_id,
             standard_duration: existingLog.standard_duration,
             status: existingLog.status,
             notes: existingLog.notes,
@@ -789,6 +810,7 @@ export async function updateSessionLog(
           assigned_date: existingLog.assigned_date,
           assigned_time: existingLog.assigned_time,
           completed_by_ktv_id: existingLog.completed_by_ktv_id,
+          branch_id: existingLog.branch_id,
           standard_duration: existingLog.standard_duration,
           status: existingLog.status,
           notes: existingLog.notes,

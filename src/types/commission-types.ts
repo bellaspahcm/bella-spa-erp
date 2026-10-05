@@ -11,6 +11,7 @@ export interface BookingServiceItem {
   id: string;
   booking_id: string;
   tenant_id: string;
+  branch_id: string | null;
   ktv_id: string | null;
   service_name: string;
   quantity: number;
@@ -29,6 +30,7 @@ export interface ProductSale {
   id: string;
   booking_id: string;
   tenant_id: string;
+  branch_id: string | null;
   ktv_id: string | null;
   product_name: string;
   quantity: number;

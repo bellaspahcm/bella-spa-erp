@@ -11,11 +11,13 @@
 
 import { createClient } from '@/lib/supabase-server';
 import { calculateProductSalesCommission } from '@/lib/business-rules/commission';
+import { resolveSingleStaffBranchContext } from '@/services/beauty-branch-context';
 import type { CommissionType } from '@/lib/business-rules/commission';
 import type { Database } from '@/types/database.types';
 
 type ProductSalesInsert = Database['public']['Tables']['product_sales']['Insert'];
 type ProductSalesUpdate = Database['public']['Tables']['product_sales']['Update'];
+type ProductSalesSupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
 
 interface CreateProductSaleInput {
@@ -32,6 +34,7 @@ interface CreateProductSaleInput {
   overrideCommissionValue?: number | null;
   paymentMethod: 'cash' | 'bank_transfer' | 'zalo_pay' | 'momo' | 'card';
   saleDate: string;
+  branchId?: string | null;
   notes?: string | null;
 }
 
@@ -39,6 +42,33 @@ interface ActionResult<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
+}
+
+async function resolveProductSaleBranchId(
+  supabase: ProductSalesSupabaseClient,
+  input: {
+    tenantId: string;
+    ktvId: string;
+    saleDate: string;
+    branchId?: string | null;
+  },
+): Promise<{ success: true; branchId: string } | { success: false; error: string }> {
+  const branchContext = await resolveSingleStaffBranchContext({
+    supabase,
+    tenantId: input.tenantId,
+    userId: input.ktvId,
+    asOfDate: input.saleDate,
+    branchId: input.branchId,
+    missingMessage: 'Không xác định được chi nhánh cho giao dịch bán sản phẩm',
+    ambiguousMessage: 'KTV có nhiều chi nhánh khả dụng; vui lòng chọn chi nhánh cho giao dịch bán sản phẩm',
+    unauthorizedMessage: 'KTV không thuộc chi nhánh bán sản phẩm này',
+  });
+
+  if (!branchContext.success) {
+    return { success: false, error: branchContext.error };
+  }
+
+  return { success: true, branchId: branchContext.context.branchId };
 }
 
 /**
@@ -102,10 +132,21 @@ export async function createProductSale(
       defaultValue,
     });
 
+    const branchResult = await resolveProductSaleBranchId(supabase, {
+      tenantId: input.tenantId,
+      ktvId: input.ktvId,
+      saleDate: input.saleDate,
+      branchId: input.branchId,
+    });
+    if (!branchResult.success) {
+      return { success: false, error: branchResult.error };
+    }
+
     // 3. Prepare insert data
     const insertData: ProductSalesInsert = {
       tenant_id: input.tenantId,
       ktv_id: input.ktvId,
+      branch_id: branchResult.branchId,
       customer_id: input.customerId || null,
       product_name: input.productName,
       product_category: input.productCategory || null,
@@ -229,6 +270,24 @@ export async function updateProductSale(
     const defaultType = commissionConfig?.product_sales_commission_default?.type;
     const defaultValue = commissionConfig?.product_sales_commission_default?.value;
 
+    const branchId = input.branchId ?? existing.branch_id;
+    if (!branchId) {
+      return {
+        success: false,
+        error: 'Giao dịch bán sản phẩm thiếu branch_id nên không thể cập nhật commission branch-aware.',
+      };
+    }
+
+    const branchResult = await resolveProductSaleBranchId(supabase, {
+      tenantId: existing.tenant_id,
+      ktvId: input.ktvId ?? existing.ktv_id,
+      saleDate: input.saleDate ?? existing.sale_date,
+      branchId,
+    });
+    if (!branchResult.success) {
+      return { success: false, error: branchResult.error };
+    }
+
     // Recalculate commission
     const calculatedCommission = calculateProductSalesCommission({
       totalSalesAmount: updated.total_sales_amount,
@@ -246,6 +305,7 @@ export async function updateProductSale(
       quantity: updated.quantity,
       unit_price: updated.unit_price,
       total_sales_amount: updated.total_sales_amount,
+      branch_id: branchResult.branchId,
       override_commission_type: updated.override_commission_type ?? null,
       override_commission_value: updated.override_commission_value ?? null,
       calculated_commission: calculatedCommission,

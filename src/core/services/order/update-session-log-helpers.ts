@@ -1,6 +1,7 @@
 import { getLocalDateString, sanitizeTime } from '@bella/shared';;
 import { buildCompletedSessionAccountingUpdate } from './session-completion-helpers';
 import { processSessionCompletion } from './session-completion-engine';
+import { resolveSingleStaffBranchContext } from '@/services/beauty-branch-context';
 import type { createClient } from '@/lib/supabase-server';
 import type { getCurrentUser } from '@/services/user-actions';
 import type { Database } from '@/types/database.types';
@@ -15,6 +16,7 @@ type AllowedUpdateKey =
   | 'assigned_date'
   | 'completed_date'
   | 'completed_by_ktv_id'
+  | 'branch_id'
   | 'address'
   | 'status'
   | 'notes'
@@ -60,6 +62,7 @@ export function normalizeSessionLogUpdate(payload: UpdateSessionLogInput): Updat
   if (Object.prototype.hasOwnProperty.call(updates, 'assigned_date')) safeUpdates.assigned_date = updates.assigned_date;
   if (Object.prototype.hasOwnProperty.call(updates, 'completed_date')) safeUpdates.completed_date = updates.completed_date;
   if (Object.prototype.hasOwnProperty.call(updates, 'completed_by_ktv_id')) safeUpdates.completed_by_ktv_id = updates.completed_by_ktv_id;
+  if (Object.prototype.hasOwnProperty.call(updates, 'branch_id')) safeUpdates.branch_id = updates.branch_id;
   if (Object.prototype.hasOwnProperty.call(updates, 'address')) safeUpdates.address = updates.address;
   if (Object.prototype.hasOwnProperty.call(updates, 'status')) safeUpdates.status = updates.status;
   if (Object.prototype.hasOwnProperty.call(updates, 'notes')) safeUpdates.notes = updates.notes;
@@ -181,6 +184,23 @@ export async function applyCompletionDefaults(
     completedUpdates.completed_by_ktv_id = completionBooking.assigned_ktv_id;
   }
 
+  if (completedUpdates.completed_by_ktv_id) {
+    const branchContext = await resolveSingleStaffBranchContext({
+      supabase,
+      tenantId,
+      userId: completedUpdates.completed_by_ktv_id,
+      asOfDate: completedDate.slice(0, 10),
+      branchId: existingLog.branch_id,
+      missingMessage: 'Không xác định được chi nhánh cho buổi dịch vụ hoàn tất',
+      ambiguousMessage: 'KTV có nhiều chi nhánh khả dụng; vui lòng chọn chi nhánh cho buổi dịch vụ',
+      unauthorizedMessage: 'KTV không thuộc chi nhánh của buổi dịch vụ này',
+    });
+    if (!branchContext.success) {
+      return { error: branchContext.error };
+    }
+    completedUpdates.branch_id = branchContext.context.branchId;
+  }
+
   Object.assign(completedUpdates, buildCompletedSessionAccountingUpdate({
     sessionId: existingLog.id,
     bookingId,
@@ -248,6 +268,7 @@ export async function processCompletedSessionUpdate(params: {
         status: existingLog.status || 'scheduled',
         completed_date: existingLog.completed_date || null,
         completed_by_ktv_id: existingLog.completed_by_ktv_id || null,
+        branch_id: existingLog.branch_id,
         business_event_type: existingLog.business_event_type,
         accounting_review_status: existingLog.accounting_review_status,
         accounting_metadata: existingLog.accounting_metadata,

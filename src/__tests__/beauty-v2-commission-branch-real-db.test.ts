@@ -7,10 +7,28 @@ import {
   COMMISSION_BRANCH_MAPPING_ERRORS,
   recalculateAndSaveSalaryRecordEngine,
 } from '@/modules/hr-salary/actions/salary-recalculation-engine';
+import { createBookingServiceItems } from '@/core/services/order/create-booking-service-items-helper';
+import { createProductSale } from '@/modules/product-sales/actions/product-sales-actions';
 import { getSupabaseAdminKey, getSupabaseAdminUrl, requireSupabaseAdminEnv } from '@/lib/supabase-admin-env';
 import type { Database } from '@/types/database.types';
 
 jest.mock('server-only', () => ({}), { virtual: true });
+
+const mockCreateClient = jest.fn();
+const mockRecalculateAndSaveSalaryRecord = jest.fn();
+const mockSafeRevalidatePath = jest.fn();
+
+jest.mock('@/lib/supabase-server', () => ({
+  createClient: () => mockCreateClient(),
+}));
+
+jest.mock('@/modules/hr-salary/actions/admin-salary-actions', () => ({
+  recalculateAndSaveSalaryRecord: (...args: unknown[]) => mockRecalculateAndSaveSalaryRecord(...args),
+}));
+
+jest.mock('@/lib/revalidate', () => ({
+  safeRevalidatePath: (path: string) => mockSafeRevalidatePath(path),
+}));
 
 jest.setTimeout(120_000);
 
@@ -86,6 +104,10 @@ describeWithRealSupabase('Beauty V2 Commission branch Real DB proof', () => {
   const branchBId = randomUUID();
   const otherTenantBranchId = randomUUID();
   const customerId = randomUUID();
+  const successPersonId = randomUUID();
+  const mismatchPersonId = randomUUID();
+  const nullBranchPersonId = randomUUID();
+  const multiBranchPersonId = randomUUID();
   const successKtvEmail = `${marker}-success@example.test`;
   const mismatchKtvEmail = `${marker}-mismatch@example.test`;
   const nullBranchKtvEmail = `${marker}-null@example.test`;
@@ -234,6 +256,78 @@ describeWithRealSupabase('Beauty V2 Commission branch Real DB proof', () => {
     }));
   }
 
+  async function createServiceSourceViaWriter(ktvId: string, bookingId: string, amount: number) {
+    const result = await createBookingServiceItems({
+      supabase,
+      booking: {
+        id: bookingId,
+        tenant_id: tenantId,
+        assigned_ktv_id: ktvId,
+        status: 'completed',
+        start_date: today,
+        end_date: null,
+      } as unknown as Database['public']['Tables']['bookings']['Row'],
+      tenantId,
+      serviceItems: [
+        {
+          serviceName: `${marker} service item`,
+          quantity: 1,
+          unitPrice: amount,
+          ktvId,
+          overrideType: 'fixed',
+          overrideValue: amount,
+        },
+      ],
+    });
+
+    if (!result.success) {
+      throw new Error(`service writer failed: ${result.error}`);
+    }
+  }
+
+  async function createProductSourceViaWriter(ktvId: string, amount: number) {
+    const result = await createProductSale({
+      tenantId,
+      ktvId,
+      productName: `${marker} product`,
+      quantity: 1,
+      unitPrice: amount,
+      totalSalesAmount: amount,
+      overrideCommissionType: 'fixed',
+      overrideCommissionValue: amount,
+      paymentMethod: 'cash',
+      saleDate: today,
+    });
+
+    if (!result.success) {
+      throw new Error(`product writer failed: ${result.error}`);
+    }
+  }
+
+  async function assertWriterBranchReadBack(ktvId: string) {
+    const serviceRows = await supabase
+      .from('booking_service_items')
+      .select('branch_id')
+      .eq('tenant_id', tenantId)
+      .eq('ktv_id', ktvId)
+      .eq('service_name', `${marker} service item`);
+    expect(serviceRows.error).toBeNull();
+    expect(serviceRows.data).toEqual([
+      { branch_id: branchAId },
+    ]);
+
+    const productRows = await supabase
+      .from('product_sales')
+      .select('branch_id')
+      .eq('tenant_id', tenantId)
+      .eq('ktv_id', ktvId)
+      .eq('product_name', `${marker} product`);
+    expect(productRows.error).toBeNull();
+    expect(productRows.data).toEqual([
+      { branch_id: branchAId },
+    ]);
+  }
+
   async function salaryRowsFor(ktvId: string) {
     const result = await supabase
       .from('salary_records')
@@ -273,6 +367,20 @@ describeWithRealSupabase('Beauty V2 Commission branch Real DB proof', () => {
       WHERE ktv_id IN (${userIdsSql});
       DELETE FROM public.bookings WHERE booking_number LIKE '${marker}%';
       DELETE FROM public.customers WHERE id = '${requireUuid(customerId, 'customer cleanup id')}';
+      DELETE FROM public.org_relationships
+      WHERE from_id IN (
+        '${requireUuid(successPersonId, 'success person cleanup id')}',
+        '${requireUuid(mismatchPersonId, 'mismatch person cleanup id')}',
+        '${requireUuid(nullBranchPersonId, 'null branch person cleanup id')}',
+        '${requireUuid(multiBranchPersonId, 'multi branch person cleanup id')}'
+      );
+      DELETE FROM public.people_directory
+      WHERE id IN (
+        '${requireUuid(successPersonId, 'success person cleanup id')}',
+        '${requireUuid(mismatchPersonId, 'mismatch person cleanup id')}',
+        '${requireUuid(nullBranchPersonId, 'null branch person cleanup id')}',
+        '${requireUuid(multiBranchPersonId, 'multi branch person cleanup id')}'
+      );
       DELETE FROM public.users WHERE id IN (${userIdsSql});
       DELETE FROM public.org_units WHERE id IN (${orgUnitIdsSql});
     `);
@@ -351,6 +459,20 @@ describeWithRealSupabase('Beauty V2 Commission branch Real DB proof', () => {
     const tenants = await supabase.from('tenants').select('id').like('name', `${marker}%`);
     expect(tenants.error).toBeNull();
     expect(tenants.data).toEqual([]);
+
+    const people = await supabase
+      .from('people_directory')
+      .select('id')
+      .in('id', [successPersonId, mismatchPersonId, nullBranchPersonId, multiBranchPersonId]);
+    expect(people.error).toBeNull();
+    expect(people.data).toEqual([]);
+
+    const relationships = await supabase
+      .from('org_relationships')
+      .select('id')
+      .in('from_id', [successPersonId, mismatchPersonId, nullBranchPersonId, multiBranchPersonId]);
+    expect(relationships.error).toBeNull();
+    expect(relationships.data).toEqual([]);
   }
 
   beforeAll(async () => {
@@ -358,6 +480,9 @@ describeWithRealSupabase('Beauty V2 Commission branch Real DB proof', () => {
     supabase = createSupabaseClient<Database>(url, adminKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
+    mockCreateClient.mockResolvedValue(supabase);
+    mockRecalculateAndSaveSalaryRecord.mockResolvedValue({ success: true });
+    mockSafeRevalidatePath.mockResolvedValue(undefined);
 
     await selectExistingProofTenants();
 
@@ -461,6 +586,84 @@ describeWithRealSupabase('Beauty V2 Commission branch Real DB proof', () => {
         hire_date: `${today.slice(0, 4)}-01-01`,
       },
     ]));
+
+    await cleanupStep('people directory insert', supabase.from('people_directory').insert([
+      {
+        id: successPersonId,
+        tenant_id: tenantId,
+        user_id: successKtvId,
+        display_name: 'Beauty Commission Branch Success KTV',
+        person_type: 'employee',
+        is_active: true,
+      },
+      {
+        id: mismatchPersonId,
+        tenant_id: tenantId,
+        user_id: mismatchKtvId,
+        display_name: 'Beauty Commission Mismatch KTV',
+        person_type: 'employee',
+        is_active: true,
+      },
+      {
+        id: nullBranchPersonId,
+        tenant_id: tenantId,
+        user_id: nullBranchKtvId,
+        display_name: 'Beauty Commission Null Branch KTV',
+        person_type: 'employee',
+        is_active: true,
+      },
+      {
+        id: multiBranchPersonId,
+        tenant_id: tenantId,
+        user_id: multiBranchKtvId,
+        display_name: 'Beauty Commission Multi Branch KTV',
+        person_type: 'employee',
+        is_active: true,
+      },
+    ]));
+
+    await cleanupStep('org relationships insert', supabase.from('org_relationships').insert([
+      {
+        tenant_id: tenantId,
+        from_id: successPersonId,
+        from_type: 'person',
+        to_id: branchAId,
+        to_type: 'unit',
+        rel_type: 'belongs_to',
+      },
+      {
+        tenant_id: tenantId,
+        from_id: mismatchPersonId,
+        from_type: 'person',
+        to_id: branchAId,
+        to_type: 'unit',
+        rel_type: 'belongs_to',
+      },
+      {
+        tenant_id: tenantId,
+        from_id: nullBranchPersonId,
+        from_type: 'person',
+        to_id: branchAId,
+        to_type: 'unit',
+        rel_type: 'belongs_to',
+      },
+      {
+        tenant_id: tenantId,
+        from_id: multiBranchPersonId,
+        from_type: 'person',
+        to_id: branchAId,
+        to_type: 'unit',
+        rel_type: 'belongs_to',
+      },
+      {
+        tenant_id: tenantId,
+        from_id: multiBranchPersonId,
+        from_type: 'person',
+        to_id: branchBId,
+        to_type: 'unit',
+        rel_type: 'belongs_to',
+      },
+    ]));
   });
 
   afterAll(async () => {
@@ -472,8 +675,9 @@ describeWithRealSupabase('Beauty V2 Commission branch Real DB proof', () => {
   it('proves branch-aware commission allow and deny-before-write cases on real DB', async () => {
     await insertAttendance(successKtvId, branchAId);
     const successBookingId = await insertSessionSource(successKtvId, branchAId);
-    await insertServiceSource(successKtvId, successBookingId, branchAId, 150000);
-    await insertProductSource(successKtvId, successBookingId, branchAId, 25000);
+    await createServiceSourceViaWriter(successKtvId, successBookingId, 150000);
+    await createProductSourceViaWriter(successKtvId, 25000);
+    await assertWriterBranchReadBack(successKtvId);
 
     const success = await recalculateAndSaveSalaryRecordEngine(
       supabase,

@@ -10,6 +10,7 @@
 import { createClient } from '@/lib/supabase-server';
 import { calculateServiceCommission } from '@/lib/business-rules/commission';
 import { revalidatePath } from 'next/cache';
+import { resolveSingleStaffBranchContext } from '@/services/beauty-branch-context';
 import {
   insertBookingServiceItem,
   getBookingServiceItem,
@@ -27,9 +28,41 @@ export interface ServiceItemInput {
   quantity: number;
   unitPrice: number;
   ktvId: string | null;
+  branchId?: string | null;
   completedDate: string;
   overrideType: 'fixed' | 'percentage' | null;
   overrideValue: number | null;
+}
+
+async function resolveServiceItemBranchId(
+  supabase: SupabaseClient,
+  input: {
+    tenantId: string;
+    ktvId: string | null;
+    completedDate: string;
+    branchId?: string | null;
+  },
+): Promise<{ success: true; branchId: string | null } | { success: false; error: string }> {
+  if (!input.ktvId) {
+    return { success: true, branchId: null };
+  }
+
+  const branchContext = await resolveSingleStaffBranchContext({
+    supabase,
+    tenantId: input.tenantId,
+    userId: input.ktvId,
+    asOfDate: input.completedDate,
+    branchId: input.branchId,
+    missingMessage: 'Không xác định được chi nhánh cho dịch vụ phát sinh commission',
+    ambiguousMessage: 'KTV có nhiều chi nhánh khả dụng; vui lòng chọn chi nhánh cho dịch vụ phát sinh commission',
+    unauthorizedMessage: 'KTV không thuộc chi nhánh của dịch vụ phát sinh commission này',
+  });
+
+  if (!branchContext.success) {
+    return { success: false, error: branchContext.error };
+  }
+
+  return { success: true, branchId: branchContext.context.branchId };
 }
 
 export interface ServiceItemResult {
@@ -118,10 +151,21 @@ export async function createServiceItem(input: ServiceItemInput): Promise<Servic
       defaultValue: commissionConfig?.service_commission_default?.value,
     });
 
+    const branchResult = await resolveServiceItemBranchId(supabase, {
+      tenantId: input.tenantId,
+      ktvId: input.ktvId,
+      completedDate: input.completedDate,
+      branchId: input.branchId,
+    });
+    if (!branchResult.success) {
+      return { success: false, error: branchResult.error };
+    }
+
     // Insert service item
     const { data, error } = await insertBookingServiceItem(supabase, {
       booking_id: input.bookingId,
       tenant_id: input.tenantId,
+      branch_id: branchResult.branchId,
       ktv_id: input.ktvId,
       service_name: input.serviceName,
       quantity: input.quantity,
@@ -227,9 +271,34 @@ export async function updateServiceItem(
       defaultValue: commissionConfig?.service_commission_default?.value,
     });
 
+    const targetBranchId = updates.branchId ?? existing.branch_id ?? null;
+    if (newKtvId && !targetBranchId) {
+      return {
+        success: false,
+        error: 'Dịch vụ phát sinh commission thiếu branch_id nên không thể cập nhật branch-aware.',
+      };
+    }
+    if (newKtvId && !newCompletedDate) {
+      return {
+        success: false,
+        error: 'Dịch vụ phát sinh commission thiếu ngày hoàn tất nên không thể xác định branch_id.',
+      };
+    }
+
+    const branchResult = await resolveServiceItemBranchId(supabase, {
+      tenantId,
+      ktvId: newKtvId,
+      completedDate: newCompletedDate ?? '',
+      branchId: targetBranchId,
+    });
+    if (!branchResult.success) {
+      return { success: false, error: branchResult.error };
+    }
+
     // Update service item
     const { data, error } = await updateBookingServiceItem(supabase, id, tenantId, {
       service_name: updates.serviceName ?? existing.service_name,
+      branch_id: branchResult.branchId,
       quantity: updatedQuantity,
       unit_price: updatedUnitPrice,
       subtotal: updatedSubtotal,
@@ -271,6 +340,7 @@ export async function updateServiceItem(
         // Rollback update
         await updateBookingServiceItem(supabase, id, tenantId, {
           service_name: existing.service_name,
+          branch_id: existing.branch_id,
           quantity: existing.quantity,
           unit_price: existing.unit_price,
           subtotal: existing.subtotal,
@@ -295,6 +365,7 @@ export async function updateServiceItem(
       // Rollback update
       await updateBookingServiceItem(supabase, id, tenantId, {
         service_name: existing.service_name,
+        branch_id: existing.branch_id,
         quantity: existing.quantity,
         unit_price: existing.unit_price,
         subtotal: existing.subtotal,

@@ -3,6 +3,7 @@
 import { getLocalDateString } from '@bella/shared';;
 import { safeRevalidatePath } from '@/lib/revalidate';
 import type { Database } from '@/types/database.types';
+import { resolveSingleStaffBranchContext } from '@/services/beauty-branch-context';
 import { processSessionCompletion } from './session-completion-engine';
 import {
   buildCompletedSessionAccountingUpdate,
@@ -80,11 +81,25 @@ export async function completeSession(sessionId: string, bookingId: string, cust
     day: '2-digit'
   }).format(new Date());
   const completedByKtvId = bookingData.assigned_ktv_id;
+  const branchContext = await resolveSingleStaffBranchContext({
+    supabase,
+    tenantId,
+    userId: completedByKtvId,
+    asOfDate: completedDate,
+    branchId: existingLog.branch_id,
+    missingMessage: 'Không xác định được chi nhánh cho buổi dịch vụ hoàn tất',
+    ambiguousMessage: 'KTV có nhiều chi nhánh khả dụng; vui lòng chọn chi nhánh cho buổi dịch vụ',
+    unauthorizedMessage: 'KTV không thuộc chi nhánh của buổi dịch vụ này',
+  });
+  if (!branchContext.success) {
+    return { error: branchContext.error };
+  }
 
   const updatePayload: Database['public']['Tables']['session_logs']['Update'] = {
     status: 'completed',
     completed_date: completedDate,
     completed_by_ktv_id: completedByKtvId,
+    branch_id: branchContext.context.branchId,
     ...buildCompletedSessionAccountingUpdate({
       sessionId,
       bookingId,
@@ -137,6 +152,7 @@ export async function completeSession(sessionId: string, bookingId: string, cust
       status: existingLog?.status || 'scheduled',
       completed_date: null,
       completed_by_ktv_id: null,
+      branch_id: existingLog.branch_id,
       business_event_type: existingLog.business_event_type,
       accounting_review_status: existingLog.accounting_review_status,
       accounting_metadata: existingLog.accounting_metadata,
