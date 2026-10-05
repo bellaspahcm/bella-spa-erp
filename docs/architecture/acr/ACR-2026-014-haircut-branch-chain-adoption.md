@@ -4,6 +4,34 @@ Status: APPROVED
 Date: 2026-10-05
 Scope: Haircut (`bella_haircut`) branch-chain adoption.
 
+<!-- APPROVED_CORE_CHANGE_V1
+{
+  "version": 1,
+  "acrId": "ACR-2026-014",
+  "status": "APPROVED",
+  "pr": 224,
+  "approvedCoreFiles": [
+    "src/core/services/order/complete-session-action.ts",
+    "src/core/services/order/create-booking-action.ts",
+    "src/core/services/order/create-booking-helpers.ts",
+    "src/core/services/order/create-session-log-action.ts",
+    "src/core/services/order/haircut-branch-context.ts",
+    "src/core/services/order/payment-actions.ts",
+    "src/core/services/order/payment-helpers.ts",
+    "src/core/services/order/session-completion-helpers.ts",
+    "src/core/services/order/update-session-log-helpers.ts"
+  ],
+  "approver": "Human/ARB",
+  "approvedDate": "2026-10-05",
+  "purpose": "Allow the shared Core order chain to adopt the existing Platform org-unit branch context for Haircut booking, session, completion, and payment propagation without creating a product-local branch abstraction.",
+  "contractChange": true,
+  "schemaChange": true,
+  "rpcChange": true,
+  "apiChange": false,
+  "ownershipChange": true
+}
+-->
+
 ## APPROVED_CORE_CHANGE_V1
 
 reason: Haircut Branch Chain was verified as NOT_IMPLEMENTED. The fix must adopt existing Platform Org Unit / Branch context into the current Core order operational chain.
