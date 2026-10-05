@@ -72,8 +72,21 @@ describe('createBooking auth context', () => {
     jest.clearAllMocks();
     mockCreateCustomerForBookingIfNeeded.mockResolvedValue({ customerId: 'customer-1', created: false });
     mockFindPendingBookingForCustomer.mockResolvedValue(null);
+    const tenantProductQuery = {
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn(async () => ({
+        data: { product_key: 'beauty_spa' },
+        error: null,
+      })),
+    };
     (createDevelopmentBypassClient as jest.Mock).mockResolvedValue({
-      from: jest.fn(),
+      from: jest.fn((table: string) => {
+        if (table === 'tenants') {
+          return tenantProductQuery;
+        }
+        throw new Error(`Unexpected table query in createBooking auth-context test: ${table}`);
+      }),
       auth: { getUser: jest.fn() },
     });
   });

@@ -234,6 +234,7 @@ export async function recordRemainingPayment(params: RecordRemainingPaymentParam
       supabase,
       payment: params,
       tenantId,
+      branchId: bookingResult.booking.branch_id || null,
       actorId: currentUser?.id || null,
     });
 

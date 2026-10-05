@@ -52,7 +52,7 @@ describe('session lifecycle auth context and tenant scope', () => {
 
     expect(body).toMatch(/\.from\('session_logs'\)[\s\S]*?\.select\('\*'\)[\s\S]*?\.eq\('id', sessionId\)[\s\S]*?\.eq\('tenant_id', tenantId\)[\s\S]*?\.single\(\)/);
     expect(body).toContain('existingLog.booking_id !== bookingId');
-    expect(body).toMatch(/\.from\('bookings'\)[\s\S]*?\.select\('assigned_ktv_id, package_id, status, full_price, discount_percent, total_sessions'\)[\s\S]*?\.eq\('id', bookingId\)[\s\S]*?\.eq\('tenant_id', tenantId\)[\s\S]*?\.single\(\)/);
+    expect(body).toMatch(/\.from\('bookings'\)[\s\S]*?\.select\('assigned_ktv_id, package_id, status, branch_id, full_price, discount_percent, total_sessions'\)[\s\S]*?\.eq\('id', bookingId\)[\s\S]*?\.eq\('tenant_id', tenantId\)[\s\S]*?\.single\(\)/);
     expect(body).toMatch(/\.from\('session_logs'\)[\s\S]*?\.update\(updatePayload\)[\s\S]*?\.eq\('id', sessionId\)[\s\S]*?\.eq\('tenant_id', tenantId\)/);
   });
 

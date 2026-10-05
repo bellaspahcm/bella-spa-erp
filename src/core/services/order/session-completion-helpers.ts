@@ -33,6 +33,7 @@ type BookingUpdate = Database['public']['Tables']['bookings']['Update'];
 type RevenueInsert = Database['public']['Tables']['revenue']['Insert'];
 type SessionLogUpdate = Database['public']['Tables']['session_logs']['Update'];
 type SessionReviewInsert = Database['public']['Tables']['session_reviews']['Insert'];
+type RevenueInsertWithBranch = RevenueInsert & { branch_id?: string | null };
 
 type CompletionBooking = Pick<
   BookingRow,
@@ -51,7 +52,7 @@ type CompletionBooking = Pick<
   | 'deposit_amount'
   | 'discount_percent'
   | 'is_in_care'
->;
+> & { branch_id?: string | null };
 
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) return error.message;
@@ -189,6 +190,7 @@ export function buildCompletedSessionAccountingUpdate(input: {
   fullPrice?: number | string | null;
   discountPercent?: number | string | null;
   totalSessions?: number | string | null;
+  branchId?: string | null;
   existingAccountingMetadata?: Json | null;
   existingAccountingReviewStatus?: string | null;
 }): Pick<SessionLogUpdate, 'business_event_type' | 'accounting_review_status' | 'accounting_metadata'> {
@@ -208,6 +210,7 @@ export function buildCompletedSessionAccountingUpdate(input: {
     earned_revenue: earnedRevenue,
     completed_by_ktv_id: input.completedByKtvId ?? null,
     completed_date: input.completedDate ?? null,
+    branch_id: input.branchId ?? null,
     status: 'completed',
   };
 
@@ -353,7 +356,7 @@ export async function syncBookingCompletionProgress(params: {
 
   const { data: currentBooking } = await supabase
     .from('bookings')
-    .select('total_sessions, completed_sessions, status, package_name, ktv_commission, assigned_ktv_id, customer_id, tenant_id, full_price, deposit_amount, discount_percent, is_in_care')
+    .select('total_sessions, completed_sessions, status, package_name, ktv_commission, assigned_ktv_id, customer_id, tenant_id, branch_id, full_price, deposit_amount, discount_percent, is_in_care')
     .eq('id', bookingId)
     .single();
 
@@ -412,8 +415,11 @@ export async function recordSingleSessionRevenueIfNeeded(params: {
     bookingId,
     reason: `Tự động: Thu phí dịch vụ lẻ - ${packageName}`,
   });
+  if (currentBooking?.branch_id) {
+    accountingPayload.branch_id = currentBooking.branch_id;
+  }
 
-  const revenuePayload: RevenueInsert = {
+  const revenuePayload: RevenueInsertWithBranch = {
     booking_id: bookingId,
     amount: actualAmount,
     revenue_type: revenueType,
@@ -426,6 +432,9 @@ export async function recordSingleSessionRevenueIfNeeded(params: {
     accounting_review_status: resolveAccountingReviewStatus(businessEventType, accountingPayload),
     accounting_metadata: accountingPayload,
   };
+  if (currentBooking?.branch_id) {
+    revenuePayload.branch_id = currentBooking.branch_id;
+  }
 
   const { data: createdRevenue, error: revenueError } = await supabase
     .from('revenue')
@@ -470,6 +479,7 @@ export async function recordSingleSessionRevenueIfNeeded(params: {
       revenueId: createdRevenueId,
       totalAmount: actualAmount,
       description: accountingPayload.reason,
+      branchId: currentBooking?.branch_id || null,
     }),
     '[processSessionCompletion:single-session-revenue]'
   );
@@ -535,7 +545,12 @@ export async function syncKtvSalaryAfterCompletion(params: {
 
   try {
     const { recalculateAndSaveSalaryRecord } = await import('@/modules/hr-salary/actions/admin-salary-actions');
-    await recalculateAndSaveSalaryRecord(supabase, ktvId, monthYear, tenantId);
+    const branchId = currentBooking?.branch_id || null;
+    if (branchId) {
+      await recalculateAndSaveSalaryRecord(supabase, ktvId, monthYear, tenantId, undefined, branchId);
+    } else {
+      await recalculateAndSaveSalaryRecord(supabase, ktvId, monthYear, tenantId);
+    }
   } catch (error) {
     salaryError = new Error(getErrorMessage(error));
   }
@@ -678,6 +693,7 @@ export async function enqueueSessionDoneAccountingOutbox(params: {
         sessionLogId: sessionId,
         bookingId,
         ktvId: ktvId || currentBooking?.assigned_ktv_id || null,
+        branchId: currentBooking?.branch_id || null,
         earnedRevenueAmount,
         deferredRevenueAmount,
         receivableAmount,
