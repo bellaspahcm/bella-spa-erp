@@ -14,6 +14,7 @@ on:
       - 'src/modules/real_estate/**'
       - 'src/app/dashboard/real-estate/**'
       - 'supabase/migrations/**'
+      - '.github/workflows/ci-real-estate.yml'
 
 jobs:
   # ============================================================================

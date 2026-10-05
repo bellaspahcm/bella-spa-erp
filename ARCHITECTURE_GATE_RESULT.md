@@ -14,7 +14,7 @@
 - Product Manifest: no new product capability.
 - Ownership Map: `.github/workflows/ci-real-estate.yml` is owned by CI/repository governance. `node scripts/test-changed-files.mjs` remains the unit-test authority.
 - Contract Dependency Map: GitHub Actions `Unit Tests` -> changed-file Jest runner -> optional coverage artifact -> optional Codecov upload.
-- Change Authority: limited to the Real Estate workflow coverage-upload step. Unit-test execution remains mandatory.
+- Change Authority: limited to the Real Estate workflow coverage-upload step and the matching `pull_request` path filter needed to verify workflow-only CI fixes. Unit-test execution remains mandatory.
 - UI -> Contract Reconciliation: none.
 - Additive Migration Plan: none.
 - Verification Gates Plan: workflow syntax inspection, `git diff --check`, rerun CI.
