@@ -556,12 +556,13 @@ describe('shared business rule engines', () => {
       tenantId: 'tenant-1',
       salaryRecordId: 'salary-1',
       amount: 6000000,
+      branchId: 'branch-1',
       ktvId: 'ktv-1',
     })).toMatchObject({
       eventType: 'SALARY_PAID',
       referenceType: 'SALARY_RECORD',
       referenceId: 'salary-1',
-      payload: { amount: 6000000, ktvId: 'ktv-1', branchId: 'tenant-1' },
+      payload: { amount: 6000000, ktvId: 'ktv-1', branchId: 'branch-1' },
     });
 
     expect(buildInventoryConsumedOutboxEvent({

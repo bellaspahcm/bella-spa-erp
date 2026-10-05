@@ -30,10 +30,12 @@ BEGIN
   END IF;
 END $$;
 
+-- zero-downtime: allow blocking-index - additive nullable branch-dimension index; production deployment remains separately gated
 CREATE INDEX IF NOT EXISTS idx_salary_records_tenant_branch_month
   ON public.salary_records (tenant_id, branch_id, month_year)
   WHERE branch_id IS NOT NULL;
 
+-- zero-downtime: allow blocking-index - additive payroll lookup index scoped to branch-aware records
 CREATE INDEX IF NOT EXISTS idx_salary_records_tenant_ktv_month_branch
   ON public.salary_records (tenant_id, ktv_id, month_year, branch_id)
   WHERE branch_id IS NOT NULL;

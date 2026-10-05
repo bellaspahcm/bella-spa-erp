@@ -1,8 +1,10 @@
 import {
-  COMMISSION_BRANCH_MAPPING_ERRORS,
-  PAYROLL_BRANCH_MAPPING_ERRORS,
   recalculateAndSaveSalaryRecordEngine,
 } from '@/modules/hr-salary/actions/salary-recalculation-engine';
+import {
+  COMMISSION_BRANCH_MAPPING_ERRORS,
+  PAYROLL_BRANCH_MAPPING_ERRORS,
+} from '@/modules/hr-salary/lib/salary-branch-mapping';
 
 jest.mock('@/modules/hr-salary/actions/base-salary-actions', () => ({
   calcProRataBaseSalary: jest.fn(async () => 0),

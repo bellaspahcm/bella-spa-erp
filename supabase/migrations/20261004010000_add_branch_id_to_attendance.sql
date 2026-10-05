@@ -33,9 +33,11 @@ BEGIN
   END IF;
 END $$;
 
+-- zero-downtime: allow blocking-index - additive nullable branch-dimension index; production deployment remains separately gated
 CREATE INDEX IF NOT EXISTS idx_attendance_tenant_branch_date
   ON public.attendance (tenant_id, branch_id, date)
   WHERE branch_id IS NOT NULL;
 
+-- zero-downtime: allow blocking-index - additive query-support index for existing tenant/KTV attendance lookup
 CREATE INDEX IF NOT EXISTS idx_attendance_tenant_ktv_date
   ON public.attendance (tenant_id, ktv_id, date);

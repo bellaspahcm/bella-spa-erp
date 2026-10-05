@@ -28,6 +28,7 @@ BEGIN
 END
 $$;
 
+-- zero-downtime: allow blocking-index - additive nullable branch-dimension index for completed commission sources
 CREATE INDEX IF NOT EXISTS idx_session_logs_tenant_branch_completed
   ON public.session_logs (tenant_id, branch_id, completed_date)
   WHERE branch_id IS NOT NULL AND status = 'completed';
@@ -55,6 +56,7 @@ BEGIN
 END
 $$;
 
+-- zero-downtime: allow blocking-index - additive nullable branch-dimension index for completed service item commission sources
 CREATE INDEX IF NOT EXISTS idx_booking_service_items_tenant_branch_date
   ON public.booking_service_items (tenant_id, branch_id, completed_date)
   WHERE branch_id IS NOT NULL AND status = 'completed';
@@ -82,6 +84,7 @@ BEGIN
 END
 $$;
 
+-- zero-downtime: allow blocking-index - additive nullable branch-dimension index for completed product sale commission sources
 CREATE INDEX IF NOT EXISTS idx_product_sales_tenant_branch_date
   ON public.product_sales (tenant_id, branch_id, sale_date)
   WHERE branch_id IS NOT NULL AND status = 'completed';

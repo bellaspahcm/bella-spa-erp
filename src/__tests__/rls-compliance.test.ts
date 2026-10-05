@@ -104,6 +104,51 @@ jest.mock('../services/user-actions', () => {
   };
 });
 
+type BranchAwareQueryResult = {
+  data: unknown;
+  error: { message: string } | null;
+};
+
+function createKtvBranchAwareQuery(table: string) {
+  const query = {
+    select: jest.fn(() => query),
+    eq: jest.fn((field: string, value: unknown) => {
+      mockEq(field, value);
+      return query;
+    }),
+    in: jest.fn(() => query),
+    order: jest.fn(() => query),
+    limit: jest.fn(() => query),
+    maybeSingle: jest.fn((): Promise<BranchAwareQueryResult> => {
+      if (table === 'people_directory') {
+        return Promise.resolve({ data: { id: 'person-ktv-123' }, error: null });
+      }
+      return Promise.resolve({ data: null, error: null });
+    }),
+    single: jest.fn((): Promise<BranchAwareQueryResult> =>
+      Promise.resolve({ data: { id: 'att-1' }, error: null }),
+    ),
+    insert: jest.fn((payload: unknown) => {
+      mockInsert(payload);
+      return {
+        select: jest.fn(() => ({
+          single: jest.fn(() => Promise.resolve({ data: { id: 'att-1' }, error: null })),
+        })),
+      };
+    }),
+    update: jest.fn(() => query),
+    then: jest.fn((onfulfilled?: ((value: BranchAwareQueryResult) => unknown) | null) => {
+      const data = table === 'org_relationships'
+        ? [{ rel_type: 'belongs_to', since: null, to_id: 'branch-a', until: null }]
+        : table === 'org_units'
+          ? [{ id: 'branch-a', parent_id: null, unit_type: 'branch' }]
+          : [];
+      return Promise.resolve({ data, error: null }).then(onfulfilled ?? undefined);
+    }),
+  };
+  return query;
+}
+
 describe('Row-Level Security (RLS) & Tenant Isolation Compliance Suite', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -225,6 +270,7 @@ describe('Row-Level Security (RLS) & Tenant Isolation Compliance Suite', () => {
 
   describe('KTV Attendance Isolation & Granularity', () => {
     it('guarantees KTV queries filter by their own KTV User ID at the application layer', async () => {
+      mockSupabase.from.mockImplementation((table: string) => createKtvBranchAwareQuery(table));
       mockGetCurrentUser.mockResolvedValue({
         id: 'ktv-123',
         email: 'ktv123@bella.vn',
@@ -257,6 +303,7 @@ describe('Row-Level Security (RLS) & Tenant Isolation Compliance Suite', () => {
     });
 
     it('requires valid tenant_id and ktv_id upon check-in insertion', async () => {
+      mockSupabase.from.mockImplementation((table: string) => createKtvBranchAwareQuery(table));
       mockGetCurrentUser.mockResolvedValue({
         id: 'ktv-123',
         email: 'ktv123@bella.vn',

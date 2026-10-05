@@ -4,9 +4,9 @@ import { spawnSync } from 'node:child_process';
 import { createClient as createSupabaseClient, type SupabaseClient } from '@supabase/supabase-js';
 
 import {
-  PAYROLL_BRANCH_MAPPING_ERRORS,
   recalculateAndSaveSalaryRecordEngine,
 } from '@/modules/hr-salary/actions/salary-recalculation-engine';
+import { PAYROLL_BRANCH_MAPPING_ERRORS } from '@/modules/hr-salary/lib/salary-branch-mapping';
 import { getSupabaseAdminKey, getSupabaseAdminUrl, requireSupabaseAdminEnv } from '@/lib/supabase-admin-env';
 import type { Database } from '@/types/database.types';
 

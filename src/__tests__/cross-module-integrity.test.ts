@@ -104,6 +104,7 @@ type FranchiseRoyaltyInvoiceRow = Database['public']['Tables']['franchise_royalt
 type InterBranchClearingRecordRow = Database['public']['Tables']['inter_branch_clearing_records']['Row'];
 type TenantRow = Database['public']['Tables']['tenants']['Row'];
 type PackageRow = Database['public']['Tables']['packages']['Row'];
+type PlatformMockRow = Record<string, unknown>;
 
 // Mock Database Store
 interface MockStore {
@@ -118,6 +119,9 @@ interface MockStore {
   inter_branch_clearing_records: InterBranchClearingRecordRow[];
   tenants: TenantRow[];
   packages: PackageRow[];
+  people_directory: PlatformMockRow[];
+  org_relationships: PlatformMockRow[];
+  org_units: PlatformMockRow[];
 }
 
 let mockStore: MockStore = {
@@ -132,6 +136,9 @@ let mockStore: MockStore = {
   inter_branch_clearing_records: [],
   tenants: [],
   packages: [],
+  people_directory: [],
+  org_relationships: [],
+  org_units: [],
 };
 
 function resetMockStore() {
@@ -176,6 +183,36 @@ function resetMockStore() {
     session_reviews: [],
     franchise_royalty_invoices: [],
     inter_branch_clearing_records: [],
+    people_directory: [
+      {
+        id: 'person-ktv-1',
+        tenant_id: 'tenant-a',
+        user_id: 'ktv-1',
+        is_active: true,
+      },
+    ],
+    org_relationships: [
+      {
+        id: 'relationship-ktv-branch-a',
+        tenant_id: 'tenant-a',
+        from_id: 'person-ktv-1',
+        from_type: 'person',
+        to_id: 'branch-a',
+        to_type: 'unit',
+        rel_type: 'belongs_to',
+        since: null,
+        until: null,
+      },
+    ],
+    org_units: [
+      {
+        id: 'branch-a',
+        tenant_id: 'tenant-a',
+        parent_id: null,
+        unit_type: 'branch',
+        is_active: true,
+      },
+    ],
     tenants: [
       { 
         id: 'tenant-a', 
@@ -315,8 +352,8 @@ class MockQueryBuilder {
     return Promise.resolve({ data: list[0] || null, error: null });
   }
 
-  insert(payload: Partial<BookingRow | SessionLogRow | RevenueRow | ExpenseRow | UserRow | SalaryRecordRow | SessionReviewRow | FranchiseRoyaltyInvoiceRow | InterBranchClearingRecordRow | TenantRow | PackageRow> | Array<Partial<BookingRow | SessionLogRow | RevenueRow | ExpenseRow | UserRow | SalaryRecordRow | SessionReviewRow | FranchiseRoyaltyInvoiceRow | InterBranchClearingRecordRow | TenantRow | PackageRow>>) {
-    type StoreRecord = BookingRow | SessionLogRow | RevenueRow | ExpenseRow | UserRow | SalaryRecordRow | SessionReviewRow | FranchiseRoyaltyInvoiceRow | InterBranchClearingRecordRow | TenantRow | PackageRow;
+  insert(payload: Partial<BookingRow | SessionLogRow | RevenueRow | ExpenseRow | UserRow | SalaryRecordRow | SessionReviewRow | FranchiseRoyaltyInvoiceRow | InterBranchClearingRecordRow | TenantRow | PackageRow | PlatformMockRow> | Array<Partial<BookingRow | SessionLogRow | RevenueRow | ExpenseRow | UserRow | SalaryRecordRow | SessionReviewRow | FranchiseRoyaltyInvoiceRow | InterBranchClearingRecordRow | TenantRow | PackageRow | PlatformMockRow>>) {
+    type StoreRecord = BookingRow | SessionLogRow | RevenueRow | ExpenseRow | UserRow | SalaryRecordRow | SessionReviewRow | FranchiseRoyaltyInvoiceRow | InterBranchClearingRecordRow | TenantRow | PackageRow | PlatformMockRow;
     const inserted = Array.isArray(payload) ? payload : [payload];
     const records = inserted.map(item => {
       const newItem = {
@@ -344,7 +381,7 @@ class MockQueryBuilder {
     };
   }
 
-  update(payload: Partial<BookingRow | SessionLogRow | RevenueRow | ExpenseRow | UserRow | SalaryRecordRow | SessionReviewRow | FranchiseRoyaltyInvoiceRow | InterBranchClearingRecordRow | TenantRow | PackageRow>) {
+  update(payload: Partial<BookingRow | SessionLogRow | RevenueRow | ExpenseRow | UserRow | SalaryRecordRow | SessionReviewRow | FranchiseRoyaltyInvoiceRow | InterBranchClearingRecordRow | TenantRow | PackageRow | PlatformMockRow>) {
     this.updatePayload = payload as Record<string, unknown>;
     return this;
   }
@@ -354,8 +391,8 @@ class MockQueryBuilder {
     return this;
   }
 
-  private execute(): Array<BookingRow | SessionLogRow | RevenueRow | ExpenseRow | UserRow | SalaryRecordRow | SessionReviewRow | FranchiseRoyaltyInvoiceRow | InterBranchClearingRecordRow | TenantRow | PackageRow> {
-    type StoreRecord = BookingRow | SessionLogRow | RevenueRow | ExpenseRow | UserRow | SalaryRecordRow | SessionReviewRow | FranchiseRoyaltyInvoiceRow | InterBranchClearingRecordRow | TenantRow | PackageRow;
+  private execute(): Array<BookingRow | SessionLogRow | RevenueRow | ExpenseRow | UserRow | SalaryRecordRow | SessionReviewRow | FranchiseRoyaltyInvoiceRow | InterBranchClearingRecordRow | TenantRow | PackageRow | PlatformMockRow> {
+    type StoreRecord = BookingRow | SessionLogRow | RevenueRow | ExpenseRow | UserRow | SalaryRecordRow | SessionReviewRow | FranchiseRoyaltyInvoiceRow | InterBranchClearingRecordRow | TenantRow | PackageRow | PlatformMockRow;
     type RecordWithField = Record<string, unknown>;
     
     let list: StoreRecord[] = mockStore[this.table as keyof MockStore] || [];
@@ -394,7 +431,7 @@ class MockQueryBuilder {
     return list;
   }
 
-  then(onfulfilled: ((value: { data: Array<BookingRow | SessionLogRow | RevenueRow | ExpenseRow | UserRow | SalaryRecordRow | SessionReviewRow | FranchiseRoyaltyInvoiceRow | InterBranchClearingRecordRow | TenantRow | PackageRow>; error: null }) => unknown) | null | undefined) {
+  then(onfulfilled: ((value: { data: Array<BookingRow | SessionLogRow | RevenueRow | ExpenseRow | UserRow | SalaryRecordRow | SessionReviewRow | FranchiseRoyaltyInvoiceRow | InterBranchClearingRecordRow | TenantRow | PackageRow | PlatformMockRow>; error: null }) => unknown) | null | undefined) {
     const list = this.execute();
     return Promise.resolve({ data: list, error: null }).then(onfulfilled);
   }

@@ -4,9 +4,9 @@ import { spawnSync } from 'node:child_process';
 import { createClient as createSupabaseClient, type SupabaseClient } from '@supabase/supabase-js';
 
 import {
-  COMMISSION_BRANCH_MAPPING_ERRORS,
   recalculateAndSaveSalaryRecordEngine,
 } from '@/modules/hr-salary/actions/salary-recalculation-engine';
+import { COMMISSION_BRANCH_MAPPING_ERRORS } from '@/modules/hr-salary/lib/salary-branch-mapping';
 import { createBookingServiceItems } from '@/core/services/order/create-booking-service-items-helper';
 import { createProductSale } from '@/modules/product-sales/actions/product-sales-actions';
 import { getSupabaseAdminKey, getSupabaseAdminUrl, requireSupabaseAdminEnv } from '@/lib/supabase-admin-env';
