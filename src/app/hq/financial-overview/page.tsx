@@ -5,8 +5,8 @@ import FinancialOverviewClient from './financial-overview-client';
 type ConsolidatedPnLRow = Awaited<ReturnType<typeof getConsolidatedPnLReport>>[number];
 
 export const metadata = {
-  title: 'Bella Spa HQ — Tổng quan Tài chính Toàn Network',
-  description: 'So sánh hiệu quả kinh doanh các chi nhánh trong hệ thống Bella Spa.',
+  title: 'HQ Portal — Tổng quan Tài chính Toàn Network',
+  description: 'So sánh hiệu quả kinh doanh các chi nhánh trong hệ thống.',
 };
 
 export default async function HqFinancialOverviewPage({

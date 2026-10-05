@@ -161,7 +161,7 @@ export function HqBranchRegistrationModal({
                 <div>
                   <p className="text-xs font-black uppercase tracking-widest text-emerald-800">Nhận diện Beauty Spa</p>
                   <p className="mt-1 text-xs font-bold leading-relaxed text-emerald-700/80">
-                    Chỉ áp dụng cho tenant Beauty Spa này. Bella ERP gốc và tenant Mother & Baby không bị đổi giao diện.
+                    Chỉ áp dụng cho tenant Beauty Spa này. Hệ thống ERP gốc và tenant Mother & Baby không bị đổi giao diện.
                   </p>
                 </div>
               </div>
@@ -254,7 +254,7 @@ export function HqBranchRegistrationModal({
                   value={form.spaName}
                   onChange={(event) => updateField('spaName', event.target.value)}
                   className="w-full rounded-2xl border border-slate-200 dark:border-[#3E3A35] bg-white dark:bg-[#11100F] pl-11 pr-4 py-3 text-sm font-bold outline-none focus:border-primary"
-                  placeholder="Bella Spa Quận 7"
+                  placeholder="Chi nhánh Spa Quận 7"
                 />
               </div>
             </label>

@@ -1,8 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import Image from 'next/image';
-import { ExternalLink, LogOut, PieChart, Plus, RefreshCw } from 'lucide-react';
+import { Building2, ExternalLink, LogOut, PieChart, Plus, RefreshCw } from 'lucide-react';
 import ThemeToggle from '@/components/common/ThemeToggle';
 import type { CurrentUser } from '@/types/domain';
 
@@ -38,14 +37,14 @@ export function HqDashboardHeader({
       <div className="flex items-center gap-3 min-w-0">
         <motion.div
           whileHover={{ scale: 1.05 }}
-          className="drop-shadow-lg"
+          className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-slate-900 via-rose-950 to-rose-600 border border-rose-500/30 flex items-center justify-center text-white shadow-md shadow-rose-950/20 shrink-0"
         >
-          <Image src="/logo.png" alt="Bella Spa Logo" width={120} height={40} className="h-10 w-auto object-contain" priority />
+          <Building2 className="w-5 h-5 text-rose-400" />
         </motion.div>
         <div className="h-6 w-px bg-slate-200 dark:bg-[#3E3A35]" />
         <div>
           <h1 className="text-sm font-black text-slate-900 dark:text-[#EFE9E1] tracking-wider uppercase flex items-center gap-1.5">
-            Bella Spa Headquarter
+            Executive Headquarter
             <span className="bg-rose-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full tracking-widest uppercase">HQ Portal</span>
           </h1>
           <p className="text-[10px] text-slate-500 dark:text-[#CDBCAB] font-bold uppercase tracking-wider">Hệ thống Quản trị Cấp cao</p>
@@ -58,7 +57,7 @@ export function HqDashboardHeader({
             {currentUser.full_name?.charAt(0) || 'A'}
           </div>
           <div className="text-left leading-none">
-            <p className="text-[10px] font-black text-slate-800 dark:text-[#EFE9E1] truncate max-w-[100px]">{currentUser.full_name || 'Super Admin'}</p>
+            <p className="text-[10px] font-black text-slate-800 dark:text-[#EFE9E1] truncate max-w-[100px]">{currentUser.full_name || 'HQ Admin'}</p>
             <span className="text-[7px] font-black text-primary dark:text-rose-400 uppercase tracking-widest">Cấp cao</span>
           </div>
         </div>
@@ -76,7 +75,7 @@ export function HqDashboardHeader({
             className="flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider px-3 md:px-3.5 py-2.5 md:py-2 rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
           >
             <ExternalLink size={10} className="md:w-3.5 md:h-3.5" />
-            Spa chính
+            Hệ thống chính
           </a>
           <button
             type="button"
@@ -112,6 +111,7 @@ export function HqDashboardHeader({
     </header>
   );
 }
+
 
 interface HqDashboardTabsProps {
   activeTab: HqDashboardTab;

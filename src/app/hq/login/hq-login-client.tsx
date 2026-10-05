@@ -44,7 +44,7 @@ export default function HqLoginClient() {
           <div className="space-y-8">
             <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-slate-500 shadow-sm">
               <ShieldCheck className="h-4 w-4 text-emerald-600" />
-              Bella HQ Portal
+              Executive HQ Portal
             </div>
 
             <div className="max-w-2xl space-y-5">
@@ -52,7 +52,7 @@ export default function HqLoginClient() {
                 Đăng nhập Tổng bộ
               </h1>
               <p className="text-base font-medium leading-8 text-slate-600">
-                Khu vực quản trị cấp hệ thống cho điều hành mạng lưới chi nhánh Bella.
+                Khu vực quản trị cấp hệ thống cho điều hành mạng lưới chi nhánh.
               </p>
             </div>
 
@@ -100,7 +100,7 @@ export default function HqLoginClient() {
                     required
                     autoComplete="email"
                     className="h-12 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm font-semibold outline-none transition focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100"
-                    placeholder="hq-admin@bella.vn"
+                    placeholder="hq-admin@hqportal.com"
                   />
                 </span>
               </label>

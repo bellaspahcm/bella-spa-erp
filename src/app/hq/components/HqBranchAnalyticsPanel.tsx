@@ -111,7 +111,7 @@ export function HqBranchAnalyticsPanel({
               })
               .slice(0, 5)
               .map((branch, index) => {
-                const cleanName = branch.name.replace('Bella Spa ', '');
+                const cleanName = branch.name.replace(/^Bella\s+Spa\s+/i, '');
                 const val = compareMetric === 'revenue' ? (branch.revenueSum || 0) : (branch.customerCount || 0);
                 const maxVal = compareMetric === 'revenue'
                   ? Math.max(...operatingTenants.map(t => t.revenueSum || 0), 1)

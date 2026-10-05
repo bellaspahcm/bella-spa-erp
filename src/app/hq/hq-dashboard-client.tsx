@@ -306,7 +306,7 @@ export default function HqDashboardClient({
         // await loadServicesData(); // TODO: Implement loadServicesData
       // }
       
-      toast.success('Đồng bộ dữ liệu Bella HQ thành công!');
+      toast.success('Đồng bộ dữ liệu Tổng bộ HQ thành công!');
     } catch (err: unknown) {
       toast.error('Lỗi khi tải lại dữ liệu: ' + getErrorMessage(err));
     } finally {
@@ -839,7 +839,7 @@ export default function HqDashboardClient({
               Xin chào, {currentUser.full_name || 'Super Admin'}
             </h2>
             <p className="text-slate-300 text-sm leading-relaxed font-medium">
-              Chào mừng bạn đến với Tổng bộ Quản trị Cấp cao Bella HQ. Nơi bạn giám sát doanh số, cấu hình thỏa thuận tài chính nhượng quyền thương mại (franchise), duyệt đối soát royalty, và quản trị an toàn bảo mật toàn sàn.
+              Chào mừng bạn đến với Tổng bộ Quản trị Cấp cao HQ Portal. Nơi bạn giám sát doanh số, cấu hình thỏa thuận tài chính nhượng quyền thương mại (franchise), duyệt đối soát royalty, và quản trị an toàn bảo mật toàn sàn.
             </p>
           </div>
         </section>
