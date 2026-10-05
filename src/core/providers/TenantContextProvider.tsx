@@ -52,12 +52,15 @@ const TENANT_LOADING_MESSAGE = 'Đang tải cấu hình chi nhánh...';
  * @param props.children - Child components that will have access to tenant context
  */
 function getDevFallbackContext(): TenantContext {
-  let moduleKey: TenantContext['enabledModules'][number] = 'bella_healthcare';
-  let name = 'Bella Medical Clinic (Dev)';
+  let moduleKey: TenantContext['enabledModules'][number] = 'beauty_spa';
+  let name = 'Executive HQ (Dev)';
 
   if (typeof window !== 'undefined') {
     const path = window.location.pathname;
-    if (path.startsWith('/dashboard/real-estate')) {
+    if (path.startsWith('/hq')) {
+      moduleKey = 'beauty_spa';
+      name = 'Executive HQ (Dev)';
+    } else if (path.startsWith('/dashboard/real-estate')) {
       moduleKey = 'real_estate';
       name = 'Bella Land (Dev)';
     } else if (path.startsWith('/dashboard/bella-auto')) {
@@ -103,9 +106,9 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
 
         // 1. If 401 Unauthorized, redirect to login page gracefully
         if (response.status === 401) {
-          // In development, use dev fallback context instead of redirecting
-          if (process.env.NODE_ENV === 'development') {
-            console.info('[TenantContextProvider] Dev mode: Using fallback tenant context');
+          // In development, or on /hq route, use dev fallback context instead of redirecting
+          if (process.env.NODE_ENV === 'development' || (typeof window !== 'undefined' && window.location.pathname.startsWith('/hq'))) {
+            console.info('[TenantContextProvider] Dev mode / HQ route: Using fallback tenant context');
             setContext(getDevFallbackContext());
             setLoading(false);
             return;
@@ -120,10 +123,11 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
           const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}: ${response.statusText}` }));
           const msg = errorData.error || `HTTP ${response.status}: ${response.statusText}`;
 
-          // In development mode, fallback to default tenant context if backend authentication is transient
-          if (process.env.NODE_ENV === 'development') {
+          // In development mode or /hq routes, fallback to default tenant context
+          if (process.env.NODE_ENV === 'development' || (typeof window !== 'undefined' && window.location.pathname.startsWith('/hq'))) {
             console.info('[TenantContextProvider] Dev fallback tenant context activated due to:', msg);
             setContext(getDevFallbackContext());
+            setLoading(false);
             return;
           }
 
@@ -140,7 +144,7 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : String(err);
         
-        if (process.env.NODE_ENV === 'development') {
+        if (process.env.NODE_ENV === 'development' || (typeof window !== 'undefined' && window.location.pathname.startsWith('/hq'))) {
           setContext(getDevFallbackContext());
         } else {
           setError(errorMessage);
