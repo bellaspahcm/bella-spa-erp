@@ -101,6 +101,11 @@ describeWithRealSupabase('Inventory session consumption Real DB proof', () => {
     if (error) throw new Error(`${label} cleanup failed: ${error.message}`);
   }
 
+  async function cleanupStepBestEffort(label: string, result: PromiseLike<{ error: { message: string } | null }>) {
+    const { error } = await result;
+    if (error) console.warn(`${label} cleanup retained fixture rows: ${error.message}`);
+  }
+
   async function cleanup() {
     if (!tenantId || !otherTenantId) return;
 
@@ -116,9 +121,13 @@ describeWithRealSupabase('Inventory session consumption Real DB proof', () => {
     await cleanupStep('org_relationships', supabase.from('org_relationships').delete().eq('from_id', adminPersonId));
     await cleanupStep('people_directory', supabase.from('people_directory').delete().eq('id', adminPersonId));
     await cleanupStep('org_units', supabase.from('org_units').delete().eq('id', branchId));
-    if (adminUserId || otherUserId) {
-      await cleanupStep('users', supabase.from('users').delete().in('id', [adminUserId, otherUserId].filter(Boolean)));
-    }
+  }
+
+  async function cleanupPublicUsersBestEffort() {
+    const userIds = [adminUserId, otherUserId].filter(Boolean);
+    if (userIds.length === 0) return;
+
+    await cleanupStepBestEffort('users', supabase.from('users').delete().in('id', userIds));
   }
 
   async function createAuthUser(email: string) {
@@ -157,6 +166,7 @@ describeWithRealSupabase('Inventory session consumption Real DB proof', () => {
     await cleanup();
     await deleteAuthUser(adminUserId);
     await deleteAuthUser(otherUserId);
+    await cleanupPublicUsersBestEffort();
     mockCurrentUser = null;
   });
 
