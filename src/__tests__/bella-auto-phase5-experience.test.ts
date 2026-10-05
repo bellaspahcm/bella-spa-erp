@@ -67,6 +67,9 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
       throw new Error(`Failed to set Bella Auto Phase 5 tenant context: ${tenantContextError.message}`);
     }
 
+    const { getPrimaryClient } = await import('@/lib/database/read-replica');
+    await getPrimaryClient().rpc('set_session_tenant', { p_tenant_id: testTenantId });
+
     // Create test customer
     const { data: customer, error: customerError } = await supabase
       .from('customers')
