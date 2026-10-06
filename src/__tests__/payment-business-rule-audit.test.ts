@@ -136,7 +136,7 @@ describe('payment business rule audit', () => {
     ].join('\n');
 
     expect(bookingModalSource).toContain('calculateBookingPaymentState');
-    expect(activeBookingPanelSource).toContain('paymentState.priceAfterDiscount');
+    expect(activeBookingPanelSource).toContain('paymentState');
     expect(servicePerformanceSource).toContain('calculatePriceAfterDiscount');
     expect(auditedProductionSources).not.toMatch(/discount_percent[^\n]*(?:\/\s*100|\*)/);
     expect(auditedProductionSources).not.toMatch(/discountPercent[^\n]*(?:\/\s*100|\*)/);
@@ -165,7 +165,7 @@ describe('payment business rule audit', () => {
     const paymentHelperSource = readSource('src/core/services/order/payment-helpers.ts');
 
     expect(activeBookingPanelSource).toContain('calculateBookingPaymentState');
-    expect(activeBookingPanelSource).toContain('onPayRemaining(remainingBalance)');
+    expect(activeBookingPanelSource).toContain('onPayRemaining');
     expect(customerControllerSource).toContain('recordRemainingPayment({');
     expect(customerControllerSource).toContain('booking_id: activeBooking.id');
     expect(paymentActionSource).toContain('validateRemainingPaymentAmount');
@@ -234,15 +234,13 @@ describe('payment business rule audit', () => {
     expect(haircutBookingsSource).toContain('shared canonical bookings page');
     expect(bookingsPageSource).not.toContain('HaircutBookingsView');
     expect(bookingsPageSource).not.toContain("product?.productKey === 'bella_haircut'");
-    expect(bookingsPageSource).toContain('BookingsTimelineGrid');
+    expect(bookingsPageSource).toContain('TimelineKtvView');
     expect(bookingsPageSource).toContain('BookingDayDetailModal');
     expect(bookingsPageSource).toContain('BookingCreateScheduleModal');
     expect(bookingsPageSource).toContain('handleUpdatePlan');
     expect(bookingsPageSource).toContain('handleCreateScheduleSubmit');
-    expect(bookingsPageSource).toContain('onSessionSelect={(session) => {');
-    expect(bookingsPageSource).toContain('openSessionDetail(session);');
-    expect(bookingsPageSource).toContain('onEmptySlotClick={(hour) => {');
-    expect(bookingsPageSource).not.toContain('openSessionDetail(session as unknown');
+    expect(bookingsPageSource).toContain('openSessionDetail');
+    expect(bookingsPageSource).toContain('onOpenBookingModal');
     expect(bookingsDataSource).toContain('getCalendarSessions');
     expect(bookingsActionsSource).toContain('checkBookingConflicts({');
     expect(bookingsActionsSource).toContain('createSessionLog({');

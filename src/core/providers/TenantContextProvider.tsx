@@ -52,12 +52,15 @@ const TENANT_LOADING_MESSAGE = 'Đang tải cấu hình chi nhánh...';
  * @param props.children - Child components that will have access to tenant context
  */
 function getDevFallbackContext(): TenantContext {
-  let moduleKey: TenantContext['enabledModules'][number] = 'bella_healthcare';
-  let name = 'Bella Medical Clinic (Dev)';
+  let moduleKey: TenantContext['enabledModules'][number] = 'beauty_spa';
+  let name = 'Executive HQ (Dev)';
 
   if (typeof window !== 'undefined') {
     const path = window.location.pathname;
-    if (path.startsWith('/dashboard/real-estate')) {
+    if (path.startsWith('/hq')) {
+      moduleKey = 'beauty_spa';
+      name = 'Executive HQ (Dev)';
+    } else if (path.startsWith('/dashboard/real-estate')) {
       moduleKey = 'real_estate';
       name = 'Bella Land (Dev)';
     } else if (path.startsWith('/dashboard/bella-auto')) {
@@ -88,7 +91,27 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     async function loadTenantContext() {
+      const isHqRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/hq');
+      const allowNonProductionFallback = process.env.NODE_ENV !== 'production';
+
+      // For HQ portal in non-production mode, immediately apply HQ fallback context so UI never hangs.
+      if (isHqRoute && allowNonProductionFallback) {
+        console.info('[TenantContextProvider] Instant HQ fallback activated for /hq route');
+        setContext(getDevFallbackContext());
+        setLoading(false);
+        return;
+      }
+
+      const controller = allowNonProductionFallback ? new AbortController() : null;
+      const timeoutId = controller
+        ? setTimeout(() => {
+            controller.abort();
+          }, 2000)
+        : null;
+
       try {
         setLoading(true);
         setError(null);
@@ -99,15 +122,20 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
             'Content-Type': 'application/json',
           },
           credentials: 'same-origin',
+          ...(controller ? { signal: controller.signal } : {}),
         });
+
+        if (timeoutId) clearTimeout(timeoutId);
 
         // 1. If 401 Unauthorized, redirect to login page gracefully
         if (response.status === 401) {
-          // In development, use dev fallback context instead of redirecting
-          if (process.env.NODE_ENV === 'development') {
-            console.info('[TenantContextProvider] Dev mode: Using fallback tenant context');
-            setContext(getDevFallbackContext());
-            setLoading(false);
+          // In non-production, use dev fallback context instead of redirecting.
+          if (allowNonProductionFallback) {
+            console.info('[TenantContextProvider] Dev mode / HQ route: Using fallback tenant context');
+            if (isMounted) {
+              setContext(getDevFallbackContext());
+              setLoading(false);
+            }
             return;
           }
           
@@ -120,10 +148,13 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
           const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}: ${response.statusText}` }));
           const msg = errorData.error || `HTTP ${response.status}: ${response.statusText}`;
 
-          // In development mode, fallback to default tenant context if backend authentication is transient
-          if (process.env.NODE_ENV === 'development') {
+          // In non-production, fallback to default tenant context.
+          if (allowNonProductionFallback) {
             console.info('[TenantContextProvider] Dev fallback tenant context activated due to:', msg);
-            setContext(getDevFallbackContext());
+            if (isMounted) {
+              setContext(getDevFallbackContext());
+              setLoading(false);
+            }
             return;
           }
 
@@ -136,21 +167,35 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
           throw new Error('Invalid tenant context response format');
         }
 
-        setContext(data as TenantContext);
+        if (isMounted) {
+          setContext(data as TenantContext);
+        }
       } catch (err: unknown) {
+        if (timeoutId) clearTimeout(timeoutId);
         const errorMessage = err instanceof Error ? err.message : String(err);
         
-        if (process.env.NODE_ENV === 'development') {
-          setContext(getDevFallbackContext());
+        if (allowNonProductionFallback) {
+          console.info('[TenantContextProvider] Fallback context activated on error/timeout:', errorMessage);
+          if (isMounted) {
+            setContext(getDevFallbackContext());
+          }
         } else {
-          setError(errorMessage);
+          if (isMounted) {
+            setError(errorMessage);
+          }
         }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     }
 
     loadTenantContext();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Apply tenant module theme to <html> element when context loads

@@ -17,6 +17,8 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 jest.setTimeout(30000);
 
+const fixtureRunMarker = `bella-auto-phase5-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+
 let testTenantId: string;
 let testCustomerId: string;
 let testJourneyId: string;
@@ -31,40 +33,33 @@ let testCsiTemplateId: string;
 
 describe('Bella Auto Phase 5 - Experience Center', () => {
   beforeAll(async () => {
-    const { data: tenant, error: tenantLookupError } = await supabase
+    const { data: tenant, error: tenantCreateError } = await supabase
       .from('tenants')
+      .insert({
+        name: `Test Tenant Bella Auto Phase5 E2E ${fixtureRunMarker}`,
+        status: 'active',
+      })
       .select('id')
-      .eq('name', 'Test Tenant Bella Auto Phase5 E2E')
-      .maybeSingle();
+      .single();
 
-    if (tenantLookupError) {
-      throw new Error(`Failed to look up Bella Auto Phase 5 test tenant: ${tenantLookupError.message}`);
+    if (tenantCreateError) {
+      throw new Error(`Failed to create Bella Auto Phase 5 test tenant: ${tenantCreateError.message}`);
     }
 
-    if (tenant) {
-      testTenantId = tenant.id;
-    } else {
-      const { data: newTenant, error: tenantCreateError } = await supabase
-        .from('tenants')
-        .insert({
-          name: 'Test Tenant Bella Auto Phase5 E2E',
-          status: 'active',
-        })
-        .select('id')
-        .single();
-
-      if (tenantCreateError) {
-        throw new Error(`Failed to create Bella Auto Phase 5 test tenant: ${tenantCreateError.message}`);
-      }
-
-      testTenantId = newTenant!.id;
-    }
+    testTenantId = tenant!.id;
 
     // Set tenant context
     const { error: tenantContextError } = await supabase.rpc('set_session_tenant', { p_tenant_id: testTenantId });
 
     if (tenantContextError) {
       throw new Error(`Failed to set Bella Auto Phase 5 tenant context: ${tenantContextError.message}`);
+    }
+
+    const { getPrimaryClient } = await import('@/lib/database/read-replica');
+    const { error: primaryTenantContextError } = await getPrimaryClient().rpc('set_session_tenant', { p_tenant_id: testTenantId });
+
+    if (primaryTenantContextError) {
+      throw new Error(`Failed to set Bella Auto Phase 5 primary tenant context: ${primaryTenantContextError.message}`);
     }
 
     // Create test customer
@@ -316,6 +311,10 @@ describe('Bella Auto Phase 5 - Experience Center', () => {
     const templateIds = [testNpsTemplateId, testCsiTemplateId].filter(Boolean);
     if (templateIds.length > 0) {
       await supabase.from('auto_survey_templates').delete().in('id', templateIds);
+    }
+
+    if (testTenantId) {
+      await supabase.from('tenants').delete().eq('id', testTenantId);
     }
   });
 
