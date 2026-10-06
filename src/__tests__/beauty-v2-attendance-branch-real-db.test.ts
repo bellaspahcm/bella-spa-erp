@@ -113,8 +113,11 @@ describeWithRealSupabase('Beauty V2 Attendance branch Real DB proof', () => {
       WHERE tenant_id IN ('${currentProofTenantId}', '${currentProofOtherTenantId}');
       ${userCleanupSql}
       DELETE FROM public.org_units WHERE id IN (${orgUnitIds});
-      DELETE FROM public.tenants WHERE id IN ('${currentProofTenantId}', '${currentProofOtherTenantId}');
     `);
+
+    console.warn(
+      `[Beauty V2 Attendance branch cleanup] retained tenant shells because public.timeline_events is append-only and may hold tenant FK rows: ${currentProofTenantId}, ${currentProofOtherTenantId}`,
+    );
 
     if (ktvUserId) {
       const { error } = await supabase.auth.admin.deleteUser(ktvUserId);

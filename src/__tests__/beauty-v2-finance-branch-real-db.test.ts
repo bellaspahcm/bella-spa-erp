@@ -196,10 +196,11 @@ describeWithRealSupabase('Beauty V2 Finance SALARY_PAID branch Real DB proof', (
 
       DELETE FROM public.org_units
       WHERE id IN (${orgUnitSql});
-
-      DELETE FROM public.tenants
-      WHERE id IN (${tenantSql});
     `);
+
+    console.warn(
+      `[Beauty V2 Finance branch cleanup] retained tenant shells because public.timeline_events is append-only and may hold tenant FK rows: ${tenantId}, ${otherTenantId}`,
+    );
 
     cleaned = true;
   }
@@ -270,12 +271,12 @@ describeWithRealSupabase('Beauty V2 Finance SALARY_PAID branch Real DB proof', (
     expect(orgRows.error).toBeNull();
     expect(orgRows.data).toEqual([]);
 
-    const tenantRows = await supabase
-      .from('tenants')
+    const orgRowsAfterCleanup = await supabase
+      .from('org_units')
       .select('id')
-      .in('id', [tenantId, otherTenantId]);
-    expect(tenantRows.error).toBeNull();
-    expect(tenantRows.data).toEqual([]);
+      .in('tenant_id', [tenantId, otherTenantId]);
+    expect(orgRowsAfterCleanup.error).toBeNull();
+    expect(orgRowsAfterCleanup.data).toEqual([]);
   }
 
   beforeAll(async () => {
@@ -538,9 +539,19 @@ describeWithRealSupabase('Beauty V2 Finance SALARY_PAID branch Real DB proof', (
         },
       }));
       expect(response.status).toBe(200);
-      const body = await response.json() as { success?: boolean; processed?: number };
-      expect(body.success).toBe(true);
+      const body = await response.json() as {
+        processed?: number;
+        details?: Array<{ referenceId?: string; status?: string }>;
+      };
       expect(Number(body.processed ?? 0)).toBeGreaterThanOrEqual(1);
+      expect(body.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            referenceId: salaryId,
+            status: 'completed',
+          }),
+        ]),
+      );
     } finally {
       if (priorSecret === undefined) {
         delete process.env.CRON_SECRET;
