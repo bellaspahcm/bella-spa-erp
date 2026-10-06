@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS public.preschool_chain_course_branch_assignments (
   CONSTRAINT uq_preschool_chain_course_branch_assignment UNIQUE (tenant_id, course_id)
 );
 
+-- zero-downtime: allow blocking-index - new Preschool Chain product table has no existing production rows.
 CREATE INDEX IF NOT EXISTS idx_preschool_chain_course_branch_assignments_tenant_branch
   ON public.preschool_chain_course_branch_assignments(tenant_id, branch_id);
 
@@ -37,6 +38,7 @@ CREATE TABLE IF NOT EXISTS public.preschool_chain_enrollment_branch_assignments 
   CONSTRAINT uq_preschool_chain_enrollment_branch_request UNIQUE (tenant_id, request_id)
 );
 
+-- zero-downtime: allow blocking-index - new Preschool Chain product table has no existing production rows.
 CREATE INDEX IF NOT EXISTS idx_preschool_chain_enrollment_branch_assignments_tenant_branch
   ON public.preschool_chain_enrollment_branch_assignments(tenant_id, branch_id);
 
