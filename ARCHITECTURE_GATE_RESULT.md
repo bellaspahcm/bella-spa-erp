@@ -4325,14 +4325,14 @@ No migration.
 
 ### 1. Bella OS/Product Development Process Gate
 - **Problem:** PR #244 CI failed at `Trivy filesystem` and `Security Gates`.
-- **Truth / Evidence:** Trivy reported fixable high/critical advisories in lockfiles only: `sharp@0.35.4`, `source-map-js@1.2.1`, `@modelcontextprotocol/sdk@1.29.0`, and `proxy-addr@2.0.7`.
+- **Truth / Evidence:** Trivy reported fixable high/critical advisories in lockfiles only: `sharp@0.35.4`, `source-map-js@1.2.1`, `@modelcontextprotocol/sdk@1.29.0`, `proxy-addr@2.0.7`, `compression@1.8.1`, and `shell-quote@1.10.0`.
 - **Root Cause:** Dependency security drift in root and `mcp-server` lockfiles; not an English Center product/runtime regression.
 - **Gate Result:** `PASS`.
 
 ### 2. Product Manifest
 - **Product:** None.
 - **Capability:** CI security dependency gate remediation.
-- **Scope:** `package.json`, `package-lock.json`, `mcp-server/package.json`, and `mcp-server/package-lock.json`.
+- **Scope:** `package.json`, `package-lock.json`, `mcp-server/package.json`, `mcp-server/package-lock.json`, `apps/mobile/package.json`, and `apps/mobile/package-lock.json`.
 - **Non-goals:** No English product code, no tenant data, no migration SQL, no production/customer DB mutation.
 
 ### 3. Ownership Map
@@ -4368,6 +4368,7 @@ No migration.
 ### Verification
 - `package-lock.json`: `sharp=0.35.5`, `source-map-js=1.2.2`, `@modelcontextprotocol/sdk=1.32.1`, `proxy-addr=2.0.8`.
 - `mcp-server/package-lock.json`: `@modelcontextprotocol/sdk=1.32.1`, `proxy-addr=2.0.8`.
+- `apps/mobile/package-lock.json`: `compression=1.8.2`, `shell-quote=1.12.0`, `source-map-js=1.2.2`.
 - `npm run security:audit` -> PASS.
 - `git diff --check` -> PASS.
 

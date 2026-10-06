@@ -35,8 +35,10 @@
     "typescript": "~5.3.3"
   },
   "overrides": {
+    "compression": "^1.8.2",
     "tar": "^7.5.19",
-    "shell-quote": "^1.8.5",
+    "shell-quote": "^1.11.0",
+    "source-map-js": "^1.2.2",
     "brace-expansion": "^1.1.20",
     "browserslist": "^4.28.9",
     "js-yaml": "^4.3.2",
