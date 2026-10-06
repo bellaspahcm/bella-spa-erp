@@ -24,6 +24,7 @@ const dbUrl =
   || process.env.SUPABASE_DATABASE_URL
   || process.env.SUPABASE_DB_URL
   || '';
+const educationSystemUserId = '00000000-0000-0000-0000-000000000001';
 
 function isRunnableDbUrl(value: string): boolean {
   if (!value.trim()) return false;
@@ -228,13 +229,6 @@ describe('Preschool Chain real DB E2E proof', () => {
     );
     await pg.query(
       `
-        DELETE FROM public.party_parties
-        WHERE tenant_id = ANY($1::uuid[])
-      `,
-      [[ids.tenant, ids.otherTenant]],
-    );
-    await pg.query(
-      `
         DELETE FROM public.edu_courses
         WHERE tenant_id = ANY($1::uuid[])
       `,
@@ -272,7 +266,7 @@ describe('Preschool Chain real DB E2E proof', () => {
     );
 
     console.warn(
-      `[Preschool Chain real DB cleanup] retained tenant shells because public.timeline_events has append-only/RLS FK behavior: ${ids.tenant}, ${ids.otherTenant}`,
+      `[Preschool Chain real DB cleanup] retained tenant and Party shells because public.timeline_events is append-only and may hold tenant/party FK rows: ${ids.tenant}, ${ids.otherTenant}`,
     );
   }
 
@@ -311,13 +305,19 @@ describe('Preschool Chain real DB E2E proof', () => {
     await pg.query(
       `
         INSERT INTO public.users (id, tenant_id, email, full_name, role, status)
-        VALUES ($1::uuid, $2::uuid, $3, $4, 'admin_staff', 'active')
+        VALUES
+          ($1::uuid, $2::uuid, $3, $4, 'admin_staff', 'active'),
+          ($5::uuid, $2::uuid, $6, $7, 'admin_staff', 'active')
+        ON CONFLICT (id) DO NOTHING
       `,
       [
         actorUserId,
         ids.tenant,
         actorEmail,
         `${marker} Admission Operator`,
+        educationSystemUserId,
+        `${marker}-education-system@example.test`,
+        `${marker} Education System Actor`,
       ],
     );
 
@@ -499,6 +499,9 @@ describe('Preschool Chain real DB E2E proof', () => {
     const response = await createPreschoolEnrollment(buildAdmissionRequest());
     const body: PreschoolEnrollmentResponse = await response.json();
 
+    if (response.status !== 201) {
+      throw new Error(`Expected Preschool admission 201, received ${response.status}: ${JSON.stringify(body)}`);
+    }
     expect(response.status).toBe(201);
     expect(body.success).toBe(true);
     expect(body.enrollment.courseId).toBe(ids.course);
