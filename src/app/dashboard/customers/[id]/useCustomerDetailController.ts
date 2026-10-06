@@ -297,7 +297,6 @@ export function useCustomerDetailController() {
     const secondaryTimer = setTimeout(() => {
       void fetchKtvs();
     }, 200); // 200ms head-start for critical data
-    return () => clearTimeout(secondaryTimer);
 
     const supabase = createClient();
     const channel = supabase
@@ -315,6 +314,7 @@ export function useCustomerDetailController() {
       .subscribe();
 
     return () => {
+      clearTimeout(secondaryTimer);
       if (reloadTimerRef.current) {
         clearTimeout(reloadTimerRef.current);
       }
