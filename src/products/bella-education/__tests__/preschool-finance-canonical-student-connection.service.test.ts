@@ -211,6 +211,58 @@ describe('Preschool Finance canonical student Party connection', () => {
     expect(payment.unallocatedAmount).toBe(1000000);
   });
 
+  it('reconciles payment and invoice by canonical student_party_id when legacy student_id is null', async () => {
+    const invoice: Invoice = {
+      ...makeInvoice({
+        studentPartyId,
+        studentId: null,
+        lineItems: [{
+          tenantId,
+          itemType: 'TUITION',
+          description: 'Monthly tuition',
+          unitPrice: 5000000,
+          quantity: 1,
+          subtotalAmount: 5000000,
+          sourceDomain: 'FINANCE_CATALOG',
+          sourceEntityType: 'FEE_STRUCTURE',
+          sourceEntityId: 'fee-tuition',
+        }],
+      }),
+      invoiceStatus: 'ISSUED',
+    };
+    const wrongStudentPayment: Payment = {
+      id: 'payment-wrong-student',
+      tenantId,
+      payerPartyId: 'guardian-party-a',
+      studentPartyId: otherStudentPartyId,
+      studentId: null,
+      paymentNumber: 'PAY-WRONG',
+      paymentMethod: 'BANK_TRANSFER',
+      amount: 1000000,
+      allocatedAmount: 0,
+      unallocatedAmount: 1000000,
+      paymentDate: '2026-09-30T00:00:00.000Z',
+      status: 'RECEIVED',
+      createdBy: 'staff-a',
+    };
+    const repo = {
+      async getInvoiceById(): Promise<Invoice> {
+        return invoice;
+      },
+      async getPaymentById(): Promise<Payment> {
+        return wrongStudentPayment;
+      },
+    } as unknown as PreschoolFinanceRepository;
+
+    await expect(new PaymentReconciliationService(repo).reconcilePaymentToInvoice({
+      tenantId,
+      paymentId: wrongStudentPayment.id,
+      invoiceId: invoice.id,
+      allocationAmount: 1000000,
+      reconciledByPartyId: 'staff-a',
+    })).rejects.toThrow('PAYMENT_INVOICE_STUDENT_MISMATCH_ERROR');
+  });
+
   it('keeps legacy student_id rows compatible while adding canonical identity constraints', () => {
     const migration = fs.readFileSync(
       path.join(process.cwd(), 'supabase/migrations/20260927070000_preschool_finance_canonical_student_party.sql'),

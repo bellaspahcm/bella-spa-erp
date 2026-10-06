@@ -5,12 +5,25 @@ import type { EducationAttendanceStatus } from '@/platform/education/contracts/a
 import { AttendanceProductService } from '@/products/bella-education/services/attendance.service';
 import { PreschoolGuardianAuthorizationService } from '@/products/bella-education/services/preschool-guardian-authorization.service';
 import { PreschoolSafePickupHandoverService } from '@/products/bella-education/services/preschool-safe-pickup-handover.service';
+import {
+  EducationSecurityGuardService,
+  type EducationRole,
+  type SecurityUserContext,
+} from '@/products/bella-education/security/education-security-guard.service';
 import { createClient } from '@/lib/supabase-server';
 import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
 import { getCurrentUser } from '@/services/user-actions';
 import type { Database } from '@/types/database.types';
 
 type EducationAttendanceClient = SupabaseClient<Database>;
+
+interface RequestContext {
+  readonly tenantId: string;
+  readonly userId: string;
+  readonly role: string;
+}
+
+const attendanceGuard = new EducationSecurityGuardService();
 
 function isAttendanceStatus(value: unknown): value is EducationAttendanceStatus {
   return value === 'present' || value === 'absent' || value === 'excused';
@@ -50,7 +63,31 @@ function createAdminOperationClient(): EducationAttendanceClient | null {
   });
 }
 
-async function resolveTenantId(request: Request): Promise<string | null> {
+function mapBellaAttendanceRole(role: string): EducationRole | null {
+  const normalizedRole = role.trim().toLowerCase();
+  if (normalizedRole === 'admin' || normalizedRole === 'super_admin') return 'PRINCIPAL';
+  if (normalizedRole === 'admin_staff') return 'TEACHER';
+  return null;
+}
+
+function assertCanUseAttendanceRoster(context: RequestContext): void {
+  const educationRole = mapBellaAttendanceRole(context.role);
+  if (!educationRole) {
+    throw new Error(
+      `AUTH_ROLE_PERMISSION_ERROR: Role '${context.role || 'unknown'}' is forbidden from modifying class attendance rosters`
+    );
+  }
+
+  const securityContext: SecurityUserContext = {
+    userId: context.userId,
+    tenantId: context.tenantId,
+    role: educationRole,
+  };
+
+  attendanceGuard.assertCanModifyAttendanceRoster(securityContext);
+}
+
+async function resolveRequestContext(request: Request): Promise<RequestContext | null> {
   const mockEmail = process.env.NODE_ENV === 'development'
     ? request.headers.get('x-mock-user-email')?.trim()
     : '';
@@ -59,15 +96,35 @@ async function resolveTenantId(request: Request): Promise<string | null> {
     const supabase = createClient();
     const { data: user } = await supabase
       .from('users')
-      .select('tenant_id')
+      .select('id, tenant_id, role')
       .eq('email', mockEmail)
       .maybeSingle();
 
-    if (user?.tenant_id) return user.tenant_id;
+    if (user?.id && user.tenant_id && user.role) {
+      return {
+        tenantId: user.tenant_id,
+        userId: user.id,
+        role: user.role,
+      };
+    }
   }
 
   const currentUser = await getCurrentUser();
-  return currentUser?.tenant_id ?? null;
+  if (!currentUser?.id || !currentUser.tenant_id || !currentUser.role) {
+    return null;
+  }
+
+  return {
+    tenantId: currentUser.tenant_id,
+    userId: currentUser.id,
+    role: currentUser.role,
+  };
+}
+
+function resolveErrorStatus(message: string): number {
+  if (message === 'INVALID_ROLL_CALL_TIME') return 400;
+  if (message.startsWith('AUTH_ROLE_PERMISSION_ERROR')) return 403;
+  return 500;
 }
 
 export async function GET(request: Request) {
@@ -84,22 +141,23 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: false, error: 'date must be YYYY-MM-DD' }, { status: 400 });
     }
 
-    const tenantId = await resolveTenantId(request);
-    if (!tenantId) {
+    const context = await resolveRequestContext(request);
+    if (!context) {
       return NextResponse.json({ success: false, error: 'Authenticated tenant is required' }, { status: 401 });
     }
+    assertCanUseAttendanceRoster(context);
 
     const supabase = createDevMockClient(mockEmail) ?? createAdminOperationClient() ?? createClient();
     const service = new AttendanceProductService(new AttendanceContractImpl(supabase));
-    const roster = await service.getCourseDailyAttendance({ tenantId, courseId, schoolDay });
+    const roster = await service.getCourseDailyAttendance({ tenantId: context.tenantId, courseId, schoolDay });
     const guardianService = new PreschoolGuardianAuthorizationService(supabase);
     const guardiansByStudent = await guardianService.getAuthorizedGuardians(
-      tenantId,
+      context.tenantId,
       roster.map((student) => student.studentPartyId),
     );
     const handoverService = new PreschoolSafePickupHandoverService(supabase);
     const handoversByStudent = await handoverService.getLatestHandovers(
-      tenantId,
+      context.tenantId,
       roster.map((student) => student.studentPartyId),
     );
     const rosterWithGuardians = roster.map((student) => ({
@@ -111,7 +169,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: true, roster: rosterWithGuardians });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return NextResponse.json({ success: false, error: message }, { status: resolveErrorStatus(message) });
   }
 }
 
@@ -119,10 +177,11 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const mockEmail = request.headers.get('x-mock-user-email')?.trim() ?? '';
-    const tenantId = await resolveTenantId(request);
-    if (!tenantId) {
+    const context = await resolveRequestContext(request);
+    if (!context) {
       return NextResponse.json({ success: false, error: 'Authenticated tenant is required' }, { status: 401 });
     }
+    assertCanUseAttendanceRoster(context);
 
     if (typeof body.enrollmentId !== 'string' || !body.enrollmentId.trim()) {
       return NextResponse.json({ success: false, error: 'enrollmentId is required' }, { status: 400 });
@@ -137,7 +196,7 @@ export async function POST(request: Request) {
     const supabase = createDevMockClient(mockEmail) ?? createAdminOperationClient() ?? createClient();
     const service = new AttendanceProductService(new AttendanceContractImpl(supabase));
     const attendance = await service.setDailyAttendance({
-      tenantId,
+      tenantId: context.tenantId,
       enrollmentId: body.enrollmentId,
       status: body.status,
       rollCallTime: resolveRollCallTime(body.date, body.rollCallTime),
@@ -146,7 +205,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, attendance });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    const status = message === 'INVALID_ROLL_CALL_TIME' ? 400 : 500;
-    return NextResponse.json({ success: false, error: message }, { status });
+    return NextResponse.json({ success: false, error: message }, { status: resolveErrorStatus(message) });
   }
 }

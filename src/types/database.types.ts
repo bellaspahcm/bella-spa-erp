@@ -10428,6 +10428,123 @@ export type Database = {
           },
         ]
       }
+      preschool_chain_course_branch_assignments: {
+        Row: {
+          assigned_by: string | null
+          branch_id: string
+          course_id: string
+          created_at: string
+          id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          branch_id: string
+          course_id: string
+          created_at?: string
+          id?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_by?: string | null
+          branch_id?: string
+          course_id?: string
+          created_at?: string
+          id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preschool_chain_course_branch_assignments_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preschool_chain_course_branch_assignments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "edu_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preschool_chain_course_branch_assignments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      preschool_chain_enrollment_branch_assignments: {
+        Row: {
+          assigned_by: string | null
+          branch_id: string
+          course_id: string
+          created_at: string
+          enrollment_id: string
+          id: string
+          request_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          branch_id: string
+          course_id: string
+          created_at?: string
+          enrollment_id: string
+          id?: string
+          request_id: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_by?: string | null
+          branch_id?: string
+          course_id?: string
+          created_at?: string
+          enrollment_id?: string
+          id?: string
+          request_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preschool_chain_enrollment_branch_assignments_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preschool_chain_enrollment_branch_assignments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "edu_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preschool_chain_enrollment_branch_assignments_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "edu_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preschool_chain_enrollment_branch_assignments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       edu_fac_assets: {
         Row: {
           asset_category: string

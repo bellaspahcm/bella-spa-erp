@@ -15,14 +15,21 @@ import {
 import { PreschoolDomainEvent } from '../events/preschool-analytics-events';
 
 type EnrollmentStudentRaw = {
+  course_id?: string;
   metadata?: Record<string, unknown> | null;
 };
 
 function getStudentClassroomId(student: EnrollmentStudentRaw): string | null {
+  if (typeof student.course_id === 'string') return student.course_id;
+
   const metadata = student.metadata;
   const classroomId = metadata?.classroom_id ?? metadata?.classroomId;
 
   return typeof classroomId === 'string' ? classroomId : null;
+}
+
+function normalizeAttendanceStatus(status: string): string {
+  return status.trim().toUpperCase();
 }
 
 export class PreschoolAnalyticsService {
@@ -82,9 +89,12 @@ export class PreschoolAnalyticsService {
     });
 
     // 2. Daily Attendance (P3)
-    const todayPresentCount = attendanceRaw.filter(a => a.attendance_status === 'PRESENT' || a.attendance_status === 'LATE').length;
-    const todayLateCount = attendanceRaw.filter(a => a.attendance_status === 'LATE').length;
-    const todayAbsentCount = attendanceRaw.filter(a => a.attendance_status === 'ABSENT').length;
+    const todayPresentCount = attendanceRaw.filter((attendance) => {
+      const status = normalizeAttendanceStatus(attendance.attendance_status);
+      return status === 'PRESENT' || status === 'LATE';
+    }).length;
+    const todayLateCount = attendanceRaw.filter(a => normalizeAttendanceStatus(a.attendance_status) === 'LATE').length;
+    const todayAbsentCount = attendanceRaw.filter(a => normalizeAttendanceStatus(a.attendance_status) === 'ABSENT').length;
     const presentVsEnrolledRate = totalEnrolledStudents > 0 
       ? Math.round((todayPresentCount / totalEnrolledStudents) * 100) 
       : 0;
