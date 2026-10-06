@@ -86,6 +86,7 @@ import { createPageRefreshEvent } from '@/lib/page-refresh';
 import ThemeToggle from '@/components/common/ThemeToggle';
 import { TenantBrandLogo } from '@/components/common/TenantBrandLogo';
 import AdminNotificationBell from '@/components/common/AdminNotificationBell';
+import { BeautyRuntimeBranchSelector } from '@/components/layout/BeautyRuntimeBranchSelector';
 import type { CurrentUser } from '@/types/domain';
 import {
   isSidebarItemAllowed,
@@ -370,6 +371,7 @@ const menuItems: SidebarMenuItem[] = [
 
   { type: 'header', label: 'Tài chính & Nhân sự' },
   { icon: Banknote,        label: 'Bảng lương & Công',  href: '/dashboard/salary' },
+  { icon: GitFork,         label: 'Chain Management',   href: '/dashboard/beauty-spa-v2/chain' },
   { icon: Wallet,          label: 'Sổ cái kế toán',     href: '/dashboard/accounting' },
   { icon: DollarSign,      label: 'Đối soát Công nợ',   href: '/dashboard/finance/reconciliation' },
 
@@ -1029,6 +1031,8 @@ export function Sidebar() {
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        <BeautyRuntimeBranchSelector enabled={isBeautySpaShell && user?.role?.toLowerCase() !== 'customer'} />
 
         {/* ── Nav (scrollable) ── */}
         <nav className={cn(

@@ -7,6 +7,7 @@ import { getSupabaseAdminKey, getSupabaseAdminUrl, requireSupabaseAdminEnv } fro
 import type { Database } from '@/types/database.types';
 import { createAuthenticatedClient } from '../../tests/utils/test-jwt-helper';
 import { runRealDbSql } from './utils/real-db-sql';
+import { createUserOrgUnitAccessRuntimeClient } from './utils/user-org-unit-access-runtime-client';
 
 jest.mock('server-only', () => ({}), { virtual: true });
 
@@ -20,6 +21,7 @@ type CurrentUserStub = {
 };
 
 let mockCurrentUser: CurrentUserStub | null = null;
+let supabaseForRuntime: SupabaseClient<Database>;
 
 jest.mock('@/services/user-actions', () => ({
   getCurrentUser: jest.fn(async () => mockCurrentUser),
@@ -52,6 +54,10 @@ function requireUuid(value: string, label: string): string {
 
   return value;
 }
+
+jest.mock('@/lib/supabase-dev-bypass-server', () => ({
+  createDevelopmentBypassClient: jest.fn(async () => supabaseForRuntime),
+}));
 
 describeWithRealSupabase('Beauty V2 go-live payroll and commission Real DB proof', () => {
   const marker = `beauty-v2-payroll-proof-${Date.now()}`;
@@ -197,6 +203,7 @@ describeWithRealSupabase('Beauty V2 go-live payroll and commission Real DB proof
     supabase = createSupabaseClient<Database>(url, adminKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
+    supabaseForRuntime = supabase;
     tenantId = await ensureTenant('Beauty V2 Go Live Payroll Proof Tenant');
     otherTenantId = await ensureTenant('Beauty V2 Go Live Payroll Proof Other Tenant');
     await cleanup();
@@ -229,6 +236,7 @@ describeWithRealSupabase('Beauty V2 go-live payroll and commission Real DB proof
     adminUserId = await createAuthUser(adminEmail);
     ktvUserId = await createAuthUser(ktvEmail);
     otherUserId = await createAuthUser(otherEmail);
+    supabaseForRuntime = createUserOrgUnitAccessRuntimeClient(supabase, { tenantId, userId: ktvUserId });
 
     const userInsert = await supabase.from('users').upsert([
       {
@@ -355,6 +363,7 @@ describeWithRealSupabase('Beauty V2 go-live payroll and commission Real DB proof
       booking_id: bookingId,
       session_number: 1,
       assigned_date: today,
+      branch_id: branchId,
       status: 'scheduled',
     });
     expect(sessionInsert.error).toBeNull();

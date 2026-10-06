@@ -134,11 +134,11 @@ describe('attendance read actions fail-fast behavior', () => {
 
   it('propagates today attendance query failures', async () => {
     const scripts: ScriptedResult[] = [
-      { table: 'people_directory', op: 'select', data: { id: 'person-1' } },
+      { table: 'tenants', op: 'select', data: { product_key: 'bella_spa' } },
       {
-        table: 'org_relationships',
+        table: 'user_org_unit_access',
         op: 'select',
-        data: [{ rel_type: 'belongs_to', since: null, to_id: 'branch-a', until: null }],
+        data: [{ user_id: 'ktv-1', org_unit_id: 'branch-a', root_org_unit_id: 'branch-a', access_source: 'belongs_to' }],
       },
       {
         table: 'org_units',
@@ -582,22 +582,21 @@ describe('attendance branch-aware KTV mutations', () => {
 
   const branchAccessScripts: ScriptedResult[] = [
     { table: 'org_units', op: 'select', data: { id: 'branch-a', parent_id: null } },
-    { table: 'people_directory', op: 'select', data: { id: 'person-1' } },
     {
-      table: 'org_relationships',
+      table: 'user_org_unit_access',
       op: 'select',
-      data: [{ id: 'rel-1', rel_type: 'belongs_to', since: null, to_id: 'branch-a', until: null }],
+      data: [{ user_id: 'ktv-1', org_unit_id: 'branch-a', root_org_unit_id: 'branch-a', access_source: 'belongs_to' }],
     },
-    { table: 'org_units', op: 'select', data: [{ id: 'branch-a', parent_id: null }] },
+    { table: 'org_units', op: 'select', data: [{ id: 'branch-a', parent_id: null, unit_type: 'branch' }] },
   ];
 
   it('resolves the current KTV branch when check-in omits branchId', async () => {
     const calls = installScriptedSupabase([
-      { table: 'people_directory', op: 'select', data: { id: 'person-1' } },
+      { table: 'tenants', op: 'select', data: { product_key: 'bella_spa' } },
       {
-        table: 'org_relationships',
+        table: 'user_org_unit_access',
         op: 'select',
-        data: [{ rel_type: 'belongs_to', since: null, to_id: 'branch-a', until: null }],
+        data: [{ user_id: 'ktv-1', org_unit_id: 'branch-a', root_org_unit_id: 'branch-a', access_source: 'belongs_to' }],
       },
       {
         table: 'org_units',
@@ -619,13 +618,34 @@ describe('attendance branch-aware KTV mutations', () => {
       });
   });
 
+  it('allows legacy BabyCare KTV check-in without Platform branch registration', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'tenants', op: 'select', data: { product_key: 'bella_babycare' } },
+      { table: 'attendance', op: 'select', data: null },
+      { table: 'attendance', op: 'insert', data: { id: 'att-legacy-1', branch_id: null } },
+    ]);
+
+    const result = await ktvCheckIn();
+
+    expect(result.success).toBe(true);
+    const insertPayload = calls.find(call => call.table === 'attendance' && call.op === 'insert')?.payload;
+    expect(insertPayload).toMatchObject({
+      ktv_id: 'ktv-1',
+      tenant_id: 'tenant-1',
+    });
+    expect(insertPayload).not.toHaveProperty('branch_id');
+    expect(calls.some(call => call.table === 'people_directory')).toBe(false);
+    expect(calls.some(call => call.table === 'org_relationships')).toBe(false);
+    expect(calls.some(call => call.table === 'org_units')).toBe(false);
+  });
+
   it('denies ambiguous KTV branch resolution before check-in write', async () => {
     const calls = installScriptedSupabase([
-      { table: 'people_directory', op: 'select', data: { id: 'person-1' } },
+      { table: 'tenants', op: 'select', data: { product_key: 'bella_spa' } },
       {
-        table: 'org_relationships',
+        table: 'user_org_unit_access',
         op: 'select',
-        data: [{ rel_type: 'manages', since: null, to_id: 'region-1', until: null }],
+        data: [{ user_id: 'ktv-1', org_unit_id: 'region-1', root_org_unit_id: 'region-1', access_source: 'manages' }],
       },
       {
         table: 'org_units',
@@ -668,18 +688,17 @@ describe('attendance branch-aware KTV mutations', () => {
   it('denies cross-branch check-in before attendance write', async () => {
     const calls = installScriptedSupabase([
       { table: 'org_units', op: 'select', data: { id: 'branch-b', parent_id: null } },
-      { table: 'people_directory', op: 'select', data: { id: 'person-1' } },
       {
-        table: 'org_relationships',
+        table: 'user_org_unit_access',
         op: 'select',
-        data: [{ id: 'rel-1', rel_type: 'belongs_to', since: null, to_id: 'branch-a', until: null }],
+        data: [{ user_id: 'ktv-1', org_unit_id: 'branch-a', root_org_unit_id: 'branch-a', access_source: 'belongs_to' }],
       },
       {
         table: 'org_units',
         op: 'select',
         data: [
-          { id: 'branch-a', parent_id: null },
-          { id: 'branch-b', parent_id: null },
+          { id: 'branch-a', parent_id: null, unit_type: 'branch' },
+          { id: 'branch-b', parent_id: null, unit_type: 'branch' },
         ],
       },
     ]);

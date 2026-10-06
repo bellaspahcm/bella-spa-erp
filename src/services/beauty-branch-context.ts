@@ -8,9 +8,9 @@ type OrgUnitRow = Pick<
   Database['public']['Tables']['org_units']['Row'],
   'id' | 'parent_id' | 'unit_type'
 >;
-type OrgRelationshipRow = Pick<
-  Database['public']['Tables']['org_relationships']['Row'],
-  'rel_type' | 'since' | 'to_id' | 'until'
+type UserOrgUnitAccessRow = Pick<
+  Database['public']['Views']['user_org_unit_access']['Row'],
+  'access_source' | 'org_unit_id' | 'root_org_unit_id' | 'user_id'
 >;
 
 export type BeautyBranchContext = {
@@ -21,14 +21,6 @@ export type BeautyBranchContext = {
 export type BeautyBranchContextResult =
   | { success: true; context: BeautyBranchContext }
   | { success: false; error: string };
-
-const STAFF_BRANCH_REL_TYPES = ['belongs_to', 'manages', 'participates_in'];
-
-function isEffectiveOrgRelationship(relationship: OrgRelationshipRow, asOfDate: string) {
-  const startsBeforeDate = !relationship.since || relationship.since <= asOfDate;
-  const endsAfterDate = !relationship.until || relationship.until >= asOfDate;
-  return startsBeforeDate && endsAfterDate;
-}
 
 function collectDescendantBranchIds(unitId: string, orgUnits: OrgUnitRow[]) {
   const branches = new Set<string>();
@@ -68,14 +60,14 @@ function findAncestorBranchId(unitId: string, orgUnitById: Map<string, OrgUnitRo
   return null;
 }
 
-function collectAccessibleBranchIds(relationships: OrgRelationshipRow[], orgUnits: OrgUnitRow[], asOfDate: string) {
+function collectAccessibleBranchIds(accessRows: UserOrgUnitAccessRow[], orgUnits: OrgUnitRow[]) {
   const orgUnitById = new Map(orgUnits.map(unit => [unit.id, unit]));
   const branchIds = new Set<string>();
 
-  for (const relationship of relationships) {
-    if (!isEffectiveOrgRelationship(relationship, asOfDate)) continue;
+  for (const access of accessRows) {
+    if (!access.org_unit_id) continue;
 
-    const relatedUnit = orgUnitById.get(relationship.to_id);
+    const relatedUnit = orgUnitById.get(access.org_unit_id);
     if (!relatedUnit) continue;
 
     const ancestorBranchId = findAncestorBranchId(relatedUnit.id, orgUnitById);
@@ -113,49 +105,30 @@ export async function resolveSingleStaffBranchContext(params: {
     unauthorizedMessage = 'Không có quyền thao tác tại chi nhánh này',
   } = params;
 
-  const { data: person, error: personError } = await supabase
-    .from('people_directory')
-    .select('id')
-    .eq('tenant_id', tenantId)
-    .eq('user_id', userId)
-    .eq('is_active', true)
-    .maybeSingle();
+  const [accessResult, orgUnitsResult] = await Promise.all([
+    supabase
+      .from('user_org_unit_access')
+      .select('access_source, org_unit_id, root_org_unit_id, user_id')
+      .eq('tenant_id', tenantId)
+      .eq('user_id', userId),
+    supabase
+      .from('org_units')
+      .select('id, parent_id, unit_type')
+      .eq('tenant_id', tenantId)
+      .eq('is_active', true),
+  ]);
 
-  if (personError) {
-    return { success: false, error: personError.message };
+  if (accessResult.error) {
+    return { success: false, error: accessResult.error.message };
   }
-  if (!person) {
-    return { success: false, error: missingMessage };
-  }
-
-  const { data: relationships, error: relationshipError } = await supabase
-    .from('org_relationships')
-    .select('rel_type, since, to_id, until')
-    .eq('tenant_id', tenantId)
-    .eq('from_id', person.id)
-    .eq('from_type', 'person')
-    .eq('to_type', 'unit')
-    .in('rel_type', STAFF_BRANCH_REL_TYPES);
-
-  if (relationshipError) {
-    return { success: false, error: relationshipError.message };
+  if (orgUnitsResult.error) {
+    return { success: false, error: orgUnitsResult.error.message };
   }
 
-  const { data: orgUnits, error: orgUnitsError } = await supabase
-    .from('org_units')
-    .select('id, parent_id, unit_type')
-    .eq('tenant_id', tenantId)
-    .eq('is_active', true);
-
-  if (orgUnitsError) {
-    return { success: false, error: orgUnitsError.message };
-  }
-
-  const orgUnitRows = (orgUnits ?? []) as OrgUnitRow[];
+  const orgUnitRows = (orgUnitsResult.data ?? []) as OrgUnitRow[];
   const accessibleBranchIds = collectAccessibleBranchIds(
-    (relationships ?? []) as OrgRelationshipRow[],
+    (accessResult.data ?? []) as UserOrgUnitAccessRow[],
     orgUnitRows,
-    asOfDate,
   );
 
   if (branchId) {

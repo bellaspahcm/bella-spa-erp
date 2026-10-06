@@ -23,7 +23,6 @@ import { buildSessionModalData, getMonthDays, isSameDay } from './utils/bookings
 
 import { TimelineKtvView } from '../sessions/components/TimelineKtvView';
 import { MonthCalendarView } from '../sessions/components/MonthCalendarView';
-import type { SessionBooking } from '../sessions/types';
 
 function BookingsContent() {
   const searchParams = useSearchParams();
@@ -215,9 +214,9 @@ function BookingsContent() {
             transition={{ duration: 0.25 }}
           >
             <MonthCalendarView
-              sessions={sessions as unknown as SessionBooking[]}
+              sessions={sessions}
               onSelectBooking={(session) => {
-                openSessionDetail(session as any);
+                openSessionDetail(session);
               }}
               onOpenBookingModal={() => {
                 setCreateDate(getLocalDateString());
@@ -235,9 +234,10 @@ function BookingsContent() {
             transition={{ duration: 0.25 }}
           >
             <TimelineKtvView
-              sessions={sessions as unknown as SessionBooking[]}
+              sessions={sessions}
+              ktvs={ktvs}
               onSelectBooking={(session) => {
-                openSessionDetail(session as any);
+                openSessionDetail(session);
               }}
               onOpenBookingModal={() => {
                 setCreateDate(getLocalDateString());
