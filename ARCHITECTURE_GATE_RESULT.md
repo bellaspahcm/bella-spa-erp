@@ -4321,6 +4321,61 @@ No migration.
 
 ---
 
+## 2026-10-07 PR #244 CI Security Dependency Gate
+
+### 1. Bella OS/Product Development Process Gate
+- **Problem:** PR #244 CI failed at `Trivy filesystem` and `Security Gates`.
+- **Truth / Evidence:** Trivy reported fixable high/critical advisories in lockfiles only: `sharp@0.35.4`, `source-map-js@1.2.1`, `@modelcontextprotocol/sdk@1.29.0`, and `proxy-addr@2.0.7`.
+- **Root Cause:** Dependency security drift in root and `mcp-server` lockfiles; not an English Center product/runtime regression.
+- **Gate Result:** `PASS`.
+
+### 2. Product Manifest
+- **Product:** None.
+- **Capability:** CI security dependency gate remediation.
+- **Scope:** `package.json`, `package-lock.json`, `mcp-server/package.json`, and `mcp-server/package-lock.json`.
+- **Non-goals:** No English product code, no tenant data, no migration SQL, no production/customer DB mutation.
+
+### 3. Ownership Map
+- **Owner:** Repository dependency governance.
+- **Data Owner:** N/A.
+
+### 4. Contract Dependency Map
+`CI Security Gate` -> `npm audit --omit=dev` / Trivy filesystem scan -> npm lockfiles.
+
+### 5. Change Authority
+- Authorized layers: dependency metadata and lockfiles required to unblock CI security scan.
+- Not authorized and not modified: Platform Core, Education runtime, Product Registry, tenant bootstrap data, Healthcare H1-H12, Logistics E7.
+
+### 6. UI -> Contract Reconciliation
+No UI change.
+
+### 7. Additive Migration Plan
+No migration.
+
+### 8. 11 Automated Verification Gates Plan
+1. Inspect failed PR check names.
+2. Inspect Trivy failure log.
+3. Identify direct vulnerable packages and fixed versions.
+4. Confirm dependency paths from root and `mcp-server` lockfiles.
+5. Apply minimal dependency override/package metadata changes.
+6. Regenerate lockfiles using npm.
+7. Verify lockfile versions are at or above fixed versions.
+8. Run `npm run security:audit`.
+9. Run `git diff --check`.
+10. Commit and push to PR branch.
+11. Wait for refreshed CI security gates.
+
+### Verification
+- `package-lock.json`: `sharp=0.35.5`, `source-map-js=1.2.2`, `@modelcontextprotocol/sdk=1.32.1`, `proxy-addr=2.0.8`.
+- `mcp-server/package-lock.json`: `@modelcontextprotocol/sdk=1.32.1`, `proxy-addr=2.0.8`.
+- `npm run security:audit` -> PASS.
+- `git diff --check` -> PASS.
+
+### Conclusion
+`PASS`
+
+---
+
 ## 2026-10-06 Runtime CSS Scan Gate
 
 ### 1. Bella OS/Product Development Process Gate
