@@ -3,6 +3,7 @@
 import { useState, FormEvent } from 'react';
 import Image from 'next/image';
 import { Mail, Lock, Loader2, AlertTriangle, Shield, Smartphone } from 'lucide-react';
+import { validateDevelopmentLoginBypassEmail } from '@/services/dev-login-actions';
 
 /**
  * Login Page - Bella Multi-Service ERP
@@ -47,21 +48,10 @@ export default function LoginPage() {
           return;
         }
 
-        if (email === 'bellaspa.testadmin@gmail.com' || email === 'admin@medical.vn' || email === 'admin@healthcare.vn') {
+        const bypassResult = await validateDevelopmentLoginBypassEmail(email);
+        if (bypassResult.ok) {
           document.cookie = `mock_user_email=${email}; path=/; max-age=31536000; SameSite=Lax`;
-          window.location.href = '/dashboard/hospital';
-          return;
-        }
-
-        const { data: userExists } = await supabase
-          .from('users')
-          .select('email, role')
-          .eq('email', email)
-          .single();
-
-        if (userExists) {
-          document.cookie = `mock_user_email=${email}; path=/; max-age=31536000; SameSite=Lax`;
-          window.location.href = '/dashboard';
+          window.location.href = bypassResult.redirectTo || '/dashboard';
           return;
         }
       }

@@ -138,7 +138,7 @@ describeWithRealSupabase('Beauty V2 Payroll branch Real DB proof', () => {
     `);
 
     console.warn(
-      `[Beauty V2 Payroll branch cleanup] retained tenant shells because public.timeline_events has append-only/RLS FK behavior: ${currentTenantId}, ${currentOtherTenantId}`,
+      `[Beauty V2 Payroll branch cleanup] retained tenant shells because public.timeline_events is append-only and may hold tenant FK rows: ${currentTenantId}, ${currentOtherTenantId}`,
     );
 
     for (const userId of authUserIds) {
@@ -174,6 +174,12 @@ describeWithRealSupabase('Beauty V2 Payroll branch Real DB proof', () => {
     expect(orgUnits.error).toBeNull();
     expect(orgUnits.data).toEqual([]);
 
+    const orgUnitsAfterCleanup = await supabase
+      .from('org_units')
+      .select('id')
+      .in('tenant_id', [tenantId, otherTenantId]);
+    expect(orgUnitsAfterCleanup.error).toBeNull();
+    expect(orgUnitsAfterCleanup.data).toEqual([]);
   }
 
   beforeAll(async () => {

@@ -118,7 +118,7 @@ describeWithRealSupabase('Beauty V2 Attendance branch Real DB proof', () => {
     `);
 
     console.warn(
-      `[Beauty V2 Attendance branch cleanup] retained tenant shells because public.timeline_events has append-only/RLS FK behavior: ${currentProofTenantId}, ${currentProofOtherTenantId}`,
+      `[Beauty V2 Attendance branch cleanup] retained tenant shells because public.timeline_events is append-only and may hold tenant FK rows: ${currentProofTenantId}, ${currentProofOtherTenantId}`,
     );
 
     if (ktvUserId) {
