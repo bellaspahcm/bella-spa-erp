@@ -55,6 +55,10 @@ function sumRevenueByTenant(rows: readonly { tenant_id: string | null; amount: n
   return sums;
 }
 
+function normalizeRoyaltyType(value: string | null): HqTenantRecord['royalty_type'] {
+  return value === 'fixed' || value === 'percentage' ? value : null;
+}
+
 async function fetchHqTenants(supabase: HqSupabaseClient): Promise<TenantRow[]> {
   const { data: tenants, error } = await supabase
     .from('tenants')
@@ -100,6 +104,7 @@ function buildHqTenantRecords(
 ): HqTenantRecord[] {
   return tenants.map((tenant) => ({
     ...tenant,
+    royalty_type: normalizeRoyaltyType(tenant.royalty_type),
     staffCount: aggregates.staffCounts.get(tenant.id) || 0,
     customerCount: aggregates.customerCounts.get(tenant.id) || 0,
     revenueSum: aggregates.revenueSums.get(tenant.id) || 0,
