@@ -19,9 +19,13 @@ type CurrentUserStub = {
 };
 
 let mockCurrentUser: CurrentUserStub | null = null;
+let supabaseForRuntime: SupabaseClient<Database>;
 
 jest.mock('@/services/user-actions', () => ({
   getCurrentUser: jest.fn(async () => mockCurrentUser),
+}));
+jest.mock('@/lib/supabase-dev-bypass-server', () => ({
+  createDevelopmentBypassClient: jest.fn(async () => supabaseForRuntime),
 }));
 
 jest.setTimeout(90_000);
@@ -42,10 +46,26 @@ const hasRealSupabaseAdminEnv = () => {
 
 const describeWithRealSupabase = hasRealSupabaseAdminEnv() ? describe : describe.skip;
 
+function createRuntimeWriterClient(
+  adminSupabase: SupabaseClient<Database>,
+  accessSupabase: SupabaseClient<Database>,
+): SupabaseClient<Database> {
+  const client = {
+    auth: accessSupabase.auth,
+    from: (table: string) => (
+      table === 'user_org_unit_access' ? accessSupabase : adminSupabase
+    ).from(table as keyof Database['public']['Tables'] & keyof Database['public']['Views']),
+    rpc: (...args: Parameters<SupabaseClient<Database>['rpc']>) => adminSupabase.rpc(...args),
+  };
+
+  return client as unknown as SupabaseClient<Database>;
+}
+
 describeWithRealSupabase('Inventory session consumption Real DB proof', () => {
   const marker = `inventory-real-db-proof-${Date.now()}`;
   const adminEmail = `${marker}-admin@example.test`;
   const otherEmail = `${marker}-other@example.test`;
+  const adminPassword = `${randomUUID()}A1!`;
   const customerId = randomUUID();
   const packageId = randomUUID();
   const bookingId = randomUUID();
@@ -70,6 +90,7 @@ describeWithRealSupabase('Inventory session consumption Real DB proof', () => {
   let otherTenantId: string;
   let adminUserId = '';
   let otherUserId = '';
+  let adminRuntimeSupabase: SupabaseClient<Database>;
 
   async function ensureTenant(name: string) {
     const existing = await supabase
@@ -154,7 +175,16 @@ describeWithRealSupabase('Inventory session consumption Real DB proof', () => {
 
   beforeAll(async () => {
     const { url, adminKey } = requireSupabaseAdminEnv();
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+    if (!anonKey) {
+      throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY is required for inventory branch proof');
+    }
+
     supabase = createSupabaseClient<Database>(url, adminKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    supabaseForRuntime = supabase;
+    adminRuntimeSupabase = createSupabaseClient<Database>(url, anonKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
     tenantId = await ensureTenant('Inventory Real DB Proof Tenant');
@@ -171,8 +201,22 @@ describeWithRealSupabase('Inventory session consumption Real DB proof', () => {
   });
 
   it('proves complete session auto-consumes package materials and RLS isolates inventory rows', async () => {
-    adminUserId = await createAuthUser(adminEmail);
+    const adminAuth = await supabase.auth.admin.createUser({
+      email: adminEmail,
+      password: adminPassword,
+      email_confirm: true,
+    });
+    if (adminAuth.error || !adminAuth.data.user) {
+      throw new Error(`auth user fixture failed for ${adminEmail}: ${adminAuth.error?.message ?? 'missing auth user'}`);
+    }
+    adminUserId = adminAuth.data.user.id;
     otherUserId = await createAuthUser(otherEmail);
+    const adminSignIn = await adminRuntimeSupabase.auth.signInWithPassword({
+      email: adminEmail,
+      password: adminPassword,
+    });
+    if (adminSignIn.error) throw new Error(`admin auth sign-in failed: ${adminSignIn.error.message}`);
+    supabaseForRuntime = createRuntimeWriterClient(supabase, adminRuntimeSupabase);
 
     const tenantInsert = await supabase
       .from('tenants')
@@ -289,6 +333,7 @@ describeWithRealSupabase('Inventory session consumption Real DB proof', () => {
       status: 'booked',
       total_sessions: 2,
       completed_sessions: 0,
+      branch_id: branchId,
     });
     expect(bookingInsert.error).toBeNull();
 

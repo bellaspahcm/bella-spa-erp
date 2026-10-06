@@ -73,6 +73,7 @@ describeWithRealSupabase('Beauty V2 Commission branch Real DB proof', () => {
   const nullBranchPersonId = randomUUID();
   const multiBranchPersonId = randomUUID();
   const successKtvEmail = `${marker}-success@example.test`;
+  const successKtvPassword = `${randomUUID()}A1!`;
   const mismatchKtvEmail = `${marker}-mismatch@example.test`;
   const nullBranchKtvEmail = `${marker}-null@example.test`;
   const multiBranchKtvEmail = `${marker}-multi@example.test`;
@@ -82,6 +83,7 @@ describeWithRealSupabase('Beauty V2 Commission branch Real DB proof', () => {
   let nullBranchKtvId = '';
   let multiBranchKtvId = '';
   let cleaned = false;
+  let successKtvSupabase: SeedClient;
 
   const today = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Ho_Chi_Minh',
@@ -268,6 +270,18 @@ describeWithRealSupabase('Beauty V2 Commission branch Real DB proof', () => {
     }
   }
 
+  function createRuntimeWriterClient(accessSupabase: SeedClient): SeedClient {
+    const client = {
+      auth: accessSupabase.auth,
+      from: (table: string) => (
+        table === 'user_org_unit_access' ? accessSupabase : supabase
+      ).from(table as keyof Database['public']['Tables'] & keyof Database['public']['Views']),
+      rpc: (...args: Parameters<SeedClient['rpc']>) => supabase.rpc(...args),
+    };
+
+    return client as unknown as SeedClient;
+  }
+
   async function assertWriterBranchReadBack(ktvId: string) {
     const serviceRows = await supabase
       .from('booking_service_items')
@@ -450,7 +464,29 @@ describeWithRealSupabase('Beauty V2 Commission branch Real DB proof', () => {
 
     await selectExistingProofTenants();
 
-    successKtvId = await createAuthUser(successKtvEmail);
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+    if (!anonKey) {
+      throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY is required for commission branch proof');
+    }
+    const successAuth = await supabase.auth.admin.createUser({
+      email: successKtvEmail,
+      password: successKtvPassword,
+      email_confirm: true,
+    });
+    if (successAuth.error || !successAuth.data.user) {
+      throw new Error(`auth user fixture failed for ${successKtvEmail}: ${successAuth.error?.message ?? 'missing auth user'}`);
+    }
+    successKtvId = successAuth.data.user.id;
+    successKtvSupabase = createSupabaseClient<Database>(url, anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const successSignIn = await successKtvSupabase.auth.signInWithPassword({
+      email: successKtvEmail,
+      password: successKtvPassword,
+    });
+    if (successSignIn.error) throw new Error(`success ktv auth sign-in failed: ${successSignIn.error.message}`);
+    const successWriterSupabase = createRuntimeWriterClient(successKtvSupabase);
+    mockCreateClient.mockResolvedValue(successWriterSupabase);
     mismatchKtvId = await createAuthUser(mismatchKtvEmail);
     nullBranchKtvId = await createAuthUser(nullBranchKtvEmail);
     multiBranchKtvId = await createAuthUser(multiBranchKtvEmail);

@@ -25,6 +25,8 @@ type CurrentUserStub = {
 };
 
 let supabase: SupabaseClient<Database>;
+let adminSupabase: SupabaseClient<Database>;
+let ktvSupabase: SupabaseClient<Database>;
 let mockCurrentUser: CurrentUserStub | null = null;
 
 jest.mock('@/services/user-actions', () => ({
@@ -64,6 +66,18 @@ function requireUuid(value: string, label: string): string {
   return value;
 }
 
+function createRuntimeWriterClient(): SupabaseClient<Database> {
+  const client = {
+    auth: ktvSupabase.auth,
+    from: (table: string) => (
+      table === 'user_org_unit_access' ? ktvSupabase : adminSupabase
+    ).from(table as keyof Database['public']['Tables'] & keyof Database['public']['Views']),
+    rpc: (...args: Parameters<SupabaseClient<Database>['rpc']>) => adminSupabase.rpc(...args),
+  };
+
+  return client as unknown as SupabaseClient<Database>;
+}
+
 describeWithRealSupabase('Beauty V2 Attendance branch Real DB proof', () => {
   const marker = `beauty-v2-attendance-${Date.now()}`;
   const tenantId = randomUUID();
@@ -76,6 +90,7 @@ describeWithRealSupabase('Beauty V2 Attendance branch Real DB proof', () => {
   const personId = randomUUID();
   const relationshipId = randomUUID();
   const email = `${marker}-ktv@example.test`;
+  const password = `${randomUUID()}A1!`;
   let ktvUserId = '';
 
   const today = new Intl.DateTimeFormat('en-CA', {
@@ -117,7 +132,7 @@ describeWithRealSupabase('Beauty V2 Attendance branch Real DB proof', () => {
     `);
 
     if (ktvUserId) {
-      const { error } = await supabase.auth.admin.deleteUser(ktvUserId);
+      const { error } = await adminSupabase.auth.admin.deleteUser(ktvUserId);
       if (error && !error.message.toLowerCase().includes('user not found')) {
         throw new Error(`auth user cleanup failed: ${error.message}`);
       }
@@ -126,19 +141,34 @@ describeWithRealSupabase('Beauty V2 Attendance branch Real DB proof', () => {
 
   beforeAll(async () => {
     const { url, adminKey } = requireSupabaseAdminEnv();
-    supabase = createSupabaseClient<Database>(url, adminKey, {
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+    if (!anonKey) {
+      throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY is required for attendance branch proof');
+    }
+
+    adminSupabase = createSupabaseClient<Database>(url, adminKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
+    supabase = adminSupabase;
 
     const authUser = await supabase.auth.admin.createUser({
       email,
-      password: randomUUID(),
+      password,
       email_confirm: true,
     });
     if (authUser.error || !authUser.data.user) {
       throw new Error(`auth user fixture failed: ${authUser.error?.message ?? 'missing auth user'}`);
     }
     ktvUserId = authUser.data.user.id;
+
+    ktvSupabase = createSupabaseClient<Database>(url, anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const ktvSignIn = await ktvSupabase.auth.signInWithPassword({ email, password });
+    if (ktvSignIn.error) {
+      throw new Error(`ktv auth sign-in failed: ${ktvSignIn.error.message}`);
+    }
+    supabase = createRuntimeWriterClient();
 
     await cleanupStep('tenant insert', supabase.from('tenants').insert([
       {
@@ -246,7 +276,7 @@ describeWithRealSupabase('Beauty V2 Attendance branch Real DB proof', () => {
     const checkInResult = await ktvCheckIn(branchAId);
     expect(checkInResult.success).toBe(true);
 
-    const attendanceA = await supabase
+    const attendanceA = await adminSupabase
       .from('attendance')
       .select('id, ktv_id, tenant_id, branch_id, date, status, checkout_time')
       .eq('tenant_id', tenantId)
@@ -275,7 +305,7 @@ describeWithRealSupabase('Beauty V2 Attendance branch Real DB proof', () => {
       error: 'Không có quyền chấm công tại chi nhánh này',
     });
 
-    const deniedRows = await supabase
+    const deniedRows = await adminSupabase
       .from('attendance')
       .select('id')
       .or(`branch_id.eq.${branchBId},branch_id.eq.${otherBranchId}`);
@@ -285,7 +315,7 @@ describeWithRealSupabase('Beauty V2 Attendance branch Real DB proof', () => {
     const checkOutResult = await ktvCheckOut(branchAId);
     expect(checkOutResult.success).toBe(true);
 
-    const checkedOut = await supabase
+    const checkedOut = await adminSupabase
       .from('attendance')
       .select('tenant_id, branch_id, checkout_time')
       .eq('tenant_id', tenantId)
