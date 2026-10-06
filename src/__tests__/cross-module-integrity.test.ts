@@ -122,6 +122,7 @@ interface MockStore {
   people_directory: PlatformMockRow[];
   org_relationships: PlatformMockRow[];
   org_units: PlatformMockRow[];
+  user_org_unit_access: PlatformMockRow[];
 }
 
 let mockStore: MockStore = {
@@ -139,6 +140,7 @@ let mockStore: MockStore = {
   people_directory: [],
   org_relationships: [],
   org_units: [],
+  user_org_unit_access: [],
 };
 
 function resetMockStore() {
@@ -211,6 +213,15 @@ function resetMockStore() {
         parent_id: null,
         unit_type: 'branch',
         is_active: true,
+      },
+    ],
+    user_org_unit_access: [
+      {
+        tenant_id: 'tenant-a',
+        user_id: 'ktv-1',
+        org_unit_id: 'branch-a',
+        root_org_unit_id: 'branch-a',
+        access_source: 'belongs_to',
       },
     ],
     tenants: [
@@ -584,6 +595,7 @@ describe('Cross-Module End-to-End Integrity Tests', () => {
       start_date: '2026-05-10',
       assigned_ktv_id: 'ktv-1',
       preferred_time: '14:00',
+      branch_id: 'branch-a',
     };
 
     const createResult = await createBooking(bookingFormData);
@@ -641,6 +653,7 @@ describe('Cross-Module End-to-End Integrity Tests', () => {
       tenant_id: 'tenant-a',
       session_number: 1,
       status: 'scheduled',
+      branch_id: 'branch-a',
       actual_duration: null,
       care_note_content: null,
       care_note_template: null,
