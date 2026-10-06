@@ -135,8 +135,11 @@ describeWithRealSupabase('Beauty V2 Payroll branch Real DB proof', () => {
          OR ktv_id IN (${userIdsSql});
       DELETE FROM public.users WHERE id IN (${userIdsSql});
       DELETE FROM public.org_units WHERE id IN (${orgUnitIdsSql});
-      DELETE FROM public.tenants WHERE id IN ('${currentTenantId}', '${currentOtherTenantId}');
     `);
+
+    console.warn(
+      `[Beauty V2 Payroll branch cleanup] retained tenant shells because public.timeline_events has append-only/RLS FK behavior: ${currentTenantId}, ${currentOtherTenantId}`,
+    );
 
     for (const userId of authUserIds) {
       const { error } = await supabase.auth.admin.deleteUser(userId);
@@ -171,9 +174,6 @@ describeWithRealSupabase('Beauty V2 Payroll branch Real DB proof', () => {
     expect(orgUnits.error).toBeNull();
     expect(orgUnits.data).toEqual([]);
 
-    const tenants = await supabase.from('tenants').select('id').in('id', [tenantId, otherTenantId]);
-    expect(tenants.error).toBeNull();
-    expect(tenants.data).toEqual([]);
   }
 
   beforeAll(async () => {

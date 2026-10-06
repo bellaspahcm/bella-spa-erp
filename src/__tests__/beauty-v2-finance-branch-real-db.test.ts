@@ -196,10 +196,11 @@ describeWithRealSupabase('Beauty V2 Finance SALARY_PAID branch Real DB proof', (
 
       DELETE FROM public.org_units
       WHERE id IN (${orgUnitSql});
-
-      DELETE FROM public.tenants
-      WHERE id IN (${tenantSql});
     `);
+
+    console.warn(
+      `[Beauty V2 Finance branch cleanup] retained tenant shells because public.timeline_events has append-only/RLS FK behavior: ${tenantId}, ${otherTenantId}`,
+    );
 
     cleaned = true;
   }
@@ -270,12 +271,6 @@ describeWithRealSupabase('Beauty V2 Finance SALARY_PAID branch Real DB proof', (
     expect(orgRows.error).toBeNull();
     expect(orgRows.data).toEqual([]);
 
-    const tenantRows = await supabase
-      .from('tenants')
-      .select('id')
-      .in('id', [tenantId, otherTenantId]);
-    expect(tenantRows.error).toBeNull();
-    expect(tenantRows.data).toEqual([]);
   }
 
   beforeAll(async () => {

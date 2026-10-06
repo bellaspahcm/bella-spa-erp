@@ -11,6 +11,12 @@ import {
 import { PreschoolChainService } from '@/products/bella-education/services/preschool-chain.service';
 import type { Database } from '@/types/database.types';
 
+let supabase: SupabaseClient<Database>;
+
+jest.mock('@/lib/supabase-server', () => ({
+  createClient: () => supabase,
+}));
+
 jest.setTimeout(120_000);
 
 const dbUrl =
@@ -18,8 +24,6 @@ const dbUrl =
   || process.env.SUPABASE_DATABASE_URL
   || process.env.SUPABASE_DB_URL
   || '';
-
-const actorUserId = '00000000-0000-0000-0000-000000000001';
 
 function isRunnableDbUrl(value: string): boolean {
   if (!value.trim()) return false;
@@ -106,7 +110,9 @@ describe('Preschool Chain real DB E2E proof', () => {
   };
 
   let pg: Client;
-  let supabase: SupabaseClient<Database>;
+  let actorUserId = '';
+  let authUserId = '';
+  const actorEmail = `${marker}-admission-operator@example.test`;
 
   beforeAll(async () => {
     if (!isRunnableDbUrl(dbUrl)) {
@@ -121,6 +127,19 @@ describe('Preschool Chain real DB E2E proof', () => {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
+    const authUser = await supabase.auth.admin.createUser({
+      email: actorEmail,
+      password: `${randomUUID()}A1!`,
+      email_confirm: true,
+    });
+    if (authUser.error || !authUser.data.user) {
+      throw new Error(`Failed to seed Preschool auth user: ${authUser.error?.message ?? 'missing user'}`);
+    }
+    authUserId = authUser.data.user.id;
+    actorUserId = authUser.data.user.id;
+    const routeUser = authUser.data.user;
+    supabase.auth.getUser = async () => ({ data: { user: routeUser }, error: null });
+
     pg = new Client({
       connectionString: dbUrl,
       ssl: sslConfig(),
@@ -131,12 +150,28 @@ describe('Preschool Chain real DB E2E proof', () => {
   });
 
   afterAll(async () => {
-    if (!pg) return;
+    let cleanupError: unknown = null;
     try {
-      await cleanupDatabaseRows();
-      await assertNoPreschoolChainRowsRemain();
+      if (pg) {
+        try {
+          await cleanupDatabaseRows();
+          await assertNoPreschoolChainRowsRemain();
+        } catch (error) {
+          cleanupError = error;
+        } finally {
+          await pg.end();
+        }
+      }
     } finally {
-      await pg.end();
+      if (authUserId && supabase) {
+        const { error } = await supabase.auth.admin.deleteUser(authUserId);
+        if (error && !error.message.toLowerCase().includes('user not found')) {
+          cleanupError = cleanupError ?? error;
+        }
+      }
+      if (cleanupError) {
+        throw cleanupError;
+      }
     }
   });
 
@@ -219,6 +254,15 @@ describe('Preschool Chain real DB E2E proof', () => {
       `,
       [[ids.tenant, ids.otherTenant]],
     );
+    if (actorUserId) {
+      await pg.query(
+        `
+          DELETE FROM public.users
+          WHERE id = $1::uuid
+        `,
+        [actorUserId],
+      );
+    }
     await pg.query(
       `
         DELETE FROM public.org_units
@@ -226,12 +270,9 @@ describe('Preschool Chain real DB E2E proof', () => {
       `,
       [[ids.tenant, ids.otherTenant]],
     );
-    await pg.query(
-      `
-        DELETE FROM public.tenants
-        WHERE id = ANY($1::uuid[])
-      `,
-      [[ids.tenant, ids.otherTenant]],
+
+    console.warn(
+      `[Preschool Chain real DB cleanup] retained tenant shells because public.timeline_events has append-only/RLS FK behavior: ${ids.tenant}, ${ids.otherTenant}`,
     );
   }
 
@@ -264,6 +305,19 @@ describe('Preschool Chain real DB E2E proof', () => {
         `${marker} Tenant`,
         ids.otherTenant,
         `${marker} Other Tenant`,
+      ],
+    );
+
+    await pg.query(
+      `
+        INSERT INTO public.users (id, tenant_id, email, full_name, role, status)
+        VALUES ($1::uuid, $2::uuid, $3, $4, 'admin_staff', 'active')
+      `,
+      [
+        actorUserId,
+        ids.tenant,
+        actorEmail,
+        `${marker} Admission Operator`,
       ],
     );
 
