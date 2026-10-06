@@ -254,10 +254,10 @@ describe('Preschool Chain real DB E2E proof', () => {
   async function seedPreschoolChainFixture(): Promise<void> {
     await pg.query(
       `
-        INSERT INTO public.tenants (id, name, status, product_key, enabled_modules, metadata)
+        INSERT INTO public.tenants (id, name, status, product_key, enabled_modules)
         VALUES
-          ($1::uuid, $2, 'active', 'bella_education', '{"education": true}'::jsonb, '{"proof":"preschool-chain-real-db"}'::jsonb),
-          ($3::uuid, $4, 'active', 'bella_education', '{"education": true}'::jsonb, '{"proof":"preschool-chain-real-db"}'::jsonb)
+          ($1::uuid, $2, 'active', 'bella_education', '{"education": true}'::jsonb),
+          ($3::uuid, $4, 'active', 'bella_education', '{"education": true}'::jsonb)
       `,
       [
         ids.tenant,
